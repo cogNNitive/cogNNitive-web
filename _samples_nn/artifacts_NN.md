@@ -21,7 +21,7 @@ format:: html
 summary:: Unified interactive HTML application providing cross-model visualization, metrics dashboards, and live execution consoles.
 status:: verified
 produced_by:: Compile Workspace Hub
-derived_from_inputs:: Ghostbusters Business Model
+sources:: [models/Ghostbusters_business-model_NN.md]
 file_path:: artifacts/workspace_hub.html
 tags:: [dashboard, runtime, console]
 
@@ -30,6 +30,6 @@ format:: model
 summary:: Structured synthesis of 1984 NYC paranormal elimination operations, client billing totals, and municipal indemnity compliance.
 status:: verified
 produced_by:: Compile Workspace Hub
-derived_from_inputs:: NYC Paranormal Activity Report 1984
+sources:: [sources/nn/nyc-paranormal-activity-report-1984.md]
 artifact_model:: artifacts/models/executive_remediation_report_NN.md
 tags:: [report, executive, compliance]

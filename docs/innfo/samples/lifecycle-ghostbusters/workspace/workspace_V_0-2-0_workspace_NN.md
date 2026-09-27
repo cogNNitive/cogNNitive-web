@@ -47,7 +47,6 @@ version:: V1
 model_ref:: models/Ghostbusters_Operations_V_1-0-0_NN.md
 model_version:: V_1-0-0
 model_template:: business_V_0-2-0
-derived_from:: [commercial_pricing_memo.md#manhattan-commercial-rates, commercial_pricing_memo.md#hazardous-entanglement-surcharge, containment_debrief.md#nn-section--000001]
 
 # NN Artifacts
 
