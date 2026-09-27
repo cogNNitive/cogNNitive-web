@@ -223,10 +223,10 @@ channels:
     refs:
       - key: skills
         repo: cogNNitive/cogNNitive
-        version: "2.3.0"
+        version: "2.4.0"
       - key: templates
         repo: cogNNitive/cogNNitive
-        version: "0.15.0"
+        version: "0.16.0"
       - key: innfo-mcp
         repo: cogNNitive/cogNNitive
       - key: innfo-console
