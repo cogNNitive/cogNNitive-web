@@ -102,7 +102,45 @@ committed on `dev` in the fixed order (A1 → A2 → A3 → A4).
 - No commits made red; each item's own tests were run and green before
   committing.
 
+## Fix-forward: A3 entrypoint gap (confirmed CRITICAL by fresh-context sdd-verify)
+
+`sdd-verify` (adversarial fresh-context review) found that A3's wiring call in
+`workspace.ts` (~lines 562-572) runs only inside the `while (queue.length > 0)`
+worklist loop, gated on `node.source.path === resolvedPath` where
+`resolvedPath` always comes from a queued submodel item. The entrypoint model
+(`workspace_NN.md`/`index.md`) is registered via `parseAndRegisterModel`
+*before* that loop starts and its own path never becomes a queued
+`resolvedPath` — so `type:: citation` fields declared directly on elements of
+the entrypoint model itself were never wired into `node.sources`/relationships,
+only ones in submodels reached via the worklist. This contradicted the
+generic (no entrypoint exception) wording in
+`specs/typed-source-references/spec.md`, and the existing test suite didn't
+catch it because all 3 original `attachSchemaTypedCitations.test.ts` cases put
+the citation-typed element inside a submodel.
+
+- **Gap closed:** added a second, additive call site in
+  `iNNfo/packages/innfo-core/src/recursiveParser/workspace.ts`, right after
+  `entrypointSchema` is computed and before the worklist loop starts, mirroring
+  the exact post-schema-stash pattern already used inside the loop. Iterates
+  `ctx.nodes` for `node.kind === 'element' && node.source.path ===
+  entrypointPath` and calls `attachSchemaTypedCitations(node, entrypointSchema)`.
+  Purely additive — the worklist loop and submodel handling are untouched.
+- **Regression test added:** a 4th case in
+  `attachSchemaTypedCitations.test.ts` using a `workspace_01.md` primary
+  entrypoint (not a submodel) with a `precio_source:: citation` field declared
+  directly on an entrypoint element, asserting it is wired into
+  `node.sources`/relationships.
+- **Tests re-run, all green:** `attachSchemaTypedCitations.test.ts` (4/4),
+  `roundtrip-fidelity.test.ts` (3/3), `workspaceSources.test.ts` (20/20),
+  `source-citations.test.ts` (30/30), `citation-typing.test.ts` (8/8). Full
+  innfo-core suite: **868 passed, 1 skipped** (71 files). `npm run build`
+  (tsc) → clean. innfo-mcp, rebuilt against the new innfo-core dist:
+  `resolve-sources.spec.ts` (8/8), `server.spec.ts` (33/33).
+- **Commit:** `fix(innfo-core): wire schema-typed citations for entrypoint
+  elements` (fix-forward, not amended into `47f9e64`).
+
 ## Remaining work
 
-None — all 4 tasks (A1–A4) and the cross-cutting acceptance criteria from
-proposal.md are implemented, tested, and committed. Ready for `sdd-verify`.
+None — all 4 tasks (A1–A4), the cross-cutting acceptance criteria from
+proposal.md, and the entrypoint-gap fix-forward above are implemented, tested,
+and committed. Ready for re-verification.

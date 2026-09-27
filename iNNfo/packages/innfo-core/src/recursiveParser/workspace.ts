@@ -475,6 +475,22 @@ export async function recursiveParse(
   )
   const initialRefs = extractSubmodelRefs(entrypointContent, entrypointPath, entrypointSchema)
   const entrypointKey = normalizePathKey(entrypointPath)
+
+  // A3 (entrypoint gap fix): wire schema-typed `type:: citation` fields on
+  // elements defined directly on the entrypoint model too. The worklist loop
+  // below only ever calls attachSchemaTypedCitations for resolvedPath values
+  // drawn from queued submodel items — the entrypoint's own path never goes
+  // through that loop, so its citation-typed fields were never wired.
+  // Mirrors the same post-schema-stash pattern used at the A3 call site
+  // inside the worklist loop (see below).
+  if (entrypointSchema) {
+    for (const node of Object.values(ctx.nodes)) {
+      if (node.kind === 'element' && node.source.path === entrypointPath) {
+        attachSchemaTypedCitations(node, entrypointSchema)
+      }
+    }
+  }
+
   for (const ref of initialRefs) {
     queue.push({
       path: ref.path,
