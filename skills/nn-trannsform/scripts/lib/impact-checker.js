@@ -268,7 +268,7 @@ function remediationFor(reason, suggestions) {
 
 /**
  * Render a structured Markdown audit report from an impact audit result.
- * The report carries `type: report` and `derived_from` frontmatter, names every
+ * The report carries `type: report` and `generated_by` frontmatter, names every
  * affected model and element, and details recommended remediation per drift.
  *
  * @param {ReturnType<typeof auditModelCitations>} audit
@@ -282,7 +282,7 @@ function buildImpactReport(audit, date) {
   lines.push('type: report');
   lines.push('title: Dynamic Sources Impact Audit Report');
   lines.push(`date: ${d}`);
-  lines.push('derived_from: auditModelCitations');
+  lines.push('generated_by: auditModelCitations');
   lines.push('---');
   lines.push('');
   lines.push('# Dynamic Sources Impact Audit Report');

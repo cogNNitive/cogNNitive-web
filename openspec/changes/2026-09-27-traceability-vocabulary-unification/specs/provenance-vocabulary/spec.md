@@ -117,4 +117,27 @@ deprecated alias of `cited_works:`. New workspaces and new artifacts MUST use
 - GIVEN a newly created artifact entry
 - WHEN its derivation is authored
 - THEN it is written using `sources::` / `sources:` only
+
+### Requirement: Frontmatter external-works key is `cited_works` [MODIFIED]
+
+Normalised Source frontmatter and Level 3 model frontmatter MUST use
+`cited_works:` for the list of external works a document cites. `references:`
+MUST be accepted as a deprecated alias (read, not written) for one more
+release cycle.
+
+This corrects the base requirement's "Legacy references still read" scenario,
+which described a run-log deprecation note that was never implemented: the
+scanner's alias (`scanner-core.js`) silently maps `references:` to
+`cited_works:` on read, with no log line. No code change is made by this
+change — the scenario below is a wording fix to match actual, already-shipped
+behavior, so the spec stops promising a diagnostic that does not exist.
+
+#### Scenario: Legacy references still read (corrected)
+
+- GIVEN an existing Source file with a `references:` block
+- WHEN the scanner normalizes its frontmatter
+- THEN the entries are read as `cited_works`
+- AND no run-log deprecation note is emitted (this is a silent alias, unlike
+  the `LEGACY_DERIVATION_KEY` warning for `derived_from`/`derived_from_inputs`,
+  which does surface a diagnostic)
 - AND neither `derived_from` nor `derived_from_inputs::` is written

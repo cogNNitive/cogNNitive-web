@@ -106,7 +106,7 @@ status:: Inactive
     // Test 5: buildImpactReport emits structured markdown with required frontmatter
     const reportMd = buildImpactReport(auditDrift, '2026-09-12');
     ok(reportMd.includes('type: report'), 'report carries type: report frontmatter');
-    ok(reportMd.includes('derived_from:'), 'report carries derived_from frontmatter');
+    ok(reportMd.includes('generated_by:'), 'report carries generated_by frontmatter');
     ok(reportMd.includes('models/Drifted_V_1-0-0_NN.md'), 'report names each affected model');
     ok(reportMd.includes('Unknown Heading Target'), 'report names the affected element');
     ok(reportMd.includes('non-existent-heading'), 'report cites the drifting source heading');
@@ -118,7 +118,7 @@ status:: Inactive
     ok(written.reportPath.endsWith(path.join('export', 'Impact_Audit_2026-09-12_report.md').replace(/\\/g, '/')), 'report path uses export/Impact_Audit_<date>_report.md');
     const writtenContent = fs.readFileSync(written.reportPath, 'utf8');
     ok(writtenContent.includes('type: report'), 'written report carries type: report');
-    ok(writtenContent.includes('derived_from:'), 'written report carries derived_from');
+    ok(writtenContent.includes('generated_by:'), 'written report carries generated_by');
     ok(writtenContent.includes('Recommended remediation'), 'written report details remediation');
 
     // Test 8: groupSourceFamilies and detectSourceFamilyEvolution
