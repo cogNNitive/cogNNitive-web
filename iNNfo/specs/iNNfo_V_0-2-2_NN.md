@@ -111,7 +111,7 @@ Declares a typed Field of a Concept. The Element name is the Field name. Allowed
 | Property | Type | Description |
 |---|---|---|
 | `concept` | string | Name of the owning Concept Definition (required) |
-| `type` | `string` \| `select` \| `reference` \| `markdown_inline` \| `markdown_file` \| `image` \| `file` \| `video` \| `audio` \| `url` \| `model` | Field type (required) |
+| `type` | `string` \| `select` \| `reference` \| `markdown_inline` \| `markdown_file` \| `image` \| `file` \| `video` \| `audio` \| `url` \| `model` \| `citation` | Field type (required) |
 | `options` | array | Allowed values for `select` fields |
 | `target_concepts` | array | Target concepts for `reference` fields |
 | `description` | string | Human-readable explanation |
@@ -129,6 +129,8 @@ options:: [Ideation, MVP, Validation]
 **Reference Fields (`type:: reference`).** Property values for fields declared with `type:: reference` MUST be formatted using WikiLink syntax `[[Target Element]]` (e.g. `location:: [[Salón-Comedor]]`). Bare string values without WikiLink delimiters are not parsed as active element-to-element graph references.
 
 **Model Fields (`type:: model`).** A Field of any Concept MAY be declared `type:: model`. Its value is a workspace-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[models/acme_business_NN.md]]`). When the Field declares `target_template`, the referenced model's `parent_spec` MUST identify that template. Model fields are followed during workspace traversal, so a model referenced by two parents appears once in the graph with both incoming edges — a diamond is not a cycle.
+
+**Citation Fields (`type:: citation`).** A Field declared `type:: citation` holds a pointer list to the Source documents it derives from, using the same bracketed grammar as the reserved `sources::` property (`[sources/nn/<filename>#<heading-slug>, ...]`). Unlike `reference` and `model`, its values are validated by the `KU_*` integrity checks and are read into the element's source citations.
 
 **Qualified Cross-Model References.** A `reference` or `model` Field MAY target an Element in another model in the same workspace using the qualified form `[[Model Title :: Element Name]]`. `Model Title` is the target model's frontmatter `title` (its filename without `.md` is accepted as a fallback) and MUST be unique within the workspace. `Element Name` is an Element name in that model. Positional or anchor forms (`path#slug`) are not defined. Cross-workspace references are not defined.
 
@@ -817,7 +819,7 @@ description:: Name of the owning Concept Definition (required).
 ## NN Field Definition: type
 concept:: Field Definition
 type:: select
-options:: [string, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, model]
+options:: [string, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, model, citation]
 description:: Field type (required).
 
 ## NN Field Definition: options
