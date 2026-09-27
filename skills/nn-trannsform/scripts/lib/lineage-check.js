@@ -8,9 +8,18 @@ const indexLib = require('./workspace-index');
  *
  * Errors:
  *  - a `models/*_NN.md` with no `## NN Models:` entry;
- *  - a `## NN Artifacts:` entry whose `derived_from` names a model/version
- *    absent from `models/`;
+ *  - a `## NN Artifacts:` entry whose `derived_from` names a model that does
+ *    not exist at all under `models/` (no model with that name, at any
+ *    version);
  *  - a `sources::` value in any model that does not resolve under `sources/nn/`.
+ *
+ * Warnings:
+ *  - a `## NN Artifacts:` entry whose `derived_from` names a model that does
+ *    exist under `models/`, but whose recorded `model_version` differs from
+ *    the model's current `model_version` (artifact-staleness diagnostic).
+ *    This is a distinct, non-escalating diagnostic: it never becomes an
+ *    error and never causes a non-zero exit on its own (see
+ *    `scripts/index.js`, which already exits 0 when only warnings exist).
  *
  * @param {string} projectDir
  * @returns {{ errors: string[], warnings: string[] }}
@@ -44,7 +53,18 @@ function checkLineage(projectDir) {
       const ok = models.some(
         (m) => ref === m.name || (m.model_version && ref === `${m.name} ${m.model_version}`),
       );
-      if (!ok) {
+      if (ok) continue;
+
+      const known = models.filter((m) => ref.startsWith(`${m.name} `));
+      if (known.length > 0) {
+        const versions = known
+          .map((m) => m.model_version || 'no model_version')
+          .join(', ');
+        const knownName = known[0].name;
+        warnings.push(
+          `Artifact "${nameLine}" derives from "${ref}", but models/ has "${knownName}" at ${versions} — artifact may be stale.`,
+        );
+      } else {
         errors.push(
           `Artifact "${nameLine}" derives from "${ref}", but no such model/version exists under models/.`,
         );

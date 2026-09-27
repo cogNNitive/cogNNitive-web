@@ -202,6 +202,66 @@ function run() {
     ok(checkOrphanChain.warnings.some((w) => /orphan.*abandoned_chain/i.test(w)), '--check reports warning for orphan archive chain');
     ok(checkOrphanChain.errors.filter(e => !/abandoned_chain/i.test(e)).length === 0, 'orphan chain does not generate error for itself');
     fs.rmSync(path.join(proj, 'sources', 'archive', 'abandoned_chain'), { recursive: true, force: true });
+
+    // Test 2.3: Artifact staleness diagnostic — drift vs. missing model (A2)
+    // Subtest 2.3A: version-drifted-but-existing model -> warning, not error, exit-zero-worthy
+    const modelWithDriftedArtifact = mVersions.replace(
+      'derived_from:: [Business Plan V_1-0-0]',
+      'derived_from:: [Business Plan V_0-9-0]',
+    );
+    fs.writeFileSync(r1.modelPath, modelWithDriftedArtifact);
+    const checkDrifted = checkLineage(proj);
+    ok(
+      checkDrifted.warnings.some(
+        (w) => /Business Plan/.test(w) && /V_0-9-0/.test(w) && /V_1-0-0/.test(w) && /stale/i.test(w),
+      ),
+      '--check flags a version-drifted artifact as a distinct staleness warning naming both versions',
+    );
+    ok(
+      !checkDrifted.errors.some((e) => /Business Plan/.test(e)),
+      'a version-drifted (but existing) model does not also produce an error',
+    );
+
+    // Subtest 2.3B: unknown model name still stays an error (regression guard)
+    const modelWithUnknownArtifact = mVersions.replace(
+      'derived_from:: [Business Plan V_1-0-0]',
+      'derived_from:: [Nonexistent_Model V_1-0-0]',
+    );
+    fs.writeFileSync(r1.modelPath, modelWithUnknownArtifact);
+    const checkUnknown = checkLineage(proj);
+    ok(
+      checkUnknown.errors.some((e) => /Nonexistent_Model/.test(e)),
+      'an unknown model name keeps the existing error',
+    );
+    ok(
+      !checkUnknown.warnings.some((w) => /Nonexistent_Model/.test(w)),
+      'an unknown model name does not also produce a staleness warning',
+    );
+
+    // Subtest 2.3C: missing-model error and drifted-model warning reported independently
+    const modelWithBoth = mVersions
+      .replace(
+        'derived_from:: [Business Plan V_1-0-0]',
+        'derived_from:: [Business Plan V_0-9-0]',
+      )
+      .replace(
+        '## NN Artifacts: Proposal_V_1-0-0',
+        '## NN Artifacts: Proposal_V_1-0-0\nmodel_ref:: models/Ghost_V_1-0-0_NN.md\nderived_from:: [Ghost_Model V_1-0-0]\n## NN Artifacts: Ghost_Artifact_V_1-0-0',
+      );
+    fs.writeFileSync(r1.modelPath, modelWithBoth);
+    const checkBoth = checkLineage(proj);
+    ok(
+      checkBoth.errors.some((e) => /Ghost_Model/.test(e)) &&
+        checkBoth.errors.filter((e) => /Ghost_Model|Business Plan/.test(e)).length === 1,
+      'missing-model error is reported once, independently of the drift warning',
+    );
+    ok(
+      checkBoth.warnings.some((w) => /Business Plan/.test(w) && /stale/i.test(w)),
+      'drift warning is reported independently of the missing-model error',
+    );
+
+    // Restore valid lineage record for any subsequent assertions.
+    fs.writeFileSync(r1.modelPath, mVersions);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
