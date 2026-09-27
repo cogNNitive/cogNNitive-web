@@ -67,7 +67,7 @@ async function handleCliMode(argv) {
     console.log(`Bootstrapping project "${argv.name}" at "${projectDir}"...`);
     const bootstrap = bootstrapProject(argv.src, argv.dest, argv.name);
     console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);
-    console.log(`Initialized cogNNitive provenance model at: ${bootstrap.provModelPath}`);
+    console.log(`Initialized cogNNitive lineage record at: ${bootstrap.provModelPath}`);
     if (bootstrap.agentsMdPath) {
       console.log(`Scaffolded workspace AGENTS.md entrypoint at: ${bootstrap.agentsMdPath}`);
     }
@@ -541,7 +541,7 @@ async function runBootstrapperFlow() {
   const projectDir = path.join(targetDest, answers.name);
   const bootstrap = bootstrapProject(answers.src, targetDest, answers.name);
   console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);
-  console.log(`Initialized cogNNitive provenance model at: ${bootstrap.provModelPath}`);
+  console.log(`Initialized cogNNitive lineage record at: ${bootstrap.provModelPath}`);
 
   config.saveConfig({ lastProjectPath: projectDir });
 

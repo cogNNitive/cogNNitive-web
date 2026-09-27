@@ -547,6 +547,9 @@ function findOrphanSources(projectDir) {
         if (relPath === 'index.md') continue;
         const content = fs.readFileSync(abs, 'utf8');
         const fm = parseFrontmatterFields(content);
+        // `user_input` is no longer an authorable source_type in the taxonomy (folded into
+        // conversations); this check stays as a defensive legacy read for pre-existing data,
+        // and still covers the `inline:`/`chat:` prefixes, which remain valid.
         if (fm.source_type === 'user_input' || (fm.source_file && (fm.source_file.startsWith('inline:') || fm.source_file.startsWith('chat:') || fm.source_file.includes('(proporcionado directamente')))) {
           continue;
         }

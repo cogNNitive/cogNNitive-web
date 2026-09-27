@@ -140,7 +140,7 @@ async function scanAndProcess(projectDir, options = {}) {
   }
 
   // Build sources/nn/index.md manifest with OKF v0.1 compliant frontmatter
-  let indexContent = `---\ntype: "index"\ntitle: "traNNsform Ingestion Manifest & Processing Log"\ndescription: "Source documents registry and processing log for normalized knowledge assets"\ntags: [sources, ingestion, manifest, okf, provenance]\ntimestamp: "${new Date().toISOString()}"\n---\n\n`;
+  let indexContent = `---\ntype: "index"\ntitle: "traNNsform Ingestion Manifest & Processing Log"\ndescription: "Source documents registry and processing log for normalized knowledge assets"\ntags: [sources, ingestion, manifest, okf, lineage]\ntimestamp: "${new Date().toISOString()}"\n---\n\n`;
   indexContent += `# traNNsform Ingestion Manifest & Processing Log\n\n`;
   indexContent += `## Ingestion Status\n`;
   indexContent += `*   **Total Files Discovered:** ${totalDiscovered}\n`;

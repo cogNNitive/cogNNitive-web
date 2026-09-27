@@ -24,7 +24,7 @@ const TRANNSFORM_README = `# Transform
 Transform (traNNsform) is a tool to structure and process unstructured documents:
 1. Place files in \`sources/import/\`.
 2. Scan and normalize to \`sources/nn/\`.
-3. Track provenance with \`<Project>_V_0-2-0_workspace_NN.md\`.
+3. Track lineage with \`<Project>_V_0-2-0_workspace_NN.md\`.
 `;
 
 /**

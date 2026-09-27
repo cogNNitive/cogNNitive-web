@@ -60,12 +60,12 @@ Knowledge initially resides in human brains—internal team members, external re
 When external files enter the cogNNitive workspace:
 * **`sources/import/` (Immutable Originals)**: Original raw files are stored and protected.
 * **`sources/staging/` (Extraction Buffer)**: Intermediate raw outputs (Whisper transcripts, OCR dumps) live in a temporary scratchpad.
-* **`sources/normalized/` (Normalized Markdown)**: Content is normalized into clean Markdown with permanent heading sections (`#heading-slug`) and provenance frontmatter.
+* **`sources/normalized/` (Normalized Markdown)**: Content is normalized into clean Markdown with permanent heading sections (`#heading-slug`) and Source frontmatter.
 
 ### 2. MANAGE: Semantic Modeling (Single Source of Truth)
 Normalized sources are structured into predictable **Models** (`models/*_NN.md`):
 * **Predictable Semantic Structure**: Concepts define the schema, Elements represent specific entity instances, and Fields store typed attributes.
-* **Radical Fine-Grained Traceability**: Every element cites its exact provenance using section anchors (`sources:: [meeting.md#budget]`).
+* **Radical Fine-Grained Traceability**: Every element cites its exact lineage using section anchors (`sources:: [meeting.md#budget]`).
 * **Universal Access Freedom**:
   1. **Text Editors**: Open and edit directly with Obsidian, VS Code, Notepad, or Logseq.
   2. **iNNfo Modeler**: Use the zero-install web UI to visually navigate graphs and edit matrices.

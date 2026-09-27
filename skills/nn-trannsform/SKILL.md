@@ -1,6 +1,6 @@
 ---
 name: nn-trannsform
-description: "Bootstrap projects, scan raw documents, normalize them to Markdown with mandatory provenance frontmatter, apply V_0-1-0 template-based transformations, and execute multi-step transformation procedures compliant with procedures_V_0-1-0_NN.md. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), procedure orchestration, and export generation. Triggers: trannsform, transform, workflow, pipeline, procedure, normalize, scan documents, document ingestion, document transformation, document processing, markdown conversion, project bootstrap"
+description: "Bootstrap projects, scan raw documents, normalize them to Markdown with mandatory Source frontmatter, apply V_0-1-0 template-based transformations, and execute multi-step transformation procedures compliant with procedures_V_0-1-0_NN.md. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), procedure orchestration, and export generation. Triggers: trannsform, transform, workflow, pipeline, procedure, normalize, scan documents, document ingestion, document transformation, document processing, markdown conversion, project bootstrap"
 version: "V_3-3-0"
 last_updated: 2026-09-12
 empty_sections_mode: "ask-per-section"
@@ -228,7 +228,7 @@ When an existing source file is modified in `sources/import/` (or `sources/origi
 
 Workspaces can watch external file drops without daemons or external mutations:
 
-1. **Declarative Watch Roots in Provenance Model**:
+1. **Declarative Watch Roots in the Lineage record**:
    ```markdown
    ## NN External Watch Roots:
    - Root: "D:/External_Drops/Client_Inputs"
@@ -314,7 +314,7 @@ It exits non-zero when any error is found.
 The filesystem sync (§2d) covers files that went through the standard `nn-trannsform` scan pipeline (`# NN Sources`) or that exist as real files under `models/` / `artifacts/`. Two cases still need EXPLICIT manual registration by the agent:
 
 1. **Formats routed to "skip" in the capability matrix** (§2g, e.g. legacy `.doc`): before skipping, ask the user whether to register a minimal `## NN Sources:` entry anyway (file name, format, and a note that content wasn't extracted) so the file isn't silently untraceable. Do not skip in silence.
-2. **Large binary batches processed by a custom procedure outside the standard scan** (e.g. a photo-import workflow using Jimp/LLM Vision instead of `--scan`): once the procedure completes, the agent MUST register the batch in the provenance model — either as one aggregate `## NN Sources:` entry (folder path, file count, date range, e.g. "79 photos in `sources/import/photos/`, imported 2026-08-12") when per-file entries would be unwieldy, or as individual entries when the batch is small (roughly under 10 files). This registration is the agent's responsibility, NOT automatic — a custom procedure is by definition not covered by the standard scan pipeline in §2d.
+2. **Large binary batches processed by a custom procedure outside the standard scan** (e.g. a photo-import workflow using Jimp/LLM Vision instead of `--scan`): once the procedure completes, the agent MUST register the batch in the Lineage record — either as one aggregate `## NN Sources:` entry (folder path, file count, date range, e.g. "79 photos in `sources/import/photos/`, imported 2026-08-12") when per-file entries would be unwieldy, or as individual entries when the batch is small (roughly under 10 files). This registration is the agent's responsibility, NOT automatic — a custom procedure is by definition not covered by the standard scan pipeline in §2d.
 
 #### 2f. Conversation Transcripts & Knowledge Promotion Protocol
 
@@ -454,7 +454,7 @@ Select the citation and export format for the deliverable:
   [f] IEEE — [N] numbered references with trailing References
   [g] Vancouver — numeric citation style with trailing References
   [h] BibTeX export — clean document + companion .bib file
-  [i] No sources — clean text without citations or provenance markers
+  [i] No sources — clean text without citations or lineage markers
   [x] Cancel
 ```
 
