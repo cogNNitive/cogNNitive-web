@@ -117,7 +117,7 @@ The cogNNitive ecosystem operates on four clearly differentiated categories of s
    - Internal deliverables or consolidated summaries re-ingested into the workspace graph (`sources/export/`, marked with `is_synthetic: true`).
 4. **User Input / Interactive Source (Fuente de Entrada de Usuario)**:
    - In-line sources provided interactively during conversations (e.g. pasted data, calendars).
-   - Marked with `source_type: "user_input"` or `source_file: "inline:..."` and exempt from physical file existence checks.
+   - Marked with `source_file: "inline:..."` and exempt from physical file existence checks.
 
 #### 2a-1. Ingest `sources/import/` to `sources/nn/` and Binary Media Companion Linking
 
@@ -291,7 +291,7 @@ When the user pastes a URL in chat and wants it ingested:
 
 #### 2d. Lineage Record Filesystem Sync
 
-The cogNNitive **lineage record** (`<Project>_V_0-2-0_cogNNitive_NN.md`, or `<Project>_V_0-1-0_cogNNitive_NN.md` on older workspaces) keeps three of its four sections in sync with the workspace filesystem on every build/refresh (bootstrap, `--scan`, `--import-url`, or the standalone `--lineage` / `--provenance` flag):
+The cogNNitive **lineage record** (`<Project>_V_0-2-0_cogNNitive_NN.md`, or `<Project>_V_0-1-0_cogNNitive_NN.md` on older workspaces) keeps three of its four sections in sync with the workspace filesystem on every build/refresh (bootstrap, `--scan`, `--import-url`, or the standalone `--lineage` flag):
 
 - **`# NN Sources`** — one entry per active normalized file under `sources/nn/` (carrying `version::` and `archive_path::` when snapshots exist), plus one entry per archived snapshot under `sources/archive/` (carrying `status:: archived`, `version::`, and `superseded_by::` when superseded). Synthetic sources retain `is_synthetic: true`.
 - **`# NN Models`** — one entry per `models/*_NN.md`, with `model_ref`, `model_version`, `model_template`, and `derived_from::` scraped from that model's `sources::` Citations.
@@ -348,7 +348,7 @@ Interaction dialogues are first-class source streams. The transcript lifecycle f
    node scripts/index.js --promote-conv "conversations/YYYY-MM-DD_<slug>.md" --format full
    ```
    The CLI path is a mechanical verbatim copy (no turn headings added); the agent-driven path — naming step + turn-structured body passed as `fullContent` — produces the author-attributed `_source.md`.
-8. **Agent Modification provenance**: When an agent turn in the transcript pasted a `## NN Agent Modification: <slug>` block (per `nn-innfo` §5), that heading survives promotion into the `_source.md` and is citeable via the `@` pointer grammar: `sources:: [conversations/<session-slug>_source.md@## NN Agent Modification: <scope>]`. This is how synthetic agent reasoning enters the workspace provenance graph.
+8. **Agent Modification lineage**: When an agent turn in the transcript pasted a `## NN Agent Modification: <slug>` block (per `nn-innfo` §5), that heading survives promotion into the `_source.md` and is citeable via the `@` pointer grammar: `sources:: [conversations/<session-slug>_source.md@## NN Agent Modification: <scope>]`. This is how synthetic agent reasoning enters the workspace Lineage graph.
 
 #### 2g. Capability Assessment — Decision Matrix
 
@@ -422,12 +422,12 @@ When creating a new transformation, ask the user:
 
 *(Notice: You can select one option or a combination (e.g. A and B))*
 
-#### 3b. Mandatory Provenance in Level 3 Models (Bloque 2)
+#### 3b. Mandatory Citations in Level 3 Models (Bloque 2)
 
 When transforming normalized Markdown into an iNNfo Level 3 Model:
 - Frontmatter MUST use lightweight V_0-1-0 format (`level: 3`, `spec_version: "V_0-1-0"`, `parent_spec: { name, url }`).
 - Body MUST use unified NN syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, `key:: value`.
-- Every element MUST include explicit provenance pointers via `sources::`. Unqualified filenames resolve canonically relative to `sources/nn/` (no redundant `sources/nn/` prefix required):
+- Every element MUST include explicit citation pointers via `sources::`. Unqualified filenames resolve canonically relative to `sources/nn/` (no redundant `sources/nn/` prefix required):
 
 ```markdown
 # NN Stakeholders
@@ -477,11 +477,11 @@ When normalized sources must be mapped to Level 3 model elements (`sources::`), 
 
 ---
 
-### 4. Citation & Provenance Protocol
+### 4. Citation & Lineage Protocol
 
 Derived deliverables are generated in a single pass directly to `export/[Deliverable_Name]_V_x-y-z.md` (or legacy `artifacts/` if existing) without intermediate `_draft.md` files or non-standard `<!-- cite: ... -->` HTML comments:
 1. **Direct Formatting**: Apply the citation format selected in §3c directly during generation per rules in `citations.md`.
-2. **Provenance Traceability**: When citations are included (formats `[a]`–`[h]`), resolve claims directly from the Level 3 model's `sources::` pointers (`<path>.md#<heading-slug>`, resolving canonically against `sources/nn/`).
+2. **Source Traceability**: When citations are included (formats `[a]`–`[h]`), resolve claims directly from the Level 3 model's `sources::` pointers (`<path>.md#<heading-slug>`, resolving canonically against `sources/nn/`).
 3. **Clean Presentation**: Format `[i]` (No sources) produces presentation-ready deliverables omitting all citation markers and reference lists.
 
 ---
@@ -532,8 +532,8 @@ At the end of transformation:
 1. **Zero Unilateral Mutation**: NEVER move, rename, or delete files in `sources/import/` (or any user file) without prior explicit confirmation.
 2. **Recommended Option First**: Always prefix option `[a]` with `(Recommended)`.
 3. **Multi-Selection Notice**: Add `"You can select one option or a combination (e.g. A and B)"` when applicable.
-4. **Mandatory Scanner Provenance**: Normalized Markdown in `sources/nn/` MUST include scanner frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, plus optional `staging_file`, `is_synthetic`, `canonical`, and `cited_works`). No `source_id`/`src-NNN`.
-5. **Mandatory Model Provenance**: Level 3 elements MUST include `sources:: <path.md#heading-slug>` (or a list `sources:: [a.md#slug, b.md#slug]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
+4. **Mandatory Scanner Origin Metadata**: Normalized Markdown in `sources/nn/` MUST include scanner frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, plus optional `staging_file`, `is_synthetic`, `canonical`, and `cited_works`). No `source_id`/`src-NNN`.
+5. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: <path.md#heading-slug>` (or a list `sources:: [a.md#slug, b.md#slug]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
 6. **V_0-1-0 Compliance**: Target iNNfo V_0-1-0 meta-template specification and unified NN syntax (`# NN`, `## NN`, `key:: value`).
 7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn-router`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
 7a. **Lineage Record Sync**: `# NN Sources`, `# NN Models` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `models/`, `export/`, fallback `artifacts/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.

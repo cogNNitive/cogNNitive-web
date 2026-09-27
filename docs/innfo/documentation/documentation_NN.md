@@ -145,8 +145,8 @@ description:: Graph relationships, bidirectional edges, and matrices in iNNfo.
 
 ## NN Page: Sources, Citations & Lineage
 title:: Sources, Citations & Lineage
-source:: citations-provenance.md
-route:: citations-provenance
+source:: sources-citations-lineage.md
+route:: sources-citations-lineage
 order:: 30
 parent:: [[Guides]]
 description:: How the pipeline tracks where knowledge comes from, with three terms — Source, Citation, Lineage.

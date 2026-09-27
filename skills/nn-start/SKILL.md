@@ -74,7 +74,7 @@ Every agent interaction across the cogNNitive ecosystem MUST follow these strict
    - **Primary Sources (Fuentes Primarias)**: Raw files in `sources/import/`, `sources/original/`, or external watch roots (`## NN External Watch Roots:`). Includes documents and raw media (`.mp3`, `.wav`).
    - **Normalized Sources (Fuentes Normalizadas)**: Structured Markdown in `sources/nn/`. Companion media files sharing the same stem are linked via `media_file` frontmatter.
    - **Synthetic Sources (Fuentes Sintéticas)**: Deliverables re-ingested into graph (`is_synthetic: true`).
-   - **User Input Sources (Entrada de Usuario)**: In-line conversational inputs (`source_type: "user_input"`), exempt from physical file checks.
+   - **User Input Sources (Entrada de Usuario)**: In-line conversational inputs (`inline:` / `chat:`), exempt from physical file checks.
 
 7. **Optimistic Execution & Reversibility Protocol (Informative Grace)**:
    - **Convention over Confirmation**: For all safe, standard, idempotent, or reversible actions (e.g. working on the default `dev` branch, auto-binding a single discovered model, creating standard workspace layout folders, using the standard canonical app as-is without customization, running deterministic validation gates):

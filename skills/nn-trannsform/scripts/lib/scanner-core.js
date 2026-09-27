@@ -116,7 +116,7 @@ function generateSourceFrontmatter(originalFilePath, relativeSourcePath, extra =
 
   // External works this Source cites. `references` is accepted as a deprecated
   // input alias; the emitted key is always `cited_works` (the iNNfo `reference`
-  // *field type* is a different concept — see docs/innfo/documentation/citations-provenance.md).
+  // *field type* is a different concept — see docs/innfo/documentation/sources-citations-lineage.md).
   const citedWorks = Array.isArray(extra.cited_works)
     ? extra.cited_works
     : Array.isArray(extra.references)

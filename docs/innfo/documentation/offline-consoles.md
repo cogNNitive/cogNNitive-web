@@ -109,7 +109,7 @@ per-shell runtime, **not** the canonical runtime.
 
 ## See also
 
-- [Sources, Citations & Lineage](citations-provenance) §5 — Git vs. the native
+- [Sources, Citations & Lineage](sources-citations-lineage) §5 — Git vs. the native
   semantic-versioning system: history/release anchors vs. the write-once
   per-artifact contract.
 - [Collaboration with Git](collaboration-git) — the workspace-to-Git review layer

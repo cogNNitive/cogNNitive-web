@@ -56,7 +56,7 @@ This skill guides LLMs and agents in authoring, creating from scratch (wizard), 
 
 ---
 
-## Canonical Source Taxonomy & Provenance Contract
+## Canonical Source Taxonomy & Citation Contract
 
 The iNNfo ecosystem establishes an explicit taxonomy for sources and evidence:
 
@@ -72,7 +72,7 @@ The iNNfo ecosystem establishes an explicit taxonomy for sources and evidence:
 4. **Synthetic Source (Fuente Sintética)**:
    - Derived deliverables re-ingested into `sources/export/` (`is_synthetic: true`).
 5. **User Input Source (Fuente de Entrada de Usuario)**:
-   - In-line interactive input (`source_type: "user_input"`, `source_file: "inline:..."`) exempt from physical disk file existence.
+   - In-line interactive input (`source_file: "inline:..."`) exempt from physical disk file existence.
 
 ---
 
@@ -345,7 +345,7 @@ Stable reference URLs (the version lives in the file name — `main` is already 
    - Simple relative paths: `client_interview_transcript.md#feedback` resolves canonically to `sources/nn/client_interview_transcript.md`.
    - Subfolders: `interviews/interview_transcript.md#overview` resolves to `sources/nn/interviews/interview_transcript.md`.
    - The explicit `sources/nn/` prefix is still tolerated for backward compatibility.
-    - **A Model is a first-class Source.** `models/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains provenance: `artifact → models/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`models/…`); only unqualified paths default to `sources/nn/`.
+    - **A Model is a first-class Source.** `models/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains Lineage: `artifact → models/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`models/…`); only unqualified paths default to `sources/nn/`.
     - **Curated CSVs are citable.** `sources/nn/<file>.csv@<row-id>` addresses the row whose first-column value equals `<row-id>` (e.g. `metricas_q3.csv@104`); append `&<column>` for one cell (`metricas_q3.csv@104&mrr_usd`). Raw uploads under `sources/original/` are never citable.
    - **Heading-level convention (authoring rule).** So model-heading slugs are stable and meaningful: `# NN <Concept>` (H1 = Concept), `## NN <Concept>: <Element>` (H2 = Element), and `###`+ only inside an element's description/prose — never as standalone structural blocks. The slug algorithm is level-agnostic; this is discipline, not validation.
    - Global PIDs use schema identifiers: `doi:10.1145/3290605.3300233`.
@@ -362,7 +362,7 @@ Stable reference URLs (the version lives in the file name — `main` is already 
     ```
     - Markdown units keep their header level (`@#`, `@##`, `@###`) and slugify GitHub-style, except the `Concept: Element` boundary which stays visible as `--` (e.g. `@## NN Person: Dr. Egon Spengler` → slug `nn-person--dr-egon-spengler`).
     - Numeric line ranges (`#L1-L10`) and legacy `#slug` fragments are **deprecated** (the latter still validates with a warning during transition) — ranges are fragile under reformatting, bare slugs are level-blind.
-    - Every unit must resolve in the cited document; queries (`?filter=…`) are NEVER valid inside `sources::` — they belong to retrieval tools, not provenance.
+    - Every unit must resolve in the cited document; queries (`?filter=…`) are NEVER valid inside `sources::` — they belong to retrieval tools, not citations.
 5. **`sources::` is ALWAYS a bracketed list `[...]`, even for a single source.** The L1 spec requires `sources:: [sources/nn/<filename>@<unit>, ...]` — it MUST always be formatted as a list enclosed in brackets `[...]`, even when referencing a single source document. There is no scalar syntax and no bracket omission for a single value (see `iNNfo/specs/iNNfo_V_0-2-0_NN.md`). In `type:: reference` fields, the WikiLink syntax `[[...]]` is separately mandatory (see §8d and Core Rule 12):
    ```markdown
    ## NN Stakeholders: Enterprise Customer
@@ -376,7 +376,7 @@ Stable reference URLs (the version lives in the file name — `main` is already 
 6. **Granularity: element-level, not individual-claim level.** `sources::` covers the set of sources backing the WHOLE element (all its fields together) — there is no per-field or per-sentence citation mechanism inside a domain model. If different fields of the same element come from different sources, list the union of them all in the element's single `sources::`. Claim-level citation (via standard `[^1]` footnotes or bibliographic formats) is a separate mechanism, used only inside artifacts generated from the model (see `nn-trannsform/SKILL.md` §4) — never inside a `*_NN.md`.
 7. **No duplicates or empty references.** Do not repeat the same `<ref>` twice in one list. If there is no real source to cite, omit the whole field — do not write `sources:: []` or a placeholder value.
 8. **Conversational instruction:** If the project has files under `sources/nn/`, the agent should suggest adding `sources::`. If it is a greenfield / creative model from scratch, the agent does NOT request or require citations. In both cases the skill's general rule applies: never invent a `<ref>` or content that is not verifiably present in the cited file.
-9. **Retrieval queries (`?`) are never provenance.** A `path?filter=value` expression (e.g. `metricas_q3.csv?segmento=Enterprise`) selects a SET of units for retrieval tools — it MUST NEVER appear inside `sources::` (the validator rejects it: run the query, then cite the resulting `@` pointers). `@` addresses one unit; `?` selects many; the two never mix in one string.
+9. **Retrieval queries (`?`) are never a citation.** A `path?filter=value` expression (e.g. `metricas_q3.csv?segmento=Enterprise`) selects a SET of units for retrieval tools — it MUST NEVER appear inside `sources::` (the validator rejects it: run the query, then cite the resulting `@` pointers). `@` addresses one unit; `?` selects many; the two never mix in one string.
 
 ---
 
@@ -402,7 +402,7 @@ Every skill-driven `.md` write (new model, app, specialization, or full-file rew
 3. **FORBIDDEN:** shell `echo` / `printf` redirection for file writes — they mangle encodings, join lines, and drop trailing newlines.
 4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_model` — no encoding or line-joining diagnostics may appear.
 
-#### Agent Modification provenance (MANDATORY on every successful `apply_change`)
+#### Agent Modification lineage (MANDATORY on every successful `apply_change`)
 
 Whenever an `innfo-mcp_apply_change` call returns `success: true` **and** a `modification` field, you MUST paste that block **verbatim** into your reply, under its own `## NN Agent Modification: <slug>` heading exactly as returned (the block already opens with that heading — reproduce it, do not re-slug it). This makes the synthetic reasoning addressable by heading-slug, so a promoted `_source.md` transcript is citeable via `@` pointers — pasted modifications via `sources:: [conversations/<session-slug>_source.md@## NN Agent Modification: <scope>]` and transcript turns via `sources:: [conversations/<session-slug>_source.md@## NN Turn NN: <author-id>]`. The `#` fragment form (`#<slug>`) MUST NOT be used for `## NN …: …` headings: the Concept/Element boundary in their slug contains `--`, which `parseSourceRef` rejects (`KU_MALFORMED`).
 
@@ -473,7 +473,7 @@ Shall we proceed with this modification?
 - [x] Cancel
 ```
 
-Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_model`. Feed the "Rationale" line from this preview into `apply_change` as `args.rationale`, and — since the user just confirmed — pass `args.approved_by: "user"` and `args.author: "<your-tool-id>"` so the block is populated at the source. Then paste the returned `modification` block verbatim per §5 (Agent Modification provenance).
+Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_model`. Feed the "Rationale" line from this preview into `apply_change` as `args.rationale`, and — since the user just confirmed — pass `args.approved_by: "user"` and `args.author: "<your-tool-id>"` so the block is populated at the source. Then paste the returned `modification` block verbatim per §5 (Agent Modification lineage).
 
 ---
 
@@ -680,7 +680,7 @@ The workspace manifest (`workspace_NN.md`, section `# NN Models`) can drift out 
 ## 15. External Watch Roots & Pre-Authoring Scanner Integration
 
 When authoring or auditing models that rely on external data drops (e.g. client spreadsheets, RFPs, audio transcripts):
-1. **Detect Declarative Watch Roots**: Check if the workspace provenance model (`workspace_NN.md` or `<Project>_V_0-2-0_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
+1. **Detect Declarative Watch Roots**: Check if the workspace Lineage record (`workspace_NN.md` or `<Project>_V_0-2-0_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
 2. **Pre-Authoring Scan Check**: Before updating or creating a model citing dynamic sources, offer to scan external roots:
    > *"This workspace defines external watch roots. Would you like to scan for new or evolved primary sources before authoring?"*
 3. **Execution**: Invoke `node skills/nn-trannsform/scripts/index.js --scan-external --check-impact` to inspect external changes, import timestamped snapshots (`YYYYMMDD-HHmmss`), and check source family evolutions.
@@ -796,7 +796,7 @@ Deterministic instructions for identifying and mechanically repairing legacy syn
    - Detect duplicate `## NN <Concept>: <Element>` headings within a model file that yield identical slugs (e.g. `## NN Person: Alice` and another `## NN Person: Alice`).
    - Prompt the user for disambiguation or rename duplicate elements deterministically using `innfo-mcp_apply_change` (`rename_element`).
 4. **Frontmatter Standardization (V_0-2-0)**:
-   - Ensure Level 3 frontmatter contains only valid metadata: `model_version`, `parent_spec: { name, url }`, `title`, and optional workspace/provenance tags.
+   - Ensure Level 3 frontmatter contains only valid metadata: `model_version`, `parent_spec: { name, url }`, `title`, and optional workspace/lineage tags.
    - Remove forbidden legacy frontmatter structures such as `concepts: []` or `fields: []` embedded in YAML frontmatter.
 
 ---

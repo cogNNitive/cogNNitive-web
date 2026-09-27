@@ -15,7 +15,7 @@
 - [External Tooling & Integrations](integrations): Integration of independent external tools (MCP vs CLI), with the WaveSpeed image-generation case study.
 - [Usage](usage): Practical workflow examples and CLI usage.
 - [Relationships & Connections](relationships): Graph relationships, bidirectional edges, and matrices in iNNfo.
-- [Sources, Citations & Lineage](citations-provenance): How the pipeline tracks where knowledge comes from, with three terms — Source, Citation, Lineage.
+- [Sources, Citations & Lineage](sources-citations-lineage): How the pipeline tracks where knowledge comes from, with three terms — Source, Citation, Lineage.
 - [Lifecycle Walkthrough (Case Study)](lifecycle-walkthrough): End-to-end walkthrough of the 3-phase knowledge lifecycle using the Ghostbusters Inc. sample workspace.
 - [Tags & Open Taxonomy](tags-and-taxonomy): Cross-cutting categorization, centralized workspace taxonomies, and multi-dimensional view filtering.
 - [Collaboration with Git](collaboration-git): Gated workspace-to-Git review workflow with private defaults, branch-per-change PR gates, version map, and offline backup.

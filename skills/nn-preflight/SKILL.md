@@ -85,7 +85,7 @@ Environment readiness gate for cogNNitive workflows. Runs deterministic checks a
 8. **Workspace Source Integrity Audit (`scanWorkspaceSources`)**: when `--workspace-dir` is provided:
    - Discovers files across `sources/import/`, `sources/conversations/`, and `sources/export/` (or legacy `sources/original/`).
    - Pairs raw media binaries (`.mp3`, `.wav`, etc.) sharing the same stem with text companions via `media_file` without flagging them as unnormalized. Standalone media is classified as informational `raw-media` (pending transcription) and does not flip the exit code to warning.
-   - Recognizes in-line user sources (`source_type: "user_input"` or `inline:`) and does not flag them as dangling.
+   - Recognizes in-line user sources (`inline:` or `chat:`) and does not flag them as dangling.
    - Verifies that every text source has an up-to-date normalized counterpart in `sources/nn/` matching its content SHA-256 hash. Any unnormalized or stale source is reported as an actionable warning recommending `node scripts/index.js --scan`. Emits structured `sources_integrity` payload in `--json` mode.
 
 ## Tier 3 Checks (workspace template upgrades — informational)

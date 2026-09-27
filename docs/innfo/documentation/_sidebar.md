@@ -16,7 +16,7 @@
 - **Guides**
   - [Usage](usage)
   - [Relationships & Connections](relationships)
-  - [Sources, Citations & Lineage](citations-provenance)
+  - [Sources, Citations & Lineage](sources-citations-lineage)
   - [Lifecycle Walkthrough (Case Study)](lifecycle-walkthrough)
   - [Tags & Open Taxonomy](tags-and-taxonomy)
   - [Collaboration with Git](collaboration-git)
