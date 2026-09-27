@@ -22,7 +22,7 @@ title: "Generate Anydeo Script Procedure"
 
 ## NN Procedure: Generate Anydeo Script
 category:: transformation
-summary:: Frame a Video from its bound Subject and Series, author and gate an Anydeo V_0-3-3 script with skills/nn-video-script, register it, generate an asset generation and cost estimation plan (asset_plan.md), then finalize and register the rendered assets once VidGeNN has produced them.
+summary:: Frame a Video from its bound Subject and Series, author and gate an Anydeo V_0-3-3 script with skills/nn-video-script, register it, generate an asset generation and cost estimation plan (asset_plan.md), finalize and register the rendered assets once VidGeNN has produced them, and conduct a closing conversation retrospective for continuous improvement.
 inputs_required:: Subject Element (via sources::) and Series registry model
 outputs_expected:: Registered Video Assets
 executed_by:: Video Producer
@@ -35,11 +35,11 @@ step_type:: task
 next:: [[Frame the Script]]
 condition:: A Subject and a Series are available for the Video
 input:: [[Subject and Series Selection]]
-output:: [[Registered Video Assets]]
+output:: [[Registered Video Assets]], [[Improvement Recommendations]]
 output_status:: verified
 tool:: [[nn-video-script Skill]]
 scope:: internal
-Orchestrate script generation end to end: frame the video from its Subject and Series, author and validate Anydeo V_0-3-3 scenes and layers, register the script, plan and estimate media asset generation costs into `asset_plan.md`, then finalize and register the rendered assets once VidGeNN has rendered them.
+Orchestrate script generation end to end: frame the video from its Subject and Series, author and validate Anydeo V_0-3-3 scenes and layers, register the script, plan and estimate media asset generation costs into `asset_plan.md`, finalize and register the rendered assets once VidGeNN has rendered them, and conclude with a collaborative retrospective for continuous improvement.
 
 ## NN Work: Frame the Script
 parent:: [[Generate Anydeo Script Workflow]]
@@ -156,6 +156,7 @@ Set `master::`, `thumbnail::`, and (when present) `voiceover::` on the owning Vi
 ## NN Work: Prompt Web Portal Publication
 parent:: [[Generate Anydeo Script Workflow]]
 step_type:: task
+next:: [[Conduct Closing Retrospective]]
 condition:: Video assets are registered
 input:: [[Registered Video Assets]]
 output:: [[Web Publication Decision]]
@@ -163,6 +164,17 @@ output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
 Prompt the user explicitly asking if they want to publish the video companion page and update the public web portal via the `Publish Video Web Portal` procedure (`procedures/publish_web_portal_NN.md`). If confirmed, proceed to generate or update the web portal in the `web/` directory.
+
+## NN Work: Conduct Closing Retrospective
+parent:: [[Generate Anydeo Script Workflow]]
+step_type:: task
+condition:: Script drafting or video finalization session is complete
+input:: [[Draft Script]], [[Validated Script]]
+output:: [[Improvement Recommendations]]
+output_status:: verified
+tool:: [[AI Agent]]
+scope:: internal
+Conclude the authoring session by proactively asking the user if they want to analyze the entire conversation to extract learnings and suggest iterative improvements. If confirmed, evaluate prompt patterns, user adjustments, and narrative hurdles from the session to recommend concrete refinements to the Series rules (`series_rules.md`), script template (`script_template.md`), or agent authoring workflows.
 
 # NN Artifact
 
@@ -209,6 +221,10 @@ description:: The finalized assets referenced by the owning Video Element's mast
 ## NN Artifact: Web Publication Decision
 type:: output
 description:: User confirmation and intent to proceed with web portal generation and GitHub Pages publication.
+
+## NN Artifact: Improvement Recommendations
+type:: output
+description:: Actionable suggestions for refining Series rules, script templates, or authoring workflows derived from analyzing the session conversation.
 
 # NN Tools
 

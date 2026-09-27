@@ -56,7 +56,7 @@ and exits 0 — it never probes a default path.
 
 This skill owns **authoring, gating, and finalizing** one video's
 `script.md` inside a Series folder. The generic script-generation procedure
-that sequences Frame → Author → Validate → Register Script → Plan Assets & Costs (`asset_plan.md`) → Render → Finalize
+that sequences Frame → Author → Validate → Register Script → Plan Assets & Costs (`asset_plan.md`) → Render → Finalize → Retrospective
 lives in the video template's own procedure document
 (`iNNfo/specs/templates/video/procedures/generate_anydeo_script_NN.md`) —
 this skill is what that procedure delegates to for the authoring and
@@ -81,6 +81,8 @@ validation steps:
    Prints the exact field values (`master::`, `thumbnail::`, `voiceover::`)
    to hand to the model-writing tool (innfo-mcp). This script never edits
    the model file itself.
+4. **Closing Retrospective & Improvement Analysis**:
+   After completing the script elaboration (or concluding the authoring session), proactively prompt the user asking if they want to analyze the session's conversation to suggest concrete improvements. If confirmed, examine the authoring exchange to propose refinements for the Series rules (`series_rules.md`), template structures (`script_template.md`), or prompt and narrative guidelines for future episodes.
 
 ## 3. Script Structure (order matters)
 
