@@ -61,6 +61,18 @@
         }
       ]
     },
+    "design-presets": {
+      "name": "design-presets",
+      "adopted": "V_0-1-0",
+      "versions": [
+        {
+          "template_version": "V_0-1-0",
+          "spec_version": "V_0-2-1",
+          "title": "Design Presets App",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/design-presets/spec_NN.md"
+        }
+      ]
+    },
     "documentation": {
       "name": "documentation",
       "adopted": "V_0-2-1",
@@ -159,10 +171,10 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "template_version": "V_0-3-1",
+          "template_version": "V_0-3-2",
           "spec_version": "V_0-2-1",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/video/spec_NN.md"

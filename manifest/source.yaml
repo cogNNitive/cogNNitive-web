@@ -151,6 +151,11 @@ templates:
     path: iNNfo/specs/templates/artifacts/spec_NN.md
     version: "V_0-2-1"
     ref_key: templates
+  - name: design-presets
+    repo: cogNNitive/cogNNitive
+    path: iNNfo/specs/templates/design-presets/spec_NN.md
+    version: "V_0-2-1"
+    ref_key: templates
 
 # Retired templates kept byte-identical on disk for legacy resolution. They are
 # NOT part of ACTIVE distribution: the catalog drops them from `templates` and

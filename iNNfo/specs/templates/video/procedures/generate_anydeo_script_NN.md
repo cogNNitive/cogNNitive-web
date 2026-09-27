@@ -102,7 +102,8 @@ scope:: internal
 Before triggering generation of any image, video, audio/TTS, or multimodal asset, inspect `script.md` to inventory every asset needed following the visual preproduction standards (`references/thumbnail-and-asset-pipeline.md`):
 1. **Empty Set First**: Group environment backgrounds (`set_[scene].jpeg`) with strict empty room prompts (`strictly no people, empty chairs`) as prerequisite steps before in-painting character avatars (`avatar_[role]_[scene].jpeg`).
 2. **Identity Anchoring**: Anchor characters against canonical isolated portraits (`avatar_[character]_base_white.jpeg`).
-3. **Two-Phase Thumbnail**: Plan the clean 16:9 base thumbnail (`thumbnail_[topic]_base.jpeg`) without text, followed by programmatic composition.
+3. **Design Preset Resolution**: If the Video declares `preset:: [[<PresetName>]]`, query the corresponding `DesignPreset` element to automatically inject `illustration_prompt_anchor` and `illustration_negative_prompt` into generative prompts, and adopt `typography_video_title` / `typography_video_subtitle` for overlay layers.
+4. **Two-Phase Thumbnail**: Plan the clean 16:9 base thumbnail (`thumbnail_[topic]_base.jpeg`) without text, followed by programmatic composition.
 For each asset, document a clear description/prompt, select the target AI model and provider (e.g. Replicate, WaveSpeed, fal.ai, ElevenLabs), search current pricing information on each provider's documentation/pricing pages, calculate per-asset estimated costs, and compute the total estimated production cost. Write this proposal to `asset_plan.md` in the video's own folder (`assets/{video-slug}/asset_plan.md` or `series/{series-slug}/assets/{video-slug}/asset_plan.md`).
 
 ## NN Work: Render Video

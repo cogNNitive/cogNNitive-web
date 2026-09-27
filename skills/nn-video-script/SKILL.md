@@ -64,7 +64,11 @@ validation steps:
 
 1. **Author** `script.md` from the Series' `script_template.md`, following
    the `{{slot}}` convention (`references/series-template-convention.md`)
-   and this file's syntax notes (`references/vus-authoring-notes.md`).
+   and this file's syntax notes (`references/vus-authoring-notes.md`). If the
+   Video element specifies `preset:: [[<PresetName>]]`, resolve the
+   `DesignPreset` to inject `typography_video_title` / `typography_video_subtitle`
+   into text layers and incorporate `illustration_prompt_anchor` into asset planning
+   (`asset_plan.md`).
 2. **Validate**, in order:
    ```
    node scripts/check-script.mjs <script.md> --series-root <series-dir>

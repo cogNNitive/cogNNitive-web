@@ -37,6 +37,7 @@ export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
   business: 'V_0-2-5',
   'business-model': 'V_0-2-3',
   cogNNitive: 'V_0-2-0',
+  'design-presets': 'V_0-1-0',
   documentation: 'V_0-2-1',
   innovation: 'V_0-2-1',
   metrics: 'V_0-2-1',
@@ -45,5 +46,5 @@ export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
   projects: 'V_0-2-2',
   repository: 'V_0-1-1',
   sources: 'V_0-1-0',
-  video: 'V_0-3-1',
+  video: 'V_0-3-2',
 }

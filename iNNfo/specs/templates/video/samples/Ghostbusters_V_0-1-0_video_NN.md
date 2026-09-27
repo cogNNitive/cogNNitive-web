@@ -20,5 +20,6 @@ title: "Ghostbusters Inc. Recruitment Video"
 title:: Ghostbusters 30-Second Recruitment Spot
 description:: Short promotional video recruiting new field technicians for the Ghostbusters containment crew.
 script:: script.md
+preset:: [[Ghostbusters Tech Noir]]
 status:: published
 sources:: [sources/nn/nyc-paranormal-activity-report-1984.md@## Market Demand]

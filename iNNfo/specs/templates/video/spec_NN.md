@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-3-1"
+template_version: "V_0-3-2"
 title: "Video App"
 procedures:
   - id: "generate-anydeo-script"
@@ -87,6 +87,11 @@ concept:: Video
 type:: string
 description:: Public YouTube URL of the uploaded video (optional).
 
+## NN Field Definition: preset
+concept:: Video
+type:: string
+description:: Design preset reference (e.g. [[Ghostbusters Tech Noir]], [[morado-nazareno]]) for typography and illustration style.
+
 # Video App
 
 ## A minimal schema for one video: its metadata, its own media folder, and traceability to its sources
@@ -163,6 +168,7 @@ Assets are scoped at exactly three levels — workspace, series, video — match
 | Video | `master` | video | Rendered video file (`assets/{slug}/`) |
 | Video | `status` | select | draft / scripting / rendering / published / archived |
 | Video | `youtube_url` | string | Public YouTube URL (optional) |
+| Video | `preset` | string | Design preset reference (optional) |
 
 Each file-backed field holds exactly one filename. A video that needs several images or several voice clips keeps them in its folder as attachments.
 
