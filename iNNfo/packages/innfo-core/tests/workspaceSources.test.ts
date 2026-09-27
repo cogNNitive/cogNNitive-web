@@ -6,6 +6,7 @@ import { applyMutation } from '../src/mutate'
 import { normalizeSingleModel } from '../src/recursiveParser'
 import type { RecursiveParseResult } from '../src/recursiveParser/types'
 import type { ModelNode } from '../src/types'
+import type { TemplateSchema } from '../src/schema'
 
 function field(value: unknown): ModelNode['fields'][string] {
   return { value, editAttribution: { author: { kind: 'system', id: 'test' }, timestamp: '' } }
@@ -349,5 +350,143 @@ note:: keep
     )
     expect(diags).toHaveLength(1)
     expect(diags[0]).toMatchObject({ severity: 'error', code: 'KU_MALFORMED' })
+  })
+})
+
+// --- WU2 (2.2): conflicts:: validation + LEGACY_DERIVATION_KEY warning ---
+
+function resultWithSchema(
+  conceptType: string,
+  fieldName: string,
+  value: unknown,
+  schema: TemplateSchema | undefined,
+): RecursiveParseResult {
+  const root: ModelNode = {
+    id: 'root-1',
+    name: 'root_01',
+    parentId: null,
+    childIds: ['elem-1'],
+    type: 'document',
+    kind: 'root',
+    fields: {},
+    markers: {},
+    relationships: [],
+    rawSections: {},
+    source: { path: 'workspace_NN.md' },
+    templateSchema: schema,
+  }
+  const element: ModelNode = {
+    id: 'elem-1',
+    name: 'Item One',
+    parentId: 'root-1',
+    childIds: [],
+    type: conceptType,
+    kind: 'element',
+    fields: { [fieldName]: field(value) },
+    markers: {},
+    relationships: [],
+    rawSections: {},
+    source: { path: 'workspace_NN.md' },
+  }
+  return { nodes: { 'root-1': root, 'elem-1': element }, rootIds: ['root-1'], issues: [] }
+}
+
+const schemaWith = (concepts: TemplateSchema['concepts']): TemplateSchema => ({
+  concepts,
+  markers: [],
+  matrices: [],
+  taxonomy: [],
+})
+
+// Schema declaring `Models` (with no `derived_from` field) and `Artifacts`
+// (with no `derived_from_inputs` field) — the "declares the concept but not
+// the field" case from D3.
+const WORKSPACE_SCHEMA = schemaWith([
+  { name: 'Models', type: 'element', fields: [{ name: 'sources', type: 'citation' }] },
+  { name: 'Artifacts', type: 'element', fields: [{ name: 'sources', type: 'citation' }] },
+])
+
+// Frozen cogNNitive schema declares `ModelRecords`, not `Models` — must stay silent.
+const COGNNITIVE_SCHEMA = schemaWith([
+  { name: 'ModelRecords', type: 'element', fields: [{ name: 'sources', type: 'citation' }] },
+])
+
+describe('validateWorkspaceSources — conflicts:: (D5)', () => {
+  it('produces the same KU_MALFORMED code a malformed sources:: value would', () => {
+    const diags = validateWorkspaceSources(
+      resultWith('report.md#L10-L20', 'conflicts'),
+      resolver({ 'sources/nn/report.md': true }),
+    )
+    expect(diags).toHaveLength(1)
+    expect(diags[0]).toMatchObject({ severity: 'error', code: 'KU_MALFORMED' })
+  })
+
+  it('a valid conflicts:: pointer produces SRC_CONFLICT_FLAGGED and no KU_* error', () => {
+    const diags = validateWorkspaceSources(
+      resultWith('report.md#intro', 'conflicts'),
+      resolver({ 'sources/nn/report.md': ['intro'] }),
+    )
+    expect(diags.some((d) => d.severity === 'error')).toBe(false)
+    expect(diags.some((d) => d.code === 'SRC_CONFLICT_FLAGGED')).toBe(true)
+  })
+
+  it('a conflicts:: pointer never appears in node.sources or any relationship edge after normalization', () => {
+    const model = parseModel(`---
+spec_version: "V_0-2-1"
+level: 3
+parent_spec:
+  name: "Fixture"
+  url: "https://example.test/fixture"
+title: "Fixture Model"
+---
+
+# NN Phase
+## NN Phase: First
+conflicts:: [present.md#intro]
+`)
+    const serialized = serializeModel(model)
+    const { nodes } = normalizeSingleModel(
+      serialized,
+      'models/Fixture_V_1-0-0_NN.md',
+      'Fixture_V_1-0-0_NN',
+    )
+    const element = Object.values(nodes).find((n) => n.kind === 'element')!
+    expect(element.sources ?? []).toEqual([])
+    expect((element.relationships ?? []).some((r) => r.origin === 'source')).toBe(false)
+  })
+})
+
+describe('validateWorkspaceSources — LEGACY_DERIVATION_KEY (D3)', () => {
+  it('fires for a workspace Models entry carrying derived_from', () => {
+    const diags = validateWorkspaceSources(
+      resultWithSchema('Models', 'derived_from', 'models/other.md', WORKSPACE_SCHEMA),
+      resolver({}),
+    )
+    expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(true)
+    expect(diags.find((d) => d.code === 'LEGACY_DERIVATION_KEY')?.severity).toBe('warning')
+  })
+
+  it('fires for an Artifacts entry carrying derived_from_inputs::', () => {
+    const diags = validateWorkspaceSources(
+      resultWithSchema('Artifacts', 'derived_from_inputs', 'some prose', WORKSPACE_SCHEMA),
+      resolver({}),
+    )
+    expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(true)
+  })
+
+  it('stays silent for the frozen cogNNitive ModelRecords schema', () => {
+    const diags = validateWorkspaceSources(
+      resultWithSchema('Models', 'derived_from', 'models/other.md', COGNNITIVE_SCHEMA),
+      resolver({}),
+    )
+    expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(false)
+  })
+
+  it('stays silent for an element with no resolved schema', () => {
+    const diags = validateWorkspaceSources(
+      resultWithSchema('Models', 'derived_from', 'models/other.md', undefined),
+      resolver({}),
+    )
+    expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(false)
   })
 })

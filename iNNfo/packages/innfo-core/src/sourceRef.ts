@@ -62,6 +62,14 @@ const SLUG = '[a-z0-9]+(?:-[a-z0-9]+)*'
 export const SOURCE_FIELD_NAMES = new Set(['sources', 'source'])
 
 /**
+ * Reserved element-level property name for `conflicts::`. Deliberately kept
+ * SEPARATE from `SOURCE_FIELD_NAMES`: a `conflicts::` pointer is validated by
+ * the same citation grammar, but MUST NOT feed `recursiveParser/normalize.ts`'s
+ * `node.sources` / lineage-edge construction the way a `sources::` value does.
+ */
+export const CONFLICT_FIELD_NAMES = new Set(['conflicts'])
+
+/**
  * Parse a single field value as a source reference. Returns `null` for anything
  * that is not a reference (plain prose, URLs, line-range anchors, `src-NNN`
  * wrappers, `sources/original/` paths).

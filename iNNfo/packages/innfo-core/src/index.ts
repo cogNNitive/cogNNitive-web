@@ -85,6 +85,7 @@ export {
   extractHeadings,
   resolveHeadingSection,
   SOURCE_FIELD_NAMES,
+  CONFLICT_FIELD_NAMES,
 } from './sourceRef.js'
 export type { SourceRef, HeadingInfo, ResolvedHeadingSection } from './sourceRef.js'
 export {

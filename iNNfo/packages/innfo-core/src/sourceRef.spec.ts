@@ -7,6 +7,7 @@ import {
   splitSourceFieldValue,
   levenshteinDistance,
   SOURCE_FIELD_NAMES,
+  CONFLICT_FIELD_NAMES,
 } from './sourceRef.js'
 
 describe('parseSourceRef', () => {
@@ -168,6 +169,19 @@ describe('SOURCE_FIELD_NAMES', () => {
     expect(SOURCE_FIELD_NAMES.has('source')).toBe(true)
     expect(SOURCE_FIELD_NAMES.has('SOURCES')).toBe(false) // case-folding is the caller's job
     expect(SOURCE_FIELD_NAMES.has('title')).toBe(false)
+  })
+
+  it('stays unchanged by the addition of CONFLICT_FIELD_NAMES', () => {
+    expect(SOURCE_FIELD_NAMES).toEqual(new Set(['sources', 'source']))
+  })
+})
+
+describe('CONFLICT_FIELD_NAMES', () => {
+  it('exports exactly the reserved "conflicts" property name, separate from SOURCE_FIELD_NAMES', () => {
+    expect(CONFLICT_FIELD_NAMES).toEqual(new Set(['conflicts']))
+    expect(CONFLICT_FIELD_NAMES.has('conflicts')).toBe(true)
+    expect(CONFLICT_FIELD_NAMES.has('sources')).toBe(false)
+    expect(SOURCE_FIELD_NAMES.has('conflicts')).toBe(false)
   })
 })
 

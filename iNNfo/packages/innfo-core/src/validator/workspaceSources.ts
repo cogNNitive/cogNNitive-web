@@ -4,6 +4,7 @@ import { parseCsvTable } from '../csvTable.js'
 import { parseKnowledgeQuery } from '../queryUnits.js'
 import {
   SOURCE_FIELD_NAMES,
+  CONFLICT_FIELD_NAMES,
   extractHeadings,
   normalizeName,
   parseKnowledgeUnitRef,
@@ -63,8 +64,8 @@ export type SourceResolver = (
  * - `error KU_DUPLICATE_KEY` / `KU_EMPTY_KEY` — CSV key-column integrity (once per file).
  */
 /**
- * Whether `fieldName` on an element of concept `conceptType` carries
- * provenance (AD-5).
+ * Whether `fieldName` on an element of concept `conceptType` carries a
+ * citation (AD-5).
  *
  * The DECLARED type wins: a field the template declares `citation` is checked
  * whatever it is called, and a field it declares as anything else is not —
@@ -85,6 +86,44 @@ function isCitationField(
   const declared = findDeclaredField(schema, conceptType, fieldName)
   if (declared) return declared.type === 'citation'
   return SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())
+}
+
+/**
+ * Whether `fieldName` is the reserved `conflicts` property (design D5). This
+ * is a RESERVED NAME check, deliberately independent of `isCitationField`'s
+ * declared-type resolution: `conflicts::` values follow the same KU_*
+ * validation path as `sources::`, but must NEVER be added to
+ * `SOURCE_FIELD_NAMES` or fed into `recursiveParser/normalize.ts`'s
+ * `node.sources` / `origin: 'source'` relationship-edge construction. The
+ * reserved name wins over any declared field type.
+ */
+function isConflictField(fieldName: string): boolean {
+  return CONFLICT_FIELD_NAMES.has(fieldName.toLowerCase())
+}
+
+/**
+ * Trigger pairs for the deprecated read-only legacy derivation keys (design
+ * D3): `(any concept, derived_from_inputs)` and `(Models, derived_from)`.
+ * The warning fires ONLY when the resolved schema declares the concept but
+ * not the field — so the frozen cogNNitive schema (which declares
+ * `ModelRecords`, not `Models`) and an unresolved schema both stay silent.
+ */
+const LEGACY_DERIVATION_FIELD_NAMES = new Set(['derived_from', 'derived_from_inputs'])
+
+function legacyDerivationKeyFor(
+  fieldName: string,
+  conceptType: string | undefined,
+  schema: TemplateSchema | undefined,
+): string | undefined {
+  const lower = fieldName.toLowerCase()
+  if (!LEGACY_DERIVATION_FIELD_NAMES.has(lower)) return undefined
+  if (!schema || !conceptType) return undefined
+  const concept = schema.concepts.find((c) => c.name.toLowerCase() === conceptType.toLowerCase())
+  if (!concept) return undefined
+  // Declares the concept but NOT the field — that is the trigger condition.
+  const declaresField = concept.fields?.some((f) => f.name.toLowerCase() === lower)
+  if (declaresField) return undefined
+  return fieldName
 }
 
 export function validateWorkspaceSources(
@@ -111,17 +150,34 @@ export function validateWorkspaceSources(
     const schema = schemaFor(node)
 
     for (const [fieldName, fv] of Object.entries(node.fields)) {
-      if (!isCitationField(fieldName, node.type, schema)) continue
+      const isConflict = isConflictField(fieldName)
+      const legacyKey = legacyDerivationKeyFor(fieldName, node.type, schema)
+
+      if (legacyKey) {
+        const path = `${node.source.path}#${node.name}.${fieldName}`
+        diagnostics.push({
+          path,
+          message: `"${legacyKey}" is deprecated — write "sources::" (pointer list); lineage is computed`,
+          severity: 'warning',
+          code: 'LEGACY_DERIVATION_KEY',
+        })
+      }
+
+      // The reserved `conflicts` name wins over any declared field type
+      // (design D5) — a conflicts:: field is checked here even when the
+      // schema does not declare it `type:: citation`.
+      if (!isConflict && !isCitationField(fieldName, node.type, schema)) continue
 
       const path = `${node.source.path}#${node.name}.${fieldName}`
+      let sawValidConflictPointer = false
 
       for (const value of splitSourceFieldValue(fv.value)) {
-        // Queries select sets for retrieval tools — never valid provenance.
+        // Queries select sets for retrieval tools — never a valid citation.
         // This check precedes both parsers so the message stays specific.
         if (value.includes('?') && parseKnowledgeQuery(value)) {
           diagnostics.push({
             path,
-            message: `Queries are not valid provenance: "${value}" selects a set, not a unit — resolve it to pointers first (e.g. run it as a query, then cite the resulting "@" references)`,
+            message: `Queries are not valid citations: "${value}" selects a set, not a unit — resolve it to pointers first (e.g. run it as a query, then cite the resulting "@" references)`,
             severity: 'error',
             code: 'QU_NOT_PROVENANCE',
           })
@@ -130,6 +186,7 @@ export function validateWorkspaceSources(
 
         const unitRef = parseKnowledgeUnitRef(value)
         if (unitRef?.unit) {
+          const before = diagnostics.length
           validateUnitPointer(
             unitRef,
             node.source.path,
@@ -138,6 +195,9 @@ export function validateWorkspaceSources(
             diagnostics,
             checkedCsvKeys,
           )
+          if (isConflict && !diagnostics.slice(before).some((d) => d.severity === 'error')) {
+            sawValidConflictPointer = true
+          }
           continue
         }
 
@@ -163,6 +223,8 @@ export function validateWorkspaceSources(
           continue
         }
 
+        if (isConflict) sawValidConflictPointer = true
+
         if (ref.slug && resolved.headings && !resolved.headings.includes(ref.slug)) {
           diagnostics.push({
             path,
@@ -177,6 +239,15 @@ export function validateWorkspaceSources(
           message: `Legacy "#slug" form is deprecated — prefer "@" pointers${suggestCanonical(resolved, ref)}`,
           severity: 'warning',
           code: 'KU_DEPRECATED_HASH',
+        })
+      }
+
+      if (isConflict && sawValidConflictPointer) {
+        diagnostics.push({
+          path,
+          message: `Element "${node.name}" flags a conflict via "conflicts::" — review and record the resolution in "rationale::"`,
+          severity: 'warning',
+          code: 'SRC_CONFLICT_FLAGGED',
         })
       }
     }
