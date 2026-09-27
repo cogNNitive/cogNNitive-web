@@ -413,13 +413,13 @@ type:: model
 `
 
 const ARTIFACTS_SPEC_CONTENT = `---
-spec_version: "V_0-2-1"
+spec_version: "V_0-2-2"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-1-0"
+  name: "iNNfo_V_0-2-2"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
+template_version: "V_0-2-0"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -472,9 +472,9 @@ type:: string
 concept:: Artifact
 type:: string
 
-## NN Field Definition: derived_from_inputs
+## NN Field Definition: sources
 concept:: Artifact
-type:: string
+type:: citation
 
 ## NN Field Definition: artifact_model
 concept:: Artifact
@@ -758,14 +758,14 @@ values:: [Modifies]
 `
 
 const WORKSPACE_SPEC_CONTENT = `---
-spec_version: "V_0-2-1"
+spec_version: "V_0-2-2"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  name: "iNNfo_V_0-2-2"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
 title: "Workspace Specification App"
-template_version: "V_0-5-1"
+template_version: "V_0-6-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -916,7 +916,7 @@ concept:: Templates
 type:: string
 description:: Domain classification or strategic focus of the template.
 
-<!-- Models fields: inventory + provenance -->
+<!-- Models fields: inventory + lineage -->
 
 ## NN Field Definition: path
 concept:: Models
@@ -938,12 +938,6 @@ description:: Lifecycle status of the model within this workspace.
 concept:: Models
 type:: string
 description:: Author or owner of the model within this workspace (workspace-scoped; not stored in the model file).
-
-## NN Field Definition: derived_from
-concept:: Models
-type:: reference
-target_concepts:: [Sources]
-description:: The Sources this model was derived from (PROV wasDerivedFrom).
 
 ## NN Field Definition: generated_by
 concept:: Models
@@ -2158,13 +2152,14 @@ export const CANONICAL_TEMPLATES: Record<string, CanonicalTemplate> = {
   },
   artifacts: {
     name: 'artifacts',
-    version: 'V_0-1-0',
+    version: 'V_0-2-0',
     aliases: [
       'artifacts',
       'artifacts_spec_nn',
       'artifacts_spec',
       'artifacts_v_0-1-0_nn',
       'artifacts_v_0-1-0',
+      'artifacts_v_0-2-0',
       'specs/templates/artifacts/spec_nn.md',
       'https://raw.githubusercontent.com/cognnitive/cognnitive/main/innfo/specs/templates/artifacts/spec_nn.md',
     ],
@@ -2207,7 +2202,7 @@ export const CANONICAL_TEMPLATES: Record<string, CanonicalTemplate> = {
   },
   workspace: {
     name: 'workspace',
-    version: 'V_0-5-1',
+    version: 'V_0-6-0',
     aliases: [
       'workspace',
       'workspace_spec_nn',
@@ -2221,6 +2216,7 @@ export const CANONICAL_TEMPLATES: Record<string, CanonicalTemplate> = {
       'workspace_v_0-3-0_spec_nn',
       'workspace_v_0-4-0',
       'workspace_v_0-5-1',
+      'workspace_v_0-6-0',
       'specs/templates/workspace_spec_nn.md',
       'specs/templates/workspace/spec_nn.md',
       'https://raw.githubusercontent.com/cognnitive/cognnitive/main/innfo/specs/templates/workspace_spec_nn.md',
@@ -2302,10 +2298,16 @@ export const CANONICAL_TEMPLATES: Record<string, CanonicalTemplate> = {
       'iNNfo_V_0-2-1',
       'innfo_V_0-2-1_NN',
       'iNNfo_V_0-2-1_NN',
+      'innfo_V_0-2-2',
+      'iNNfo_V_0-2-2',
+      'innfo_V_0-2-2_NN',
+      'iNNfo_V_0-2-2_NN',
       'specs/iNNfo_V_0-2-0_NN.md',
       'specs/iNNfo_V_0-2-1_NN.md',
+      'specs/iNNfo_V_0-2-2_NN.md',
       'https://raw.githubusercontent.com/cognnitive/cognnitive/main/innfo/specs/innfo_v_0-2-0_nn.md',
       'https://raw.githubusercontent.com/cognnitive/cognnitive/main/innfo/specs/innfo_v_0-2-1_nn.md',
+      'https://raw.githubusercontent.com/cognnitive/cognnitive/main/innfo/specs/innfo_v_0-2-2_nn.md',
     ],
     specContent: INNFO_SPEC_CONTENT,
   },

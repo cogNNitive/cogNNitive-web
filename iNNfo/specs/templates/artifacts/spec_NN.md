@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-2-2"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-1-0"
+  name: "iNNfo_V_0-2-2"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
+template_version: "V_0-2-0"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -63,10 +63,10 @@ concept:: Artifact
 type:: string
 description:: Reference to the procedure or workflow run that produced this artifact (PROV wasGeneratedBy).
 
-## NN Field Definition: derived_from_inputs
+## NN Field Definition: sources
 concept:: Artifact
-type:: string
-description:: List of references to source documents and domain models this artifact was derived from (PROV wasDerivedFrom).
+type:: citation
+description:: Citations to the Source documents and domain models this artifact derives from (PROV wasDerivedFrom).
 
 ## NN Field Definition: artifact_model
 concept:: Artifact
@@ -84,7 +84,7 @@ description:: Relative path to generated deliverable file when format is non-mod
 
 ## Philosophy
 
-The Artifacts Catalog registers all tangible and digital outputs generated within an iNNfo workspace. Artifacts encompass interactive web consoles, compiled HTML hubs, documents, tabular datasets, and structured downstream models. By capturing concise summaries and W3C PROV lineage (produced_by, derived_from_inputs) in the catalog, agents and users can trace output provenance without scanning raw deliverable files.
+The Artifacts Catalog registers all tangible and digital outputs generated within an iNNfo workspace. Artifacts encompass interactive web consoles, compiled HTML hubs, documents, tabular datasets, and structured downstream models. By capturing concise summaries and W3C PROV lineage (produced_by, sources) in the catalog, agents and users can trace output lineage without scanning raw deliverable files.
 
 ## Template
 
@@ -115,6 +115,6 @@ summary:: Concise summary of the deliverable contents.
 status:: verified
 tags:: [report, summary]
 produced_by:: [[Procedure Name]]
-derived_from_inputs:: [[Source Name]]
+sources:: [sources/nn/source_document.md#section]
 artifact_model:: artifacts/models/report_NN.md
 ```

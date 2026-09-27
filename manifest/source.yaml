@@ -6,20 +6,20 @@ skills:
   - name: nn-start
     repo: cogNNitive/cogNNitive
     path: skills/nn-start
-    version: "V_3-4-0"
+    version: "V_3-4-1"
     ref_key: skills
     description: Central system governance, setup, environment readiness gate (Preflight), and start router.
   - name: nn-trannsform
     repo: cogNNitive/cogNNitive
     path: skills/nn-trannsform
-    version: "V_3-3-0"
+    version: "V_3-4-0"
     ref_key: skills
     requires: [nn-innfo, nn-preflight]
     description: Ingest documents (PDF, DOCX, XLSX), transform using templates, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
   - name: nn-innfo
     repo: cogNNitive/cogNNitive
     path: skills/nn-innfo
-    version: "V_0-5-2"
+    version: "V_0-5-3"
     ref_key: skills
     description: Author, edit, and validate iNNfo models with built-in step-by-step Model Creation Wizard.
     templates: [workspace]
@@ -32,7 +32,7 @@ skills:
   - name: nn-preflight
     repo: cogNNitive/cogNNitive
     path: skills/nn-preflight
-    version: "V_0-2-0"
+    version: "V_0-2-1"
     ref_key: skills
     description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
   - name: nn-upgrade
@@ -79,7 +79,7 @@ templates:
   - name: workspace
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/templates/workspace_spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-2-2"
     ref_key: templates
   - name: projects
     repo: cogNNitive/cogNNitive
@@ -149,7 +149,7 @@ templates:
   - name: artifacts
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/templates/artifacts/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-2-2"
     ref_key: templates
   - name: design-presets
     repo: cogNNitive/cogNNitive

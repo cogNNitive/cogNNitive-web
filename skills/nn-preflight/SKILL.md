@@ -1,7 +1,7 @@
 ---
 name: nn-preflight
 description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, innfo-mcp availability, workspace layout, source integrity audit across sources/import/, sources/conversations/, sources/export/) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. Triggers: preflight, readiness, environment check, "run Tier 1".
-version: "V_0-2-0"
+version: "V_0-2-1"
 last_updated: 2026-09-06
 metadata:
   source_type: original

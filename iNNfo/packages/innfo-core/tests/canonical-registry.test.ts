@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   findCanonicalTemplate,
   getCanonicalSpecContent,
@@ -6,6 +8,13 @@ import {
   CANONICAL_TEMPLATES,
   resolveTemplateSchema,
 } from '../src/schema'
+
+const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
+const fieldNames = (content: string): string[] =>
+  content
+    .split(/\r?\n/)
+    .filter((l) => l.startsWith('## NN Field Definition: '))
+    .map((l) => l.slice('## NN Field Definition: '.length).trim())
 
 describe('Canonical Template Registry & Offline Fallback', () => {
   it('bundles all standard Level 2 templates', () => {
@@ -86,5 +95,29 @@ describe('Canonical Template Registry & Offline Fallback', () => {
   it('returns null for unknown template identifiers', () => {
     expect(findCanonicalTemplate('completely_unknown_template_xyz')).toBeNull()
     expect(getCanonicalSpecContent('')).toBeNull()
+  })
+
+  it('resolves the new V_0-2-2 core-language aliases', () => {
+    const url =
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md'
+
+    expect(findCanonicalTemplate('iNNfo_V_0-2-2_NN')?.name).toBe('innfo')
+    expect(findCanonicalTemplate('innfo_v_0-2-2')?.name).toBe('innfo')
+    expect(findCanonicalTemplate('specs/iNNfo_V_0-2-2_NN.md')?.name).toBe('innfo')
+    expect(findCanonicalTemplate(url)?.name).toBe('innfo')
+  })
+
+  it('mirrors the workspace and artifacts V_0-2-2 templates without drift', () => {
+    for (const [template, specPath] of [
+      ['workspace', 'templates/workspace_spec_NN.md'],
+      ['artifacts', 'templates/artifacts/spec_NN.md'],
+    ] as const) {
+      const disk = readFileSync(join(specsRoot, specPath), 'utf-8')
+      const mirror = getCanonicalSpecContent(template)!
+
+      expect(mirror, `${template} mirror exists`).not.toBeNull()
+      expect(mirror, `${template} mirror carries V_0-2-2`).toContain('spec_version: "V_0-2-2"')
+      expect(fieldNames(mirror), `${template} field names drift`).toEqual(fieldNames(disk))
+    }
   })
 })

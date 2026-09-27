@@ -9,14 +9,14 @@ agent-bootstrap:
     - name: nn-start
       repo: cogNNitive/cogNNitive
       path: skills/nn-start
-      version: "V_3-4-0"
+      version: "V_3-4-1"
       ref: "skills-v2.3.0"
       commit: "7ce77dfc28b27b1d9465268044a75e70b8fcb774"
       description: Central system governance, setup, environment readiness gate (Preflight), and start router.
     - name: nn-trannsform
       repo: cogNNitive/cogNNitive
       path: skills/nn-trannsform
-      version: "V_3-3-0"
+      version: "V_3-4-0"
       ref: "skills-v2.3.0"
       commit: "7ce77dfc28b27b1d9465268044a75e70b8fcb774"
       requires: [nn-innfo, nn-preflight]
@@ -24,7 +24,7 @@ agent-bootstrap:
     - name: nn-innfo
       repo: cogNNitive/cogNNitive
       path: skills/nn-innfo
-      version: "V_0-5-2"
+      version: "V_0-5-3"
       ref: "skills-v2.3.0"
       commit: "7ce77dfc28b27b1d9465268044a75e70b8fcb774"
       description: Author, edit, and validate iNNfo models with built-in step-by-step Model Creation Wizard.
@@ -40,7 +40,7 @@ agent-bootstrap:
     - name: nn-preflight
       repo: cogNNitive/cogNNitive
       path: skills/nn-preflight
-      version: "V_0-2-0"
+      version: "V_0-2-1"
       ref: "skills-v2.3.0"
       commit: "7ce77dfc28b27b1d9465268044a75e70b8fcb774"
       description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
@@ -86,7 +86,7 @@ agent-bootstrap:
     - name: workspace
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/templates/workspace_spec_NN.md
-      version: "V_0-2-1"
+      version: "V_0-2-2"
       ref: "templates-v0.15.0"
       commit: "7ce77dfc28b27b1d9465268044a75e70b8fcb774"
     - name: projects
@@ -170,7 +170,7 @@ agent-bootstrap:
     - name: artifacts
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/templates/artifacts/spec_NN.md
-      version: "V_0-2-1"
+      version: "V_0-2-2"
       ref: "templates-v0.15.0"
       commit: "7ce77dfc28b27b1d9465268044a75e70b8fcb774"
     - name: design-presets

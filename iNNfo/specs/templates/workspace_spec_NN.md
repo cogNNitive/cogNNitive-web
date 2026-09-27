@@ -1,12 +1,12 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-2-2"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  name: "iNNfo_V_0-2-2"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
 title: "Workspace Specification App"
-template_version: "V_0-5-1"
+template_version: "V_0-6-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -157,7 +157,7 @@ concept:: Templates
 type:: string
 description:: Domain classification or strategic focus of the template.
 
-<!-- Models fields: inventory + provenance -->
+<!-- Models fields: inventory + lineage -->
 
 ## NN Field Definition: path
 concept:: Models
@@ -179,12 +179,6 @@ description:: Lifecycle status of the model within this workspace.
 concept:: Models
 type:: string
 description:: Author or owner of the model within this workspace (workspace-scoped; not stored in the model file).
-
-## NN Field Definition: derived_from
-concept:: Models
-type:: reference
-target_concepts:: [Sources]
-description:: The Sources this model was derived from (PROV wasDerivedFrom).
 
 ## NN Field Definition: generated_by
 concept:: Models
@@ -370,7 +364,7 @@ Declares the foundational formal grammars and metaplantillas referenced by templ
 Primary input catalog linking raw evidence and normalized sources.
 
 ### Description
-Points to the workspace Sources Catalog model (`sources_NN.md`), establishing immutable provenance links to business documents, contracts, CSVs, and scans.
+Points to the workspace Sources Catalog model (`sources_NN.md`), establishing immutable Source links to business documents, contracts, CSVs, and scans.
 
 ### Methodologies
 - Immutable primary sources with SHA-256 provenance hashes.

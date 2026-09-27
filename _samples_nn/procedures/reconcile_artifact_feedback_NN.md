@@ -80,7 +80,7 @@ output_status:: verified
 tool:: [[iNNfo MCP Server]]
 scope:: internal
 tags:: [lineage, provenance, derived-from, dependencies]
-Reads baseline artifact registration in `workspace_NN.md` to map `derived_from_inputs::`, determining whether changed data originates in domain models, satellite financial models, or raw transcripts.
+Reads baseline artifact registration in `workspace_NN.md` to map `sources::`, determining whether changed data originates in domain models, satellite financial models, or raw transcripts.
 
 ## NN Work: Step 3 - Four-Layer Discrepancy Triaging
 parent:: [[Artifact Feedback Reconciliation Workflow]]

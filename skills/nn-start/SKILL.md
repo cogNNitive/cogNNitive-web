@@ -2,7 +2,7 @@
 name: nn-start
 description: Primary Front Controller, ecosystem entry point, system governance, setup, environment readiness gate (Preflight), and skill router for cogNNitive. Invoke with /nn-start.
 disable-model-invocation: false
-version: "V_3-4-0"
+version: "V_3-4-1"
 last_updated: 2026-09-24
 license: MIT
 compatibility: opencode, claude-code, cursor, any agent supporting skills
