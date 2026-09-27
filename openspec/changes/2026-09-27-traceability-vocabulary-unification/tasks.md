@@ -72,7 +72,7 @@ implementation edit. Items 2.1-2.3 can be implemented in parallel by
 different files since they touch disjoint modules; 2.4 depends on 2.1-2.2
 existing first (workspaceSources.ts references `CONFLICT_FIELD_NAMES`).
 
-- [ ] 2.1 `iNNfo/packages/innfo-core/src/sourceRef.ts`: add
+- [x] 2.1 `iNNfo/packages/innfo-core/src/sourceRef.ts`: add
       `CONFLICT_FIELD_NAMES = new Set(['conflicts'])` after `:62`. Export it
       from `iNNfo/packages/innfo-core/src/index.ts:87`.
       Test first: extend `sourceRef.spec.ts` — assert
@@ -81,7 +81,7 @@ existing first (workspaceSources.ts references `CONFLICT_FIELD_NAMES`).
       pins this — do not let it regress).
       `[spec: document-citations → "conflicts:: Is a Reserved Element
       Property Validated Like sources::"]`
-- [ ] 2.2 `iNNfo/packages/innfo-core/src/validator/workspaceSources.ts`
+- [x] 2.2 `iNNfo/packages/innfo-core/src/validator/workspaceSources.ts`
       (loop at `:109-183`):
       - Implement D5: at `:114`, `if (!isConflict && !isCitationField(...))
         continue`, so `conflicts::` values follow the same KU_* validation
@@ -114,7 +114,7 @@ existing first (workspaceSources.ts references `CONFLICT_FIELD_NAMES`).
       `[spec: document-citations → all 4 scenarios; provenance-vocabulary →
       "Legacy Derivation Keys Are Deprecated Read-Only Aliases" → both
       scenarios]`
-- [ ] 2.3 `skills/nn-trannsform/scripts/lib/impact-checker.js:285`: change
+- [x] 2.3 `skills/nn-trannsform/scripts/lib/impact-checker.js:285`: change
       `lines.push('derived_from: auditModelCitations');` to
       `lines.push('generated_by: auditModelCitations');` — this is the one
       confirmed writer bug (verified against the current working tree:
@@ -125,7 +125,7 @@ existing first (workspaceSources.ts references `CONFLICT_FIELD_NAMES`).
       `derived_from:`.
       `[spec: provenance-vocabulary → "Single Written Derivation Term Is
       sources"]`
-- [ ] 2.4 `skills/nn-trannsform/scripts/lib/provenance-model.js`:
+- [x] 2.4 `skills/nn-trannsform/scripts/lib/provenance-model.js`:
       `parseArtifactMeta` (`:404-436`) reads an optional frontmatter
       `sources:` list on artifacts; `collectArtifacts` (`:460-462`) prefers
       it over `model`/`model_version` when both are present.
@@ -135,14 +135,14 @@ existing first (workspaceSources.ts references `CONFLICT_FIELD_NAMES`).
       inputs that don't use the new field.
       `[spec: provenance-vocabulary → "Artifact derivation is authored as
       sources" scenario]`
-- [ ] 2.5 Rename "provenance model" → "lineage record" and tag
+- [x] 2.5 Rename "provenance model" → "lineage record" and tag
       `provenance` → `lineage` in `skills/nn-trannsform/scripts/index.js:70,
       544`, `lib/bootstrap.js:27`, `scanner.js:143`. No behavior change —
       verify existing tests referencing the old tag/string are updated,
       not just the source.
       `[spec: provenance-vocabulary → "Documentation uses only Source /
       Citation / Lineage"]`
-- [ ] 2.6 `skills/nn-preflight/scripts/preflight-check.js:401-407`,
+- [x] 2.6 `skills/nn-preflight/scripts/preflight-check.js:401-407`,
       `skills/nn-trannsform/scripts/lib/scanner-core.js:550`: add a
       one-line comment noting these `user_input`-adjacent checks are
       defensive legacy reads that also cover `inline:`/`chat:` (which
@@ -151,11 +151,11 @@ existing first (workspaceSources.ts references `CONFLICT_FIELD_NAMES`).
       would need updating.
       `[spec: source-normalization-pipeline → "user_input Is Not a Valid
       source_type"]`
-- [ ] 2.7 `skills/nn-innfo/SKILL.md`: document `conflicts::` (new prose,
+- [x] 2.7 `skills/nn-innfo/SKILL.md`: document `conflicts::` (new prose,
       not a rename — additive to WU2 since it documents new validator
       behavior from 2.1-2.2).
       `[spec: document-citations]`
-- [ ] 2.8 Spec-only correction (no code): confirm design.md's D2 finding
+- [x] 2.8 Spec-only correction (no code): confirm design.md's D2 finding
       that the `references:` alias scenario needs a spec fix, not a code
       fix. Verified against the working tree: `scanner-core.js:117-124`
       silently aliases `references:` → `cited_works` on input with no
