@@ -394,12 +394,44 @@ function collectModels(projectDir) {
 }
 
 /**
+ * Every `sources:` value declared in an artifact's YAML frontmatter block, in
+ * document order. Accepts both the flow-list form (`sources: [a, b]`) and the
+ * block-list form (`sources:\n  - a\n  - b`). Same pointer-array grammar as
+ * an element's `sources::` field, reusing the same split/trim conventions as
+ * `scrapeSourceRefs`.
+ * @param {string} fmBlock
+ * @returns {string[]}
+ */
+function parseFrontmatterSources(fmBlock) {
+  if (!fmBlock) return [];
+  const flow = fmBlock.match(/^sources:\s*\[(.*)\]\s*$/m);
+  if (flow) {
+    return flow[1]
+      .split(',')
+      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+      .filter(Boolean);
+  }
+  const block = fmBlock.match(/^sources:\s*\r?\n((?:[ \t]+-\s+.*\r?\n?)+)/m);
+  if (block) {
+    return block[1]
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('-'))
+      .map((line) => line.replace(/^-\s*/, '').trim().replace(/^["']|["']$/g, ''))
+      .filter(Boolean);
+  }
+  return [];
+}
+
+/**
  * Read a source-model reference out of an artifact: from Markdown frontmatter
- * (`model` / `model_name` + `model_version`) or from an HTML
- * `<script id="export-meta" type="application/json">` block.
+ * (`model` / `model_name` + `model_version`, or an optional `sources:`
+ * pointer-array field) or from an HTML
+ * `<script id="export-meta" type="application/json">` block (which may carry
+ * an equivalent `sources` JSON array).
  * @param {string} content
  * @param {string} fileName
- * @returns {{ model: string | null, model_version: string | null, format: string }}
+ * @returns {{ model: string | null, model_version: string | null, sources: string[], format: string }}
  */
 function parseArtifactMeta(content, fileName) {
   const isHtml = /\.html?$/i.test(fileName);
@@ -413,13 +445,14 @@ function parseArtifactMeta(content, fileName) {
         return {
           model: j.modelName || j.model || null,
           model_version: j.modelVersion || j.model_version || null,
+          sources: Array.isArray(j.sources) ? j.sources.map((s) => String(s).trim()).filter(Boolean) : [],
           format: 'board',
         };
       } catch {
         /* fall through */
       }
     }
-    return { model: null, model_version: null, format: 'board' };
+    return { model: null, model_version: null, sources: [], format: 'board' };
   }
   const header = parseModelHeader(content);
   const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -431,6 +464,7 @@ function parseArtifactMeta(content, fileName) {
   return {
     model: modelName ? modelName.trim() : null,
     model_version: header.model_version,
+    sources: parseFrontmatterSources(fm ? fm[1] : ''),
     format: (typeField && typeField.trim()) || 'document',
   };
 }
@@ -457,15 +491,21 @@ function collectArtifacts(projectDir) {
   return walkFiles(artDir, (n) => /\.(md|html?|csv|json)$/i.test(n)).map((rel) => {
     const content = fs.readFileSync(path.join(artDir, rel), 'utf8');
     const meta = parseArtifactMeta(content, rel);
-    const derived = meta.model
-      ? [meta.model_version ? `${meta.model} ${meta.model_version}` : meta.model]
-      : [];
+    // A frontmatter `sources:` pointer array takes precedence over the
+    // model/model_version reference when both are present (design.md D-
+    // "the lineage builder reads artifact `sources:` frontmatter").
+    const derived =
+      meta.sources && meta.sources.length > 0
+        ? meta.sources
+        : meta.model
+          ? [meta.model_version ? `${meta.model} ${meta.model_version}` : meta.model]
+          : [];
     return {
       name: path.basename(rel).replace(/\.[^.]+$/, ''),
       artifact_ref: `${dirPrefix}/${rel}`,
       artifact_format: meta.format,
       derived_from: derived,
-      note: meta.model ? null : 'no source model reference found in this artifact',
+      note: derived.length > 0 ? null : 'no source model reference found in this artifact',
     };
   });
 }

@@ -119,6 +119,32 @@ function run() {
     ok(/is_synthetic:: true/.test(mExport), '# NN Sources includes is_synthetic:: true for synthetic source');
     ok(/derived_from:: \[Plan_V_1-0-0_NN\.md\]/.test(mExport), '# NN Sources includes derived_from for synthetic source');
 
+    // Test: artifact frontmatter `sources:` pointer array is read by the
+    // lineage builder and preferred over model/model_version when both are
+    // present (task 2.4 — parseArtifactMeta / collectArtifacts).
+    fs.writeFileSync(
+      path.join(proj, 'export', 'Brief_V_1-0-0.md'),
+      '---\nmodel: "Business Plan"\nmodel_version: "V_1-0-0"\ntype: "brief"\nsources: [report.md#overview, notes.md#key-points]\n---\n\n# Brief\n',
+    );
+    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const mArtifactSources = fs.readFileSync(r1.modelPath, 'utf8');
+    ok(/## NN Artifacts: Brief_V_1-0-0/.test(mArtifactSources), 'artifact with frontmatter sources: rendered under # NN Artifacts');
+    ok(
+      /## NN Artifacts: Brief_V_1-0-0\nartifact_ref:: export\/Brief_V_1-0-0\.md\nartifact_format:: brief\nderived_from:: \[report\.md#overview, notes\.md#key-points\]/.test(
+        mArtifactSources,
+      ),
+      'derived_from is computed from frontmatter sources:, not model/model_version, when both are present',
+    );
+    // Models catalog lineage stays byte-unchanged for inputs that don't use the new field.
+    ok(
+      /model_ref:: models\/Plan_V_1-0-0_NN\.md\n(?:model_version:: V_1-0-0\n)?(?:model_template:: [^\n]+\n)?derived_from:: \[report\.md#overview\]/.test(
+        mArtifactSources,
+      ),
+      'Models catalog lineage output stays byte-unchanged for models not using artifact sources:',
+    );
+    fs.rmSync(path.join(proj, 'export', 'Brief_V_1-0-0.md'));
+    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+
     // Test 2.1: Lineage version metadata on active and archived sources
     // Create an archive snapshot for report: sources/archive/report/V1/report.md
     fs.mkdirSync(path.join(proj, 'sources', 'archive', 'report', 'V1'), { recursive: true });
