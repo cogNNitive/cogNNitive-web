@@ -10,6 +10,7 @@ import type {
 } from './types.js'
 import { stripMdSuffix, normalizePathKey, resolveSubmodelPath, basename } from './paths.js'
 import { parseAndRegisterModel } from './model.js'
+import { attachSchemaTypedCitations } from './normalize.js'
 import { parseModel, parseFrontmatter, stripFrontmatter } from '../parser/index.js'
 import { computeModelDagTopology } from './topology.js'
 
@@ -556,6 +557,18 @@ export async function recursiveParse(
     const schema = schemaFor(options, resolvedPath, item.name, content)
     if (childNode && schema) {
       childNode.templateSchema = schema
+    }
+
+    // A3: wire schema-typed `type:: citation` fields into the graph once the
+    // schema is known (design D3: must run after templateSchema is stashed,
+    // never inside normalizeElementsIntoGraph). Additive to the name-based
+    // path in attachSourceCitations, which already ran during normalization.
+    if (schema) {
+      for (const node of Object.values(ctx.nodes)) {
+        if (node.kind === 'element' && node.source.path === resolvedPath) {
+          attachSchemaTypedCitations(node, schema)
+        }
+      }
     }
 
     // Extract nested submodel references from this model

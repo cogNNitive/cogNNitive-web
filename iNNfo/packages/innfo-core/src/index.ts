@@ -28,6 +28,7 @@ export {
   resolveTemplateSchema,
   canonicalizeDefinition,
   applyAliasToSchema,
+  findDeclaredField,
   CANONICAL_TEMPLATES,
   findCanonicalTemplate,
   getCanonicalSpecContent,

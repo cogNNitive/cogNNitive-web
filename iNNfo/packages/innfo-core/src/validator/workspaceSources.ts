@@ -14,6 +14,7 @@ import {
 import { listSectionFields, resolveUnit } from '../unitResolve.js'
 import type { ModelNode } from '../types/index.js'
 import type { TemplateSchema } from '../schema/index.js'
+import { findDeclaredField } from '../schema/index.js'
 
 export interface SourceResolution {
   exists: boolean
@@ -81,9 +82,7 @@ function isCitationField(
   conceptType: string | undefined,
   schema: TemplateSchema | undefined,
 ): boolean {
-  const declared = schema?.concepts
-    .find((c) => c.name.toLowerCase() === (conceptType ?? '').toLowerCase())
-    ?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase())
+  const declared = findDeclaredField(schema, conceptType, fieldName)
   if (declared) return declared.type === 'citation'
   return SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())
 }

@@ -6,7 +6,7 @@ import type {
   ModelNode,
   TaxonomyEdge,
 } from '../types/index.js'
-import { extractTemplateSchema } from '../schema/index.js'
+import { extractTemplateSchema, findDeclaredField, type TemplateSchema } from '../schema/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import {
   SOURCE_FIELD_NAMES,
@@ -36,6 +36,37 @@ export function attachSourceCitations(node: ModelNode): void {
     }
     if (refs.length > 0) {
       node.sources = refs
+      for (const ref of refs) {
+        node.relationships.push({ targetId: ref.filePath, label: fieldName, origin: 'source' })
+      }
+    }
+  }
+}
+
+/**
+ * Additive second pass, run once a node's composed `templateSchema` is known
+ * (design D3): any field the schema declares `type:: citation`, whose name is
+ * NOT already in `SOURCE_FIELD_NAMES` (that path stays byte-identical, see
+ * {@link attachSourceCitations}), is resolved the same way — appended to
+ * `node.sources` and emitting one `origin: 'source'` relationship. The union
+ * of the two paths (name OR declared type) is intentional (design D5): a
+ * field named `sources`/`source` keeps working even when the schema declares
+ * it as something else.
+ */
+export function attachSchemaTypedCitations(node: ModelNode, schema: TemplateSchema | undefined): void {
+  if (!schema) return
+  for (const [fieldName, fv] of Object.entries(node.fields)) {
+    if (SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())) continue
+    const declared = findDeclaredField(schema, node.type, fieldName)
+    if (declared?.type !== 'citation') continue
+
+    const refs: SourceRef[] = []
+    for (const raw of splitSourceFieldValue(fv.value)) {
+      const ref = parseKnowledgeUnitRef(raw) ?? parseSourceRef(raw)
+      if (ref) refs.push(ref)
+    }
+    if (refs.length > 0) {
+      node.sources = [...(node.sources ?? []), ...refs]
       for (const ref of refs) {
         node.relationships.push({ targetId: ref.filePath, label: fieldName, origin: 'source' })
       }

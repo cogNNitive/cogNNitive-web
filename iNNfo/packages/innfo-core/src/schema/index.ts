@@ -19,6 +19,8 @@ export type { TemplateSchema } from './extract.js'
 export { resolveTemplateSchema, canonicalizeDefinition, applyAliasToSchema } from './compose.js'
 export type { IncludeResolver, ResolvedTemplateSchema } from './compose.js'
 
+export { findDeclaredField } from './declaredField.js'
+
 export {
   extractMetaschema,
   validateTemplateAgainstMetaschema,
