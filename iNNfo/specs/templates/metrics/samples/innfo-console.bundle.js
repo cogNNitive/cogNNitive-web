@@ -911,7 +911,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   function parseAndEvalFormula(formula, m, rowMap, overrides, memo, growthState, historyCount) {
     if (!formula || /^<.*>$/.test(formula)) return 0
     var cleaned = formula.replace(/\s+[xX]\s+/g, ' * ')
-    var tokens = cleaned.split(/(\s*[\+\-\*\/]\s*)/).map(function (s) { return s.trim() }).filter(Boolean)
+    var tokens = cleaned.split(/(\s*[+\-*/]\s*)/).map(function (s) { return s.trim() }).filter(Boolean)
     if (!tokens.length) return 0
 
     function resolveOperand(token) {
@@ -999,6 +999,62 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     }
   }
 
+  function svgIcon(name, size, cls) {
+    var s = size || 14
+    var c = cls ? ' ' + cls : ''
+    var svgs = {
+      pin: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>',
+      chart: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
+      target: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>',
+      explorer: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
+      matrices: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>',
+      timeline: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>',
+      star: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
+      calc: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="9" x2="19" y2="9"></line><line x1="5" y1="15" x2="19" y2="15"></line></svg>',
+      derived: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a4 4 0 0 1 8 0 4 4 0 0 0 8 0"></path></svg>',
+      close: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+    }
+    return svgs[name] || ''
+  }
+
+  function getSemanticBarColor(val, minVal, maxVal, row) {
+    if (row && row.colors && row.colors.gradient) {
+      var grad = row.colors.gradient
+      if (val <= minVal && grad.low) return grad.low
+      if (val >= maxVal && grad.high) return grad.high
+      if (grad.mid) return grad.mid
+    }
+    if (row && row.colors && row.colors.base) {
+      return row.colors.base
+    }
+
+    if (val < 0) {
+      return '#ef4444' // red for negative numbers
+    }
+
+    var metricType = (row && (row.metricType || row.type)) || ''
+    var isCost = metricType === 'cost' || metricType === 'expense' || /cost|churn|cpa|cac|expense|churn/i.test((row && (row.id || row.label)) || '')
+
+    var effectiveMin = Math.min(0, minVal)
+    var effectiveMax = Math.max(0.0001, maxVal)
+    var range = effectiveMax - effectiveMin
+    var ratio = range > 0 ? (val - effectiveMin) / range : 1
+    ratio = Math.max(0, Math.min(1, ratio))
+
+    if (isCost) {
+      // Cost metric: low is good (#86efac), mid is amber (#f59e0b), high is bad (#ef4444)
+      if (ratio < 0.35) return '#86efac'
+      if (ratio < 0.7) return '#f59e0b'
+      return '#ef4444'
+    } else {
+      // Revenue / Profit / general: 0 is light neutral/gray (#cbd5e1), mid is mint (#6ee7b7), high is rich green (#059669)
+      if (ratio < 0.25) return '#cbd5e1'
+      if (ratio < 0.55) return '#6ee7b7'
+      if (ratio < 0.85) return '#10b981'
+      return '#059669'
+    }
+  }
+
   function renderTimelineGrid(doc, model, meta) {
     var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-timeline-grid') : null
     if (!host) return
@@ -1030,6 +1086,57 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var overrides = {}
     var pinnedRowIds = {}
     var expandedChartRowIds = {}
+    var focusedDependencyRowId = null
+
+    function extractDirectDependencyIds(r) {
+      var depIds = []
+      if (Array.isArray(r.dependencies)) {
+        r.dependencies.forEach(function (d) {
+          var norm = normalizeKey(d)
+          if (rowMap[norm] && depIds.indexOf(rowMap[norm].id) === -1) {
+            depIds.push(rowMap[norm].id)
+          }
+        })
+      }
+      if (r.formula) {
+        var cleaned = String(r.formula).replace(/\s+[xX]\s+/g, ' * ')
+        var tokens = cleaned.split(/(\s*[+\-*/]\s*)/).map(function (s) { return s.trim() }).filter(Boolean)
+        tokens.forEach(function (tok) {
+          if (!tok || !isNaN(Number(tok)) || tok === '+' || tok === '-' || tok === '*' || tok === '/') return
+          var norm = normalizeKey(tok)
+          var targetRow = rowMap[norm]
+          if (targetRow && depIds.indexOf(targetRow.id) === -1) {
+            depIds.push(targetRow.id)
+          }
+        })
+      }
+      return depIds
+    }
+
+    function getTransitiveDependencySet(startRowId) {
+      var result = {}
+      result[startRowId] = true
+      var queue = [startRowId]
+      var visited = {}
+      var byId = {}
+      rows.forEach(function (r) { if (r && r.id) byId[r.id] = r })
+
+      while (queue.length > 0) {
+        var currId = queue.shift()
+        if (visited[currId]) continue
+        visited[currId] = true
+        var currRow = byId[currId]
+        if (!currRow) continue
+        var directDeps = extractDirectDependencyIds(currRow)
+        directDeps.forEach(function (depId) {
+          result[depId] = true
+          if (!visited[depId]) {
+            queue.push(depId)
+          }
+        })
+      }
+      return result
+    }
 
     function recalculate() {
       var memo = {}
@@ -1046,32 +1153,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
     function renderView() {
       var rowValues = recalculate()
+      var activeDepSet = focusedDependencyRowId ? getTransitiveDependencySet(focusedDependencyRowId) : null
       host.innerHTML = ''
 
-      // 1. KPI Cards
-      var resultRows = rows.filter(function (r) {
-        return r && !r.variable && (r.metricType === 'result' || r.metricType === 'revenue')
-      })
-      if (resultRows.length) {
-        var cardsWrap = el('div', 'innfo-timeline-cards')
-        resultRows.forEach(function (r) {
-          var vals = rowValues[r.id] || []
-          var tot = vals.reduce(function (a, b) { return a + b }, 0)
-          var card = el('div', 'innfo-card innfo-timeline-kpi')
-          var kpiTitle = el('h4', 'innfo-kpi-title', r.label || r.id)
-          var kpiValue = el('div', 'innfo-kpi-value', formatGridNumber(tot) + (r.metricUnit ? ' ' + r.metricUnit : ''))
-          var kpiSub = el('div', 'innfo-kpi-sub', totalMonths + 'm Total · Horizon Net')
-          if (tot >= 0) kpiValue.classList.add('positive')
-          else kpiValue.classList.add('negative')
-          if (card && kpiTitle) card.appendChild(kpiTitle)
-          if (card && kpiValue) card.appendChild(kpiValue)
-          if (card && kpiSub) card.appendChild(kpiSub)
-          if (cardsWrap && card) cardsWrap.appendChild(card)
-        })
-        if (cardsWrap) host.appendChild(cardsWrap)
-      }
-
-      // 2. Header + Actions
+      // Header + Actions (KPI cards removed)
       var gridHeader = el('div', 'innfo-timeline-header')
       var gridTitle = el('h3', 'innfo-timeline-title', 'Timeline & P&L Projection')
       var gridActions = el('div', 'innfo-timeline-actions')
@@ -1100,7 +1185,26 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       if (gridHeader && gridActions) gridHeader.appendChild(gridActions)
       if (gridHeader) host.appendChild(gridHeader)
 
-      // 3. Interactive Table
+      if (focusedDependencyRowId) {
+        var focusedRow = rows.filter(function (r) { return r.id === focusedDependencyRowId })[0]
+        if (focusedRow) {
+          var filterBanner = el('div', 'innfo-timeline-filter-banner')
+          var bannerText = el('span', 'innfo-filter-banner-text')
+          bannerText.innerHTML = svgIcon('target', 14) + ' <span>Showing dependency tree for: <strong>' + (focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
+          var clearBtn = el('button', 'innfo-filter-banner-clear')
+          clearBtn.setAttribute('type', 'button')
+          clearBtn.innerHTML = svgIcon('close', 12) + ' <span>Clear Filter</span>'
+          clearBtn.addEventListener('click', function () {
+            focusedDependencyRowId = null
+            renderView()
+          })
+          filterBanner.appendChild(bannerText)
+          filterBanner.appendChild(clearBtn)
+          host.appendChild(filterBanner)
+        }
+      }
+
+      // Interactive Table
       var tableWrap = el('div', 'innfo-timeline-table-wrap')
       var table = el('table', 'innfo-timeline-table')
       var thead = el('thead')
@@ -1122,14 +1226,15 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       var tbody = el('tbody')
 
       function renderRowItem(r, isPinned) {
-        var tr = el('tr', 'innfo-timeline-row' + (r.variable ? ' is-var' : '') + (isPinned ? ' is-pinned' : ''))
+        var tr = el('tr', 'innfo-timeline-row' + (r.variable ? ' is-var' : '') + (isPinned ? ' is-pinned' : '') + (focusedDependencyRowId === r.id ? ' is-focus-root' : ''))
         var tdMetric = el('td', 'td-sticky td-metric')
 
         var actionsSpan = el('span', 'innfo-row-actions')
         var isPinnedThis = !!pinnedRowIds[r.id]
-        var pinBtn = el('button', 'innfo-row-btn innfo-pin-btn' + (isPinnedThis ? ' pinned' : ''), '📌')
+        var pinBtn = el('button', 'innfo-row-btn innfo-pin-btn' + (isPinnedThis ? ' pinned' : ''))
         pinBtn.setAttribute('type', 'button')
         pinBtn.setAttribute('title', isPinnedThis ? 'Unpin row' : 'Pin row to top')
+        pinBtn.innerHTML = svgIcon('pin', 12)
         pinBtn.addEventListener('click', function (e) {
           e.stopPropagation()
           pinnedRowIds[r.id] = !pinnedRowIds[r.id]
@@ -1138,19 +1243,36 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         actionsSpan.appendChild(pinBtn)
 
         var isChartThis = !!expandedChartRowIds[r.id]
-        var chartBtn = el('button', 'innfo-row-btn innfo-chart-btn' + (isChartThis ? ' active' : ''), '📈')
+        var chartBtn = el('button', 'innfo-row-btn innfo-chart-btn' + (isChartThis ? ' active' : ''))
         chartBtn.setAttribute('type', 'button')
         chartBtn.setAttribute('title', isChartThis ? 'Hide inline monthly chart' : 'Show inline monthly chart')
+        chartBtn.innerHTML = svgIcon('chart', 12)
         chartBtn.addEventListener('click', function (e) {
           e.stopPropagation()
           expandedChartRowIds[r.id] = !expandedChartRowIds[r.id]
           renderView()
         })
         actionsSpan.appendChild(chartBtn)
+
+        var directDeps = extractDirectDependencyIds(r)
+        if (directDeps.length > 0 || r.formula || focusedDependencyRowId === r.id) {
+          var isFocusThis = focusedDependencyRowId === r.id
+          var filterBtn = el('button', 'innfo-row-btn innfo-filter-btn' + (isFocusThis ? ' active' : ''))
+          filterBtn.setAttribute('type', 'button')
+          filterBtn.setAttribute('title', isFocusThis ? 'Clear dependency tree filter' : 'Filter grid to show only dependencies of ' + (r.label || r.id))
+          filterBtn.innerHTML = svgIcon('target', 12)
+          filterBtn.addEventListener('click', function (e) {
+            e.stopPropagation()
+            focusedDependencyRowId = (focusedDependencyRowId === r.id ? null : r.id)
+            renderView()
+          })
+          actionsSpan.appendChild(filterBtn)
+        }
         tdMetric.appendChild(actionsSpan)
 
-        var markerSymbol = r.variable ? '★' : r.source === 'derived' ? '~' : '='
-        var markerSpan = el('span', 'innfo-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'), markerSymbol)
+        var markerSvg = r.variable ? svgIcon('star', 11) : r.source === 'derived' ? svgIcon('derived', 11) : svgIcon('calc', 11)
+        var markerSpan = el('span', 'innfo-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'))
+        markerSpan.innerHTML = markerSvg
         var nameSpan = el('span', 'innfo-row-name', r.label || r.id)
         if (r.formula) nameSpan.setAttribute('title', 'Formula: ' + r.formula)
         tdMetric.appendChild(markerSpan)
@@ -1234,7 +1356,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         if (expandedChartRowIds[r.id]) {
           var trChart = el('tr', 'innfo-timeline-chart-row')
           var tdChartSticky = el('td', 'td-sticky')
-          tdChartSticky.appendChild(el('span', 'innfo-chart-row-label', '📈 Monthly: ' + (r.label || r.id)))
+          var chartLabel = el('span', 'innfo-chart-row-label')
+          chartLabel.innerHTML = svgIcon('chart', 12) + ' <span>Monthly: ' + (r.label || r.id) + '</span>'
+          tdChartSticky.appendChild(chartLabel)
           trChart.appendChild(tdChartSticky)
 
           var maxAbs = Math.max.apply(null, vals.map(function (v) { return Math.abs(v) })) || 1
@@ -1257,7 +1381,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
             var heightPct = Math.max(4, Math.round((Math.abs(cVal) / maxAbs) * 100))
             var bar = el('div', 'innfo-mini-bar' + (cVal < 0 ? ' negative' : ''))
             bar.style.height = heightPct + '%'
-            if (r.colors && r.colors.base) bar.style.backgroundColor = r.colors.base
+            bar.style.backgroundColor = getSemanticBarColor(cVal, minReal, maxReal, r)
 
             var valLabel = el('span', 'innfo-mini-bar-val', formatGridNumber(cVal))
             barWrap.appendChild(bar)
@@ -1278,12 +1402,18 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       }
 
       // 1. Render pinned section if any
-      var pinnedRows = rows.filter(function (r) { return !!pinnedRowIds[r.id] })
+      var pinnedRows = rows.filter(function (r) {
+        if (!pinnedRowIds[r.id]) return false
+        if (activeDepSet && !activeDepSet[r.id]) return false
+        return true
+      })
       if (pinnedRows.length > 0) {
         var trPinnedHdr = el('tr', 'innfo-timeline-grp innfo-pinned-grp')
         var tdPinnedHdr = el('td')
         tdPinnedHdr.setAttribute('colspan', String(totalMonths + 4))
-        tdPinnedHdr.appendChild(el('span', 'innfo-grp-badge', '📌 PINNED METRICS (' + pinnedRows.length + ')'))
+        var pinnedBadge = el('span', 'innfo-grp-badge')
+        pinnedBadge.innerHTML = svgIcon('pin', 12) + ' <span>PINNED METRICS (' + pinnedRows.length + ')</span>'
+        tdPinnedHdr.appendChild(pinnedBadge)
         trPinnedHdr.appendChild(tdPinnedHdr)
         tbody.appendChild(trPinnedHdr)
 
@@ -1300,14 +1430,20 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       })
 
       groups.forEach(function (grp) {
+        var grpRows = rows.filter(function (r) {
+          if ((r.grp || 'GENERAL') !== grp) return false
+          if (activeDepSet && !activeDepSet[r.id]) return false
+          return true
+        })
+        if (!grpRows.length) return
+
         var trGrp = el('tr', 'innfo-timeline-grp')
         var tdGrp = el('td')
         tdGrp.setAttribute('colspan', String(totalMonths + 4))
-        tdGrp.appendChild(el('span', 'innfo-grp-badge', grp))
+        tdGrp.appendChild(el('span', 'innfo-grp-badge', grp + (activeDepSet ? ' (filtered)' : '')))
         trGrp.appendChild(tdGrp)
         tbody.appendChild(trGrp)
 
-        var grpRows = rows.filter(function (r) { return (r.grp || 'GENERAL') === grp })
         grpRows.forEach(function (r) {
           renderRowItem(r, false)
         })
@@ -1329,15 +1465,16 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var hasMatrices = Array.isArray(model && model.matrices) && model.matrices.length > 0
     var hasExplorer = Array.isArray(model && model.elements) && model.elements.length > 0
 
+    // Put generic views first (Model Explorer, Matrices), followed by custom domain views (Timeline & Projections)
     var tabs = []
-    if (hasDomain) {
-      tabs.push({ id: 'timeline', label: '📊 Timeline & Projections', targetId: 'innfo-tab-domain' })
-    }
     if (hasExplorer) {
-      tabs.push({ id: 'explorer', label: '🗂️ Model Explorer', targetId: 'innfo-tab-explorer' })
+      tabs.push({ id: 'explorer', label: 'Model Explorer', icon: 'explorer', targetId: 'innfo-tab-explorer' })
     }
     if (hasMatrices) {
-      tabs.push({ id: 'matrices', label: '🔗 Matrices', targetId: 'innfo-tab-matrices' })
+      tabs.push({ id: 'matrices', label: 'Matrices', icon: 'matrices', targetId: 'innfo-tab-matrices' })
+    }
+    if (hasDomain) {
+      tabs.push({ id: 'timeline', label: 'Timeline & Projections', icon: 'timeline', targetId: 'innfo-tab-domain' })
     }
 
     if (tabs.length <= 1) {
@@ -1349,10 +1486,12 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     tabsNav.style.display = 'flex'
 
     var initialHash = String(doc.location ? doc.location.hash || '' : '').replace(/^#/, '')
-    var activeTabId = tabs[0].id
+    var activeTabId = initialHash || (hasDomain ? 'timeline' : tabs[0].id)
+    var tabFound = false
     tabs.forEach(function (t) {
-      if (t.id === initialHash) activeTabId = t.id
+      if (t.id === activeTabId) tabFound = true
     })
+    if (!tabFound) activeTabId = tabs[0].id
 
     function selectTab(tabId) {
       tabs.forEach(function (t) {
@@ -1365,14 +1504,17 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       if (doc.location && typeof doc.location.replace === 'function' && doc.location.hash !== '#' + tabId) {
         try {
           doc.location.replace('#' + tabId)
-        } catch (e) {}
+        } catch {
+          // ignore navigation errors in iframe or file://
+        }
       }
     }
 
     tabs.forEach(function (t) {
-      var btn = el('button', 'innfo-view-tab' + (t.id === activeTabId ? ' active' : ''), t.label)
+      var btn = el('button', 'innfo-view-tab' + (t.id === activeTabId ? ' active' : ''))
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
+      btn.innerHTML = svgIcon(t.icon, 15) + '<span>' + t.label + '</span>'
       btn.addEventListener('click', function () {
         selectTab(t.id)
       })

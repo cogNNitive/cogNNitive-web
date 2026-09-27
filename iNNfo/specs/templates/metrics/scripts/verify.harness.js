@@ -504,7 +504,7 @@ if (require.main === module) {
       rail: document.querySelectorAll('#innfo-rail button').length,
       cards: document.querySelectorAll('#innfo-content .innfo-card').length,
       matrices: document.querySelectorAll('#innfo-matrices table').length,
-      charts: document.querySelectorAll('#innfo-charts .innfo-chart').length,
+      charts: document.querySelectorAll('#innfo-charts .innfo-chart, #innfo-timeline-grid table').length,
       exportOpen: Boolean(document.getElementById('innfo-export-open')),
     }));
     console.log(JSON.stringify(info, null, 1));

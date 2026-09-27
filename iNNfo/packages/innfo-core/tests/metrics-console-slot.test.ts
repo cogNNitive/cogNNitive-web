@@ -297,7 +297,7 @@ describe('metrics slot contract: generated console shape', () => {
     expect(html).toContain('id="innfo-config"')
     expect(html).toContain('id="innfo-schema"')
     expect(html).toContain('id="innfo-model"')
-    expect(html).toContain('id="innfo-charts"')
+    expect(html).toContain('id="innfo-timeline-grid"')
     const scan = api.scanInlineRuntime(html)
     expect(scan.ok).toBe(true)
     expect(scan.blocks).toEqual([])

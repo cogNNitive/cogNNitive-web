@@ -614,6 +614,44 @@
       .innfo-timeline-row.is-pinned td.td-sticky {
         background: rgba(37, 99, 235, 0.06);
       }
+      .innfo-timeline-row.is-focus-root td {
+        background: rgba(37, 99, 235, 0.08);
+      }
+      .innfo-timeline-row.is-focus-root td.td-sticky {
+        background: rgba(37, 99, 235, 0.14);
+        border-left: 3px solid var(--link);
+      }
+      .innfo-timeline-filter-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px solid var(--link);
+        border-radius: var(--radius-sm);
+        padding: 8px 14px;
+        margin-bottom: 12px;
+      }
+      .innfo-filter-banner-text {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--link);
+      }
+      .innfo-filter-banner-clear {
+        appearance: none;
+        border: 1px solid var(--link);
+        background: var(--surface);
+        color: var(--link);
+        border-radius: var(--radius-sm);
+        padding: 3px 8px;
+        font: inherit;
+        font-size: 0.74rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .innfo-filter-banner-clear:hover {
+        background: var(--link);
+        color: #ffffff;
+      }
       .innfo-grp-badge {
         display: inline-block;
         font-size: 0.72rem;
@@ -791,7 +829,6 @@
     <div id="innfo-tab-domain" class="innfo-tab-panel">
       <main style="max-width: 1400px; padding: 20px 28px;">
         <div id="innfo-timeline-grid"></div>
-        <div id="innfo-charts"></div>
       </main>
     </div>
 
