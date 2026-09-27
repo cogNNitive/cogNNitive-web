@@ -309,9 +309,25 @@
             >
               No hay información de linaje disponible para este archivo.
             </div>
-            <div v-else class="w-full flex justify-center overflow-x-auto py-4">
-              <MermaidWidget :model-value="lineageMermaidCode" readonly />
-            </div>
+            <template v-else>
+              <button
+                v-if="hiddenOutgoingCount > 0"
+                type="button"
+                class="mb-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer self-end"
+                @click="showOutgoing = !showOutgoing"
+              >
+                {{
+                  showOutgoing
+                    ? 'Ocultar relaciones salientes'
+                    : `Mostrar +${hiddenOutgoingCount} hidden`
+                }}
+              </button>
+              <div class="w-full overflow-auto py-4">
+                <div class="w-max mx-auto">
+                  <MermaidWidget :model-value="lineageMermaidCode" readonly />
+                </div>
+              </div>
+            </template>
           </div>
 
           <!-- Code / Text Line-by-Line Mode -->
@@ -476,6 +492,25 @@ const openOriginalError = ref<string | null>(null)
 const viewMode = ref<'preview' | 'code' | 'lineage'>('preview')
 const objectUrl = ref('')
 
+// 4th-level outgoing relationships (from a citing element) are collapsed by
+// default; see lineage-graph-legibility spec.
+const showOutgoing = ref(false)
+
+const hiddenOutgoingCount = computed(() => {
+  if (props.kind !== 'source' && !isMarkdown.value) return 0
+  const citations = modelStore.getSourceCitations(props.filePath)
+  let total = 0
+  for (const c of citations) {
+    const outRels = (c.relationships ?? []).filter((r) => r.origin !== 'source')
+    if (showOutgoing.value) {
+      if (outRels.length > 3) total += outRels.length - 3
+    } else {
+      total += outRels.length
+    }
+  }
+  return total
+})
+
 const lineageMermaidCode = computed(() => {
   if (props.kind !== 'source' && !isMarkdown.value) return ''
 
@@ -489,8 +524,11 @@ const lineageMermaidCode = computed(() => {
   // 3. Downstream citations from modelStore
   const citations = modelStore.getSourceCitations(props.filePath)
 
-  // Build Mermaid graph LR lines
-  const chartLines: string[] = ['graph LR']
+  // Build Mermaid graph TD lines, rendered at natural size (no shrink-to-fit).
+  const chartLines: string[] = [
+    '%%{init: {"flowchart": {"useMaxWidth": false}}}%%',
+    'graph TD',
+  ]
 
   // Sanitizer for Mermaid labels
   const sanitize = (text: string) => text.replace(/["\n\r\[\]\(\)\{\}]/g, ' ').trim()
@@ -526,17 +564,31 @@ const lineageMermaidCode = computed(() => {
         chartLines.push(`  FOCAL -->|${edgeLabel}| ${nodeId}`)
       }
 
-      // Outstream relationships from this citing element
+      // Outgoing relationships from this citing element (4th nesting level).
+      // Collapsed by default: hidden entirely behind a "+N hidden" node.
       const outRels = (c.relationships ?? []).filter((r) => r.origin !== 'source')
-      outRels.slice(0, 3).forEach((rel, rIdx) => {
-        const targetNode = modelStore.getNode(rel.targetId)
-        const targetName = targetNode?.name ?? rel.targetId
-        const targetType = targetNode?.type ?? 'Elemento'
-        const targetId = `R_${idx}_${rIdx}`
-        const targetLabel = `🔗 ${sanitize(targetType)}: ${sanitize(targetName)}`
-        chartLines.push(`  ${targetId}["${targetLabel}"]:::relNode`)
-        chartLines.push(`  ${nodeId} -.->|${sanitize(rel.label || 'rel')}| ${targetId}`)
-      })
+      if (!showOutgoing.value) {
+        if (outRels.length > 0) {
+          const moreId = `R_${idx}_more`
+          chartLines.push(`  ${moreId}["+${outRels.length} hidden"]:::emptyNode`)
+          chartLines.push(`  ${nodeId} -.-> ${moreId}`)
+        }
+      } else {
+        outRels.slice(0, 3).forEach((rel, rIdx) => {
+          const targetNode = modelStore.getNode(rel.targetId)
+          const targetName = targetNode?.name ?? rel.targetId
+          const targetType = targetNode?.type ?? 'Elemento'
+          const targetId = `R_${idx}_${rIdx}`
+          const targetLabel = `🔗 ${sanitize(targetType)}: ${sanitize(targetName)}`
+          chartLines.push(`  ${targetId}["${targetLabel}"]:::relNode`)
+          chartLines.push(`  ${nodeId} -.->|${sanitize(rel.label || 'rel')}| ${targetId}`)
+        })
+        if (outRels.length > 3) {
+          const moreId = `R_${idx}_more`
+          chartLines.push(`  ${moreId}["+${outRels.length - 3} hidden"]:::emptyNode`)
+          chartLines.push(`  ${nodeId} -.-> ${moreId}`)
+        }
+      }
     })
   }
 

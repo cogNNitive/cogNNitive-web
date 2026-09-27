@@ -272,4 +272,197 @@ describe('FilePreviewModal', () => {
       expect(code).toContain('Intro')
     }
   })
+
+  it('renders the lineage graph at natural size, top-down', async () => {
+    const tree: FakeTree = {
+      sources: {
+        nn: {
+          'report.md': markdownWithFrontmatter,
+        },
+      },
+    }
+    const handle = buildFakeTree('workspace', tree)
+    const workspaceStore = useWorkspaceStore()
+    workspaceStore.handle = handle
+
+    const parsed = parseSourceRef('sources/nn/report.md')
+    wrapper = mount(FilePreviewModal, {
+      props: { isOpen: true, kind: 'source', filePath: parsed.filePath, fileName: parsed.fileName },
+      attachTo: document.body,
+    })
+
+    await vi.waitFor(() => {
+      expect(document.body.textContent ?? '').toContain('sources/original/clientA/report.docx')
+    })
+
+    const lineageButton = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Linaje'),
+    )
+    lineageButton!.click()
+
+    await vi.waitFor(() => {
+      expect(document.body.querySelector('.widget-mermaid')).toBeTruthy()
+    })
+
+    const mermaidWidget = wrapper.findComponent(MermaidWidget)
+    const code = mermaidWidget.props('modelValue') as string
+    expect(code.startsWith('%%{init: {"flowchart": {"useMaxWidth": false}}}%%\ngraph TD')).toBe(
+      true,
+    )
+  })
+
+  it('collapses the 4th-level outgoing relationships by default and expands them via the toggle', async () => {
+    const tree: FakeTree = {
+      sources: {
+        nn: {
+          'report.md': markdownWithFrontmatter,
+        },
+      },
+    }
+    const handle = buildFakeTree('workspace', tree)
+    const workspaceStore = useWorkspaceStore()
+    workspaceStore.handle = handle
+
+    const modelStore = useModelStore()
+    modelStore.nodes['Rel/A'] = { id: 'Rel/A', name: 'A', type: 'Section' } as any
+    modelStore.nodes['Rel/B'] = { id: 'Rel/B', name: 'B', type: 'Section' } as any
+    modelStore.nodes['Rel/C'] = { id: 'Rel/C', name: 'C', type: 'Section' } as any
+    modelStore.nodes['Rel/D'] = { id: 'Rel/D', name: 'D', type: 'Section' } as any
+    modelStore.nodes['Rel/E'] = { id: 'Rel/E', name: 'E', type: 'Section' } as any
+    modelStore.nodes['CaseStudy/Intro'] = {
+      id: 'CaseStudy/Intro',
+      name: 'Intro',
+      parentId: 'CaseStudy',
+      childIds: [],
+      type: 'Section',
+      fields: {},
+      markers: {},
+      relationships: [
+        { targetId: 'Rel/A', label: 'references', origin: 'metamodel' },
+        { targetId: 'Rel/B', label: 'references', origin: 'metamodel' },
+        { targetId: 'Rel/C', label: 'references', origin: 'metamodel' },
+        { targetId: 'Rel/D', label: 'references', origin: 'metamodel' },
+        { targetId: 'Rel/E', label: 'references', origin: 'metamodel' },
+      ],
+      rawSections: {},
+      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      sources: [
+        {
+          filePath: 'sources/nn/report.md',
+          fileName: 'report.md',
+          kind: 'source',
+          raw: 'sources/nn/report.md',
+        },
+      ],
+    } as any
+
+    const parsed = parseSourceRef('sources/nn/report.md')
+    wrapper = mount(FilePreviewModal, {
+      props: { isOpen: true, kind: 'source', filePath: parsed.filePath, fileName: parsed.fileName },
+      attachTo: document.body,
+    })
+
+    await vi.waitFor(() => {
+      expect(document.body.textContent ?? '').toContain('sources/original/clientA/report.docx')
+    })
+
+    const lineageButton = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Linaje'),
+    )
+    lineageButton!.click()
+
+    await vi.waitFor(() => {
+      expect(document.body.querySelector('.widget-mermaid')).toBeTruthy()
+    })
+
+    const mermaidWidget = wrapper.findComponent(MermaidWidget)
+
+    // Collapsed by default: no R_x_y nodes, a "+5 hidden" node instead.
+    await vi.waitFor(() => {
+      const code = mermaidWidget.props('modelValue') as string
+      if (!code.includes('+5 hidden')) throw new Error('not collapsed yet')
+    })
+    let code = mermaidWidget.props('modelValue') as string
+    expect(code).toContain('+5 hidden')
+    expect(code).not.toMatch(/R_0_\d+\[/)
+
+    const toggleButton = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('hidden'),
+    )
+    expect(toggleButton).toBeTruthy()
+
+    toggleButton!.click()
+
+    await vi.waitFor(() => {
+      code = mermaidWidget.props('modelValue') as string
+      if (!code.includes('R_0_0[')) throw new Error('not expanded yet')
+    })
+    code = mermaidWidget.props('modelValue') as string
+    expect(code).toContain('R_0_0[')
+    expect(code).toContain('R_0_1[')
+    expect(code).toContain('R_0_2[')
+    expect(code).toContain('+2 hidden')
+    expect(code).not.toContain('+5 hidden')
+  })
+
+  it('shows no collapse toggle when the deepest outgoing chain is only 3 levels', async () => {
+    const tree: FakeTree = {
+      sources: {
+        nn: {
+          'report.md': markdownWithFrontmatter,
+        },
+      },
+    }
+    const handle = buildFakeTree('workspace', tree)
+    const workspaceStore = useWorkspaceStore()
+    workspaceStore.handle = handle
+
+    const modelStore = useModelStore()
+    modelStore.nodes['CaseStudy/Intro'] = {
+      id: 'CaseStudy/Intro',
+      name: 'Intro',
+      parentId: 'CaseStudy',
+      childIds: [],
+      type: 'Section',
+      fields: {},
+      markers: {},
+      // No outgoing relationships: the chain stops at UP -> FOCAL -> citing node
+      // (3 levels), so there is no 4th level to collapse.
+      relationships: [],
+      rawSections: {},
+      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      sources: [
+        {
+          filePath: 'sources/nn/report.md',
+          fileName: 'report.md',
+          kind: 'source',
+          raw: 'sources/nn/report.md',
+        },
+      ],
+    } as any
+
+    const parsed = parseSourceRef('sources/nn/report.md')
+    wrapper = mount(FilePreviewModal, {
+      props: { isOpen: true, kind: 'source', filePath: parsed.filePath, fileName: parsed.fileName },
+      attachTo: document.body,
+    })
+
+    await vi.waitFor(() => {
+      expect(document.body.textContent ?? '').toContain('sources/original/clientA/report.docx')
+    })
+
+    const lineageButton = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Linaje'),
+    )
+    lineageButton!.click()
+
+    await vi.waitFor(() => {
+      expect(document.body.querySelector('.widget-mermaid')).toBeTruthy()
+    })
+
+    const toggleButton = Array.from(document.body.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('hidden'),
+    )
+    expect(toggleButton).toBeUndefined()
+  })
 })
