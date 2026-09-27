@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-3-0"
+template_version: "V_0-3-1"
 title: "Video App"
 procedures:
   - id: "generate-anydeo-script"
@@ -115,7 +115,7 @@ The field values are **bare filenames** — they do not repeat the folder, becau
 series/interviews/assets/recruitment-spot/script.md
 ```
 
-Renaming the Element renames its folder with it. One video, one folder, all of its media inside.
+Renaming the Element renames its folder with it. One video, one folder, all of its media, script, and planning files inside. During production, the folder also hosts the asset generation and cost plan (`asset_plan.md`) preceding media rendering.
 
 ### Folder contract (D4)
 
@@ -127,6 +127,7 @@ Assets are scoped at exactly three levels — workspace, series, video — match
 
 - Provide a valid Level 2 template usable as `parent_spec` for video models, reusable as the Level-3 Series registry itself (AD1).
 - Model one video per Element: `title`, `description`, `status`, and its media fields.
+- Plan and estimate media generation costs via `asset_plan.md` before executing generation/renders.
 - Keep every file of a video inside that video's own folder, scoped inside its Series when one applies.
 - Keep traceability to input documents, and to the Video's own Subject, through the reserved `sources::` property.
 - Delegate script, scene, layer, and asset structure to the Anydeo specification.

@@ -45,5 +45,5 @@ export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
   projects: 'V_0-2-2',
   repository: 'V_0-1-1',
   sources: 'V_0-1-0',
-  video: 'V_0-3-0',
+  video: 'V_0-3-1',
 }

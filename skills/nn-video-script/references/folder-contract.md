@@ -31,7 +31,7 @@ Assets are scoped at exactly three levels:
     series_rules.md                     # series-wide rules only
     shared/                              # series scope
     assets/<video-slug>/                 # video scope = Element-owned folder
-      script.md  master.mp4  thumbnail.png  voiceover.<ext>  media/
+      script.md  asset_plan.md  master.mp4  thumbnail.png  voiceover.<ext>  media/
       renders/<ref>/  .anydeo/           # ephemeral — see below
 ```
 

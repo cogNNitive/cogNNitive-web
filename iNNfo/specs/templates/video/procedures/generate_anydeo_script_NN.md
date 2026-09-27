@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
-model_version: "V_0-2-0"
+model_version: "V_0-3-0"
 title: "Generate Anydeo Script Procedure"
 ---
 
@@ -22,7 +22,7 @@ title: "Generate Anydeo Script Procedure"
 
 ## NN Procedure: Generate Anydeo Script
 category:: transformation
-summary:: Frame a Video from its bound Subject and Series, author and gate an Anydeo V_0-3-3 script with skills/nn-video-script, register it, then finalize and register the rendered assets once VidGeNN has produced them.
+summary:: Frame a Video from its bound Subject and Series, author and gate an Anydeo V_0-3-3 script with skills/nn-video-script, register it, generate an asset generation and cost estimation plan (asset_plan.md), then finalize and register the rendered assets once VidGeNN has produced them.
 inputs_required:: Subject Element (via sources::) and Series registry model
 outputs_expected:: Registered Video Assets
 executed_by:: Video Producer
@@ -39,7 +39,7 @@ output:: [[Registered Video Assets]]
 output_status:: verified
 tool:: [[nn-video-script Skill]]
 scope:: internal
-Orchestrate script generation end to end: frame the video from its Subject and Series, author and validate Anydeo V_0-3-3 scenes and layers, register the script, then finalize and register the rendered assets once VidGeNN has rendered them.
+Orchestrate script generation end to end: frame the video from its Subject and Series, author and validate Anydeo V_0-3-3 scenes and layers, register the script, plan and estimate media asset generation costs into `asset_plan.md`, then finalize and register the rendered assets once VidGeNN has rendered them.
 
 ## NN Work: Frame the Script
 parent:: [[Generate Anydeo Script Workflow]]
@@ -80,7 +80,7 @@ Run `node scripts/check-script.mjs <script.md> --series-root <series-dir>` first
 ## NN Work: Register Script Artifact
 parent:: [[Generate Anydeo Script Workflow]]
 step_type:: task
-next:: [[Render Video]]
+next:: [[Plan and Estimate Asset Generation]]
 condition:: Script passed both validation checks
 input:: [[Validated Script]]
 output:: [[Registered Script Artifact]]
@@ -89,17 +89,29 @@ tool:: [[File Editor]]
 scope:: internal
 Write the script to the video's own folder — `series/{series-slug}/assets/{video-slug}/script.md` when the Video belongs to a Series, or `{modelDir}/assets/{video-slug}/script.md` for a standalone Video — set `script::` on the owning Video Element, and set `status:: scripting`.
 
+## NN Work: Plan and Estimate Asset Generation
+parent:: [[Generate Anydeo Script Workflow]]
+step_type:: task
+next:: [[Render Video]]
+condition:: Script is registered and validated
+input:: [[Registered Script Artifact]]
+output:: [[Asset Generation and Cost Plan]]
+output_status:: verified
+tool:: [[AI Agent]]
+scope:: internal
+Before triggering generation of any image, video, audio/TTS, or multimodal asset, inspect `script.md` to inventory every asset needed. For each asset, document a clear description/prompt, select the target AI model and provider (e.g. Replicate, WaveSpeed, fal.ai, ElevenLabs), search current pricing information on each provider's documentation/pricing pages, calculate per-asset estimated costs, and compute the total estimated production cost. Write this proposal to `asset_plan.md` in the video's own folder (`assets/{video-slug}/asset_plan.md` or `series/{series-slug}/assets/{video-slug}/asset_plan.md`).
+
 ## NN Work: Render Video
 parent:: [[Generate Anydeo Script Workflow]]
 step_type:: task
 next:: [[Finalize Video Assets]]
-condition:: Script is registered
-input:: [[Registered Script Artifact]]
+condition:: Script is registered and asset_plan.md is approved
+input:: [[Registered Script Artifact]], [[Asset Generation and Cost Plan]]
 output:: [[Rendered Output]]
 output_status:: verified
 tool:: [[VidGeNN]]
 scope:: external
-User-driven: the Video Producer renders the registered script in VidGeNN, producing `renders/{ref}/master.mp4` (and, when VidGeNN emits them, a thumbnail and a voiceover) next to the script. This step runs outside iNNfo's own tooling.
+User-driven: the Video Producer reviews the `asset_plan.md` budget and renders the registered script in VidGeNN, producing `renders/{ref}/master.mp4` (and, when VidGeNN emits them, a thumbnail and a voiceover) next to the script. This step runs outside iNNfo's own tooling.
 
 ## NN Work: Finalize Video Assets
 parent:: [[Generate Anydeo Script Workflow]]
@@ -145,6 +157,10 @@ description:: A script.md that passed both the zero-unresolved-placeholder/asset
 ## NN Artifact: Registered Script Artifact
 type:: output
 description:: The validated Anydeo script stored in the video's own folder and referenced by the owning Video Element's script:: field, with status:: scripting.
+
+## NN Artifact: Asset Generation and Cost Plan
+type:: intermediate
+description:: A markdown document (`asset_plan.md`) stored in the video's own folder containing the itemized asset inventory, generation prompts/descriptions, assigned AI models and providers (Replicate, WaveSpeed, etc.), unit rates looked up from provider pricing pages, estimated costs per asset, and total projected generation budget.
 
 ## NN Artifact: Rendered Output
 type:: intermediate

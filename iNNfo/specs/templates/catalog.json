@@ -159,10 +159,10 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "template_version": "V_0-3-0",
+          "template_version": "V_0-3-1",
           "spec_version": "V_0-2-1",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/video/spec_NN.md"

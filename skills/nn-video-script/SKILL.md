@@ -56,7 +56,7 @@ and exits 0 — it never probes a default path.
 
 This skill owns **authoring, gating, and finalizing** one video's
 `script.md` inside a Series folder. The generic script-generation procedure
-that sequences Frame → Author → Validate → Register → Render → Finalize
+that sequences Frame → Author → Validate → Register Script → Plan Assets & Costs (`asset_plan.md`) → Render → Finalize
 lives in the video template's own procedure document
 (`iNNfo/specs/templates/video/procedures/generate_anydeo_script_NN.md`) —
 this skill is what that procedure delegates to for the authoring and
