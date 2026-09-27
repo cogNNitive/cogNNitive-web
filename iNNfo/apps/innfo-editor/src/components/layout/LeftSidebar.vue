@@ -501,13 +501,17 @@ function handleSelectNode(rootId: string, nodeId: string): void {
 function handleClickGhost(conceptName: string, targetRootId?: string): void {
   const rootId = targetRootId ?? activeModelId.value ?? visibleRootIds.value[0]
   if (rootId) uiStore.setActiveModel(rootId)
-  const concept = metamodelStore.getConceptByName(conceptName)
+  const terminalName = conceptName.split(' / ').pop() || conceptName
+  const concept =
+    metamodelStore.getConceptByName(terminalName) ||
+    metamodelStore.getConceptByName(conceptName)
+  const targetName = concept?.name ?? terminalName
   const type = concept?.type ?? 'text'
   if (type === 'text') {
-    modelStore.addTextSection(conceptName, rootId ?? undefined)
+    modelStore.addTextSection(targetName, rootId ?? undefined)
     uiStore.selectNode(rootId ?? visibleRootIds.value[0])
   } else {
-    const id = modelStore.addConceptElement(conceptName, `New ${conceptName}`, rootId ?? undefined)
+    const id = modelStore.addConceptElement(targetName, `New ${targetName}`, rootId ?? undefined)
     if (id) uiStore.selectNode(id)
   }
 }

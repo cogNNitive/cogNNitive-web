@@ -96,7 +96,29 @@ export function buildTreeGroups(input: TreeGroupsInput): TreeGroup[] {
     return ia - ib
   })
 
-  return items
+  return items.map(compactTreeGroup)
+}
+
+/**
+ * Recursively compacts unary chains in tree groups (like VS Code explorer.compactFolders).
+ * When a group has no direct elements and exactly one child group, they are merged
+ * into a single group with a path-like name: "Parent / Child".
+ */
+export function compactTreeGroup(group: TreeGroup): TreeGroup {
+  const compactedChildren = group.children.map(compactTreeGroup)
+  if (group.elements.length === 0 && compactedChildren.length === 1) {
+    const onlyChild = compactedChildren[0]
+    return {
+      name: `${group.name} / ${onlyChild.name}`,
+      ghost: onlyChild.ghost,
+      elements: onlyChild.elements,
+      children: onlyChild.children,
+    }
+  }
+  return {
+    ...group,
+    children: compactedChildren,
+  }
 }
 
 export function useModelConcepts() {

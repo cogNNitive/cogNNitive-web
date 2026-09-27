@@ -303,7 +303,10 @@ function onHeaderClick(): void {
 const conceptColorHex = computed(() => {
   if (props.ghost) {
     // For ghost concepts, resolve from metamodel directly (no children)
-    const concept = metamodelStore.getConceptByName(props.conceptName)
+    const terminalName = props.conceptName.split(' / ').pop() || props.conceptName
+    const concept =
+      metamodelStore.getConceptByName(terminalName) ||
+      metamodelStore.getConceptByName(props.conceptName)
     if (concept?.color) return getHexColor(concept.color)
     return '#94a3b8'
   }
@@ -317,7 +320,10 @@ const conceptColorHex = computed(() => {
 
 const conceptIcon = computed(() => {
   if (props.ghost) {
-    const concept = metamodelStore.getConceptByName(props.conceptName)
+    const terminalName = props.conceptName.split(' / ').pop() || props.conceptName
+    const concept =
+      metamodelStore.getConceptByName(terminalName) ||
+      metamodelStore.getConceptByName(props.conceptName)
     return concept?.icon ?? 'folder'
   }
   const firstEl = props.elements[0] ?? props.subGroups[0]?.elements?.[0]
