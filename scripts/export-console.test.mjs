@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile, readFile, copyFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
@@ -51,6 +51,7 @@ level: 3
 # NN Market
 ## NN Stakeholders: Enterprise Customer
   budget:: "$50k"
+  tagline:: "They REJECTED $1M. Today They're Bankrupt"
 
   Primary enterprise segment with annual subscription.
 `
@@ -142,6 +143,28 @@ level: 3
       const modelJson = JSON.parse(jsonMatch[1])
       assert.equal(modelJson.meta.sha256, expectedHash)
       assert.equal(modelJson.meta.modelVersion, 'V_0-2-5')
+    })
+
+    it('emits embedded model JSON verbatim when fields contain $-sequences', async () => {
+      const res = await runCli([tempDir, 'business'])
+      assert.equal(res.code, 0)
+
+      const htmlPath = join(
+        tempDir,
+        'export',
+        'business_V_0-2-5_console',
+        'business_V_0-2-5_console.html',
+      )
+      const htmlContent = await readFile(htmlPath, 'utf-8')
+      const jsonMatch = htmlContent.match(
+        /<script type="application\/json" id="innfo-model">([\s\S]*?)<\/script>/,
+      )
+      assert.ok(jsonMatch, 'innfo-model script slot exists in HTML')
+
+      const modelJson = JSON.parse(jsonMatch[1])
+      const element = modelJson.elements.find((e) => e.fields.tagline)
+      assert.ok(element, 'fixture element with $-sequence survived injection')
+      assert.equal(element.fields.tagline, "They REJECTED $1M. Today They're Bankrupt")
     })
 
     it('reports status tags correctly with --status in read-only mode', async () => {
@@ -244,6 +267,63 @@ level: 3
       assert.doesNotMatch(res.stdout, /business_V_0-2-5_console\.html/)
       assert.doesNotMatch(res.stdout, /procedures_V_0-1-0_console\.html/)
       assert.match(res.stdout, /Exported 1 console artifact\(s\)/)
+    })
+  })
+
+  describe('Phase 4: Standalone exporter & CDN pin', () => {
+    it('pins the runtime CDN to the vendored bundle version banner', async () => {
+      const res = await runCli([tempDir, 'business'])
+      assert.equal(res.code, 0)
+
+      const htmlPath = join(
+        tempDir,
+        'export',
+        'business_V_0-2-5_console',
+        'business_V_0-2-5_console.html',
+      )
+      const htmlContent = await readFile(htmlPath, 'utf-8')
+      const configMatch = htmlContent.match(
+        /<script type="application\/json" id="innfo-config">([\s\S]*?)<\/script>/,
+      )
+      assert.ok(configMatch, 'innfo-config slot exists in HTML')
+      const config = JSON.parse(configMatch[1])
+
+      const bundle = await readFile(
+        resolve(here, '..', 'iNNfo', 'specs', 'templates', 'console', 'innfo-console.bundle.js'),
+        'utf-8',
+      )
+      const version = bundle.match(/\bVersion (\d+\.\d+\.\d+)\./)[1]
+      assert.equal(
+        config.runtime.cdn,
+        `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v${version}/iNNfo/specs/templates/console/innfo-console.bundle.js`,
+      )
+    })
+
+    it('runs standalone next to the console assets without scripts/lib or manifest', async () => {
+      const repoRoot = resolve(here, '..')
+      const toolsDir = join(tempDir, 'tools')
+      const consoleDir = join(tempDir, 'iNNfo', 'specs', 'templates', 'console')
+      await mkdir(toolsDir, { recursive: true })
+      await mkdir(consoleDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
+      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
+        await copyFile(
+          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
+          join(consoleDir, name),
+        )
+      }
+      assert.equal(existsSync(join(tempDir, 'manifest')), false)
+
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        [join(toolsDir, 'export-console.mjs'), tempDir, 'business'],
+        { cwd: tempDir },
+      )
+      assert.match(stdout, /business_V_0-2-5_console\.html/)
+      assert.equal(
+        existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
+        true,
+      )
     })
   })
 })

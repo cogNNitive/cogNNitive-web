@@ -29,17 +29,18 @@ import { existsSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
-import { createRequire } from 'node:module'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
 
-const require = createRequire(import.meta.url)
-const { getConsoleReleaseInfo } = require('./lib/console-release-info.js')
-// Derived from manifest/source.yaml (channels.stable.refs, key
-// innfo-console) — not a hardcoded tag — so a manifest re-pin is the only
-// place this ever needs to change. See scripts/lib/console-release-info.js.
-const consoleReleaseInfo = getConsoleReleaseInfo(repoRoot)
+// CDN pin comes from the vendored bundle's generated version banner, not from
+// manifest/source.yaml, so this file stays runnable standalone in a workspace
+// (issue #91). build-console-bundle.mjs stamps the banner from the manifest.
+function parseConsoleCdnRef(bundleText) {
+  const m = bundleText && bundleText.match(/\bVersion (\d+\.\d+\.\d+)\./)
+  return m ? `innfo-console-v${m[1]}` : null
+}
+
 const blueprintPath = join(
   repoRoot,
   'iNNfo',
@@ -265,16 +266,12 @@ async function renderTree(models, root) {
 }
 
 function injectSlots(blueprint, config, schema, model) {
-  const slot = (id, json) =>
-    blueprint.replace(
+  const slot = (html, id, json) =>
+    html.replace(
       new RegExp(`(<script type="application/json" id="${id}">)[\\s\\S]*?(</script>)`),
-      `$1\n${JSON.stringify(json, null, 2)}\n$2`,
+      (_m, open, close) => `${open}\n${JSON.stringify(json, null, 2)}\n${close}`,
     )
-  let out = blueprint
-  out = slot('innfo-config', config)
-  out = slot('innfo-schema', schema)
-  out = slot('innfo-model', model)
-  return out
+  return slot(slot(slot(blueprint, 'innfo-config', config), 'innfo-schema', schema), 'innfo-model', model)
 }
 
 async function main() {
@@ -287,7 +284,7 @@ async function main() {
   }
   const root = resolve(args.root)
   const blueprint = await readFile(blueprintPath, 'utf-8')
-  const bundle = existsSync(bundlePath) ? await readFile(bundlePath) : null
+  const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
 
   const models = []
   for (const f of await findModelFiles(root)) {
@@ -367,6 +364,14 @@ async function main() {
     process.exit(1)
   }
 
+  const consoleCdnRef = parseConsoleCdnRef(bundle)
+  if (!consoleCdnRef) {
+    console.error(
+      `Cannot derive console CDN pin: no "Version X.Y.Z." banner found in ${bundlePath}`,
+    )
+    process.exit(1)
+  }
+
   const config = {
     needs: [
       'concept-rail',
@@ -377,7 +382,7 @@ async function main() {
       'document-view',
     ],
     runtime: {
-      cdn: consoleReleaseInfo.cdnUrl,
+      cdn: `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@${consoleCdnRef}/iNNfo/specs/templates/console/innfo-console.bundle.js`,
       fallback:
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js',
     },
