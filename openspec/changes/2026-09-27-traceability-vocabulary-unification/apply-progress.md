@@ -209,7 +209,7 @@ change's apply phase.
   `inventory + lineage` (matched to WU1's house substitution);
   `:373` prose "immutable provenance links" → "immutable Source links";
   `template_version` V_0-5-1 → V_0-6-0; `spec_version`/`parent_spec`
-  V_0-2-1 → V_0-2-2. `:376` "SHA-256 provenance hashes" left alone
+  V_0-2-1 → V_0-2-2. `:370` "SHA-256 provenance hashes" left alone
   deliberately: it is the cryptographic term, it is outside the task list,
   and it survives in the sibling `import_and_*.md` procedures this change
   does not touch — editing it alone would have been isolated scope creep.
@@ -277,15 +277,20 @@ change's apply phase.
 - [ ] **4.14 NOT GREEN — by construction.** `validate-manifest.js --channel
   stable` was run in a `git worktree add --detach` checkout at `c365ba0`.
   It reports 29 violations, every one belonging to a single family caused
-  by one fact: the pinned commit `5eec209` is `ahead` of `main`
-  (`not reachable from main` for all 9 skills + 16 templates + 1 console,
-  `content ... differs between pinned commit and main` for
-  workspace/video/artifacts, and a `404 at main` fetch for the brand-new
-  `design-presets/spec_NN.md`). A filtered re-run confirmed **no
-  independent violation** (no missing tag, no hash mismatch, no schema
-  error). This state cannot become green inside `sdd-apply`: it requires
-  the `dev`→`main` push, which tasks.md itself declares out of scope and
-  `nn-dev-development` §4e gates on the maintainer. Re-run post-merge.
+  by one fact: the pinned commit `5eec209` is `ahead` of `main`. The
+  breakdown is 25 × `not reachable from main` (all 9 skills, all 16
+  templates, and the console asset), 3 × `content ... differs between
+  pinned commit and main` (workspace/video/artifacts) and 1 × `404 at main`
+  (the brand-new `design-presets/spec_NN.md`) — 29 in total. A filtered
+  re-run confirmed **no independent violation** (no missing tag, no hash
+  mismatch, no schema error). This state cannot become green inside
+  `sdd-apply`: it requires the `dev`→`main` push, which tasks.md itself
+  declares out of scope and `nn-dev-development` §4e gates on the
+  maintainer. Re-run post-merge.
+  **Corrected by the verify pass**: this bullet originally said "for all 9
+  skills + 16 templates + 1 console", which sums to 26, not the 25 actually
+  reported — the aggregate 29 was right, the per-family prose was off by
+  one.
 - [x] 4.15 `check:integrity` in the detached worktree: `ALL INTEGRITY
   GATES PASSED`, including Group 1c ("No unpinned skills/template changes
   detected") — the group that catches the "forgot the re-pin" failure
@@ -328,7 +333,7 @@ change's apply phase.
   by neither; its `spec_url` points at `main`, so the correction reaches
   consumers when the batch merges. **Flagged as a deliberate,
   out-of-task-list addition so `sdd-verify` can judge it on the merits.**
-- **The `sdd-verify`-bait items above** — 4.2's `:376` decision, 4.4's
+- **The `sdd-verify`-bait items above** — 4.2's `:370` decision, 4.4's
   `:82` tags, the registry entry-version bumps, and the two extra
   regenerated files — are all places where the task list was silent and a
   choice had to be made. Each is stated with its rationale so a fresh-context
@@ -360,3 +365,58 @@ change's apply phase.
   defines `summary` as a single `type:: string` value. Flagged here in
   case sdd-verify wants to confirm this interpretation against the
   design's intent.
+
+## WU4 — fresh-context `sdd-verify` outcome
+
+A fresh-context verifier (no prior session history) was run against WU4 on
+`469d894`, with instructions to treat every claim in this file as unverified
+and to be blunt. Result: **WU4 is genuinely complete-and-correct on `dev`**,
+with nothing that must be fixed before the `dev`→`main` merge.
+
+- Verdicts: 4.1-4.13, 4.16 **VERIFIED**; 4.14 **VERIFIED as documented NOT
+  GREEN** (reproduced independently: 29 violations, all one family, zero
+  independent); 4.15 **PARTIAL** — the exact detached-worktree run was not
+  reproducible under the read-only constraint, but its substance (Group 1c
+  closes the loop) is covered by the `tag-pin-freshness` unit tests
+  ("Template spec_NN.md change without manifest re-pin fails", etc.).
+- The verifier independently confirmed: byte-parity of the 4.5 copy (sha256
+  `EAF3E718…`, 14866 B both sides); both tags annotated on `origin` at
+  `5eec209`; `generate-manifest --check` up to date on stable *and* preview;
+  specs vs docs `catalog.json` byte-identical; 4 gates + 880-test innfo-core
+  suite green.
+- It **agreed with all six** scrutinised judgment calls (4.2's `:370`, 4.4's
+  `:82`, the registry entry-version bumps, 4.16's citation documentation, the
+  4.14 non-green state, and the drift test's value), with one caveat on the
+  last — see below.
+- Over-declarations found: two, both minor and both corrected above in this
+  file — the 4.14 per-family arithmetic (26 → 25) and the `:376` line
+  coordinate (→ `:370`). No claim was contradicted by the repo.
+
+### Advisory 1 — `type:: citation` had no covering requirement (RESOLVED)
+The verifier's concern was archive hygiene, not correctness: a shipped
+behavior with no requirement in the deltas means `sdd-archive` would sync
+something nothing asked for. Fixed by adding an ADDED requirement,
+`type:: citation Is Documented in the Core Language`, plus a scenario, to
+`specs/document-citations/spec.md`.
+
+### Advisory 2 — the drift guard was weaker than its name (RESOLVED)
+The new registry test only compared `## NN Field Definition:` **name sets**
+plus the presence of `spec_version: "V_0-2-2"`, so a `type::` change (the
+whole point of this WU) could slip through. The verifier proved
+*name*-level non-vacuity by feeding the stale `9e77649` mirror; it also
+showed a `type:: citation` → `type:: string` mutation still passed.
+Fixed by extracting `name=type` pairs instead of bare names. Non-vacuity for
+the *type* axis was then proven the same way: mutating the artifacts mirror to
+`type:: string` makes the test fail
+(`artifacts field name=type drift: expected [ 'format=select', … ] to deeply
+equal …`), after which the mutation was reverted and the file confirmed
+byte-identical to `HEAD`.
+
+### Out of WU4's scope, flagged for the archive pass (not acted on)
+The verifier noted residual "provenance" on surfaces the `provenance-vocabulary`
+requirement targets but which belong to WU1, not WU4:
+`docs/innfo/documentation/lifecycle-walkthrough.md:160` ("**Radical
+Provenance**") and `docs/innfo/documentation/sources-citations-lineage.md:94`
+(`buildProvenanceModel`). WU1/WU2/WU3 are already verified and out of this
+pass's scope, so these were deliberately left untouched — recorded here so the
+archive pass does not lose them.

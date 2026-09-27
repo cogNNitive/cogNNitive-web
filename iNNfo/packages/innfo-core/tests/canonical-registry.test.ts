@@ -10,11 +10,31 @@ import {
 } from '../src/schema'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
-const fieldNames = (content: string): string[] =>
-  content
-    .split(/\r?\n/)
-    .filter((l) => l.startsWith('## NN Field Definition: '))
-    .map((l) => l.slice('## NN Field Definition: '.length).trim())
+
+/**
+ * Extracts `name=type` for every Field Definition. Asserting on the pair (not
+ * just the name) is what makes the mirror guard catch a semantic change such
+ * as `derived_from_inputs`/`string` -> `sources`/`citation`, not only a rename.
+ */
+const fieldNameTypes = (content: string): string[] => {
+  const lines = content.split(/\r?\n/)
+  const pairs: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const header = lines[i].match(/^## NN Field Definition: (.+)$/)
+    if (!header) continue
+    let type = '<none>'
+    for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+      const match = lines[j].match(/^type:: (.+)$/)
+      if (match) {
+        type = match[1].trim()
+        break
+      }
+      if (lines[j].startsWith('## NN Field Definition:')) break
+    }
+    pairs.push(`${header[1].trim()}=${type}`)
+  }
+  return pairs
+}
 
 describe('Canonical Template Registry & Offline Fallback', () => {
   it('bundles all standard Level 2 templates', () => {
@@ -117,7 +137,9 @@ describe('Canonical Template Registry & Offline Fallback', () => {
 
       expect(mirror, `${template} mirror exists`).not.toBeNull()
       expect(mirror, `${template} mirror carries V_0-2-2`).toContain('spec_version: "V_0-2-2"')
-      expect(fieldNames(mirror), `${template} field names drift`).toEqual(fieldNames(disk))
+      expect(fieldNameTypes(mirror), `${template} field name=type drift`).toEqual(
+        fieldNameTypes(disk),
+      )
     }
   })
 })

@@ -48,3 +48,32 @@ requirement.
 - THEN both warnings are surfaced independently
 - AND no automated resolution, precedence, or authority ranking is applied
   between the two elements
+
+### Requirement: `type:: citation` Is Documented in the Core Language
+
+`citation` MUST be listed as a Field Definition `type` in the core-language
+version this change introduces — in the Field Definition property table and in
+the metaschema `options::` enumeration — together with prose describing the
+type's semantics. `type:: citation` is the declared-type form of a citation
+field: its value is a pointer list to the Source documents the element derives
+from, using the same bracketed
+`[sources/nn/<filename>#<heading-slug>, ...]` grammar as the reserved
+`sources::` property, and its values are subject to the same `KU_*` integrity
+checks.
+
+This requirement closes a documentation gap rather than introducing a
+behavior: the parser has accepted `citation` as a field type since
+`2026-09-13-document-fidelity-and-provenance-integrity` (AD-5), but no
+published core-language version listed it. The gap became load-bearing here
+because the `artifacts` template now declares `type:: citation` (see the
+`Single Written Derivation Term Is sources` requirement), so the core-language
+version this change ships would otherwise invoke a type it does not document.
+
+#### Scenario: Core language lists the citation type
+
+- GIVEN the core-language version introduced by this change
+- WHEN its Field Definition `type` table and metaschema `options::` list are
+  inspected
+- THEN both include `citation`
+- AND a prose paragraph describes the pointer grammar and validation of
+  `type:: citation`
