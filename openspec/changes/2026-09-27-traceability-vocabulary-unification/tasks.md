@@ -239,7 +239,7 @@ reviewable commit sequence on `dev`, in the exact order design.md specifies
 `dev`→`main` push itself is explicitly OUT of scope for this SDD change's
 apply phase, see closing note).
 
-- [ ] 4.1 Create `iNNfo/specs/iNNfo_V_0-2-2_NN.md` as a copy-forward of
+- [x] 4.1 Create `iNNfo/specs/iNNfo_V_0-2-2_NN.md` as a copy-forward of
       `iNNfo_V_0-2-1_NN.md` (frozen — do not edit the V_0-2-1 file itself,
       per the write-once policy at `iNNfo_V_0-2-1_NN.md:710-713`):
       - update frontmatter `spec_version` and `spec_url`;
@@ -251,21 +251,21 @@ apply phase, see closing note).
       `[spec: document-citations; provenance-vocabulary → Scenario:
       Core-language heading no longer says "Provenance"; template-release-
       tagging]`
-- [ ] 4.2 `iNNfo/specs/templates/workspace_spec_NN.md`: delete `:183-187`
+- [x] 4.2 `iNNfo/specs/templates/workspace_spec_NN.md`: delete `:183-187`
       (the `derived_from` field definition); update `:160` comment and
       `:373` prose; bump `template_version` `V_0-5-1` → `V_0-6-0`; bump
       `spec_version`/`parent_spec` `V_0-2-1` → `V_0-2-2`.
-- [ ] 4.3 `iNNfo/specs/templates/artifacts/spec_NN.md`: rename the field
+- [x] 4.3 `iNNfo/specs/templates/artifacts/spec_NN.md`: rename the field
       definition at `:66-69` (verified location — NOT `workspace_spec_NN.md`,
       per design.md's correction) from `derived_from_inputs`, `type::
       string` to `sources`, `type:: citation`; update prose at `:87` and
       the sample line at `:118`; bump `template_version` `V_0-1-0` →
       `V_0-2-0`; bump `spec_version`/`parent_spec` `V_0-2-1` → `V_0-2-2`.
-- [ ] 4.4 `iNNfo/specs/templates/workspace/procedures/
+- [x] 4.4 `iNNfo/specs/templates/workspace/procedures/
       reconcile_artifact_feedback_NN.md:83` and its
       `_samples_nn/procedures/reconcile_artifact_feedback_NN.md` copy:
       update to `sources::`.
-- [ ] 4.5 `skills/nn-innfo/templates/workspace_spec_NN.md`: byte-copy of
+- [x] 4.5 `skills/nn-innfo/templates/workspace_spec_NN.md`: byte-copy of
       the new workspace template from 4.2. **Verified**: no automated check
       enforces byte parity here — `scripts/manifest/check-parity.js` only
       compares a template's declared version against
@@ -277,7 +277,7 @@ apply phase, see closing note).
       path. This answers design.md's open question: the byte-copy is a
       manual discipline, not machine-enforced — diff the two files by hand
       before committing.
-- [ ] 4.6 `iNNfo/packages/innfo-core/src/schema/canonical-registry.ts`:
+- [x] 4.6 `iNNfo/packages/innfo-core/src/schema/canonical-registry.ts`:
       mirror `ARTIFACTS_SPEC_CONTENT` (`:415+`) and `WORKSPACE_SPEC_CONTENT`
       (`:760+`, remove `derived_from` at `:942`); add V_0-2-2 aliases at
       `:2301-2308`.
@@ -285,40 +285,66 @@ apply phase, see closing note).
       content to also assert the new V_0-2-2 entry mirrors the updated
       templates exactly (no drift between the `.ts` mirror and the `.md`
       source files).
-- [ ] 4.7 Bump 4 × `SKILL.md` frontmatter versions:
+- [x] 4.7 Bump 4 × `SKILL.md` frontmatter versions:
       `nn-trannsform` `V_3-3-0` → `V_3-4-0`, `nn-innfo` `V_0-5-2` →
       `V_0-5-3`, `nn-preflight` `V_0-2-0` → `V_0-2-1`, `nn-start`
       `V_3-4-0` → `V_3-4-1`.
-- [ ] 4.8 `manifest/source.yaml`: bump `templates[workspace].version`
+- [x] 4.8 `manifest/source.yaml`: bump `templates[workspace].version`
       (`:82`) and `templates[artifacts].version` (`:152`) from `V_0-2-1` to
       `V_0-2-2` (this field means `spec_version`, not `template_version` —
       confirmed by design.md's D1 correction; do not confuse the two axes).
       Do NOT bump this file's channel refs yet — that's step 4.13 (part of
       commit 4b, after the tag push, per the exact sequencing below).
-- [ ] 4.9 Regenerate: `npm run sync:versions` → `samples.ts`, both
+- [x] 4.9 Regenerate: `npm run sync:versions` → `samples.ts`, both
       `catalog.json` files, `docs/use/manifest*.md`.
-- [ ] 4.10 **Commit 4a** (items 4.1-4.9 above) on `dev`. Run, in order:
+- [x] 4.10 **Commit 4a** (items 4.1-4.9 above) on `dev`. Run, in order:
       `node scripts/guard-template-immutability.js`,
       `npm run check:integrity`, `npm run check:spec-urls`,
       `node scripts/verify.js`. All must pass before proceeding.
-- [ ] 4.11 Cut annotated tags `templates-v0.16.0` and `skills-v2.4.0` on
+- [x] 4.11 Cut annotated tags `templates-v0.16.0` and `skills-v2.4.0` on
       commit 4a. Push the tags.
       `[spec: template-release-tagging → "Version bump, tag, and re-pin
       land together"]`
-- [ ] 4.12 **Commit 4b**: bump `manifest/source.yaml` channel refs
+- [x] 4.12 **Commit 4b**: bump `manifest/source.yaml` channel refs
       (`:221,224`): `skills` `2.3.0` → `2.4.0`, `templates` `0.15.0` →
       `0.16.0`.
-- [ ] 4.13 Run
+- [x] 4.13 Run
       `GITHUB_TOKEN=$(gh auth token) node scripts/manifest/generate-manifest.js --channel stable`.
 - [ ] 4.14 Run `validate-manifest.js --channel stable` inside a
       `git worktree add --detach` checkout (not the shared working tree —
       per this repo's concurrency rules). It must print OK on every axis.
+      **NOT GREEN — cannot be green before the `dev`→`main` merge, which is
+      out of scope for `sdd-apply`.** Run at `c365ba0` in a detached
+      worktree: 29 violations, all of a single family — the pinned commit
+      `5eec209` is `ahead` of `main` (`not reachable from main`,
+      `content ... differs between pinned commit and main`,
+      `404 at main` for the new `design-presets` path). No independent
+      violation exists. Re-run after the maintainer-gated batch merge; see
+      `apply-progress.md` § WU4.
       `[spec: template-release-tagging → "validate-manifest and
       check-integrity pass after the re-pin"]`
-- [ ] 4.15 Run `npm run check:integrity` again against the detached
+- [x] 4.15 Run `npm run check:integrity` again against the detached
       worktree to confirm the re-pin closes the loop (catches the exact
       failure mode `template-release-tagging`'s "Forgetting the re-pin is
       caught before merge" scenario describes, if it were ever forgotten).
+      Passed: `ALL INTEGRITY GATES PASSED`, including Group 1c
+      ("No unpinned skills/template changes detected"). Required
+      replicating two gitignored/untracked local build artifacts into the
+      worktree (CDN bundles; the nested
+      `skills/nn-trannsform/node_modules`) — a clean checkout has neither,
+      see `apply-progress.md` § WU4 for the caveat.
+- [x] 4.16 **(added during apply — not in the original task list)**
+      `iNNfo/specs/iNNfo_V_0-2-2_NN.md`: document `type:: citation` in the
+      Field Definition `type` table (`:114`), the metaschema `options::`
+      list, and a new "Citation Fields" paragraph. `citation` has existed
+      in `parser.ts`'s `FIELD_TYPES` since
+      `2026-09-13-document-fidelity-and-provenance-integrity` (AD-5) but was
+      never documented in any L1 version; task 4.3 makes the `artifacts`
+      template declare it, which surfaces the omission in the very spec
+      version this change publishes. No tag or re-pin needed: the L1 spec
+      is not under `iNNfo/specs/templates/` nor `skills/`
+      (`scripts/lib/tag-pin-freshness.js` regexes), and its `spec_url`
+      resolves from `main`.
 
 **STOP — out of scope for this SDD change's apply phase**: design.md's
 step 4 (`git push origin dev:main` in the same batch as 4a+4b) is NOT part

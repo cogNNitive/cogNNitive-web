@@ -187,8 +187,165 @@ catalog derived_from_inputs to sources (WU3)" on `dev`.
 
 ## WU4 — Release unit
 
-**Status**: Out of scope for this run (explicitly deferred per the
-apply-phase instruction). Not started.
+**Status**: Applied on `dev`. Commits `5eec209` (4a), `c365ba0` (4b), plus
+one flagged in-run addition `2b099f5` (4c). Tags `templates-v0.16.0` and
+`skills-v2.4.0` cut on `5eec209` and pushed. `dev` pushed. **NOT merged to
+`main`** — that push is maintainer-gated and explicitly out of this
+change's apply phase.
+
+### Commit 4a — `5eec209` (19 files)
+- [x] 4.1 `iNNfo/specs/iNNfo_V_0-2-2_NN.md` created as a copy-forward of
+  `V_0-2-1` (write-once: the V_0-2-1 file was not touched). Frontmatter
+  `spec_version`/`spec_url` → V_0-2-2; heading `:377` →
+  `## Sources & Citations (sources, conflicts)`; `:379` text →
+  "cites the Source documents it derives from"; a `conflicts::` bullet
+  added after `:386` with the same optionality/bracket-list grammar/scoping
+  as `sources::`. Also updated the file's `## Self-Description`
+  self-reference (`:926`) from `iNNfo_V_0-2-1_NN.md` to
+  `iNNfo_V_0-2-2_NN.md` — the task list did not mention it, but leaving it
+  would have made the new version claim to be the old one.
+- [x] 4.2 `workspace_spec_NN.md`: `derived_from` Field Definition
+  (`:183-187`) deleted; `:160` comment `inventory + provenance` →
+  `inventory + lineage` (matched to WU1's house substitution);
+  `:373` prose "immutable provenance links" → "immutable Source links";
+  `template_version` V_0-5-1 → V_0-6-0; `spec_version`/`parent_spec`
+  V_0-2-1 → V_0-2-2. `:376` "SHA-256 provenance hashes" left alone
+  deliberately: it is the cryptographic term, it is outside the task list,
+  and it survives in the sibling `import_and_*.md` procedures this change
+  does not touch — editing it alone would have been isolated scope creep.
+- [x] 4.3 `artifacts/spec_NN.md`: `derived_from_inputs` / `type:: string`
+  → `sources` / `type:: citation`; description reworded to "Citations to
+  the Source documents and domain models this artifact derives from";
+  `:87` prose `(produced_by, derived_from_inputs)` → `(produced_by,
+  sources)` and "trace output provenance" → "trace output lineage";
+  `:118` sample line → `sources:: [sources/nn/source_document.md#section]`
+  (pointer-array grammar, since the field is now `type:: citation`, not
+  the old `[[Source Name]]` wikilink form); `template_version` V_0-1-0 →
+  V_0-2-0; `spec_version`/`parent_spec` → V_0-2-2.
+- [x] 4.4 `reconcile_artifact_feedback_NN.md:83` and its `_samples_nn`
+  copy: `derived_from_inputs::` → `sources::`. The `:82` tag list
+  (`[lineage, provenance, derived-from, dependencies]`) was left alone —
+  not in the task list, and `provenance`/`derived-from` survive as tags on
+  many untouched procedure files.
+- [x] 4.5 `skills/nn-innfo/templates/workspace_spec_NN.md`: byte copy of
+  the 4.2 file. Verified the two files were byte-identical *before* the
+  edit (sha256 equal), then copied and confirmed sha256 equality after.
+- [x] 4.6 `canonical-registry.ts`: `ARTIFACTS_SPEC_CONTENT` and
+  `WORKSPACE_SPEC_CONTENT` mirrored to V_0-2-2 (including the
+  `derived_from` deletion and the `sources`/`citation` rename); registry
+  entry versions bumped (`workspace` V_0-5-1 → V_0-6-0, `artifacts`
+  V_0-1-0 → V_0-2-0) with their version aliases added — the task list only
+  named the two content blocks and the `innfo` aliases, but leaving the
+  entry versions stale would have been drift against the very files being
+  mirrored; `innfo` entry gained the V_0-2-2 alias set. `innfo`'s own
+  `version: 'V_0-2-0'` and its embedded `INNFO_SPEC_CONTENT` were left as
+  design.md's D1 explicitly documents (reservation is not versioned).
+  Test: new `resolves the new V_0-2-2 core-language aliases` and
+  `mirrors the workspace and artifacts V_0-2-2 templates without drift`
+  (frontmatter + `## NN Field Definition:` name-set equality against the
+  on-disk files) in `canonical-registry.test.ts`.
+- [x] 4.7 4× `SKILL.md` frontmatter bumps: nn-trannsform V_3-3-0 → V_3-4-0,
+  nn-innfo V_0-5-2 → V_0-5-3, nn-preflight V_0-2-0 → V_0-2-1,
+  nn-start V_3-4-0 → V_3-4-1.
+- [x] 4.8 `manifest/source.yaml`: `templates[workspace].version` (`:82`)
+  and `templates[artifacts].version` (`:152`) V_0-2-1 → V_0-2-2 (this
+  field is `spec_version`, not `template_version`).
+- [x] 4.9 Regeneration. `npm run sync:versions` propagated the 4.7 skill
+  versions into `manifest/source.yaml`'s `skills[]` and wrote `samples.ts`,
+  `iNNfo/specs/templates/catalog.json`, `docs/use/manifest.md`. Two
+  generated files the task list's wording ("both `catalog.json` files,
+  `docs/use/manifest*.md`") implied but `sync:versions` does not cover were
+  regenerated explicitly: `docs/innfo/templates/catalog.json` (a byte copy
+  of the specs catalog, which `scripts/build-docs.mjs:107-114` does as one
+  step of a much larger run — copied directly to avoid unrelated
+  `cdn/manifest.json` timestamp and docsify-suite churn) and
+  `docs/use/manifest-next.md` (the preview-channel rendering; needed
+  `GITHUB_TOKEN`).
+- [x] 4.10 Commit 4a. All four gates green in the shared tree:
+  `guard-template-immutability.js` OK, `check:integrity` ALL PASSED,
+  `check:spec-urls` OK, `verify.js` OK. `innfo-core` suite: 71 files / 880
+  tests passed (1 skipped).
+- [x] 4.11 Tags `templates-v0.16.0` + `skills-v2.4.0` created on `5eec209`
+  and pushed. Note these also cover the **other session's** `9e77649`
+  (design-presets template + video integration), which landed on `dev`
+  without tags or a re-pin — one tag pair for one batch, as intended.
+- [x] 4.12 Commit 4b (`c365ba0`): `manifest/source.yaml` channel refs
+  skills 2.3.0 → 2.4.0, templates 0.15.0 → 0.16.0.
+- [x] 4.13 `generate-manifest.js --channel stable` (with `GITHUB_TOKEN`)
+  regenerated `docs/use/manifest.md`; refs and commits now resolve to
+  `skills-v2.4.0` / `templates-v0.16.0` at `5eec209`.
+- [ ] **4.14 NOT GREEN — by construction.** `validate-manifest.js --channel
+  stable` was run in a `git worktree add --detach` checkout at `c365ba0`.
+  It reports 29 violations, every one belonging to a single family caused
+  by one fact: the pinned commit `5eec209` is `ahead` of `main`
+  (`not reachable from main` for all 9 skills + 16 templates + 1 console,
+  `content ... differs between pinned commit and main` for
+  workspace/video/artifacts, and a `404 at main` fetch for the brand-new
+  `design-presets/spec_NN.md`). A filtered re-run confirmed **no
+  independent violation** (no missing tag, no hash mismatch, no schema
+  error). This state cannot become green inside `sdd-apply`: it requires
+  the `dev`→`main` push, which tasks.md itself declares out of scope and
+  `nn-dev-development` §4e gates on the maintainer. Re-run post-merge.
+- [x] 4.15 `check:integrity` in the detached worktree: `ALL INTEGRITY
+  GATES PASSED`, including Group 1c ("No unpinned skills/template changes
+  detected") — the group that catches the "forgot the re-pin" failure
+  mode. Caveat: a clean checkout cannot satisfy this gate on its own. Two
+  pieces of local state had to be replicated into the worktree because
+  they are respectively gitignored and untracked — the
+  `docs/innfo/cdn/*.bundle.js` bundles (Group 2) and the nested
+  `skills/nn-trannsform/node_modules` (the nn-trannsform suite needs
+  `minimist`, which is installed there, not at the root). With those
+  absent the run fails for environmental reasons only (2 failures, both
+  `Cannot find module 'minimist'`), which is worth knowing before anyone
+  reads a red worktree run as a regression.
+- [x] **4.16 (added during apply, not in the original task list)** —
+  `iNNfo/specs/iNNfo_V_0-2-2_NN.md`: documented `type:: citation`. See
+  "Risks / Notes" below for why this was in scope and why it needed no
+  tag.
+
+### Files changed
+| Commit | Files |
+|--------|-------|
+| `5eec209` (4a) | 19 files: new `iNNfo_V_0-2-2_NN.md`; `workspace_spec_NN.md`; `artifacts/spec_NN.md`; 2× `reconcile_artifact_feedback_NN.md`; `skills/nn-innfo/templates/workspace_spec_NN.md`; `canonical-registry.ts` + 2 tests; 4× `SKILL.md`; `manifest/source.yaml`; `samples.ts`; 2× `catalog.json`; 2× `docs/use/manifest*.md` |
+| `c365ba0` (4b) | `manifest/source.yaml`, `docs/use/manifest.md` |
+| `2b099f5` (4c) | `iNNfo/specs/iNNfo_V_0-2-2_NN.md` |
+
+### Risks / Notes
+- **The `citation` type gap (task 4.16).** `type:: citation` has been a
+  real field type in `iNNfo/packages/innfo-core/src/types/parser.ts`
+  (`FIELD_TYPES`, added by `2026-09-13-document-fidelity-and-provenance-integrity`
+  AD-5) since September, but **no** L1 spec version — V_0-1-0, V_0-2-0,
+  V_0-2-1, or the new V_0-2-2 — ever listed it in the Field Definition
+  `type` table or the metaschema `options::`. Nothing in code derives
+  allowed types from that table (`FIELD_TYPES` is not imported anywhere),
+  and the editor's widget handling is hardcoded, so it was a
+  documentation/discoverability gap, not a functional break. It became
+  worth closing here because 4.3 makes the `artifacts` template declare
+  `type:: citation`, i.e. the spec version this change publishes would
+  invoke a type it does not document. Fixing it required no tag and no
+  re-pin: `scripts/lib/tag-pin-freshness.js` matches only `^skills\//` and
+  `^iNNfo\/specs\/templates\/.*spec_NN\.md$`, and the L1 spec is covered
+  by neither; its `spec_url` points at `main`, so the correction reaches
+  consumers when the batch merges. **Flagged as a deliberate,
+  out-of-task-list addition so `sdd-verify` can judge it on the merits.**
+- **The `sdd-verify`-bait items above** — 4.2's `:376` decision, 4.4's
+  `:82` tags, the registry entry-version bumps, and the two extra
+  regenerated files — are all places where the task list was silent and a
+  choice had to be made. Each is stated with its rationale so a fresh-context
+  verifier can disagree explicitly rather than discover it.
+- **Local-tree incident during this run (repaired).** To make the worktree
+  `check:integrity` run whole, a Windows directory junction was created at
+  `<worktree>/skills/nn-trannsform/node_modules` pointing at the real
+  directory. `git worktree remove --force` then **traversed the junction
+  and deleted the target's contents**, emptying
+  `skills/nn-trannsform/node_modules` (mammoth, minimist, pdf-parse,
+  prompts, xlsx). This surfaced as the main tree's nn-trannsform suite
+  going 509/2-failed. Repaired with `npm install` in
+  `skills/nn-trannsform` (45 entries restored, all 5 declared deps present)
+  and `check:integrity` is green again. The directory is gitignored, so no
+  tracked file was affected. Lesson: do not junction `node_modules` into a
+  worktree that will be removed — copy it, or accept the environmental
+  failures and say so.
 
 ## Risks / Notes
 - WU2's commits (`7d51d68`, `accc632`) predate this run's `tasks.md`
