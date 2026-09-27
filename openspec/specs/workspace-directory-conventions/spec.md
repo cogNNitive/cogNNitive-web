@@ -4,12 +4,12 @@
 
 ### Requirement: Series and Video Folder Layout
 
-The workspace directory conventions MUST recognize a `series/` tree for video production: `series/{series-slug}/` holds a Series' registry file, script template, and shared series assets; `series/{series-slug}/videos/{video-slug}/` holds one Video's own files. This layout replaces the single-level `{modelDir}/assets/{video-slug}/` rule from the `video` template's V_0-2-1 prose for any workspace producing videos through a Series.
+The workspace directory conventions MUST recognize a `series/` tree for video production: `series/{series-slug}/` holds a Series' `video`-template model file (carrying its `series:` frontmatter block), its script template, and shared series assets. The standard `{modelDir}/assets/{video-slug}/` rule (unchanged from the `video` template's V_0-2-1 prose) then places each Video's own files at `series/{series-slug}/assets/{video-slug}/`, because the Series model file is that Video Element's `{modelDir}`.
 
 #### Scenario: Series tree present in a video-producing workspace
 - GIVEN a workspace using the video/Series hierarchy
 - WHEN inspecting its top-level layout
-- THEN a `series/` directory exists containing one subdirectory per series, each with its own `videos/` subdirectory
+- THEN a `series/` directory exists containing one subdirectory per series, each with its own `assets/` subdirectory holding that series's Video Elements' files
 
 #### Scenario: Legacy flat video layout still resolves for existing workspaces
 - GIVEN an existing workspace with videos stored at `{modelDir}/assets/{video-slug}/` and no `series/` tree

@@ -6,7 +6,7 @@ Defines the four-level production hierarchy — Workspace → Subject → Series
 
 ## Design Decision: Subject and Series Representation
 
-**Series is a lightweight registry file, not a full iNNfo template/Element.** A Series only needs to be discoverable and referenceable by its Videos — it does not need typed fields, cross-model relationships, or an evaluable matrix. It is closer to shared configuration (a procedure extension, a script-template path, shared assets) than to domain content, so a plain registry avoids forcing template-version machinery (spec pins, `template_version` bumps) onto it. It can be upgraded to a full template later without breaking existing Videos.
+**Series is implemented as a Level-3 model of the existing `video` template, reused rather than duplicated as a new template.** A Series is one `series/{series-slug}/{Name}_V_x-y-z_video_NN.md` file: its frontmatter carries an added `series:` block (the procedure it extends, its script-template path, its shared-assets path), and the same file contains that Series's own Video Elements. This introduces no new Level-2 template, no new `template_version` axis, and no new spec pin for "Series" as its own concept — it reuses the `video` template's existing shape and versioning instead of inventing bespoke registry machinery, because `{modelDir}/assets/{slug}/` resolution (the mechanism that gives each Video Element its own asset folder) only applies to real iNNfo model files, not to an arbitrary config/registry file.
 
 **Subject stays workspace-custom.** This change does not ship a new cogNNitive-owned Subject template. Subject content (facts and sources) is genuinely domain-specific per workspace — iNNtrevistas already models it as a bespoke historical-innovation template — and standardizing it now would force a premature, generic shape onto content that varies per project. Video references its Subject generically, the same way it already references `sources::`, without requiring any particular Subject template.
 
@@ -28,14 +28,14 @@ The system MUST recognize four production levels: Workspace, Subject, Series, an
 - WHEN a new Video is authored for the same Subject under Series B
 - THEN the Subject content is reused unchanged and no coupling to Series A is required
 
-### Requirement: Series Represented as Lightweight Registry
+### Requirement: Series Represented as a Reused Video-Template Model
 
-A Series MUST be represented as a lightweight registry file declaring, at minimum: series name/slug, the procedure it extends, the path to its script template, and the path to its shared series-assets folder. It MUST NOT require an iNNfo Concept/Field Definition block, `template_version`, or a spec pin.
+A Series MUST be represented as a Level-3 model of the existing `video` template — not a new Level-2 template — located at `series/{series-slug}/{Name}_V_x-y-z_video_NN.md`. Its frontmatter MUST declare a `series:` block naming, at minimum: the procedure it extends, the path to its script template, and the path to its shared series-assets folder. This representation MUST NOT introduce a new iNNfo Concept/Field Definition template, a new `template_version` axis, or a new spec pin for Series as its own concept.
 
 #### Scenario: Video resolves its Series registry
 - GIVEN a Video referencing Series `X`
 - WHEN the owning procedure runs
-- THEN it locates `X`'s registry file and reads its procedure, script-template, and assets-folder entries
+- THEN it locates `X`'s `video`-template model file and reads the procedure, script-template, and assets-folder entries from its `series:` frontmatter block
 
 ### Requirement: Subject Referenced Generically, Not Standardized
 
