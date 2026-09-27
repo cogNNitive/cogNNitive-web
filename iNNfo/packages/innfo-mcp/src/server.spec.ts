@@ -144,6 +144,11 @@ describe('innfo-mcp server (dispatch/handler layer, real MCP client/server round
     expect(tools).toHaveLength(TOOL_COUNT)
   })
 
+  it('lists resolve_sources among the registered tools', async () => {
+    const { tools } = await client.listTools()
+    expect(tools.some((t) => t.name === 'resolve_sources')).toBe(true)
+  })
+
   it('returns an isError result for an unknown tool name', async () => {
     const result = await client.callTool({ name: 'not_a_real_tool', arguments: {} })
     expect(result.isError).toBe(true)

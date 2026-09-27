@@ -44,6 +44,7 @@ import {
 } from './tools/mutate.js'
 import { checkWorkspace } from './tools/check-workspace.js'
 import { queryUnits } from './tools/query-units.js'
+import { resolveSources } from './tools/resolve-sources.js'
 import { findRepoRoot } from './tools/repo-root.js'
 import { syncWorkspaceManifest } from './tools/workspace-sync.js'
 import { envelope, envelopeList } from '@cognnitive/innfo-core'
@@ -470,6 +471,30 @@ const TOOL_REGISTRY: ReadonlyArray<ToolEntry> = [
   },
   {
     definition: {
+      name: 'resolve_sources',
+      description:
+        'Read-only: resolve an element\'s citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, excerpt?, sha256?, version?, error?}. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          model: { type: 'string', description: 'Model id (filename stem)' },
+          elementId: { type: 'string', description: 'Element name within the model' },
+          fieldName: {
+            type: 'string',
+            description: 'Optional: restrict resolution to this single field',
+          },
+          root: {
+            type: 'string',
+            description: 'Optional workspace root directory override (default: server root)',
+          },
+        },
+        required: ['model', 'elementId'],
+      },
+    },
+    handler: handleResolveSources,
+  },
+  {
+    definition: {
       name: 'list_template_procedures',
       description:
         'List all procedures defined in a template and its transitively included templates up to depth 10',
@@ -689,6 +714,21 @@ async function handleQueryUnits(args: Record<string, unknown>): Promise<CallTool
     max_values_chars: args.max_values_chars as number | undefined,
   })
   return textResult(JSON.stringify(envelope('innfo-query-units', result), null, 2))
+}
+
+async function handleResolveSources(args: Record<string, unknown>): Promise<CallToolResult> {
+  const model = args.model as string
+  const elementId = args.elementId as string
+  if (!model || !elementId) return errorResult('Missing required arguments: model, elementId')
+  const root = (args.root as string) || ROOT_DIR
+  const results = await resolveSources(root, {
+    model,
+    elementId,
+    fieldName: args.fieldName as string | undefined,
+  })
+  return textResult(
+    JSON.stringify(envelopeList('innfo-resolve-sources', 'citations', results), null, 2),
+  )
 }
 
 async function handleListTemplateProcedures(
