@@ -188,34 +188,34 @@ equivalents under the frozen `cogNNitive` template tree (`manifest/source.yaml`
 a task item against them, even a "read-only confirm" one, beyond the exclusion
 check in 3.0.
 
-- [ ] 3.0 Grep-confirm the exhaustive file list before editing:
+- [x] 3.0 Grep-confirm the exhaustive file list before editing:
       `rg derived_from_inputs` and `rg "derived_from:"` (excluding
       `node_modules`, `openspec/changes/archive/**`, and the frozen
       `cogNNitive` tree) across the repo. Cross-check against the list
       below; if new hits appear that aren't in this list or in WU4's list,
       stop and re-derive design.md's assumptions before continuing.
-- [ ] 3.1 `_samples_nn/artifacts_NN.md:24,33` — replace
+- [x] 3.1 `_samples_nn/artifacts_NN.md:24,33` — replace
       `derived_from_inputs::` with `sources::` pointers where the value is a
       genuine resolvable pointer (map to `models/<file>_NN.md` or
       `sources/nn/<file>.md`); move to a new `summary::` field where the
       value is unresolvable free text (e.g. "iNNfo Language Specification").
       `[spec: provenance-vocabulary → "Artifact derivation is authored as
       sources"]`
-- [ ] 3.2 `workspace_NN/artifacts/artifacts_NN.md:24,33` — same migration
+- [x] 3.2 `workspace_NN/artifacts/artifacts_NN.md:24,33` — same migration
       rule as 3.1.
-- [ ] 3.3 `docs/cognitive_nn/use-cases/youtube-creator/artifacts_NN.md`,
+- [x] 3.3 `docs/cognitive_nn/use-cases/youtube-creator/artifacts_NN.md`,
       `docs/cognitive_nn/use-cases/freelance-designer/artifacts_NN.md`,
       `docs/cognitive_nn/use-cases/consulting-sales/artifacts_NN.md`,
       `docs/cognitive_nn/use-cases/startup-founder/artifacts_NN.md` — same
       migration rule as 3.1, applied to each of the 4 files.
-- [ ] 3.4 `docs/innfo/samples/lifecycle-ghostbusters/workspace/
+- [x] 3.4 `docs/innfo/samples/lifecycle-ghostbusters/workspace/
       workspace_V_0-2-0_workspace_NN.md:50` — remove the Models catalog
       `derived_from::` field entirely (per B2 — Models derivation is read
       from the model's own `sources::`, not a separate field). Confirm this
       file is NOT part of the frozen `cogNNitive` sample tree before
       editing (it is a workspace-template sample, not the cogNNitive
       template).
-- [ ] 3.5 Run the WU2 lineage-sync test (`test-lineage-sync.js`) and any
+- [x] 3.5 Run the WU2 lineage-sync test (`test-lineage-sync.js`) and any
       Models-catalog test against the migrated samples to confirm lineage
       output for models is unchanged (Success Criteria: "Lineage output is
       unchanged for models").
