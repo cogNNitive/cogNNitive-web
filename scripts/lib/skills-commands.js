@@ -227,6 +227,29 @@ async function installSkillAtCommit(skill, skillsDir, state) {
       copyDirAtomic(src, dest);
     }
 
+    const pkgPath = path.join(dest, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        const deps = Object.keys(pkg.dependencies || {});
+        const nodeModulesDir = path.join(dest, 'node_modules');
+        const needsInstall =
+          deps.length > 0 &&
+          (!fs.existsSync(nodeModulesDir) ||
+            deps.some((d) => !fs.existsSync(path.join(nodeModulesDir, d))));
+        if (needsInstall) {
+          try {
+            spawnSync('npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], {
+              cwd: dest,
+              encoding: 'utf-8',
+              shell: true,
+              timeout: 60000,
+            });
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+
     state.skills[skill.name] = {
       commit: skill.commit,
       version: skill.version,
@@ -247,44 +270,66 @@ async function installSkillAtCommit(skill, skillsDir, state) {
 async function installTemplateAtCommit(template, templatesDir, state) {
   const isMdFile = template.path.endsWith('.md') || template.path.endsWith('.markdown');
   const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-  const destPath = isMdFile ? path.join(templatesDir, fileName) : path.join(templatesDir, template.name);
+  const flatDestPath = path.join(templatesDir, fileName);
+  const pkgDestPath = path.join(templatesDir, template.name);
 
   fs.mkdirSync(templatesDir, { recursive: true });
 
-  if (isMdFile) {
-    const rawUrl = `https://raw.githubusercontent.com/${template.repo}/${template.commit}/${template.path}`;
-    await downloadFile(rawUrl, destPath);
-  } else {
-    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'actioNN-templates-'));
-    try {
-      const tarball = path.join(tmpRoot, 'tmpl.tar.gz');
-      const url = `https://codeload.github.com/${template.repo}/tar.gz/${template.commit}`;
-      await downloadFile(url, tarball);
+  let recordedPath = isMdFile ? flatDestPath : pkgDestPath;
 
-      const extractDir = path.join(tmpRoot, 'x');
-      extractTarball(tarball, extractDir);
-      const repoRoot = findRepoRoot(extractDir);
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'actioNN-templates-'));
+  try {
+    const tarball = path.join(tmpRoot, 'tmpl.tar.gz');
+    const url = `https://codeload.github.com/${template.repo}/tar.gz/${template.commit}`;
+    await downloadFile(url, tarball);
 
-      const src = path.join(repoRoot, template.path);
-      if (!fs.existsSync(src)) {
-        throw new Error(`template path ${template.path} not found in ${template.repo} at ${template.commit}`);
-      }
+    const extractDir = path.join(tmpRoot, 'x');
+    extractTarball(tarball, extractDir);
+    const repoRoot = findRepoRoot(extractDir);
 
-      if (fs.statSync(src).isDirectory()) {
-        if (fs.existsSync(destPath)) replaceDirAtomic(src, destPath);
-        else copyDirAtomic(src, destPath);
-      } else {
-        fs.copyFileSync(src, destPath);
-      }
-    } finally {
-      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    const src = path.join(repoRoot, template.path);
+    if (!fs.existsSync(src)) {
+      throw new Error(`template path ${template.path} not found in ${template.repo} at ${template.commit}`);
     }
+
+    if (fs.statSync(src).isDirectory()) {
+      if (fs.existsSync(pkgDestPath)) replaceDirAtomic(src, pkgDestPath);
+      else copyDirAtomic(src, pkgDestPath);
+      recordedPath = pkgDestPath;
+    } else {
+      const srcParentDir = path.dirname(src);
+      const hasPackageSubdirs =
+        fs.existsSync(path.join(srcParentDir, 'procedures')) ||
+        fs.existsSync(path.join(srcParentDir, 'assets')) ||
+        fs.existsSync(path.join(srcParentDir, 'samples')) ||
+        path.basename(srcParentDir).toLowerCase() === template.name.toLowerCase();
+
+      if (hasPackageSubdirs) {
+        if (fs.existsSync(pkgDestPath)) replaceDirAtomic(srcParentDir, pkgDestPath);
+        else copyDirAtomic(srcParentDir, pkgDestPath);
+        try { fs.copyFileSync(src, flatDestPath); } catch (_) {}
+        recordedPath = pkgDestPath;
+      } else {
+        fs.copyFileSync(src, flatDestPath);
+        recordedPath = flatDestPath;
+      }
+    }
+  } catch (err) {
+    if (isMdFile) {
+      const rawUrl = `https://raw.githubusercontent.com/${template.repo}/${template.commit}/${template.path}`;
+      await downloadFile(rawUrl, flatDestPath);
+      recordedPath = flatDestPath;
+    } else {
+      throw err;
+    }
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
 
   state.templates[template.name] = {
     commit: template.commit,
     version: template.version,
-    path: destPath,
+    path: recordedPath,
     updated_at: new Date().toISOString(),
   };
 }

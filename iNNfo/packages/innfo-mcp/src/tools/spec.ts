@@ -10,7 +10,7 @@
  * the self-describing parent chain up to level 0, caching locally.
  */
 
-import { join, basename } from 'node:path'
+import { join, basename, dirname } from 'node:path'
 import { readFile, stat } from 'node:fs/promises'
 import {
   getTemplate as coreGetTemplate,
@@ -38,6 +38,7 @@ import {
   isLocalPath,
   toLocalFilePath,
   parseSpecName,
+  findSpecInPackageDir,
 } from './resolver-node.js'
 import type { FreshnessResult, ResolvedCache } from './resolver-node.js'
 
@@ -375,7 +376,8 @@ export async function listTemplates(
           try {
             const content = await readFile(filePath, 'utf-8')
             const fm = parseFrontmatter(content)
-            if (fm?.version) version = String(fm.version)
+            if (fm?.template_version) version = String(fm.template_version)
+            else if (fm?.version) version = String(fm.version)
             else if (fm?.spec_version) version = String(fm.spec_version)
           } catch (err) {
             // swallow deliberately: an unreadable template falls back to the
@@ -390,6 +392,41 @@ export async function listTemplates(
             filePath,
             ...(skillName ? { skillName } : {}),
           })
+        } else if (file.isDirectory()) {
+          const skip = [
+            'node_modules',
+            '.git',
+            'dist',
+            '.spec-cache',
+            'backups',
+            'archive',
+            'samples',
+            'procedures',
+            'assets',
+            'web',
+          ]
+          if (!skip.includes(file.name.toLowerCase())) {
+            const pkgDir = join(dir, file.name)
+            const specFile = await findSpecInPackageDir(pkgDir, file.name)
+            if (specFile && !seenNames.has(file.name)) {
+              seenNames.add(file.name)
+              let version = 'V_0-1-0'
+              try {
+                const content = await readFile(specFile, 'utf-8')
+                const fm = parseFrontmatter(content)
+                if (fm?.template_version) version = String(fm.template_version)
+                else if (fm?.version) version = String(fm.version)
+                else if (fm?.spec_version) version = String(fm.spec_version)
+              } catch (_) {}
+              discovered.push({
+                name: file.name,
+                version,
+                source: source === 'skill' ? `skill:${skillName}` : source,
+                filePath: specFile,
+                ...(skillName ? { skillName } : {}),
+              })
+            }
+          }
         }
       }
     } catch (err) {
@@ -586,7 +623,12 @@ export async function discoverTransitiveAssets(
   opts?: ListTemplateProceduresOptions,
 ): Promise<DiscoveredAssets> {
   const specsDir = join(rootDir, 'specs')
-  const queue: Array<{ docName: string; fm: SpecFrontmatter; depth: number }> = []
+  const queue: Array<{
+    docName: string
+    fm: SpecFrontmatter
+    depth: number
+    filePath?: string
+  }> = []
 
   let modelId = opts?.model_id
   if (!modelId && opts?.model_path) {
@@ -602,7 +644,7 @@ export async function discoverTransitiveAssets(
       if (content) {
         const fm = parseFrontmatter(content)
         if (fm) {
-          queue.push({ docName: basename(filePath, '.md'), fm, depth: 0 })
+          queue.push({ docName: basename(filePath, '.md'), fm, depth: 0, filePath })
         }
       }
     }
@@ -619,6 +661,7 @@ export async function discoverTransitiveAssets(
             docName: basename(pkg.specFilePath, '.md') || opts.template_name || pkg.name,
             fm,
             depth: 0,
+            filePath: pkg.specFilePath,
           })
         }
       }
@@ -643,7 +686,7 @@ export async function discoverTransitiveAssets(
       if (content) {
         const fm = parseFrontmatter(content)
         if (fm) {
-          queue.push({ docName: tmpl.name, fm, depth: 0 })
+          queue.push({ docName: tmpl.name, fm, depth: 0, filePath: tmpl.filePath })
         }
       }
     }
@@ -675,6 +718,49 @@ export async function discoverTransitiveAssets(
           })
         }
       }
+    }
+
+    // Discover procedures from on-disk procedures/ folder if present
+    let templateDir: string | null = null
+    if (item.filePath) {
+      templateDir = dirname(item.filePath)
+    } else {
+      const pkg = await resolveTemplatePackage(rootDir, item.docName)
+      if (pkg) {
+        templateDir = pkg.isPackageDir ? pkg.packagePath : dirname(pkg.specFilePath)
+      }
+    }
+
+    if (templateDir) {
+      const procsDir = join(templateDir, 'procedures')
+      try {
+        const procEntries = await readdir(procsDir, { withFileTypes: true })
+        for (const pe of procEntries) {
+          if (pe.isFile() && pe.name.endsWith('.md')) {
+            const procStem = pe.name.replace(/\.md$/i, '')
+            const procId = procStem.replace(/_NN$/i, '').toLowerCase().replace(/_/g, '-')
+            if (!seenProcIds.has(procId)) {
+              seenProcIds.add(procId)
+              let procName = procStem
+                .replace(/_NN$/i, '')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (c) => c.toUpperCase())
+              try {
+                const procContent = await readFile(join(procsDir, pe.name), 'utf-8')
+                const procFm = parseFrontmatter(procContent)
+                if (procFm?.title) procName = String(procFm.title)
+                else if (procFm?.name) procName = String(procFm.name)
+              } catch (_) {}
+              procedures.push({
+                id: procId,
+                name: procName,
+                path: `procedures/${pe.name}`,
+                source_template: item.docName,
+              })
+            }
+          }
+        }
+      } catch (_) {}
     }
 
     if (Array.isArray(fm.skills)) {
@@ -723,7 +809,12 @@ export async function discoverTransitiveAssets(
           if (incContent) {
             const incFm = parseFrontmatter(incContent)
             if (incFm) {
-              queue.push({ docName: inc.name, fm: incFm, depth: item.depth + 1 })
+              queue.push({
+                docName: inc.name,
+                fm: incFm,
+                depth: item.depth + 1,
+                filePath: pkg?.specFilePath,
+              })
             }
           }
         }
@@ -757,7 +848,12 @@ export async function discoverTransitiveAssets(
           if (parentContent) {
             const pFm = parseFrontmatter(parentContent)
             if (pFm) {
-              queue.push({ docName: pName, fm: pFm, depth: item.depth + 1 })
+              queue.push({
+                docName: pName,
+                fm: pFm,
+                depth: item.depth + 1,
+                filePath: pkg?.specFilePath,
+              })
             }
           }
         }

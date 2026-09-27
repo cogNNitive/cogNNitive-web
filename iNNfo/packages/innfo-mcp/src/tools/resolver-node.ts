@@ -296,7 +296,7 @@ async function findLocalSpec(specsDir: string, reqName: string): Promise<string 
 /**
  * Helper to find a canonical spec markdown file inside a package directory.
  */
-async function findSpecInPackageDir(dir: string, base: string): Promise<string | null> {
+export async function findSpecInPackageDir(dir: string, base: string): Promise<string | null> {
   try {
     const entries = await readdir(dir, { withFileTypes: true })
     const files = entries

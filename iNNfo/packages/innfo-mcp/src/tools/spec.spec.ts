@@ -333,6 +333,41 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(procsRes.procedures.some((p) => p.id === 'proc-sec-v2')).toBe(true)
   })
 
+  it('discoverTransitiveAssets discovers procedures from on-disk procedures/ folder even without explicit frontmatter procedures array', async () => {
+    const pkgDir = join(rootDir, 'templates', 'video_pkg')
+    const procsDir = join(pkgDir, 'procedures')
+    await mkdir(procsDir, { recursive: true })
+
+    await writeFile(
+      join(pkgDir, 'spec_NN.md'),
+      [
+        '---',
+        'level: 2',
+        'title: "Video Package Without Frontmatter Procedures"',
+        '---',
+      ].join('\n'),
+      'utf-8',
+    )
+
+    await writeFile(
+      join(procsDir, 'generate_script_NN.md'),
+      [
+        '---',
+        'title: "Generate Script SOP"',
+        '---',
+        '# NN Procedure',
+      ].join('\n'),
+      'utf-8',
+    )
+
+    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'video_pkg' })
+    expect(procsRes.procedures.length).toBeGreaterThanOrEqual(1)
+    const scriptProc = procsRes.procedures.find((p) => p.id === 'generate-script')
+    expect(scriptProc).toBeDefined()
+    expect(scriptProc?.name).toBe('Generate Script SOP')
+    expect(scriptProc?.path).toBe('procedures/generate_script_NN.md')
+  })
+
   it('M1: findModelFile skips specs/ by default but descends with includeSpecs', async () => {
     await writeFile(
       join(specsDir, 'business_V_0-2-0_NN.md'),

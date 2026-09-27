@@ -92,6 +92,17 @@ function replaceDirAtomic(src, dest) {
     }
     try {
       safeRename(staged, dest);
+      const backupNodeModules = path.join(backup, 'node_modules');
+      const destNodeModules = path.join(dest, 'node_modules');
+      if (fs.existsSync(backupNodeModules) && !fs.existsSync(destNodeModules)) {
+        try {
+          safeRename(backupNodeModules, destNodeModules);
+        } catch (_) {
+          try {
+            fs.cpSync(backupNodeModules, destNodeModules, { recursive: true });
+          } catch (_) {}
+        }
+      }
       fs.rmSync(backup, { recursive: true, force: true });
     } catch (err) {
       if (fs.existsSync(backup) && !fs.existsSync(dest)) {

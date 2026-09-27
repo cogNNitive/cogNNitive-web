@@ -312,6 +312,21 @@ async function testAtomicFs() {
     assert.strictEqual(fs.readFileSync(path.join(destDir, 'file3.txt'), 'utf-8'), 'new file 3');
     assert.strictEqual(fs.existsSync(path.join(destDir, 'sub', 'file2.txt')), false, 'old content replaced');
 
+    // 3b. replaceDirAtomic preserves node_modules across atomic swap
+    const nmDest = path.join(tmpRoot, 'nm-dest');
+    fs.mkdirSync(path.join(nmDest, 'node_modules', 'some-pkg'), { recursive: true });
+    fs.writeFileSync(path.join(nmDest, 'node_modules', 'some-pkg', 'index.js'), 'export default 1');
+    fs.writeFileSync(path.join(nmDest, 'package.json'), '{"name":"nm-dest"}');
+
+    const nmSrc = path.join(tmpRoot, 'nm-src');
+    fs.mkdirSync(nmSrc, { recursive: true });
+    fs.writeFileSync(path.join(nmSrc, 'package.json'), '{"name":"nm-dest","version":"2.0.0"}');
+    fs.writeFileSync(path.join(nmSrc, 'index.js'), 'console.log("v2");');
+
+    atomicFs.replaceDirAtomic(nmSrc, nmDest);
+    assert.strictEqual(fs.existsSync(path.join(nmDest, 'index.js')), true);
+    assert.strictEqual(fs.existsSync(path.join(nmDest, 'node_modules', 'some-pkg', 'index.js')), true, 'node_modules must be preserved across replaceDirAtomic');
+
     // 4. replaceDirAtomic rollback on failure
     const rollbackDest = path.join(tmpRoot, 'rollback-dest');
     fs.mkdirSync(rollbackDest, { recursive: true });
