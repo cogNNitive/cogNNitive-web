@@ -188,7 +188,7 @@ console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
     file: iNNfo/specs/templates/console/innfo-console.bundle.js
-    version: "0.2.0"
+    version: "0.3.0"
     ref_key: innfo-console
 
 workflows:
@@ -218,10 +218,10 @@ channels:
     refs:
       - key: skills
         repo: cogNNitive/cogNNitive
-        version: "2.2.0"
+        version: "2.3.0"
       - key: templates
         repo: cogNNitive/cogNNitive
-        version: "0.14.0"
+        version: "0.15.0"
       - key: innfo-mcp
         repo: cogNNitive/cogNNitive
       - key: innfo-console
