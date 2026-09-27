@@ -81,7 +81,7 @@ agent-bootstrap:
       ref: "skills-v2.2.0"
       commit: "d361a0968c3b10e8d22ecf9a306222ffe25c7e4b"
       requires: [nn-innfo]
-      description: Author, gate, and finalize VidGeNN (VUS) video scripts inside iNNfo Series.
+      description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
   templates:
     - name: workspace
       repo: cogNNitive/cogNNitive

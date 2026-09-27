@@ -67,7 +67,7 @@ skills:
     version: "V_0-1-0"
     ref_key: skills
     requires: [nn-innfo]
-    description: Author, gate, and finalize VidGeNN (VUS) video scripts inside iNNfo Series.
+    description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
     external_specs:
       - name: vus
         repo: innV0/VidGeNN
