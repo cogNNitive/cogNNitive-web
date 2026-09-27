@@ -11,6 +11,12 @@ procedures:
   - id: "generate-anydeo-script"
     name: "Generate Anydeo Script"
     path: "procedures/generate_anydeo_script_NN.md"
+  - id: "publish-web-portal"
+    name: "Publish Video Web Portal"
+    path: "procedures/publish_web_portal_NN.md"
+  - id: "setup-github-pages-repo"
+    name: "Setup GitHub Pages Repo"
+    path: "procedures/setup_github_pages_repo_NN.md"
 relationship_types:
   hierarchy:
     enabled: true
@@ -75,6 +81,11 @@ concept:: Video
 type:: select
 options:: [draft, scripting, rendering, published, archived]
 description:: Production state of the video.
+
+## NN Field Definition: youtube_url
+concept:: Video
+type:: string
+description:: Public YouTube URL of the uploaded video (optional).
 
 # Video App
 
@@ -151,6 +162,7 @@ Assets are scoped at exactly three levels — workspace, series, video — match
 | Video | `voiceover` | audio | Master voiceover track (`assets/{slug}/`) |
 | Video | `master` | video | Rendered video file (`assets/{slug}/`) |
 | Video | `status` | select | draft / scripting / rendering / published / archived |
+| Video | `youtube_url` | string | Public YouTube URL (optional) |
 
 Each file-backed field holds exactly one filename. A video that needs several images or several voice clips keeps them in its folder as attachments.
 
@@ -175,7 +187,7 @@ When a Video is part of the Workspace → Subject → Series → Video hierarchy
 
 ### Summary
 
-One video: its title, description, and status, plus the file-backed fields `script`, `thumbnail`, `voiceover`, and `master`, all stored in the video's own folder.
+One video: its title, description, status, and optional `youtube_url`, plus the file-backed fields `script`, `thumbnail`, `voiceover`, and `master`, all stored in the video's own folder.
 
 ### Description
 
