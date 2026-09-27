@@ -99,26 +99,42 @@ output:: [[Asset Generation and Cost Plan]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Before triggering generation of any image, video, audio/TTS, or multimodal asset, inspect `script.md` to inventory every asset needed. For each asset, document a clear description/prompt, select the target AI model and provider (e.g. Replicate, WaveSpeed, fal.ai, ElevenLabs), search current pricing information on each provider's documentation/pricing pages, calculate per-asset estimated costs, and compute the total estimated production cost. Write this proposal to `asset_plan.md` in the video's own folder (`assets/{video-slug}/asset_plan.md` or `series/{series-slug}/assets/{video-slug}/asset_plan.md`).
+Before triggering generation of any image, video, audio/TTS, or multimodal asset, inspect `script.md` to inventory every asset needed following the visual preproduction standards (`references/thumbnail-and-asset-pipeline.md`):
+1. **Empty Set First**: Group environment backgrounds (`set_[scene].jpeg`) with strict empty room prompts (`strictly no people, empty chairs`) as prerequisite steps before in-painting character avatars (`avatar_[role]_[scene].jpeg`).
+2. **Identity Anchoring**: Anchor characters against canonical isolated portraits (`avatar_[character]_base_white.jpeg`).
+3. **Two-Phase Thumbnail**: Plan the clean 16:9 base thumbnail (`thumbnail_[topic]_base.jpeg`) without text, followed by programmatic composition.
+For each asset, document a clear description/prompt, select the target AI model and provider (e.g. Replicate, WaveSpeed, fal.ai, ElevenLabs), search current pricing information on each provider's documentation/pricing pages, calculate per-asset estimated costs, and compute the total estimated production cost. Write this proposal to `asset_plan.md` in the video's own folder (`assets/{video-slug}/asset_plan.md` or `series/{series-slug}/assets/{video-slug}/asset_plan.md`).
 
 ## NN Work: Render Video
 parent:: [[Generate Anydeo Script Workflow]]
 step_type:: task
-next:: [[Finalize Video Assets]]
+next:: [[Compose Video Thumbnail]]
 condition:: Script is registered and asset_plan.md is approved
 input:: [[Registered Script Artifact]], [[Asset Generation and Cost Plan]]
 output:: [[Rendered Output]]
 output_status:: verified
 tool:: [[VidGeNN]]
 scope:: external
-User-driven: the Video Producer reviews the `asset_plan.md` budget and renders the registered script in VidGeNN, producing `renders/{ref}/master.mp4` (and, when VidGeNN emits them, a thumbnail and a voiceover) next to the script. This step runs outside iNNfo's own tooling.
+User-driven: the Video Producer reviews the `asset_plan.md` budget and renders the registered script in VidGeNN, producing `renders/{ref}/master.mp4` (and, when VidGeNN emits them, a clean base thumbnail and a voiceover) next to the script. This step runs outside iNNfo's own tooling.
+
+## NN Work: Compose Video Thumbnail
+parent:: [[Generate Anydeo Script Workflow]]
+step_type:: task
+next:: [[Finalize Video Assets]]
+condition:: Clean 16:9 base thumbnail is available
+input:: [[Asset Generation and Cost Plan]]
+output:: [[Composed Video Thumbnail]]
+output_status:: verified
+tool:: [[nn-video-script Skill]]
+scope:: internal
+Run `node scripts/render-thumbnail.mjs --base <path> --title <title> [--subtitle <subt>] [--badge <badge>] --out <out>`. It programmatically composites bold high-contrast title, subtitle/metadata, and brand badge pill onto the clean base image at 2560x1440 resolution using SVG vector templating and sharp.
 
 ## NN Work: Finalize Video Assets
 parent:: [[Generate Anydeo Script Workflow]]
 step_type:: task
 next:: [[Register Video Assets]]
 condition:: A render is available under renders/
-input:: [[Rendered Output]]
+input:: [[Rendered Output]], [[Composed Video Thumbnail]]
 output:: [[Finalized Video Assets]]
 output_status:: verified
 tool:: [[nn-video-script Skill]]
@@ -128,6 +144,7 @@ Run `node scripts/finalize-video.mjs --video-dir <dir> [--ref <r>] [--force-thum
 ## NN Work: Register Video Assets
 parent:: [[Generate Anydeo Script Workflow]]
 step_type:: task
+next:: [[Prompt Web Portal Publication]]
 condition:: Finalize has printed the field values to set
 input:: [[Finalized Video Assets]]
 output:: [[Registered Video Assets]]
@@ -135,6 +152,17 @@ output_status:: verified
 tool:: [[File Editor]]
 scope:: internal
 Set `master::`, `thumbnail::`, and (when present) `voiceover::` on the owning Video Element using the values `finalize-video.mjs` printed, and set `status:: rendering`.
+
+## NN Work: Prompt Web Portal Publication
+parent:: [[Generate Anydeo Script Workflow]]
+step_type:: task
+condition:: Video assets are registered
+input:: [[Registered Video Assets]]
+output:: [[Web Publication Decision]]
+output_status:: verified
+tool:: [[AI Agent]]
+scope:: internal
+Prompt the user explicitly asking if they want to publish the video companion page and update the public web portal via the `Publish Video Web Portal` procedure (`procedures/publish_web_portal_NN.md`). If confirmed, proceed to generate or update the web portal in the `web/` directory.
 
 # NN Artifact
 
@@ -166,6 +194,10 @@ description:: A markdown document (`asset_plan.md`) stored in the video's own fo
 type:: intermediate
 description:: The master/thumbnail/voiceover files VidGeNN produced under renders/{ref}/, not yet promoted into the video's own folder.
 
+## NN Artifact: Composed Video Thumbnail
+type:: intermediate
+description:: The 2560x1440 thumbnail image generated by render-thumbnail.mjs with programmatic typography and brand styling overlaid on the clean 16:9 base.
+
 ## NN Artifact: Finalized Video Assets
 type:: intermediate
 description:: The master/thumbnail/voiceover files copied out of renders/{ref}/ into the video's own folder by finalize-video.mjs, plus the field values it printed.
@@ -173,6 +205,10 @@ description:: The master/thumbnail/voiceover files copied out of renders/{ref}/ 
 ## NN Artifact: Registered Video Assets
 type:: output
 description:: The finalized assets referenced by the owning Video Element's master::, thumbnail::, and voiceover:: fields, with status:: rendering.
+
+## NN Artifact: Web Publication Decision
+type:: output
+description:: User confirmation and intent to proceed with web portal generation and GitHub Pages publication.
 
 # NN Tools
 

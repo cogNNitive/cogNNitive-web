@@ -37,6 +37,7 @@
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-vue": "^9.33.0",
     "prettier": "^3.9.4",
+    "sharp": "^0.35.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.62.1",
     "vue-eslint-parser": "^9.4.3"

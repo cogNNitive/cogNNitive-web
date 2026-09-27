@@ -121,9 +121,11 @@ Subject template shape.
 | `scripts/check-script.mjs` | Zero-Unresolved-Placeholder Gate + No-Upward-Escape Rule. Exits 1 with `line:col` findings on the first failing category. |
 | `scripts/vus-parse.mjs` | Runs the real `ScriptParser` (via `npx tsx` against `$VIDGENN_ROOT`) and requires zero issues. Skips explicitly (exit 0) when `VIDGENN_ROOT` is unset. |
 | `scripts/vus-spec.mjs` | The only place this skill reads VUS-syntax facts. `voices` / `props <scope>` queries against the pinned, hash-verified spec. |
+| `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast titles, subtitles, and brand badges over clean 16:9 base images. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.
+See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines (Empty Set First, Two-Phase Thumbnail, and asset naming conventions).
 
 ## 7. VidGeNN Stays Unaware of This Fork
 
