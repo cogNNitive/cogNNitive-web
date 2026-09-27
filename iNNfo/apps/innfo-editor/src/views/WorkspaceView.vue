@@ -371,9 +371,6 @@ const activeEditorEvents = computed(() => {
 
 function onSelectNode(nodeId: string): void {
   uiStore.selectNode(nodeId)
-  if (uiStore.activeView === 'matrices' || uiStore.activeView === 'info') {
-    uiStore.setActiveView('editor')
-  }
 }
 
 function onEditorChange(): void {

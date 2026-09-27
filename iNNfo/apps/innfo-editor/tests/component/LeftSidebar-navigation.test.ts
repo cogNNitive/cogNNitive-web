@@ -27,12 +27,12 @@ status: "active"
   }
 }
 
-describe('LeftSidebar — Semantic Navigation & View Switcher (specs/sidebar-navigation)', () => {
+describe('LeftSidebar — Dedicated Content Tree Navigation (specs/editor-navigation)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
-  it('renders switcher buttons for editor, graph, and consoles exclusively', () => {
+  it('does NOT render view switcher tabs (editor, graph, consoles, explorer)', () => {
     const modelStore = useModelStore()
     modelStore.setGraph(
       {
@@ -43,40 +43,14 @@ describe('LeftSidebar — Semantic Navigation & View Switcher (specs/sidebar-nav
 
     const wrapper = mount(LeftSidebar)
 
-    // Verify semantic buttons exist
-    expect(wrapper.find('[data-testid="view-switcher-editor"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="view-switcher-graph"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="view-switcher-consoles"]').exists()).toBe(true)
-
-    // Verify explorer switcher button is NOT rendered
+    // Verify view switcher buttons do NOT exist in LeftSidebar
+    expect(wrapper.find('[data-testid="view-switcher-editor"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="view-switcher-graph"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="view-switcher-consoles"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="view-switcher-explorer"]').exists()).toBe(false)
   })
 
-  it('clicking semantic view switcher buttons switches uiStore.activeView', async () => {
-    const modelStore = useModelStore()
-    const uiStore = useUiStore()
-    modelStore.setGraph(
-      {
-        'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
-      },
-      ['workspace_01.md'],
-    )
-
-    const wrapper = mount(LeftSidebar)
-
-    expect(uiStore.activeView).toBe('editor')
-
-    await wrapper.find('[data-testid="view-switcher-graph"]').trigger('click')
-    expect(uiStore.activeView).toBe('graph')
-
-    await wrapper.find('[data-testid="view-switcher-consoles"]').trigger('click')
-    expect(uiStore.activeView).toBe('consoles')
-
-    await wrapper.find('[data-testid="view-switcher-editor"]').trigger('click')
-    expect(uiStore.activeView).toBe('editor')
-  })
-
-  it('renders semantic model header and tree nodes in editor view', () => {
+  it('permanently renders semantic model header and tree structure', () => {
     const modelStore = useModelStore()
     modelStore.setGraph(
       {
@@ -89,5 +63,30 @@ describe('LeftSidebar — Semantic Navigation & View Switcher (specs/sidebar-nav
 
     expect(wrapper.find('[data-testid="model-header"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="model-header-name"]').text()).toContain('workspace_01.md')
+  })
+
+  it('preserves tree accessibility regardless of uiStore.activeView', async () => {
+    const modelStore = useModelStore()
+    const uiStore = useUiStore()
+    modelStore.setGraph(
+      {
+        'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
+      },
+      ['workspace_01.md'],
+    )
+
+    const wrapper = mount(LeftSidebar)
+
+    // Tree is rendered in editor view
+    uiStore.setActiveView('editor')
+    expect(wrapper.find('[data-testid="model-header"]').exists()).toBe(true)
+
+    // Tree remains rendered in graph view
+    uiStore.setActiveView('graph')
+    expect(wrapper.find('[data-testid="model-header"]').exists()).toBe(true)
+
+    // Tree remains rendered in consoles view
+    uiStore.setActiveView('consoles')
+    expect(wrapper.find('[data-testid="model-header"]').exists()).toBe(true)
   })
 })

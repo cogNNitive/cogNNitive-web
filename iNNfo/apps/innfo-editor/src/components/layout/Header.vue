@@ -87,6 +87,58 @@
       </div>
     </div>
 
+    <!-- Primary Workspace View Switcher -->
+    <div
+      v-if="hasRootNode"
+      class="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shrink-0 mr-4"
+      data-testid="header-view-switcher"
+    >
+      <button
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer capitalize border border-transparent"
+        :class="
+          uiStore.activeView === 'editor'
+            ? 'bg-white dark:bg-slate-700 text-primary shadow-xs'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+        "
+        @click="uiStore.setActiveView('editor')"
+        data-testid="header-view-editor"
+        title="Editor View"
+      >
+        <FileText class="w-3.5 h-3.5 shrink-0" />
+        <span>Editor</span>
+      </button>
+
+      <button
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer capitalize border border-transparent"
+        :class="
+          uiStore.activeView === 'graph'
+            ? 'bg-white dark:bg-slate-700 text-primary shadow-xs'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+        "
+        @click="uiStore.setActiveView('graph')"
+        data-testid="header-view-graph"
+        title="Graph View"
+      >
+        <LayoutDashboard class="w-3.5 h-3.5 shrink-0" />
+        <span>Graph</span>
+      </button>
+
+      <button
+        class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer capitalize border border-transparent"
+        :class="
+          uiStore.activeView === 'consoles'
+            ? 'bg-white dark:bg-slate-700 text-primary shadow-xs'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+        "
+        @click="uiStore.setActiveView('consoles')"
+        data-testid="header-view-consoles"
+        title="Workspace Consoles & Hub"
+      >
+        <Layers class="w-3.5 h-3.5 shrink-0" />
+        <span>Consoles</span>
+      </button>
+    </div>
+
     <!-- Right Section Actions -->
     <div class="flex items-center gap-2.5 shrink-0">
       <!-- Search Button & Floating Search Popup Wrapper -->
@@ -515,6 +567,9 @@ import {
   Sparkles,
   Search,
   X,
+  FileText,
+  LayoutDashboard,
+  Layers,
 } from 'lucide-vue-next'
 
 import { useWorkspaceStore } from '../../stores/workspaceStore'

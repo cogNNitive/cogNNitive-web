@@ -13,55 +13,6 @@
     ></div>
 
     <div class="px-3 py-4 space-y-4">
-      <!-- Navigation Switcher (Horizontal) -->
-      <div class="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800/80">
-        <!-- Editor -->
-        <button
-          class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer capitalize border border-transparent"
-          :class="
-            uiStore.activeView === 'editor'
-              ? 'bg-white dark:bg-slate-700 text-primary shadow-xs'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-          "
-          @click="uiStore.setActiveView('editor')"
-          data-testid="view-switcher-editor"
-        >
-          <FileText class="w-3.5 h-3.5 shrink-0" />
-          <span>editor</span>
-        </button>
-
-        <!-- Graph -->
-        <button
-          class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer capitalize border border-transparent"
-          :class="
-            uiStore.activeView === 'graph'
-              ? 'bg-white dark:bg-slate-700 text-primary shadow-xs'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-          "
-          @click="uiStore.setActiveView('graph')"
-          data-testid="view-switcher-graph"
-        >
-          <LayoutDashboard class="w-3.5 h-3.5 shrink-0" />
-          <span>graph</span>
-        </button>
-
-        <!-- Consoles -->
-        <button
-          class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer capitalize border border-transparent"
-          :class="
-            uiStore.activeView === 'consoles'
-              ? 'bg-white dark:bg-slate-700 text-primary shadow-xs'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-          "
-          @click="uiStore.setActiveView('consoles')"
-          data-testid="view-switcher-consoles"
-          title="Workspace Consoles & Hub"
-        >
-          <Layers class="w-3.5 h-3.5 shrink-0" />
-          <span>consoles</span>
-        </button>
-      </div>
-
       <!-- Breadcrumb navigation for Focused Model Mode -->
       <div
         v-if="uiStore.sidebarMode === 'focused_model'"
@@ -344,7 +295,6 @@ import { resolveEffectiveMetamodel } from '../../model/metamodel'
 import {
   ChevronsDown,
   ChevronsUp,
-  LayoutDashboard,
   Table2,
   Settings,
   FileText,
@@ -352,7 +302,6 @@ import {
   ChevronDown,
   ArrowLeft,
   Boxes,
-  Layers,
 } from 'lucide-vue-next'
 import { useModelStore } from '../../stores/modelStore'
 import { useMetamodelStore } from '../../stores/metamodelStore'

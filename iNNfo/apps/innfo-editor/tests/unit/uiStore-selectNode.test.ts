@@ -17,10 +17,17 @@ describe('uiStore.selectNode', () => {
     expect(uiStore.showValidationReport).toBe(false)
   })
 
-  it('resets activeView to editor when activeView is ai-guide', () => {
+  it.each([
+    'graph',
+    'consoles',
+    'matrices',
+    'info',
+    'ai-guide',
+    'explorer',
+  ] as const)('resets activeView to editor when activeView is %s', (view) => {
     const uiStore = useUiStore()
-    uiStore.setActiveView('ai-guide')
-    expect(uiStore.activeView).toBe('ai-guide')
+    uiStore.setActiveView(view)
+    expect(uiStore.activeView).toBe(view)
 
     uiStore.selectNode('Ghostbusters/Root/Element')
 

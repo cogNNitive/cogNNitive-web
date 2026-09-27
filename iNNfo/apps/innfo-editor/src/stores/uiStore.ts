@@ -137,7 +137,7 @@ export const useUiStore = defineStore('ui', () => {
     // navigation path routes through selectNode, so dismissing it here is
     // what makes "click anywhere else" show that place again.
     showValidationReport.value = false
-    if (activeView.value === 'ai-guide') {
+    if (activeView.value !== 'editor') {
       activeView.value = 'editor'
     }
   }
