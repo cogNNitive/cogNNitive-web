@@ -27,7 +27,7 @@ skills:
       - name: innfo-mcp
         repo: cogNNitive/cogNNitive
         path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
-        version: "0.10.0"
+        version: "0.11.0"
         ref_key: innfo-mcp
   - name: nn-preflight
     repo: cogNNitive/cogNNitive
@@ -193,7 +193,7 @@ console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
     file: iNNfo/specs/templates/console/innfo-console.bundle.js
-    version: "0.3.0"
+    version: "0.4.0"
     ref_key: innfo-console
 
 workflows:

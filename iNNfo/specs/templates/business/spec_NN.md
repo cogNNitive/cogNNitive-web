@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-5"
+template_version: "V_0-2-6"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -28,10 +28,6 @@ relationship_types:
     enabled: false
   sequence:
     enabled: true
-procedures:
-  - id: "compile-model-viewer"
-    name: "Compile Model Viewer"
-    path: "procedures/compile_model_viewer_NN.md"
 assets:
   - id: "model-viewer-shell"
     name: "Model Viewer HTML Layout"
@@ -182,7 +178,13 @@ procedure) and moves the `Metrics-Organizational goals` matrix onto the
 composite, where both endpoints meet. The `V_0-2-3` Ghostbusters sample is
 kept as the canonical sample: its prose-only `Metrics` elements and its
 `metrics-organizational goals` block resolve unchanged against the new
-composition.
+composition. `V_0-2-6` drops the `Compile Model Viewer` procedure
+(`procedures/compile_model_viewer_NN.md`) and its `procedures:` entry: model
+consultation has relocated to the workspace level as `Compile Model Console`
+(`workspace/procedures/compile_model_console_NN.md`), which fills the same
+consultation shell plus per-field citation icons. The `model-viewer-shell`
+asset entry (`assets/model_viewer.html`) stays declared for one transition
+cycle even though no procedure still targets it from this template.
 
 ## Parent Chain
 

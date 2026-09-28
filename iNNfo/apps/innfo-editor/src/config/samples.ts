@@ -34,7 +34,7 @@ export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
   artifacts: 'V_0-2-0',
   base: 'V_0-1-0',
   blank: 'V_0-2-0',
-  business: 'V_0-2-5',
+  business: 'V_0-2-6',
   'business-model': 'V_0-2-3',
   cogNNitive: 'V_0-2-0',
   'design-presets': 'V_0-1-0',

@@ -2039,7 +2039,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-5"
+template_version: "V_0-2-6"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -2062,10 +2062,6 @@ relationship_types:
     enabled: false
   sequence:
     enabled: true
-procedures:
-  - id: "compile-model-viewer"
-    name: "Compile Model Viewer"
-    path: "procedures/compile_model_viewer_NN.md"
 assets:
   - id: "model-viewer-shell"
     name: "Model Viewer HTML Layout"
@@ -2088,7 +2084,7 @@ description:: Scores how directly each Metric tracks each Organizational goal.
 export const CANONICAL_TEMPLATES: Record<string, CanonicalTemplate> = {
   business: {
     name: 'business',
-    version: 'V_0-2-5',
+    version: 'V_0-2-6',
     aliases: [
       'business',
       'business_spec_nn',

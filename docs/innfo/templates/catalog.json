@@ -39,10 +39,10 @@
     },
     "business": {
       "name": "business",
-      "adopted": "V_0-2-5",
+      "adopted": "V_0-2-6",
       "versions": [
         {
-          "template_version": "V_0-2-5",
+          "template_version": "V_0-2-6",
           "spec_version": "V_0-2-5",
           "title": "Business App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
