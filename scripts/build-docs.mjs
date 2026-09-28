@@ -114,6 +114,11 @@ fs.mkdirSync(catalogTargetDir, { recursive: true });
 fs.copyFileSync(catalogSrc, path.join(catalogTargetDir, 'catalog.json'));
 console.log('✅ Staged docs/innfo/templates/catalog.json');
 
+// 3c. Derive docs-facts generated regions (MCP tool facts today; skills
+// catalog from Unit 3 onward) from their canonical sources, so the Docsify
+// step below never staleness-races a hand-typed fact (design D5).
+run('node scripts/generate-docs-facts.mjs', 'Generate docs-derived facts (MCP tool facts)');
+
 // 4. Generate Docsify documentation suites from iNNfo models
 run(
   'node scripts/generate-docsify-suite.mjs docs/innfo/documentation/documentation_NN.md',
