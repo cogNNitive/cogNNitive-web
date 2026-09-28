@@ -648,7 +648,9 @@ const pillClasses = computed(() => {
   if (props.selected) {
     const p = visuals.palette.value
     if (props.kind === 'concept') {
-      return [...baseClasses, p.selectedBg, 'text-white']
+      const textColor = p.conceptText ?? 'text-white'
+      const borderColor = p.conceptBorder ?? 'border-transparent'
+      return [...baseClasses, p.selectedBg, textColor, 'border', borderColor]
     }
     return [...baseClasses, p.text, 'border-primary ring-1 ring-primary shadow-xs']
   }

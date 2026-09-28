@@ -36,8 +36,8 @@
         <span
           class="text-2xs px-1.5 py-0.5 rounded-full shrink-0 font-medium tabular-nums"
           :style="{
-            backgroundColor: conceptColorHex + '18',
-            color: conceptColorHex,
+            backgroundColor: countBadgeBg,
+            color: countBadgeText,
           }"
         >
           {{ totalElementCount }}
@@ -331,6 +331,20 @@ const conceptIcon = computed(() => {
     return visuals.resolveIcon(firstEl)
   }
   return 'folder'
+})
+
+const countBadgeBg = computed(() => {
+  if (conceptColorHex.value === '#94a3b8') {
+    return '#f1f5f9'
+  }
+  return conceptColorHex.value + '18'
+})
+
+const countBadgeText = computed(() => {
+  if (conceptColorHex.value === '#94a3b8') {
+    return '#64748b'
+  }
+  return conceptColorHex.value
 })
 
 const headerStyle = computed(() => {

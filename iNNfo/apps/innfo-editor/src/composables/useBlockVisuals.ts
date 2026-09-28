@@ -68,7 +68,9 @@ export function useBlockVisuals(opts: BlockVisualsOptions): BlockVisuals {
 
     // Solid identity tier: Concept (the mold) and Model (a file identity) — own color, solid fill.
     if (kind === 'concept' || kind === 'model') {
-      return [p.selectedBg, 'text-white', 'border', 'border-transparent']
+      const textColor = p.conceptText ?? 'text-white'
+      const borderColor = p.conceptBorder ?? 'border-transparent'
+      return [p.selectedBg, textColor, 'border', borderColor]
     }
 
     // Firm outline tier: Source and Artifact — fixed neutral color, white fill, solid border/text.
