@@ -185,6 +185,16 @@ agent-bootstrap:
       ref: "innfo-console-v0.4.0"
       commit: "9e8cfde2010435b8d2997558e8f9bb3556be160e"
       url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/9e8cfde2010435b8d2997558e8f9bb3556be160e/iNNfo/specs/templates/console/innfo-console.bundle.js
+    - file: iNNfo/specs/templates/console/artifact_blueprint.html
+      version: "0.4.0"
+      ref: "innfo-console-v0.4.0"
+      commit: "9e8cfde2010435b8d2997558e8f9bb3556be160e"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/9e8cfde2010435b8d2997558e8f9bb3556be160e/iNNfo/specs/templates/console/artifact_blueprint.html
+    - file: scripts/export-console.mjs
+      version: "0.4.0"
+      ref: "innfo-console-v0.4.0"
+      commit: "9e8cfde2010435b8d2997558e8f9bb3556be160e"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/9e8cfde2010435b8d2997558e8f9bb3556be160e/scripts/export-console.mjs
   workflows:
     - id: model
       label: Create an iNNfo model

@@ -539,7 +539,7 @@ There are **4 formal relationship forms** in iNNfo (`hierarchy`, `evaluable_matr
 When the user selects option `[d]` (Export / update console artifacts):
 1. Verify active model context via the Active Model Selection Gate (§0a-bis).
 2. Execute console compilation for the active model:
-   - Run `node scripts/export-console.mjs . <model_name>` (or `--stale` / `--all` depending on user intent).
+   - Run the console export CLI (`node ~/.agents/console/export-console.mjs . <model_name>` in user workspaces, or `node scripts/export-console.mjs . <model_name>` when inside the cogNNitive monorepo). Use `--stale` or `--all` depending on user intent.
    - If the user requests inspection or status, invoke with `--status` or `--tree` (read-only mode).
 3. Present the compiled artifact path (e.g. `export/<stem>_console/<stem>_console.html`) with instructions for opening offline or in browser.
 

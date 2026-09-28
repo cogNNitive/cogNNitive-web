@@ -325,5 +325,83 @@ level: 3
         true,
       )
     })
+
+    it('runs standalone installed in ~/.agents/console layout where all assets live in the same directory', async () => {
+      const repoRoot = resolve(here, '..')
+      const agentsConsoleDir = join(tempDir, 'agents-console')
+      await mkdir(agentsConsoleDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(agentsConsoleDir, 'export-console.mjs'))
+      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
+        await copyFile(
+          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
+          join(agentsConsoleDir, name),
+        )
+      }
+
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        [join(agentsConsoleDir, 'export-console.mjs'), tempDir, 'business'],
+        { cwd: tempDir },
+      )
+      assert.match(stdout, /business_V_0-2-5_console\.html/)
+      assert.equal(
+        existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
+        true,
+      )
+    })
+
+    it('resolves console assets using INNFO_CONSOLE_DIR environment variable', async () => {
+      const repoRoot = resolve(here, '..')
+      const customBinDir = join(tempDir, 'custom-bin')
+      const customAssetsDir = join(tempDir, 'custom-assets')
+      await mkdir(customBinDir, { recursive: true })
+      await mkdir(customAssetsDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(customBinDir, 'export-console.mjs'))
+      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
+        await copyFile(
+          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
+          join(customAssetsDir, name),
+        )
+      }
+
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        [join(customBinDir, 'export-console.mjs'), tempDir, 'business'],
+        {
+          cwd: tempDir,
+          env: { ...process.env, INNFO_CONSOLE_DIR: customAssetsDir },
+        },
+      )
+      assert.match(stdout, /business_V_0-2-5_console\.html/)
+      assert.equal(
+        existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
+        true,
+      )
+    })
+
+    it('fails with helpful error message when blueprint cannot be found', async () => {
+      const emptyBinDir = join(tempDir, 'empty-bin')
+      await mkdir(emptyBinDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(emptyBinDir, 'export-console.mjs'))
+
+      const { code, stderr } = await (async () => {
+        try {
+          await execFileAsync(
+            process.execPath,
+            [join(emptyBinDir, 'export-console.mjs'), tempDir, 'business'],
+            {
+              cwd: tempDir,
+              env: { ...process.env, INNFO_CONSOLE_DIR: join(tempDir, 'non-existent') },
+            },
+          )
+          return { code: 0, stderr: '' }
+        } catch (err) {
+          return { code: err.code ?? 1, stderr: err.stderr ?? '' }
+        }
+      })()
+
+      assert.equal(code, 1)
+      assert.match(stderr, /Cannot find console blueprint 'artifact_blueprint\.html'/)
+    })
   })
 })

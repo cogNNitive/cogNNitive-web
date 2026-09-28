@@ -29,6 +29,7 @@ import { existsSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
+import os from 'node:os'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
@@ -41,22 +42,25 @@ function parseConsoleCdnRef(bundleText) {
   return m ? `innfo-console-v${m[1]}` : null
 }
 
-const blueprintPath = join(
-  repoRoot,
-  'iNNfo',
-  'specs',
-  'templates',
-  'console',
-  'artifact_blueprint.html',
-)
-const bundlePath = join(
-  repoRoot,
-  'iNNfo',
-  'specs',
-  'templates',
-  'console',
-  'innfo-console.bundle.js',
-)
+export function resolveConsoleAsset(filename) {
+  if (process.env.INNFO_CONSOLE_DIR) {
+    const p = join(process.env.INNFO_CONSOLE_DIR, filename)
+    if (existsSync(p)) return p
+  }
+  const pHere = join(here, filename)
+  if (existsSync(pHere)) return pHere
+
+  const pHome = join(os.homedir(), '.agents', 'console', filename)
+  if (existsSync(pHome)) return pHome
+
+  const pRepo = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', filename)
+  if (existsSync(pRepo)) return pRepo
+
+  return pHere
+}
+
+const blueprintPath = resolveConsoleAsset('artifact_blueprint.html')
+const bundlePath = resolveConsoleAsset('innfo-console.bundle.js')
 
 function computeSha256(content) {
   return createHash('sha256').update(content, 'utf8').digest('hex')
@@ -285,6 +289,17 @@ async function main() {
     process.exit(2)
   }
   const root = resolve(args.root)
+  if (!existsSync(blueprintPath)) {
+    console.error(
+      `Cannot find console blueprint 'artifact_blueprint.html'. Looked in:\n` +
+      `  - $INNFO_CONSOLE_DIR (${process.env.INNFO_CONSOLE_DIR || 'not set'})\n` +
+      `  - ${here}\n` +
+      `  - ${join(os.homedir(), '.agents', 'console')}\n` +
+      `  - ${join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')}\n` +
+      `Run 'node scripts/skills-manager.js update' or bootstrap to install console assets.`,
+    )
+    process.exit(1)
+  }
   const blueprint = await readFile(blueprintPath, 'utf-8')
   const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
 
