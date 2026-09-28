@@ -21,7 +21,7 @@ All skills, templates, and MCP bundles declared in the bootstrap manifest (`mani
 - GIVEN the skills section of `manifest/source.yaml`
 - WHEN any skill entry (e.g. `nn-router`, `nn-innfo`, `nn-trannsform`) is inspected
 - THEN its `repo:` is `cogNNitive/cogNNitive`
-- AND its `path:` begins with `actioNN/skills/`
+- AND its `path:` begins with `skills/`
 
 #### Scenario: Templates asset declaration
 - GIVEN the templates section of `manifest/source.yaml`
@@ -99,14 +99,14 @@ No frontmatter URL (`spec_url`, `parent_spec.url`, `includes[].url`) is rewritte
 
 ### Requirement: Workspace Git Skill Registration
 
-At release time (the `chore(release)` commit that tags the skills channel, precedent `73cbc64` for nn-upgrade — NOT in the feature change), the skills section of `manifest/source.yaml` MUST declare `nn-workspace-git` with `repo: cogNNitive/cogNNitive`, `path: actioNN/skills/nn-workspace-git`, and `ref_key: skills`. The entry MUST NOT reference any archived repository. Registering in the feature change is FORBIDDEN: pre-release it breaks `Validate Stable Manifest` (404 at the pinned tag) while omitting the regen breaks `Doc Fresh` — both cannot pass before release tags exist.
+At release time (the `chore(release)` commit that tags the skills channel, precedent `73cbc64` for nn-upgrade — NOT in the feature change), the skills section of `manifest/source.yaml` MUST declare `nn-workspace-git` with `repo: cogNNitive/cogNNitive`, `path: skills/nn-workspace-git`, and `ref_key: skills`. The entry MUST NOT reference any archived repository. Registering in the feature change is FORBIDDEN: pre-release it breaks `Validate Stable Manifest` (404 at the pinned tag) while omitting the regen breaks `Doc Fresh` — both cannot pass before release tags exist.
 
 #### Scenario: Skill entry declaration
 
 - GIVEN the skills section of `manifest/source.yaml`
 - WHEN the `nn-workspace-git` entry is inspected
 - THEN its `repo:` is `cogNNitive/cogNNitive`
-- AND its `path:` is `actioNN/skills/nn-workspace-git`
+- AND its `path:` is `skills/nn-workspace-git`
 
 #### Scenario: Distribution stays unified
 

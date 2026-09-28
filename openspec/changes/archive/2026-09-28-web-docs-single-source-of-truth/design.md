@@ -34,7 +34,7 @@ A new, dedicated generator (`scripts/generate-docs-facts.mjs`) owns derived fact
 | `scripts/generate-docs-facts.mjs` | Create | CLI: write / `--check [--against HEAD]`. Exit 0 ok, 1 drift, 2 input failure |
 | `scripts/generate-docsify-suite.mjs` | Modify | Export `parseNNModel`; is-main guard |
 | `scripts/build-docs.mjs` | Modify | Call the generator (write mode) |
-| `scripts/verify.js` | Modify | New step 7e: `--check --against HEAD` plus the literal scan |
+| `scripts/verify.js` | Modify | New step 7e: `--check [--against HEAD]` plus the literal scan |
 | `docs/innfo/documentation/innfo-mcp.md` | Modify | Replace the hand-typed 9-row table with the `mcp-tools` region |
 | `docs/skills/documentation/README.md` | Modify | `skills-catalog` region (count, name, version, description). The hand-typed Triggers column is dropped |
 | `docs/skills/documentation/documentation_NN.md` | Modify | Page `nn-router` becomes `nn-start`; add `nn-video-script` |
