@@ -23,7 +23,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
 /**
@@ -317,8 +317,12 @@ export function parseCliArgs(argv) {
   return args;
 }
 
-// CLI Execution entry point
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// CLI entry point. Symlink/junction-safe guard: compare realpaths, not the typed path.
+const isMain =
+  process.argv[1] &&
+  fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+
+if (isMain) {
   const args = parseCliArgs(process.argv.slice(2));
 
   if (args.help || !args.basePath || !args.title || !args.outputPath) {

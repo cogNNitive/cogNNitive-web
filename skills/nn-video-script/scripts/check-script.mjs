@@ -20,7 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const DEFAULT_PINNED_VERSION = 'V_0-3-3';
 
@@ -171,6 +171,11 @@ function main() {
   console.log('✅ [check-script] All checks passed: no leaked placeholders, no leftover slot comments, header pinned, no asset escapes.');
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Symlink/junction-safe guard: compare realpaths, not the typed path vs import.meta.url.
+const isMain =
+  process.argv[1] &&
+  fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+
+if (isMain) {
   main();
 }

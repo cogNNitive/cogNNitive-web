@@ -20,9 +20,10 @@
  *   node vus-parse.mjs <script.md>
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RUNNER_PATH = path.join(__dirname, 'vus-parse-runner.mjs');
@@ -80,6 +81,11 @@ function main() {
   console.log('✅ [vus-parse] ScriptParser reports zero issues.');
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Symlink/junction-safe guard: compare realpaths, not the typed path vs import.meta.url.
+const isMain =
+  process.argv[1] &&
+  fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+
+if (isMain) {
   main();
 }
