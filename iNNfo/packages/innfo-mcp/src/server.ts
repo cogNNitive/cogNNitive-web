@@ -473,7 +473,7 @@ const TOOL_REGISTRY: ReadonlyArray<ToolEntry> = [
     definition: {
       name: 'resolve_sources',
       description:
-        'Read-only: resolve an element\'s citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, excerpt?, sha256?, version?, error?}. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files.',
+        'Read-only: resolve an element\'s citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" | "human" | "reviewer" | "document"), resolved from the heading the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files.',
       inputSchema: {
         type: 'object',
         properties: {
