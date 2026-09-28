@@ -56,6 +56,28 @@ function fixtureTree(opts = {}) {
     : ['# innfo-mcp', '', '## Tools', '', '| Tool | Description |', '|------|-------------|', ''].join('\n');
   fs.writeFileSync(path.join(docsDir, 'innfo-mcp.md'), body, 'utf8');
 
+  // Populate skills catalog fixture files
+  const manifestDir = path.join(root, 'manifest');
+  fs.mkdirSync(manifestDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(manifestDir, 'source.yaml'),
+    'skills:\n  - name: test-skill\n    description: Test Skill Description\n',
+    'utf8',
+  );
+
+  const skillsDocsDir = path.join(root, 'docs', 'skills', 'documentation');
+  fs.mkdirSync(skillsDocsDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(skillsDocsDir, 'documentation_NN.md'),
+    '---\ntitle: Agent Skills Documentation\nmodel_version: V_0-2-0\n---\n# NN Section\n## NN Section: Canonical Skills\ntitle:: Canonical Skills\n# NN Page\n## NN Page: test-skill\ntitle:: Test Skill\nparent:: [[Canonical Skills]]\n',
+    'utf8',
+  );
+  fs.writeFileSync(
+    path.join(skillsDocsDir, 'README.md'),
+    '# Skills Catalog\n<!-- generated:skills-catalog (source: manifest/source.yaml) -->\n**1** skills\n\n- `test-skill`: Test Skill Description\n<!-- /generated:skills-catalog -->\n',
+    'utf8',
+  );
+
   return root;
 }
 
