@@ -14,6 +14,8 @@ import assert from 'node:assert';
 import {
   replaceRegion,
   renderMcpToolsRegion,
+  renderSkillsCatalogRegion,
+  checkSkillPageSet,
   findHandTypedFacts,
   normalizeOutput,
 } from './docs-facts.mjs';
@@ -120,6 +122,78 @@ function testRenderMcpToolsRegion() {
   console.log('✔ renderMcpToolsRegion: derives count from input, preserves registry order, escapes table-breaking text');
 }
 
+function testRenderSkillsCatalogRegion() {
+  // 1. Source.yaml order preserved, count derived from array length; no Triggers column.
+  {
+    const body = renderSkillsCatalogRegion([
+      { name: 'nn-start', version: 'V_3-4-1', description: 'Central system governance and start router.' },
+      { name: 'nn-innfo', version: 'V_0-5-3', description: 'Author, edit, and validate iNNfo models.' },
+    ]);
+    assert.ok(body.startsWith('**2** skills'), 'count line reflects the input length');
+    assert.ok(!/Triggers/i.test(body), 'the Triggers column is dropped');
+    const rows = body.split('\n').filter((line) => line.startsWith('| ['));
+    assert.deepStrictEqual(
+      rows,
+      [
+        '| [`nn-start`](skills/nn-start.md) | `V_3-4-1` | Central system governance and start router. |',
+        '| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-3` | Author, edit, and validate iNNfo models. |',
+      ],
+      'rows render in source.yaml (input) order, linking to the conventional skills/<name>.md page',
+    );
+  }
+
+  // 2. Triangulation: a different skill count produces a different count line — proves it is derived, not fixed.
+  {
+    const body = renderSkillsCatalogRegion([
+      { name: 'a', version: 'V_0-1-0', description: 'A' },
+      { name: 'b', version: 'V_0-1-0', description: 'B' },
+      { name: 'c', version: 'V_0-1-0', description: 'C' },
+    ]);
+    assert.ok(body.startsWith('**3** skills'), 'count line tracks a 3-skill catalog');
+  }
+
+  // 3. Pipe characters and multi-line whitespace in a description do not break the table row.
+  {
+    const body = renderSkillsCatalogRegion([
+      { name: 'weird', version: 'V_0-1-0', description: 'Has a | pipe and\n  multiple   spaces' },
+    ]);
+    const row = body.split('\n').find((line) => line.startsWith('| [`weird`]'));
+    assert.strictEqual(
+      row,
+      '| [`weird`](skills/weird.md) | `V_0-1-0` | Has a \\| pipe and multiple spaces |',
+      'pipes escaped, whitespace collapsed to single spaces',
+    );
+  }
+
+  console.log('✔ renderSkillsCatalogRegion: derives count from input, preserves source.yaml order, drops Triggers, escapes table-breaking text');
+}
+
+function testCheckSkillPageSet() {
+  // 1. Equal sets: ok, no missing or extra pages.
+  {
+    const result = checkSkillPageSet(['nn-start', 'nn-innfo'], ['nn-start', 'nn-innfo']);
+    assert.deepStrictEqual(result, { ok: true, missingPages: [], extraPages: [] });
+  }
+
+  // 2. A skill in source.yaml with no matching Page is reported as missing.
+  {
+    const result = checkSkillPageSet(['nn-start'], ['nn-start', 'nn-video-script']);
+    assert.strictEqual(result.ok, false, 'a skill without a page fails the guard');
+    assert.deepStrictEqual(result.missingPages, ['nn-video-script']);
+    assert.deepStrictEqual(result.extraPages, []);
+  }
+
+  // 3. Triangulation: a Page with no matching skill entry is reported as extra (proves both directions are checked).
+  {
+    const result = checkSkillPageSet(['nn-start', 'nn-router'], ['nn-start']);
+    assert.strictEqual(result.ok, false, 'a page without a skill entry fails the guard');
+    assert.deepStrictEqual(result.missingPages, []);
+    assert.deepStrictEqual(result.extraPages, ['nn-router']);
+  }
+
+  console.log('✔ checkSkillPageSet: ok on equal sets, reports missing pages and extra pages independently');
+}
+
 function testFindHandTypedFacts() {
   // 1. A hand-typed spelled-out count is flagged.
   {
@@ -198,6 +272,8 @@ function main() {
   console.log('Running docs-facts unit tests...');
   section('replaceRegion', testReplaceRegion);
   section('renderMcpToolsRegion', testRenderMcpToolsRegion);
+  section('renderSkillsCatalogRegion', testRenderSkillsCatalogRegion);
+  section('checkSkillPageSet', testCheckSkillPageSet);
   section('findHandTypedFacts', testFindHandTypedFacts);
   section('normalizeOutput', testNormalizeOutput);
   console.log('\nAll docs-facts unit tests passed successfully!');

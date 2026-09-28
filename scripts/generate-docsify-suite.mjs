@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,7 +67,7 @@ function parseArgs() {
   return { modelPath, outputDir, dryRun, skipFileCheck, mode };
 }
 
-function parseNNModel(content) {
+export function parseNNModel(content) {
   const lines = content.split(/\r?\n/);
   let docSite = null;
   const sections = new Map();
@@ -372,4 +372,9 @@ function run() {
   }
 }
 
-run();
+// Is-main guard (design D2): importing this module for `parseNNModel` alone
+// (e.g. from scripts/generate-docs-facts.mjs) must not also trigger this
+// CLI's own `run()`, which reads argv and calls `process.exit`.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  run();
+}

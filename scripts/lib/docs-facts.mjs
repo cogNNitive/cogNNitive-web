@@ -111,6 +111,49 @@ export function renderMcpToolsRegion(tools) {
   return lines.join('\n');
 }
 
+/**
+ * Renders the `skills-catalog` region body: a bold skill count followed by a
+ * `| Skill | Version | Description |` table, in `manifest/source.yaml`
+ * order (design D1). There is no `Triggers` column — this catalog documents
+ * what a skill is, not the router's dispatch table. Each skill name links to
+ * its conventional doc page (`skills/<name>.md`), the same slug every
+ * existing canonical-skill page already uses.
+ * @param {Array<{ name: string, version: string, description: string }>} skills
+ * @returns {string}
+ */
+export function renderSkillsCatalogRegion(skills) {
+  const rows = skills.map(
+    (skill) =>
+      `| [\`${skill.name}\`](skills/${skill.name}.md) | \`${skill.version}\` | ${escapeTableCell(skill.description)} |`,
+  );
+  const lines = [
+    `**${skills.length}** skills`,
+    '',
+    '| Skill | Version | Description |',
+    '|-------|---------|-------------|',
+    ...rows,
+  ];
+  return lines.join('\n');
+}
+
+/**
+ * Compares the set of canonical-skill Page names declared in the iNNfo
+ * model against the set of skill names declared in `manifest/source.yaml`
+ * (design D1). The two sets MUST be equal: a skill with no Page would be
+ * undiscoverable in the published catalog, and a Page with no matching skill
+ * documents something that was never actually distributed.
+ * @param {string[]} pageNames - Page ids under the model's canonical skills section.
+ * @param {string[]} skillNames - `source.yaml` skill names.
+ * @returns {{ ok: boolean, missingPages: string[], extraPages: string[] }}
+ */
+export function checkSkillPageSet(pageNames, skillNames) {
+  const pageSet = new Set(pageNames);
+  const skillSet = new Set(skillNames);
+  const missingPages = skillNames.filter((name) => !pageSet.has(name));
+  const extraPages = pageNames.filter((name) => !skillSet.has(name));
+  return { ok: missingPages.length === 0 && extraPages.length === 0, missingPages, extraPages };
+}
+
 const NUMBER_WORDS =
   'one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty';
 
