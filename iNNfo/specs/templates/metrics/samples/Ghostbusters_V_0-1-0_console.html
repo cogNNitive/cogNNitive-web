@@ -66,20 +66,34 @@
         --radius-lg: 10px;
         --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
         --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        --mono: 'SF Mono', ui-monospace, 'Courier New', monospace;
+        --mono: 'SF Mono', 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+      }
+      .dark,
+      html.dark,
+      body.dark {
+        --bg: #09090b;
+        --surface: #18181b;
+        --surface-2: #27272a;
+        --text: #fafafa;
+        --muted: #a1a1a1;
+        --faint: #71717a;
+        --border: #27272a;
+        --primary: #fafafa;
+        --primary-hover: #f4f4f5;
+        --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
       }
       @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0a0a0a;
-          --surface: #0a0a0a;
+        :root:not(.light) {
+          --bg: #09090b;
+          --surface: #18181b;
           --surface-2: #27272a;
           --text: #fafafa;
           --muted: #a1a1a1;
-          --faint: #737373;
+          --faint: #71717a;
           --border: #27272a;
-          --primary: #e5e5e5;
-          --primary-hover: #fafafa;
-          --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+          --primary: #fafafa;
+          --primary-hover: #f4f4f5;
+          --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
       }
       * {
@@ -820,6 +834,166 @@
         color: var(--link);
         text-align: right;
       }
+      /* Studio / Simulator Styles */
+      .innfo-studio-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin: 20px 0 32px 0;
+      }
+      .innfo-studio-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+      }
+      .innfo-studio-kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-studio-kpi-card.is-highlight {
+        border-color: var(--link);
+        background: rgba(37, 99, 235, 0.03);
+      }
+      .innfo-studio-kpi-label {
+        font-size: 0.75rem;
+        color: var(--muted);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+      }
+      .innfo-studio-kpi-val-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .innfo-studio-kpi-val {
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--text);
+      }
+      .innfo-studio-kpi-unit {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .innfo-studio-grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .innfo-studio-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .innfo-studio-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-studio-panel-hdr {
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+      .innfo-studio-panel-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .innfo-studio-sliders-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .innfo-slider-card {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+      }
+      .innfo-slider-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .innfo-slider-label {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .innfo-slider-num-input {
+        font: inherit;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        width: 80px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 3px 6px;
+        text-align: right;
+        color: var(--text);
+      }
+      .innfo-slider-row {
+        margin-bottom: 6px;
+      }
+      .innfo-slider-range {
+        width: 100%;
+        accent-color: var(--link);
+        cursor: pointer;
+      }
+      .innfo-slider-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .innfo-slider-reset {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: var(--link);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.72rem;
+        text-decoration: underline;
+        padding: 0;
+      }
+      .innfo-studio-chart-box {
+        width: 100%;
+        overflow-x: auto;
+      }
+      .innfo-studio-chart-svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .innfo-chart-axis-line {
+        stroke: var(--border);
+        stroke-width: 1;
+        stroke-dasharray: 3 3;
+      }
+      .innfo-chart-axis-text {
+        fill: var(--muted);
+        font-size: 11px;
+        font-family: var(--mono);
+      }
+      .innfo-chart-legend-text {
+        fill: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -829,6 +1003,12 @@
     <div id="innfo-tab-domain" class="innfo-tab-panel">
       <main style="max-width: 1400px; padding: 20px 28px;">
         <div id="innfo-timeline-grid"></div>
+      </main>
+    </div>
+
+    <div id="innfo-tab-studio" class="innfo-tab-panel">
+      <main style="max-width: 1400px; padding: 20px 28px;">
+        <div id="innfo-studio-view"></div>
       </main>
     </div>
 

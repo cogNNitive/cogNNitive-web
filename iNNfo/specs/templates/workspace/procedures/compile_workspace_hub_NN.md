@@ -58,7 +58,7 @@ output:: [[Workspace Hub HTML]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Assemble a responsive, standalone HTML portal adhering to cogNNitive Design Presets (Inter font, slate/indigo styling, responsive card grid, embedded live iframe viewer, and AI agent prompt generator for batch console regeneration). Save as `artifacts/workspace_hub.html`.
+Assemble a responsive, standalone HTML portal adhering to cogNNitive Design Presets (Inter font, slate/indigo styling, responsive card grid, embedded live iframe viewer supporting Monoconsole dual-tab consoles, theme synchronization dispatcher passing `innfo:theme-change` postMessage events to iframes on dark/light toggle, and AI agent prompt generator for batch console regeneration). Save as `artifacts/workspace_hub.html`.
 
 ## NN Work: Verify Workspace Hub
 parent:: [[Compile Workspace Hub]]
@@ -70,7 +70,7 @@ output:: [[Verified Workspace Hub]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Verify that the generated workspace hub links cleanly to all active models and consoles, handles missing consoles gracefully, includes the agent prompt generator modal, and renders properly in offline `file://` mode.
+Verify that the generated workspace hub links cleanly to all active models and consoles, handles missing consoles gracefully, propagates theme changes seamlessly to embedded iframes via `innfo:theme-change`, includes the agent prompt generator modal, and renders properly in offline `file://` mode.
 
 # NN Tools
 

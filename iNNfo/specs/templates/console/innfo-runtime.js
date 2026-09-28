@@ -750,6 +750,19 @@
     return String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '')
   }
 
+  // Theme message synchronization for embedded iframes
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('message', function (e) {
+      if (e && e.data && e.data.type === 'innfo:theme-change') {
+        var isDark = e.data.theme === 'dark'
+        if (typeof document !== 'undefined' && document.documentElement) {
+          document.documentElement.classList.toggle('dark', isDark)
+          document.documentElement.classList.toggle('light', !isDark)
+        }
+      }
+    })
+  }
+
   function evaluateFormulaTree(row, m, rowMap, overrides, memo, growthState, historyCount) {
     var memoKey = row.id + '|' + m
     if (memo[memoKey] !== undefined) return memo[memoKey]
@@ -757,11 +770,37 @@
     memo[memoKey] = null
 
     var val = 0
-    if (row.variable) {
-      if (overrides[row.id] && overrides[row.id][m] !== undefined) {
-        val = Number(overrides[row.id][m]) || 0
+    var isVar = row.variable || (!row.formula && (row.base != null || row.metricValue != null || row.val != null))
+
+    if (isVar) {
+      if (overrides[row.id] !== undefined) {
+        if (typeof overrides[row.id] === 'number') {
+          var base = Number(overrides[row.id]) || 0
+          var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
+          var factor = Number(g.factor) || 0
+          if (g.mode === 'compound' && factor) {
+            val = base * Math.pow(1 + factor / 100, m)
+          } else if (g.mode === 'additive' && factor) {
+            val = base + factor * m
+          } else {
+            val = base
+          }
+        } else if (overrides[row.id] && overrides[row.id][m] !== undefined) {
+          val = Number(overrides[row.id][m]) || 0
+        } else {
+          var base = row.base != null ? Number(row.base) : (row.metricValue != null ? Number(row.metricValue) : (row.val != null ? Number(row.val) : 0))
+          var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
+          var factor = Number(g.factor) || 0
+          if (g.mode === 'compound' && factor) {
+            val = base * Math.pow(1 + factor / 100, m)
+          } else if (g.mode === 'additive' && factor) {
+            val = base + factor * m
+          } else {
+            val = base
+          }
+        }
       } else {
-        var base = row.base != null ? Number(row.base) : 0
+        var base = row.base != null ? Number(row.base) : (row.metricValue != null ? Number(row.metricValue) : (row.val != null ? Number(row.val) : 0))
         var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
         var factor = Number(g.factor) || 0
         if (g.mode === 'compound' && factor) {
@@ -785,6 +824,8 @@
       }
     } else if (row.base != null) {
       val = Number(row.base)
+    } else if (row.metricValue != null) {
+      val = Number(row.metricValue)
     }
 
     memo[memoKey] = val
@@ -949,6 +990,225 @@
       if (ratio < 0.85) return '#10b981'
       return '#059669'
     }
+  }
+
+  function renderStudioView(doc, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange) {
+    var studioHost = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-studio-view') : null
+    if (!studioHost) return
+
+    function computeValues() {
+      var memo = {}
+      var computed = {}
+      rows.forEach(function (r) {
+        var arr = []
+        for (var m = 0; m < totalMonths; m++) {
+          arr.push(evaluateFormulaTree(r, m, rowMap, overrides, memo, growthState, historyCount))
+        }
+        computed[r.id] = arr
+      })
+      return computed
+    }
+
+    var rowValues = computeValues()
+    studioHost.innerHTML = ''
+
+    var studioWrap = el('div', 'innfo-studio-layout')
+
+    // Top Summary KPI Cards
+    var kpisWrap = el('div', 'innfo-studio-kpis')
+    
+    var revRow = rows.filter(function (r) { return /revenue|ingreso/i.test(r.metricType || r.id || r.label) })[0]
+    var costRow = rows.filter(function (r) { return /expense|cost|gasto/i.test(r.metricType || r.id || r.label) })[0]
+    var netRow = rows.filter(function (r) { return /result|net|ebit|beneficio/i.test(r.metricType || r.id || r.label) })[0] || rows[0]
+
+    var kpiList = []
+    if (netRow && rowValues[netRow.id]) {
+      var netSum = rowValues[netRow.id].reduce(function (a, b) { return a + b }, 0)
+      kpiList.push({ label: 'Net Result (Year 1)', val: formatGridNumber(netSum), unit: netRow.metricUnit || 'USD', isHighlight: true })
+    }
+    if (revRow && rowValues[revRow.id]) {
+      var revSum = rowValues[revRow.id].reduce(function (a, b) { return a + b }, 0)
+      kpiList.push({ label: 'Total Revenue', val: formatGridNumber(revSum), unit: revRow.metricUnit || 'USD' })
+    }
+    if (costRow && rowValues[costRow.id]) {
+      var costSum = rowValues[costRow.id].reduce(function (a, b) { return a + b }, 0)
+      kpiList.push({ label: 'Total Expenses', val: formatGridNumber(costSum), unit: costRow.metricUnit || 'USD' })
+    }
+
+    kpiList.forEach(function (kpi) {
+      var card = el('div', 'innfo-studio-kpi-card' + (kpi.isHighlight ? ' is-highlight' : ''))
+      card.appendChild(el('div', 'innfo-studio-kpi-label', kpi.label))
+      var valRow = el('div', 'innfo-studio-kpi-val-row')
+      valRow.appendChild(el('span', 'innfo-studio-kpi-val', kpi.val))
+      if (kpi.unit) valRow.appendChild(el('span', 'innfo-studio-kpi-unit', kpi.unit))
+      card.appendChild(valRow)
+      kpisWrap.appendChild(card)
+    })
+    studioWrap.appendChild(kpisWrap)
+
+    // Main Studio Grid (Controls on Left, Scenario Curves on Right)
+    var mainGrid = el('div', 'innfo-studio-grid')
+
+    // Left Column: Interactive Variable Sliders
+    var leftCol = el('div', 'innfo-studio-panel innfo-studio-controls')
+    var leftHdr = el('div', 'innfo-studio-panel-hdr')
+    leftHdr.appendChild(el('h4', 'innfo-studio-panel-title', 'Scenario Parameters & Sliders'))
+    leftCol.appendChild(leftHdr)
+
+    var varRows = rows.filter(function (r) {
+      return r.variable || (!r.formula && (r.metricValue != null || r.val != null || r.base != null))
+    })
+
+    if (!varRows.length) {
+      varRows = rows.slice(0, 4)
+    }
+
+    var sliderCardsWrap = el('div', 'innfo-studio-sliders-wrap')
+
+    varRows.forEach(function (r) {
+      var baseVal = r.metricValue !== undefined ? Number(r.metricValue) : (r.val !== undefined ? Number(r.val) : (r.base !== undefined ? Number(r.base) : 0))
+      var currVal = overrides[r.id] !== undefined ? (typeof overrides[r.id] === 'number' ? overrides[r.id] : overrides[r.id][0]) : baseVal
+      if (currVal === undefined || isNaN(currVal)) currVal = baseVal
+
+      var minVal = baseVal > 0 ? Math.floor(baseVal * 0.2) : (baseVal < 0 ? Math.floor(baseVal * 2.5) : 0)
+      var maxVal = baseVal > 0 ? Math.ceil(baseVal * 2.5) : (baseVal < 0 ? Math.ceil(baseVal * 0.2) : 100)
+      if (minVal === maxVal) { minVal = 0; maxVal = 100; }
+      var step = baseVal > 1000 ? 100 : (baseVal > 100 ? 10 : (baseVal > 10 ? 1 : 0.1))
+
+      var card = el('div', 'innfo-slider-card')
+      var cardTop = el('div', 'innfo-slider-card-top')
+      cardTop.appendChild(el('span', 'innfo-slider-label', r.label || r.id))
+      var numInput = el('input', 'innfo-slider-num-input')
+      numInput.setAttribute('type', 'number')
+      numInput.value = String(currVal)
+      cardTop.appendChild(numInput)
+      card.appendChild(cardTop)
+
+      var sliderRow = el('div', 'innfo-slider-row')
+      var slider = el('input', 'innfo-slider-range')
+      slider.setAttribute('type', 'range')
+      slider.setAttribute('min', String(minVal))
+      slider.setAttribute('max', String(maxVal))
+      slider.setAttribute('step', String(step))
+      slider.value = String(currVal)
+
+      function handleValChange(newVal) {
+        var num = Number(newVal)
+        if (isNaN(num)) return
+        slider.value = String(num)
+        numInput.value = String(num)
+        overrides[r.id] = num
+        onStateChange()
+      }
+
+      slider.addEventListener('input', function (e) {
+        handleValChange(e.target.value)
+      })
+      numInput.addEventListener('change', function (e) {
+        handleValChange(e.target.value)
+      })
+
+      sliderRow.appendChild(slider)
+      card.appendChild(sliderRow)
+
+      var cardMeta = el('div', 'innfo-slider-meta')
+      cardMeta.appendChild(el('span', 'innfo-slider-range-hint', minVal + ' .. ' + maxVal + (r.metricUnit ? ' ' + r.metricUnit : '')))
+      if (overrides[r.id] !== undefined && overrides[r.id] !== baseVal) {
+        var resetLink = el('button', 'innfo-slider-reset', 'reset')
+        resetLink.setAttribute('type', 'button')
+        resetLink.addEventListener('click', function () {
+          delete overrides[r.id]
+          onStateChange()
+        })
+        cardMeta.appendChild(resetLink)
+      }
+      card.appendChild(cardMeta)
+      sliderCardsWrap.appendChild(card)
+    })
+
+    leftCol.appendChild(sliderCardsWrap)
+    mainGrid.appendChild(leftCol)
+
+    // Right Column: Interactive Scenario Visualizer
+    var rightCol = el('div', 'innfo-studio-panel innfo-studio-visualizer')
+    var rightHdr = el('div', 'innfo-studio-panel-hdr')
+    rightHdr.appendChild(el('h4', 'innfo-studio-panel-title', 'Scenario Projection Curves'))
+    rightCol.appendChild(rightHdr)
+
+    var chartBox = el('div', 'innfo-studio-chart-box')
+    var svg = el('svg', 'innfo-studio-chart-svg')
+    svg.setAttribute('viewBox', '0 0 700 300')
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+
+    var plotRows = [revRow, costRow, netRow].filter(Boolean)
+    if (!plotRows.length) plotRows = rows.slice(0, 3)
+
+    var allVals = []
+    plotRows.forEach(function (pr) {
+      if (rowValues[pr.id]) allVals = allVals.concat(rowValues[pr.id])
+    })
+    var minPlot = Math.min.apply(null, allVals) || 0
+    var maxPlot = Math.max.apply(null, allVals) || 1
+    if (minPlot > 0) minPlot = 0
+    var rangePlot = (maxPlot - minPlot) || 1
+
+    var padX = 60, padY = 30, plotW = 600, plotH = 220
+
+    var zeroY = padY + plotH - ((0 - minPlot) / rangePlot) * plotH
+    var zeroLine = el('line', 'innfo-chart-axis-line')
+    zeroLine.setAttribute('x1', String(padX))
+    zeroLine.setAttribute('y1', String(zeroY))
+    zeroLine.setAttribute('x2', String(padX + plotW))
+    zeroLine.setAttribute('y2', String(zeroY))
+    svg.appendChild(zeroLine)
+
+    var colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6']
+
+    plotRows.forEach(function (pr, pidx) {
+      var pVals = rowValues[pr.id] || []
+      if (!pVals.length) return
+      var pts = []
+      for (var mi = 0; mi < totalMonths; mi++) {
+        var vx = padX + (mi / Math.max(1, totalMonths - 1)) * plotW
+        var vy = padY + plotH - (((pVals[mi] || 0) - minPlot) / rangePlot) * plotH
+        pts.push(vx.toFixed(1) + ',' + vy.toFixed(1))
+      }
+      var poly = el('polyline', 'innfo-chart-curve')
+      poly.setAttribute('points', pts.join(' '))
+      poly.setAttribute('stroke', colors[pidx % colors.length])
+      poly.setAttribute('fill', 'none')
+      poly.setAttribute('stroke-width', '2.5')
+      svg.appendChild(poly)
+
+      var legendG = el('g', 'innfo-chart-legend-item')
+      var legDot = el('circle')
+      legDot.setAttribute('cx', String(padX + pidx * 160))
+      legDot.setAttribute('cy', '15')
+      legDot.setAttribute('r', '5')
+      legDot.setAttribute('fill', colors[pidx % colors.length])
+      var legTxt = el('text', 'innfo-chart-legend-text', pr.label || pr.id)
+      legTxt.setAttribute('x', String(padX + pidx * 160 + 10))
+      legTxt.setAttribute('y', '19')
+      legendG.appendChild(legDot)
+      legendG.appendChild(legTxt)
+      svg.appendChild(legendG)
+    })
+
+    for (var ti = 0; ti < totalMonths; ti += Math.max(1, Math.floor(totalMonths / 6))) {
+      var tx = padX + (ti / Math.max(1, totalMonths - 1)) * plotW
+      var xTxt = el('text', 'innfo-chart-axis-text', labels[ti] || ('M' + (ti + 1)))
+      xTxt.setAttribute('x', String(tx))
+      xTxt.setAttribute('y', String(padY + plotH + 20))
+      xTxt.setAttribute('text-anchor', 'middle')
+      svg.appendChild(xTxt)
+    }
+
+    chartBox.appendChild(svg)
+    rightCol.appendChild(chartBox)
+    mainGrid.appendChild(rightCol)
+
+    studioWrap.appendChild(mainGrid)
+    studioHost.appendChild(studioWrap)
   }
 
   function renderTimelineGrid(doc, model, meta) {
@@ -1192,7 +1452,8 @@
         selGrow.appendChild(optAdd)
         selGrow.addEventListener('change', function (e) {
           growthState[r.id].mode = e.target.value
-          renderView()
+          if (inpFactor) inpFactor.disabled = (e.target.value === 'fixed')
+          onStateChange()
         })
         tdRule.appendChild(selGrow)
 
@@ -1203,7 +1464,7 @@
         if (g.mode === 'fixed') inpFactor.disabled = true
         inpFactor.addEventListener('change', function (e) {
           growthState[r.id].factor = parseFloat(e.target.value) || 0
-          renderView()
+          onStateChange()
         })
         tdRule.appendChild(inpFactor)
         tr.appendChild(tdRule)
@@ -1219,19 +1480,19 @@
           var tdVal = el('td', 'td-num' + (isHistCell ? ' hist-cell' : ''))
 
           if (r.variable && !isHistCell) {
-            var isOverridden = overrides[r.id] && overrides[r.id][mi] !== undefined
+            var isOverridden = overrides[r.id] && (typeof overrides[r.id] === 'number' || overrides[r.id][mi] !== undefined)
             var inpVar = el('input', 'innfo-var-input' + (isOverridden ? ' overridden' : ''))
             inpVar.type = 'number'
             inpVar.step = 'any'
-            inpVar.value = isOverridden ? overrides[r.id][mi] : String(Math.round(val * 100) / 100)
+            inpVar.value = isOverridden ? (typeof overrides[r.id] === 'number' ? String(overrides[r.id]) : String(overrides[r.id][mi])) : String(Math.round(val * 100) / 100)
             inpVar.dataset.row = r.id
             inpVar.dataset.m = String(mi)
             inpVar.addEventListener('change', function (e) {
               var rowId = e.target.dataset.row
               var monthIdx = Number(e.target.dataset.m)
-              if (!overrides[rowId]) overrides[rowId] = {}
+              if (!overrides[rowId] || typeof overrides[rowId] === 'number') overrides[rowId] = {}
               overrides[rowId][monthIdx] = parseFloat(e.target.value) || 0
-              renderView()
+              onStateChange()
             })
             tdVal.appendChild(inpVar)
           } else {
@@ -1350,7 +1611,13 @@
       if (host && tableWrap) host.appendChild(tableWrap)
     }
 
+    function onStateChange() {
+      renderView()
+      renderStudioView(doc, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
+    }
+
     renderView()
+    renderStudioView(doc, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
   }
 
   function renderViewTabs(doc, config, model, meta) {
@@ -1358,19 +1625,23 @@
     if (!tabsNav) return
 
     var hasDomain = hasNeed(config, 'timeline-grid') || (Array.isArray(model && model.rows) && model.rows.length > 0 && meta && meta.months)
+    var hasStudio = !!(doc && typeof doc.getElementById === 'function' && doc.getElementById('innfo-tab-studio'))
     var hasMatrices = Array.isArray(model && model.matrices) && model.matrices.length > 0
     var hasExplorer = Array.isArray(model && model.elements) && model.elements.length > 0
 
-    // Put generic views first (Model Explorer, Matrices), followed by custom domain views (Timeline & Projections)
+    // Put generic views first (Model Explorer, Matrices), followed by custom domain views (Canonical Spreadsheet, Domain Studio)
     var tabs = []
+    if (hasDomain) {
+      tabs.push({ id: 'canonical', label: 'Canonical Spreadsheet', icon: 'timeline', targetId: 'innfo-tab-domain' })
+      if (hasStudio) {
+        tabs.push({ id: 'studio', label: 'Domain Studio', icon: 'chart', targetId: 'innfo-tab-studio' })
+      }
+    }
     if (hasExplorer) {
       tabs.push({ id: 'explorer', label: 'Model Explorer', icon: 'explorer', targetId: 'innfo-tab-explorer' })
     }
     if (hasMatrices) {
       tabs.push({ id: 'matrices', label: 'Matrices', icon: 'matrices', targetId: 'innfo-tab-matrices' })
-    }
-    if (hasDomain) {
-      tabs.push({ id: 'timeline', label: 'Timeline & Projections', icon: 'timeline', targetId: 'innfo-tab-domain' })
     }
 
     if (tabs.length <= 1) {
@@ -1382,7 +1653,7 @@
     tabsNav.style.display = 'flex'
 
     var initialHash = String(doc.location ? doc.location.hash || '' : '').replace(/^#/, '')
-    var activeTabId = initialHash || (hasDomain ? 'timeline' : tabs[0].id)
+    var activeTabId = initialHash || (hasDomain ? 'canonical' : tabs[0].id)
     var tabFound = false
     tabs.forEach(function (t) {
       if (t.id === activeTabId) tabFound = true
