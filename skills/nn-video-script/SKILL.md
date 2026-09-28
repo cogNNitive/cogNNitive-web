@@ -11,7 +11,9 @@ metadata:
   dependency_direction: "cogNNitive -> VidGeNN only (read-only reference; VidGeNN MUST NOT reference or depend on this fork)"
 vus_spec:
   version: "V_0-3-3"
-  sha256: "72630624f8fb35e6ca6124249663f4e58c2f4772474ed2162007a09eb2013642"
+  sha256: "d617aadcc85ad5816ca0b447e28032b14c1fc64bac65f550fa4149bd4f7cedda"
+  source_repo: "innV0/VidGeNN"
+  source_commit: "4c05a5849aaf3928c0a6ce19175c309787865058"
 ---
 
 # nn-video-script Skill
