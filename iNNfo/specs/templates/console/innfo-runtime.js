@@ -12,6 +12,9 @@
   var CONSOLE_VERSION = '0.1.0'
 
   var REVIEWER_STORAGE_KEY = 'innfo_reviewer_name'
+  // Fallback reviewer name used when none is stored. Treated as "no identifier"
+  // by the export gate so the user must enter a real one before exporting.
+  var DEFAULT_REVIEWER_NAME = 'reviewer'
   var MODEL_VERSION_PATTERN = /^V_\d+-\d+-\d+$/
   var EXPORTED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/
   var ITEM_ID_PATTERN = /^fb-\d{3,}$/
@@ -48,7 +51,7 @@
       .replace(/[^a-z0-9_]+/g, '')
       .replace(/^_+|_+$/g, '')
       .replace(/_{2,}/g, '_')
-    return text || 'reviewer'
+    return text || DEFAULT_REVIEWER_NAME
   }
 
   function getReviewerName() {
@@ -62,11 +65,11 @@
     } catch {
       /* localStorage unavailable (private mode / file://) - fall through to default */
     }
-    return 'reviewer'
+    return DEFAULT_REVIEWER_NAME
   }
 
   function setReviewerName(name) {
-    var val = String(name || '').trim() || 'reviewer'
+    var val = String(name || '').trim() || DEFAULT_REVIEWER_NAME
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(REVIEWER_STORAGE_KEY, val)
@@ -2342,7 +2345,7 @@
     if (!check.ok) {
       throw new Error('innfo-console: review export blocked — ' + check.errors.join('; '))
     }
-    var filename = buildReviewFilename(model, version, reviewer)
+    var filename = buildFeedbackFilename(model, String(version).replace(/^V_/, ''), reviewer)
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     var url = URL.createObjectURL(blob)
     var anchor = doc.createElement('a')
@@ -2563,6 +2566,54 @@
     })
   }
 
+  function openExportModal(doc, state) {
+    var modal = doc.getElementById('innfo-export-modal')
+    if (!modal) {
+      downloadReviewExport(doc, state)
+      return
+    }
+    var identifierInput = modal.querySelector('[data-innfo="identifier"]')
+    var instructions = modal.querySelector('[data-innfo="instructions"]')
+    var agentPrompt = modal.querySelector('[data-innfo="agent-prompt"]')
+    var downloadBtn = modal.querySelector('[data-innfo="download"]')
+    var drafts = readStore(state.draftKey)
+    if (identifierInput) {
+      // Prefill the stored reviewer name, but never prefill the bare fallback:
+      // an export must carry an identifier the user actually chose.
+      var storedName = getReviewerName()
+      identifierInput.value = storedName === DEFAULT_REVIEWER_NAME ? '' : storedName
+    }
+    if (instructions) {
+      instructions.textContent =
+        'Review ' +
+        drafts.length +
+        ' pending draft(s), then download the review JSON.'
+    }
+    if (agentPrompt) {
+      agentPrompt.textContent =
+        'Apply the attached review JSON to ' +
+        state.modelTitle +
+        ' (' +
+        state.modelVersion +
+        ').'
+    }
+    modal.setAttribute('open', 'open')
+    if (downloadBtn && !downloadBtn.getAttribute('data-innfo-bound')) {
+      downloadBtn.setAttribute('data-innfo-bound', '1')
+      downloadBtn.addEventListener('click', function () {
+        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        // The feedback export contract requires a reviewer identifier the user
+        // actually chose: an empty field, or the bare fallback, is refused so no
+        // file is emitted and the modal stays open for correction.
+        if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
+        setReviewerName(identifier)
+        downloadReviewExport(doc, state)
+        if (typeof modal.close === 'function') modal.close()
+        else modal.removeAttribute('open')
+      })
+    }
+  }
+
   function downloadExport(doc, state, identifier) {
     if (identifier && String(identifier).trim()) {
       setReviewerName(String(identifier).trim())
@@ -2673,7 +2724,7 @@
       var exportBtn = active.getElementById('innfo-export-open')
       if (exportBtn) {
         exportBtn.addEventListener('click', function () {
-          downloadReviewExport(active, state)
+          openExportModal(active, state)
         })
       }
     }
