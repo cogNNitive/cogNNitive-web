@@ -14,21 +14,16 @@ The monorepo that ties the iNNfo ecosystem together.
 iNNfo is organized as an npm workspaces monorepo — one editor app, two shared
 packages, and the spec chain:
 
+```
 iNNfo/
-
 ├── apps/
-
-│ └── innfo-editor/ // Vue 3 workspace editor — the iNNfo Modeler
-
+│   └── innfo-editor/  // Vue 3 workspace editor — the iNNfo Modeler
 ├── packages/
-
-│ ├── innfo-core/ // TS parser, resolver, validator
-
-│ └── innfo-mcp/ // MCP server for AI agents
-
-├── specs/ // defiNNe, iNNfo, templates, samples
-
-└── docs/ // This website
+│   ├── innfo-core/    // TS parser, resolver, validator
+│   └── innfo-mcp/     // MCP server for AI agents
+├── specs/             // defiNNe, iNNfo, templates, samples
+└── docs/             // This website
+```
 
 ## App
 

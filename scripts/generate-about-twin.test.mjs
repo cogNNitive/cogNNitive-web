@@ -99,6 +99,59 @@ function testHtmlFragmentToMarkdownConvertsElements() {
   assert.ok(markdown.includes('A short intro paragraph'), `expected the paragraph text to survive, got:\n${markdown}`);
 }
 
+const TREE_DIAGRAM_FRAGMENT = `<div
+  style="
+    background: var(--canvas-inert);
+    font-family: var(--mono);
+  "
+>
+  iNNfo/<br />
+  ├── apps/<br />
+  │&nbsp;&nbsp; └── innfo-editor/ &nbsp;<span
+    style="color: var(--ink-muted)"
+    >// Vue 3 workspace editor</span
+  ><br />
+  └── docs/ &nbsp;&nbsp;<span style="color: var(--ink-muted)">// This website</span>
+</div>`;
+
+function testHtmlFragmentToMarkdownPreservesTreeDiagramIndentation() {
+  const markdown = htmlFragmentToMarkdown(TREE_DIAGRAM_FRAGMENT);
+
+  assert.ok(
+    markdown.includes('```'),
+    `expected the <br>-separated tree diagram to be wrapped in a fenced code block, got:\n${markdown}`,
+  );
+
+  const fencedMatch = /```\n([\s\S]*?)\n```/.exec(markdown);
+  assert.ok(fencedMatch, `expected to find a fenced code block, got:\n${markdown}`);
+  const lines = fencedMatch[1].split('\n');
+
+  assert.strictEqual(
+    lines.length,
+    4,
+    `expected the 4 <br>-separated lines to survive as one block, got:\n${JSON.stringify(lines)}`,
+  );
+  assert.strictEqual(lines[0], 'iNNfo/');
+  assert.strictEqual(lines[1], '├── apps/');
+  assert.ok(
+    lines[2].startsWith('│  '),
+    `expected the nested line to keep its "│" indentation (decoded &nbsp; as spaces), got: ${JSON.stringify(lines[2])}`,
+  );
+  assert.ok(
+    lines[2].includes('└── innfo-editor/') && lines[2].includes('// Vue 3 workspace editor'),
+    `expected the nested line's content and inline comment to survive, got: ${JSON.stringify(lines[2])}`,
+  );
+  assert.ok(
+    lines[3].startsWith('└── docs/'),
+    `expected the last tree line to survive, got: ${JSON.stringify(lines[3])}`,
+  );
+
+  assert.ok(
+    !/iNNfo\/\s*\n\s*\n/.test(markdown),
+    'tree lines must not be split into separate paragraphs by a blank line',
+  );
+}
+
 function testRenderFrontmatterPreservesAllFields() {
   const meta = extractHeadMetadata(FIXTURE_HTML);
   const frontmatter = renderFrontmatter(meta);
@@ -243,6 +296,10 @@ function main() {
   section('extractHeadMetadata()', testExtractHeadMetadata);
   section('extractMainFragment() strips nav/footer/script', testExtractMainFragmentStripsChrome);
   section('htmlFragmentToMarkdown() converts headings/paragraphs/links/code', testHtmlFragmentToMarkdownConvertsElements);
+  section(
+    'htmlFragmentToMarkdown() preserves tree-diagram indentation as a fenced code block',
+    testHtmlFragmentToMarkdownPreservesTreeDiagramIndentation,
+  );
   section('renderFrontmatter() preserves all fields', testRenderFrontmatterPreservesAllFields);
   section('renderAboutTwin() is deterministic', testRenderAboutTwinIsDeterministic);
 

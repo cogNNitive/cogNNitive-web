@@ -128,6 +128,14 @@ function decodeEntities(text) {
  * (unwrapped, keeping its text). `<br>` becomes a line break within the
  * current block. Whitespace is then collapsed and blank lines normalized so
  * the result is stable regardless of the source's indentation.
+ *
+ * One exception: a run of content with 2+ `<br>` tags AND a visible
+ * indentation signal (a decoded `&nbsp;` or a box-drawing connector —
+ * `├`, `└`, `│`) is treated as a preformatted diagram, not prose. There,
+ * `<br>` is the only thing holding the diagram's shape together, so it is
+ * rendered as a single fenced code block with each line's own indentation
+ * preserved, instead of being flattened into separate paragraphs by the
+ * whitespace-collapse pass below.
  * @param {string} fragment
  * @returns {string}
  */
@@ -136,6 +144,46 @@ export function htmlFragmentToMarkdown(fragment) {
 
   /** @param {string} inner */
   const squeeze = (inner) => inner.replace(/\s+/g, ' ').trim();
+
+  // --- Preformatted (tree-diagram-style) block extraction -----------------
+  // Chunk the fragment by structural tag occurrences (not matched pairs —
+  // nested <div>s elsewhere in the document make pair-matching unreliable,
+  // but every occurrence is still a valid boundary between "blocks"). Any
+  // chunk that looks like a preformatted diagram is rendered up front and
+  // swapped for a placeholder so the generic pipeline below — which
+  // intentionally treats an ordinary `<br>` as a soft line break within a
+  // paragraph — never touches it. The placeholder is spliced back out once
+  // the generic pipeline (and its whitespace collapse) is done with
+  // everything else.
+  const preformattedBlocks = [];
+  const placeholderFor = (i) => `\u0000PREBLOCK${i}\u0000`;
+  const parts = text.split(/(<\/?(?:p|h1|h2|h3|li|ul|div)\b[^>]*>)/gi);
+  for (let i = 0; i < parts.length; i += 2) {
+    const chunk = parts[i];
+    const brCount = (chunk.match(/<br\s*\/?>/gi) || []).length;
+    if (brCount < 2 || !/&nbsp;|[├└│]/.test(chunk)) continue;
+
+    const lines = chunk
+      .split(/<br\s*\/?>/gi)
+      .map((rawLine) => decodeEntities(rawLine.replace(/<[^>]+>/g, '')))
+      // Strip only the incidental leading/trailing whitespace introduced by
+      // the source file's own pretty-printing (a raw newline plus the
+      // indentation that follows it) — never internal whitespace, which is
+      // how the diagram encodes its own indentation via decoded `&nbsp;`.
+      .map((line) =>
+        line
+          .replace(/^\s*\n+\s*/, '')
+          .replace(/\s*\n+\s*$/, '')
+          .replace(/[ \t]+$/, ''),
+      )
+      .filter((line) => line.length > 0);
+    if (lines.length < 2) continue;
+
+    const index = preformattedBlocks.length;
+    preformattedBlocks.push(['```', ...lines, '```'].join('\n'));
+    parts[i] = `\n\n${placeholderFor(index)}\n\n`;
+  }
+  text = parts.join('');
 
   // Line breaks first, so they survive as newlines through the later
   // whitespace collapse instead of being swallowed as inter-tag padding.
@@ -192,7 +240,11 @@ export function htmlFragmentToMarkdown(fragment) {
   while (blocks.length > 0 && blocks[0] === '') blocks.shift();
   while (blocks.length > 0 && blocks[blocks.length - 1] === '') blocks.pop();
 
-  return blocks.join('\n');
+  let result = blocks.join('\n');
+  preformattedBlocks.forEach((block, i) => {
+    result = result.split(placeholderFor(i)).join(block);
+  });
+  return result;
 }
 
 /**
@@ -246,7 +298,7 @@ function parseArgs(argv) {
  * @param {string} cwd
  * @param {string} targetPath
  * @param {string | null} against
- * @param {(cmd: string, args: string[], opts: object) => string} execFile - injectable for tests
+ * @param {Function} execFile - injectable for tests
  * @returns {{ content: string } | { error: string }}
  */
 function readCurrentContent(cwd, targetPath, against, execFile) {
