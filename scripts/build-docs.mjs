@@ -117,7 +117,13 @@ console.log('✅ Staged docs/innfo/templates/catalog.json');
 // 3c. Derive docs-facts generated regions (MCP tool facts today; skills
 // catalog from Unit 3 onward) from their canonical sources, so the Docsify
 // step below never staleness-races a hand-typed fact (design D5).
-run('node scripts/generate-docs-facts.mjs', 'Generate docs-derived facts (MCP tool facts)');
+run('node scripts/generate-docs-facts.mjs', 'Generate docs-derived facts (MCP tool facts, skills catalog)');
+
+// 3d. Regenerate docs/innfo/about.md as a Markdown twin of about.html
+// (design D6, superseding the original "delete about.md" decision): the
+// twin is never hand-edited, so every build re-derives it from the
+// canonical HTML page.
+run('node scripts/generate-about-twin.mjs', 'Generate docs/innfo/about.md twin from about.html');
 
 // 4. Generate Docsify documentation suites from iNNfo models
 run(

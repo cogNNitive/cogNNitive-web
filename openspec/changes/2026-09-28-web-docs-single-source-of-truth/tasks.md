@@ -82,12 +82,12 @@ Chain strategy: stacked-to-main
 
 - [x] 5.1 Update the `docs-content-hygiene` delta spec ("One Canonical About Page") and `design.md` D6/File-Changes to record: `about.md` is generated from `about.html`, not removed.
 - [x] 5.2 Fix hand-typed "seven semantic tools" in `docs/innfo/about.html` (non-numeric wording) before generating the twin, so it doesn't trip Unit 7's literal scan.
-- [ ] 5.3 RED: `scripts/generate-about-twin.test.mjs` — failing tests: strips `<nav>`/`<footer>`/`<script>`, converts headings/paragraphs/links/code to Markdown, preserves frontmatter, deterministic on repeat run.
-- [ ] 5.4 GREEN: create `scripts/generate-about-twin.mjs` (write / `--check [--against HEAD]`, exit 0/1/2).
-- [ ] 5.5 Wire `scripts/build-docs.mjs` to call it in write mode; regenerate `docs/innfo/about.md`.
-- [ ] 5.6 Confirm `about.html:13`, `llms.txt:9`, `ai-index.yaml:21` still correctly reference `about.md` (no edit needed — file still exists).
-- [ ] 5.7 Run `node scripts/generate-about-twin.test.mjs`, `npm run lint`; confirm protected WIP files untouched.
-- [ ] 5.8 Commit `docs(about): generate about.md twin from about.html`.
+- [x] 5.3 RED: `scripts/generate-about-twin.test.mjs` — failing tests: strips `<nav>`/`<footer>`/`<script>`, converts headings/paragraphs/links/code to Markdown, preserves frontmatter, deterministic on repeat run.
+- [x] 5.4 GREEN: create `scripts/generate-about-twin.mjs` (write / `--check [--against HEAD]`, exit 0/1/2).
+- [x] 5.5 Wire `scripts/build-docs.mjs` to call it in write mode; regenerate `docs/innfo/about.md`.
+- [x] 5.6 Confirm `about.html:13`, `llms.txt:9`, `ai-index.yaml:21` still correctly reference `about.md` (no edit needed — file still exists).
+- [x] 5.7 Run `node scripts/generate-about-twin.test.mjs`, `npm run lint`; confirm protected WIP files untouched.
+- [x] 5.8 Commit `docs(about): generate about.md twin from about.html`.
 
 ## Unit 6: Delete marketing/storyboard (docs-content-hygiene)
 
