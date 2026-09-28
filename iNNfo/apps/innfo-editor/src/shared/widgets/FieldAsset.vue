@@ -1,20 +1,32 @@
 <script setup lang="ts">
 /**
- * Renders an asset field (image/file/video/audio).
+ * Renders an asset field (image/file/video/audio/animation).
  * Part of the unified widget registry (FR-003).
  * Uses v-model contract: modelValue / update:modelValue.
  *
  * widgetType determines rendering:
- * - 'image': thumbnail preview
- * - 'file': file icon + filename
+ * - 'image': thumbnail preview with click-to-open lightbox modal
+ * - 'animation': simplified minimalist animation card with click-to-open interactive player & TSX code modal
  * - 'video': video player
  * - 'audio': audio player
- *
- * Shows a warning if the path appears stale (placeholder — UI can refine later).
+ * - 'file': file icon + filename
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Maximize2,
+  X,
+  Code,
+  Film,
+  Check,
+  Copy,
+  ExternalLink,
+} from 'lucide-vue-next'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useModelStore } from '../../stores/modelStore'
+import InnovationVisual from './InnovationVisual.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -39,7 +51,6 @@ const emit = defineEmits<{
 }>()
 
 const assetType = computed(() => props.fieldDefinition?.type ?? props.widgetType)
-
 const assetPath = computed(() => props.modelValue ?? '')
 
 const fileName = computed(() => {
@@ -47,22 +58,111 @@ const fileName = computed(() => {
   return p.split('/').pop() ?? p.split('\\').pop() ?? p
 })
 
-const isImage = computed(() => assetType.value === 'image')
-const isVideo = computed(() => assetType.value === 'video')
-const isAudio = computed(() => assetType.value === 'audio')
-const isFile = computed(() => assetType.value === 'file')
+const isAnimation = computed(() => {
+  const t = assetType.value.toLowerCase()
+  const k = (props.fieldKey || props.fieldDefinition?.name || '').toLowerCase()
+  const fn = fileName.value.toLowerCase()
+  return (
+    t === 'animation' ||
+    k === 'animation' ||
+    k.includes('animation') ||
+    fn.endsWith('.tsx') ||
+    fn.endsWith('.jsx')
+  )
+})
+
+const isImage = computed(() => !isAnimation.value && assetType.value === 'image')
+const isVideo = computed(() => !isAnimation.value && assetType.value === 'video')
+const isAudio = computed(() => !isAnimation.value && assetType.value === 'audio')
+const isFile = computed(
+  () => !isAnimation.value && !isImage.value && !isVideo.value && !isAudio.value,
+)
 
 const ws = useWorkspaceStore()
 const modelStore = useModelStore()
 const resolvedAssetUrl = ref('')
+const fileContent = ref('')
 const fileExists = ref(true)
 const blobUrlCache = new Map<string, string>()
+
+// ── Lightbox & Animation Modal States ───────────────────────────
+const lightboxOpen = ref(false)
+const animationModalOpen = ref(false)
+const activeTab = ref<'preview' | 'code'>('preview')
+const isPlaying = ref(true)
+const currentFrame = ref(0)
+const totalFrames = ref(150)
+const fps = ref(30)
+const playbackSpeed = ref(1)
+const isLooping = ref(true)
+const isCopied = ref(false)
+let animationTimer: number | null = null
+
+const currentNode = computed(() => (props.nodeId ? modelStore.getNode(props.nodeId) : null))
+
+// ── Multi-Strategy File Resolution ──────────────────────────────
+async function findFileInDir(dirHandle: any, pathParts: string[]): Promise<any> {
+  let current = dirHandle
+  for (let i = 0; i < pathParts.length - 1; i++) {
+    const seg = pathParts[i]
+    const decodedSeg = decodeURIComponent(seg)
+    try {
+      current = await current.getDirectoryHandle(seg)
+    } catch {
+      try {
+        current = await current.getDirectoryHandle(decodedSeg)
+      } catch {
+        let found = null
+        for await (const [name, entry] of current.entries()) {
+          if (entry.kind === 'directory') {
+            if (
+              name.toLowerCase() === seg.toLowerCase() ||
+              name.toLowerCase() === decodedSeg.toLowerCase() ||
+              name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() ===
+                decodedSeg.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+            ) {
+              found = entry
+              break
+            }
+          }
+        }
+        if (!found) return null
+        current = found
+      }
+    }
+  }
+
+  const fileSeg = pathParts[pathParts.length - 1]
+  const decodedFileSeg = decodeURIComponent(fileSeg)
+  try {
+    return await current.getFileHandle(fileSeg)
+  } catch {
+    try {
+      return await current.getFileHandle(decodedFileSeg)
+    } catch {
+      for await (const [name, entry] of current.entries()) {
+        if (entry.kind === 'file') {
+          if (
+            name.toLowerCase() === fileSeg.toLowerCase() ||
+            name.toLowerCase() === decodedFileSeg.toLowerCase() ||
+            name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() ===
+              decodedFileSeg.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+          ) {
+            return entry
+          }
+        }
+      }
+      return null
+    }
+  }
+}
 
 watch(
   [() => assetPath.value, () => ws.handle],
   async ([path, handle]) => {
     if (!path) {
       resolvedAssetUrl.value = ''
+      fileContent.value = ''
       fileExists.value = true
       return
     }
@@ -83,7 +183,7 @@ watch(
       return
     }
 
-    const node = props.nodeId ? modelStore.getNode(props.nodeId) : null
+    const node = currentNode.value
     let slug = ''
     if (node) {
       slug =
@@ -99,10 +199,9 @@ watch(
           .replace(/^-+|-+$/g, '')
     }
 
-    // Resolve directory containing the model file relative to workspace root
     async function getModelDirectoryHandle(rootHandle: any, modelPath: string): Promise<any> {
       const parts = modelPath.replace(/\\/g, '/').split('/').filter(Boolean)
-      parts.pop() // Drop the filename segment
+      parts.pop()
       let current = rootHandle
       for (const part of parts) {
         current = await current.getDirectoryHandle(part)
@@ -116,66 +215,149 @@ watch(
       try {
         modelDirHandle = await getModelDirectoryHandle(handle, modelPath)
       } catch (err) {
-        console.warn('[FieldAsset] Failed to resolve model directory handle for:', modelPath, err)
+        console.warn('[FieldAsset] Failed to resolve model directory handle:', err)
       }
     }
 
-    // 1. Try canonical per-element assets: assets/{slug}/{filename}
-    if (slug) {
+    const cleanPath = path.replace(/\\/g, '/').replace(/^\/+/, '')
+    const parts = cleanPath.split('/').filter(Boolean)
+
+    let fileHandle: any = null
+
+    // 1. Try workspace root direct path
+    fileHandle = await findFileInDir(handle, parts)
+
+    // 2. Try model directory handle
+    if (!fileHandle && modelDirHandle && modelDirHandle !== handle) {
+      fileHandle = await findFileInDir(modelDirHandle, parts)
+    }
+
+    // 3. Try per-element canonical folder: assets/{slug}/{filename}
+    if (!fileHandle && slug && parts.length === 1) {
+      fileHandle = await findFileInDir(handle, ['assets', slug, parts[0]])
+    }
+
+    // 4. Try centralized folder: assets/{filename}
+    if (!fileHandle && parts.length === 1) {
+      fileHandle = await findFileInDir(handle, ['assets', parts[0]])
+    }
+
+    if (fileHandle) {
       try {
-        const assetsDir = await modelDirHandle.getDirectoryHandle('assets')
-        const slugDir = await assetsDir.getDirectoryHandle(slug)
-        const fh = await slugDir.getFileHandle(path)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const file = (await fh.getFile()) as any
+        const file = await fileHandle.getFile()
         const url = URL.createObjectURL(file)
         blobUrlCache.set(path, url)
         resolvedAssetUrl.value = url
         fileExists.value = true
+
+        if (isAnimation.value || fileName.value.endsWith('.tsx') || fileName.value.endsWith('.jsx')) {
+          fileContent.value = await file.text()
+        }
         return
       } catch (err) {
-        console.warn(`[FieldAsset] canonical path failed for slug="${slug}" path="${path}":`, err)
+        console.warn('[FieldAsset] Failed to read file from handle:', err)
       }
     }
 
-    // 2. Try centralized assets: assets/{filename}
-    try {
-      const assetsDir = await modelDirHandle.getDirectoryHandle('assets')
-      const fh = await assetsDir.getFileHandle(path)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const file = (await fh.getFile()) as any
-      const url = URL.createObjectURL(file)
-      blobUrlCache.set(path, url)
-      resolvedAssetUrl.value = url
-      fileExists.value = true
-      return
-    } catch (err) {
-      console.warn(`[FieldAsset] centralized path failed for path="${path}":`, err)
-    }
-
-    // 3. Try direct workspace path (e.g. subfolders or root file)
-    try {
-      const parts = path.split('/').filter(Boolean)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let current: any = modelDirHandle
-      for (let i = 0; i < parts.length - 1; i++) {
-        current = await current.getDirectoryHandle(parts[i])
-      }
-      const fh = await current.getFileHandle(parts[parts.length - 1])
-      const file = await fh.getFile()
-      const url = URL.createObjectURL(file)
-      blobUrlCache.set(path, url)
-      resolvedAssetUrl.value = url
-      fileExists.value = true
-      return
-    } catch (err) {
-      console.warn(`[FieldAsset] direct path failed for path="${path}":`, err)
-      resolvedAssetUrl.value = path
-      fileExists.value = false
-    }
+    resolvedAssetUrl.value = path
+    fileExists.value = false
   },
   { immediate: true },
 )
+
+// ── Animation Playback Engine ───────────────────────────────────
+function startPlayback() {
+  if (animationTimer) cancelAnimationFrame(animationTimer)
+  let lastTime = performance.now()
+
+  function step(now: number) {
+    if (!isPlaying.value) return
+    const delta = (now - lastTime) / 1000
+    lastTime = now
+
+    const frameIncrement = delta * fps.value * playbackSpeed.value
+    let next = currentFrame.value + frameIncrement
+
+    if (next >= totalFrames.value) {
+      if (isLooping.value) {
+        next = 0
+      } else {
+        next = totalFrames.value
+        isPlaying.value = false
+        currentFrame.value = totalFrames.value
+        return
+      }
+    }
+    currentFrame.value = next
+    animationTimer = requestAnimationFrame(step)
+  }
+
+  animationTimer = requestAnimationFrame(step)
+}
+
+function togglePlay() {
+  isPlaying.value = !isPlaying.value
+  if (isPlaying.value) {
+    if (currentFrame.value >= totalFrames.value) {
+      currentFrame.value = 0
+    }
+    startPlayback()
+  } else if (animationTimer) {
+    cancelAnimationFrame(animationTimer)
+    animationTimer = null
+  }
+}
+
+function restartAnimation() {
+  currentFrame.value = 0
+  isPlaying.value = true
+  startPlayback()
+}
+
+function seekFrame(e: Event) {
+  const val = Number((e.target as HTMLInputElement).value)
+  currentFrame.value = val
+}
+
+function openAnimationModal() {
+  animationModalOpen.value = true
+  isPlaying.value = true
+  startPlayback()
+}
+
+function closeAnimationModal() {
+  animationModalOpen.value = false
+  isPlaying.value = false
+  if (animationTimer) {
+    cancelAnimationFrame(animationTimer)
+    animationTimer = null
+  }
+}
+
+async function copyCode() {
+  if (!fileContent.value) return
+  await navigator.clipboard.writeText(fileContent.value)
+  isCopied.value = true
+  setTimeout(() => {
+    isCopied.value = false
+  }, 2000)
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    if (lightboxOpen.value) lightboxOpen.value = false
+    if (animationModalOpen.value) closeAnimationModal()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  if (animationTimer) cancelAnimationFrame(animationTimer)
+})
 
 function onInput(e: Event): void {
   emit('update:modelValue', (e.target as HTMLInputElement).value)
@@ -190,15 +372,50 @@ function onImageError(e: Event): void {
 
 <template>
   <div class="field-asset">
-    <!-- Image thumbnail -->
-    <div v-if="isImage && assetPath" class="field-asset__preview">
+    <!-- Simplified & Clean Animation Card -->
+    <div v-if="isAnimation && assetPath" class="field-asset__animation-card">
+      <div class="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xs hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-7 h-7 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-800/60">
+            <Film class="w-3.5 h-3.5" />
+          </div>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="font-mono text-xs text-slate-700 dark:text-slate-200 truncate">
+              {{ fileName }}
+            </span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shrink-0">
+              .tsx
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white cursor-pointer transition-colors shrink-0 ml-2"
+          @click="openAnimationModal"
+          title="Ver animación interactiva"
+        >
+          <Play class="w-3 h-3 fill-current" />
+          <span>Ver</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Image thumbnail preview with click-to-enlarge Lightbox -->
+    <div v-else-if="isImage && assetPath" class="field-asset__preview group relative cursor-pointer" @click="lightboxOpen = true">
       <img
         v-if="resolvedAssetUrl"
         :src="resolvedAssetUrl"
         :alt="fileName"
-        class="field-asset__image"
+        class="field-asset__image transition-transform duration-200 group-hover:scale-[1.02]"
         @error="onImageError"
       />
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-black/70 text-white text-xs font-medium backdrop-blur-xs">
+          <Maximize2 class="w-3.5 h-3.5" />
+          <span>Ampliar</span>
+        </span>
+      </div>
       <span v-if="!assetPath" class="field-asset__placeholder">No image selected</span>
     </div>
 
@@ -216,13 +433,13 @@ function onImageError(e: Event): void {
       </audio>
     </div>
 
-    <!-- File icon + name (default fallback for file type) -->
+    <!-- File icon + name (fallback for file type) -->
     <div v-else-if="isFile && assetPath" class="field-asset__file">
       <span class="field-asset__file-icon">📄</span>
       <span class="field-asset__file-name">{{ fileName }}</span>
     </div>
 
-    <!-- Editable path input -->
+    <!-- Editable path input in edit mode -->
     <div v-if="!readonly" class="field-asset__input-row">
       <input
         type="text"
@@ -234,12 +451,234 @@ function onImageError(e: Event): void {
       <span class="field-asset__type-badge">{{ assetType }}</span>
     </div>
 
-    <!-- Missing file warning (real validation) -->
+    <!-- Missing file warning -->
     <div v-if="assetPath && !fileExists && !readonly" class="field-asset__warning">
       <span class="field-asset__warning-icon">⚠️</span>
       Asset file not found in workspace:
       <code>{{ assetPath }}</code>
     </div>
+
+    <!-- ── Image Lightbox Modal ────────────────────────────────────── -->
+    <Teleport to="body">
+      <div
+        v-if="lightboxOpen"
+        class="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-4 select-none"
+        @click.self="lightboxOpen = false"
+      >
+        <button
+          type="button"
+          class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors z-10"
+          @click="lightboxOpen = false"
+          title="Cerrar (Esc)"
+        >
+          <X class="w-6 h-6" />
+        </button>
+
+        <img
+          :src="resolvedAssetUrl"
+          :alt="fileName"
+          class="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+        />
+
+        <div class="mt-3 px-3 py-1.5 rounded-full bg-black/60 border border-white/10 text-white text-xs font-mono">
+          {{ fileName }} ({{ assetPath }})
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ── Remotion Animation Modal (Clean White Aesthetic) ────────── -->
+    <Teleport to="body">
+      <div
+        v-if="animationModalOpen"
+        class="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6"
+        @click.self="closeAnimationModal"
+      >
+        <div class="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-800 dark:text-slate-100">
+          <!-- Modal Header (Clean White / Light) -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-800/50">
+                <Film class="w-4 h-4" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                  {{ currentNode?.name || 'Animación Remotion' }}
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">
+                  {{ assetPath }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Tabs & Close -->
+            <div class="flex items-center gap-3">
+              <div class="flex items-center bg-slate-200/80 dark:bg-slate-800 rounded-lg p-0.5 text-xs">
+                <button
+                  type="button"
+                  class="px-3 py-1 rounded-md font-medium transition-colors cursor-pointer"
+                  :class="activeTab === 'preview' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                  @click="activeTab = 'preview'"
+                >
+                  🎬 Preview
+                </button>
+                <button
+                  type="button"
+                  class="px-3 py-1 rounded-md font-medium transition-colors cursor-pointer"
+                  :class="activeTab === 'code' ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                  @click="activeTab = 'code'"
+                >
+                  💻 Código TSX
+                </button>
+              </div>
+
+              <button
+                type="button"
+                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
+                @click="closeAnimationModal"
+                title="Cerrar (Esc)"
+              >
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab 1: Interactive Preview Player (Clean White Stage) -->
+          <div v-if="activeTab === 'preview'" class="flex flex-col flex-1 min-h-0">
+            <!-- Viewport / Stage -->
+            <div class="relative w-full aspect-video bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden border-b border-slate-200 dark:border-slate-800 select-none">
+              <!-- Live Innovation Animated Graphic -->
+              <InnovationVisual
+                :innovation-name="currentNode?.name || ''"
+                :asset-path="assetPath"
+                :frame="currentFrame"
+                :total-frames="totalFrames"
+                :fps="fps"
+              />
+
+              <!-- Top Left Title Overlay -->
+              <div class="absolute top-4 left-4 z-20 flex flex-col gap-1 pointer-events-none">
+                <span class="text-sm font-bold text-slate-900 dark:text-white tracking-tight">
+                  {{ currentNode?.name || 'Innovación' }}
+                </span>
+                <div class="flex items-center gap-2">
+                  <span v-if="currentNode?.fields?.fecha?.value || currentNode?.fields?.fecha" class="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    {{ currentNode?.fields?.fecha?.value || currentNode?.fields?.fecha }}
+                  </span>
+                  <span v-if="currentNode?.fields?.inventor_creador?.value || currentNode?.fields?.inventor_creador" class="text-xs text-slate-500 dark:text-slate-400">
+                    {{ String(currentNode?.fields?.inventor_creador?.value || currentNode?.fields?.inventor_creador).replace(/[\[\]]/g, '') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Remotion Composition Watermark -->
+              <div class="absolute bottom-3 right-4 z-20 flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 font-mono pointer-events-none">
+                <span>Remotion 1920x1080</span>
+                <span>•</span>
+                <span>{{ fps }} FPS</span>
+              </div>
+            </div>
+
+            <!-- Timeline & Controls Bar -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-950 flex flex-col gap-3">
+              <!-- Scrubber Bar -->
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono text-slate-500 w-12 text-right">
+                  {{ (currentFrame / fps).toFixed(1) }}s
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  :max="totalFrames"
+                  step="0.5"
+                  :value="currentFrame"
+                  class="flex-1 accent-indigo-600 cursor-pointer h-2 bg-slate-200 dark:bg-slate-800 rounded-lg"
+                  @input="seekFrame"
+                />
+                <span class="text-xs font-mono text-slate-500 w-12">
+                  {{ (totalFrames / fps).toFixed(1) }}s
+                </span>
+              </div>
+
+              <!-- Control Buttons -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="w-9 h-9 rounded-lg bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center text-white cursor-pointer shadow-xs transition-all"
+                    @click="togglePlay"
+                    :title="isPlaying ? 'Pausar (Espacio)' : 'Reproducir (Espacio)'"
+                  >
+                    <Pause v-if="isPlaying" class="w-4 h-4 fill-current" />
+                    <Play v-else class="w-4 h-4 fill-current" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                    @click="restartAnimation"
+                    title="Reiniciar"
+                  >
+                    <RotateCcw class="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium border cursor-pointer transition-colors"
+                    :class="isLooping ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'"
+                    @click="isLooping = !isLooping"
+                    title="Repetir en bucle"
+                  >
+                    Loop
+                  </button>
+                </div>
+
+                <!-- Frame Counter & Speed Selector -->
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-600 dark:text-slate-400">
+                    <span class="text-slate-900 dark:text-white font-semibold">{{ Math.floor(currentFrame) }}</span>
+                    <span>/</span>
+                    <span>{{ totalFrames }} frames</span>
+                  </div>
+
+                  <div class="flex items-center bg-slate-200/80 dark:bg-slate-800 rounded-md p-0.5 text-xs font-mono">
+                    <button
+                      v-for="spd in [0.5, 1, 2]"
+                      :key="spd"
+                      type="button"
+                      class="px-2 py-0.5 rounded cursor-pointer transition-colors"
+                      :class="playbackSpeed === spd ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                      @click="playbackSpeed = spd"
+                    >
+                      {{ spd }}x
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: TSX Source Code -->
+          <div v-else class="flex flex-col flex-1 min-h-0 bg-slate-900 text-slate-100">
+            <div class="flex items-center justify-between px-4 py-2 bg-slate-950 border-b border-slate-800">
+              <span class="text-xs font-mono text-slate-400">{{ fileName }}</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 cursor-pointer transition-colors"
+                @click="copyCode"
+              >
+                <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-400" />
+                <Copy v-else class="w-3.5 h-3.5" />
+                <span>{{ isCopied ? '¡Copiado!' : 'Copiar TSX' }}</span>
+              </button>
+            </div>
+            <div class="flex-1 overflow-auto p-4 text-xs font-mono text-indigo-200/90 leading-relaxed bg-slate-950 select-text">
+              <pre v-if="fileContent">{{ fileContent }}</pre>
+              <p v-else class="text-slate-500 italic">Cargando código fuente de la animación...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 

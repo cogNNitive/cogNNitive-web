@@ -59,15 +59,40 @@ const refNode = computed(() => {
     name = name.slice(closingBracket + 1).trim()
   }
 
-  return Object.values(modelStore.nodes).find((n) => {
-    if (modelPrefix) {
-      const path = n.source?.path || ''
-      const modelFileName = path.split('/').pop()?.split('\\').pop() || ''
-      const modelBaseName = modelFileName.replace(/\.md$/i, '').replace(/_NN$/i, '').toLowerCase()
-      return n.name.toLowerCase() === name.toLowerCase() && modelBaseName === modelPrefix
-    }
-    return n.name.toLowerCase() === name.toLowerCase()
-  }) || null
+  const searchName = name.toLowerCase()
+  const searchNorm = searchName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  return (
+    Object.values(modelStore.nodes).find((n) => {
+      if (!n) return false
+      if (modelPrefix) {
+        const path = n.source?.path || ''
+        const modelFileName = path.split('/').pop()?.split('\\').pop() || ''
+        const modelBaseName = modelFileName
+          .replace(/\.md$/i, '')
+          .replace(/_NN$/i, '')
+          .toLowerCase()
+        if (modelBaseName !== modelPrefix) return false
+      }
+      const nName = (n.name || '').toLowerCase()
+      const nNorm = nName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      if (nName === searchName || nNorm === searchNorm) return true
+
+      const fVal = String(
+        n.fields?.nombre?.value ??
+          n.fields?.nombre ??
+          n.fields?.name?.value ??
+          n.fields?.name ??
+          n.fields?.title?.value ??
+          n.fields?.title ??
+          '',
+      ).toLowerCase()
+      const fNorm = fVal.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      if (fVal && (fVal === searchName || fNorm === searchNorm)) return true
+
+      return n.id.toLowerCase() === searchName || n.id.toLowerCase() === searchNorm
+    }) || null
+  )
 })
 
 const getConceptFields = (typeName: string | undefined) => {
@@ -200,13 +225,12 @@ function onBlur(): void {
         class="cursor-pointer"
         @click="uiStore.selectNode(refNode.id)"
       />
-      <span
+      <Pill
         v-else-if="cleanQuery"
-        class="text-slate-400 dark:text-slate-500 italic underline decoration-dotted cursor-help"
-        title="Referenced node not found in this model"
-      >
-        [[{{ cleanQuery }}]]
-      </span>
+        :name="cleanQuery"
+        kind="instance"
+        :interactive="false"
+      />
       <span v-else class="field-reference-readonly">—</span>
     </template>
     <input

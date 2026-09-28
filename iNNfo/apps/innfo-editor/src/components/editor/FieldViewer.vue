@@ -62,7 +62,7 @@
               </span>
             </div>
           </template>
-          <template v-else-if="entry.def.type === 'reference'">
+          <template v-else-if="entry.isReferenceType || isWikilinkValue(entry.displayValue)">
             <Pill
               v-if="entry.refNode"
               :node-id="entry.refNode.id"
@@ -79,13 +79,12 @@
               class="cursor-pointer"
               @click="uiStore.selectNode(entry.refNode.id)"
             />
-            <span
+            <Pill
               v-else
-              class="text-slate-400 dark:text-slate-500 italic underline decoration-dotted cursor-help"
-              title="Referenced node not found in this model"
-            >
-              [[{{ cleanReferenceName(entry.displayValue) }}]]
-            </span>
+              :name="cleanReferenceName(entry.displayValue)"
+              kind="instance"
+              :interactive="false"
+            />
           </template>
           <template v-else-if="entry.def.type === 'boolean'">
             <span
@@ -165,6 +164,12 @@ function cleanReferenceName(val: unknown): string {
     .trim()
 }
 
+function isWikilinkValue(val: unknown): boolean {
+  if (typeof val !== 'string') return false
+  const s = val.trim()
+  return s.startsWith('[[') && s.endsWith(']]')
+}
+
 function isSourceRef(val: unknown): boolean {
   return parseForPill(val) !== null
 }
@@ -188,12 +193,29 @@ function toFileRef(val: string): {
 }
 
 const MARKDOWN_FIELD_TYPES = new Set(['markdown_inline', 'markdown_file', 'markdown'])
-const ASSET_FIELD_TYPES = new Set(['image', 'image_url', 'asset', 'file', 'video', 'audio'])
+const ASSET_FIELD_TYPES = new Set(['image', 'image_url', 'asset', 'file', 'video', 'audio', 'animation'])
 
 function isAssetField(def: { name: string; type: string }, val: unknown): boolean {
   if (ASSET_FIELD_TYPES.has(def.type)) return true
+  const lowerName = (def.name || '').toLowerCase()
+  if (lowerName === 'animation' || lowerName.includes('animation')) return true
   if (typeof val === 'string' && val.trim()) {
     if (isImageFieldValue(def.name, val)) return true
+    const clean = val.trim().toLowerCase()
+    if (
+      clean.endsWith('.tsx') ||
+      clean.endsWith('.jsx') ||
+      clean.endsWith('.mp4') ||
+      clean.endsWith('.mov') ||
+      clean.endsWith('.webm') ||
+      clean.endsWith('.png') ||
+      clean.endsWith('.jpg') ||
+      clean.endsWith('.jpeg') ||
+      clean.endsWith('.gif') ||
+      clean.endsWith('.svg')
+    ) {
+      return true
+    }
   }
   return false
 }
@@ -210,6 +232,7 @@ interface FieldEntry {
   displayValue: unknown
   isMarkdownType: boolean
   isAssetType: boolean
+  isReferenceType: boolean
   refNode?: ModelNode | null
 }
 
@@ -262,13 +285,11 @@ const fieldEntries = computed<FieldEntry[]>(() => {
     const fv = node?.fields?.[def.name]
     const rawValue = fv?.value ?? fv ?? undefined
     const hasValue = rawValue !== undefined && rawValue !== null && rawValue !== ''
+    const isReference = def.type === 'reference' || (typeof rawValue === 'string' && isWikilinkValue(rawValue))
 
     let refNode = null
-    if (def.type === 'reference' && hasValue && typeof rawValue === 'string') {
-      let name = rawValue
-        .replace(/^\[\[\s*/, '')
-        .replace(/\s*\]\]$/, '')
-        .trim()
+    if (isReference && hasValue && typeof rawValue === 'string') {
+      let name = cleanReferenceName(rawValue)
       if (name.startsWith('[[') && name.endsWith(']]')) {
         name = name.slice(2, -2).trim()
       }
@@ -280,8 +301,12 @@ const fieldEntries = computed<FieldEntry[]>(() => {
         name = name.slice(closingBracket + 1).trim()
       }
 
+      const searchName = name.toLowerCase()
+      const searchNorm = searchName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
       refNode =
         Object.values(modelStore.nodes).find((n) => {
+          if (!n) return false
           if (modelPrefix) {
             const path = n.source?.path || ''
             const modelFileName = path.split('/').pop()?.split('\\').pop() || ''
@@ -289,9 +314,17 @@ const fieldEntries = computed<FieldEntry[]>(() => {
               .replace(/\.md$/i, '')
               .replace(/_NN$/i, '')
               .toLowerCase()
-            return n.name.toLowerCase() === name.toLowerCase() && modelBaseName === modelPrefix
+            if (modelBaseName !== modelPrefix) return false
           }
-          return n.name.toLowerCase() === name.toLowerCase()
+          const nName = (n.name || '').toLowerCase()
+          const nNorm = nName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          if (nName === searchName || nNorm === searchNorm) return true
+
+          const fVal = String(n.fields?.nombre?.value ?? n.fields?.nombre ?? n.fields?.name?.value ?? n.fields?.name ?? '').toLowerCase()
+          const fNorm = fVal.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          if (fVal === searchName || fNorm === searchNorm) return true
+
+          return n.id.toLowerCase() === searchName
         }) || null
     }
 
@@ -301,6 +334,7 @@ const fieldEntries = computed<FieldEntry[]>(() => {
       displayValue: rawValue ?? '',
       isMarkdownType: MARKDOWN_FIELD_TYPES.has(def.type),
       isAssetType: isAssetField(def, rawValue),
+      isReferenceType: isReference,
       refNode,
     }
   })

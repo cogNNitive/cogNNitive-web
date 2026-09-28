@@ -41,14 +41,19 @@ const currentValue = computed(() => modelStore.getNode(props.nodeId)?.fields[pro
 
 const effectiveWidgetType = computed(() => {
   const t = props.widgetType || props.fieldDefinition?.type || 'string'
-  if (t === 'image' || t === 'asset' || t === 'file' || t === 'video' || t === 'audio') {
-    return t === 'asset' ? 'image' : t
+  if (t === 'image' || t === 'asset' || t === 'file' || t === 'video' || t === 'audio' || t === 'animation') {
+    return t === 'asset' || t === 'animation' ? 'asset' : t
   }
   const name = props.fieldKey || props.fieldDefinition?.name || ''
+  if (name.toLowerCase() === 'animation' || name.toLowerCase().includes('animation')) return 'asset'
   if (isImageFieldName(name)) return 'image'
   if (typeof currentValue.value === 'string' && currentValue.value.trim()) {
     if (isImageFieldValue(name, currentValue.value)) return 'image'
+    const clean = currentValue.value.trim().toLowerCase()
+    if (clean.endsWith('.tsx') || clean.endsWith('.jsx') || clean.endsWith('.mp4')) return 'asset'
+    if (clean.startsWith('[[') && clean.endsWith(']]')) return 'reference'
   }
+  if (name.toLowerCase().includes('creador') || name.toLowerCase().includes('inventor')) return 'reference'
   return t
 })
 

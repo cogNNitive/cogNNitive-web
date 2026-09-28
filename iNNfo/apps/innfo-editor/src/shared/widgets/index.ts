@@ -21,6 +21,7 @@ import DiagramWidget from './DiagramWidget.vue'
 import TimestampWidget from './TimestampWidget.vue'
 import MarkdownWidget from './MarkdownWidget.vue'
 import MarkdownFieldEditor from './MarkdownFieldEditor.vue'
+import InnovationVisual from './InnovationVisual.vue'
 import { UNIFIED_WIDGET_REGISTRY } from './registry'
 
 export { default as FallbackWidget } from './FallbackWidget.vue'
@@ -47,6 +48,7 @@ export {
   TimestampWidget,
   MarkdownWidget,
   MarkdownFieldEditor,
+  InnovationVisual,
 }
 export { UNIFIED_WIDGET_REGISTRY }
 export type { WidgetType } from './registry'

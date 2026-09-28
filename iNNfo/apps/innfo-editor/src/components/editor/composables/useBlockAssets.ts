@@ -82,41 +82,103 @@ export function useBlockAssets(
       return url
     }
 
-    try {
-      const modelDirHandle = modelPath ? await getModelDirectoryHandle(handle, modelPath) : handle
-
-      // Fallback for simple filenames (no path segments) from image fields
-      if (!relativePath.includes('/') && !relativePath.includes('\\')) {
-        if (slug) {
+    async function findFileInDir(dirHandle: any, pathParts: string[]): Promise<any> {
+      let current = dirHandle
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        const seg = pathParts[i]
+        const decodedSeg = decodeURIComponent(seg)
+        try {
+          current = await current.getDirectoryHandle(seg)
+        } catch {
           try {
-            const assetsDir = await modelDirHandle.getDirectoryHandle('assets')
-            const slugDir = await assetsDir.getDirectoryHandle(slug)
-            const fh = await slugDir.getFileHandle(relativePath)
-            const file = await fh.getFile()
-            return cacheWithStats(file)
+            current = await current.getDirectoryHandle(decodedSeg)
           } catch {
-            // fallback
+            // Try matching by normalized name
+            let found = null
+            for await (const [name, entry] of current.entries()) {
+              if (entry.kind === 'directory') {
+                if (
+                  name.toLowerCase() === seg.toLowerCase() ||
+                  name.toLowerCase() === decodedSeg.toLowerCase() ||
+                  name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() ===
+                    decodedSeg.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+                ) {
+                  found = entry
+                  break
+                }
+              }
+            }
+            if (!found) return null
+            current = found
           }
         }
+      }
 
+      const fileSeg = pathParts[pathParts.length - 1]
+      const decodedFileSeg = decodeURIComponent(fileSeg)
+      try {
+        return await current.getFileHandle(fileSeg)
+      } catch {
         try {
-          const assetsDir = await modelDirHandle.getDirectoryHandle('assets')
-          const fh = await assetsDir.getFileHandle(relativePath)
-          const file = await fh.getFile()
-          return cacheWithStats(file)
+          return await current.getFileHandle(decodedFileSeg)
         } catch {
-          // fallback
+          for await (const [name, entry] of current.entries()) {
+            if (entry.kind === 'file') {
+              if (
+                name.toLowerCase() === fileSeg.toLowerCase() ||
+                name.toLowerCase() === decodedFileSeg.toLowerCase() ||
+                name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() ===
+                  decodedFileSeg.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+              ) {
+                return entry
+              }
+            }
+          }
+          return null
+        }
+      }
+    }
+
+    try {
+      const modelDirHandle = modelPath ? await getModelDirectoryHandle(handle, modelPath) : handle
+      const cleanPath = relativePath.replace(/\\/g, '/').replace(/^\/+/, '')
+      const parts = cleanPath.split('/').filter(Boolean)
+
+      // 1. Try resolving against workspace root (handle)
+      const rootFh = await findFileInDir(handle, parts)
+      if (rootFh) {
+        const file = await rootFh.getFile()
+        return cacheWithStats(file)
+      }
+
+      // 2. Try resolving against model directory handle
+      if (modelDirHandle && modelDirHandle !== handle) {
+        const modelFh = await findFileInDir(modelDirHandle, parts)
+        if (modelFh) {
+          const file = await modelFh.getFile()
+          return cacheWithStats(file)
         }
       }
 
-      const parts = relativePath.split('/').filter(Boolean)
-      let current: any = modelDirHandle
-      for (let i = 0; i < parts.length - 1; i++) {
-        current = await current.getDirectoryHandle(parts[i])
+      // 3. Try canonical per-element assets: assets/{slug}/{filename}
+      if (slug && parts.length === 1) {
+        const slugFh = await findFileInDir(handle, ['assets', slug, parts[0]])
+        if (slugFh) {
+          const file = await slugFh.getFile()
+          return cacheWithStats(file)
+        }
       }
-      const fh = await current.getFileHandle(parts[parts.length - 1])
-      const file = await fh.getFile()
-      return cacheWithStats(file)
+
+      // 4. Try centralized assets: assets/{filename}
+      if (parts.length === 1) {
+        const assetFh = await findFileInDir(handle, ['assets', parts[0]])
+        if (assetFh) {
+          const file = await assetFh.getFile()
+          return cacheWithStats(file)
+        }
+      }
+
+      return relativePath
     } catch {
       return relativePath
     }
