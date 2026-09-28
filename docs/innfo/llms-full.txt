@@ -32,7 +32,7 @@ A monorepo that ties the iNNfo ecosystem together:
 
 ## Built for AI agents
 
-- **innfo-mcp** â€” a stdio MCP server with semantic tools (`list_models`, `read_model`, `get_spec`, `get_template`, `validate_model`, `apply_change`, `validate_model_url`).
+- **innfo-mcp** â€” a stdio MCP server exposing iNNfo as semantic tools for AI agents.
 - **Use iNNfo with AI** â€” a built-in checklist to connect your workspace to Claude Code, Google Antigravity, or OpenCode.
 
 ## Monorepo structure
