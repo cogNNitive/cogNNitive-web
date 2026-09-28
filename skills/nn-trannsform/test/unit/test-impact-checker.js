@@ -92,6 +92,30 @@ status:: Inactive
     ok(Boolean(drifted), 'records drifted citation details');
     eq(drifted.reason, 'missing_heading', 'reason is missing_heading');
 
+    // Test 2b: @ grammar citation validated for real, not auto-skipped
+    const atModelContent = `---
+spec_version: "V_0-1-0"
+---
+
+# NN Objectives
+
+## NN Objectives: At Grammar Valid
+sources:: strategy_source.md@## Strategic Vision
+
+## NN Objectives: At Grammar Drifted
+sources:: strategy_source.md@## Nonexistent Section
+`;
+    fs.writeFileSync(path.join(modelsDir, 'AtGrammar_V_1-0-0_NN.md'), atModelContent, 'utf8');
+
+    const auditAt = auditModelCitations(tmpDir);
+    const atValid = auditAt.driftedCitations.find(c => c.citation.includes('Strategic Vision'));
+    ok(!atValid, '@ grammar citation to a real heading is not flagged as drift');
+    const atDrifted = auditAt.driftedCitations.find(c => c.citation.includes('Nonexistent Section'));
+    ok(Boolean(atDrifted), '@ grammar citation to a missing heading IS flagged as drift');
+    eq(atDrifted.reason, 'missing_heading', '@ grammar drift reason is missing_heading');
+
+    fs.rmSync(path.join(modelsDir, 'AtGrammar_V_1-0-0_NN.md'));
+
     // Test 3: Suggest closest matching slugs
     const suggestions = findClosestSlugs('strategic-mission', ['strategic-vision', 'market-positioning', 'overview']);
     ok(suggestions.includes('strategic-vision'), 'finds closest slug suggestions for similar tokens');

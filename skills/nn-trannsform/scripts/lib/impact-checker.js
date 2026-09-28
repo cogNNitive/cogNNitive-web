@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const modelLib = require('./provenance-model');
-const { extractHeadingSlugs } = require('../markdown-utils');
+const { extractHeadingSlugs, slugifyUnitHeading } = require('../markdown-utils');
 
 /**
  * Audit all models in the workspace to verify that every `sources::` citation
@@ -86,9 +86,72 @@ function auditModelCitations(projectDir) {
         for (const ref of refs) {
           totalCitations++;
 
-          // Skip turn pointers with @ syntax or model-to-model references
-          if (ref.includes('@') || ref.startsWith('models/')) {
+          // Model-to-model references cite another model, not a source heading —
+          // nothing here to validate against sources/nn/.
+          if (ref.startsWith('models/')) {
             validCitations++;
+            continue;
+          }
+
+          const atIdx = ref.indexOf('@');
+          if (atIdx !== -1) {
+            const filePartAt = ref.slice(0, atIdx).replace(/^sources\/nn\//, '').trim();
+            const unitPartRaw = ref.slice(atIdx + 1).split('&')[0].trim();
+            const headerMatch = unitPartRaw.match(/^(#{1,6})\s*(.+?)\s*$/);
+
+            if (!filePartAt || !headerMatch) {
+              // Not a header-unit pointer (e.g. a CSV row unit like `data.csv@RowID`) —
+              // row-level validation isn't implemented yet, so keep it as unvalidated
+              // rather than falsely flagging it as drift.
+              validCitations++;
+              continue;
+            }
+
+            let targetRelPathAt = filePartAt;
+            let sourceDataAt = getHeadingsForSource(targetRelPathAt);
+            if (!sourceDataAt) {
+              const found = findSourceUnderNn(nnDir, filePartAt);
+              if (found) {
+                targetRelPathAt = found;
+                sourceDataAt = getHeadingsForSource(targetRelPathAt);
+              }
+            }
+
+            if (!sourceDataAt) {
+              const msg = `${modelRelPath}${currentElement ? ` (${currentElement})` : ''}: sources:: "${ref}" does not resolve to any file in sources/nn/.`;
+              errors.push(msg);
+              driftedCitations.push({
+                modelFile: modelRelPath,
+                elementName: currentElement || undefined,
+                citation: ref,
+                sourceFile: filePartAt,
+                headingSlug: unitPartRaw,
+                reason: 'missing_file',
+              });
+              continue;
+            }
+
+            const level = headerMatch[1].length;
+            const { slug } = slugifyUnitHeading(level, headerMatch[2]);
+            const matches = sourceDataAt.headings.some((h) => h.level === level && h.slug === slug);
+
+            if (!matches) {
+              const suggestions = findClosestSlugs(slug, Array.from(sourceDataAt.slugSet));
+              const suggStr = suggestions.length > 0 ? ` (Did you mean: ${suggestions.map(s => `@${'#'.repeat(level)} ${s}`).join(', ')}?)` : '';
+              const msg = `${modelRelPath}${currentElement ? ` (${currentElement})` : ''}: sources:: "${ref}" references missing heading "${unitPartRaw}" in "sources/nn/${targetRelPathAt}"${suggStr}.`;
+              errors.push(msg);
+              driftedCitations.push({
+                modelFile: modelRelPath,
+                elementName: currentElement || undefined,
+                citation: ref,
+                sourceFile: targetRelPathAt,
+                headingSlug: slug,
+                reason: 'missing_heading',
+                suggestions,
+              });
+            } else {
+              validCitations++;
+            }
             continue;
           }
 
