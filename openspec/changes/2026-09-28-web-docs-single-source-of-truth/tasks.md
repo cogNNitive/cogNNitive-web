@@ -80,8 +80,8 @@ Chain strategy: stacked-to-main
 
 ## Unit 5: About Twin Generated From about.html (docs-content-hygiene, corrected)
 
-- [ ] 5.1 Update the `docs-content-hygiene` delta spec ("One Canonical About Page") and `design.md` D6/File-Changes to record: `about.md` is generated from `about.html`, not removed.
-- [ ] 5.2 Fix hand-typed "seven semantic tools" in `docs/innfo/about.html` (non-numeric wording) before generating the twin, so it doesn't trip Unit 7's literal scan.
+- [x] 5.1 Update the `docs-content-hygiene` delta spec ("One Canonical About Page") and `design.md` D6/File-Changes to record: `about.md` is generated from `about.html`, not removed.
+- [x] 5.2 Fix hand-typed "seven semantic tools" in `docs/innfo/about.html` (non-numeric wording) before generating the twin, so it doesn't trip Unit 7's literal scan.
 - [ ] 5.3 RED: `scripts/generate-about-twin.test.mjs` — failing tests: strips `<nav>`/`<footer>`/`<script>`, converts headings/paragraphs/links/code to Markdown, preserves frontmatter, deterministic on repeat run.
 - [ ] 5.4 GREEN: create `scripts/generate-about-twin.mjs` (write / `--check [--against HEAD]`, exit 0/1/2).
 - [ ] 5.5 Wire `scripts/build-docs.mjs` to call it in write mode; regenerate `docs/innfo/about.md`.
