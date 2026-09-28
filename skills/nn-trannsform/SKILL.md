@@ -65,7 +65,7 @@ Every project workspace MUST adhere to the following structure:
 
 ```
 [project-name]/
-├── AGENTS.md             # Workspace agent entrypoint (Session Start -> nn-router)
+├── AGENTS.md             # Workspace agent entrypoint (Session Start -> nn-start)
 ├── sources/
 │   ├── import/           # External raw files (PDF, DOCX, CSV, TXT, JSON, HTML). Legacy sources/original/ supported via fallback.
 │   ├── conversations/    # Promoted transcripts (*_source.md — full transcript only).
@@ -84,7 +84,7 @@ Every project workspace MUST adhere to the following structure:
 ```
 
 > [!NOTE]
-> **Workspace AGENTS.md Scaffolding**: During workspace initialization (`bootstrapProject`), an `AGENTS.md` file is automatically scaffolded at the workspace root if not already present. It directs AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) to immediately invoke `nn-router` at session start. Pre-existing `AGENTS.md` files are preserved intact without destructive overwrite.
+> **Workspace AGENTS.md Scaffolding**: During workspace initialization (`bootstrapProject`), an `AGENTS.md` file is automatically scaffolded at the workspace root if not already present. It directs AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) to immediately invoke `nn-start` at session start. Pre-existing `AGENTS.md` files are preserved intact without destructive overwrite.
 
 > [!NOTE]
 > **Workspace index.md Format**: The workspace `index.md` file (in the project root) uses standard Markdown links (`* [label](target.md)`), unlike the internal `# NN index` block of Level 3 models which uses WikiLinks (`* [[Concept]]`). When regenerated, the tool preserves existing custom/unknown lines, filters out duplicate or dangling links, and keeps the highest version if multiple versions of the same model base exist.
@@ -535,7 +535,7 @@ At the end of transformation:
 4. **Mandatory Scanner Origin Metadata**: Normalized Markdown in `sources/nn/` MUST include scanner frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, plus optional `staging_file`, `is_synthetic`, `canonical`, and `cited_works`). No `source_id`/`src-NNN`.
 5. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: <path.md#heading-slug>` (or a list `sources:: [a.md#slug, b.md#slug]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
 6. **V_0-1-0 Compliance**: Target iNNfo V_0-1-0 meta-template specification and unified NN syntax (`# NN`, `## NN`, `key:: value`).
-7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn-router`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
+7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn-start`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
 7a. **Lineage Record Sync**: `# NN Sources`, `# NN Models` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `models/`, `export/`, fallback `artifacts/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.
 8. **Prose Description in Level 3 Models**: The description of an element in a Level 3 model must NEVER be formatted as a `description::` property field. It must always be written as free-form Markdown prose below the `key:: value` fields list, separated from them by a blank line.
 9. **Scored Matching, Never Silent Exclusion**: normalized sources map to model elements through `scorePairs` (`scripts/lib/score-matcher.js`, threshold 0.7); below-threshold pairs enter the review queue with a recorded decision, and undecided pairs stay queued across sessions.

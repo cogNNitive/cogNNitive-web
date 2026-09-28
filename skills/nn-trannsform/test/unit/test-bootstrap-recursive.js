@@ -82,8 +82,8 @@ function run() {
     check(fs.existsSync(result.agentsMdPath), 'AGENTS.md exists at project root');
     const agentsContent = fs.readFileSync(result.agentsMdPath, 'utf8');
     check(
-      agentsContent.includes('## Session Start: Load nn-router (MANDATORY)'),
-      'AGENTS.md has Session Start nn-router directive',
+      agentsContent.includes('## Session Start: Load nn-start (MANDATORY)'),
+      'AGENTS.md has Session Start nn-start directive',
     );
     check(
       agentsContent.includes('nn-preflight'),
@@ -108,7 +108,7 @@ function run() {
     const overwrittenResult = bootstrapProject(undefined, destParent, 'ProjExisting', { overwriteAgents: true });
     const overwrittenContent = fs.readFileSync(overwrittenResult.agentsMdPath, 'utf8');
     check(
-      overwrittenContent.includes('## Session Start: Load nn-router (MANDATORY)'),
+      overwrittenContent.includes('## Session Start: Load nn-start (MANDATORY)'),
       'AGENTS.md is overwritten when options.overwriteAgents is true',
     );
 

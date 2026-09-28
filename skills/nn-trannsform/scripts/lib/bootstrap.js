@@ -36,14 +36,14 @@ Transform (traNNsform) is a tool to structure and process unstructured documents
 function generateAgentsMd(projectName) {
   return `# AGENTS.md — ${projectName}
 
-## Session Start: Load nn-router (MANDATORY)
+## Session Start: Load nn-start (MANDATORY)
 
-At the beginning of every interactive session in this workspace, AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) **MUST** immediately load and execute **\`nn-router\`** (\`skills/nn-router/SKILL.md\` or \`/nn-router\`).
+At the beginning of every interactive session in this workspace, AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) **MUST** immediately load and execute **\`nn-start\`** (\`skills/nn-start/SKILL.md\` or \`/nn-start\`).
 
 ### Session Start Protocol
-1. **Activation Gate & Environment Readiness**: Trigger \`nn-router\` to run \`nn-preflight\` readiness checks (Node.js runtime, MCP health, and workspace layout verification).
+1. **Activation Gate & Environment Readiness**: Trigger \`nn-start\` to run \`nn-preflight\` readiness checks (Node.js runtime, MCP health, and workspace layout verification).
 2. **Session Transcript Allocation**: Silently allocate or attach turn logging under \`conversations/YYYY-MM-DD_HHmmss.md\` to preserve context.
-3. **Skill Routing**: Match user intent against the 7 core skills in the cogNNitive catalog (\`nn-router\`, \`nn-preflight\`, \`nn-trannsform\`, \`nn-innfo\`, \`nn-site-generator\`, \`nn-design-presets\`, \`nn-skills-lifecycle\`).
+3. **Skill Routing**: Match user intent against the 7 core skills in the cogNNitive catalog (\`nn-start\`, \`nn-preflight\`, \`nn-trannsform\`, \`nn-innfo\`, \`nn-site-generator\`, \`nn-design-presets\`, \`nn-skills-lifecycle\`).
 
 ### System & UX Governance (Mandatory)
 - **Zero Unilateral Mutation (Consent First)**: NEVER move, rename, or delete user files (including raw files in \`sources/import/\`) without explicit confirmation.

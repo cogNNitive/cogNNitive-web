@@ -350,13 +350,13 @@ node scripts/preflight-check.js   # fallback: node skills/nn-preflight/scripts/p
 ```
 - ❌ preflight runner not found on any known path, or exits `2` (Node blocker).
 - ⚠️ exits `1` (outdated / missing components) — report, do not auto-fix.
-- For every consumer skill (`nn-router`, `nn-innfo`, `nn-trannsform`, `nn-site-generator`,
+- For every consumer skill (`nn-start`, `nn-innfo`, `nn-trannsform`, `nn-site-generator`,
   `nn-skills-lifecycle`, `nn-design-presets`): its SKILL.md has a `## 0. Activation Gate`
   section delegating to `nn-preflight` with the canonical text, a greeting banner
   (`🔧 You're using skill: …`), and does **not** duplicate the runner command / exit-code
   branching.
 
-Judgement (opt-in — requires reading, not a script): read `nn-router` → `nn-preflight` →
+Judgement (opt-in — requires reading, not a script): read `nn-start` → `nn-preflight` →
 the entry menus and option flows of `nn-innfo` / `nn-trannsform` / the others, and assess
 whether the routing order and the user-facing flow still hold together — no dead options,
 no menu pointing at a step that was removed, no contradictory instructions between a

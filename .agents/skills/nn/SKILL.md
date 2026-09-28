@@ -2,8 +2,8 @@
 name: nn
 description: Primary Front Controller, ecosystem entry point, system governance, setup, environment readiness gate (Preflight), and skill router for cogNNitive. Triggers: /nn, NN, nn, cognnitive, cognitive, router, setup.
 disable-model-invocation: false
-version: "V_3-3-0"
-last_updated: 2026-09-21
+version: "V_3-4-0"
+last_updated: 2026-09-28
 license: MIT
 compatibility: opencode, claude-code, cursor, any agent supporting skills
 metadata:
@@ -13,6 +13,6 @@ bundled_templates: []
 
 # nn Front Controller
 
-Alias entry point for `/nn` delegating to `nn-router`.
+Alias entry point for `/nn` delegating to `nn-start`.
 
-Execute the canonical router in [`skills/nn-router/SKILL.md`](../../../skills/nn-router/SKILL.md).
+Execute the canonical router in [`skills/nn-start/SKILL.md`](../../../skills/nn-start/SKILL.md).
