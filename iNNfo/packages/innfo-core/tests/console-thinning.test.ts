@@ -1,14 +1,17 @@
 import { describe, it, expect } from 'vitest'
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const templatesDir = join(here, '..', '..', '..', 'specs', 'templates')
+const repoRoot = join(here, '..', '..', '..', '..')
 
 const assets = {
   viewer: join(templatesDir, 'business', 'assets', 'model_viewer.html'),
   timeline: join(templatesDir, 'metrics', 'assets', 'timeline.html'),
+  console: join(templatesDir, 'workspace', 'assets', 'model_console.html'),
 }
 
 // Markers that would indicate a duplicated inline copy of the shared runtime.
@@ -27,6 +30,7 @@ function readAsset(path: string): string {
 describe.each([
   ['viewer', assets.viewer],
   ['timeline', assets.timeline],
+  ['console', assets.console],
 ])('%s console asset', (_name, path) => {
   it('declares an innfo-config block with a needs[] capability list', () => {
     const html = readAsset(path)
@@ -57,6 +61,50 @@ describe('viewer slot payloads', () => {
     const html = readAsset(assets.viewer)
     expect(html).toContain('id="innfo-schema"')
     expect(html).toContain('id="innfo-model"')
+  })
+
+  it('stays byte-unchanged by the console-citation-icons change (C2-C4 create a workspace-level copy instead)', () => {
+    const tracked = execFileSync(
+      'git',
+      ['show', 'HEAD:iNNfo/specs/templates/business/assets/model_viewer.html'],
+      { cwd: repoRoot, encoding: 'utf8' },
+    )
+    const onDisk = readAsset(assets.viewer)
+    expect(onDisk).toBe(tracked)
+  })
+})
+
+// The workspace-level console asset is the citation-aware sibling of the
+// business viewer shell: same renderer contract, plus the native citation
+// dialog and icon colour rules, plus the shared bundle (not the split
+// innfo-runtime.js/render-model-viewer.js tags the business shell still
+// uses).
+describe('console (workspace) slot payloads', () => {
+  it('keeps the #innfo-schema and #innfo-model slots', () => {
+    const html = readAsset(assets.console)
+    expect(html).toContain('id="innfo-schema"')
+    expect(html).toContain('id="innfo-model"')
+  })
+
+  it('boots the shared console bundle (not the legacy split runtime/renderer tags)', () => {
+    const html = readAsset(assets.console)
+    expect(html).toContain('innfo-console.bundle.js')
+    expect(html).not.toContain('innfo-runtime.js')
+    expect(html).not.toContain('render-model-viewer.js')
+  })
+
+  it('declares the native citation dialog and its colour-rule hooks', () => {
+    const html = readAsset(assets.console)
+    expect(html).toContain('id="innfo-citation-dialog"')
+    expect(html).toContain('aria-label="Citation details"')
+    for (const cls of ['.cite-icon.cite-agent', '.cite-icon.cite-human', '.cite-icon.cite-reviewer', '.cite-icon.cite-document', '.cite-icon.cite-error']) {
+      expect(html).toContain(cls)
+    }
+  })
+
+  it('widens the innfo-ref-dialog CSS selectors to also cover innfo-citation-dialog', () => {
+    const html = readAsset(assets.console)
+    expect(html).toContain('#innfo-ref-dialog, #innfo-citation-dialog')
   })
 })
 

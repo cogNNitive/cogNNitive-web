@@ -895,9 +895,22 @@
       star: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
       calc: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="9" x2="19" y2="9"></line><line x1="5" y1="15" x2="19" y2="15"></line></svg>',
       derived: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a4 4 0 0 1 8 0 4 4 0 0 0 8 0"></path></svg>',
-      close: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+      close: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+      'cite-agent': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="11" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><line x1="12" y1="7" x2="12" y2="9"></line><line x1="8" y1="14" x2="8" y2="15"></line><line x1="16" y1="14" x2="16" y2="15"></line></svg>',
+      'cite-human': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-7 8-7s8 3 8 7"></path></svg>',
+      'cite-reviewer': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="m9 10 2 2 4-4"></path></svg>',
+      'cite-document': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>',
+      'cite-error': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
     }
     return svgs[name] || ''
+  }
+
+  var CITATION_ORIGIN_LABELS = {
+    agent: 'AI agent',
+    human: 'Human author',
+    reviewer: 'Reviewer feedback',
+    document: 'Document',
+    error: 'Unresolved citation',
   }
 
   function getSemanticBarColor(val, minVal, maxVal, row) {
@@ -1457,6 +1470,78 @@
     dialog.showModal()
   }
 
+  // Citation detail dialog (Console Citation Icons / Tanda C). Reuses the
+  // innfo-ref-dialog markup/classes so no second stylesheet is needed. Unlike
+  // renderRefDialog, it creates #innfo-citation-dialog and appends it to
+  // <body> when the shell does not already declare it, so old shells (built
+  // before this change) still work once the runtime is updated.
+  function renderCitationDialog(doc, fieldName, entries) {
+    if (!doc || !Array.isArray(entries)) return
+    var dialog = doc.getElementById('innfo-citation-dialog')
+    if (!dialog) {
+      dialog = doc.createElement('dialog')
+      dialog.id = 'innfo-citation-dialog'
+      dialog.setAttribute('aria-label', 'Citation details')
+      var host = doc.body
+      if (host) host.appendChild(dialog)
+    }
+    if (typeof dialog.showModal !== 'function') return
+    dialog.innerHTML = ''
+
+    var head = el('div', 'innfo-ref-head')
+    var h = el('h2', null, 'Citations: ' + String(fieldName || ''))
+    var close = el('button', 'innfo-ref-close', '×')
+    if (close) {
+      close.setAttribute('type', 'button')
+      close.setAttribute('aria-label', 'Close')
+      close.addEventListener('click', function () {
+        if (typeof dialog.close === 'function') dialog.close()
+      })
+    }
+    if (head && h) head.appendChild(h)
+    if (head && close) head.appendChild(close)
+
+    var body = el('div', 'innfo-ref-body')
+    entries.forEach(function (entry) {
+      if (!entry || !body) return
+      var variantKey = entry.error
+        ? 'error'
+        : Object.prototype.hasOwnProperty.call(CITATION_ORIGIN_LABELS, entry.origin)
+          ? entry.origin
+          : 'document'
+      var labelText = CITATION_ORIGIN_LABELS[variantKey] || variantKey
+      var tagText = labelText + (entry.author ? ' · ' + entry.author : '')
+      var tag = el('span', 'innfo-ref-tag', tagText)
+      if (tag) body.appendChild(tag)
+
+      var dl = el('dl', 'innfo-ref-fields')
+      function addField(label, value) {
+        if (!dl) return
+        if (value === null || value === undefined || value === '') return
+        var dt = el('dt', null, label)
+        var dd = el('dd', null, String(value))
+        if (dt) dl.appendChild(dt)
+        if (dd) dl.appendChild(dd)
+      }
+      addField('Path', entry.path)
+      addField('Anchor', entry.anchor)
+      addField('Version', entry.version)
+      addField('SHA-256', entry.sha256)
+      addField('Error', entry.error)
+      if (dl && dl.children.length) body.appendChild(dl)
+
+      if (entry.excerpt) {
+        var excerptText = entry.excerpt + (entry.truncated ? ' … (truncated)' : '')
+        var pre = el('pre', 'innfo-cite-excerpt', excerptText)
+        if (pre) body.appendChild(pre)
+      }
+    })
+
+    dialog.appendChild(head)
+    dialog.appendChild(body)
+    dialog.showModal()
+  }
+
   // Generic readable-document renderer for a chain of elements (concept-agnostic).
   // `chain` is an array of tree nodes (from buildTree/chainOf) with .el/.fields.
   // The first element is treated as the root; the rest are rendered as steps.
@@ -1783,6 +1868,8 @@
     filterElements: filterElements,
     buildRefsByName: buildRefsByName,
     renderRefDialog: renderRefDialog,
+    renderCitationDialog: renderCitationDialog,
+    svgIcon: svgIcon,
     renderDocument: renderDocument,
     renderDocumentView: renderDocumentView,
     buildTree: buildTree,

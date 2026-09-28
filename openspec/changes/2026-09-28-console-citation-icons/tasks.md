@@ -116,7 +116,7 @@ innfo-core first if any innfo-core type changed underneath this tool.
 
 ## C2 — Payload: new `workspace/procedures/compile_model_console_NN.md`
 
-- [ ] 2.1 Create `workspace/procedures/compile_model_console_NN.md` as a copy
+- [x] 2.1 Create `workspace/procedures/compile_model_console_NN.md` as a copy
       of the business procedure (`business/procedures/compile_model_viewer_NN.md`)
       with `model_version: V_0-1-0` (new file), `Load Reference Shell`
       pointed at `workspace/assets/model_console.html`, and a new step
@@ -126,7 +126,7 @@ innfo-core first if any innfo-core type changed underneath this tool.
       `[spec: console-field-citations → "Compile-time citation payload";
       innfo-console-runtime → "Console compile procedure relocated to
       workspace level"]`
-- [ ] 2.2 Implement the `Resolve Element Citations` step: for each element,
+- [x] 2.2 Implement the `Resolve Element Citations` step: for each element,
       call `resolve_sources({model, elementId: el.name})` — **`el.name`, not
       the slug `id`** — with `fieldName` omitted. If the call returns a
       single `MODEL_NOT_FOUND`/`ELEMENT_NOT_FOUND` entry, embed nothing for
@@ -139,14 +139,14 @@ innfo-core first if any innfo-core type changed underneath this tool.
       `[spec: console-field-citations → "Compile-time citation payload" →
       Scenario: Citations embedded per element; Scenario: Document-level
       resolution timestamp]`
-- [ ] 2.3 In `Inject Data into Shell`, escape `<` as `<` inside all
+- [x] 2.3 In `Inject Data into Shell`, escape `<` as `<` inside all
       injected JSON (not just citation excerpts — the whole payload), so an
       excerpt containing the literal string `</script>` cannot break the
       page. Add a test case with an excerpt containing `</script>` and assert
       the injected `<script>` block parses and the literal string never
       appears unescaped.
       `[design: C2 → "Inject Data into Shell must escape < as <"]`
-- [ ] 2.4 Write/extend a compile-procedure-level test (or fixture-based
+- [x] 2.4 Write/extend a compile-procedure-level test (or fixture-based
       assertion) covering: an element with a `sources` field and a
       `precio_source` field produces `el.citations.sources` and
       `el.citations.precio_source`; a compile run resolving at least one
@@ -158,7 +158,7 @@ innfo-core first if any innfo-core type changed underneath this tool.
 
 ## C3 — Renderer: `render-model-viewer.js`
 
-- [ ] 3.1 Write failing jsdom tests in a new `console-dom.test.ts`: no
+- [x] 3.1 Write failing jsdom tests in a new `console-dom.test.ts`: no
       `citations` on an element gives DOM identical to today (backward
       compatibility); a `sources`-family citation renders its icon on the
       element header; a non-`sources` citation-typed field renders its icon
@@ -168,7 +168,7 @@ innfo-core first if any innfo-core type changed underneath this tool.
       inert when rendered (XSS guard, jsdom pragma).
       `[spec: console-field-citations → "Backward-compatible rendering";
       "Origin-typed citation icons" → all 4 scenarios]`
-- [ ] 3.2 Implement `citationButtons(fieldName, entries)` as a module-level
+- [x] 3.2 Implement `citationButtons(fieldName, entries)` as a module-level
       helper in `render-model-viewer.js`: returns `span.cite-icons` of
       `<button type="button" class="cite-icon cite-<variant>">` per distinct
       variant, ordered `error, agent, human, reviewer, document`; `variant =
@@ -178,19 +178,19 @@ innfo-core first if any innfo-core type changed underneath this tool.
       returns `null` when `InnfoConsole.renderCitationDialog`/`svgIcon` are
       missing.
       `[spec: console-field-citations → "Origin-typed citation icons"]`
-- [ ] 3.3 Wire `citationButtons` into `renderElement()` (`:233-301`): after
+- [x] 3.3 Wire `citationButtons` into `renderElement()` (`:233-301`): after
       the markers loop and before the chevron, merge `sources`/`source` keys
       (`SOURCES_FAMILY`) and append the header button; inside the fields loop,
       for each `k` with `citations[k]` not in `SOURCES_FAMILY`, append the
       button to `tr.lastChild`. Leave `matchesQuery` unchanged.
-- [ ] 3.4 Run the new `console-dom.test.ts` plus existing
+- [x] 3.4 Run the new `console-dom.test.ts` plus existing
       `console-renderers.test.ts`/`console-thinning.test.ts` until green.
 
 ---
 
 ## C4 — Runtime: `innfo-runtime.js` icons and dialog
 
-- [ ] 4.1 Write failing tests: clicking a citation icon opens
+- [x] 4.1 Write failing tests: clicking a citation icon opens
       `#innfo-citation-dialog` via `showModal()` without toggling the
       element open; the dialog shows path/anchor/excerpt for the clicked
       entry; a truncated excerpt shows a visible truncation mark; a missing
@@ -200,13 +200,13 @@ innfo-core first if any innfo-core type changed underneath this tool.
       and appended to `body` when the shell lacks it.
       `[spec: console-field-citations → "Native citation detail dialog" →
       all 4 scenarios]`
-- [ ] 4.2 Add `svgIcon` entries (`cite-agent`, `cite-human`, `cite-reviewer`,
+- [x] 4.2 Add `svgIcon` entries (`cite-agent`, `cite-human`, `cite-reviewer`,
       `cite-document`, `cite-error`) per design's glyph/label/colour table,
       same stroke-SVG format and `innfo-icon` class as existing entries. Add
       `CITATION_ORIGIN_LABELS`.
       `[spec: console-field-citations → "Origin-typed citation icons" →
       Scenario: Human origin distinguishable from agent and document]`
-- [ ] 4.3 Implement `renderCitationDialog(doc, fieldName, entries)` next to
+- [x] 4.3 Implement `renderCitationDialog(doc, fieldName, entries)` next to
       `renderRefDialog`: get-or-create `#innfo-citation-dialog`; reuse
       `innfo-ref-head`/`innfo-ref-close`/`innfo-ref-body`/`innfo-ref-tag`/
       `innfo-ref-fields` classes; each entry shows a tag (label, plus
@@ -217,7 +217,7 @@ innfo-core first if any innfo-core type changed underneath this tool.
       never `innerHTML` of citation data. Export `renderCitationDialog` and
       `svgIcon` in `PUBLIC_API`.
       `[spec: console-field-citations → "Native citation detail dialog"]`
-- [ ] 4.4 Create `workspace/assets/model_console.html` (copy of
+- [x] 4.4 Create `workspace/assets/model_console.html` (copy of
       `business/assets/model_viewer.html`) with: bundle `<script src>` tags
       pointing at the existing `@innfo-console-v0.3.0` CDN pin (C5 bumps it),
       a `<dialog id="innfo-citation-dialog" aria-label="Citation details">`,
@@ -229,7 +229,7 @@ innfo-core first if any innfo-core type changed underneath this tool.
       `[spec: innfo-console-runtime → "No Duplicated Inline Runtime" →
       Scenario: New workspace-level asset renders citations; Scenario: Old
       business shell still resolves during the transition cycle]`
-- [ ] 4.5 Run the runtime + console-dom test suites until green, and
+- [x] 4.5 Run the runtime + console-dom test suites until green, and
       re-confirm 3.1's backward-compatibility case (no `citations` → DOM
       unchanged) still passes with the runtime wired in.
 
@@ -304,8 +304,8 @@ a follow-up tag instead of deleting it.
 
 ## Cross-cutting acceptance (from proposal.md Success Criteria)
 
-- [ ] Every cited field shows an icon matching its origin, and the dialog
+- [x] Every cited field shows an icon matching its origin, and the dialog
       content matches `resolve_sources` output. (C1-C4)
-- [ ] A console compiled without citations renders unchanged. (C3, task 3.1)
+- [x] A console compiled without citations renders unchanged. (C3, task 3.1)
 - [ ] Nothing references the business procedure path, and `check:integrity`
       and `validate-manifest` pass. (C5, tasks 5.8-5.12)

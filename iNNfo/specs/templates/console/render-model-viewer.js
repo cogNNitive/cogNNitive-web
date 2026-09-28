@@ -52,6 +52,62 @@
       .replace(/^-|-$/g, '')
   }
 
+  // ---- Citation icons (Console Citation Icons / Tanda C) ----
+  var SOURCES_FAMILY = { sources: true, source: true }
+  var ORIGIN_VARIANT_ORDER = ['error', 'agent', 'human', 'reviewer', 'document']
+  var CITATION_ICON_LABELS = {
+    error: 'Unresolved citation',
+    agent: 'AI agent',
+    human: 'Human author',
+    reviewer: 'Reviewer feedback',
+    document: 'Document',
+  }
+
+  function citationVariant(entry) {
+    if (entry && entry.error) return 'error'
+    var origin = entry && entry.origin
+    return Object.prototype.hasOwnProperty.call(CITATION_ICON_LABELS, origin) ? origin : 'document'
+  }
+
+  // Returns a `span.cite-icons` of one button per distinct origin/error
+  // variant present in `entries`, or null when there is nothing to show or
+  // the shared runtime (icons + dialog) is not loaded. Degrading to null is
+  // identical to pre-citations rendering — see design D7/D9.
+  function citationButtons(fieldName, entries) {
+    var rt = typeof window !== 'undefined' ? window.InnfoConsole : null
+    if (!rt || typeof rt.renderCitationDialog !== 'function' || typeof rt.svgIcon !== 'function') {
+      return null
+    }
+    var list = Array.isArray(entries) ? entries : []
+    if (!list.length) return null
+
+    var present = {}
+    list.forEach(function (entry) {
+      present[citationVariant(entry)] = true
+    })
+
+    var span = document.createElement('span')
+    span.className = 'cite-icons'
+    var any = false
+    ORIGIN_VARIANT_ORDER.forEach(function (variant) {
+      if (!present[variant]) return
+      any = true
+      var btn = document.createElement('button')
+      btn.setAttribute('type', 'button')
+      btn.className = 'cite-icon cite-' + variant
+      var label = (CITATION_ICON_LABELS[variant] || variant) + ': ' + fieldName
+      btn.setAttribute('aria-label', label)
+      btn.setAttribute('title', label)
+      btn.innerHTML = rt.svgIcon('cite-' + variant, 14)
+      btn.addEventListener('click', function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        rt.renderCitationDialog(document, fieldName, list)
+      })
+      span.appendChild(btn)
+    })
+    return any ? span : null
+  }
+
   function boot() {
     if (typeof document === 'undefined' || !document.getElementById) {
       return { ok: false, reason: 'no-document' }
@@ -246,6 +302,16 @@
         chip.innerHTML = esc(m) + ' <b>' + esc(String(markers[m])) + '</b>'
         head.appendChild(chip)
       })
+      var citations = el.citations || {}
+      var sourcesEntries = []
+      Object.keys(citations).forEach(function (k) {
+        if (SOURCES_FAMILY[k] && Array.isArray(citations[k])) {
+          sourcesEntries = sourcesEntries.concat(citations[k])
+        }
+      })
+      var headerCite = citationButtons('sources', sourcesEntries)
+      if (headerCite) head.appendChild(headerCite)
+
       var chev = document.createElement('span')
       chev.className = 'chevron'
       chev.textContent = '▸'
@@ -271,6 +337,10 @@
         fkeys.forEach(function (k) {
           var tr = document.createElement('tr')
           tr.innerHTML = '<td>' + esc(k) + '</td><td>' + esc(String(fields[k])) + '</td>'
+          if (!SOURCES_FAMILY[k] && Array.isArray(citations[k])) {
+            var fieldCite = citationButtons(k, citations[k])
+            if (fieldCite) tr.lastChild.appendChild(fieldCite)
+          }
           t.appendChild(tr)
         })
         body.appendChild(t)
