@@ -124,7 +124,8 @@ async function findModelFiles(dir) {
 }
 
 function frontmatterOf(content) {
-  const fm = content.match(/^---\n([\s\S]*?)\n---/)
+  const normalized = content.replace(/\r\n/g, '\n')
+  const fm = normalized.match(/^---\n([\s\S]*?)\n---/)
   if (!fm) return {}
   const out = {}
   for (const line of fm[1].split('\n')) {
@@ -143,7 +144,8 @@ function isLevel3(content) {
 function parseElements(text) {
   const elements = []
   let concept = null
-  for (const line of text.split('\n')) {
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.replace(/\r$/, '')
     const block = line.match(/^## NN ([^:]+): (.+)$/)
     if (block) {
       concept = block[1].trim()
@@ -380,6 +382,7 @@ async function main() {
       'hash-routing',
       'reference-popup',
       'document-view',
+      'feedback-export',
     ],
     runtime: {
       cdn: `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@${consoleCdnRef}/iNNfo/specs/templates/console/innfo-console.bundle.js`,
@@ -403,7 +406,12 @@ async function main() {
       slug: elSlug(stem),
     }
     const model = { meta, elements, matrices: [] }
-    const schema = { concepts: [], markers: [], matrices: [] }
+    const conceptNames = Array.from(new Set(elements.map((e) => e.concept).filter(Boolean)))
+    const schema = {
+      concepts: conceptNames.map((name) => ({ name })),
+      markers: [],
+      matrices: [],
+    }
 
     const outDir = join(root, 'export', `${stem}_console`)
     await mkdir(outDir, { recursive: true })

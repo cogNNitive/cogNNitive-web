@@ -138,6 +138,7 @@ function runVerification(options = {}) {
   const suites = [
     ...collectTestSuites(path.join(repoRoot, 'scripts')),
     ...collectTestSuites(path.join(repoRoot, 'skills')),
+    ...collectTestSuites(path.join(repoRoot, 'test')),
   ];
   console.log(`
 ▶ Discovered ${suites.length} script/skill test suites.`);

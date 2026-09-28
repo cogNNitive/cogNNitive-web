@@ -423,6 +423,327 @@
         font-size: 0.9rem;
         padding: 40px 0;
       }
+      .innfo-reviewer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-left: auto;
+        cursor: pointer;
+        user-select: none;
+      }
+      .innfo-reviewer-chip:hover {
+        border-color: var(--muted);
+      }
+      .innfo-reviewer-label {
+        color: var(--muted);
+      }
+      .innfo-reviewer-name {
+        font-weight: 600;
+        color: var(--text);
+      }
+      .innfo-reviewer-edit {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.82rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        opacity: 0.7;
+      }
+      .innfo-reviewer-edit:hover {
+        opacity: 1;
+      }
+      .innfo-card-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--danger);
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 1px 7px;
+        min-width: 18px;
+        height: 18px;
+        line-height: 1;
+      }
+      .innfo-rail-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--danger);
+        color: #ffffff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 1px 6px;
+        min-width: 16px;
+        height: 16px;
+        line-height: 1;
+        margin-left: 6px;
+      }
+      .innfo-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .innfo-card-head h3 {
+        margin: 0;
+      }
+      .innfo-concept-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .innfo-concept-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .innfo-concept-count {
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+      .innfo-element-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .innfo-cite-icon-wrap {
+        display: inline-flex;
+        align-items: center;
+      }
+      .innfo-view-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 20px;
+        padding-bottom: 4px;
+      }
+      .innfo-view-tab {
+        appearance: none;
+        border: 1px solid transparent;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .innfo-view-tab:hover {
+        color: var(--text);
+        background: var(--surface-2);
+      }
+      .innfo-view-tab.active {
+        color: var(--text);
+        border-bottom-color: var(--primary);
+        background: var(--surface-2);
+      }
+      .innfo-tab-panel {
+        display: none;
+      }
+      .innfo-tab-panel.active {
+        display: block;
+      }
+      .innfo-review-head {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        background: var(--surface);
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-review-head h2 {
+        margin: 0 0 14px 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+      .innfo-review-stats {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .innfo-review-stat {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 16px;
+        background: var(--surface-2);
+        border-radius: var(--radius-sm);
+        min-width: 90px;
+      }
+      .innfo-stat-num {
+        font-size: 1.4rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--text);
+      }
+      .innfo-stat-lbl {
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .innfo-review-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .innfo-btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 16px;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+      }
+      .innfo-btn:hover {
+        background: var(--surface-2);
+      }
+      .innfo-btn-primary {
+        background: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+      }
+      .innfo-btn-primary:hover {
+        background: var(--primary-hover);
+      }
+      .innfo-review-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .innfo-review-item {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        background: var(--surface);
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-review-item-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .innfo-review-item-id {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .innfo-review-kind-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+      }
+      .innfo-review-kind-badge.kind-correction {
+        background: rgba(231, 0, 11, 0.1);
+        color: var(--danger);
+        border-color: rgba(231, 0, 11, 0.3);
+      }
+      .innfo-review-kind-badge.kind-comment {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--link);
+        border-color: rgba(37, 99, 235, 0.3);
+      }
+      .innfo-review-card-link {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: var(--link);
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+      }
+      .innfo-review-card-link:hover {
+        color: var(--primary);
+      }
+      .innfo-review-status-select {
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-left: auto;
+      }
+      .innfo-review-delete-btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .innfo-review-delete-btn:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+      .innfo-review-item-field {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .innfo-review-item-note {
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+      .innfo-highlight {
+        animation: innfo-pulse-glow 2.5s ease-out;
+      }
+      @keyframes innfo-pulse-glow {
+        0% {
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.5);
+          border-color: var(--link);
+        }
+        100% {
+          box-shadow: var(--shadow-card);
+          border-color: var(--border);
+        }
+      }
     </style>
   </head>
   <body>
@@ -440,9 +761,16 @@
           />
           <button id="innfo-export-open" type="button">Export feedback</button>
         </div>
-        <div id="innfo-doc"></div>
-        <div id="innfo-content"></div>
-        <div id="innfo-matrices"></div>
+        <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
+        <div id="innfo-tab-explorer" class="innfo-tab-panel active">
+          <div id="innfo-doc"></div>
+          <div id="innfo-content"></div>
+          <div id="innfo-matrices"></div>
+          <div id="innfo-charts"></div>
+        </div>
+        <div id="innfo-tab-domain" class="innfo-tab-panel"></div>
+        <div id="innfo-tab-studio" class="innfo-tab-panel"></div>
+        <div id="innfo-tab-review" class="innfo-tab-panel"></div>
       </main>
     </div>
 
