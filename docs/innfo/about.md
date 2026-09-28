@@ -59,11 +59,10 @@ and the MCP server run on top of it.
 ### innfo-mcp
 
 A Model Context Protocol server (stdio) wrapping innfo-core. It exposes a focused set
-of semantic tools — `list_models`, `read_model`, `get_spec`,
-`get_template`, `validate_model`, `apply_change`, and
-`validate_model_url` — so any MCP-capable AI agent can read, validate, and
+of semantic tools so any MCP-capable AI agent can read, validate, and
 safely mutate iNNfo models. Spec and template resolution follow the model's parent
-chain, with no hardcoded URLs.
+chain, with no hardcoded URLs. See the
+[full tool reference](/innfo/documentation/#/innfo-mcp) for the current list.
 
 ## Specifications
 
