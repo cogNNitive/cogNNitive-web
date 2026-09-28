@@ -29,6 +29,7 @@ import { existsSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
+import { homedir } from 'node:os'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
@@ -41,22 +42,20 @@ function parseConsoleCdnRef(bundleText) {
   return m ? `innfo-console-v${m[1]}` : null
 }
 
-const blueprintPath = join(
-  repoRoot,
-  'iNNfo',
-  'specs',
-  'templates',
-  'console',
-  'artifact_blueprint.html',
-)
-const bundlePath = join(
-  repoRoot,
-  'iNNfo',
-  'specs',
-  'templates',
-  'console',
-  'innfo-console.bundle.js',
-)
+// The console assets (artifact_blueprint.html + innfo-console.bundle.js) live in
+// this repo at iNNfo/specs/templates/console/ and are also distributed to
+// ~/.agents/console by skills-manager. Resolve them from the first location that
+// actually holds the blueprint, so the exporter runs both from a checkout and
+// from a workspace where only the installed console assets exist (issue #94).
+// $INNFO_CONSOLE_DIR overrides every candidate.
+const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+const consoleDir =
+  [process.env.INNFO_CONSOLE_DIR, join(homedir(), '.agents', 'console'), repoConsoleDir]
+    .filter(Boolean)
+    .find((dir) => existsSync(join(dir, 'artifact_blueprint.html'))) || repoConsoleDir
+
+const blueprintPath = join(consoleDir, 'artifact_blueprint.html')
+const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
 
 function computeSha256(content) {
   return createHash('sha256').update(content, 'utf8').digest('hex')
@@ -285,6 +284,14 @@ async function main() {
     process.exit(2)
   }
   const root = resolve(args.root)
+  if (!existsSync(blueprintPath)) {
+    console.error(
+      `Console assets not found: ${blueprintPath}\n` +
+        'Install the console assets (skills-manager install) or set INNFO_CONSOLE_DIR to ' +
+        'the folder holding artifact_blueprint.html and innfo-console.bundle.js.',
+    )
+    process.exit(1)
+  }
   const blueprint = await readFile(blueprintPath, 'utf-8')
   const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
 

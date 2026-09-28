@@ -352,5 +352,31 @@ level: 3
         true,
       )
     })
+
+    it('resolves console assets from $INNFO_CONSOLE_DIR when no repo tree is present', async () => {
+      const repoRoot = resolve(here, '..')
+      const assetsDir = join(tempDir, 'installed-console')
+      const toolsDir = join(tempDir, 'elsewhere', 'tools')
+      await mkdir(assetsDir, { recursive: true })
+      await mkdir(toolsDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
+      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
+        await copyFile(
+          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
+          join(assetsDir, name),
+        )
+      }
+
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        [join(toolsDir, 'export-console.mjs'), tempDir, 'business'],
+        { cwd: tempDir, env: { ...process.env, INNFO_CONSOLE_DIR: assetsDir } },
+      )
+      assert.match(stdout, /business_V_0-2-5_console\.html/)
+      assert.equal(
+        existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
+        true,
+      )
+    })
   })
 })
