@@ -7,7 +7,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 # nn-upgrade
 
-**Skill**: `nn-upgrade` · **Version**: `V_0-1-0` · **Role**: Consent-gated migration
+**Skill**: `nn-upgrade` · **Role**: Consent-gated migration
 
 Guided workspace template upgrade. Owns the migration that `nn-preflight` Tier 3 only
 *detects*: preflight reports `upgrade-available` models; this skill migrates them with a

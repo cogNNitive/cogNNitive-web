@@ -7,7 +7,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 # nn-trannsform
 
-**Skill**: `nn-trannsform` · **Version**: `V_3-0-0` · **Role**: Document Ingestion & Transformation Pipeline
+**Skill**: `nn-trannsform` · **Role**: Document Ingestion & Transformation Pipeline
 
 Bootstrap projects, scan raw multi-modal documents, normalize them to Markdown with mandatory provenance frontmatter, apply template-based transformations, and execute multi-step procedures compliant with `procedures_V_0-1-0_NN.md`.
 

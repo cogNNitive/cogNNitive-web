@@ -7,7 +7,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 # cogNNitive Design Presets
 
-**Skill**: `nn-design-presets` · **Version**: `V_1-2-0` · **Role**: Visual Design System Tokens
+**Skill**: `nn-design-presets` · **Role**: Visual Design System Tokens
 
 Defines visual identities, palettes, typography stacks, 8px spacing grids, shadows, and layout rules for web artifacts and documentation.
 

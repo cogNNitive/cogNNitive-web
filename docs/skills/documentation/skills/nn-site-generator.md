@@ -7,7 +7,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 # nn-site-generator
 
-**Skill**: `nn-site-generator` · **Version**: `V_0-2-0` · **Role**: Website Generation & Hydration
+**Skill**: `nn-site-generator` · **Role**: Website Generation & Hydration
 
 Generates, edits, and hydrates static websites, landing pages, Docsify documentation portals, and interactive showcases inside `docs/`.
 

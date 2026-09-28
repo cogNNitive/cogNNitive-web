@@ -7,7 +7,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 # nn-skills-lifecycle
 
-**Skill**: `nn-skills-lifecycle` · **Version**: `V_1-2-0` · **Role**: Skill Lifecycle & Manifest Governance
+**Skill**: `nn-skills-lifecycle` · **Role**: Skill Lifecycle & Manifest Governance
 
 Single entry point for managing skills tracked in the bootstrap manifest. Manages installation, updates, synchronization, quality audits, and registry generation.
 

@@ -1,13 +1,13 @@
 ---
-title: "nn-router — Front Controller & Ecosystem Router"
+title: "nn-start — Front Controller & Ecosystem Start Router"
 description: "Primary Front Controller, ecosystem entry point, system governance, setup, preflight readiness gate, and skill router for cogNNitive."
-html_url: https://cognnitive.com/skills/documentation/#/skills/nn-router
+html_url: https://cognnitive.com/skills/documentation/#/skills/nn-start
 generator: https://cognnitive.com/skills/nn-design-presets
 ---
 
-# nn System & Router
+# nn System & Start Router
 
-**Skill**: `nn-router` · **Version**: `V_3-3-0` · **Role**: Primary Front Controller & Governance
+**Skill**: `nn-start` · **Role**: Primary Front Controller & Governance
 
 Primary Front Controller and single entry point for system governance, setup, environment readiness checks, and routing across the **cogNNitive** ecosystem.
 
@@ -15,7 +15,7 @@ Primary Front Controller and single entry point for system governance, setup, en
 
 ## 0. Activation Gate
 
-When invoked, `nn-router` immediately executes the canonical activation gate defined in [`nn-preflight`](skills/nn-preflight.md):
+When invoked, `nn-start` immediately executes the canonical activation gate defined in [`nn-preflight`](skills/nn-preflight.md):
 1. **Session Greeting Banner**: Prints the canonical ecosystem greeting.
 2. **Deterministic Preflight Integrity Check**: Runs `node scripts/preflight-check.js` to verify dependencies and lockfile integrity.
 
@@ -23,7 +23,7 @@ When invoked, `nn-router` immediately executes the canonical activation gate def
 
 ## 1. Environment Readiness (Preflight Gate)
 
-Before launching any specialized workflow, `nn-router` verifies:
+Before launching any specialized workflow, `nn-start` verifies:
 1. **Preflight Runner**: Ensures the integrity check passes via `nn-preflight`.
 2. **Node.js**: Requires `node --version >= 18`.
 3. **MCP Server**: Verifies `innfo-mcp` responsiveness via `innfo-mcp_list_models` (or resolves bundle at `~/.agents/mcp/innfo-mcp.bundle.js`).
@@ -55,7 +55,7 @@ The cogNNitive ecosystem is streamlined into 7 specialized skills:
 
 | Skill | Role & Scope | Invocation / Triggers |
 | :--- | :--- | :--- |
-| **[`nn-router`](skills/nn-router.md)** | Front Controller, governance, setup, preflight gate & routing | `NN`, `nn`, `/nn`, `/nn-router`, `router`, `setup` |
+| **[`nn-start`](skills/nn-start.md)** | Front Controller, governance, setup, preflight gate & routing | `NN`, `nn`, `/nn`, `/nn-start`, `setup` |
 | **[`nn-preflight`](skills/nn-preflight.md)** | Environment readiness gate (Tier 1/2 checks) | `preflight`, `readiness`, `environment check` |
 | **[`nn-innfo`](skills/nn-innfo.md)** | iNNfo model authoring, schema validation & Model Creation Wizard | `NN`, `nn`, `model`, `wizard`, `template`, `innfo` |
 | **[`nn-trannsform`](skills/nn-trannsform.md)** | Document ingestion (PDF/DOCX/XLSX), normalization & procedures | `trannsform`, `transform`, `workflow`, `pipeline` |

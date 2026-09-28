@@ -13,7 +13,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 ## 1. Overview
 
-Rather than relying on ambiguous conversational narrative, user-agent interactions in **cogNNitive** are architected as a **Deterministic State Machine (FSM)** coordinated by a **Front Controller** (`nn-router`). 
+Rather than relying on ambiguous conversational narrative, user-agent interactions in **cogNNitive** are architected as a **Deterministic State Machine (FSM)** coordinated by a **Front Controller** (`nn-start`). 
 
 Whenever a user inputs `nn` or any domain trigger into an agent such as OpenCode, Claude Code, or Antigravity, the system transitions across explicit states with strict guards and governance protocols.
 
@@ -37,7 +37,7 @@ stateDiagram-v2
     Input_NN --> Gate
     Gate --> RouterTriage: Gate passed (Zero Interruption if OK)
 
-    state "1. Front Controller (nn-router)" as RouterTriage {
+    state "1. Front Controller (nn-start)" as RouterTriage {
         [*] --> EvaluateContext: Check for intent keywords
         EvaluateContext --> IntentMenu: Ambiguous or bare "nn"
         EvaluateContext --> DispatchSkill: Clear domain intent detected

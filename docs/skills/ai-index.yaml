@@ -19,12 +19,12 @@ pages:
     last_modified: "2026-09-22"
     format: markdown
     url: "https://cognnitive.com/skills/documentation/README.md"
-  - path: "/documentation/skills/nn-router"
-    title: "nn-router"
+  - path: "/documentation/skills/nn-start"
+    title: "nn-start"
     description: "Front controller, setup, environment readiness gate, and skill routing"
-    last_modified: "2026-09-22"
+    last_modified: "2026-09-28"
     format: markdown
-    url: "https://cognnitive.com/skills/documentation/skills/nn-router.md"
+    url: "https://cognnitive.com/skills/documentation/skills/nn-start.md"
   - path: "/documentation/skills/nn-preflight"
     title: "nn-preflight"
     description: "Environment readiness gate (Node.js, MCP availability, workspace layout)"
@@ -67,3 +67,9 @@ pages:
     last_modified: "2026-09-22"
     format: markdown
     url: "https://cognnitive.com/skills/documentation/skills/nn-upgrade.md"
+  - path: "/documentation/skills/nn-video-script"
+    title: "nn-video-script"
+    description: "Anydeo VUS video script authoring, gating, and finalization inside a Series/Video hierarchy"
+    last_modified: "2026-09-28"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-video-script.md"

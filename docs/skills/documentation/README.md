@@ -11,18 +11,23 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 ## Canonical Skills Catalog
 
-The cogNNitive ecosystem provides 8 specialized, autonomous agent skills:
+The cogNNitive ecosystem provides the following specialized, autonomous agent skills, derived from [`manifest/source.yaml`](https://github.com/cogNNitive/cogNNitive/blob/main/manifest/source.yaml):
 
-| Skill | Version | Role & Scope | Triggers |
-| :--- | :--- | :--- | :--- |
-| **[`nn-router`](skills/nn-router.md)** | `V_3-3-0` | Primary Front Controller, system governance, setup, preflight gate & routing | `NN`, `nn`, `/nn`, `/nn-router`, `router`, `setup`, `preflight` |
-| **[`nn-preflight`](skills/nn-preflight.md)** | `V_0-2-0` | Environment readiness gate (Node.js >= 18, MCP availability, workspace layout) | `preflight`, `readiness`, `environment check`, `run Tier 1` |
-| **[`nn-innfo`](skills/nn-innfo.md)** | `V_0-5-2` | iNNfo model authoring, schema validation & conversational Model Creation Wizard (L2 &rarr; L3) | `NN`, `nn`, `model`, `wizard`, `template`, `innfo` |
-| **[`nn-trannsform`](skills/nn-trannsform.md)** | `V_3-3-0` | Multi-modal document ingestion (PDF, DOCX, XLSX), normalization & procedures | `trannsform`, `transform`, `workflow`, `pipeline`, `procedure` |
-| **[`nn-site-generator`](skills/nn-site-generator.md)** | `V_0-2-0` | Static website generation, markdown twin hydration & Docsify suites | `/nn-site-generator`, `generate site`, `create website` |
-| **[`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md)** | `V_1-2-0` | Skill ecosystem lifecycle, manifest pinning & lockfile updates | `/nn-skills-lifecycle`, `install skill`, `update skills` |
-| **[`nn-design-presets`](skills/nn-design-presets.md)** | `V_1-3-0` | Design tokens, Morado Nazareno palette (`#4D0E4E`), typography scales & 8px grid | `design preset`, `morado-nazareno`, visual artifact styling |
-| **[`nn-upgrade`](skills/nn-upgrade.md)** | `V_0-1-0` | Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates | `upgrade`, `migrate workspace`, `update templates` |
+<!-- generated:skills-catalog (source: manifest/source.yaml; run node scripts/generate-docs-facts.mjs) -->
+**9** skills
+
+| Skill | Version | Description |
+|-------|---------|-------------|
+| [`nn-start`](skills/nn-start.md) | `V_3-4-1` | Central system governance, setup, environment readiness gate (Preflight), and start router. |
+| [`nn-trannsform`](skills/nn-trannsform.md) | `V_3-4-0` | Ingest documents (PDF, DOCX, XLSX), transform using templates, and execute multi-step procedures (procedures_V_0-1-0_NN.md). |
+| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-3` | Author, edit, and validate iNNfo models with built-in step-by-step Model Creation Wizard. |
+| [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-1` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
+| [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-1-0` | Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates. |
+| [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
+| [`nn-design-presets`](skills/nn-design-presets.md) | `V_1-3-0` | cogNNitive visual design presets — palettes, typography, spacing. |
+| [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-2-0` | Audit, update, and maintain cogNNitive skills. |
+| [`nn-video-script`](skills/nn-video-script.md) | `V_0-1-0` | Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series. |
+<!-- /generated:skills-catalog -->
 
 ## Installation
 

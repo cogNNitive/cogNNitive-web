@@ -66,13 +66,13 @@ tags:: [docs, architecture, fsm, statechart, mermaid]
 
 Deterministic finite state machine, decision transition matrix, and governance paths across cogNNitive skills from the "nn" entry point.
 
-## NN Page: nn-router
-title:: nn-router
-source:: skills/nn-router.md
-route:: skills/nn-router.md
+## NN Page: nn-start
+title:: nn-start
+source:: skills/nn-start.md
+route:: skills/nn-start.md
 order:: 10
 parent:: [[Canonical Skills]]
-tags:: [docs, skills, router, front-controller, governance]
+tags:: [docs, skills, start, front-controller, governance]
 
 Primary Front Controller, ecosystem governance, activation preflight gate, and intent triage router.
 
@@ -145,6 +145,16 @@ parent:: [[Canonical Skills]]
 tags:: [docs, skills, upgrade, migration, templates]
 
 Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates.
+
+## NN Page: nn-video-script
+title:: nn-video-script
+source:: skills/nn-video-script.md
+route:: skills/nn-video-script.md
+order:: 90
+parent:: [[Canonical Skills]]
+tags:: [docs, skills, video, vus, series]
+
+Forked, iNNfo-aware authoring of Anydeo VUS video scripts inside a workspace's Series/Video production hierarchy.
 
 ## NN Page: Sample Workflows
 title:: Sample Workflows
