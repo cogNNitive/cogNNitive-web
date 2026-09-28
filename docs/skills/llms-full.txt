@@ -1,6 +1,6 @@
 # cogNNitive — Full Content
 
-> Modular agent skills for OpenCode. Model authoring, document transformation, site generation, design presets, and lifecycle governance.
+> Modular agent skills for AI coding agents — Claude Code, Cursor, Google Antigravity, Codex, and OpenCode Desktop (recommended). Model authoring, document transformation, site generation, design presets, and lifecycle governance.
 
 ## Home
 

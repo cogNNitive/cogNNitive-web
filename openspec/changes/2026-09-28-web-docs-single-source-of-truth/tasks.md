@@ -55,28 +55,28 @@ Chain strategy: stacked-to-main
 
 ## Unit 3: Skills Catalog + nn-router→nn-start (docs-derived-facts)
 
-- [ ] 3.1 RED: extend `docs-facts.test.mjs` — failing tests for `renderSkillsCatalogRegion` (name/version/description, no Triggers) and `checkSkillPageSet` (Page set vs `source.yaml`, exit 2 on mismatch).
-- [ ] 3.2 GREEN: extend `docs-facts.mjs` with those exports, reusing `parseSourceYaml`.
-- [ ] 3.3 Export `parseNNModel` from `generate-docsify-suite.mjs`; wrap its `run()` in an is-main guard (design D2).
-- [ ] 3.4 Extend `generate-docs-facts.mjs` to render/check the skills-catalog region; re-run tests until green.
-- [ ] 3.5 Replace the hand-typed table in `docs/skills/documentation/README.md` with the `skills-catalog` region; drop the `Triggers` column.
-- [ ] 3.6 In `documentation_NN.md`: rename Page `nn-router`→`nn-start` (`title::`/`source::`/`route::`); add Page `nn-video-script`.
-- [ ] 3.7 Rename `docs/skills/documentation/skills/nn-router.md`→`nn-start.md` (fix self-refs and `interaction-flows.md` cross-refs); create `nn-video-script.md`.
-- [ ] 3.8 Drop `**Version**:` from every page under `docs/skills/documentation/skills/*.md`.
-- [ ] 3.9 Run `node scripts/generate-docsify-suite.mjs docs/skills/documentation/documentation_NN.md` to regenerate `_sidebar.md`/`llms.txt`/`ai-index.yaml` under that folder.
-- [ ] 3.10 Hand-fix landing-level `docs/skills/{index.md,llms.txt,llms-full.txt,ai-index.yaml,sitemap.xml,.well-known/ai-catalog.json}`: `nn-router`→`nn-start`, add `nn-video-script`. Not generated; automating this landing-level twin set is future follow-up, out of scope here.
-- [ ] 3.11 Run `node scripts/lib/docs-facts.test.mjs`, `npm run lint`, `npm run typecheck`, `npm test`; confirm protected WIP files untouched.
-- [ ] 3.12 Commit `feat(docs): derive skills catalog and rename nn-router to nn-start`.
+- [x] 3.1 RED: extend `docs-facts.test.mjs` — failing tests for `renderSkillsCatalogRegion` (name/version/description, no Triggers) and `checkSkillPageSet` (Page set vs `source.yaml`, exit 2 on mismatch).
+- [x] 3.2 GREEN: extend `docs-facts.mjs` with those exports, reusing `parseSourceYaml`.
+- [x] 3.3 Export `parseNNModel` from `generate-docsify-suite.mjs`; wrap its `run()` in an is-main guard (design D2).
+- [x] 3.4 Extend `generate-docs-facts.mjs` to render/check the skills-catalog region; re-run tests until green.
+- [x] 3.5 Replace the hand-typed table in `docs/skills/documentation/README.md` with the `skills-catalog` region; drop the `Triggers` column.
+- [x] 3.6 In `documentation_NN.md`: rename Page `nn-router`→`nn-start` (`title::`/`source::`/`route::`); add Page `nn-video-script`.
+- [x] 3.7 Rename `docs/skills/documentation/skills/nn-router.md`→`nn-start.md` (fix self-refs and `interaction-flows.md` cross-refs); create `nn-video-script.md`.
+- [x] 3.8 Drop `**Version**:` from every page under `docs/skills/documentation/skills/*.md`.
+- [x] 3.9 Run `node scripts/generate-docsify-suite.mjs docs/skills/documentation/documentation_NN.md` to regenerate `_sidebar.md`/`llms.txt`/`ai-index.yaml` under that folder.
+- [x] 3.10 Hand-fix landing-level `docs/skills/{index.md,llms.txt,llms-full.txt,ai-index.yaml,sitemap.xml,.well-known/ai-catalog.json}`: `nn-router`→`nn-start`, add `nn-video-script`. Not generated; automating this landing-level twin set is future follow-up, out of scope here.
+- [x] 3.11 Run `node scripts/lib/docs-facts.test.mjs`, `npm run lint`, `npm run typecheck`, `npm test`; confirm protected WIP files untouched.
+- [x] 3.12 Commit `feat(docs): derive skills catalog and rename nn-router to nn-start`.
 
 ## Unit 4: Install Guide + Branding (docs-install-guide)
 
-- [ ] 4.1 Confirm `docs/innfo/documentation/installing-ai-agents.md` is canonical; add a Cursor section (currently missing).
-- [ ] 4.2 Rewrite `docs/skills/index.html`: title/meta/heading/footer "for OpenCode"/"Built for OpenCode" → multi-agent wording naming OpenCode Desktop recommended; replace the install steps with a short CTA + link to the canonical guide.
-- [ ] 4.3 Replace the install steps in `docs/skills/documentation/README.md` with a link to the canonical guide.
-- [ ] 4.4 Grep-verify no remaining exclusive "for OpenCode"/"Built for OpenCode" wording in `docs/` (outside historical CDN/out-of-scope files).
-- [ ] 4.5 Grep-verify every install-referencing surface links to the same canonical path.
-- [ ] 4.6 Run `npm run lint`; confirm protected WIP files untouched.
-- [ ] 4.7 Commit `docs(install): consolidate multi-agent install guide and OpenCode Desktop branding`.
+- [x] 4.1 Confirm `docs/innfo/documentation/installing-ai-agents.md` is canonical; add a Cursor section (currently missing).
+- [x] 4.2 Rewrite `docs/skills/index.html`: title/meta/heading/footer "for OpenCode"/"Built for OpenCode" → multi-agent wording naming OpenCode Desktop recommended; replace the install steps with a short CTA + link to the canonical guide.
+- [x] 4.3 Replace the install steps in `docs/skills/documentation/README.md` with a link to the canonical guide.
+- [x] 4.4 Grep-verify no remaining exclusive "for OpenCode"/"Built for OpenCode" wording in `docs/` (outside historical CDN/out-of-scope files).
+- [x] 4.5 Grep-verify every install-referencing surface links to the same canonical path.
+- [x] 4.6 Run `npm run lint`; confirm protected WIP files untouched.
+- [x] 4.7 Commit `docs(install): consolidate multi-agent install guide and OpenCode Desktop branding`.
 
 ## Unit 5: About Twin Generated From about.html (docs-content-hygiene, corrected)
 

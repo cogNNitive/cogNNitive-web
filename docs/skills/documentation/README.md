@@ -31,13 +31,7 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 
 ## Installation
 
-No Git or terminal needed. Tell your AI agent:
-
-```
-I want to use https://cognnitive.com/use
-```
-
-OpenCode fetches the bootstrap manifest, downloads all skills from GitHub, registers the MCP server, and presents a workflow menu — all automatic.
+For full install steps across every supported AI coding agent (Claude Code, Cursor, Google Antigravity, Codex, and OpenCode Desktop — recommended), see the [canonical install guide](https://cognnitive.com/innfo/documentation/#/installing-ai-agents).
 
 Skills that declare `mcp[]` register the MCP server at install time. Skills that declare `templates:` resolve versioned iNNfo template packages through `innfo-mcp`'s four-tier lookup (workspace package directory, workspace flat fallback, global user cache, installed skills directory).
 

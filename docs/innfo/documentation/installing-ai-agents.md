@@ -14,6 +14,7 @@ An AI coding agent is software that runs locally on your computer (desktop app o
 | **Claude Code** | Terminal CLI | Deep reasoning, automated refactoring in command line | Supported |
 | **Google Antigravity** | Agentic IDE & CLI | Dynamic subagents, enterprise workflows | Supported |
 | **Codex** | CLI / Extension | Scripting and programmatic agent automation | Supported |
+| **Cursor** | AI-Powered IDE | In-editor agent mode, inline multi-file edits | Supported |
 
 ---
 
@@ -82,6 +83,25 @@ OpenAI Codex and compatible terminal agents allow scriptable command execution a
 ### Installation
 
 Follow the installation instructions for your chosen OpenAI CLI distribution (e.g. via `pip` or `npm`) and configure your `OPENAI_API_KEY`.
+
+---
+
+## 5. Cursor
+
+[Cursor](https://cursor.com) is an AI-powered code editor built on VS Code, with a built-in agent mode for autonomous multi-file edits and native MCP server support.
+
+### Installation
+
+Download the installer for your OS from [cursor.com](https://cursor.com).
+
+### Launching Cursor in your workspace
+
+Open your workspace folder (e.g. ending in `_NN`) via **File → Open Folder**, or from your terminal:
+
+```bash
+cd ~/Documents/my-project_NN
+cursor .
+```
 
 ---
 
