@@ -59,7 +59,9 @@
           return stored.trim()
         }
       }
-    } catch {}
+    } catch {
+      /* localStorage unavailable (private mode / file://) - fall through to default */
+    }
     return 'reviewer'
   }
 
@@ -69,7 +71,9 @@
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(REVIEWER_STORAGE_KEY, val)
       }
-    } catch {}
+    } catch {
+      /* localStorage unavailable (private mode / file://) - name stays in-memory */
+    }
     return val
   }
 
@@ -900,7 +904,7 @@
     })
   }
 
-  function renderCards(doc, elements, drafts, onSuggest, refs, citations) {
+  function renderCards(doc, elements, drafts, onSuggest, refs) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -1134,6 +1138,23 @@
     })
   }
 
+  function baseValueOf(row) {
+    return row.base != null
+      ? Number(row.base)
+      : row.metricValue != null
+        ? Number(row.metricValue)
+        : row.val != null
+          ? Number(row.val)
+          : 0
+  }
+
+  function growValue(base, growth, m) {
+    var factor = Number(growth.factor) || 0
+    if (growth.mode === 'compound' && factor) return base * Math.pow(1 + factor / 100, m)
+    if (growth.mode === 'additive' && factor) return base + factor * m
+    return base
+  }
+
   function evaluateFormulaTree(row, m, rowMap, overrides, memo, growthState, historyCount) {
     var memoKey = row.id + '|' + m
     if (memo[memoKey] !== undefined) return memo[memoKey]
@@ -1144,43 +1165,17 @@
     var isVar = row.variable || (!row.formula && (row.base != null || row.metricValue != null || row.val != null))
 
     if (isVar) {
+      var growth = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
       if (overrides[row.id] !== undefined) {
         if (typeof overrides[row.id] === 'number') {
-          var base = Number(overrides[row.id]) || 0
-          var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-          var factor = Number(g.factor) || 0
-          if (g.mode === 'compound' && factor) {
-            val = base * Math.pow(1 + factor / 100, m)
-          } else if (g.mode === 'additive' && factor) {
-            val = base + factor * m
-          } else {
-            val = base
-          }
+          val = growValue(Number(overrides[row.id]) || 0, growth, m)
         } else if (overrides[row.id] && overrides[row.id][m] !== undefined) {
           val = Number(overrides[row.id][m]) || 0
         } else {
-          var base = row.base != null ? Number(row.base) : (row.metricValue != null ? Number(row.metricValue) : (row.val != null ? Number(row.val) : 0))
-          var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-          var factor = Number(g.factor) || 0
-          if (g.mode === 'compound' && factor) {
-            val = base * Math.pow(1 + factor / 100, m)
-          } else if (g.mode === 'additive' && factor) {
-            val = base + factor * m
-          } else {
-            val = base
-          }
+          val = growValue(baseValueOf(row), growth, m)
         }
       } else {
-        var base = row.base != null ? Number(row.base) : (row.metricValue != null ? Number(row.metricValue) : (row.val != null ? Number(row.val) : 0))
-        var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-        var factor = Number(g.factor) || 0
-        if (g.mode === 'compound' && factor) {
-          val = base * Math.pow(1 + factor / 100, m)
-        } else if (g.mode === 'additive' && factor) {
-          val = base + factor * m
-        } else {
-          val = base
-        }
+        val = growValue(baseValueOf(row), growth, m)
       }
     } else if (Array.isArray(row.history) && m < row.history.length && row.history[m] !== null) {
       val = Number(row.history[m]) || 0
@@ -2138,7 +2133,6 @@
 
     var drafts = state ? readStore(state.draftKey) : []
     var summary = getDraftSummary(drafts)
-    var reviewerName = getReviewerName()
 
     var root = el('div', 'innfo-review-tab-content')
     if (!root) return
@@ -2567,49 +2561,6 @@
         append: true,
       })
     })
-  }
-
-  function openExportModal(doc, state) {
-    var modal = doc.getElementById('innfo-export-modal')
-    if (!modal) {
-      downloadReviewExport(doc, state)
-      return
-    }
-    var identifierInput = modal.querySelector('[data-innfo="identifier"]')
-    var instructions = modal.querySelector('[data-innfo="instructions"]')
-    var agentPrompt = modal.querySelector('[data-innfo="agent-prompt"]')
-    var downloadBtn = modal.querySelector('[data-innfo="download"]')
-    var drafts = readStore(state.draftKey)
-    if (identifierInput) {
-      identifierInput.value = getReviewerName()
-    }
-    if (instructions) {
-      instructions.textContent =
-        'Review ' +
-        drafts.length +
-        ' pending draft(s), then download the review JSON.'
-    }
-    if (agentPrompt) {
-      agentPrompt.textContent =
-        'Apply the attached review JSON to ' +
-        state.modelTitle +
-        ' (' +
-        state.modelVersion +
-        ').'
-    }
-    modal.setAttribute('open', 'open')
-    if (downloadBtn && !downloadBtn.getAttribute('data-innfo-bound')) {
-      downloadBtn.setAttribute('data-innfo-bound', '1')
-      downloadBtn.addEventListener('click', function () {
-        var identifier = identifierInput && identifierInput.value ? identifierInput.value : ''
-        if (identifier && String(identifier).trim()) {
-          setReviewerName(String(identifier).trim())
-        }
-        downloadReviewExport(doc, state)
-        if (typeof modal.close === 'function') modal.close()
-        else modal.removeAttribute('open')
-      })
-    }
   }
 
   function downloadExport(doc, state, identifier) {
