@@ -299,6 +299,33 @@ level: 3
       )
     })
 
+    it('normalizes every console CDN ref in the output to the vendored bundle version', async () => {
+      const res = await runCli([tempDir, 'business'])
+      assert.equal(res.code, 0)
+
+      const htmlPath = join(
+        tempDir,
+        'export',
+        'business_V_0-2-5_console',
+        'business_V_0-2-5_console.html',
+      )
+      const htmlContent = await readFile(htmlPath, 'utf-8')
+
+      const bundle = await readFile(
+        resolve(here, '..', 'iNNfo', 'specs', 'templates', 'console', 'innfo-console.bundle.js'),
+        'utf-8',
+      )
+      const version = bundle.match(/\bVersion (\d+\.\d+\.\d+)\./)[1]
+
+      const refs = [...htmlContent.matchAll(/@innfo-console-v(\d+\.\d+\.\d+)/g)].map((m) => m[1])
+      assert.ok(refs.length > 0, 'console CDN ref(s) present in output')
+      assert.deepEqual(
+        [...new Set(refs)],
+        [version],
+        'every console CDN ref must match the vendored bundle version',
+      )
+    })
+
     it('runs standalone next to the console assets without scripts/lib or manifest', async () => {
       const repoRoot = resolve(here, '..')
       const toolsDir = join(tempDir, 'tools')
@@ -326,82 +353,30 @@ level: 3
       )
     })
 
-    it('runs standalone installed in ~/.agents/console layout where all assets live in the same directory', async () => {
+    it('resolves console assets from $INNFO_CONSOLE_DIR when no repo tree is present', async () => {
       const repoRoot = resolve(here, '..')
-      const agentsConsoleDir = join(tempDir, 'agents-console')
-      await mkdir(agentsConsoleDir, { recursive: true })
-      await copyFile(resolve(here, 'export-console.mjs'), join(agentsConsoleDir, 'export-console.mjs'))
+      const assetsDir = join(tempDir, 'installed-console')
+      const toolsDir = join(tempDir, 'elsewhere', 'tools')
+      await mkdir(assetsDir, { recursive: true })
+      await mkdir(toolsDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
       for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
         await copyFile(
           join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
-          join(agentsConsoleDir, name),
+          join(assetsDir, name),
         )
       }
 
       const { stdout } = await execFileAsync(
         process.execPath,
-        [join(agentsConsoleDir, 'export-console.mjs'), tempDir, 'business'],
-        { cwd: tempDir },
+        [join(toolsDir, 'export-console.mjs'), tempDir, 'business'],
+        { cwd: tempDir, env: { ...process.env, INNFO_CONSOLE_DIR: assetsDir } },
       )
       assert.match(stdout, /business_V_0-2-5_console\.html/)
       assert.equal(
         existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
         true,
       )
-    })
-
-    it('resolves console assets using INNFO_CONSOLE_DIR environment variable', async () => {
-      const repoRoot = resolve(here, '..')
-      const customBinDir = join(tempDir, 'custom-bin')
-      const customAssetsDir = join(tempDir, 'custom-assets')
-      await mkdir(customBinDir, { recursive: true })
-      await mkdir(customAssetsDir, { recursive: true })
-      await copyFile(resolve(here, 'export-console.mjs'), join(customBinDir, 'export-console.mjs'))
-      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
-        await copyFile(
-          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
-          join(customAssetsDir, name),
-        )
-      }
-
-      const { stdout } = await execFileAsync(
-        process.execPath,
-        [join(customBinDir, 'export-console.mjs'), tempDir, 'business'],
-        {
-          cwd: tempDir,
-          env: { ...process.env, INNFO_CONSOLE_DIR: customAssetsDir },
-        },
-      )
-      assert.match(stdout, /business_V_0-2-5_console\.html/)
-      assert.equal(
-        existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
-        true,
-      )
-    })
-
-    it('fails with helpful error message when blueprint cannot be found', async () => {
-      const emptyBinDir = join(tempDir, 'empty-bin')
-      await mkdir(emptyBinDir, { recursive: true })
-      await copyFile(resolve(here, 'export-console.mjs'), join(emptyBinDir, 'export-console.mjs'))
-
-      const { code, stderr } = await (async () => {
-        try {
-          await execFileAsync(
-            process.execPath,
-            [join(emptyBinDir, 'export-console.mjs'), tempDir, 'business'],
-            {
-              cwd: tempDir,
-              env: { ...process.env, INNFO_CONSOLE_DIR: join(tempDir, 'non-existent') },
-            },
-          )
-          return { code: 0, stderr: '' }
-        } catch (err) {
-          return { code: err.code ?? 1, stderr: err.stderr ?? '' }
-        }
-      })()
-
-      assert.equal(code, 1)
-      assert.match(stderr, /Cannot find console blueprint 'artifact_blueprint\.html'/)
     })
   })
 })

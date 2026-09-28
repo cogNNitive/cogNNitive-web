@@ -12,6 +12,9 @@
   var CONSOLE_VERSION = '0.1.0'
 
   var REVIEWER_STORAGE_KEY = 'innfo_reviewer_name'
+  // Fallback reviewer name used when none is stored. Treated as "no identifier"
+  // by the export gate so the user must enter a real one before exporting.
+  var DEFAULT_REVIEWER_NAME = 'reviewer'
   var MODEL_VERSION_PATTERN = /^V_\d+-\d+-\d+$/
   var EXPORTED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/
   var ITEM_ID_PATTERN = /^fb-\d{3,}$/
@@ -48,7 +51,7 @@
       .replace(/[^a-z0-9_]+/g, '')
       .replace(/^_+|_+$/g, '')
       .replace(/_{2,}/g, '_')
-    return text || 'reviewer'
+    return text || DEFAULT_REVIEWER_NAME
   }
 
   function getReviewerName() {
@@ -59,17 +62,21 @@
           return stored.trim()
         }
       }
-    } catch {}
-    return 'reviewer'
+    } catch {
+      /* localStorage unavailable (private mode / file://) - fall through to default */
+    }
+    return DEFAULT_REVIEWER_NAME
   }
 
   function setReviewerName(name) {
-    var val = String(name || '').trim() || 'reviewer'
+    var val = String(name || '').trim() || DEFAULT_REVIEWER_NAME
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(REVIEWER_STORAGE_KEY, val)
       }
-    } catch {}
+    } catch {
+      /* localStorage unavailable (private mode / file://) - name stays in-memory */
+    }
     return val
   }
 
@@ -900,7 +907,7 @@
     })
   }
 
-  function renderCards(doc, elements, drafts, onSuggest, refs, citations) {
+  function renderCards(doc, elements, drafts, onSuggest, refs) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -1134,6 +1141,23 @@
     })
   }
 
+  function baseValueOf(row) {
+    return row.base != null
+      ? Number(row.base)
+      : row.metricValue != null
+        ? Number(row.metricValue)
+        : row.val != null
+          ? Number(row.val)
+          : 0
+  }
+
+  function growValue(base, growth, m) {
+    var factor = Number(growth.factor) || 0
+    if (growth.mode === 'compound' && factor) return base * Math.pow(1 + factor / 100, m)
+    if (growth.mode === 'additive' && factor) return base + factor * m
+    return base
+  }
+
   function evaluateFormulaTree(row, m, rowMap, overrides, memo, growthState, historyCount) {
     var memoKey = row.id + '|' + m
     if (memo[memoKey] !== undefined) return memo[memoKey]
@@ -1144,43 +1168,17 @@
     var isVar = row.variable || (!row.formula && (row.base != null || row.metricValue != null || row.val != null))
 
     if (isVar) {
+      var growth = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
       if (overrides[row.id] !== undefined) {
         if (typeof overrides[row.id] === 'number') {
-          var base = Number(overrides[row.id]) || 0
-          var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-          var factor = Number(g.factor) || 0
-          if (g.mode === 'compound' && factor) {
-            val = base * Math.pow(1 + factor / 100, m)
-          } else if (g.mode === 'additive' && factor) {
-            val = base + factor * m
-          } else {
-            val = base
-          }
+          val = growValue(Number(overrides[row.id]) || 0, growth, m)
         } else if (overrides[row.id] && overrides[row.id][m] !== undefined) {
           val = Number(overrides[row.id][m]) || 0
         } else {
-          var base = row.base != null ? Number(row.base) : (row.metricValue != null ? Number(row.metricValue) : (row.val != null ? Number(row.val) : 0))
-          var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-          var factor = Number(g.factor) || 0
-          if (g.mode === 'compound' && factor) {
-            val = base * Math.pow(1 + factor / 100, m)
-          } else if (g.mode === 'additive' && factor) {
-            val = base + factor * m
-          } else {
-            val = base
-          }
+          val = growValue(baseValueOf(row), growth, m)
         }
       } else {
-        var base = row.base != null ? Number(row.base) : (row.metricValue != null ? Number(row.metricValue) : (row.val != null ? Number(row.val) : 0))
-        var g = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-        var factor = Number(g.factor) || 0
-        if (g.mode === 'compound' && factor) {
-          val = base * Math.pow(1 + factor / 100, m)
-        } else if (g.mode === 'additive' && factor) {
-          val = base + factor * m
-        } else {
-          val = base
-        }
+        val = growValue(baseValueOf(row), growth, m)
       }
     } else if (Array.isArray(row.history) && m < row.history.length && row.history[m] !== null) {
       val = Number(row.history[m]) || 0
@@ -2138,7 +2136,6 @@
 
     var drafts = state ? readStore(state.draftKey) : []
     var summary = getDraftSummary(drafts)
-    var reviewerName = getReviewerName()
 
     var root = el('div', 'innfo-review-tab-content')
     if (!root) return
@@ -2348,7 +2345,7 @@
     if (!check.ok) {
       throw new Error('innfo-console: review export blocked — ' + check.errors.join('; '))
     }
-    var filename = buildReviewFilename(model, version, reviewer)
+    var filename = buildFeedbackFilename(model, String(version).replace(/^V_/, ''), reviewer)
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     var url = URL.createObjectURL(blob)
     var anchor = doc.createElement('a')
@@ -2581,7 +2578,10 @@
     var downloadBtn = modal.querySelector('[data-innfo="download"]')
     var drafts = readStore(state.draftKey)
     if (identifierInput) {
-      identifierInput.value = getReviewerName()
+      // Prefill the stored reviewer name, but never prefill the bare fallback:
+      // an export must carry an identifier the user actually chose.
+      var storedName = getReviewerName()
+      identifierInput.value = storedName === DEFAULT_REVIEWER_NAME ? '' : storedName
     }
     if (instructions) {
       instructions.textContent =
@@ -2601,10 +2601,12 @@
     if (downloadBtn && !downloadBtn.getAttribute('data-innfo-bound')) {
       downloadBtn.setAttribute('data-innfo-bound', '1')
       downloadBtn.addEventListener('click', function () {
-        var identifier = identifierInput && identifierInput.value ? identifierInput.value : ''
-        if (identifier && String(identifier).trim()) {
-          setReviewerName(String(identifier).trim())
-        }
+        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        // The feedback export contract requires a reviewer identifier the user
+        // actually chose: an empty field, or the bare fallback, is refused so no
+        // file is emitted and the modal stays open for correction.
+        if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
+        setReviewerName(identifier)
         downloadReviewExport(doc, state)
         if (typeof modal.close === 'function') modal.close()
         else modal.removeAttribute('open')
@@ -2722,7 +2724,7 @@
       var exportBtn = active.getElementById('innfo-export-open')
       if (exportBtn) {
         exportBtn.addEventListener('click', function () {
-          downloadReviewExport(active, state)
+          openExportModal(active, state)
         })
       }
     }

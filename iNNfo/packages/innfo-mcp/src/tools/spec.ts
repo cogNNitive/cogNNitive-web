@@ -417,7 +417,9 @@ export async function listTemplates(
                 if (fm?.template_version) version = String(fm.template_version)
                 else if (fm?.version) version = String(fm.version)
                 else if (fm?.spec_version) version = String(fm.spec_version)
-              } catch (_) {}
+              } catch (_) {
+                /* unreadable/invalid frontmatter — fall back to the default version */
+              }
               discovered.push({
                 name: file.name,
                 version,
@@ -750,7 +752,9 @@ export async function discoverTransitiveAssets(
                 const procFm = parseFrontmatter(procContent)
                 if (procFm?.title) procName = String(procFm.title)
                 else if (procFm?.name) procName = String(procFm.name)
-              } catch (_) {}
+              } catch (_) {
+                /* unreadable/invalid frontmatter — fall back to the default name */
+              }
               procedures.push({
                 id: procId,
                 name: procName,
@@ -760,7 +764,9 @@ export async function discoverTransitiveAssets(
             }
           }
         }
-      } catch (_) {}
+      } catch (_) {
+        /* procedures directory unreadable — skip discovery for this template */
+      }
     }
 
     if (Array.isArray(fm.skills)) {
