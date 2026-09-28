@@ -7,7 +7,7 @@ const indexLib = require('./workspace-index');
  * Report drift between the lineage record and the workspace filesystem.
  *
  * Errors:
- *  - a `models/*_NN.md` with no `## NN Models:` entry;
+ *  - a `models/*_NN.md` with no `## NN ModelRecords:` entry;
  *  - a `## NN Artifacts:` entry whose `derived_from` names a model that does
  *    not exist at all under `models/` (no model with that name, at any
  *    version);
@@ -40,7 +40,7 @@ function checkLineage(projectDir) {
   // 1. Every model file is registered.
   for (const m of models) {
     if (!record.includes(`model_ref:: ${m.model_ref}`)) {
-      errors.push(`${m.model_ref} has no entry in the lineage record's # NN Models section.`);
+      errors.push(`${m.model_ref} has no entry in the lineage record's # NN ModelRecords section.`);
     }
   }
 

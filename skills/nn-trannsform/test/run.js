@@ -65,6 +65,11 @@ async function main() {
     totalPassed += lineageSyncResult.passed;
     totalFailed += lineageSyncResult.failed;
 
+    const lineageMigrationTest = require('./unit/test-lineage-migration');
+    const lineageMigrationResult = await lineageMigrationTest.run();
+    totalPassed += lineageMigrationResult.passed;
+    totalFailed += lineageMigrationResult.failed;
+
     const webImportTest = require('./unit/test-web-import');
     const webImportResult = await webImportTest.run();
     totalPassed += webImportResult.passed;

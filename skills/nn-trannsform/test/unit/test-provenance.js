@@ -80,10 +80,10 @@ function run() {
     eq(r1.created, true, 'model created on first run');
     eq(r1.sourceCount, 3, 'three sources registered');
     ok(fs.existsSync(r1.modelPath), 'model file written');
-    eq(path.basename(r1.modelPath), 'Acme_V_0-2-0_workspace_NN.md', 'model file named after the workspace template (not trannsform)');
+    eq(path.basename(r1.modelPath), 'Acme_V_0-2-0_cogNNitive_NN.md', 'model file named after the cogNNitive lineage template');
 
     const model1 = fs.readFileSync(r1.modelPath, 'utf8');
-    ok(/parent_spec:\s*\n\s*name: "workspace"/.test(model1), 'parent_spec points to the workspace template');
+    ok(/parent_spec:\s*\n\s*name: "cogNNitive"/.test(model1), 'parent_spec points to the cogNNitive template');
     ok(/## NN Sources: market-report\.docx/.test(model1), 'source element present');
     ok(/source_format:: docx/.test(model1), 'source_format derived from extension');
     ok(/source_format:: md/.test(model1), 'source_format html mapped to md (declared set only)');
@@ -97,13 +97,13 @@ function run() {
     // semantic index.md written at root
     const idx = fs.readFileSync(path.join(proj, 'index.md'), 'utf8');
     ok(/# NN index/.test(idx), 'semantic index has # NN index');
-    ok(/Acme_V_0-2-0_workspace_NN\.md/.test(idx), 'index links the provenance model');
+    ok(/Acme_V_0-2-0_cogNNitive_NN\.md/.test(idx), 'index links the provenance model');
 
-    // The # NN Models section is filesystem-managed now: a hand-added entry is
-    // replaced on the next sync (there are no models/*_NN.md files here yet).
+    // The # NN ModelRecords section is filesystem-managed now: a hand-added
+    // entry is replaced on the next sync (there are no models/*_NN.md files).
     const withModel = model1.replace(
-      /# NN Models\n\n<!--[\s\S]*?-->\n/,
-      '# NN Models\n\n## NN Models: Acme Plan\nmodel_template:: business\nsources:: [sources/nn/clientA/market-report.md]\n'
+      /# NN ModelRecords\n\n<!--[\s\S]*?-->\n/,
+      '# NN ModelRecords\n\n## NN ModelRecords: Acme Plan\nmodel_template:: business\nsources:: [sources/nn/clientA/market-report.md]\n'
     );
     fs.writeFileSync(r1.modelPath, withModel);
     fs.rmSync(path.join(proj, 'sources', 'nn', 'team.md')); // drop one source
@@ -112,7 +112,7 @@ function run() {
     eq(r2.created, false, 'model refreshed (not recreated) on second run');
     eq(r2.sourceCount, 2, 'sources refreshed down to two');
     const model2 = fs.readFileSync(r2.modelPath, 'utf8');
-    ok(!/## NN Models: Acme Plan/.test(model2), 'hand-added Models entry replaced by filesystem sync');
+    ok(!/## NN ModelRecords: Acme Plan/.test(model2), 'hand-added ModelRecords entry replaced by filesystem sync');
     ok(!/## NN Sources: team\.csv/.test(model2), 'dropped source removed from Sources');
 
     // --- P5: workspace index.md preserves existing entries, drops dangling, walks nested models/ ---
@@ -139,7 +139,7 @@ function run() {
     eq(r3.created, false, 'model refreshed again on third run');
     const idx3 = fs.readFileSync(idxPath, 'utf8');
     ok(idx3.includes('* [My Custom](models/Custom_Model_V_2-0-0_NN.md)'), 'existing index entry preserved with its original label');
-    ok(idx3.includes('Acme_V_0-2-0_workspace_NN.md'), 'discovered provenance model link kept after regeneration');
+    ok(idx3.includes('Acme_V_0-2-0_cogNNitive_NN.md'), 'discovered provenance model link kept after regeneration');
     ok(idx3.includes('models/sub/Deep_Model_V_1-0-0_NN.md'), 'nested model under models/sub/ included in index');
     ok(!/Gone/.test(idx3), 'dangling index entry (target removed) dropped');
     ok(logs.some((l) => /regenerated.*dropped 1 dangling/.test(l)), 'regeneration logged the dropped dangling entry');
@@ -148,7 +148,7 @@ function run() {
     const nested = provenance.listWorkspaceModels(proj);
     ok(nested.includes('./models/sub/Deep_Model_V_1-0-0_NN.md'), 'listWorkspaceModels is recursive into models/sub/');
     ok(nested.includes('./models/Custom_Model_V_2-0-0_NN.md'), 'listWorkspaceModels includes top-level models/');
-    ok(nested.includes('./Acme_V_0-2-0_workspace_NN.md'), 'listWorkspaceModels keeps root files prefixed ./');
+    ok(nested.includes('./Acme_V_0-2-0_cogNNitive_NN.md'), 'listWorkspaceModels keeps root files prefixed ./');
 
     const csvProj = path.join(TMP, 'CsvProj');
     fs.mkdirSync(path.join(csvProj, 'sources', 'nn', 'import'), { recursive: true });

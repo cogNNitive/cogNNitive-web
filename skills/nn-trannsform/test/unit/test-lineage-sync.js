@@ -42,7 +42,7 @@ function run() {
     const r1 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
     const m1 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(r1.modelCount === 1 && r1.artifactCount === 1, 'build reports 1 model + 1 artifact');
-    ok(/## NN Models: Business Plan/.test(m1), '# NN Models entry rendered from models/');
+    ok(/## NN ModelRecords: Business Plan/.test(m1), '# NN ModelRecords entry rendered from models/');
     ok(
       /model_ref:: models\/Plan_V_1-0-0_NN\.md/.test(m1) &&
         /derived_from:: \[report\.md#overview\]/.test(m1),
@@ -70,11 +70,11 @@ function run() {
     mp = fs.readFileSync(r1.modelPath, 'utf8');
     ok((mp.match(/## NN Procedures:/g) || []).length === 2, 'section refresh preserves procedure history');
 
-    // Remove the model → drops out of # NN Models.
+    // Remove the model → drops out of # NN ModelRecords.
     fs.rmSync(path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'));
     provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
     const m3 = fs.readFileSync(r1.modelPath, 'utf8');
-    ok(!/## NN Models: Business Plan/.test(m3), 'removed model drops out of # NN Models');
+    ok(!/## NN ModelRecords: Business Plan/.test(m3), 'removed model drops out of # NN ModelRecords');
 
     // --check drift: artifact still cites the now-missing model.
     const drift = checkLineage(proj);

@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const TEMPLATE_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md';
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/cogNNitive/spec_NN.md';
 const INNFO_URL =
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md';
-const TEMPLATE_NAME = 'workspace';
+const TEMPLATE_NAME = 'cogNNitive';
 
 const DOC_NOTICE =
   '> [!NOTE]\n> This is an **iNNfo document** — a plain-text Markdown file. ' +
@@ -372,7 +372,7 @@ function scrapeSourceRefs(content) {
 
 /**
  * Enumerate `models/*_NN.md` and describe each for the lineage record's
- * `# NN Models` section: title, ref, version, template, and the source
+ * `# NN ModelRecords` section: title, ref, version, template, and the source
  * Citations it derives from (scraped from its `sources::` fields).
  * @param {string} projectDir
  * @returns {Array<{ name: string, model_ref: string, model_version: string | null, model_template: string | null, derived_from: string[] }>}
@@ -555,22 +555,22 @@ function emptySection(concept, guidance) {
 }
 
 const MODELS_GUIDANCE =
-  'Auto-synced from models/ on every --scan/--import-url/--lineage. One element per Level 3 model.';
+  'Auto-synced from models/ on every --scan/--import-url/--lineage. One ModelRecords element per Level 3 model.';
 const ARTIFACTS_GUIDANCE =
   'Auto-synced from export/ on every --scan/--import-url/--lineage. One element per generated deliverable.';
 const PROCEDURES_GUIDANCE =
   'Append-only. One entry per pipeline run (--scan, --import-url, --apply). Never regenerated.';
 
 /**
- * Formats the NN Models section from the models discovered under models/.
+ * Formats the NN ModelRecords section from the models discovered under models/.
  * @param {Array<any>} models
  * @returns {string}
  */
 function renderModelsSection(models) {
-  if (models.length === 0) return emptySection('Models', MODELS_GUIDANCE).replace(/\n$/, '');
-  let out = '# NN Models\n';
+  if (models.length === 0) return emptySection('ModelRecords', MODELS_GUIDANCE).replace(/\n$/, '');
+  let out = '# NN ModelRecords\n';
   for (const m of models) {
-    out += `\n## NN Models: ${m.name}\n`;
+    out += `\n## NN ModelRecords: ${m.name}\n`;
     out += `model_ref:: ${m.model_ref}\n`;
     if (m.model_version) out += `model_version:: ${m.model_version}\n`;
     if (m.model_template) out += `model_template:: ${m.model_template}\n`;
@@ -642,7 +642,7 @@ function managedSections(data) {
   const d = toLineageData(data);
   return [
     { re: /^# NN Sources\b/, render: () => renderSourcesSection(d.sources) },
-    { re: /^# NN Models\b/, render: () => renderModelsSection(d.models) },
+    { re: /^# NN Model(?:Records|s)\b/, render: () => renderModelsSection(d.models) },
     { re: /^# NN Artifacts\b/, render: () => renderArtifactsSection(d.artifacts) },
   ];
 }
@@ -653,9 +653,8 @@ function managedSections(data) {
  * @param {LineageData | Array<any>} data
  * @returns {string}
  */
-function buildFreshModel(title, data) {
-  const d = toLineageData(data);
-  const frontmatter =
+function renderFrontmatter(title, modelVersion = 'V_0-2-0') {
+  return (
     '---\n' +
     'specification_version: "V_0-2-1"\n' +
     `specification_url: "${INNFO_URL}"\n` +
@@ -663,41 +662,59 @@ function buildFreshModel(title, data) {
     'parent_spec:\n' +
     `  name: "${TEMPLATE_NAME}"\n` +
     `  url: "${TEMPLATE_URL}"\n` +
-    'model_version: "V_0-2-0"\n' +
-    `title: "${title} Provenance"\n` +
-    '---\n';
+    `model_version: "${modelVersion}"\n` +
+    `title: "${title}"\n` +
+    '---\n'
+  );
+}
 
+function buildFreshModel(title, data) {
+  const d = toLineageData(data);
   const index =
     '# NN index\n\n' +
     '* [[Sources]]\n' +
-    '* [[Models]]\n' +
+    '* [[ModelRecords]]\n' +
     '* [[Artifacts]]\n' +
     '* [[Procedures]]\n';
 
-  return [
-    frontmatter,
-    DOC_NOTICE,
+  const blocks = [
     index,
-    renderSourcesSection(d.sources).replace(/\n+$/, '') + '\n',
-    renderModelsSection(d.models).replace(/\n+$/, '') + '\n',
-    renderArtifactsSection(d.artifacts).replace(/\n+$/, '') + '\n',
+    renderSourcesSection(d.sources),
+    renderModelsSection(d.models),
+    renderArtifactsSection(d.artifacts),
     emptySection('Procedures', PROCEDURES_GUIDANCE),
-  ].join('\n') + '\n';
+  ].map((s) => s.replace(/\n+$/, '') + '\n');
+
+  return (
+    renderFrontmatter(`${title} Provenance`) +
+    '\n' +
+    DOC_NOTICE.replace(/^\n+|\n+$/g, '') +
+    '\n\n' +
+    blocks.join('\n') +
+    '\n'
+  );
 }
 
 /**
  * Re-synchronises the three filesystem-owned sections (`# NN Sources`,
- * `# NN Models`, `# NN Artifacts`) of an existing lineage record from the
+ * `# NN ModelRecords`, `# NN Artifacts`) of an existing lineage record from the
  * current workspace state. Every other section — `# NN index`, the append-only
  * `# NN Procedures` log, any hand-authored block — is passed through untouched.
+ *
+ * The frontmatter is regenerated from the canonical `cogNNitive` parent spec, so
+ * a legacy record adopted from a previous `workspace`-templated file is migrated
+ * on the first refresh. A legacy `# NN Models` heading is treated as the managed
+ * ModelRecords section and replaced.
  * @param {string} existing
  * @param {LineageData | Array<any>} data
  * @returns {string}
  */
 function refreshExistingModel(existing, data) {
-  const fmMatch = existing.match(/^(---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?)/);
-  const frontmatter = fmMatch ? fmMatch[1] : '';
-  const body = fmMatch ? existing.slice(frontmatter.length) : existing;
+  const fmMatch = existing.match(/^(---\r?\n[\s\S]*?\r?\n---(?:\r?\n)?)/);
+  const body = fmMatch ? existing.slice(fmMatch[1].length) : existing;
+
+  const titleMatch = existing.match(/^title:\s*"?(.*?)"?\s*$/m);
+  const versionMatch = existing.match(/^model_version:\s*"?(.*?)"?\s*$/m);
 
   const { preamble, blocks } = splitTopLevelSections(body);
   const managed = managedSections(data);
@@ -710,11 +727,16 @@ function refreshExistingModel(existing, data) {
       present[idx] = true;
       return rendered[idx];
     }
-    return (b.heading + '\n' + b.lines.join('\n')).replace(/\n+$/, '') + '\n';
+    let text = (b.heading + '\n' + b.lines.join('\n')).replace(/\n+$/, '') + '\n';
+    // Migrate a pre-ModelRecords index link when adopting a legacy record.
+    if (/^# NN index\b/.test(b.heading)) {
+      text = text.replace(/\* \[\[Models\]\]/g, '* [[ModelRecords]]');
+    }
+    return text;
   });
 
   // Insert any missing managed section just after `# NN index` (or at the top),
-  // keeping Sources → Models → Artifacts order.
+  // keeping Sources → ModelRecords → Artifacts order.
   const anchor = rebuilt.findIndex((s) => /^# NN index\b/.test(s));
   let insertAt = anchor >= 0 ? anchor + 1 : 0;
   for (let i = 0; i < managed.length; i++) {
@@ -727,7 +749,17 @@ function refreshExistingModel(existing, data) {
   }
 
   const notice = preamble.replace(/^\n+|\n+$/g, '');
-  return frontmatter + '\n' + notice + '\n\n' + rebuilt.join('\n') + '\n';
+  return (
+    renderFrontmatter(
+      titleMatch ? titleMatch[1] : 'Provenance',
+      versionMatch ? versionMatch[1] : 'V_0-2-0',
+    ) +
+    '\n' +
+    notice +
+    '\n\n' +
+    rebuilt.join('\n') +
+    '\n'
+  );
 }
 
 /**
@@ -770,15 +802,17 @@ function appendProcedureRun(existing, run) {
 
 /**
  * Resolves the latest versioned provenance model file in projectDir, or null.
+ * The default suffix matches the canonical `cogNNitive` lineage record; pass
+ * `_workspace_NN.md` to detect a legacy record for one-time migration.
  * @param {string} projectDir
  * @param {string} projectName
  * @param {(v1: number[], v2: number[]) => number} compareVersions
+ * @param {string} [suffix]
  * @returns {string | null}
  */
-function resolveLatestModelFile(projectDir, projectName, compareVersions) {
+function resolveLatestModelFile(projectDir, projectName, compareVersions, suffix = '_cogNNitive_NN.md') {
   const files = fs.existsSync(projectDir) ? fs.readdirSync(projectDir) : [];
   const prefix = `${projectName}_V_`;
-  const suffix = `_workspace_NN.md`;
 
   let bestFile = null;
   let bestVersion = [-1, -1, -1];

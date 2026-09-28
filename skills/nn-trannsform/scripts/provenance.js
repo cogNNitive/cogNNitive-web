@@ -4,7 +4,7 @@
  * Builds and refreshes an iNNfo Level 3 lineage record that registers every
  * Source ingested, every Model authored under `models/`, and every Artifact
  * under `artifacts/` as first-class iNNfo elements with explicit derivation.
- * The `# NN Sources`, `# NN Models` and `# NN Artifacts` sections are
+ * The `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` sections are
  * re-synced from the filesystem on every run; `# NN Procedures` is an
  * append-only run log.
  *
@@ -16,12 +16,28 @@ const path = require('path');
 const modelLib = require('./lib/provenance-model');
 const indexLib = require('./lib/workspace-index');
 
-/** Resolve the lineage-record file path for a project (existing latest, or the V_0-2-0 default). */
+/**
+ * Resolve the canonical `cogNNitive` lineage-record path for a project: the
+ * existing latest record, a legacy `_workspace_NN.md` record migrated in place,
+ * or the V_0-2-0 default.
+ */
 function resolveModelPath(projectDir, projectName) {
-  const bestFile = modelLib.resolveLatestModelFile(projectDir, projectName, indexLib.compareVersions);
-  return bestFile
-    ? { modelPath: path.join(projectDir, bestFile), created: false }
-    : { modelPath: path.join(projectDir, `${projectName}_V_0-2-0_workspace_NN.md`), created: true };
+  const latest = modelLib.resolveLatestModelFile(projectDir, projectName, indexLib.compareVersions);
+  if (latest) return { modelPath: path.join(projectDir, latest), created: false };
+
+  const legacy = modelLib.resolveLatestModelFile(
+    projectDir,
+    projectName,
+    indexLib.compareVersions,
+    '_workspace_NN.md',
+  );
+  if (legacy) {
+    const migrated = legacy.replace(/_workspace_NN\.md$/, '_cogNNitive_NN.md');
+    fs.renameSync(path.join(projectDir, legacy), path.join(projectDir, migrated));
+    return { modelPath: path.join(projectDir, migrated), created: false };
+  }
+
+  return { modelPath: path.join(projectDir, `${projectName}_V_0-2-0_cogNNitive_NN.md`), created: true };
 }
 
 /**

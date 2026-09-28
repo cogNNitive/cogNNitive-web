@@ -294,7 +294,7 @@ When the user pastes a URL in chat and wants it ingested:
 The cogNNitive **lineage record** (`<Project>_V_0-2-0_cogNNitive_NN.md`, or `<Project>_V_0-1-0_cogNNitive_NN.md` on older workspaces) keeps three of its four sections in sync with the workspace filesystem on every build/refresh (bootstrap, `--scan`, `--import-url`, or the standalone `--lineage` flag):
 
 - **`# NN Sources`** — one entry per active normalized file under `sources/nn/` (carrying `version::` and `archive_path::` when snapshots exist), plus one entry per archived snapshot under `sources/archive/` (carrying `status:: archived`, `version::`, and `superseded_by::` when superseded). Synthetic sources retain `is_synthetic: true`.
-- **`# NN Models`** — one entry per `models/*_NN.md`, with `model_ref`, `model_version`, `model_template`, and `derived_from::` scraped from that model's `sources::` Citations.
+- **`# NN ModelRecords`** — one entry per `models/*_NN.md`, with `model_ref`, `model_version`, `model_template`, and `derived_from::` scraped from that model's `sources::` Citations.
 - **`# NN Artifacts`** — one entry per deliverable file under `export/` (with fallback to `artifacts/`), with `derived_from::` read from the artifact's frontmatter (`model` + `model_version`) or an HTML `export-meta` block. Note: the concept name `# NN Artifacts` remains identical in Level 2 and Level 3 lineage records.
 
 All three use **idempotent replace**: re-running regenerates them from the current filesystem state, no duplicate entries, and removed files drop out.
@@ -404,7 +404,7 @@ When a user requests to remove, delete, or unlink a source completely from the w
    - Removes normalized file(s) in `sources/nn/`.
    - Removes matching assets directory in `assets/<stem>/`.
    - Re-syncs `sources/nn/index.md` and workspace `index.md`.
-   - Re-generates the lineage record (`<Project>_V_0-2-0_workspace_NN.md`) in idempotent replace mode, eliminating all dangling references.
+   - Re-generates the lineage record (`<Project>_V_0-2-0_cogNNitive_NN.md`) in idempotent replace mode, eliminating all dangling references.
 
 ---
 
@@ -536,6 +536,6 @@ At the end of transformation:
 5. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: <path.md#heading-slug>` (or a list `sources:: [a.md#slug, b.md#slug]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
 6. **V_0-1-0 Compliance**: Target iNNfo V_0-1-0 meta-template specification and unified NN syntax (`# NN`, `## NN`, `key:: value`).
 7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn-start`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
-7a. **Lineage Record Sync**: `# NN Sources`, `# NN Models` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `models/`, `export/`, fallback `artifacts/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.
+7a. **Lineage Record Sync**: `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `models/`, `export/`, fallback `artifacts/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.
 8. **Prose Description in Level 3 Models**: The description of an element in a Level 3 model must NEVER be formatted as a `description::` property field. It must always be written as free-form Markdown prose below the `key:: value` fields list, separated from them by a blank line.
 9. **Scored Matching, Never Silent Exclusion**: normalized sources map to model elements through `scorePairs` (`scripts/lib/score-matcher.js`, threshold 0.7); below-threshold pairs enter the review queue with a recorded decision, and undecided pairs stay queued across sessions.
