@@ -91,10 +91,10 @@ Chain strategy: stacked-to-main
 
 ## Unit 6: Delete marketing/storyboard (docs-content-hygiene)
 
-- [ ] 6.1 Grep-verify nothing links to `marketing/storyboard/`.
-- [ ] 6.2 Delete `marketing/storyboard/` (`index.html`, `storyboard_script.md`).
-- [ ] 6.3 Re-run the link-scan; confirm zero references remain outside git history.
-- [ ] 6.4 Commit `chore(marketing): delete unpublished storyboard`.
+- [x] 6.1 Grep-verify nothing links to `marketing/storyboard/`.
+- [x] 6.2 Delete `marketing/storyboard/` (`index.html`, `storyboard_script.md`).
+- [x] 6.3 Re-run the link-scan; confirm zero references remain outside git history.
+- [x] 6.4 Commit `chore(marketing): delete unpublished storyboard`.
 
 ## Unit 7: Drift Guard in CI (docs-derived-facts, CI Drift Guard)
 
