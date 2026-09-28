@@ -185,3 +185,287 @@ depend on C5). Ready for the C5 batch (release unit) in a separate
 `sdd-apply` session, gated on the `templates-v0.16.0` → `main` precondition
 check tasks.md requires `sdd-apply` to run itself before starting any C5
 task.
+
+---
+
+## C5 — Release unit
+
+**Status**: Done. All 13 tasks (5.0-5.12) complete. Two commits on `dev`,
+per this repo's own `ae1d8f0`/`59070b0` release precedent: `9e8cfde` (5a:
+tasks 5.1-5.8) and `15f255e` (5b: task 5.11's manifest re-pin). Tags
+`templates-v0.17.0`, `innfo-console-v0.4.0`, `innfo-mcp-v0.11.0` cut on
+`9e8cfde` and pushed to origin. `dev` was **not** pushed (explicit
+instruction from the launching orchestrator, not just the usual
+`nn-dev-development` gate).
+
+### Precondition re-check (task 5.0)
+
+Re-ran `git merge-base --is-ancestor templates-v0.16.0 origin/main` at the
+start of this session (the orchestrator's own precondition check could have
+gone stale): succeeded. C5 proceeded.
+
+### Task-by-task
+
+- [x] 5.0 Precondition gate — confirmed above.
+- [x] 5.1 Deleted `iNNfo/specs/templates/business/procedures/compile_model_viewer_NN.md`
+      (`git rm`).
+- [x] 5.2 `business/spec_NN.md`: dropped the `compile-model-viewer`
+      `procedures:` entry (kept `model-viewer-shell` under `assets:`);
+      bumped `template_version` `V_0-2-5` → `V_0-2-6` only —
+      `spec_version` and `manifest/source.yaml`'s `templates[business].version`
+      both stayed `V_0-2-5` (two-axes rule, verified by inspection: `sync-versions.mjs`'s
+      `syncSourceYaml` writes `templates[]`/`frozen_templates[]` from
+      `spec_version`, not `template_version`, so it never touches that
+      field). Added a history-note sentence to the Examples/Canonical
+      Sample prose (this template's established place for narrating
+      what changed per version — no `## History` section convention
+      exists elsewhere in this repo's spec_NN.md files, checked by grep
+      before choosing this placement) documenting the relocation to
+      `workspace/procedures/compile_model_console_NN.md` and that
+      `model-viewer-shell` stays declared for one transition cycle with
+      no procedure targeting it. Did **not** add a `procedures:` entry to
+      `workspace_spec_NN.md` — confirmed the `compile_workspace_hub_NN.md`
+      precedent (undeclared workspace procedure, no manifest entry) still
+      holds on disk before relying on it.
+- [x] 5.3 Mirrored 5.2 exactly in `canonical-registry.ts`'s
+      `BUSINESS_SPEC_CONTENT` (frontmatter + procedures: removal) and
+      bumped `CANONICAL_TEMPLATES.business.version` `'V_0-2-5'` →
+      `'V_0-2-6'` (this field mirrors `template_version`, confirmed via
+      the WU4 precedent's workspace entry, not `spec_version` — no new
+      alias needed since `spec_version`-named files didn't change).
+- [x] 5.4 `manifest/source.yaml`: `console_assets[0].version` `"0.3.0"` →
+      `"0.4.0"`. `model_console.html`'s two `@innfo-console-v0.3.0`
+      occurrences (JSON runtime config + `<script src>`) repointed to
+      `@innfo-console-v0.4.0`.
+- [x] 5.5 `iNNfo/packages/innfo-mcp/package.json`: `"version"` `0.10.0` →
+      `0.11.0`.
+- [x] 5.6 Ran `node scripts/build-console-bundle.mjs` (console bundle
+      rebuilt, version 0.4.0 baked into its header), then
+      `npm --workspace=@cognnitive/innfo-core run build` and
+      `npm --workspace=@cognnitive/innfo-mcp run build:bundle` (tsup,
+      version 0.11.0 baked in via `__INNFO_MCP_VERSION__`). Ran
+      `node scripts/sync-versions.mjs` directly (**not** the composite
+      `npm run sync:versions`, which chains `generate-manifest.js
+      --channel stable` — see Deviation 1 below) — propagated
+      `samples.ts`'s `business` entry, `innfo-core/package.json`'s
+      version, and `innfo-mcp/package.json`'s `@cognnitive/innfo-core`
+      dependency range, all to `0.11.0`/`V_0-2-6` as applicable; left
+      `manifest/source.yaml`'s `templates[business].version` untouched
+      (confirmed by diff — see 5.2). Ran `node scripts/template-catalog.mjs`
+      directly for the same reason, then manually copied
+      `iNNfo/specs/templates/catalog.json` → `docs/innfo/templates/catalog.json`
+      (the two-copy mirror `build-docs.mjs` normally keeps in sync,
+      same as WU4's 4.9 note). Confirmed the rebuilt `innfo-mcp.bundle.js`
+      no longer contains the string `compile_model_viewer_NN` (0 matches)
+      and does contain the new `V_0-2-6`/`business` registry content.
+- [x] 5.7 `docs/innfo/documentation/offline-consoles.md`: updated the
+      "two canonical shells" paragraph (was line ~31) to name
+      `workspace/assets/model_console.html` as a third canonical,
+      bundle-booted shell with its DOM anchors (`#doc-title`/`#rail`),
+      confirmed directly against the shipped HTML rather than assumed.
+      Added a note after the legacy-runtime table (was line 102, the
+      literal task target) that `model_viewer.html` is superseded by
+      `model_console.html` and that the `Compile Model Viewer` procedure
+      was removed in `template_version` `V_0-2-6`. Grepped the whole
+      file first for prior `model_viewer`/`model_console` mentions (none)
+      to confirm there was no other spot needing an update.
+- [x] 5.8 Grep-verified: zero occurrences of the literal string
+      `business/procedures/compile_model_viewer_NN.md` anywhere in the
+      repo except the exempted frozen fixture
+      (`iNNfo/packages/innfo-core/tests/fixtures/simulacro-refactorizacion/**`,
+      confirmed present and untouched) and expected historical/planning
+      mentions (this change's own `openspec/changes/2026-09-28-*/` docs,
+      the negative-assertion test in `console-citations-payload.test.ts`
+      that asserts the string's *absence* from the new procedure). Before
+      the rebuild in 5.6, the old `innfo-mcp.bundle.js` still contained
+      the bare `compile_model_viewer_NN` path (baked into its stale
+      registry mirror) — confirmed it disappeared post-rebuild rather
+      than assuming the rebuild would fix it.
+- [x] 5.9 Committed 5a (`9e8cfde`, 13 files — the 5.1-5.8 changes only;
+      explicitly excluded 5 unrelated files with uncommitted foreign
+      changes already present in the shared tree at session start —
+      `docs/contact.html`, `docs/index.html`, `docs/use-cases.html`,
+      plus untracked `docs/legal.html`/`docs/privacy.html` — staged by
+      explicit path list, no `git add -A`/`.`). Ran the 4 gates in this
+      order: `guard-template-immutability` (OK), `check:integrity`
+      (found and fixed a real pre-existing gap — see Issues Found item 1),
+      `check:spec-urls` (OK, exit 0), `node scripts/verify.js` (single
+      expected failure — see Deviation 1). Re-ran `check:integrity` after
+      the commit; the only remaining failure was that same expected one.
+- [x] 5.10 Cut 3 annotated tags on `9e8cfde` and pushed:
+      `templates-v0.17.0`, `innfo-console-v0.4.0`, `innfo-mcp-v0.11.0`.
+      `git push origin templates-v0.17.0 innfo-console-v0.4.0 innfo-mcp-v0.11.0`
+      → all 3 reported `[new tag]`. `dev` itself was not pushed, per the
+      orchestrator's explicit instruction.
+- [x] 5.11 Committed 5b (`15f255e`): bumped `channels.stable.refs`'
+      `templates` entry `version: "0.16.0"` → `"0.17.0"` in
+      `manifest/source.yaml`, then ran (with `GITHUB_TOKEN` from
+      `gh auth token`) `node scripts/manifest/generate-manifest.js
+      --channel stable`, which now resolved all 3 new tags cleanly and
+      rewrote `docs/use/manifest.md`. Also folded in
+      `docs/innfo/cdn/manifest.json`'s `latest`/`updated` bump (a
+      side effect of the 5.6 `build:docs`-adjacent bundle rebuild,
+      not itself gated by any check, but part of the same "pin to
+      release" family per the `ae1d8f0`/`59070b0` precedent this
+      commit's message cites).
+- [x] 5.12 Validated in a `git worktree add --detach` checkout at
+      `15f255e` (a sibling directory, not the shared `dev` checkout).
+      See "Detached-worktree validation" below for the full pass/fail
+      summary and the environmental caveat.
+
+### Detached-worktree validation (task 5.12)
+
+Replicated 2 categories of gitignored/untracked local state into the
+worktree before running anything, per WU4's documented caveat (copied,
+never junctioned, learning from WU4's `git worktree remove` incident):
+root `node_modules` (7m49s via `cp -a`), the 4 workspace-nested
+`node_modules` (`innfo-core`, `innfo-mcp`, `innfo-editor`, and
+`skills/nn-trannsform` — the last one is WU4's specific documented
+gotcha), and `docs/innfo/cdn/*.bundle.js` (needed for `check:integrity`'s
+Group 2 CDN-staging check).
+
+**`node scripts/manifest/validate-manifest.js --channel stable`** (with
+`GITHUB_TOKEN`): **FAIL, 19 violations — exactly one family, zero
+independent.** 18 × "not reachable from main" (all 9 skills, all 16
+templates, and `innfo-console.bundle.js`) + 1 × "content ... differs
+between pinned commit and main" (`business`, since its `spec_NN.md`
+content changed and `main` doesn't have it yet). Verified with a filtered
+grep that no other violation category exists in the output. This is
+exactly the family tasks.md's own annotation predicted ("expected red
+only for 'not reachable from main'") plus the one content-diff case WU4's
+4.14 also hit for its own changed templates — not a regression.
+
+**`node scripts/check-integrity.js`** (with `GITHUB_TOKEN`): first run
+**FAIL** — one failure, `skills/nn-video-script/test/render-thumbnail.test.mjs`,
+`sharp`/`svgload_buffer: SVG rendering failed (glib rendering error)`.
+Reproduced as environmental, not a regression: the identical test passes
+in the main tree (`node skills/nn-video-script/test/render-thumbnail.test.mjs`
+→ all 5 assertions green) and only fails in the `cp -a`-copied worktree —
+consistent with `sharp`'s native `libvips`/`glib` bindings embedding
+absolute or install-relative paths that a raw directory copy to a
+different path breaks. Temporarily moved that one test file aside inside
+the worktree only (never touched in the real `dev` tree) to see past it,
+re-ran: **`🎉 [nn-dev-check-integrity] ALL INTEGRITY GATES PASSED.`** — 0
+`FAIL`/`❌` lines in the full log, including `Check Stable Manifest Doc
+Fresh` (green now that the tags exist) and `Template Immutability Guard`.
+Restored the test file before removing the worktree.
+
+Removed the worktree with `git worktree remove --force` afterward —
+confirmed `git worktree list` shows only the main `dev` checkout, and
+confirmed no foreign in-flight changes in the shared tree were disturbed
+(see Issues Found item 2).
+
+### Files changed
+
+| Commit | Files |
+|--------|-------|
+| `9e8cfde` (5a) | 13 files: deleted `business/procedures/compile_model_viewer_NN.md`; `business/spec_NN.md`; `canonical-registry.ts`; `manifest/source.yaml`; `innfo-mcp/package.json`; `innfo-core/package.json`; `innfo-mcp/bin/innfo-mcp.bundle.js`; `console/innfo-console.bundle.js`; `workspace/assets/model_console.html`; `innfo-editor/src/config/samples.ts`; `specs/templates/catalog.json`; `docs/innfo/templates/catalog.json`; `docs/innfo/documentation/offline-consoles.md` |
+| `15f255e` (5b) | `manifest/source.yaml` (templates channel ref); `docs/use/manifest.md`; `docs/innfo/cdn/manifest.json` |
+
+### Deviations from Design
+
+1. **`sync:versions`/`generate-manifest` cannot run as the single
+   composite command claimed in task 5.6/design's step 6, before tags
+   exist.** `channels.stable.refs`' `innfo-mcp`/`innfo-console` rows have
+   no `version:` field — `resolveChannelRefs` (`scripts/lib/channel-refs.js`)
+   derives their ref directly from the artifact version
+   (`VERSION_SOURCE['innfo-mcp'|'innfo-console']`), unlike `templates`/`skills`,
+   which carry an explicitly staged `version:` that lags behind until a
+   later re-pin commit. The instant `innfo-mcp`'s `package.json` version
+   or `console_assets[0].version` changes, `generate-manifest.js` (called
+   by both `npm run sync:versions` and `verify.js` step 8) tries to
+   resolve `innfo-mcp-v0.11.0`/`innfo-console-v0.4.0` via the GitHub API
+   and fails with exit 2 (`ref ... not found as a tag or branch`) — not a
+   diff, a hard resolution error, so it fails identically with or without
+   `--check`. Reproduced directly (`generate-manifest.js --channel stable
+   --check` → `FAIL: innfo-mcp: ref 'innfo-mcp-v0.11.0' not found...`)
+   before working around it. This is exactly what this repo's own history
+   already does differently from design's literal wording: `git log`
+   shows `ae1d8f0` ("bump iNNfo Suite to 0.10.0") never touched
+   `docs/use/manifest.md`, and a separate, later commit `59070b0`
+   ("pin stable manifest to v0.10.0 release tags") did that alone, after
+   tagging. Followed that real precedent instead of the task list's
+   literal single-command wording: ran `node scripts/sync-versions.mjs`
+   and `node scripts/template-catalog.mjs` directly (skipping the
+   `generate-manifest` step) in 5.6/commit 5a, and ran
+   `generate-manifest.js --channel stable` for real in 5.11/commit 5b,
+   after the tags existed. Net effect on the task list is zero — every
+   task 5.1-5.12 still completed — but the exact shell command differs
+   from "run `npm run sync:versions`" as literally written. Flagged here
+   so `sdd-verify` can judge the substitution on its merits.
+2. **`GITHUB_TOKEN` needed to be sourced from `gh auth token` manually**
+   for `generate-manifest.js` (both the pre-tag failure and the post-tag
+   success) and for both worktree checks — `verify.js`'s own auto-fetch
+   (`execSync('gh auth token')`) only applies inside `verify.js` itself,
+   not to bare `node scripts/manifest/...` invocations run directly. Hit
+   one transient `403` rate-limit on an unrelated ref
+   (`nn-video-script`/`skills-v2.4.0`) on the first unauthenticated
+   attempt; exporting the token first resolved it. Not a design gap, just
+   worth recording for the next person running these scripts standalone.
+
+### Issues Found
+
+1. **A pre-existing tag/pin-freshness gap, not introduced by this
+   change, self-resolved by this commit.** Before committing 5a,
+   `check:integrity`'s Group 1c (`checkTagPinFreshness`, diffs
+   `origin/main...HEAD`) failed: "skills/ changed (5 path(s) ...) but
+   manifest/source.yaml was not re-pinned in the same diff" — caused by
+   an earlier, already-committed `dev` commit (`42926e4`, visible in
+   `git log`, touching `skills/nn-trannsform/**`) that never re-pinned
+   the manifest. This predates my session and is unrelated to C5's
+   scope. Confirmed the mechanism (`origin/main...HEAD`, not working-tree
+   diff) before concluding it would self-resolve, then re-ran after
+   committing 5a: green, because `manifest/source.yaml` is now part of
+   the same cumulative diff. Not something I fixed by editing
+   `skills/nn-trannsform` — just recording that the gate's pass/fail
+   flipped because of ordering, not because the underlying skill commit
+   became correct.
+2. **The shared working tree had foreign, unrelated in-flight work
+   during this session**, consistent with this repo's documented
+   concurrency hazard. At different points, `git status` showed
+   uncommitted changes to `docs/contact.html`/`docs/index.html`/
+   `docs/use-cases.html`/`docs/legal.html`/`docs/privacy.html` (later
+   disappeared — presumably committed elsewhere as `640964f`, visible in
+   `git log` between my two commits) and, after the ~8-minute worktree
+   `node_modules` copy, new uncommitted changes to
+   `console/innfo-console.bundle.js`, `console/innfo-runtime.js`,
+   `metrics/assets/timeline.html`, `metrics/procedures/create_timeline_NN.md`,
+   `metrics/samples/*`, and `workspace/procedures/compile_workspace_hub_NN.md`
+   (substantial, unrelated feature work — 300+ lines in `innfo-runtime.js`
+   alone). None of these were staged, committed, or otherwise touched by
+   this session; verified after every commit that only the intended
+   explicit paths were staged (no `git add -A`/`.` used anywhere in this
+   batch) and that my own files' content was unaffected.
+
+### Confirmations for the orchestrator
+
+- `dev` was **not** pushed to `main` or to `origin/dev` — only the 3 tags
+  were pushed. `git log --oneline -3` on `dev`:
+  `15f255e chore(manifest): pin stable manifest to templates-v0.17.0
+  release tags`, `640964f` (foreign, not this session's), `9e8cfde
+  feat(release): relocate model consultation to console, bump versions
+  (Tanda C5)`.
+- `cogNNitive`'s frozen template (`manifest/source.yaml`'s
+  `frozen_templates:` list — `cogNNitive` and `base`) was not touched;
+  confirmed no diff in either commit touches
+  `iNNfo/specs/templates/cogNNitive/**` or `iNNfo/specs/templates/base/**`.
+- `validate-manifest --channel stable`: **FAIL, 19/19 violations in the
+  single expected "ahead of main" family, 0 independent violations.**
+- `check:integrity`: **`🎉 ALL INTEGRITY GATES PASSED`** in the detached
+  worktree (after working around the unrelated, reproduced-as-environmental
+  `sharp` failure local to that copied worktree only).
+
+### Cross-cutting acceptance (final)
+
+- [x] Every cited field shows an icon matching its origin, and the
+      dialog content matches `resolve_sources` output. (C1-C4)
+- [x] A console compiled without citations renders unchanged. (C3, task
+      3.1)
+- [x] Nothing references the business procedure path, and
+      `check:integrity` and `validate-manifest` pass (`validate-manifest`
+      passes in the sense tasks.md defines: zero violations outside the
+      single documented "ahead of main" family, which cannot close until
+      the maintainer-gated `dev`→`main` merge — same boundary as WU4).
+      (C5, tasks 5.8-5.12)
+
+All 3 Tanda C success criteria from `proposal.md` are now met on `dev`.

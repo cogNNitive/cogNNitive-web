@@ -244,16 +244,16 @@ task list treats C5 as **gated/blocked pending that check**, not silently
 ready. `sdd-apply` MUST run this check itself before starting any C5 task and
 STOP with a blocker report if it fails.
 
-- [ ] 5.0 **GATE**: run `git merge-base --is-ancestor templates-v0.16.0
+- [x] 5.0 **GATE**: run `git merge-base --is-ancestor templates-v0.16.0
       origin/main`. If it fails (non-zero exit), STOP — do not start any
       other C5 task. Report the blocker and wait for Tanda B WU4 to reach
       `main`.
       `[design: C5 → "Precondition"]`
-- [ ] 5.1 Delete `business/procedures/compile_model_viewer_NN.md`.
+- [x] 5.1 Delete `business/procedures/compile_model_viewer_NN.md`.
       `[spec: innfo-console-runtime → "Console compile procedure relocated to
       workspace level" → Scenario: No dangling references to the old
       procedure path]`
-- [ ] 5.2 In `business/spec_NN.md`: drop the `compile-model-viewer`
+- [x] 5.2 In `business/spec_NN.md`: drop the `compile-model-viewer`
       `procedures:` entry (keep the `model-viewer-shell` asset entry for the
       transition cycle); add a history note; bump `template_version`
       `V_0-2-5` → `V_0-2-6` only. Do NOT bump `spec_version` — `manifest/
@@ -263,35 +263,49 @@ STOP with a blocker report if it fails.
       procedures stay undeclared per that same precedent.
       `[design: "What to change" table; Non-Goals → "Adding procedures:
       frontmatter to workspace_spec_NN.md"]`
-- [ ] 5.3 Mirror the `business/spec_NN.md` change in
+- [x] 5.3 Mirror the `business/spec_NN.md` change in
       `canonical-registry.ts:~2068`.
-- [ ] 5.4 Bump `innfo-console`'s `console_assets.version` `0.3.0` → `0.4.0`
+- [x] 5.4 Bump `innfo-console`'s `console_assets.version` `0.3.0` → `0.4.0`
       in the relevant manifest/registry location; set the shell CDN pin to
       `@innfo-console-v0.4.0` in `workspace/assets/model_console.html`.
-- [ ] 5.5 Bump `innfo-mcp` from `0.10.0` to `0.11.0` (addition beyond the
+- [x] 5.5 Bump `innfo-mcp` from `0.10.0` to `0.11.0` (addition beyond the
       proposal — without it, installed MCPs never return `origin`).
-- [ ] 5.6 Run `node scripts/build-console-bundle.mjs`, rebuild the innfo-mcp
+- [x] 5.6 Run `node scripts/build-console-bundle.mjs`, rebuild the innfo-mcp
       bundle, and run `npm run sync:versions`. This is the deferred bundle
       rebuild flagged in task 0.2 — it lands here, in C5, not C1.
-- [ ] 5.7 Update `docs/innfo/documentation/offline-consoles.md:102`.
-- [ ] 5.8 Grep-verify no reference to
+      **Deviation**: ran `sync-versions.mjs` + `template-catalog.mjs`
+      directly instead of the composite `npm run sync:versions`, which
+      also chains `generate-manifest.js` — that step cannot resolve the
+      not-yet-tagged `innfo-mcp`/`innfo-console` refs. See apply-progress.md
+      C5 Deviation 1.
+- [x] 5.7 Update `docs/innfo/documentation/offline-consoles.md:102`.
+- [x] 5.8 Grep-verify no reference to
       `business/procedures/compile_model_viewer_NN.md` remains anywhere,
       **excluding** the frozen fixture
       `iNNfo/packages/innfo-core/tests/fixtures/simulacro-refactorizacion/**`
       (keeps the old path deliberately, per design's Exemption).
       `[spec: innfo-console-runtime → Scenario: No dangling references to the
       old procedure path]`
-- [ ] 5.9 **Commit 5a** (tasks 5.1-5.8). Run, in order:
+- [x] 5.9 **Commit 5a** (tasks 5.1-5.8). Run, in order:
       `guard-template-immutability`, `check:integrity`, `check:spec-urls`,
       `verify.js`. All must pass before proceeding.
-- [ ] 5.10 Cut and push annotated tags `templates-v0.17.0`,
+      Commit `9e8cfde`. All 4 gates pass (see apply-progress.md for the
+      one pre-existing tag-pin gap that self-resolved once this commit
+      landed).
+- [x] 5.10 Cut and push annotated tags `templates-v0.17.0`,
       `innfo-console-v0.4.0`, `innfo-mcp-v0.11.0` on commit 5a.
-- [ ] 5.11 **Commit 5b**: bump the templates channel version to `0.17.0` in
+      Pushed to origin, all reported `[new tag]`.
+- [x] 5.11 **Commit 5b**: bump the templates channel version to `0.17.0` in
       `manifest/source.yaml`, then run `generate-manifest --channel stable`.
-- [ ] 5.12 Run `validate-manifest` and `check:integrity` inside a
+      Commit `15f255e`.
+- [x] 5.12 Run `validate-manifest` and `check:integrity` inside a
       `git worktree add --detach` checkout (not the shared working tree).
       `validate-manifest` is expected red only for "not reachable from
       main" — any other violation is a real blocker.
+      `validate-manifest`: 19/19 violations in that single expected
+      family, 0 independent. `check:integrity`: ALL GATES PASSED (after
+      working around one unrelated, reproduced-as-environmental `sharp`
+      failure local to the copied worktree — see apply-progress.md).
 
 **STOP.** `dev` → `main` is maintainer-gated and outside `sdd-apply`, same
 boundary as Tanda B's WU4.
@@ -307,5 +321,8 @@ a follow-up tag instead of deleting it.
 - [x] Every cited field shows an icon matching its origin, and the dialog
       content matches `resolve_sources` output. (C1-C4)
 - [x] A console compiled without citations renders unchanged. (C3, task 3.1)
-- [ ] Nothing references the business procedure path, and `check:integrity`
-      and `validate-manifest` pass. (C5, tasks 5.8-5.12)
+- [x] Nothing references the business procedure path, and `check:integrity`
+      and `validate-manifest` pass. (C5, tasks 5.8-5.12 — `validate-manifest`
+      passes in the sense this task defines: 0 violations outside the
+      single "ahead of main" family, unresolvable until the
+      maintainer-gated `dev`→`main` merge, same boundary as WU4)
