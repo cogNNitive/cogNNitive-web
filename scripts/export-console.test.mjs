@@ -299,6 +299,33 @@ level: 3
       )
     })
 
+    it('normalizes every console CDN ref in the output to the vendored bundle version', async () => {
+      const res = await runCli([tempDir, 'business'])
+      assert.equal(res.code, 0)
+
+      const htmlPath = join(
+        tempDir,
+        'export',
+        'business_V_0-2-5_console',
+        'business_V_0-2-5_console.html',
+      )
+      const htmlContent = await readFile(htmlPath, 'utf-8')
+
+      const bundle = await readFile(
+        resolve(here, '..', 'iNNfo', 'specs', 'templates', 'console', 'innfo-console.bundle.js'),
+        'utf-8',
+      )
+      const version = bundle.match(/\bVersion (\d+\.\d+\.\d+)\./)[1]
+
+      const refs = [...htmlContent.matchAll(/@innfo-console-v(\d+\.\d+\.\d+)/g)].map((m) => m[1])
+      assert.ok(refs.length > 0, 'console CDN ref(s) present in output')
+      assert.deepEqual(
+        [...new Set(refs)],
+        [version],
+        'every console CDN ref must match the vendored bundle version',
+      )
+    })
+
     it('runs standalone next to the console assets without scripts/lib or manifest', async () => {
       const repoRoot = resolve(here, '..')
       const toolsDir = join(tempDir, 'tools')

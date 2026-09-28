@@ -374,6 +374,15 @@ async function main() {
     process.exit(1)
   }
 
+  // The blueprint ships a release-pinned CDN ref (e.g. @innfo-console-v0.1.0) in its
+  // default config and static <script> tags. Those tags are not injectSlots targets, so
+  // normalize every occurrence to the ref derived from the vendored bundle banner —
+  // otherwise a generated console loads a stale bundle version first (#95).
+  const resolvedBlueprint = blueprint.replace(
+    /@innfo-console-v\d+\.\d+\.\d+/g,
+    `@${consoleCdnRef}`,
+  )
+
   const config = {
     needs: [
       'concept-rail',
@@ -416,7 +425,7 @@ async function main() {
     const outDir = join(root, 'export', `${stem}_console`)
     await mkdir(outDir, { recursive: true })
     const outFile = join(outDir, `${stem}_console.html`)
-    const html = injectSlots(blueprint, config, schema, model)
+    const html = injectSlots(resolvedBlueprint, config, schema, model)
     await writeFile(outFile, html, 'utf-8')
     if (bundle) await cp(bundlePath, join(outDir, 'innfo-console.bundle.js'))
     console.log(`✔ ${stem}_console.html → ${outFile.replace(root, '.')}`)
