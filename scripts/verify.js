@@ -14,9 +14,11 @@
  * its tag is cut (release order: merge -> tag -> pin).
  */
 
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 // Ensure local node_modules/.bin is accessible on PATH for standalone node invocations
 const binDir = path.join(__dirname, '..', 'node_modules', '.bin');
@@ -59,6 +61,132 @@ function checkTemplateInventory(templatesDir, sourceYamlPath) {
 
   const missing = diskFolders.filter(name => !declaredTemplates.has(name));
   return { ok: missing.length === 0, missing, diskFolders };
+}
+
+/**
+ * Scans git-tracked docs source files under `docs/innfo/**` and
+ * `docs/skills/**` (`.md`/`.txt`) at `ref` for hand-typed facts that must
+ * instead be derived: a literal MCP tool count, or a registered skill name
+ * paired with a literal version string (spec docs-derived-facts,
+ * "CI Drift Guard").
+ *
+ * Reuses the canonical ESM `findHandTypedFacts` from `scripts/lib/docs-facts.mjs`
+ * — never duplicated here (this codebase has already been bitten once by two
+ * copies of the same parser drifting apart) — via a one-shot Node subprocess,
+ * since `verify.js` itself is CommonJS and cannot `require()` an ESM module
+ * synchronously. The bridge script is written to a throwaway OS-tmp file
+ * (never a tracked repo file) and removed once it has run.
+ *
+ * @param {string} repoRoot - target repo whose git-tracked docs are scanned
+ *   (its own working tree is never read — only `git show <ref>:<path>`).
+ * @param {string} ref - git ref to scan (design D5: never the working tree —
+ *   CI runs `build:docs` before `verify.js`, so a working-tree scan could
+ *   never see drift that write mode already rewrote).
+ * @param {{ execFileSync?: Function, scriptsDir?: string }} [deps] - injectable
+ *   for tests. `scriptsDir` is where `lib/docs-facts.mjs` and
+ *   `manifest/generate-manifest.js` are loaded from — defaults to this file's
+ *   own directory, deliberately independent of `repoRoot` so a test fixture
+ *   repo can be scanned using the real, unduplicated generator code.
+ * @returns {{ ok: boolean, output: string }}
+ */
+function checkHandTypedFactsAtRef(repoRoot, ref, deps = {}) {
+  const exec = deps.execFileSync || execFileSync;
+  const scriptsDir = deps.scriptsDir || __dirname;
+  const libHref = pathToFileURL(path.join(scriptsDir, 'lib', 'docs-facts.mjs')).href;
+  const generateManifestPath = path.join(scriptsDir, 'manifest', 'generate-manifest.js');
+
+  const bridgeSource = [
+    `import { findHandTypedFacts } from ${JSON.stringify(libHref)};`,
+    "import { execFileSync } from 'node:child_process';",
+    "import { createRequire } from 'node:module';",
+    '',
+    'const require = createRequire(import.meta.url);',
+    `const repoRoot = ${JSON.stringify(repoRoot)};`,
+    `const ref = ${JSON.stringify(ref)};`,
+    '',
+    'function git(args) {',
+    "  return execFileSync('git', args, { cwd: repoRoot, encoding: 'utf-8' });",
+    '}',
+    '',
+    "const listing = git(['ls-tree', '-r', '--name-only', ref, '--', 'docs/innfo', 'docs/skills']);",
+    "const paths = listing.split(/\\r?\\n/).filter((p) => p && /\\.(md|txt)$/.test(p));",
+    "const files = paths.map((p) => ({ path: p, content: git(['show', ref + ':' + p]) }));",
+    '',
+    `const { parseSourceYaml } = require(${JSON.stringify(generateManifestPath)});`,
+    'let skillNames = [];',
+    'try {',
+    "  const manifestContent = git(['show', ref + ':manifest/source.yaml']);",
+    '  skillNames = parseSourceYaml(manifestContent).skills.map((s) => s.name);',
+    '} catch (err) {',
+    '  // manifest missing at ref: the tool-count rule still runs, the skill-version rule is skipped',
+    '}',
+    '',
+    'const violations = findHandTypedFacts(files, { skillNames });',
+    'if (violations.length > 0) {',
+    '  for (const v of violations) {',
+    "    console.log('FAIL: hand-typed ' + v.rule + ' at ' + v.path + ':' + v.line + ': ' + v.excerpt);",
+    '  }',
+    '  process.exit(1);',
+    '}',
+    "console.log('OK: no hand-typed docs facts found across ' + files.length + ' file(s) at ' + ref);",
+    'process.exit(0);',
+    '',
+  ].join('\n');
+
+  const tmpFile = path.join(os.tmpdir(), `cognnitive-hand-typed-facts-${process.pid}-${Date.now()}.mjs`);
+  fs.writeFileSync(tmpFile, bridgeSource, 'utf-8');
+  try {
+    const output = exec(process.execPath, [tmpFile], { encoding: 'utf-8' });
+    return { ok: true, output };
+  } catch (err) {
+    return { ok: false, output: (err.stdout || '') + (err.stderr || err.message || '') };
+  } finally {
+    fs.rmSync(tmpFile, { force: true });
+  }
+}
+
+/**
+ * Step 7e: Docs-Derived Facts Drift Guard (spec docs-derived-facts,
+ * "CI Drift Guard"). Runs both generated-region/twin freshness checks and the
+ * hand-typed-fact repo scan, all against a committed git ref rather than the
+ * working tree (design D5) — CI's `build:docs` step already ran write mode
+ * before `verify.js` runs, so a working-tree check could never see drift.
+ *
+ * @param {string} repoRoot - target repo to check (see `checkHandTypedFactsAtRef`).
+ * @param {string} ref
+ * @param {{ execFileSync?: Function, scriptsDir?: string }} [deps] - injectable
+ *   for tests; see `checkHandTypedFactsAtRef` for `scriptsDir`.
+ * @returns {{ ok: boolean, failures: string[] }}
+ */
+function checkDocsFactsDriftAtRef(repoRoot, ref, deps = {}) {
+  const exec = deps.execFileSync || execFileSync;
+  const scriptsDir = deps.scriptsDir || __dirname;
+  const failures = [];
+
+  const generatorChecks = [
+    ['generate-docs-facts.mjs', 'MCP tool facts / skills catalog regions'],
+    ['generate-about-twin.mjs', 'about.md twin'],
+  ];
+
+  for (const [scriptName, label] of generatorChecks) {
+    try {
+      exec(process.execPath, [path.join(scriptsDir, scriptName), '--check', '--against', ref], {
+        cwd: repoRoot,
+        encoding: 'utf-8',
+      });
+    } catch (err) {
+      failures.push(
+        `${label} (${scriptName} --check --against ${ref}) is stale:\n${(err.stdout || '') + (err.stderr || err.message || '')}`,
+      );
+    }
+  }
+
+  const scan = checkHandTypedFactsAtRef(repoRoot, ref, deps);
+  if (!scan.ok) {
+    failures.push(`Hand-typed docs facts reintroduced at ${ref}:\n${scan.output}`);
+  }
+
+  return { ok: failures.length === 0, failures };
 }
 
 /**
@@ -227,6 +355,23 @@ function runVerification(options = {}) {
   //     not as a confusing rendered-doc diff.
   run('node scripts/sync-versions.mjs --check', 'Check Version Parity with Specs and Skills');
 
+  // 7e. Docs-Derived Facts Drift Guard: generated regions (innfo-mcp.md
+  //     mcp-tools, README.md skills-catalog) and the about.md twin must match
+  //     what regenerating them from their canonical sources at HEAD would
+  //     produce, and no hand-typed MCP tool count or skill version literal
+  //     may have reappeared in docs/innfo/** or docs/skills/** (spec
+  //     docs-derived-facts, "CI Drift Guard"). Checked against HEAD, never
+  //     the working tree (design D5) — CI's build:docs step already ran
+  //     write mode before this runs.
+  console.log('\n▶ Docs-Derived Facts Drift Guard (against HEAD)...');
+  const driftResult = checkDocsFactsDriftAtRef(repoRoot, 'HEAD');
+  if (!driftResult.ok) {
+    console.error('❌ Docs-Derived Facts Drift Guard failed:');
+    driftResult.failures.forEach((f) => console.error(`  - ${f}`));
+    process.exit(1);
+  }
+  console.log('▶ Docs-Derived Facts Drift Guard: no drift detected against HEAD.');
+
   // 8. Rendered stable manifest doc must be in sync with manifest/source.yaml.
   //    Deterministic (renders source.yaml and compares bytes). Runs BEFORE the
   //    live validation so a hand-edited generated manifest fails fast with a
@@ -262,4 +407,6 @@ module.exports = {
   checkTemplateInventory,
   runVerification,
   extractDeclaredTemplates,
+  checkHandTypedFactsAtRef,
+  checkDocsFactsDriftAtRef,
 };
