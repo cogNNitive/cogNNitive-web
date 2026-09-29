@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-2"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Projects App"
 procedures:
   - id: "calculate-critical-path"
@@ -258,7 +258,7 @@ level: 3
 parent_spec:
   name: "projects_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "<Project Title>"
 ---
 

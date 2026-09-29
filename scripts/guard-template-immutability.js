@@ -7,20 +7,20 @@
  *
  * Blueprints now ship under canonical unversioned paths
  * (`iNNfo/specs/bluepriNNts/<name>/spec_NN.md`, `workspace_spec_NN.md`). The
- * authoritative version is the frontmatter `template_version`, never the
+ * authoritative version is the frontmatter `blueprint_version`, never the
  * filename. This guard enforces that any *content* change to a canonical
- * template is accompanied by a strictly increasing `template_version`
+ * template is accompanied by a strictly increasing `blueprint_version`
  * relative to the base branch:
  *
- *   - status M (modified): base `template_version` is read via
+ *   - status M (modified): base `blueprint_version` is read via
  *     `git show <base>:<path>`. If the body changed and the working
- *     `template_version` is not > the base version (semver), fail.
+ *     `blueprint_version` is not > the base version (semver), fail.
  *   - status A (added): the new file MUST declare a valid semver
- *     `template_version` in frontmatter (no filename token required).
+ *     `blueprint_version` in frontmatter (no filename token required).
  *   - status R (rename): validated as M against the OLD path's base content;
  *     a pure rename with no content change passes. A rename from a *versioned*
  *     legacy filename (`<name>_V_x-y-z_...`) to the canonical filename is the
- *     one-time path migration — it only has to carry a valid `template_version`,
+ *     one-time path migration — it only has to carry a valid `blueprint_version`,
  *     not increment one.
  *   - status D (deleted): always passes (history lives in git tags).
  *   - non-template files and files under samples/ or assets/: ignored.
@@ -76,11 +76,11 @@ function compareSemver(a, b) {
   return 0;
 }
 
-/** Extract the frontmatter `template_version` from raw file content, or null. */
+/** Extract the frontmatter `blueprint_version` from raw file content, or null. */
 function templateVersionOf(content) {
   try {
     const fm = parseFocusedYaml(parseFrontmatter(content));
-    return fm && fm.template_version != null ? String(fm.template_version) : null;
+    return fm && fm.blueprint_version != null ? String(fm.blueprint_version) : null;
   } catch {
     return null;
   }
@@ -201,7 +201,7 @@ function checkModified(relPath, baseContent, workingContent, errors, migrationRe
   const workV = templateVersionOf(workingContent);
   if (!workV || !semver(workV)) {
     errors.push(
-      `ERROR: ${relPath} was modified but declares no valid frontmatter template_version (got "${workV ?? 'missing'}").`,
+      `ERROR: ${relPath} was modified but declares no valid frontmatter blueprint_version (got "${workV ?? 'missing'}").`,
     );
     return;
   }
@@ -220,7 +220,7 @@ function checkModified(relPath, baseContent, workingContent, errors, migrationRe
   if (compareSemver(workV, baseV) <= 0) {
     errors.push(
       `ERROR: canonical template ${relPath} was modified without incrementing frontmatter ` +
-        `template_version (base: "${baseV}", current: "${workV}"). Bump template_version on every content change.`,
+        `blueprint_version (base: "${baseV}", current: "${workV}"). Bump blueprint_version on every content change.`,
     );
   }
 }
@@ -229,7 +229,7 @@ function checkAdded(relPath, workingContent, errors) {
   const workV = workingContent == null ? null : templateVersionOf(workingContent);
   if (!workV || !semver(workV)) {
     errors.push(
-      `ERROR: new template ${relPath} declares no valid semver frontmatter template_version (got "${workV ?? 'missing'}").`,
+      `ERROR: new template ${relPath} declares no valid semver frontmatter blueprint_version (got "${workV ?? 'missing'}").`,
     );
   }
 }
@@ -279,7 +279,7 @@ function main() {
     for (const err of errors) console.log(`  ${err}`);
     process.exit(1);
   }
-  console.log('Template immutability guard: OK — every changed canonical template bumps template_version.');
+  console.log('Template immutability guard: OK — every changed canonical template bumps blueprint_version.');
   process.exit(0);
 }
 

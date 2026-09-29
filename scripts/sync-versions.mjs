@@ -36,7 +36,7 @@ const GENERATED_HEADER = [
 ].join('\n');
 
 const FRONTMATTER_VERSION_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
-const TEMPLATE_VERSION_RE = /^template_version:\s*"?([^"\r\n]+?)"?\s*$/m;
+const BLUEPRINT_VERSION_RE = /^blueprint_version:\s*"?([^"\r\n]+?)"?\s*$/m;
 const SPEC_VERSION_RE = /^spec_version:\s*"?([^"\r\n]+?)"?\s*$/m;
 const SKILL_VERSION_RE = /^version:\s*"?([^"\r\n]+?)"?\s*$/m;
 
@@ -52,9 +52,9 @@ function readFrontmatterVersion(filePath, fieldRe) {
   return versionMatch ? versionMatch[1].trim() : undefined;
 }
 
-/** Reads `template_version` -- the template's OWN version. */
+/** Reads `blueprint_version` -- the blueprint's OWN version. */
 function readTemplateVersion(filePath) {
-  return readFrontmatterVersion(filePath, TEMPLATE_VERSION_RE);
+  return readFrontmatterVersion(filePath, BLUEPRINT_VERSION_RE);
 }
 
 /**

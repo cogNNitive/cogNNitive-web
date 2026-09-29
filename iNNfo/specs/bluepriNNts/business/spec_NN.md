@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-5"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-6"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -134,7 +134,7 @@ level: 3
 parent_spec:
   name: "business_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
-model_version: "V_x-y-z"
+knowledge_version: "V_x-y-z"
 title: "<Your Business Name>"
 ---
 
@@ -196,8 +196,8 @@ parent_spec:
 
 # This template's parent:
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 
 # This template's includes:
 includes:

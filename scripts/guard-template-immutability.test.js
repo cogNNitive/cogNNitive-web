@@ -29,7 +29,7 @@ function runGuard(args, cwd) {
 }
 
 const tpl = (version, body = 'Body.') =>
-  `---\nspec_version: "V_0-2-1"\nlevel: 2\ntemplate_version: "${version}"\ntitle: "T"\n---\n\n# T\n\n${body}\n`;
+  `---\nspec_version: "V_0-2-1"\nlevel: 2\nblueprint_version: "${version}"\ntitle: "T"\n---\n\n# T\n\n${body}\n`;
 
 async function runTests() {
   console.log('Running template immutability guard tests...');
@@ -61,7 +61,7 @@ async function runTests() {
   ];
 
   try {
-    // 1. Modified template, content changed, template_version NOT bumped -> exit 1
+    // 1. Modified template, content changed, blueprint_version NOT bumped -> exit 1
     {
       writeBase('business/spec_NN.md', tpl('V_0-2-1', 'Old body.'));
       writeWork('business/spec_NN.md', tpl('V_0-2-1', 'New body.'));
@@ -69,18 +69,18 @@ async function runTests() {
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 1, 'unbumped content change must exit 1');
       assert.ok(res.stdout.includes('business/spec_NN.md'), 'names the file');
-      assert.ok(/template_version/.test(res.stdout), 'carries the bump remediation');
-      console.log('✔ modified template without a template_version bump fails');
+      assert.ok(/blueprint_version/.test(res.stdout), 'carries the bump remediation');
+      console.log('✔ modified template without a blueprint_version bump fails');
     }
 
-    // 2. Modified template, content changed, template_version bumped -> exit 0
+    // 2. Modified template, content changed, blueprint_version bumped -> exit 0
     {
       writeBase('projects/spec_NN.md', tpl('V_0-2-0', 'Old body.'));
       writeWork('projects/spec_NN.md', tpl('V_0-3-0', 'New body.'));
       const fx = writeFixture(['M\tiNNfo/specs/bluepriNNts/projects/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'bumped content change must exit 0');
-      console.log('✔ modified template with an incremented template_version passes');
+      console.log('✔ modified template with an incremented blueprint_version passes');
     }
 
     // 2b. Modified frontmatter only (same body) with same version -> exit 0
@@ -93,23 +93,23 @@ async function runTests() {
       console.log('✔ a no-op M entry (identical content) passes');
     }
 
-    // 3. Added template with a valid semver template_version -> exit 0
+    // 3. Added template with a valid semver blueprint_version -> exit 0
     {
       writeWork('newthing/spec_NN.md', tpl('V_0-1-0'));
       const fx = writeFixture(['A\tiNNfo/specs/bluepriNNts/newthing/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'valid added template must exit 0');
-      console.log('✔ added template with a valid frontmatter template_version passes');
+      console.log('✔ added template with a valid frontmatter blueprint_version passes');
     }
 
-    // 4. Added template with missing / invalid template_version -> exit 1
+    // 4. Added template with missing / invalid blueprint_version -> exit 1
     {
       writeWork('broken/spec_NN.md', '---\nlevel: 2\ntitle: "T"\n---\n\n# T\n');
       const fx = writeFixture(['A\tiNNfo/specs/bluepriNNts/broken/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 1, 'added template without a version must exit 1');
       assert.ok(res.stdout.includes('broken/spec_NN.md'));
-      console.log('✔ added template without a valid template_version fails');
+      console.log('✔ added template without a valid blueprint_version fails');
     }
 
     // 5. Deleted template -> exit 0
@@ -134,7 +134,7 @@ async function runTests() {
 
     // 6b. Legacy-versioned -> canonical rename is the one-time migration: it
     //     may carry content edits (e.g. self-referential URLs) without a bump,
-    //     but MUST still declare a valid template_version.
+    //     but MUST still declare a valid blueprint_version.
     {
       writeBase('analysis/analysis_V_0-2-0_NN.md', tpl('V_0-2-0', 'Old.'));
       writeWork('analysis/spec_NN.md', tpl('V_0-2-0', 'URLs rewritten during migration.'));
@@ -146,7 +146,7 @@ async function runTests() {
       console.log('✔ legacy->canonical migration rename is exempt from the version bump');
     }
 
-    // 6c. ...but a migration rename that drops template_version entirely fails.
+    // 6c. ...but a migration rename that drops blueprint_version entirely fails.
     {
       writeBase('innovation/innovation_V_0-2-0_NN.md', tpl('V_0-2-0'));
       writeWork('innovation/spec_NN.md', '---\nlevel: 2\ntitle: "T"\n---\n\n# T\n');
@@ -155,7 +155,7 @@ async function runTests() {
       ]);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 1, 'migration rename without a valid version must exit 1');
-      console.log('✔ migration rename that drops template_version still fails');
+      console.log('✔ migration rename that drops blueprint_version still fails');
     }
 
     // 7. Clean diff -> exit 0

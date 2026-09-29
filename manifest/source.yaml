@@ -77,85 +77,85 @@ skills:
         commit: "4c05a5849aaf3928c0a6ce19175c309787865058"
 
 blueprints:
-  - name: workspace
+  - name: domaiNN
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/bluepriNNts/workspace_spec_NN.md
-    version: "V_0-2-2"
+    path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: projects
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: procedures
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: organization
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: business
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/business/spec_NN.md
-    version: "V_0-2-5"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: business-model
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: analysis
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: innovation
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: blank
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: documentation
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: metrics
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: repository
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: video
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/video/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: sources
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: artifacts
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
-    version: "V_0-2-2"
+    version: "V_0-3-0"
     ref_key: blueprints
   - name: design-presets
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
-    version: "V_0-2-1"
+    version: "V_0-3-0"
     ref_key: blueprints
 
 # Retired blueprints kept byte-identical on disk for legacy resolution. They are
@@ -172,6 +172,11 @@ frozen_blueprints:
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/base/spec_NN.md
     version: "V_0-1-0"
+    ref_key: blueprints
+  - name: workspace
+    repo: cogNNitive/cogNNitive
+    path: iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+    version: "V_0-2-2"
     ref_key: blueprints
 
 # Shared seam folders that live under iNNfo/specs/bluepriNNts/ but are NOT

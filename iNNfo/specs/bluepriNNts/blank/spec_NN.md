@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-0"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Blank App"
 relationship_types:
   hierarchy:
@@ -65,7 +65,7 @@ By design it keeps model creation unopinionated: you add `# NN Concept Definitio
 
 - Provide a minimal, valid Level 2 template that can be used as `parent_spec` for any new or exploratory model.
 - Avoid forcing any domain vocabulary onto the model author.
-- Keep the body valid against the `iNNfo_V_0-2-0` meta-template (the four root primitives instantiated in the body, no `concepts:`/`fields:` frontmatter).
+- Keep the body valid against the `iNNfo_V_0-3-0` meta-template (the four root primitives instantiated in the body, no `concepts:`/`fields:` frontmatter).
 - Serve as the starting point for authoring a specialization that still follows iNNfo conventions.
 
 ## Specification
@@ -109,7 +109,7 @@ level: 3
 parent_spec:
   name: "blank_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
-model_version: "V_x-y-z"
+knowledge_version: "V_x-y-z"
 title: "<Your Model Name>"
 ---
 
@@ -123,7 +123,7 @@ title: "<Your Model Name>"
 Your opening content here.
 ```
 
-The application will resolve the `parent` URL, download this template, and use its Concept, Field, Marker, and Matrix Definitions to validate and render your model. To model a richer domain, extend the template (or create a specialization) with additional `# NN Concept Definition` and `# NN Field Definition` elements following the `iNNfo_V_0-2-0` meta-template.
+The application will resolve the `parent` URL, download this template, and use its Concept, Field, Marker, and Matrix Definitions to validate and render your model. To model a richer domain, extend the template (or create a specialization) with additional `# NN Concept Definition` and `# NN Field Definition` elements following the `iNNfo_V_0-3-0` meta-template.
 
 ## Examples
 
@@ -136,8 +136,8 @@ The Blank Template intentionally ships without a domain sample, because a blank 
 ```yaml
 # This template's parent:
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 ```
 
 Models targeting this template set:

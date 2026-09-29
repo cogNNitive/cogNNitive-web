@@ -33,11 +33,11 @@ function fixtureTree() {
 
   const spec = (url, level, tv) =>
     `---\nspec_version: "V_0-2-1"\nlevel: ${level}\nspec_url: "${url}"\n` +
-    (tv == null ? '' : `template_version: "${tv}"\n`) +
+    (tv == null ? '' : `blueprint_version: "${tv}"\n`) +
     `title: "T"\n---\n`;
 
   // Canonical unversioned filenames; version is the authoritative frontmatter
-  // `template_version`, not the path.
+  // `blueprint_version`, not the path.
   fs.writeFileSync(path.join(t, 'business', 'spec_NN.md'), spec('https://x/business/spec_NN.md', 2, 'V_0-2-1'));
   // a leftover historical file in the same dir still aggregates by frontmatter version
   fs.writeFileSync(path.join(t, 'business', 'business_V_0-1-0_NN.md'), spec('https://x/business/business_V_0-1-0_NN.md', 2, 'V_0-1-0'));
@@ -47,7 +47,7 @@ function fixtureTree() {
   fs.writeFileSync(path.join(t, 'documentation', 'spec_NN.md'), spec('https://x/documentation/spec_NN.md', 2, 'V_0-2-0'));
   // root workspace spec — canonical bare filename, discovered as `workspace`
   fs.writeFileSync(path.join(t, 'workspace_spec_NN.md'), spec('https://x/workspace_spec_NN.md', 2, 'V_0-3-0'));
-  // level-2 template with no frontmatter template_version — skipped with a warning
+  // level-2 template with no frontmatter blueprint_version — skipped with a warning
   fs.writeFileSync(path.join(t, 'draft', 'spec_NN.md'), spec('https://x/draft/spec_NN.md', 2, null));
   // frozen lineage templates — cogNNitive + base must land in `frozen`, not `templates`
   fs.writeFileSync(path.join(t, 'cogNNitive', 'spec_NN.md'), spec('https://x/cogNNitive/spec_NN.md', 2, 'V_0-2-0'));
@@ -68,27 +68,27 @@ async function runTests() {
       const catalog = JSON.parse(fs.readFileSync(out, 'utf-8'));
 
       assert.deepStrictEqual(
-        catalog.blueprints.business.versions.map((v) => v.template_version),
+        catalog.blueprints.business.versions.map((v) => v.blueprint_version),
         ['V_0-1-0', 'V_0-2-1'],
-        'business versions come from frontmatter template_version, sorted ascending',
+        'business versions come from frontmatter blueprint_version, sorted ascending',
       );
       assert.strictEqual(catalog.blueprints.business.adopted, 'V_0-2-1', 'adopted = highest version');
       assert.strictEqual(catalog.blueprints.business.versions[1].url, 'https://x/business/spec_NN.md');
       assert.strictEqual(catalog.blueprints.business.versions.length, 2, 'level-3 sample excluded');
 
       assert.deepStrictEqual(
-        catalog.blueprints.documentation.versions.map((v) => v.template_version),
+        catalog.blueprints.documentation.versions.map((v) => v.blueprint_version),
         ['V_0-2-0'],
         'flat canonical subdir template discovered by frontmatter version',
       );
 
-      assert.ok('workspace' in catalog.blueprints, 'root workspace_spec_NN.md discovered as workspace');
-      assert.strictEqual(catalog.blueprints.workspace.adopted, 'V_0-3-0');
+      assert.ok('workspace' in catalog.frozen, 'root workspace_spec_NN.md discovered as a frozen workspace blueprint');
+      assert.strictEqual(catalog.frozen.workspace.adopted, 'V_0-3-0');
 
-      assert.ok(!('draft' in catalog.blueprints), 'level-2 file without template_version is not catalogued');
+      assert.ok(!('draft' in catalog.blueprints), 'level-2 file without blueprint_version is not catalogued');
       assert.ok(
         catalog.warnings.some((w) => w.includes('draft/spec_NN.md')),
-        'missing template_version produces a warning',
+        'missing blueprint_version produces a warning',
       );
       console.log('✔ generator emits correct catalog (frontmatter versions, adopted, level-3 excluded, canonical names)');
     }
@@ -99,8 +99,10 @@ async function runTests() {
       assert.ok('frozen' in catalog, 'catalog carries a top-level frozen partition');
       assert.ok('cogNNitive' in catalog.frozen, 'cogNNitive recorded under frozen');
       assert.ok('base' in catalog.frozen, 'base recorded under frozen');
-      assert.ok(!('cogNNitive' in catalog.blueprints), 'cogNNitive dropped from templates');
-      assert.ok(!('base' in catalog.blueprints), 'base dropped from templates');
+      assert.ok('workspace' in catalog.frozen, 'workspace recorded under frozen');
+      assert.ok(!('cogNNitive' in catalog.blueprints), 'cogNNitive dropped from blueprints');
+      assert.ok(!('base' in catalog.blueprints), 'base dropped from blueprints');
+      assert.ok(!('workspace' in catalog.blueprints), 'workspace dropped from blueprints');
       assert.strictEqual(catalog.frozen.cogNNitive.adopted, 'V_0-2-0', 'frozen cogNNitive adopted version preserved');
       assert.strictEqual(catalog.frozen.base.adopted, 'V_0-1-0', 'frozen base adopted version preserved');
       console.log('✔ frozen partition emits cogNNitive + base and drops them from templates');

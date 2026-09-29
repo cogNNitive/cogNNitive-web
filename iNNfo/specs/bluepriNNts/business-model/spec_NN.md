@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-3"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Business Model App"
 relationship_types:
   hierarchy:
@@ -773,7 +773,7 @@ level: 3
 parent_spec:
   name: "business-model_V_0-1-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
-model_version: "V_x-y-z"
+knowledge_version: "V_x-y-z"
 title: "<Your Business Name>"
 ---
 
@@ -811,8 +811,8 @@ This template has no sample of its own — its concepts are exercised by the
 ```yaml
 # This template's parent:
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 ```
 
 

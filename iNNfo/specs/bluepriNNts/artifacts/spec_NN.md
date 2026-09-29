@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-2"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-2"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
-template_version: "V_0-2-0"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -70,7 +70,7 @@ description:: Citations to the Source documents and domain models this artifact 
 
 ## NN Field Definition: artifact_model
 concept:: Artifact
-type:: model
+type:: knowledge
 description:: Link to structured output model in artifacts/models/ when format is model.
 
 ## NN Field Definition: file_path
@@ -96,7 +96,7 @@ level: 3
 parent_spec:
   name: "artifacts"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "<Artifacts Catalog Name>"
 ---
 

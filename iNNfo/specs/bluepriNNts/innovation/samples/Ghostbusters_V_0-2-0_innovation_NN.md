@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "innovation_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/innovation_V_0-2-0_NN.md"
-model_version: "V_0-2-1"
+knowledge_version: "V_0-2-1"
 title: "Ghostbusters Inc. Ecto-Tech Innovation Portfolio Model"
 ---
 

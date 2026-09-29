@@ -3,11 +3,11 @@
   "blueprints": {
     "analysis": {
       "name": "analysis",
-      "adopted": "V_0-2-1",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-1",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Analysis App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
         }
@@ -15,11 +15,11 @@
     },
     "artifacts": {
       "name": "artifacts",
-      "adopted": "V_0-2-0",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-0",
-          "spec_version": "V_0-2-2",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Artifacts Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
         }
@@ -27,11 +27,11 @@
     },
     "blank": {
       "name": "blank",
-      "adopted": "V_0-2-0",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-0",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Blank App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
         }
@@ -39,11 +39,11 @@
     },
     "business": {
       "name": "business",
-      "adopted": "V_0-2-6",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-6",
-          "spec_version": "V_0-2-5",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Business App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
         }
@@ -51,11 +51,11 @@
     },
     "business-model": {
       "name": "business-model",
-      "adopted": "V_0-2-3",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-3",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Business Model App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
         }
@@ -63,11 +63,11 @@
     },
     "design-presets": {
       "name": "design-presets",
-      "adopted": "V_0-1-0",
+      "adopted": "V_0-2-0",
       "versions": [
         {
-          "template_version": "V_0-1-0",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-2-0",
+          "spec_version": "V_0-3-0",
           "title": "Design Presets App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
         }
@@ -75,23 +75,35 @@
     },
     "documentation": {
       "name": "documentation",
-      "adopted": "V_0-2-1",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-1",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Documentation Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
         }
       ]
     },
-    "innovation": {
-      "name": "innovation",
-      "adopted": "V_0-2-1",
+    "domaiNN": {
+      "name": "domaiNN",
+      "adopted": "V_0-1-0",
       "versions": [
         {
-          "template_version": "V_0-2-1",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-1-0",
+          "spec_version": "V_0-3-0",
+          "title": "DomaiNN Blueprint",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
+        }
+      ]
+    },
+    "innovation": {
+      "name": "innovation",
+      "adopted": "V_0-3-0",
+      "versions": [
+        {
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Innovation App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
         }
@@ -99,11 +111,11 @@
     },
     "metrics": {
       "name": "metrics",
-      "adopted": "V_0-2-1",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-1",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Metrics App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
         }
@@ -111,11 +123,11 @@
     },
     "organization": {
       "name": "organization",
-      "adopted": "V_0-2-2",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-2",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Organization App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
         }
@@ -123,11 +135,11 @@
     },
     "procedures": {
       "name": "procedures",
-      "adopted": "V_0-2-2",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-2",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Procedures App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
         }
@@ -135,11 +147,11 @@
     },
     "projects": {
       "name": "projects",
-      "adopted": "V_0-2-2",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "template_version": "V_0-2-2",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-3-0",
+          "spec_version": "V_0-3-0",
           "title": "Projects App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
         }
@@ -147,11 +159,11 @@
     },
     "repository": {
       "name": "repository",
-      "adopted": "V_0-1-1",
+      "adopted": "V_0-2-0",
       "versions": [
         {
-          "template_version": "V_0-1-1",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-2-0",
+          "spec_version": "V_0-3-0",
           "title": "Repository App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
         }
@@ -159,11 +171,11 @@
     },
     "sources": {
       "name": "sources",
-      "adopted": "V_0-1-0",
+      "adopted": "V_0-2-0",
       "versions": [
         {
-          "template_version": "V_0-1-0",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-2-0",
+          "spec_version": "V_0-3-0",
           "title": "Sources Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"
         }
@@ -171,54 +183,21 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-4-0",
+      "adopted": "V_0-5-0",
       "versions": [
         {
-          "template_version": "V_0-4-0",
-          "spec_version": "V_0-2-1",
+          "blueprint_version": "V_0-5-0",
+          "spec_version": "V_0-3-0",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
         }
       ]
-    },
-    "workspace": {
-      "name": "workspace",
-      "adopted": "V_0-6-0",
-      "versions": [
-        {
-          "template_version": "V_0-6-0",
-          "spec_version": "V_0-2-2",
-          "title": "Workspace Specification App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
-        }
-      ]
     }
   },
-  "frozen": {
-    "base": {
-      "name": "base",
-      "adopted": "V_0-1-0",
-      "versions": [
-        {
-          "template_version": "V_0-1-0",
-          "spec_version": "V_0-1-0",
-          "title": "Base Workspace Overview Template",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
-        }
-      ]
-    },
-    "cogNNitive": {
-      "name": "cogNNitive",
-      "adopted": "V_0-2-0",
-      "versions": [
-        {
-          "template_version": "V_0-2-0",
-          "spec_version": "V_0-2-1",
-          "title": "cogNNitive Template",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
-        }
-      ]
-    }
-  },
-  "warnings": []
+  "frozen": {},
+  "warnings": [
+    "skipped (no parseable blueprint_version): base/spec_NN.md",
+    "skipped (no parseable blueprint_version): cogNNitive/spec_NN.md",
+    "skipped (no parseable blueprint_version): workspace_spec_NN.md"
+  ]
 }

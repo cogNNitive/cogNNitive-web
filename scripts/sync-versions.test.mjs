@@ -25,20 +25,20 @@ function fixtureTree() {
   fs.mkdirSync(path.join(templatesDir, 'alpha'), { recursive: true });
   fs.writeFileSync(
     path.join(templatesDir, 'alpha', 'spec_NN.md'),
-    '---\nspec_version: "V_9-0-0"\ntemplate_version: "V_0-1-0"\n---\n# Alpha\n',
+    '---\nspec_version: "V_9-0-0"\nblueprint_version: "V_0-1-0"\n---\n# Alpha\n',
     'utf8'
   );
 
   fs.mkdirSync(path.join(templatesDir, 'beta'), { recursive: true });
   fs.writeFileSync(
     path.join(templatesDir, 'beta', 'spec_NN.md'),
-    '---\nspec_version: V_9-0-0\ntemplate_version: V_0-3-2\n---\n# Beta\n',
+    '---\nspec_version: V_9-0-0\nblueprint_version: V_0-3-2\n---\n# Beta\n',
     'utf8'
   );
 
   fs.writeFileSync(
     path.join(templatesDir, 'workspace_spec_NN.md'),
-    '---\nspec_version: V_9-0-0\ntemplate_version: V_0-4-0\n---\n# Workspace\n',
+    '---\nspec_version: V_9-0-0\nblueprint_version: V_0-4-0\n---\n# Workspace\n',
     'utf8'
   );
 

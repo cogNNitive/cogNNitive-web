@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-1"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Metrics App"
 relationship_types:
   hierarchy:
@@ -254,7 +254,7 @@ level: 3
 parent_spec:
   name: "metrics_V_0-1-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "<Metrics Model Title>"
 ---
 
@@ -285,8 +285,8 @@ parent_spec:
 
 # This template's parent:
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 ```
 
 # Concept Guidance Documentation

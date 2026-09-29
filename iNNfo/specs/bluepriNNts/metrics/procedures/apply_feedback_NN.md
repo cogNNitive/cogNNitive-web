@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Apply Feedback Procedure"
 ---
 
@@ -22,7 +22,7 @@ output:: [[Regenerated Console]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Carry accepted reviewer items back into the active metrics model with staleness protection and patch-bump versioning: check `source_model_version` against the live model, preview the diff, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_model`, bump the patch version, and regenerate the stable-name timeline console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only. Never auto-apply without reviewer confirmation of the preview.
+Carry accepted reviewer items back into the active metrics model with staleness protection and patch-bump versioning: check `source_model_version` against the live model, preview the diff, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_knowledge`, bump the patch version, and regenerate the stable-name timeline console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only. Never auto-apply without reviewer confirmation of the preview.
 
 ## NN Work: Load Feedback
 parent:: [[Apply Feedback]]
@@ -80,9 +80,9 @@ condition:: Items applied
 input:: [[Updated Model]]
 output:: [[Validated Model]]
 output_status:: verified
-tool:: [[innfo-mcp validate_model]]
+tool:: [[innfo-mcp validate_knowledge]]
 scope:: internal
-Run `validate_model` on the updated metrics model. On failure, abort the run with the validation report: no version bump and no console rewrite. On success, continue.
+Run `validate_knowledge` on the updated metrics model. On failure, abort the run with the validation report: no version bump and no console rewrite. On success, continue.
 
 ## NN Work: Bump Patch Version
 parent:: [[Apply Feedback]]
@@ -118,7 +118,7 @@ LLM agent (e.g. OpenCode Desktop) that loads the feedback, renders the preview, 
 scope:: external
 Model mutation contract: `update_field`, `rename_element`, `set_marker`, each with `{rationale, approved_by}`. One call per accepted feedback item.
 
-## NN Tools: innfo-mcp validate_model
+## NN Tools: innfo-mcp validate_knowledge
 scope:: external
 Post-apply gate. Failure aborts the run with no bump and no console rewrite.
 
@@ -151,7 +151,7 @@ Active metrics model with approved items applied, pending validation.
 ## NN Artifact: Validated Model
 type:: data
 format:: markdown
-Active metrics model after a passing `validate_model` run.
+Active metrics model after a passing `validate_knowledge` run.
 
 ## NN Artifact: Versioned Model
 type:: data

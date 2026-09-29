@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-1"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Innovation App"
 procedures:
   - id: "score-innovation-pipeline"
@@ -287,8 +287,8 @@ type:: string
 
 ## NN Field Definition: initiativeBusinessModel
 concept:: Initiative
-type:: model
-target_template:: business
+type:: knowledge
+target_blueprint:: business
 description:: Business model for this initiative, as a submodel conforming to the business template.
 
 # NN Marker Definition
@@ -392,7 +392,7 @@ level: 3
 parent_spec:
   name: "innovation_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "<Innovation Portfolio Title>"
 ---
 
@@ -484,7 +484,7 @@ An active execution workstream that addresses an opportunity, with budget, resul
 
 ### Description
 
-An Initiative is the execution unit of the portfolio. It links to the opportunity it addresses and the person who manages it. It carries the problem, proposed solution, value proposition, solution hypothesis, goals, and a measurable objective, plus results, learnings, an explicit decision (e.g. Persevere / Pivot / Stop), next steps, budget, resources, and risks. Each initiative passes through the program's lifecycle stages. An initiative may also reference a dedicated business model as a submodel via the `initiativeBusinessModel` field (`type:: model`, `target_template: business`), giving each initiative its own Business-template model for value proposition, segments, channels, and revenue.
+An Initiative is the execution unit of the portfolio. It links to the opportunity it addresses and the person who manages it. It carries the problem, proposed solution, value proposition, solution hypothesis, goals, and a measurable objective, plus results, learnings, an explicit decision (e.g. Persevere / Pivot / Stop), next steps, budget, resources, and risks. Each initiative passes through the program's lifecycle stages. An initiative may also reference a dedicated business model as a submodel via the `initiativeBusinessModel` field (`type:: knowledge`, `target_blueprint: business`), giving each initiative its own Business-template model for value proposition, segments, channels, and revenue.
 
 ### Methodologies
 

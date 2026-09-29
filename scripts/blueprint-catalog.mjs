@@ -11,9 +11,9 @@
  *   - Walks the bluepriNNts tree for level-2 documents only (skips samples/).
  *   - Canonical name comes from the containing directory (`<name>/spec_NN.md`),
  *     or from the bare filename for the root workspace spec (`workspace_spec_NN.md`).
- *   - Version is the authoritative frontmatter `template_version` (`V_x-y-z` or
+ *   - Version is the authoritative frontmatter `blueprint_version` (`V_x-y-z` or
  *     dotted `x.y.z`), NOT the filename — filenames are canonical/unversioned.
- *   - `adopted` is the highest `template_version` discovered for each name. On
+ *   - `adopted` is the highest `blueprint_version` discovered for each name. On
  *     `main` only the current canonical spec is on disk, so `versions` carries a
  *     single entry; historical versions live in immutable `templates-v*` tags.
  *
@@ -44,7 +44,7 @@ const SKIP_DIRS = new Set(['samples', 'node_modules', '.git', 'dist', '.spec-cac
  * `frozen` object and dropped from `blueprints` (so nn-preflight upgrade-check —
  * which reads only `catalog.blueprints` — gives them no upgrade notices).
  */
-const FROZEN_NAMES = ['cogNNitive', 'base'];
+const FROZEN_NAMES = ['cogNNitive', 'base', 'workspace'];
 
 function parseFrontmatter(text) {
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -72,7 +72,7 @@ function compareVersions(a, b) {
   return (va.major - vb.major) || (va.minor - vb.minor) || (va.patch - vb.patch);
 }
 
-/** Canonical `V_x-y-z` token from an authoritative `template_version` value. */
+/** Canonical `V_x-y-z` token from an authoritative `blueprint_version` value. */
 function normalizeTemplateVersion(raw) {
   const sv = parseSemVer(raw);
   return sv ? `V_${sv.major}-${sv.minor}-${sv.patch}` : null;
@@ -129,9 +129,9 @@ function generate(rootDir) {
 
     const relPosix = rel.replace(/\\/g, '/');
     const name = nameFromPath(relPosix);
-    const version = normalizeTemplateVersion(fm.template_version);
+    const version = normalizeTemplateVersion(fm.blueprint_version);
     if (!version) {
-      warnings.push(`skipped (no parseable template_version): ${relPosix}`);
+      warnings.push(`skipped (no parseable blueprint_version): ${relPosix}`);
       continue;
     }
 
@@ -139,7 +139,7 @@ function generate(rootDir) {
 
     if (!byName.has(name)) byName.set(name, []);
     byName.get(name).push({
-      template_version: version,
+      blueprint_version: version,
       spec_version: fm.spec_version || null,
       title: fm.title || null,
       url,
@@ -149,10 +149,10 @@ function generate(rootDir) {
   const blueprints = {};
   const frozen = {};
   for (const [name, versions] of byName.entries()) {
-    versions.sort((a, b) => compareVersions(a.template_version, b.template_version));
+    versions.sort((a, b) => compareVersions(a.blueprint_version, b.blueprint_version));
     const entry = {
       name,
-      adopted: versions[versions.length - 1].template_version,
+      adopted: versions[versions.length - 1].blueprint_version,
       versions,
     };
     if (FROZEN_NAMES.includes(name)) {

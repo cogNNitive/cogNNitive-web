@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "design-presets"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Ghostbusters Inc. Visual Design Presets"
 ---
 

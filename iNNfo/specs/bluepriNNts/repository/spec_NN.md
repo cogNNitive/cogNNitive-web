@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-1-1"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+blueprint_version: "V_0-2-0"
 title: "Repository App"
 relationship_types:
   hierarchy:
@@ -161,7 +161,7 @@ The Repository Template models a GitHub repository as a container (`Repository`)
 - Provide a valid Level 2 template usable as `parent_spec` for repository models.
 - Model a repository lifecycle: state, releases, and per-change history.
 - Express change-to-release and release-to-state relations as evaluable matrices.
-- Keep the body valid against the `iNNfo_V_0-2-1` meta-template.
+- Keep the body valid against the `iNNfo_V_0-3-0` meta-template.
 
 ## Specification
 

@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Create Timeline Procedure"
 ---
 
@@ -142,7 +142,7 @@ input:: [[Verification Report]]
 output:: [[Regenerated Console]]
 output_status:: verified
 tool:: [[innfo-mcp apply_change]]
-Apply Feedback replaces the old Version-And-Archive step: the console is a frozen snapshot and only changes through the feedback loop. Run the Apply Feedback procedure (`../procedures/apply_feedback_NN.md`): staleness check (`meta.source_model_version` vs the live model — block with a report naming both versions until the reviewer confirms), diff preview per pending item, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_model` (failure aborts the run: no version bump and no console rewrite), bump the patch version once, and regenerate the stable-name console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only.
+Apply Feedback replaces the old Version-And-Archive step: the console is a frozen snapshot and only changes through the feedback loop. Run the Apply Feedback procedure (`../procedures/apply_feedback_NN.md`): staleness check (`meta.source_model_version` vs the live model — block with a report naming both versions until the reviewer confirms), diff preview per pending item, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_knowledge` (failure aborts the run: no version bump and no console rewrite), bump the patch version once, and regenerate the stable-name console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only.
 
 # NN Artifact
 
@@ -197,7 +197,7 @@ Portable Node script (`scripts/verify.harness.js`) exposing the slot-contract he
 scope:: external
 Model mutation contract: `update_field`, `rename_element`, `set_marker`, each with `{rationale, approved_by}`. One call per accepted feedback item.
 
-## NN Tools: innfo-mcp validate_model
+## NN Tools: innfo-mcp validate_knowledge
 scope:: external
 Post-apply gate. Failure aborts the run with no bump and no console rewrite.
 
@@ -235,7 +235,7 @@ User responsible for providing the model, reviewing artifact aesthetics, and app
 | Apply Feedback | Responsible | Accountable |
 
 # NN matrices: work-tools matrix
-| Work \ Tools | AI Agent | Shared Console Runtime | Verify Harness | innfo-mcp apply_change | innfo-mcp validate_model | innfo-mcp bump_version | nn-trannsform --scan |
+| Work \ Tools | AI Agent | Shared Console Runtime | Verify Harness | innfo-mcp apply_change | innfo-mcp validate_knowledge | innfo-mcp bump_version | nn-trannsform --scan |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | Analyze Workspace Models | Uses | - | - | - | - | - | - |
 | Confirm Metric Plan | Uses | - | - | - | - | - | - |
