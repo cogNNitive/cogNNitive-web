@@ -169,9 +169,8 @@ export function serializeModel(model: ParsedModel): string {
     lines.push('---')
     if (fm.level !== 3 || fm.spec_version) {
       // Fallback only reached for a non-level-3 doc that somehow lacks an
-      // explicit spec_version; track the adopted L1 (iNNfo_V_0-2-1), not the
-      // superseded one.
-      lines.push(`spec_version: "${fm.spec_version || 'V_0-2-1'}"`)
+      // explicit spec_version; track the adopted L1 (iNNfo_V_0-3-0), not superseded.
+      lines.push(`spec_version: "${fm.spec_version || 'V_0-3-0'}"`)
     }
     if (fm.spec_url) {
       lines.push(`spec_url: "${fm.spec_url}"`)
@@ -189,7 +188,15 @@ export function serializeModel(model: ParsedModel): string {
         lines.push(yamlStringify({ parent: val }).trim())
       }
     }
-    if (fm.model_version) lines.push(`model_version: "${fm.model_version}"`)
+    if (fm.knowledge_version) {
+      lines.push(`knowledge_version: "${fm.knowledge_version}"`)
+    } else if (fm.model_version) {
+      lines.push(`model_version: "${fm.model_version}"`)
+    }
+    if (fm.blueprint_version) lines.push(`blueprint_version: "${fm.blueprint_version}"`)
+    if (fm.blueprint_name) lines.push(`blueprint_name: "${fm.blueprint_name}"`)
+    if (fm.knowledge_dir) lines.push(`knowledge_dir: "${fm.knowledge_dir}"`)
+    if (fm.blueprints_dir) lines.push(`blueprints_dir: "${fm.blueprints_dir}"`)
     if (fm.title) lines.push(`title: "${fm.title}"`)
     if (fm.mode) lines.push(`mode: "${fm.mode}"`)
     if (fm.template !== undefined) {

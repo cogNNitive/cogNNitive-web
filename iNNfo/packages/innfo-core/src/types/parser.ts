@@ -7,6 +7,7 @@ export const CONCEPT_TYPES = [
   'weight',
   'steps',
   'sequence',
+  'knowledge',
   'model',
 ] as const
 export type ConceptType = (typeof CONCEPT_TYPES)[number]
@@ -23,6 +24,7 @@ export const FIELD_TYPES = [
   'url',
   'markdown_inline',
   'markdown_file',
+  'knowledge',
   'model',
   // A path PLUS an addressable knowledge unit, subject to the `KU_*` integrity
   // checks. Distinct from `file` ("a path") and `markdown_file` ("a content
@@ -85,6 +87,7 @@ export interface ConceptField {
   type: FieldType
   options?: string[]
   target_concepts?: string[]
+  target_blueprint?: string
   target_template?: string
 }
 
@@ -178,6 +181,11 @@ export interface SpecFrontmatter {
   matrices?: MatrixDecl[]
   relationship_types?: RelationshipTypeDef[]
   relationship_declarations?: Partial<Record<RelationshipType, RelationshipDecl>>
+  knowledge_version?: string
+  blueprint_version?: string
+  blueprint_name?: string
+  knowledge_dir?: string
+  blueprints_dir?: string
   model_version?: string
   mode?: string
   template?: string | Record<string, unknown>

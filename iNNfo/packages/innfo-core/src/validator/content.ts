@@ -180,29 +180,48 @@ export function validateFormatContent(
           : 'Parent_spec missing url',
   })
 
-  // 3. model_version present
-  const hasVersion = typeof fm.model_version === 'string' && fm.model_version.length > 0
-  checks.push({
-    id: 'fm-version',
-    label: 'Model version declared',
-    description: 'model_version field must be present',
-    category: 'frontmatter',
-    severity: 'error',
-    passed: hasVersion,
-    message: hasVersion ? undefined : 'Missing model_version',
-  })
+  // 3. version present
+  const isV030 = fm.spec_version === 'V_0-3-0' || (!fm.spec_version && fm.level === 3 && fm.knowledge_version !== undefined)
+  const hasKnowledgeVersion = typeof fm.knowledge_version === 'string' && fm.knowledge_version.length > 0
+  const hasModelVersion = typeof fm.model_version === 'string' && fm.model_version.length > 0
+  const hasBlueprintVersion = typeof fm.blueprint_version === 'string' && fm.blueprint_version.length > 0
 
-  // 4. model_version format
-  const versionFormatOk = hasVersion && VERSION_RE.test(fm.model_version as string)
-  if (hasVersion) {
+  if (isV030 && hasModelVersion) {
+    checks.push({
+      id: 'fm-version',
+      label: 'Knowledge version declared',
+      description: 'V_0-3-0 documents must declare knowledge_version',
+      category: 'frontmatter',
+      severity: 'error',
+      passed: false,
+      message: 'Legacy frontmatter key "model_version" detected. Expected "knowledge_version". Run nn-upgrade to migrate.',
+    })
+  } else if (fm.level === 3) {
+    const versionDeclared = isV030 ? hasKnowledgeVersion : (hasKnowledgeVersion || hasModelVersion)
+    checks.push({
+      id: 'fm-version',
+      label: 'Knowledge/model version declared',
+      description: 'knowledge_version field must be present',
+      category: 'frontmatter',
+      severity: 'error',
+      passed: versionDeclared,
+      message: versionDeclared ? undefined : 'Missing knowledge_version',
+    })
+  }
+
+  // 4. version format
+  const activeVersion = fm.knowledge_version ?? fm.blueprint_version ?? fm.model_version
+  const hasAnyVersion = typeof activeVersion === 'string' && activeVersion.length > 0
+  const versionFormatOk = hasAnyVersion && (VERSION_RE.test(activeVersion as string) || /^\d+\.\d+\.\d+/.test(activeVersion as string))
+  if (hasAnyVersion && fm.level === 3 && !isV030) {
     checks.push({
       id: 'fm-version-format',
       label: 'Version follows V_MAJOR-MINOR-PATCH',
-      description: 'model_version must match V_x-y-z (e.g. V_0-1-0)',
+      description: 'version must match V_x-y-z (e.g. V_0-1-0)',
       category: 'frontmatter',
       severity: 'warning',
       passed: versionFormatOk,
-      message: versionFormatOk ? undefined : `"${fm.model_version}" does not match V_x-y-z format`,
+      message: versionFormatOk ? undefined : `"${activeVersion}" does not match V_x-y-z format`,
     })
   }
 
@@ -322,6 +341,32 @@ export function validateFormatContent(
           ? 'No concept sections found (body is empty or malformed)'
           : undefined,
     })
+
+    // Check for retired type:: model keyword
+    if (isV030 || fm.level === 2) {
+      const retiredModelTypes: string[] = []
+      for (const el of parsed.elements.get(CONCEPT_DEFINITION) ?? []) {
+        if (el.fields['type'] === 'model') {
+          retiredModelTypes.push(`Concept Definition: ${el.name}`)
+        }
+      }
+      for (const el of parsed.elements.get('Field Definition') ?? []) {
+        if (el.fields['type'] === 'model') {
+          retiredModelTypes.push(`Field Definition: ${el.name}`)
+        }
+      }
+      if (retiredModelTypes.length > 0) {
+        checks.push({
+          id: 'body-type-model-retired',
+          label: 'No retired type:: model',
+          description: 'type:: model is retired in V_0-3-0; use type:: knowledge',
+          category: 'body',
+          severity: 'error',
+          passed: false,
+          message: `Retired keyword "type:: model" used in: ${retiredModelTypes.join(', ')}. Expected "type:: knowledge".`,
+        })
+      }
+    }
   }
 
   // 10. Element marker syntax (unified `## NN Concept: Element` headings)
