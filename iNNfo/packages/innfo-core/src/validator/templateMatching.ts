@@ -1,6 +1,6 @@
 /**
  * Matches a resolved submodel/target template against an expected
- * `target_template` value: exact name, exact url, url suffix variants
+ * `target_blueprint` value: exact name, exact url, url suffix variants
  * (`/<expected>`, `/<expected>.md`, `/<expected>_NN.md`), or name suffix.
  */
 export function matchesTargetTemplate(expectedTemplate: string, actual: { name?: string; url?: string }): boolean {

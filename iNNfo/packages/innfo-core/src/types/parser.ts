@@ -88,7 +88,6 @@ export interface ConceptField {
   options?: string[]
   target_concepts?: string[]
   target_blueprint?: string
-  target_template?: string
 }
 
 export interface Concept {
@@ -186,7 +185,6 @@ export interface SpecFrontmatter {
   blueprint_name?: string
   knowledge_dir?: string
   blueprints_dir?: string
-  model_version?: string
   mode?: string
   template?: string | Record<string, unknown>
   last_saved?: string

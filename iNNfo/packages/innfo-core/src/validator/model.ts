@@ -229,7 +229,7 @@ export function validateModel(
     if (isStale) {
       d.warn(
         'parent_spec',
-        `Cached template specs/templates/${templateName}_NN.md differs from canonical remote upstream.`,
+        `Cached template specs/bluepriNNts/${templateName}_NN.md differs from canonical remote upstream.`,
         {
           code: 'TEMPLATE_CACHE_STALE',
           promptHint: `Update the template under specs/ with the canonical remote version "${canonicalUrl}" and re-validate the model.`,

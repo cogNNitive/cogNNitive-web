@@ -199,10 +199,10 @@ function resolveOneCitation(
   }
 
   const fm = parseFrontmatter(content) as
-    | { sha256?: string; version?: string; model_version?: string; source_type?: string; author?: string }
+    | { sha256?: string; version?: string; knowledge_version?: string; source_type?: string; author?: string }
     | null
   const sha256 = fm?.sha256
-  const version = fm?.version ?? fm?.model_version
+  const version = fm?.version ?? fm?.knowledge_version
 
   let excerpt: { text: string; truncated: boolean } | undefined
   if (ref.unit) {

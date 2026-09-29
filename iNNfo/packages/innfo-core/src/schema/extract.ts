@@ -109,14 +109,12 @@ export function extractTemplateSchema(parsed: ParsedModel): TemplateSchema {
     const owner = asString(el.fields['concept'])
     if (!owner) continue
     const targetBlueprint = asString(el.fields['target_blueprint'])
-    const targetTemplate = asString(el.fields['target_template'])
     const field: ConceptField = {
       name: el.name,
       type: (asString(el.fields['type']) as ConceptField['type']) ?? 'string',
       options: asStringArray(el.fields['options']),
       target_concepts: asStringArray(el.fields['target_concepts']),
-      target_blueprint: targetBlueprint ?? targetTemplate,
-      target_template: targetTemplate ?? targetBlueprint,
+      target_blueprint: targetBlueprint,
     }
     const list = fieldsByConcept.get(owner)
     if (list) {

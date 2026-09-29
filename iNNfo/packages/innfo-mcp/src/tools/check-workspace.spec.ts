@@ -9,7 +9,7 @@ const specsDir = join(rootDir, 'specs')
 const modelsDir = join(rootDir, 'models')
 
 const TEMPLATE_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/V_0-2-0/spec_NN.md'
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md'
 
 const TEMPLATE_CONTENT = [
   '---',
@@ -63,8 +63,8 @@ const CATALOG = {
       name: 'business',
       adopted: 'V_0-2-0',
       versions: [
-        { template_version: 'V_0-1-0', spec_url: TEMPLATE_URL },
-        { template_version: 'V_0-2-0', spec_url: TEMPLATE_URL },
+        { blueprint_version: 'V_0-1-0', spec_url: TEMPLATE_URL },
+        { blueprint_version: 'V_0-2-0', spec_url: TEMPLATE_URL },
       ],
     },
   },
@@ -75,7 +75,7 @@ function modelContent(title: string, body: string): string {
     '---',
     'level: 3',
     `title: "${title}"`,
-    'model_version: "V_0-1-0"',
+    'knowledge_version: "V_0-1-0"',
     'parent_spec:',
     '  name: "business_V_0-2-0"',
     '  url: "' + TEMPLATE_URL + '"',
@@ -150,7 +150,7 @@ describe('resolveCatalog (AD-3)', () => {
     stubNetwork()
     const result = await resolveCatalog(rootDir, false)
     expect(result.source).toBe('remote')
-    expect(result.catalog?.templates.business.adopted).toBe('V_0-2-0')
+    expect(result.catalog?.blueprints.business.adopted).toBe('V_0-2-0')
   })
 
   it('degrades to in-repo when remote is unreachable', async () => {
@@ -162,7 +162,7 @@ describe('resolveCatalog (AD-3)', () => {
     await writeFile(local, JSON.stringify(CATALOG), 'utf-8')
     const result = await resolveCatalog(rootDir, false)
     expect(result.source).toBe('in-repo')
-    expect(result.catalog?.templates.business).toBeDefined()
+    expect(result.catalog?.blueprints.business).toBeDefined()
   })
 
   it('goes offline when nothing resolves and never throws', async () => {

@@ -461,7 +461,7 @@ describe('NodeSpecResolver', () => {
     it('hydrateTemplatePackageAtomically writes a full package payload (spec + alias + procedures + samples + assets)', async () => {
       const { hydrateTemplatePackageAtomically } = await import('./resolver-node')
       const pkgPath = await hydrateTemplatePackageAtomically(rootDir, 'documentation', 'V_0-2-0', {
-        spec: '---\ntemplate_version: "V_0-2-0"\n---\n# Doc\n',
+        spec: '---\nblueprint_version: "V_0-2-0"\n---\n# Doc\n',
         procedures: { 'generate_docsify_suite_NN.md': '# Procedure\n' },
         samples: { 'Ghostbusters_V_0-2-0_documentation_NN.md': '# Sample\n' },
         assets: { 'master.html': '<!doctype html>' },

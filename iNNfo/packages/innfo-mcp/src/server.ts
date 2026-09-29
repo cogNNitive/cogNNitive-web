@@ -566,7 +566,6 @@ const TOOL_REGISTRY: ReadonlyArray<ToolEntry> = [
           knowledge_id: { type: 'string', description: 'Optional knowledge ID' },
           model_id: { type: 'string', description: 'Optional knowledge ID (alias for knowledge_id)' },
           blueprint_name: { type: 'string', description: 'Optional blueprint name' },
-          template_name: { type: 'string', description: 'Optional blueprint name (alias for blueprint_name)' },
           version: { type: 'string', description: 'Optional blueprint version' },
           url: { type: 'string', description: 'Optional blueprint URL' },
           domain: { type: 'string', description: 'Optional domain root directory override' },
@@ -589,7 +588,6 @@ const TOOL_REGISTRY: ReadonlyArray<ToolEntry> = [
           knowledge_id: { type: 'string', description: 'Optional knowledge ID' },
           model_id: { type: 'string', description: 'Optional knowledge ID (alias for knowledge_id)' },
           blueprint_name: { type: 'string', description: 'Optional blueprint name' },
-          template_name: { type: 'string', description: 'Optional blueprint name (alias for blueprint_name)' },
           version: { type: 'string', description: 'Optional blueprint version' },
           url: { type: 'string', description: 'Optional blueprint URL' },
           domain: { type: 'string', description: 'Optional domain root directory override' },
@@ -743,9 +741,9 @@ async function handleValidateBlueprint(args: Record<string, unknown>): Promise<C
 async function handleInitKnowledge(args: Record<string, unknown>): Promise<CallToolResult> {
   const id = (args.knowledge_id as string) || (args.id as string)
   const blueprintUrl = (args.blueprint_url as string) || (args.template_url as string)
-  const blueprintName = (args.blueprint_name as string) || (args.template_name as string)
+  const blueprintName = args.blueprint_name as string
   const title = args.title as string | undefined
-  const knowledgeVersion = (args.knowledge_version as string) || (args.model_version as string)
+  const knowledgeVersion = args.knowledge_version as string
   const root = (args.domain as string) || (args.root as string) || ROOT_DIR
   if (!id || !blueprintUrl || !blueprintName) {
     return errorResult('Missing required arguments: id, blueprint_url, blueprint_name')
@@ -772,7 +770,7 @@ async function handleListBlueprints(args: Record<string, unknown>): Promise<Call
 }
 
 async function handleHydrateBlueprint(args: Record<string, unknown>): Promise<CallToolResult> {
-  const blueprintName = (args.blueprint_name as string) || (args.template_name as string)
+  const blueprintName = args.blueprint_name as string
   if (!blueprintName) return errorResult('Missing required argument: blueprint_name')
   const root = (args.domain as string) || (args.root as string) || ROOT_DIR
   const legacyErr = await checkDomainLegacy(root)
@@ -838,7 +836,7 @@ async function handleListBlueprintProcedures(
   const result = await listTemplateProcedures(root, {
     model_path: (args.knowledge_path as string) || (args.model_path as string),
     model_id: (args.knowledge_id as string) || (args.model_id as string),
-    template_name: (args.blueprint_name as string) || (args.template_name as string),
+    blueprint_name: args.blueprint_name as string,
     version: args.version as string | undefined,
     url: args.url as string | undefined,
   })
@@ -852,7 +850,7 @@ async function handleListBlueprintSkills(args: Record<string, unknown>): Promise
   const result = await listTemplateSkills(root, {
     model_path: (args.knowledge_path as string) || (args.model_path as string),
     model_id: (args.knowledge_id as string) || (args.model_id as string),
-    template_name: (args.blueprint_name as string) || (args.template_name as string),
+    blueprint_name: args.blueprint_name as string,
     version: args.version as string | undefined,
     url: args.url as string | undefined,
   })

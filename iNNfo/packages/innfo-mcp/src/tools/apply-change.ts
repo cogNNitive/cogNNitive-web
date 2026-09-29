@@ -66,7 +66,7 @@ function formatVersion(p: VersionParts): string {
  * Compute the new model version from bump_version args.
  * Either an explicit `version` ("V_0-5-0") or a `bump` of
  * "major" | "minor" | "patch" (default patch) applied to the current
- * `model_version` frontmatter. Returns null when the args are invalid.
+ * `knowledge_version` frontmatter. Returns null when the args are invalid.
  */
 function computeNewVersion(
   current: string | undefined,
@@ -214,7 +214,7 @@ function cascadeModelReferences(
 }
 
 /**
- * Apply the `bump_version` operation: set `frontmatter.model_version`, rename
+ * Apply the `bump_version` operation: set `frontmatter.knowledge_version`, rename
  * the file to the canonical `_V_<version>_` filename, validate BEFORE writing,
  * and reject-without-writing on any failure.
  */
@@ -225,8 +225,8 @@ async function bumpVersion(
   args: Record<string, unknown>,
   id: string,
 ): Promise<ApplyChangeResult> {
-  const prevVersion = String(model.frontmatter.knowledge_version ?? model.frontmatter.model_version ?? '')
-  const next = computeNewVersion(model.frontmatter.knowledge_version ?? model.frontmatter.model_version, args)
+  const prevVersion = String(model.frontmatter.knowledge_version ?? model.frontmatter.blueprint_version ?? '')
+  const next = computeNewVersion(prevVersion, args)
   if (!next) {
     return {
       success: false,
@@ -240,13 +240,10 @@ async function bumpVersion(
     }
   }
 
-  if (model.frontmatter.knowledge_version !== undefined || model.frontmatter.model_version === undefined) {
-    model.frontmatter.knowledge_version = next.version
-    if (model.frontmatter.model_version !== undefined) {
-      delete model.frontmatter.model_version
-    }
+  if (model.frontmatter.knowledge_version === undefined && model.frontmatter.blueprint_version !== undefined) {
+    model.frontmatter.blueprint_version = next.version
   } else {
-    model.frontmatter.model_version = next.version
+    model.frontmatter.knowledge_version = next.version
   }
 
   // A pre-write backup is taken when the caller asked for one, or when the
@@ -672,8 +669,7 @@ export async function applyChange(
       buildAgentModificationBlock(op, args, {
         model: id,
         knowledge: id,
-        knowledgeVersion: String(model.frontmatter.knowledge_version ?? model.frontmatter.model_version ?? ''),
-        modelVersion: String(model.frontmatter.knowledge_version ?? model.frontmatter.model_version ?? ''),
+    knowledgeVersion: String(model.frontmatter.knowledge_version ?? model.frontmatter.blueprint_version ?? ''),
         ...modificationContext(args),
       }) ?? undefined,
   }

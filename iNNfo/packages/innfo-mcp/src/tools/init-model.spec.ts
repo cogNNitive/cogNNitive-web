@@ -7,7 +7,7 @@ const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-init-model')
 const specsDir = join(rootDir, 'specs')
 
 const TEMPLATE_URL = 'https://example.com/business_V_0-2-0_NN.md'
-const TEMPLATE_NAME = 'business_V_0-2-0'
+const blueprint_name = 'business_V_0-2-0'
 
 /** Write the level-1 + level-0 spec chain locally so resolution never hits the network. */
 async function stubSpecChain() {
@@ -82,7 +82,7 @@ describe('initModel', () => {
 
     const result = await initModel(rootDir, 'NewModel', {
       template_url: TEMPLATE_URL,
-      template_name: TEMPLATE_NAME,
+      blueprint_name: blueprint_name,
       title: 'New Model',
     })
 
@@ -92,7 +92,7 @@ describe('initModel', () => {
     expect(result.filePath).toBe(join(rootDir, 'NewModel_NN.md'))
 
     expect(result.content).toContain('parent_spec:')
-    expect(result.content).toContain(`name: "${TEMPLATE_NAME}"`)
+    expect(result.content).toContain(`name: "${blueprint_name}"`)
     expect(result.content).toContain(`url: "${TEMPLATE_URL}"`)
     expect(result.content).toContain('title: "New Model"')
     expect(result.content).toContain('# NN Work')
@@ -105,7 +105,7 @@ describe('initModel', () => {
   it('writes frontmatter without scaffolding a body when the template cannot be resolved', async () => {
     const result = await initModel(rootDir, 'Orphan', {
       template_url: TEMPLATE_URL,
-      template_name: TEMPLATE_NAME,
+      blueprint_name: blueprint_name,
     })
 
     expect(result.success).toBe(true)
@@ -113,7 +113,7 @@ describe('initModel', () => {
     expect(result.scaffolded).toBe(false)
     expect(result.warnings.some((w) => /template resolution failed/i.test(w))).toBe(true)
 
-    expect(result.content).toContain(`name: "${TEMPLATE_NAME}"`)
+    expect(result.content).toContain(`name: "${blueprint_name}"`)
     expect(result.content).not.toContain('# NN Work')
 
     const onDisk = await readFile(result.filePath!, 'utf-8')
@@ -139,7 +139,7 @@ describe('initModel', () => {
 
     const result = await initModel(rootDir, 'Existing', {
       template_url: TEMPLATE_URL,
-      template_name: TEMPLATE_NAME,
+      blueprint_name: blueprint_name,
     })
 
     expect(result.success).toBe(true)
@@ -160,7 +160,7 @@ describe('initModel', () => {
     // Test quotes in title
     const resQuotes = await initModel(rootDir, 'QuotesModel', {
       template_url: TEMPLATE_URL,
-      template_name: TEMPLATE_NAME,
+      blueprint_name: blueprint_name,
       title: 'The "Real" Deal',
     })
     expect(resQuotes.success).toBe(true)
@@ -171,7 +171,7 @@ describe('initModel', () => {
     // Test newline in title
     const resNewlines = await initModel(rootDir, 'NewlineModel', {
       template_url: TEMPLATE_URL,
-      template_name: TEMPLATE_NAME,
+      blueprint_name: blueprint_name,
       title: 'Line1\nLine2',
     })
     expect(resNewlines.success).toBe(true)
@@ -213,7 +213,7 @@ describe('initModel', () => {
 
       const result = await initModel(rootDir, 'Inferred', {
         template_url: TEMPLATE_URL,
-        template_name: TEMPLATE_NAME,
+        blueprint_name: blueprint_name,
       })
 
       expect(result.success).toBe(true)
@@ -226,7 +226,7 @@ describe('initModel', () => {
 
       const result = await initModel(rootDir, 'InferredOld', {
         template_url: 'https://example.com/business_V_0-1-0_NN.md',
-        template_name: 'business_V_0-1-0',
+        blueprint_name: 'business_V_0-1-0',
       })
 
       expect(result.success).toBe(true)
@@ -234,10 +234,10 @@ describe('initModel', () => {
       expect(result.content).toContain('knowledge_version: "V_0-1-0"')
     })
 
-    it('Override wins: explicit model_version is used when the parent cannot be resolved', async () => {
+    it('Override wins: explicit knowledge_version is used when the parent cannot be resolved', async () => {
       const result = await initModel(rootDir, 'OverrideOnly', {
         template_url: TEMPLATE_URL,
-        template_name: TEMPLATE_NAME,
+        blueprint_name: blueprint_name,
         knowledge_version: 'V_0-3-0',
       })
 
@@ -251,7 +251,7 @@ describe('initModel', () => {
 
       const result = await initModel(rootDir, 'OverrideMatch', {
         template_url: TEMPLATE_URL,
-        template_name: TEMPLATE_NAME,
+        blueprint_name: blueprint_name,
         knowledge_version: 'V_0-2-0',
       })
 
@@ -265,7 +265,7 @@ describe('initModel', () => {
 
       const result = await initModel(rootDir, 'Mismatch', {
         template_url: TEMPLATE_URL,
-        template_name: TEMPLATE_NAME,
+        blueprint_name: blueprint_name,
         knowledge_version: 'V_9-9-9',
       })
 
@@ -309,7 +309,7 @@ describe('initModel', () => {
     // If validation fails prior to write, file should not exist on disk
     const result = await initModel(rootDir, 'ShouldNotExist', {
       template_url: 'https://example.com/broken_V_0-2-0_NN.md',
-      template_name: 'broken_V_0-2-0',
+      blueprint_name: 'broken_V_0-2-0',
     })
 
     expect(result.validation.valid).toBe(false)
@@ -364,7 +364,7 @@ describe('initModel', () => {
 
       const result = await initModel(rootDir, 'RefModel', {
         template_url: 'https://example.com/reftpl_V_0-1-0_NN.md',
-        template_name: 'reftpl_V_0-1-0',
+        blueprint_name: 'reftpl_V_0-1-0',
       })
 
       expect(result.success).toBe(true)
@@ -400,8 +400,8 @@ describe('initModel', () => {
       await stubRealBlankTemplate()
 
       const result = await initModel(rootDir, 'BlankModel', {
-        template_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/blank/spec_NN.md',
-        template_name: 'blank_V_0-2-0',
+        template_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md',
+        blueprint_name: 'blank_V_0-2-0',
       })
 
       expect(result.success).toBe(true)

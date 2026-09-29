@@ -85,11 +85,9 @@ function scaffoldBodyFromSchema(schema: {
 
 export interface InitModelArgs {
   template_url?: string
-  template_name?: string
   blueprint_url?: string
   blueprint_name?: string
   title?: string
-  model_version?: string
   knowledge_version?: string
 }
 
@@ -112,9 +110,9 @@ export async function initModel(
 }> {
   const cleanId = normalizeId(id)
   const warnings: string[] = []
-  const blueprintName = args.blueprint_name || args.template_name || ''
+  const blueprintName = args.blueprint_name || ''
   const blueprintUrl = args.blueprint_url || args.template_url || ''
-  const requestedVersion = args.knowledge_version || args.model_version
+  const requestedVersion = args.knowledge_version
 
   let filePath = await findModelFile(rootDir, id)
 

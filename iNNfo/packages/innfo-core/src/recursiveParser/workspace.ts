@@ -344,7 +344,7 @@ function linkParentChild(
 /**
  * Resolves a node's composed template schema via the host-supplied
  * `options.resolveTemplateSchema`, when one was supplied. A throwing or
- * absent resolver degrades that node to today's behavior (no `type:: model`
+ * absent resolver degrades that node to today's behavior (no `type:: knowledge`
  * field following) instead of aborting the whole parse (AD-04).
  */
 function schemaFor(

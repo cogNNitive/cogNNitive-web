@@ -51,7 +51,7 @@ export interface ParseContext {
 /**
  * Host-supplied, SYNCHRONOUS resolver returning a node's level-2 template schema.
  * MUST return the COMPOSED schema (schema.ts `resolveTemplateSchema(...).schema`,
- * i.e. `includes`-merged), so `type:: model` fields inherited through `includes`
+ * i.e. `includes`-merged), so `type:: knowledge` fields inherited through `includes`
  * are followed during traversal. Return `null` when the template is unknown.
  * Named `TemplateSchemaResolver` (not `resolveTemplateSchema`) to avoid colliding
  * with the exported function `resolveTemplateSchema` in schema.ts (AD-03).

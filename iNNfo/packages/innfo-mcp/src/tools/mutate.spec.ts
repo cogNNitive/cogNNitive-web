@@ -363,8 +363,8 @@ describe('mutate tools', () => {
           {
             model: 'Mutable',
             knowledge: 'Mutable',
-            knowledgeVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.model_version) as string,
-            modelVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.model_version) as string,
+            knowledgeVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.knowledge_version) as string,
+            modelVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.knowledge_version) as string,
             timestamp: result.modification!.match(/timestamp:: (.*)/)![1],
           },
         )
@@ -494,7 +494,7 @@ describe('mutate tools', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-5-0')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-5-0')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-5-0_NN.md'))
 
       // Old file removed, new file carries the bumped frontmatter.
@@ -511,7 +511,7 @@ describe('mutate tools', () => {
       const result = await applyChange(rootDir, 'Versioned_V_0-0-1', 'bump_version', {})
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-0-2')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-0-2')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-0-2_NN.md'))
     })
 
@@ -525,7 +525,7 @@ describe('mutate tools', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-1-1')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-1-1')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-1-1_NN.md'))
     })
 
@@ -537,7 +537,7 @@ describe('mutate tools', () => {
       const result = await applyChange(rootDir, 'Mutable', 'bump_version', { bump: 'minor' })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-1-1')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-1-1')
       expect(result.newPath).toBe(filePath)
       const onDisk = await readFile(filePath, 'utf-8')
       expect(onDisk).toContain('knowledge_version: "V_0-1-1"')
@@ -884,7 +884,7 @@ describe('mutate tools', () => {
           '---',
           'parent_spec:',
           '  name: "canonical_pkg"',
-          '  url: "https://example.com/specs/templates/canonical_pkg/V_1-0-0/spec_NN.md"',
+          '  url: "https://example.com/specs/bluepriNNts/canonical_pkg/V_1-0-0/spec_NN.md"',
           '---',
         ].join('\n'),
       )
@@ -903,7 +903,7 @@ describe('mutate tools', () => {
           'spec_version: "V_1-0-0"',
           'includes:',
           '  - name: "sub_pkg"',
-          '    url: "https://example.com/specs/templates/sub_pkg/V_0-5-0/spec_NN.md"',
+          '    url: "https://example.com/specs/bluepriNNts/sub_pkg/V_0-5-0/spec_NN.md"',
           '---',
         ].join('\n'),
       )
@@ -967,7 +967,7 @@ describe('mutate tools', () => {
         '---',
         'spec_version: "V_0-1-0"',
         'level: 3',
-        'model_version: "V_0-1-0"',
+        'knowledge_version: "V_0-1-0"',
         'title: "My Model"',
         'parent_spec:',
         '  name: "my_template_V_0-1-0"',
@@ -1039,7 +1039,7 @@ describe('mutate tools', () => {
         '---',
         'spec_version: "V_0-1-0"',
         'level: 3',
-        'model_version: "V_0-1-0"',
+        'knowledge_version: "V_0-1-0"',
         'title: "M"',
         'parent_spec:',
         '  name: "t_V_0-1-0"',

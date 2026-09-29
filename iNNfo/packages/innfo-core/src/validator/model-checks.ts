@@ -8,7 +8,7 @@ export type ElementGroup = [string, Array<{ name: string; fields: Record<string,
 
 /**
  * Frontmatter-level invariants that do not need the resolved template:
- * `level`, `parent_spec`, level-3 `model_version` + no-schema-in-frontmatter,
+ * `level`, `parent_spec`, level-3 `knowledge_version` + no-schema-in-frontmatter,
  * slug collisions, reserved concept names, and the removed FOLDER mode.
  */
 export function checkFrontmatterInvariants(model: ParsedModel, d: Diagnostics): void {
@@ -28,7 +28,7 @@ export function checkFrontmatterInvariants(model: ParsedModel, d: Diagnostics): 
   }
 
   if (fm.level === 3) {
-    if (!fm.knowledge_version && !fm.model_version) {
+    if (!fm.knowledge_version) {
       d.error('frontmatter.knowledge_version', 'Missing knowledge_version')
     }
     if (

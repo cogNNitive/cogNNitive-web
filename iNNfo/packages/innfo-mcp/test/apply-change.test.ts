@@ -12,7 +12,7 @@ level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Strategy"
 ---
 
@@ -32,7 +32,7 @@ level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Execution"
 ---
 
@@ -52,7 +52,7 @@ level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Marketing"
 ---
 
@@ -119,7 +119,7 @@ level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Broken"
 ---
 

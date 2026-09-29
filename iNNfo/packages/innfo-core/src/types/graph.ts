@@ -49,7 +49,7 @@ export interface MetamodelConcept {
     type: string
     options?: string[]
     target_concepts?: string[]
-    target_template?: string
+    target_blueprint?: string
   }[]
   tags?: string[]
 }

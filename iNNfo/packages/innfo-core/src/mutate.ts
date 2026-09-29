@@ -531,7 +531,7 @@ export function updateWikiLinks(text: string, oldName: string, newName: string):
 }
 
 /** Which field names does the schema declare as `type:: reference` (or
- *  `type:: model`) for each concept? Used to gate the rename rewrite. */
+ *  `type:: knowledge`) for each concept? Used to gate the rename rewrite. */
 function referenceFieldsByConcept(schema: TemplateSchema | undefined): Map<string, Set<string>> {
   const map = new Map<string, Set<string>>()
   if (!schema) return map
@@ -599,7 +599,7 @@ function renameElement(
 
   // Rewrite references in element fields, description, and relationships.
   // Schema-aware: a string field is only rewritten as a scalar reference when
-  // the parent template declares it `type:: reference` (or `type:: model`);
+  // the parent template declares it `type:: reference` (or `type:: knowledge`);
   // otherwise only embedded `[[...]]` wikilinks are rewritten, never a bare
   // slug-matching string (which would clobber plain data like `category:: cost`).
   const refsByConcept = referenceFieldsByConcept(schema)

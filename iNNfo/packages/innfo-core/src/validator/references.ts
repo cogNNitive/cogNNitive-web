@@ -180,8 +180,8 @@ export function validateElementFieldReferences(
                     promptHint: `Create the file "${cleanPath}" or fix the path in field "${fieldDef?.name ?? fieldName}".`,
                     meta: { refPath: cleanPath, field: fieldDef?.name ?? fieldName },
                   })
-                } else if (fieldDef.target_template) {
-                  const matches = matchesTargetTemplate(fieldDef.target_template, {
+                } else if (fieldDef.target_blueprint) {
+                  const matches = matchesTargetTemplate(fieldDef.target_blueprint, {
                     name: res.templateName,
                     url: res.templateUrl,
                   })
@@ -190,12 +190,12 @@ export function validateElementFieldReferences(
                     const actualLabel = res.templateName || res.templateUrl || 'unknown'
                     diagnostics.push({
                       path: `elements.${conceptName}.${el.name}.fields.${fieldDef?.name ?? fieldName}`,
-                      message: `Submodel template mismatch: field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_template}", but referenced file "${cleanPath}" uses template "${actualLabel}"`,
+                      message: `Submodel template mismatch: field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_blueprint}", but referenced file "${cleanPath}" uses template "${actualLabel}"`,
                       severity: 'warning',
                       code: 'SUBMODEL_TEMPLATE_MISMATCH',
-                      promptHint: `Field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_template}" but "${cleanPath}" uses "${actualLabel}": update target_template or fix parent_spec in the referenced file.`,
+                      promptHint: `Field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_blueprint}" but "${cleanPath}" uses "${actualLabel}": update target_blueprint or fix parent_spec in the referenced file.`,
                       meta: {
-                        expectedTemplate: fieldDef.target_template,
+                        expectedTemplate: fieldDef.target_blueprint,
                         actualTemplate: actualLabel,
                         refPath: cleanPath,
                       },

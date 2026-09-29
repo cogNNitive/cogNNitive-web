@@ -38,10 +38,10 @@ describe('syncWorkspaceManifest', () => {
   })
 
   it('dry-run reports discovered model as an "added" change without writing the manifest', async () => {
-    await writeFile(join(rootDir, 'workspace_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
     await writeFile(join(rootDir, 'acme_business_NN.md'), modelFrontmatter(), 'utf-8')
 
-    const before = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const before = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     const result = await syncWorkspaceManifest(rootDir, { dry_run: true })
 
     expect(result.dry_run).toBe(true)
@@ -52,32 +52,32 @@ describe('syncWorkspaceManifest', () => {
     expect(result.diff).toBeDefined()
     expect(result.diff).toContain('acme_business_NN.md')
 
-    const after = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const after = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     expect(after).toBe(before)
   })
 
   it('dry_run: false writes the reconciled content to disk', async () => {
-    await writeFile(join(rootDir, 'workspace_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
     await writeFile(join(rootDir, 'acme_business_NN.md'), modelFrontmatter(), 'utf-8')
 
     const result = await syncWorkspaceManifest(rootDir, { dry_run: false })
 
     expect(result.written).toBe(true)
-    const after = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const after = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     expect(after).toContain('## NN Models: Acme Business Model')
     expect(after).toContain('<!-- nn:auto -->')
   })
 
   it('defaults dry_run to true when omitted', async () => {
-    await writeFile(join(rootDir, 'workspace_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
     await writeFile(join(rootDir, 'acme_business_NN.md'), modelFrontmatter(), 'utf-8')
 
-    const before = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const before = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     const result = await syncWorkspaceManifest(rootDir, {})
 
     expect(result.dry_run).toBe(true)
     expect(result.written).toBe(false)
-    const after = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const after = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     expect(after).toBe(before)
   })
 
@@ -90,7 +90,7 @@ describe('syncWorkspaceManifest', () => {
       'status:: active',
       '',
     ].join('\n')
-    await writeFile(join(rootDir, 'workspace_NN.md'), manifestBody, 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), manifestBody, 'utf-8')
 
     const result = await syncWorkspaceManifest(rootDir, { dry_run: false })
 
@@ -103,12 +103,12 @@ describe('syncWorkspaceManifest', () => {
       },
     ])
     expect(result.written).toBe(false)
-    const after = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const after = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     expect(after).toBe(manifestBody)
   })
 
   it('excludes cogNNitive-templated models and the manifest itself from discovery', async () => {
-    await writeFile(join(rootDir, 'workspace_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
     await writeFile(
       join(rootDir, 'acme_cogNNitive_NN.md'),
       ['---', 'level: 3', 'parent_spec:', '  name: "cogNNitive_V_0-2-0"', '---'].join('\n'),
@@ -120,9 +120,9 @@ describe('syncWorkspaceManifest', () => {
   })
 
   it('excludes workspace-conforming lineage records from discovery', async () => {
-    await writeFile(join(rootDir, 'workspace_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), ['# NN Models', ''].join('\n'), 'utf-8')
     await writeFile(
-      join(rootDir, 'acme_V_0-2-0_workspace_NN.md'),
+      join(rootDir, 'acme_V_0-2-0_domaiNN_NN.md'),
       ['---', 'level: 3', 'parent_spec:', '  name: "workspace_V_0-3-0_spec_NN"', '---'].join('\n'),
       'utf-8',
     )
@@ -141,7 +141,7 @@ describe('syncWorkspaceManifest', () => {
       'path:: procedures/procedures_NN.md',
       '',
     ].join('\n')
-    await writeFile(join(rootDir, 'workspace_NN.md'), manifestBody, 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), manifestBody, 'utf-8')
     await mkdir(join(rootDir, 'procedures'), { recursive: true })
     await writeFile(
       join(rootDir, 'procedures', 'procedures_NN.md'),
@@ -169,22 +169,22 @@ describe('syncWorkspaceManifest', () => {
     expect(result.changes).toEqual([])
     expect(result.written).toBe(false)
 
-    const after = await readFile(join(rootDir, 'workspace_NN.md'), 'utf-8')
+    const after = await readFile(join(rootDir, 'domaiNN_NN.md'), 'utf-8')
     expect(after).toBe(manifestBody)
   })
 })
 
 describe('buildUnifiedDiff', () => {
   it('returns an empty string when contents are identical', () => {
-    expect(buildUnifiedDiff('same', 'same', 'workspace_NN.md')).toBe('')
+    expect(buildUnifiedDiff('same', 'same', 'domaiNN_NN.md')).toBe('')
   })
 
   it('produces a single-hunk diff around the changed region', () => {
     const oldContent = ['a', 'b', 'c'].join('\n')
     const newContent = ['a', 'b', 'c', 'd'].join('\n')
-    const diff = buildUnifiedDiff(oldContent, newContent, 'workspace_NN.md')
-    expect(diff).toContain('--- a/workspace_NN.md')
-    expect(diff).toContain('+++ b/workspace_NN.md')
+    const diff = buildUnifiedDiff(oldContent, newContent, 'domaiNN_NN.md')
+    expect(diff).toContain('--- a/domaiNN_NN.md')
+    expect(diff).toContain('+++ b/domaiNN_NN.md')
     expect(diff).toContain('+d')
   })
 })

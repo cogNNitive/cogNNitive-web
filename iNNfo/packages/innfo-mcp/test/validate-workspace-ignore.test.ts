@@ -47,7 +47,7 @@ level: 3
 parent_spec:
   name: Template
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Main"
 ---
 
@@ -66,7 +66,7 @@ level: 3
 parent_spec:
   name: Template
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "BadModule"
 ---
 

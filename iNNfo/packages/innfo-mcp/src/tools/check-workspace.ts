@@ -46,7 +46,7 @@ import {
 export const CATALOG_PAGES_URL = 'https://cognnitive.com/innfo/templates/catalog.json'
 /** Raw fallback URL for the catalog (AD-3, tier 2). */
 export const CATALOG_RAW_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/catalog.json'
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json'
 
 const CATALOG_TIMEOUT_MS = 2500
 const FRESHNESS_TIMEOUT_MS = 10000
@@ -106,13 +106,13 @@ async function fetchJson(url: string, timeoutMs: number): Promise<unknown | null
 function parseCatalog(json: unknown): TemplateCatalog | null {
   if (!json || typeof json !== 'object') return null
   const cat = json as TemplateCatalog
-  if (!cat.templates || typeof cat.templates !== 'object') return null
+  if (!cat.blueprints || typeof cat.blueprints !== 'object') return null
   return cat
 }
 
 /**
  * AD-3 catalog resolution: remote-first (Pages, then raw), then in-repo
- * (`<rootDir>/specs/templates/catalog.json`, else the monorepo copy), then
+ * (`<rootDir>/specs/bluepriNNts/catalog.json`, else the monorepo copy), then
  * offline. `offline: true` skips tiers 1–2 entirely.
  */
 export async function resolveCatalog(

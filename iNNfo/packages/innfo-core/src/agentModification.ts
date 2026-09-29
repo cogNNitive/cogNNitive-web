@@ -9,7 +9,7 @@
  *
  * The builder never performs I/O and never mutates a model or its `args`.
  * `scope`, `change` and the heading slug are derived deterministically from
- * `(op, args)`; `model`, `model_version`, `timestamp`, `rationale` and
+ * `(op, args)`; `model`, `knowledge_version`, `timestamp`, `rationale` and
  * `approved_by` are caller inputs.
  */
 

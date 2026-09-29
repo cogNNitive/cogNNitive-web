@@ -29,7 +29,7 @@ export type ResolverOptionsWithFreshness = ResolverOptions & {
   skillsDir?: string
   checkFreshness?: boolean
   /**
-   * Explicit cache directory for fetched specs/templates. Defaults to
+   * Explicit cache directory for fetched specs/bluepriNNts. Defaults to
    * {@link defaultCacheDir} (OS temp dir). Reads check it after the
    * workspace tree; fetch-and-save paths write to it unless `inPlace`.
    */
@@ -42,7 +42,7 @@ export type ResolverOptionsWithFreshness = ResolverOptions & {
 }
 
 /**
- * Default on-disk location for fetched specs/templates:
+ * Default on-disk location for fetched specs/bluepriNNts:
  * `join(os.tmpdir(), 'innfo-specs')`. Resolver *writes* (never reads alone)
  * go here by default so a default run creates no cache artifacts inside the
  * workspace or repository tree. Restored in-tree only via `inPlace: true`.
@@ -333,7 +333,7 @@ export async function findSpecInPackageDir(dir: string, base: string): Promise<s
 
 /**
  * 4-Tier Template Package Resolver:
- *   Tier 1: Workspace package directory: ./specs/templates/<name>/<version>/
+ *   Tier 1: Workspace package directory: ./specs/bluepriNNts/<name>/<version>/
  *   Tier 2: Workspace flat fallback: ./templates/<name>_V_<version>_NN.md or ./specs/
  *   Tier 3: Global user cache: ~/.agents/templates/<name>/<version>/
  *   Tier 4: Installed skills directory: ~/.agents/skills/<skill-name>/templates/<name>/<version>/

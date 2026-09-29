@@ -58,7 +58,7 @@ import { isInsideRoot, isSafeRelativeId } from './path-guard.js'
 export { normalizeId }
 
 /**
- * Locate a knowledge/model file on disk by id.
+ * Locate a kNNowledge document on disk by id.
  *
  * Searches the root directory, `kNNowledge/` and the conventional `models/` subdirectory.
  * Supports nested relative paths (e.g. `subsystems/auth/tokens_NN.md`).
@@ -381,7 +381,7 @@ export async function listTemplates(
             const content = await readFile(filePath, 'utf-8')
             const fm = parseFrontmatter(content)
             if (fm?.blueprint_version) version = String(fm.blueprint_version)
-            else if (fm?.template_version) version = String(fm.template_version)
+            else if (fm?.blueprint_version) version = String(fm.blueprint_version)
             else if (fm?.version) version = String(fm.version)
             else if (fm?.spec_version) version = String(fm.spec_version)
           } catch (err) {
@@ -420,7 +420,7 @@ export async function listTemplates(
                 const content = await readFile(specFile, 'utf-8')
                 const fm = parseFrontmatter(content)
                 if (fm?.blueprint_version) version = String(fm.blueprint_version)
-                else if (fm?.template_version) version = String(fm.template_version)
+                else if (fm?.blueprint_version) version = String(fm.blueprint_version)
                 else if (fm?.version) version = String(fm.version)
                 else if (fm?.spec_version) version = String(fm.spec_version)
               } catch (_) {
@@ -618,7 +618,7 @@ export const hydrateBlueprint = hydrateTemplate
 export interface ListTemplateProceduresOptions {
   model_path?: string
   model_id?: string
-  template_name?: string
+  blueprint_name?: string
   version?: string
   url?: string
 }
@@ -626,7 +626,7 @@ export interface ListTemplateProceduresOptions {
 export interface ListTemplateSkillsOptions {
   model_path?: string
   model_id?: string
-  template_name?: string
+  blueprint_name?: string
   version?: string
   url?: string
 }
@@ -668,15 +668,15 @@ export async function discoverTransitiveAssets(
     }
   }
 
-  if (opts?.template_name) {
-    const pkg = await resolveTemplatePackage(rootDir, opts.template_name, opts.version)
+  if (opts?.blueprint_name) {
+    const pkg = await resolveTemplatePackage(rootDir, opts.blueprint_name, opts.version)
     if (pkg) {
       const content = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
       if (content) {
         const fm = parseFrontmatter(content)
         if (fm) {
           queue.push({
-            docName: basename(pkg.specFilePath, '.md') || opts.template_name || pkg.name,
+            docName: basename(pkg.specFilePath, '.md') || opts.blueprint_name || pkg.name,
             fm,
             depth: 0,
             filePath: pkg.specFilePath,
@@ -687,7 +687,7 @@ export async function discoverTransitiveAssets(
   }
 
   if (opts?.url) {
-    const name = opts.template_name || deriveNameFromUrl(opts.url)
+    const name = opts.blueprint_name || deriveNameFromUrl(opts.url)
     const content = await fetchSpecContent(name, opts.url, specsDir, 10000)
     if (content) {
       const fm = parseFrontmatter(content)

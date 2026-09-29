@@ -127,7 +127,7 @@ describe('MCP — includes composition + init_model scaffolding', () => {
 
     const res = await initModel(root, 'my_model_V_1-0-0_demo_tpl', {
       template_url: tplUrl,
-      template_name: 'demo_tpl',
+      blueprint_name: 'demo_tpl',
       title: 'My Model',
     })
 
@@ -138,7 +138,7 @@ describe('MCP — includes composition + init_model scaffolding', () => {
     // Version-aware scaffold (validator-robustness): frontmatter versions are
     // inferred from the resolved parent template (stamped V_0-1-0 above).
     expect(content).toContain('spec_version: "V_0-3-0"')
-    expect(content).toMatch(/(knowledge_version|model_version): "V_0-1-0"/)
+    expect(content).toMatch(/(knowledge_version|knowledge_version): "V_0-1-0"/)
     expect(content).toContain('# NN index')
     expect(content).toContain('* [[Overview]]')
     expect(content).toContain('* [[Item]]')

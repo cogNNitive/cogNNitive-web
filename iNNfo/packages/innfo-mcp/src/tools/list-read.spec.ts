@@ -126,10 +126,10 @@ describe('readModel', () => {
     expect(model?.frontmatter.title).toBe('Readable Model')
   })
 
-  it('discovers workspace_NN.md entrypoints and parses type:: model submodels', async () => {
+  it('discovers domaiNN_NN.md entrypoints and parses type:: model submodels', async () => {
     // H6: the workspace manifest follows the same `_NN.md` + `level: 3` +
     // `parent_spec` convention as any other discoverable model
-    // (`workspace_NN.md`, per `iNNfo/specs/templates/base/spec_NN.md`).
+    // (`domaiNN_NN.md`, per `iNNfo/specs/bluepriNNts/base/spec_NN.md`).
     const wsContent = [
       '---',
       'spec_version: "V_0-2-0"',
@@ -146,7 +146,7 @@ describe('readModel', () => {
       'type:: model',
       '',
     ].join('\n')
-    await writeFile(join(rootDir, 'workspace_NN.md'), wsContent, 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), wsContent, 'utf-8')
 
     const models = await listModels(rootDir)
     expect(models.some((m) => m.id === 'workspace_NN')).toBe(true)

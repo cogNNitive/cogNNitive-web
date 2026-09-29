@@ -23,7 +23,7 @@ const MODEL_CONTENT = [
   '---',
   'spec_version: "V_0-2-0"',
   'level: 3',
-  'model_version: "V_0-0-1"',
+  'knowledge_version: "V_0-0-1"',
   'title: "Startup Co"',
   'parent_spec:',
   '  name: business_V_0-2-0',

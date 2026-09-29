@@ -335,14 +335,14 @@ function checkOne(
   }
 
   // Check 4: template membership.
-  if (fieldDef.target_template) {
+  if (fieldDef.target_blueprint) {
     const actualTemplate = index.nodeTemplate[targetId]
-    const matches = actualTemplate ? matchesTargetTemplate(fieldDef.target_template, actualTemplate) : false
+    const matches = actualTemplate ? matchesTargetTemplate(fieldDef.target_blueprint, actualTemplate) : false
     if (!matches) {
       const actualLabel = actualTemplate?.name ?? actualTemplate?.url ?? 'unknown'
       diagnostics.push({
         path,
-        message: `Cross-model reference "${ref.raw}" in field "${fieldDef.name}" expects template "${fieldDef.target_template}", but model "${ref.modelTitle}" uses template "${actualLabel}"`,
+        message: `Cross-model reference "${ref.raw}" in field "${fieldDef.name}" expects template "${fieldDef.target_blueprint}", but model "${ref.modelTitle}" uses template "${actualLabel}"`,
         severity: 'warning',
       })
     }

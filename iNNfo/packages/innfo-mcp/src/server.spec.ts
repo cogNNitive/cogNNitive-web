@@ -386,7 +386,7 @@ describe('innfo-mcp server (dispatch/handler layer, real MCP client/server round
     it('returns legacy notice with nn-upgrade pointer when called on a legacy domain', async () => {
       // Create legacy entrypoint
       await writeFile(
-        join(rootDir, 'workspace_NN.md'),
+        join(rootDir, 'domaiNN_NN.md'),
         ['---', 'level: 2', 'workspace_version: "V_0-1-0"', '---'].join('\n'),
         'utf-8',
       )

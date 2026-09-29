@@ -18,7 +18,7 @@ const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-validate')
 const specsDir = join(rootDir, 'specs')
 const modelsDir = join(rootDir, 'kNNowledge')
 
-const TEMPLATE_NAME = 'linked_test_V_0-1-0'
+const blueprint_name = 'linked_test_V_0-1-0'
 
 const TEMPLATE_CONTENT = [
   '---',
@@ -52,7 +52,7 @@ function modelContent(title: string, body: string): string {
     `title: "${title}"`,
     'knowledge_version: "V_0-1-0"',
     'parent_spec:',
-    `  name: "${TEMPLATE_NAME}"`,
+    `  name: "${blueprint_name}"`,
     '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
     '---',
     '',
@@ -87,7 +87,7 @@ function workspaceContent(): string {
 async function writeWorkspace(): Promise<{ alphaPath: string; betaPath: string }> {
   await mkdir(specsDir, { recursive: true })
   await mkdir(modelsDir, { recursive: true })
-  await writeFile(join(specsDir, `${TEMPLATE_NAME}_NN.md`), TEMPLATE_CONTENT, 'utf-8')
+  await writeFile(join(specsDir, `${blueprint_name}_NN.md`), TEMPLATE_CONTENT, 'utf-8')
   await writeFile(
     join(specsDir, 'iNNfo_V_0-1-0_NN.md'),
     [
@@ -126,9 +126,9 @@ function buildCache(): SpecCache {
   return {
     specs: new Map([
       [
-        TEMPLATE_NAME,
+        blueprint_name,
         {
-          name: TEMPLATE_NAME,
+          name: blueprint_name,
           level: 2,
           parentName: 'iNNfo_V_0-1-0',
           parentUrl: 'https://example.com/iNNfo_V_0-1-0_NN.md',
@@ -137,7 +137,7 @@ function buildCache(): SpecCache {
         },
       ],
     ]),
-    chain: [TEMPLATE_NAME],
+    chain: [blueprint_name],
   }
 }
 
@@ -285,7 +285,7 @@ const MISSING_PARENT_CONTENT = [
   '---',
   'level: 3',
   'title: "MissingParent"',
-  'model_version: "V_0-1-0"',
+  'knowledge_version: "V_0-1-0"',
   'parent_spec:',
   '  name: "missing_V_0-1-0"',
   '  url: "https://example.com/missing_V_0-1-0_NN.md"',

@@ -29,7 +29,7 @@ level: 3
 parent_spec:
   name: security_spec
   url: https://example.com/sec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Security Tokens
 ---
 # NN Index
@@ -61,7 +61,7 @@ title: Security Tokens
       const templateContent = `---
 spec_version: V_1-0-0
 level: 2
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Architecture Template
 ---
 # NN Concept Definition
@@ -83,7 +83,7 @@ target_template:: subcomponent_template
       const subcomponentTemplateContent = `---
 spec_version: V_1-0-0
 level: 2
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Subcomponent Template
 ---
 # NN Concept Definition
@@ -98,7 +98,7 @@ level: 3
 parent_spec:
   name: subcomponent_template
   url: https://example.com/subcomponent_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Valid Subcomponent
 ---
 # NN Sub
@@ -112,7 +112,7 @@ level: 3
 parent_spec:
   name: other_template
   url: https://example.com/other_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Mismatched Subcomponent
 ---
 # NN Sub
@@ -128,7 +128,7 @@ level: 3
 parent_spec:
   name: app_template
   url: https://example.com/app_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Model
 ---
 # NN Components
@@ -156,7 +156,7 @@ level: 3
 parent_spec:
   name: app_template
   url: https://example.com/app_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Model
 ---
 # NN Components
@@ -184,7 +184,7 @@ level: 3
 parent_spec:
   name: app_template
   url: https://example.com/app_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Model
 ---
 # NN Components

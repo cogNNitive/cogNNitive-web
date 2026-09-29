@@ -91,7 +91,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
         '---',
         'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'parent_spec:',
         '  name: "business_V_0-2-0"',
         '  url: "https://example.com/business_V_0-2-0_NN.md"',
@@ -281,12 +281,12 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'base_spec_NN' })
+    const procsRes = await listTemplateProcedures(rootDir, { blueprint_name: 'base_spec_NN' })
     expect(procsRes.procedures).toHaveLength(2)
     expect(procsRes.procedures.map((p) => p.id)).toEqual(['proc-base', 'proc-included'])
     expect(procsRes.procedures[0].source_template).toBe('base_spec_NN')
 
-    const skillsRes = await listTemplateSkills(rootDir, { template_name: 'base_spec_NN' })
+    const skillsRes = await listTemplateSkills(rootDir, { blueprint_name: 'base_spec_NN' })
     expect(skillsRes.skills).toHaveLength(2)
     expect(skillsRes.skills.map((s) => s.name)).toEqual(['nn-base', 'nn-included'])
     expect(skillsRes.skills[0].source_template).toBe('base_spec_NN')
@@ -329,7 +329,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'main_tmpl_NN' })
+    const procsRes = await listTemplateProcedures(rootDir, { blueprint_name: 'main_tmpl_NN' })
     expect(procsRes.procedures.some((p) => p.id === 'proc-sec-v2')).toBe(true)
   })
 
@@ -361,7 +361,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'video_pkg' })
+    const procsRes = await listTemplateProcedures(rootDir, { blueprint_name: 'video_pkg' })
     expect(procsRes.procedures.length).toBeGreaterThanOrEqual(1)
     const scriptProc = procsRes.procedures.find((p) => p.id === 'generate-script')
     expect(scriptProc).toBeDefined()
@@ -460,11 +460,11 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const procs = await listTemplateProcedures(rootDir, { template_name: 'child' })
+    const procs = await listTemplateProcedures(rootDir, { blueprint_name: 'child' })
     expect(procs.procedures.length).toBeGreaterThan(0)
     expect(procs.procedures.some((p) => p.name.includes('Proc 1'))).toBe(true)
 
-    const skills = await listTemplateSkills(rootDir, { template_name: 'child' })
+    const skills = await listTemplateSkills(rootDir, { blueprint_name: 'child' })
     expect(Array.isArray(skills.skills)).toBe(true)
   })
 })
