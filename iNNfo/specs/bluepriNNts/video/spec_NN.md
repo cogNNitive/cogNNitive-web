@@ -5,11 +5,14 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-3-2"
+template_version: "V_0-4-0"
 title: "Video App"
 procedures:
+  - id: "generate-video-script"
+    name: "Generate Video Script"
+    path: "procedures/generate_video_script_NN.md"
   - id: "generate-anydeo-script"
-    name: "Generate Anydeo Script"
+    name: "Generate Anydeo Script (Deprecated)"
     path: "procedures/generate_anydeo_script_NN.md"
   - id: "publish-web-portal"
     name: "Publish Video Web Portal"
@@ -59,7 +62,7 @@ description:: Short description of the video scope.
 ## NN Field Definition: script
 concept:: Video
 type:: file
-description:: The Anydeo V_0-3-3 script, stored in the video's own folder.
+description:: The cogNNitive Video script, stored in the video's own folder.
 
 ## NN Field Definition: thumbnail
 concept:: Video
@@ -98,15 +101,15 @@ description:: Design preset reference (e.g. [[Ghostbusters Tech Noir]], [[morado
 
 ## Philosophy
 
-The Video App models one video as a single Element that owns its own media folder. The script is a **generated artifact** authored in Anydeo V_0-3-3 syntax (scenes `@`, layers `@@`, `layer_type`, `scene_templates`, `scene_tts_model`, avatars) and authored by the [`skills/nn-video-script`](https://github.com/cogNNitive/cogNNitive/tree/main/skills/nn-video-script) skill — it is not re-modelled as iNNfo data. The Element records where its files live and which sources it derives from (`sources::`), so the model never re-encodes structure Anydeo already expresses.
+The Video App models one video as a single Element that owns its own media folder. The script is a **generated artifact** authored in cogNNitive Video syntax (scenes `@`, layers `@@`, `layer_type`, `scene_templates`, `scene_tts_model`, overlays, transitions) and compiled by the [`skills/nn-video-script`](https://github.com/cogNNitive/cogNNitive/tree/main/skills/nn-video-script) skill into Remotion Composition Manifests — it is not re-modelled as iNNfo data. The Element records where its files live and which sources it derives from (`sources::`), so the model never re-encodes structure the video engine already expresses.
 
 ## Production Hierarchy: Workspace → Subject → Series → Video
 
 A video is produced by combining exactly one **Subject** with exactly one **Series**:
 
 - **Workspace** — the iNNfo workspace root. Its own `assets/` folder holds files shared across every Series, never referenced directly from a script (stage them into a Series' `shared/` folder first, as a copy).
-- **Subject** — the content: facts and sources. Subject stays **workspace-custom** — this template does not ship a cogNNitive-owned Subject template (a workspace models it however fits its domain, e.g. iNNtrevistas' bespoke historical-innovation template). A Video references its Subject generically through the reserved `sources::` property (see Reserved Properties below), never through a new Field, so no particular Subject shape is required.
-- **Series** — the production format: one procedure that extends `generate_anydeo_script_NN.md`, one script template (`script_template.md`), a series-wide rules document (`series_rules.md`), and shared series assets. A Series is **not a new template** — it **reuses this very `video` template** as a Level-3 model (`<SeriesName>_V_x-y-z_video_NN.md`) whose frontmatter carries a `series:` block (at minimum: slug, the procedure it extends, the script-template path, and the shared-assets folder) and which contains that Series' own Video Elements as children. Because a Video Element lives inside exactly one Series model file, a Video belongs to exactly one Series by construction — no separate registry mechanism is needed.
+- **Subject** — the content: facts and sources. Subject stays **workspace-custom** — this template does not ship a cogNNitive-owned Subject template (a workspace models it however fits its domain, e.g. bespoke historical-innovation or product templates). A Video references its Subject generically through the reserved `sources::` property (see Reserved Properties below), never through a new Field, so no particular Subject shape is required.
+- **Series** — the production format: one procedure that extends `generate_video_script_NN.md`, one script template (`script_template.md`), a series-wide rules document (`series_rules.md`), and shared series assets. A Series is **not a new template** — it **reuses this very `video` template** as a Level-3 model (`<SeriesName>_V_x-y-z_video_NN.md`) whose frontmatter carries a `series:` block (at minimum: slug, the procedure it extends, the script-template path, and the shared-assets folder) and which contains that Series' own Video Elements as children. Because a Video Element lives inside exactly one Series model file, a Video belongs to exactly one Series by construction — no separate registry mechanism is needed.
 - **Video** — combines exactly one Subject with exactly one Series. Subject and Series vary independently: the same Subject may be produced again under a different Series without any coupling to the first.
 
 A standalone Video with no Series (as in the Ghostbusters sample) remains valid: it simply has no `series:` block on its model, and its folder resolution follows the unchanged rule below.
@@ -137,7 +140,15 @@ Renaming the Element renames its folder with it. One video, one folder, all of i
 
 Assets are scoped at exactly three levels — workspace, series, video — matching the three folder levels above. A script's asset paths **MUST NOT resolve above its own Series folder**: `../../shared/x.mp4` (staying inside the Series) is allowed; a path that climbs out to another Series or the workspace root (e.g. `../../../../assets/x.mp4`) is rejected. `http(s)://` references are allowed; `file://`, absolute paths, and `asset://` are rejected outright. `skills/nn-video-script`'s `check-script.mjs` enforces this mechanically as part of script validation — see the procedure below.
 
-`renders/<ref>/` and `.anydeo/`, wherever they appear inside a video or series folder, are ephemeral engine output: gitignored, and never treated as iNNfo Artifacts or scanned as knowledge inputs. The generic procedure's finalize step promotes the files a video actually keeps (`master`, `thumbnail`, `voiceover`) out of `renders/<ref>/` into the video's own folder; nothing in `renders/` or `.anydeo/` is ever referenced by a Video Element's fields once finalize has run.
+`renders/<ref>/` and `.cognnitive/cache/video/`, wherever they appear inside a video or series folder, are engine output and cache stores: gitignored, and never treated as iNNfo Artifacts or scanned as knowledge inputs. The generic procedure's finalize step promotes the files a video actually keeps (`master`, `thumbnail`, `voiceover`) out of `renders/<ref>/` into the video's own folder; nothing in `renders/` or cache directories is directly referenced by a Video Element's fields once finalize has run.
+
+## Remotion Scene Engine Architecture
+
+The cogNNitive Video Engine compiles scripts into typed Remotion Composition Manifests consisting of:
+- **Scene Tracks**: Ordered sequence tracks supporting `chapter_title`, `image_motion`, `kinetic_text`, `concept_diagram`, and `split_screen` types with frame math ($\text{frames} = \lceil\text{durationInSeconds} \times \text{FPS}\rceil$).
+- **Audio Bindings**: Precise TTS voiceover track synchronization probed to prevent audio clipping.
+- **Visual Overlays**: Frame-timed `lowerThird`, `kineticTitle`, and `conceptCallout` overlays.
+- **Headless CLI**: Headless Remotion rendering and preview server execution via `video-engine-cli.mjs`.
 
 ## Objectives
 
@@ -146,7 +157,7 @@ Assets are scoped at exactly three levels — workspace, series, video — match
 - Plan and estimate media generation costs via `asset_plan.md` before executing generation/renders.
 - Keep every file of a video inside that video's own folder, scoped inside its Series when one applies.
 - Keep traceability to input documents, and to the Video's own Subject, through the reserved `sources::` property.
-- Delegate script, scene, layer, and asset structure to the Anydeo specification.
+- Support programmatic compilation, asset synthesis caching, and Remotion rendering via cogNNitive Video Engine.
 
 ## Specification
 
@@ -162,7 +173,7 @@ Assets are scoped at exactly three levels — workspace, series, video — match
 |---|---|---|---|
 | Video | `title` | string | Video title |
 | Video | `description` | markdown_inline | Scope description |
-| Video | `script` | file | Anydeo V_0-3-3 script (`assets/{slug}/`) |
+| Video | `script` | file | cogNNitive Video script (`assets/{slug}/`) |
 | Video | `thumbnail` | image | Cover image (`assets/{slug}/`) |
 | Video | `voiceover` | audio | Master voiceover track (`assets/{slug}/`) |
 | Video | `master` | video | Rendered video file (`assets/{slug}/`) |
@@ -183,7 +194,7 @@ When a Video is part of the Workspace → Subject → Series → Video hierarchy
 | Type | Enabled | Representation |
 |---|---|---|
 | Hierarchy | ✅ | index block (wikilinks) |
-| Evaluable matrix | ❌ | Not applicable — pipeline structure lives in Anydeo |
+| Evaluable matrix | ❌ | Not applicable — pipeline structure lives in video engine |
 | Graph edge | ❌ | Not applicable |
 | Sequence | ❌ | Not applicable |
 

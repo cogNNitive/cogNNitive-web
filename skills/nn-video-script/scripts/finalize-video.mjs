@@ -87,8 +87,12 @@ export function finalizeVideo({ videoDir, ref, forceThumbnail = false }) {
   const messages = [];
 
   // 1. master
-  const masterSrc = path.join(renderDir, `${resolvedRef}.mp4`);
-  if (fs.existsSync(masterSrc)) {
+  const masterSrcCandidates = [
+    path.join(renderDir, `${resolvedRef}.mp4`),
+    path.join(renderDir, 'master.mp4'),
+  ];
+  const masterSrc = masterSrcCandidates.find((p) => fs.existsSync(p));
+  if (masterSrc) {
     const masterDest = path.join(videoDir, 'master.mp4');
     copyViaTempRename(masterSrc, masterDest);
     fields.master = 'master.mp4';
@@ -96,8 +100,12 @@ export function finalizeVideo({ videoDir, ref, forceThumbnail = false }) {
   }
 
   // 2. thumbnail — series often design their own; preserve unless forced or absent.
-  const thumbnailSrc = path.join(renderDir, `${resolvedRef}_thumbnail.png`);
-  if (fs.existsSync(thumbnailSrc)) {
+  const thumbCandidates = [
+    path.join(renderDir, `${resolvedRef}_thumbnail.png`),
+    path.join(renderDir, 'thumbnail.png'),
+  ];
+  const thumbnailSrc = thumbCandidates.find((p) => fs.existsSync(p));
+  if (thumbnailSrc) {
     const thumbnailDest = path.join(videoDir, 'thumbnail.png');
     const shouldCopy = forceThumbnail || !fs.existsSync(thumbnailDest);
     if (shouldCopy) {
@@ -109,8 +117,9 @@ export function finalizeVideo({ videoDir, ref, forceThumbnail = false }) {
     }
   }
 
-  // 3. voiceover — only if VidGeNN emitted one; it does not today.
-  const voiceoverSrc = findVoiceoverFile(renderDir, resolvedRef);
+  // 3. voiceover
+  const voiceoverSrc = findVoiceoverFile(renderDir, resolvedRef) ||
+    (fs.existsSync(path.join(renderDir, 'voiceover.mp3')) ? path.join(renderDir, 'voiceover.mp3') : null);
   if (voiceoverSrc) {
     const ext = path.extname(voiceoverSrc);
     const voiceoverName = `voiceover${ext}`;
