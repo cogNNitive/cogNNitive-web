@@ -206,7 +206,7 @@
 - [x] **15.1-15.4**: created `scripts/lib/legacy-write-guard.js` (token-based; scope `iNNfo/packages/*/src/**`, `iNNfo/apps/*/src/**`, `scripts/**` minus tests, `skills/*/scripts/**`; excludes docs/tests/openspec/cdn/frozen `_V_`; allowlist with mandatory reason; Pages path carve-out by lookbehind) + `scripts/lib/legacy-write-guard.test.js` (9 token cases, scope exclusions, allowlist, Pages allowance, no-reason failure, clean pass) — **tests green**.
 
 ### Blocked (not committed wired)
-- [ ] **15.5**: the guard reports **145 retired tokens** in the real tree — `innfo-core` 43, `innfo-mcp` 37, `skills/nn-trannsform/scripts` 25, `innfo-editor` 9, plus `scripts/**` and `skills/nn-preflight/scripts`. This is unfinished S6a/S6b/S6c (and S8 for nn-trannsform/preflight): the runtime token rename was not completed. The guard is deliberately **NOT wired into `verify.js`** yet (task 15.5 requires a green tree); wire it as step 15 once that cleanup lands.
+- [ ] **15.5**: the guard reports retired tokens in the real tree. Progress: **`scripts/**` is now CLEAN (0 hits)** after commit `25cdc055` (`scripts/**` purge). Remaining **255 hits**: `innfo-core/src/schema/canonical-registry.ts` 90 (embedded spec copies), `innfo-core` (rest) ~35, `innfo-mcp` 37, `skills/nn-trannsform/scripts` 23, `innfo-editor` 9, `skills/nn-preflight/scripts` 7. These are unfinished S6a/S6b/S6c (core/mcp/editor) and S8 (nn-trannsform/nn-preflight); nn-trannsform is a real behaviour change (`model_version`->`knowledge_version`, `source_model_version`->`source_knowledge_version`). The guard is deliberately **NOT wired into `verify.js`** yet (task 15.5 requires a green tree); wire it as step 15 once the cleanup lands.
 - [ ] **15.6**: contributor doc.
 
 ## Remaining after S7/S10
