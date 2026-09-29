@@ -23,6 +23,8 @@ playwright-report/
 **/playwright-report/
 
 # Agent & Tooling caches/artifacts
+.cogNNitive/
+**/.cogNNitive/
 .playwright-mcp/
 **/.playwright-mcp/
 .opencode/
