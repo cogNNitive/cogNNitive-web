@@ -15,7 +15,7 @@ testing:
   strict_tdd: true
   detected_at: '2026-09-02'
   runner:
-    command: 'npm --prefix iNNfo run test'
+    command: 'npm run test'
     framework: 'Vitest / Playwright / Node.js Test Runner'
   layers:
     unit:
@@ -29,19 +29,19 @@ testing:
       tool: 'Playwright (apps/innfo-editor)'
   coverage:
     available: true
-    command: 'npm --prefix iNNfo run test:coverage'
+    command: 'npm run test:coverage'
   quality:
     linter:
       available: true
-      command: 'npm --prefix iNNfo run lint'
-      fix_command: 'npm --prefix iNNfo run lint:fix'
+      command: 'npm run lint'
+      fix_command: 'npm run lint:fix'
     typecheck:
       available: true
-      command: 'npm --prefix iNNfo run typecheck'
+      command: 'npm run typecheck'
     formatter:
       available: true
-      command: 'npm --prefix iNNfo run format:check'
-      fix_command: 'npm --prefix iNNfo run format'
+      command: 'npm run format:check'
+      fix_command: 'npm run format'
       # INFORMATIONAL — legacy gate. The repo carries ~236 pre-existing
       # prettier-dirty files (baseline) and `format:check` is NOT wired into
       # CI (CI runs `verify` + `quality` only). Do not block on or report
