@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const TEMPLATE_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/cogNNitive/spec_NN.md';
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md';
 const INNFO_URL =
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md';
 const TEMPLATE_NAME = 'cogNNitive';
@@ -323,10 +323,10 @@ function walkFiles(dir, matches) {
 }
 
 /**
- * Reads `title`, `model_version`, and `parent_spec.name` from a Level 3 model's
+ * Reads `title`, `knowledge_version`, and `parent_spec.name` from a Level 3 model's
  * YAML frontmatter (regex — these scripts carry no YAML dependency).
  * @param {string} content
- * @returns {{ title: string | null, model_version: string | null, template: string | null }}
+ * @returns {{ title: string | null, knowledge_version: string | null, template: string | null }}
  */
 function parseModelHeader(content) {
   const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -339,7 +339,7 @@ function parseModelHeader(content) {
   const templateName = nested ? (nested[0].match(/^\s+name:\s*"?([^"\n\r]+)"?/m) || [])[1] : null;
   return {
     title: flat('title'),
-    model_version: flat('model_version') || flat('model'),
+    knowledge_version: flat('knowledge_version') || flat('model'),
     template: templateName ? templateName.trim() : null,
   };
 }
@@ -375,7 +375,7 @@ function scrapeSourceRefs(content) {
  * `# NN ModelRecords` section: title, ref, version, template, and the source
  * Citations it derives from (scraped from its `sources::` fields).
  * @param {string} projectDir
- * @returns {Array<{ name: string, model_ref: string, model_version: string | null, model_template: string | null, derived_from: string[] }>}
+ * @returns {Array<{ name: string, model_ref: string, knowledge_version: string | null, model_template: string | null, derived_from: string[] }>}
  */
 function collectModels(projectDir) {
   const modelsDir = path.join(projectDir, 'models');
@@ -386,7 +386,7 @@ function collectModels(projectDir) {
     return {
       name: header.title || base,
       model_ref: `models/${rel}`,
-      model_version: header.model_version,
+      knowledge_version: header.knowledge_version,
       model_template: header.template,
       derived_from: scrapeSourceRefs(content),
     };
@@ -425,13 +425,13 @@ function parseFrontmatterSources(fmBlock) {
 
 /**
  * Read a source-model reference out of an artifact: from Markdown frontmatter
- * (`model` / `model_name` + `model_version`, or an optional `sources:`
+ * (`model` / `model_name` + `knowledge_version`, or an optional `sources:`
  * pointer-array field) or from an HTML
  * `<script id="export-meta" type="application/json">` block (which may carry
  * an equivalent `sources` JSON array).
  * @param {string} content
  * @param {string} fileName
- * @returns {{ model: string | null, model_version: string | null, sources: string[], format: string }}
+ * @returns {{ model: string | null, knowledge_version: string | null, sources: string[], format: string }}
  */
 function parseArtifactMeta(content, fileName) {
   const isHtml = /\.html?$/i.test(fileName);
@@ -444,7 +444,7 @@ function parseArtifactMeta(content, fileName) {
         const j = JSON.parse(block[1].trim());
         return {
           model: j.modelName || j.model || null,
-          model_version: j.modelVersion || j.model_version || null,
+          knowledge_version: j.modelVersion || j.knowledge_version || null,
           sources: Array.isArray(j.sources) ? j.sources.map((s) => String(s).trim()).filter(Boolean) : [],
           format: 'board',
         };
@@ -452,7 +452,7 @@ function parseArtifactMeta(content, fileName) {
         /* fall through */
       }
     }
-    return { model: null, model_version: null, sources: [], format: 'board' };
+    return { model: null, knowledge_version: null, sources: [], format: 'board' };
   }
   const header = parseModelHeader(content);
   const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -463,7 +463,7 @@ function parseArtifactMeta(content, fileName) {
     null;
   return {
     model: modelName ? modelName.trim() : null,
-    model_version: header.model_version,
+    knowledge_version: header.knowledge_version,
     sources: parseFrontmatterSources(fm ? fm[1] : ''),
     format: (typeField && typeField.trim()) || 'document',
   };
@@ -492,20 +492,20 @@ function collectArtifacts(projectDir) {
     const content = fs.readFileSync(path.join(artDir, rel), 'utf8');
     const meta = parseArtifactMeta(content, rel);
     // A frontmatter `sources:` pointer array takes precedence over the
-    // model/model_version reference when both are present (design.md D-
+    // model/knowledge_version reference when both are present (design.md D-
     // "the lineage builder reads artifact `sources:` frontmatter").
     const derived =
       meta.sources && meta.sources.length > 0
         ? meta.sources
         : meta.model
-          ? [meta.model_version ? `${meta.model} ${meta.model_version}` : meta.model]
+          ? [meta.knowledge_version ? `${meta.model} ${meta.knowledge_version}` : meta.model]
           : [];
     return {
       name: path.basename(rel).replace(/\.[^.]+$/, ''),
       artifact_ref: `${dirPrefix}/${rel}`,
       artifact_format: meta.format,
       derived_from: derived,
-      note: derived.length > 0 ? null : 'no source model reference found in this artifact',
+      note: derived.length > 0 ? null : 'no Source kNNowledge reference found in this artifact',
     };
   });
 }
@@ -572,7 +572,7 @@ function renderModelsSection(models) {
   for (const m of models) {
     out += `\n## NN ModelRecords: ${m.name}\n`;
     out += `model_ref:: ${m.model_ref}\n`;
-    if (m.model_version) out += `model_version:: ${m.model_version}\n`;
+    if (m.knowledge_version) out += `knowledge_version:: ${m.knowledge_version}\n`;
     if (m.model_template) out += `model_template:: ${m.model_template}\n`;
     if (m.derived_from && m.derived_from.length > 0) {
       out += `derived_from:: [${m.derived_from.join(', ')}]\n`;
@@ -662,7 +662,7 @@ function renderFrontmatter(title, modelVersion = 'V_0-2-0') {
     'parent_spec:\n' +
     `  name: "${TEMPLATE_NAME}"\n` +
     `  url: "${TEMPLATE_URL}"\n` +
-    `model_version: "${modelVersion}"\n` +
+    `knowledge_version: "${modelVersion}"\n` +
     `title: "${title}"\n` +
     '---\n'
   );
@@ -714,7 +714,7 @@ function refreshExistingModel(existing, data) {
   const body = fmMatch ? existing.slice(fmMatch[1].length) : existing;
 
   const titleMatch = existing.match(/^title:\s*"?(.*?)"?\s*$/m);
-  const versionMatch = existing.match(/^model_version:\s*"?(.*?)"?\s*$/m);
+  const versionMatch = existing.match(/^knowledge_version:\s*"?(.*?)"?\s*$/m);
 
   const { preamble, blocks } = splitTopLevelSections(body);
   const managed = managedSections(data);

@@ -338,7 +338,7 @@ const FEEDBACK_ITEM_STATUSES = ['pending', 'applied', 'rejected'];
 
 /**
  * Validates a parsed reviewer-feedback payload against the innfo-console
- * feedback contract (mirrors iNNfo/specs/templates/console/feedback.schema.json).
+ * feedback contract (mirrors iNNfo/specs/bluepriNNts/console/feedback.schema.json).
  * Unknown draft fields are ignored. Throws naming the offending item id.
  * @param {any} parsed
  * @returns {{ meta: Record<string, any>, items: Array<Record<string, any>> }}
@@ -352,11 +352,11 @@ function validateFeedbackJson(parsed) {
   }
   const meta = parsed.meta;
   if (!meta || typeof meta !== 'object') fail('meta: required object is missing');
-  for (const field of ['source_model', 'artifact', 'artifact_version', 'author', 'viewer']) {
+  for (const field of ['source_knowledge', 'artifact', 'artifact_version', 'author', 'viewer']) {
     if (!meta[field] || typeof meta[field] !== 'string') fail(`meta.${field}: required non-empty string is missing`);
   }
-  if (!/^V_\d+-\d+-\d+$/.test(String(meta.source_model_version || ''))) {
-    fail(`meta.source_model_version: must match V_x-y-z (got ${meta.source_model_version})`);
+  if (!/^V_\d+-\d+-\d+$/.test(String(meta.source_knowledge_version || ''))) {
+    fail(`meta.source_knowledge_version: must match V_x-y-z (got ${meta.source_knowledge_version})`);
   }
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/.test(String(meta.exported_at || ''))) {
     fail(`meta.exported_at: must be ISO-8601 with seconds (got ${meta.exported_at})`);
@@ -402,7 +402,7 @@ function convertFeedbackJson(content, baseName) {
 
   let out = `# NN Feedback: ${baseName}\n\n`;
   out += `## NN Meta\n\n`;
-  out += `- **Source Model**: ${meta.source_model} (${meta.source_model_version})\n`;
+  out += `- **Source kNNowledge**: ${meta.source_knowledge} (${meta.source_knowledge_version})\n`;
   out += `- **Artifact**: ${meta.artifact} (v${meta.artifact_version})\n`;
   out += `- **Exported At**: ${meta.exported_at}\n`;
   out += `- **Author**: ${meta.author}\n`;

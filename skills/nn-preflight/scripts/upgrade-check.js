@@ -8,7 +8,7 @@
  * published Level-2 template catalog, and reports — it never mutates anything.
  *
  * Classification of a model's pinned template against the catalog `adopted`
- * version (highest published template_version for that template name):
+ * version (highest published blueprint_version for that blueprint name):
  *
  *   current            — pinned == adopted
  *   upgrade-available  — pinned < adopted (gap reported as major/minor/patch)
@@ -91,7 +91,7 @@ function discoverModels(workspaceDir) {
 
 /**
  * Classify every workspace model against the catalog.
- * `catalog` shape: { templates: { <name>: { name, adopted, versions: [{template_version}] } } }
+ * `catalog` shape: { blueprints: { <name>: { name, adopted, versions: [{blueprint_version}] } } }
  *
  * Classification delegates to the shared `classifyAgainstCatalog` primitive
  * (bundled from innfo-core) so the CLI, `innfo-mcp` check_workspace, and the

@@ -50,6 +50,8 @@ const ALLOWLIST = [
   { pattern: 'skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs', reason: 'generated legacy-migrate bundle (ledger: migrate-bundle)' },
   { pattern: 'skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs', reason: 'generated legacy-detect bundle (ledger: detect-bundle)' },
   { pattern: 'scripts/migrate-spec-urls.mjs', reason: 'historical one-time codemod (cogNNitive/iNNfo -> monorepo) that must match the pre-migration paths' },
+  { pattern: 'skills/nn-trannsform/scripts/provenance.js', reason: 'detects the legacy `_workspace_NN.md` lineage record by name for one-time in-place migration to `_cogNNitive_NN.md`' },
+  { pattern: 'skills/nn-trannsform/scripts/lib/provenance-model.js', reason: 'legacy `_workspace_NN.md` lineage-record suffix documented for one-time migration' },
   { pattern: 'scripts/lib/legacy-write-guard.js', reason: 'this guard carries the token table itself' },
 ];
 

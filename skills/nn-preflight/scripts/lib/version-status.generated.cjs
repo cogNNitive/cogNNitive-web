@@ -58,7 +58,7 @@ function parsePinnedUrl(url) {
   const basename = String(url).split("/").pop()?.replace(/\.md$/i, "") ?? "";
   const flat = basename.match(/^(.+?)_V_(\d+)-(\d+)-(\d+)(?:_spec)?_NN$/i);
   if (flat) return { name: flat[1], version: `V_${flat[2]}-${flat[3]}-${flat[4]}` };
-  const pkg = String(url).match(/templates\/([^/]+)\/V_(\d+)-(\d+)-(\d+)\/spec_NN\.md/i);
+  const pkg = String(url).match(/bluepriNNts\/([^/]+)\/V_(\d+)-(\d+)-(\d+)\/spec_NN\.md/i);
   if (pkg) return { name: pkg[1], version: `V_${pkg[2]}-${pkg[3]}-${pkg[4]}` };
   return null;
 }
@@ -94,7 +94,7 @@ function classifyAgainstCatalog(parentUrl, catalog) {
       detail: "Not a versioned canonical template URL"
     };
   }
-  const entry = catalog.templates?.[pinned.name];
+  const entry = catalog.blueprints?.[pinned.name];
   if (!entry) {
     return {
       status: "unlisted",
@@ -105,7 +105,7 @@ function classifyAgainstCatalog(parentUrl, catalog) {
       detail: "Template not in catalog"
     };
   }
-  const known = entry.versions.some((v) => v.template_version === pinned.version);
+  const known = entry.versions.some((v) => v.blueprint_version === pinned.version);
   if (!known && compareVersions(pinned.version, entry.adopted) > 0) {
     return {
       status: "ahead",

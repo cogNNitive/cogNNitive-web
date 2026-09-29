@@ -31,11 +31,11 @@ function run() {
     );
     fs.writeFileSync(
       path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
-      '---\nlevel: 3\nmodel_version: "V_1-0-0"\nparent_spec:\n  name: "business_V_0-1-0"\ntitle: "Business Plan"\n---\n\n# NN Stakeholders\n\n## NN Stakeholders: Clients\nsources:: [report.md#overview]\n',
+      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\nparent_spec:\n  name: "business_V_0-1-0"\ntitle: "Business Plan"\n---\n\n# NN Stakeholders\n\n## NN Stakeholders: Clients\nsources:: [report.md#overview]\n',
     );
     fs.writeFileSync(
       path.join(proj, 'artifacts', 'Exec_Summary_V_1-0-0.md'),
-      '---\nmodel: "Business Plan"\nmodel_version: "V_1-0-0"\ntype: "report"\n---\n\n# Executive Summary\n',
+      '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "report"\n---\n\n# Executive Summary\n',
     );
 
     // First build.
@@ -86,7 +86,7 @@ function run() {
     // Restore the model, add a dangling sources:: — --check catches it.
     fs.writeFileSync(
       path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
-      '---\nlevel: 3\nmodel_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [ghost.md#nowhere]\n',
+      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [ghost.md#nowhere]\n',
     );
     provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
     const drift2 = checkLineage(proj);
@@ -95,7 +95,7 @@ function run() {
     // Clean workspace → no errors.
     fs.writeFileSync(
       path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
-      '---\nlevel: 3\nmodel_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [report.md#overview]\n',
+      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [report.md#overview]\n',
     );
     fs.rmSync(path.join(proj, 'artifacts', 'Exec_Summary_V_1-0-0.md'));
     provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
@@ -105,7 +105,7 @@ function run() {
     fs.mkdirSync(path.join(proj, 'export'), { recursive: true });
     fs.writeFileSync(
       path.join(proj, 'export', 'Proposal_V_1-0-0.md'),
-      '---\nmodel: "Business Plan"\nmodel_version: "V_1-0-0"\ntype: "proposal"\n---\n\n# Proposal\n',
+      '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "proposal"\n---\n\n# Proposal\n',
     );
     fs.mkdirSync(path.join(proj, 'sources', 'nn', 'export'), { recursive: true });
     fs.writeFileSync(
@@ -120,11 +120,11 @@ function run() {
     ok(/derived_from:: \[Plan_V_1-0-0_NN\.md\]/.test(mExport), '# NN Sources includes derived_from for synthetic source');
 
     // Test: artifact frontmatter `sources:` pointer array is read by the
-    // lineage builder and preferred over model/model_version when both are
+    // lineage builder and preferred over model/knowledge_version when both are
     // present (task 2.4 — parseArtifactMeta / collectArtifacts).
     fs.writeFileSync(
       path.join(proj, 'export', 'Brief_V_1-0-0.md'),
-      '---\nmodel: "Business Plan"\nmodel_version: "V_1-0-0"\ntype: "brief"\nsources: [report.md#overview, notes.md#key-points]\n---\n\n# Brief\n',
+      '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "brief"\nsources: [report.md#overview, notes.md#key-points]\n---\n\n# Brief\n',
     );
     provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
     const mArtifactSources = fs.readFileSync(r1.modelPath, 'utf8');
@@ -133,11 +133,11 @@ function run() {
       /## NN Artifacts: Brief_V_1-0-0\nartifact_ref:: export\/Brief_V_1-0-0\.md\nartifact_format:: brief\nderived_from:: \[report\.md#overview, notes\.md#key-points\]/.test(
         mArtifactSources,
       ),
-      'derived_from is computed from frontmatter sources:, not model/model_version, when both are present',
+      'derived_from is computed from frontmatter sources:, not model/knowledge_version, when both are present',
     );
     // Models catalog lineage stays byte-unchanged for inputs that don't use the new field.
     ok(
-      /model_ref:: models\/Plan_V_1-0-0_NN\.md\n(?:model_version:: V_1-0-0\n)?(?:model_template:: [^\n]+\n)?derived_from:: \[report\.md#overview\]/.test(
+      /model_ref:: models\/Plan_V_1-0-0_NN\.md\n(?:knowledge_version:: V_1-0-0\n)?(?:model_template:: [^\n]+\n)?derived_from:: \[report\.md#overview\]/.test(
         mArtifactSources,
       ),
       'Models catalog lineage output stays byte-unchanged for models not using artifact sources:',

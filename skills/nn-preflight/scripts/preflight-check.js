@@ -53,9 +53,9 @@ const LEGACY_STATE_FILE = path.join(os.homedir(), '.agents', 'skills-state.json'
  * fallback. When both fail, upgrade detection degrades to offline.
  */
 const DEFAULT_TEMPLATE_CATALOG_URL =
-  'https://cognnitive.com/innfo/templates/catalog.json';
+  'https://cognnitive.com/innfo/blueprints/catalog.json';
 const FALLBACK_TEMPLATE_CATALOG_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/catalog.json';
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json';
 
 /**
  * Canonical channel freshness summary published by CI on every push to main.
@@ -109,7 +109,7 @@ function loadState(file) {
       return {
         manifest: data.manifest || DEFAULT_MANIFEST_URL,
         skills: data.skills || {},
-        templates: data.templates || {},
+        blueprints: data.blueprints || {},
         mcp: data.mcp || {},
         projections: data.projections || {},
       };
@@ -126,7 +126,7 @@ function loadState(file) {
       return {
         manifest: legacyData.manifest || DEFAULT_MANIFEST_URL,
         skills: legacyData.skills || {},
-        templates: {},
+        blueprints: {},
         mcp: {},
         projections: {},
       };
@@ -135,7 +135,7 @@ function loadState(file) {
     }
   }
 
-  return { manifest: DEFAULT_MANIFEST_URL, skills: {}, templates: {}, mcp: {}, projections: {} };
+  return { manifest: DEFAULT_MANIFEST_URL, skills: {}, blueprints: {}, mcp: {}, projections: {} };
 }
 
 function parseManifest(text) {
@@ -147,7 +147,7 @@ function parseManifest(text) {
   return {
     version: bootstrap.version || 'unknown',
     skills: Array.isArray(bootstrap.skills) ? bootstrap.skills : [],
-    templates: Array.isArray(bootstrap.templates) ? bootstrap.templates : [],
+    blueprints: Array.isArray(bootstrap.blueprints) ? bootstrap.blueprints : [],
     // Exposes the published `console-assets` block so its resolved `ref` can be
     // compared against the freshness JSON's `innfo-console` pin, the same way
     // `skills`/`templates` already are (Defect 1 fix).
@@ -554,7 +554,7 @@ function scanWorkspaceSources(workspaceDir) {
 /* ── Template Composition & Semantic AST Validator ─────────────────── */
 
 /**
- * Inspects Level 2 template compositions across specs/templates and specs/.
+ * Inspects Level 2 blueprint compositions across specs/bluepriNNts and specs/.
  * Evaluates:
  *   1. Resolvability of all `includes:` definitions on disk.
  *   2. Absence of cyclic includes.
@@ -1127,15 +1127,15 @@ async function runCheck(options = {}) {
     // (e.g. zero drift), per the published tracked-subsystem prefixes.
     const SUBSYSTEM_PATH_LABELS = {
       skills: 'skills/',
-      templates: 'iNNfo/specs/templates/',
+      templates: 'iNNfo/specs/bluepriNNts/',
       'innfo-mcp': 'iNNfo/packages/innfo-mcp/',
-      'innfo-console': 'iNNfo/specs/templates/console/',
+      'innfo-console': 'iNNfo/specs/bluepriNNts/console/',
     };
     const MAX_FILES_SHOWN = 3;
 
     const targets = [
       { key: 'skills', manifestRef: (manifest.skills.find(s => s && s.ref) || {}).ref },
-      { key: 'templates', manifestRef: (manifest.templates.find(t => t && t.ref) || {}).ref },
+      { key: 'templates', manifestRef: (manifest.blueprints.find(t => t && t.ref) || {}).ref },
       { key: 'innfo-mcp', manifestRef: innfoMcpEntry ? innfoMcpEntry.ref : undefined },
       { key: 'innfo-console', manifestRef: innfoConsoleEntry ? innfoConsoleEntry.ref : undefined },
     ];
@@ -1253,12 +1253,12 @@ async function runCheck(options = {}) {
   }
 
   // 4. Audit Templates
-  for (const tmpl of manifest.templates) {
+  for (const tmpl of manifest.blueprints) {
     results.summary.templatesTotal++;
     const fileName = tmpl.name.endsWith('.md') ? tmpl.name : `${tmpl.name}.md`;
     const tmplPath = path.join(templatesDir, fileName);
     const tmplExists = fs.existsSync(tmplPath) || fs.existsSync(path.join(templatesDir, tmpl.name));
-    const recorded = state.templates[tmpl.name];
+    const recorded = state.blueprints[tmpl.name];
     let tmplStatus = 'up-to-date';
 
     if (!tmplExists) {

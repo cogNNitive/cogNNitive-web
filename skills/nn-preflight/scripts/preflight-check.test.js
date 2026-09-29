@@ -90,7 +90,7 @@ agent-bootstrap:
       mcp:
         - name: innfo-mcp
           version: "0.2.4"
-  templates:
+  blueprints:
     - name: workspace_spec_NN
       commit: "3bd4501e75915e8f2365fd7c547d9384a3e0c837"
       version: "V_0-2-0"
@@ -102,7 +102,7 @@ agent-bootstrap:
     assert.strictEqual(parsed.skills.length, 1);
     assert.strictEqual(parsed.skills[0].name, 'nn-innfo');
     assert.strictEqual(parsed.skills[0].mcp[0].name, 'innfo-mcp');
-    assert.strictEqual(parsed.templates.length, 1);
+    assert.strictEqual(parsed.blueprints.length, 1);
     console.log('✔ parseManifest extracts skills, mcp, and templates correctly');
   }
 
@@ -118,7 +118,7 @@ agent-bootstrap:
       mcp:
         - name: innfo-mcp
           version: "0.2.4"
-  templates:
+  blueprints:
     - name: workspace_spec_NN
       commit: "2222222222222222222222222222222222222222"
       version: "V_0-2-0"
@@ -143,7 +143,7 @@ agent-bootstrap:
         skills: {
           'nn-innfo': { commit: '1111111111111111111111111111111111111111', version: 'V_0-1-0' },
         },
-        templates: {
+        blueprints: {
           workspace_spec_NN: { commit: '2222222222222222222222222222222222222222', version: 'V_0-2-0' },
         },
         mcp: {
@@ -176,7 +176,7 @@ agent-bootstrap:
     - name: nn-innfo
       commit: "latest-commit-sha-99999999999999999999999"
       version: "V_0-2-0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -220,7 +220,7 @@ agent-bootstrap:
     - name: nn-innfo
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -263,7 +263,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -309,7 +309,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const localContent = `---\nspec_url: "${''}"\n---\n# IDENTICAL CONTENT\n`;
@@ -355,7 +355,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(emptyManifest);
@@ -398,7 +398,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -442,7 +442,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -486,7 +486,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -525,7 +525,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -567,7 +567,7 @@ agent-bootstrap:
     - name: nn-innfo
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -790,7 +790,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(emptyManifest);
@@ -827,7 +827,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(emptyManifest);
@@ -873,15 +873,15 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const catalog = JSON.stringify({
-      templates: {
+      blueprints: {
         business: {
           name: 'business',
           adopted: 'V_0-2-0',
-          versions: [{ template_version: 'V_0-1-0' }, { template_version: 'V_0-2-0' }],
+          versions: [{ blueprint_version: 'V_0-1-0' }, { blueprint_version: 'V_0-2-0' }],
         },
       },
     });
@@ -895,7 +895,7 @@ agent-bootstrap:
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(
         path.join(ws, 'models', 'Old_V_0-1-0_business_NN.md'),
-        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-1-0_NN.md"\nmodel_version: "V_0-1-0"\n---\n',
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
         'utf-8',
       );
 
@@ -928,7 +928,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({ '/manifest.md': emptyManifest });
@@ -938,7 +938,7 @@ agent-bootstrap:
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(
         path.join(ws, 'models', 'Old_V_0-1-0_business_NN.md'),
-        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-1-0_NN.md"\nmodel_version: "V_0-1-0"\n---\n',
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
         'utf-8',
       );
 
@@ -1116,7 +1116,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({ '/manifest.md': emptyManifest });
@@ -1157,7 +1157,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const freshnessContent = {
@@ -1235,7 +1235,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     // freshness route returns 500 error
@@ -1286,7 +1286,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.1"
-  templates: []
+  blueprints: []
 ---
 `;
     const staleFreshnessContent = {
@@ -1347,7 +1347,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -1393,7 +1393,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates:
+  blueprints:
     - name: workspace_spec_NN
       commit: "2222222222222222222222222222222222222222"
       version: "V_0-2-0"
@@ -1412,11 +1412,11 @@ agent-bootstrap:
           commitsSincePin: 0,
           filesTouched: [],
         },
-        templates: {
+        blueprints: {
           subsystem: 'templates',
           pinnedTag: 'templates-v0.10.0',
           pinnedTagDate: '2026-09-16T08:41:12Z',
-          paths: ['iNNfo/specs/templates/'],
+          paths: ['iNNfo/specs/bluepriNNts/'],
           commitsSincePin: null,
           reason: 'unresolved',
           filesTouched: [],
@@ -1441,7 +1441,7 @@ agent-bootstrap:
         skills: {
           'nn-innfo': { commit: '1111111111111111111111111111111111111111', version: 'V_0-1-0' },
         },
-        templates: {
+        blueprints: {
           workspace_spec_NN: { commit: '2222222222222222222222222222222222222222', version: 'V_0-2-0' },
         },
       }));
@@ -1519,9 +1519,9 @@ agent-bootstrap:
         - name: innfo-mcp
           version: "0.9.0"
           ref: "innfo-mcp-v0.9.0"
-  templates: []
+  blueprints: []
   console-assets:
-    - file: "iNNfo/specs/templates/console/innfo-console.bundle.js"
+    - file: "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"
       version: "0.2.0"
       ref: "innfo-console-v0.2.0"
 ---
@@ -1549,7 +1549,7 @@ agent-bootstrap:
           pinnedTag: 'innfo-console-v0.2.0',
           pinnedTagDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           commitsSincePin: 1,
-          filesTouched: ['iNNfo/specs/templates/console/innfo-console.bundle.js'],
+          filesTouched: ['iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js'],
         },
       },
     };
@@ -1623,7 +1623,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1644,7 +1644,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,
@@ -1689,7 +1689,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1710,7 +1710,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           opencode: {
             dir: opencodeSkillsDir,
@@ -1756,7 +1756,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1781,7 +1781,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,
@@ -1827,7 +1827,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1844,7 +1844,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,
@@ -1896,7 +1896,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: 'http://127.0.0.1:9999/manifest.md',
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,

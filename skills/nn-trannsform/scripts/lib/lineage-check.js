@@ -15,8 +15,8 @@ const indexLib = require('./workspace-index');
  *
  * Warnings:
  *  - a `## NN Artifacts:` entry whose `derived_from` names a model that does
- *    exist under `models/`, but whose recorded `model_version` differs from
- *    the model's current `model_version` (artifact-staleness diagnostic).
+ *    exist under `models/`, but whose recorded `knowledge_version` differs from
+ *    the model's current `knowledge_version` (artifact-staleness diagnostic).
  *    This is a distinct, non-escalating diagnostic: it never becomes an
  *    error and never causes a non-zero exit on its own (see
  *    `scripts/index.js`, which already exits 0 when only warnings exist).
@@ -51,14 +51,14 @@ function checkLineage(projectDir) {
     const nameLine = blk.split(/\r?\n/, 1)[0].trim();
     for (const ref of df[1].split(',').map((s) => s.trim()).filter(Boolean)) {
       const ok = models.some(
-        (m) => ref === m.name || (m.model_version && ref === `${m.name} ${m.model_version}`),
+        (m) => ref === m.name || (m.knowledge_version && ref === `${m.name} ${m.knowledge_version}`),
       );
       if (ok) continue;
 
       const known = models.filter((m) => ref.startsWith(`${m.name} `));
       if (known.length > 0) {
         const versions = known
-          .map((m) => m.model_version || 'no model_version')
+          .map((m) => m.knowledge_version || 'no knowledge_version')
           .join(', ');
         const knownName = known[0].name;
         warnings.push(
