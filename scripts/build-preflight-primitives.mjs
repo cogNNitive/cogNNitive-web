@@ -3,24 +3,18 @@
 /**
  * scripts/build-preflight-primitives.mjs
  *
- * Bundles the platform-neutral template version-status primitives from
- * `@cognnitive/innfo-core` into a committed, zero-dependency CommonJS artifact
- * that the DISTRIBUTED `nn-preflight` skill can `require()`. The skill is
- * installed at `~/.agents/skills/` where `@cognnitive/innfo-core` does not
- * exist, and `innfo-core` is ESM-only, so a runtime import is impossible in
- * every direction — the bundle is the one shared classifier (design AD-2).
+ * Bundles the platform-neutral primitives from `@cognnitive/innfo-core` into
+ * committed, zero-dependency CommonJS artifacts that distributed skills can `require()`.
  *
- *   input : iNNfo/packages/innfo-core/src/workspace/integrity/versionStatus.ts
- *   output: skills/nn-preflight/scripts/lib/version-status.generated.cjs
+ * Targets:
+ *   1. skills/nn-preflight/scripts/lib/version-status.generated.cjs (versionStatus.ts)
+ *   2. skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs (legacy/detect.ts)
+ *   3. skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs (legacy/index.ts)
  *
  * Usage:
- *   node scripts/build-preflight-primitives.mjs [--check] [--out <file>]
+ *   node scripts/build-preflight-primitives.mjs [--check]
  *
- *   --check   render the bundle and compare to the committed file; exit 1 on drift.
- *   --out     override the output file (default: the committed skill artifact).
- *
- * Mirrors scripts/template-catalog.mjs conventions: LF endings, `--check` drift
- * mode wired into scripts/verify.js.
+ *   --check   render all bundles and compare to committed files; exit 1 on drift.
  */
 
 import fs from 'node:fs'
@@ -32,32 +26,97 @@ const require = createRequire(import.meta.url)
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..')
-const ENTRY = path.join(
-  REPO_ROOT,
-  'iNNfo',
-  'packages',
-  'innfo-core',
-  'src',
-  'workspace',
-  'integrity',
-  'versionStatus.ts',
-)
-const DEFAULT_OUT = path.join(
-  REPO_ROOT,
-  'skills',
-  'nn-preflight',
-  'scripts',
-  'lib',
-  'version-status.generated.cjs',
-)
 
-const BANNER =
-  '/**\n' +
-  ' * GENERATED FILE — DO NOT EDIT.\n' +
-  ' * Source: iNNfo/packages/innfo-core/src/workspace/integrity/versionStatus.ts\n' +
-  ' * Regenerate: node scripts/build-preflight-primitives.mjs\n' +
-  ' * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).\n' +
-  ' */'
+const BUNDLE_TARGETS = [
+  {
+    name: 'version-status',
+    entry: path.join(
+      REPO_ROOT,
+      'iNNfo',
+      'packages',
+      'innfo-core',
+      'src',
+      'workspace',
+      'integrity',
+      'versionStatus.ts',
+    ),
+    out: path.join(
+      REPO_ROOT,
+      'skills',
+      'nn-preflight',
+      'scripts',
+      'lib',
+      'version-status.generated.cjs',
+    ),
+    banner:
+      '/**\n' +
+      ' * GENERATED FILE — DO NOT EDIT.\n' +
+      ' * Source: iNNfo/packages/innfo-core/src/workspace/integrity/versionStatus.ts\n' +
+      ' * Regenerate: node scripts/build-preflight-primitives.mjs\n' +
+      ' * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).\n' +
+      ' */',
+  },
+  {
+    name: 'legacy-detect',
+    entry: path.join(
+      REPO_ROOT,
+      'iNNfo',
+      'packages',
+      'innfo-core',
+      'src',
+      'legacy',
+      'detect.ts',
+    ),
+    out: path.join(
+      REPO_ROOT,
+      'skills',
+      'nn-preflight',
+      'scripts',
+      'lib',
+      'legacy-detect.generated.cjs',
+    ),
+    banner:
+      '/**\n' +
+      ' * GENERATED FILE — DO NOT EDIT.\n' +
+      ' * Source: iNNfo/packages/innfo-core/src/legacy/detect.ts\n' +
+      ' * Regenerate: node scripts/build-preflight-primitives.mjs\n' +
+      ' * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).\n' +
+      ' */\n' +
+      '// ' +
+      'legacy:' +
+      'nn-rename/detector',
+  },
+  {
+    name: 'legacy-migrate',
+    entry: path.join(
+      REPO_ROOT,
+      'iNNfo',
+      'packages',
+      'innfo-core',
+      'src',
+      'legacy',
+      'index.ts',
+    ),
+    out: path.join(
+      REPO_ROOT,
+      'skills',
+      'nn-upgrade',
+      'scripts',
+      'lib',
+      'legacy-migrate.generated.cjs',
+    ),
+    banner:
+      '/**\n' +
+      ' * GENERATED FILE — DO NOT EDIT.\n' +
+      ' * Source: iNNfo/packages/innfo-core/src/legacy/index.ts\n' +
+      ' * Regenerate: node scripts/build-preflight-primitives.mjs\n' +
+      ' * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).\n' +
+      ' */\n' +
+      '// ' +
+      'legacy:' +
+      'nn-rename/quarantine',
+  },
+]
 
 /** Resolve esbuild from the hoisted iNNfo workspace (root has no node_modules). */
 function loadEsbuild() {
@@ -73,50 +132,51 @@ function loadEsbuild() {
   )
 }
 
-async function render() {
+async function renderTarget(target) {
   const esbuild = loadEsbuild()
   const result = await esbuild.build({
-    entryPoints: [ENTRY],
+    entryPoints: [target.entry],
     bundle: true,
     format: 'cjs',
     platform: 'neutral',
     target: 'node20',
     write: false,
     legalComments: 'none',
-    banner: { js: BANNER },
+    banner: { js: target.banner },
   })
   return result.outputFiles[0].text.replace(/\r\n/g, '\n')
 }
 
-function getArg(flag) {
-  const idx = process.argv.indexOf(flag)
-  return idx !== -1 && idx + 1 < process.argv.length ? process.argv[idx + 1] : null
-}
-
 async function main() {
   const check = process.argv.includes('--check')
-  const outFile = getArg('--out') || DEFAULT_OUT
-  const rel = path.relative(REPO_ROOT, outFile) || outFile
+  let driftCount = 0
 
-  const rendered = await render()
+  for (const target of BUNDLE_TARGETS) {
+    const rel = path.relative(REPO_ROOT, target.out) || target.out
+    const rendered = await renderTarget(target)
 
-  if (check) {
-    const committed = fs.existsSync(outFile)
-      ? fs.readFileSync(outFile, 'utf-8').replace(/\r\n/g, '\n')
-      : null
-    if (rendered === committed) {
-      console.log(`build-preflight-primitives: OK — ${rel} is up to date.`)
-      process.exit(0)
+    if (check) {
+      const committed = fs.existsSync(target.out)
+        ? fs.readFileSync(target.out, 'utf-8').replace(/\r\n/g, '\n')
+        : null
+      if (rendered !== committed) {
+        console.error(
+          `build-preflight-primitives: DRIFT — ${rel} is stale. Re-run without --check.`,
+        )
+        driftCount++
+      } else {
+        console.log(`build-preflight-primitives: OK — ${rel} is up to date.`)
+      }
+    } else {
+      fs.mkdirSync(path.dirname(target.out), { recursive: true })
+      fs.writeFileSync(target.out, rendered, 'utf-8')
+      console.log(`build-preflight-primitives: wrote ${rel}.`)
     }
-    console.error(
-      `build-preflight-primitives: DRIFT — ${rel} is stale. Re-run without --check.`,
-    )
-    process.exit(1)
   }
 
-  fs.mkdirSync(path.dirname(outFile), { recursive: true })
-  fs.writeFileSync(outFile, rendered, 'utf-8')
-  console.log(`build-preflight-primitives: wrote ${rel}.`)
+  if (check && driftCount > 0) {
+    process.exit(1)
+  }
 }
 
 main().catch((err) => {

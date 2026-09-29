@@ -114,5 +114,32 @@
 - `node scripts/lib/legacy-ledger-guard.js`: **5 entries, 8 code markers validated**.
 - `node scripts/verify.js`: **PASS** (All deterministic pre-checks passed).
 - `node scripts/check-integrity.js`: **PASS** (ALL INTEGRITY GATES PASSED).
+- Committed on `dev`: `b5c0dcb1`.
+
+---
+
+## Slice S5: Migrator Engine and nn-upgrade Flow (Tracker) [domain-layout-migration, legacy-import-as-source, workspace-template-upgrade]
+
+### Completed Tasks
+- [x] **6.1**: Created tracker branch `feat/nn-rename-tracker` from `dev` and audited tree.
+- [x] **6.2**: RED: Extended `scripts/build-preflight-primitives.test.mjs` verifying 3 bundles (`version-status`, `legacy-detect`, `legacy-migrate`) and drift detection.
+- [x] **6.3**: GREEN: Generalized `scripts/build-preflight-primitives.mjs` to multi-entry, emitting `skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs` and `skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs` with embedded ledger markers in banners.
+- [x] **6.4**: Added ledger entries for both generated bundles in `legacy-ledger.yaml`; verified 1:1 marker guard.
+- [x] **6.5**: RED: Created `skills/nn-upgrade/scripts/migrate-domain.test.js` covering dry-run, `--apply --plan-hash` mismatch abort, double run noop, interrupted run with `--restore`, restore with SHA-256 equality, custom template language-only, and malformed document blocking.
+- [x] **6.6**: RED: Tested scenario failure handling, consent enforcement, `path::` reference rewriting, and JSON feedback key migrations.
+- [x] **6.7**: RED: Tested schema mapping question rules and non-interactive automatic application for additive changes.
+- [x] **6.8**: GREEN: Created `skills/nn-upgrade/scripts/migrate-domain.js` with full detection, dry-run reporting, hash validation, full-tree backup, in-place journaling (`journal.json`), restore, and injected validator adapter.
+- [x] **6.9**: GREEN: Updated `skills/nn-upgrade/scripts/backup-workspace.js` and `backup-workspace.test.js` to full-tree backup including all root documents (`domaiNN_NN.md`, `workspace_NN.md`, etc.) with `manifest.sha256`.
+- [x] **6.10**: GREEN: Implemented `--import-as-source --new-domain-dir <dir>` in `migrate-domain.js` creating clean domaiNN scaffold with byte-identical legacy tree under `sources/legacy/` and lineage documentation.
+- [x] **6.11**: Updated `skills/nn-upgrade/SKILL.md` documenting Flow A (Domain Layout Migration), Flow B (bluepriNNt Version Upgrade), min-MCP gate check, and recovery exits.
+- [x] **6.12**: Updated `docs/skills/documentation/skills/nn-upgrade.md` and verified tracker child minimum (typecheck clean, isolated empty USERPROFILE/HOME test suite runs green).
+
+### Gate & Test Evidence (S5)
+- `node scripts/build-preflight-primitives.test.mjs`: **3/3 passed**.
+- `node skills/nn-upgrade/scripts/migrate-domain.test.js`: **8/8 passed**.
+- `node skills/nn-upgrade/scripts/backup-workspace.test.js`: **5/5 passed**.
+- `npm run typecheck`: **PASS** (core build, mcp typecheck, editor typecheck clean).
+- Isolated environment run (`USERPROFILE=TEMP` / `HOME=TEMP`): **PASS** (100% green).
+- `node scripts/lib/legacy-ledger-guard.js`: **5 entries, 10 code markers validated**.
 
 

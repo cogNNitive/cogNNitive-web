@@ -157,19 +157,19 @@ Note: the sdd-tasks 530-word budget cannot hold a 17-section, strict-TDD plan; t
 
 ## 6. S5 Migrator engine and nn-upgrade flow (tracker) [domain-layout-migration, legacy-import-as-source, workspace-template-upgrade]
 
-- [ ] 6.1 Create tracker branch `feat/nn-rename-tracker` from `dev` after 1.1 approval; re-audit the shared tree first.
-- [ ] 6.2 RED: extend the `build-preflight-primitives` test/`--check` so it expects two extra outputs; verify.js step 5 must go red when either bundle drifts.
-- [ ] 6.3 GREEN: generalise `scripts/build-preflight-primitives.mjs` to multi-entry; emit `skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs` and `skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs`, each carrying its ledger marker in the build BANNER (so the drift check covers it); extend verify.js step 5.
-- [ ] 6.4 Add ledger entries for both generated bundles.
-- [ ] 6.5 RED: `skills/nn-upgrade/scripts/migrate-domain.test.js` on a temp copy: dry-run writes nothing, `--apply --plan-hash` mismatch aborts, double run is `noop`, interrupted run (`failAfter` hook) offers `--restore`, restore with sha256 equality, domain without local specs, custom template language-only, invalid kNNowledge blocks. Uses the S4 minimal fixture targets and an injected stub validator.
-- [ ] 6.6 RED: migrator scenario tests: automated backup failure stops the run and shows the manual fallback (no domain write until confirmed); consent declined writes, moves and deletes nothing; `path::` references are rewritten so they still resolve; feedback JSON and `export-meta` keys migrate.
-- [ ] 6.7 RED: mapping-question rules: an additive schema change asks nothing; a removed, renamed or re-typed definition in use asks before that document changes.
-- [ ] 6.8 GREEN: create `skills/nn-upgrade/scripts/migrate-domain.js` (detect, dry-run, consent, full-tree out-of-tree backup + sha256 manifest verified, in-place apply with `journal.json`, restore); it owns all I/O and supplies the injected validator adapter.
-- [ ] 6.9 RED then GREEN: fix `skills/nn-upgrade/scripts/backup-workspace.js` to the same full-tree backup (root docs such as `domaiNN_NN.md` included); test that a root document is present in the backup; the version-upgrade flow uses it.
-- [ ] 6.10 RED then GREEN: import-as-source is offered after a validation failure that restores the domain, and for a bluepriNNt with no schema map, with the identity-loss statement; `--import-as-source --new-domain-dir` scaffolds a domaiNN, copies the legacy tree under `sources/`; test the result is a valid domaiNN with Source/Citation lineage path and the legacy domain is byte-identical; no core code and no ledger entry.
-- [ ] 6.11 Update `skills/nn-upgrade/SKILL.md`: two flows (layout migration, version upgrade), consent order, `legacy-layout` routing, min-MCP gate note, restore and import-as-source exit.
-- [ ] 6.12 Docs: `docs/skills` nn-upgrade page. Run the tracker child minimum (typecheck, S5 tests, `node scripts/verify.js` steps for the new bundles) plus the empty `USERPROFILE`/`HOME` rerun of the nn-upgrade suites. Known-red gates: none expected.
-- [ ] 6.13 Rollback: abandon or revert the tracker child PR; main untouched.
+- [x] 6.1 Create tracker branch `feat/nn-rename-tracker` from `dev` after 1.1 approval; re-audit the shared tree first.
+- [x] 6.2 RED: extend the `build-preflight-primitives` test/`--check` so it expects two extra outputs; verify.js step 5 must go red when either bundle drifts.
+- [x] 6.3 GREEN: generalise `scripts/build-preflight-primitives.mjs` to multi-entry; emit `skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs` and `skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs`, each carrying its ledger marker in the build BANNER (so the drift check covers it); extend verify.js step 5.
+- [x] 6.4 Add ledger entries for both generated bundles.
+- [x] 6.5 RED: `skills/nn-upgrade/scripts/migrate-domain.test.js` on a temp copy: dry-run writes nothing, `--apply --plan-hash` mismatch aborts, double run is `noop`, interrupted run (`failAfter` hook) offers `--restore`, restore with sha256 equality, domain without local specs, custom template language-only, invalid kNNowledge blocks. Uses the S4 minimal fixture targets and an injected stub validator.
+- [x] 6.6 RED: migrator scenario tests: automated backup failure stops the run and shows the manual fallback (no domain write until confirmed); consent declined writes, moves and deletes nothing; `path::` references are rewritten so they still resolve; feedback JSON and `export-meta` keys migrate.
+- [x] 6.7 RED: mapping-question rules: an additive schema change asks nothing; a removed, renamed or re-typed definition in use asks before that document changes.
+- [x] 6.8 GREEN: create `skills/nn-upgrade/scripts/migrate-domain.js` (detect, dry-run, consent, full-tree out-of-tree backup + sha256 manifest verified, in-place apply with `journal.json`, restore); it owns all I/O and supplies the injected validator adapter.
+- [x] 6.9 RED then GREEN: fix `skills/nn-upgrade/scripts/backup-workspace.js` to the same full-tree backup (root docs such as `domaiNN_NN.md` included); test that a root document is present in the backup; the version-upgrade flow uses it.
+- [x] 6.10 RED then GREEN: import-as-source is offered after a validation failure that restores the domain, and for a bluepriNNt with no schema map, with the identity-loss statement; `--import-as-source --new-domain-dir` scaffolds a domaiNN, copies the legacy tree under `sources/`; test the result is a valid domaiNN with Source/Citation lineage path and the legacy domain is byte-identical; no core code and no ledger entry.
+- [x] 6.11 Update `skills/nn-upgrade/SKILL.md`: two flows (layout migration, version upgrade), consent order, `legacy-layout` routing, min-MCP gate note, restore and import-as-source exit.
+- [x] 6.12 Docs: `docs/skills` nn-upgrade page. Run the tracker child minimum (typecheck, S5 tests, `node scripts/verify.js` steps for the new bundles) plus the empty `USERPROFILE`/`HOME` rerun of the nn-upgrade suites. Known-red gates: none expected.
+- [x] 6.13 Rollback: abandon or revert the tracker child PR; main untouched.
 
 ## 7. S6a Core flips to the new language and layout [versioned-document-grammar, workspace-entrypoint, workspace-entrypoint-resolution, workspace-directory-conventions, model-primitive-type, model-scaffold-robustness]
 

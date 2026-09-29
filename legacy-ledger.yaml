@@ -4,6 +4,7 @@ entries:
     what: Legacy quarantine module interface and index
     paths:
       - iNNfo/packages/innfo-core/src/legacy/index.ts
+      - skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs
     why: Core quarantine interface for legacy detection and migration planning
     removal: all-known-domains-migrated + maintainer-sign-off
     owner: 2026-09-29-nn-level-nomenclature-rename
@@ -12,6 +13,7 @@ entries:
     what: Legacy layout detector
     paths:
       - iNNfo/packages/innfo-core/src/legacy/detect.ts
+      - skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs
     why: MCP/editor/preflight must recognise legacy domains
     removal: all-known-domains-migrated + maintainer-sign-off
     owner: 2026-09-29-nn-level-nomenclature-rename

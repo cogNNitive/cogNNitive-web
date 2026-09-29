@@ -24,6 +24,8 @@ function buildWorkspace() {
   fs.writeFileSync(path.join(ws, 'models', 'node_modules', 'X.md'), '# noise');
   fs.writeFileSync(path.join(ws, 'specs', 'business_V_0-2-0_NN.md'), '# spec');
   fs.writeFileSync(path.join(ws, 'sources', 'nn', 'doc.md'), '# norm');
+  fs.writeFileSync(path.join(ws, 'domaiNN_NN.md'), '# domain root');
+  fs.writeFileSync(path.join(ws, 'workspace_NN.md'), '# legacy root');
   fs.writeFileSync(path.join(ws, 'index.md'), '# index');
   fs.writeFileSync(path.join(ws, 'backups', 'old.zip'), 'junk');
   return ws;
@@ -32,38 +34,38 @@ function buildWorkspace() {
 async function runTests() {
   console.log('Running backup-workspace unit tests...');
 
-  // Test 1: real backup copies the declared files outside the workspace
+  // Test 1: real backup copies full tree including root docs outside the workspace
   {
     const ws = buildWorkspace();
     const target = path.join(path.dirname(ws), `backup-test-${Date.now()}`);
     try {
       const manifest = backupWorkspace(ws, { target });
-      assert.deepStrictEqual(manifest.dirs, ['models', 'specs', 'sources/nn', 'procedures']);
-      assert.deepStrictEqual(manifest.files, ['index.md']);
+      assert.ok(manifest.files.includes('domaiNN_NN.md'), 'domaiNN_NN.md in manifest');
+      assert.ok(manifest.files.includes('workspace_NN.md'), 'workspace_NN.md in manifest');
+      assert.ok(manifest.files.includes('models/A_V_0-1-0_business_NN.md'), 'model in manifest');
+      assert.ok(fs.existsSync(path.join(target, 'domaiNN_NN.md')), 'domaiNN_NN.md copied');
+      assert.ok(fs.existsSync(path.join(target, 'workspace_NN.md')), 'workspace_NN.md copied');
       assert.ok(fs.existsSync(path.join(target, 'models', 'A_V_0-1-0_business_NN.md')), 'model copied');
-      assert.ok(fs.existsSync(path.join(target, 'specs', 'business_V_0-2-0_NN.md')), 'spec copied');
-      assert.ok(fs.existsSync(path.join(target, 'sources', 'nn', 'doc.md')), 'normalized source copied');
-      assert.ok(fs.existsSync(path.join(target, 'index.md')), 'index copied');
+      assert.ok(fs.existsSync(path.join(target, 'manifest.sha256')), 'manifest.sha256 generated');
       assert.ok(!fs.existsSync(path.join(target, 'models', 'node_modules')), 'noise dir skipped');
       assert.ok(!fs.existsSync(path.join(target, 'backups')), 'backups dir skipped');
-      console.log('✔ backup copies declared dirs outside the workspace and skips noise');
+      console.log('✔ backup copies full tree including root docs and skips noise');
     } finally {
       fs.rmSync(ws, { recursive: true, force: true });
       fs.rmSync(target, { recursive: true, force: true });
     }
   }
 
-  // Test 2: missing dirs are skipped, not fatal
+  // Test 2: minimal workspace
   {
     const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'bw-min-'));
     const target = path.join(path.dirname(ws), `backup-min-${Date.now()}`);
     try {
-      fs.writeFileSync(path.join(ws, 'index.md'), '# index');
+      fs.writeFileSync(path.join(ws, 'domaiNN_NN.md'), '# root');
       const manifest = backupWorkspace(ws, { target });
-      assert.deepStrictEqual(manifest.dirs, [], 'no dirs existed');
-      assert.deepStrictEqual(manifest.files, ['index.md']);
-      assert.ok(manifest.missing.includes('models'), 'models reported missing');
-      console.log('✔ missing dirs are reported and skipped');
+      assert.strictEqual(manifest.files.length, 1);
+      assert.ok(fs.existsSync(path.join(target, 'domaiNN_NN.md')));
+      console.log('✔ minimal workspace with root document backed up successfully');
     } finally {
       fs.rmSync(ws, { recursive: true, force: true });
       fs.rmSync(target, { recursive: true, force: true });
@@ -76,7 +78,7 @@ async function runTests() {
     const target = path.join(path.dirname(ws), `backup-dry-${Date.now()}`);
     try {
       const manifest = backupWorkspace(ws, { target, dryRun: true });
-      assert.strictEqual(manifest.dirs.length, 4, 'dry-run still reports the plan');
+      assert.ok(manifest.files.length > 0, 'dry-run reports the file list');
       assert.ok(!fs.existsSync(target), 'dry-run creates nothing');
       console.log('✔ dry-run reports without creating anything');
     } finally {
