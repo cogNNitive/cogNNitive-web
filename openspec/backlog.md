@@ -660,3 +660,47 @@ that check succeeds. Full research write-up:
 **Suggested trigger:** `/sdd-explore opencode-web-onboarding-hint` (after the PATH/binary
 question above is verified empirically).
 
+
+---
+
+## `chore/third-party-license-compliance` — audit that every dependency and vendored component honours its license
+
+**Type:** chore / legal · **Size:** medium · **Status:** someday-maybe
+
+**Why:** nothing checks that the libraries and third-party code incorporated into the
+monorepo are used within the terms of their licenses. Two gaps make this impossible
+today: the root `package.json` declares no `license` field and the repo has no `LICENSE`
+file, so there is no project license to check dependencies against; and part of the
+third-party code is vendored (SHA-pinned CDN bundles, console assets) rather than
+installed, so no manifest-based scanner sees it.
+
+**Behaviour (as requested):** a repeatable check that lists every third-party component
+(npm workspaces under `iNNfo/packages/*` and `iNNfo/apps/*`, `skills/nn-trannsform`'s own
+`package.json`, and vendored files), classifies each license, flags anything outside an
+explicit allow/deny/review policy, and produces an attribution file that includes the
+copyright notice and license text MIT/BSD/Apache require (not just package names).
+
+**Prerequisite (blocks starting this):** the maintainer picks the project's own license
+and records it (root `package.json` `license` + `LICENSE` file). The allow/deny policy
+derives from it.
+
+**Evaluated and rejected (2026-09-29):** the `checking-license-compliance` agent skill
+(`jeremylongshore/claude-code-plugins-plus-skills`, penetration-tester plugin). Its
+script does not implement what its SKILL.md advertises (`INCOMPATIBLE_PAIRS` is defined
+but never used; no source-header or direct/transitive analysis); it classifies only the
+first term of an SPDX expression, so `MIT AND GPL-3.0` passes as permissive; with no venv
+it audits the machine's global Python site-packages; it skips nested `node_modules`
+(non-hoisted versions) and workspace-local `node_modules`; it does not separate dev from
+production dependencies; its NOTICE lists names only; and it depends on the plugin's
+`lib/` package. Other directory skills found (`license-compliance-auditor` by jorgealves,
+GPL-3.0, 2 commits; a5c-ai `license-compliance-checker`; a Snyk-based one needing an
+account) were not deeper-reviewed.
+
+**Approach (open):** prefer mature tooling wrapped in a small repo-local check over an
+LLM-driven skill — e.g. `license-checker-rseidelsohn --production` with `--onlyAllow` as
+a CI gate for npm, plus a hand-maintained `THIRD_PARTY.md` inventory for vendored code
+(a file scanner such as ScanCode or a Syft SBOM is the alternative if the inventory
+drifts). Mind the CI Node pin and `engine-strict=true` when adding any dev dependency.
+
+**Suggested trigger:** `/sdd-explore third-party-license-compliance` (after the project
+license is chosen).
