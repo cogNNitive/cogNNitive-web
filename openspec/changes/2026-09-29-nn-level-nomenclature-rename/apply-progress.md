@@ -205,9 +205,15 @@
 ### Completed
 - [x] **15.1-15.4**: created `scripts/lib/legacy-write-guard.js` (token-based; scope `iNNfo/packages/*/src/**`, `iNNfo/apps/*/src/**`, `scripts/**` minus tests, `skills/*/scripts/**`; excludes docs/tests/openspec/cdn/frozen `_V_`; allowlist with mandatory reason; Pages path carve-out by lookbehind) + `scripts/lib/legacy-write-guard.test.js` (9 token cases, scope exclusions, allowlist, Pages allowance, no-reason failure, clean pass) — **tests green**.
 
-### Blocked (not committed wired)
-- [ ] **15.5**: the guard reports retired tokens in the real tree. Progress: **`scripts/**` is now CLEAN (0 hits)** after commit `25cdc055` (`scripts/**` purge). Remaining **255 hits**: `innfo-core/src/schema/canonical-registry.ts` 90 (embedded spec copies), `innfo-core` (rest) ~35, `innfo-mcp` 37, `skills/nn-trannsform/scripts` 23, `innfo-editor` 9, `skills/nn-preflight/scripts` 7. These are unfinished S6a/S6b/S6c (core/mcp/editor) and S8 (nn-trannsform/nn-preflight); nn-trannsform is a real behaviour change (`model_version`->`knowledge_version`, `source_model_version`->`source_knowledge_version`). The guard is deliberately **NOT wired into `verify.js`** yet (task 15.5 requires a green tree); wire it as step 15 once the cleanup lands.
-- [ ] **15.6**: contributor doc.
+### 15.5 DONE — tree is clean and the guard is wired
+- [x] **15.5**: runtime token cleanup complete — guard reports **0 hits, ok=true**.
+  - `scripts/**` purged (`25cdc055`); `skills/nn-preflight` + `skills/nn-trannsform` (`2e35b86f`); `innfo-core` + `innfo-mcp` runtime aligned (`7ba6ddf6`, mcp aliases removed); `innfo-editor` (`a55cf3aa`); `canonical-registry.ts` embedded copies + `verify.js` step 15 (`27bbde9d`).
+  - Allowlist (each with a reason): quarantine module, generated bundles, `scripts/migrate-spec-urls.mjs` (historical codemod), `nn-trannsform` provenance (`_workspace_NN.md` legacy record), `innfo-core/validator/content.ts` (V_0-3-0 legacy-key rejection), `canonical-registry.ts` (offline fallback + legacy alias maps). Token carve-outs: `innfo/blueprints/` (Pages) and lowercase `innfo/specs/templates` (registry legacy aliases).
+  - Wired as **step 15** in `scripts/verify.js`.
+- [ ] **15.6**: contributor doc (pending).
+
+### Known-red after the token cleanup (S9a/S9b scope, not regressions of the cleanup)
+- `innfo-core` suite ~208 failed / 508 passed; `innfo-mcp` ~8 failed / 290 passed; `innfo-editor` ~41 failed / 665 passed. The failures are tests whose inline fixtures/real fixtures still use the retired keys/paths (`model_version`, `target_template`, `specs/templates`), plus resolver layout semantics — the plan migrates real fixtures in S9a/S9b and the unit-test fixtures alongside their code.
 
 ## Remaining after S7/S10
 - **S8**: `skills/nn-preflight/scripts/{preflight-check,upgrade-check}.js` (new keys, `--blueprints-dir`, catalog URLs, `min_version`), `scripts/skills-manager.js` + `lib/skills-commands.js`, skill frontmatter `bundled_templates` -> `bundled_blueprints`, `nn-workspace-git` -> `nn-domain-git`, `innfo-mcp` 0.12.0 bump via the derived-version flow (needs the CDN/CDN-tag path).
