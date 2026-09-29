@@ -348,10 +348,10 @@ function getModelInfo(rootId: string): { baseName: string; version: SemVer } {
     try {
       const fm = parseFrontmatter(rootNode.rawContent)
       if (fm?.title) baseName = fm.title
-      if (typeof fm?.model_version === 'string') {
+      if (typeof fm?.knowledge_version === 'string') {
         const vMatch =
-          fm.model_version.match(/(\d+)\.(\d+)\.(\d+)/) ||
-          fm.model_version.match(/(\d+)-(\d+)-(\d+)/)
+          fm.knowledge_version.match(/(\d+)\.(\d+)\.(\d+)/) ||
+          fm.knowledge_version.match(/(\d+)-(\d+)-(\d+)/)
         if (vMatch) {
           version = { major: Number(vMatch[1]), minor: Number(vMatch[2]), patch: Number(vMatch[3]) }
         }
@@ -420,7 +420,7 @@ const visibleRootIds = computed(() => {
 
   const deduplicatedRoots = Array.from(bestByBaseName.values()).map((v) => v.id)
 
-  // Prioritize primary root (e.g. workspace_NN.md) at index 0 if present
+  // Prioritize primary root (e.g. domaiNN_NN.md) at index 0 if present
   if (topology.primaryRootId && deduplicatedRoots.includes(topology.primaryRootId)) {
     return [
       topology.primaryRootId,

@@ -35,7 +35,7 @@ async function fetchCatalogJson(): Promise<{ catalog: TemplateCatalog | null; so
     const json = (await resp.json()) as unknown
     if (!json || typeof json !== 'object') return { catalog: null, source: 'offline' }
     const catalog = json as TemplateCatalog
-    if (!catalog.templates || typeof catalog.templates !== 'object') {
+    if (!catalog.blueprints || typeof catalog.blueprints !== 'object') {
       return { catalog: null, source: 'offline' }
     }
     return { catalog, source: 'remote' }

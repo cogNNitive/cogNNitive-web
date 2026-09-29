@@ -440,7 +440,7 @@ export async function saveActiveFileWithVersionBump(
   // Update the root node's in-memory frontmatter version
   if (rootNode.rawContent) {
     rootNode.rawContent = rootNode.rawContent.replace(
-      /^(model_version|version):\s*"V_\d+-\d+-\d+"/m,
+      /^(knowledge_version|version):\s*"V_\d+-\d+-\d+"/m,
       `$1: "${versionStr}"`,
     )
   }

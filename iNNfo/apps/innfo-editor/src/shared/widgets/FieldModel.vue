@@ -25,7 +25,6 @@ interface FieldDefinitionLike {
   options?: string[]
   target_concepts?: string[]
   target_blueprint?: string
-  target_template?: string
   [key: string]: unknown
 }
 
@@ -91,7 +90,7 @@ const showCreateAction = computed(
     !props.readonly ||
     (props.readonly &&
       modelMissing.value &&
-      !!(props.fieldDefinition?.target_blueprint || props.fieldDefinition?.target_template)),
+      !!props.fieldDefinition?.target_blueprint),
 )
 
 interface ModelSuggestion {
@@ -165,7 +164,7 @@ function onBlur(): void {
 
 async function handleCreateSubmodel(): Promise<void> {
   const targetTemplate =
-    props.fieldDefinition?.target_blueprint || props.fieldDefinition?.target_template || 'base'
+    props.fieldDefinition?.target_blueprint || 'base'
   const targetNode = props.nodeId ? modelStore.getNode(props.nodeId) : undefined
   const isElement = targetNode?.kind === 'element'
   const elementSlug = isElement
@@ -281,10 +280,10 @@ async function handleCreateSubmodel(): Promise<void> {
         <Plus class="w-3.5 h-3.5 shrink-0" />
         <span>Create & bind new model</span>
         <span
-          v-if="fieldDefinition?.target_template"
+          v-if="fieldDefinition?.target_blueprint"
           class="text-3xs px-1 py-0.2 rounded bg-primary/10 text-primary font-mono ml-0.5"
         >
-          {{ fieldDefinition.target_template }}
+          {{ fieldDefinition.target_blueprint }}
         </span>
       </button>
     </div>

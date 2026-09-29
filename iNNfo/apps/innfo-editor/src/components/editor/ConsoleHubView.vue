@@ -60,7 +60,7 @@ const discoveredModels = computed(() => {
       }
 
       const sourcePath = (node.source?.path || '').toLowerCase()
-      if (sourcePath.endsWith('workspace_nn.md') || sourcePath.endsWith('index.md')) {
+      if (sourcePath.endsWith('domaiNN_NN.md') || sourcePath.endsWith('index.md')) {
         return false
       }
 
@@ -82,7 +82,7 @@ const discoveredModels = computed(() => {
         node?.type ||
         'business'
       const version =
-        (typeof node?.fields?.['model_version']?.value === 'string' ? node.fields['model_version'].value : null) ||
+        (typeof node?.fields?.['knowledge_version']?.value === 'string' ? node.fields['knowledge_version'].value : null) ||
         (node as any)?.version ||
         '1.0.0'
       const desc =
@@ -450,8 +450,8 @@ async function inlineConsoleResources(
         filename,
         `export/${filename}`,
         `artifacts/${filename}`,
-        `specs/templates/console/${filename}`,
-        `innfo/specs/templates/console/${filename}`,
+        `specs/bluepriNNts/console/${filename}`,
+        `innfo/specs/bluepriNNts/console/${filename}`,
       ].filter(Boolean)
 
       for (const candidate of candidatePaths) {
@@ -474,8 +474,8 @@ async function inlineConsoleResources(
     // B. Fallback: Try fetching via local specs endpoint or relative URL
     if (!scriptContent) {
       const fetchUrls = [
-        `/specs/templates/console/${filename}`,
-        `/innfo/specs/templates/console/${filename}`,
+        `/specs/bluepriNNts/console/${filename}`,
+        `/innfo/specs/bluepriNNts/console/${filename}`,
         src.startsWith('http') ? null : src,
       ].filter(Boolean) as string[]
 

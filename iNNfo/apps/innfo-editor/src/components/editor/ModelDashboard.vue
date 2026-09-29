@@ -29,7 +29,7 @@ const modelTitle = computed(() => {
 const modelVersion = computed(() => {
   if (!rootNode.value?.rawContent) return '0.1.0'
   const fm = parseFrontmatter(rootNode.value.rawContent)
-  return ((fm as any)?.model_version || '0.1.0') as string
+  return ((fm as any)?.knowledge_version || '0.1.0') as string
 })
 
 const templateName = computed(() => {

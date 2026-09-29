@@ -104,7 +104,7 @@ const modelName = computed(() => selectedRootNode.value?.name ?? '(unknown model
 
 const modelVersion = computed(() => {
   const node = selectedRootNode.value
-  return (node?.fields?.version?.value ?? node?.fields?.model_version?.value ?? '—') as string
+  return (node?.fields?.version?.value ?? node?.fields?.knowledge_version?.value ?? '—') as string
 })
 
 const getNestedName = (val: unknown): string | undefined =>
@@ -126,14 +126,14 @@ const formatVersion = computed(() => {
 
 const templateName = computed(() => {
   const node = selectedRootNode.value
-  return (node?.fields?.template_name?.value ??
+  return (node?.fields?.blueprint_name?.value ??
     getNestedName(node?.fields?.parent_spec?.value) ??
     '—') as string
 })
 
 const templateVersion = computed(() => {
   const node = selectedRootNode.value
-  return (node?.fields?.template_version?.value ??
+  return (node?.fields?.blueprint_version?.value ??
     getNestedVersion(node?.fields?.parent?.value) ??
     '—') as string
 })
@@ -363,10 +363,10 @@ function formatLog(): string {
       if (!node || !report) continue
 
       const path = node.source?.path ?? ''
-      const mVersion = (node.fields?.version?.value ?? node.fields?.model_version?.value ?? '—') as string
+      const mVersion = (node.fields?.version?.value ?? node.fields?.knowledge_version?.value ?? '—') as string
       const fVersion = (node.fields?.format_version?.value ?? node.fields?.spec_version?.value ?? '0.1.0') as string
-      const tName = (node.fields?.template_name?.value ?? getNestedName(node.fields?.parent_spec?.value) ?? '—') as string
-      const tVersion = (node.fields?.template_version?.value ?? getNestedVersion(node.fields?.parent?.value) ?? '—') as string
+      const tName = (node.fields?.blueprint_name?.value ?? getNestedName(node.fields?.parent_spec?.value) ?? '—') as string
+      const tVersion = (node.fields?.blueprint_version?.value ?? getNestedVersion(node.fields?.parent?.value) ?? '—') as string
 
       lines.push(`## Model: ${m.name} (v${mVersion})`)
       lines.push(`   File:     ${m.fileName}`)
@@ -504,7 +504,7 @@ function formatAiPrompt(): string {
       if (!node || !report) continue
 
       const path = node.source?.path ?? ''
-      const mVersion = (node.fields?.version?.value ?? node.fields?.model_version?.value ?? '—') as string
+      const mVersion = (node.fields?.version?.value ?? node.fields?.knowledge_version?.value ?? '—') as string
 
       const modelChecks = [...report.checks]
       const modelPath = node.source?.path ?? ''

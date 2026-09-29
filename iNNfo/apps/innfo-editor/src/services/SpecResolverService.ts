@@ -139,18 +139,18 @@ async function tryBundledTemplate(
       `/specs/bluepriNNts/${slug}_spec_NN.md`,
       `/specs/bluepriNNts/${cleanName}_NN.md`,
       `/specs/bluepriNNts/${cleanName}.md`,
-      `/specs/templates/${slug}/${cleanName}_NN.md`,
-      `/specs/templates/${slug}/${cleanName}.md`,
-      `/specs/templates/${slug}/spec_NN.md`,
-      `/specs/templates/${slug}_spec_NN.md`,
-      `/specs/templates/${cleanName}_NN.md`,
-      `/specs/templates/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/spec_NN.md`,
+      `/specs/bluepriNNts/${slug}_spec_NN.md`,
+      `/specs/bluepriNNts/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${cleanName}.md`,
       `/specs/${cleanName}_NN.md`,
       `/specs/${cleanName}.md`,
     )
     if (slug === 'workspace' || slug === 'domainn') {
       candidateUrls.push(`/specs/bluepriNNts/domaiNN/spec_NN.md`)
-      candidateUrls.push(`/specs/templates/workspace_spec_NN.md`)
+      candidateUrls.push(`/specs/bluepriNNts/workspace_spec_NN.md`)
     }
   }
 
@@ -240,7 +240,7 @@ async function buildIncludeMap(
  *      the parent name;
  *   2. the `parent_spec.url` itself when it is a local/relative path
  *      (resolved against the workspace handle instead of fetch());
- *   3. dev-only `specs/templates/{name}/` fallback (served by vite);
+ *   3. dev-only `specs/bluepriNNts/{name}/` fallback (served by vite);
  *   4. network fetch, ONLY for http(s) URLs.
  * Extracted so both `resolveParentSpecs` (the post-parse pass) and
  * `warmTemplateCache` (the pre-parse warm-up, C1/AD-04) share one fetch path
@@ -334,7 +334,7 @@ async function fetchTemplateText(
  * `recursiveParse`, into a `lowercased parent_spec.name -> composed TemplateSchema`
  * map. Seeded from `seed` (typically the entrypoint's own `parent_spec`) plus
  * any `parent_spec` discovered on a shallow (root-level only) pass over the
- * handle — a workspace with deeper `type:: model` targets simply warms fewer
+ * handle — a workspace with deeper `type:: knowledge` targets simply warms fewer
  * entries, which is the "cold cache" path AD-04 explicitly allows: it degrades
  * to today's traversal for that node rather than erroring.
  */
@@ -398,7 +398,7 @@ export async function warmTemplateCache(
  *      the parent name or the URL's basename;
  *   2. the `parent_spec.url` itself when it is a local/relative path
  *      (resolved against the workspace handle instead of fetch());
- *   3. dev-only `specs/templates/{name}/` fallback (served by vite);
+ *   3. dev-only `specs/bluepriNNts/{name}/` fallback (served by vite);
  *   4. network fetch, ONLY for http(s) URLs.
  *
  * Locally-resolved and fetched templates are persisted back to `specs/`

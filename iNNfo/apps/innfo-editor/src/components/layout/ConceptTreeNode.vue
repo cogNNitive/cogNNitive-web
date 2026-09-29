@@ -298,7 +298,7 @@ function isModelFieldEntry(key: string, fieldVal: string, conceptDef: any, nType
     return fn === normKey
   })
 
-  if (fieldDef?.type === 'model' || fieldDef?.type === 'submodel' || fieldDef?.target_template) {
+  if (fieldDef?.type === 'model' || fieldDef?.type === 'submodel' || fieldDef?.target_blueprint) {
     return true
   }
 
@@ -375,7 +375,7 @@ const elementSubmodels = computed<ElementSubmodel[]>(() => {
         fieldKey: key,
         submodelId: matchingNode.id,
         submodelName: matchingNode.name || extractModelBasename(clean) || clean,
-        targetTemplate: fieldDef?.target_template,
+        targetTemplate: fieldDef?.target_blueprint,
         path: matchingNode.source?.path || clean,
       })
     }

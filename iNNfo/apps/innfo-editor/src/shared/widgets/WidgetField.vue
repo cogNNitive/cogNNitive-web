@@ -27,7 +27,7 @@ const props = withDefaults(
       type: string
       options?: string[]
       target_concepts?: string[]
-      target_template?: string
+      target_blueprint?: string
       default?: unknown
     }
     readonly?: boolean

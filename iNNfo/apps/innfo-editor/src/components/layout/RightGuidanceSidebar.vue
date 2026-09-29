@@ -322,7 +322,7 @@ function extractVersion(raw: string): string {
     const vMatch = templateSection[1].match(/version:\s*["']([^"'\n]+)["']/)
     if (vMatch) return vMatch[1]
   }
-  const mvMatch = raw.match(/^model_version:\s*["']([^"'\n]+)["']/m)
+  const mvMatch = raw.match(/^knowledge_version:\s*["']([^"'\n]+)["']/m)
   return mvMatch?.[1] ?? ''
 }
 

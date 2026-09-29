@@ -10,7 +10,7 @@ export function isTemplateNode(node: ModelNode | undefined): boolean {
   if (node.rawContent) {
     try {
       const fm = parseFrontmatter(node.rawContent)
-      if (Number(fm?.level) === 3 || fm?.model_version) return false
+      if (Number(fm?.level) === 3 || fm?.knowledge_version) return false
       if (fm?.kind === 'template' || fm?.kind === 'spec') return true
       if (Array.isArray(fm?.concepts) && fm.concepts.length > 0 && !fm?.parent_spec) return true
     } catch {

@@ -496,7 +496,7 @@ export const useModelStore = defineStore('model', () => {
    */
   async function parseFromHandle(handle: DirectoryHandleLike, driver?: ModelDriver): Promise<void> {
     // C1: warm a synchronously-servable template cache BEFORE the parse so
-    // recursiveParse can follow `type:: model` fields (AD-04). A cold/partial
+    // recursiveParse can follow `type:: knowledge` fields (AD-04). A cold/partial
     // cache is not an error — it degrades that node to today's traversal.
     const templateCache = await warmTemplateCache(handle)
     const result = await recursiveParse(handle, driver, {

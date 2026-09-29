@@ -26,7 +26,7 @@ const availableModels = computed(() => {
         try {
           const fm = parseFrontmatter(node.rawContent) as any
           if (fm?.title) title = fm.title
-          if (fm?.model_version) version = fm.model_version
+          if (fm?.knowledge_version) version = fm.knowledge_version
           if (fm?.parent_spec?.name) templateName = fm.parent_spec.name
         } catch {
           /* unparseable frontmatter — fall back to defaults */

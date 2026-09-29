@@ -623,8 +623,8 @@ const modelFileName = computed(() => {
 
 // ── Template Version Notice (D3) ────────────────────────────────────────
 // Passive badge + copyable migration prompt when the model's parent_spec
-// pins an older template_version than the newest one discoverable locally
-// or in the bundled SHIPPED_TEMPLATE_VERSIONS map. Never blocks editing.
+// pins an older blueprint_version than the newest one discoverable locally
+// or in the bundled SHIPPED_blueprint_versionS map. Never blocks editing.
 
 const workspaceHandle = computed(() => workspaceStore.handle ?? undefined)
 

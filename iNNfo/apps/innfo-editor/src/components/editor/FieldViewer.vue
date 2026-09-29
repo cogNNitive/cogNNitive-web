@@ -53,12 +53,12 @@
                 <span>{{ entry.displayValue }}</span>
               </button>
               <span
-                v-if="entry.def.target_template"
+                v-if="entry.def.target_blueprint"
                 class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                :title="`Expected Template: ${entry.def.target_template}`"
+                :title="`Expected Template: ${entry.def.target_blueprint}`"
                 data-testid="model-target-template-badge"
               >
-                {{ entry.def.target_template }}
+                {{ entry.def.target_blueprint }}
               </span>
             </div>
           </template>
@@ -226,7 +226,7 @@ interface FieldEntry {
     type: string
     options?: string[]
     target_concepts?: string[]
-    target_template?: string
+    target_blueprint?: string
   }
   hasValue: boolean
   displayValue: unknown
@@ -251,7 +251,7 @@ const props = withDefaults(
       type: string
       options?: string[]
       target_concepts?: string[]
-      target_template?: string
+      target_blueprint?: string
     }>
     readonly?: boolean
   }>(),

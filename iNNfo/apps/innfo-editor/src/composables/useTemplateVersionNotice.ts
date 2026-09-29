@@ -1,18 +1,18 @@
 /**
  * useTemplateVersionNotice — detects when a model's `parent_spec` pins an
- * older L2 `template_version` than the newest one discoverable, and builds
+ * older L2 `blueprint_version` than the newest one discoverable, and builds
  * the passive D3 migration notice (badge + copyable `innfo:` prompt).
  *
  * Detection (design.md A1): union the versions found by scanning the
  * resolver's own local search dirs (`specs/`, `.specs/`, `.spec-cache/`) for
- * `{slug}_V_*_NN.md` files with the bundled `SHIPPED_TEMPLATE_VERSIONS` map.
+ * `{slug}_V_*_NN.md` files with the bundled `SHIPPED_blueprint_versionS` map.
  * Fires when the highest version found is strictly newer than the version
  * pinned by `parent_spec.name`. Read-only observer — never mutates anything.
  */
 import { ref, type Ref } from 'vue'
 import type { DirectoryHandleLike } from '../model/fs-types'
 import { innfoPrompt } from '../ai-guide/prompt'
-import { SHIPPED_TEMPLATE_VERSIONS } from '../config/samples'
+import { SHIPPED_blueprint_versionS } from '../config/samples'
 
 export interface TemplateVersionNotice {
   current: string
@@ -118,10 +118,10 @@ export function buildMigrationPrompt(opts: {
   const currentName = `${templateSlug}_${currentVersion}`
   const latestName = `${templateSlug}_${latestVersion}`
   return innfoPrompt(
-    `My model "${modelFileName}" pins parent_spec.name "${currentName}" (template_version ` +
+    `My model "${modelFileName}" pins parent_spec.name "${currentName}" (blueprint_version ` +
       `${currentVersion}), but a newer template version is available: "${latestName}" ` +
-      `(template_version ${latestVersion}). Migrate it: create a NEW model file — do NOT edit or ` +
-      `delete "${modelFileName}" — with model_version bumped one MAJOR version. In the new file, ` +
+      `(blueprint_version ${latestVersion}). Migrate it: create a NEW model file — do NOT edit or ` +
+      `delete "${modelFileName}" — with knowledge_version bumped one MAJOR version. In the new file, ` +
       `rewrite parent_spec.name from "${currentName}" to "${latestName}" by replacing only the ` +
       `trailing _V_x-y-z version segment (mirror the parent_spec.name rewrite pattern used for ` +
       `template version bumps; do NOT reuse any operation that deletes the original model or ` +
@@ -157,7 +157,7 @@ export function useTemplateVersionNotice(ctx: UseTemplateVersionNoticeCtx): {
     }
 
     const found: string[] = []
-    const shipped = SHIPPED_TEMPLATE_VERSIONS[parsed.slug]
+    const shipped = SHIPPED_blueprint_versionS[parsed.slug]
     if (shipped) found.push(shipped)
 
     const handle = ctx.handle?.value

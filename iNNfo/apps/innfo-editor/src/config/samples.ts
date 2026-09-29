@@ -32,7 +32,7 @@ export const SAMPLE_BASE: string = import.meta.env.DEV ? '/specs/bluepriNNts' : 
 // GENERATED — DO NOT EDIT. Source: iNNfo/specs/bluepriNNts/*/spec_NN.md and
 // iNNfo/specs/bluepriNNts/workspace_spec_NN.md.
 // Regenerate with `npm run sync:versions` (scripts/sync-versions.mjs).
-export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
+export const SHIPPED_blueprint_versionS: Record<string, string> = {
   analysis: 'V_0-3-0',
   artifacts: 'V_0-3-0',
   blank: 'V_0-3-0',

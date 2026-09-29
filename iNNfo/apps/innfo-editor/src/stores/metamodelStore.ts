@@ -170,7 +170,7 @@ export const useMetamodelStore = defineStore('metamodel', () => {
 
   /**
    * Extracts the template version string from a FORMAT document's raw frontmatter.
-   * Tries `template.version` first, then falls back to `model_version`.
+   * Tries `template.version` first, then falls back to `knowledge_version`.
    */
   function extractTemplateVersionFromRaw(rawContent: string): string {
     // Try template: { name: ..., version: ... } block
@@ -179,8 +179,8 @@ export const useMetamodelStore = defineStore('metamodel', () => {
       const versionMatch = templateSection[1].match(/version:\s*["']([^"'\n]+)["']/)
       if (versionMatch) return versionMatch[1]
     }
-    // Fallback to top-level model_version
-    const modelVersionMatch = rawContent.match(/^model_version:\s*["']([^"'\n]+)["']/m)
+    // Fallback to top-level knowledge_version
+    const modelVersionMatch = rawContent.match(/^knowledge_version:\s*["']([^"'\n]+)["']/m)
     if (modelVersionMatch) return modelVersionMatch[1]
     return ''
   }

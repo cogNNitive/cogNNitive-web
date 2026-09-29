@@ -790,7 +790,7 @@ const specFileName = computed(() => {
 
 const modelVersion = computed(() => {
   const node = rootNode.value
-  return (node?.fields?.version?.value ?? node?.fields?.model_version?.value ?? '—') as string
+  return (node?.fields?.version?.value ?? node?.fields?.knowledge_version?.value ?? '—') as string
 })
 
 const activeModelName = computed(() => {
