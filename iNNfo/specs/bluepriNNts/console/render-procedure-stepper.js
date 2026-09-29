@@ -17,22 +17,23 @@
           ? globalThis
           : this
 
-  var RENDERER_VERSION = '0.1.0'
+  var RENDERER_VERSION = '0.2.0'
 
   var STATUS_COLORS = {
     done: '#16a34a',
-    active: '#171717',
-    pending: '#a1a1a1',
+    active: '#0284c7',
+    pending: '#94a3b8',
     warning: '#d97706',
-    error: '#e7000b',
+    error: '#dc2626',
+    skipped: '#64748b',
   }
 
   // Reuse the shared visual vocabulary when loaded (visuals.js); fall back to
-  // local literals when the module is absent (e.g. raw file:// single renderer).
+  // local literals when the module is absent.
   var V = (GLOBAL.InnfoVisuals && typeof GLOBAL.InnfoVisuals === 'object') ? GLOBAL.InnfoVisuals : null
 
-  function vIcon(name) {
-    return V && typeof V.iconSvg === 'function' ? V.iconSvg(name, 12) : ''
+  function vIcon(name, size) {
+    return V && typeof V.iconSvg === 'function' ? V.iconSvg(name, size || 14) : ''
   }
 
   var STEP_TYPE_ICONS = {
@@ -44,6 +45,7 @@
   var STATE_ICONS = {
     done: '✓',
     active: '▶',
+    skipped: '↷',
   }
 
   function parseJSON(id) {
@@ -152,6 +154,48 @@
       return { ok: false, reason: 'missing-shell' }
     }
 
+    // ---- Execution Runtime State ----
+    var activeProcedure = procedures[0] || null
+    var currentStepIndex = 0
+    var stepStates = {} // { [stepId]: 'pending' | 'active' | 'done' | 'skipped' }
+    var auditLogs = []
+    var timerSeconds = 0
+    var timerInterval = null
+
+    function initRuntimeState() {
+      stepStates = {}
+      if (activeProcedure) {
+        var chain = chainOf(activeProcedure)
+        chain.forEach(function (step, i) {
+          stepStates[step.el.id] = i === 0 ? 'active' : 'pending'
+        })
+      }
+      auditLogs = []
+      addLog('Procedure "' + (activeProcedure ? activeProcedure.el.name : 'Unknown') + '" initialized.', 'System', 'active')
+      startTimer()
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval)
+      timerSeconds = 0
+      timerInterval = setInterval(function () {
+        timerSeconds++
+        var timerEl = document.getElementById('run-timer')
+        if (timerEl) {
+          var mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
+          var secs = String(timerSeconds % 60).padStart(2, '0')
+          timerEl.textContent = mins + ':' + secs
+        }
+      }, 1000)
+    }
+
+    function addLog(text, author, status) {
+      var now = new Date()
+      var timeStr = now.toTimeString().split(' ')[0]
+      auditLogs.unshift({ time: timeStr, text: text, author: author || 'Operator', status: status || 'active' })
+      renderAuditLog()
+    }
+
     // ---- Reference popup (shared runtime capability) ----
     function openRef(element) {
       var rt = GLOBAL.InnfoConsole
@@ -159,7 +203,6 @@
         rt.renderRefDialog(document, element)
         return
       }
-      // Local fallback when the runtime did not boot (defensive; shell loads it).
       var dialog = document.getElementById('innfo-ref-dialog')
       if (!dialog) return
       dialog.innerHTML = ''
@@ -180,7 +223,6 @@
     }
 
     function refButton(label, name) {
-      // returns {node, ok} — plain text when unresolvable
       var target = byName[name]
       if (!target) {
         var span = document.createElement('span')
@@ -214,6 +256,7 @@
       else if (name === 'concept') renderConcept()
       else renderProcedures()
     }
+
     mainTabs.forEach(function (b) {
       b.addEventListener('click', function () {
         railSelection = 'procedures'
@@ -227,11 +270,8 @@
     concepts.sort(function (a, b) {
       return (b.weight || 0) - (a.weight || 0)
     })
-    // 'procedures' | 'matrices' | 'matrix:<name>' | <concept name>
     var railSelection = 'procedures'
 
-    // Concept color comes from the ACTIVE TEMPLATE (innfo-schema.concepts[].color),
-    // translated name->hex by the shared visuals module. Never the app's palette.
     function conceptColor(name) {
       var c = null
       concepts.forEach(function (x) {
@@ -274,7 +314,7 @@
         })
         rail.appendChild(b)
       })
-      // Matrices section below concepts: one item per matrix
+      // Matrices section
       var mLabel = document.createElement('div')
       mLabel.className = 'rail-label'
       mLabel.textContent = 'Matrices'
@@ -302,13 +342,12 @@
       if (!content) return
       content.innerHTML = ''
       if (!railSelection || railSelection === 'procedures' || railSelection === 'matrices' || railSelection.indexOf('matrix:') === 0) {
-        content.innerHTML = '<div class="empty-state">Select a concept.</div>'
+        content.innerHTML = '<div class="empty-state">Select a concept from the rail.</div>'
         return
       }
       var list = elemsByConcept[railSelection] || []
       if (!list.length) {
-        content.innerHTML =
-          '<div class="empty-state">No <code>' + esc(railSelection) + '</code> elements.</div>'
+        content.innerHTML = '<div class="empty-state">No <code>' + esc(railSelection) + '</code> elements found.</div>'
         return
       }
       var wrap = document.createElement('div')
@@ -350,7 +389,7 @@
     }
 
     // ---- Procedure view mode: Document (default) | Wizard ----
-    var proceduresMode = 'document'
+    var proceduresMode = 'wizard'
     var docBody = document.getElementById('doc-body')
     var wizardBody = document.getElementById('wizard-body')
     var subTabs = document.querySelectorAll('.subtabs .subtab')
@@ -359,7 +398,7 @@
       if (proceduresMode === 'wizard') {
         if (docBody) docBody.classList.add('hidden')
         if (wizardBody) wizardBody.classList.remove('hidden')
-        renderStepper()
+        renderExecutionWorkspace()
       } else {
         if (wizardBody) wizardBody.classList.add('hidden')
         if (docBody) docBody.classList.remove('hidden')
@@ -369,6 +408,7 @@
         b.classList.toggle('active', b.getAttribute('data-mode') === proceduresMode)
       })
     }
+
     subTabs.forEach(function (b) {
       b.addEventListener('click', function () {
         proceduresMode = b.getAttribute('data-mode') === 'wizard' ? 'wizard' : 'document'
@@ -395,7 +435,7 @@
         block.className = isRoot ? 'doc-root' : 'doc-step'
         var h = document.createElement(isRoot ? 'h2' : 'h3')
         var iconName = step.fields.step_type || 'task'
-        var svg = vIcon(iconName)
+        var svg = vIcon(iconName, 16)
         var stepColor = conceptColor('Work')
         h.style.color = stepColor
         h.innerHTML =
@@ -432,9 +472,6 @@
     }
 
     // ---- Procedure tabs ----
-    var activeProcedure = procedures[0] || null
-    var currentStepIndex = 0
-
     function renderTabs() {
       if (!tabsHost) return
       tabsHost.innerHTML = ''
@@ -446,6 +483,7 @@
         b.addEventListener('click', function () {
           activeProcedure = p
           currentStepIndex = 0
+          initRuntimeState()
           renderTabs()
           renderProcedures()
         })
@@ -454,9 +492,6 @@
     }
 
     // ---- Chain: procedure root -> steps ordered by next within same parent ----
-    // These are shared with the generic runtime (innfo-runtime.js). When the
-    // runtime is loaded we delegate to it (single source of truth); otherwise
-    // fall back to the local copies.
     var RT = GLOBAL.InnfoConsole
 
     function chainOf(proc) {
@@ -558,15 +593,15 @@
       return out
     }
 
-    // ---- Stepper ----
-    function renderStepper() {
+    // ---- Enhanced Execution Workspace (DAG + Stepper + Audit) ----
+    function renderExecutionWorkspace() {
       if (!stepBody) return
       stepBody.innerHTML = ''
-      if (stepProgress) stepProgress.innerHTML = ''
       if (!activeProcedure) {
         stepBody.innerHTML = '<div class="empty-state">No procedures found.</div>'
         return
       }
+
       var chain = chainOf(activeProcedure)
       if (!chain.length) {
         stepBody.innerHTML = '<div class="empty-state">No steps in this procedure.</div>'
@@ -574,140 +609,442 @@
       }
       if (currentStepIndex >= chain.length) currentStepIndex = chain.length - 1
 
-      // Progress rail: connected dots with state icons
-      if (stepProgress) {
-        var pw = document.createElement('div')
-        pw.className = 'proc-progress'
-        chain.forEach(function (step, i) {
-          var isActive = i === currentStepIndex
-          var isDone = i < currentStepIndex
-          var cls = isActive ? 'active' : isDone ? 'done' : 'pending'
-          var nodeHost = document.createElement('div')
-          nodeHost.className = 'step-node ' + cls
-          if (i > 0) {
-            var link = document.createElement('span')
-            link.className = 'step-link'
-            nodeHost.appendChild(link)
-          }
-          var inner = document.createElement('div')
-          inner.className = 'step-node-inner'
-          var dot = document.createElement('button')
-          dot.className = 'step-dot'
-          dot.setAttribute('type', 'button')
-          dot.setAttribute('aria-label', step.el.name || 'step')
-          var stateName = isActive ? 'play' : isDone ? 'check' : step.fields.step_type
-          var svg = vIcon(stateName)
-          if (svg) {
-            dot.innerHTML = svg
-          } else {
-            dot.textContent = isActive
-              ? STATE_ICONS.active
-              : isDone
-                ? STATE_ICONS.done
-                : STEP_TYPE_ICONS[step.fields.step_type] || '•'
-          }
-          dot.addEventListener('click', function () {
-            currentStepIndex = i
-            renderStepper()
-          })
-          var label = document.createElement('span')
-          label.className = 'step-dot-label'
-          label.textContent = step.el.name || 'Step'
-          inner.appendChild(dot)
-          inner.appendChild(label)
-          nodeHost.appendChild(inner)
-          pw.appendChild(nodeHost)
+      // Workspace 3-pane layout
+      var ws = document.createElement('div')
+      ws.className = 'exec-workspace'
+
+      // Left Column: Interactive SVG DAG
+      var dagCol = document.createElement('div')
+      dagCol.className = 'exec-dag-col'
+      var dagHeader = document.createElement('div')
+      dagHeader.className = 'exec-col-header'
+      dagHeader.innerHTML = '<span>' + vIcon('workflow', 14) + ' Flow & Topology</span><span class="count-badge">' + chain.length + ' steps</span>'
+      dagCol.appendChild(dagHeader)
+
+      var dagView = document.createElement('div')
+      dagView.className = 'exec-dag-view'
+      dagView.appendChild(renderDAG(chain))
+      dagCol.appendChild(dagView)
+      ws.appendChild(dagCol)
+
+      // Center Column: Active Step Card
+      var activeCol = document.createElement('div')
+      activeCol.className = 'exec-active-col'
+      activeCol.appendChild(renderActiveStepCard(chain))
+      ws.appendChild(activeCol)
+
+      // Right Column: Live Audit Log
+      var logCol = document.createElement('div')
+      logCol.className = 'exec-log-col'
+      var logHeader = document.createElement('div')
+      logHeader.className = 'exec-col-header'
+      logHeader.innerHTML = '<span>' + vIcon('clipboard', 14) + ' Execution Log</span><button class="btn-xs" id="btn-export-log">' + vIcon('copy', 12) + ' Export</button>'
+      logCol.appendChild(logHeader)
+
+      var logView = document.createElement('div')
+      logView.className = 'exec-log-view'
+      logView.id = 'audit-log-container'
+      logCol.appendChild(logView)
+      ws.appendChild(logCol)
+
+      stepBody.appendChild(ws)
+
+      // Bind Export Log Button
+      var exportBtn = document.getElementById('btn-export-log')
+      if (exportBtn) {
+        exportBtn.addEventListener('click', function () {
+          openExportModal(chain)
         })
-        stepProgress.appendChild(pw)
       }
 
-      // Detail card
+      renderProgressHeader(chain)
+      renderAuditLog()
+    }
+
+    function renderProgressHeader(chain) {
+      if (!stepProgress) return
+      stepProgress.innerHTML = ''
+      var doneCount = 0
+      Object.keys(stepStates).forEach(function (k) {
+        if (stepStates[k] === 'done') doneCount++
+      })
+      var pct = Math.round((doneCount / chain.length) * 100)
+
+      var barWrap = document.createElement('div')
+      barWrap.className = 'proc-status-bar'
+      barWrap.innerHTML =
+        '<div class="proc-status-left">' +
+          '<span class="proc-status-title">Execution Progress: <strong>Step ' + (currentStepIndex + 1) + ' of ' + chain.length + '</strong> (' + pct + '%)</span>' +
+          '<div class="proc-progress-track"><div class="proc-progress-fill" style="width:' + pct + '%"></div></div>' +
+        '</div>' +
+        '<div class="proc-status-right">' +
+          '<span class="proc-timer">' + vIcon('clock', 13) + ' <span id="run-timer">' + formatTimer() + '</span></span>' +
+        '</div>'
+      stepProgress.appendChild(barWrap)
+    }
+
+    function formatTimer() {
+      var mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
+      var secs = String(timerSeconds % 60).padStart(2, '0')
+      return mins + ':' + secs
+    }
+
+    // ---- SVG DAG Renderer ----
+    function renderDAG(chain) {
+      var svgNS = 'http://www.w3.org/2000/svg'
+      var svg = document.createElementNS(svgNS, 'svg')
+      svg.setAttribute('class', 'dag-canvas')
+      svg.setAttribute('viewBox', '0 0 320 ' + (chain.length * 84 + 20))
+
+      var nodeW = 280
+      var nodeH = 56
+      var startX = 20
+      var startY = 16
+      var gapY = 84
+
+      // Edges
+      for (var i = 0; i < chain.length - 1; i++) {
+        var x1 = startX + nodeW / 2
+        var y1 = startY + i * gapY + nodeH
+        var x2 = startX + nodeW / 2
+        var y2 = startY + (i + 1) * gapY
+
+        var edge = document.createElementNS(svgNS, 'path')
+        edge.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
+        edge.setAttribute('class', 'dag-edge ' + (i < currentStepIndex ? 'done' : i === currentStepIndex ? 'active' : ''))
+        svg.appendChild(edge)
+      }
+
+      // Nodes
+      chain.forEach(function (step, i) {
+        var y = startY + i * gapY
+        var state = stepStates[step.el.id] || (i === currentStepIndex ? 'active' : i < currentStepIndex ? 'done' : 'pending')
+        var isDecision = step.fields.step_type === 'decision'
+
+        var g = document.createElementNS(svgNS, 'g')
+        g.setAttribute('class', 'dag-node ' + (isDecision ? 'decision ' : '') + state)
+        g.addEventListener('click', function () {
+          currentStepIndex = i
+          renderExecutionWorkspace()
+        })
+
+        var rect = document.createElementNS(svgNS, 'rect')
+        rect.setAttribute('x', startX)
+        rect.setAttribute('y', y)
+        rect.setAttribute('width', nodeW)
+        rect.setAttribute('height', nodeH)
+        rect.setAttribute('rx', '8')
+        g.appendChild(rect)
+
+        // Status Indicator
+        var dot = document.createElementNS(svgNS, 'circle')
+        dot.setAttribute('cx', startX + 18)
+        dot.setAttribute('cy', y + nodeH / 2)
+        dot.setAttribute('r', '6')
+        dot.setAttribute('class', 'node-dot')
+        g.appendChild(dot)
+
+        // Step Type Text
+        var typeText = document.createElementNS(svgNS, 'text')
+        typeText.setAttribute('x', startX + 34)
+        typeText.setAttribute('y', y + 20)
+        typeText.setAttribute('class', 'node-sub')
+        typeText.textContent = (step.fields.step_type || 'TASK').toUpperCase() + (step.fields.condition ? ' • IF: ' + step.fields.condition : '')
+        g.appendChild(typeText)
+
+        // Step Name Text
+        var nameText = document.createElementNS(svgNS, 'text')
+        nameText.setAttribute('x', startX + 34)
+        nameText.setAttribute('y', y + 38)
+        nameText.setAttribute('class', 'node-title')
+        var titleStr = step.el.name || 'Step ' + (i + 1)
+        if (titleStr.length > 28) titleStr = titleStr.substring(0, 26) + '…'
+        nameText.textContent = titleStr
+        g.appendChild(nameText)
+
+        svg.appendChild(g)
+      })
+
+      return svg
+    }
+
+    // ---- Active Step Card Renderer ----
+    function renderActiveStepCard(chain) {
       var cur = chain[currentStepIndex]
+      var state = stepStates[cur.el.id] || 'active'
       var card = document.createElement('article')
-      card.className = 'step-card'
-      var h = document.createElement('h3')
-      h.innerHTML =
-        '<span class="step-type-icon">' + (STEP_TYPE_ICONS[cur.fields.step_type] || '•') + '</span> ' +
-        esc(cur.el.name || 'Step')
-      card.appendChild(h)
+      card.className = 'exec-step-card'
+
+      // Step Header
+      var headerRow = document.createElement('div')
+      headerRow.className = 'exec-step-head'
+
+      var typeName = cur.fields.step_type || 'task'
+      var typePill = document.createElement('span')
+      typePill.className = 'step-type-pill pill-' + typeName
+      typePill.innerHTML = vIcon(typeName, 14) + ' ' + typeName.toUpperCase()
+
+      var statusPill = document.createElement('span')
+      statusPill.className = 'step-state-badge state-' + state
+      statusPill.textContent = state === 'done' ? 'Completed' : state === 'active' ? 'In Progress' : 'Pending'
+
+      headerRow.appendChild(typePill)
+      headerRow.appendChild(statusPill)
+      card.appendChild(headerRow)
+
+      // Title & Description
+      var h2 = document.createElement('h2')
+      h2.className = 'exec-step-title'
+      h2.textContent = cur.el.name || 'Step ' + (currentStepIndex + 1)
+      card.appendChild(h2)
+
       if (cur.el.description) {
-        var p = document.createElement('p')
-        p.className = 'desc'
-        p.textContent = cur.el.description
-        card.appendChild(p)
+        var pDesc = document.createElement('p')
+        pDesc.className = 'exec-step-desc'
+        pDesc.textContent = cur.el.description
+        card.appendChild(pDesc)
       }
 
-      var tags = []
-      if (cur.fields.condition) tags.push(chip('IF ' + cur.fields.condition, 'warning'))
-      if (cur.fields.step_type) tags.push(chip(cur.fields.step_type, 'active'))
-      if (cur.fields.output_status) tags.push(chip(cur.fields.output_status, 'done'))
-      if (cur.fields.tool) {
-        var toolRef = refButton(cur.fields.tool, cur.fields.tool)
-        tags.push(chipWithNode(toolRef.node, 'active'))
-      }
-      if (tags.length) {
-        var chips = document.createElement('div')
-        chips.className = 'chips'
-        tags.forEach(function (t) {
-          chips.appendChild(t)
-        })
-        card.appendChild(chips)
-      }
-
-      var io = document.createElement('div')
-      io.className = 'io'
-      if (cur.fields.input) io.appendChild(ioPill('Input', cur.fields.input, 'in'))
-      if (cur.fields.output) io.appendChild(ioPill('Output', cur.fields.output, 'out'))
-      if (io.childNodes.length) card.appendChild(io)
-
+      // RACI Governance Bar
       var raci = rolesForStep(cur.el.name)
       if (raci.length) {
-        var box = document.createElement('div')
-        box.className = 'raci'
-        box.innerHTML = '<h4>Roles</h4>'
+        var raciBox = document.createElement('div')
+        raciBox.className = 'exec-raci-box'
+        var raciHead = document.createElement('div')
+        raciHead.className = 'exec-box-title'
+        raciHead.innerHTML = vIcon('users', 13) + ' Governance & Roles (RACI)'
+        raciBox.appendChild(raciHead)
+
+        var raciList = document.createElement('div')
+        raciList.className = 'exec-raci-list'
         raci.forEach(function (r) {
           var target = byName[r.label]
-          var pill = document.createElement('button')
-          pill.className = 'raci-pill'
-          pill.setAttribute('type', 'button')
-          pill.textContent = r.label + ': ' + r.value
+          var rPill = document.createElement('button')
+          rPill.className = 'raci-item-btn'
+          rPill.setAttribute('type', 'button')
+          var badgeCls = 'raci-' + String(r.value || 'i').toLowerCase().charAt(0)
+          rPill.innerHTML = '<span class="raci-badge ' + badgeCls + '">' + esc(r.value.charAt(0)) + '</span> <span>' + esc(r.label) + '</span>'
           if (target) {
-            pill.addEventListener('click', function () {
+            rPill.addEventListener('click', function () {
               openRef(target)
             })
-          } else {
-            pill.setAttribute('disabled', 'disabled')
           }
-          box.appendChild(pill)
+          raciList.appendChild(rPill)
         })
-        card.appendChild(box)
+        raciBox.appendChild(raciList)
+        card.appendChild(raciBox)
       }
 
-      stepBody.appendChild(card)
+      // Artifact I/O Pipeline Cards
+      var ioBox = document.createElement('div')
+      ioBox.className = 'exec-io-box'
+      var ioGrid = document.createElement('div')
+      ioGrid.className = 'exec-io-grid'
 
-      var nav = document.createElement('div')
-      nav.className = 'btn-row'
-      var back = document.createElement('button')
-      back.className = 'btn'
-      back.textContent = '◀ Previous'
-      back.setAttribute('type', 'button')
-      back.disabled = currentStepIndex === 0
-      back.addEventListener('click', function () {
+      if (cur.fields.input) {
+        var inCard = document.createElement('div')
+        inCard.className = 'io-panel io-panel-in'
+        inCard.innerHTML =
+          '<div class="io-panel-label">' + vIcon('arrow-right', 12) + ' Required Input</div>' +
+          '<div class="io-panel-name">' + esc(cur.fields.input) + '</div>' +
+          '<label class="io-check-label"><input type="checkbox" checked /> Ready & Verified</label>'
+        ioGrid.appendChild(inCard)
+      }
+
+      if (cur.fields.output) {
+        var outCard = document.createElement('div')
+        outCard.className = 'io-panel io-panel-out'
+        var isDone = state === 'done'
+        outCard.innerHTML =
+          '<div class="io-panel-label">' + vIcon('package', 12) + ' Produced Output</div>' +
+          '<div class="io-panel-name">' + esc(cur.fields.output) + '</div>' +
+          '<label class="io-check-label"><input type="checkbox" ' + (isDone ? 'checked' : '') + ' id="chk-output-done" /> Status: <code>' + esc(cur.fields.output_status || 'verified') + '</code></label>'
+        ioGrid.appendChild(outCard)
+      }
+
+      if (ioGrid.children.length) {
+        ioBox.appendChild(ioGrid)
+        card.appendChild(ioBox)
+      }
+
+      // Tooling & CLI Action Helper
+      if (cur.fields.tool) {
+        var toolBox = document.createElement('div')
+        toolBox.className = 'exec-tool-box'
+        var toolHead = document.createElement('div')
+        toolHead.className = 'exec-box-title'
+        toolHead.innerHTML = vIcon('wrench', 13) + ' Tooling & Execution: <strong>' + esc(cur.fields.tool) + '</strong>'
+        toolBox.appendChild(toolHead)
+
+        var cmdSnippet = 'innfo-cli run --step "' + esc(cur.el.name) + '" --tool "' + esc(cur.fields.tool) + '"'
+        var cliSnippet = document.createElement('div')
+        cliSnippet.className = 'exec-cli-snippet'
+        cliSnippet.innerHTML =
+          '<code>' + vIcon('terminal', 12) + ' ' + cmdSnippet + '</code>' +
+          '<button class="btn-copy" type="button">' + vIcon('copy', 12) + ' Copy</button>'
+
+        cliSnippet.querySelector('.btn-copy').addEventListener('click', function () {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(cmdSnippet)
+            addLog('Copied CLI command for step "' + cur.el.name + '"', 'Operator', 'active')
+          }
+        })
+        toolBox.appendChild(cliSnippet)
+        card.appendChild(toolBox)
+      }
+
+      // Decision Gate
+      if (cur.fields.step_type === 'decision') {
+        var decBox = document.createElement('div')
+        decBox.className = 'exec-decision-box'
+        decBox.innerHTML =
+          '<div class="exec-box-title" style="color:var(--warning)">' + vIcon('decision', 13) + ' Decision Gate: Choose Branch Path</div>' +
+          '<div class="decision-btn-row">' +
+            '<button class="btn-branch btn-primary" type="button" id="btn-branch-pass">Proceed Path (Standard) ▶</button>' +
+            '<button class="btn-branch" type="button" id="btn-branch-alt">Rework / Alternate Path ↺</button>' +
+          '</div>'
+
+        decBox.querySelector('#btn-branch-pass').addEventListener('click', function () {
+          addLog('Decision Gate: Passed standard branch on step "' + cur.el.name + '"', 'Operator', 'done')
+          completeCurrentStep(chain)
+        })
+        decBox.querySelector('#btn-branch-alt').addEventListener('click', function () {
+          addLog('Decision Gate: Selected rework / alternative branch on step "' + cur.el.name + '"', 'Operator', 'warning')
+          currentStepIndex = Math.max(0, currentStepIndex - 1)
+          renderExecutionWorkspace()
+        })
+        card.appendChild(decBox)
+      }
+
+      // Stepper Navigation Actions
+      var actionsRow = document.createElement('div')
+      actionsRow.className = 'exec-actions-row'
+
+      var prevBtn = document.createElement('button')
+      prevBtn.className = 'btn'
+      prevBtn.type = 'button'
+      prevBtn.disabled = currentStepIndex === 0
+      prevBtn.innerHTML = vIcon('arrow-left', 13) + ' Previous'
+      prevBtn.addEventListener('click', function () {
         currentStepIndex = Math.max(0, currentStepIndex - 1)
-        renderStepper()
+        renderExecutionWorkspace()
       })
-      var next = document.createElement('button')
-      next.className = 'btn btn-primary'
-      next.textContent = currentStepIndex === chain.length - 1 ? 'Finish ✓' : 'Next ▶'
-      next.setAttribute('type', 'button')
-      next.disabled = currentStepIndex === chain.length - 1
-      next.addEventListener('click', function () {
-        currentStepIndex = Math.min(chain.length - 1, currentStepIndex + 1)
-        renderStepper()
+      actionsRow.appendChild(prevBtn)
+
+      var rightGroup = document.createElement('div')
+      rightGroup.className = 'btn-group-right'
+
+      var skipBtn = document.createElement('button')
+      skipBtn.className = 'btn'
+      skipBtn.type = 'button'
+      skipBtn.innerHTML = vIcon('skip', 13) + ' Skip Step'
+      skipBtn.addEventListener('click', function () {
+        stepStates[cur.el.id] = 'skipped'
+        addLog('Skipped step "' + cur.el.name + '"', 'Operator', 'skipped')
+        if (currentStepIndex < chain.length - 1) {
+          currentStepIndex++
+          stepStates[chain[currentStepIndex].el.id] = 'active'
+        }
+        renderExecutionWorkspace()
       })
-      nav.appendChild(back)
-      nav.appendChild(next)
-      stepBody.appendChild(nav)
+      rightGroup.appendChild(skipBtn)
+
+      var nextBtn = document.createElement('button')
+      nextBtn.className = 'btn btn-primary'
+      nextBtn.type = 'button'
+      var isLast = currentStepIndex === chain.length - 1
+      nextBtn.innerHTML = isLast ? vIcon('check', 13) + ' Finish Procedure' : vIcon('play', 13) + ' Complete & Advance'
+      nextBtn.addEventListener('click', function () {
+        completeCurrentStep(chain)
+      })
+      rightGroup.appendChild(nextBtn)
+
+      actionsRow.appendChild(rightGroup)
+      card.appendChild(actionsRow)
+
+      return card
+    }
+
+    function completeCurrentStep(chain) {
+      var cur = chain[currentStepIndex]
+      stepStates[cur.el.id] = 'done'
+      addLog('Step "' + cur.el.name + '" completed. Output verified: [' + (cur.fields.output || 'Complete') + ']', 'Lead Role', 'done')
+
+      if (currentStepIndex < chain.length - 1) {
+        currentStepIndex++
+        stepStates[chain[currentStepIndex].el.id] = 'active'
+        addLog('Advanced to step "' + chain[currentStepIndex].el.name + '"', 'System', 'active')
+      } else {
+        addLog('🎉 Procedure "' + (activeProcedure ? activeProcedure.el.name : 'Procedure') + '" fully executed!', 'System', 'done')
+      }
+      renderExecutionWorkspace()
+    }
+
+    // ---- Live Audit Log ----
+    function renderAuditLog() {
+      var container = document.getElementById('audit-log-container')
+      if (!container) return
+      container.innerHTML = ''
+      auditLogs.forEach(function (log) {
+        var item = document.createElement('div')
+        item.className = 'audit-item status-' + log.status
+        item.innerHTML =
+          '<div class="audit-time">' + esc(log.time) + ' • <span class="audit-author">' + esc(log.author) + '</span></div>' +
+          '<div class="audit-text">' + esc(log.text) + '</div>'
+        container.appendChild(item)
+      })
+    }
+
+    // ---- Export Modal ----
+    function openExportModal(chain) {
+      var dialog = document.getElementById('innfo-export-modal')
+      if (!dialog) {
+        dialog = document.createElement('dialog')
+        dialog.id = 'innfo-export-modal'
+        dialog.className = 'export-dialog'
+        document.body.appendChild(dialog)
+      }
+      dialog.innerHTML = ''
+
+      var doneCount = 0
+      Object.keys(stepStates).forEach(function (k) {
+        if (stepStates[k] === 'done') doneCount++
+      })
+
+      var md = '# Execution Audit Log: ' + (activeProcedure ? activeProcedure.el.name : 'Procedure') + '\n\n'
+      md += '- **Model**: ' + (meta.title || 'iNNfo Model') + ' (' + (meta.modelVersion || 'V_0-1-0') + ')\n'
+      md += '- **Timestamp**: ' + new Date().toISOString() + '\n'
+      md += '- **Progress**: ' + doneCount + ' of ' + chain.length + ' steps completed\n'
+      md += '- **Execution Time**: ' + formatTimer() + '\n\n'
+      md += '## Chronological Events\n\n'
+      auditLogs.slice().reverse().forEach(function (l) {
+        md += '- `[' + l.time + ']` **' + l.author + '**: ' + l.text + '\n'
+      })
+
+      var box = document.createElement('div')
+      box.className = 'export-modal-inner'
+      box.innerHTML =
+        '<h3>' + vIcon('clipboard', 16) + ' Execution Audit Report</h3>' +
+        '<p class="export-modal-desc">Copy this structured Markdown summary for audit logs, release notes, or tickets.</p>' +
+        '<textarea readonly class="export-textarea">' + esc(md) + '</textarea>' +
+        '<div class="export-modal-actions">' +
+          '<button class="btn btn-close" type="button">Close</button>' +
+          '<button class="btn btn-primary btn-copy-all" type="button">' + vIcon('copy', 13) + ' Copy to Clipboard</button>' +
+        '</div>'
+
+      box.querySelector('.btn-close').addEventListener('click', function () {
+        dialog.close()
+      })
+      box.querySelector('.btn-copy-all').addEventListener('click', function () {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(md)
+          alert('Execution report copied to clipboard!')
+          dialog.close()
+        }
+      })
+
+      dialog.appendChild(box)
+      if (typeof dialog.showModal === 'function') dialog.showModal()
     }
 
     // ---- Matrices ----
@@ -717,7 +1054,7 @@
       var selected = railSelection.indexOf('matrix:') === 0 ? railSelection.slice(7) : null
       var target = selected ? matrixByIdName(selected) : null
       if (!target) {
-        matrixPort.innerHTML = '<div class="empty-state">Select a matrix.</div>'
+        matrixPort.innerHTML = '<div class="empty-state">Select a matrix from the rail.</div>'
         return
       }
       matrixPort.appendChild(renderMatrixBlock(target))
@@ -759,7 +1096,7 @@
       s.className = 'chip'
       var dot = document.createElement('span')
       dot.className = 'chip-dot'
-      dot.style.background = STATUS_COLORS[status] || '#a1a1a1'
+      dot.style.background = STATUS_COLORS[status] || '#94a3b8'
       s.appendChild(dot)
       s.appendChild(document.createTextNode(' ' + esc(text)))
       return s
@@ -770,7 +1107,7 @@
       s.className = 'chip'
       var dot = document.createElement('span')
       dot.className = 'chip-dot'
-      dot.style.background = STATUS_COLORS[status] || '#a1a1a1'
+      dot.style.background = STATUS_COLORS[status] || '#94a3b8'
       s.appendChild(dot)
       s.appendChild(document.createTextNode(' '))
       if (node) s.appendChild(node)
@@ -804,6 +1141,7 @@
     }
 
     // ---- Boot ----
+    initRuntimeState()
     renderRail()
     renderTabs()
     switchView('procedures')
