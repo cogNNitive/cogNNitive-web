@@ -197,7 +197,7 @@ function validateLegacyLedger(options = {}) {
   let trackedFiles = options.lsFiles;
   if (!trackedFiles) {
     try {
-      const output = execFileSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' });
+      const output = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: repoRoot, encoding: 'utf8' });
       trackedFiles = output.split(/\r?\n/).filter(Boolean);
     } catch (err) {
       errors.push(`Failed to get git tracked files via git ls-files: ${err.message}`);

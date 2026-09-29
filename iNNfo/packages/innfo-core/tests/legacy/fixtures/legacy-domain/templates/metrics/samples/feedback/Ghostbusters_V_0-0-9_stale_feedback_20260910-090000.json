@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "source_model": "Ghostbusters",
+    "source_model_version": "V_0-0-9",
+    "artifact": "Ghostbusters_V_0-1-0_console.html",
+    "artifact_version": "0.1.0",
+    "exported_at": "2026-09-10T09:00:00Z",
+    "author": "round-0",
+    "feedback_slug": "stale",
+    "session_label": "stale",
+    "viewer": "innfo-console/0.1.0"
+  },
+  "items": [
+    {
+      "id": "fb-001",
+      "kind": "correction",
+      "target": {
+        "element_id": "variables-monthly-incidents",
+        "concept": "Variables",
+        "element": "Monthly Incidents",
+        "field": "variableValue"
+      },
+      "original": "20",
+      "proposed": "22",
+      "comment": "Caught on an older export — the model has moved on since.",
+      "status": "pending"
+    }
+  ]
+}

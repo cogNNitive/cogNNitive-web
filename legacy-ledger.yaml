@@ -1,2 +1,44 @@
 version: 1
-entries: []
+entries:
+  - id: quarantine
+    what: Legacy quarantine module interface and index
+    paths:
+      - iNNfo/packages/innfo-core/src/legacy/index.ts
+    why: Core quarantine interface for legacy detection and migration planning
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: detector
+    what: Legacy layout detector
+    paths:
+      - iNNfo/packages/innfo-core/src/legacy/detect.ts
+    why: MCP/editor/preflight must recognise legacy domains
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: language-map
+    what: Legacy reader and language migration map
+    paths:
+      - iNNfo/packages/innfo-core/src/legacy/reader.ts
+      - iNNfo/packages/innfo-core/src/legacy/language-map.ts
+    why: Mechanical language and keyword migration from legacy to canonical layout
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: schema-maps
+    what: Per-blueprint schema migration maps
+    paths:
+      - iNNfo/packages/innfo-core/src/legacy/schema-maps/index.ts
+      - iNNfo/packages/innfo-core/src/legacy/schema-maps/types.ts
+      - iNNfo/packages/innfo-core/src/legacy/schema-maps/workspace.ts
+    why: Blueprint concept and field schema migration maps
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: legacy-fixture
+    what: Frozen legacy domain test fixture
+    paths:
+      - iNNfo/packages/innfo-core/tests/legacy/fixtures/legacy-domain/LEGACY.md
+    why: Frozen legacy domain for migrator and detector test suites
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename

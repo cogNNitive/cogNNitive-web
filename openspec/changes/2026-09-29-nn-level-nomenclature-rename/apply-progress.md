@@ -90,4 +90,29 @@
 - `node scripts/verify.js`: **PASS** (All deterministic pre-checks passed).
 - `node scripts/check-integrity.js`: **PASS** (ALL INTEGRITY GATES PASSED).
 
+---
+
+## Slice S4: Quarantine Module (Unreleased Core) [legacy-quarantine, versioned-document-grammar, domain-layout-migration]
+
+### Completed Tasks
+- [x] **5.1**: RED: Created `iNNfo/packages/innfo-core/tests/legacy/detect.test.ts` testing `detectLegacy` and `DomainReader` against all D4 signals (overview-root `*_base_NN.md`, `workspace_NN.md`, `models/`, `specs/templates/`, legacy frontmatter keys, `type:: model`, parent URLs, `V_0-1-0`/`V_0-2-2` L1 parents, mixed layout, and case-exact probe).
+- [x] **5.2**: GREEN: Created `iNNfo/packages/innfo-core/src/legacy/detect.ts` and `iNNfo/packages/innfo-core/src/legacy/index.ts` implementing `DomainReader` and `detectLegacy` with `legacy:nn-rename/detector` and `legacy:nn-rename/quarantine` markers.
+- [x] **5.3**: Copied (not moved) `iNNfo/packages/innfo-core/tests/fixtures/simulacro-refactorizacion` to `iNNfo/packages/innfo-core/tests/legacy/fixtures/legacy-domain/` and added `LEGACY.md` carrying `<!-- legacy:nn-rename/legacy-fixture -->`.
+- [x] **5.4**: RED: Created `iNNfo/packages/innfo-core/tests/legacy/language-map.test.ts` testing mechanical path and content migrations (key renames with values kept unchanged, `target_template` -> `target_blueprint`, `type:: model` -> `type:: knowledge`, `models/` -> `kNNowledge/`, `specs/templates/` -> `specs/bluepriNNts/`, `workspace_NN.md` -> `domaiNN_NN.md`, parent repoint, and JSON feedback keys).
+- [x] **5.5**: GREEN: Created `iNNfo/packages/innfo-core/src/legacy/reader.ts` and `iNNfo/packages/innfo-core/src/legacy/language-map.ts` implementing `readLegacyDomain`, `migratePath`, `migrateContent`, and pure `planMigration(reader, deps)` taking injected `deps = { targets, validate }`.
+- [x] **5.6**: RED/GREEN: Created `iNNfo/packages/innfo-core/tests/legacy/plan-migration.test.ts` asserting `noop` on migrated domain, deterministic `planHash`, `status: 'blocked'` on malformed frontmatter, and custom-heading passthrough on unmapped blueprints.
+- [x] **5.7**: RED: Created `iNNfo/packages/innfo-core/tests/legacy/schema-maps.test.ts` asserting canonical concept renames (`Workspace` -> `domaiNN`, `Models` -> `kNNowledge`, `Templates` -> `bluepriNNts`), untouched custom headings, and minor version bump.
+- [x] **5.8**: GREEN: Created `iNNfo/packages/innfo-core/src/legacy/schema-maps/{index,types,workspace}.ts` per D12 typed shape with `legacy:nn-rename/schema-maps` markers.
+- [x] **5.9**: Added `./legacy` subpath export in `innfo-core/package.json` with browser-safe entry (`./dist/legacy/detect.js`) and created `tests/legacy/boundary.test.ts` validating import boundary and zero Node built-in imports in browser entry.
+- [x] **5.10**: Added ledger entries (`quarantine`, `detector`, `language-map`, `schema-maps`, `legacy-fixture`) with `removal: all-known-domains-migrated + maintainer-sign-off` in `legacy-ledger.yaml`; verified 1:1 marker guard.
+- [x] **5.11**: Added Quarantine Module & Legacy Boundary section to `docs/innfo/documentation/innfo-core.md`; ran Gate G (all tests and pre-checks 100% green).
+
+### Gate & Test Evidence (S4)
+- `innfo-core` legacy vitest suite: **5 test files, 30 passed, 0 failed**.
+- `innfo-core` full vitest suite: **79 test files, 952 passed, 0 failed**.
+- `node scripts/lib/legacy-ledger-guard.test.js`: **10 passed, 0 failed**.
+- `node scripts/lib/legacy-ledger-guard.js`: **5 entries, 8 code markers validated**.
+- `node scripts/verify.js`: **PASS** (All deterministic pre-checks passed).
+- `node scripts/check-integrity.js`: **PASS** (ALL INTEGRITY GATES PASSED).
+
 

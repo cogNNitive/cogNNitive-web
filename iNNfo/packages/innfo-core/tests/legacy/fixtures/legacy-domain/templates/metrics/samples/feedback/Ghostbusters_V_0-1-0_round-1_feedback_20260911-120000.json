@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "source_model": "Ghostbusters",
+    "source_model_version": "V_0-1-0",
+    "artifact": "Ghostbusters_V_0-1-0_console.html",
+    "artifact_version": "0.1.0",
+    "exported_at": "2026-09-11T12:00:00Z",
+    "author": "round-1",
+    "feedback_slug": "round-1",
+    "session_label": "round-1",
+    "viewer": "innfo-console/0.1.0"
+  },
+  "items": [
+    {
+      "id": "fb-001",
+      "kind": "correction",
+      "target": {
+        "element_id": "metrics-monthly-payroll",
+        "concept": "Metrics",
+        "element": "Monthly Payroll",
+        "field": "metricValue"
+      },
+      "original": "35000",
+      "proposed": "36000",
+      "comment": "Crew added a second office manager.",
+      "status": "pending"
+    },
+    {
+      "id": "fb-002",
+      "kind": "comment",
+      "target": {
+        "element_id": "scenario-year-1-baseline",
+        "concept": "Scenario",
+        "element": "Year 1 Baseline"
+      },
+      "comment": "Confirm the near break-even narrative holds with the revised payroll.",
+      "status": "pending"
+    }
+  ]
+}

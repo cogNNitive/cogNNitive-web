@@ -1,4 +1,4 @@
-﻿# @cognnitive/innfo-core
+# @cognnitive/innfo-core
 
 Framework-agnostic TypeScript library shared across the cogNNitive ecosystem. Used by both `innfo-editor` and `innfo-mcp`.
 
@@ -23,6 +23,14 @@ const fm = parseFrontmatter(content)
 const result = validateModel(model, template, formatSpec)
 ```
 
+## Quarantine Module & Legacy Boundary
+
+All temporary legacy compatibility code is strictly quarantined in `src/legacy/` and tracked 1:1 in `legacy-ledger.yaml`:
+- **Subpath Export**: `@cognnitive/innfo-core/legacy` exposes `detectLegacy` and `DomainReader`.
+- **Browser Safety**: The `./legacy` browser export is detect-only and free of Node built-ins.
+- **Ledger & Markers**: Every quarantined file carries a marker formatted as `legacy:<namespace>/<id>`.
+- **Enforcement**: Vitest and CI guards ensure no external module outside the authorized quarantine boundary imports legacy migration code.
+
 ## Usage
 
 ```bash
@@ -32,3 +40,4 @@ npm run build -w @cognnitive/innfo-core
 # Run tests
 npm run test -w @cognnitive/innfo-core
 ```
+

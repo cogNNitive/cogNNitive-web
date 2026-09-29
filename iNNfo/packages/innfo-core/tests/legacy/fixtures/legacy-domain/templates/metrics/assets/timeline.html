@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeline — Metrics Template</title>
+    <!--
+    timeline.html — thinned Timeline Layout shell (metrics template asset:
+    timeline-layout). The ~700-line inline dashboard engine was DELETED:
+    generating agents must only (1) declare capabilities in the innfo-config
+    needs[] list below (pins resolve via console/needs-registry.json — never
+    hand-edit URLs), (2) paste the resolved template schema into #innfo-schema,
+    and (3) paste the innfo-model snapshot into #innfo-model. Nothing else in
+    this file is edited. The shared runtime (innfo-console.bundle.js,
+    window.InnfoConsole) renders banner, rail, search, element cards, matrices,
+    charts (uPlot from the vendored bundle) and the feedback-export modal. No
+    inline runtime code belongs here — the no-inline-runtime scan
+    (verify.harness.js --check-slots) rejects it.
+
+    innfo-model snapshot contract (see assets/MODEL_DATA.template.json):
+      meta: model, model_version, source_model, generated_at, months,
+            historyMonths, charts, slug, title, startMonth, startYear
+      rows: [{ id, grp, label, metricType, source, variable?, formula?,
+               history?, colors?, growth {mode: fixed|compound|additive} }]
+      series: { "<chartId>": number[] } — PRE-COMPUTED month values, pure JSON
+               data only (no executable JS); horizon capped at 120 months.
+    The snapshot step pre-computes SERIES into pure-JSON (series-as-data);
+    the runtime only renders. RESOLUTION RECORD: series-as-data was ADOPTED;
+    the executable-logic slot (FORMULAS/DEPS/SERIES as JS in the slot) was
+    REJECTED because it breaks the two-slot contract, needs eval, and harms
+    file:// safety. The pilot declares the "charts" capability (registered in
+    console/needs-registry.json; renderer = innfo-runtime renderCharts with
+    vendored uPlot inside innfo-console.bundle.js) plus the minimal set below,
+    adding "feedback-export" only when the export UI is required.
+
+    Generation gate: no console is generated while the activation gate is
+    closed (runtime pins unreachable, file:// smoke failing, or "charts" not
+    registered — see procedures/create_timeline_NN.md step Check Activation
+    Gate).
+
+    Runtime loading (static script tags only — file:// compatible, no modules,
+    no network fetch calls):
+      - Primary: jsDelivr pin @innfo-console-v0.1.0.
+      - Fallback: raw.githubusercontent mirror, then the vendored copy
+        shipped next to the generated console for offline double-click.
+      The runtime no-ops on re-execution, so the fallback tags below are
+      safe: exactly one copy boots.
+    -->
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-2: #f4f4f5;
+        --text: #0a0a0a;
+        --muted: #737373;
+        --faint: #a1a1a1;
+        --border: #e5e5e5;
+        --primary: #171717;
+        --primary-hover: #0a0a0a;
+        --success: #16a34a;
+        --danger: #e7000b;
+        --warning: #d97706;
+        --link: #2563eb;
+        --radius-sm: 6px;
+        --radius: 8px;
+        --radius-lg: 10px;
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Courier New', monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0a0a;
+          --surface: #0a0a0a;
+          --surface-2: #27272a;
+          --text: #fafafa;
+          --muted: #a1a1a1;
+          --faint: #737373;
+          --border: #27272a;
+          --primary: #e5e5e5;
+          --primary-hover: #fafafa;
+          --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.85em;
+      }
+      #innfo-banner {
+        padding: 20px 28px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+      #innfo-banner strong {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      #innfo-banner .innfo-banner-version,
+      #innfo-banner .innfo-banner-needs,
+      #innfo-banner .innfo-banner-drafts {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+      #innfo-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 0;
+        align-items: start;
+      }
+      @media (max-width: 820px) {
+        #innfo-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      #innfo-rail {
+        position: sticky;
+        top: 0;
+        border-right: 1px solid var(--border);
+        background: var(--surface);
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 100vh;
+        overflow-y: auto;
+      }
+      @media (max-width: 820px) {
+        #innfo-rail {
+          position: static;
+          max-height: none;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+      }
+      .innfo-rail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        background: transparent;
+        border: none;
+        border-left: 3px solid transparent;
+        border-radius: 6px;
+        padding: 7px 10px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        color: var(--text);
+        font: inherit;
+      }
+      .innfo-rail-item:hover {
+        background: var(--surface-2);
+      }
+      .innfo-rail-item.active {
+        background: var(--surface-2);
+        border-left-color: var(--primary);
+        font-weight: 700;
+      }
+      main {
+        padding: 24px 28px 96px;
+        max-width: 1080px;
+        min-width: 0;
+      }
+      .innfo-toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      #innfo-search {
+        flex: 1 1 280px;
+        max-width: 420px;
+        padding: 8px 12px;
+        font: inherit;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      #innfo-search:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--text);
+      }
+      #innfo-export-open {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        height: 36px;
+      }
+      #innfo-export-open:hover {
+        background: var(--surface-2);
+      }
+      .innfo-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        scroll-margin-top: 12px;
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-card h3 {
+        margin: 0 0 4px 0;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .innfo-card-concept {
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin: 0 0 8px 0;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .innfo-card-fields {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 4px 12px;
+        font-size: 0.84rem;
+        margin: 10px 0 0;
+      }
+      .innfo-card-fields dt {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .innfo-card-fields dd {
+        margin: 0;
+      }
+      .innfo-matrix {
+        margin: 24px 0;
+      }
+      .innfo-matrix h3 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .innfo-matrix table {
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        width: 100%;
+      }
+      .innfo-matrix th,
+      .innfo-matrix td {
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        text-align: left;
+      }
+      .innfo-matrix thead th,
+      .innfo-matrix tbody th:first-child {
+        background: var(--surface-2);
+        font-weight: 600;
+      }
+      #innfo-export-modal {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        max-width: 560px;
+        width: 100%;
+        background: var(--surface);
+        color: var(--text);
+      }
+      #innfo-export-modal::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+      #innfo-export-modal input {
+        width: 100%;
+        padding: 8px 12px;
+        margin: 8px 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      #innfo-export-modal pre {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px;
+        white-space: pre-wrap;
+        font-size: 0.8rem;
+      }
+      #innfo-ref-dialog {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 0;
+        max-width: 480px;
+        width: 100%;
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+      }
+      #innfo-ref-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+      #innfo-ref-dialog .innfo-ref-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      #innfo-ref-dialog .innfo-ref-head h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      #innfo-ref-dialog .innfo-ref-close {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        border-radius: var(--radius-sm);
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      #innfo-ref-dialog .innfo-ref-body {
+        padding: 16px 20px 20px;
+      }
+      #innfo-ref-dialog .innfo-ref-tag {
+        display: inline-block;
+        font-size: 0.64rem;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        padding: 1px 8px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+      }
+      #innfo-ref-dialog .innfo-ref-desc {
+        margin: 0 0 12px;
+        font-size: 0.88rem;
+      }
+      #innfo-ref-dialog .innfo-ref-fields {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 3px 14px;
+        margin: 0;
+        font-size: 0.8rem;
+      }
+      #innfo-ref-dialog .innfo-ref-fields dt {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      #innfo-ref-dialog .innfo-ref-fields dd {
+        margin: 0;
+      }
+      .innfo-ref-pill {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        color: var(--link);
+        border-radius: 999px;
+        padding: 1px 8px;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .innfo-ref-pill:hover {
+        border-color: var(--link);
+        background: rgba(37, 99, 235, 0.06);
+      }
+      /* Generic document view (renderDocument) */
+      #innfo-doc .doc-root {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 20px 22px;
+        margin-bottom: 14px;
+        box-shadow: var(--shadow-card);
+      }
+      #innfo-doc .doc-root h2 {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #innfo-doc .doc-root p.desc,
+      #innfo-doc .doc-step p.desc {
+        margin: 0 0 10px;
+        font-size: 0.9rem;
+      }
+      #innfo-doc .doc-step {
+        border-left: 3px solid var(--border);
+        padding: 12px 16px;
+        margin: 0 0 10px 8px;
+        background: var(--surface);
+      }
+      #innfo-doc .doc-step h3 {
+        margin: 0 0 6px;
+        font-size: 0.98rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #innfo-doc .doc-icon {
+        color: var(--muted);
+      }
+      #innfo-doc .doc-fields {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 3px 14px;
+        margin: 8px 0 0;
+        font-size: 0.8rem;
+      }
+      #innfo-doc .doc-fields dt {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      #innfo-doc .doc-fields dd {
+        margin: 0;
+      }
+      .empty-state {
+        color: var(--muted);
+        font-size: 0.9rem;
+        padding: 40px 0;
+      }
+      #innfo-charts {
+        margin: 24px 0 0;
+      }
+      #innfo-charts .innfo-chart {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin-bottom: 16px;
+      }
+      #innfo-charts .innfo-chart-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin: 0 0 10px;
+      }
+      #innfo-charts .innfo-chart-canvas {
+        min-height: 240px;
+      }
+    </style>
+  </head>
+  <body>
+    <header id="innfo-banner" aria-label="Console review banner"></header>
+
+    <div id="innfo-layout">
+      <nav id="innfo-rail" aria-label="Concept rail"></nav>
+      <main>
+        <div class="innfo-toolbar">
+          <input
+            id="innfo-search"
+            type="search"
+            placeholder="Search elements…"
+            aria-label="Search elements"
+          />
+          <button id="innfo-export-open" type="button">Export feedback</button>
+        </div>
+        <div id="innfo-doc"></div>
+        <div id="innfo-content"></div>
+        <div id="innfo-matrices"></div>
+        <div id="innfo-charts"></div>
+      </main>
+    </div>
+
+    <dialog id="innfo-export-modal" aria-label="Export reviewer feedback">
+      <h2>Export reviewer feedback</h2>
+      <label
+        >Reviewer identifier (required)
+        <input data-innfo="identifier" type="text" placeholder="e.g. round-2" />
+      </label>
+      <h3>Instructions</h3>
+      <pre data-innfo="instructions"></pre>
+      <h3>Agent prompt</h3>
+      <pre data-innfo="agent-prompt"></pre>
+      <button data-innfo="download" type="button">Download feedback JSON</button>
+    </dialog>
+
+    <dialog id="innfo-ref-dialog" aria-label="Referenced element details"></dialog>
+
+    <script type="application/json" id="innfo-config">
+      {
+        "needs": [
+          "charts",
+          "concept-rail",
+          "fulltext-search",
+          "matrix-grids",
+          "hash-routing",
+          "reference-popup",
+          "feedback-export"
+        ],
+        "runtime": {
+          "cdn": "https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/innfo-console.bundle.js",
+          "fallback": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js"
+        }
+      }
+    </script>
+    <script type="application/json" id="innfo-schema">
+      {}
+    </script>
+    <script type="application/json" id="innfo-model">
+      {}
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+    <script src="./innfo-console.bundle.js"></script>
+  </body>
+</html>

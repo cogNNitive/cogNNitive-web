@@ -1,0 +1,65 @@
+{
+  "_comment": "MODEL_DATA.template.json — innfo-model snapshot contract (Series-as-Data). The Create Timeline procedure snapshots an L3 metrics model into this shape: meta carries the required innfo-model keys, rows mirror the model rows with growth rules, and series{} carries PRE-COMPUTED month values per chart as pure JSON numbers (no executable JS — the runtime only renders). Months are capped at 120 (MONTHS_CAP in scripts/verify.harness.js).",
+  "meta": {
+    "model": "models/<model>_V_0-1-0_metrics_NN.md",
+    "model_version": "V_0-1-0",
+    "source_model": "models/<source-figures>_NN.md",
+    "generated_at": "YYYY-MM-DD",
+    "months": 12,
+    "historyMonths": 2,
+    "slug": "<csv-filename-base>",
+    "title": "<dashboard title>",
+    "startMonth": 3,
+    "startYear": 2026,
+    "charts": [
+      { "id": "flow", "label": "Cumulative" },
+      { "id": "net", "label": "Net result" }
+    ]
+  },
+  "rows": [
+    {
+      "id": "netResult",
+      "grp": "RESULTS",
+      "label": "Net result",
+      "metricType": "result",
+      "formula": "<verbatim text of the model metricFormula field>",
+      "source": "model",
+      "growth": { "mode": "fixed", "factor": 0 }
+    },
+    {
+      "id": "supplyCost",
+      "grp": "EXPENSES",
+      "label": "Supplies",
+      "metricType": "expense",
+      "variable": true,
+      "base": 200,
+      "metricUnit": "currency/month",
+      "source": "model",
+      "growth": { "mode": "fixed", "factor": 0 }
+    },
+    {
+      "id": "activeIncome",
+      "grp": "REVENUES · Active scenario",
+      "label": "Net income of the active scenario",
+      "metricType": "revenue",
+      "formula": "row feeding the result under the active scenario",
+      "source": "derived",
+      "growth": { "mode": "compound", "factor": 5 }
+    },
+    {
+      "id": "ebitda",
+      "grp": "RESULTS",
+      "label": "Monthly EBITDA",
+      "metricType": "result",
+      "formula": "scenario net income - opex subtotal",
+      "source": "model",
+      "history": [4100.5, 4230.0],
+      "colors": { "min": "#3b82f6", "mid": "#1d4ed8", "max": "#172554" },
+      "growth": { "mode": "fixed", "factor": 0 }
+    }
+  ],
+  "series": {
+    "flow": [4100, 3800, 3600],
+    "net": [1917, 2003, 2090]
+  }
+}
