@@ -33,7 +33,9 @@ const TOKENS = [
   { id: 'templates-dir', re: /templates_dir/g, label: 'blueprints_dir' },
   { id: 'target-template', re: /target_template/g, label: 'target_blueprint' },
   { id: 'type-model', re: /type::\s*model\b/g, label: 'type:: knowledge' },
-  { id: 'specs-templates', re: /specs\/templates/g, label: 'specs/bluepriNNts' },
+  // Legacy URL alias map carve-out: the offline registry keeps lowercase `innfo/specs/templates/...`
+  // aliases as permanent history, so only the canonical capital-`iNNfo` path is flagged.
+  { id: 'specs-templates', re: /(?<!innfo\/)specs\/templates/g, label: 'specs/bluepriNNts' },
   { id: 'workspace-entrypoint', re: /workspace_NN\.md/g, label: 'domaiNN_NN.md' },
   { id: 'lowercase-knowledge-dir', re: /\bknowledge\//g, label: 'kNNowledge/' },
   // Pages path allowance: the canonical Pages URL `innfo/blueprints/catalog.json` is a
@@ -51,6 +53,7 @@ const ALLOWLIST = [
   { pattern: 'skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs', reason: 'generated legacy-detect bundle (ledger: detect-bundle)' },
   { pattern: 'scripts/migrate-spec-urls.mjs', reason: 'historical one-time codemod (cogNNitive/iNNfo -> monorepo) that must match the pre-migration paths' },
   { pattern: 'iNNfo/packages/innfo-core/src/validator/content.ts', reason: 'V_0-3-0 gate: detects and rejects retired frontmatter keys / the retired `type:: model` keyword with an explicit migration message' },
+  { pattern: 'iNNfo/packages/innfo-core/src/schema/canonical-registry.ts', reason: 'offline fallback registry: embeds canonical spec copies + the permanent lowercase legacy URL/alias maps' },
   { pattern: 'skills/nn-trannsform/scripts/provenance.js', reason: 'detects the legacy `_workspace_NN.md` lineage record by name for one-time in-place migration to `_cogNNitive_NN.md`' },
   { pattern: 'skills/nn-trannsform/scripts/lib/provenance-model.js', reason: 'legacy `_workspace_NN.md` lineage-record suffix documented for one-time migration' },
   { pattern: 'scripts/lib/legacy-write-guard.js', reason: 'this guard carries the token table itself' },

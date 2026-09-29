@@ -400,9 +400,8 @@ function runVerification(options = {}) {
   // 14. Legacy Ledger & Quarantine Marker Guard
   run('node scripts/lib/legacy-ledger-guard.js', 'Legacy Ledger & Quarantine Guard');
 
-  // 15. Legacy Write Guard is NOT wired here yet (S10): 145 retired tokens remain in
-  //     S6a/b/c and S8 runtime source. Wire it once that token cleanup lands, so this
-  //     step is green from the first run.
+  // 15. Legacy Write Guard: retired vocabulary tokens must not reappear in runtime source
+  run('node scripts/lib/legacy-write-guard.js', 'Legacy Write Guard');
 
   console.log('\n✅ [cogNNitive Verify] All deterministic pre-checks passed.');
 }
