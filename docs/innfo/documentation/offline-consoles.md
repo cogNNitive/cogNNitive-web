@@ -28,11 +28,11 @@ double-clicking the file from `file://`.
    **fallbacks**, not a mechanism that guarantees a single boot — do not assume
    re-execution is a strict no-op.
 
-Three shells are canonical: `console/artifact_blueprint.html`,
+Three shells are canonical: `console/artifact_shell.html`,
 `procedures/assets/procedure_console.html`, and
 `workspace/assets/model_console.html`. All three use the same three-tag boot
 and declare the **same two JSON slots** (`#innfo-schema`, `#innfo-model`);
-what differs is their DOM anchors — the blueprint uses
+what differs is their DOM anchors — the console shell uses
 `#innfo-banner` / `#innfo-rail` / `#innfo-search` / `#innfo-content` /
 `#innfo-matrices` / `#innfo-export-modal`, the procedure console uses
 `#doc-title` / `#doc-meta` / `#rail` / `#proc-tabs` / `#progress` /
@@ -56,7 +56,7 @@ sources, concatenated in order:
 
 ## The `file://` invariant is test-enforced
 
-`innfo-core/tests/console-blueprint.test.ts` pins the offline contract:
+`innfo-core/tests/console-shell.test.ts` pins the offline contract:
 
 - the shell contains **no** `type="module"` and **no** `fetch(`;
 - the UMD runtime and the single-file bundle keep the same no-fetch /

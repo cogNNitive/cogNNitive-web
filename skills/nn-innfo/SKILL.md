@@ -261,7 +261,7 @@ When the user selects option `[w]` (View & consult documentation):
    - **Level 1 Core Specification**: `iNNfo_V_0-2-0_NN.md` (Primitives: Concepts, Fields, Matrices, Markers).
    - **Level 2 Canonical Templates**: Business, Procedures, Organization, Metrics, Projects, Innovation, Analysis, Documentation.
    - **Syntactic & Structural Rules**: Heading conventions (`# NN`, `## NN`), typing heuristics, WikiLink reference formatting (`[[...]]`), and source citation grammar (`sources:: [...]`).
-   - **Artifact & Console Architecture**: Blueprints, slot payloads, and interactive console runtimes.
+   - **Artifact & Console Architecture**: Console shell, slot payloads, and interactive console runtimes.
 2. **Read-only consultation**: This workflow is purely informational and performs **zero workspace filesystem mutations**.
 
 ---
@@ -540,7 +540,7 @@ When the user selects option `[d]` (Export / update console artifacts):
 1. Verify active model context via the Active Model Selection Gate (§0a-bis).
 2. Execute console compilation for the active model:
    - Run `node <path-to>/export-console.mjs . <model_name>` (or `--stale` / `--all` depending on user intent). The CLI ships in the cogNNitive repo at `scripts/export-console.mjs`; run it from a checkout, or from the copy installed under `~/.agents/console/` once console assets are distributed.
-   - The CLI resolves its console assets (`artifact_blueprint.html` + `innfo-console.bundle.js`) from `$INNFO_CONSOLE_DIR`, then `~/.agents/console/`, then the repo's `iNNfo/specs/templates/console/`. Set `INNFO_CONSOLE_DIR` when running outside a checkout.
+   - The CLI resolves its console assets (`artifact_shell.html` + `innfo-console.bundle.js`) from `$INNFO_CONSOLE_DIR`, then `~/.agents/console/`, then the repo's `iNNfo/specs/templates/console/`. Set `INNFO_CONSOLE_DIR` when running outside a checkout.
    - If the user requests inspection or status, invoke with `--status` or `--tree` (read-only mode).
 3. Present the compiled artifact path (e.g. `export/<stem>_console/<stem>_console.html`) with instructions for opening offline or in browser.
 

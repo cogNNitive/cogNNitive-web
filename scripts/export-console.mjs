@@ -5,8 +5,8 @@
  * Unified console artifact export (backlog: feature/console-artifact-export-cli).
  *
  * Scans a workspace for iNNfo Level-3 models and compiles a self-contained
- * `*_console.html` per model against the canonical console blueprint
- * (`iNNfo/specs/templates/console/artifact_blueprint.html`), filling the
+ * `*_console.html` per model against the canonical console shell
+ * (`iNNfo/specs/templates/console/artifact_shell.html`), filling the
  * `innfo-config` / `innfo-schema` / `innfo-model` JSON slots from a direct
  * model scan (no runtime dependency on innfo-core, whose raw `dist/` barrel
  * is not ESM-importable). Vendors `innfo-console.bundle.js` next to each
@@ -42,19 +42,33 @@ function parseConsoleCdnRef(bundleText) {
   return m ? `innfo-console-v${m[1]}` : null
 }
 
-// The console assets (artifact_blueprint.html + innfo-console.bundle.js) live in
+// The console assets (artifact_shell.html + innfo-console.bundle.js) live in
 // this repo at iNNfo/specs/templates/console/ and are also distributed to
 // ~/.agents/console by skills-manager. Resolve them from the first location that
-// actually holds the blueprint, so the exporter runs both from a checkout and
+// actually holds the shell, so the exporter runs both from a checkout and
 // from a workspace where only the installed console assets exist (issue #94).
 // $INNFO_CONSOLE_DIR overrides every candidate.
+//
+// The shell was called artifact_blueprint.html before the "blueprint" name was
+// reserved for level-2 templates. Installs made before the rename still carry the
+// old filename, so each candidate dir is probed for the new name first and the
+// legacy name second.
+const SHELL_FILENAME = 'artifact_shell.html'
+const LEGACY_SHELL_FILENAME = 'artifact_blueprint.html'
 const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+
+function findShell(dir) {
+  return [SHELL_FILENAME, LEGACY_SHELL_FILENAME]
+    .map((name) => join(dir, name))
+    .find((p) => existsSync(p))
+}
+
 const consoleDir =
   [process.env.INNFO_CONSOLE_DIR, join(homedir(), '.agents', 'console'), repoConsoleDir]
     .filter(Boolean)
-    .find((dir) => existsSync(join(dir, 'artifact_blueprint.html'))) || repoConsoleDir
+    .find((dir) => findShell(dir)) || repoConsoleDir
 
-const blueprintPath = join(consoleDir, 'artifact_blueprint.html')
+const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
 const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
 
 function computeSha256(content) {
@@ -266,13 +280,13 @@ async function renderTree(models, root) {
   }
 }
 
-function injectSlots(blueprint, config, schema, model) {
+function injectSlots(shell, config, schema, model) {
   const slot = (html, id, json) =>
     html.replace(
       new RegExp(`(<script type="application/json" id="${id}">)[\\s\\S]*?(</script>)`),
       (_m, open, close) => `${open}\n${JSON.stringify(json, null, 2)}\n${close}`,
     )
-  return slot(slot(slot(blueprint, 'innfo-config', config), 'innfo-schema', schema), 'innfo-model', model)
+  return slot(slot(slot(shell, 'innfo-config', config), 'innfo-schema', schema), 'innfo-model', model)
 }
 
 async function main() {
@@ -284,15 +298,15 @@ async function main() {
     process.exit(2)
   }
   const root = resolve(args.root)
-  if (!existsSync(blueprintPath)) {
+  if (!existsSync(shellPath)) {
     console.error(
-      `Console assets not found: ${blueprintPath}\n` +
+      `Console assets not found: ${shellPath}\n` +
         'Install the console assets (skills-manager install) or set INNFO_CONSOLE_DIR to ' +
-        'the folder holding artifact_blueprint.html and innfo-console.bundle.js.',
+        'the folder holding artifact_shell.html and innfo-console.bundle.js.',
     )
     process.exit(1)
   }
-  const blueprint = await readFile(blueprintPath, 'utf-8')
+  const shell = await readFile(shellPath, 'utf-8')
   const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
 
   const models = []
@@ -381,11 +395,11 @@ async function main() {
     process.exit(1)
   }
 
-  // The blueprint ships a release-pinned CDN ref (e.g. @innfo-console-v0.1.0) in its
+  // The shell ships a release-pinned CDN ref (e.g. @innfo-console-v0.1.0) in its
   // default config and static <script> tags. Those tags are not injectSlots targets, so
   // normalize every occurrence to the ref derived from the vendored bundle banner —
   // otherwise a generated console loads a stale bundle version first (#95).
-  const resolvedBlueprint = blueprint.replace(
+  const resolvedShell = shell.replace(
     /@innfo-console-v\d+\.\d+\.\d+/g,
     `@${consoleCdnRef}`,
   )
@@ -432,7 +446,7 @@ async function main() {
     const outDir = join(root, 'export', `${stem}_console`)
     await mkdir(outDir, { recursive: true })
     const outFile = join(outDir, `${stem}_console.html`)
-    const html = injectSlots(resolvedBlueprint, config, schema, model)
+    const html = injectSlots(resolvedShell, config, schema, model)
     await writeFile(outFile, html, 'utf-8')
     if (bundle) await cp(bundlePath, join(outDir, 'innfo-console.bundle.js'))
     console.log(`✔ ${stem}_console.html → ${outFile.replace(root, '.')}`)

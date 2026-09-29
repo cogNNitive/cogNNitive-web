@@ -173,7 +173,7 @@ function guardExecutablePayload(obj) {
 }
 
 /* Inline-runtime scan: names every offending block marker found in the HTML.
-   A clean thinned console (blueprint shell + static bundle tags) reports ok
+   A clean thinned console (console shell + static bundle tags) reports ok
    with zero blocks (spec: inline runtime rejected, naming the block). */
 function scanInlineRuntime(html) {
   const blocks = INLINE_RUNTIME_MARKERS.filter((marker) => String(html).indexOf(marker) !== -1);

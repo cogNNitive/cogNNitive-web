@@ -165,7 +165,7 @@ The `open | closed` outcome of the activation gate probe. `closed` keeps the inl
 The innfo-model snapshot embedded in the artifact: `meta` (the 11 required keys), `rows` with model/derived provenance and growth rules, and the pre-computed pure-JSON `series{}` block. Single point to update when the model changes.
 
 ## NN Artifact: Timeline Layout
-The thinned blueprint shell at `../assets/timeline.html`: `innfo-config needs[]` plus the `innfo-schema` / `innfo-model` slots and the static bundle tags. No inline runtime.
+The thinned console shell at `../assets/timeline.html`: `innfo-config needs[]` plus the `innfo-schema` / `innfo-model` slots and the static bundle tags. No inline runtime.
 
 ## NN Artifact: Console HTML
 The standalone deliverable file (`<Model>_V_<version>_console.html`): slots only, shared runtime via static tags, vendored bundle next to the output.

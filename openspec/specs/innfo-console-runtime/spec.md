@@ -2,7 +2,7 @@
 
 ## Purpose
 
-One shared versioned runtime (`innfo-runtime.js`) plus a thin blueprint shell (`artifact_blueprint.html`) for all HTML console artifacts. Eliminates inline runtime duplication across template assets while preserving `file://` double-click with zero build.
+One shared versioned runtime (`innfo-runtime.js`) plus a thin console shell (`artifact_shell.html`) for all HTML console artifacts. Eliminates inline runtime duplication across template assets while preserving `file://` double-click with zero build.
 
 ## Requirements
 
@@ -22,9 +22,9 @@ The system MUST ship a single versioned `innfo-runtime.js` as a UMD/IIFE global 
 - WHEN scanned for `fetch(` and `type=module`
 - THEN neither token appears
 
-### Requirement: Blueprint Shell with Config and JSON Slots
+### Requirement: Console Shell with Config and JSON Slots
 
-`artifact_blueprint.html` MUST declare an `innfo-config` block with a `needs[]` capability list and exactly two JSON slots: `innfo-schema` and `innfo-model`. Generated consoles MUST declare only `needs[]` plus slot payloads and MUST NOT inline runtime code.
+`artifact_shell.html` MUST declare an `innfo-config` block with a `needs[]` capability list and exactly two JSON slots: `innfo-schema` and `innfo-model`. Generated consoles MUST declare only `needs[]` plus slot payloads and MUST NOT inline runtime code.
 
 #### Scenario: Thin console renders from slots
 
@@ -40,7 +40,7 @@ The system MUST ship a single versioned `innfo-runtime.js` as a UMD/IIFE global 
 
 ### Requirement: No Duplicated Inline Runtime
 
-The reference assets (`business/assets/model_viewer.html`, `workspace/assets/model_console.html`, `metrics/assets/timeline.html`) MUST thin onto the blueprint. No console artifact SHALL ship duplicated inline runtime. `workspace/assets/model_console.html` MUST render the origin-typed citation icons and the citation detail dialog defined by the `console-field-citations` capability. `business/assets/model_viewer.html` MUST remain unchanged and reachable from `main` for one release cycle after `workspace/assets/model_console.html` ships, because installed procedures fetch it by that path.
+The reference assets (`business/assets/model_viewer.html`, `workspace/assets/model_console.html`, `metrics/assets/timeline.html`) MUST thin onto the shell. No console artifact SHALL ship duplicated inline runtime. `workspace/assets/model_console.html` MUST render the origin-typed citation icons and the citation detail dialog defined by the `console-field-citations` capability. `business/assets/model_viewer.html` MUST remain unchanged and reachable from `main` for one release cycle after `workspace/assets/model_console.html` ships, because installed procedures fetch it by that path.
 (Previously: only two reference assets existed — `business/assets/model_viewer.html` and `metrics/assets/timeline.html` — with no citation rendering and no relocation constraint.)
 
 #### Scenario: Reference assets thinned

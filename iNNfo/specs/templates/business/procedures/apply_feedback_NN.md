@@ -106,7 +106,7 @@ output:: [[Regenerated Console]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Regenerate the business consoles from `artifact_blueprint.html`: declare `needs[]` in `innfo-config` (pins resolve via `console/needs-registry.json`), populate the `innfo-schema`/`innfo-model` slots, reference the single-file console bundle via static script tags, and ship the vendored `innfo-console.bundle.js` next to the console for offline double-click. Save under the stable name `{Model}_V_{version}_console.html`; timestamped copies are archive-only.
+Regenerate the business consoles from `artifact_shell.html`: declare `needs[]` in `innfo-config` (pins resolve via `console/needs-registry.json`), populate the `innfo-schema`/`innfo-model` slots, reference the single-file console bundle via static script tags, and ship the vendored `innfo-console.bundle.js` next to the console for offline double-click. Save under the stable name `{Model}_V_{version}_console.html`; timestamped copies are archive-only.
 
 # NN Tools
 
@@ -166,4 +166,4 @@ Active model after the single patch bump.
 ## NN Artifact: Regenerated Console
 type:: deliverable
 format:: html
-Blueprint console saved as `{Model}_V_{version}_console.html` with the vendored runtime alongside.
+Shell-based console saved as `{Model}_V_{version}_console.html` with the vendored runtime alongside.

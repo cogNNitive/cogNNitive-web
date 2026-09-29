@@ -333,7 +333,7 @@ level: 3
       await mkdir(toolsDir, { recursive: true })
       await mkdir(consoleDir, { recursive: true })
       await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
-      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
+      for (const name of ['artifact_shell.html', 'innfo-console.bundle.js']) {
         await copyFile(
           join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
           join(consoleDir, name),
@@ -353,6 +353,55 @@ level: 3
       )
     })
 
+    it('falls back to the legacy artifact_blueprint.html name in an installed console dir', async () => {
+      const repoRoot = resolve(here, '..')
+      const consoleSrc = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+      const assetsDir = join(tempDir, 'legacy-console')
+      const toolsDir = join(tempDir, 'elsewhere', 'tools')
+      await mkdir(assetsDir, { recursive: true })
+      await mkdir(toolsDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
+      // Installs made before the shell rename only carry the old filename.
+      await copyFile(join(consoleSrc, 'artifact_shell.html'), join(assetsDir, 'artifact_blueprint.html'))
+      await copyFile(join(consoleSrc, 'innfo-console.bundle.js'), join(assetsDir, 'innfo-console.bundle.js'))
+
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        [join(toolsDir, 'export-console.mjs'), tempDir, 'business'],
+        { cwd: tempDir, env: { ...process.env, INNFO_CONSOLE_DIR: assetsDir } },
+      )
+      assert.match(stdout, /business_V_0-2-5_console\.html/)
+      assert.equal(
+        existsSync(join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html')),
+        true,
+      )
+    })
+
+    it('prefers artifact_shell.html over the legacy name when both exist in a dir', async () => {
+      const repoRoot = resolve(here, '..')
+      const consoleSrc = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+      const assetsDir = join(tempDir, 'both-console')
+      const toolsDir = join(tempDir, 'elsewhere', 'tools')
+      await mkdir(assetsDir, { recursive: true })
+      await mkdir(toolsDir, { recursive: true })
+      await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
+      await copyFile(join(consoleSrc, 'artifact_shell.html'), join(assetsDir, 'artifact_shell.html'))
+      const shell = await readFile(join(consoleSrc, 'artifact_shell.html'), 'utf-8')
+      await writeFile(join(assetsDir, 'artifact_blueprint.html'), shell.replace('<title>', '<title>STALE-LEGACY '))
+      await copyFile(join(consoleSrc, 'innfo-console.bundle.js'), join(assetsDir, 'innfo-console.bundle.js'))
+
+      await execFileAsync(
+        process.execPath,
+        [join(toolsDir, 'export-console.mjs'), tempDir, 'business'],
+        { cwd: tempDir, env: { ...process.env, INNFO_CONSOLE_DIR: assetsDir } },
+      )
+      const out = await readFile(
+        join(tempDir, 'export', 'business_V_0-2-5_console', 'business_V_0-2-5_console.html'),
+        'utf-8',
+      )
+      assert.equal(out.includes('STALE-LEGACY'), false)
+    })
+
     it('resolves console assets from $INNFO_CONSOLE_DIR when no repo tree is present', async () => {
       const repoRoot = resolve(here, '..')
       const assetsDir = join(tempDir, 'installed-console')
@@ -360,7 +409,7 @@ level: 3
       await mkdir(assetsDir, { recursive: true })
       await mkdir(toolsDir, { recursive: true })
       await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
-      for (const name of ['artifact_blueprint.html', 'innfo-console.bundle.js']) {
+      for (const name of ['artifact_shell.html', 'innfo-console.bundle.js']) {
         await copyFile(
           join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
           join(assetsDir, name),

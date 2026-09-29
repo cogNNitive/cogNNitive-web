@@ -17,7 +17,7 @@ import { createRequire } from 'node:module'
  * nn-trannsform's `test-scanner.js`. Duplicating it here would add no signal.
  *
  * What had NO gated coverage is the DOM wiring below: that booting the runtime
- * against the blueprint's slots actually paints a banner, rail and cards, that
+ * against the shell's slots actually paints a banner, rail and cards, that
  * the search box filters the rendered cards (not just `filterElements`), and
  * that the export button refuses to emit a file until an identifier is typed.
  * The runtime is UMD and guards its own auto-boot, so happy-dom is enough —
@@ -55,12 +55,12 @@ const modelFixture = {
 }
 
 /**
- * Fills the shipped blueprint's JSON slots and drops its `<script src>` tags.
+ * Fills the shipped shell's JSON slots and drops its `<script src>` tags.
  * The runtime is loaded through `require` instead, so leaving the tags in only
  * makes happy-dom attempt (and fail) real network fetches.
  */
-function renderBlueprint(): void {
-  const shell = readFileSync(join(consoleDir, 'artifact_blueprint.html'), 'utf8')
+function renderShell(): void {
+  const shell = readFileSync(join(consoleDir, 'artifact_shell.html'), 'utf8')
   const filled = shell
     .replace(
       /(<script type="application\/json" id="innfo-schema">)[\s\S]*?(<\/script>)/,
@@ -88,7 +88,7 @@ function typeInto(selector: string, value: string): void {
 
 describe('innfo-console — rendered DOM', () => {
   beforeEach(() => {
-    renderBlueprint()
+    renderShell()
   })
 
   it('paints the banner, concept rail and one card per element from the slots', () => {
@@ -133,7 +133,7 @@ describe('innfo-console — export gate', () => {
   let clickSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    renderBlueprint()
+    renderShell()
     downloads = []
     // The runtime downloads by creating an <a download=...> and clicking it.
     // Capturing the click is the only seam; `downloads` staying empty is what

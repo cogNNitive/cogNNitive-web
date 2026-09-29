@@ -110,7 +110,7 @@ describe('console (workspace) slot payloads', () => {
 
 // The timeline asset is a template blue-print shell: it declares the shared
 // console bundle (innfo-console.bundle.js), NOT the legacy innfo-runtime.js,
-// and carries the two blueprint JSON slots. Inline dashboard engine markers
+// and carries the two shell JSON slots. Inline dashboard engine markers
 // (MODEL_DATA/FORMULAS/DEPS/SERIES/SEASON as code) must not survive.
 describe('timeline slot payloads', () => {
   it('boots the shared console bundle (not the legacy innfo-runtime.js)', () => {
@@ -119,7 +119,7 @@ describe('timeline slot payloads', () => {
     expect(html).not.toContain('innfo-runtime.js')
   })
 
-  it('keeps the innfo-schema and innfo-model blueprint slots', () => {
+  it('keeps the innfo-schema and innfo-model shell slots', () => {
     const html = readAsset(assets.timeline)
     expect(html).toContain('id="innfo-schema"')
     expect(html).toContain('id="innfo-model"')

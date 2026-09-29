@@ -291,7 +291,7 @@ describe('metrics slot contract: MODEL_DATA.template.json series snapshot', () =
 })
 
 describe('metrics slot contract: generated console shape', () => {
-  it('thinned timeline.html carries the blueprint slots and zero dashboard runtime', () => {
+  it('thinned timeline.html carries the shell slots and zero dashboard runtime', () => {
     const api = loadContract()
     const html = readFileSync(join(metricsDir, 'assets', 'timeline.html'), 'utf8')
     expect(html).toContain('id="innfo-config"')

@@ -64,7 +64,7 @@ skills:
   - name: nn-video-script
     repo: cogNNitive/cogNNitive
     path: skills/nn-video-script
-    version: "V_0-1-0"
+    version: "V_0-2-0"
     ref_key: skills
     requires: [nn-innfo]
     description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
@@ -175,7 +175,7 @@ frozen_templates:
     ref_key: templates
 
 # Shared seam folders that live under iNNfo/specs/templates/ but are NOT
-# distributable templates: they hold cross-template runtime assets (blueprint
+# distributable templates: they hold cross-template runtime assets (console
 # shells, UMD runtimes, schemas) with no spec_NN.md. Listed here only so the
 # verify.js Template Inventory Guard recognizes the folder; the catalog and
 # manifest generators skip them (no spec_NN.md to enumerate), same as `assets`.
@@ -183,7 +183,7 @@ seam_dirs:
   - name: console
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/templates/console/
-    description: Shared console seam — artifact blueprint shell, InnfoConsole UMD runtime, and feedback JSON schema for the reviewer feedback loop.
+    description: Shared console seam — artifact shell, InnfoConsole UMD runtime, and feedback JSON schema for the reviewer feedback loop.
 
 # Published console bundle: the single-file runtime + renderers (visuals,
 # innfo-runtime, model-viewer, procedure-stepper) that generated console
@@ -196,9 +196,9 @@ console_assets:
     file: iNNfo/specs/templates/console/innfo-console.bundle.js
     version: "0.4.0"
     ref_key: innfo-console
-  - name: innfo-console-blueprint
+  - name: innfo-console-shell
     repo: cogNNitive/cogNNitive
-    file: iNNfo/specs/templates/console/artifact_blueprint.html
+    file: iNNfo/specs/templates/console/artifact_shell.html
     version: "0.4.0"
     ref_key: innfo-console
   - name: innfo-console-export-cli

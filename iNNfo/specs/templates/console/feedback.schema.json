@@ -39,7 +39,7 @@
         "artifact_version": {
           "type": "string",
           "minLength": 1,
-          "description": "Console runtime/blueprint version that produced the export."
+          "description": "Console runtime/shell version that produced the export."
         },
         "exported_at": {
           "type": "string",

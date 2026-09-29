@@ -5,22 +5,22 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const consoleDir = join(here, '..', '..', '..', 'specs', 'templates', 'console')
-const blueprintPath = join(consoleDir, 'artifact_blueprint.html')
+const shellPath = join(consoleDir, 'artifact_shell.html')
 const registryPath = join(consoleDir, 'needs-registry.json')
 const runtimePath = join(consoleDir, 'innfo-runtime.js')
 
-function readBlueprint(): string {
-  return readFileSync(blueprintPath, 'utf8')
+function readShell(): string {
+  return readFileSync(shellPath, 'utf8')
 }
 
-describe('artifact_blueprint.html (console shell)', () => {
+describe('artifact_shell.html (console shell)', () => {
   it('exists as a standalone file:// document', () => {
-    expect(existsSync(blueprintPath)).toBe(true)
-    expect(readBlueprint().toLowerCase()).toContain('<!doctype html>')
+    expect(existsSync(shellPath)).toBe(true)
+    expect(readShell().toLowerCase()).toContain('<!doctype html>')
   })
 
   it('declares exactly the innfo-config block plus innfo-schema and innfo-model slots', () => {
-    const html = readBlueprint()
+    const html = readShell()
     expect(html).toContain('id="innfo-config"')
     expect(html).toContain('id="innfo-schema"')
     expect(html).toContain('id="innfo-model"')
@@ -31,19 +31,19 @@ describe('artifact_blueprint.html (console shell)', () => {
   })
 
   it('declares needs[] inside innfo-config', () => {
-    const html = readBlueprint()
+    const html = readShell()
     expect(html).toContain('"needs"')
   })
 
   it('loads the shared runtime via static script tags (no fetch, no modules)', () => {
-    const html = readBlueprint()
+    const html = readShell()
     expect(html).toContain('innfo-runtime.js')
     expect(html).not.toContain('type="module"')
     expect(html).not.toContain('fetch(')
   })
 
   it('provides the review banner and export modal containers', () => {
-    const html = readBlueprint()
+    const html = readShell()
     expect(html).toContain('id="innfo-banner"')
     expect(html).toContain('id="innfo-export-modal"')
   })

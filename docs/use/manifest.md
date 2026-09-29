@@ -77,7 +77,7 @@ agent-bootstrap:
     - name: nn-video-script
       repo: cogNNitive/cogNNitive
       path: skills/nn-video-script
-      version: "V_0-1-0"
+      version: "V_0-2-0"
       ref: "skills-v2.4.0"
       commit: "5eec2098c41e2b4875b5bb27c9ea15e5156d3779"
       requires: [nn-innfo]
@@ -185,11 +185,11 @@ agent-bootstrap:
       ref: "innfo-console-v0.4.0"
       commit: "9e8cfde2010435b8d2997558e8f9bb3556be160e"
       url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/9e8cfde2010435b8d2997558e8f9bb3556be160e/iNNfo/specs/templates/console/innfo-console.bundle.js
-    - file: iNNfo/specs/templates/console/artifact_blueprint.html
+    - file: iNNfo/specs/templates/console/artifact_shell.html
       version: "0.4.0"
       ref: "innfo-console-v0.4.0"
       commit: "9e8cfde2010435b8d2997558e8f9bb3556be160e"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/9e8cfde2010435b8d2997558e8f9bb3556be160e/iNNfo/specs/templates/console/artifact_blueprint.html
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/9e8cfde2010435b8d2997558e8f9bb3556be160e/iNNfo/specs/templates/console/artifact_shell.html
     - file: scripts/export-console.mjs
       version: "0.4.0"
       ref: "innfo-console-v0.4.0"
