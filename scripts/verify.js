@@ -337,10 +337,10 @@ function runVerification(options = {}) {
   //    otherwise make this unreachable in CI (W2/W3, slice-1 verify report).
   run('node scripts/build-preflight-primitives.mjs --check', 'Check Preflight Primitives Bundle Fresh');
 
-  // 7. Template Catalog Drift Guard: the committed iNNfo/specs/templates/catalog.json
-  //    must match the on-disk templates tree (workspace-template-upgrade, shared
-  //    classifier input for check_workspace and the preflight CLI).
-  run('node scripts/template-catalog.mjs --check', 'Check Template Catalog Fresh');
+  // 7. Blueprint Catalog Drift Guard: the committed iNNfo/specs/bluepriNNts/catalog.json
+  //    must match the on-disk bluepriNNts tree (workspace-blueprint-upgrade, shared
+  //    classifier input for check_domain and the preflight CLI).
+  run('node scripts/blueprint-catalog.mjs --check', 'Check Blueprint Catalog Fresh');
 
   // 7b. nn-trannsform slug mirror drift guard: the committed generated mirror must
   //     match a fresh esbuild render of innfo-core's slug primitives (single

@@ -24,8 +24,8 @@
     "check:integrity": "node scripts/check-integrity.js",
     "sync:samples": "node scripts/sync-samples.mjs",
     "check:samples": "node scripts/sync-samples.mjs --check",
-    "sync:versions": "node scripts/sync-versions.mjs && node scripts/manifest/generate-manifest.js --channel stable && node scripts/template-catalog.mjs",
-    "check:versions": "node scripts/sync-versions.mjs --check && node scripts/manifest/generate-manifest.js --channel stable --check && node scripts/template-catalog.mjs --check",
+    "sync:versions": "node scripts/sync-versions.mjs && node scripts/manifest/generate-manifest.js --channel stable && node scripts/blueprint-catalog.mjs",
+    "check:versions": "node scripts/sync-versions.mjs --check && node scripts/manifest/generate-manifest.js --channel stable --check && node scripts/blueprint-catalog.mjs --check",
     "check:spec-version": "node scripts/check-spec-version.mjs",
     "check:spec-urls": "node scripts/check-spec-version.mjs --check-urls",
     "check:specs": "node scripts/check-spec-version.mjs --check-urls && node scripts/check-spec-version.mjs --inventory"

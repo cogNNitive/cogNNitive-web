@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * scripts/template-catalog.test.mjs
+ * scripts/blueprint-catalog.test.mjs
  *
- * Unit tests for scripts/template-catalog.mjs (plain node, zero deps —
+ * Unit tests for scripts/blueprint-catalog.mjs (plain node, zero deps —
  * matches the repo's actioNN .test.js convention).
  */
 
@@ -15,14 +15,14 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const GENERATOR = path.join(SCRIPT_DIR, 'template-catalog.mjs');
+const GENERATOR = path.join(SCRIPT_DIR, 'blueprint-catalog.mjs');
 
 function runGenerator(args) {
   return spawnSync(process.execPath, [GENERATOR, ...args], { encoding: 'utf-8' });
 }
 
 function fixtureTree() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'template-catalog-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'blueprint-catalog-test-'));
   const t = path.join(root, 'templates');
   fs.mkdirSync(path.join(t, 'business'), { recursive: true });
   fs.mkdirSync(path.join(t, 'business', 'samples'), { recursive: true });
@@ -56,7 +56,7 @@ function fixtureTree() {
 }
 
 async function runTests() {
-  console.log('Running template-catalog unit tests...');
+  console.log('Running blueprint-catalog unit tests...');
   const root = fixtureTree();
   const t = path.join(root, 'templates');
   const out = path.join(root, 'catalog.json');
@@ -68,24 +68,24 @@ async function runTests() {
       const catalog = JSON.parse(fs.readFileSync(out, 'utf-8'));
 
       assert.deepStrictEqual(
-        catalog.templates.business.versions.map((v) => v.template_version),
+        catalog.blueprints.business.versions.map((v) => v.template_version),
         ['V_0-1-0', 'V_0-2-1'],
         'business versions come from frontmatter template_version, sorted ascending',
       );
-      assert.strictEqual(catalog.templates.business.adopted, 'V_0-2-1', 'adopted = highest version');
-      assert.strictEqual(catalog.templates.business.versions[1].url, 'https://x/business/spec_NN.md');
-      assert.strictEqual(catalog.templates.business.versions.length, 2, 'level-3 sample excluded');
+      assert.strictEqual(catalog.blueprints.business.adopted, 'V_0-2-1', 'adopted = highest version');
+      assert.strictEqual(catalog.blueprints.business.versions[1].url, 'https://x/business/spec_NN.md');
+      assert.strictEqual(catalog.blueprints.business.versions.length, 2, 'level-3 sample excluded');
 
       assert.deepStrictEqual(
-        catalog.templates.documentation.versions.map((v) => v.template_version),
+        catalog.blueprints.documentation.versions.map((v) => v.template_version),
         ['V_0-2-0'],
         'flat canonical subdir template discovered by frontmatter version',
       );
 
-      assert.ok('workspace' in catalog.templates, 'root workspace_spec_NN.md discovered as workspace');
-      assert.strictEqual(catalog.templates.workspace.adopted, 'V_0-3-0');
+      assert.ok('workspace' in catalog.blueprints, 'root workspace_spec_NN.md discovered as workspace');
+      assert.strictEqual(catalog.blueprints.workspace.adopted, 'V_0-3-0');
 
-      assert.ok(!('draft' in catalog.templates), 'level-2 file without template_version is not catalogued');
+      assert.ok(!('draft' in catalog.blueprints), 'level-2 file without template_version is not catalogued');
       assert.ok(
         catalog.warnings.some((w) => w.includes('draft/spec_NN.md')),
         'missing template_version produces a warning',
@@ -99,8 +99,8 @@ async function runTests() {
       assert.ok('frozen' in catalog, 'catalog carries a top-level frozen partition');
       assert.ok('cogNNitive' in catalog.frozen, 'cogNNitive recorded under frozen');
       assert.ok('base' in catalog.frozen, 'base recorded under frozen');
-      assert.ok(!('cogNNitive' in catalog.templates), 'cogNNitive dropped from templates');
-      assert.ok(!('base' in catalog.templates), 'base dropped from templates');
+      assert.ok(!('cogNNitive' in catalog.blueprints), 'cogNNitive dropped from templates');
+      assert.ok(!('base' in catalog.blueprints), 'base dropped from templates');
       assert.strictEqual(catalog.frozen.cogNNitive.adopted, 'V_0-2-0', 'frozen cogNNitive adopted version preserved');
       assert.strictEqual(catalog.frozen.base.adopted, 'V_0-1-0', 'frozen base adopted version preserved');
       console.log('✔ frozen partition emits cogNNitive + base and drops them from templates');
@@ -126,7 +126,7 @@ async function runTests() {
     fs.rmSync(root, { recursive: true, force: true });
   }
 
-  console.log('All template-catalog tests passed successfully!\n');
+  console.log('All blueprint-catalog tests passed successfully!\n');
 }
 
 runTests().catch((err) => {

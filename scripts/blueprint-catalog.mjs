@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * scripts/template-catalog.mjs
+ * scripts/blueprint-catalog.mjs
  *
- * Generates iNNfo/specs/templates/catalog.json — the machine-readable Level-2
- * template catalog consumed by the nn-preflight Tier-3 upgrade detection scan
+ * Generates iNNfo/specs/bluepriNNts/catalog.json — the machine-readable Level-2
+ * blueprint catalog consumed by the nn-preflight Tier-3 upgrade detection scan
  * (skills/nn-preflight/scripts/upgrade-check.js).
  *
  * Discovery rules:
- *   - Walks the templates tree for level-2 documents only (skips samples/).
+ *   - Walks the bluepriNNts tree for level-2 documents only (skips samples/).
  *   - Canonical name comes from the containing directory (`<name>/spec_NN.md`),
  *     or from the bare filename for the root workspace spec (`workspace_spec_NN.md`).
  *   - Version is the authoritative frontmatter `template_version` (`V_x-y-z` or
@@ -18,11 +18,11 @@
  *     single entry; historical versions live in immutable `templates-v*` tags.
  *
  * Usage:
- *   node scripts/template-catalog.mjs [--check] [--root <dir>] [--out <file>]
+ *   node scripts/blueprint-catalog.mjs [--check] [--root <dir>] [--out <file>]
  *
  *   --check   compare the rendered catalog to the committed file; exit 1 on drift.
- *   --root    override the templates tree (default: iNNfo/specs/templates).
- *   --out     override the output file (default: iNNfo/specs/templates/catalog.json).
+ *   --root    override the bluepriNNts tree (default: iNNfo/specs/bluepriNNts).
+ *   --out     override the output file (default: iNNfo/specs/bluepriNNts/catalog.json).
  *
  * Zero external dependencies. LF line endings, stable key ordering.
  */
@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
-const DEFAULT_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
+const DEFAULT_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 const DEFAULT_OUT = path.join(DEFAULT_ROOT, 'catalog.json');
 
 const SKIP_DIRS = new Set(['samples', 'node_modules', '.git', 'dist', '.spec-cache', 'backups', 'archive']);
@@ -41,8 +41,8 @@ const SKIP_DIRS = new Set(['samples', 'node_modules', '.git', 'dist', '.spec-cac
 /**
  * Retired templates that are frozen byte-identical for legacy resolution but no
  * longer part of ACTIVE distribution. They are emitted under a top-level
- * `frozen` object and dropped from `templates` (so nn-preflight upgrade-check —
- * which reads only `catalog.templates` — gives them no upgrade notices).
+ * `frozen` object and dropped from `blueprints` (so nn-preflight upgrade-check —
+ * which reads only `catalog.blueprints` — gives them no upgrade notices).
  */
 const FROZEN_NAMES = ['cogNNitive', 'base'];
 
@@ -135,7 +135,7 @@ function generate(rootDir) {
       continue;
     }
 
-    const url = fm.spec_url || `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/${relPosix}`;
+    const url = fm.spec_url || `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${relPosix}`;
 
     if (!byName.has(name)) byName.set(name, []);
     byName.get(name).push({
@@ -146,7 +146,7 @@ function generate(rootDir) {
     });
   }
 
-  const templates = {};
+  const blueprints = {};
   const frozen = {};
   for (const [name, versions] of byName.entries()) {
     versions.sort((a, b) => compareVersions(a.template_version, b.template_version));
@@ -158,13 +158,13 @@ function generate(rootDir) {
     if (FROZEN_NAMES.includes(name)) {
       frozen[name] = entry;
     } else {
-      templates[name] = entry;
+      blueprints[name] = entry;
     }
   }
 
   return {
-    generator: 'scripts/template-catalog.mjs',
-    templates: Object.fromEntries(Object.keys(templates).sort().map((k) => [k, templates[k]])),
+    generator: 'scripts/blueprint-catalog.mjs',
+    blueprints: Object.fromEntries(Object.keys(blueprints).sort().map((k) => [k, blueprints[k]])),
     frozen: Object.fromEntries(Object.keys(frozen).sort().map((k) => [k, frozen[k]])),
     warnings,
   };
@@ -183,7 +183,7 @@ function main() {
   const outFile = outIdx !== -1 ? argv[outIdx + 1] : DEFAULT_OUT;
 
   if (!fs.existsSync(rootDir)) {
-    console.error(`template-catalog: templates tree not found: ${rootDir}`);
+    console.error(`blueprint-catalog: bluepriNNts tree not found: ${rootDir}`);
     process.exit(2);
   }
 
@@ -193,10 +193,10 @@ function main() {
   if (check) {
     const committed = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf-8') : null;
     if (rendered === committed) {
-      console.log(`template-catalog: OK — ${outFile} is up to date.`);
+      console.log(`blueprint-catalog: OK — ${outFile} is up to date.`);
       process.exit(0);
     }
-    console.error(`template-catalog: DRIFT — ${outFile} is stale. Re-run without --check.`);
+    console.error(`blueprint-catalog: DRIFT — ${outFile} is stale. Re-run without --check.`);
     if (catalog.warnings.length) {
       console.error(catalog.warnings.map((w) => `  - ${w}`).join('\n'));
     }
@@ -205,8 +205,8 @@ function main() {
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, rendered, 'utf-8');
-  const count = Object.keys(catalog.templates).length;
-  console.log(`template-catalog: wrote ${outFile} (${count} templates).`);
+  const count = Object.keys(catalog.blueprints).length;
+  console.log(`blueprint-catalog: wrote ${outFile} (${count} blueprints).`);
 }
 
 main();
