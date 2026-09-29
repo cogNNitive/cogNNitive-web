@@ -1,6 +1,6 @@
 ---
 spec_version: "V_0-2-1"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
@@ -253,7 +253,7 @@ To create a metrics model, create a level 3 FILE mode document with:
 level: 3
 parent_spec:
   name: "metrics_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
 model_version: "V_0-1-0"
 title: "<Metrics Model Title>"
 ---
@@ -281,7 +281,7 @@ The official sample for this template is at `specs/templates/metrics/samples/Gho
 # From the Ghostbusters metrics sample:
 parent_spec:
   name: "metrics_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
 
 # This template's parent:
 parent_spec:

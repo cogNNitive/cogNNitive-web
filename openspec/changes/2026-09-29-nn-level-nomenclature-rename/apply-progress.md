@@ -1,11 +1,13 @@
 # Apply Progress: NN Level Nomenclature Rename
 
 ## Overview
-- **Active Slice**: S3 (defiNNition and iNNfo V_0-3-0 additive specifications) -> ready for commit
-- **Base Branch**: `dev`
+- **Active Slice**: S7 (path move + manifest keys + bumps) -> commit 1 DONE (`60cf20d0`, 109 renames). Commits 2-3 **BLOCKED on the uncommitted video-engine workstream** sitting in the shared tree.
+- **Base Branch**: `feat/nn-rename-tracker` (S2a exception, approved 2026-09-29). S0-S4 were planned for `dev` but were committed on the tracker branch.
 - **Delivery Strategy**: `ask-on-risk`
 - **Chain Strategy**: `feature-branch-chain`
 - **Strict TDD Mode**: Active
+
+> Resume note (2026-09-29): S1-S6c are committed on `feat/nn-rename-tracker`. S7 commit 1 (`git mv iNNfo/specs/templates iNNfo/specs/bluepriNNts`) is committed. S7 commits 2-3 and S8-S11/T are pending. Do NOT start S7 commit 2/3 until the uncommitted video-engine workstream (`iNNfo/specs/bluepriNNts/video/spec_NN.md` V_0-4-0, `procedures/generate_video_script_NN.md`, console assets, 8 archived openspec changes) is committed by its owner: S7 regenerates `catalog.json` and `manifest/*` and bumps every `spec_NN.md`, including `video`, so racing it would sweep foreign work or conflict.
 
 ---
 
@@ -141,5 +143,56 @@
 - `npm run typecheck`: **PASS** (core build, mcp typecheck, editor typecheck clean).
 - Isolated environment run (`USERPROFILE=TEMP` / `HOME=TEMP`): **PASS** (100% green).
 - `node scripts/lib/legacy-ledger-guard.js`: **5 entries, 10 code markers validated**.
+- Committed on `feat/nn-rename-tracker`: `2038f62d`.
 
+---
+
+## Slice S6a: Core flip [versioned-document-grammar, workspace-entrypoint, workspace-entrypoint-resolution, workspace-directory-conventions, model-primitive-type, model-scaffold-robustness]
+
+### Completed (as committed)
+- [x] 7.1-7.9: core `layout.ts`, resolver tiers, `recursiveParser/workspace.ts`, validator/serializer/types, legacy hint via `detectLegacy`; unit tests on new-layout fixtures; real legacy fixtures left known-red for S9a.
+- Committed on `feat/nn-rename-tracker`: `4cf3e0c4`.
+
+---
+
+## Slice S6b: MCP flip [mcp-tool-naming]
+
+### Completed (as committed)
+- [x] 8.1-8.9: 13 tools renamed, 4 kept; `INNFO_DOMAIN_DIR`; resolver `^blueprints-v\d+\.\d+\.\d+$`; legacy domain returns migration notice; `tools/legacy-hint.ts`; README + docs.
+- Committed on `feat/nn-rename-tracker`: `65b90bbd`.
+
+---
+
+## Slice S6c: Editor flip [innfo-console-feedback, sample-workspaces]
+
+### Completed (as committed)
+- [x] 9.1-9.8 (except the S9a/S9b-deferred sample regeneration): editor views and labels, `FieldModel.vue` hierarchical `kNNowledge/` paths, feedback/`export-meta` new keys, `useLegacyDomain.ts` legacy banner, `sync-samples.mjs` new paths.
+- Committed on `feat/nn-rename-tracker`: `dfb17775`.
+- Note: task checkboxes 9.x in `tasks.md` were left unticked by the prior session; the commit is the source of truth.
+
+---
+
+## Slice S7: Path move, manifest keys, domaiNN blueprint, bumps (ONE PR)
+
+### Completed Tasks
+- [x] **10.6 (commit 1)**: `git mv iNNfo/specs/templates iNNfo/specs/bluepriNNts` as a single mechanical commit, no edits inside — **DONE** (`60cf20d0`, 109 renames, 0 line changes).
+- [x] **10.7 (partial, commit 2 unit 1)**: `scripts/template-catalog.mjs` -> `scripts/blueprint-catalog.mjs` (+ its test), output key `templates` -> `blueprints`, default root/URL/`--root`/`--out`/messages to `bluepriNNts`, generated file `iNNfo/specs/bluepriNNts/catalog.json`; wiring updated in `package.json` (`sync:versions`/`check:versions`), `scripts/verify.js` step 7, `scripts/build-docs.mjs` (staging target `docs/innfo/blueprints/catalog.json`) — **DONE** (`9b64adde`; `scripts/blueprint-catalog.test.mjs` 4/4 green).
+  - **Known-red introduced by this unit**: the committed `iNNfo/specs/bluepriNNts/catalog.json` still carries the old `templates` key + old URLs, so `node scripts/blueprint-catalog.mjs --check` (verify step 7) fails until the spec_url sweep + regeneration below. This is the plan's sanctioned intermediate-red (tasks.md 10.11).
+
+### Remaining S7 scope (measured 2026-09-29: ~150 tracked files still reference `iNNfo/specs/templates`)
+- **Path sweep `iNNfo/specs/templates` -> `iNNfo/specs/bluepriNNts`** across: `manifest/source.yaml` + `manifest/body.md`; `scripts/**` (excluding tests that assert legacy); `iNNfo/specs/bluepriNNts/**` (spec `spec_url` fields, sample `parent_spec.url`); `iNNfo/packages/*/src` non-legacy + `tests`; `skills/**` prose/scripts; `docs/**` (many are generated). **MUST EXCLUDE**: `iNNfo/packages/innfo-core/src/legacy/**` and `tests/legacy/**` (the detector/migrator must keep matching the OLD path), `docs/innfo/cdn/**` (frozen bundles), `openspec/**`, `.claude/**`, and the S9a/S9b fixtures/samples (`tests/fixtures/simulacro-refactorizacion`, `_samples_nn/**`, `docs/cognitive_nn/use-cases/**`, `workspace_NN/**`, `simulation/**`) which are migrated by the tool, not hand-edited.
+- **Manifest key flip** in `manifest/source.yaml` (`templates:`->`blueprints:`, `frozen_templates:`->`frozen_blueprints:`, `ref_key: templates`->`blueprints`, workflow `template:`->`blueprint`, skill `templates:`->`blueprints:`) + `sync-versions.mjs` section regex + `generate-manifest.js` + `validate-manifest.js`/`lib/manifest-rules.js` + `check-parity.js` + `canonical-registry.ts` + `tag-pin-freshness.js` (`TEMPLATE_SPEC_RE`) + `guard-template-immutability.js`; update their tests.
+- **Regeneration (needs network/GitHub API)**: `docs/use/manifest.md` + `docs/use/manifest-next.md` via `generate-manifest.js`; regenerate `catalog.json` and `validation-baseline.json`.
+- **Not local-only**: `check:versions` and `validate-manifest --channel stable` cannot be fully green until the manifest docs are regenerated with a GH token — a maintainer/network step.
+
+### Pending / Blocked
+- [ ] **10.1** Prerequisite gate: `video`/`design-presets` releases landed — **NOT MET**: the video-engine workstream is uncommitted in the shared tree (`video/spec_NN.md` V_0-4-0, `procedures/generate_video_script_NN.md` untracked, console assets, 8 archived openspec changes untracked).
+- [ ] **10.2-10.5** RED tests for `blueprint-catalog.mjs`, manifest keys, domaiNN blueprint, wizard workflow rebind.
+- [ ] **10.6 (rest)** Update `tag-pin-freshness.js` `TEMPLATE_SPEC_RE`, `guard-template-immutability.js`, `build-docs.mjs`, `sync-samples.mjs` path references.
+- [ ] **10.7 (commit 2)** Rename `scripts/template-catalog.mjs` -> `blueprint-catalog.mjs`, flip `sync-versions.mjs`, `channel-refs.js`, `manifest/{generate,validate,check-parity}.js`, `manifest/source.yaml`, `canonical-registry.ts`; regenerate `docs/use/manifest*.md`.
+- [ ] **10.8-10.12 (commit 3)** domaiNN blueprint, per-blueprint MINOR bump + re-parent, real schema maps, registration, procedures MCP-tool names, docs.
+
+### Known-red gates (tracker child policy)
+- Gates reading skill frontmatter `bundled_templates` until S8; `validate-manifest --channel stable` only after R.
+- Do NOT run `node scripts/verify.js` / `check-integrity` catalog steps until commit 2 flips the script/keys, or they will fail on the moved path.
 

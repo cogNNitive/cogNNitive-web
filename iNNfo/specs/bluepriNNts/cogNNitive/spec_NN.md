@@ -1,6 +1,6 @@
 ---
 spec_version: "V_0-2-1"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/cogNNitive/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
@@ -274,7 +274,7 @@ A cogNNitive provenance model is associated with each workspace/model, named `<W
 level: 3
 parent_spec:
   name: "cogNNitive"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/cogNNitive/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
 model_version: "V_x-y-z"
 title: "<Workspace> Provenance"
 ---

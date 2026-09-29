@@ -18,8 +18,12 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
-const SAMPLES_SSOT_DIR = path.join(REPO_ROOT, '_samples_nn', 'models');
-const TEMPLATES_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
+const SAMPLES_SSOT_DIR = fs.existsSync(path.join(REPO_ROOT, '_samples_nn', 'kNNowledge'))
+  ? path.join(REPO_ROOT, '_samples_nn', 'kNNowledge')
+  : path.join(REPO_ROOT, '_samples_nn', 'models');
+const TEMPLATES_ROOT = fs.existsSync(path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts'))
+  ? path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts')
+  : path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
 
 export const SAMPLE_MAPPINGS = [
   {

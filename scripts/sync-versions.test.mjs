@@ -103,8 +103,8 @@ function fixtureTree() {
     [
       "export const SAMPLE_BASE = '/specs/templates'",
       '',
-      '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/templates/*/spec_NN.md and',
-      '// iNNfo/specs/templates/workspace_spec_NN.md.',
+      '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/bluepriNNts/*/spec_NN.md and',
+      '// iNNfo/specs/bluepriNNts/workspace_spec_NN.md.',
       '// Regenerate with `npm run sync:versions` (scripts/sync-versions.mjs).',
       'export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {',
       "  alpha: 'V_0-0-0',",
@@ -134,24 +134,24 @@ function fixtureTree() {
       '    path: skills/alpha',
       '    version: "V_0-0-0"',
       '',
-      'templates:',
+      'blueprints:',
       '  - name: workspace',
       '    repo: cogNNitive/cogNNitive',
-      '    path: iNNfo/specs/templates/workspace_spec_NN.md',
+      '    path: iNNfo/specs/bluepriNNts/workspace_spec_NN.md',
       '    version: "V_0-1-0"',
-      '    ref_key: templates',
+      '    ref_key: blueprints',
       '  - name: alpha',
       '    repo: cogNNitive/cogNNitive',
-      '    path: iNNfo/specs/templates/alpha/spec_NN.md',
+      '    path: iNNfo/specs/bluepriNNts/alpha/spec_NN.md',
       '    version: "V_0-0-0"',
-      '    ref_key: templates',
+      '    ref_key: blueprints',
       '',
-      'frozen_templates:',
+      'frozen_blueprints:',
       '  - name: beta',
       '    repo: cogNNitive/cogNNitive',
-      '    path: iNNfo/specs/templates/beta/spec_NN.md',
+      '    path: iNNfo/specs/bluepriNNts/beta/spec_NN.md',
       '    version: "V_0-0-0"',
-      '    ref_key: templates',
+      '    ref_key: blueprints',
       '',
       'channels:',
       '  stable:',
@@ -222,9 +222,9 @@ async function runTests() {
     assert.ok(/name: innfo-mcp[\s\S]*?version: "9\.9\.9"/.test(sourceContent), 'nested innfo-mcp receives 9.9.9');
 
     // Template versions
-    assert.ok(/templates:[\s\S]*?name: alpha[\s\S]*?version: "V_9-0-0"/.test(sourceContent), 'template alpha receives spec_version V_9-0-0');
+    assert.ok(/blueprints:[\s\S]*?name: alpha[\s\S]*?version: "V_9-0-0"/.test(sourceContent), 'blueprint alpha receives spec_version V_9-0-0');
     assert.ok(/workspace[\s\S]*?version: "V_9-0-0"/.test(sourceContent), 'workspace receives spec_version');
-    assert.ok(/beta[\s\S]*?version: "V_9-0-0"/.test(sourceContent), 'frozen_templates receives spec_version');
+    assert.ok(/beta[\s\S]*?version: "V_9-0-0"/.test(sourceContent), 'frozen_blueprints receives spec_version');
 
     // Core package version and dependency range
     const corePkg = JSON.parse(fs.readFileSync(corePkgPath, 'utf8'));

@@ -1,6 +1,6 @@
 {
-  "generator": "scripts/template-catalog.mjs",
-  "templates": {
+  "generator": "scripts/blueprint-catalog.mjs",
+  "blueprints": {
     "analysis": {
       "name": "analysis",
       "adopted": "V_0-2-1",
@@ -9,7 +9,7 @@
           "template_version": "V_0-2-1",
           "spec_version": "V_0-2-1",
           "title": "Analysis App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/analysis/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
         }
       ]
     },
@@ -21,7 +21,7 @@
           "template_version": "V_0-2-0",
           "spec_version": "V_0-2-2",
           "title": "Artifacts Catalog App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
         }
       ]
     },
@@ -33,7 +33,7 @@
           "template_version": "V_0-2-0",
           "spec_version": "V_0-2-1",
           "title": "Blank App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/blank/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
         }
       ]
     },
@@ -45,7 +45,7 @@
           "template_version": "V_0-2-6",
           "spec_version": "V_0-2-5",
           "title": "Business App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
         }
       ]
     },
@@ -57,7 +57,7 @@
           "template_version": "V_0-2-3",
           "spec_version": "V_0-2-1",
           "title": "Business Model App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business-model/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
         }
       ]
     },
@@ -69,7 +69,7 @@
           "template_version": "V_0-1-0",
           "spec_version": "V_0-2-1",
           "title": "Design Presets App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/design-presets/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
         }
       ]
     },
@@ -81,7 +81,7 @@
           "template_version": "V_0-2-1",
           "spec_version": "V_0-2-1",
           "title": "Documentation Specification App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/documentation/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
         }
       ]
     },
@@ -93,7 +93,7 @@
           "template_version": "V_0-2-1",
           "spec_version": "V_0-2-1",
           "title": "Innovation App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/innovation/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
         }
       ]
     },
@@ -105,7 +105,7 @@
           "template_version": "V_0-2-1",
           "spec_version": "V_0-2-1",
           "title": "Metrics App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
         }
       ]
     },
@@ -117,7 +117,7 @@
           "template_version": "V_0-2-2",
           "spec_version": "V_0-2-1",
           "title": "Organization App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/organization/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
         }
       ]
     },
@@ -129,7 +129,7 @@
           "template_version": "V_0-2-2",
           "spec_version": "V_0-2-1",
           "title": "Procedures App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
         }
       ]
     },
@@ -141,7 +141,7 @@
           "template_version": "V_0-2-2",
           "spec_version": "V_0-2-1",
           "title": "Projects App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/projects/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
         }
       ]
     },
@@ -153,7 +153,7 @@
           "template_version": "V_0-1-1",
           "spec_version": "V_0-2-1",
           "title": "Repository App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/repository/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
         }
       ]
     },
@@ -165,7 +165,7 @@
           "template_version": "V_0-1-0",
           "spec_version": "V_0-2-1",
           "title": "Sources Catalog App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/sources/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"
         }
       ]
     },
@@ -177,7 +177,7 @@
           "template_version": "V_0-4-0",
           "spec_version": "V_0-2-1",
           "title": "Video App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/video/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
         }
       ]
     },
@@ -189,7 +189,7 @@
           "template_version": "V_0-6-0",
           "spec_version": "V_0-2-2",
           "title": "Workspace Specification App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
         }
       ]
     }
@@ -203,7 +203,7 @@
           "template_version": "V_0-1-0",
           "spec_version": "V_0-1-0",
           "title": "Base Workspace Overview Template",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/base/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
         }
       ]
     },
@@ -215,7 +215,7 @@
           "template_version": "V_0-2-0",
           "spec_version": "V_0-2-1",
           "title": "cogNNitive Template",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/cogNNitive/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
         }
       ]
     }

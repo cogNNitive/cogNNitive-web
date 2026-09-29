@@ -5,8 +5,8 @@
  *
  * Zero-dependency template versioning guard for canonical iNNfo templates.
  *
- * Templates now ship under canonical unversioned paths
- * (`iNNfo/specs/templates/<name>/spec_NN.md`, `workspace_spec_NN.md`). The
+ * Blueprints now ship under canonical unversioned paths
+ * (`iNNfo/specs/bluepriNNts/<name>/spec_NN.md`, `workspace_spec_NN.md`). The
  * authoritative version is the frontmatter `template_version`, never the
  * filename. This guard enforces that any *content* change to a canonical
  * template is accompanied by a strictly increasing `template_version`
@@ -47,7 +47,7 @@ const fs = require('fs');
 const path = require('path');
 const { parseFocusedYaml, parseFrontmatter } = require('../skills/nn-preflight/scripts/lib/yaml-lite');
 
-const DEFAULT_ROOT = path.join(__dirname, '..', 'iNNfo', 'specs', 'templates');
+const DEFAULT_ROOT = path.join(__dirname, '..', 'iNNfo', 'specs', 'bluepriNNts');
 
 function getArg(flag) {
   const idx = process.argv.indexOf(flag);
@@ -136,11 +136,11 @@ function diffLinesFromGit(base, root, staged) {
   return out.split(/\r?\n/).filter(Boolean);
 }
 
-/** Path of `relPath` relative to the first `templates/` segment (posix). */
+/** Path of `relPath` relative to the first `bluepriNNts/` segment (posix). */
 function underTemplates(relPath) {
   const p = relPath.replace(/\\/g, '/');
-  const i = p.indexOf('templates/');
-  return i === -1 ? path.basename(p) : p.slice(i + 'templates/'.length);
+  const i = p.indexOf('bluepriNNts/');
+  return i === -1 ? path.basename(p) : p.slice(i + 'bluepriNNts/'.length);
 }
 
 function readWorkingContent(relOrAbs) {

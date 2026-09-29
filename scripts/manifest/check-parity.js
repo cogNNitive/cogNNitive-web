@@ -21,18 +21,18 @@ const { parseFocusedYaml, parseFrontmatter } = require('../lib/yaml-parser.js');
 /**
  * Validates workspace file versions against manifest/source.yaml.
  * @param {string} repoRoot
- * @returns {{ ok: boolean, errors: string[], stats: { skillsCount: number, templatesCount: number, mcpCount: number } }}
+ * @returns {{ ok: boolean, errors: string[], stats: { skillsCount: number, blueprintsCount: number, mcpCount: number } }}
  */
 function checkWorkspaceParity(repoRoot = process.cwd()) {
   const sourcePath = path.join(repoRoot, 'manifest', 'source.yaml');
   if (!fs.existsSync(sourcePath)) {
-    return { ok: false, errors: [`manifest/source.yaml not found at ${sourcePath}`], stats: { skillsCount: 0, templatesCount: 0, mcpCount: 0 } };
+    return { ok: false, errors: [`manifest/source.yaml not found at ${sourcePath}`], stats: { skillsCount: 0, blueprintsCount: 0, mcpCount: 0 } };
   }
 
   const source = parseFocusedYaml(fs.readFileSync(sourcePath, 'utf8'));
   const errors = [];
   let skillsCount = 0;
-  let templatesCount = 0;
+  let blueprintsCount = 0;
   let mcpCount = 0;
 
   // 1. Check skills (presence only — version comparison dissolved in favor of sync-versions.mjs generator)
@@ -94,22 +94,22 @@ function checkWorkspaceParity(repoRoot = process.cwd()) {
     }
   }
 
-  // 2. Check top-level templates
-  for (const template of (source.templates || [])) {
-    templatesCount++;
-    const tmplPath = path.join(repoRoot, template.path);
+  // 2. Check top-level blueprints
+  for (const blueprint of (source.blueprints || [])) {
+    blueprintsCount++;
+    const tmplPath = path.join(repoRoot, blueprint.path);
     if (!fs.existsSync(tmplPath)) {
-      errors.push(`Template '${template.name}': file not found at ${tmplPath}`);
+      errors.push(`Blueprint '${blueprint.name}': file not found at ${tmplPath}`);
       continue;
     }
     const text = fs.readFileSync(tmplPath, 'utf8');
     let declared = null;
     try {
       const meta = parseFocusedYaml(parseFrontmatter(text));
-      // Deliberately NOT `template_version`: manifest/source.yaml's `version`
-      // tracks the Level-1 spec a template conforms to, and the release-time
+      // Deliberately NOT `blueprint_version`: manifest/source.yaml's `version`
+      // tracks the Level-1 spec a blueprint conforms to, and the release-time
       // validator (manifest/lib/manifest-rules.js checkVersionParity) reads the
-      // same fields. Preferring `template_version` here makes the local check
+      // same fields. Preferring `blueprint_version` here makes the local check
       // pass while stable-manifest validation fails on main.
       declared = meta.version !== undefined ? meta.version : (meta.spec_version !== undefined ? meta.spec_version : (meta.metadata && meta.metadata.version));
     } catch {
@@ -120,16 +120,16 @@ function checkWorkspaceParity(repoRoot = process.cwd()) {
       if (fnMatch) declared = fnMatch[0];
     }
     if (declared === undefined || declared === null) {
-      errors.push(`Template '${template.name}': no version declared in ${tmplPath}`);
-    } else if (String(declared) !== String(template.version)) {
-      errors.push(`Template '${template.name}': version mismatch — manifest '${template.version}' vs template '${declared}'`);
+      errors.push(`Blueprint '${blueprint.name}': no version declared in ${tmplPath}`);
+    } else if (String(declared) !== String(blueprint.version)) {
+      errors.push(`Blueprint '${blueprint.name}': version mismatch — manifest '${blueprint.version}' vs blueprint '${declared}'`);
     }
   }
 
   return {
     ok: errors.length === 0,
     errors,
-    stats: { skillsCount, templatesCount, mcpCount },
+    stats: { skillsCount, blueprintsCount, mcpCount },
   };
 }
 
@@ -147,7 +147,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`✅ [check-parity] All ${stats.skillsCount} skills, ${stats.templatesCount} templates, and ${stats.mcpCount} mcp bundles in sync.`);
+  console.log(`✅ [check-parity] All ${stats.skillsCount} skills, ${stats.blueprintsCount} blueprints, and ${stats.mcpCount} mcp bundles in sync.`);
 }
 
 module.exports = { checkWorkspaceParity, main };

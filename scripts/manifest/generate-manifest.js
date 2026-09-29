@@ -47,7 +47,7 @@ function parseSourceYaml(text) {
     version: doc.version,
     entrypoint: doc.entrypoint,
     skills: Array.isArray(doc.skills) ? doc.skills : [],
-    templates: Array.isArray(doc.templates) ? doc.templates : [],
+    blueprints: Array.isArray(doc.blueprints) ? doc.blueprints : [],
     consoleAssets: Array.isArray(doc.console_assets) ? doc.console_assets : [],
     workflows: Array.isArray(doc.workflows) ? doc.workflows : [],
     channels,
@@ -108,11 +108,11 @@ async function buildRenderModel(source, channel, resolveRef) {
     skills.push({ ...skill, ref: resolved.ref, commit: resolved.commit, mcp });
   }
 
-  const templates = [];
-  for (const template of source.templates) {
-    const resolved = await resolveEntryRef(template, channelRefs, resolveRef, policy);
-    if (resolved.error) return { error: `${template.name}: ${resolved.error}` };
-    templates.push({ ...template, ref: resolved.ref, commit: resolved.commit });
+  const blueprints = [];
+  for (const blueprint of source.blueprints) {
+    const resolved = await resolveEntryRef(blueprint, channelRefs, resolveRef, policy);
+    if (resolved.error) return { error: `${blueprint.name}: ${resolved.error}` };
+    blueprints.push({ ...blueprint, ref: resolved.ref, commit: resolved.commit });
   }
 
   const consoleAssets = [];
@@ -132,7 +132,7 @@ async function buildRenderModel(source, channel, resolveRef) {
     version: source.version,
     entrypoint: source.entrypoint,
     skills,
-    templates,
+    blueprints,
     consoleAssets,
     workflows: source.workflows,
   };
@@ -167,8 +167,8 @@ function renderSkillEntry(skill) {
     out += `${indent}  requires: [${skill.requires.join(', ')}]\n`;
   }
   out += `${indent}  description: ${skill.description}\n`;
-  if (skill.templates && skill.templates.length) {
-    out += `${indent}  templates: [${skill.templates.join(', ')}]\n`;
+  if (skill.blueprints && skill.blueprints.length) {
+    out += `${indent}  blueprints: [${skill.blueprints.join(', ')}]\n`;
   }
   if (skill.mcp && skill.mcp.length) {
     out += `${indent}  mcp:\n`;
@@ -188,15 +188,15 @@ function renderSkillEntry(skill) {
   return out;
 }
 
-function renderTemplateEntry(template) {
+function renderBlueprintEntry(blueprint) {
   const indent = '    ';
-  let out = renderNoteLines(template.note, indent);
-  out += `${indent}- name: ${template.name}\n`;
-  out += `${indent}  repo: ${template.repo}\n`;
-  out += `${indent}  path: ${template.path}\n`;
-  out += `${indent}  version: ${q(template.version)}\n`;
-  out += `${indent}  ref: ${q(template.ref)}\n`;
-  out += `${indent}  commit: ${q(template.commit)}\n`;
+  let out = renderNoteLines(blueprint.note, indent);
+  out += `${indent}- name: ${blueprint.name}\n`;
+  out += `${indent}  repo: ${blueprint.repo}\n`;
+  out += `${indent}  path: ${blueprint.path}\n`;
+  out += `${indent}  version: ${q(blueprint.version)}\n`;
+  out += `${indent}  ref: ${q(blueprint.ref)}\n`;
+  out += `${indent}  commit: ${q(blueprint.commit)}\n`;
   return out;
 }
 
@@ -216,7 +216,7 @@ function renderWorkflowEntry(wf) {
   out += `${indent}  label: ${wf.label}\n`;
   out += `${indent}  description: ${wf.description}\n`;
   if (wf.skill) out += `${indent}  skill: ${wf.skill}\n`;
-  if (wf.template) out += `${indent}  template: ${wf.template}\n`;
+  if (wf.blueprint) out += `${indent}  blueprint: ${wf.blueprint}\n`;
   return out;
 }
 
@@ -231,8 +231,8 @@ function renderFrontmatter(model, channel) {
   out += `  entrypoint: ${q(model.entrypoint)}\n`;
   out += '  skills:\n';
   for (const s of model.skills) out += renderSkillEntry(s);
-  out += '  templates:\n';
-  for (const t of model.templates) out += renderTemplateEntry(t);
+  out += '  blueprints:\n';
+  for (const t of model.blueprints) out += renderBlueprintEntry(t);
   if (model.consoleAssets && model.consoleAssets.length) {
     out += '  console-assets:\n';
     for (const a of model.consoleAssets) out += renderConsoleAssetEntry(a);

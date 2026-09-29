@@ -5,7 +5,7 @@
  * Zero external test framework dependencies.
  *
  * The guard runs in --diff-file mode: it reads working-tree content from
- * <tmp>/iNNfo/specs/templates (via --root) and base-revision content from
+ * <tmp>/iNNfo/specs/bluepriNNts (via --root) and base-revision content from
  * <tmp>/base-templates (via --base-root).
  */
 
@@ -35,7 +35,7 @@ async function runTests() {
   console.log('Running template immutability guard tests...');
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-immutability-'));
-  const workRoot = path.join(tmpDir, 'iNNfo', 'specs', 'templates');
+  const workRoot = path.join(tmpDir, 'iNNfo', 'specs', 'bluepriNNts');
   const baseRoot = path.join(tmpDir, 'base-templates');
 
   const writeWork = (rel, content) => {
@@ -65,7 +65,7 @@ async function runTests() {
     {
       writeBase('business/spec_NN.md', tpl('V_0-2-1', 'Old body.'));
       writeWork('business/spec_NN.md', tpl('V_0-2-1', 'New body.'));
-      const fx = writeFixture(['M\tiNNfo/specs/templates/business/spec_NN.md']);
+      const fx = writeFixture(['M\tiNNfo/specs/bluepriNNts/business/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 1, 'unbumped content change must exit 1');
       assert.ok(res.stdout.includes('business/spec_NN.md'), 'names the file');
@@ -77,7 +77,7 @@ async function runTests() {
     {
       writeBase('projects/spec_NN.md', tpl('V_0-2-0', 'Old body.'));
       writeWork('projects/spec_NN.md', tpl('V_0-3-0', 'New body.'));
-      const fx = writeFixture(['M\tiNNfo/specs/templates/projects/spec_NN.md']);
+      const fx = writeFixture(['M\tiNNfo/specs/bluepriNNts/projects/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'bumped content change must exit 0');
       console.log('✔ modified template with an incremented template_version passes');
@@ -87,7 +87,7 @@ async function runTests() {
     {
       writeBase('blank/spec_NN.md', tpl('V_0-2-0', 'Same body.'));
       writeWork('blank/spec_NN.md', tpl('V_0-2-0', 'Same body.'));
-      const fx = writeFixture(['M\tiNNfo/specs/templates/blank/spec_NN.md']);
+      const fx = writeFixture(['M\tiNNfo/specs/bluepriNNts/blank/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'no content change must exit 0');
       console.log('✔ a no-op M entry (identical content) passes');
@@ -96,7 +96,7 @@ async function runTests() {
     // 3. Added template with a valid semver template_version -> exit 0
     {
       writeWork('newthing/spec_NN.md', tpl('V_0-1-0'));
-      const fx = writeFixture(['A\tiNNfo/specs/templates/newthing/spec_NN.md']);
+      const fx = writeFixture(['A\tiNNfo/specs/bluepriNNts/newthing/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'valid added template must exit 0');
       console.log('✔ added template with a valid frontmatter template_version passes');
@@ -105,7 +105,7 @@ async function runTests() {
     // 4. Added template with missing / invalid template_version -> exit 1
     {
       writeWork('broken/spec_NN.md', '---\nlevel: 2\ntitle: "T"\n---\n\n# T\n');
-      const fx = writeFixture(['A\tiNNfo/specs/templates/broken/spec_NN.md']);
+      const fx = writeFixture(['A\tiNNfo/specs/bluepriNNts/broken/spec_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 1, 'added template without a version must exit 1');
       assert.ok(res.stdout.includes('broken/spec_NN.md'));
@@ -114,7 +114,7 @@ async function runTests() {
 
     // 5. Deleted template -> exit 0
     {
-      const fx = writeFixture(['D\tiNNfo/specs/templates/organization/organization_V_0-1-0_NN.md']);
+      const fx = writeFixture(['D\tiNNfo/specs/bluepriNNts/organization/organization_V_0-1-0_NN.md']);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'deletion must exit 0');
       console.log('✔ deleted template passes (history lives in git tags)');
@@ -125,7 +125,7 @@ async function runTests() {
       writeBase('procedures/procedures_V_0-2-0_NN.md', tpl('V_0-2-0', 'Identical.'));
       writeWork('procedures/spec_NN.md', tpl('V_0-2-0', 'Identical.'));
       const fx = writeFixture([
-        'R100\tiNNfo/specs/templates/procedures/procedures_V_0-2-0_NN.md\tiNNfo/specs/templates/procedures/spec_NN.md',
+        'R100\tiNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md\tiNNfo/specs/bluepriNNts/procedures/spec_NN.md',
       ]);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'pure rename must exit 0');
@@ -139,7 +139,7 @@ async function runTests() {
       writeBase('analysis/analysis_V_0-2-0_NN.md', tpl('V_0-2-0', 'Old.'));
       writeWork('analysis/spec_NN.md', tpl('V_0-2-0', 'URLs rewritten during migration.'));
       const fx = writeFixture([
-        'R090\tiNNfo/specs/templates/analysis/analysis_V_0-2-0_NN.md\tiNNfo/specs/templates/analysis/spec_NN.md',
+        'R090\tiNNfo/specs/bluepriNNts/analysis/analysis_V_0-2-0_NN.md\tiNNfo/specs/bluepriNNts/analysis/spec_NN.md',
       ]);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'canonical migration rename is exempt from the bump');
@@ -151,7 +151,7 @@ async function runTests() {
       writeBase('innovation/innovation_V_0-2-0_NN.md', tpl('V_0-2-0'));
       writeWork('innovation/spec_NN.md', '---\nlevel: 2\ntitle: "T"\n---\n\n# T\n');
       const fx = writeFixture([
-        'R100\tiNNfo/specs/templates/innovation/innovation_V_0-2-0_NN.md\tiNNfo/specs/templates/innovation/spec_NN.md',
+        'R100\tiNNfo/specs/bluepriNNts/innovation/innovation_V_0-2-0_NN.md\tiNNfo/specs/bluepriNNts/innovation/spec_NN.md',
       ]);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 1, 'migration rename without a valid version must exit 1');
@@ -169,9 +169,9 @@ async function runTests() {
     // 8. Non-template edits (samples/, assets/, procedures/) -> exit 0
     {
       const fx = writeFixture([
-        'M\tiNNfo/specs/templates/business/samples/Ghostbusters_V_0-2-1_business_NN.md',
-        'M\tiNNfo/specs/templates/assets/people/egon_spengler.png',
-        'M\tiNNfo/specs/templates/business/procedures/compile_strategic_master_NN.md',
+        'M\tiNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-1_business_NN.md',
+        'M\tiNNfo/specs/bluepriNNts/assets/people/egon_spengler.png',
+        'M\tiNNfo/specs/bluepriNNts/business/procedures/compile_strategic_master_NN.md',
       ]);
       const res = await runGuard(args(fx), tmpDir);
       assert.strictEqual(res.status, 0, 'non-template edits must not fail the guard');

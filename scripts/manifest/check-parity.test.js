@@ -36,7 +36,7 @@ function main() {
     const result = checkWorkspaceParity(repoRoot);
     assert.strictEqual(result.ok, true, `Live workspace parity should be ok. Errors: ${result.errors.join('; ')}`);
     assert.strictEqual(result.stats.skillsCount > 0, true);
-    assert.strictEqual(result.stats.templatesCount > 0, true);
+    assert.strictEqual(result.stats.blueprintsCount > 0, true);
     assert.strictEqual(result.stats.mcpCount, 1);
     console.log('✔ Live workspace parity test passed');
   }
@@ -63,19 +63,19 @@ skills:
   // 3. Template version mismatch is detected
   {
     const sourceYaml = `
-templates:
+blueprints:
   - name: test-tmpl
-    path: iNNfo/specs/templates/test_spec.md
+    path: iNNfo/specs/bluepriNNts/test_spec.md
     version: "V_0-2-0"
 `;
     const files = {
-      'iNNfo/specs/templates/test_spec.md': '---\nversion: "V_0-1-0"\n---\n# Spec',
+      'iNNfo/specs/bluepriNNts/test_spec.md': '---\nversion: "V_0-1-0"\n---\n# Spec',
     };
     const tmpDir = createTempWorkspace(sourceYaml, files);
     try {
       const result = checkWorkspaceParity(tmpDir);
       assert.strictEqual(result.ok, false);
-      assert.strictEqual(result.errors.some(e => e.includes("version mismatch — manifest 'V_0-2-0' vs template 'V_0-1-0'")), true);
+      assert.strictEqual(result.errors.some(e => e.includes("version mismatch — manifest 'V_0-2-0' vs blueprint 'V_0-1-0'")), true);
       console.log('✔ Template version mismatch detection passed');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -112,13 +112,13 @@ skills:
   // 5. Template with body-only V_x-y-z does not cause spurious mismatch
   {
     const sourceYaml = `
-templates:
+blueprints:
   - name: test-tmpl
-    path: iNNfo/specs/templates/test_V_0-1-0_spec.md
+    path: iNNfo/specs/bluepriNNts/test_V_0-1-0_spec.md
     version: "V_0-1-0"
 `;
     const files = {
-      'iNNfo/specs/templates/test_V_0-1-0_spec.md': '# Spec\nparent_spec: https://example.com/iNNfo_V_0-2-1_NN.md\n',
+      'iNNfo/specs/bluepriNNts/test_V_0-1-0_spec.md': '# Spec\nparent_spec: https://example.com/iNNfo_V_0-2-1_NN.md\n',
     };
     const tmpDir = createTempWorkspace(sourceYaml, files);
     try {

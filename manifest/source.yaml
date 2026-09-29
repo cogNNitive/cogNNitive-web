@@ -1,5 +1,5 @@
 version: "2.0"
-entrypoint: "workspace_NN.md"
+entrypoint: "domaiNN_NN.md"
 # manifest/source.yaml - pinned source of truth for distribution
 
 skills:
@@ -15,14 +15,14 @@ skills:
     version: "V_3-4-0"
     ref_key: skills
     requires: [nn-innfo, nn-preflight]
-    description: Ingest documents (PDF, DOCX, XLSX), transform using templates, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
+    description: Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
   - name: nn-innfo
     repo: cogNNitive/cogNNitive
     path: skills/nn-innfo
     version: "V_0-5-3"
     ref_key: skills
-    description: Author, edit, and validate iNNfo models with built-in step-by-step Model Creation Wizard.
-    templates: [workspace]
+    description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
+    blueprints: [domaiNN]
     mcp:
       - name: innfo-mcp
         repo: cogNNitive/cogNNitive
@@ -38,10 +38,10 @@ skills:
   - name: nn-upgrade
     repo: cogNNitive/cogNNitive
     path: skills/nn-upgrade
-    version: "V_0-1-0"
+    version: "V_0-2-0"
     ref_key: skills
     requires: [nn-preflight]
-    description: Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates.
+    description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
   - name: nn-site-generator
     repo: cogNNitive/cogNNitive
     path: skills/nn-site-generator
@@ -76,113 +76,113 @@ skills:
         sha256: "d617aadcc85ad5816ca0b447e28032b14c1fc64bac65f550fa4149bd4f7cedda"
         commit: "4c05a5849aaf3928c0a6ce19175c309787865058"
 
-templates:
+blueprints:
   - name: workspace
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/workspace_spec_NN.md
+    path: iNNfo/specs/bluepriNNts/workspace_spec_NN.md
     version: "V_0-2-2"
-    ref_key: templates
+    ref_key: blueprints
   - name: projects
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/projects/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: procedures
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/procedures/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: organization
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/organization/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: business
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/business/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/business/spec_NN.md
     version: "V_0-2-5"
-    ref_key: templates
+    ref_key: blueprints
   - name: business-model
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/business-model/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: analysis
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/analysis/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: innovation
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/innovation/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: blank
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/blank/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: documentation
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/documentation/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: metrics
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/metrics/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: repository
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/repository/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: video
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/video/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/video/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: sources
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/sources/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: artifacts
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/artifacts/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
     version: "V_0-2-2"
-    ref_key: templates
+    ref_key: blueprints
   - name: design-presets
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/design-presets/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
 
-# Retired templates kept byte-identical on disk for legacy resolution. They are
-# NOT part of ACTIVE distribution: the catalog drops them from `templates` and
+# Retired blueprints kept byte-identical on disk for legacy resolution. They are
+# NOT part of ACTIVE distribution: the catalog drops them from `blueprints` and
 # records them under a top-level `frozen` object; this partition keeps the
-# verify.js template inventory guard satisfied while the folders stay on disk.
-frozen_templates:
+# verify.js blueprint inventory guard satisfied while the folders stay on disk.
+frozen_blueprints:
   - name: cogNNitive
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/cogNNitive/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md
     version: "V_0-2-1"
-    ref_key: templates
+    ref_key: blueprints
   - name: base
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/base/spec_NN.md
+    path: iNNfo/specs/bluepriNNts/base/spec_NN.md
     version: "V_0-1-0"
-    ref_key: templates
+    ref_key: blueprints
 
-# Shared seam folders that live under iNNfo/specs/templates/ but are NOT
-# distributable templates: they hold cross-template runtime assets (console
+# Shared seam folders that live under iNNfo/specs/bluepriNNts/ but are NOT
+# distributable blueprints: they hold cross-blueprint runtime assets (console
 # shells, UMD runtimes, schemas) with no spec_NN.md. Listed here only so the
-# verify.js Template Inventory Guard recognizes the folder; the catalog and
+# verify.js Blueprint Inventory Guard recognizes the folder; the catalog and
 # manifest generators skip them (no spec_NN.md to enumerate), same as `assets`.
 seam_dirs:
   - name: console
     repo: cogNNitive/cogNNitive
-    path: iNNfo/specs/templates/console/
+    path: iNNfo/specs/bluepriNNts/console/
     description: Shared console seam — artifact shell, InnfoConsole UMD runtime, and feedback JSON schema for the reviewer feedback loop.
 
 # Published console bundle: the single-file runtime + renderers (visuals,
@@ -193,12 +193,12 @@ seam_dirs:
 console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
-    file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     version: "0.4.0"
     ref_key: innfo-console
   - name: innfo-console-shell
     repo: cogNNitive/cogNNitive
-    file: iNNfo/specs/templates/console/artifact_shell.html
+    file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
     version: "0.4.0"
     ref_key: innfo-console
   - name: innfo-console-export-cli
@@ -212,7 +212,7 @@ workflows:
     label: Create an iNNfo model
     description: Turn an idea, document, or dataset into a validated structured model.
     skill: nn-innfo
-    template: workspace
+    blueprint: domaiNN
   - id: transform
     label: Transform a document
     description: Normalize a PDF/DOCX/XLSX into clean Markdown, or export to HTML.
@@ -221,13 +221,13 @@ workflows:
 # `refs` is a list of { key, repo, ref }: the tag/branch that channel resolves
 # to a commit for a given ref_key. ref_key defaults to an entry's own `repo`;
 # entries that share a repo with a different release cadence (e.g. innfo-mcp
-# vs. templates) declare an explicit `ref_key` and
+# vs. blueprints) declare an explicit `ref_key` and
 # get their own row here, with `repo` restated so the generator can catch a
 # mismatched key. (A list, not a map, because the focused YAML parser used by
 # these zero-dependency scripts does not support `/` inside a mapping key.)
 channels:
   stable:
-    # The tag is derived as "<key>-v<version>" — never typed. skills and templates
+    # The tag is derived as "<key>-v<version>" — never typed. skills and blueprints
     # carry their own channel version (a batch number that exists nowhere else in
     # the repo); innfo-mcp and innfo-console derive theirs from the artifact
     # version declared above, because there it is the same fact, not a copy.
@@ -235,7 +235,7 @@ channels:
       - key: skills
         repo: cogNNitive/cogNNitive
         version: "2.4.0"
-      - key: templates
+      - key: blueprints
         repo: cogNNitive/cogNNitive
         version: "0.17.0"
       - key: innfo-mcp
@@ -247,7 +247,7 @@ channels:
       - key: skills
         repo: cogNNitive/cogNNitive
         ref: main
-      - key: templates
+      - key: blueprints
         repo: cogNNitive/cogNNitive
         ref: main
       - key: innfo-mcp

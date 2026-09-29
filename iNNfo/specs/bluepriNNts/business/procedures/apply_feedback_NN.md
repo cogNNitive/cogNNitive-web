@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 model_version: "V_0-1-0"
 title: "Apply Feedback Procedure"
 ---
@@ -34,7 +34,7 @@ output:: [[Loaded Feedback]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Load the feedback file from `sources/import/feedback/` (normalized under `sources/nn/import/feedback/` via `nn-trannsform --scan`, citable with `sources::`). Validate it against `iNNfo/specs/templates/console/feedback.schema.json`: `meta` carries `source_model`, `source_model_version` (`V_x-y-z`), `artifact`, `artifact_version`, `exported_at` (ISO-8601 with seconds), `author`, `feedback_slug`, and `viewer`; every item carries `id` (`fb-NNN`), `kind` (`correction`|`comment`|`new`|`delete`), `target`, and `status`. Reject the file with a report when validation fails.
+Load the feedback file from `sources/import/feedback/` (normalized under `sources/nn/import/feedback/` via `nn-trannsform --scan`, citable with `sources::`). Validate it against `iNNfo/specs/bluepriNNts/console/feedback.schema.json`: `meta` carries `source_model`, `source_model_version` (`V_x-y-z`), `artifact`, `artifact_version`, `exported_at` (ISO-8601 with seconds), `author`, `feedback_slug`, and `viewer`; every item carries `id` (`fb-NNN`), `kind` (`correction`|`comment`|`new`|`delete`), `target`, and `status`. Reject the file with a report when validation fails.
 
 ## NN Work: Check Staleness
 parent:: [[Apply Feedback]]

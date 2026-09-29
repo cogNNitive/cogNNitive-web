@@ -465,20 +465,20 @@ async function validateTemplate(template, policy) {
 }
 
 /**
- * Checks skill dependency closure (requires) and template closure across skills and workflows.
+ * Checks skill dependency closure (requires) and blueprint closure across skills and workflows.
  * @param {{
  *   skills?: any[],
- *   templates?: any[],
+ *   blueprints?: any[],
  *   workflows?: any[],
  * }} manifestData
- * @param {Iterable<string>} [bundledTemplateNames=[]]
+ * @param {Iterable<string>} [bundledBlueprintNames=[]]
  * @returns {string[]}
  */
-function checkClosureViolations(manifestData, bundledTemplateNames = []) {
-  const { skills = [], templates = [], workflows = [] } = manifestData;
+function checkClosureViolations(manifestData, bundledBlueprintNames = []) {
+  const { skills = [], blueprints = [], workflows = [] } = manifestData;
   const violations = [];
   const knownSkills = new Set(skills.map(s => s.name));
-  const knownTemplates = new Set([...templates.map(t => t.name), ...bundledTemplateNames]);
+  const knownBlueprints = new Set([...blueprints.map(t => t.name), ...bundledBlueprintNames]);
 
   // Skill dependency closure (requires)
   for (const skill of skills) {
@@ -487,17 +487,17 @@ function checkClosureViolations(manifestData, bundledTemplateNames = []) {
         violations.push(`${skill.name}: requires '${req}' which is not in the manifest`);
       }
     }
-    for (const tmpl of (skill.templates || [])) {
-      if (!knownTemplates.has(tmpl)) {
-        violations.push(`${skill.name}: references template '${tmpl}' which is not declared in top-level templates or bundled`);
+    for (const bp of (skill.blueprints || [])) {
+      if (!knownBlueprints.has(bp)) {
+        violations.push(`${skill.name}: references blueprint '${bp}' which is not declared in top-level blueprints or bundled`);
       }
     }
   }
 
-  // Workflow template dependency closure
+  // Workflow blueprint dependency closure
   for (const wf of workflows) {
-    if (wf.template && !knownTemplates.has(wf.template)) {
-      violations.push(`workflow '${wf.id || wf.label}': references template '${wf.template}' which is not declared in top-level templates or bundled`);
+    if (wf.blueprint && !knownBlueprints.has(wf.blueprint)) {
+      violations.push(`workflow '${wf.id || wf.label}': references blueprint '${wf.blueprint}' which is not declared in top-level blueprints or bundled`);
     }
   }
 
@@ -505,12 +505,12 @@ function checkClosureViolations(manifestData, bundledTemplateNames = []) {
 }
 
 /**
- * Validates all skills, templates, mcp entries, and dependency closures of a manifest against a policy.
+ * Validates all skills, blueprints, mcp entries, and dependency closures of a manifest against a policy.
  * @param {{
  *   version?: string,
  *   entrypoint?: string,
  *   skills?: any[],
- *   templates?: any[],
+ *   blueprints?: any[],
  *   workflows?: any[],
  *   mcp?: any[],
  *   consoleAssets?: any[],
@@ -518,11 +518,11 @@ function checkClosureViolations(manifestData, bundledTemplateNames = []) {
  * @param {typeof CHANNELS[string]} policy
  * @returns {Promise<{
  *   violations: string[],
- *   stats: { skillsCount: number, templatesCount: number, mcpCount: number, consoleCount: number },
+ *   stats: { skillsCount: number, blueprintsCount: number, mcpCount: number, consoleCount: number },
  * }>}
  */
 async function validateManifest(manifestData, policy) {
-  const { skills = [], templates = [], workflows = [], mcp = [], consoleAssets = [] } = manifestData;
+  const { skills = [], blueprints = [], workflows = [], mcp = [], consoleAssets = [] } = manifestData;
   const mcpCount = mcp.length + skills.reduce((n, s) => n + ((s.mcp || []).length), 0);
   const violations = [];
   const knownSkillBundledTemplates = new Set();
@@ -536,8 +536,8 @@ async function validateManifest(manifestData, policy) {
     }
   }
 
-  for (const template of templates) {
-    violations.push(...await validateTemplate(template, policy));
+  for (const blueprint of blueprints) {
+    violations.push(...await validateTemplate(blueprint, policy));
   }
 
   for (const mcpEntry of mcp) {
@@ -555,7 +555,7 @@ async function validateManifest(manifestData, policy) {
     violations,
     stats: {
       skillsCount: skills.length,
-      templatesCount: templates.length,
+      blueprintsCount: blueprints.length,
       mcpCount,
       consoleCount: consoleAssets.length,
     },

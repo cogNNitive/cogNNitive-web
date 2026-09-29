@@ -179,11 +179,11 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
   workflows:
     - id: test-wf
       label: Test Workflow
-      template: missing_template_spec
+      blueprint: missing_template_spec
 ---
 # Manifest`;
 
@@ -191,8 +191,8 @@ agent-bootstrap:
   try {
     const res = spawnSync('node', [validatorScript, tmpDir], { encoding: 'utf-8' });
     assert.notStrictEqual(res.status, 0, 'Missing dependency closure should fail validation');
-    assert.match(res.stderr, /references template 'missing_template_spec' which is not declared/);
-    console.log('✔ Dependency closure (missing template) test passed');
+    assert.match(res.stderr, /references blueprint 'missing_template_spec' which is not declared/);
+    console.log('✔ Dependency closure (missing blueprint) test passed');
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -475,18 +475,18 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
   console-assets:
-    - file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
       version: "0.1.0"
       ref: "innfo-console-v0.1.0"
       commit: "3f1a9c2b8e4d6f0a1b2c3d4e5f60718293a4b5c6"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/3f1a9c2b8e4d6f0a1b2c3d4e5f60718293a4b5c6/iNNfo/specs/templates/console/innfo-console.bundle.js
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/3f1a9c2b8e4d6f0a1b2c3d4e5f60718293a4b5c6/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
 ---
 # Manifest`;
   const parsed = mod.parseManifest(manifestText);
   assert.strictEqual(parsed.consoleAssets.length, 1, 'console-assets must be parsed');
-  assert.strictEqual(parsed.consoleAssets[0].file, 'iNNfo/specs/templates/console/innfo-console.bundle.js');
+  assert.strictEqual(parsed.consoleAssets[0].file, 'iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js');
   assert.strictEqual(parsed.consoleAssets[0].version, '0.1.0');
 
   // validateConsoleAsset happy path: commit exists, ref resolves, provenance identical, path present

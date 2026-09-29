@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 
-const DEFAULT_TEMPLATES_DIR = path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
+const DEFAULT_TEMPLATES_DIR = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 const DEFAULT_SKILLS_DIR = path.join(REPO_ROOT, 'skills');
 const DEFAULT_SAMPLES_TS_PATH = path.join(
   REPO_ROOT, 'iNNfo', 'apps', 'innfo-editor', 'src', 'config', 'samples.ts'
@@ -30,8 +30,8 @@ const DEFAULT_MCP_PKG_PATH = path.join(REPO_ROOT, 'iNNfo', 'packages', 'innfo-mc
 const DEFAULT_CORE_PKG_PATH = path.join(REPO_ROOT, 'iNNfo', 'packages', 'innfo-core', 'package.json');
 
 const GENERATED_HEADER = [
-  '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/templates/*/spec_NN.md and',
-  '// iNNfo/specs/templates/workspace_spec_NN.md.',
+  '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/bluepriNNts/*/spec_NN.md and',
+  '// iNNfo/specs/bluepriNNts/workspace_spec_NN.md.',
   '// Regenerate with `npm run sync:versions` (scripts/sync-versions.mjs).',
 ].join('\n');
 
@@ -194,7 +194,7 @@ function syncSourceYaml({ sectionMaps, sourceYamlPath, check }) {
     if (/^\S/.test(line)) {
       const match = line.match(/^(\S+):/);
       const secName = match ? match[1] : null;
-      if (secName && /^(templates|frozen_templates|skills)$/.test(secName)) {
+      if (secName && /^(blueprints|frozen_blueprints|skills)$/.test(secName)) {
         currentSection = secName;
       } else {
         currentSection = null;
@@ -339,8 +339,8 @@ export function syncVersions({
   }
 
   const sectionMaps = {
-    templates: specVersions,
-    frozen_templates: specVersions,
+    blueprints: specVersions,
+    frozen_blueprints: specVersions,
     skills: skillVersions,
   };
 
