@@ -15,7 +15,7 @@ import { syncSamples, SAMPLE_MAPPINGS } from './sync-samples.mjs';
 function fixtureTree() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-samples-test-'));
   const ssotModels = path.join(root, '_samples_nn', 'models');
-  const templatesDir = path.join(root, 'iNNfo', 'specs', 'templates');
+  const templatesDir = path.join(root, 'iNNfo', 'specs', 'bluepriNNts');
 
   fs.mkdirSync(ssotModels, { recursive: true });
   fs.mkdirSync(templatesDir, { recursive: true });

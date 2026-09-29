@@ -66,7 +66,7 @@ function readSpecVersion(filePath) {
 
 /**
  * Walks `templatesDir` for `<slug>/spec_NN.md` files plus the root
- * `workspace_spec_NN.md`, returning a map of slug -> template_version.
+ * `workspace_spec_NN.md`, returning a map of slug -> blueprint_version.
  * @param {string} templatesDir
  * @param {(filePath: string) => string | undefined} read
  * @returns {Record<string, string>}

@@ -282,13 +282,13 @@ function runVerification(options = {}) {
   run('node scripts/generate-vocabulary-doc.mjs --check', 'Check Canonical Vocabulary Doc Fresh');
 
 // 1. Template Inventory Guard: ensure every template folder is declared in manifest/source.yaml
-  const templatesDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'templates');
+  const templatesDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'bluepriNNts');
   const sourceYamlPath = path.join(__dirname, '..', 'manifest', 'source.yaml');
 
   if (fs.existsSync(templatesDir) && fs.existsSync(sourceYamlPath)) {
     const { ok, missing, diskFolders } = checkTemplateInventory(templatesDir, sourceYamlPath);
     if (!ok) {
-      console.error(`❌ Template Inventory Mismatch! Folders exist in specs/templates/ but are missing from manifest/source.yaml: ${missing.join(', ')}`);
+      console.error(`❌ Template Inventory Mismatch! Folders exist in specs/bluepriNNts/ but are missing from manifest/source.yaml: ${missing.join(', ')}`);
       process.exit(1);
     }
     console.log(`▶ Template Inventory Guard: all ${diskFolders.length} template folders are registered in manifest.`);

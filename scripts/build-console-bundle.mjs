@@ -14,7 +14,7 @@
  *   4. render-model-viewer.js (InnfoModelViewer — boots on #doc-title + #rail)
  *   5. render-procedure-stepper.js (InnfoProcedureStepper — boots on #doc-title + #proc-tabs)
  *
- * Output: iNNfo/specs/templates/console/innfo-console.bundle.js (committed,
+ * Output: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js (committed,
  * following the innfo-mcp.bundle.js precedent). Regenerate on every console release.
  */
 
@@ -25,7 +25,7 @@ import { createRequire } from 'node:module'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = join(here, '..')
-const consoleDir = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+const consoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
 
 const require = createRequire(import.meta.url)
 const { getConsoleReleaseInfo } = require('./lib/console-release-info.js')

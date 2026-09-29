@@ -33,7 +33,7 @@ function main() {
 console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
-    file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     version: "0.2.0"
     ref_key: innfo-console
 
@@ -49,7 +49,7 @@ channels:
       assert.strictEqual(info.cdnRef, 'innfo-console-v0.2.0');
       assert.strictEqual(
         info.cdnUrl,
-        'https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.2.0/iNNfo/specs/templates/console/innfo-console.bundle.js',
+        'https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.2.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js',
       );
       console.log('✔ Derives version and CDN URL from manifest/source.yaml');
     } finally {
@@ -63,7 +63,7 @@ channels:
 console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
-    file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     version: "0.3.0"
     ref_key: innfo-console
 

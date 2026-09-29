@@ -2,8 +2,8 @@
  * scripts/lib/tag-pin-freshness.js
  *
  * Deterministic, git-only guard for the "tag/pin freshness" failure mode
- * (expediente: 2026-09-24 — a skill directory rename plus `template_version`
- * bumps across ~15 `spec_NN.md` files under `iNNfo/specs/bluepriNNts/` were
+ * (expediente: 2026-09-24 — a skill directory rename plus a spec version
+ * bump across ~15 `spec_NN.md` files under `iNNfo/specs/bluepriNNts/` were
  * merged `dev -> main` without cutting a new `skills-v*`/`blueprints-v*` tag
  * or re-pinning `manifest/source.yaml` in the same batch;
  * `validate-manifest.js --channel stable` failed on CI afterward).

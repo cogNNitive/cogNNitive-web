@@ -25,16 +25,16 @@ const { resolveChannelRefs } = require('./lib/channel-refs.js');
  * derived from `manifest/source.yaml` entries (those name files, which would
  * reproduce the single-file blindness this change removes — design.md ADR-003).
  *
- * ponytail: `innfo-console` lives under `iNNfo/specs/templates/`, so a console
+ * ponytail: `innfo-console` lives under `iNNfo/specs/bluepriNNts/`, so a console
  * commit is double-counted under `templates` too. Accepted as an informational
  * lower-bound signal; a `:(exclude)` pathspec is the upgrade path if it ever
  * misleads (ADR-003).
  */
 const SUBSYSTEM_PATHS = {
   skills: ['skills/'],
-  templates: ['iNNfo/specs/templates/'],
+  templates: ['iNNfo/specs/bluepriNNts/'],
   'innfo-mcp': ['iNNfo/packages/innfo-mcp/'],
-  'innfo-console': ['iNNfo/specs/templates/console/'],
+  'innfo-console': ['iNNfo/specs/bluepriNNts/console/'],
 };
 
 /**

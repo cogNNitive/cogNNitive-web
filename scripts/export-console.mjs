@@ -6,7 +6,7 @@
  *
  * Scans a workspace for iNNfo Level-3 models and compiles a self-contained
  * `*_console.html` per model against the canonical console shell
- * (`iNNfo/specs/templates/console/artifact_shell.html`), filling the
+ * (`iNNfo/specs/bluepriNNts/console/artifact_shell.html`), filling the
  * `innfo-config` / `innfo-schema` / `innfo-model` JSON slots from a direct
  * model scan (no runtime dependency on innfo-core, whose raw `dist/` barrel
  * is not ESM-importable). Vendors `innfo-console.bundle.js` next to each
@@ -43,7 +43,7 @@ function parseConsoleCdnRef(bundleText) {
 }
 
 // The console assets (artifact_shell.html + innfo-console.bundle.js) live in
-// this repo at iNNfo/specs/templates/console/ and are also distributed to
+// this repo at iNNfo/specs/bluepriNNts/console/ and are also distributed to
 // ~/.agents/console by skills-manager. Resolve them from the first location that
 // actually holds the shell, so the exporter runs both from a checkout and
 // from a workspace where only the installed console assets exist (issue #94).
@@ -55,7 +55,7 @@ function parseConsoleCdnRef(bundleText) {
 // legacy name second.
 const SHELL_FILENAME = 'artifact_shell.html'
 const LEGACY_SHELL_FILENAME = 'artifact_blueprint.html'
-const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
 
 function findShell(dir) {
   return [SHELL_FILENAME, LEGACY_SHELL_FILENAME]
@@ -221,7 +221,7 @@ async function inspectModelStatus(model, rootDir) {
     return { status: 'stale', targetHtmlPath }
   }
 
-  const currentVersion = String(model.fm.model_version ?? 'V_0-1-0')
+  const currentVersion = String(model.fm.knowledge_version ?? 'V_0-1-0')
   if (embeddedMeta.modelVersion && embeddedMeta.modelVersion !== currentVersion) {
     return { status: 'version_mismatch', targetHtmlPath, embeddedMeta }
   }
@@ -415,15 +415,15 @@ async function main() {
       'feedback-export',
     ],
     runtime: {
-      cdn: `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@${consoleCdnRef}/iNNfo/specs/templates/console/innfo-console.bundle.js`,
+      cdn: `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@${consoleCdnRef}/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js`,
       fallback:
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js',
     },
   }
 
   for (const m of selected) {
     const stem = m.name
-    const modelVersion = String(m.fm.model_version ?? 'V_0-1-0')
+    const modelVersion = String(m.fm.knowledge_version ?? 'V_0-1-0')
     const elements = parseElements(m.content)
     const sourceSha256 = computeSha256(m.content)
     const meta = {

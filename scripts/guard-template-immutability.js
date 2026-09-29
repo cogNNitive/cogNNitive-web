@@ -33,7 +33,7 @@
  *   --base       base ref to diff against (default: origin/main if it resolves,
  *                otherwise HEAD).
  *   --staged     diff the index instead of the working tree.
- *   --root       templates directory (default: <repo>/iNNfo/specs/templates).
+ *   --root       bluepriNNts directory (default: <repo>/iNNfo/specs/bluepriNNts).
  *   --diff-file  read `git diff --name-status` lines from a file instead of
  *                invoking git — enables plain-node tests. Working-tree content
  *                is read from disk (under --root); base content for M/R entries

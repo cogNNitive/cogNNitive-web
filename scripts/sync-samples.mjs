@@ -5,7 +5,7 @@
  *
  * Synchronizes and validates canonical sample models from the Single Source of Truth
  * (_samples_nn/models/) into their respective Level-2 template distribution folders
- * (iNNfo/specs/templates/<template>/samples/).
+ * (iNNfo/specs/bluepriNNts/<template>/samples/).
  *
  * Usage:
  *   node scripts/sync-samples.mjs          # Syncs files from _samples_nn to templates
@@ -21,9 +21,7 @@ const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 const SAMPLES_SSOT_DIR = fs.existsSync(path.join(REPO_ROOT, '_samples_nn', 'kNNowledge'))
   ? path.join(REPO_ROOT, '_samples_nn', 'kNNowledge')
   : path.join(REPO_ROOT, '_samples_nn', 'models');
-const TEMPLATES_ROOT = fs.existsSync(path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts'))
-  ? path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts')
-  : path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
+const TEMPLATES_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 
 export const SAMPLE_MAPPINGS = [
   {
@@ -124,7 +122,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
   const isCheck = process.argv.includes('--check');
 
   if (isCheck) {
-    console.log('🔍 Checking samples parity (_samples_nn/models/ <-> iNNfo/specs/templates/*/samples/)...');
+    console.log('🔍 Checking samples parity (_samples_nn/models/ <-> iNNfo/specs/bluepriNNts/*/samples/)...');
     const res = syncSamples({ check: true });
     if (!res.ok) {
       console.error('❌ Samples drift detected:');

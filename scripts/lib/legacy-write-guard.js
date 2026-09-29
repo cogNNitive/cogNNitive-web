@@ -49,6 +49,7 @@ const ALLOWLIST = [
   { pattern: 'iNNfo/packages/innfo-core/src/legacy/', reason: 'legacy quarantine module (ledger: quarantine/detector/language-map/schema-maps)' },
   { pattern: 'skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs', reason: 'generated legacy-migrate bundle (ledger: migrate-bundle)' },
   { pattern: 'skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs', reason: 'generated legacy-detect bundle (ledger: detect-bundle)' },
+  { pattern: 'scripts/migrate-spec-urls.mjs', reason: 'historical one-time codemod (cogNNitive/iNNfo -> monorepo) that must match the pre-migration paths' },
   { pattern: 'scripts/lib/legacy-write-guard.js', reason: 'this guard carries the token table itself' },
 ];
 

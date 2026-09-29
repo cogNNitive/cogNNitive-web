@@ -189,9 +189,9 @@ function extractVersionRefs(relPath, content) {
     const sv = fm.match(/^spec_version\s*:\s*['"]?(V_\d+-\d+-\d+)['"]?\s*$/m)
     if (sv) refs.push({ field: 'spec_version', value: sv[1], location: relPath })
 
-    // model_version
-    const mv = fm.match(/^model_version\s*:\s*['"]?(V_\d+-\d+-\d+)['"]?\s*$/m)
-    if (mv) refs.push({ field: 'model_version', value: mv[1], location: relPath })
+    // knowledge_version
+    const mv = fm.match(/^knowledge_version\s*:\s*['"]?(V_\d+-\d+-\d+)['"]?\s*$/m)
+    if (mv) refs.push({ field: 'knowledge_version', value: mv[1], location: relPath })
 
     // spec_url (extract version from URL)
     const su = fm.match(/^spec_url\s*:\s*['"](https?:\/\/[^'"]+)['"]\s*$/m)
