@@ -1112,3 +1112,8 @@ export async function validateTemplate(
     warnings: decoratedWarnings,
   }
 }
+
+export const validateKnowledge = validateModel
+export const validateKnowledgeUrl = validateModelUrl
+export const validateBlueprint = validateTemplate
+

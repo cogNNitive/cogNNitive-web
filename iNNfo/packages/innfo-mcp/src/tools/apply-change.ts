@@ -225,22 +225,29 @@ async function bumpVersion(
   args: Record<string, unknown>,
   id: string,
 ): Promise<ApplyChangeResult> {
-  const prevVersion = String(model.frontmatter.model_version ?? '')
-  const next = computeNewVersion(model.frontmatter.model_version, args)
+  const prevVersion = String(model.frontmatter.knowledge_version ?? model.frontmatter.model_version ?? '')
+  const next = computeNewVersion(model.frontmatter.knowledge_version ?? model.frontmatter.model_version, args)
   if (!next) {
     return {
       success: false,
       errors: [
         {
-          path: 'frontmatter.model_version',
+          path: 'frontmatter.knowledge_version',
           message:
-            'Invalid version args for bump_version: provide { version: "V_x-y-z" } or { bump: "major" | "minor" | "patch" } against a valid model_version frontmatter',
+            'Invalid version args for bump_version: provide { version: "V_x-y-z" } or { bump: "major" | "minor" | "patch" } against a valid version frontmatter',
         },
       ],
     }
   }
 
-  model.frontmatter.model_version = next.version
+  if (model.frontmatter.knowledge_version !== undefined || model.frontmatter.model_version === undefined) {
+    model.frontmatter.knowledge_version = next.version
+    if (model.frontmatter.model_version !== undefined) {
+      delete model.frontmatter.model_version
+    }
+  } else {
+    model.frontmatter.model_version = next.version
+  }
 
   // A pre-write backup is taken when the caller asked for one, or when the
   // `specs/` tree has uncommitted changes. If a backup was judged necessary
@@ -518,6 +525,8 @@ async function bumpVersion(
     modification:
       buildAgentModificationBlock('bump_version', args, {
         model: id,
+        knowledge: id,
+        knowledgeVersion: next.version,
         modelVersion: next.version,
         versionTransition: { from: prevVersion, to: next.version },
         ...modificationContext(args),
@@ -662,7 +671,9 @@ export async function applyChange(
     modification:
       buildAgentModificationBlock(op, args, {
         model: id,
-        modelVersion: String(model.frontmatter.model_version ?? ''),
+        knowledge: id,
+        knowledgeVersion: String(model.frontmatter.knowledge_version ?? model.frontmatter.model_version ?? ''),
+        modelVersion: String(model.frontmatter.knowledge_version ?? model.frontmatter.model_version ?? ''),
         ...modificationContext(args),
       }) ?? undefined,
   }

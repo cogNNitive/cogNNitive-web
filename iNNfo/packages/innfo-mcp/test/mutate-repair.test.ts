@@ -32,8 +32,8 @@ describe('MCP model repair tools', () => {
 
     expect(res.success).toBe(true)
     const content = await readFile(res.filePath, 'utf-8')
-    expect(content).toContain('spec_version: "V_0-2-1"')
-    expect(content).toContain('model_version: "V_0-5-1"')
+    expect(content).toContain('spec_version: "V_0-3-0"')
+    expect(content).toMatch(/(knowledge_version|model_version): "V_0-5-1"/)
     expect(content).toContain('title: "Arenzano Residential"')
     expect(content).toContain('> [!NOTE]')
   })
@@ -59,6 +59,6 @@ describe('MCP model repair tools', () => {
     // fixed version here couples the test to volatile external template hosting
     // (the legacy `latest/level2/**` URL no longer resolves); assert the shape.
     expect(content).toMatch(/^spec_version: "V_\d+-\d+-\d+"$/m)
-    expect(content).toMatch(/^model_version: "V_\d+-\d+-\d+"$/m)
+    expect(content).toMatch(/^(knowledge_version|model_version): "V_\d+-\d+-\d+"$/m)
   })
 })

@@ -44,3 +44,11 @@ entries:
     why: Frozen legacy domain for migrator and detector test suites
     removal: all-known-domains-migrated + maintainer-sign-off
     owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: legacy-hint
+    what: MCP legacy domain detection and hint helper
+    paths:
+      - iNNfo/packages/innfo-mcp/src/tools/legacy-hint.ts
+    why: MCP tools must intercept calls against legacy domains with an nn-upgrade hint
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename

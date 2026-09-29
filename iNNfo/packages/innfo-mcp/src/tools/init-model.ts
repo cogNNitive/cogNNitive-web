@@ -83,15 +83,20 @@ function scaffoldBodyFromSchema(schema: {
   return lines.join('\n').trimEnd() + '\n'
 }
 
+export interface InitModelArgs {
+  template_url?: string
+  template_name?: string
+  blueprint_url?: string
+  blueprint_name?: string
+  title?: string
+  model_version?: string
+  knowledge_version?: string
+}
+
 export async function initModel(
   rootDir: string,
   id: string,
-  args: {
-    template_url: string
-    template_name: string
-    title?: string
-    model_version?: string
-  },
+  args: InitModelArgs,
   opts?: {
     cacheDir?: string
     inPlace?: boolean
@@ -107,27 +112,28 @@ export async function initModel(
 }> {
   const cleanId = normalizeId(id)
   const warnings: string[] = []
+  const blueprintName = args.blueprint_name || args.template_name || ''
+  const blueprintUrl = args.blueprint_url || args.template_url || ''
+  const requestedVersion = args.knowledge_version || args.model_version
+
   let filePath = await findModelFile(rootDir, id)
 
   if (!filePath) {
+    const knowledgeDir = join(rootDir, 'kNNowledge')
     const modelsDir = join(rootDir, 'models')
-    let useModelsDir = false
+    let targetDir = rootDir
     try {
-      const st = await stat(modelsDir)
-      if (st.isDirectory()) {
-        useModelsDir = true
+      const stK = await stat(knowledgeDir)
+      if (stK.isDirectory()) targetDir = knowledgeDir
+    } catch {
+      try {
+        const stM = await stat(modelsDir)
+        if (stM.isDirectory()) targetDir = modelsDir
+      } catch {
+        targetDir = rootDir
       }
-    } catch (err) {
-      /* v8 ignore start */
-      // swallow deliberately: no models/ dir — write beside the repo root.
-      if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-        console.warn(`[init-model] Failed to stat models dir ${modelsDir}: ${err}`)
-      }
-      /* v8 ignore stop */
     }
-    const target = useModelsDir
-      ? join(modelsDir, `${cleanId}_NN.md`)
-      : join(rootDir, `${cleanId}_NN.md`)
+    const target = join(targetDir, `${cleanId}_NN.md`)
     // The scaffold branch creates a new file from an untrusted id — it must be
     // confined to the workspace just like the lookup branch above.
     if (!isSafeRelativeId(id) || !isInsideRoot(rootDir, target)) {
@@ -159,8 +165,8 @@ export async function initModel(
   try {
     const resolved = await resolveTemplateWithCache(
       rootDir,
-      args.template_url,
-      args.template_name,
+      blueprintUrl,
+      blueprintName,
       opts,
     )
     template = resolved.template
@@ -183,7 +189,7 @@ export async function initModel(
       }
     } else {
       warnings.push(
-        `Template "${args.template_name}" could not be resolved from "${args.template_url}" — frontmatter written, body not scaffolded.`,
+        `Template "${blueprintName}" could not be resolved from "${blueprintUrl}" — frontmatter written, body not scaffolded.`,
       )
     }
   } catch (err) {
@@ -198,23 +204,23 @@ export async function initModel(
   }
 
   // Version-aware frontmatter (model-scaffold-robustness): infer the version
-  // from the resolved parent template's own `spec_version`. An explicit
-  // `model_version` wins only when there is nothing to contradict it (parent
+  // from the resolved parent template's own `spec_version` or `blueprint_version`. An explicit
+  // version wins only when there is nothing to contradict it (parent
   // unresolved, or exact match); when both exist and differ the scaffold
   // refuses with VERSION_MISMATCH rather than emit a differing version.
   const inferredVersion =
-    template?.frontmatter && typeof template.frontmatter.spec_version === 'string'
-      ? template.frontmatter.spec_version
+    template?.frontmatter && typeof (template.frontmatter.blueprint_version ?? template.frontmatter.spec_version) === 'string'
+      ? String(template.frontmatter.blueprint_version ?? template.frontmatter.spec_version)
       : null
   if (
-    args.model_version &&
+    requestedVersion &&
     inferredVersion &&
-    normalizeVersion(args.model_version) !== normalizeVersion(inferredVersion)
+    normalizeVersion(requestedVersion) !== normalizeVersion(inferredVersion)
   ) {
     const message =
-      `[VERSION_MISMATCH] Explicit model_version "${args.model_version}" differs ` +
-      `from the resolved parent template spec_version "${inferredVersion}". ` +
-      `Omit model_version to inherit "${inferredVersion}".`
+      `[VERSION_MISMATCH] Explicit version "${requestedVersion}" differs ` +
+      `from the resolved parent blueprint spec_version "${inferredVersion}". ` +
+      `Omit knowledge_version to inherit "${inferredVersion}".`
     return {
       success: false,
       templateResolved,
@@ -223,27 +229,27 @@ export async function initModel(
       validation: {
         valid: false,
         errors: [
-          { path: 'model_version', message, code: 'VERSION_MISMATCH', severity: 'error' as const },
+          { path: 'knowledge_version', message, code: 'VERSION_MISMATCH', severity: 'error' as const },
         ],
         warnings: [],
       },
     }
   }
 
-  const modelVersion = args.model_version || inferredVersion || 'V_0-1-0'
-  const specVersion = inferredVersion || 'V_0-2-1'
+  const knowledgeVersion = requestedVersion || inferredVersion || 'V_0-1-0'
+  const specVersion = 'V_0-3-0'
   const title = args.title || cleanId
 
   const esc = (s: string) => JSON.stringify(s)
   const frontmatter = [
     '---',
     `spec_version: ${esc(specVersion)}`,
-    'spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"',
+    'spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"',
     'level: 3',
     'parent_spec:',
-    `  name: ${esc(args.template_name)}`,
-    `  url: ${esc(args.template_url)}`,
-    `model_version: ${esc(modelVersion)}`,
+    `  name: ${esc(blueprintName)}`,
+    `  url: ${esc(blueprintUrl)}`,
+    `knowledge_version: ${esc(knowledgeVersion)}`,
     `title: ${esc(title)}`,
     '---',
   ].join('\n')
@@ -291,3 +297,6 @@ export async function initModel(
     validation: { valid: doc.valid, errors: doc.errors, warnings: doc.warnings },
   }
 }
+
+export const initKnowledge = initModel
+

@@ -12,22 +12,22 @@ const TEMPLATE_NAME = 'business_V_0-2-0'
 /** Write the level-1 + level-0 spec chain locally so resolution never hits the network. */
 async function stubSpecChain() {
   await writeFile(
-    join(specsDir, 'iNNfo_V_0-1-0_NN.md'),
+    join(specsDir, 'iNNfo_V_0-3-0_NN.md'),
     [
       '---',
-      'spec_version: "V_0-1-0"',
+      'spec_version: "V_0-3-0"',
       'level: 1',
       'title: "Local iNNfo Spec"',
       'parent_spec:',
-      '  name: "defiNNe_V_0-1-0"',
-      '  url: "https://example.com/defiNNe_V_0-1-0_NN.md"',
+      '  name: "defiNNition_V_0-1-0"',
+      '  url: "https://example.com/defiNNition_V_0-1-0_NN.md"',
       '---',
     ].join('\n'),
     'utf-8',
   )
   await writeFile(
-    join(specsDir, 'defiNNe_V_0-1-0_NN.md'),
-    ['---', 'spec_version: "V_0-1-0"', 'level: 0', 'title: "Local defiNNe Spec"', '---'].join('\n'),
+    join(specsDir, 'defiNNition_V_0-1-0_NN.md'),
+    ['---', 'spec_version: "V_0-1-0"', 'level: 0', 'title: "Local defiNNition Spec"', '---'].join('\n'),
     'utf-8',
   )
 }
@@ -39,12 +39,12 @@ async function stubBusinessTemplate() {
     join(specsDir, 'business_V_0-2-0_NN.md'),
     [
       '---',
-      'spec_version: "V_0-2-0"',
+      'blueprint_version: "V_0-2-0"',
       'level: 2',
       'title: "Local Business Template"',
       'parent_spec:',
-      '  name: "iNNfo_V_0-1-0"',
-      '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+      '  name: "iNNfo_V_0-3-0"',
+      '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
       '---',
       '',
       '# NN Concept Definition',
@@ -188,12 +188,12 @@ describe('initModel', () => {
       join(specsDir, 'business_V_0-1-0_NN.md'),
       [
         '---',
-        'spec_version: "V_0-1-0"',
+        'blueprint_version: "V_0-1-0"',
         'level: 2',
         'title: "Local Business Template V010"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
         '',
         '# NN Concept Definition',
@@ -218,8 +218,7 @@ describe('initModel', () => {
 
       expect(result.success).toBe(true)
       expect(result.templateResolved).toBe(true)
-      expect(result.content).toContain('spec_version: "V_0-2-0"')
-      expect(result.content).toContain('model_version: "V_0-2-0"')
+      expect(result.content).toContain('knowledge_version: "V_0-2-0"')
     })
 
     it('Version inferred (triangulation): a different parent version yields that version, not a constant', async () => {
@@ -232,22 +231,19 @@ describe('initModel', () => {
 
       expect(result.success).toBe(true)
       expect(result.templateResolved).toBe(true)
-      expect(result.content).toContain('spec_version: "V_0-1-0"')
-      expect(result.content).toContain('model_version: "V_0-1-0"')
+      expect(result.content).toContain('knowledge_version: "V_0-1-0"')
     })
 
     it('Override wins: explicit model_version is used when the parent cannot be resolved', async () => {
       const result = await initModel(rootDir, 'OverrideOnly', {
         template_url: TEMPLATE_URL,
         template_name: TEMPLATE_NAME,
-        model_version: 'V_0-3-0',
+        knowledge_version: 'V_0-3-0',
       })
 
       expect(result.success).toBe(true)
       expect(result.templateResolved).toBe(false)
-      expect(result.content).toContain('model_version: "V_0-3-0"')
-      // No parent to infer from: the L1 default still applies to spec_version.
-      expect(result.content).toContain('spec_version: "V_0-2-1"')
+      expect(result.content).toContain('knowledge_version: "V_0-3-0"')
     })
 
     it('Override wins (triangulation): a matching explicit version is accepted and carried', async () => {
@@ -256,11 +252,11 @@ describe('initModel', () => {
       const result = await initModel(rootDir, 'OverrideMatch', {
         template_url: TEMPLATE_URL,
         template_name: TEMPLATE_NAME,
-        model_version: 'V_0-2-0',
+        knowledge_version: 'V_0-2-0',
       })
 
       expect(result.success).toBe(true)
-      expect(result.content).toContain('model_version: "V_0-2-0"')
+      expect(result.content).toContain('knowledge_version: "V_0-2-0"')
     })
 
     it('Mismatch refused: a differing explicit version fails with VERSION_MISMATCH and writes nothing', async () => {
@@ -270,7 +266,7 @@ describe('initModel', () => {
       const result = await initModel(rootDir, 'Mismatch', {
         template_url: TEMPLATE_URL,
         template_name: TEMPLATE_NAME,
-        model_version: 'V_9-9-9',
+        knowledge_version: 'V_9-9-9',
       })
 
       expect(result.success).toBe(false)
@@ -288,12 +284,12 @@ describe('initModel', () => {
       join(specsDir, 'broken_V_0-2-0_NN.md'),
       [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Broken Template"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         'includes:',
         '  - name: "missing_tpl_V_0-1-0"',
         '    url: "https://example.com/missing_tpl_V_0-1-0_NN.md"',
@@ -334,12 +330,12 @@ describe('initModel', () => {
         join(specsDir, 'reftpl_V_0-1-0_NN.md'),
         [
           '---',
-          'spec_version: "V_0-1-0"',
+          'blueprint_version: "V_0-1-0"',
           'level: 2',
           'title: "Reference Field Template"',
           'parent_spec:',
-          '  name: "iNNfo_V_0-1-0"',
-          '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+          '  name: "iNNfo_V_0-3-0"',
+          '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
           '---',
           '',
           '# NN Concept Definition',
@@ -397,22 +393,6 @@ describe('initModel', () => {
         'utf-8',
       )
       await writeFile(join(specsDir, 'blank_V_0-2-0_NN.md'), blankRaw, 'utf-8')
-      // blank's parent_spec is iNNfo_V_0-2-1 -> defiNNe_V_0-1-0; stub that
-      // chain locally (same shape already proven by stubSpecChain()).
-      await writeFile(
-        join(specsDir, 'iNNfo_V_0-2-1_NN.md'),
-        [
-          '---',
-          'spec_version: "V_0-2-1"',
-          'level: 1',
-          'title: "Local iNNfo Spec V_0-2-1"',
-          'parent_spec:',
-          '  name: "defiNNe_V_0-1-0"',
-          '  url: "https://example.com/defiNNe_V_0-1-0_NN.md"',
-          '---',
-        ].join('\n'),
-        'utf-8',
-      )
       await stubSpecChain()
     }
 

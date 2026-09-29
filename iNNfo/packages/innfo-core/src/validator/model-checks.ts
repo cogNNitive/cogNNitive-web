@@ -28,8 +28,8 @@ export function checkFrontmatterInvariants(model: ParsedModel, d: Diagnostics): 
   }
 
   if (fm.level === 3) {
-    if (!fm.model_version) {
-      d.error('frontmatter.model_version', 'Missing model_version')
+    if (!fm.knowledge_version && !fm.model_version) {
+      d.error('frontmatter.knowledge_version', 'Missing knowledge_version')
     }
     if (
       fm.matrices !== undefined ||

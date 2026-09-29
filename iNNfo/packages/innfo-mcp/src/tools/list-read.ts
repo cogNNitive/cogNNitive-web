@@ -59,33 +59,37 @@ export function normalizeId(id: string): string {
 }
 
 /**
- * Scan a directory for iNNfo models.
+ * Scan a directory for iNNfo knowledge documents.
  */
 export async function listModels(rootDir: string): Promise<ModelInfo[]> {
   const rootModels = await coreListModels(rootDir)
-  const modelsDir = join(rootDir, 'models')
-  try {
-    const { stat } = await import('node:fs/promises')
-    const st = await stat(modelsDir)
-    if (st.isDirectory()) {
-      const subModels = await coreListModels(modelsDir)
-      for (const m of subModels) {
-        if (!rootModels.some((rm) => rm.path === m.path)) {
-          rootModels.push(m)
+  const candidateDirs = [join(rootDir, 'kNNowledge'), join(rootDir, 'models')]
+  for (const dir of candidateDirs) {
+    try {
+      const { stat } = await import('node:fs/promises')
+      const st = await stat(dir)
+      if (st.isDirectory()) {
+        const subModels = await coreListModels(dir)
+        for (const m of subModels) {
+          if (!rootModels.some((rm) => rm.path === m.path)) {
+            rootModels.push(m)
+          }
         }
       }
+    } catch (err) {
+      /* v8 ignore start */
+      if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+        console.warn(`[list-read] Failed to scan dir ${dir}: ${err}`)
+      }
+      /* v8 ignore stop */
     }
-  } catch (err) {
-    /* v8 ignore start */
-    // swallow deliberately: models/ may legitimately not exist.
-    if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-      console.warn(`[list-read] Failed to scan models dir ${modelsDir}: ${err}`)
-    }
-    /* v8 ignore stop */
   }
   rootModels.sort((a, b) => a.id.localeCompare(b.id))
   return rootModels
 }
+
+export const listKnowledge = listModels
+export const readKnowledge = readModel
 
 /**
  * Read and parse an iNNfo model by its id.

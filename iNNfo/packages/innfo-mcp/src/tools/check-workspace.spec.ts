@@ -157,8 +157,8 @@ describe('resolveCatalog (AD-3)', () => {
     vi.spyOn(global, 'fetch').mockImplementation(() =>
       Promise.resolve({ ok: false } as unknown as Response),
     )
-    const local = join(specsDir, 'templates', 'catalog.json')
-    await mkdir(join(specsDir, 'templates'), { recursive: true })
+    const local = join(specsDir, 'bluepriNNts', 'catalog.json')
+    await mkdir(join(specsDir, 'bluepriNNts'), { recursive: true })
     await writeFile(local, JSON.stringify(CATALOG), 'utf-8')
     const result = await resolveCatalog(rootDir, false)
     expect(result.source).toBe('in-repo')
@@ -217,8 +217,8 @@ describe('checkWorkspace (AD-5)', () => {
     expect(report.catalogSource).toBe('remote')
     expect(report.offline).toBe(false)
 
-    // The hydration wrote a new package under specs/templates/business/V_0-2-0/
-    const pkgDir = join(specsDir, 'templates', 'business', 'V_0-2-0')
+    // The hydration wrote a new package under specs/bluepriNNts/business/V_0-2-0/
+    const pkgDir = join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0')
     const files = await readdir(pkgDir)
     expect(files).toContain('spec_NN.md')
   })
@@ -227,10 +227,10 @@ describe('checkWorkspace (AD-5)', () => {
     stubNetwork()
     await writeModels(1)
     // Pre-place an existing spec that the resolver would otherwise hydrate.
-    await mkdir(join(specsDir, 'templates', 'business', 'V_0-2-0'), { recursive: true })
+    await mkdir(join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0'), { recursive: true })
     const preExisting = 'PRE-EXISTING CONTENT - DO NOT TOUCH'
     await writeFile(
-      join(specsDir, 'templates', 'business', 'V_0-2-0', 'spec_NN.md'),
+      join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0', 'spec_NN.md'),
       preExisting,
       'utf-8',
     )
@@ -238,7 +238,7 @@ describe('checkWorkspace (AD-5)', () => {
     const report = await checkWorkspace(rootDir)
     expect(report.models).toHaveLength(1)
     const after = await readFile(
-      join(specsDir, 'templates', 'business', 'V_0-2-0', 'spec_NN.md'),
+      join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0', 'spec_NN.md'),
       'utf-8',
     )
     expect(after).toBe(preExisting)
@@ -247,9 +247,9 @@ describe('checkWorkspace (AD-5)', () => {
   it('offline: true still runs local validation and degrades version/freshness', async () => {
     const spy = vi.spyOn(global, 'fetch')
     // Pre-hydrate the template locally so resolution works without network.
-    await mkdir(join(specsDir, 'templates', 'business', 'V_0-2-0'), { recursive: true })
+    await mkdir(join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0'), { recursive: true })
     await writeFile(
-      join(specsDir, 'templates', 'business', 'V_0-2-0', 'spec_NN.md'),
+      join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0', 'spec_NN.md'),
       TEMPLATE_CONTENT,
       'utf-8',
     )

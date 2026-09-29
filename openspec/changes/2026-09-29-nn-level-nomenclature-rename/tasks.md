@@ -185,15 +185,15 @@ Note: the sdd-tasks 530-word budget cannot hold a 17-section, strict-TDD plan; t
 
 ## 8. S6b MCP flips [mcp-tool-naming]
 
-- [ ] 8.1 Verify `2026-09-27-template-procedures-manifest-and-discovery` has landed; stop if not.
-- [ ] 8.2 RED: `innfo-mcp` tests: 13 tools renamed per D6, 4 kept (`get_spec`, `apply_change`, `query_units`, `resolve_sources`); old names respond "tool does not exist" and are not forwarded; envelope ids `innfo-<tool>@1`; args `knowledge_id`, `blueprint_url`, `domain`; list key `knowledge`.
-- [ ] 8.3 RED: `INNFO_DOMAIN_DIR` honoured; `INNFO_MODELS_DIR` alone behaves as unset; `INNFO_GLOBAL_DIR` default `~/.agents/bluepriNNts`.
-- [ ] 8.4 RED: resolver: regex `^blueprints-v\d+\.\d+\.\d+$` accepted, `templates-v0.17.0` rejected; `dirInRepo` is `iNNfo/specs/bluepriNNts/<base>` with no workspace special case; `ref` is required (no `templates-v<template_version>` default).
-- [ ] 8.5 RED: every canonical tool on a legacy domain returns the legacy notice + nn-upgrade pointer, no read-through, no write; no `migrate_domain` tool registered.
-- [ ] 8.6 RED: `findModelFile` (or its renamed equivalent) locates nested files recursively (`kNNowledge/subsystems/auth/tokens_NN.md` by name and by relative path); hydration without a version does not silently resolve the `domaiNN` name (versionless-hydrate refusal).
-- [ ] 8.7 GREEN: update `innfo-mcp/src/server.ts`, `tools/*.ts`, `resolver-node.ts`; create `tools/legacy-hint.ts` (imports only `detectLegacy`); ledger entry for it.
-- [ ] 8.8 Update the MCP `README.md` and tool descriptions to canonical names only (bluepriNNt procedures that name MCP tools are updated in S7 after the path move). MCP test fixtures that are real legacy domains migrate in S9a.
-- [ ] 8.9 Docs: `docs/innfo` MCP tool reference. Run the tracker child minimum (rebuild innfo-core before trusting MCP tests). Known-red gates: MCP tests reading real legacy fixtures until S9a. Rollback: revert child PR.
+- [x] 8.1 Verify `2026-09-27-template-procedures-manifest-and-discovery` has landed; stop if not.
+- [x] 8.2 RED: `innfo-mcp` tests: 13 tools renamed per D6, 4 kept (`get_spec`, `apply_change`, `query_units`, `resolve_sources`); old names respond "tool does not exist" and are not forwarded; envelope ids `innfo-<tool>@1`; args `knowledge_id`, `blueprint_url`, `domain`; list key `knowledge`.
+- [x] 8.3 RED: `INNFO_DOMAIN_DIR` honoured; `INNFO_MODELS_DIR` alone behaves as unset; `INNFO_GLOBAL_DIR` default `~/.agents/bluepriNNts`.
+- [x] 8.4 RED: resolver: regex `^blueprints-v\d+\.\d+\.\d+$` accepted, `templates-v0.17.0` rejected; `dirInRepo` is `iNNfo/specs/bluepriNNts/<base>` with no workspace special case; `ref` is required (no `templates-v<template_version>` default).
+- [x] 8.5 RED: every canonical tool on a legacy domain returns the legacy notice + nn-upgrade pointer, no read-through, no write; no `migrate_domain` tool registered.
+- [x] 8.6 RED: `findModelFile` (or its renamed equivalent) locates nested files recursively (`kNNowledge/subsystems/auth/tokens_NN.md` by name and by relative path); hydration without a version does not silently resolve the `domaiNN` name (versionless-hydrate refusal).
+- [x] 8.7 GREEN: update `innfo-mcp/src/server.ts`, `tools/*.ts`, `resolver-node.ts`; create `tools/legacy-hint.ts` (imports only `detectLegacy`); ledger entry for it.
+- [x] 8.8 Update the MCP `README.md` and tool descriptions to canonical names only (bluepriNNt procedures that name MCP tools are updated in S7 after the path move). MCP test fixtures that are real legacy domains migrate in S9a.
+- [x] 8.9 Docs: `docs/innfo` MCP tool reference. Run the tracker child minimum (rebuild innfo-core before trusting MCP tests). Known-red gates: MCP tests reading real legacy fixtures until S9a. Rollback: revert child PR.
 
 ## 9. S6c Editor flips [innfo-console-feedback, sample-workspaces]
 

@@ -189,14 +189,14 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
   it('listTemplates discovers templates across workspace, global, and skill stores', async () => {
     const globalDir = join(rootDir, 'global_templates')
     const skillsDir = join(rootDir, 'skills')
-    await mkdir(join(rootDir, 'templates'), { recursive: true })
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts'), { recursive: true })
     await mkdir(globalDir, { recursive: true })
-    await mkdir(join(skillsDir, 'nn-innfo', 'templates'), { recursive: true })
+    await mkdir(join(skillsDir, 'nn-innfo', 'bluepriNNts'), { recursive: true })
 
-    await writeFile(join(rootDir, 'templates', 'ws_tmpl.md'), '---\nversion: V_1-0-0\n---')
+    await writeFile(join(rootDir, 'specs', 'bluepriNNts', 'ws_tmpl.md'), '---\nversion: V_1-0-0\n---')
     await writeFile(join(globalDir, 'global_tmpl.md'), '---\nversion: V_1-0-0\n---')
     await writeFile(
-      join(skillsDir, 'nn-innfo', 'templates', 'skill_tmpl.md'),
+      join(skillsDir, 'nn-innfo', 'bluepriNNts', 'skill_tmpl.md'),
       '---\nversion: V_1-0-0\n---',
     )
 
@@ -209,7 +209,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     )
   })
 
-  it('hydrateTemplate copies template from global or skill store into workspace ./templates/', async () => {
+  it('hydrateTemplate copies template from global or skill store into workspace ./specs/bluepriNNts/', async () => {
     const globalDir = join(rootDir, 'global_templates')
     const skillsDir = join(rootDir, 'skills')
     await mkdir(globalDir, { recursive: true })
@@ -225,14 +225,14 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(res.templateName).toBe('workspace_V_0-3-0_spec_NN')
     expect(res.source).toBe('global')
 
-    const targetFile = join(rootDir, 'templates', 'workspace_V_0-3-0_spec_NN.md')
+    const targetFile = join(rootDir, 'specs', 'bluepriNNts', 'workspace_V_0-3-0_spec_NN.md')
     const { stat: statFs } = await import('node:fs/promises')
     const st = await statFs(targetFile)
     expect(st.isFile()).toBe(true)
   })
 
   it('listTemplateProcedures and listTemplateSkills dynamically discover transitive procedures and skills across includes trees', async () => {
-    const templatesDir = join(rootDir, 'templates')
+    const templatesDir = join(rootDir, 'specs', 'bluepriNNts')
     await mkdir(templatesDir, { recursive: true })
 
     await writeFile(
@@ -293,7 +293,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
   })
 
   it('S-01: discoverTransitiveAssets parses version strings from inc.url to resolve package templates', async () => {
-    const pkgDir = join(specsDir, 'templates', 'sec_pkg', 'V_2-0-0')
+    const pkgDir = join(specsDir, 'bluepriNNts', 'sec_pkg', 'V_2-0-0')
     await mkdir(pkgDir, { recursive: true })
 
     await writeFile(
@@ -312,7 +312,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const templatesDir = join(rootDir, 'templates')
+    const templatesDir = join(rootDir, 'specs', 'bluepriNNts')
     await mkdir(templatesDir, { recursive: true })
 
     await writeFile(
@@ -323,7 +323,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
         'title: "Main Template"',
         'includes:',
         '  - name: "sec_pkg"',
-        '    url: "https://example.com/specs/templates/sec_pkg/V_2-0-0/spec_NN.md"',
+        '    url: "https://example.com/specs/bluepriNNts/sec_pkg/V_2-0-0/spec_NN.md"',
         '---',
       ].join('\n'),
       'utf-8',
@@ -334,7 +334,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
   })
 
   it('discoverTransitiveAssets discovers procedures from on-disk procedures/ folder even without explicit frontmatter procedures array', async () => {
-    const pkgDir = join(rootDir, 'templates', 'video_pkg')
+    const pkgDir = join(rootDir, 'specs', 'bluepriNNts', 'video_pkg', 'V_1-0-0')
     const procsDir = join(pkgDir, 'procedures')
     await mkdir(procsDir, { recursive: true })
 
@@ -343,6 +343,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       [
         '---',
         'level: 2',
+        'spec_version: "V_1-0-0"',
         'title: "Video Package Without Frontmatter Procedures"',
         '---',
       ].join('\n'),
@@ -419,7 +420,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
   // after a coverage metric rather than a behaviour.
   it('spec.ts: discoverTransitiveAssets traverses parent_spec and includes', async () => {
     // Create template with procedures and parent_spec
-    const basePkgDir = join(specsDir, 'templates', 'base', '0.1.0')
+    const basePkgDir = join(specsDir, 'bluepriNNts', 'base', '0.1.0')
     await mkdir(join(basePkgDir, 'procedures'), { recursive: true })
     await writeFile(
       join(basePkgDir, 'spec_NN.md'),
@@ -442,7 +443,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const childPkgDir = join(specsDir, 'templates', 'child', '0.1.0')
+    const childPkgDir = join(specsDir, 'bluepriNNts', 'child', '0.1.0')
     await mkdir(childPkgDir, { recursive: true })
     await writeFile(
       join(childPkgDir, 'spec_NN.md'),
@@ -453,7 +454,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
         'title: "Child"',
         'parent_spec:',
         '  name: "base"',
-        '  url: "specs/templates/base/0.1.0/spec_NN.md"',
+        '  url: "specs/bluepriNNts/base/0.1.0/spec_NN.md"',
         '---',
       ].join('\n'),
       'utf-8',

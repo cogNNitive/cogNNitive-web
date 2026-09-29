@@ -6,23 +6,22 @@ import { validateModel } from '../src/tools/validate.js'
 const rootDir = join(import.meta.dirname!, '..', 'temp-test-workspace-sources')
 
 const INDEX = `---
-spec_version: "V_0-1-2"
-level: 0
+spec_version: "V_0-3-0"
+level: 3
 title: "Workspace Index"
 ---
 
 # NN index
 
-* [Plan](./models/Plan_V_1-0-0_NN.md)
+* [Plan](./kNNowledge/Plan_V_1-0-0_NN.md)
 `
 
 const MODEL = `---
-specification_version: "V_0-1-0"
 level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Plan"
 ---
 
@@ -50,10 +49,10 @@ Some normalised text.
 describe('validate_model workspace mode — sources:: Citations', () => {
   beforeEach(async () => {
     await rm(rootDir, { recursive: true, force: true })
-    await mkdir(join(rootDir, 'models'), { recursive: true })
+    await mkdir(join(rootDir, 'kNNowledge'), { recursive: true })
     await mkdir(join(rootDir, 'sources', 'nn'), { recursive: true })
-    await writeFile(join(rootDir, 'index.md'), INDEX, 'utf-8')
-    await writeFile(join(rootDir, 'models', 'Plan_V_1-0-0_NN.md'), MODEL, 'utf-8')
+    await writeFile(join(rootDir, 'domaiNN_NN.md'), INDEX, 'utf-8')
+    await writeFile(join(rootDir, 'kNNowledge', 'Plan_V_1-0-0_NN.md'), MODEL, 'utf-8')
     await writeFile(join(rootDir, 'sources', 'nn', 'present.md'), PRESENT_SOURCE, 'utf-8')
   })
 
@@ -87,16 +86,15 @@ describe('validate_model workspace mode — sources:: Citations', () => {
 
   it('resolves local sub-workspace sources from nested models', async () => {
     const subprojectDir = join(rootDir, 'subproject')
-    await mkdir(join(subprojectDir, 'models'), { recursive: true })
+    await mkdir(join(subprojectDir, 'kNNowledge'), { recursive: true })
     await mkdir(join(subprojectDir, 'sources', 'nn'), { recursive: true })
 
     const nestedModel = `---
-specification_version: "V_0-1-0"
 level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Finance Plan"
 ---
 
@@ -117,11 +115,11 @@ sha256: "0"
 # Budget Summary
 Budget details.
 `
-    await writeFile(join(subprojectDir, 'models', 'finance_NN.md'), nestedModel, 'utf-8')
+    await writeFile(join(subprojectDir, 'kNNowledge', 'finance_NN.md'), nestedModel, 'utf-8')
     await writeFile(join(subprojectDir, 'sources', 'nn', 'budget.md'), budgetSource, 'utf-8')
     await writeFile(
-      join(rootDir, 'index.md'),
-      INDEX + '\n* [Finance](./subproject/models/finance_NN.md)\n',
+      join(rootDir, 'domaiNN_NN.md'),
+      INDEX + '\n* [Finance](./subproject/kNNowledge/finance_NN.md)\n',
       'utf-8',
     )
 
@@ -132,15 +130,14 @@ Budget details.
 
   it('falls back to root workspace sources when subproject has no local sources', async () => {
     const subprojectDir = join(rootDir, 'subproject_fallback')
-    await mkdir(join(subprojectDir, 'models'), { recursive: true })
+    await mkdir(join(subprojectDir, 'kNNowledge'), { recursive: true })
 
     const nestedModel = `---
-specification_version: "V_0-1-0"
 level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Fallback Plan"
 ---
 
@@ -161,11 +158,11 @@ sha256: "0"
 # Policy Overview
 Root policy details.
 `
-    await writeFile(join(subprojectDir, 'models', 'fallback_NN.md'), nestedModel, 'utf-8')
+    await writeFile(join(subprojectDir, 'kNNowledge', 'fallback_NN.md'), nestedModel, 'utf-8')
     await writeFile(join(rootDir, 'sources', 'nn', 'shared_policy.md'), rootPolicySource, 'utf-8')
     await writeFile(
-      join(rootDir, 'index.md'),
-      INDEX + '\n* [Fallback](./subproject_fallback/models/fallback_NN.md)\n',
+      join(rootDir, 'domaiNN_NN.md'),
+      INDEX + '\n* [Fallback](./subproject_fallback/kNNowledge/fallback_NN.md)\n',
       'utf-8',
     )
 
@@ -176,12 +173,11 @@ Root policy details.
 
   it('emits missing parent directory and fuzzy suggestions in diagnostics', async () => {
     const modelWithErrors = `---
-specification_version: "V_0-1-0"
 level: 3
 parent_spec:
   name: business
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Error Plan"
 ---
 
@@ -194,15 +190,15 @@ title: "Error Plan"
 ## NN Stakeholders: Error Reviewers
 sources:: [missing_folder/report.md#summary, annual_repots.md#intro]
 `
-    await writeFile(join(rootDir, 'models', 'Error_V_1-0-0_NN.md'), modelWithErrors, 'utf-8')
+    await writeFile(join(rootDir, 'kNNowledge', 'Error_V_1-0-0_NN.md'), modelWithErrors, 'utf-8')
     await writeFile(
       join(rootDir, 'sources', 'nn', 'annual_reports.md'),
       '# Annual Reports\nData\n',
       'utf-8',
     )
     await writeFile(
-      join(rootDir, 'index.md'),
-      INDEX + '\n* [Error](./models/Error_V_1-0-0_NN.md)\n',
+      join(rootDir, 'domaiNN_NN.md'),
+      INDEX + '\n* [Error](./kNNowledge/Error_V_1-0-0_NN.md)\n',
       'utf-8',
     )
 

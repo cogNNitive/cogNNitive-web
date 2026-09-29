@@ -11,22 +11,22 @@ const modelsDir = join(rootDir, 'models')
 /** Write the level-1 + level-0 spec chain locally so resolution never hits the network. */
 async function stubSpecChain() {
   await writeFile(
-    join(specsDir, 'iNNfo_V_0-1-0_NN.md'),
+    join(specsDir, 'iNNfo_V_0-3-0_NN.md'),
     [
       '---',
-      'spec_version: "V_0-1-0"',
+      'spec_version: "V_0-3-0"',
       'level: 1',
       'title: "Local iNNfo Spec"',
       'parent_spec:',
-      '  name: "defiNNe_V_0-1-0"',
-      '  url: "https://example.com/defiNNe_V_0-1-0_NN.md"',
+      '  name: "defiNNition_V_0-1-0"',
+      '  url: "https://example.com/defiNNition_V_0-1-0_NN.md"',
       '---',
     ].join('\n'),
     'utf-8',
   )
   await writeFile(
-    join(specsDir, 'defiNNe_V_0-1-0_NN.md'),
-    ['---', 'spec_version: "V_0-1-0"', 'level: 0', 'title: "Local defiNNe Spec"', '---'].join('\n'),
+    join(specsDir, 'defiNNition_V_0-1-0_NN.md'),
+    ['---', 'spec_version: "V_0-1-0"', 'level: 0', 'title: "Local defiNNition Spec"', '---'].join('\n'),
     'utf-8',
   )
 }
@@ -38,12 +38,12 @@ async function stubBusinessTemplate() {
     join(specsDir, 'business_V_0-2-0_NN.md'),
     [
       '---',
-      'spec_version: "V_0-2-0"',
+      'blueprint_version: "V_0-2-0"',
       'level: 2',
       'title: "Local Business Template"',
       'parent_spec:',
-      '  name: "iNNfo_V_0-1-0"',
-      '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+      '  name: "iNNfo_V_0-3-0"',
+      '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
       '---',
       '',
       '# NN Concept Definition',
@@ -63,9 +63,8 @@ async function stubBusinessTemplate() {
  * otherwise (default fetch-reject mock, no local stub) it resolves to null. */
 const MUTABLE_MODEL_CONTENT = [
   '---',
-  'spec_version: "V_0-2-0"',
   'level: 3',
-  'model_version: "V_0-0-1"',
+  'knowledge_version: "V_0-0-1"',
   'title: "Test"',
   'parent_spec:',
   '  name: "business_V_0-2-0"',
@@ -161,12 +160,12 @@ describe('mutate tools', () => {
         join(rootDir, 'custom-templates', 'business_V_0-2-0_NN.md'),
         [
           '---',
-          'spec_version: "V_0-2-0"',
+          'blueprint_version: "V_0-2-0"',
           'level: 2',
           'title: "Local Business Template"',
           'parent_spec:',
-          '  name: "iNNfo_V_0-1-0"',
-          '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+          '  name: "iNNfo_V_0-3-0"',
+          '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
           '---',
           '',
           '# NN Concept Definition',
@@ -180,9 +179,8 @@ describe('mutate tools', () => {
 
       const contentWithRelativeParent = [
         '---',
-        'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_0-0-1"',
+        'knowledge_version: "V_0-0-1"',
         'title: "Test"',
         'parent_spec:',
         '  name: "business_V_0-2-0"',
@@ -356,7 +354,7 @@ describe('mutate tools', () => {
         expect(result.success).toBe(true)
         expect(typeof result.modification).toBe('string')
         expect(result.modification).toContain('scope:: add_element concept "Work" element "Review"')
-        expect(result.modification).toContain('model:: Mutable')
+        expect(result.modification).toContain('knowledge:: Mutable')
         expect(result.modification).toContain('rationale:: _')
 
         const expected = buildAgentModificationBlock(
@@ -364,7 +362,9 @@ describe('mutate tools', () => {
           { conceptName: 'Work', elementName: 'Review', description: 'Code review step.' },
           {
             model: 'Mutable',
-            modelVersion: result.model!.frontmatter.model_version as string,
+            knowledge: 'Mutable',
+            knowledgeVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.model_version) as string,
+            modelVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.model_version) as string,
             timestamp: result.modification!.match(/timestamp:: (.*)/)![1],
           },
         )
@@ -457,7 +457,7 @@ describe('mutate tools', () => {
         expect(result.success).toBe(true)
         expect(result.modification).toContain('scope:: bump_version "V_0-0-1" → "V_0-5-0"')
         expect(result.modification).toContain('version_transition:: V_0-0-1 → V_0-5-0')
-        expect(result.modification).toContain('model_version:: V_0-5-0')
+        expect(result.modification).toContain('knowledge_version:: V_0-5-0')
       })
 
       it('omits the modification block on every failure path', async () => {
@@ -494,13 +494,13 @@ describe('mutate tools', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-5-0')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-5-0')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-5-0_NN.md'))
 
       // Old file removed, new file carries the bumped frontmatter.
       await expect(readFile(oldPath, 'utf-8')).rejects.toThrow()
       const newContent = await readFile(result.newPath!, 'utf-8')
-      expect(newContent).toContain('model_version: "V_0-5-0"')
+      expect(newContent).toContain('knowledge_version: "V_0-5-0"')
     })
 
     it('bump_version increments patch by default when no bump level is given', async () => {
@@ -511,7 +511,7 @@ describe('mutate tools', () => {
       const result = await applyChange(rootDir, 'Versioned_V_0-0-1', 'bump_version', {})
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-0-2')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-0-2')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-0-2_NN.md'))
     })
 
@@ -525,7 +525,7 @@ describe('mutate tools', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-1-1')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-1-1')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-1-1_NN.md'))
     })
 
@@ -537,10 +537,10 @@ describe('mutate tools', () => {
       const result = await applyChange(rootDir, 'Mutable', 'bump_version', { bump: 'minor' })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-1-1')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.model_version).toBe('V_0-1-1')
       expect(result.newPath).toBe(filePath)
       const onDisk = await readFile(filePath, 'utf-8')
-      expect(onDisk).toContain('model_version: "V_0-1-1"')
+      expect(onDisk).toContain('knowledge_version: "V_0-1-1"')
     })
 
     it('bump_version rejects an invalid version without touching the file', async () => {
@@ -660,12 +660,12 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 3',
         'title: "Wrong Level"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
       const result = await validateTemplate(rootDir, undefined, content)
@@ -677,11 +677,11 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
       const result = await validateTemplate(rootDir, undefined, content)
@@ -693,12 +693,12 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Business Template"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
       const result = await validateTemplate(rootDir, undefined, content)
@@ -710,12 +710,12 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Business Template"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
       await writeFile(join(rootDir, 'Template_NN.md'), content, 'utf-8')
@@ -729,9 +729,8 @@ describe('mutate tools', () => {
       await stubBusinessTemplate()
       const workspaceContent = [
         '---',
-        'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_0-0-1"',
+        'knowledge_version: "V_0-0-1"',
         'title: "Workspace Model"',
         'parent_spec:',
         '  name: "business_V_0-2-0"',
@@ -743,20 +742,20 @@ describe('mutate tools', () => {
         'path:: models/auth_01.md',
         '',
       ].join('\n')
-      await writeFile(join(rootDir, 'workspace_01.md'), workspaceContent, 'utf-8')
+      await writeFile(join(rootDir, 'workspace_01_NN.md'), workspaceContent, 'utf-8')
 
       const templateContent = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Workspace Spec"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
         '# NN Concept Definition',
         '## NN Concept Definition: Models',
-        'type:: model',
+        'type:: list',
       ].join('\n')
       await writeFile(join(specsDir, 'business_V_0-2-0_NN.md'), templateContent, 'utf-8')
 

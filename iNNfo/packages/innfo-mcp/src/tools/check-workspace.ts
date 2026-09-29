@@ -129,7 +129,9 @@ export async function resolveCatalog(
   }
 
   const localCandidates = [
+    join(rootDir, 'specs', 'bluepriNNts', 'catalog.json'),
     join(rootDir, 'specs', 'templates', 'catalog.json'),
+    join(rootDir, 'iNNfo', 'specs', 'bluepriNNts', 'catalog.json'),
     join(rootDir, 'iNNfo', 'specs', 'templates', 'catalog.json'),
   ]
   for (const path of localCandidates) {
@@ -343,3 +345,6 @@ export async function checkWorkspace(
     ...(truncated ? { truncated: true } : {}),
   }
 }
+
+export const checkDomain = checkWorkspace
+

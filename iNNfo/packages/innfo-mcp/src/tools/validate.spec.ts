@@ -16,7 +16,7 @@ vi.mock('@cognnitive/innfo-core', async (importOriginal) => {
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-validate')
 const specsDir = join(rootDir, 'specs')
-const modelsDir = join(rootDir, 'models')
+const modelsDir = join(rootDir, 'kNNowledge')
 
 const TEMPLATE_NAME = 'linked_test_V_0-1-0'
 
@@ -50,7 +50,7 @@ function modelContent(title: string, body: string): string {
     '---',
     'level: 3',
     `title: "${title}"`,
-    'model_version: "V_0-1-0"',
+    'knowledge_version: "V_0-1-0"',
     'parent_spec:',
     `  name: "${TEMPLATE_NAME}"`,
     '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
@@ -67,19 +67,19 @@ function workspaceContent(): string {
     '---',
     'spec_version: "V_0-1-0"',
     'level: 3',
-    'model_version: "V_0-0-1"',
+    'knowledge_version: "V_0-0-1"',
     'title: "Workspace Model"',
     'parent_spec:',
     '  name: "linked_test_V_0-1-0"',
     '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
     '---',
     '',
-    '# NN Models',
-    '## NN Models: Alpha',
-    'path:: models/alpha_V_0-1-0_linked_test_NN.md',
+    '# NN kNNowledge',
+    '## NN kNNowledge: Alpha',
+    'path:: kNNowledge/alpha_V_0-1-0_linked_test_NN.md',
     '',
-    '## NN Models: Beta',
-    'path:: models/beta_V_0-1-0_linked_test_NN.md',
+    '## NN kNNowledge: Beta',
+    'path:: kNNowledge/beta_V_0-1-0_linked_test_NN.md',
     '',
   ].join('\n')
 }
@@ -118,7 +118,7 @@ async function writeWorkspace(): Promise<{ alphaPath: string; betaPath: string }
     'utf-8',
   )
   await writeFile(betaPath, modelContent('Beta', '## NN Roles: RoleB\n'), 'utf-8')
-  await writeFile(join(rootDir, 'workspace_01.md'), workspaceContent(), 'utf-8')
+  await writeFile(join(rootDir, 'domaiNN_NN.md'), workspaceContent(), 'utf-8')
   return { alphaPath, betaPath }
 }
 
@@ -248,21 +248,21 @@ describe('collectWorkspaceDiagnostics / filterDiagnosticsForModel (AD-4 split)',
         'utf-8',
       )
       await writeFile(
-        join(rootDir, 'workspace_01.md'),
+        join(rootDir, 'domaiNN_NN.md'),
         [
           '---',
           'spec_version: "V_0-1-0"',
           'level: 3',
-          'model_version: "V_0-0-1"',
+          'knowledge_version: "V_0-0-1"',
           'title: "Unit Workspace"',
           'parent_spec:',
           '  name: "linked_test_V_0-1-0"',
           '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
           '---',
           '',
-          '# NN Models',
-          '## NN Models: Gamma',
-          'path:: models/gamma_V_0-1-0_linked_test_NN.md',
+          '# NN kNNowledge',
+          '## NN kNNowledge: Gamma',
+          'path:: kNNowledge/gamma_V_0-1-0_linked_test_NN.md',
           '',
         ].join('\n'),
         'utf-8',

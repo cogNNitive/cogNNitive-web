@@ -13,8 +13,16 @@
 
 export type { ApplyChangeResult } from './apply-change.js'
 export { applyChange } from './apply-change.js'
-export { validateModel, validateModelUrl, validateTemplate } from './validate.js'
-export { initModel } from './init-model.js'
+export {
+  validateModel,
+  validateModelUrl,
+  validateTemplate,
+  validateKnowledge,
+  validateKnowledgeUrl,
+  validateBlueprint,
+} from './validate.js'
+export { initModel, initKnowledge } from './init-model.js'
 export { calculateSpecReachability, pruneOrphanedSpecs } from './reachability.js'
 export type { PruneOrphanedSpecsResult } from './reachability.js'
 export { createSpecsBackupZip } from './spec-backup.js'
+

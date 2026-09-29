@@ -58,16 +58,10 @@ import { isInsideRoot, isSafeRelativeId } from './path-guard.js'
 export { normalizeId }
 
 /**
- * Locate a model file on disk by id.
+ * Locate a knowledge/model file on disk by id.
  *
- * Searches the root directory and the conventional `models/` subdirectory
- * (iNNfo workspace layout). For each directory it tries, in order:
- *   `<cleanId>_NN.md`, `<cleanId>.md`, `<cleanId>`, `<id>`, `<id>.md`.
- *
- * The `<id>.md` candidate is what makes ids that already end in `_NN`
- * (e.g. `LC_programas_Tutorias_V_0-1-0_NN`) resolve to the exact file
- * `LC_programas_Tutorias_V_0-1-0_NN.md` instead of failing with
- * "Model not found".
+ * Searches the root directory, `kNNowledge/` and the conventional `models/` subdirectory.
+ * Supports nested relative paths (e.g. `subsystems/auth/tokens_NN.md`).
  */
 export async function findModelFile(
   rootDir: string,
@@ -78,7 +72,7 @@ export async function findModelFile(
   // drive/UNC-qualified forms before it ever reaches a `join`.
   if (!isSafeRelativeId(id)) return null
   const cleanId = normalizeId(id)
-  const searchDirs = [rootDir, join(rootDir, 'models')]
+  const searchDirs = [rootDir, join(rootDir, 'kNNowledge'), join(rootDir, 'models')]
   for (const dir of searchDirs) {
     const candidates = [
       join(dir, `${cleanId}_NN.md`),
@@ -86,6 +80,7 @@ export async function findModelFile(
       join(dir, cleanId),
       join(dir, id),
       join(dir, `${id}.md`),
+      join(dir, `${id}_NN.md`),
     ].filter((fp) => isInsideRoot(rootDir, fp))
     for (const fp of candidates) {
       try {
@@ -100,13 +95,20 @@ export async function findModelFile(
     }
   }
 
-  if (cleanId.toLowerCase().startsWith('workspace') || id.toLowerCase().startsWith('workspace')) {
+  if (
+    cleanId.toLowerCase().startsWith('domain') ||
+    cleanId.toLowerCase().startsWith('workspace') ||
+    id.toLowerCase().startsWith('domain') ||
+    id.toLowerCase().startsWith('workspace')
+  ) {
     const { readdir } = await import('node:fs/promises')
     for (const dir of searchDirs) {
       try {
         const files = await readdir(dir)
         const wsFile = files.find(
-          (f) => f.toLowerCase().startsWith('workspace') && f.toLowerCase().endsWith('.md'),
+          (f) =>
+            (f.toLowerCase().startsWith('domain') || f.toLowerCase().startsWith('workspace')) &&
+            f.toLowerCase().endsWith('.md'),
         )
         if (wsFile) {
           return join(dir, wsFile)
@@ -126,6 +128,8 @@ export async function findModelFile(
 
   return null
 }
+
+export const findKnowledgeFile = findModelFile
 
 async function recursiveFindModel(
   dir: string,
@@ -352,7 +356,7 @@ export async function listTemplates(
   rootDir: string,
   opts?: { globalDir?: string; skillsDir?: string },
 ): Promise<DiscoveredTemplate[]> {
-  const globalDir = opts?.globalDir ?? join(homedir(), '.agents', 'templates')
+  const globalDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir = opts?.skillsDir ?? join(homedir(), '.agents', 'skills')
 
   const discovered: DiscoveredTemplate[] = []
@@ -376,7 +380,8 @@ export async function listTemplates(
           try {
             const content = await readFile(filePath, 'utf-8')
             const fm = parseFrontmatter(content)
-            if (fm?.template_version) version = String(fm.template_version)
+            if (fm?.blueprint_version) version = String(fm.blueprint_version)
+            else if (fm?.template_version) version = String(fm.template_version)
             else if (fm?.version) version = String(fm.version)
             else if (fm?.spec_version) version = String(fm.spec_version)
           } catch (err) {
@@ -414,7 +419,8 @@ export async function listTemplates(
               try {
                 const content = await readFile(specFile, 'utf-8')
                 const fm = parseFrontmatter(content)
-                if (fm?.template_version) version = String(fm.template_version)
+                if (fm?.blueprint_version) version = String(fm.blueprint_version)
+                else if (fm?.template_version) version = String(fm.template_version)
                 else if (fm?.version) version = String(fm.version)
                 else if (fm?.spec_version) version = String(fm.spec_version)
               } catch (_) {
@@ -439,16 +445,15 @@ export async function listTemplates(
     }
   }
 
-  await scanDir(join(rootDir, 'templates'), 'workspace')
+  await scanDir(join(rootDir, 'specs', 'bluepriNNts'), 'workspace')
   await scanDir(join(rootDir, 'specs'), 'workspace')
-  await scanDir(join(rootDir, 'specs', 'templates'), 'workspace')
   await scanDir(globalDir, 'global')
 
   try {
     const skillEntries = await readdir(skillsDir, { withFileTypes: true })
     for (const entry of skillEntries) {
       if (entry.isDirectory()) {
-        await scanDir(join(skillsDir, entry.name, 'templates'), 'skill', entry.name)
+        await scanDir(join(skillsDir, entry.name, 'bluepriNNts'), 'skill', entry.name)
         await scanDir(join(skillsDir, entry.name), 'skill', entry.name)
       }
     }
@@ -461,6 +466,8 @@ export async function listTemplates(
 
   return discovered
 }
+
+export const listBlueprints = listTemplates
 
 export interface HydrateTemplateResult {
   success: boolean
@@ -475,7 +482,14 @@ export async function hydrateTemplate(
   templateName: string,
   opts?: { targetDir?: string; globalDir?: string; skillsDir?: string },
 ): Promise<HydrateTemplateResult> {
-  const globalTemplatesDir = opts?.globalDir ?? join(homedir(), '.agents', 'templates')
+  const parsed = parseSpecName(templateName)
+  if (parsed.base === 'domainn' && !parsed.version) {
+    throw new UnresolvedTemplateError(templateName, [
+      'Versionless hydration for domaiNN is not allowed; specify a versioned blueprint name or ref',
+    ])
+  }
+
+  const globalTemplatesDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir = opts?.skillsDir ?? join(homedir(), '.agents', 'skills')
 
   const pkg = await resolveTemplatePackage(rootDir, templateName, undefined, {
@@ -504,7 +518,7 @@ export async function hydrateTemplate(
 
     if (content) {
       if (opts?.targetDir || !pkg.isPackageDir) {
-        const targetDir = opts?.targetDir ?? join(rootDir, 'templates')
+        const targetDir = opts?.targetDir ?? join(rootDir, 'specs', 'bluepriNNts')
         await mkdir(targetDir, { recursive: true })
         const fileName = templateName.endsWith('.md') ? templateName : `${templateName}.md`
         const targetPath = join(targetDir, fileName)
@@ -515,7 +529,7 @@ export async function hydrateTemplate(
             templateName,
             targetPath,
             source: sourceName,
-            message: `Template ${templateName} already present at ${targetPath} (write-once cache immutability)`,
+            message: `Blueprint ${templateName} already present at ${targetPath} (write-once cache immutability)`,
           }
         } catch (err) {
           /* v8 ignore start */
@@ -529,12 +543,12 @@ export async function hydrateTemplate(
             templateName,
             targetPath,
             source: sourceName,
-            message: `Hydrated template ${templateName} from ${sourceName} to ${targetPath}`,
+            message: `Hydrated blueprint ${templateName} from ${sourceName} to ${targetPath}`,
           }
         }
       }
 
-      // Default: hydrate into workspace package directory specs/templates/<name>/<version>/
+      // Default: hydrate into workspace package directory specs/bluepriNNts/<name>/<version>/
       const targetPkgDir = await hydrateTemplatePackageAtomically(
         rootDir,
         pkg.name,
@@ -546,7 +560,7 @@ export async function hydrateTemplate(
         templateName,
         targetPath: targetPkgDir,
         source: sourceName,
-        message: `Hydrated template package ${templateName} (${pkg.version}) from ${sourceName} to ${targetPkgDir}`,
+        message: `Hydrated blueprint package ${templateName} (${pkg.version}) from ${sourceName} to ${targetPkgDir}`,
       }
     }
   }
@@ -566,7 +580,7 @@ export async function hydrateTemplate(
     throw new UnresolvedTemplateError(templateName, checkedPaths)
   }
 
-  const targetDir = opts?.targetDir ?? join(rootDir, 'templates')
+  const targetDir = opts?.targetDir ?? join(rootDir, 'specs', 'bluepriNNts')
   await mkdir(targetDir, { recursive: true })
 
   const fileName = templateName.endsWith('.md') ? templateName : `${templateName}.md`
@@ -579,7 +593,7 @@ export async function hydrateTemplate(
       templateName,
       targetPath,
       source: location.source,
-      message: `Template ${templateName} already present at ${targetPath} (write-once cache immutability)`,
+      message: `Blueprint ${templateName} already present at ${targetPath} (write-once cache immutability)`,
     }
   } catch (err) {
     /* v8 ignore start */
@@ -595,9 +609,11 @@ export async function hydrateTemplate(
     templateName,
     targetPath,
     source: location.source,
-    message: `Hydrated template ${templateName} from ${location.source} to ${targetPath}`,
+    message: `Hydrated blueprint ${templateName} from ${location.source} to ${targetPath}`,
   }
 }
+
+export const hydrateBlueprint = hydrateTemplate
 
 export interface ListTemplateProceduresOptions {
   model_path?: string
