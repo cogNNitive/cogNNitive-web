@@ -117,15 +117,15 @@ Note: the sdd-tasks 530-word budget cannot hold a 17-section, strict-TDD plan; t
 
 ## 3. S2 Legacy ledger and one-to-one guard [legacy-quarantine]
 
-- [ ] 3.1 RED: create `scripts/lib/legacy-ledger-guard.test.js` with fixture repos in a temp dir; one test per failure mode (marker without entry, entry without marker, marked file outside `paths`, `paths` item with no marker file, duplicate or malformed id). Each seen red first. The test builds marker strings by concatenation (never as one literal), so the test file carries no live marker; the guard also excludes its own test file and the contributor docs.
-- [ ] 3.2 RED: test that an empty ledger with zero markers passes and that `openspec/**`, the ledger file, the guard's own test file and the contributor docs are excluded from the scan.
-- [ ] 3.3 RED: test that an entry missing any required field (`id`, `what`, `paths`, `why`, `removal`, `owner`) fails and names the entry id, and that `version` other than `1` fails.
-- [ ] 3.4 RED: test that permanent history (a tag, a frozen CDN bundle, a `_V_` file, an archived change) listed in an entry's `paths` fails.
-- [ ] 3.5 GREEN: create `scripts/lib/legacy-ledger-guard.js` scanning `git ls-files` for `legacy:([a-z0-9-]+)/([a-z0-9-]+)`, with the exclusions above.
-- [ ] 3.6 Create `legacy-ledger.yaml` at the repo root (`version: 1`, `entries: []`).
-- [ ] 3.7 Wire the guard into `scripts/verify.js` and `scripts/check-integrity.js`; confirm a seeded stray marker turns verify red.
-- [ ] 3.8 Docs: describe the ledger/marker contract in the contributor docs (`docs/innfo` or `AGENTS.md` pointer); write the marker as the placeholder `legacy:<namespace>/<id>` so the docs carry no live marker.
-- [ ] 3.9 Run Gate G. Rollback: revert; starts empty so nothing depends on it.
+- [x] 3.1 RED: create `scripts/lib/legacy-ledger-guard.test.js` with fixture repos in a temp dir; one test per failure mode (marker without entry, entry without marker, marked file outside `paths`, `paths` item with no marker file, duplicate or malformed id). Each seen red first. The test builds marker strings by concatenation (never as one literal), so the test file carries no live marker; the guard also excludes its own test file and the contributor docs.
+- [x] 3.2 RED: test that an empty ledger with zero markers passes and that `openspec/**`, the ledger file, the guard's own test file and the contributor docs are excluded from the scan.
+- [x] 3.3 RED: test that an entry missing any required field (`id`, `what`, `paths`, `why`, `removal`, `owner`) fails and names the entry id, and that `version` other than `1` fails.
+- [x] 3.4 RED: test that permanent history (a tag, a frozen CDN bundle, a `_V_` file, an archived change) listed in an entry's `paths` fails.
+- [x] 3.5 GREEN: create `scripts/lib/legacy-ledger-guard.js` scanning `git ls-files` for `legacy:([a-z0-9-]+)/([a-z0-9-]+)`, with the exclusions above.
+- [x] 3.6 Create `legacy-ledger.yaml` at the repo root (`version: 1`, `entries: []`).
+- [x] 3.7 Wire the guard into `scripts/verify.js` and `scripts/check-integrity.js`; confirm a seeded stray marker turns verify red.
+- [x] 3.8 Docs: describe the ledger/marker contract in the contributor docs (`docs/innfo` or `AGENTS.md` pointer); write the marker as the placeholder `legacy:<namespace>/<id>` so the docs carry no live marker.
+- [x] 3.9 Run Gate G. Rollback: revert; starts empty so nothing depends on it.
 
 ## 4. S3 defiNNition and iNNfo V_0-3-0 (additive) [level-identity-succession, canonical-spec-hosting, template-release-tagging, model-primitive-type]
 

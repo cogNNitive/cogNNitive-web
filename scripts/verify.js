@@ -397,6 +397,9 @@ function runVerification(options = {}) {
   //     any git-visible text file (binary and generated bundles skipped by rule).
   run('node scripts/guard-text-encoding.js', 'Guard Tracked Text Encoding');
 
+  // 14. Legacy Ledger & Quarantine Marker Guard
+  run('node scripts/lib/legacy-ledger-guard.js', 'Legacy Ledger & Quarantine Guard');
+
   console.log('\n✅ [cogNNitive Verify] All deterministic pre-checks passed.');
 }
 

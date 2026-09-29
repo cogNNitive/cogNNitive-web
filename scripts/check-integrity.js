@@ -23,6 +23,7 @@ const path = require('path');
 const { checkCdnBundleStaged } = require('./lib/cdn-bundle-staged.js');
 const { checkTagPinFreshness } = require('./lib/tag-pin-freshness.js');
 const { checkNodeEngines } = require('./lib/node-engine-check.js');
+const { validateLegacyLedger } = require('./lib/legacy-ledger-guard.js');
 const { runVerification } = require('./verify.js');
 
 const repoRoot = path.resolve(__dirname, '..');
@@ -101,6 +102,16 @@ if (!nodeEngines.ok) {
   process.exit(1);
 }
 console.log('  ✅ All installed workspace dependencies are compatible with CI-pinned Node version(s).');
+
+// Step 2d: Legacy Ledger & Quarantine Marker Guard
+console.log('\n[Group 2d] Legacy Ledger & Quarantine Marker Guard:');
+const legacyLedgerResult = validateLegacyLedger({ repoRoot });
+if (!legacyLedgerResult.ok) {
+  console.error('❌ Legacy Ledger check failed:');
+  legacyLedgerResult.errors.forEach(err => console.error(`  - ${err}`));
+  process.exit(1);
+}
+console.log(`  ✅ Legacy ledger valid (${legacyLedgerResult.entries.length} entries, ${legacyLedgerResult.markers.length} code markers).`);
 
 // Step 3: Full Deterministic Workspace Verification (verify.js)
 console.log('\n[Groups 3, 4, 7+] Workspace Verification Suite:');
