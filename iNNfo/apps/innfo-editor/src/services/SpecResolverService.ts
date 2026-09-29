@@ -133,6 +133,12 @@ async function tryBundledTemplate(
     )
   } else {
     candidateUrls.push(
+      `/specs/bluepriNNts/${slug}/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/spec_NN.md`,
+      `/specs/bluepriNNts/${slug}_spec_NN.md`,
+      `/specs/bluepriNNts/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${cleanName}.md`,
       `/specs/templates/${slug}/${cleanName}_NN.md`,
       `/specs/templates/${slug}/${cleanName}.md`,
       `/specs/templates/${slug}/spec_NN.md`,
@@ -142,7 +148,8 @@ async function tryBundledTemplate(
       `/specs/${cleanName}_NN.md`,
       `/specs/${cleanName}.md`,
     )
-    if (slug === 'workspace') {
+    if (slug === 'workspace' || slug === 'domainn') {
+      candidateUrls.push(`/specs/bluepriNNts/domaiNN/spec_NN.md`)
       candidateUrls.push(`/specs/templates/workspace_spec_NN.md`)
     }
   }
@@ -407,8 +414,9 @@ export async function resolveParentSpecs(
   handle?: DirectoryHandleLike,
   issues?: Array<{ path: string; message: string }>,
 ): Promise<void> {
-  for (const rootId of rootIds) {
-    const root = nodes[rootId]
+  const rootNodes = Object.values(nodes).filter((n) => n.kind === 'root')
+  for (const root of rootNodes) {
+    const rootId = root.id
     if (!root?.rawContent) continue
 
     const fm = parseFrontmatter(root.rawContent) as SpecFrontmatter

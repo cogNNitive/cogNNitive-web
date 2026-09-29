@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'vue-router'
 import Header from '../components/layout/Header.vue'
 import SampleBanner from '../components/layout/SampleBanner.vue'
+import LegacyDomainBanner from '../components/layout/LegacyDomainBanner.vue'
 import LeftSidebar from '../components/layout/LeftSidebar.vue'
 import RightGuidanceSidebar from '../components/layout/RightGuidanceSidebar.vue'
 import ValidationReport from '../components/ValidationReport.vue'
@@ -577,6 +578,8 @@ onUnmounted(() => {
       @create="onSampleCreate"
       @dismiss="onSampleBannerDismiss"
     />
+
+    <LegacyDomainBanner />
 
     <div class="flex flex-1 overflow-hidden">
       <LeftSidebar

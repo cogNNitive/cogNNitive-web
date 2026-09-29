@@ -116,17 +116,21 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const modelStore = useModelStore()
       await modelStore.parseFromHandle(newHandle, driver.value ?? undefined)
 
-      // Detect empty folder — no _NN.md model files found
+      // Detect empty folder — no canonical domaiNN / kNNowledge roots found
       const hasModelRoots = modelStore.rootIds.some(
         (id) => !id.startsWith('spec:') && modelStore.nodes[id],
       )
-      if (!hasModelRoots) {
+      const isLegacyDomain = modelStore.parseIssues.some((issue) => issue.code === 'LEGACY_DOMAIN')
+
+      if (!hasModelRoots && !isLegacyDomain) {
         emptyFolderError.value = true
 
         // Surface per-file parse problems so "no models found" is explainable:
         // e.g. a _NN.md file that exists but failed to parse. The <root> issue
         // (missing index.md fallback notice) is expected and not an error.
-        const parseIssues = modelStore.parseIssues.filter((issue) => issue.path !== '<root>')
+        const parseIssues = modelStore.parseIssues.filter(
+          (issue) => issue.path !== '<root>' && issue.code !== 'LEGACY_DOMAIN',
+        )
         if (parseIssues.length > 0) {
           error.value = parseIssues
             .slice(0, 4)

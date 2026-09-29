@@ -7,17 +7,17 @@
  * - In production builds, samples are fetched from the published GitHub
  *   `main` branch.
  *
- * Callers build `${SAMPLE_BASE}/{templateName}/samples/{file}`, matching the
- * `specs/templates/{name}/samples/` layout (see `spec-versioning`, R-SV-01).
+ * Callers build `${SAMPLE_BASE}/{blueprintName}/samples/{file}`, matching the
+ * `specs/bluepriNNts/{name}/samples/` layout (see `spec-versioning`, R-SV-01).
  */
 export const REMOTE_SPEC_BASE = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs'
-const REMOTE_SAMPLE_BASE = `${REMOTE_SPEC_BASE}/templates`
+const REMOTE_SAMPLE_BASE = `${REMOTE_SPEC_BASE}/bluepriNNts`
 
-export const SAMPLE_BASE: string = import.meta.env.DEV ? '/specs/templates' : REMOTE_SAMPLE_BASE
+export const SAMPLE_BASE: string = import.meta.env.DEV ? '/specs/bluepriNNts' : REMOTE_SAMPLE_BASE
 
 /**
- * Bundled fallback of each shipped L2 template's newest known
- * `template_version`, keyed by template slug (e.g. "business").
+ * Bundled fallback of each shipped L2 blueprint's newest known
+ * `blueprint_version`, keyed by blueprint slug (e.g. "business").
  *
  * Used by `useTemplateVersionNotice` (spec-versioning D3) as one half of the
  * union that decides whether a model's pinned template is stale — the other
@@ -26,8 +26,8 @@ export const SAMPLE_BASE: string = import.meta.env.DEV ? '/specs/templates' : RE
  * the badge can still fire for a workspace that has never locally cached a
  * newer template file (e.g. right after this app itself ships a bump).
  */
-// GENERATED — DO NOT EDIT. Source: iNNfo/specs/templates/*/spec_NN.md and
-// iNNfo/specs/templates/workspace_spec_NN.md.
+// GENERATED — DO NOT EDIT. Source: iNNfo/specs/bluepriNNts/*/spec_NN.md and
+// iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md.
 // Regenerate with `npm run sync:versions` (scripts/sync-versions.mjs).
 export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
   analysis: 'V_0-2-1',
@@ -46,5 +46,5 @@ export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {
   projects: 'V_0-2-2',
   repository: 'V_0-1-1',
   sources: 'V_0-1-0',
-  video: 'V_0-3-2',
+  video: 'V_0-4-0',
 }

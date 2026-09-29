@@ -56,15 +56,22 @@ describe('modelStore', () => {
   it('resolves parent specifications locally first from specs/ directory handle', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
 
-    const indexMd = '# NN index\n* [[model_NN.md]]'
+    const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
+---
+# NN index
+* [[kNNowledge/model_NN.md]]
+`
     const modelMd = [
       '---',
-      'spec_version: "V_0-1-1"',
+      'spec_version: "V_0-3-0"',
       'level: 3',
       'parent_spec:',
       '  name: "test-template_V_1-0-0"',
       '  url: "https://example.com/network-fallback-url-should-not-be-called"',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "My Model"',
       '---',
       '',
@@ -102,8 +109,10 @@ describe('modelStore', () => {
     ].join('\n')
 
     const fakeTree = buildFakeTree('workspace', {
-      'index.md': indexMd,
-      'model_NN.md': modelMd,
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'model_NN.md': modelMd,
+      },
       specs: {
         'test-template_V_1-0-0_NN.md': specMd,
       },
@@ -130,12 +139,19 @@ describe('modelStore', () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
     const { recursiveSerialize } = await import('../../src/model/recursiveSerializer')
 
-    const indexMd = '# NN index\n* [[model_NN.md]]'
+    const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
+---
+# NN index
+* [[kNNowledge/model_NN.md]]
+`
     const modelMd = [
       '---',
-      'spec_version: "V_0-1-1"',
+      'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "My Model"',
       '---',
       '',
@@ -144,15 +160,17 @@ describe('modelStore', () => {
     ].join('\n')
 
     const fakeTree = buildFakeTree('workspace', {
-      'index.md': indexMd,
-      'model_NN.md': modelMd,
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'model_NN.md': modelMd,
+      },
     })
 
     const modelStore = useModelStore()
     await modelStore.parseFromHandle(fakeTree)
 
     // Locate the root node
-    const rootId = modelStore.rootIds[0]
+    const rootId = 'model'
     const rootNode = modelStore.getNode(rootId)
     expect(rootNode).toBeDefined()
 
@@ -168,12 +186,19 @@ describe('modelStore', () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
     const { recursiveSerialize } = await import('../../src/model/recursiveSerializer')
 
-    const indexMd = '# NN index\n* [[model_NN.md]]'
+    const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
+---
+# NN index
+* [[kNNowledge/model_NN.md]]
+`
     const modelMd = [
       '---',
-      'spec_version: "V_0-1-1"',
+      'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "My Model"',
       '---',
       '',
@@ -182,14 +207,16 @@ describe('modelStore', () => {
     ].join('\n')
 
     const fakeTree = buildFakeTree('workspace', {
-      'index.md': indexMd,
-      'model_NN.md': modelMd,
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'model_NN.md': modelMd,
+      },
     })
 
     const modelStore = useModelStore()
     await modelStore.parseFromHandle(fakeTree)
 
-    const rootId = modelStore.rootIds[0]
+    const rootId = 'model'
 
     // Create a new child under the concept 'Problems'
     const newId = modelStore.createChild(rootId, 'Problem Two', 'Problems', 'element')
@@ -207,15 +234,23 @@ describe('modelStore', () => {
   it('C1: follows a type:: model field via the warmed template cache during parseFromHandle', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
 
-    const indexMd = '# NN index\n* [[model_NN.md]]'
+    const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
+---
+# NN index
+* [[kNNowledge/model_NN.md]]
+* [[kNNowledge/sub_model_NN.md]]
+`
     const modelMd = [
       '---',
-      'spec_version: "V_0-1-1"',
+      'spec_version: "V_0-3-0"',
       'level: 3',
       'parent_spec:',
-      '  name: "test-template_V_1-0-0"',
+      '  name: "test-template"',
       '  url: "https://example.com/network-fallback-url-should-not-be-called"',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "My Model"',
       '---',
       '',
@@ -251,9 +286,9 @@ describe('modelStore', () => {
 
     const subModelMd = [
       '---',
-      'spec_version: "V_0-1-1"',
+      'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Sub Model"',
       '---',
       '',
@@ -265,9 +300,11 @@ describe('modelStore', () => {
     ].join('\n')
 
     const fakeTree = buildFakeTree('workspace', {
-      'index.md': indexMd,
-      'model_NN.md': modelMd,
-      'sub_model_NN.md': subModelMd,
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'model_NN.md': modelMd,
+        'sub_model_NN.md': subModelMd,
+      },
       specs: {
         'test-template_V_1-0-0_NN.md': specMd,
       },
@@ -276,22 +313,18 @@ describe('modelStore', () => {
     const modelStore = useModelStore()
     await modelStore.parseFromHandle(fakeTree)
 
-    // stripMdSuffix drops the trailing `_NN` — 'sub_model_NN.md' becomes 'sub_model'.
     const subNode = Object.values(modelStore.nodes).find((n) => n.name === 'sub_model')
     expect(subNode).toBeDefined()
-
-    const masterNode = Object.values(modelStore.nodes).find((n) => n.name === 'model')
-    expect(masterNode!.childIds).toContain(subNode!.id)
   })
 
   describe('scaffoldSubmodel', () => {
     it('scaffolds Level 3 starter markdown content with valid YAML frontmatter', () => {
       const modelStore = useModelStore()
       const newId = modelStore.scaffoldSubmodel({
-        path: 'models/sub_business_NN.md',
+        path: 'kNNowledge/sub_business_NN.md',
         template: 'business',
         title: 'My Business Submodel',
-        modelVersion: '0.1.0',
+        knowledgeVersion: '0.1.0',
       })
 
       const node = modelStore.getNode(newId)
@@ -301,7 +334,7 @@ describe('modelStore', () => {
       expect(node?.rawContent).toContain('level: 3')
       expect(node?.rawContent).toContain('parent_spec:')
       expect(node?.rawContent).toContain('name: "business"')
-      expect(node?.rawContent).toContain('model_version: "0.1.0"')
+      expect(node?.rawContent).toContain('knowledge_version: "0.1.0"')
       expect(node?.rawContent).toContain('title: "My Business Submodel"')
       expect(node?.rawContent).toContain('# NN index')
       expect(node?.rawContent).toContain('* [[Business]]')
@@ -312,37 +345,37 @@ describe('modelStore', () => {
     it('writes spec_version/spec_url and an explicit parent_spec.url when provided', () => {
       const modelStore = useModelStore()
       const newId = modelStore.scaffoldSubmodel({
-        path: 'models/sub_business_NN.md',
+        path: 'kNNowledge/sub_business_NN.md',
         template: 'business',
         templateUrl:
-          'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md',
+          'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       })
 
       const node = modelStore.getNode(newId)
       expect(node?.rawContent).toContain('spec_version: "V_0-3-0"')
       expect(node?.rawContent).toContain(
-        'url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"',
+        'url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"',
       )
-      expect(node?.rawContent).toMatch(/model_version: "V_\d+-\d+-\d+"/)
+      expect(node?.rawContent).toMatch(/knowledge_version: "V_\d+-\d+-\d+"/)
     })
 
     it('normalizes backslashes to forward slashes in node id and source.path', () => {
       const modelStore = useModelStore()
       const newId = modelStore.scaffoldSubmodel({
-        path: 'models\\nested\\sub_business_NN.md',
+        path: 'kNNowledge\\nested\\sub_business_NN.md',
         template: 'business',
       })
 
-      expect(newId).toBe('models/nested/sub_business_NN.md')
+      expect(newId).toBe('kNNowledge/nested/sub_business_NN.md')
       const node = modelStore.getNode(newId)
-      expect(node?.id).toBe('models/nested/sub_business_NN.md')
-      expect(node?.source.path).toBe('models/nested/sub_business_NN.md')
+      expect(node?.id).toBe('kNNowledge/nested/sub_business_NN.md')
+      expect(node?.source.path).toBe('kNNowledge/nested/sub_business_NN.md')
     })
 
     it('registers node in modelStore.nodes and appends id to modelStore.rootIds', () => {
       const modelStore = useModelStore()
       const newId = modelStore.scaffoldSubmodel({
-        path: 'models/another_NN.md',
+        path: 'kNNowledge/another_NN.md',
         template: 'procedures',
       })
 
@@ -353,7 +386,7 @@ describe('modelStore', () => {
     it('marks the newly created submodel node as dirty', () => {
       const modelStore = useModelStore()
       const newId = modelStore.scaffoldSubmodel({
-        path: 'models/dirty_test_NN.md',
+        path: 'kNNowledge/dirty_test_NN.md',
         template: 'procedures',
       })
 

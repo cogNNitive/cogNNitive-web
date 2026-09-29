@@ -4,29 +4,29 @@ import { useWorkspaceStore } from '../../src/stores/workspaceStore'
 import { useModelStore } from '../../src/stores/modelStore'
 import { buildFakeTree } from '../helpers/fakeFs'
 
-const indexMd = `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
 
-# _NN index
+# NN index
 
-* [[Doc_NN.md]]
+* [[kNNowledge/Doc_NN.md]]
 `
 
 const validFormatMd = `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 spec_url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
 level: 3
 parent_spec:
-  name: "business_V_0-1-1"
+  name: "business"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Workspace Store Fixture"
 ---
 
-# _NN Business summary
+# NN Business summary
 
 Fixture used to exercise workspaceStore.open() integrity-check wiring.
 `
@@ -40,7 +40,12 @@ describe('workspaceStore integrity check (AD-6)', () => {
   it('open() never awaits the integrity check and does not reject open()', async () => {
     const workspaceStore = useWorkspaceStore()
     const modelStore = useModelStore()
-    const handle = buildFakeTree('workspace', { 'index.md': indexMd, 'Doc_NN.md': validFormatMd })
+    const handle = buildFakeTree('workspace', {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'Doc_NN.md': validFormatMd,
+      },
+    })
 
     // Network is unavailable in tests → fetchCatalog degrades to offline.
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('network down'))
@@ -52,7 +57,12 @@ describe('workspaceStore integrity check (AD-6)', () => {
 
   it('a rejecting integrity check never sets the workspace error state', async () => {
     const workspaceStore = useWorkspaceStore()
-    const handle = buildFakeTree('workspace', { 'index.md': indexMd, 'Doc_NN.md': validFormatMd })
+    const handle = buildFakeTree('workspace', {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'Doc_NN.md': validFormatMd,
+      },
+    })
 
     // Simulate a catastrophic port failure inside the check builder.
     const module = await import('../../src/services/workspaceIntegrityPorts')
@@ -73,22 +83,25 @@ describe('workspaceStore integrity check (AD-6)', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.integrityReport = {
       schemaVersion: 1,
-      generatedAt: '2026-09-08T00:00:00.000Z',
-      models: [],
-      aggregate: {
-        modelsScanned: 0,
-        invalid: 0,
-        withWarnings: 0,
-        versionStatus: {},
-        templateResolution: {},
-        freshness: {},
-      },
-      catalogSource: 'offline',
-      offline: true,
-      degraded: [],
+      generatedAt: '2026-04-18T00:00:00.000Z',
+      verdict: 'clean',
+      summary: { total: 1, clean: 1, warnings: 0, blockers: 0 },
+      checks: [
+        {
+          id: 'catalog:business:freshness',
+          category: 'catalog',
+          severity: 'clean',
+          title: 'Catalog entry fresh',
+          message: 'Template business matches latest release',
+          source: { kind: 'template', name: 'business', version: 'V_0-2-3' },
+          remediation: 'none',
+        },
+      ],
     }
     workspaceStore.integrityRunning = true
+
     workspaceStore.reset()
+
     expect(workspaceStore.integrityReport).toBeNull()
     expect(workspaceStore.integrityRunning).toBe(false)
   })

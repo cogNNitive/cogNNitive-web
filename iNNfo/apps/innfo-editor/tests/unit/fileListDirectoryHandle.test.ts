@@ -46,8 +46,12 @@ describe('createDirectoryHandleFromFileList (F-13)', () => {
     setActivePinia(createPinia())
     const files = [
       makeFile(
-        'workspace/Doc_NN.md',
-        '---\nspec_version: "V_0-1-2"\nmodel_version: "V_1-0-0"\ntitle: "Doc"\n---\n# _NN index\n',
+        'workspace/domaiNN_NN.md',
+        '---\nspec_version: "V_0-3-0"\nlevel: 1\ntitle: "Domain"\n---\n# NN index\n* [[kNNowledge/Doc_NN.md]]\n',
+      ),
+      makeFile(
+        'workspace/kNNowledge/Doc_NN.md',
+        '---\nspec_version: "V_0-3-0"\nknowledge_version: "V_1-0-0"\ntitle: "Doc"\n---\n# NN index\n',
       ),
     ]
     const handle = createDirectoryHandleFromFileList(files)
@@ -57,6 +61,6 @@ describe('createDirectoryHandleFromFileList (F-13)', () => {
 
     expect(modelStore.rootIds.length).toBeGreaterThan(0)
     const parsedPaths = Object.values(modelStore.nodes).map((n) => n.source?.path)
-    expect(parsedPaths).toContain('Doc_NN.md')
+    expect(parsedPaths).toContain('kNNowledge/Doc_NN.md')
   })
 })

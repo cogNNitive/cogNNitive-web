@@ -24,6 +24,7 @@ interface FieldDefinitionLike {
   type: string
   options?: string[]
   target_concepts?: string[]
+  target_blueprint?: string
   target_template?: string
   [key: string]: unknown
 }
@@ -90,7 +91,7 @@ const showCreateAction = computed(
     !props.readonly ||
     (props.readonly &&
       modelMissing.value &&
-      !!props.fieldDefinition?.target_template),
+      !!(props.fieldDefinition?.target_blueprint || props.fieldDefinition?.target_template)),
 )
 
 interface ModelSuggestion {
@@ -163,7 +164,8 @@ function onBlur(): void {
 }
 
 async function handleCreateSubmodel(): Promise<void> {
-  const targetTemplate = props.fieldDefinition?.target_template || 'base'
+  const targetTemplate =
+    props.fieldDefinition?.target_blueprint || props.fieldDefinition?.target_template || 'base'
   const targetNode = props.nodeId ? modelStore.getNode(props.nodeId) : undefined
   const isElement = targetNode?.kind === 'element'
   const elementSlug = isElement
@@ -189,7 +191,7 @@ async function handleCreateSubmodel(): Promise<void> {
 
   const parentRootId = props.nodeId ? modelStore.getModelRootForNode(props.nodeId) : undefined
   const parentRootNode = parentRootId ? modelStore.getNode(parentRootId) : undefined
-  const parentPath = parentRootNode?.source?.path || 'models/model_NN.md'
+  const parentPath = parentRootNode?.source?.path || 'kNNowledge/knowledge_NN.md'
 
   const suggestedPath = deriveSuggestedSubmodelPath({
     parentPath,
@@ -198,6 +200,7 @@ async function handleCreateSubmodel(): Promise<void> {
     fieldName: props.fieldKey,
     targetTemplate,
   })
+
   const userPath = window.prompt(`Enter path for new submodel (${targetTemplate}):`, suggestedPath)
   if (!userPath || !userPath.trim()) return
 

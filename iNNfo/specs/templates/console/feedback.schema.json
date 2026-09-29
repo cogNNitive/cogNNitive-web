@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/feedback.schema.json",
   "title": "innfo-console Reviewer Feedback",
-  "description": "Reviewer-to-model feedback exported from an innfo-console artifact. Export filenames MUST match {PrimaryModel}_V_{version}_{slug}_feedback_{YYYYMMDD-HHMMSS}.json where {version} is V_x-y-z with hyphen separators and the stamp is UTC.",
+  "description": "Reviewer-to-knowledge feedback exported from an innfo-console artifact. Export filenames MUST match {PrimaryKnowledge}_V_{version}_{slug}_feedback_{YYYYMMDD-HHMMSS}.json where {version} is V_x-y-z with hyphen separators and the stamp is UTC.",
   "type": "object",
   "required": ["meta", "items"],
   "additionalProperties": true,
@@ -10,8 +10,8 @@
     "meta": {
       "type": "object",
       "required": [
-        "source_model",
-        "source_model_version",
+        "source_knowledge",
+        "source_knowledge_version",
         "artifact",
         "artifact_version",
         "exported_at",
@@ -21,15 +21,25 @@
       ],
       "additionalProperties": true,
       "properties": {
-        "source_model": {
+        "source_knowledge": {
           "type": "string",
           "minLength": 1,
-          "description": "Primary model name the feedback was collected against."
+          "description": "Primary knowledge name the feedback was collected against."
         },
-        "source_model_version": {
+        "source_knowledge_version": {
           "type": "string",
           "pattern": "^V_\\d+-\\d+-\\d+$",
-          "description": "Model version pinned at export time (V_x-y-z). Used for staleness checks."
+          "description": "Knowledge version pinned at export time (V_x-y-z). Used for staleness checks."
+        },
+        "knowledge": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Primary knowledge name the feedback was collected against."
+        },
+        "knowledge_version": {
+          "type": "string",
+          "pattern": "^V_\\d+-\\d+-\\d+$",
+          "description": "Knowledge version pinned at export time (V_x-y-z). Used for staleness checks."
         },
         "artifact": {
           "type": "string",

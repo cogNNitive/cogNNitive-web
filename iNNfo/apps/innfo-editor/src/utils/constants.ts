@@ -12,11 +12,13 @@
  */
 export const DEFAULT_INNFO_VERSION = 'V_0-3-0'
 
-/** Default template name for new documents. */
+/** Default template/blueprint name for new documents. */
 export const DEFAULT_TEMPLATE_NAME = ''
+export const DEFAULT_BLUEPRINT_NAME = ''
 
-/** Default template version. */
+/** Default template/blueprint version. */
 export const DEFAULT_TEMPLATE_VERSION = 'V_0-2-0'
+export const DEFAULT_BLUEPRINT_VERSION = 'V_0-2-0'
 
 /** Maximum marker score value (scores range from 0 to this value). */
 export const MAX_MARKER_SCORE = 3
@@ -37,11 +39,15 @@ export function buildSpecificationUrl(version: string = DEFAULT_INNFO_VERSION): 
 }
 
 /**
- * Builds the canonical raw GitHub URL for an L2 template version, grouped
- * under its own `specs/templates/{name}/` folder alongside its samples.
+ * Builds the canonical raw GitHub URL for an L2 blueprint version, grouped
+ * under its own `specs/bluepriNNts/{name}/` folder alongside its samples.
  */
 export function buildTemplateUrl(name: string, version: string = DEFAULT_TEMPLATE_VERSION): string {
-  return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/${name}/${name}_${version}_NN.md`
+  return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${name}/${name}_${version}_NN.md`
+}
+
+export function buildBlueprintUrl(name: string, version: string = DEFAULT_BLUEPRINT_VERSION): string {
+  return buildTemplateUrl(name, version)
 }
 
 const KNOWN_TEMPLATES = new Set([
@@ -54,17 +60,18 @@ const KNOWN_TEMPLATES = new Set([
   'innovation',
   'metrics',
   'workspace',
+  'domaiNN',
   'blank',
   'cogNNitive',
 ])
 
 /**
- * Normalizes a `target_template` field value (e.g. `business` or
- * `business_V_0-2-0`) into the canonical template URL used in a model's
+ * Normalizes a `target_blueprint` (or legacy `target_template`) field value (e.g. `business` or
+ * `business_V_0-2-0`) into the canonical blueprint URL used in a model's
  * `parent_spec.url`.
  *
- * Templates evolved from a per-version file (`{name}_{version}_NN.md`) to
- * a stable `spec_NN.md` leaf under `specs/templates/{name}/` (their
+ * Blueprints evolved from a per-version file (`{name}_{version}_NN.md`) to
+ * a stable `spec_NN.md` leaf under `specs/bluepriNNts/{name}/` (their
  * `spec_url` today points at that immutable path). `buildSubmodelTemplateUrl`
  * produces the current canonical form so a freshly scaffolded submodel
  * resolves without a network 404.
@@ -72,12 +79,12 @@ const KNOWN_TEMPLATES = new Set([
 export function buildSubmodelTemplateUrl(template: string): string {
   const normalized = (template || '').trim()
   if (KNOWN_TEMPLATES.has(normalized)) {
-    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/${normalized}/spec_NN.md`
+    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${normalized}/spec_NN.md`
   }
   // Known templates may arrive version-suffixed (e.g. "business_V_0-2-0").
   const baseName = normalized.match(/^(.*?)(?:_V_\d+-\d+-\d+)?$/i)?.[1] || normalized
   if (KNOWN_TEMPLATES.has(baseName)) {
-    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/${baseName}/spec_NN.md`
+    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${baseName}/spec_NN.md`
   }
-  return buildTemplateUrl(normalized, DEFAULT_TEMPLATE_VERSION)
+  return buildBlueprintUrl(normalized, DEFAULT_TEMPLATE_VERSION)
 }

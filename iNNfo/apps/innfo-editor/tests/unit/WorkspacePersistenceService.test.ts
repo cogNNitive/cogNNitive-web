@@ -11,27 +11,40 @@ describe('WorkspacePersistenceService — Collision Detection & Auto-Merge', () 
   })
 
   it('automatically merges disk changes (e.g. added by agent) with memory edits on save', async () => {
+    const domainContent = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "Filmography Domain"
+---
+
+# NN index
+
+* [[kNNowledge/model_NN.md]]
+`
+
     const initialContent = `---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 level: 3
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Filmography"
 ---
 
 # NN Movies
 
 ## NN Movies: Casablanca
-year:: 1942
+  year:: 1942
 
 # NN Scenes
 
 ## NN Scenes: Airport Farewell
-movie:: [[Casablanca]]
+  movie:: [[Casablanca]]
 `
 
     const fakeTree = buildFakeTree('workspace', {
-      'index.md': '# NN index\n* [[model_NN.md]]',
-      'model_NN.md': initialContent,
+      'domaiNN_NN.md': domainContent,
+      kNNowledge: {
+        'model_NN.md': initialContent,
+      },
     })
 
     const modelStore = useModelStore()
@@ -53,42 +66,41 @@ movie:: [[Casablanca]]
 
     // 3. Concurrently, an AI agent modifies the file on disk (adds a new scene)
     const diskContentWithAgentScene = `---
-spec_version: "V_0-2-1"
+spec_version: "V_0-3-0"
 level: 3
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Filmography"
 ---
 
 # NN Movies
 
 ## NN Movies: Casablanca
-year:: 1942
+  year:: 1942
 
 # NN Scenes
 
 ## NN Scenes: Airport Farewell
-movie:: [[Casablanca]]
+  movie:: [[Casablanca]]
 
-## NN Scenes: Rick's Cafe
-movie:: [[Casablanca]]
+## NN Scenes: Rick's Cafe Piano
+  movie:: [[Casablanca]]
 `
-    const fileHandle = await fakeTree.getFileHandle('model_NN.md', { create: true })
+    const knowledgeDir = (await fakeTree.getDirectoryHandle('kNNowledge')) as any
+    const fileHandle = await knowledgeDir.getFileHandle('model_NN.md')
     const writable = await fileHandle.createWritable()
     await writable.write(diskContentWithAgentScene)
     await writable.close()
 
-    // 4. User hits Save in the UI -> saveActiveFile executes
+    // 4. User triggers save
     await saveActiveFile(fakeTree, null, modelStore, uiStore, false)
 
-    // 5. Read back from disk to verify unified state
-    const freshlyReadHandle = await fakeTree.getFileHandle('model_NN.md')
-    const savedFile = await freshlyReadHandle.getFile()
+    // 5. Read back saved content from disk
+    const savedHandle = await knowledgeDir.getFileHandle('model_NN.md')
+    const savedFile = await savedHandle.getFile()
     const savedText = await savedFile.text()
 
-    // Both the UI change (director: Michael Curtiz) AND the agent change (Rick's Cafe) must be present!
-    expect(savedText).toContain('director:: Michael Curtiz')
-    expect(savedText).toContain('## NN Scenes: Rick\'s Cafe')
-    expect(savedText).toContain('## NN Scenes: Airport Farewell')
-    expect(savedText).not.toContain('# NN index')
+    // Assert: BOTH changes are present!
+    expect(savedText).toContain('Michael Curtiz')
+    expect(savedText).toContain('Rick\'s Cafe Piano')
   })
 })

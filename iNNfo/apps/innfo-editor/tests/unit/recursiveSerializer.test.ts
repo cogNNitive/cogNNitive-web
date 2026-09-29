@@ -8,13 +8,13 @@ import type { ModelNode } from '../../src/model/types'
 import type { ParsedModel, ModelDriver } from '@cognnitive/innfo-core'
 
 const fileDocMd = `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 spec_url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
 level: 3
-parent:
-  name: "business_V_0-1-1"
+parent_spec:
+  name: "business"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Serializer File Doc"
 ---
 
@@ -28,20 +28,23 @@ title: "Serializer File Doc"
 A problem used to exercise the serializer.
 `
 
-const indexMd = `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
 
 # NN index
 
-* [[Doc_NN.md]]
+* [[kNNowledge/Doc_NN.md]]
 `
 
 describe('recursiveSerializer', () => {
   it('returns write reports for dirty nodes', async () => {
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': fileDocMd }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': fileDocMd },
+    }
     const root = buildFakeTree('workspace', tree)
     const parsed = await recursiveParse(root)
 
@@ -51,12 +54,15 @@ describe('recursiveSerializer', () => {
     const report = await recursiveSerialize(parsed.nodes, dirty)
     expect(report).toHaveLength(1)
     expect(report[0].nodeId).toBe(docId)
-    expect(report[0].path).toBe('Doc_NN.md')
+    expect(report[0].path).toBe('kNNowledge/Doc_NN.md')
     expect(['exact', 'canonical']).toContain(report[0].fidelity)
   })
 
   it('returns empty report when no dirty nodes', async () => {
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': fileDocMd }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': fileDocMd },
+    }
     const root = buildFakeTree('workspace', tree)
     const parsed = await recursiveParse(root)
 
@@ -65,7 +71,10 @@ describe('recursiveSerializer', () => {
   })
 
   it('writes through driver when provided', async () => {
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': fileDocMd }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': fileDocMd },
+    }
     const root = buildFakeTree('workspace', tree)
     const parsed = await recursiveParse(root)
 
@@ -91,7 +100,10 @@ describe('recursiveSerializer', () => {
   })
 
   it('throws for dirty node without rawContent', async () => {
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': fileDocMd }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': fileDocMd },
+    }
     const root = buildFakeTree('workspace', tree)
     const parsed = await recursiveParse(root)
 
@@ -105,7 +117,10 @@ describe('recursiveSerializer', () => {
   })
 
   it('preserves node identity after parse -> serialize report -> re-parse round-trip', async () => {
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': fileDocMd }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': fileDocMd },
+    }
     const root = buildFakeTree('workspace', tree)
     const firstParse = await recursiveParse(root)
     const idsBefore = Object.keys(firstParse.nodes).sort()
@@ -128,7 +143,10 @@ describe('recursiveSerializer', () => {
     expect(roundtripContent).not.toBeNull()
 
     // Re-parse from the written content
-    const tree2: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': roundtripContent! }
+    const tree2: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': roundtripContent! },
+    }
     const root2 = buildFakeTree('workspace', tree2)
     const secondParse = await recursiveParse(root2)
     const idsAfter = Object.keys(secondParse.nodes).sort()
@@ -138,7 +156,7 @@ describe('recursiveSerializer', () => {
 
   it('persists matrix cell edits from node.fields to serialized markdown and re-parses them', async () => {
     const docWithMatrix = `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 level: 3
 title: "Matrix Test"
 matrices:
@@ -160,7 +178,10 @@ matrices:
 
 ## NN Values: Value A
 `
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': docWithMatrix }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': docWithMatrix },
+    }
     const root = buildFakeTree('workspace', tree)
     const parsed = await recursiveParse(root)
 
@@ -169,7 +190,7 @@ matrices:
     const valueA = Object.values(parsed.nodes).find((n) => n.name === 'Value A')!
 
     // Simulate user editing a cell in MatricesGrid. The in-memory cell key is
-    // id-based (`matrixName||<rowId>||<colId>`, E1); the serializer resolves
+    // id-based (\`matrixName||<rowId>||<colId>\`, E1); the serializer resolves
     // ids back to display names for the on-disk matrix table.
     docNode.fields[`Problems-Values Matrix||${problem1.id}||${valueA.id}`] = { value: 'X' }
 
@@ -192,7 +213,10 @@ matrices:
 
     // Re-parse the written content and verify the cell is restored into
     // node.fields under the id-based key.
-    const tree2: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': writtenContent! }
+    const tree2: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': writtenContent! },
+    }
     const root2 = buildFakeTree('workspace', tree2)
     const secondParse = await recursiveParse(root2)
     const reparsedDocNode = Object.values(secondParse.nodes).find((n) => n.name === 'Doc')!
@@ -207,7 +231,7 @@ matrices:
 
   it('persists dynamic relational matrix definitions from node.fields to serialized markdown', async () => {
     const docWithoutMatrix = `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 level: 1
 title: "Matrix Definitions Test"
 ---
@@ -225,7 +249,10 @@ title: "Matrix Definitions Test"
 
 ## NN Values: Value A
 `
-    const tree: FakeTree = { 'index.md': indexMd, 'Doc_NN.md': docWithoutMatrix }
+    const tree: FakeTree = {
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: { 'Doc_NN.md': docWithoutMatrix },
+    }
     const root = buildFakeTree('workspace', tree)
     const parsed = await recursiveParse(root)
 
@@ -283,7 +310,7 @@ title: "Matrix Definitions Test"
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'Doc_NN.md' },
+      source: { path: 'kNNowledge/Doc_NN.md' },
     }
     const conceptA: ModelNode = {
       id: 'ConceptA',
@@ -296,7 +323,7 @@ title: "Matrix Definitions Test"
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'Doc_NN.md' },
+      source: { path: 'kNNowledge/Doc_NN.md' },
     }
     const conceptB: ModelNode = {
       id: 'ConceptB',
@@ -310,7 +337,7 @@ title: "Matrix Definitions Test"
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'Doc_NN.md' },
+      source: { path: 'kNNowledge/Doc_NN.md' },
     }
     const root: ModelNode = {
       id: 'Root',
@@ -323,7 +350,7 @@ title: "Matrix Definitions Test"
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'Doc_NN.md' },
+      source: { path: 'kNNowledge/Doc_NN.md' },
       rawContent: fileDocMd,
     }
 

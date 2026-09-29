@@ -394,13 +394,14 @@ export const useModelStore = defineStore('model', () => {
     template: string
     templateUrl?: string
     title?: string
+    knowledgeVersion?: string
     modelVersion?: string
   }): string {
     const normalizedPath = options.path.replace(/\\/g, '/').trim()
     const id = normalizedPath
     const title =
       options.title || normalizedPath.split('/').pop()?.replace(/\.md$/i, '') || 'New Submodel'
-    const version = options.modelVersion || 'V_0-1-0'
+    const version = options.knowledgeVersion || options.modelVersion || 'V_0-1-0'
     const template = options.template || 'base'
     const templateUrl = options.templateUrl || ''
     const specVersion = DEFAULT_INNFO_VERSION
@@ -415,7 +416,7 @@ export const useModelStore = defineStore('model', () => {
       'parent_spec:',
       `  name: "${template}"`,
       `  url: "${templateUrl}"`,
-      `model_version: "${version}"`,
+      `knowledge_version: "${version}"`,
       `title: "${title}"`,
       '---',
       '',
