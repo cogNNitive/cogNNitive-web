@@ -192,14 +192,32 @@
 - **Regeneration (needs network/GitHub API)**: `docs/use/manifest.md` + `docs/use/manifest-next.md` via `generate-manifest.js`; regenerate `catalog.json` and `validation-baseline.json`.
 - **Not local-only**: `check:versions` and `validate-manifest --channel stable` cannot be fully green until the manifest docs are regenerated with a GH token — a maintainer/network step.
 
-### Pending / Blocked
-- [ ] **10.1** Prerequisite gate: `video`/`design-presets` releases landed — **NOT MET**: the video-engine workstream is uncommitted in the shared tree (`video/spec_NN.md` V_0-4-0, `procedures/generate_video_script_NN.md` untracked, console assets, 8 archived openspec changes untracked).
-- [ ] **10.2-10.5** RED tests for `blueprint-catalog.mjs`, manifest keys, domaiNN blueprint, wizard workflow rebind.
-- [ ] **10.6 (rest)** Update `tag-pin-freshness.js` `TEMPLATE_SPEC_RE`, `guard-template-immutability.js`, `build-docs.mjs`, `sync-samples.mjs` path references.
-- [ ] **10.7 (commit 2)** Rename `scripts/template-catalog.mjs` -> `blueprint-catalog.mjs`, flip `sync-versions.mjs`, `channel-refs.js`, `manifest/{generate,validate,check-parity}.js`, `manifest/source.yaml`, `canonical-registry.ts`; regenerate `docs/use/manifest*.md`.
-- [ ] **10.8-10.12 (commit 3)** domaiNN blueprint, per-blueprint MINOR bump + re-parent, real schema maps, registration, procedures MCP-tool names, docs.
+### Still open from S7 (tracker)
+- [ ] Real per-blueprint schema maps under `iNNfo/packages/innfo-core/src/legacy/schema-maps/` (S4 shipped fixture-based maps; S7 10.8 wants the real ones).
+- [ ] `canonical-registry.ts` embedded spec copies (61 refs) still carry `template_version` + old parents + old `spec_url`; hand-maintained (no generator). Must be aligned before the registry parity test can be green.
+- [ ] `docs/use/manifest*.md` regenerated (needs network/GitHub API) — maintainer step.
+- [ ] `validation-baseline.json` regenerated.
+
+---
+
+## Slice S10: Legacy-write guard
+
+### Completed
+- [x] **15.1-15.4**: created `scripts/lib/legacy-write-guard.js` (token-based; scope `iNNfo/packages/*/src/**`, `iNNfo/apps/*/src/**`, `scripts/**` minus tests, `skills/*/scripts/**`; excludes docs/tests/openspec/cdn/frozen `_V_`; allowlist with mandatory reason; Pages path carve-out by lookbehind) + `scripts/lib/legacy-write-guard.test.js` (9 token cases, scope exclusions, allowlist, Pages allowance, no-reason failure, clean pass) — **tests green**.
+
+### Blocked (not committed wired)
+- [ ] **15.5**: the guard reports **145 retired tokens** in the real tree — `innfo-core` 43, `innfo-mcp` 37, `skills/nn-trannsform/scripts` 25, `innfo-editor` 9, plus `scripts/**` and `skills/nn-preflight/scripts`. This is unfinished S6a/S6b/S6c (and S8 for nn-trannsform/preflight): the runtime token rename was not completed. The guard is deliberately **NOT wired into `verify.js`** yet (task 15.5 requires a green tree); wire it as step 15 once that cleanup lands.
+- [ ] **15.6**: contributor doc.
+
+## Remaining after S7/S10
+- **S8**: `skills/nn-preflight/scripts/{preflight-check,upgrade-check}.js` (new keys, `--blueprints-dir`, catalog URLs, `min_version`), `scripts/skills-manager.js` + `lib/skills-commands.js`, skill frontmatter `bundled_templates` -> `bundled_blueprints`, `nn-workspace-git` -> `nn-domain-git`, `innfo-mcp` 0.12.0 bump via the derived-version flow (needs the CDN/CDN-tag path).
+- **S6c/S8 leftover cleanup**: the 145 tokens above (innfo-core/mcp/editor/nn-trannsform/preflight) — required before S10 can be wired.
+- **S9a**: migrate the core/mcp/editor fixtures + `tests/fixtures/simulacro-refactorizacion` (live) + `simulation/**` through `migrate-domain.js` (tool-driven; needs the built migrator + the S7 domaiNN/bumped blueprints).
+- **S9b**: dogfood migration (`workspace_NN/`, `_samples_nn/`, the 4 use-case workspaces).
+- **S11**: [maintainer] sign-off, then delete the quarantine, bundles, `legacy-hint.ts`, `useLegacyDomain.ts`, the frozen fixture, and the ledger entries; release core/MCP minor.
+- **T**: internal identifier renames per package (mechanical).
 
 ### Known-red gates (tracker child policy)
 - Gates reading skill frontmatter `bundled_templates` until S8; `validate-manifest --channel stable` only after R.
-- Do NOT run `node scripts/verify.js` / `check-integrity` catalog steps until commit 2 flips the script/keys, or they will fail on the moved path.
+- `verify.js` step 15 (write guard) is intentionally absent until the 145-token cleanup lands.
 
