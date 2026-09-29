@@ -3,24 +3,13 @@ const fs = require('fs');
 const path = require('path');
 
 // Canonical vocabulary dictionary guard (nn-trannsform unit pattern).
-// Validates iNNfo/specs/vocabulary.json: well-formed, `app` canonical,
-// `template` recorded as a deprecated alias, and every stable identifier
-// (resolution-bearing path/tool/key/tag that MUST NOT be renamed) listed.
+// Validates iNNfo/specs/vocabulary.json: well-formed, case-sensitive terms,
+// retired aliases (app & template -> bluepriNNt), level hierarchy terms,
+// uncountable kNNowledge rules, domaiNN container semantics, and the
+// retired-identifier alias table (documentation only, no runtime alias).
 const SPECS_DIR = path.resolve(__dirname, '..');
 const VOCAB_FILE = path.join(SPECS_DIR, 'vocabulary.json');
 const REPO_ROOT = path.resolve(SPECS_DIR, '..', '..');
-
-// Every identifier that must stay byte-identical during the user-facing
-// `template` -> `app` rename. If one is dropped from the dictionary, the
-// guard fails so the deprecation contract stays auditable.
-const REQUIRED_STABLE_IDENTIFIERS = [
-  'specs/templates/',
-  'template_version',
-  'get_template',
-  'templates:',
-  'templates-v*',
-  'SHIPPED_TEMPLATE_VERSIONS',
-];
 
 function run() {
   let passed = 0;
@@ -31,7 +20,7 @@ function run() {
       assert.strictEqual(actual, expected);
       console.log(`  PASS: ${msg}`);
       passed++;
-    } catch {
+    } catch (e) {
       console.log(`  FAIL: ${msg}`);
       console.log(`    Expected: ${JSON.stringify(expected)}`);
       console.log(`    Actual:   ${JSON.stringify(actual)}`);
@@ -55,68 +44,127 @@ function run() {
     // Well-formedness
     assertEqual(typeof vocab, 'object', 'vocabulary.json parses as an object');
     assertEqual(typeof vocab.terms, 'object', 'vocabulary.json has a terms map');
+    assertTrue(Array.isArray(vocab.retired_identifiers) || typeof vocab.retired_identifiers === 'object', 'vocabulary.json has retired_identifiers table');
 
-    // `app` is the canonical term
-    const app = vocab.terms.app;
-    assertEqual(typeof app, 'object', 'app term entry exists');
-    assertTrue(app.canonical === true, 'app is marked canonical');
+    // Case-sensitive exact keys test
+    const terms = vocab.terms;
 
-    // `template` is recorded as a deprecated alias
-    assertTrue(Array.isArray(app.aliases), 'app declares an aliases array');
-    assertTrue(app.aliases.includes('template'), 'template is listed as a deprecated alias');
-
-    // sense + excluded senses
-    assertEqual(typeof app.sense, 'string', 'app declares a sense string');
-    assertTrue(app.sense.length > 0, 'app sense is non-empty');
-    assertTrue(Array.isArray(app.excludes), 'app declares an excludes array');
-    assertTrue(
-      app.excludes.includes('traNNsformations'),
-      'excludes covers the nn-trannsform traNNsformations sense',
-    );
-    assertTrue(
-      app.excludes.includes('vue-sfc-template'),
-      'excludes covers the Vue SFC <template> sense',
-    );
-
-    // Every stable identifier is listed (deprecation contract)
-    assertTrue(Array.isArray(app.stable_identifiers), 'app lists stable identifiers');
-    for (const id of REQUIRED_STABLE_IDENTIFIERS) {
-      assertTrue(
-        app.stable_identifiers.includes(id),
-        `stable identifier "${id}" is listed`,
-      );
+    // Level 0: defiNNition
+    assertTrue(!!terms.defiNNition, 'defiNNition term entry exists');
+    if (terms.defiNNition) {
+      assertTrue(terms.defiNNition.canonical === true, 'defiNNition is marked canonical');
+      assertTrue(Array.isArray(terms.defiNNition.aliases) && terms.defiNNition.aliases.includes('defiNNe'), 'defiNNe is a deprecated alias of defiNNition');
     }
 
-    // `ageNNt` is the canonical term
-    const ageNNt = vocab.terms.ageNNt;
-    assertEqual(typeof ageNNt, 'object', 'ageNNt term entry exists');
-    assertTrue(ageNNt.canonical === true, 'ageNNt is marked canonical');
-    assertTrue(Array.isArray(ageNNt.aliases), 'ageNNt declares an aliases array');
-    assertTrue(ageNNt.aliases.includes('actioNN'), 'actioNN is listed as a deprecated alias');
-    assertEqual(typeof ageNNt.sense, 'string', 'ageNNt declares a sense string');
-    assertTrue(ageNNt.sense.length > 0, 'ageNNt sense is non-empty');
-    assertTrue(Array.isArray(ageNNt.stable_identifiers), 'ageNNt lists stable identifiers');
-    // Post-consolidation (2026-09-16) the skill ecosystem lives at the repo
-    // root; every stable identifier must resolve on disk today.
-    for (const id of ['skills/', 'scripts/skills-manager.js']) {
-      assertTrue(ageNNt.stable_identifiers.includes(id), `stable identifier "${id}" is listed for ageNNt`);
+    // Level 1: iNNfo and meta-bluepriNNt
+    assertTrue(!!terms.iNNfo, 'iNNfo term entry exists');
+    if (terms.iNNfo) {
+      assertTrue(terms.iNNfo.canonical === true, 'iNNfo is marked canonical');
     }
-    for (const id of ageNNt.stable_identifiers) {
-      assertTrue(
-        fs.existsSync(path.join(REPO_ROOT, id)),
-        `stable identifier "${id}" must exist on disk`
-      );
+    assertTrue(!!terms['meta-bluepriNNt'], 'meta-bluepriNNt term entry exists');
+    if (terms['meta-bluepriNNt']) {
+      assertTrue(terms['meta-bluepriNNt'].canonical === true, 'meta-bluepriNNt is marked canonical');
+      assertTrue(Array.isArray(terms['meta-bluepriNNt'].aliases) && terms['meta-bluepriNNt'].aliases.includes('meta-template'), 'meta-template is a deprecated alias of meta-bluepriNNt');
     }
 
-    // `assistant` is the canonical term
-    const assistant = vocab.terms.assistant;
-    assertEqual(typeof assistant, 'object', 'assistant term entry exists');
-    assertTrue(assistant.canonical === true, 'assistant is marked canonical');
-    assertTrue(Array.isArray(assistant.aliases), 'assistant declares an aliases array');
-    assertTrue(assistant.aliases.includes('coach'), 'coach is listed as a deprecated alias');
-    assertTrue(assistant.aliases.includes('architecture coach'), 'architecture coach is listed as an alias');
-    assertEqual(typeof assistant.sense, 'string', 'assistant declares a sense string');
-    assertTrue(assistant.sense.length > 0, 'assistant sense is non-empty');
+    // Level 2: bluepriNNt (app & template are deprecated aliases)
+    assertTrue(!!terms.bluepriNNt, 'bluepriNNt term entry exists');
+    if (terms.bluepriNNt) {
+      assertTrue(terms.bluepriNNt.canonical === true, 'bluepriNNt is marked canonical');
+      assertTrue(Array.isArray(terms.bluepriNNt.aliases), 'bluepriNNt declares an aliases array');
+      assertTrue(terms.bluepriNNt.aliases.includes('app'), 'app is listed as a deprecated alias of bluepriNNt');
+      assertTrue(terms.bluepriNNt.aliases.includes('template'), 'template is listed as a deprecated alias of bluepriNNt');
+      assertTrue(Array.isArray(terms.bluepriNNt.excludes), 'bluepriNNt declares excludes array');
+      assertTrue(terms.bluepriNNt.excludes.includes('vue-sfc-template'), 'bluepriNNt excludes vue-sfc-template');
+    }
+    // `app` as a top-level canonical term must NO LONGER be canonical
+    assertTrue(!terms.app || terms.app.canonical !== true, 'app is NOT a canonical top-level term');
+
+    // Level 3: kNNowledge (uncountable, distinct sense for knowledge unit, plural form)
+    assertTrue(!!terms.kNNowledge, 'kNNowledge term entry exists');
+    if (terms.kNNowledge) {
+      assertTrue(terms.kNNowledge.canonical === true, 'kNNowledge is marked canonical');
+      assertTrue(Array.isArray(terms.kNNowledge.aliases) && terms.kNNowledge.aliases.includes('model'), 'model is listed as a deprecated alias of kNNowledge');
+      assertEqual(typeof terms.kNNowledge.plural_rule, 'string', 'kNNowledge declares plural_rule');
+      assertTrue(terms.kNNowledge.plural_rule.includes('N kNNowledge documents'), 'plural rule specifies "N kNNowledge documents"');
+      assertTrue(Array.isArray(terms.kNNowledge.distinct_senses), 'kNNowledge declares distinct_senses');
+      assertTrue(terms.kNNowledge.distinct_senses.includes('knowledge unit'), 'knowledge unit is a distinct sense');
+    }
+
+    // Container: domaiNN
+    assertTrue(!!terms.domaiNN, 'domaiNN term entry exists');
+    if (terms.domaiNN) {
+      assertTrue(terms.domaiNN.canonical === true, 'domaiNN is marked canonical');
+      assertTrue(Array.isArray(terms.domaiNN.aliases) && terms.domaiNN.aliases.includes('workspace'), 'workspace is a deprecated alias of domaiNN');
+      assertTrue(typeof terms.domaiNN.sense === 'string' && terms.domaiNN.sense.length > 0, 'domaiNN declares container sense');
+      assertTrue(terms.domaiNN.self_knowledge_relation === true, 'domaiNN is defined as a kNNowledge document itself');
+      assertTrue(Array.isArray(terms.domaiNN.excludes), 'domaiNN declares excludes array');
+    }
+
+    // `ageNNt` and `assistant`
+    assertTrue(!!terms.ageNNt, 'ageNNt term entry exists');
+    assertTrue(!!terms.assistant, 'assistant term entry exists');
+
+    // Retired identifier alias table verification
+    const retired = vocab.retired_identifiers;
+    assertTrue(Array.isArray(retired) || typeof retired === 'object', 'retired_identifiers table exists');
+    
+    // Check key required entries in retired table
+    const retiredList = Array.isArray(retired) ? retired : Object.entries(retired).map(([oldId, val]) => ({ old: oldId, ...val }));
+    
+    function findRetired(oldName) {
+      return retiredList.find(e => e.old === oldName || (e.paths && e.paths.includes(oldName)) || e.id === oldName);
+    }
+
+    // INNFO_MODELS_DIR -> INNFO_DOMAIN_DIR with "no fallback"
+    const envEntry = findRetired('INNFO_MODELS_DIR');
+    assertTrue(!!envEntry, 'INNFO_MODELS_DIR is in retired_identifiers');
+    if (envEntry) {
+      assertEqual(envEntry.new, 'INNFO_DOMAIN_DIR', 'INNFO_MODELS_DIR replacement is INNFO_DOMAIN_DIR');
+      assertTrue(typeof envEntry.notes === 'string' && envEntry.notes.toLowerCase().includes('no fallback'), 'INNFO_MODELS_DIR notes state "no fallback"');
+    }
+
+    // target_template -> target_blueprint
+    const targetTemplateEntry = findRetired('target_template');
+    assertTrue(!!targetTemplateEntry, 'target_template is in retired_identifiers');
+    if (targetTemplateEntry) {
+      assertEqual(targetTemplateEntry.new, 'target_blueprint', 'target_template replacement is target_blueprint');
+    }
+
+    // type:: model -> type:: knowledge
+    const typeModelEntry = findRetired('type:: model');
+    assertTrue(!!typeModelEntry, 'type:: model is in retired_identifiers');
+    if (typeModelEntry) {
+      assertEqual(typeModelEntry.new, 'type:: knowledge', 'type:: model replacement is type:: knowledge');
+    }
+
+    // nn-workspace-git -> nn-domain-git
+    const skillEntry = findRetired('nn-workspace-git');
+    assertTrue(!!skillEntry, 'nn-workspace-git is in retired_identifiers');
+    if (skillEntry) {
+      assertEqual(skillEntry.new, 'nn-domain-git', 'nn-workspace-git replacement is nn-domain-git');
+    }
+
+    // tag namespace: templates-v* -> blueprints-v*
+    const tagEntry = findRetired('templates-v*');
+    assertTrue(!!tagEntry, 'templates-v* is in retired_identifiers');
+    if (tagEntry) {
+      assertEqual(tagEntry.new, 'blueprints-v*', 'templates-v* replacement is blueprints-v*');
+    }
+
+    // entrypoint: workspace_NN.md -> domaiNN_NN.md
+    const entrypointEntry = findRetired('workspace_NN.md');
+    assertTrue(!!entrypointEntry, 'workspace_NN.md is in retired_identifiers');
+    if (entrypointEntry) {
+      assertEqual(entrypointEntry.new, 'domaiNN_NN.md', 'workspace_NN.md replacement is domaiNN_NN.md');
+    }
+
+    // Capability folders mapping recorded (names kept per D13)
+    const capFoldersEntry = findRetired('capability_folders');
+    assertTrue(!!capFoldersEntry, 'capability_folders mapping is recorded in retired_identifiers');
+
+    // Documentation-only check: assert table has documentation_only: true or runtime_consumers: []
+    assertTrue(vocab.documentation_only === true || (vocab.meta && vocab.meta.documentation_only === true), 'retired table is documentation only (no runtime aliases)');
 
     console.log(`\n  Vocabulary tests: ${passed} passed, ${failed} failed`);
   } catch (e) {

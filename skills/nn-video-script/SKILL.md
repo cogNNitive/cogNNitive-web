@@ -1,145 +1,73 @@
 ---
 name: nn-video-script
 description: |
-  Forked, iNNfo-aware skill for authoring Anydeo VUS (Video Universal Specification) scripts inside a cogNNitive workspace's Series/Video hierarchy. Understands Series registries, the {{slot}} script-template convention, the folder-contract escape rule, and the check-script/vus-parse validation gates. Never restates VUS voice IDs, property names, or other syntax facts as prose — always resolves them at run time via scripts/vus-spec.mjs against the pinned spec. Triggers: video script, anydeo script, VUS, series script, nn-video-script, {{slot}}, script_template.md, finalize video, render video script.
-version: "V_0-1-0"
-last_updated: 2026-09-26
+  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Supports Remotion scene compilation, deterministic SHA-256 asset caching, headless MP4 rendering, and thumbnail composition. Triggers: video script, cognnitive video, remotion video, series script, nn-video-script, {{slot}}, script_template.md, finalize video, render video script.
+version: "V_0-2-0"
+last_updated: 2026-09-29
 license: MIT
-metadata:
-  source_type: "fork"
-  source: "innV0/VidGeNN/.agent/skills/anydeo-script-builder"
-  dependency_direction: "cogNNitive -> VidGeNN only (read-only reference; VidGeNN MUST NOT reference or depend on this fork)"
 vus_spec:
   version: "V_0-3-3"
   sha256: "d617aadcc85ad5816ca0b447e28032b14c1fc64bac65f550fa4149bd4f7cedda"
-  source_repo: "innV0/VidGeNN"
-  source_commit: "4c05a5849aaf3928c0a6ce19175c309787865058"
+metadata:
+  engine: "cogNNitive Video Engine"
+  renderer: "Remotion Headless CLI"
 ---
 
-# nn-video-script Skill
+# cogNNitive Video Script Engine Skill
 
-Forked from VidGeNN's `anydeo-script-builder`, adapted to author Anydeo VUS
-scripts inside an iNNfo workspace's Series/Video production hierarchy
-(`video-production-hierarchy`). Replaces the video template's previously
-dangling reference to a skill that only ever existed in VidGeNN.
+Provides end-to-end video script authoring, deterministic TTS/media asset synthesis, Remotion scene compilation, and headless rendering for cogNNitive.
 
 ## 0. Activation Gate
 
-Execute the canonical activation gate defined in `nn-preflight` (session
-greeting + deterministic preflight integrity check), same as every other
-cogNNitive skill.
+Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check), same as every other cogNNitive skill.
 
-## 1. Machine-Checkable VUS Spec Pin (No-Prose-Copy)
+## 1. Engine Architecture & Remotion Compilation
 
-This skill's own documentation and prompts **never** restate voice IDs,
-property names/scopes, or any other VUS-syntax fact as literal prose. Every
-such fact is resolved by reading the pinned spec file at run time:
-
-```
-node scripts/vus-spec.mjs voices          # the full pinned voice list
-node scripts/vus-spec.mjs props scene     # every scene-scoped property
-node scripts/vus-spec.mjs props layer     # every layer-scoped property
-```
-
-The pin itself lives in this file's own frontmatter (`vus_spec.version`,
-`vus_spec.sha256`) and points exclusively at
-`VidGeNN/packages/core/specs/<version>.json` — never the stale
-`.agent/skills/anydeo-script-builder/specs/` copy. `scripts/vus-spec.mjs`
-verifies the pinned hash against the canonical file before answering any
-query, and refuses to answer (loudly) on drift. This is the fix for the
-`English_Deep-VoicedGentleman`-class bug: a voice ID or property name
-restated in prose can silently drift from what the pinned spec actually
-allows; a value resolved live from the pinned spec cannot.
-
-When `VIDGENN_ROOT` is not set, `vus-spec.mjs` prints an explicit skip line
-and exits 0 — it never probes a default path.
+The video engine operates headlessly through programmatic modules:
+- **Scene Compiler (`scripts/remotion-scene-compiler.mjs`)**: Compiles Markdown/VUS video scripts into frame-accurate Remotion Composition Manifests with sequence tracks, transitions, lower-thirds (`lowerThird`), kinetic titles (`kineticTitle`), and concept callouts (`conceptCallout`).
+- **Deterministic Asset Cache (`scripts/cache-manager.mjs`)**: Content-addressed SHA-256 cache under `.cognnitive/cache/video/` with isolated subdirectories (`tts/`, `images/`, `temp/`).
+- **Asset Synthesizer (`scripts/asset-synthesizer.mjs` / `scripts/tts-generator.mjs`)**: Synthesizes TTS voiceover tracks and image/motion assets, probing audio durations to guarantee zero audio clipping.
+- **Video Engine CLI (`scripts/video-engine-cli.mjs`)**: Headless CLI providing `compile`, `render`, and `preview` commands.
 
 ## 2. Scope of This Skill in the Authoring Workflow
 
-This skill owns **authoring, gating, and finalizing** one video's
-`script.md` inside a Series folder. The generic script-generation procedure
-that sequences Frame → Author → Validate → Register Script → Plan Assets & Costs (`asset_plan.md`) → Render → Finalize → Retrospective
-lives in the video template's own procedure document
-(`iNNfo/specs/templates/video/procedures/generate_anydeo_script_NN.md`) —
-this skill is what that procedure delegates to for the authoring and
-validation steps:
+This skill owns **authoring, validating, compiling, rendering, and finalizing** one video's `script.md` inside a Series folder:
 
-1. **Author** `script.md` from the Series' `script_template.md`, following
-   the `{{slot}}` convention (`references/series-template-convention.md`)
-   and this file's syntax notes (`references/vus-authoring-notes.md`). If the
-   Video element specifies `preset:: [[<PresetName>]]`, resolve the
-   `DesignPreset` to inject `typography_video_title` / `typography_video_subtitle`
-   into text layers and incorporate `illustration_prompt_anchor` into asset planning
-   (`asset_plan.md`).
-2. **Validate**, in order:
-   ```
+1. **Author** `script.md` from the Series' `script_template.md`, following the `{{slot}}` convention (`references/series-template-convention.md`) and syntax notes (`references/vus-authoring-notes.md`).
+2. **Validate**:
+   ```bash
    node scripts/check-script.mjs <script.md> --series-root <series-dir>
-   node scripts/vus-parse.mjs <script.md>
    ```
-   `check-script.mjs` MUST pass before `vus-parse.mjs` runs — an unresolved
-   `{{...}}` placeholder is invisible to the VUS grammar (it parses as
-   ordinary narration), so the placeholder gate is the only thing that
-   catches it.
-3. **Finalize**, once VidGeNN has rendered the script:
+3. **Compile Composition & Synthesize Assets**:
+   ```bash
+   node scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json
    ```
+4. **Render Master Video**:
+   ```bash
+   node scripts/video-engine-cli.mjs render renders/{ref}/manifest.json --output renders/{ref}/master.mp4
+   ```
+5. **Compose Video Thumbnail**:
+   ```bash
+   node scripts/render-thumbnail.mjs --base <path> --title <title> --out <out>
+   ```
+6. **Finalize**:
+   ```bash
    node scripts/finalize-video.mjs --video-dir <video-dir> [--ref <r>] [--force-thumbnail]
    ```
-   Prints the exact field values (`master::`, `thumbnail::`, `voiceover::`)
-   to hand to the model-writing tool (innfo-mcp). This script never edits
-   the model file itself.
-4. **Closing Retrospective & Improvement Analysis**:
-   After completing the script elaboration (or concluding the authoring session), proactively prompt the user asking if they want to analyze the session's conversation to suggest concrete improvements. If confirmed, examine the authoring exchange to propose refinements for the Series rules (`series_rules.md`), template structures (`script_template.md`), or prompt and narrative guidelines for future episodes.
+7. **Closing Retrospective & Improvement Analysis**:
+   After completing the script elaboration or rendering session, proactively prompt the user asking if they want to analyze the session's conversation to suggest concrete refinements for future episodes.
 
-## 3. Script Structure (order matters)
-
-1. `//ANYDEO_SPEC: <pinned-version>` — compliance header, MUST be the very
-   first line. See `references/vus-authoring-notes.md` for why this is
-   load-bearing beyond just documentation.
-2. Optional reusable property bundles and templates, declared before the
-   global video-level block.
-3. The global video-level block (project-wide settings).
-4. Scenes (`@`), grouped under section headers, each optionally carrying
-   visual/audio layers (`@@`).
-
-Property names are always scope-checked against the pinned spec
-(`node scripts/vus-spec.mjs props <scope>`) — never assumed from memory or
-copied from an older script.
-
-## 4. Folder Contract (D4)
-
-Three-level asset scoping (workspace / series / video), the no-upward-escape
-rule, and the ephemeral `renders/` / `.anydeo/` directories are all detailed
-in `references/folder-contract.md`. `scripts/check-script.mjs`'s asset-escape
-check is the mechanical enforcement of the escape rule — read that file
-before authoring a script that references any asset outside its own folder.
-
-## 5. Series/Video Registration
-
-A Video's owning Series is a Level-3 `video` model file carrying a `series:`
-frontmatter block (AD1) — Series is not a separate template, and this skill
-does not ship one (`video-production-hierarchy`). A Video's Subject is
-referenced generically through the model's `sources::` field (AD2); this
-skill does not standardize Subject content and never assumes a particular
-Subject template shape.
-
-## 6. Tooling Reference
+## 3. Tooling Reference
 
 | Script | Purpose |
 |---|---|
-| `scripts/check-script.mjs` | Zero-Unresolved-Placeholder Gate + No-Upward-Escape Rule. Exits 1 with `line:col` findings on the first failing category. |
-| `scripts/vus-parse.mjs` | Runs the real `ScriptParser` (via `npx tsx` against `$VIDGENN_ROOT`) and requires zero issues. Skips explicitly (exit 0) when `VIDGENN_ROOT` is unset. |
-| `scripts/vus-spec.mjs` | The only place this skill reads VUS-syntax facts. `voices` / `props <scope>` queries against the pinned, hash-verified spec. |
-| `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast titles, subtitles, and brand badges over clean 16:9 base images. |
+| `scripts/remotion-scene-compiler.mjs` | Compiles video scripts into Remotion composition manifests with calculated frame timings and overlay configs. |
+| `scripts/cache-manager.mjs` | Deterministic SHA-256 asset cache manager under `.cognnitive/cache/video/`. |
+| `scripts/asset-synthesizer.mjs` | Multi-provider TTS and media synthesis with audio duration probing and cache support. |
+| `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`), headless rendering (`render`), and local web preview (`preview`). |
+| `scripts/check-script.mjs` | Zero-Unresolved-Placeholder Gate + No-Upward-Escape Rule. |
+| `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast typography over clean 16:9 base images. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.
-See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines (Empty Set First, Two-Phase Thumbnail, and asset naming conventions).
-
-## 7. VidGeNN Stays Unaware of This Fork
-
-The dependency direction is cogNNitive → VidGeNN only. VidGeNN is read-only
-reference material: this skill reads its `packages/core/specs/*.json` (via
-`VIDGENN_ROOT`) and, only during local development/spike work, its
-TypeScript parser source for `vus-parse.mjs`. Nothing in VidGeNN ever
-references this skill, and nothing this skill writes touches the VidGeNN
-checkout.
+See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines.

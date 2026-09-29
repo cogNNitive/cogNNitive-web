@@ -52,3 +52,16 @@ own pre-push typecheck hook.
 The hook matches on the command text, so a command that merely quotes one of
 those patterns is refused too. Verify the rules with
 `node .claude/hooks/block-dangerous-git.test.mjs`.
+
+## Canonical Vocabulary & Ubiquitous Language
+
+All agents MUST adhere to the canonical iNNfo level nomenclature and vocabulary:
+- **Level 0**: `defiNNition` (meta-specification language)
+- **Level 1**: `iNNfo` (concrete specification meta-template) & `meta-bluepriNNt`
+- **Level 2**: `bluepriNNt` (domain schema; `template` and `app` are deprecated aliases)
+- **Level 3**: `kNNowledge` (domain data model; uncountable noun, e.g. "N kNNowledge documents")
+- **Container**: `domaiNN` (workspace container; a domaiNN is itself a kNNowledge document)
+
+Authoritative sources:
+- Machine-readable dictionary: [`iNNfo/specs/vocabulary.json`](iNNfo/specs/vocabulary.json)
+- Rendered vocabulary & alias guide: [`docs/innfo/documentation/vocabulary.md`](docs/innfo/documentation/vocabulary.md)

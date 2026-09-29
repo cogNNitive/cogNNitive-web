@@ -1,24 +1,65 @@
 {
-  "version": "V_0-2-0",
+  "version": "V_0-3-0",
+  "documentation_only": true,
   "terms": {
-    "app": {
+    "defiNNition": {
       "canonical": true,
-      "aliases": ["template"],
-      "sense": "Level-2 schema (_spec_NN.md pinned by parent_spec)",
+      "level": 0,
+      "aliases": ["defiNNe"],
+      "sense": "Level-0 meta-specification language (formerly defiNNe)",
+      "excludes": ["ordinary-english-definition"]
+    },
+    "iNNfo": {
+      "canonical": true,
+      "level": 1,
+      "aliases": [],
+      "sense": "Level-1 concrete specification meta-template defining root primitives (Concept Definition, Field Definition, Matrix Definition, Marker Definition)",
+      "excludes": []
+    },
+    "meta-bluepriNNt": {
+      "canonical": true,
+      "level": 1,
+      "aliases": ["meta-template"],
+      "sense": "Level-1 specification describing the structure of bluepriNNts",
+      "excludes": []
+    },
+    "bluepriNNt": {
+      "canonical": true,
+      "level": 2,
+      "aliases": ["app", "template"],
+      "sense": "Level-2 domain schema specification file (formerly Template / App; e.g. business_V_0-2-0_NN.md)",
       "excludes": ["traNNsformations", "vue-sfc-template", "generic-english"],
       "stable_identifiers": [
-        "specs/templates/",
-        "template_version",
-        "get_template",
-        "templates:",
-        "templates-v*",
+        "specs/bluepriNNts/",
+        "blueprint_version",
+        "get_blueprint",
+        "blueprints:",
+        "blueprints-v*",
         "SHIPPED_TEMPLATE_VERSIONS"
-      ],
-      "planned_migrations": [
-        "specs/templates/ -> specs/apps/",
-        "MCP tool names",
-        "manifest templates: key",
-        "templates-v* tags"
+      ]
+    },
+    "kNNowledge": {
+      "canonical": true,
+      "level": 3,
+      "aliases": ["model"],
+      "sense": "Level-3 domain data model (formerly Model). Uncountable noun.",
+      "uncountable": true,
+      "plural_rule": "N kNNowledge documents",
+      "distinct_senses": ["knowledge unit"],
+      "excludes": ["llm-model", "statistical-model"]
+    },
+    "domaiNN": {
+      "canonical": true,
+      "level": 3,
+      "aliases": ["workspace"],
+      "sense": "Container of kNNowledge, bluepriNNts, sources, procedures and related assets (formerly Workspace). A domaiNN is itself a kNNowledge document.",
+      "self_knowledge_relation": true,
+      "excludes": [
+        "npm workspace",
+        "VS Code workspace",
+        "git worktree",
+        "IndexedDB workspace",
+        "subject-area domain"
       ]
     },
     "ageNNt": {
@@ -31,7 +72,7 @@
         "scripts/skills-manager.js"
       ],
       "planned_migrations": [
-        "actioNN/skills/ -> skills/ in monorepo root (done 2026-09-16; the earlier actioNN/ -> ageNNt/ rename was abandoned in favor of a flat root skills/ directory)",
+        "actioNN/skills/ -> skills/ in monorepo root (done 2026-09-16)",
         "actioNN URL references"
       ]
     },
@@ -43,5 +84,133 @@
       "stable_identifiers": [],
       "planned_migrations": []
     }
-  }
+  },
+  "retired_identifiers": [
+    {
+      "id": "specs/templates/",
+      "old": "specs/templates/",
+      "new": "specs/bluepriNNts/",
+      "kind": "path",
+      "notes": "Relocated under iNNfo/specs/bluepriNNts/ and domain specs/bluepriNNts/"
+    },
+    {
+      "id": "models/",
+      "old": "models/",
+      "new": "kNNowledge/",
+      "kind": "path",
+      "notes": "Domain models directory renamed to kNNowledge/"
+    },
+    {
+      "id": "~/.agents/templates",
+      "old": "~/.agents/templates",
+      "new": "~/.agents/bluepriNNts",
+      "kind": "path",
+      "notes": "Global template storage location renamed to bluepriNNts"
+    },
+    {
+      "id": "model_version",
+      "old": "model_version",
+      "new": "knowledge_version",
+      "kind": "key",
+      "notes": "Level-3 frontmatter version property"
+    },
+    {
+      "id": "template_version",
+      "old": "template_version",
+      "new": "blueprint_version",
+      "kind": "key",
+      "notes": "Level-2 frontmatter version property"
+    },
+    {
+      "id": "template_name",
+      "old": "template_name",
+      "new": "blueprint_name",
+      "kind": "key",
+      "notes": "Level-2 schema name property"
+    },
+    {
+      "id": "models_dir",
+      "old": "models_dir",
+      "new": "knowledge_dir",
+      "kind": "key",
+      "notes": "Domain layout configuration key"
+    },
+    {
+      "id": "templates_dir",
+      "old": "templates_dir",
+      "new": "blueprints_dir",
+      "kind": "key",
+      "notes": "Domain layout configuration key"
+    },
+    {
+      "id": "target_template",
+      "old": "target_template",
+      "new": "target_blueprint",
+      "kind": "key",
+      "notes": "Field definition property naming target blueprint"
+    },
+    {
+      "id": "type:: model",
+      "old": "type:: model",
+      "new": "type:: knowledge",
+      "kind": "keyword",
+      "notes": "Grammar keyword for submodel references"
+    },
+    {
+      "id": "workflow: model",
+      "old": "workflow: model",
+      "new": "workflow: knowledge",
+      "kind": "key",
+      "notes": "Manifest workflow definition key"
+    },
+    {
+      "id": "workflow: template",
+      "old": "workflow: template",
+      "new": "workflow: blueprint",
+      "kind": "key",
+      "notes": "Manifest workflow template parameter key"
+    },
+    {
+      "id": "INNFO_MODELS_DIR",
+      "old": "INNFO_MODELS_DIR",
+      "new": "INNFO_DOMAIN_DIR",
+      "kind": "env_var",
+      "notes": "Domain root environment variable (no fallback)"
+    },
+    {
+      "id": "templates-v*",
+      "old": "templates-v*",
+      "new": "blueprints-v*",
+      "kind": "tag_namespace",
+      "notes": "Tag namespace for blueprint releases"
+    },
+    {
+      "id": "workspace_NN.md",
+      "old": "workspace_NN.md",
+      "new": "domaiNN_NN.md",
+      "kind": "entrypoint",
+      "notes": "Domain container entrypoint document"
+    },
+    {
+      "id": "nn-workspace-git",
+      "old": "nn-workspace-git",
+      "new": "nn-domain-git",
+      "kind": "skill",
+      "notes": "Skill renamed to reflect domaiNN terminology"
+    },
+    {
+      "id": "capability_folders",
+      "old": "capability_folders",
+      "new": "capability_folders",
+      "kind": "mapping",
+      "notes": "Openspec capability folders retain their existing kebab-case names per D13"
+    },
+    {
+      "id": "tool_names",
+      "old": "13 legacy tool names",
+      "new": "13 canonical blueprint/knowledge tool names",
+      "kind": "mcp_tools",
+      "notes": "list_knowledge, read_knowledge, init_knowledge, validate_knowledge, validate_knowledge_url, get_blueprint, validate_blueprint, list_blueprints, hydrate_blueprint, list_blueprint_procedures, list_blueprint_skills, sync_domain_manifest, check_domain"
+    }
+  ]
 }

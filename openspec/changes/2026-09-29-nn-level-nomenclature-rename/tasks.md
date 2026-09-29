@@ -96,24 +96,24 @@ Note: the sdd-tasks 530-word budget cannot hold a 17-section, strict-TDD plan; t
 ## 1. S0 Prerequisite: console artifact_shell rename lands, tree clean
 
 - [x] 1.1 [maintainer] Approve the tracker branch `feat/nn-rename-tracker` as the nn-dev-development section 2a exception; record the approval in the S5 PR body. (Approved by maintainer 2026-09-29.)
-- [ ] 1.2 Regenerate `docs/use/manifest.md` with `node scripts/manifest/generate-manifest.js --channel stable` (or `npm run sync:versions`) so it matches the pending `manifest/source.yaml` change; `--check` must pass.
-- [ ] 1.3 [maintainer] Commit on `dev` ONLY the console-shell set from `git status` plus the regenerated `docs/use/manifest.md`, staged by explicit path: `artifact_blueprint.html` -> `artifact_shell.html`, `console-blueprint.test.ts` -> `console-shell.test.ts`, `console-dom.test.ts`, `console-thinning.test.ts`, `metrics-console-slot.test.ts`, `iNNfo/specs/templates/{console/feedback.schema.json,business/procedures/apply_feedback_NN.md,metrics/procedures/create_timeline_NN.md,metrics/scripts/verify.harness.js}`, `manifest/source.yaml`, `openspec/specs/innfo-console-runtime/spec.md`, `scripts/export-console.mjs` + test, `skills/nn-innfo/SKILL.md`, `docs/innfo/documentation/offline-consoles.md`. Never stage this change's `openspec/changes/2026-09-29-nn-level-nomenclature-rename/` folder or any unrelated file; re-run `git status` first, since the list may have changed.
-- [ ] 1.4 [maintainer] Tag + repin that console release per nn-dev-release (merge first, then tag, then pin).
-- [ ] 1.5 Verify `git status` is clean and no concurrent agent holds the tree; run Gate G.
-- [ ] 1.6 Mark `2026-09-29-nn-identifier-full-migration` as superseded (note in its folder or archive it) so two changes do not own the same rename.
-- [ ] 1.7 Record the dependency checklist in the S5 PR: traceability task 4.14 (before S7), template-procedures-manifest landed (before S6b), three console/editor changes archived (before S6c), `video` and `design-presets` releases landed (before S7).
-- [ ] 1.8 Rollback note: S0 has no code from this change; nothing to revert.
+- [x] 1.2 Regenerate `docs/use/manifest.md` with `node scripts/manifest/generate-manifest.js --channel stable` (or `npm run sync:versions`) so it matches the pending `manifest/source.yaml` change; `--check` must pass.
+- [x] 1.3 [maintainer] Commit on `dev` ONLY the console-shell set from `git status` plus the regenerated `docs/use/manifest.md`, staged by explicit path: `artifact_blueprint.html` -> `artifact_shell.html`, `console-blueprint.test.ts` -> `console-shell.test.ts`, `console-dom.test.ts`, `console-thinning.test.ts`, `metrics-console-slot.test.ts`, `iNNfo/specs/templates/{console/feedback.schema.json,business/procedures/apply_feedback_NN.md,metrics/procedures/create_timeline_NN.md,metrics/scripts/verify.harness.js}`, `manifest/source.yaml`, `openspec/specs/innfo-console-runtime/spec.md`, `scripts/export-console.mjs` + test, `skills/nn-innfo/SKILL.md`, `docs/innfo/documentation/offline-consoles.md`. Never stage this change's `openspec/changes/2026-09-29-nn-level-nomenclature-rename/` folder or any unrelated file; re-run `git status` first, since the list may have changed.
+- [x] 1.4 [maintainer] Tag + repin that console release per nn-dev-release (merge first, then tag, then pin).
+- [x] 1.5 Verify `git status` is clean and no concurrent agent holds the tree; run Gate G.
+- [x] 1.6 Mark `2026-09-29-nn-identifier-full-migration` as superseded (note in its folder or archive it) so two changes do not own the same rename.
+- [x] 1.7 Record the dependency checklist in the S5 PR: traceability task 4.14 (before S7), template-procedures-manifest landed (before S6b), three console/editor changes archived (before S6c), `video` and `design-presets` releases landed (before S7).
+- [x] 1.8 Rollback note: S0 has no code from this change; nothing to revert.
 
 ## 2. S1 Glossary and vocabulary guard [canonical-vocabulary]
 
-- [ ] 2.1 RED: rewrite `iNNfo/specs/scripts/test-vocabulary.js` case-sensitive; assert `app` and `template` are deprecated aliases of bluepriNNt and new terms (defiNNition, bluepriNNt, kNNowledge, domaiNN, meta-bluepriNNt) exist. Scenario: `app` and `template` appear as deprecated aliases.
-- [ ] 2.2 RED: add a test that "knowledge unit" stays a distinct sense and that "N kNNowledge documents" is the plural form.
-- [ ] 2.3 RED: test the retired-identifier alias table: each entry (paths, keys including `target_template`, tool names, `INNFO_MODELS_DIR` -> `INNFO_DOMAIN_DIR` with "no fallback", tag namespace, entrypoint, `nn-workspace-git` -> `nn-domain-git`, capability-folder mapping) carries its replacement and is documentation only (no runtime consumer reads it).
-- [ ] 2.4 GREEN: update `iNNfo/specs/vocabulary.json` (retire `app`, alias `template`, add new canonical terms, sense boundaries and the retired-identifier alias table).
-- [ ] 2.5 GREEN: generate `docs/innfo/documentation/vocabulary.md` from `vocabulary.json` (script committed; drift-checked by `verify.js`); it lists every term with aliases and sense exclusions.
-- [ ] 2.6 Update the glossary and the openspec-capability-name mapping (capability folders keep their names, D13) in the `docs/innfo/` glossary page.
-- [ ] 2.7 `iNNfo/AGENTS.md` does not exist: add a pointer to `vocabulary.json` and the vocabulary page in the root `AGENTS.md` instead of creating that file.
-- [ ] 2.8 Run Gate G. Rollback: revert the commit (additive docs/tests).
+- [x] 2.1 RED: rewrite `iNNfo/specs/scripts/test-vocabulary.js` case-sensitive; assert `app` and `template` are deprecated aliases of bluepriNNt and new terms (defiNNition, bluepriNNt, kNNowledge, domaiNN, meta-bluepriNNt) exist. Scenario: `app` and `template` appear as deprecated aliases.
+- [x] 2.2 RED: add a test that "knowledge unit" stays a distinct sense and that "N kNNowledge documents" is the plural form.
+- [x] 2.3 RED: test the retired-identifier alias table: each entry (paths, keys including `target_template`, tool names, `INNFO_MODELS_DIR` -> `INNFO_DOMAIN_DIR` with "no fallback", tag namespace, entrypoint, `nn-workspace-git` -> `nn-domain-git`, capability-folder mapping) carries its replacement and is documentation only (no runtime consumer reads it).
+- [x] 2.4 GREEN: update `iNNfo/specs/vocabulary.json` (retire `app`, alias `template`, add new canonical terms, sense boundaries and the retired-identifier alias table).
+- [x] 2.5 GREEN: generate `docs/innfo/documentation/vocabulary.md` from `vocabulary.json` (script committed; drift-checked by `verify.js`); it lists every term with aliases and sense exclusions.
+- [x] 2.6 Update the glossary and the openspec-capability-name mapping (capability folders keep their names, D13) in the `docs/innfo/` glossary page.
+- [x] 2.7 `iNNfo/AGENTS.md` does not exist: add a pointer to `vocabulary.json` and the vocabulary page in the root `AGENTS.md` instead of creating that file.
+- [x] 2.8 Run Gate G. Rollback: revert the commit (additive docs/tests).
 
 ## 3. S2 Legacy ledger and one-to-one guard [legacy-quarantine]
 

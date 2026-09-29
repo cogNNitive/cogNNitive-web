@@ -279,6 +279,7 @@ function runVerification(options = {}) {
   //     discovery above cannot find them. Keep them explicit.
   run('node skills/nn-trannsform/test/run.js', 'Test nn-trannsform Skill Suite');
   run('node iNNfo/specs/scripts/test-vocabulary.js', 'Test Canonical Vocabulary Guard');
+  run('node scripts/generate-vocabulary-doc.mjs --check', 'Check Canonical Vocabulary Doc Fresh');
 
 // 1. Template Inventory Guard: ensure every template folder is declared in manifest/source.yaml
   const templatesDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'templates');
