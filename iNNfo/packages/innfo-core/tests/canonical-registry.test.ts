@@ -127,6 +127,68 @@ describe('Canonical Template Registry & Offline Fallback', () => {
     expect(findCanonicalTemplate(url)?.name).toBe('innfo')
   })
 
+  it('resolves defiNNition (Level 0) and iNNfo V_0-3-0 (Level 1) canonical identities', () => {
+    const defUrl =
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md'
+    const def = findCanonicalTemplate('defiNNition')
+    expect(def).not.toBeNull()
+    expect(def?.name).toBe('defiNNition')
+    expect(findCanonicalTemplate('defiNNition_V_0-1-0_NN')?.name).toBe('defiNNition')
+    expect(findCanonicalTemplate('specs/defiNNition_V_0-1-0_NN.md')?.name).toBe('defiNNition')
+    expect(findCanonicalTemplate(defUrl)?.name).toBe('defiNNition')
+
+    const innfoUrl =
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md'
+    const innfo3 = findCanonicalTemplate('iNNfo_V_0-3-0_NN')
+    expect(innfo3).not.toBeNull()
+    expect(innfo3?.name).toBe('innfo')
+    expect(findCanonicalTemplate('innfo_v_0-3-0')?.name).toBe('innfo')
+    expect(findCanonicalTemplate('specs/iNNfo_V_0-3-0_NN.md')?.name).toBe('innfo')
+    expect(findCanonicalTemplate(innfoUrl)?.name).toBe('innfo')
+  })
+
+  it('verifies iNNfo V_0-3-0 parent points to defiNNition on main', () => {
+    const content = getCanonicalSpecContent('iNNfo_V_0-3-0_NN')
+    expect(content).not.toBeNull()
+    expect(content).toContain('spec_version: "V_0-3-0"')
+    expect(content).toContain(
+      'parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"',
+    )
+  })
+
+  it('verifies iNNfo V_0-3-0 defines knowledge and blueprint keys and types', () => {
+    const content = getCanonicalSpecContent('iNNfo_V_0-3-0_NN')!
+    expect(content).not.toBeNull()
+    expect(content).toContain('knowledge_version')
+    expect(content).toContain('blueprint_version')
+    expect(content).toContain('blueprint_name')
+    expect(content).toContain('knowledge_dir')
+    expect(content).toContain('blueprints_dir')
+    expect(content).toContain('target_blueprint')
+    expect(content).toContain('knowledge')
+  })
+
+  it('does not truncate or mis-split names with embedded NN token', () => {
+    const def = findCanonicalTemplate('defiNNition_V_0-1-0_NN.md')
+    expect(def).not.toBeNull()
+    expect(def?.name).toBe('defiNNition')
+  })
+
+  it('returns null for unregistered _V_ spec files', () => {
+    expect(findCanonicalTemplate('unregistered_spec_V_9-9-9_NN.md')).toBeNull()
+    expect(findCanonicalTemplate('custom_template_V_8-8-8_NN.md')).toBeNull()
+  })
+
+  it('mirrors on-disk defiNNition and iNNfo V_0-3-0 specs byte-for-byte in canonical registry', () => {
+    const defDisk = readFileSync(join(specsRoot, 'defiNNition_V_0-1-0_NN.md'), 'utf-8')
+    const defMirror = getCanonicalSpecContent('defiNNition')!
+    expect(defMirror).toBe(defDisk)
+
+    const innfoDisk = readFileSync(join(specsRoot, 'iNNfo_V_0-3-0_NN.md'), 'utf-8')
+    const innfoMirror = getCanonicalSpecContent('innfo')!
+    expect(innfoMirror).toBe(innfoDisk)
+  })
+
   it('mirrors the workspace and artifacts V_0-2-2 templates without drift', () => {
     for (const [template, specPath] of [
       ['workspace', 'templates/workspace_spec_NN.md'],
@@ -143,3 +205,4 @@ describe('Canonical Template Registry & Offline Fallback', () => {
     }
   })
 })
+

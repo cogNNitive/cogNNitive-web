@@ -120,10 +120,10 @@ function collectFiles(dir, includeArchives) {
 // â”€â”€ Classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function classifyFile(relPath) {
-  const isFormatFile = relPath.endsWith('_FORMAT.md') || relPath.endsWith('_F.md')
+  const isFormatFile = relPath.endsWith('_FORMAT.md') || relPath.endsWith('_F.md') || relPath.endsWith('_NN.md')
 
   if (relPath.startsWith('specs') && isFormatFile && !relPath.includes('/samples/')) {
-    if (relPath.includes('defiNNe') || relPath.includes('/FORMAT')) return 'spec'
+    if (relPath.includes('defiNNe') || relPath.includes('defiNNition') || relPath.includes('iNNfo_V') || relPath.includes('/FORMAT')) return 'spec'
     return 'template'
   }
   if (relPath.includes('/samples/') && isFormatFile) return 'model'
@@ -327,9 +327,9 @@ function scanUrls(files) {
     if (matches.length === 0) continue
 
     for (const match of matches) {
-      // Skip dynamic template-literal URLs (e.g. `.../${name}/${name}_${version}_NN.md`) -
-      // these are runtime-constructed URL builders, not static references to verify.
-      if (match[0].includes('${')) continue
+      // Skip dynamic template-literal URLs (e.g. `.../${name}/${name}_${version}_NN.md`) and
+      // placeholder URLs (e.g. `.../<name>/...`) - these are doc syntax templates.
+      if (match[0].includes('${') || match[0].includes('<') || match[0].includes('>')) continue
 
       const repoPath = match[1].replace(/\/+$/, '')
       const localPath = join(INNFO_DIR, repoPath.replace(/\//g, '\\'))

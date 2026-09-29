@@ -10,7 +10,7 @@
  *   3. Update each stale file to match.
  *   4. Never duplicate this value as a hardcoded string elsewhere in .ts/.vue.
  */
-export const DEFAULT_INNFO_VERSION = 'V_0-2-1'
+export const DEFAULT_INNFO_VERSION = 'V_0-3-0'
 
 /** Default template name for new documents. */
 export const DEFAULT_TEMPLATE_NAME = ''

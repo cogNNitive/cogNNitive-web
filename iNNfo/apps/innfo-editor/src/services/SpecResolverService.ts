@@ -122,7 +122,7 @@ async function tryBundledTemplate(
   }
 
   // 2. Candidate local URLs served by dev server
-  const isRootSpec = slug === 'iNNfo' || slug === 'defiNNe'
+  const isRootSpec = slug === 'iNNfo' || slug === 'defiNNe' || slug === 'defiNNition'
   const candidateUrls: string[] = []
 
   if (isRootSpec) {

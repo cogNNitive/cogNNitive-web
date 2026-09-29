@@ -129,17 +129,17 @@ Note: the sdd-tasks 530-word budget cannot hold a 17-section, strict-TDD plan; t
 
 ## 4. S3 defiNNition and iNNfo V_0-3-0 (additive) [level-identity-succession, canonical-spec-hosting, template-release-tagging, model-primitive-type]
 
-- [ ] 4.1 Run `git tag -l "v0.*"` and record the output (D5). At planning time (2026-09-29) the latest is `v0.10.0` and nothing collides; re-run to confirm. No `v*` tag is cut for the L0/L1 files.
-- [ ] 4.2 RED: extend `scripts/check-spec-version` tests and `canonical-registry` tests: `defiNNition_V_0-1-0_NN.md` and `iNNfo_V_0-3-0_NN.md` are registered; `iNNfo_V_0-3-0` `parent:` points at defiNNition on `main`; frozen predecessors untouched.
-- [ ] 4.3 RED: test that `iNNfo_V_0-3-0` defines `knowledge_version`, `blueprint_version`, `blueprint_name`, `knowledge_dir`, `blueprints_dir`, the field type `knowledge` and the `target_blueprint` property (frozen `iNNfo_V_0-1-0` keeps `model` and `target_template`).
-- [ ] 4.4 RED: name-parser tests: `defiNNition_V_0-1-0_NN.md` and `domaiNN_NN.md` are not truncated or mis-split at the embedded `NN`; grammar-unchanged test: a `# NN Concept Definition` document parses exactly as under `iNNfo_V_0-2-2`.
-- [ ] 4.5 RED: unregistered-new-identity gate: a new iNNfo version file added without the editor default-version update makes the test suite or `check-spec-version` fail and name the identity; `SpecResolverService` resolves the slug `defiNNition`.
-- [ ] 4.6 GREEN: create `iNNfo/specs/defiNNition_V_0-1-0_NN.md` (frozen `defiNNe` content under the new noun, write-once).
-- [ ] 4.7 GREEN: create `iNNfo/specs/iNNfo_V_0-3-0_NN.md` with the new keys, keyword and headings; `parent:` = defiNNition URL on `main`.
-- [ ] 4.8 Register both in `canonical-registry.ts`, `SpecResolverService.ts`, editor `constants.ts` and `check-spec-version.mjs`; regenerate `validation-baseline.json`.
-- [ ] 4.9 Add a test asserting `canonical-registry.ts` embedded copies are byte-equal to the on-disk files.
-- [ ] 4.10 Docs: update `docs/innfo` language-version pages to list the new identities.
-- [ ] 4.11 Run Gate G (`check:spec-urls` scans `openspec/specs`; write repo slugs as split code spans). Rollback: revert; never delete a tagged `_V_` file.
+- [x] 4.1 Run `git tag -l "v0.*"` and record the output (D5). At planning time (2026-09-29) the latest is `v0.10.0` and nothing collides; re-run to confirm. No `v*` tag is cut for the L0/L1 files.
+- [x] 4.2 RED: extend `scripts/check-spec-version` tests and `canonical-registry` tests: `defiNNition_V_0-1-0_NN.md` and `iNNfo_V_0-3-0_NN.md` are registered; `iNNfo_V_0-3-0` `parent:` points at defiNNition on `main`; frozen predecessors untouched.
+- [x] 4.3 RED: test that `iNNfo_V_0-3-0` defines `knowledge_version`, `blueprint_version`, `blueprint_name`, `knowledge_dir`, `blueprints_dir`, the field type `knowledge` and the `target_blueprint` property (frozen `iNNfo_V_0-1-0` keeps `model` and `target_template`).
+- [x] 4.4 RED: name-parser tests: `defiNNition_V_0-1-0_NN.md` and `domaiNN_NN.md` are not truncated or mis-split at the embedded `NN`; grammar-unchanged test: a `# NN Concept Definition` document parses exactly as under `iNNfo_V_0-2-2`.
+- [x] 4.5 RED: unregistered-new-identity gate: a new iNNfo version file added without the editor default-version update makes the test suite or `check-spec-version` fail and name the identity; `SpecResolverService` resolves the slug `defiNNition`.
+- [x] 4.6 GREEN: create `iNNfo/specs/defiNNition_V_0-1-0_NN.md` (frozen `defiNNe` content under the new noun, write-once).
+- [x] 4.7 GREEN: create `iNNfo/specs/iNNfo_V_0-3-0_NN.md` with the new keys, keyword and headings; `parent:` = defiNNition URL on `main`.
+- [x] 4.8 Register both in `canonical-registry.ts`, `SpecResolverService.ts`, editor `constants.ts` and `check-spec-version.mjs`; regenerate `validation-baseline.json`.
+- [x] 4.9 Add a test asserting `canonical-registry.ts` embedded copies are byte-equal to the on-disk files.
+- [x] 4.10 Docs: update `docs/innfo` language-version pages to list the new identities.
+- [x] 4.11 Run Gate G (`check:spec-urls` scans `openspec/specs`; write repo slugs as split code spans). Rollback: revert; never delete a tagged `_V_` file.
 
 ## 5. S4 Quarantine module (unreleased core) [legacy-quarantine, versioned-document-grammar, domain-layout-migration]
 

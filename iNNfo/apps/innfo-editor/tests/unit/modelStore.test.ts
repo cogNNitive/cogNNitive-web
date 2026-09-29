@@ -319,7 +319,7 @@ describe('modelStore', () => {
       })
 
       const node = modelStore.getNode(newId)
-      expect(node?.rawContent).toContain('spec_version: "V_0-2-1"')
+      expect(node?.rawContent).toContain('spec_version: "V_0-3-0"')
       expect(node?.rawContent).toContain(
         'url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"',
       )

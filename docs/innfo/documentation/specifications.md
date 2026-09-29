@@ -12,23 +12,26 @@ lists the current file for each spec.
 
 | Spec | Source |
 |------|--------|
-| **defiNNe** V 0.1.0 | [`specs/defiNNe_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md) |
+| **defiNNition** V 0.1.0 | [`specs/defiNNition_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md) |
+| defiNNe V 0.1.0 | Superseded — frozen predecessor (`specs/defiNNe_V_0-1-0_NN.md`) |
 
 ## Level 1 — Central specification
 
 The **iNNfo** specification. Every model is a single `_NN.md` document with optional structural children — concepts, elements, fields, markers, and matrices.
 
-The `status` frontmatter field on a spec file uses the `defiNNe` vocabulary
-`Draft | Stable | Deprecated`. `iNNfo_V_0-2-1` is the adopted L1 (`status: "Stable"`).
+The `status` frontmatter field on a spec file uses the `defiNNition` vocabulary
+`Draft | Stable | Deprecated`. `iNNfo_V_0-3-0` is the adopted L1 (`status: "Stable"`).
 The **adopted** version is defined by `DEFAULT_INNFO_VERSION` in
 `apps/innfo-editor/src/utils/constants.ts`, not by mutating older spec files:
-`iNNfo_V_0-2-0_NN.md` and `iNNfo_V_0-1-0_NN.md` are immutable (`spec-versioning` R-SV-02) and keep whatever
+`iNNfo_V_0-2-2_NN.md`, `iNNfo_V_0-2-1_NN.md`, `iNNfo_V_0-2-0_NN.md` and `iNNfo_V_0-1-0_NN.md` are immutable and keep whatever
 `status` they were published with; they are simply no longer the default, and stay
 resolvable forever for models authored against them.
 
 | Spec | Role | Source |
 |------|------|--------|
-| **iNNfo** V 0.2.1 | Adopted (`status: "Stable"`) | [`specs/iNNfo_V_0-2-1_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md) |
+| **iNNfo** V 0.3.0 | Adopted (`status: "Stable"`) | [`specs/iNNfo_V_0-3-0_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md) |
+| iNNfo V 0.2.2 | Superseded — frozen, still resolvable | [`specs/iNNfo_V_0-2-2_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md) |
+| iNNfo V 0.2.1 | Superseded — frozen, still resolvable | [`specs/iNNfo_V_0-2-1_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md) |
 | iNNfo V 0.2.0 | Superseded — frozen, still resolvable | [`specs/iNNfo_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md) |
 | iNNfo V 0.1.0 | Superseded — frozen, still resolvable | [`specs/iNNfo_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md) |
 
