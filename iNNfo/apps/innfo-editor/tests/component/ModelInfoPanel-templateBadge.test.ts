@@ -30,13 +30,25 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
 const rootContent = `---
 spec_version: "V_0-3-0"
 parent_spec:
+  name: "analysis_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-3-0_NN.md"
+knowledge_version: "V_1-0-0"
+title: "StartupValidation"
+---
+
+# NN StartupValidation
+`
+
+const oldPinContent = `---
+spec_version: "V_0-3-0"
+parent_spec:
   name: "analysis_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-2-1_NN.md"
 knowledge_version: "V_1-0-0"
 title: "StartupValidation"
 ---
 
-# _F StartupValidation
+# NN StartupValidation
 `
 
 describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
@@ -51,7 +63,7 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
         Root: makeNode('Root', {
           kind: 'concept',
           childIds: [],
-          rawContent: rootContent,
+          rawContent: oldPinContent,
           source: { path: 'Ghostbusters_V_0-1-2_business_NN.md' },
         }),
       },
@@ -61,9 +73,9 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = buildFakeTree('workspace', {
       specs: {
-        templates: {
+        bluepriNNts: {
           analysis: {
-            'analysis_V_0-2-2_NN.md': '---\nlevel: 2\n---\n',
+            'analysis_V_0-3-0_NN.md': '---\nlevel: 2\n---\n',
           },
         },
       },
@@ -77,7 +89,7 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
 
     const badge = wrapper.find('[data-testid="template-version-badge"]')
     expect(badge.exists()).toBe(true)
-    expect(badge.text()).toContain('V_0-2-2')
+    expect(badge.text()).toContain('V_0-3-0')
     expect(badge.text()).toContain('V_0-2-1')
 
     const copyButton = wrapper.find('[data-testid="template-version-copy-prompt"]')
@@ -104,9 +116,9 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = buildFakeTree('workspace', {
       specs: {
-        templates: {
+        bluepriNNts: {
           analysis: {
-            'analysis_V_0-2-1_NN.md': '---\nlevel: 2\n---\n',
+            'analysis_V_0-3-0_NN.md': '---\nlevel: 2\n---\n',
           },
         },
       },

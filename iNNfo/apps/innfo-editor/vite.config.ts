@@ -71,6 +71,10 @@ export default defineConfig({
     conditions: ['browser'],
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@cognnitive/innfo-core/legacy': resolve(
+        __dirname,
+        '../../packages/innfo-core/src/legacy/detect.ts',
+      ),
       '@cognnitive/innfo-core': resolve(__dirname, '../../packages/innfo-core/src/browser.ts'),
     },
   },

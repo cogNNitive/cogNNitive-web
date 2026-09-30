@@ -26,8 +26,8 @@ function makeNode(id: string, path: string, name?: string): ModelNode {
 describe('modelMatching utility', () => {
   it('normalizes paths, trims wikilinks and backslashes', () => {
     expect(normalizeModelPath('[[kNNowledge/test.md]]')).toBe('kNNowledge/test.md')
-    expect(normalizeModelPath('models\\test_NN.md')).toBe('kNNowledge/test_NN.md')
-    expect(normalizeModelPath('  [[  models\\nested\\doc.md ]] ')).toBe('kNNowledge/nested/doc.md')
+    expect(normalizeModelPath('models\\test_NN.md')).toBe('models/test_NN.md')
+    expect(normalizeModelPath('  [[  models\\nested\\doc.md ]] ')).toBe('models/nested/doc.md')
   })
 
   it('extracts basename correctly', () => {
