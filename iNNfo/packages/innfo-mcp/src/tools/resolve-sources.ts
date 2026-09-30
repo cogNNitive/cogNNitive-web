@@ -32,7 +32,7 @@ import type {
   HeadingInfo,
 } from '@cognnitive/innfo-core'
 import { readKnowledge } from './list-read.js'
-import { findKnowledgeFile, resolveTemplateWithCache } from './spec.js'
+import { findKnowledgeFile, resolveBlueprintWithCache } from './spec.js'
 import { createWorkspaceSourceResolver, buildBlueprintSchemaResolverFromCache } from './validate.js'
 
 /** Hard cap on a returned excerpt's character length. */
@@ -135,7 +135,7 @@ function findElement(model: ParsedKnowledge, elementId: string): FoundElement | 
 /**
  * Field selection (design D6): explicit `fieldName` skips schema resolution
  * entirely (works standalone, no A3 dependency). When omitted, the schema
- * comes from `resolveTemplateWithCache` + `buildBlueprintSchemaResolverFromCache`
+ * comes from `resolveBlueprintWithCache` + `buildBlueprintSchemaResolverFromCache`
  * — a single-model read, never a full `recursiveParse` — and falls back to
  * `SOURCE_FIELD_NAMES` only when no schema resolves.
  */
@@ -167,7 +167,7 @@ async function resolveSchemaForModel(
 ): Promise<BlueprintSchema | undefined> {
   const parent = model.frontmatter.parent_spec
   if (!parent?.url || !parent?.name) return undefined
-  const { cache } = await resolveTemplateWithCache(rootDir, parent.url, parent.name)
+  const { cache } = await resolveBlueprintWithCache(rootDir, parent.url, parent.name)
   if (!cache) return undefined
   const resolveSchema = buildBlueprintSchemaResolverFromCache(cache)
   return (

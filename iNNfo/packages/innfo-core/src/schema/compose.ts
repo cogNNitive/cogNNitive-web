@@ -1,7 +1,7 @@
 import type {
   AliasMap,
   Concept,
-  IncludedTemplateRef,
+  IncludedBlueprintRef,
   Marker,
   MatrixDecl,
   ValidationError,
@@ -31,7 +31,7 @@ import { type BlueprintSchema, extractBlueprintSchema } from './extract.js'
 /** Resolve the raw content of an included template by name (and optionally
  *  URL). Returns null when it cannot be resolved. Supplied by the host
  *  (innfo-mcp / the editor) so this module stays I/O-free. */
-export type IncludeResolver = (ref: IncludedTemplateRef) => string | null
+export type IncludeResolver = (ref: IncludedBlueprintRef) => string | null
 
 export interface ResolvedBlueprintSchema {
   schema: BlueprintSchema

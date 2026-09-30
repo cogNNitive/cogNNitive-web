@@ -243,10 +243,10 @@ async function buildIncludeMap(
  *   3. dev-only `specs/bluepriNNts/{name}/` fallback (served by vite);
  *   4. network fetch, ONLY for http(s) URLs.
  * Extracted so both `resolveParentSpecs` (the post-parse pass) and
- * `warmTemplateCache` (the pre-parse warm-up, C1/AD-04) share one fetch path
+ * `warmBlueprintCache` (the pre-parse warm-up, C1/AD-04) share one fetch path
  * instead of drifting apart.
  */
-async function fetchTemplateText(
+async function fetchBlueprintText(
   parentName: string,
   parentUrl: string | undefined,
   handle?: DirectoryHandleLike,
@@ -338,7 +338,7 @@ async function fetchTemplateText(
  * entries, which is the "cold cache" path AD-04 explicitly allows: it degrades
  * to today's traversal for that node rather than erroring.
  */
-export async function warmTemplateCache(
+export async function warmBlueprintCache(
   handle?: DirectoryHandleLike,
   seed?: Array<{ name: string; url?: string }>,
 ): Promise<Map<string, BlueprintSchema>> {
@@ -372,7 +372,7 @@ export async function warmTemplateCache(
 
   for (const ref of refs.values()) {
     try {
-      const resolved = await fetchTemplateText(ref.name, ref.url, handle)
+      const resolved = await fetchBlueprintText(ref.name, ref.url, handle)
       if (!resolved) continue
       const includeMap = await buildIncludeMap(resolved.text, handle)
       const resolveInclude = (r: { name: string }) => includeMap.get(r.name) ?? null
@@ -438,7 +438,7 @@ export async function resolveParentSpecs(
     })
     if (existingPeer) continue
 
-    const fetched = await fetchTemplateText(parentName, parentUrl, handle)
+    const fetched = await fetchBlueprintText(parentName, parentUrl, handle)
     const text = fetched?.text ?? ''
     const specFilename = fetched?.specFilename ?? ''
 
@@ -513,11 +513,11 @@ export async function resolveParentSpecs(
       // the template's source/target instead of skipping.
       if (schema.matrices.length > 0) {
         const existingDefs = root.fields[MATRIX_DEFS_KEY]?.value
-        const needsTemplateDefs =
+        const needsBlueprintDefs =
           !Array.isArray(existingDefs) ||
           existingDefs.length === 0 ||
           existingDefs.some((d: any) => !d?.source || !d?.target)
-        if (needsTemplateDefs) {
+        if (needsBlueprintDefs) {
           root.fields[MATRIX_DEFS_KEY] = {
             value: schema.matrices.map((m) =>
               normalizeMatrixDecl(m as unknown as Record<string, unknown>),

@@ -3,9 +3,9 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
 import {
-  resolveTemplatePath,
-  getTemplateSearchPaths,
-  UnresolvedTemplateError,
+  resolveBlueprintPath,
+  getBlueprintSearchPaths,
+  UnresolvedBlueprintError,
   validateKnowledge,
   parseKnowledge,
   resolveBlueprintSchema,
@@ -42,9 +42,9 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
       '# NN concept: Skill',
     )
 
-    const loc = await resolveTemplatePath(tmplName, {
+    const loc = await resolveBlueprintPath(tmplName, {
       workspaceDir,
-      globalTemplatesDir: globalDir,
+      globalBlueprintsDir: globalDir,
       skillsDir,
     })
     expect(loc).not.toBeNull()
@@ -60,9 +60,9 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
       '# NN concept: Skill',
     )
 
-    const loc = await resolveTemplatePath(tmplName, {
+    const loc = await resolveBlueprintPath(tmplName, {
       workspaceDir,
-      globalTemplatesDir: globalDir,
+      globalBlueprintsDir: globalDir,
       skillsDir,
     })
     expect(loc).not.toBeNull()
@@ -77,9 +77,9 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
       '# NN concept: Skill',
     )
 
-    const loc = await resolveTemplatePath(tmplName, {
+    const loc = await resolveBlueprintPath(tmplName, {
       workspaceDir,
-      globalTemplatesDir: globalDir,
+      globalBlueprintsDir: globalDir,
       skillsDir,
     })
     expect(loc).not.toBeNull()
@@ -90,14 +90,14 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
 
   it('returns null and reports every searched tier when the template is missing everywhere', async () => {
     const missingName = 'non_existent_spec'
-    const opts = { workspaceDir, globalTemplatesDir: globalDir, skillsDir }
+    const opts = { workspaceDir, globalBlueprintsDir: globalDir, skillsDir }
 
-    const loc = await resolveTemplatePath(missingName, opts)
+    const loc = await resolveBlueprintPath(missingName, opts)
     expect(loc).toBeNull()
 
     // The diagnostics must list the real precedence list, not an approximation:
-    // every tier resolveTemplatePath walks has to appear in the searched paths.
-    const checkedPaths = await getTemplateSearchPaths(missingName, opts)
+    // every tier resolveBlueprintPath walks has to appear in the searched paths.
+    const checkedPaths = await getBlueprintSearchPaths(missingName, opts)
     expect(checkedPaths).toContain(path.join(workspaceDir, 'specs', 'bluepriNNts', `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(workspaceDir, `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(workspaceDir, 'specs', `${missingName}.md`))
@@ -107,8 +107,8 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
     )
     expect(checkedPaths).toContain(path.join(skillsDir, 'nn-innfo', `${missingName}.md`))
 
-    const err = new UnresolvedTemplateError(missingName, checkedPaths)
-    expect(err.name).toBe('UnresolvedTemplateError')
+    const err = new UnresolvedBlueprintError(missingName, checkedPaths)
+    expect(err.name).toBe('UnresolvedBlueprintError')
     expect(err.message).toContain('Unresolved template "non_existent_spec"')
     expect(err.message).toContain('searched:')
     expect(err.checkedPaths).toEqual(checkedPaths)

@@ -36,30 +36,30 @@ if (!process.env.GITHUB_TOKEN) {
   }
 }
 
-function extractDeclaredTemplates(sourceText) {
+function extractDeclaredBlueprints(sourceText) {
   /** @type {Set<string>} */
-  const declaredTemplates = new Set();
+  const declaredBlueprints = new Set();
   const matchRegex = /-\s+name:\s+([^\s\n]+)/g;
   for (const block of ['blueprints:', 'frozen_blueprints:', 'seam_dirs:']) {
     const templatesMatch = sourceText.match(new RegExp(`(?:^|\\n)${block}\\s*\\r?\\n([\\s\\S]*?)(?=\\r?\\n[a-z_]+:|$)`));
     const templatesBlock = templatesMatch ? templatesMatch[1] : '';
     let match;
     while ((match = matchRegex.exec(templatesBlock)) !== null) {
-      declaredTemplates.add(match[1]);
+      declaredBlueprints.add(match[1]);
     }
   }
-  return declaredTemplates;
+  return declaredBlueprints;
 }
 
 function checkBlueprintInventory(blueprintsDir, sourceYamlPath) {
   const sourceText = fs.readFileSync(sourceYamlPath, 'utf8');
-  const declaredTemplates = extractDeclaredTemplates(sourceText);
+  const declaredBlueprints = extractDeclaredBlueprints(sourceText);
 
   const diskFolders = fs.readdirSync(blueprintsDir, { withFileTypes: true })
     .filter(d => d.isDirectory() && d.name !== 'assets')
     .map(d => d.name);
 
-  const missing = diskFolders.filter(name => !declaredTemplates.has(name));
+  const missing = diskFolders.filter(name => !declaredBlueprints.has(name));
   return { ok: missing.length === 0, missing, diskFolders };
 }
 
@@ -413,7 +413,7 @@ if (require.main === module) {
 module.exports = {
   checkBlueprintInventory,
   runVerification,
-  extractDeclaredTemplates,
+  extractDeclaredBlueprints,
   checkHandTypedFactsAtRef,
   checkDocsFactsDriftAtRef,
 };

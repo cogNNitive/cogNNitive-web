@@ -1,25 +1,25 @@
 import { describe, it, expect } from 'vitest'
 import { ref } from 'vue'
 import {
-  parseTemplateName,
+  parseBlueprintName,
   parseVersionedFilename,
   compareVersions,
   pickLatestVersion,
-  scanWorkspaceForTemplateVersions,
+  scanWorkspaceForBlueprintVersions,
   buildMigrationPrompt,
   useBlueprintVersionNotice,
 } from '../../src/composables/useBlueprintVersionNotice'
 import { buildFakeTree } from '../helpers/fakeFs'
 import { SHIPPED_BLUEPRINT_VERSIONS } from '../../src/config/samples'
 
-describe('parseTemplateName', () => {
+describe('parseBlueprintName', () => {
   it('splits a versioned parent_spec.name into slug + version', () => {
-    expect(parseTemplateName('business_V_0-1-0')).toEqual({ slug: 'business', version: 'V_0-1-0' })
+    expect(parseBlueprintName('business_V_0-1-0')).toEqual({ slug: 'business', version: 'V_0-1-0' })
   })
 
   it('returns null for a name with no version suffix, and for an empty string', () => {
-    expect(parseTemplateName('business')).toBeNull()
-    expect(parseTemplateName('')).toBeNull()
+    expect(parseBlueprintName('business')).toBeNull()
+    expect(parseBlueprintName('')).toBeNull()
   })
 })
 
@@ -61,7 +61,7 @@ describe('pickLatestVersion', () => {
   })
 })
 
-describe('scanWorkspaceForTemplateVersions', () => {
+describe('scanWorkspaceForBlueprintVersions', () => {
   it('finds versioned template files under specs/bluepriNNts/{slug}/, recursively', async () => {
     const handle = buildFakeTree('workspace', {
       specs: {
@@ -72,7 +72,7 @@ describe('scanWorkspaceForTemplateVersions', () => {
         },
       },
     })
-    const versions = await scanWorkspaceForTemplateVersions(handle, 'business')
+    const versions = await scanWorkspaceForBlueprintVersions(handle, 'business')
     expect(versions).toEqual(['V_0-1-2'])
   })
 
@@ -82,7 +82,7 @@ describe('scanWorkspaceForTemplateVersions', () => {
       '.specs': { 'business_V_0-1-1_NN.md': '---\nlevel: 2\n---\n' },
       '.spec-cache': { 'business_V_0-1-3_NN.md': '---\nlevel: 2\n---\n' },
     })
-    const versions = await scanWorkspaceForTemplateVersions(handle, 'business')
+    const versions = await scanWorkspaceForBlueprintVersions(handle, 'business')
     expect(versions.sort()).toEqual(['V_0-1-0', 'V_0-1-1', 'V_0-1-3'])
   })
 
@@ -93,13 +93,13 @@ describe('scanWorkspaceForTemplateVersions', () => {
         'procedures_V_0-5-0_NN.md': '---\nlevel: 2\n---\n',
       },
     })
-    const versions = await scanWorkspaceForTemplateVersions(handle, 'business')
+    const versions = await scanWorkspaceForBlueprintVersions(handle, 'business')
     expect(versions).toEqual(['V_0-1-2'])
   })
 
   it('returns an empty array when none of the search dirs exist', async () => {
     const handle = buildFakeTree('workspace', { 'index.md': '# empty workspace' })
-    const versions = await scanWorkspaceForTemplateVersions(handle, 'business')
+    const versions = await scanWorkspaceForBlueprintVersions(handle, 'business')
     expect(versions).toEqual([])
   })
 })

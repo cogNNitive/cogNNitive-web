@@ -40,15 +40,11 @@ export function buildSpecificationUrl(version: string = DEFAULT_INNFO_VERSION): 
  * Builds the canonical raw GitHub URL for an L2 blueprint version, grouped
  * under its own `specs/bluepriNNts/{name}/` folder alongside its samples.
  */
-export function buildTemplateUrl(name: string, version: string = DEFAULT_BLUEPRINT_VERSION): string {
+export function buildBlueprintUrl(name: string, version: string = DEFAULT_BLUEPRINT_VERSION): string {
   return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${name}/${name}_${version}_NN.md`
 }
 
-export function buildBlueprintUrl(name: string, version: string = DEFAULT_BLUEPRINT_VERSION): string {
-  return buildTemplateUrl(name, version)
-}
-
-const KNOWN_TEMPLATES = new Set([
+const KNOWN_BLUEPRINTS = new Set([
   'business',
   'business-model',
   'analysis',
@@ -70,18 +66,18 @@ const KNOWN_TEMPLATES = new Set([
  *
  * Blueprints evolved from a per-version file (`{name}_{version}_NN.md`) to
  * a stable `spec_NN.md` leaf under `specs/bluepriNNts/{name}/` (their
- * `spec_url` today points at that immutable path). `buildSubmodelTemplateUrl`
+ * `spec_url` today points at that immutable path). `buildSubmodelBlueprintUrl`
  * produces the current canonical form so a freshly scaffolded submodel
  * resolves without a network 404.
  */
-export function buildSubmodelTemplateUrl(template: string): string {
+export function buildSubmodelBlueprintUrl(template: string): string {
   const normalized = (template || '').trim()
-  if (KNOWN_TEMPLATES.has(normalized)) {
+  if (KNOWN_BLUEPRINTS.has(normalized)) {
     return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${normalized}/spec_NN.md`
   }
   // Known templates may arrive version-suffixed (e.g. "business_V_0-2-0").
   const baseName = normalized.match(/^(.*?)(?:_V_\d+-\d+-\d+)?$/i)?.[1] || normalized
-  if (KNOWN_TEMPLATES.has(baseName)) {
+  if (KNOWN_BLUEPRINTS.has(baseName)) {
     return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${baseName}/spec_NN.md`
   }
   return buildBlueprintUrl(normalized, DEFAULT_BLUEPRINT_VERSION)

@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { parseKnowledge, serializeKnowledge } from '@cognnitive/innfo-core'
 import type { ParsedKnowledge, SpecDocument } from '@cognnitive/innfo-core'
-import { resolveTemplateWithCache } from './spec.js'
+import { resolveBlueprintWithCache } from './spec.js'
 
 /**
  * Resolve a model's template from its `parent_spec.url` (source of truth).
@@ -16,7 +16,7 @@ export async function resolveBlueprintForKnowledge(
 }> {
   const parent = model.frontmatter.parent_spec
   if (parent?.url && parent?.name) {
-    const r = await resolveTemplateWithCache(rootDir, parent.url, parent.name)
+    const r = await resolveBlueprintWithCache(rootDir, parent.url, parent.name)
     return { template: r.template, resolveInclude: r.resolveInclude }
   }
   return { template: null, resolveInclude: () => null }

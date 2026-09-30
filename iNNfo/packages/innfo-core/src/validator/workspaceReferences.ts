@@ -4,7 +4,7 @@ import type { WorkspaceIndex } from '../recursiveParser/workspaceIndex.js'
 import type { ReferenceDiagnostic } from './references.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import { stripMdSuffix, basename } from '../recursiveParser/paths.js'
-import { matchesTargetTemplate } from './templateMatching.js'
+import { matchesTargetBlueprint } from './templateMatching.js'
 
 /**
  * `[[Model Title :: Element Name]]` — the ONLY cross-model reference form
@@ -336,10 +336,10 @@ function checkOne(
 
   // Check 4: template membership.
   if (fieldDef.target_blueprint) {
-    const actualTemplate = index.nodeTemplate[targetId]
-    const matches = actualTemplate ? matchesTargetTemplate(fieldDef.target_blueprint, actualTemplate) : false
+    const actualBlueprint = index.nodeBlueprint[targetId]
+    const matches = actualBlueprint ? matchesTargetBlueprint(fieldDef.target_blueprint, actualBlueprint) : false
     if (!matches) {
-      const actualLabel = actualTemplate?.name ?? actualTemplate?.url ?? 'unknown'
+      const actualLabel = actualBlueprint?.name ?? actualBlueprint?.url ?? 'unknown'
       diagnostics.push({
         path,
         message: `Cross-model reference "${ref.raw}" in field "${fieldDef.name}" expects template "${fieldDef.target_blueprint}", but model "${ref.modelTitle}" uses template "${actualLabel}"`,

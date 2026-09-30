@@ -22,25 +22,23 @@ export interface MultiStoreResolverOptions {
   workspaceDir?: string
   domainDir?: string
   globalBlueprintsDir?: string
-  /** @deprecated use globalBlueprintsDir */
-  globalTemplatesDir?: string
   skillsDir?: string
   timeout?: number
 }
 
-export interface SpecTemplateLocation {
+export interface SpecBlueprintLocation {
   name: string
   filePath: string
   source: 'workspace' | 'global' | 'skill'
   skillName?: string
 }
 
-export class UnresolvedTemplateError extends Error {
+export class UnresolvedBlueprintError extends Error {
   public readonly checkedPaths: string[]
   constructor(templateName: string, checkedPaths: string[]) {
     const formatted = checkedPaths.map((p) => `  - ${p}`).join('\n')
     super(`Unresolved template "${templateName}". (searched:\n${formatted})`)
-    this.name = 'UnresolvedTemplateError'
+    this.name = 'UnresolvedBlueprintError'
     this.checkedPaths = checkedPaths
   }
 }
@@ -52,7 +50,7 @@ export function getSpecForLevel(cache: SpecCache, level: number): SpecDocument |
   return undefined
 }
 
-export function getTemplate(cache: SpecCache): SpecDocument | undefined {
+export function getBlueprint(cache: SpecCache): SpecDocument | undefined {
   return getSpecForLevel(cache, 3) ?? getSpecForLevel(cache, 2)
 }
 
@@ -75,11 +73,11 @@ interface TemplateCandidate {
  * precedence order: domain (specs/bluepriNNts/), then global user blueprints (~/.agents/bluepriNNts/),
  * then the blueprints bundled with each installed skill (~/.agents/skills/*\/bluepriNNts/).
  *
- * Resolution and the "searched:" diagnostics in `UnresolvedTemplateError` both
+ * Resolution and the "searched:" diagnostics in `UnresolvedBlueprintError` both
  * read from this one list, so the precedence order cannot drift between where
  * a blueprint is actually found and where we claim to have looked.
  */
-async function buildTemplateCandidates(
+async function buildBlueprintCandidates(
   templateName: string,
   options?: MultiStoreResolverOptions,
 ): Promise<TemplateCandidate[]> {
@@ -90,7 +88,6 @@ async function buildTemplateCandidates(
   const workspaceDir = options?.domainDir ?? options?.workspaceDir ?? process.cwd()
   const globalBlueprintsDir =
     options?.globalBlueprintsDir ??
-    options?.globalTemplatesDir ??
     path.join(os.homedir(), '.agents', 'bluepriNNts')
   const skillsDir = options?.skillsDir ?? path.join(os.homedir(), '.agents', 'skills')
 
@@ -148,22 +145,22 @@ async function buildTemplateCandidates(
 
 /**
  * Returns every path template resolution would check, in precedence order.
- * Intended for diagnostics after `resolveTemplatePath` returns null.
+ * Intended for diagnostics after `resolveBlueprintPath` returns null.
  */
-export async function getTemplateSearchPaths(
+export async function getBlueprintSearchPaths(
   templateName: string,
   options?: MultiStoreResolverOptions,
 ): Promise<string[]> {
-  const candidates = await buildTemplateCandidates(templateName, options)
+  const candidates = await buildBlueprintCandidates(templateName, options)
   return candidates.map((candidate) => candidate.filePath)
 }
 
-export async function resolveTemplatePath(
+export async function resolveBlueprintPath(
   templateName: string,
   options?: MultiStoreResolverOptions,
-): Promise<SpecTemplateLocation | null> {
+): Promise<SpecBlueprintLocation | null> {
   const fs = await import('node:fs/promises')
-  const candidates = await buildTemplateCandidates(templateName, options)
+  const candidates = await buildBlueprintCandidates(templateName, options)
 
   for (const candidate of candidates) {
     try {

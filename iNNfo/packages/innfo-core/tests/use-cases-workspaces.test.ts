@@ -51,7 +51,7 @@ function nodeHandle(dirPath: string, name = ''): DirectoryHandleLike {
   } as unknown as DirectoryHandleLike
 }
 
-function warmTemplateCache(): Map<string, unknown> {
+function warmBlueprintCache(): Map<string, unknown> {
   const cache = new Map<string, unknown>()
   for (const entry of readdirSync(TEMPLATES, { withFileTypes: true })) {
     const spec = entry.isDirectory()
@@ -73,7 +73,7 @@ function warmTemplateCache(): Map<string, unknown> {
 }
 
 describe('Canonical Use Case Workspaces', () => {
-  const templateCache = warmTemplateCache()
+  const templateCache = warmBlueprintCache()
 
   for (const slug of USE_CASE_SLUGS) {
     describe(`Workspace: ${slug}`, () => {

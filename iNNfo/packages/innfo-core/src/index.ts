@@ -23,37 +23,37 @@ export {
   extractBlueprintSchema,
   extractBlueprintSchemaFromContent,
   extractMetaschema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
   resolveBlueprintSchema,
   canonicalizeDefinition,
   applyAliasToSchema,
   findDeclaredField,
-  CANONICAL_TEMPLATES,
-  findCanonicalTemplate,
+  CANONICAL_BLUEPRINTS,
+  findCanonicalBlueprint,
   getCanonicalSpecContent,
-  listCanonicalTemplates,
+  listCanonicalBlueprints,
 } from './schema/index.js'
 export type {
   BlueprintSchema,
   SchemaCheckOptions,
   IncludeResolver,
   ResolvedBlueprintSchema,
-  CanonicalTemplate,
+  CanonicalBlueprint,
 } from './schema/index.js'
 
 export {
   getSpecForLevel,
-  getTemplate,
+  getBlueprint,
   getFormatSpec,
   getDefiNNe,
   SpecResolutionError,
-  resolveTemplatePath,
-  getTemplateSearchPaths,
-  UnresolvedTemplateError,
+  resolveBlueprintPath,
+  getBlueprintSearchPaths,
+  UnresolvedBlueprintError,
 } from './resolver.js'
-export type { SpecResolver, MultiStoreResolverOptions, SpecTemplateLocation } from './resolver.js'
+export type { SpecResolver, MultiStoreResolverOptions, SpecBlueprintLocation } from './resolver.js'
 
 export {
   validateKnowledge,
@@ -147,7 +147,7 @@ export type {
   TemplateResolution,
 } from './workspace/integrity/report.js'
 export { listKnowledge, resolveSpecVersionFromFilename } from './helpers.js'
-export type { ModelInfo } from './helpers.js'
+export type { KnowledgeInfo } from './helpers.js'
 export { applyMutation, updateReferenceString, updateWikiLinks } from './mutate.js'
 export type { MutationResult } from './mutate.js'
 export { buildAgentModificationBlock } from './agentModification.js'

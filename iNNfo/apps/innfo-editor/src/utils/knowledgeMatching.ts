@@ -4,7 +4,7 @@ import type { KnowledgeNode } from '../model/types'
 /**
  * Returns true if the node represents a Level 2 template, Level 1 spec, or spec node.
  */
-export function isTemplateNode(node: KnowledgeNode | undefined): boolean {
+export function isBlueprintNode(node: KnowledgeNode | undefined): boolean {
   if (!node) return true
   if (node.id.startsWith('spec:')) return true
   if (node.rawContent) {

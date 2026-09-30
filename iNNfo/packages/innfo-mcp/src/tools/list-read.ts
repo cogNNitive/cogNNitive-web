@@ -10,7 +10,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { listKnowledge as coreListModels, parseKnowledge, ElementsMap } from '@cognnitive/innfo-core'
-import type { ModelInfo, ParsedKnowledge } from '@cognnitive/innfo-core'
+import type { KnowledgeInfo, ParsedKnowledge } from '@cognnitive/innfo-core'
 
 /**
  * Default line cap for surgical slice reads (llm-context-efficiency).
@@ -61,7 +61,7 @@ export function normalizeId(id: string): string {
 /**
  * Scan a directory for iNNfo knowledge documents.
  */
-export async function listKnowledge(rootDir: string): Promise<ModelInfo[]> {
+export async function listKnowledge(rootDir: string): Promise<KnowledgeInfo[]> {
   const rootModels = await coreListModels(rootDir)
   const candidateDirs = [join(rootDir, 'kNNowledge'), join(rootDir, 'models')]
   for (const dir of candidateDirs) {

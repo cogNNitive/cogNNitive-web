@@ -7,13 +7,13 @@ import { homedir, tmpdir } from 'node:os'
 import {
   parseFrontmatter,
   SpecResolutionError,
-  findCanonicalTemplate,
+  findCanonicalBlueprint,
 } from '@cognnitive/innfo-core'
 import type {
   SpecCache,
   SpecDocument,
   ResolverOptions,
-  ResolvedTemplatePackage,
+  ResolvedBlueprintPackage,
 } from '@cognnitive/innfo-core'
 
 export type FreshnessVerdict = 'fresh' | 'stale' | 'unknown'
@@ -338,12 +338,12 @@ export async function findSpecInPackageDir(dir: string, base: string): Promise<s
  *   Tier 3: Global user cache: ~/.agents/templates/<name>/<version>/
  *   Tier 4: Installed skills directory: ~/.agents/skills/<skill-name>/templates/<name>/<version>/
  */
-export async function resolveTemplatePackage(
+export async function resolveBlueprintPackage(
   rootDir: string,
   reqName: string,
   reqVersion?: string,
   options?: { globalDir?: string; skillsDir?: string },
-): Promise<ResolvedTemplatePackage | null> {
+): Promise<ResolvedBlueprintPackage | null> {
   const globalDir =
     options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir =
@@ -605,7 +605,7 @@ function uniqueSuffix(): string {
  * `payload` accepts either a bare spec string (spec-only hydration) or a full
  * {@link TemplatePackagePayload}.
  */
-export async function hydrateTemplatePackageAtomically(
+export async function hydrateBlueprintPackageAtomically(
   rootDir: string,
   base: string,
   version: string,
@@ -632,10 +632,10 @@ export async function hydrateTemplatePackageAtomically(
     /* v8 ignore stop */
   }
 
-  const baseTemplatesDir = join(templatesBase, base)
-  await mkdir(baseTemplatesDir, { recursive: true })
+  const baseBlueprintsDir = join(templatesBase, base)
+  await mkdir(baseBlueprintsDir, { recursive: true })
 
-  const stagingDir = join(baseTemplatesDir, `.staging-${uniqueSuffix()}`)
+  const stagingDir = join(baseBlueprintsDir, `.staging-${uniqueSuffix()}`)
   await mkdir(stagingDir, { recursive: true })
 
   const specFileName = 'spec_NN.md'
@@ -677,13 +677,13 @@ export async function hydrateTemplatePackageAtomically(
  *
  * `ref` is required and must match `^blueprints-v\d+\.\d+\.\d+$`.
  */
-export async function fetchTemplatePackageFromRemote(
+export async function fetchBlueprintPackageFromRemote(
   base: string,
   version: string,
   options: { repo?: string; ref?: string; timeout?: number } = {},
 ): Promise<TemplatePackagePayload> {
   if (!options.ref) {
-    throw new Error('ref is required for fetchTemplatePackageFromRemote')
+    throw new Error('ref is required for fetchBlueprintPackageFromRemote')
   }
   if (!/^blueprints-v\d+\.\d+\.\d+$/.test(options.ref)) {
     throw new Error(`Invalid blueprint ref "${options.ref}": must match ^blueprints-v\\d+\\.\\d+\\.\\d+$`)
@@ -826,7 +826,7 @@ export async function resolveParentChainNode(
     // 1. 4-tier blueprint package resolution (workspace package -> workspace flat -> global -> skill)
     if (content === null && !isLocalPath(currentUrl)) {
       attempted.push(`4-tier package resolver for "${currentName}" in "${specsDir}"`)
-      const pkg = await resolveTemplatePackage(rootDir, currentName, undefined, options)
+      const pkg = await resolveBlueprintPackage(rootDir, currentName, undefined, options)
       if (pkg) {
         content = await readFile(pkg.specFilePath, 'utf-8')
         resolvedFromLocalTier = true
@@ -855,13 +855,13 @@ export async function resolveParentChainNode(
         let payload: string | TemplatePackagePayload = content
         const tagMatch = currentUrl.match(/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/([^/]+)\//)
         if (tagMatch && /^blueprints-v\d+\.\d+\.\d+$/.test(tagMatch[2])) {
-          payload = await fetchTemplatePackageFromRemote(baseName, fmVer, {
+          payload = await fetchBlueprintPackageFromRemote(baseName, fmVer, {
             repo: tagMatch[1],
             ref: tagMatch[2],
             timeout,
           }).catch(() => content as string)
         }
-        await hydrateTemplatePackageAtomically(rootDir, baseName, fmVer, payload, {
+        await hydrateBlueprintPackageAtomically(rootDir, baseName, fmVer, payload, {
           baseDir: blueprintsBaseDir,
         })
         const specName = canonicalSpecFilename(currentName, content)
@@ -883,8 +883,8 @@ export async function resolveParentChainNode(
       if (!isRemote || isCanonicalRemote) {
         attempted.push(`canonical fallback registry for "${currentName}"`)
         const canonical =
-          findCanonicalTemplate(currentName) ||
-          (currentUrl ? findCanonicalTemplate(currentUrl) : null)
+          findCanonicalBlueprint(currentName) ||
+          (currentUrl ? findCanonicalBlueprint(currentUrl) : null)
         if (canonical) {
           content = canonical.specContent
           resolvedFromLocalTier = true
@@ -979,7 +979,7 @@ export async function fetchSpecContent(
     if (hit) return readFile(hit, 'utf-8').catch(() => null)
   }
   const rootDir = specsDir.replace(/[/\\]specs[/\\]?$/, '')
-  const pkg = await resolveTemplatePackage(rootDir, name).catch(() => null)
+  const pkg = await resolveBlueprintPackage(rootDir, name).catch(() => null)
   if (pkg) return readFile(pkg.specFilePath, 'utf-8').catch(() => null)
   if (url && /^https?:\/\//i.test(url)) {
     try {
@@ -1001,7 +1001,7 @@ export async function fetchSpecContent(
   const isCanonicalRemote =
     isRemote && /raw\.githubusercontent\.com\/cogNNitive\/cogNNitive\//i.test(url)
   if (!isRemote || isCanonicalRemote) {
-    const canonical = findCanonicalTemplate(name) || (url ? findCanonicalTemplate(url) : null)
+    const canonical = findCanonicalBlueprint(name) || (url ? findCanonicalBlueprint(url) : null)
     if (canonical) return canonical.specContent
   }
   return null

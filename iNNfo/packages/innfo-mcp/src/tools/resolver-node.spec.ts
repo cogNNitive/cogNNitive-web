@@ -6,7 +6,7 @@ import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import {
   resolveParentChainNode,
   saveSpecOnce,
-  fetchTemplatePackageFromRemote,
+  fetchBlueprintPackageFromRemote,
   defaultCacheDir,
 } from './resolver-node'
 import { rmWithRetry } from '../../test/helpers/fs-retry'
@@ -391,12 +391,12 @@ describe('NodeSpecResolver', () => {
 
   describe('4-Tier Package Resolver & Immutability (Batch 3)', () => {
     it('resolves Tier 1 workspace package directory first', async () => {
-      const { resolveTemplatePackage } = await import('./resolver-node')
+      const { resolveBlueprintPackage } = await import('./resolver-node')
       const pkgDir = join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0')
       await mkdir(pkgDir, { recursive: true })
       await writeFile(join(pkgDir, 'spec_NN.md'), '---\nspec_version: "V_0-2-0"\nlevel: 2\n---')
 
-      const res = await resolveTemplatePackage(rootDir, 'business_V_0-2-0')
+      const res = await resolveBlueprintPackage(rootDir, 'business_V_0-2-0')
       expect(res).not.toBeNull()
       expect(res?.tier).toBe('workspace-package')
       expect(res?.isPackageDir).toBe(true)
@@ -404,26 +404,26 @@ describe('NodeSpecResolver', () => {
     })
 
     it('falls back to Tier 2 workspace flat spec when workspace package dir is missing', async () => {
-      const { resolveTemplatePackage } = await import('./resolver-node')
+      const { resolveBlueprintPackage } = await import('./resolver-node')
       await writeFile(
         join(specsDir, 'business_V_0-2-0_NN.md'),
         '---\nspec_version: "V_0-2-0"\nlevel: 2\n---',
       )
 
-      const res = await resolveTemplatePackage(rootDir, 'business_V_0-2-0')
+      const res = await resolveBlueprintPackage(rootDir, 'business_V_0-2-0')
       expect(res).not.toBeNull()
       expect(res?.tier).toBe('workspace-flat')
       expect(res?.isPackageDir).toBe(false)
     })
 
     it('falls back to Tier 3 global user cache when absent in workspace', async () => {
-      const { resolveTemplatePackage } = await import('./resolver-node')
+      const { resolveBlueprintPackage } = await import('./resolver-node')
       const globalDir = join(rootDir, 'global_agents')
       const globalPkgDir = join(globalDir, 'projects', 'V_0-2-0')
       await mkdir(globalPkgDir, { recursive: true })
       await writeFile(join(globalPkgDir, 'spec_NN.md'), '---\nspec_version: "V_0-2-0"\n---')
 
-      const res = await resolveTemplatePackage(rootDir, 'projects_V_0-2-0', undefined, {
+      const res = await resolveBlueprintPackage(rootDir, 'projects_V_0-2-0', undefined, {
         globalDir,
       })
       expect(res).not.toBeNull()
@@ -432,20 +432,20 @@ describe('NodeSpecResolver', () => {
     })
 
     it('falls back to Tier 4 installed skill directory', async () => {
-      const { resolveTemplatePackage } = await import('./resolver-node')
+      const { resolveBlueprintPackage } = await import('./resolver-node')
       const skillsDir = join(rootDir, 'skills')
       const skillPkgDir = join(skillsDir, 'nn-innfo', 'bluepriNNts', 'custom', 'V_0-1-0')
       await mkdir(skillPkgDir, { recursive: true })
       await writeFile(join(skillPkgDir, 'spec_NN.md'), '---\nspec_version: "V_0-1-0"\n---')
 
-      const res = await resolveTemplatePackage(rootDir, 'custom_V_0-1-0', undefined, { skillsDir })
+      const res = await resolveBlueprintPackage(rootDir, 'custom_V_0-1-0', undefined, { skillsDir })
       expect(res).not.toBeNull()
       expect(res?.tier).toBe('installed-skill')
     })
 
-    it('hydrateTemplatePackageAtomically creates package directory via staging rename and enforces write-once immutability', async () => {
-      const { hydrateTemplatePackageAtomically } = await import('./resolver-node')
-      const pkgPath = await hydrateTemplatePackageAtomically(
+    it('hydrateBlueprintPackageAtomically creates package directory via staging rename and enforces write-once immutability', async () => {
+      const { hydrateBlueprintPackageAtomically } = await import('./resolver-node')
+      const pkgPath = await hydrateBlueprintPackageAtomically(
         rootDir,
         'business',
         'V_0-2-0',
@@ -454,13 +454,13 @@ describe('NodeSpecResolver', () => {
       expect(await readFile(join(pkgPath, 'spec_NN.md'), 'utf-8')).toBe('Content V1')
 
       // Write-once immutability: second call does not overwrite existing package contents
-      await hydrateTemplatePackageAtomically(rootDir, 'business', 'V_0-2-0', 'Content V2')
+      await hydrateBlueprintPackageAtomically(rootDir, 'business', 'V_0-2-0', 'Content V2')
       expect(await readFile(join(pkgPath, 'spec_NN.md'), 'utf-8')).toBe('Content V1')
     })
 
-    it('hydrateTemplatePackageAtomically writes a full package payload (spec + alias + procedures + samples + assets)', async () => {
-      const { hydrateTemplatePackageAtomically } = await import('./resolver-node')
-      const pkgPath = await hydrateTemplatePackageAtomically(rootDir, 'documentation', 'V_0-2-0', {
+    it('hydrateBlueprintPackageAtomically writes a full package payload (spec + alias + procedures + samples + assets)', async () => {
+      const { hydrateBlueprintPackageAtomically } = await import('./resolver-node')
+      const pkgPath = await hydrateBlueprintPackageAtomically(rootDir, 'documentation', 'V_0-2-0', {
         spec: '---\nblueprint_version: "V_0-2-0"\n---\n# Doc\n',
         procedures: { 'generate_docsify_suite_NN.md': '# Procedure\n' },
         samples: { 'Ghostbusters_V_0-2-0_documentation_NN.md': '# Sample\n' },
@@ -641,7 +641,7 @@ describe('NodeSpecResolver', () => {
   })
 })
 
-describe('fetchTemplatePackageFromRemote', () => {
+describe('fetchBlueprintPackageFromRemote', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -699,7 +699,7 @@ describe('fetchTemplatePackageFromRemote', () => {
       },
     )
 
-    const pkg = await fetchTemplatePackageFromRemote('business', 'V_0-2-1', {
+    const pkg = await fetchBlueprintPackageFromRemote('business', 'V_0-2-1', {
       ref: 'blueprints-v0.18.0',
     })
 
@@ -710,15 +710,15 @@ describe('fetchTemplatePackageFromRemote', () => {
   })
 
   it('requires ref and rejects invalid refs like templates-v0.17.0', async () => {
-    await expect(fetchTemplatePackageFromRemote('analysis', '0.2.0')).rejects.toThrow('ref is required')
+    await expect(fetchBlueprintPackageFromRemote('analysis', '0.2.0')).rejects.toThrow('ref is required')
     await expect(
-      fetchTemplatePackageFromRemote('analysis', '0.2.0', { ref: 'templates-v0.17.0' }),
+      fetchBlueprintPackageFromRemote('analysis', '0.2.0', { ref: 'templates-v0.17.0' }),
     ).rejects.toThrow(/Invalid blueprint ref/)
   })
 
   it('uses iNNfo/specs/bluepriNNts/<base> with no workspace special case', async () => {
     const spy = mockFetch({ '/domainn/spec_NN.md': '# DomaiNN' }, {})
-    const pkg = await fetchTemplatePackageFromRemote('domainn', 'V_0-1-0', {
+    const pkg = await fetchBlueprintPackageFromRemote('domainn', 'V_0-1-0', {
       repo: 'org/repo',
       ref: 'blueprints-v0.18.0',
     })
@@ -739,7 +739,7 @@ describe('fetchTemplatePackageFromRemote', () => {
       },
     )
 
-    const pkg = await fetchTemplatePackageFromRemote('business', 'V_0-2-1', {
+    const pkg = await fetchBlueprintPackageFromRemote('business', 'V_0-2-1', {
       ref: 'blueprints-v0.18.0',
     })
     expect(pkg.spec).toBe('# spec')
@@ -758,7 +758,7 @@ describe('fetchTemplatePackageFromRemote', () => {
       { 'business/procedures': [file('ok_NN.md'), file('broken_NN.md')] },
     )
 
-    const pkg = await fetchTemplatePackageFromRemote('business', 'V_0-2-1', {
+    const pkg = await fetchBlueprintPackageFromRemote('business', 'V_0-2-1', {
       ref: 'blueprints-v0.18.0',
     })
     expect(pkg.procedures).toEqual({ 'ok_NN.md': '# ok' })
@@ -767,7 +767,7 @@ describe('fetchTemplatePackageFromRemote', () => {
   it('throws when the primary spec cannot be fetched', async () => {
     mockFetch({ '/business/spec_NN.md': null }, {})
     await expect(
-      fetchTemplatePackageFromRemote('business', 'V_0-2-1', { ref: 'blueprints-v0.18.0' }),
+      fetchBlueprintPackageFromRemote('business', 'V_0-2-1', { ref: 'blueprints-v0.18.0' }),
     ).rejects.toThrow()
   })
 })

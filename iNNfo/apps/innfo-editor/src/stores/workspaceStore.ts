@@ -36,7 +36,7 @@ export interface WorkspaceState {
   /** True when loaded from a sample/preview URL (no folder handle). */
   isSampleSession: boolean
   /** Human-readable template name for the sample banner. */
-  sampleTemplateName: string
+  sampleBlueprintName: string
   /** Set by open() when folder contains zero _NN.md model files. */
   emptyFolderError: boolean
   /** Workspace integrity report, produced fire-and-forget on open() (AD-6). */
@@ -64,7 +64,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const backupEnabled = ref(true)
   const repository = ref<IndexedDbWorkspaceRepository>(markRaw(new IndexedDbWorkspaceRepository()))
   const isSampleSession = ref(false)
-  const sampleTemplateName = ref('')
+  const sampleBlueprintName = ref('')
   const emptyFolderError = ref(false)
   const integrityReport = ref<WorkspaceIntegrityReport | null>(null)
   const integrityRunning = ref(false)
@@ -74,7 +74,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * same-origin template catalog. Non-blocking and informational: a failure
    * of any port (or of the whole pass) clears the report and is swallowed —
    * it must never set `error` or prevent editing. Catalog-only on open
-   * (Resolved Decision 4): resolveTemplate/checkFreshness are omitted, so
+   * (Resolved Decision 4): resolveBlueprint/checkFreshness are omitted, so
    * those fields render as `not-checked`.
    */
   async function _runIntegrityCheck(): Promise<void> {
@@ -212,7 +212,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       uiStore.setActiveView('editor')
 
       isSampleSession.value = true
-      sampleTemplateName.value = templateName || name || 'workspace'
+      sampleBlueprintName.value = templateName || name || 'workspace'
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
       throw err
@@ -304,7 +304,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     sourceUrl.value = null
     backupEnabled.value = true
     isSampleSession.value = false
-    sampleTemplateName.value = ''
+    sampleBlueprintName.value = ''
     emptyFolderError.value = false
     integrityReport.value = null
     integrityRunning.value = false
@@ -406,7 +406,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     backupEnabled,
     repository,
     isSampleSession,
-    sampleTemplateName,
+    sampleBlueprintName,
     emptyFolderError,
     integrityReport,
     integrityRunning,

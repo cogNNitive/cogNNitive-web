@@ -297,7 +297,7 @@ async function bumpVersion(
   // frontmatter is serialized below. Used as the validation `template` when
   // resolveBlueprintForKnowledge can't yet see the bump (the new file hasn't been
   // written to disk at this point in the flow).
-  let localParentTemplate: SpecDocument | null = null
+  let localParentBlueprint: SpecDocument | null = null
 
   if (model.frontmatter.parent_spec && typeof args.parent_version === 'string') {
     const parentVer = args.parent_version.trim()
@@ -331,7 +331,7 @@ async function bumpVersion(
           parentModel.frontmatter.spec_version = parentVerString
         }
         parentContent = serializeKnowledge(parentModel)
-        localParentTemplate = {
+        localParentBlueprint = {
           name: newParentName,
           level: parentModel.frontmatter.level ?? 0,
           parentName: parentModel.frontmatter.parent_spec?.name,
@@ -363,12 +363,12 @@ async function bumpVersion(
   let resolveInclude: (ref: { name: string; url: string }) => string | null = () => null
   try {
     if (parentContent && newParentName) {
-      template = localParentTemplate
+      template = localParentBlueprint
       const r = await resolveBlueprintForKnowledge(rootDir, model).catch(() => ({
-        template: localParentTemplate,
+        template: localParentBlueprint,
         resolveInclude: () => null,
       }))
-      template = r.template ?? localParentTemplate
+      template = r.template ?? localParentBlueprint
       resolveInclude = r.resolveInclude
     } else {
       const r = await resolveBlueprintForKnowledge(rootDir, model)
@@ -560,16 +560,16 @@ export async function applyChange(
 
   if (op === 'generate_index') {
     try {
-      const { template: idxTemplate, resolveInclude: idxInclude } = await resolveBlueprintForKnowledge(
+      const { template: idxBlueprint, resolveInclude: idxInclude } = await resolveBlueprintForKnowledge(
         rootDir,
         model,
       )
-      if (idxTemplate) {
+      if (idxBlueprint) {
         // Compose the taxonomy across `includes` too, not just the composite.
-        const { schema } = resolveBlueprintSchema(idxTemplate.rawContent, idxInclude)
+        const { schema } = resolveBlueprintSchema(idxBlueprint.rawContent, idxInclude)
         args.taxonomy = schema.taxonomy.length
           ? schema.taxonomy
-          : parseKnowledge(idxTemplate.rawContent).taxonomy
+          : parseKnowledge(idxBlueprint.rawContent).taxonomy
       }
     } catch (err) {
       // log + continue: template not resolvable — generate_index falls back to
@@ -585,10 +585,10 @@ export async function applyChange(
   let renameSchema: BlueprintSchema | undefined
   if (op === 'rename_element') {
     try {
-      const { template: schemaTemplate, resolveInclude: schemaInclude } =
+      const { template: schemaBlueprint, resolveInclude: schemaInclude } =
         await resolveBlueprintForKnowledge(rootDir, model)
-      if (schemaTemplate) {
-        renameSchema = resolveBlueprintSchema(schemaTemplate.rawContent, schemaInclude).schema
+      if (schemaBlueprint) {
+        renameSchema = resolveBlueprintSchema(schemaBlueprint.rawContent, schemaInclude).schema
       }
     } catch (err) {
       // log + continue: without the resolved schema the rename runs untyped

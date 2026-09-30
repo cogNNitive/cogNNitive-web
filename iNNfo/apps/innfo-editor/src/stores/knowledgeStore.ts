@@ -26,7 +26,7 @@ import type {
   ValidationReport,
   ReferenceDiagnostic,
 } from '@cognnitive/innfo-core'
-import { resolveParentSpecs, warmTemplateCache } from '../services/SpecResolverService'
+import { resolveParentSpecs, warmBlueprintCache } from '../services/SpecResolverService'
 
 import { useUiStore } from './uiStore'
 
@@ -268,10 +268,10 @@ export const useKnowledgeStore = defineStore('model', () => {
    * (F-15).
    */
   function validateKnowledge(scopedRootIds?: string[]): void {
-    const nonTemplateRoots = rootIds.value.filter(
+    const nonBlueprintRoots = rootIds.value.filter(
       (id) => !id.startsWith('spec:') && nodes.value[id],
     )
-    if (nonTemplateRoots.length === 0) {
+    if (nonBlueprintRoots.length === 0) {
       validationReport.value = null
       validationReports.value = {}
       return
@@ -282,7 +282,7 @@ export const useKnowledgeStore = defineStore('model', () => {
       ? { ...validationReports.value }
       : {}
 
-    for (const rootId of nonTemplateRoots) {
+    for (const rootId of nonBlueprintRoots) {
       if (scopedSet && !scopedSet.has(rootId)) continue
 
       const rootNode = nodes.value[rootId]
@@ -321,7 +321,7 @@ export const useKnowledgeStore = defineStore('model', () => {
     // Cheap aggregation over the per-root reports (recomputed or reused) —
     // this loop never re-runs validateFormatContent.
     let combinedReport: ValidationReport | null = null
-    for (const rootId of nonTemplateRoots) {
+    for (const rootId of nonBlueprintRoots) {
       const report = reports[rootId]
       if (!report) continue
       if (!combinedReport) {
@@ -498,7 +498,7 @@ export const useKnowledgeStore = defineStore('model', () => {
     // C1: warm a synchronously-servable template cache BEFORE the parse so
     // recursiveParse can follow `type:: knowledge` fields (AD-04). A cold/partial
     // cache is not an error — it degrades that node to today's traversal.
-    const templateCache = await warmTemplateCache(handle)
+    const templateCache = await warmBlueprintCache(handle)
     const result = await recursiveParse(handle, driver, {
       resolveBlueprintSchema: ({ frontmatter }) => {
         const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec

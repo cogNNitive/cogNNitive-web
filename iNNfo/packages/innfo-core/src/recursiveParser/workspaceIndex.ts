@@ -13,7 +13,7 @@ export interface WorkspaceIndex {
   /** lowercased stripMdSuffix(basename) -> node id(s). Repeats are ambiguity, not error (AD-05). */
   fileNameToNodeIds: Record<string, string[]>
   /** root node id -> resolved template identity from `parent_spec` */
-  nodeTemplate: Record<string, { name: string; url?: string }>
+  nodeBlueprint: Record<string, { name: string; url?: string }>
   /** root node id -> (lowercased element name -> owning concept name[]) */
   nodeElementConcepts: Record<string, Record<string, string[]>>
   /** root node id -> composed BlueprintSchema (from KnowledgeNode.templateSchema, or the fallback resolver) */
@@ -45,7 +45,7 @@ export function buildWorkspaceIndex(
   const pathToNodeId: Record<string, string> = {}
   const titleToNodeIds: Record<string, string[]> = {}
   const fileNameToNodeIds: Record<string, string[]> = {}
-  const nodeTemplate: Record<string, { name: string; url?: string }> = {}
+  const nodeBlueprint: Record<string, { name: string; url?: string }> = {}
   const nodeElementConcepts: Record<string, Record<string, string[]>> = {}
   const nodeSchema: Record<string, BlueprintSchema> = {}
   const extraParents: Record<string, string[]> = {}
@@ -75,7 +75,7 @@ export function buildWorkspaceIndex(
     const parentSpec = root.fields['parent_spec']?.value as
       { name?: string; url?: string } | undefined
     if (parentSpec?.name) {
-      nodeTemplate[root.id] = { name: parentSpec.name, url: parentSpec.url }
+      nodeBlueprint[root.id] = { name: parentSpec.name, url: parentSpec.url }
     }
 
     if (root.templateSchema) {
@@ -165,7 +165,7 @@ export function buildWorkspaceIndex(
     pathToNodeId,
     titleToNodeIds,
     fileNameToNodeIds,
-    nodeTemplate,
+    nodeBlueprint,
     nodeElementConcepts,
     nodeSchema,
     extraParents,

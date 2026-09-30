@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  collectTemplateVersions,
+  collectBlueprintVersions,
   collectSkillVersions,
   readMcpPackageVersion,
   syncVersions,
@@ -177,10 +177,10 @@ async function runTests() {
     console.log('✔ Live repository check passes with zero drift');
   }
 
-  // Test 2: collectTemplateVersions & collectSkillVersions & readMcpPackageVersion
+  // Test 2: collectBlueprintVersions & collectSkillVersions & readMcpPackageVersion
   {
     const { root, blueprintsDir, skillsDir, mcpPkgPath } = fixtureTree();
-    const tVersions = collectTemplateVersions(blueprintsDir);
+    const tVersions = collectBlueprintVersions(blueprintsDir);
     assert.strictEqual(tVersions.alpha, 'V_0-1-0');
     assert.strictEqual(tVersions.beta, 'V_0-3-2');
     assert.strictEqual(tVersions.workspace, 'V_0-4-0');
@@ -192,7 +192,7 @@ async function runTests() {
     const mcpVer = readMcpPackageVersion(mcpPkgPath);
     assert.strictEqual(mcpVer, '9.9.9');
 
-    console.log('✔ collectTemplateVersions, collectSkillVersions, and readMcpPackageVersion read sources');
+    console.log('✔ collectBlueprintVersions, collectSkillVersions, and readMcpPackageVersion read sources');
     fs.rmSync(root, { recursive: true, force: true });
   }
 

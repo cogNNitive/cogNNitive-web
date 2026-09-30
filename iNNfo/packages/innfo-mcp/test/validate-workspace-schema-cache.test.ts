@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
-import { resolveTemplateWithCache } from '../src/tools/spec.js'
+import { resolveBlueprintWithCache } from '../src/tools/spec.js'
 import { buildBlueprintSchemaResolverFromCache, validateKnowledge } from '../src/tools/validate.js'
 
 const rootDir = join(import.meta.dirname!, '..', 'temp-test-schema-cache')
@@ -37,7 +37,7 @@ describe('buildBlueprintSchemaResolverFromCache', () => {
     ].join('\n')
     await writeFile(join(specsDir, 'business_V_0-1-1_NN.md'), templateContent, 'utf-8')
 
-    const { cache } = await resolveTemplateWithCache(
+    const { cache } = await resolveBlueprintWithCache(
       rootDir,
       'https://example.com/business_V_0-1-1_NN.md',
       'business_V_0-1-1',
@@ -71,7 +71,7 @@ describe('buildBlueprintSchemaResolverFromCache', () => {
     ].join('\n')
     await writeFile(join(specsDir, 'business_V_0-1-1_NN.md'), templateContent, 'utf-8')
 
-    const { cache } = await resolveTemplateWithCache(
+    const { cache } = await resolveBlueprintWithCache(
       rootDir,
       'https://example.com/business_V_0-1-1_NN.md',
       'business_V_0-1-1',

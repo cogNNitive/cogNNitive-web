@@ -6,7 +6,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import { parseFrontmatter } from './parser/index.js'
-import { isDiscoverableModel, NN_FILENAME_RE as MODEL_NN_FILENAME_RE } from './workspace/discoverModels.js'
+import { isDiscoverableModel, NN_FILENAME_RE as KNOWLEDGE_NN_FILENAME_RE } from './workspace/discoverModels.js'
 
 /* ── Version resolution ──────────────────────────────────────── */
 
@@ -27,7 +27,7 @@ export function resolveSpecVersionFromFilename(filename: string): string | null 
 
 /* ── Model scanning ──────────────────────────────────────────── */
 
-export interface ModelInfo {
+export interface KnowledgeInfo {
   /** Short model identifier (filename stem, used as `id` in MCP tools) */
   id: string
   /** Absolute filesystem path */
@@ -57,7 +57,7 @@ function isIgnoredDir(name: string): boolean {
  * `_NN.md` name (cheap, no I/O) -> read + parse frontmatter -> shared
  * predicate. Only `_NN.md` candidates are ever read from disk.
  */
-async function collectModels(dir: string, rootDir: string, models: ModelInfo[]): Promise<void> {
+async function collectModels(dir: string, rootDir: string, models: KnowledgeInfo[]): Promise<void> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
   for (const entry of entries) {
     if (entry.isDirectory()) {
@@ -68,7 +68,7 @@ async function collectModels(dir: string, rootDir: string, models: ModelInfo[]):
     if (!entry.isFile()) continue
     if (!MD_FILE_RE.test(entry.name)) continue
     if (entry.name.toLowerCase() === 'index.md') continue
-    if (!MODEL_NN_FILENAME_RE.test(entry.name)) continue
+    if (!KNOWLEDGE_NN_FILENAME_RE.test(entry.name)) continue
 
     const filePath = join(dir, entry.name)
     const relPath = relative(rootDir, filePath).split('\\').join('/')
@@ -100,10 +100,10 @@ async function collectModels(dir: string, rootDir: string, models: ModelInfo[]):
  * (`_NN.md`, `level: 3`, resolvable `parent_spec` — see
  * `isDiscoverableModel`). Skips `backups`, `archive`, `specs`,
  * `node_modules`, `.git`, and any dot-directory. Returns an array of
- * `ModelInfo` sorted by id.
+ * `KnowledgeInfo` sorted by id.
  */
-export async function listKnowledge(rootDir: string): Promise<ModelInfo[]> {
-  const models: ModelInfo[] = []
+export async function listKnowledge(rootDir: string): Promise<KnowledgeInfo[]> {
+  const models: KnowledgeInfo[] = []
   await collectModels(rootDir, rootDir, models)
   models.sort((a, b) => a.id.localeCompare(b.id))
   return models

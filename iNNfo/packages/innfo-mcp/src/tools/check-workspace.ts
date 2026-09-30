@@ -38,7 +38,7 @@ import {
 } from './validate.js'
 import {
   resolveParentChainNode,
-  resolveTemplatePackage,
+  resolveBlueprintPackage,
   freshnessVerdict,
 } from './resolver-node.js'
 
@@ -166,7 +166,7 @@ async function resolveBlueprintForKnowledge(
   if (!model.parentUrl || !model.parentName) {
     return { outcome: 'not-checked', detail: 'No parent_spec.url to resolve' }
   }
-  const existingPkg = await resolveTemplatePackage(rootDir, model.parentName).catch(() => null)
+  const existingPkg = await resolveBlueprintPackage(rootDir, model.parentName).catch(() => null)
   try {
     const cache = await resolveParentChainNode(rootDir, model.parentUrl, model.parentName, {
       checkFreshness: false,
@@ -303,7 +303,7 @@ export function buildCheckWorkspacePorts(ctx: CheckContext): WorkspaceIntegrityP
     discoverModels: () => discoverModels(ctx),
     validateAll: (models) => validateAll(ctx, models),
     fetchCatalog: () => resolveCatalog(ctx.rootDir, ctx.offline),
-    resolveTemplate: (model) => {
+    resolveBlueprint: (model) => {
       const cached = ctx.resolutions.get(model.path)
       return cached ? Promise.resolve(cached) : resolveBlueprintForKnowledge(ctx, model)
     },

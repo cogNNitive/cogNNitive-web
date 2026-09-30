@@ -3,8 +3,8 @@ import path from 'node:path'
 import os from 'node:os'
 import fs from 'node:fs/promises'
 import {
-  getTemplateSearchPaths,
-  resolveTemplatePath,
+  getBlueprintSearchPaths,
+  resolveBlueprintPath,
 } from '../src/resolver.js'
 
 describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
@@ -24,7 +24,7 @@ describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
       await fs.writeFile(skillBpPath, '# NN Concept Definition\n', 'utf8')
 
       // Resolve blueprint present in skill
-      const skillRes = await resolveTemplatePath('projects_V_0-1-0_NN.md', {
+      const skillRes = await resolveBlueprintPath('projects_V_0-1-0_NN.md', {
         workspaceDir,
         globalBlueprintsDir,
         skillsDir,
@@ -37,7 +37,7 @@ describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
       const globalBpPath = path.join(globalBlueprintsDir, 'projects_V_0-1-0_NN.md')
       await fs.writeFile(globalBpPath, '# NN Concept Definition\n', 'utf8')
 
-      const globalRes = await resolveTemplatePath('projects_V_0-1-0_NN.md', {
+      const globalRes = await resolveBlueprintPath('projects_V_0-1-0_NN.md', {
         workspaceDir,
         globalBlueprintsDir,
         skillsDir,
@@ -52,7 +52,7 @@ describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
       const localBpPath = path.join(localBpDir, 'projects_V_0-1-0_NN.md')
       await fs.writeFile(localBpPath, '# NN Concept Definition\n', 'utf8')
 
-      const localRes = await resolveTemplatePath('projects_V_0-1-0_NN.md', {
+      const localRes = await resolveBlueprintPath('projects_V_0-1-0_NN.md', {
         workspaceDir,
         globalBlueprintsDir,
         skillsDir,
@@ -76,14 +76,14 @@ describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
       const legacyBpPath = path.join(legacyTemplatesDir, 'legacy_spec_NN.md')
       await fs.writeFile(legacyBpPath, '# NN Concept Definition\n', 'utf8')
 
-      const searchPaths = await getTemplateSearchPaths('legacy_spec_NN.md', {
+      const searchPaths = await getBlueprintSearchPaths('legacy_spec_NN.md', {
         workspaceDir,
       })
       // Retired templates/ path should not be in search paths
       const hasRetiredTemplates = searchPaths.some((p) => p.includes(path.join('workspace', 'bluepriNNts')))
       expect(hasRetiredTemplates).toBe(false)
 
-      const res = await resolveTemplatePath('legacy_spec_NN.md', {
+      const res = await resolveBlueprintPath('legacy_spec_NN.md', {
         workspaceDir,
       })
       expect(res).toBeNull()

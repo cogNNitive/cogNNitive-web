@@ -319,7 +319,7 @@ import ConceptTreeNode from './ConceptTreeNode.vue'
 import VirtualGroupNode, { type TreeGroup } from './VirtualGroupNode.vue'
 import MatrixPill from '../editor/MatrixPill.vue'
 import Pill from '../editor/Pill.vue'
-import { findMatchingKnowledgeNode, isTemplateNode } from '../../utils/knowledgeMatching'
+import { findMatchingKnowledgeNode, isBlueprintNode } from '../../utils/knowledgeMatching'
 import { useKnowledgeConcepts } from '../../composables/useKnowledgeConcepts'
 
 const emit = defineEmits<{
@@ -381,7 +381,7 @@ const modelDagTopology = computed(() => {
 })
 
 function isModelRoot(node: KnowledgeNode | undefined): boolean {
-  if (!node || isTemplateNode(node)) return false
+  if (!node || isBlueprintNode(node)) return false
   return node.kind === 'root' || node.parentId === null || knowledgeStore.rootIds.includes(node.id)
 }
 
@@ -410,7 +410,7 @@ const visibleRootIds = computed(() => {
   const bestByBaseName = new Map<string, { id: string; version: SemVer }>()
   for (const rid of candidateIds) {
     const node = knowledgeStore.getNode(rid)
-    if (!node || isTemplateNode(node)) continue
+    if (!node || isBlueprintNode(node)) continue
     const info = getModelInfo(node.id)
     const existing = bestByBaseName.get(info.baseName)
     if (!existing || compareSemVer(info.version, existing.version) > 0) {

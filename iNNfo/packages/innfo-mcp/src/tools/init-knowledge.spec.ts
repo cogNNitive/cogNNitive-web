@@ -33,7 +33,7 @@ async function stubSpecChain() {
 }
 
 /** Write a level-2 business template (declaring a "Work" list concept), resolvable
- * locally by `resolveTemplateWithCache` without any network I/O. */
+ * locally by `resolveBlueprintWithCache` without any network I/O. */
 async function stubBusinessTemplate() {
   await writeFile(
     join(specsDir, 'business_V_0-2-0_NN.md'),

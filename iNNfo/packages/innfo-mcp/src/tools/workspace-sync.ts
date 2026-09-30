@@ -80,7 +80,7 @@ async function findManifestPath(root: string): Promise<string | null> {
   return match ? join(root, match.name) : null
 }
 
-function parentSpecTemplateName(frontmatter: Record<string, unknown>): string | undefined {
+function parentSpecBlueprintName(frontmatter: Record<string, unknown>): string | undefined {
   const parentSpec = frontmatter['parent_spec']
   if (!parentSpec) return undefined
   if (typeof parentSpec === 'string') return parentSpec
@@ -120,7 +120,7 @@ async function discoverCandidates(
     discovered.push({
       path: relPath,
       name: title !== '' ? title : stripMdSuffix(pathBasename(relPath)),
-      template: parentSpecTemplateName(frontmatter),
+      template: parentSpecBlueprintName(frontmatter),
     })
   }
 

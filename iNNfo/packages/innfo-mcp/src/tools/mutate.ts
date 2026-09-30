@@ -16,7 +16,6 @@ export { applyChange } from './apply-change.js'
 export {
   validateKnowledge,
   validateKnowledgeUrl,
-  validateTemplate,
   validateBlueprint,
 } from './validate.js'
 export { initKnowledge } from './init-knowledge.js'

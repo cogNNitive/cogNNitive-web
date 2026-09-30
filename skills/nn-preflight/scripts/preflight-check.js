@@ -52,9 +52,9 @@ const LEGACY_STATE_FILE = path.join(os.homedir(), '.agents', 'skills-state.json'
  * (same-origin for the editor), the raw.githubusercontent copy is the
  * fallback. When both fail, upgrade detection degrades to offline.
  */
-const DEFAULT_TEMPLATE_CATALOG_URL =
+const DEFAULT_BLUEPRINT_CATALOG_URL =
   'https://cognnitive.com/innfo/blueprints/catalog.json';
-const FALLBACK_TEMPLATE_CATALOG_URL =
+const FALLBACK_BLUEPRINT_CATALOG_URL =
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json';
 
 /**
@@ -566,36 +566,36 @@ function scanWorkspaceSources(workspaceDir) {
  * @param {string} [options.blueprintsDir]
  * @returns {{ validCount: number, blockerCount: number, warningCount: number, items: Array<any> }}
  */
-function validateTemplateCompositions(options = {}) {
+function validateBlueprintCompositions(options = {}) {
   const { workspaceDir, blueprintsDir } = options;
   const searchDirs = [];
 
   if (workspaceDir) {
-    const wsSpecsTemplates = path.join(workspaceDir, 'specs', 'templates');
+    const wsSpecsBlueprints = path.join(workspaceDir, 'specs', 'templates');
     const wsSpecs = path.join(workspaceDir, 'specs');
-    if (fs.existsSync(wsSpecsTemplates)) searchDirs.push(wsSpecsTemplates);
+    if (fs.existsSync(wsSpecsBlueprints)) searchDirs.push(wsSpecsBlueprints);
     if (fs.existsSync(wsSpecs)) searchDirs.push(wsSpecs);
   } else if (blueprintsDir && fs.existsSync(blueprintsDir)) {
     searchDirs.push(blueprintsDir);
   } else {
     const repoRoot = path.resolve(__dirname, '../../../..');
-    const repoSpecsTemplates = path.join(repoRoot, 'specs', 'templates');
+    const repoSpecsBlueprints = path.join(repoRoot, 'specs', 'templates');
     const repoSpecs = path.join(repoRoot, 'specs');
-    if (fs.existsSync(repoSpecsTemplates)) searchDirs.push(repoSpecsTemplates);
+    if (fs.existsSync(repoSpecsBlueprints)) searchDirs.push(repoSpecsBlueprints);
     if (fs.existsSync(repoSpecs)) searchDirs.push(repoSpecs);
   }
 
   // Also include resolver fallback search dirs
   const resolverDirs = [...searchDirs];
   const repoRoot = path.resolve(__dirname, '../../../..');
-  const repoInnfoSpecsTemplates = path.join(repoRoot, 'iNNfo', 'specs', 'templates');
-  const repoSpecsTemplates = path.join(repoRoot, 'specs', 'templates');
+  const repoInnfoSpecsBlueprints = path.join(repoRoot, 'iNNfo', 'specs', 'templates');
+  const repoSpecsBlueprints = path.join(repoRoot, 'specs', 'templates');
   const repoSpecs = path.join(repoRoot, 'specs');
-  if (fs.existsSync(repoInnfoSpecsTemplates) && !resolverDirs.includes(repoInnfoSpecsTemplates)) {
-    resolverDirs.push(repoInnfoSpecsTemplates);
+  if (fs.existsSync(repoInnfoSpecsBlueprints) && !resolverDirs.includes(repoInnfoSpecsBlueprints)) {
+    resolverDirs.push(repoInnfoSpecsBlueprints);
   }
-  if (fs.existsSync(repoSpecsTemplates) && !resolverDirs.includes(repoSpecsTemplates)) {
-    resolverDirs.push(repoSpecsTemplates);
+  if (fs.existsSync(repoSpecsBlueprints) && !resolverDirs.includes(repoSpecsBlueprints)) {
+    resolverDirs.push(repoSpecsBlueprints);
   }
   if (fs.existsSync(repoSpecs) && !resolverDirs.includes(repoSpecs)) {
     resolverDirs.push(repoSpecs);
@@ -603,14 +603,14 @@ function validateTemplateCompositions(options = {}) {
 
   const templateFiles = new Map();
 
-  function walkTemplates(dir) {
+  function walkBlueprints(dir) {
     let entries;
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const ent of entries) {
       if (ent.name.startsWith('.') || SPEC_SKIP_DIRS.has(ent.name)) continue;
       const fullPath = path.join(dir, ent.name);
       if (ent.isDirectory()) {
-        walkTemplates(fullPath);
+        walkBlueprints(fullPath);
       } else if (ent.isFile() && ent.name.endsWith('.md')) {
         try {
           const content = fs.readFileSync(fullPath, 'utf8');
@@ -632,7 +632,7 @@ function validateTemplateCompositions(options = {}) {
   }
 
   for (const d of searchDirs) {
-    walkTemplates(d);
+    walkBlueprints(d);
   }
 
   const results = {
@@ -979,12 +979,12 @@ async function runCheck(options = {}) {
       sourcesNormalized: 0,
       sourcesUnnormalized: 0,
       sourcesDangling: 0,
-      templateModelsScanned: 0,
+      blueprintModelsScanned: 0,
       templateUpgradesAvailable: 0,
-      templateModelsCurrent: 0,
-      templateModelsAhead: 0,
-      templateModelsUnlisted: 0,
-      templateModelsUnpinned: 0,
+      blueprintModelsCurrent: 0,
+      blueprintModelsAhead: 0,
+      blueprintModelsUnlisted: 0,
+      blueprintModelsUnpinned: 0,
       templateCatalogOffline: 0,
       templatesCompositionValid: 0,
       templatesCompositionBlockers: 0,
@@ -1044,7 +1044,7 @@ async function runCheck(options = {}) {
     if (discoverModels(workspaceDir).length > 0) {
       const catalogUrls = options.templateCatalogUrl
         ? [options.templateCatalogUrl]
-        : [DEFAULT_TEMPLATE_CATALOG_URL, FALLBACK_TEMPLATE_CATALOG_URL];
+        : [DEFAULT_BLUEPRINT_CATALOG_URL, FALLBACK_BLUEPRINT_CATALOG_URL];
       let catalog = null;
       for (const catalogUrl of catalogUrls) {
         try {
@@ -1065,12 +1065,12 @@ async function runCheck(options = {}) {
       }
       if (catalog) {
         const upgrade = scanWorkspaceUpgrades(workspaceDir, catalog);
-        results.summary.templateModelsScanned = upgrade.summary.modelsScanned;
+        results.summary.blueprintModelsScanned = upgrade.summary.modelsScanned;
         results.summary.templateUpgradesAvailable = upgrade.summary.upgradeAvailable;
-        results.summary.templateModelsCurrent = upgrade.summary.current;
-        results.summary.templateModelsAhead = upgrade.summary.ahead;
-        results.summary.templateModelsUnlisted = upgrade.summary.unlisted;
-        results.summary.templateModelsUnpinned = upgrade.summary.unpinned;
+        results.summary.blueprintModelsCurrent = upgrade.summary.current;
+        results.summary.blueprintModelsAhead = upgrade.summary.ahead;
+        results.summary.blueprintModelsUnlisted = upgrade.summary.unlisted;
+        results.summary.blueprintModelsUnpinned = upgrade.summary.unpinned;
         results.items.push(...upgrade.items);
       }
     }
@@ -1280,7 +1280,7 @@ async function runCheck(options = {}) {
   }
 
   // 5. Template Composition Integrity Validation
-  const compositionResults = validateTemplateCompositions({
+  const compositionResults = validateBlueprintCompositions({
     workspaceDir,
     blueprintsDir,
   });
@@ -1505,7 +1505,7 @@ module.exports = {
   parseManifest,
   loadState,
   scanWorkspaceSources,
-  validateTemplateCompositions,
+  validateBlueprintCompositions,
   FRESHNESS_URL,
   formatAge,
 };

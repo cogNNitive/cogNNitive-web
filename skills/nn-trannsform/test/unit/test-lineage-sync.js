@@ -39,7 +39,7 @@ function run() {
     );
 
     // First build.
-    const r1 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const m1 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(r1.modelCount === 1 && r1.artifactCount === 1, 'build reports 1 model + 1 artifact');
     ok(/## NN ModelRecords: Business Plan/.test(m1), '# NN ModelRecords entry rendered from models/');
@@ -56,7 +56,7 @@ function run() {
     ok(/# NN Procedures/.test(m1), '# NN Procedures section present (empty placeholder)');
 
     // Idempotent re-run: managed sections byte-identical.
-    const r2 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const r2 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const m2 = fs.readFileSync(r2.modelPath, 'utf8');
     const managed = (s) => s.slice(s.indexOf('# NN Sources'), s.indexOf('# NN Procedures'));
     ok(managed(m1) === managed(m2), 'managed sections byte-identical on idempotent re-run');
@@ -66,13 +66,13 @@ function run() {
     provenance.appendProcedureRun(proj, { command: 'apply Foo', inputs: ['models/'], outputs: ['artifacts/'] });
     let mp = fs.readFileSync(r1.modelPath, 'utf8');
     ok((mp.match(/## NN Procedures:/g) || []).length === 2, 'two procedure entries appended');
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     mp = fs.readFileSync(r1.modelPath, 'utf8');
     ok((mp.match(/## NN Procedures:/g) || []).length === 2, 'section refresh preserves procedure history');
 
     // Remove the model → drops out of # NN ModelRecords.
     fs.rmSync(path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'));
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const m3 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(!/## NN ModelRecords: Business Plan/.test(m3), 'removed model drops out of # NN ModelRecords');
 
@@ -88,7 +88,7 @@ function run() {
       path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
       '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [ghost.md#nowhere]\n',
     );
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const drift2 = checkLineage(proj);
     ok(drift2.errors.some((e) => /ghost\.md/.test(e)), '--check flags a dangling sources:: pointer');
 
@@ -98,7 +98,7 @@ function run() {
       '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [report.md#overview]\n',
     );
     fs.rmSync(path.join(proj, 'artifacts', 'Exec_Summary_V_1-0-0.md'));
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     ok(checkLineage(proj).errors.length === 0, '--check clean on a synced workspace');
 
     // Test export/ promotion & is_synthetic in # NN Sources
@@ -112,7 +112,7 @@ function run() {
       path.join(proj, 'sources', 'nn', 'export', 'synthetic_brief.md'),
       '---\nsource_file: "sources/export/synthetic_brief.md"\nsha256: "b"\nsize_bytes: 2\nis_synthetic: true\nderived_from: [Plan_V_1-0-0_NN.md]\nnormalized_at: "y"\nnormalized_by: "t"\n---\n\n# Brief\n',
     );
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const mExport = fs.readFileSync(r1.modelPath, 'utf8');
     ok(/## NN Artifacts: Proposal_V_1-0-0/.test(mExport), 'deliverable in export/ rendered under # NN Artifacts');
     ok(/artifact_ref:: export\/Proposal_V_1-0-0\.md/.test(mExport), 'artifact_ref points to export/');
@@ -126,7 +126,7 @@ function run() {
       path.join(proj, 'export', 'Brief_V_1-0-0.md'),
       '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "brief"\nsources: [report.md#overview, notes.md#key-points]\n---\n\n# Brief\n',
     );
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const mArtifactSources = fs.readFileSync(r1.modelPath, 'utf8');
     ok(/## NN Artifacts: Brief_V_1-0-0/.test(mArtifactSources), 'artifact with frontmatter sources: rendered under # NN Artifacts');
     ok(
@@ -143,7 +143,7 @@ function run() {
       'Models catalog lineage output stays byte-unchanged for models not using artifact sources:',
     );
     fs.rmSync(path.join(proj, 'export', 'Brief_V_1-0-0.md'));
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
 
     // Test 2.1: Lineage version metadata on active and archived sources
     // Create an archive snapshot for report: sources/archive/report/V1/report.md
@@ -158,7 +158,7 @@ function run() {
       '---\nsource_file: "sources/original/report.pdf"\nsha256: "v2hash"\nsize_bytes: 150\nnormalized_at: "2026-09-06T00:00:00Z"\nnormalized_by: "traNNsform v1.0.0"\n---\n\n# Current Report\n',
     );
 
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const mVersions = fs.readFileSync(r1.modelPath, 'utf8');
 
     // Assert active element carries version:: V2 and archive_path::
@@ -173,7 +173,7 @@ function run() {
     ok(/superseded_by:: report\.pdf V2/.test(mVersions), 'archived element has superseded_by:: report.pdf V2');
 
     // Idempotent refresh is byte-identical
-    const rIdemp = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const rIdemp = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const mIdemp = fs.readFileSync(rIdemp.modelPath, 'utf8');
     ok(mVersions === mIdemp, 'lineage model with version metadata is byte-identical on idempotent re-run');
 

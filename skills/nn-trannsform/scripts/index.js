@@ -199,7 +199,7 @@ async function handleCliMode(argv) {
       }
     }
 
-    const prov = provenance.buildProvenanceModel(projectDir);
+    const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
       `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
         `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
@@ -250,7 +250,7 @@ async function handleCliMode(argv) {
       }
     }
 
-    const prov = provenance.buildProvenanceModel(projectDir);
+    const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
       `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
         `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
@@ -291,7 +291,7 @@ async function handleCliMode(argv) {
   }
 
   if ((argv.provenance || argv.lineage) && !argv.scan) {
-    const prov = provenance.buildProvenanceModel(projectDir);
+    const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
       `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
         `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
@@ -305,7 +305,7 @@ async function handleCliMode(argv) {
       const result = await transformer.applyTransformation(projectDir, templateName);
       console.log(`Transformation applied successfully!`);
       console.log(`Output saved to: ${result.outputPath}`);
-      provenance.buildProvenanceModel(projectDir);
+      provenance.buildProvenanceKnowledge(projectDir);
       provenance.appendProcedureRun(projectDir, {
         command: `apply ${templateName}`,
         inputs: ['sources/nn/', 'models/'],
@@ -351,7 +351,7 @@ async function handleCliMode(argv) {
       }
       // Regenerate lineage & index
       const scanRes = await scanner.scanAndProcess(projectDir, {});
-      const prov = provenance.buildProvenanceModel(projectDir);
+      const prov = provenance.buildProvenanceKnowledge(projectDir);
       console.log(
         `Workspace lineage refreshed: ${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s).`
       );
@@ -572,7 +572,7 @@ async function runProjectMenu(projectDir) {
   }
 
   if (response.action === 'create_template') {
-    await runCreateTemplateFlow(projectDir);
+    await runCreateBlueprintFlow(projectDir);
     return runProjectMenu(projectDir);
   }
 
@@ -602,7 +602,7 @@ async function runProjectMenu(projectDir) {
     console.log(`Skipped/Needs Review: ${result.skippedCount} files.`);
     console.log(`Review the manifest log at: ${path.join(projectDir, 'sources', 'nn', 'index.md')}`);
 
-    const prov = provenance.buildProvenanceModel(projectDir);
+    const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
       `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
         `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}\n`,
@@ -617,7 +617,7 @@ async function runProjectMenu(projectDir) {
   }
 
   if (response.action === 'transform') {
-    const templates = transformer.listTemplates(projectDir);
+    const templates = transformer.listBlueprints(projectDir);
     if (templates.length === 0) {
       console.log('No transformation templates found in traNNsformations/ directory.');
       return runProjectMenu(projectDir);
@@ -687,7 +687,7 @@ async function runPromoteConversationFlow(projectDir) {
   console.log(`\nPromoted ${result.promotedFiles.length} file(s) into sources/conversations/ and normalized into sources/nn/conversations/.`);
 }
 
-async function runCreateTemplateFlow(projectDir) {
+async function runCreateBlueprintFlow(projectDir) {
   console.log('\n=== Create New Transformation Template ===\n');
 
   const answers = await prompts([

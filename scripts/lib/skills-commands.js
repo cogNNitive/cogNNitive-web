@@ -267,7 +267,7 @@ async function installSkillAtCommit(skill, skillsDir, state) {
  * @param {object} state
  * @returns {Promise<void>}
  */
-async function installTemplateAtCommit(template, blueprintsDir, state) {
+async function installBlueprintAtCommit(template, blueprintsDir, state) {
   const isMdFile = template.path.endsWith('.md') || template.path.endsWith('.markdown');
   const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
   const flatDestPath = path.join(blueprintsDir, fileName);
@@ -478,7 +478,7 @@ async function cmdStatus(args) {
 
   const rows = [];
   const outdatedSkills = [];
-  const outdatedTemplates = [];
+  const outdatedBlueprints = [];
   const outdatedConsoleAssets = [];
 
   for (const skill of skills) {
@@ -521,7 +521,7 @@ async function cmdStatus(args) {
       installed: entry ? entry.commit.slice(0, 7) : '-',
       status,
     });
-    if (status === 'outdated') outdatedTemplates.push(template);
+    if (status === 'outdated') outdatedBlueprints.push(template);
   }
 
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
@@ -549,13 +549,13 @@ async function cmdStatus(args) {
 
   printStatusTable(rows);
 
-  if (outdatedSkills.length > 0 || outdatedTemplates.length > 0 || outdatedConsoleAssets.length > 0) {
+  if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0) {
     console.log('\nDiff previews for outdated items:');
     for (const skill of outdatedSkills) {
       const installed = state.skills[skill.name].commit;
       console.log(`  skill ${skill.name}: ${await fetchCompareSummary(skill, installed)}`);
     }
-    for (const template of outdatedTemplates) {
+    for (const template of outdatedBlueprints) {
       const installed = state.templates[template.name].commit;
       console.log(`  template ${template.name}: ${await fetchCompareSummary(template, installed)}`);
     }
@@ -574,7 +574,7 @@ async function cmdInstall(args) {
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
 
   const toInstallSkills = skills.filter(skill => !fs.existsSync(path.join(args.skillsDir, skill.name)));
-  const toInstallTemplates = templates.filter(template => {
+  const toInstallBlueprints = templates.filter(template => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
     return !fs.existsSync(path.join(args.blueprintsDir, fileName)) && !fs.existsSync(path.join(args.blueprintsDir, template.name));
   });
@@ -583,20 +583,20 @@ async function cmdInstall(args) {
     return !fs.existsSync(path.join(consoleDir, fileName));
   });
 
-  if (toInstallSkills.length === 0 && toInstallTemplates.length === 0 && toInstallConsole.length === 0) {
+  if (toInstallSkills.length === 0 && toInstallBlueprints.length === 0 && toInstallConsole.length === 0) {
     console.log('All skills, templates, and console assets present.');
     return;
   }
 
   const names = [
     ...toInstallSkills.map(s => `skill:${s.name}`),
-    ...toInstallTemplates.map(t => `template:${t.name}`),
+    ...toInstallBlueprints.map(t => `template:${t.name}`),
     ...toInstallConsole.map(a => `console:${path.basename(a.file || a.url)}`),
   ];
 
   const menu = `The following items are missing:\n` +
     (toInstallSkills.length > 0 ? `Skills:\n  - ${toInstallSkills.map(s => `${s.name} (${s.version})`).join('\n  - ')}\n` : '') +
-    (toInstallTemplates.length > 0 ? `Templates:\n  - ${toInstallTemplates.map(t => `${t.name} (${t.version})`).join('\n  - ')}\n` : '') +
+    (toInstallBlueprints.length > 0 ? `Templates:\n  - ${toInstallBlueprints.map(t => `${t.name} (${t.version})`).join('\n  - ')}\n` : '') +
     (toInstallConsole.length > 0 ? `Console assets:\n  - ${toInstallConsole.map(a => `${path.basename(a.file || a.url)} (${a.version})`).join('\n  - ')}\n` : '') +
     `\n[a] Install all missing (Recommended)\n[b] Skip\n`;
 
@@ -615,9 +615,9 @@ async function cmdInstall(args) {
     }
   }
 
-  for (const template of toInstallTemplates) {
+  for (const template of toInstallBlueprints) {
     try {
-      await installTemplateAtCommit(template, args.blueprintsDir, state);
+      await installBlueprintAtCommit(template, args.blueprintsDir, state);
       console.log(`  installed template ${template.name} (${template.version}) @ ${template.commit.slice(0, 7)}`);
     } catch (err) {
       failures++;
@@ -649,7 +649,7 @@ async function cmdInstall(args) {
     console.error(`\n${failures} item(s) failed to install.`);
     process.exit(1);
   }
-  console.log(`\nInstalled ${toInstallSkills.length} skill(s), ${toInstallTemplates.length} template(s), and ${toInstallConsole.length} console asset(s).`);
+  console.log(`\nInstalled ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), and ${toInstallConsole.length} console asset(s).`);
 }
 
 /**
@@ -669,7 +669,7 @@ async function cmdUpdate(args) {
     return dirPresent && (!entry || entry.commit !== skill.commit);
   };
 
-  const isOutdatedTemplate = (template) => {
+  const isOutdatedBlueprint = (template) => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
     const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
     const entry = state.templates[template.name];
@@ -684,16 +684,16 @@ async function cmdUpdate(args) {
   };
 
   let selectedSkills = skills.filter(isOutdatedSkill);
-  let selectedTemplates = templates.filter(isOutdatedTemplate);
+  let selectedBlueprints = templates.filter(isOutdatedBlueprint);
   let selectedConsole = (consoleAssets || []).filter(isOutdatedConsole);
 
   if (args.positional.length > 0) {
     selectedSkills = skills.filter(s => args.positional.includes(s.name) && isOutdatedSkill(s));
-    selectedTemplates = templates.filter(t => args.positional.includes(t.name) && isOutdatedTemplate(t));
+    selectedBlueprints = templates.filter(t => args.positional.includes(t.name) && isOutdatedBlueprint(t));
     selectedConsole = (consoleAssets || []).filter(a => args.positional.includes(path.basename(a.file || a.url)) && isOutdatedConsole(a));
   }
 
-  if (selectedSkills.length === 0 && selectedTemplates.length === 0 && selectedConsole.length === 0) {
+  if (selectedSkills.length === 0 && selectedBlueprints.length === 0 && selectedConsole.length === 0) {
     console.log('All skills, templates, and console assets up to date.');
     projectSkillsToAgents({
       canonicalSkillsDir: args.skillsDir,
@@ -708,14 +708,14 @@ async function cmdUpdate(args) {
 
   const names = [
     ...selectedSkills.map(s => `skill:${s.name}`),
-    ...selectedTemplates.map(t => `template:${t.name}`),
+    ...selectedBlueprints.map(t => `template:${t.name}`),
     ...selectedConsole.map(a => `console:${path.basename(a.file || a.url)}`),
   ];
 
   const proceed = await consentOrAbort(
     'update skills, templates, and console assets',
     names,
-    `Updating ${selectedSkills.length} skill(s), ${selectedTemplates.length} template(s), and ${selectedConsole.length} console asset(s).\n\n[a] Update all listed (Recommended)\n[b] Skip\n`,
+    `Updating ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), and ${selectedConsole.length} console asset(s).\n\n[a] Update all listed (Recommended)\n[b] Skip\n`,
     args.yes
   );
   if (!proceed) return;
@@ -732,9 +732,9 @@ async function cmdUpdate(args) {
     }
   }
 
-  for (const template of selectedTemplates) {
+  for (const template of selectedBlueprints) {
     try {
-      await installTemplateAtCommit(template, args.blueprintsDir, state);
+      await installBlueprintAtCommit(template, args.blueprintsDir, state);
       console.log(`  updated template ${template.name} -> ${template.version} (${template.commit.slice(0, 7)})`);
     } catch (err) {
       failures++;
@@ -766,7 +766,7 @@ async function cmdUpdate(args) {
     console.error(`\n${failures} item(s) failed to update.`);
     process.exit(1);
   }
-  console.log(`\nUpdated ${selectedSkills.length} skill(s), ${selectedTemplates.length} template(s), and ${selectedConsole.length} console asset(s).`);
+  console.log(`\nUpdated ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), and ${selectedConsole.length} console asset(s).`);
 }
 
 /**
@@ -888,7 +888,7 @@ async function cmdBootstrap(args) {
     const tmplPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, tmpl.name));
     const entry = state.templates[tmpl.name];
     if (!tmplPresent || !entry || entry.commit !== tmpl.commit) {
-      await installTemplateAtCommit(tmpl, args.blueprintsDir, state);
+      await installBlueprintAtCommit(tmpl, args.blueprintsDir, state);
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) @ ${tmpl.commit.slice(0, 7)}`);
     } else {
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) up-to-date`);
@@ -1224,7 +1224,7 @@ module.exports = {
   copyDirRecursive,
   fetchCompareSummary,
   installSkillAtCommit,
-  installTemplateAtCommit,
+  installBlueprintAtCommit,
   installMcpAtCommit,
   installConsoleAssetAtCommit,
   projectSkillsToAgents,

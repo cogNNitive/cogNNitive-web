@@ -70,7 +70,7 @@ export interface WorkspaceIntegrityPorts {
   /** REQUIRED. `catalog: null` ⇒ source is 'offline'. Never throws (best-effort). */
   fetchCatalog(): Promise<{ catalog: TemplateCatalog | null; source: CatalogSource }>
   /** OPTIONAL. Self-healing resolve + hydrate. Omitted ⇒ 'not-checked'. Never throws. */
-  resolveTemplate?(model: WorkspaceModelRef): Promise<TemplateResolutionResult>
+  resolveBlueprint?(model: WorkspaceModelRef): Promise<TemplateResolutionResult>
   /** OPTIONAL. Byte-hash vs canonical remote. Omitted ⇒ 'not-checked'. Never throws. */
   checkFreshness?(templateUrl: string, localContent: string): Promise<'fresh' | 'stale' | 'unknown'>
 }
@@ -124,7 +124,7 @@ const VERSION_STATUSES: VersionStatus[] = [
   'unpinned',
   'unknown',
 ]
-const TEMPLATE_RESOLUTIONS: TemplateResolution[] = [
+const BLUEPRINT_RESOLUTIONS: TemplateResolution[] = [
   'resolved',
   'hydrated',
   'unresolved',
@@ -177,7 +177,7 @@ export function summarizeWorkspaceIntegrity(
     invalid: 0,
     withWarnings: 0,
     versionStatus: zeroed(VERSION_STATUSES),
-    templateResolution: zeroed(TEMPLATE_RESOLUTIONS),
+    templateResolution: zeroed(BLUEPRINT_RESOLUTIONS),
     freshness: zeroed(FRESHNESS_FIELDS),
   }
   for (const model of models) {
@@ -236,10 +236,10 @@ export async function buildWorkspaceIntegrityReport(
 
   // Template resolution (optional port).
   const resolutions = new Map<string, TemplateResolutionResult>()
-  if (ports.resolveTemplate) {
+  if (ports.resolveBlueprint) {
     for (const model of models) {
       try {
-        resolutions.set(model.path, await ports.resolveTemplate(model))
+        resolutions.set(model.path, await ports.resolveBlueprint(model))
       } catch (err) {
         resolutions.set(model.path, { outcome: 'unresolved', detail: errorMessage(err) })
       }
@@ -283,7 +283,7 @@ export async function buildWorkspaceIntegrityReport(
     const diag = diagnostics.get(model.path) ?? { errors: [], warnings: [] }
     const classification = classifyAgainstCatalog(model.parentUrl, catalog)
     const resolution = resolutions.get(model.path)
-    const templateResolved: TemplateResolution = ports.resolveTemplate
+    const templateResolved: TemplateResolution = ports.resolveBlueprint
       ? (resolution?.outcome ?? 'unresolved')
       : 'not-checked'
 

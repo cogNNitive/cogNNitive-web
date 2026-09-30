@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveBlueprintSchema, validateTemplateAgainstMetaschema } from '../src/index'
+import { resolveBlueprintSchema, validateBlueprintAgainstMetaschema } from '../src/index'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
@@ -29,7 +29,7 @@ describe('projects_V_0-2-0 — standalone L2 resolution', () => {
 
 describe('projects_V_0-2-0 — metaschema conformance', () => {
   it('validates green against iNNfo_V_0-2-0 (zero errors)', () => {
-    const diags = validateTemplateAgainstMetaschema(projectsV2, iNNfoV2)
+    const diags = validateBlueprintAgainstMetaschema(projectsV2, iNNfoV2)
     const errors = diags.filter((d) => d.severity === 'error')
     expect(errors, JSON.stringify(errors)).toEqual([])
   })

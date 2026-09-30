@@ -33,7 +33,7 @@ export default async function run() {
     // schema resolver. Without it every model parses schema-less, and the
     // citation check silently degrades to name matching — which is the very
     // behaviour this scenario is supposed to measure.
-    const templateCache = warmTemplateCache(resolveBlueprintSchema)
+    const templateCache = warmBlueprintCache(resolveBlueprintSchema)
     const parsed = await recursiveParse(createNodeDirectoryHandle(WS), undefined, {
       resolveBlueprintSchema: ({ frontmatter }) => {
         const name = frontmatter?.parent_spec?.name
@@ -137,10 +137,10 @@ export default async function run() {
 /**
  * Compose every shipped template's schema, keyed by the `parent_spec.name`
  * a model declares. This is the Node equivalent of the editor's
- * `warmTemplateCache`, and it must stay synchronous: `resolveBlueprintSchema`
+ * `warmBlueprintCache`, and it must stay synchronous: `resolveBlueprintSchema`
  * is called from inside the parse.
  */
-function warmTemplateCache(resolveBlueprintSchema) {
+function warmBlueprintCache(resolveBlueprintSchema) {
   const cache = new Map()
   for (const dir of readdirSync(TEMPLATES, { withFileTypes: true })) {
     const spec = dir.isDirectory()

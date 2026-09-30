@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
-import { initKnowledge, validateTemplate } from '../src/tools/mutate.js'
+import { initKnowledge, validateBlueprint } from '../src/tools/mutate.js'
 import { readFileSync } from 'node:fs'
 
 const L1 = readFileSync(
@@ -61,10 +61,10 @@ describe('MCP — includes composition + init_model scaffolding', () => {
       'includes:\n  - name: "base_roles_a"\n    url: ""\n  - name: "base_roles_b"\n    url: ""\n',
     )
 
-    const res = await validateTemplate(root, undefined, undefined, undefined) // needs id/content
+    const res = await validateBlueprint(root, undefined, undefined, undefined) // needs id/content
     expect(res.valid).toBe(false) // no input → error, sanity
 
-    const byContent = await validateTemplate(
+    const byContent = await validateBlueprint(
       root,
       undefined,
       await readFile(join(specsDir, 'composite_roles_NN.md'), 'utf-8'),
@@ -92,7 +92,7 @@ describe('MCP — includes composition + init_model scaffolding', () => {
       'includes:\n  - name: "twin_roles_a"\n    url: ""\n  - name: "twin_roles_b"\n    url: ""\n',
     )
 
-    const byContent = await validateTemplate(
+    const byContent = await validateBlueprint(
       root,
       undefined,
       await readFile(join(specsDir, 'composite_twin_roles_NN.md'), 'utf-8'),

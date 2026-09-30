@@ -2,7 +2,7 @@ import { readFile, writeFile, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { resolveBlueprintSchema, validateDocument } from '@cognnitive/innfo-core'
 import type { SpecDocument, ValidationError } from '@cognnitive/innfo-core'
-import { resolveTemplateWithCache, findKnowledgeFile, normalizeId } from './spec.js'
+import { resolveBlueprintWithCache, findKnowledgeFile, normalizeId } from './spec.js'
 import { normalizeVersion } from './resolver-node.js'
 import { isInsideRoot, isSafeRelativeId } from './path-guard.js'
 
@@ -161,7 +161,7 @@ export async function initKnowledge(
   let resolveInclude: (ref: { name: string; url: string }) => string | null = () => null
   const templateErrors: string[] = []
   try {
-    const resolved = await resolveTemplateWithCache(
+    const resolved = await resolveBlueprintWithCache(
       rootDir,
       blueprintUrl,
       blueprintName,

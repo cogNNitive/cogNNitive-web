@@ -54,8 +54,8 @@ const discoveredModels = computed(() => {
         (node.fields?.['parent_spec']?.value as any)?.name ||
         node.type ||
         ''
-      const normalizedTemplate = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
-      if (normalizedTemplate === 'workspace' || node.type === 'workspace') {
+      const normalizedBlueprint = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
+      if (normalizedBlueprint === 'workspace' || node.type === 'workspace') {
         return false
       }
 
@@ -91,13 +91,13 @@ const discoveredModels = computed(() => {
         ''
 
       const explicitConsole = typeof node?.fields?.['console']?.value === 'string' ? node.fields['console'].value : undefined
-      const normalizedTemplate = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
-      const defaultConsolePath = explicitConsole || `artifacts/${normalizedTemplate}_console.html`
+      const normalizedBlueprint = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
+      const defaultConsolePath = explicitConsole || `artifacts/${normalizedBlueprint}_console.html`
 
       return {
         id: rootId,
         name,
-        template: normalizedTemplate,
+        template: normalizedBlueprint,
         version,
         description: desc,
         consolePath: defaultConsolePath,

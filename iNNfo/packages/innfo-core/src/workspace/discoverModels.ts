@@ -37,10 +37,10 @@ function parentSpecName(frontmatter: Record<string, unknown>): string | undefine
  *   already indexed by that section; adding them under `## NN Models` duplicate
  *   the same file in two sections.
  */
-const NON_MODEL_SPEC_RE = /^(cognnitive|workspace|procedures|sources|artifacts)(_|$)/i
+const NON_KNOWLEDGE_SPEC_RE = /^(cognnitive|workspace|procedures|sources|artifacts)(_|$)/i
 
 function isNonModelSpec(name: string | undefined): boolean {
-  return typeof name === 'string' && NON_MODEL_SPEC_RE.test(name.trim())
+  return typeof name === 'string' && NON_KNOWLEDGE_SPEC_RE.test(name.trim())
 }
 
 /**

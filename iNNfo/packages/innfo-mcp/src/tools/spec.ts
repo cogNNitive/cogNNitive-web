@@ -13,13 +13,13 @@
 import { join, basename, dirname } from 'node:path'
 import { readFile, stat } from 'node:fs/promises'
 import {
-  getTemplate as coreGetTemplate,
+  getBlueprint as coreGetBlueprint,
   getFormatSpec,
   parseFrontmatter,
   SpecResolutionError,
-  resolveTemplatePath,
-  getTemplateSearchPaths,
-  UnresolvedTemplateError,
+  resolveBlueprintPath,
+  getBlueprintSearchPaths,
+  UnresolvedBlueprintError,
 } from '@cognnitive/innfo-core'
 import { mkdir, copyFile, readdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
@@ -32,8 +32,8 @@ import type {
 } from '@cognnitive/innfo-core'
 import {
   resolveParentChainNode,
-  resolveTemplatePackage,
-  hydrateTemplatePackageAtomically,
+  resolveBlueprintPackage,
+  hydrateBlueprintPackageAtomically,
   fetchSpecContent,
   isLocalPath,
   toLocalFilePath,
@@ -258,7 +258,7 @@ export async function getSpec(
  * Resolve a template document directly from a URL — the model's own
  * `parent_spec.url` is the source of truth. No hardcoded names or base URLs.
  */
-export async function getTemplateFromUrl(
+export async function getBlueprintFromUrl(
   rootDir: string,
   url: string,
   name: string,
@@ -270,7 +270,7 @@ export async function getTemplateFromUrl(
     // whatever was resolved for the requested name itself (e.g. a level-1
     // spec requested directly) — it's already in `cache.specs`, no need to
     // re-read anything from disk.
-    return coreGetTemplate(cache) ?? cache.specs.get(name) ?? null
+    return coreGetBlueprint(cache) ?? cache.specs.get(name) ?? null
   } catch (err) {
     // Surface the actionable resolution detail (searched locations) to the
     // caller so validate_model output can include it; other failures keep the
@@ -286,12 +286,12 @@ export async function getTemplateFromUrl(
 }
 
 /**
- * Like `getTemplateFromUrl`, but also returns the full resolved `SpecCache`
+ * Like `getBlueprintFromUrl`, but also returns the full resolved `SpecCache`
  * (parent chain + every `includes` target) and an `IncludeResolver` bound to
  * it — so a caller can pass template composition through to innfo-core's
  * `validateKnowledge` / `resolveBlueprintSchema` without re-reading anything.
  */
-export async function resolveTemplateWithCache(
+export async function resolveBlueprintWithCache(
   rootDir: string,
   url: string,
   name: string,
@@ -314,7 +314,7 @@ export async function resolveTemplateWithCache(
     }
     cache = null
   }
-  const template = cache ? (coreGetTemplate(cache) ?? cache.specs.get(name) ?? null) : null
+  const template = cache ? (coreGetBlueprint(cache) ?? cache.specs.get(name) ?? null) : null
   const resolveInclude = (ref: { name: string; url: string }): string | null => {
     if (!cache) return null
     const direct = cache.specs.get(ref.name)
@@ -332,17 +332,17 @@ export async function resolveTemplateWithCache(
  * Resolve a template from a loaded model, deriving the URL from its
  * `parent_spec.url`. Returns null when the model declares no parent.
  */
-export async function getTemplateFromModel(
+export async function getBlueprintFromModel(
   rootDir: string,
   modelId: string,
   cacheOpts?: ResolveCacheOptions,
 ): Promise<SpecDocument | null> {
   const parent = await readParentSpecUrl(rootDir, modelId)
   if (!parent) return null
-  return getTemplateFromUrl(rootDir, parent.url, parent.name, cacheOpts)
+  return getBlueprintFromUrl(rootDir, parent.url, parent.name, cacheOpts)
 }
 
-export interface DiscoveredTemplate {
+export interface DiscoveredBlueprint {
   name: string
   version: string
   source: 'workspace' | 'global' | string
@@ -350,14 +350,14 @@ export interface DiscoveredTemplate {
   skillName?: string
 }
 
-export async function listTemplates(
+export async function listBlueprints(
   rootDir: string,
   opts?: { globalDir?: string; skillsDir?: string },
-): Promise<DiscoveredTemplate[]> {
+): Promise<DiscoveredBlueprint[]> {
   const globalDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir = opts?.skillsDir ?? join(homedir(), '.agents', 'skills')
 
-  const discovered: DiscoveredTemplate[] = []
+  const discovered: DiscoveredBlueprint[] = []
   const seenNames = new Set<string>()
 
   const scanDir = async (
@@ -464,10 +464,7 @@ export async function listTemplates(
 
   return discovered
 }
-
-export const listBlueprints = listTemplates
-
-export interface HydrateTemplateResult {
+export interface HydrateBlueprintResult {
   success: boolean
   templateName: string
   targetPath: string
@@ -475,23 +472,23 @@ export interface HydrateTemplateResult {
   message?: string
 }
 
-export async function hydrateTemplate(
+export async function hydrateBlueprint(
   rootDir: string,
   templateName: string,
   opts?: { targetDir?: string; globalDir?: string; skillsDir?: string },
-): Promise<HydrateTemplateResult> {
+): Promise<HydrateBlueprintResult> {
   const parsed = parseSpecName(templateName)
   if (parsed.base === 'domainn' && !parsed.version) {
-    throw new UnresolvedTemplateError(templateName, [
+    throw new UnresolvedBlueprintError(templateName, [
       'Versionless hydration for domaiNN is not allowed; specify a versioned blueprint name or ref',
     ])
   }
 
-  const globalTemplatesDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
+  const globalBlueprintsDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir = opts?.skillsDir ?? join(homedir(), '.agents', 'skills')
 
-  const pkg = await resolveTemplatePackage(rootDir, templateName, undefined, {
-    globalDir: globalTemplatesDir,
+  const pkg = await resolveBlueprintPackage(rootDir, templateName, undefined, {
+    globalDir: globalBlueprintsDir,
     skillsDir,
   })
 
@@ -547,7 +544,7 @@ export async function hydrateTemplate(
       }
 
       // Default: hydrate into workspace package directory specs/bluepriNNts/<name>/<version>/
-      const targetPkgDir = await hydrateTemplatePackageAtomically(
+      const targetPkgDir = await hydrateBlueprintPackageAtomically(
         rootDir,
         pkg.name,
         pkg.version,
@@ -563,19 +560,19 @@ export async function hydrateTemplate(
     }
   }
 
-  const location = await resolveTemplatePath(templateName, {
+  const location = await resolveBlueprintPath(templateName, {
     workspaceDir: rootDir,
-    globalTemplatesDir,
+    globalBlueprintsDir,
     skillsDir,
   })
 
   if (!location) {
-    const checkedPaths = await getTemplateSearchPaths(templateName, {
+    const checkedPaths = await getBlueprintSearchPaths(templateName, {
       workspaceDir: rootDir,
-      globalTemplatesDir,
+      globalBlueprintsDir,
       skillsDir,
     })
-    throw new UnresolvedTemplateError(templateName, checkedPaths)
+    throw new UnresolvedBlueprintError(templateName, checkedPaths)
   }
 
   const targetDir = opts?.targetDir ?? join(rootDir, 'specs', 'bluepriNNts')
@@ -611,9 +608,7 @@ export async function hydrateTemplate(
   }
 }
 
-export const hydrateBlueprint = hydrateTemplate
-
-export interface ListTemplateProceduresOptions {
+export interface ListBlueprintProceduresOptions {
   model_path?: string
   model_id?: string
   blueprint_name?: string
@@ -621,7 +616,7 @@ export interface ListTemplateProceduresOptions {
   url?: string
 }
 
-export interface ListTemplateSkillsOptions {
+export interface ListBlueprintSkillsOptions {
   model_path?: string
   model_id?: string
   blueprint_name?: string
@@ -636,7 +631,7 @@ interface DiscoveredAssets {
 
 export async function discoverTransitiveAssets(
   rootDir: string,
-  opts?: ListTemplateProceduresOptions,
+  opts?: ListBlueprintProceduresOptions,
 ): Promise<DiscoveredAssets> {
   const specsDir = join(rootDir, 'specs')
   const queue: Array<{
@@ -667,7 +662,7 @@ export async function discoverTransitiveAssets(
   }
 
   if (opts?.blueprint_name) {
-    const pkg = await resolveTemplatePackage(rootDir, opts.blueprint_name, opts.version)
+    const pkg = await resolveBlueprintPackage(rootDir, opts.blueprint_name, opts.version)
     if (pkg) {
       const content = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
       if (content) {
@@ -696,7 +691,7 @@ export async function discoverTransitiveAssets(
   }
 
   if (queue.length === 0) {
-    const templates = await listTemplates(rootDir)
+    const templates = await listBlueprints(rootDir)
     for (const tmpl of templates) {
       const content = await readFile(tmpl.filePath, 'utf-8').catch(() => null)
       if (content) {
@@ -712,13 +707,13 @@ export async function discoverTransitiveAssets(
   const skills: TemplateSkill[] = []
   const seenProcIds = new Set<string>()
   const seenSkillNames = new Set<string>()
-  const seenTemplates = new Set<string>()
+  const seenBlueprints = new Set<string>()
 
   while (queue.length > 0) {
     const item = queue.shift()!
     const key = item.docName.toLowerCase()
-    if (seenTemplates.has(key) || item.depth > 10) continue
-    seenTemplates.add(key)
+    if (seenBlueprints.has(key) || item.depth > 10) continue
+    seenBlueprints.add(key)
 
     const fm = item.fm
 
@@ -741,7 +736,7 @@ export async function discoverTransitiveAssets(
     if (item.filePath) {
       templateDir = dirname(item.filePath)
     } else {
-      const pkg = await resolveTemplatePackage(rootDir, item.docName)
+      const pkg = await resolveBlueprintPackage(rootDir, item.docName)
       if (pkg) {
         templateDir = pkg.isPackageDir ? pkg.packagePath : dirname(pkg.specFilePath)
       }
@@ -802,7 +797,7 @@ export async function discoverTransitiveAssets(
         for (const inc of fm.includes) {
           if (!inc || !inc.name) continue
           const incKey = inc.name.toLowerCase()
-          if (seenTemplates.has(incKey)) continue
+          if (seenBlueprints.has(incKey)) continue
 
           let incVersion: string | undefined
           if (inc.url) {
@@ -818,7 +813,7 @@ export async function discoverTransitiveAssets(
           }
 
           let incContent: string | null = null
-          const pkg = await resolveTemplatePackage(rootDir, inc.name, incVersion)
+          const pkg = await resolveBlueprintPackage(rootDir, inc.name, incVersion)
           if (pkg) {
             incContent = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
           }
@@ -843,7 +838,7 @@ export async function discoverTransitiveAssets(
       if (fm.parent_spec && typeof fm.parent_spec === 'object' && fm.parent_spec.name) {
         const pName = fm.parent_spec.name
         const pKey = pName.toLowerCase()
-        if (!seenTemplates.has(pKey)) {
+        if (!seenBlueprints.has(pKey)) {
           let pVersion: string | undefined
           if (fm.parent_spec.url) {
             const vMatch =
@@ -858,7 +853,7 @@ export async function discoverTransitiveAssets(
           }
 
           let parentContent: string | null = null
-          const pkg = await resolveTemplatePackage(rootDir, pName, pVersion)
+          const pkg = await resolveBlueprintPackage(rootDir, pName, pVersion)
           if (pkg) {
             parentContent = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
           }
@@ -884,17 +879,17 @@ export async function discoverTransitiveAssets(
   return { procedures, skills }
 }
 
-export async function listTemplateProcedures(
+export async function listBlueprintProcedures(
   rootDir: string,
-  opts?: ListTemplateProceduresOptions,
+  opts?: ListBlueprintProceduresOptions,
 ): Promise<{ procedures: TemplateProcedure[] }> {
   const assets = await discoverTransitiveAssets(rootDir, opts)
   return { procedures: assets.procedures }
 }
 
-export async function listTemplateSkills(
+export async function listBlueprintSkills(
   rootDir: string,
-  opts?: ListTemplateSkillsOptions,
+  opts?: ListBlueprintSkillsOptions,
 ): Promise<{ skills: TemplateSkill[] }> {
   const assets = await discoverTransitiveAssets(rootDir, opts)
   return { skills: assets.skills }

@@ -7,7 +7,7 @@
  * lookups fail.
  */
 
-export interface CanonicalTemplate {
+export interface CanonicalBlueprint {
   name: string
   version: string
   aliases: string[]
@@ -40,7 +40,7 @@ const BUSINESS_MODEL_SPEC_CONTENT = "---\nspec_version: \"V_0-3-0\"\nspec_url: \
 
 const BUSINESS_SPEC_CONTENT = "---\nspec_version: \"V_0-3-0\"\nspec_url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md\"\nlevel: 2\nparent_spec:\n  name: \"iNNfo_V_0-3-0\"\n  url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md\"\nblueprint_version: \"V_0-3-0\"\ntitle: \"Business App\"\nincludes:\n  - name: \"business-model\"\n    url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md\"\n  - name: \"analysis\"\n    url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md\"\n  - name: \"organization\"\n    url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md\"\n  - name: \"projects\"\n    url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md\"\n  - name: \"metrics\"\n    url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md\"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: index block\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: true\nassets:\n  - id: \"model-viewer-shell\"\n    name: \"Model Viewer HTML Layout\"\n    path: \"assets/model_viewer.html\"\n---\n\n> [!NOTE]\n> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n# NN Matrix Definition\n\n## NN Matrix Definition: Metrics-Organizational goals Matrix\nsource:: Metrics\ntarget:: Organizational goals\nvalues:: [Max, Very High, High, Slightly High, Neutral, Slightly Low, Low, Very Low, Min]\nwidget:: set\ndescription:: Scores how directly each Metric tracks each Organizational goal.\n\n# Business Template\n\n## The complete business-modeling template — the descriptive model core plus its analysis layer, reusing the shared organization and projects vocabularies\n\n## Philosophy\n\nA comprehensive business model is more than a description of a venture. It is that\ndescription **plus** the evaluative work that keeps it honest — the assumptions it\nrests on, the risks it runs, the coherence of its parts, the experiments that turn\nbelief into evidence — **plus** the reusable vocabularies for how people are\norganized and how initiatives are planned and delivered.\n\nThis template is a **near-pure composite**. Almost its entire schema is the additive union of the\ntemplates it `includes`. It declares exactly one Matrix Definition of its own —\n`Metrics-Organizational goals Matrix` — because that relationship spans two\nincluded templates (`metrics` rows × `business-model` goals) and therefore\nbelongs to neither ingredient alone:\n\n- **`business-model`** — the descriptive core: market, value propositions,\n  solutions, marketing, team narrative, business idea and objectives, operations,\n  finance, legal, and the cross-cutting `Procedure` and `Misc` concepts. It in\n  turn `includes` `organization` and `projects`, so their concepts arrive here\n  transitively.\n- **`analysis`** — the strategic-review layer: `Analysis` (Assumptions, Risks,\n  SWOT, Keys, Suggestions) and `Validation` (Coherence, Experiments), with the\n  Assumptions-Risks and Experiments-Assumptions matrices.\n- **`organization`** (via `business-model`) — `Organization`, `Roles`,\n  `Functions`, `Position`, `Person`, `Skills`, plus the positions-roles,\n  persons-positions, and Functions-Positions matrices and the `complexity` marker.\n- **`projects`** (via `business-model`) — `Project`, `Phases`, `Milestone`,\n  `Deliverable`, `Task`, `Risk`, `Project roles`, plus the task-roles,\n  task-deliverables, and risks-milestones matrices and the `health` marker.\n- **`metrics`** — the quantified layer: `Metrics` (typed rows with formulas and\n  dependencies), `Variables`, `Evolution`, `Scenario`, with the\n  metrics-dependencies, metric-variables, and scenario-metrics matrices and the\n  `is_variable` / `is_formula` / `is_derived` markers. Its `Create Projections`\n  procedure compiles any metrics model into a standalone Projections dashboard.\n\n`business-model` and `analysis` each declare the same five markers — `importance`,\n`completion`, `certainty`, `priority`, `rating` — with **identical bodies**. Under\niNNfo's additive-composition rule, two sources declaring a Definition whose\ncanonical form is identical merge silently into one entry; declaring them\ndifferently would be a composition ERROR. That shared five-marker set is the\nbusiness vocabulary, kept in sync across the two halves.\n\n## Objectives\n\n1. Give business-model authors one `parent_spec` that resolves the full descriptive + analytical + organizational + project vocabulary.\n2. Keep the descriptive core (`business-model`) and the review layer (`analysis`) independently reusable and independently versioned.\n3. Reuse `organization` and `projects` rather than duplicating human-structure and project-planning concepts.\n4. Attach the quantified layer (`metrics`) so revenue, cost, and projection rows live in the same model as the narrative — with goal tracking (`Metrics-Organizational goals`) declared on the composite, where both endpoints meet.\n5. Compose without collisions — every shared Definition is declared identically across sources.\n\n## Specification\n\nThis template declares one Matrix Definition of its own and resolves the rest\nfrom its included templates' Definitions:\n\n| Contributed by | Concepts | Markers | Matrices |\n|---|---|---|---|\n| `business-model` | Business summary, Market, Stakeholders, Segments, Profiles, Persona, Segmentation, Market trends, Market size, Competition, Problems, Value propositions, Messages, Channels, Perceptions, Emotions, Behaviors, Journey, Solutions, Offerings, Products and services, Features, Components, Roadmap, Marketing, Branding, Media plan, Communication, Pitch, Web, Storytelling, Presentations, Team, Business idea, Inspiration, Opportunity, Business objectives, Mission, Vision, Organizational values, Organizational goals, Operations, Activities, Resources, Finance, Revenue, Costs, Unit economics, Funding sources, Shareholders, Projections, Legal, Legal issues, Contracts, Challenges, Unfair advantage, Goals, Misc, Procedure | importance, completion, certainty, priority, rating | Journey map, Segmentation-Profiles, Problems-Value propositions, Value propositions-Messages, Messages-Channels, Features-Milestone, Organizational values-Organizational goals, Activities-Resources, Problems-Competition |\n| `analysis` | Analysis, Assumptions, Risks, Suggestions, SWOT, Keys, Validation, Coherence, Experiments | importance, completion, certainty, priority, rating *(identical → merged)* | Assumptions-Risks, Experiments-Assumptions |\n| `organization` (transitive) | Organization, Roles, Functions, Position, Person, Skills | complexity | positions-roles, persons-positions, Functions-Positions |\n| `projects` (transitive) | Project, Phases, Milestone, Deliverable, Task, Risk, Project roles | health | task-roles, task-deliverables, risks-milestones |\n| `metrics` | Metrics, Variables, Evolution, Scenario | is_variable, is_formula, is_derived | metrics-dependencies, metric-variables, scenario-metrics |\n| `business` (own) | — | — | Metrics-Organizational goals |\n\n### Relationship Types\n\n| Type | Enabled | Representation |\n|---|---|---|\n| Hierarchy | ✅ | index block (wikilinks) |\n| Evaluable matrix | ✅ | Source→target tables |\n| Graph edge | ❌ | Not applicable |\n| Sequence | ✅ | concept type `steps` / `sequence` (`Journey`, `Roadmap`, `Phases`) |\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\nTo create a business model, create a level 3 FILE mode document with:\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: \"business_V_0-2-1\"\n  url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md\"\nknowledge_version: \"V_x-y-z\"\ntitle: \"<Your Business Name>\"\n---\n\n> [!NOTE]\n> This is an **iNNfo document**...\n\n# NN Business summary\nYour business summary here.\n\n# NN Stakeholders\n## NN Stakeholders: Stakeholder Name\nrelationship_model:: Dedicated\nDescription and details.\n\n# NN matrices: problems-value propositions matrix\n| Problems \\ Value propositions | VP1 | VP2 |\n| :--- | :---: | :---: |\n| Problem 1 | Max | High |\n```\n\nThe application resolves the `parent` URL, downloads this template, follows its\n`includes` (and their transitive `includes`), and unions every resolved\nConcept / Field / Marker / Matrix Definition to validate and render the model.\n\n## Examples\n\n### Canonical Sample\n\nThe official sample for this template is\n`specs/templates/business/samples/Ghostbusters_V_0-2-3_business_NN.md` — the\n`V_0-2-1` Ghostbusters sample re-pointed at this version.\n`Ghostbusters_V_0-2-1_business_NN.md` is kept for consumers still pinned to\n`V_0-2-1`. `V_0-2-1` added the `Compile Strategic Master` procedure; `V_0-2-2`\nadded `Compile Model Viewer` (`procedures/compile_model_viewer_NN.md`), which\nfills the template-agnostic consultation shell at `assets/model_viewer.html`\nwith the resolved schema and serialized model data — a single offline,\nread-only page for browsing any model built on this template. `V_0-2-3` is a\ndocs-and-sample patch that finalizes that work. `V_0-2-4` attaches the `metrics`\ntemplate (quantified rows, variables, scenarios, `Create Projections`\nprocedure) and moves the `Metrics-Organizational goals` matrix onto the\ncomposite, where both endpoints meet. The `V_0-2-3` Ghostbusters sample is\nkept as the canonical sample: its prose-only `Metrics` elements and its\n`metrics-organizational goals` block resolve unchanged against the new\ncomposition. `V_0-2-6` drops the `Compile Model Viewer` procedure\n(`procedures/compile_model_viewer_NN.md`) and its `procedures:` entry: model\nconsultation has relocated to the workspace level as `Compile Model Console`\n(`workspace/procedures/compile_model_console_NN.md`), which fills the same\nconsultation shell plus per-field citation icons. The `model-viewer-shell`\nasset entry (`assets/model_viewer.html`) stays declared for one transition\ncycle even though no procedure still targets it from this template.\n\n## Parent Chain\n\n```yaml\n# From the Ghostbusters V_0-2-3 sample:\nparent_spec:\n  name: \"business_V_0-2-3\"\n  url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md\"\n\n# This template's parent:\nparent_spec:\n  name: \"iNNfo_V_0-3-0\"\n  url: \"https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md\"\n\n# This template's includes:\nincludes:\n  - name: \"business-model\"   # → includes organization, projects\n  - name: \"analysis\"\n  - name: \"metrics\"\n```\n"
 
-export const CANONICAL_TEMPLATES: Record<string, CanonicalTemplate> = {
+export const CANONICAL_BLUEPRINTS: Record<string, CanonicalBlueprint> = {
   business: {
     name: 'business',
     version: 'V_0-2-6',
@@ -304,24 +304,24 @@ function normalizeKey(str: string): string {
 /**
  * Find a canonical Level 2 template by name, alias, shorthand, or URL.
  */
-export function findCanonicalTemplate(identifier: string): CanonicalTemplate | null {
+export function findCanonicalBlueprint(identifier: string): CanonicalBlueprint | null {
   if (!identifier) return null
   const rawClean = identifier.trim()
   const lower = rawClean.toLowerCase()
 
   // 1. Direct match on key
-  if (CANONICAL_TEMPLATES[lower]) {
-    return CANONICAL_TEMPLATES[lower]
+  if (CANONICAL_BLUEPRINTS[lower]) {
+    return CANONICAL_BLUEPRINTS[lower]
   }
 
   // 2. Normalized key match
   const normalized = normalizeKey(rawClean)
-  if (CANONICAL_TEMPLATES[normalized]) {
-    return CANONICAL_TEMPLATES[normalized]
+  if (CANONICAL_BLUEPRINTS[normalized]) {
+    return CANONICAL_BLUEPRINTS[normalized]
   }
 
   // 3. Check all templates and their aliases
-  for (const tmpl of Object.values(CANONICAL_TEMPLATES)) {
+  for (const tmpl of Object.values(CANONICAL_BLUEPRINTS)) {
     if (tmpl.name.toLowerCase() === lower || normalizeKey(tmpl.name) === normalized) {
       return tmpl
     }
@@ -340,14 +340,14 @@ export function findCanonicalTemplate(identifier: string): CanonicalTemplate | n
 
   if (lastPart) {
     const lastNorm = normalizeKey(lastPart)
-    if (CANONICAL_TEMPLATES[lastNorm]) {
-      return CANONICAL_TEMPLATES[lastNorm]
+    if (CANONICAL_BLUEPRINTS[lastNorm]) {
+      return CANONICAL_BLUEPRINTS[lastNorm]
     }
     // Check if parent part is template name (e.g. templates/business/spec_NN.md)
     if (parentPart) {
       const parentNorm = normalizeKey(parentPart)
-      if (CANONICAL_TEMPLATES[parentNorm]) {
-        return CANONICAL_TEMPLATES[parentNorm]
+      if (CANONICAL_BLUEPRINTS[parentNorm]) {
+        return CANONICAL_BLUEPRINTS[parentNorm]
       }
     }
   }
@@ -359,12 +359,12 @@ export function findCanonicalTemplate(identifier: string): CanonicalTemplate | n
  * Get canonical spec content for a template identifier.
  */
 export function getCanonicalSpecContent(identifier: string): string | null {
-  return findCanonicalTemplate(identifier)?.specContent ?? null
+  return findCanonicalBlueprint(identifier)?.specContent ?? null
 }
 
 /**
  * List all available canonical templates in the registry.
  */
-export function listCanonicalTemplates(): CanonicalTemplate[] {
-  return Object.values(CANONICAL_TEMPLATES)
+export function listCanonicalBlueprints(): CanonicalBlueprint[] {
+  return Object.values(CANONICAL_BLUEPRINTS)
 }

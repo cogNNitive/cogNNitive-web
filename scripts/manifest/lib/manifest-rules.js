@@ -219,7 +219,7 @@ async function checkVersionParity(skill) {
  * @param {string} text
  * @returns {string}
  */
-function normalizeTemplateText(text) {
+function normalizeBlueprintText(text) {
   return text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
 }
 
@@ -244,7 +244,7 @@ function coherenceFetchViolation(template, revision, message) {
  * @param {{ name: string, repo: string, path: string, commit: string, ref?: string }} template
  * @returns {Promise<string[]>} empty array = pinned content is coherent with main
  */
-async function checkTemplateMainCoherence(template) {
+async function checkBlueprintMainCoherence(template) {
   const violations = [];
   const pinUrl = `https://raw.githubusercontent.com/${template.repo}/${template.commit}/${template.path}`;
   const mainUrl = `https://raw.githubusercontent.com/${template.repo}/main/${template.path}`;
@@ -264,7 +264,7 @@ async function checkTemplateMainCoherence(template) {
   }
 
   if (pinnedText !== null && mainText !== null &&
-      normalizeTemplateText(pinnedText) !== normalizeTemplateText(mainText)) {
+      normalizeBlueprintText(pinnedText) !== normalizeBlueprintText(mainText)) {
     violations.push(
       `${template.name}: content at ${template.path} differs between pinned commit ${template.commit} and main in ${template.repo} — pin is not coherent with main (reconcile the release with main before shipping)`
     );
@@ -415,7 +415,7 @@ async function validateSkill(skill, policy) {
  * @param {typeof CHANNELS[string]} policy
  * @returns {Promise<string[]>}
  */
-async function validateTemplate(template, policy) {
+async function validateBlueprint(template, policy) {
   const violations = structuralViolations(template);
   if (violations.length > 0) return violations;
 
@@ -458,7 +458,7 @@ async function validateTemplate(template, policy) {
   // the release must equal the content at the same path on main (normalized).
   // preview pins main and is gated out by requireProvenance === false.
   if (policy.requireProvenance) {
-    violations.push(...await checkTemplateMainCoherence(template));
+    violations.push(...await checkBlueprintMainCoherence(template));
   }
 
   return violations;
@@ -537,7 +537,7 @@ async function validateManifest(manifestData, policy) {
   }
 
   for (const blueprint of blueprints) {
-    violations.push(...await validateTemplate(blueprint, policy));
+    violations.push(...await validateBlueprint(blueprint, policy));
   }
 
   for (const mcpEntry of mcp) {
@@ -576,11 +576,11 @@ module.exports = {
   checkPathAtCommit,
   checkVersionParity,
   checkMcpUrlPinned,
-  checkTemplateMainCoherence,
+  checkBlueprintMainCoherence,
   validateMcp,
   validateConsoleAsset,
   validateSkill,
-  validateTemplate,
+  validateBlueprint,
   checkClosureViolations,
   validateManifest,
 };

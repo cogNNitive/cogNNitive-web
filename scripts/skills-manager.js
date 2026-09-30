@@ -132,7 +132,7 @@ async function main() {
 
   const isWorkspaceScope = args.scope === 'workspace';
   const defaultSkills = isWorkspaceScope ? './.agents/skills' : commands.DEFAULT_SKILLS_DIR;
-  const defaultTemplates = isWorkspaceScope ? './specs/bluepriNNts' : commands.DEFAULT_BLUEPRINTS_DIR;
+  const defaultBlueprints = isWorkspaceScope ? './specs/bluepriNNts' : commands.DEFAULT_BLUEPRINTS_DIR;
   const defaultMcp = isWorkspaceScope ? './.agents/mcp' : commands.DEFAULT_MCP_DIR;
   const defaultConsole = isWorkspaceScope ? './.agents/console' : commands.DEFAULT_CONSOLE_DIR;
   const defaultState = isWorkspaceScope ? './.agents/bootstrap-state.json' : commands.DEFAULT_STATE_FILE;
@@ -140,7 +140,7 @@ async function main() {
   const resolvedArgs = {
     positional: args.positional,
     skillsDir: path.resolve(args.skillsDir || defaultSkills),
-    blueprintsDir: path.resolve(args.blueprintsDir || defaultTemplates),
+    blueprintsDir: path.resolve(args.blueprintsDir || defaultBlueprints),
     mcpDir: path.resolve(args.mcpDir || defaultMcp),
     consoleDir: path.resolve(args.consoleDir || defaultConsole),
     stateFile: path.resolve(args.state || defaultState),

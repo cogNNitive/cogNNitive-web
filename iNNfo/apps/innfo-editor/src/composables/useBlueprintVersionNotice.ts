@@ -20,7 +20,7 @@ export interface TemplateVersionNotice {
   prompt: string
 }
 
-export interface ParsedTemplateName {
+export interface ParsedBlueprintName {
   slug: string
   version: string
 }
@@ -31,14 +31,14 @@ const VERSION_SUFFIX_RE = /_V_(\d+)-(\d+)-(\d+)$/i
 const VERSIONED_FILENAME_RE = /^(.+)_V_(\d+)-(\d+)-(\d+)_NN\.md$/i
 
 /** Splits a `parent_spec.name` into template slug + version; `null` for unversioned/self-contained models. */
-export function parseTemplateName(name: string): ParsedTemplateName | null {
+export function parseBlueprintName(name: string): ParsedBlueprintName | null {
   const match = VERSION_SUFFIX_RE.exec(name)
   if (!match || match.index === 0) return null
   return { slug: name.slice(0, match.index), version: `V_${match[1]}-${match[2]}-${match[3]}` }
 }
 
 /** Splits a versioned template filename into slug + version. */
-export function parseVersionedFilename(filename: string): ParsedTemplateName | null {
+export function parseVersionedFilename(filename: string): ParsedBlueprintName | null {
   const match = VERSIONED_FILENAME_RE.exec(filename)
   return match ? { slug: match[1], version: `V_${match[2]}-${match[3]}-${match[4]}` } : null
 }
@@ -64,7 +64,7 @@ export function pickLatestVersion(versions: string[]): string | null {
 const MAX_SCAN_DEPTH = 6
 
 /** Recursively collects `{slug}_V_x-y-z_NN.md` version matches under `dir`. Bounded depth guards circular trees. */
-export async function scanDirForTemplateVersions(
+export async function scanDirForBlueprintVersions(
   dir: DirectoryHandleLike,
   slug: string,
   depth = 0,
@@ -76,7 +76,7 @@ export async function scanDirForTemplateVersions(
       const parsed = parseVersionedFilename(name)
       if (parsed && parsed.slug === slug) found.push(parsed.version)
     } else if (entry.kind === 'directory') {
-      found.push(...(await scanDirForTemplateVersions(entry as DirectoryHandleLike, slug, depth + 1)))
+      found.push(...(await scanDirForBlueprintVersions(entry as DirectoryHandleLike, slug, depth + 1)))
     }
   }
   return found
@@ -86,7 +86,7 @@ export async function scanDirForTemplateVersions(
 const SEARCH_DIR_NAMES = ['specs', '.specs', '.spec-cache']
 
 /** Scans every known local search dir in the workspace handle for a template slug's versions. */
-export async function scanWorkspaceForTemplateVersions(
+export async function scanWorkspaceForBlueprintVersions(
   handle: DirectoryHandleLike,
   slug: string,
 ): Promise<string[]> {
@@ -94,7 +94,7 @@ export async function scanWorkspaceForTemplateVersions(
   for (const dirName of SEARCH_DIR_NAMES) {
     try {
       const dir = await handle.getDirectoryHandle(dirName)
-      all.push(...(await scanDirForTemplateVersions(dir, slug)))
+      all.push(...(await scanDirForBlueprintVersions(dir, slug)))
     } catch {
       // Directory absent in this workspace — not an error, just no hits from it.
     }
@@ -150,7 +150,7 @@ export function useBlueprintVersionNotice(ctx: UseBlueprintVersionNoticeCtx): {
   const notice = ref<TemplateVersionNotice | null>(null) as Ref<TemplateVersionNotice | null>
 
   async function refresh(): Promise<void> {
-    const parsed = parseTemplateName(ctx.templateName.value)
+    const parsed = parseBlueprintName(ctx.templateName.value)
     if (!parsed) {
       notice.value = null
       return
@@ -163,7 +163,7 @@ export function useBlueprintVersionNotice(ctx: UseBlueprintVersionNoticeCtx): {
     const handle = ctx.handle?.value
     if (handle) {
       try {
-        found.push(...(await scanWorkspaceForTemplateVersions(handle, parsed.slug)))
+        found.push(...(await scanWorkspaceForBlueprintVersions(handle, parsed.slug)))
       } catch {
         // Best-effort: a scan failure never blocks editing (D3 — passive, non-blocking).
       }

@@ -83,7 +83,7 @@ export function textColor(hex: string): string {
 
 const _peerCache = new Map<string, string | null>()
 
-function findTemplatePeer(
+function findBlueprintPeer(
   rootId: string,
   rootIds: string[],
   nodes: Record<string, KnowledgeNode>,

@@ -87,7 +87,7 @@ function templateVersionOf(content) {
 }
 
 /** Canonical template filter: a markdown file directly under a template dir, outside samples/ and assets/. */
-function isCanonicalTemplate(relPath) {
+function isCanonicalBlueprint(relPath) {
   const p = relPath.replace(/\\/g, '/');
   if (!/\.md$/i.test(p)) return false;
   if (p.includes('/samples/') || p.includes('/assets/') || p.includes('/procedures/')) return false;
@@ -137,7 +137,7 @@ function diffLinesFromGit(base, root, staged) {
 }
 
 /** Path of `relPath` relative to the first `bluepriNNts/` segment (posix). */
-function underTemplates(relPath) {
+function underBlueprints(relPath) {
   const p = relPath.replace(/\\/g, '/');
   const i = p.indexOf('bluepriNNts/');
   return i === -1 ? path.basename(p) : p.slice(i + 'bluepriNNts/'.length);
@@ -156,7 +156,7 @@ function readBaseContent(relPath, base, baseRoot) {
   if (baseRoot) {
     // Test mode: base revision mirrored under <baseRoot> (a `templates/` tree).
     try {
-      return fs.readFileSync(path.join(baseRoot, underTemplates(relPath)), 'utf-8');
+      return fs.readFileSync(path.join(baseRoot, underBlueprints(relPath)), 'utf-8');
     } catch {
       return null;
     }
@@ -251,7 +251,7 @@ function main() {
     if (!parsed) continue;
     const { status, target, oldPath } = parsed;
     if (!isUnderRoot(target, root)) continue;
-    if (!isCanonicalTemplate(target)) continue;
+    if (!isCanonicalBlueprint(target)) continue;
 
     if (status === 'D') continue;
 

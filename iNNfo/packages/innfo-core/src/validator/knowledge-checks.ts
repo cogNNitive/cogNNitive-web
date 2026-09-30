@@ -192,7 +192,7 @@ export function checkElementGroups(
 }
 
 /**
- * Shared property/enum conformance pass (the same check `validateTemplate` runs
+ * Shared property/enum conformance pass (the same check `validateBlueprint` runs
  * against the level-1 metaschema). Undeclared properties are ignored at the
  * model level; bad `select` values are ERRORs.
  */

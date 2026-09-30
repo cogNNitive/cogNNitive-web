@@ -53,7 +53,7 @@ function readFrontmatterVersion(filePath, fieldRe) {
 }
 
 /** Reads `blueprint_version` -- the blueprint's OWN version. */
-function readTemplateVersion(filePath) {
+function readBlueprintVersion(filePath) {
   return readFrontmatterVersion(filePath, BLUEPRINT_VERSION_RE);
 }
 
@@ -94,8 +94,8 @@ function collectVersions(blueprintsDir, read) {
   return versions;
 }
 
-export function collectTemplateVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
-  return collectVersions(blueprintsDir, readTemplateVersion);
+export function collectBlueprintVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
+  return collectVersions(blueprintsDir, readBlueprintVersion);
 }
 
 export function collectSpecVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
@@ -309,7 +309,7 @@ export function syncVersions({
   mcpPkgPath = DEFAULT_MCP_PKG_PATH,
   corePkgPath = DEFAULT_CORE_PKG_PATH,
 } = {}) {
-  const versions = collectTemplateVersions(blueprintsDir);
+  const versions = collectBlueprintVersions(blueprintsDir);
   const specVersions = collectSpecVersions(blueprintsDir);
   /** @type {Record<string, string>} */
   let skillVersions = {};
@@ -393,7 +393,7 @@ export function syncVersions({
 }
 
 // Backward-compatibility alias
-export const syncTemplateVersions = syncVersions;
+export const syncBlueprintVersions = syncVersions;
 
 // Direct CLI invocation
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

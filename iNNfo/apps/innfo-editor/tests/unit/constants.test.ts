@@ -3,8 +3,8 @@ import {
   DEFAULT_INNFO_VERSION,
   DEFAULT_BLUEPRINT_VERSION,
   buildSpecificationUrl,
-  buildTemplateUrl,
-  buildSubmodelTemplateUrl,
+  buildBlueprintUrl,
+  buildSubmodelBlueprintUrl,
 } from '../../src/utils/constants'
 
 describe('constants — V_0-3-0 adoption', () => {
@@ -20,31 +20,31 @@ describe('constants — V_0-3-0 adoption', () => {
     expect(DEFAULT_BLUEPRINT_VERSION).toBe('V_0-2-0')
   })
 
-  it('buildTemplateUrl() defaults to the V_0-2-0 template file', () => {
-    expect(buildTemplateUrl('procedures')).toMatch(/procedures_V_0-2-0_NN\.md$/)
+  it('buildBlueprintUrl() defaults to the V_0-2-0 template file', () => {
+    expect(buildBlueprintUrl('procedures')).toMatch(/procedures_V_0-2-0_NN\.md$/)
   })
 
-  describe('buildSubmodelTemplateUrl', () => {
+  describe('buildSubmodelBlueprintUrl', () => {
     it('accepts a bare template name and maps to the canonical spec_NN.md template URL', () => {
-      expect(buildSubmodelTemplateUrl('business')).toBe(
+      expect(buildSubmodelBlueprintUrl('business')).toBe(
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       )
     })
 
     it('honors an embedded template version suffix', () => {
-      expect(buildSubmodelTemplateUrl('business_V_0-2-0')).toBe(
+      expect(buildSubmodelBlueprintUrl('business_V_0-2-0')).toBe(
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       )
     })
 
     it('falls back to the versioned template URL for unknown templates', () => {
-      expect(buildSubmodelTemplateUrl('acme-custom')).toBe(
+      expect(buildSubmodelBlueprintUrl('acme-custom')).toBe(
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/acme-custom/acme-custom_V_0-2-0_NN.md',
       )
     })
 
     it('maps a version-suffixed known template to its canonical spec_NN.md URL', () => {
-      expect(buildSubmodelTemplateUrl('procedures_V_0-2-0')).toBe(
+      expect(buildSubmodelBlueprintUrl('procedures_V_0-2-0')).toBe(
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md',
       )
     })

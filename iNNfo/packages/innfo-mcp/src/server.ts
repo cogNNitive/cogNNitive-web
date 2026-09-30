@@ -27,13 +27,13 @@ import type { ListToolsResult, CallToolResult, Tool } from '@modelcontextprotoco
 import { listKnowledge, readKnowledge } from './tools/list-read.js'
 import {
   getSpec,
-  getTemplateFromUrl,
-  getTemplateFromModel,
+  getBlueprintFromUrl,
+  getBlueprintFromModel,
   deriveNameFromUrl,
   listBlueprints,
   hydrateBlueprint,
-  listTemplateProcedures,
-  listTemplateSkills,
+  listBlueprintProcedures,
+  listBlueprintSkills,
 } from './tools/spec.js'
 import {
   validateKnowledge,
@@ -673,11 +673,11 @@ async function handleGetBlueprint(args: Record<string, unknown>): Promise<CallTo
 
   let blueprint = null
   if (url) {
-    blueprint = await getTemplateFromUrl(root, url, name ?? deriveNameFromUrl(url), {
+    blueprint = await getBlueprintFromUrl(root, url, name ?? deriveNameFromUrl(url), {
       inPlace: args.in_place as boolean | undefined,
     })
   } else if (knowledgeId) {
-    blueprint = await getTemplateFromModel(root, knowledgeId, {
+    blueprint = await getBlueprintFromModel(root, knowledgeId, {
       inPlace: args.in_place as boolean | undefined,
     })
   } else {
@@ -833,7 +833,7 @@ async function handleListBlueprintProcedures(
   const root = (args.domain as string) || (args.root as string) || ROOT_DIR
   const legacyErr = await checkDomainLegacy(root)
   if (legacyErr) return legacyErr
-  const result = await listTemplateProcedures(root, {
+  const result = await listBlueprintProcedures(root, {
     model_path: (args.knowledge_path as string) || (args.model_path as string),
     model_id: (args.knowledge_id as string) || (args.model_id as string),
     blueprint_name: args.blueprint_name as string,
@@ -847,7 +847,7 @@ async function handleListBlueprintSkills(args: Record<string, unknown>): Promise
   const root = (args.domain as string) || (args.root as string) || ROOT_DIR
   const legacyErr = await checkDomainLegacy(root)
   if (legacyErr) return legacyErr
-  const result = await listTemplateSkills(root, {
+  const result = await listBlueprintSkills(root, {
     model_path: (args.knowledge_path as string) || (args.model_path as string),
     model_id: (args.knowledge_id as string) || (args.model_id as string),
     blueprint_name: args.blueprint_name as string,

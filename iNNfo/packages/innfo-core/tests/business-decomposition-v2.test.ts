@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   resolveBlueprintSchema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   parseKnowledge,
   validateKnowledge,
 } from '../src/index'
@@ -87,7 +87,7 @@ describe('business-model_V_0-2-0 — composite of organization + projects', () =
   })
 
   it('validates green against the iNNfo_V_0-2-0 metaschema', () => {
-    const errors = validateTemplateAgainstMetaschema(BUSINESS_MODEL, INNFO_V2).filter(
+    const errors = validateBlueprintAgainstMetaschema(BUSINESS_MODEL, INNFO_V2).filter(
       (d) => d.severity === 'error',
     )
     expect(errors, JSON.stringify(errors)).toEqual([])
@@ -116,7 +116,7 @@ describe('analysis_V_0-1-0 — standalone strategic-review template', () => {
   })
 
   it('validates green against the iNNfo_V_0-2-0 metaschema', () => {
-    const errors = validateTemplateAgainstMetaschema(ANALYSIS, INNFO_V2).filter(
+    const errors = validateBlueprintAgainstMetaschema(ANALYSIS, INNFO_V2).filter(
       (d) => d.severity === 'error',
     )
     expect(errors, JSON.stringify(errors)).toEqual([])
@@ -200,7 +200,7 @@ describe('business_V_0-2-0 — umbrella composite (D1 marker dedup)', () => {
   })
 
   it('validates green against the iNNfo_V_0-2-0 metaschema', () => {
-    const errors = validateTemplateAgainstMetaschema(BUSINESS_V2, INNFO_V2).filter(
+    const errors = validateBlueprintAgainstMetaschema(BUSINESS_V2, INNFO_V2).filter(
       (d) => d.severity === 'error',
     )
     expect(errors, JSON.stringify(errors)).toEqual([])

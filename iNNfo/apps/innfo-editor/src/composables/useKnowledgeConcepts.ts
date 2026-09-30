@@ -67,8 +67,8 @@ export function buildTreeGroups(input: TreeGroupsInput): TreeGroup[] {
 
   for (const root of taxonomyRoots) {
     if (seen.has(root)) continue
-    const isTemplateConcept = templateByName.has(root)
-    if (isTemplateConcept) {
+    const isBlueprintConcept = templateByName.has(root)
+    if (isBlueprintConcept) {
       items.push(buildTree(root))
     }
     markSeenRecursively(root)

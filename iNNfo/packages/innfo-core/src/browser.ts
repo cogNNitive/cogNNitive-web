@@ -17,14 +17,14 @@ export {
   extractBlueprintSchema,
   extractBlueprintSchemaFromContent,
   extractMetaschema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
   resolveBlueprintSchema,
-  CANONICAL_TEMPLATES,
-  findCanonicalTemplate,
+  CANONICAL_BLUEPRINTS,
+  findCanonicalBlueprint,
   getCanonicalSpecContent,
-  listCanonicalTemplates,
+  listCanonicalBlueprints,
 } from './schema/index.js'
 export type {
   BlueprintSchema,
@@ -109,7 +109,7 @@ export {
 } from './workspace/integrity/report.js'
 export {
   getSpecForLevel,
-  getTemplate,
+  getBlueprint,
   getFormatSpec,
   getDefiNNe,
   SpecResolutionError,

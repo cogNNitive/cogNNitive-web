@@ -574,7 +574,7 @@ onUnmounted(() => {
 
     <SampleBanner
       v-if="workspaceStore.isSampleSession"
-      :template-name="workspaceStore.sampleTemplateName"
+      :template-name="workspaceStore.sampleBlueprintName"
       @create="onSampleCreate"
       @dismiss="onSampleBannerDismiss"
     />

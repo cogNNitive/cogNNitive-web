@@ -36,10 +36,10 @@ export default async function run() {
       )
     }
 
-    const onTemplate = applyMutation(template, 'add_concept', { conceptName: 'Hypotheses' })
+    const onBlueprint = applyMutation(template, 'add_concept', { conceptName: 'Hypotheses' })
     s.expect(
       'The same op succeeds on a level-2 template',
-      { success: onTemplate.success, errors: onTemplate.errors },
+      { success: onBlueprint.success, errors: onBlueprint.errors },
       (v) => v.success === true,
       'the gate discriminates by level, it does not simply forbid the op',
     )

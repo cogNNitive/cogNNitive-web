@@ -390,7 +390,7 @@ path:: model_a_01.md
   })
 
   describe('buildWorkspaceIndex', () => {
-    it('index-basic-maps: a 3-model workspace populates pathToNodeId, titleToNodeIds, fileNameToNodeIds, nodeTemplate', async () => {
+    it('index-basic-maps: a 3-model workspace populates pathToNodeId, titleToNodeIds, fileNameToNodeIds, nodeBlueprint', async () => {
       const files: Record<string, string> = {
         'domaiNN_NN.md': `---
 spec_version: V_1-0-0
@@ -455,11 +455,11 @@ title: Model B
       expect(index.fileNameToNodeIds['model_a_01']).toEqual([aNode.id])
       expect(index.fileNameToNodeIds['model_b_01']).toEqual([bNode.id])
 
-      expect(index.nodeTemplate[rootNode.id]).toEqual({
+      expect(index.nodeBlueprint[rootNode.id]).toEqual({
         name: 'workspace_spec_01',
         url: 'https://example.com/workspace_spec_01.md',
       })
-      expect(index.nodeTemplate[aNode.id]).toEqual({
+      expect(index.nodeBlueprint[aNode.id]).toEqual({
         name: 'spec_01',
         url: 'https://example.com/spec.md',
       })

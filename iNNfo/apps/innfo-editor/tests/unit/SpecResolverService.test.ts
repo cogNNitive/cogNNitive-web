@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { warmTemplateCache } from '../../src/services/SpecResolverService'
+import { warmBlueprintCache } from '../../src/services/SpecResolverService'
 
-describe('warmTemplateCache', () => {
+describe('warmBlueprintCache', () => {
   it('resolves a template named by a seed ref from the workspace specs/ directory into a composed BlueprintSchema map, keyed lowercased', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
 
@@ -33,7 +33,7 @@ describe('warmTemplateCache', () => {
       },
     })
 
-    const cache = await warmTemplateCache(fakeTree, [{ name: 'test-template_V_1-0-0' }])
+    const cache = await warmBlueprintCache(fakeTree, [{ name: 'test-template_V_1-0-0' }])
 
     const schema = cache.get('test-template_v_1-0-0')
     expect(schema).toBeDefined()
@@ -46,7 +46,7 @@ describe('warmTemplateCache', () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
     const fakeTree = buildFakeTree('workspace', { 'index.md': '# NN index' })
 
-    const cache = await warmTemplateCache(fakeTree)
+    const cache = await warmBlueprintCache(fakeTree)
 
     expect(cache.size).toBe(0)
   })

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest'
-import { validateTemplate } from '../src/tools/mutate.js'
+import { validateBlueprint } from '../src/tools/mutate.js'
 import { writeFile, rm, mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -59,7 +59,7 @@ type:: text
   })
 
   it('validates a valid Level 2 template with frontmatter auto-detection', async () => {
-    const result = await validateTemplate(tmpDir, 'custom_template_V_1-0')
+    const result = await validateBlueprint(tmpDir, 'custom_template_V_1-0')
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
@@ -77,7 +77,7 @@ parent_spec:
 ## NN Concept Definition: TestConcept
 type:: list
 `
-    const result = await validateTemplate(tmpDir, undefined, content)
+    const result = await validateBlueprint(tmpDir, undefined, content)
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
@@ -92,7 +92,7 @@ parent_spec:
   url: file:///non/existent/path/spec.md
 ---
 `
-    const result = await validateTemplate(tmpDir, undefined, content)
+    const result = await validateBlueprint(tmpDir, undefined, content)
     expect(result.valid).toBe(false)
     const err = result.errors.find((e) => e.message.includes('[PARENT_RESOLUTION_FAILED]'))
     expect(err).toBeDefined()

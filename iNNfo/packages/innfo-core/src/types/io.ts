@@ -4,7 +4,7 @@ export interface FileDriverOptions {
   encoding?: string
 }
 
-export interface ModelEntry {
+export interface KnowledgeEntry {
   name: string
   uri: string
   kind: 'element' | 'asset' | 'concept'
@@ -14,7 +14,7 @@ export interface ModelEntry {
 export interface KnowledgeDriver {
   readKnowledge(uri: string): Promise<ParsedKnowledge>
   writeKnowledge(uri: string, model: ParsedKnowledge): Promise<void>
-  listChildren(uri: string): Promise<ModelEntry[]>
+  listChildren(uri: string): Promise<KnowledgeEntry[]>
   listAssets(uri: string): Promise<string[]>
 }
 

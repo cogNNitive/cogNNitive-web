@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  findCanonicalTemplate,
+  findCanonicalBlueprint,
   getCanonicalSpecContent,
-  listCanonicalTemplates,
-  CANONICAL_TEMPLATES,
+  listCanonicalBlueprints,
+  CANONICAL_BLUEPRINTS,
   resolveBlueprintSchema,
 } from '../src/schema'
 
@@ -38,7 +38,7 @@ const fieldNameTypes = (content: string): string[] => {
 
 describe('Canonical Template Registry & Offline Fallback', () => {
   it('bundles all standard Level 2 templates', () => {
-    const templates = listCanonicalTemplates()
+    const templates = listCanonicalBlueprints()
     const names = templates.map((t) => t.name)
 
     expect(names).toContain('business')
@@ -52,52 +52,52 @@ describe('Canonical Template Registry & Offline Fallback', () => {
   })
 
   it('resolves templates by exact canonical name', () => {
-    const biz = findCanonicalTemplate('business')
+    const biz = findCanonicalBlueprint('business')
     expect(biz).not.toBeNull()
     expect(biz?.name).toBe('business')
 
-    const proc = findCanonicalTemplate('procedures')
+    const proc = findCanonicalBlueprint('procedures')
     expect(proc).not.toBeNull()
     expect(proc?.name).toBe('procedures')
 
-    const org = findCanonicalTemplate('organization')
+    const org = findCanonicalBlueprint('organization')
     expect(org).not.toBeNull()
     expect(org?.name).toBe('organization')
 
-    const metrics = findCanonicalTemplate('metrics')
+    const metrics = findCanonicalBlueprint('metrics')
     expect(metrics).not.toBeNull()
     expect(metrics?.name).toBe('metrics')
 
-    const ws = findCanonicalTemplate('workspace')
+    const ws = findCanonicalBlueprint('workspace')
     expect(ws).not.toBeNull()
     expect(ws?.name).toBe('workspace')
 
-    const cog = findCanonicalTemplate('cogNNitive')
+    const cog = findCanonicalBlueprint('cogNNitive')
     expect(cog).not.toBeNull()
     expect(cog?.name).toBe('cogNNitive')
   })
 
   it('resolves templates by shorthand spec name aliases', () => {
-    expect(findCanonicalTemplate('business_spec_NN')?.name).toBe('business')
-    expect(findCanonicalTemplate('business_V_0-2-0_NN.md')?.name).toBe('business')
-    expect(findCanonicalTemplate('procedures_spec_NN')?.name).toBe('procedures')
-    expect(findCanonicalTemplate('procedures_V_0-2-0_NN.md')?.name).toBe('procedures')
-    expect(findCanonicalTemplate('organization_spec_NN')?.name).toBe('organization')
-    expect(findCanonicalTemplate('metrics_spec_NN')?.name).toBe('metrics')
-    expect(findCanonicalTemplate('workspace_spec_NN')?.name).toBe('workspace')
-    expect(findCanonicalTemplate('cognnitive_spec_NN')?.name).toBe('cogNNitive')
+    expect(findCanonicalBlueprint('business_spec_NN')?.name).toBe('business')
+    expect(findCanonicalBlueprint('business_V_0-2-0_NN.md')?.name).toBe('business')
+    expect(findCanonicalBlueprint('procedures_spec_NN')?.name).toBe('procedures')
+    expect(findCanonicalBlueprint('procedures_V_0-2-0_NN.md')?.name).toBe('procedures')
+    expect(findCanonicalBlueprint('organization_spec_NN')?.name).toBe('organization')
+    expect(findCanonicalBlueprint('metrics_spec_NN')?.name).toBe('metrics')
+    expect(findCanonicalBlueprint('workspace_spec_NN')?.name).toBe('workspace')
+    expect(findCanonicalBlueprint('cognnitive_spec_NN')?.name).toBe('cogNNitive')
   })
 
   it('resolves templates by remote raw GitHub URLs', () => {
     const url =
       'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md'
-    const template = findCanonicalTemplate(url)
+    const template = findCanonicalBlueprint(url)
     expect(template).not.toBeNull()
     expect(template?.name).toBe('business')
 
     const procUrl =
       'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md'
-    expect(findCanonicalTemplate(procUrl)?.name).toBe('procedures')
+    expect(findCanonicalBlueprint(procUrl)?.name).toBe('procedures')
   })
 
   it('returns valid spec content for offline parsing', () => {
@@ -113,7 +113,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
   })
 
   it('returns null for unknown template identifiers', () => {
-    expect(findCanonicalTemplate('completely_unknown_template_xyz')).toBeNull()
+    expect(findCanonicalBlueprint('completely_unknown_template_xyz')).toBeNull()
     expect(getCanonicalSpecContent('')).toBeNull()
   })
 
@@ -121,30 +121,30 @@ describe('Canonical Template Registry & Offline Fallback', () => {
     const url =
       'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md'
 
-    expect(findCanonicalTemplate('iNNfo_V_0-2-2_NN')?.name).toBe('innfo')
-    expect(findCanonicalTemplate('innfo_v_0-2-2')?.name).toBe('innfo')
-    expect(findCanonicalTemplate('specs/iNNfo_V_0-2-2_NN.md')?.name).toBe('innfo')
-    expect(findCanonicalTemplate(url)?.name).toBe('innfo')
+    expect(findCanonicalBlueprint('iNNfo_V_0-2-2_NN')?.name).toBe('innfo')
+    expect(findCanonicalBlueprint('innfo_v_0-2-2')?.name).toBe('innfo')
+    expect(findCanonicalBlueprint('specs/iNNfo_V_0-2-2_NN.md')?.name).toBe('innfo')
+    expect(findCanonicalBlueprint(url)?.name).toBe('innfo')
   })
 
   it('resolves defiNNition (Level 0) and iNNfo V_0-3-0 (Level 1) canonical identities', () => {
     const defUrl =
       'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md'
-    const def = findCanonicalTemplate('defiNNition')
+    const def = findCanonicalBlueprint('defiNNition')
     expect(def).not.toBeNull()
     expect(def?.name).toBe('defiNNition')
-    expect(findCanonicalTemplate('defiNNition_V_0-1-0_NN')?.name).toBe('defiNNition')
-    expect(findCanonicalTemplate('specs/defiNNition_V_0-1-0_NN.md')?.name).toBe('defiNNition')
-    expect(findCanonicalTemplate(defUrl)?.name).toBe('defiNNition')
+    expect(findCanonicalBlueprint('defiNNition_V_0-1-0_NN')?.name).toBe('defiNNition')
+    expect(findCanonicalBlueprint('specs/defiNNition_V_0-1-0_NN.md')?.name).toBe('defiNNition')
+    expect(findCanonicalBlueprint(defUrl)?.name).toBe('defiNNition')
 
     const innfoUrl =
       'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md'
-    const innfo3 = findCanonicalTemplate('iNNfo_V_0-3-0_NN')
+    const innfo3 = findCanonicalBlueprint('iNNfo_V_0-3-0_NN')
     expect(innfo3).not.toBeNull()
     expect(innfo3?.name).toBe('innfo')
-    expect(findCanonicalTemplate('innfo_v_0-3-0')?.name).toBe('innfo')
-    expect(findCanonicalTemplate('specs/iNNfo_V_0-3-0_NN.md')?.name).toBe('innfo')
-    expect(findCanonicalTemplate(innfoUrl)?.name).toBe('innfo')
+    expect(findCanonicalBlueprint('innfo_v_0-3-0')?.name).toBe('innfo')
+    expect(findCanonicalBlueprint('specs/iNNfo_V_0-3-0_NN.md')?.name).toBe('innfo')
+    expect(findCanonicalBlueprint(innfoUrl)?.name).toBe('innfo')
   })
 
   it('verifies iNNfo V_0-3-0 parent points to defiNNition on main', () => {
@@ -169,14 +169,14 @@ describe('Canonical Template Registry & Offline Fallback', () => {
   })
 
   it('does not truncate or mis-split names with embedded NN token', () => {
-    const def = findCanonicalTemplate('defiNNition_V_0-1-0_NN.md')
+    const def = findCanonicalBlueprint('defiNNition_V_0-1-0_NN.md')
     expect(def).not.toBeNull()
     expect(def?.name).toBe('defiNNition')
   })
 
   it('returns null for unregistered _V_ spec files', () => {
-    expect(findCanonicalTemplate('unregistered_spec_V_9-9-9_NN.md')).toBeNull()
-    expect(findCanonicalTemplate('custom_template_V_8-8-8_NN.md')).toBeNull()
+    expect(findCanonicalBlueprint('unregistered_spec_V_9-9-9_NN.md')).toBeNull()
+    expect(findCanonicalBlueprint('custom_template_V_8-8-8_NN.md')).toBeNull()
   })
 
   it('mirrors on-disk defiNNition and iNNfo V_0-3-0 specs byte-for-byte in canonical registry', () => {

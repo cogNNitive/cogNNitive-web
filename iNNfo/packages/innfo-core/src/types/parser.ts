@@ -46,7 +46,7 @@ export interface AliasMap {
   fields?: Record<string, string>
 }
 
-export interface IncludedTemplateRef {
+export interface IncludedBlueprintRef {
   name: string
   url: string
   alias?: AliasMap
@@ -66,7 +66,7 @@ export interface TemplateSkill {
   source_template?: string
 }
 
-export interface ResolvedTemplatePackage {
+export interface ResolvedBlueprintPackage {
   name: string
   version: string
   packagePath: string
@@ -165,7 +165,7 @@ export interface SpecFrontmatter {
    * `specializes` field. Bare-string entries are tolerated on read and
    * normalized to `{ name, url: '' }`.
    */
-  includes?: IncludedTemplateRef[]
+  includes?: IncludedBlueprintRef[]
   procedures?: TemplateProcedure[]
   skills?: TemplateSkill[]
   alias?: AliasMap

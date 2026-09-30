@@ -59,7 +59,7 @@ function nodeHandle(dirPath: string, name = ''): DirectoryHandleLike {
 }
 
 /** Compose every shipped template schema, keyed by slug, as the hosts do. */
-function warmTemplateCache(): Map<string, unknown> {
+function warmBlueprintCache(): Map<string, unknown> {
   const cache = new Map<string, unknown>()
   for (const entry of readdirSync(TEMPLATES, { withFileTypes: true })) {
     const spec = entry.isDirectory()
@@ -82,7 +82,7 @@ function warmTemplateCache(): Map<string, unknown> {
 }
 
 describe('the shipped sample workspace', () => {
-  const templateCache = warmTemplateCache()
+  const templateCache = warmBlueprintCache()
 
   it('resolves the shipped template schemas', () => {
     // Guard: an empty cache would silently degrade every check below to

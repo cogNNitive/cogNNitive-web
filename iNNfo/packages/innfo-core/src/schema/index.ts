@@ -23,17 +23,17 @@ export { findDeclaredField } from './declaredField.js'
 
 export {
   extractMetaschema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
 } from './metaschema.js'
 export type { SchemaCheckOptions } from './metaschema.js'
 
 export {
-  CANONICAL_TEMPLATES,
-  findCanonicalTemplate,
+  CANONICAL_BLUEPRINTS,
+  findCanonicalBlueprint,
   getCanonicalSpecContent,
-  listCanonicalTemplates,
+  listCanonicalBlueprints,
 } from './canonical-registry.js'
-export type { CanonicalTemplate } from './canonical-registry.js'
+export type { CanonicalBlueprint } from './canonical-registry.js'
 

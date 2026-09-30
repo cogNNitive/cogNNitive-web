@@ -4,7 +4,7 @@ import { basename, dirname, join, relative, resolve, isAbsolute } from 'node:pat
 import {
   parseKnowledge,
   validateDocument,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   resolveBlueprintSchema,
   SpecResolutionError,
   parseFrontmatter,
@@ -18,8 +18,8 @@ import {
   fingerprint,
   diffNewOnly,
   normalizeBaselinePath,
-  findCanonicalTemplate,
-  CANONICAL_TEMPLATES,
+  findCanonicalBlueprint,
+  CANONICAL_BLUEPRINTS,
 } from '@cognnitive/innfo-core'
 import type {
   SpecDocument,
@@ -37,7 +37,7 @@ import type {
   BaselineEntry,
   BaselineDiff,
 } from '@cognnitive/innfo-core'
-import { resolveTemplateWithCache, findKnowledgeFile, deriveNameFromUrl, getSpec } from './spec.js'
+import { resolveBlueprintWithCache, findKnowledgeFile, deriveNameFromUrl, getSpec } from './spec.js'
 import { buildIncludeContentMap } from './resolver-node.js'
 import type { FreshnessResult } from './resolver-node.js'
 import { loadKnowledge } from './knowledge-io.js'
@@ -130,7 +130,7 @@ function syncFindSubmodel(
 /**
  * Builds a SYNCHRONOUS `BlueprintSchemaResolver` (innfo-core's C1 callback
  * type, `recursiveParser/types.ts`) reading from an already-resolved
- * `SpecCache` (produced by `resolveTemplateWithCache`). Every template named
+ * `SpecCache` (produced by `resolveBlueprintWithCache`). Every template named
  * by a node's `parent_spec.name` — plus everything on its `includes` chain —
  * is already present in `cache.specs`, so no I/O happens at call time.
  *
@@ -257,7 +257,7 @@ export function createNodeDirectoryHandle(
  * Workspace-scope cross-model validation. Collects the UNFILTERED
  * diagnostics for the whole tree — one Node-backed `recursiveParse` over
  * `rootDir`, threading the SAME synchronous template-schema resolver the
- * per-file pass already warms via `resolveTemplateWithCache` (AD-04: an
+ * per-file pass already warms via `resolveBlueprintWithCache` (AD-04: an
  * absent/throwing resolver degrades a node to "no schema", never aborts the
  * parse), then `buildWorkspaceIndex` + `validateWorkspaceReferences` +
  * `validateWorkspaceSources`. `check_workspace` calls this once with a merged
@@ -528,23 +528,23 @@ export function analyzeConceptDrift(
     }
 
     // 2. Cross-template match across canonical templates
-    let crossTemplateMatch: { templateName: string; conceptName: string } | null = null
-    for (const tmpl of Object.values(CANONICAL_TEMPLATES)) {
+    let crossBlueprintMatch: { templateName: string; conceptName: string } | null = null
+    for (const tmpl of Object.values(CANONICAL_BLUEPRINTS)) {
       const schema = resolveBlueprintSchema(tmpl.specContent, (ref) => {
-        const inc = findCanonicalTemplate(ref.name) || (ref.url ? findCanonicalTemplate(ref.url) : null)
+        const inc = findCanonicalBlueprint(ref.name) || (ref.url ? findCanonicalBlueprint(ref.url) : null)
         return inc?.specContent ?? null
       })
       const foundInOther = schema.schema.concepts.find(
         (c) => c.name.toLowerCase() === conceptLower,
       )
       if (foundInOther) {
-        crossTemplateMatch = { templateName: tmpl.name, conceptName: foundInOther.name }
+        crossBlueprintMatch = { templateName: tmpl.name, conceptName: foundInOther.name }
         break
       }
     }
 
-    if (crossTemplateMatch) {
-      const action = `Concept '${concept}' belongs to the ${crossTemplateMatch.templateName} template. Consider composing templates via 'includes' in a Level 2 specialization.`
+    if (crossBlueprintMatch) {
+      const action = `Concept '${concept}' belongs to the ${crossBlueprintMatch.templateName} template. Consider composing templates via 'includes' in a Level 2 specialization.`
       diagnostics.push({
         path: `elements.${concept}`,
         code: 'CONCEPT_DRIFT_WARNING',
@@ -559,7 +559,7 @@ export function analyzeConceptDrift(
           concept,
           suggestionType: 'cross_template',
           suggestedAction: action,
-          matchingTemplate: crossTemplateMatch.templateName,
+          matchingBlueprint: crossBlueprintMatch.templateName,
         },
       })
       continue
@@ -648,9 +648,9 @@ export async function validateKnowledge(
     }
   }
 
-  // D1: Auto-detect Level 2 templates and delegate to validateTemplate
+  // D1: Auto-detect Level 2 templates and delegate to validateBlueprint
   if (model.frontmatter.level === 2) {
-    const delegated = await validateTemplate(rootDir, id, content, templateUrl)
+    const delegated = await validateBlueprint(rootDir, id, content, templateUrl)
     return { ...delegated, suppressedCount: 0, staleEntries: [], backlog: null, summary: null }
   }
 
@@ -668,7 +668,7 @@ export async function validateKnowledge(
   const parentRef = model.frontmatter.parent_spec
   try {
     if (parentRef?.url && parentRef?.name) {
-      const resolved = await resolveTemplateWithCache(rootDir, parentRef.url, parentRef.name, {
+      const resolved = await resolveBlueprintWithCache(rootDir, parentRef.url, parentRef.name, {
         checkFreshness,
         cacheDir: options.cacheDir,
         inPlace: options.inPlace,
@@ -679,7 +679,7 @@ export async function validateKnowledge(
       freshness = resolved.freshness
     }
     if (!template && templateUrl) {
-      const resolved = await resolveTemplateWithCache(
+      const resolved = await resolveBlueprintWithCache(
         rootDir,
         templateUrl,
         deriveNameFromUrl(templateUrl),
@@ -976,7 +976,7 @@ export async function validateKnowledgeUrl(
  * @param content Raw template content string
  * @param url Explicit parent spec URL override
  */
-export async function validateTemplate(
+export async function validateBlueprint(
   rootDir: string,
   id?: string,
   content?: string,
@@ -1082,7 +1082,7 @@ export async function validateTemplate(
   // Schema-driven: check the template's root-primitive elements
   // (Concept/Field/Marker/Matrix Definition) against the level-1 metaschema
   // resolved from the parent spec. Same code path as level-3-against-template.
-  for (const diag of validateTemplateAgainstMetaschema(templateContent, parentSpec.rawContent)) {
+  for (const diag of validateBlueprintAgainstMetaschema(templateContent, parentSpec.rawContent)) {
     ;(diag.severity === 'error' ? errors : warnings).push(diag)
   }
 
@@ -1112,6 +1112,4 @@ export async function validateTemplate(
     warnings: decoratedWarnings,
   }
 }
-
-export const validateBlueprint = validateTemplate
 

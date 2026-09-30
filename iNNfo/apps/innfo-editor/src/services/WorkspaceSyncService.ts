@@ -26,7 +26,7 @@ function basename(path: string): string {
   return segments[segments.length - 1] ?? path
 }
 
-function parentSpecTemplateName(frontmatter: Record<string, unknown>): string | undefined {
+function parentSpecBlueprintName(frontmatter: Record<string, unknown>): string | undefined {
   const parentSpec = frontmatter['parent_spec']
   if (!parentSpec) return undefined
   if (typeof parentSpec === 'string') return parentSpec
@@ -105,7 +105,7 @@ export async function enumerateReconcilableModels(
     discovered.push({
       path,
       name: title !== '' ? title : stripMdSuffix(basename(path)),
-      template: parentSpecTemplateName(frontmatter),
+      template: parentSpecBlueprintName(frontmatter),
     })
   }
 

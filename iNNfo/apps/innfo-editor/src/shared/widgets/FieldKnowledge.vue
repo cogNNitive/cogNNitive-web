@@ -17,7 +17,7 @@ import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { findMatchingKnowledgeNode } from '../../utils/knowledgeMatching'
 import { deriveSuggestedSubmodelPath, slugify } from '../../utils/submodelPath'
-import { buildSubmodelTemplateUrl } from '../../utils/constants'
+import { buildSubmodelBlueprintUrl } from '../../utils/constants'
 
 interface FieldDefinitionLike {
   name: string
@@ -163,7 +163,7 @@ function onBlur(): void {
 }
 
 async function handleCreateSubmodel(): Promise<void> {
-  const targetTemplate =
+  const targetBlueprint =
     props.fieldDefinition?.target_blueprint || 'base'
   const targetNode = props.nodeId ? knowledgeStore.getNode(props.nodeId) : undefined
   const isElement = targetNode?.kind === 'element'
@@ -197,19 +197,19 @@ async function handleCreateSubmodel(): Promise<void> {
     conceptSlug,
     elementSlug,
     fieldName: props.fieldKey,
-    targetTemplate,
+    targetBlueprint,
   })
 
-  const userPath = window.prompt(`Enter path for new submodel (${targetTemplate}):`, suggestedPath)
+  const userPath = window.prompt(`Enter path for new submodel (${targetBlueprint}):`, suggestedPath)
   if (!userPath || !userPath.trim()) return
 
   const cleanPath = userPath.trim().replace(/\\/g, '/')
-  const title = `${targetNode?.name || 'Submodel'} - ${targetTemplate}`
+  const title = `${targetNode?.name || 'Submodel'} - ${targetBlueprint}`
 
   const newModelId = knowledgeStore.scaffoldSubmodel({
     path: cleanPath,
-    template: targetTemplate,
-    templateUrl: buildSubmodelTemplateUrl(targetTemplate),
+    template: targetBlueprint,
+    templateUrl: buildSubmodelBlueprintUrl(targetBlueprint),
     title,
   })
 

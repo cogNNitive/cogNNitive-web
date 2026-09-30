@@ -73,7 +73,7 @@ function compareVersions(a, b) {
 }
 
 /** Canonical `V_x-y-z` token from an authoritative `blueprint_version` value. */
-function normalizeTemplateVersion(raw) {
+function normalizeBlueprintVersion(raw) {
   const sv = parseSemVer(raw);
   return sv ? `V_${sv.major}-${sv.minor}-${sv.patch}` : null;
 }
@@ -129,7 +129,7 @@ function generate(rootDir) {
 
     const relPosix = rel.replace(/\\/g, '/');
     const name = nameFromPath(relPosix);
-    const version = normalizeTemplateVersion(fm.blueprint_version);
+    const version = normalizeBlueprintVersion(fm.blueprint_version);
     if (!version) {
       warnings.push(`skipped (no parseable blueprint_version): ${relPosix}`);
       continue;

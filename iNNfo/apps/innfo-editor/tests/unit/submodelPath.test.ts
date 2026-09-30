@@ -45,7 +45,7 @@ describe('submodelPath utility', () => {
         parentPath: 'kNNowledge/Company_V_0-1-0_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       expect(path).toBe('kNNowledge/Company_V_0-1-0/projects/alpha/business_01.md')
     })
@@ -55,13 +55,13 @@ describe('submodelPath utility', () => {
         parentPath: 'kNNowledge/Company_V_0-1-0_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       const betaPath = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Company_V_0-1-0_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Beta',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       expect(alphaPath).toBe('kNNowledge/Company_V_0-1-0/projects/alpha/business_01.md')
       expect(betaPath).toBe('kNNowledge/Company_V_0-1-0/projects/beta/business_01.md')
@@ -73,7 +73,7 @@ describe('submodelPath utility', () => {
         parentPath: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
         conceptSlug: 'initiatives',
         elementSlug: 'initiative-01',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       expect(path).toBe('kNNowledge/Ghostbusters_V_0-2-0/initiatives/initiative-01/business_01.md')
     })
@@ -83,33 +83,33 @@ describe('submodelPath utility', () => {
         parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       expect(path).toBe('kNNowledge/Company/projects/alpha/business_01.md')
     })
 
-    it('resolves leaf stem fallback precedence: targetTemplate (if not base) -> fieldName -> submodel', () => {
-      // 1. targetTemplate != base
+    it('resolves leaf stem fallback precedence: targetBlueprint (if not base) -> fieldName -> submodel', () => {
+      // 1. targetBlueprint != base
       const path1 = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         fieldName: 'custom_field',
-        targetTemplate: 'architecture',
+        targetBlueprint: 'architecture',
       })
       expect(path1).toBe('kNNowledge/Company/projects/alpha/architecture_01.md')
 
-      // 2. targetTemplate == base, falls back to fieldName
+      // 2. targetBlueprint == base, falls back to fieldName
       const path2 = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         fieldName: 'architecture_model',
-        targetTemplate: 'base',
+        targetBlueprint: 'base',
       })
       expect(path2).toBe('kNNowledge/Company/projects/alpha/architecture-model_01.md')
 
-      // 3. no targetTemplate, falls back to fieldName
+      // 3. no targetBlueprint, falls back to fieldName
       const path3 = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
@@ -118,7 +118,7 @@ describe('submodelPath utility', () => {
       })
       expect(path3).toBe('kNNowledge/Company/projects/alpha/my-submodel_01.md')
 
-      // 4. no targetTemplate and no fieldName, defaults to 'submodel'
+      // 4. no targetBlueprint and no fieldName, defaults to 'submodel'
       const path4 = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
@@ -131,7 +131,7 @@ describe('submodelPath utility', () => {
       const path = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Company_NN.md',
         elementSlug: 'Alpha',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       expect(path).toBe('kNNowledge/Company/alpha/business_01.md')
     })
@@ -139,13 +139,13 @@ describe('submodelPath utility', () => {
     it('falls back to flat path when concept and element context are missing', () => {
       const path = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/System_NN.md',
-        targetTemplate: 'architecture',
+        targetBlueprint: 'architecture',
       })
       expect(path).toBe('kNNowledge/System_architecture_01.md')
 
       const versionedPath = deriveSuggestedSubmodelPath({
         parentPath: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
-        targetTemplate: 'business',
+        targetBlueprint: 'business',
       })
       expect(versionedPath).toBe('kNNowledge/Ghostbusters_V_0-2-0_business_01.md')
     })
@@ -153,7 +153,7 @@ describe('submodelPath utility', () => {
     it('preserves path directory prefixes or lack thereof', () => {
       const noDir = deriveSuggestedSubmodelPath({
         parentPath: 'System_NN.md',
-        targetTemplate: 'architecture',
+        targetBlueprint: 'architecture',
       })
       expect(noDir).toBe('System_architecture_01.md')
 
@@ -161,7 +161,7 @@ describe('submodelPath utility', () => {
         parentPath: 'workspace/kNNowledge/sub/System_NN.md',
         conceptSlug: 'nodes',
         elementSlug: 'gateway',
-        targetTemplate: 'architecture',
+        targetBlueprint: 'architecture',
       })
       expect(deepDir).toBe('workspace/kNNowledge/sub/System/nodes/gateway/architecture_01.md')
     })
@@ -171,7 +171,7 @@ describe('submodelPath utility', () => {
         parentPath: 'kNNowledge/Company_V_0-1-0_innovation_NN.md',
         conceptSlug: 'Patente',
         elementSlug: 'Sombrero paraguas',
-        targetTemplate: 'business_V_0-2-0',
+        targetBlueprint: 'business_V_0-2-0',
       })
       expect(path).toBe('kNNowledge/Company_V_0-1-0/patente/sombrero-paraguas/business_01.md')
     })

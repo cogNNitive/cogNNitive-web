@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
-import { validateKnowledge, validateKnowledgeUrl, applyChange, validateTemplate } from './mutate'
+import { validateKnowledge, validateKnowledgeUrl, applyChange, validateBlueprint } from './mutate'
 import { buildAgentModificationBlock } from '@cognnitive/innfo-core'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-mutate')
@@ -201,9 +201,9 @@ describe('mutate tools', () => {
       expect(result.errors).toEqual([])
     })
 
-    it('delegates level-2 content to validateTemplate (D1 auto-detection)', async () => {
+    it('delegates level-2 content to validateBlueprint (D1 auto-detection)', async () => {
       // Level 2 with no parent_spec.url triggers the PARENT_RESOLUTION_FAILED diagnostic
-      // that is specific to validateTemplate — this only fires if validateKnowledge truly
+      // that is specific to validateBlueprint — this only fires if validateKnowledge truly
       // delegated, since plain model validation reports "Missing parent_spec" instead.
       const level2Content = [
         '---',
@@ -611,15 +611,15 @@ describe('mutate tools', () => {
     })
   })
 
-  describe('validateTemplate', () => {
+  describe('validateBlueprint', () => {
     it('rejects when neither id nor content is provided', async () => {
-      const result = await validateTemplate(rootDir)
+      const result = await validateBlueprint(rootDir)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Provide either id or content')
     })
 
     it('reports a template-file-not-found error in id mode', async () => {
-      const result = await validateTemplate(rootDir, 'DoesNotExist')
+      const result = await validateBlueprint(rootDir, 'DoesNotExist')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Template file not found: DoesNotExist')
     })
@@ -632,7 +632,7 @@ describe('mutate tools', () => {
         'title: "No Parent"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/PARENT_RESOLUTION_FAILED/)
       expect(result.errors[0].message).toMatch(/Parent spec URL missing/)
@@ -650,7 +650,7 @@ describe('mutate tools', () => {
         '  url: "https://example.com/iNNfo_V_9-9-9_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/PARENT_RESOLUTION_FAILED/)
       expect(result.errors[0].message).toMatch(/could not be resolved/)
@@ -668,7 +668,7 @@ describe('mutate tools', () => {
         '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /Expected level 2/.test(e.message))).toBe(true)
     })
@@ -684,7 +684,7 @@ describe('mutate tools', () => {
         '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /Missing title/.test(e.message))).toBe(true)
     })
@@ -701,7 +701,7 @@ describe('mutate tools', () => {
         '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])
     })
@@ -719,7 +719,7 @@ describe('mutate tools', () => {
         '---',
       ].join('\n')
       await writeFile(join(rootDir, 'Template_NN.md'), content, 'utf-8')
-      const result = await validateTemplate(rootDir, 'Template')
+      const result = await validateBlueprint(rootDir, 'Template')
       expect(result.valid).toBe(true)
     })
   })

@@ -14,7 +14,7 @@ import {
  *
  * The level-1 iNNfo spec carries, under its "## Metaschema (Self-Description)"
  * section, a fenced ```markdown block that expresses the four root primitives
- * in iNNfo's own syntax. `validateTemplateAgainstMetaschema` resolves that
+ * in iNNfo's own syntax. `validateBlueprintAgainstMetaschema` resolves that
  * block and checks a level-2 template's `… Definition` elements against it —
  * the same code path (`extractBlueprintSchema` + per-Field checks) used to
  * validate a level-3 Model against its level-2 Template.
@@ -193,7 +193,7 @@ export function checkWidgetConfig(
  * missing required properties are errors. When the spec carries no resolvable
  * metaschema block, a single warning is returned and the check is skipped.
  */
-export function validateTemplateAgainstMetaschema(
+export function validateBlueprintAgainstMetaschema(
   templateContent: string,
   metaschemaSpecContent: string,
 ): ValidationError[] {

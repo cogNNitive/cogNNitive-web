@@ -143,7 +143,7 @@ export const useMetamodelStore = defineStore('metamodel', () => {
           const parsed = parseFormatFilename(rootNode.source.path)
           const templateName = parsed?.templateName ?? ''
           // Extract template version from frontmatter raw content
-          const templateVersion = extractTemplateVersionFromRaw(rootNode.rawContent ?? '')
+          const templateVersion = extractBlueprintVersionFromRaw(rootNode.rawContent ?? '')
           if (templateName && templateVersion) {
             loadDocumentation(ws.handle, templateName, templateVersion)
           }
@@ -172,7 +172,7 @@ export const useMetamodelStore = defineStore('metamodel', () => {
    * Extracts the template version string from a FORMAT document's raw frontmatter.
    * Tries `template.version` first, then falls back to `knowledge_version`.
    */
-  function extractTemplateVersionFromRaw(rawContent: string): string {
+  function extractBlueprintVersionFromRaw(rawContent: string): string {
     // Try template: { name: ..., version: ... } block
     const templateSection = rawContent.match(/^template:\s*\n((?:\s+[^\n]+\n)*)/m)
     if (templateSection) {

@@ -4,7 +4,7 @@
  * The editor supplies 3 of the 5 ports — `discoverModels` reads the already
  * parsed knowledgeStore graph (zero extra IO), `validateAll` reuses the in-memory
  * per-model validation reports, `fetchCatalog` does one same-origin
- * `catalog.json` fetch. `resolveTemplate` and `checkFreshness` are OMITTED
+ * `catalog.json` fetch. `resolveBlueprint` and `checkFreshness` are OMITTED
  * (Resolved Decision 4): the browser has no fs tiers and byte-hash freshness
  * is reserved for the `check_workspace` MCP tool, so the builder degrades both
  * fields to `not-checked` rather than failing.
@@ -47,7 +47,7 @@ async function fetchCatalogJson(): Promise<{ catalog: TemplateCatalog | null; so
 }
 
 /**
- * Build the browser ports. `resolveTemplate` / `checkFreshness` are
+ * Build the browser ports. `resolveBlueprint` / `checkFreshness` are
  * deliberately absent so `buildWorkspaceIntegrityReport` reports them as
  * `not-checked` (Resolved Decision 4).
  */

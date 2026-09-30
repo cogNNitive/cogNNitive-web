@@ -314,7 +314,7 @@ const associatedMatrices = computed<MatrixDecl[]>(() => {
 
 /**
  * Extracts template version from raw frontmatter (mirrors the logic in
- * metamodelStore.extractTemplateVersionFromRaw).
+ * metamodelStore.extractBlueprintVersionFromRaw).
  */
 function extractVersion(raw: string): string {
   const templateSection = raw.match(/^template:\s*\n((?:\s+[^\n]+\n)*)/m)

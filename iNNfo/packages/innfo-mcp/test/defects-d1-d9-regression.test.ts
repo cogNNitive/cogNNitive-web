@@ -12,7 +12,7 @@ describe('Defects D1–D9 Regression Test Suite', () => {
     vi.restoreAllMocks()
   })
 
-  it('D1: validateKnowledge auto-detects level-2 template content and delegates to validateTemplate', async () => {
+  it('D1: validateKnowledge auto-detects level-2 template content and delegates to validateBlueprint', async () => {
     const templateContent = `---
 specification_version: "V_0-1-0"
 level: 2

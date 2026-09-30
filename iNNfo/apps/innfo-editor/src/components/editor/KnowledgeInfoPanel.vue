@@ -225,7 +225,7 @@
             </p>
             <div class="grid grid-cols-[80px_1fr] gap-x-2 gap-y-1 mt-1.5 font-mono text-3xs text-slate-500">
               <span class="font-sans font-medium text-slate-400">Name:</span>
-              <span class="text-slate-750 dark:text-slate-300 break-all select-all font-semibold">{{ fullTemplateName || '—' }}</span>
+              <span class="text-slate-750 dark:text-slate-300 break-all select-all font-semibold">{{ fullBlueprintName || '—' }}</span>
               
               <span class="font-sans font-medium text-slate-400">Version:</span>
               <span class="text-slate-750 dark:text-slate-300 font-semibold">{{ templateVersion || '—' }}</span>
@@ -667,7 +667,7 @@ const specFileName = computed(() => {
 })
 
 const templateFileName = computed(() => {
-  const name = fullTemplateName.value
+  const name = fullBlueprintName.value
   if (!name) return ''
   return name.endsWith('_NN') ? `${name}.md` : `${name}_NN.md`
 })
@@ -679,7 +679,7 @@ const templateRemoteUrl = computed(() => {
     '') as string
 })
 
-const fullTemplateName = computed(() => {
+const fullBlueprintName = computed(() => {
   const name = templateName.value || ''
   if (!name || name.toLowerCase() === 'template') {
     return '—'

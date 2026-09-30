@@ -28,7 +28,7 @@ interface ManifestSkill {
   description?: string;
 }
 
-interface ManifestTemplate {
+interface ManifestBlueprint {
   name: string;
   repo: string;
   path: string;
@@ -54,7 +54,7 @@ interface AgentBootstrap {
   version?: string;
   entrypoint?: string;
   skills: ManifestSkill[];
-  templates?: ManifestTemplate[];
+  templates?: ManifestBlueprint[];
   workflows?: ManifestWorkflow[];
   mcp?: ManifestMcp[];
 }
@@ -63,7 +63,7 @@ interface ToolManifest {
   version?: string;
   entrypoint?: string;
   skills: ManifestSkill[];
-  templates: ManifestTemplate[];
+  templates: ManifestBlueprint[];
   workflows: ManifestWorkflow[];
   mcp: ManifestMcp[];
 }

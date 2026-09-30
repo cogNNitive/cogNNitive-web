@@ -46,7 +46,7 @@ function resolveModelPath(projectDir, projectName) {
  * @param {Record<string, any>} [options]
  * @returns {{ modelPath: string, sourceCount: number, modelCount: number, artifactCount: number, created: boolean }}
  */
-function buildProvenanceModel(projectDir, options = {}) {
+function buildProvenanceKnowledge(projectDir, options = {}) {
   const projectName = options.projectName || path.basename(projectDir);
   const activeSources = modelLib.collectSources(path.join(projectDir, 'sources', 'nn'));
   const archivedSources = modelLib.collectArchivedSources(projectDir, activeSources);
@@ -89,7 +89,7 @@ function appendProcedureRun(projectDir, run) {
 }
 
 module.exports = {
-  buildProvenanceModel,
+  buildProvenanceKnowledge,
   appendProcedureRun,
   collectSources: modelLib.collectSources,
   collectArchivedSources: modelLib.collectArchivedSources,
@@ -112,7 +112,7 @@ if (require.main === module) {
   })();
   const args = minimist ? minimist(process.argv.slice(2)) : { src: process.argv[3] };
   const projectDir = args.src || process.cwd();
-  const result = buildProvenanceModel(projectDir, { projectName: args.name });
+  const result = buildProvenanceKnowledge(projectDir, { projectName: args.name });
   console.log(
     `workspace lineage record ${result.created ? 'created' : 'refreshed'}: ${result.modelPath}`,
   );

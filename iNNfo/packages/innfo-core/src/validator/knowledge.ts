@@ -29,7 +29,7 @@ export interface ValidateKnowledgeOptions {
   checkFreshness?: boolean
   remoteContent?: string | null
   canonicalUrl?: string
-  fetchRemoteTemplate?: (url: string) => Promise<string | null> | string | null
+  fetchRemoteBlueprint?: (url: string) => Promise<string | null> | string | null
   freshness?: {
     verdict: 'fresh' | 'stale' | 'unknown'
     url?: string
@@ -207,9 +207,9 @@ export function validateKnowledge(
           isStale = true
         }
       }
-    } else if (opts.fetchRemoteTemplate && canonicalUrl) {
+    } else if (opts.fetchRemoteBlueprint && canonicalUrl) {
       try {
-        const fetched = opts.fetchRemoteTemplate(canonicalUrl)
+        const fetched = opts.fetchRemoteBlueprint(canonicalUrl)
         if (typeof fetched === 'string') {
           localHash = computeSha256(template.rawContent || '')
           remoteHash = computeSha256(fetched)

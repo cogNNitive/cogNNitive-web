@@ -440,7 +440,7 @@ function releaseThumbnailUrl() {
   }
 }
 
-function getTemplateImageValue(fieldsRecord: Record<string, any> | undefined): string | null {
+function getBlueprintImageValue(fieldsRecord: Record<string, any> | undefined): string | null {
   if (!props.conceptFields?.length || !fieldsRecord) return null
   for (const field of props.conceptFields) {
     if (field?.type !== 'image') continue
@@ -459,7 +459,7 @@ watch(
     releaseThumbnailUrl()
 
     const node = props.blockId ? knowledgeStore.getNode(props.blockId) : null
-    const explicitImg = getTemplateImageValue(node?.fields || props.fields)
+    const explicitImg = getBlueprintImageValue(node?.fields || props.fields)
     if (!explicitImg) return
 
     if (

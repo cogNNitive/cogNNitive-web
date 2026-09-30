@@ -62,7 +62,7 @@ function fakePorts(opts: FakePortOptions = {}): WorkspaceIntegrityPorts {
     }),
   }
   if (opts.withResolve) {
-    ports.resolveTemplate = async (m): Promise<TemplateResolutionResult> => ({
+    ports.resolveBlueprint = async (m): Promise<TemplateResolutionResult> => ({
       outcome: 'resolved',
       tier: 'workspace-flat',
       localContent: `bytes:${m.parentUrl}`,
@@ -151,7 +151,7 @@ describe('buildWorkspaceIntegrityReport', () => {
     expect(report.degraded.join(' ')).toMatch(/freshness/i)
   })
 
-  it('uses the resolveTemplate outcome and tier when the port is present', async () => {
+  it('uses the resolveBlueprint outcome and tier when the port is present', async () => {
     const report = await buildWorkspaceIntegrityReport(fakePorts({ withResolve: true }))
     expect(report.models.every((m) => m.templateResolved === 'resolved')).toBe(true)
     expect(report.models.every((m) => m.templateTier === 'workspace-flat')).toBe(true)
@@ -197,9 +197,9 @@ describe('buildWorkspaceIntegrityReport', () => {
     expect(report.models.every((m) => m.versionStatus === 'unknown')).toBe(true)
   })
 
-  it('never rejects when resolveTemplate throws — that model is unresolved', async () => {
+  it('never rejects when resolveBlueprint throws — that model is unresolved', async () => {
     const ports = fakePorts({ withResolve: true })
-    ports.resolveTemplate = async () => {
+    ports.resolveBlueprint = async () => {
       throw new Error('resolver blew up')
     }
     const report = await buildWorkspaceIntegrityReport(ports)

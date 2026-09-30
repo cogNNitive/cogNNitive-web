@@ -12,7 +12,7 @@ const http = require('http');
 const assert = require('assert');
 const { spawn } = require('child_process');
 const crypto = require('crypto');
-const { parseManifest, scanWorkspaceSources, validateTemplateCompositions } = require('./preflight-check');
+const { parseManifest, scanWorkspaceSources, validateBlueprintCompositions } = require('./preflight-check');
 
 const preflightScript = path.join(__dirname, 'preflight-check.js');
 
@@ -909,7 +909,7 @@ agent-bootstrap:
       assert.strictEqual(res.status, 0, `Upgrade-available must not block. Got: ${res.stdout} ${res.stderr}`);
       const parsedRes = JSON.parse(res.stdout);
       assert.strictEqual(parsedRes.status, 'OK');
-      assert.strictEqual(parsedRes.summary.templateModelsScanned, 1);
+      assert.strictEqual(parsedRes.summary.blueprintModelsScanned, 1);
       assert.strictEqual(parsedRes.summary.templateUpgradesAvailable, 1);
       const item = parsedRes.items.find((i) => i.type === 'template-upgrade');
       assert.ok(item, 'a template-upgrade item must be reported');
@@ -961,7 +961,7 @@ agent-bootstrap:
     }
   }
 
-  // Test 18: validateTemplateCompositions passes cleanly on valid composite template
+  // Test 18: validateBlueprintCompositions passes cleanly on valid composite template
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-valid-'));
     try {
@@ -984,16 +984,16 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 0, `Expected 0 blockers, got: ${JSON.stringify(res.items)}`);
       assert.ok(res.validCount >= 3, `Expected at least 3 valid templates, got ${res.validCount}`);
-      console.log('✔ validateTemplateCompositions passes cleanly on valid composite templates');
+      console.log('✔ validateBlueprintCompositions passes cleanly on valid composite templates');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 19: validateTemplateCompositions flags unresolvable matrix endpoints as blockers
+  // Test 19: validateBlueprintCompositions flags unresolvable matrix endpoints as blockers
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-broken-matrix-'));
     try {
@@ -1006,17 +1006,17 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 1);
       const blocker = res.items.find((i) => i.status === 'blocker');
       assert.ok(blocker && blocker.detail.includes('NonExistentConcept'), 'Blocker must mention missing target');
-      console.log('✔ validateTemplateCompositions flags unresolvable matrix endpoints as blockers');
+      console.log('✔ validateBlueprintCompositions flags unresolvable matrix endpoints as blockers');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 20: validateTemplateCompositions flags unresolved includes as blockers
+  // Test 20: validateBlueprintCompositions flags unresolved includes as blockers
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-missing-inc-'));
     try {
@@ -1029,17 +1029,17 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 1);
       const blocker = res.items.find((i) => i.status === 'blocker');
       assert.ok(blocker && blocker.detail.includes('non_existent_subtemplate'), 'Blocker must mention unresolved include');
-      console.log('✔ validateTemplateCompositions flags unresolved includes as blockers');
+      console.log('✔ validateBlueprintCompositions flags unresolved includes as blockers');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 21: validateTemplateCompositions flags concept collisions across sub-templates as warnings
+  // Test 21: validateBlueprintCompositions flags concept collisions across sub-templates as warnings
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-collision-'));
     try {
@@ -1062,18 +1062,18 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 0);
       assert.strictEqual(res.warningCount, 1);
       const warn = res.items.find((i) => i.status === 'warning');
       assert.ok(warn && warn.detail.includes('DuplicateNode'), 'Warning must mention colliding concept');
-      console.log('✔ validateTemplateCompositions flags concept collisions across sub-templates as warnings');
+      console.log('✔ validateBlueprintCompositions flags concept collisions across sub-templates as warnings');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 22: validateTemplateCompositions skips a level:1 file during the template walk
+  // Test 22: validateBlueprintCompositions skips a level:1 file during the template walk
   // (F4 / ADR-007 — this must be green BEFORE and AFTER the dead-numeric-comparison
   // deletion at preflight-check.js:546-547; that is the proof the deletion is dead code).
   {
@@ -1095,7 +1095,7 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.ok(
         !res.items.some((i) => i.name.includes('skip_me')),
         `level:1 file must be skipped, got: ${JSON.stringify(res.items)}`
@@ -1104,7 +1104,7 @@ agent-bootstrap:
         res.items.some((i) => i.name.includes('keep_me')),
         `level:2 file must still be walked, got: ${JSON.stringify(res.items)}`
       );
-      console.log('✔ validateTemplateCompositions skips a level:1 file during the template walk');
+      console.log('✔ validateBlueprintCompositions skips a level:1 file during the template walk');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }

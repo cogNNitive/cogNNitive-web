@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import {
   extractMetaschema,
   extractBlueprintSchemaFromContent,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
 } from '../src/index'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
@@ -78,7 +78,7 @@ describe('Metaschema (Self-Description)', () => {
       'bluepriNNts/repository/spec_NN.md',
     ]
     for (const rel of templates) {
-      const diags = validateTemplateAgainstMetaschema(readSpec(rel), iNNfo)
+      const diags = validateBlueprintAgainstMetaschema(readSpec(rel), iNNfo)
       const errors = diags.filter((d) => d.severity === 'error')
       expect(errors, `${rel}: ${JSON.stringify(errors)}`).toEqual([])
     }
@@ -89,7 +89,7 @@ describe('Metaschema (Self-Description)', () => {
     // Wrap the metaschema body as a minimal level-2 template and check it
     // against the same metaschema: no errors — it is a fixpoint.
     const asTemplate = ['---', 'level: 2', 'title: Metaschema', '---', '', meta, ''].join('\n')
-    const diags = validateTemplateAgainstMetaschema(asTemplate, iNNfo)
+    const diags = validateBlueprintAgainstMetaschema(asTemplate, iNNfo)
     expect(diags.filter((d) => d.severity === 'error')).toEqual([])
   })
 
@@ -112,7 +112,7 @@ describe('Metaschema (Self-Description)', () => {
       'type:: importance',
       '',
     ].join('\n')
-    const diags = validateTemplateAgainstMetaschema(badTemplate, iNNfo)
+    const diags = validateBlueprintAgainstMetaschema(badTemplate, iNNfo)
     expect(
       diags.some((d) => d.severity === 'error' && d.message.includes('Invalid value "importance"')),
     ).toBe(true)
@@ -132,7 +132,7 @@ describe('Metaschema (Self-Description)', () => {
       'bogus_prop:: 1',
       '',
     ].join('\n')
-    const diags = validateTemplateAgainstMetaschema(badTemplate, iNNfo)
+    const diags = validateBlueprintAgainstMetaschema(badTemplate, iNNfo)
     expect(diags.some((d) => d.severity === 'warning' && d.message.includes('bogus_prop'))).toBe(
       true,
     )
@@ -159,7 +159,7 @@ describe('iNNfo_V_0-2-0 — metaschema still self-consistent', () => {
   it('the metaschema validates against itself (bootstrap axiom)', () => {
     const meta = extractMetaschema(iNNfoV2)!
     const asTemplate = ['---', 'level: 2', 'title: Metaschema', '---', '', meta, ''].join('\n')
-    const diags = validateTemplateAgainstMetaschema(asTemplate, iNNfoV2)
+    const diags = validateBlueprintAgainstMetaschema(asTemplate, iNNfoV2)
     expect(diags.filter((d) => d.severity === 'error')).toEqual([])
   })
 
@@ -170,7 +170,7 @@ describe('iNNfo_V_0-2-0 — metaschema still self-consistent', () => {
       'bluepriNNts/organization/spec_NN.md',
       'bluepriNNts/projects/spec_NN.md',
     ]) {
-      const errors = validateTemplateAgainstMetaschema(readSpec(rel), iNNfoV2).filter(
+      const errors = validateBlueprintAgainstMetaschema(readSpec(rel), iNNfoV2).filter(
         (d) => d.severity === 'error',
       )
       expect(errors, `${rel}: ${JSON.stringify(errors)}`).toEqual([])
@@ -226,14 +226,14 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
       'type:: url',
       '',
     ].join('\n')
-    const diags = validateTemplateAgainstMetaschema(template, iNNfoV21)
+    const diags = validateBlueprintAgainstMetaschema(template, iNNfoV21)
     expect(diags.filter((d) => d.severity === 'error'), JSON.stringify(diags)).toEqual([])
   })
 
   it('the metaschema validates against itself (bootstrap axiom)', () => {
     const meta = extractMetaschema(iNNfoV21)!
     const asTemplate = ['---', 'level: 2', 'title: Metaschema', '---', '', meta, ''].join('\n')
-    const diags = validateTemplateAgainstMetaschema(asTemplate, iNNfoV21)
+    const diags = validateBlueprintAgainstMetaschema(asTemplate, iNNfoV21)
     expect(diags.filter((d) => d.severity === 'error')).toEqual([])
   })
 
@@ -245,7 +245,7 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
       'bluepriNNts/projects/spec_NN.md',
       'bluepriNNts/video/spec_NN.md',
     ]) {
-      const errors = validateTemplateAgainstMetaschema(readSpec(rel), iNNfoV21).filter(
+      const errors = validateBlueprintAgainstMetaschema(readSpec(rel), iNNfoV21).filter(
         (d) => d.severity === 'error',
       )
       expect(errors, `${rel}: ${JSON.stringify(errors)}`).toEqual([])
@@ -253,7 +253,7 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
   })
 
   it('base_V_0-1-0 (PR6, new composite template) validates green against it', () => {
-    const errors = validateTemplateAgainstMetaschema(
+    const errors = validateBlueprintAgainstMetaschema(
       readSpec('bluepriNNts/base/spec_NN.md'),
       iNNfoV21,
     ).filter((d) => d.severity === 'error')

@@ -25,7 +25,7 @@ function emptyIndex(overrides: Partial<WorkspaceIndex> = {}): WorkspaceIndex {
     pathToNodeId: {},
     titleToNodeIds: {},
     fileNameToNodeIds: {},
-    nodeTemplate: {},
+    nodeBlueprint: {},
     nodeElementConcepts: {},
     nodeSchema: {},
     extraParents: {},

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { recursiveParse, validateTemplateAgainstMetaschema } from '../src/index'
+import { recursiveParse, validateBlueprintAgainstMetaschema } from '../src/index'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
@@ -55,7 +55,7 @@ function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHand
 
 describe('Change C — workspace_V_0-3-0_spec_NN.md normalization', () => {
   it('validates green against the iNNfo_V_0-2-0 metaschema (canonical L2 form)', () => {
-    const diags = validateTemplateAgainstMetaschema(WORKSPACE_SPEC, INNFO_V2)
+    const diags = validateBlueprintAgainstMetaschema(WORKSPACE_SPEC, INNFO_V2)
     const errors = diags.filter((d) => d.severity === 'error')
     expect(errors, JSON.stringify(errors)).toEqual([])
   })

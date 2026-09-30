@@ -101,7 +101,7 @@ describe('Template Freshness Diagnostic in innfo-core validateKnowledge (Phase 1
     const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: true,
       remoteContent: null,
-      fetchRemoteTemplate: () => {
+      fetchRemoteBlueprint: () => {
         throw new Error('ENOTFOUND raw.githubusercontent.com')
       },
     })

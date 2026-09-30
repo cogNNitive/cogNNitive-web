@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   resolveBlueprintSchema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   parseFrontmatter,
 } from '../src/index'
 
@@ -44,7 +44,7 @@ describe('organization_V_0-2-0 — standalone L2 template', () => {
   })
 
   it('validates green against the iNNfo_V_0-2-0 metaschema', () => {
-    const diags = validateTemplateAgainstMetaschema(ORG_V2, INNFO_V2)
+    const diags = validateBlueprintAgainstMetaschema(ORG_V2, INNFO_V2)
     const errors = diags.filter((d) => d.severity === 'error')
     expect(errors, JSON.stringify(errors)).toEqual([])
   })

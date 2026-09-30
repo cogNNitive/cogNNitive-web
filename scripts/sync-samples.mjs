@@ -21,7 +21,7 @@ const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 const SAMPLES_SSOT_DIR = fs.existsSync(path.join(REPO_ROOT, '_samples_nn', 'kNNowledge'))
   ? path.join(REPO_ROOT, '_samples_nn', 'kNNowledge')
   : path.join(REPO_ROOT, '_samples_nn', 'models');
-const TEMPLATES_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
+const BLUEPRINTS_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 
 export const SAMPLE_MAPPINGS = [
   {
@@ -80,7 +80,7 @@ export function syncSamples({ check = false, silent = false } = {}) {
 
   for (const mapping of SAMPLE_MAPPINGS) {
     const srcPath = path.join(SAMPLES_SSOT_DIR, mapping.source);
-    const dstPath = path.join(TEMPLATES_ROOT, mapping.target);
+    const dstPath = path.join(BLUEPRINTS_ROOT, mapping.target);
 
     if (!fs.existsSync(srcPath)) {
       const msg = `Missing SSOT sample file: ${srcPath}`;

@@ -1,7 +1,7 @@
 import type { Concept, ParsedKnowledge } from '../types/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import { conceptsByElementName, IMPLICIT_REF_FIELDS } from './elementIndex.js'
-import { matchesTargetTemplate } from './templateMatching.js'
+import { matchesTargetBlueprint } from './templateMatching.js'
 
 export interface ReferenceDiagnostic {
   path: string
@@ -181,7 +181,7 @@ export function validateElementFieldReferences(
                     meta: { refPath: cleanPath, field: fieldDef?.name ?? fieldName },
                   })
                 } else if (fieldDef.target_blueprint) {
-                  const matches = matchesTargetTemplate(fieldDef.target_blueprint, {
+                  const matches = matchesTargetBlueprint(fieldDef.target_blueprint, {
                     name: res.templateName,
                     url: res.templateUrl,
                   })
@@ -196,7 +196,7 @@ export function validateElementFieldReferences(
                       promptHint: `Field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_blueprint}" but "${cleanPath}" uses "${actualLabel}": update target_blueprint or fix parent_spec in the referenced file.`,
                       meta: {
                         expectedTemplate: fieldDef.target_blueprint,
-                        actualTemplate: actualLabel,
+                        actualBlueprint: actualLabel,
                         refPath: cleanPath,
                       },
                     })
