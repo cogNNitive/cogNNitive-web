@@ -396,13 +396,17 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
 
 ## Appendix: claim → proof
 
+> Line numbers were correct at draft time (2026-09-30). The `nn-level-nomenclature-rename`
+> wave shifted some `SKILL.md` lines and moved `iNNfo/specs/templates/` → `iNNfo/specs/bluepriNNts/`;
+> treat the file paths as authoritative and the line numbers as approximate.
+
 | Claim in this document | Verified in |
 | :--- | :--- |
 | IMPORT → MANAGE → EXPORT lifecycle | `README.md:9-21`, `docs/index.md:21-77` |
 | Immutable originals + SHA-256 + staging + normalise + archive | `README.md:19`, `skills/nn-trannsform/SKILL.md:122-144` |
 | `sources/staging/` never a citation target | `skills/nn-trannsform/SKILL.md:194` |
 | Markdown normalisation; source/citation/lineage terms | `docs/innfo/documentation/sources-citations-lineage.md:9-18,24-44` |
-| Sources catalog + progressive-disclosure summaries | `iNNfo/specs/templates/sources/spec_NN.md:61-64,86-88`; `skills/nn-trannsform/SKILL.md:179-192` |
+| Sources catalog + progressive-disclosure summaries | `iNNfo/specs/bluepriNNts/sources/spec_NN.md:61-64,86-88`; `skills/nn-trannsform/SKILL.md:179-192` |
 | Two-tier `_summary` / `_source` split | `sources-citations-lineage.md:56-61` |
 | External Watch Roots, `dynamic`/`static`, `--scan-external` | `skills/nn-trannsform/SKILL.md:227-251` |
 | Pre-authoring (not session-start) prompt | `skills/nn-innfo/SKILL.md:682-688` |

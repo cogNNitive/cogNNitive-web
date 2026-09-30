@@ -16,7 +16,7 @@ agent-bootstrap:
     - name: nn-trannsform
       repo: cogNNitive/cogNNitive
       path: skills/nn-trannsform
-      version: "V_3-4-1"
+      version: "V_3-4-2"
       ref: "skills-v2.7.0"
       commit: "42104b73e05dff968dc0bcf87d5c557391a7936b"
       requires: [nn-innfo, nn-preflight]

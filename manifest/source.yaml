@@ -12,7 +12,7 @@ skills:
   - name: nn-trannsform
     repo: cogNNitive/cogNNitive
     path: skills/nn-trannsform
-    version: "V_3-4-1"
+    version: "V_3-4-2"
     ref_key: skills
     requires: [nn-innfo, nn-preflight]
     description: Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md).

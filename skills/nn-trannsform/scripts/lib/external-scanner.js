@@ -9,6 +9,14 @@ const crypto = require('crypto');
 const TIMESTAMP_REGEX = /^(.+)_(\d{8}-\d{6})(\.[^.]+)?$/;
 
 /**
+ * Filename tokens that identify the workspace lineage / entrypoint record — the
+ * document that may declare `## NN External Watch Roots:`. `domaiNN` is the
+ * canonical entrypoint, `cogNNitive` is the lineage record, and `workspace` is
+ * the legacy entrypoint kept readable for unmigrated workspaces.
+ */
+const RECORD_TOKENS = ['cogNNitive', 'domaiNN', 'workspace'];
+
+/**
  * Formats a Date object to YYYYMMDD-HHmmss
  * @param {Date} [date]
  * @returns {string}
@@ -289,19 +297,23 @@ function scanExternalDirectory(rootConfig, cache = {}) {
  * }}
  */
 function scanAllWatchRoots(projectDir, cache = {}) {
-  // Find provenance model in workspace
+  // Find the lineage/entrypoint record that can declare watch roots. The record
+  // is `<Project>_..._cogNNitive_NN.md` (or the entrypoint `domaiNN_NN.md`), living
+  // at the workspace root or under the knowledge dir (new `kNNowledge/`, legacy `models/`).
   let modelPath = null;
-  const modelsDir = path.join(projectDir, 'models');
-  if (fs.existsSync(modelsDir)) {
-    const files = fs.readdirSync(modelsDir);
-    const prov = files.find((f) => f.includes('cogNNitive') || f.includes('workspace'));
-    if (prov) modelPath = path.join(modelsDir, prov);
+  for (const dirName of ['kNNowledge', 'models']) {
+    if (modelPath) break;
+    const dir = path.join(projectDir, dirName);
+    if (!fs.existsSync(dir)) continue;
+    const files = fs.readdirSync(dir);
+    const prov = files.find((f) => RECORD_TOKENS.some((t) => f.includes(t)));
+    if (prov) modelPath = path.join(dir, prov);
   }
 
-  // Also check workspace root models
+  // Also check workspace root records.
   if (!modelPath) {
     const rootFiles = fs.readdirSync(projectDir);
-    const prov = rootFiles.find((f) => f.endsWith('_NN.md') && (f.includes('cogNNitive') || f.includes('workspace')));
+    const prov = rootFiles.find((f) => f.endsWith('_NN.md') && RECORD_TOKENS.some((t) => f.includes(t)));
     if (prov) modelPath = path.join(projectDir, prov);
   }
 

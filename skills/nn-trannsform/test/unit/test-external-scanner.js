@@ -182,6 +182,48 @@ async function run() {
     assert.strictEqual(JSON.parse(JSON.stringify(serialized)).roots.length, 2);
   });
 
+  it('scanAllWatchRoots finds watch roots in the renamed domaiNN_NN.md entrypoint', () => {
+    const tempProj = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-proj-'));
+    const tempDrops = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-drops-'));
+    try {
+      fs.writeFileSync(path.join(tempDrops, 'q3.csv'), 'a,b\n1,2\n', 'utf8');
+      const rootPosix = tempDrops.replace(/\\/g, '/');
+      fs.writeFileSync(
+        path.join(tempProj, 'domaiNN_NN.md'),
+        `# NN index\n\n## NN External Watch Roots:\n- Root: "${rootPosix}"\n  Cadence: "dynamic"\n  Filter: ["*.csv"]\n`,
+        'utf8',
+      );
+
+      const res = scanAllWatchRoots(tempProj);
+      assert.strictEqual(res.roots.length, 1);
+      assert.strictEqual(res.classified.new.length, 1);
+    } finally {
+      fs.rmSync(tempProj, { recursive: true, force: true });
+      fs.rmSync(tempDrops, { recursive: true, force: true });
+    }
+  });
+
+  it('scanAllWatchRoots still finds the legacy cogNNitive lineage record', () => {
+    const tempProj = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-proj-legacy-'));
+    const tempDrops = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-drops-legacy-'));
+    try {
+      fs.writeFileSync(path.join(tempDrops, 'rates.csv'), 'a,b\n1,2\n', 'utf8');
+      const rootPosix = tempDrops.replace(/\\/g, '/');
+      fs.writeFileSync(
+        path.join(tempProj, 'Project_V_0-2-0_cogNNitive_NN.md'),
+        `# NN index\n\n## NN External Watch Roots:\n- Root: "${rootPosix}"\n  Cadence: "dynamic"\n  Filter: ["*.csv"]\n`,
+        'utf8',
+      );
+
+      const res = scanAllWatchRoots(tempProj);
+      assert.strictEqual(res.roots.length, 1);
+      assert.strictEqual(res.classified.new.length, 1);
+    } finally {
+      fs.rmSync(tempProj, { recursive: true, force: true });
+      fs.rmSync(tempDrops, { recursive: true, force: true });
+    }
+  });
+
   return { passed, failed };
 }
 
