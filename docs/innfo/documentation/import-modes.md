@@ -136,10 +136,50 @@ sources:: [import/sales.csv@2026-03]
 
 The editor highlights the cited row when the source is opened.
 
----
+## 7. Convergence strategies
 
-> **Roadmap.** A future refinement is to make the *convergence* step explicit and
-> declarative — a named strategy per source family (cite-only, upsert elements,
-> replace field values) applied through a reviewable, diff-previewed procedure.
-> As of today only the ingestion side is configurable; changing the model in
-> response to a new source is a normal agent-guided edit.
+The convergence step is now explicit and declarative. A source **family** (the
+timestamped snapshot series sharing a filename stem) declares, in the domaiNN
+manifest, how a new snapshot should converge into the model:
+
+```markdown
+## NN Source Family: youtube_analytics_monthly
+strategy:: upsert
+key:: video_id
+```
+
+- `cite-only` (default) — the family behaves exactly as before: new snapshots are
+  citable, and changing the model is a normal agent-guided edit.
+- `upsert` — a new snapshot yields a read-only *proposal* that **adds** new keys
+  and **flags** changed values for review; applying it does not overwrite a value
+  without a decision.
+- `replace-values` — same, but applying overwrites the changed values.
+
+`key` is required for a non-default strategy: a single column/field that is
+unique and non-empty across the snapshot. A missing, empty, or duplicated key
+aborts with a non-zero exit and no proposal.
+
+The proposal is produced by:
+
+```bash
+node skills/nn-trannsform/scripts/index.js --converge youtube_analytics_monthly --src <workspace>
+```
+
+It is **read-only**: it compares the two newest snapshots of the family and never
+writes `sources/import/`, `sources/nn/`, or the model. It reuses the session-start
+watch-digest state (`.cognnitive/watch-digest.json`), so an item the user already
+`ignore`d is not re-proposed, and it is **idempotent**: an already-applied
+proposal yields an empty one.
+
+Applying the proposal is a normal reviewed mutation — a diff preview, a
+confirmation, `apply_change`, and a single version bump — the same shape as
+reviewer feedback. After applying, mark the family applied so re-running
+`--converge` is a no-op:
+
+```bash
+node skills/nn-trannsform/scripts/index.js --converge-mark youtube_analytics_monthly --version V_0-2-0 --src <workspace>
+```
+
+Removed keys are **flag-only**: convergence lists them but never deletes or
+archives a model element. Prose and unstructured families stay `cite-only` —
+convergence applies to keyed tabular data only.

@@ -275,6 +275,46 @@ node scripts/index.js --curate-csv "<path-to-csv>" --key "<column>" [--dedup] --
 - Cite a row as `sources:: [import/<stem>.csv@<row-id>]` (or `@<row-id>&<column>` for one cell). The iNNfo editor highlights the cited row when the source pill is clicked.
 - The curated CSV is surfaced in the lineage record as `curated_csv:: sources/nn/...` on its source entry, so the citable file is tracked alongside its profile.
 
+#### 2a-5. Source Convergence Strategies (`--converge`)
+
+A timestamped source **family** (the snapshot series sharing a filename stem) can
+declare how a new snapshot converges into the model, right in the domaiNN
+manifest:
+
+```markdown
+## NN Source Family: youtube_analytics_monthly
+strategy:: upsert
+key:: video_id
+```
+
+- `cite-only` (default): no convergence; new snapshots are just citable.
+- `upsert`: add new keys, **flag** changed values for review.
+- `replace-values`: add new keys, **overwrite** changed values on apply.
+- `key`: required unless `cite-only` — one single column/field, unique and
+  non-empty across the snapshot. Missing/empty/duplicate key aborts with a
+  non-zero exit and no proposal.
+
+Produce a read-only proposal (never writes `sources/` or the model):
+
+```bash
+node scripts/index.js --converge <family> [--json] [--src <project-dir>]
+```
+
+- Compares the two newest snapshots of the family under `sources/nn/`
+  (`.csv` / `.json`) and prints added / changed / removed keys.
+- Removed keys are **flag-only** — never deleted or archived.
+- Reuses `.cognnitive/watch-digest.json`: an `ignore`d item is not re-proposed.
+- **Idempotent**: an already-applied proposal (or identical snapshots) yields an
+  empty proposal.
+
+Apply the proposal through the reviewed mutation path (`apply_change` +
+`validate_model` + one version bump), then mark it applied so re-running is a
+no-op:
+
+```bash
+node scripts/index.js --converge-mark <family> --version <V_x-y-z> [--src <project-dir>]
+```
+
 #### 2b. Progressive Disclosure & Source Naming Convention
 
 To prevent LLM context degradation (*Lost in the Middle*) and maintain workspace clarity:
