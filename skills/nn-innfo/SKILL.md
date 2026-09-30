@@ -15,7 +15,7 @@ description: |
   - Creating a new model step-by-step using apps (Business, Procedures, Organization, Metrics, Blank)
   - Creating or editing any file matching *_NN.md
   - Authoring or modifying business models, procedure models, or any model following an iNNfo app
-  - Creating, editing, or modifying apps or specializations under docs/templates/
+  - Creating, editing, or modifying apps or specializations under docs/bluepriNNts/
   - Discussing the iNNfo V_0-2-0 specification, meta-templates, primitives, matrices, or naming conventions
   - Any conversation about how iNNfo works, how to use it, or how to structure iNNfo files
   - Executing procedures declared in a model
@@ -40,7 +40,7 @@ Activates when the user invokes `/nn-innfo`, mentions domain keywords `innfo`, `
 - Create a new model step-by-step using apps (Business, Procedures, Organization, Metrics, Blank).
 - Create or edit any file matching `*_NN.md`.
 - Author or modify business models, procedure models, or any model following an iNNfo app.
-- Create, edit, or modify apps or specializations under `docs/templates/`.
+- Create, edit, or modify apps or specializations under `docs/bluepriNNts/`.
 - Discuss the iNNfo V_0-2-0 specification, meta-templates, primitives, matrices, or naming conventions.
 - Execute procedures declared in a model.
 
@@ -81,7 +81,7 @@ The iNNfo ecosystem establishes an explicit taxonomy for sources and evidence:
 To minimize token usage and unnecessary file I/O operations across large workspaces, all agent interactions MUST adhere to the 3-Tier Progressive Disclosure Protocol:
 
 - **Tier 1 (Root Discovery)**:
-  Read `workspace_NN.md` (or query `innfo-core` DAG topology) to discover workspace dimensions, directory conventions, and top-level catalog references (`models`, `sources`, `procedures`, `artifacts`).
+  Read `domaiNN_NN.md` (or query `innfo-core` DAG topology) to discover workspace dimensions, directory conventions, and top-level catalog references (`models`, `sources`, `procedures`, `artifacts`).
 - **Tier 2 (Catalog Query)**:
   Read `sources_NN.md`, `procedures_NN.md`, or `artifacts_NN.md` to scan `summary`, `format`, `status`, `category`, and `tags` of all registered entities with zero additional file I/O. Make routing, indexing, and citation decisions based entirely on these indexed catalog summaries.
 - **Tier 3 (Targeted Inspection)**:
@@ -117,9 +117,9 @@ When the user invokes the skill without an explicit intent (e.g., bare `/nn-innf
 Before executing options **[b]**, **[c]**, **[d]**, or **[x]**, the agent MUST ensure there is an active model in context (`active_model_path`).
 
 1. **Verify Session Context:** Check if a model is currently being edited/active in the session.
-2. **Dynamic Discovery:** If no model is active, call `innfo-mcp_list_models` to scan the workspace:
-   - **If 0 models found:** Inform the user that no models exist in `models/` and suggest creating one (redirecting to option **[a]**).
-   - **If 1 model found (Auto-Bind with Informative Grace):** Bind it automatically as the active model (`active_model_path`) without asking. Announce: *"Vinculando `models/{ModelName}_NN.md` (único modelo detectado en el workspace). Voy a avanzar con este modelo; si querés usar otro o crear uno nuevo, avisame antes de empezar."* Proceed immediately.
+2. **Dynamic Discovery:** If no model is active, call `innfo-mcp_list_knowledge` to scan the workspace:
+   - **If 0 models found:** Inform the user that no models exist in `kNNowledge/` and suggest creating one (redirecting to option **[a]**).
+   - **If 1 model found (Auto-Bind with Informative Grace):** Bind it automatically as the active model (`active_model_path`) without asking. Announce: *"Vinculando `kNNowledge/{ModelName}_NN.md` (único modelo detectado en el workspace). Voy a avanzar con este modelo; si querés usar otro o crear uno nuevo, avisame antes de empezar."* Proceed immediately.
    - **If multiple models found:** Present a numbered list of all models found and ask the user to select one: *"Multiple models detected. Please select which one you want to work with:"*. Set the selected file as `active_model_path` and proceed.
 3. **Session Persistence:** Once a model is selected or created, save its path in context. Subsequent actions (validation, edits, audits, console exports) MUST default to this active model. To switch models, the user can explicitly ask to "switch model" or select the change option in the quick actions menu.
 
@@ -127,13 +127,13 @@ Before executing options **[b]**, **[c]**, **[d]**, or **[x]**, the agent MUST e
 
 Before attempting to diagnose or repair child reference warnings, matrix mismatches, or element field inconsistencies in a Level 3 model, the agent MUST verify that the model's `parent_spec` resolves cleanly to a valid Level 2 template.
 
-1. **Gate Verification**: Inspect the output of `innfo-mcp_validate_model` (or `innfo-mcp_get_template`) for `PARENT_RESOLUTION_FAILED` or `CRITICAL_BLOCKER` diagnostics.
+1. **Gate Verification**: Inspect the output of `innfo-mcp_validate_knowledge` (or `innfo-mcp_get_blueprint`) for `PARENT_RESOLUTION_FAILED` or `CRITICAL_BLOCKER` diagnostics.
 2. **Fail-Fast Policy**: If `parent_spec` cannot be resolved:
    - **HALT**: The agent MUST halt all downstream field, matrix, or reference remediation immediately.
    - **NO MUTATION**: The agent MUST NOT attempt to edit child elements or add missing fields while the parent schema is unreachable.
    - **Report to User**: Report the unresolved parent template to the user, displaying the searched paths `(searched: ...)` and offering concrete remediation options:
      - Correct `parent_spec.url` to a valid stable HTTP/HTTPS URL or workspace-relative path (`specs/...`).
-     - Rehydrate the template into `specs/` using `innfo-mcp_hydrate_template` or canonical registry fallback.
+     - Rehydrate the template into `specs/` using `innfo-mcp_hydrate_blueprint` or canonical registry fallback.
      - Check the MCP root configuration (`INNFO_MODELS_DIR`).
 3. **Execution Condition**: Only after the schema resolution gate passes (`parent_spec` successfully resolved) SHALL the agent proceed to Phase 3/4 content, matrix, and reference remediation.
 
@@ -168,7 +168,7 @@ Creating **any** model — with a canonical app, custom app, or without an app �
 *(Notice: You can select one option or a combination (e.g. A and B))*.
 
 **A2a. If a canonical app was selected ([a]/[b]/[c]/[d]) (Optimistic Execution with Informative Grace):**
-Resolve the app with `innfo-mcp_get_template` and display an informative summary of the Concepts, Fields, Matrices, and Markers it already defines. Then discover its procedures with `innfo-mcp_list_template_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
+Resolve the app with `innfo-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, Matrices, and Markers it already defines. Then discover its procedures with `innfo-mcp_list_template_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
 
 **Do NOT block on an intermediate customization menu.** By default, canonical apps are used as-is. Announce with Informative Grace:
 *"Usando la plantilla estándar {App}. Voy a avanzar con el diseño de elementos del modelo; si preferís personalizar la plantilla o crear una especialización, avisame antes de empezar."*
@@ -247,10 +247,10 @@ With structure approved, offer the drafting mode:
 - **[b] Full Generation:** The agent drafts the complete draft in a single file for subsequent audit, following the plan approved in B1.
 
 **B3. Model Naming & Scaffolding**:
-Prompt for `{ModelName}` and create `{ModelName}_V_0-1-0_{Template}_NN.md` with workspace structure (`models/`, `sources/nn/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
+Prompt for `{ModelName}` and create `{ModelName}_V_0-1-0_{Template}_NN.md` with workspace structure (`kNNowledge/`, `sources/nn/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
 
 **B4. Validation & Visual Checklist**:
-Validate via `innfo-mcp_validate_model` and output the Visual Expectation Checklist (§12).
+Validate via `innfo-mcp_validate_knowledge` and output the Visual Expectation Checklist (§12).
 
 ---
 
@@ -281,7 +281,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 ## Core Concepts & Single Source of Truth
 
 > [!NOTE]
-> **The MCP server (`innfo-mcp`) and the canonical specifications are the ONLY source of truth (SSOT) for syntax and data types.** The agent does NOT reproduce grammar rules from memory; it queries them dynamically via MCP (`innfo-mcp_get_spec` / `innfo-mcp_get_template`).
+> **The MCP server (`innfo-mcp`) and the canonical specifications are the ONLY source of truth (SSOT) for syntax and data types.** The agent does NOT reproduce grammar rules from memory; it queries them dynamically via MCP (`innfo-mcp_get_spec` / `innfo-mcp_get_blueprint`).
 
 ### iNNfo Level Summary (V_0-2-0)
 
@@ -300,19 +300,19 @@ The `innfo-mcp` server exposes 15 deterministic tools built on `@cognnitive/innf
 
 | Tool | Purpose |
 |---|---|
-| `list_models` | Scans the directory for valid iNNfo models. |
-| `read_model` | Parses a model into a structured AST / JSON. |
+| `list_knowledge` | Scans the directory for valid iNNfo models. |
+| `read_knowledge` | Parses a model into a structured AST / JSON. |
 | `get_spec` | Dynamically resolves the Level 1 specification. |
-| `get_template` | Dynamically resolves the Level 2 app and its primitives. |
-| `validate_model` | Runs deterministic syntactic and schema validation (with a `(searched: ...)` diagnostic when the parent chain does not resolve). |
-| `check_workspace` | Runs one consolidated workspace integrity pass over every Level-3 model: validates each against its app and traceability, self-heals missing app packages/specs (write-once hydration), classifies each pinned app version against the published catalog, and returns one report with a per-model status and a workspace aggregate. Non-blocking and informational — validation failures never fail the tool. Accepts `root`, `summary_only` (aggregate + failing/upgrade-available models only, capped at 25), and `offline`. The editor runs the same pass on workspace open. |
-| `validate_model_url` | Validates a model from a URL without writing it to disk. |
-| `validate_template` | Validates a Level 2 app against its parent Level 1 specification. |
+| `get_blueprint` | Dynamically resolves the Level 2 app and its primitives. |
+| `validate_knowledge` | Runs deterministic syntactic and schema validation (with a `(searched: ...)` diagnostic when the parent chain does not resolve). |
+| `check_domain` | Runs one consolidated workspace integrity pass over every Level-3 model: validates each against its app and traceability, self-heals missing app packages/specs (write-once hydration), classifies each pinned app version against the published catalog, and returns one report with a per-model status and a workspace aggregate. Non-blocking and informational — validation failures never fail the tool. Accepts `root`, `summary_only` (aggregate + failing/upgrade-available models only, capped at 25), and `offline`. The editor runs the same pass on workspace open. |
+| `validate_knowledge_url` | Validates a model from a URL without writing it to disk. |
+| `validate_blueprint` | Validates a Level 2 app against its parent Level 1 specification. |
 | `apply_change` | Runs deterministic mutations (add field, rename, `bump_version`, etc.). |
-| `list_templates` | Lists Level 2 apps in the workspace, the global cache, and installed skills. |
-| `hydrate_template` | Atomically and immutably copies a Level 2 app into the workspace. |
+| `list_blueprints` | Lists Level 2 apps in the workspace, the global cache, and installed skills. |
+| `hydrate_blueprint` | Atomically and immutably copies a Level 2 app into the workspace. |
 | `prune_orphaned_specs` | Analyzes reachability and purges orphaned specs with a zip backup. |
-| `sync_workspace_manifest` | Additively reconciles the `## NN Models` entries of the manifest against the Level 3 models discovered on disk (`dry_run` defaults to `true`). See §14. |
+| `sync_workspace_manifest` | Additively reconciles the `## NN kNNowledge` entries of the manifest against the Level 3 models discovered on disk (`dry_run` defaults to `true`). See §14. |
 | `list_template_procedures` | Discovers SOP procedures transitively across the `includes` tree (depth 10). |
 | `list_template_skills` | Discovers agent skills transitively across the `includes` tree (depth 10). |
 
@@ -333,7 +333,7 @@ Stable reference URLs (the version lives in the file name — `main` is already 
 1. A Level 3 model's `parent_spec.url` must be a **STABLE (http/https)** URL pointing at the Level 2 app, or a **workspace-relative path** (e.g. `specs/MyTemplate_V_0-1-0_spec_NN.md`).
 2. **FORBIDDEN: absolute Windows paths** (e.g. `C:/Users/.../MyTemplate_spec_NN.md`): they break resolution in the Modeler (fetch over a local path) and in the MCP. The `innfo-mcp` resolver (`resolver-node.ts`) looks for the app only under the workspace's `specs/` (recursively); the canonical form is the stable http URL.
 3. After setting `parent_spec.url`, ALWAYS verify resolution (see §5, parent-chain pre-check) before declaring the model done.
-4. **Relative paths resolve against the MCP server's root** (the `INNFO_MODELS_DIR` environment variable, or the process cwd when the server starts), NOT against the model file's own folder. Therefore, to validate a workspace with relative paths, the MCP root MUST be the workspace root; `root:` overrides only apply where the tool accepts them (`validate_model` with `root`, `get_spec`/`get_template` with `url`).
+4. **Relative paths resolve against the MCP server's root** (the `INNFO_MODELS_DIR` environment variable, or the process cwd when the server starts), NOT against the model file's own folder. Therefore, to validate a workspace with relative paths, the MCP root MUST be the workspace root; `root:` overrides only apply where the tool accepts them (`validate_knowledge` with `root`, `get_spec`/`get_blueprint` with `url`).
 5. **The resolver AUTO-CACHES every resolved parent** (local or remote) into `<workspace>/specs/`, under the document's own canonical versioned file name (write-once: if a file with that name already exists, it is never overwritten). There is no separate cache directory — `specs/` is the only local lookup, recursive, relative to the MCP server's `root`. (Note: `.spec-cache/` and `.specs/` are scanned only by the in-browser editor, as an extra heuristic for a version notice — they are not part of the MCP's real resolution; do not copy files there expecting the MCP to use them.) If a resolution fails, check that the MCP `root` points at the workspace root so relative paths resolve correctly. NEVER copy files into `specs/` by hand — let the resolver sync them.
 
 ---
@@ -345,7 +345,7 @@ Stable reference URLs (the version lives in the file name — `main` is already 
    - Simple relative paths: `client_interview_transcript.md#feedback` resolves canonically to `sources/nn/client_interview_transcript.md`.
    - Subfolders: `interviews/interview_transcript.md#overview` resolves to `sources/nn/interviews/interview_transcript.md`.
    - The explicit `sources/nn/` prefix is still tolerated for backward compatibility.
-    - **A Model is a first-class Source.** `models/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains Lineage: `artifact → models/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`models/…`); only unqualified paths default to `sources/nn/`.
+    - **A Model is a first-class Source.** `kNNowledge/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains Lineage: `artifact → kNNowledge/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`kNNowledge/…`); only unqualified paths default to `sources/nn/`.
     - **Curated CSVs are citable.** `sources/nn/<file>.csv@<row-id>` addresses the row whose first-column value equals `<row-id>` (e.g. `metricas_q3.csv@104`); append `&<column>` for one cell (`metricas_q3.csv@104&mrr_usd`). Raw uploads under `sources/original/` are never citable.
    - **Heading-level convention (authoring rule).** So model-heading slugs are stable and meaningful: `# NN <Concept>` (H1 = Concept), `## NN <Concept>: <Element>` (H2 = Element), and `###`+ only inside an element's description/prose — never as standalone structural blocks. The slug algorithm is level-agnostic; this is discipline, not validation.
    - Global PIDs use schema identifiers: `doi:10.1145/3290605.3300233`.
@@ -383,14 +383,14 @@ Stable reference URLs (the version lives in the file name — `main` is already 
 
 ## 5. Operating Instructions & MCP Flow
 
-1. Get the app with `innfo-mcp_get_template({ url })`.
+1. Get the app with `innfo-mcp_get_blueprint({ url })`.
 2. Present concepts to the user using the format with `[a] (Recommended)`.
 3. Draft the body using the unified syntax `# NN <Concept>`, `## NN <Concept>: <Element>`, `key:: value`.
-4. Validate the model with `innfo-mcp_validate_model({ content })`.
-5. **Parent-chain pre-check (MANDATORY before reporting done):** resolve the parent chain with `innfo-mcp_get_template({ model_id })` (or `{ url }`) BEFORE declaring the model done. If the app does NOT resolve (`Template could not be resolved` / `PARENT_RESOLUTION_FAILED`):
+4. Validate the model with `innfo-mcp_validate_knowledge({ content })`.
+5. **Parent-chain pre-check (MANDATORY before reporting done):** resolve the parent chain with `innfo-mcp_get_blueprint({ model_id })` (or `{ url }`) BEFORE declaring the model done. If the app does NOT resolve (`Template could not be resolved` / `PARENT_RESOLUTION_FAILED`):
    - Do NOT report the model as done.
    - Warn that the app is unresolved, showing the problematic `parent_spec.url`.
-   - Read the new actionable `(searched: ...)` diagnostic returned by `validate_model` / `get_template`: it lists the directories the resolver searched for the parent. If the searched directories look wrong (e.g. they don't point at the workspace root), the problem is the **MCP root** (`INNFO_MODELS_DIR` or the server cwd), not the model: fix the root/URL and re-validate (see §2, rule 4).
+   - Read the new actionable `(searched: ...)` diagnostic returned by `validate_knowledge` / `get_blueprint`: it lists the directories the resolver searched for the parent. If the searched directories look wrong (e.g. they don't point at the workspace root), the problem is the **MCP root** (`INNFO_MODELS_DIR` or the server cwd), not the model: fix the root/URL and re-validate (see §2, rule 4).
    - Offer to fix it: a stable http/https URL or a workspace-relative path (never an absolute Windows path — see §2).
 6. When finished, show the **Visual Expectation Checklist (§12)** and the **Contextual Navigation Shortcuts (§13)** section.
 
@@ -398,10 +398,10 @@ Stable reference URLs (the version lives in the file name — `main` is already 
 
 Every skill-driven `.md` write (new model, app, specialization, or full-file rewrite) MUST go through a single canonical path so files validate cleanly:
 
-1. **Preferred:** scaffold via `innfo-mcp_init_model` (frontmatter version inferred from the resolved parent — never hand-written), then apply content with `innfo-mcp_apply_change` or a documented file-write tool.
+1. **Preferred:** scaffold via `innfo-mcp_init_knowledge` (frontmatter version inferred from the resolved parent — never hand-written), then apply content with `innfo-mcp_apply_change` or a documented file-write tool.
 2. **Encoding:** UTF-8 without BOM, LF line endings, exactly one trailing newline.
 3. **FORBIDDEN:** shell `echo` / `printf` redirection for file writes — they mangle encodings, join lines, and drop trailing newlines.
-4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_model` — no encoding or line-joining diagnostics may appear.
+4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_knowledge` — no encoding or line-joining diagnostics may appear.
 
 #### Agent Modification lineage (MANDATORY on every successful `apply_change`)
 
@@ -429,7 +429,7 @@ innfo-mcp_apply_change({
 ```
 
 - **Automated Behavior**:
-  1. Updates `model_version` in the frontmatter and renames the model file atomically.
+  1. Updates `knowledge_version` in the frontmatter and renames the model file atomically.
   2. If `parent_version` is provided, physically renames the local app file, updates its `spec_version` (in frontmatter), updates `parent_spec.name`/`url` in the model frontmatter, and copies the renamed app to the `specs/` directory.
   3. Consistently updates references in workspace `index.md`.
   4. Everything is validated via pre-check before performing any write (if validation fails, aborts without writing).
@@ -446,7 +446,7 @@ When a Concept or Element must be renamed:
 
 ## 7. Delegation & Fallback Contract
 
-* **With MCP available:** NEVER resolve specifications by hand or validate manually. Delegate to `innfo-mcp_get_spec`, `innfo-mcp_validate_model`, and `innfo-mcp_apply_change`.
+* **With MCP available:** NEVER resolve specifications by hand or validate manually. Delegate to `innfo-mcp_get_spec`, `innfo-mcp_validate_knowledge`, and `innfo-mcp_apply_change`.
 * **Fallback mode (no MCP):** Inspect local files on disk and check that the `# NN`, `## NN`, `key:: value` syntax and the lightweight Level 3 YAML frontmatter are respected.
 
 ---
@@ -455,7 +455,7 @@ When a Concept or Element must be renamed:
 
 Every field must declare an explicit `type` (`string`, `select`, `reference`, `markdown_inline`, `markdown_file`, `image`, `file`, `video`, `audio`, `model`).
 
-> 💡 **Submodel Fields (`type:: model`)**: When you need a field to reference or contain another iNNfo model document (`*_NN.md`) with app enforcement (e.g. `target_template:: business`), use `type:: model`. Never claim that `type:: model` or submodel composition does not exist — it is a fully supported normative primitive in iNNfo (V_0-2-1+).
+> 💡 **Submodel Fields (`type:: model`)**: When you need a field to reference or contain another iNNfo model document (`*_NN.md`) with app enforcement (e.g. `target_blueprint:: business`), use `type:: model`. Never claim that `type:: model` or submodel composition does not exist — it is a fully supported normative primitive in iNNfo (V_0-2-1+).
 
 > ⚠️ **List syntax — NEVER use quotes without brackets.** For any field with multiple values (`reference`, `sources::`, or any other list type), the only valid format is `[a, b, c]` — no quotes around each value. The format `"a", "b"` (individual quotes, no enclosing brackets) **corrupts parsing silently**: the validator treats it as a single unreadable string instead of a list, and ends up reporting a generic dangling reference without explaining the real cause. If you see that error and the field has loose quotes with no `[...]`, this is almost certainly the cause.
 
@@ -474,7 +474,7 @@ Shall we proceed with this modification?
 - [x] Cancel
 ```
 
-Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_model`. Feed the "Rationale" line from this preview into `apply_change` as `args.rationale`, and — since the user just confirmed — pass `args.approved_by: "user"` and `args.author: "<your-tool-id>"` so the block is populated at the source. Then paste the returned `modification` block verbatim per §5 (Agent Modification lineage).
+Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_knowledge`. Feed the "Rationale" line from this preview into `apply_change` as `args.rationale`, and — since the user just confirmed — pass `args.approved_by: "user"` and `args.author: "<your-tool-id>"` so the block is populated at the source. Then paste the returned `modification` block verbatim per §5 (Agent Modification lineage).
 
 ---
 
@@ -488,10 +488,10 @@ Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-val
 
 ## 8c. Audit, Validation & Architecture Assistant Mode (Option C)
 
-When the user picks option `[c]` (Audit & validate model), the agent executes deterministic syntactic validation (`innfo-mcp_validate_model`) and takes the role of **Architecture Assistant**:
+When the user picks option `[c]` (Audit & validate model), the agent executes deterministic syntactic validation (`innfo-mcp_validate_knowledge`) and takes the role of **Architecture Assistant**:
 
-1. Load the model (`read_model`) and its app (`get_template`).
-2. Run MCP syntactic validation (`innfo-mcp_validate_model`) and report any formal grammar or schema errors.
+1. Load the model (`read_knowledge`) and its app (`get_blueprint`).
+2. Run MCP syntactic validation (`innfo-mcp_validate_knowledge`) and report any formal grammar or schema errors.
 3. Evaluate the 4 architectural layers: **Formal Correctness**, **Logical Coherence**, **Semantic Coherence**, and **Solidity/Robustness**.
 4. **Presentation with Functional Impact (Assistant Mode):**
    Do not just list technical errors; explain the **business/functional risk** and offer the **1-click fix**:
@@ -573,7 +573,7 @@ A **composite** app (the one that declares `includes`) is the one the model name
 ## 10. Post-Edit Validation & Versioning
 
 After editing a model:
-1. Run `innfo-mcp_validate_model()`.
+1. Run `innfo-mcp_validate_knowledge()`.
 2. Present result and version menu:
    - **[a] (Recommended)** Bump Patch (`V_x-y-z+1`)
    - **[b]** Keep current version (`V_x-y-z`)
@@ -591,17 +591,17 @@ When the project scales to multiple sub-models, present the **4 Architectural Al
 💡 Architecture Scaling Selection (1 to N Models):
 
   [a] (Recommended) Option 4: Hybrid Master Aggregator with `file_ref::` references
-      - Files: `models/Master_V_0-1-0_NN.md` and `models/subsystems/`
+      - Files: `kNNowledge/Master_V_0-1-0_NN.md` and `kNNowledge/subsystems/`
       - iNNfo code: The main model references subsystems via `file_ref:: ./subsystems/auth_V_0-1-0_NN.md`
 
   [b] Option 1: Single Monolithic Model
-      - File: `models/System_V_0-1-0_NN.md`
+      - File: `kNNowledge/System_V_0-1-0_NN.md`
 
   [c] Option 2: Independent Models in the same directory
-      - Files: `models/DomainA_V_0-1-0_NN.md`, `models/DomainB_V_0-1-0_NN.md`
+      - Files: `kNNowledge/DomainA_V_0-1-0_NN.md`, `kNNowledge/DomainB_V_0-1-0_NN.md`
 
   [d] Option 3: Multi-Folder Hybrid per Project
-      - Files: `projects/domainA/models/index.md`, `projects/domainB/models/index.md`
+      - Files: `projects/domainA/kNNowledge/index.md`, `projects/domainB/kNNowledge/index.md`
 
   [x] Cancel
 
@@ -664,9 +664,9 @@ Upon concluding the generation or editing of a model, the agent MUST include log
 
 ## 14. Workspace Manifest Synchronization (Self-Registration)
 
-The workspace manifest (`workspace_NN.md`, section `# NN Models`) can drift out of sync with the filesystem: a new Level 3 model is created and nobody adds its entry, or a file is deleted and the manifest entry keeps pointing at a model that no longer exists. The MCP's `sync_workspace_manifest` tool reconciles this additively, never destructively:
+The workspace manifest (`domaiNN_NN.md`, section `# NN kNNowledge`) can drift out of sync with the filesystem: a new Level 3 model is created and nobody adds its entry, or a file is deleted and the manifest entry keeps pointing at a model that no longer exists. The MCP's `sync_workspace_manifest` tool reconciles this additively, never destructively:
 
-- Adds a `## NN Models: <name>` entry (marked with `<!-- nn:auto -->`) for every discovered Level 3 model not yet listed, always at the end of the `# NN Models` section — never reordering or regrouping existing entries.
+- Adds a `## NN kNNowledge: <name>` entry (marked with `<!-- nn:auto -->`) for every discovered Level 3 model not yet listed, always at the end of the `# NN kNNowledge` section — never reordering or regrouping existing entries.
 - Sets `status:: archived` on an entry the tool itself created (identifiable by `<!-- nn:auto -->`) when its file no longer exists on disk — never deleting it.
 - Reactivates (`status:: active`) a previously archived tool-owned entry if its file reappears.
 - **Never modifies an entry without the `<!-- nn:auto -->` marker**, leaving it completely intact whether or not its file exists. Every hand-authored entry is untouchable by design.
@@ -682,7 +682,7 @@ The workspace manifest (`workspace_NN.md`, section `# NN Models`) can drift out 
 ## 15. External Watch Roots & Pre-Authoring Scanner Integration
 
 When authoring or auditing models that rely on external data drops (e.g. client spreadsheets, RFPs, audio transcripts):
-1. **Detect Declarative Watch Roots**: Check if the workspace Lineage record (`workspace_NN.md` or `<Project>_V_0-2-0_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
+1. **Detect Declarative Watch Roots**: Check if the workspace Lineage record (`domaiNN_NN.md` or `<Project>_V_0-2-0_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
 2. **Pre-Authoring Scan Check**: Before updating or creating a model citing dynamic sources, offer to scan external roots:
    > *"This workspace defines external watch roots. Would you like to scan for new or evolved primary sources before authoring?"*
 3. **Execution**: Invoke `node skills/nn-trannsform/scripts/index.js --scan-external --check-impact` to inspect external changes, import timestamped snapshots (`YYYYMMDD-HHmmss`), and check source family evolutions.
@@ -712,8 +712,8 @@ Every automated call declares its context budget and intent class. Nothing trave
 
 ### 16a. Intent declaration (`intent:`) — RESERVED, NOT ENFORCED
 
-> **Status (2026-09-22): not implemented.** `intent` is accepted by `read_model`,
-> `validate_model` and `query_units` and is then ignored — no handler reads it,
+> **Status (2026-09-22): not implemented.** `intent` is accepted by `read_knowledge`,
+> `validate_knowledge` and `query_units` and is then ignored — no handler reads it,
 > so a declared intent does not change what the server returns. The companion
 > `override_intent` parameter was removed from the tool schemas entirely; because
 > the schemas do not set `additionalProperties: false`, passing it is silently
@@ -738,7 +738,7 @@ intent: surgical   # coach | surgical | match | verify; advisory only today
 
 Surgical work (few elements of one concept) MUST read bounded slices through existing query units and MUST NOT include whole files. No included unit SHALL exceed 150 lines without an explicit slice or recorded override:
 
-1. Assemble surgical context as one concept slice plus schema excerpt: `read_model` with `concept` + `element` + `max_lines` (default 150), and `query_units` with capped projections. A unit over 150 lines included whole, without slice or override, is a caller violation — not a server error.
+1. Assemble surgical context as one concept slice plus schema excerpt: `read_knowledge` with `concept` + `element` + `max_lines` (default 150), and `query_units` with capped projections. A unit over 150 lines included whole, without slice or override, is a caller violation — not a server error.
 2. When the needed context spans the cap, record a manual `override_reason` alongside the call; the wider unit MAY then be included.
 3. Honor the `truncated` flag: when set, the slice is partial — narrow the query instead of widening the read.
 
@@ -746,7 +746,7 @@ Surgical work (few elements of one concept) MUST read bounded slices through exi
 
 `verify` prompts MUST carry only outcome data and MUST NOT embed full logs or rendered artifacts; full logs remain on disk by path reference:
 
-1. Build the prompt from `validate_model(baseline_path)` as `{ exit, new_errors, verdict, log_path }` — exit status plus errors new against the baseline only.
+1. Build the prompt from `validate_knowledge(baseline_path)` as `{ exit, new_errors, verdict, log_path }` — exit status plus errors new against the baseline only.
 2. A clean run carries the verdict only; historical errors are never re-explained.
 
 ### 16d. Per-intent budgets and measurement
@@ -773,7 +773,7 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 8. **Architecture Assistant Mode:** In the `[c]` audit, explain business/functional risks and offer 1-click fixes.
 9. **Contextual Shortcuts:** End every response by offering 2-3 suggested next actions (Quick Actions).
 10. **Full MCP Delegation:** Query types, schemas, and validation from the `innfo-mcp` server; do not guess or duplicate the grammar.
-11. **Index Block Scope (`# NN index`):** The `# NN index` is reserved exclusively for workspace manifest documents (`workspace_NN.md` / `index.md`) and Level 2 templates (defining the taxonomy hierarchy of Concepts). Level 3 domain data models (`models/*_NN.md`) MUST NOT contain a root `# NN index` block; navigation in Level 3 models is derived dynamically from Concept and Element headings.
+11. **Index Block Scope (`# NN index`):** The `# NN index` is reserved exclusively for workspace manifest documents (`domaiNN_NN.md` / `index.md`) and Level 2 templates (defining the taxonomy hierarchy of Concepts). Level 3 domain data models (`kNNowledge/*_NN.md`) MUST NOT contain a root `# NN index` block; navigation in Level 3 models is derived dynamically from Concept and Element headings.
 12. **Mandatory WikiLink syntax in references:** In every reference field (`type:: reference`), the value MUST be formatted using WikiLink syntax (`key:: [[Element]]`). Plain text without WikiLink brackets is forbidden.
 13. **Element descriptions in prose:** The description/explanation of an element in a Level 3 model must NEVER be written as a `description::` field. It must always be free-form Markdown prose below the `key:: value` field list, separated by a blank line.
 14. **Active Model Selection Gate:** Never perform editing, validation, audits, console export, or model procedure execution without a validated active model in context. Run workspace discovery first if none is set.
@@ -792,13 +792,13 @@ Deterministic instructions for identifying and mechanically repairing legacy syn
    - Detect files containing UTF-8 Byte Order Marks (`\uFEFF` / `0xFEFF`).
    - Strip leading BOM characters upon reading and saving, strictly enforcing UTF-8 without BOM.
 2. **Obsolete Level 3 `# NN index` Removal**:
-   - The `# NN index` heading is reserved exclusively for workspace manifest documents (`workspace_NN.md` / `index.md`) and Level 2 templates, NOT Level 3 domain data models (`models/*_NN.md`).
+   - The `# NN index` heading is reserved exclusively for workspace manifest documents (`domaiNN_NN.md` / `index.md`) and Level 2 templates, NOT Level 3 domain data models (`kNNowledge/*_NN.md`).
    - When linting or refactoring Level 3 models, remove any root `# NN index` navigation blocks. Navigation in Level 3 models is derived dynamically from Concept headings (`# NN <Concept>`) and Element headings (`## NN <Concept>: <Element>`).
 3. **Heading and Slug Collision Detection**:
    - Detect duplicate `## NN <Concept>: <Element>` headings within a model file that yield identical slugs (e.g. `## NN Person: Alice` and another `## NN Person: Alice`).
    - Prompt the user for disambiguation or rename duplicate elements deterministically using `innfo-mcp_apply_change` (`rename_element`).
 4. **Frontmatter Standardization (V_0-2-0)**:
-   - Ensure Level 3 frontmatter contains only valid metadata: `model_version`, `parent_spec: { name, url }`, `title`, and optional workspace/lineage tags.
+   - Ensure Level 3 frontmatter contains only valid metadata: `knowledge_version`, `parent_spec: { name, url }`, `title`, and optional workspace/lineage tags.
    - Remove forbidden legacy frontmatter structures such as `concepts: []` or `fields: []` embedded in YAML frontmatter.
 
 ---
@@ -839,11 +839,11 @@ appear in the index — they are discovered by expanding a Concept in the sideba
 
 When creating or editing a template, the agent must:
 
-1. **Read the template** (`get_template`) to obtain the defined Concepts
+1. **Read the template** (`get_blueprint`) to obtain the defined Concepts
 2. **Identify root Concepts** (first level of the index)
 3. **Identify sub-Concepts** (if the app has hierarchies)
 4. **Generate the index** listing ONLY Concepts, NOT Elements
-5. **Validate** with `validate_template` that the index contains no Elements
+5. **Validate** with `validate_blueprint` that the index contains no Elements
 
 ### Elements↔Concepts Relationship
 
