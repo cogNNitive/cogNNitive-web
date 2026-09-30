@@ -32,7 +32,7 @@ describe('layout module & constants (Task 7.2)', () => {
     expect(isExactDomainEntrypoint('domaiNN_NN.md')).toBe(true)
     expect(isExactDomainEntrypoint('domainn_nn.md')).toBe(false)
     expect(isExactDomainEntrypoint('domainn_NN.md')).toBe(false)
-    expect(isExactDomainEntrypoint('workspace_NN.md')).toBe(false)
+    expect(isExactDomainEntrypoint('domaiNN_NN.md')).toBe(false)
   })
 
   it('verifyCaseExactLayout returns errors for mis-cased items', () => {

@@ -132,7 +132,7 @@ describe('the shipped sample workspace', () => {
   })
 
   it('Requirement 4: every artifact the workspace declares exists', () => {
-    const workspaceDoc = readFileSync(join(WS, 'workspace_NN.md'), 'utf-8')
+    const workspaceDoc = readFileSync(join(WS, 'domaiNN_NN.md'), 'utf-8')
     const declared = [...workspaceDoc.matchAll(/^path:: (artifacts\/\S+)$/gm)].map((m) => m[1])
     expect(declared.filter((p) => !existsSync(join(WS, p)))).toEqual([])
   })

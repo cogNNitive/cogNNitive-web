@@ -52,7 +52,7 @@ function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHand
 describe('DAG Topology Scanner & Root Discovery (innfo-core)', () => {
   it('computes model in-degrees and discovers top-level root model (in_degree === 0)', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 level: 3
 parent_spec:
   name: workspace
@@ -170,7 +170,7 @@ description:: Elimination services.
 
     // workspace_NN.md is the root with in-degree 0
     const wsNode = Object.values(result.nodes).find(
-      (n) => n.kind === 'root' && n.source?.path === 'workspace_NN.md',
+      (n) => n.kind === 'root' && n.source?.path === 'domaiNN_NN.md',
     )
     expect(wsNode).toBeDefined()
     expect(topo.inDegree[wsNode!.id]).toBe(0)
@@ -198,7 +198,7 @@ description:: Elimination services.
 
   it('detects cycles and halts recursive expansion gracefully with cycle issue', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 level: 3
 parent_spec:
   name: workspace
@@ -234,7 +234,7 @@ path:: ../workspace_NN.md
 
   it('enforces MAX_DEPTH = 10 recursion guard', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 level: 3
 parent_spec:
   name: workspace

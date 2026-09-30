@@ -1466,7 +1466,7 @@ describe('element slug derivation (FR-002)', () => {
     ].join('\n')
 
     const root = fakeDir([
-      ['index.md', fakeFile('index.md', indexContent)],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', indexContent)],
       ['test_NN.md', fakeFile('test_NN.md', modelContent)],
     ])
 
@@ -1633,7 +1633,7 @@ describe('asset storage convention', () => {
     ].join('\n')
 
     const root = fakeDir([
-      ['index.md', fakeFile('index.md', indexContent)],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', indexContent)],
       ['test_NN.md', fakeFile('test_NN.md', modelContent)],
     ])
 

@@ -78,7 +78,7 @@ describe('Recursive Submodels & Specification Alignment (Phase 4 innfo-core)', (
     })
 
     it('resolves canonical workspace-relative paths', () => {
-      expect(resolveSubmodelPath('models/auth_NN.md', 'workspace_NN.md')).toBe('models/auth_NN.md')
+      expect(resolveSubmodelPath('models/auth_NN.md', 'domaiNN_NN.md')).toBe('models/auth_NN.md')
       expect(resolveSubmodelPath('[[models/auth_NN.md]]')).toBe('models/auth_NN.md')
     })
   })
@@ -86,7 +86,7 @@ describe('Recursive Submodels & Specification Alignment (Phase 4 innfo-core)', (
   describe('Multi-Level Nested Traversal (Task 4.1)', () => {
     it('parses a 3-level model hierarchy and establishes parent links', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -158,7 +158,7 @@ description:: Administrator role.
   describe('Cycle Detection', () => {
     it('detects circular references (A -> B -> A) and terminates without infinite loop', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -214,7 +214,7 @@ path:: ./service_a_01.md
 
     it('handles diamond dependencies (DAG) by parsing shared submodel once without duplicate errors', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -300,7 +300,7 @@ title: Shared Database
       const files: Record<string, string> = {}
 
       // Create 12-level deep chain: workspace_01.md -> level_1_01.md -> ... -> level_12_01.md
-      files['workspace_01.md'] = `---
+      files['domaiNN_NN.md'] = `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -577,7 +577,7 @@ title: Acme Business Model
 `
 
     const files: Record<string, string> = {
-      'workspace_01.md': workspaceContent,
+      'domaiNN_NN.md': workspaceContent,
       'startups/acme_startup_01.md': startupContent,
       'startups/acme_business_01.md': businessContent,
     }
@@ -706,7 +706,7 @@ path:: startups/acme_business_01.md
 `
       const diamondFiles: Record<string, string> = {
         ...files,
-        'workspace_01.md': diamondWorkspaceContent,
+        'domaiNN_NN.md': diamondWorkspaceContent,
       }
       const root = createFakeDirectoryHandle(diamondFiles)
       const result = await recursiveParse(root, undefined, {

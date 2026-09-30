@@ -59,7 +59,7 @@ describe('Workspace Taxonomy and Submodels (Phase 1 innfo-core)', () => {
   describe('4.1 Core Parser: Entrypoint resolution & Models path extraction', () => {
     it('loads primary workspace_01.md entrypoint and extracts Models path submodels', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -105,7 +105,7 @@ description:: Core engine component.
 
     it('falls back to index.md when workspace_NN.md is absent', async () => {
       const files: Record<string, string> = {
-        'index.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -160,7 +160,7 @@ title: Standalone Model
       const soloNode = Object.values(result.nodes).find((n) => n.name === 'standalone_01')
       expect(soloNode).toBeDefined()
       expect(result.issues.length).toBeGreaterThan(0)
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
   })
 
@@ -245,7 +245,7 @@ path:: models/engine_01.md
 `
 
       const res = validateDocument(modelContent, {
-        fileName: 'workspace_01.md',
+        fileName: 'domaiNN_NN.md',
         template: templateDoc,
       })
 
@@ -321,7 +321,7 @@ parent_component:: C1
   describe('4.4 Diamond vs cycle: sidebar graph shape stability', () => {
     it('sidebar-graph-shape-stable: a diamond workspace still yields exactly one root and every node reachable from it', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -392,7 +392,7 @@ path:: model_a_01.md
   describe('buildWorkspaceIndex', () => {
     it('index-basic-maps: a 3-model workspace populates pathToNodeId, titleToNodeIds, fileNameToNodeIds, nodeTemplate', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -443,7 +443,7 @@ title: Model B
       const aNode = Object.values(result.nodes).find((n) => n.name === 'model_a_01')!
       const bNode = Object.values(result.nodes).find((n) => n.name === 'model_b_01')!
 
-      expect(index.pathToNodeId['workspace_01.md']).toBe(rootNode.id)
+      expect(index.pathToNodeId['domaiNN_NN.md']).toBe(rootNode.id)
       expect(index.pathToNodeId['model_a_01.md']).toBe(aNode.id)
       expect(index.pathToNodeId['model_b_01.md']).toBe(bNode.id)
 
@@ -467,7 +467,7 @@ title: Model B
 
     it('index-duplicate-title-error: two models sharing a title are both indexed and flagged as an error issue', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -594,7 +594,7 @@ title: Acme Org
 
     it('index-extra-parents-from-diamond: the second-encountered parent of a diamond child is surfaced in extraParents', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -652,7 +652,7 @@ path:: model_a_01.md
 
     it('index-missing-from-parse-issues: a referenced but unresolved path is surfaced in missing, de-duplicated', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -678,7 +678,7 @@ path:: ghost_business_01.md
 
     it('index-node-schema-from-stash: a resolver supplied to recursiveParse stashes the schema, and buildWorkspaceIndex surfaces it without its own fallback resolver', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -743,7 +743,7 @@ title: Model A
         relationships: [],
         rawSections: {},
         rawContent: '---\ntitle: Root Workspace\n---\n',
-        source: { path: 'workspace_01.md' },
+        source: { path: 'domaiNN_NN.md' },
       }
       const syntheticResult: RecursiveParseResult = {
         nodes: { [rootNode.id]: rootNode },
@@ -758,7 +758,7 @@ title: Model A
 
     it('index-element-concepts-normalized: an element name with a typographic dash resolves via both its exact and separator-normalized keys', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -788,7 +788,7 @@ description:: Living-dining room.
 
     it('index-workspace-id: the entrypoint frontmatter workspace_id is surfaced on the index', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -826,7 +826,7 @@ title: Model A
 
     it('index-workspace-id absent: an entrypoint without workspace_id leaves the field undefined', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -863,7 +863,7 @@ title: Model A
 
     it('never mutates the result it derives from', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:

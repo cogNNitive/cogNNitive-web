@@ -80,7 +80,7 @@ describe('Canonical Use Case Workspaces', () => {
       const wsPath = join(USE_CASES_ROOT, slug)
 
       it('manifest and catalogs exist on disk', () => {
-        expect(existsSync(join(wsPath, 'workspace_NN.md'))).toBe(true)
+        expect(existsSync(join(wsPath, 'domaiNN_NN.md'))).toBe(true)
         expect(existsSync(join(wsPath, 'sources_NN.md'))).toBe(true)
         expect(existsSync(join(wsPath, 'procedures_NN.md'))).toBe(true)
         expect(existsSync(join(wsPath, 'artifacts_NN.md'))).toBe(true)

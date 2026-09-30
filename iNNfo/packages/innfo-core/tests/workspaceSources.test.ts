@@ -372,7 +372,7 @@ function resultWithSchema(
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'workspace_NN.md' },
+    source: { path: 'domaiNN_NN.md' },
     templateSchema: schema,
   }
   const element: ModelNode = {
@@ -386,7 +386,7 @@ function resultWithSchema(
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'workspace_NN.md' },
+    source: { path: 'domaiNN_NN.md' },
   }
   return { nodes: { 'root-1': root, 'elem-1': element }, rootIds: ['root-1'], issues: [] }
 }

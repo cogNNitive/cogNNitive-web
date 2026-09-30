@@ -86,7 +86,7 @@ const PRODUCTO_SCHEMA: TemplateSchema = {
 describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
   it('fills node.sources and adds an origin:"source" relationship for a schema-typed citation field', async () => {
     const root = fakeDir('workspace', [
-      ['index.md', fakeFile('index.md', makeIndex(['plan_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['plan_NN.md']))],
       [
         'plan_NN.md',
         fakeFile('plan_NN.md', planModel('precio_source:: sources/nn/pricing.md@## Q3 Pricing')),
@@ -120,7 +120,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
       taxonomy: [],
     }
     const root = fakeDir('workspace', [
-      ['index.md', fakeFile('index.md', makeIndex(['plan_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['plan_NN.md']))],
       ['plan_NN.md', fakeFile('plan_NN.md', planModel('sources:: sources/nn/pricing.md@## Q3 Pricing'))],
     ])
 
@@ -153,7 +153,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
       '',
     ].join('\n')
 
-    const root = fakeDir('workspace', [['workspace_01.md', fakeFile('workspace_01.md', entrypoint)]])
+    const root = fakeDir('workspace', [['domaiNN_NN.md', fakeFile('domaiNN_NN.md', entrypoint)]])
 
     const result = await recursiveParse(root, undefined, {
       resolveTemplateSchema: () => PRODUCTO_SCHEMA,
@@ -170,7 +170,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
 
   it('leaves the graph unchanged when no template schema resolves', async () => {
     const root = fakeDir('workspace', [
-      ['index.md', fakeFile('index.md', makeIndex(['plan_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['plan_NN.md']))],
       [
         'plan_NN.md',
         fakeFile('plan_NN.md', planModel('precio_source:: sources/nn/pricing.md@## Q3 Pricing')),

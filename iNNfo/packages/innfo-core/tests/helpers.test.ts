@@ -55,7 +55,7 @@ describe('listModels (recursive scan)', () => {
     await writeFile(join(root, '.git', 'Git_V_0-0-1_NN.md'), '# Git', 'utf-8')
 
     // index.md must keep being skipped.
-    await writeFile(join(root, 'index.md'), '# Index', 'utf-8')
+    await writeFile(join(root, 'domaiNN_NN.md'), '# Index', 'utf-8')
 
     const models = await listModels(root)
     const ids = models.map((m) => m.id)

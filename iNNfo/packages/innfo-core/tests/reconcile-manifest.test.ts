@@ -8,7 +8,7 @@ import {
 } from '../src/workspace/reconcileManifest'
 import { parseModel } from '../src/parser'
 
-const MANIFEST_PATH = 'workspace_NN.md'
+const MANIFEST_PATH = 'domaiNN_NN.md'
 
 function candidate(path: string, frontmatter: Record<string, unknown>): CandidateFile {
   return { path, frontmatter }

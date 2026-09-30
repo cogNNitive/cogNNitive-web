@@ -64,7 +64,7 @@ describe('Change C — workspace_V_0-3-0_spec_NN.md normalization', () => {
 describe('Change C — workspace-scoped author:: propagation', () => {
   it('attaches the manifest Models author:: to each referenced model root node', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -126,7 +126,7 @@ title: Beta Model
 
   it('leaves author undefined when the Models entry carries none', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
