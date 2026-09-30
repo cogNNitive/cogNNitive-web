@@ -476,6 +476,17 @@ Shall we proceed with this modification?
 
 Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_knowledge`. Feed the "Rationale" line from this preview into `apply_change` as `args.rationale`, and — since the user just confirmed — pass `args.approved_by: "user"` and `args.author: "<your-tool-id>"` so the block is populated at the source. Then paste the returned `modification` block verbatim per §5 (Agent Modification lineage).
 
+#### Applying a Source-Convergence Proposal
+
+When a source family declares a convergence strategy (`## NN Source Family:` in the domaiNN manifest), a new snapshot produces a **read-only convergence proposal** via `node skills/nn-trannsform/scripts/index.js --converge <family>`. Apply it through this same reviewed loop — never hand-edit the source (sources are immutable citation targets):
+
+1. Present the proposal as a Change Preview with Diff: the added keys, the changed values (`key.field: from -> to`), and the flagged removed keys.
+2. Run `--converge <family> --plan` to get the exact ordered `apply_change` operation list (it requires the family to declare `concept::`). Apply the plan's `ops` with `innfo-mcp_apply_change`, then re-validate with `innfo-mcp_validate_knowledge`. `upsert` plans never overwrite a changed value — those arrive under `review` for an explicit user decision.
+3. The plan ends in **one** `bump_version` for the affected model.
+4. Mark the family applied so re-running `--converge` is a no-op: `node skills/nn-trannsform/scripts/index.js --converge-mark <family> --version <model-version>`.
+
+Removed keys are flag-only: never delete or archive a model element from a convergence proposal without an explicit user decision.
+
 ---
 
 ## 8b. Asset & Image Field Protocol
@@ -622,6 +633,21 @@ Upon completing the creation or modification of a model, the agent MUST print th
 - **Element Deep Link (Hash)**: `#<ConceptName>.<ElementName>` (e.g. `#Products.CogNNitive`).
 
 If there is an active model in context, use its `model_id` and show interactive links to its main sections.
+
+### Live preview URL (when the MCP exposes it)
+
+When the innfo-mcp process runs with `INNFO_PREVIEW=1`, every successful mutating
+tool call (`apply_change`, `sync_domain_manifest`) returns a `preview_app_url`
+field in its envelope. **Print `preview_app_url` verbatim** in addition to (not
+instead of) the static deep links above.
+
+That URL opens the editor tab as a **read-only live mirror** of the session: it
+subscribes to the MCP change stream and re-renders the affected model on every
+later mutation, preserving the current view and selected node. It is bound to
+the session — it stops working when the MCP process exits — and editing inside
+it is disabled by design, so the user changes the model by prompting the agent,
+never in the preview tab. When the field is absent, print the static deep links
+only.
 
 Example of dynamic checklist to generate:
 ```markdown

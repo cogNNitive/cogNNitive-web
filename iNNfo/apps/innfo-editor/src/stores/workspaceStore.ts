@@ -43,6 +43,8 @@ export interface WorkspaceState {
   integrityReport: WorkspaceIntegrityReport | null
   /** True while the non-blocking integrity check is in flight. */
   integrityRunning: boolean
+  /** True when opened against the MCP live preview endpoint (read-only mirror). */
+  previewReadOnly: boolean
 }
 
 /**
@@ -68,6 +70,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const emptyFolderError = ref(false)
   const integrityReport = ref<WorkspaceIntegrityReport | null>(null)
   const integrityRunning = ref(false)
+  const previewReadOnly = ref(false)
+
+  /** Marks the workspace as a read-only live-preview mirror. */
+  function setPreviewReadOnly(val: boolean): void {
+    previewReadOnly.value = val
+  }
 
   /**
    * Runs the workspace integrity check against the in-memory graph and the
@@ -308,6 +316,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     emptyFolderError.value = false
     integrityReport.value = null
     integrityRunning.value = false
+    previewReadOnly.value = false
   }
 
   /**
@@ -322,6 +331,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * keeps only the `saving`/`error` state management.
    */
   async function saveActiveFile(): Promise<void> {
+    if (previewReadOnly.value) throw new Error('Read-only live preview — saving is disabled')
     if (!handle.value) throw new Error('No workspace handle')
     saving.value = true
     try {
@@ -360,6 +370,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * `saving`/`error` state transitions happen exactly as before.
    */
   async function saveActiveFileWithVersionBump(level: BumpLevel, targetRootId?: string): Promise<void> {
+    if (previewReadOnly.value) throw new Error('Read-only live preview — version bump is disabled')
     if (!handle.value) throw new Error('No workspace handle')
     const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
@@ -410,6 +421,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     emptyFolderError,
     integrityReport,
     integrityRunning,
+    previewReadOnly,
+    setPreviewReadOnly,
     open,
     _runIntegrityCheck,
     loadFromUrl,

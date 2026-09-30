@@ -450,8 +450,19 @@
         <span>Use AI</span>
       </button>
 
+      <!-- Read-only live preview indicator -->
+      <span
+        v-if="workspaceStore.previewReadOnly"
+        class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ring-1 ring-inset ring-slate-300 dark:ring-slate-700"
+        title="Live preview of the agent's edits — read-only"
+        data-testid="header-readonly-badge"
+      >
+        <Eye class="w-3.5 h-3.5" />
+        <span>Read-only</span>
+      </span>
+
       <!-- Save Button with integrated Saved status -->
-      <div class="relative" ref="saveDropdownRef">
+      <div v-if="!workspaceStore.previewReadOnly" class="relative" ref="saveDropdownRef">
         <div class="relative inline-flex rounded-md shadow-xs">
           <button
             @click="handleSave"
@@ -570,6 +581,7 @@ import {
   FileText,
   LayoutDashboard,
   Layers,
+  Eye,
 } from 'lucide-vue-next'
 
 import { useWorkspaceStore } from '../../stores/workspaceStore'

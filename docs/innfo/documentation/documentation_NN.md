@@ -243,6 +243,14 @@ order:: 30
 parent:: [[Runtime & Internals]]
 description:: Deterministic validation, differential baseline_path output, version inference, and workspace-first resolution.
 
+## NN Page: Live Model Preview
+title:: Live Model Preview
+source:: live-preview.md
+route:: live-preview
+order:: 40
+parent:: [[Runtime & Internals]]
+description:: The opt-in MCP loopback server and SSE change stream that turns the editor tab into a read-only live mirror of the agent's mutations.
+
 # NN NavbarItem
 
 ## NN NavbarItem: Ecosistema
