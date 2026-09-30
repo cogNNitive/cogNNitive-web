@@ -57,12 +57,12 @@ Chain strategy: parser+spec first, then repoint + purge.
 
 ## Phase 3: Procedure + Docs Purge
 
-- [ ] 3.1 `generate_anydeo_script_NN.md`: delete the residual `tool:: [[VidGeNN]]`
+- [x] 3.1 `generate_anydeo_script_NN.md`: delete the residual `tool:: [[VidGeNN]]`
       reference (the canonical `generate_video_script_NN.md` already renders internally
       via `video-engine-cli.mjs`; no render change is in scope). `[video-script-skill:Requirement:Owned Skill With No External Dependency]`
-- [ ] 3.2 `docs/innfo/documentation/template-video.md` and the video docs: remove
+- [x] 3.2 `docs/innfo/documentation/template-video.md` and the video docs: remove
       VidGeNN / Anydeo references.
-- [ ] 3.3 Grep gate: zero `VidGeNN` / `Anydeo` hits across the monorepo (git history
+- [x] 3.3 Grep gate: zero `VidGeNN` / `Anydeo` hits across the monorepo (git history
       excluded).
 - [ ] 3.4 Release: cut a `skills-v*` tag **and** re-pin `manifest/source.yaml` in the
       same batch (`nn-dev-development` §4e).
