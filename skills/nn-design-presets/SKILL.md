@@ -3,7 +3,7 @@ name: nn-design-presets
 description: Reference for cogNNitive visual design presets — palettes, typography, spacing, and branding tokens. MUST be activated whenever generating visual components, web apps, HTML dashboard artifacts, or styled site pages.
 license: MIT
 compatibility: ">=1.0.0"
-version: "V_1-3-0"
+version: "V_1-4-0"
 last_updated: 2026-09-10
 metadata:
   source_type: original
