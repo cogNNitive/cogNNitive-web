@@ -5,14 +5,14 @@
  *
  * Detection (design.md A1): union the versions found by scanning the
  * resolver's own local search dirs (`specs/`, `.specs/`, `.spec-cache/`) for
- * `{slug}_V_*_NN.md` files with the bundled `SHIPPED_blueprint_versionS` map.
+ * `{slug}_V_*_NN.md` files with the bundled `SHIPPED_BLUEPRINT_VERSIONS` map.
  * Fires when the highest version found is strictly newer than the version
  * pinned by `parent_spec.name`. Read-only observer — never mutates anything.
  */
 import { ref, type Ref } from 'vue'
 import type { DirectoryHandleLike } from '../model/fs-types'
 import { innfoPrompt } from '../ai-guide/prompt'
-import { SHIPPED_blueprint_versionS } from '../config/samples'
+import { SHIPPED_BLUEPRINT_VERSIONS } from '../config/samples'
 
 export interface TemplateVersionNotice {
   current: string
@@ -157,7 +157,7 @@ export function useTemplateVersionNotice(ctx: UseTemplateVersionNoticeCtx): {
     }
 
     const found: string[] = []
-    const shipped = SHIPPED_blueprint_versionS[parsed.slug]
+    const shipped = SHIPPED_BLUEPRINT_VERSIONS[parsed.slug]
     if (shipped) found.push(shipped)
 
     const handle = ctx.handle?.value

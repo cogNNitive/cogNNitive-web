@@ -97,7 +97,7 @@ interface RefResolutionResult {
 
 interface ValidationResult {
   violations: string[];
-  bundled_templates: (string | { name?: string })[];
+  bundled_blueprints: (string | { name?: string })[];
 }
 
 interface ApiResponse<T = any> {

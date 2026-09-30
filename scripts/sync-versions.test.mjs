@@ -106,7 +106,7 @@ function fixtureTree() {
       '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/bluepriNNts/*/spec_NN.md and',
       '// iNNfo/specs/bluepriNNts/workspace_spec_NN.md.',
       '// Regenerate with `npm run sync:versions` (scripts/sync-versions.mjs).',
-      'export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {',
+      'export const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = {',
       "  alpha: 'V_0-0-0',",
       '}',
       '',
@@ -213,7 +213,7 @@ async function runTests() {
     const samplesContent = fs.readFileSync(samplesTsPath, 'utf8');
     assert.ok(samplesContent.includes("alpha: 'V_0-1-0'"), 'alpha version should be updated in samples.ts');
     assert.ok(samplesContent.includes("beta: 'V_0-3-2'"), 'beta version should be added to samples.ts');
-    assert.ok(!/^\s*workspace:/m.test(samplesContent), 'workspace must remain omitted from SHIPPED_TEMPLATE_VERSIONS');
+    assert.ok(!/^\s*workspace:/m.test(samplesContent), 'workspace must remain omitted from SHIPPED_BLUEPRINT_VERSIONS');
 
     const sourceContent = fs.readFileSync(sourceYamlPath, 'utf8');
     // Skill versions

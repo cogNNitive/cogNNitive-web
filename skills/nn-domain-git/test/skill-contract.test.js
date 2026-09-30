@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-workspace-git/test/skill-contract.test.js
+ * skills/nn-domain-git/test/skill-contract.test.js
  *
- * Persisted fixture checks for the nn-workspace-git skill contract
- * (change 2026-09-09-nn-workspace-git-plus-collaboration-git-docs).
+ * Persisted fixture checks for the nn-domain-git skill contract
+ * (change 2026-09-09-nn-domain-git-plus-collaboration-git-docs).
  *
  * Zero external test framework deps (repo convention: skills-manager.test.js,
  * backup-workspace.test.js). Uses the repo's yaml-lite subset parser for
  * frontmatter. Run with:
  *
- *   node skills/nn-workspace-git/test/skill-contract.test.js
+ *   node skills/nn-domain-git/test/skill-contract.test.js
  *
  * Covers the spec scenarios that are mechanically testable:
  *   1. SKILL.md frontmatter contract (Explicit Invocation Gate)
@@ -26,7 +26,7 @@ const path = require('node:path');
 const { parseFrontmatter, parseFocusedYaml } = require('../../../scripts/lib/yaml-lite.js');
 
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
-const SKILL_PATH = path.join(REPO_ROOT, 'skills', 'nn-workspace-git', 'SKILL.md');
+const SKILL_PATH = path.join(REPO_ROOT, 'skills', 'nn-domain-git', 'SKILL.md');
 const DOC_PATH = path.join(REPO_ROOT, 'docs', 'innfo', 'documentation', 'collaboration-git.md');
 const MODEL_PATH = path.join(REPO_ROOT, 'docs', 'innfo', 'documentation', 'documentation_NN.md');
 const SIDEBAR_PATH = path.join(REPO_ROOT, 'docs', 'innfo', 'documentation', '_sidebar.md');
@@ -87,21 +87,21 @@ function assertGitignoreBlock(block, sourceLabel) {
 }
 
 function main() {
-  console.log('Running nn-workspace-git skill-contract tests...');
+  console.log('Running nn-domain-git skill-contract tests...');
 
   // ---------- 1. SKILL.md frontmatter contract (Explicit Invocation Gate) ----------
   {
     const skill = fs.readFileSync(SKILL_PATH, 'utf8');
     const fm = parseFocusedYaml(parseFrontmatter(skill));
 
-    assert.strictEqual(fm.name, 'nn-workspace-git', 'frontmatter name');
-    assert.match(fm.description, /\/nn-workspace-git/, 'description must name the explicit trigger');
+    assert.strictEqual(fm.name, 'nn-domain-git', 'frontmatter name');
+    assert.match(fm.description, /\/nn-domain-git/, 'description must name the explicit trigger');
     assert.strictEqual(fm['disable-model-invocation'], true, 'disable-model-invocation must be true');
     assert.strictEqual(fm.version, 'V_0-1-0', 'version must be V_0-1-0');
     assert.strictEqual(fm.metadata.source_type, 'original', 'source_type must be original');
     assert.strictEqual(fm.license, 'MIT', 'license must be MIT');
     assert.strictEqual(fm.compatibility, 'opencode, claude-code, cursor', 'compatibility list');
-    assert.deepStrictEqual(fm.bundled_templates, [], 'bundled_templates must be empty');
+    assert.deepStrictEqual(fm.bundled_blueprints, [], 'bundled_blueprints must be empty');
 
     // Alpha warning + abort-with-zero-side-effects + double-confirm contract text.
     assert.match(skill, /ALPHA[\s\S]*technicians with prior Git experience/, 'alpha warning must gate to technicians');
@@ -200,7 +200,7 @@ function main() {
     console.log('✔ english-only: zero violations in skill + docs; scanner sensitivity verified');
   }
 
-  console.log('All nn-workspace-git skill-contract tests passed successfully!');
+  console.log('All nn-domain-git skill-contract tests passed successfully!');
 }
 
 main();

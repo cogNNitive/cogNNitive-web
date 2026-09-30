@@ -350,7 +350,7 @@ function runVerification(options = {}) {
   // 7c. Samples SSOT Drift Guard: ensure template sample files match _samples_nn/models/ SSOT
   run('node scripts/sync-samples.mjs --check', 'Check Samples Parity with _samples_nn');
 
-  // 7d. Version SSOT Drift Guard: ensure SHIPPED_TEMPLATE_VERSIONS and
+  // 7d. Version SSOT Drift Guard: ensure SHIPPED_BLUEPRINT_VERSIONS and
   //     manifest/source.yaml versions match specs and SKILL.md.
   //     Runs before step 8 so a stale manifest/source.yaml fails here first,
   //     not as a confusing rendered-doc diff.

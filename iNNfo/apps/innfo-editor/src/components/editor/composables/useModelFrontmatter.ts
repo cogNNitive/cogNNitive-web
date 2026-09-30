@@ -3,8 +3,8 @@ import { parseFrontmatter } from '@cognnitive/innfo-core'
 import type { SpecFrontmatter } from '@cognnitive/innfo-core'
 import {
   DEFAULT_INNFO_VERSION,
-  DEFAULT_blueprint_name,
-  DEFAULT_blueprint_version,
+  DEFAULT_BLUEPRINT_NAME,
+  DEFAULT_BLUEPRINT_VERSION,
 } from '../../../utils/constants'
 
 /**
@@ -57,18 +57,18 @@ export function useModelFrontmatter(rawContent: Ref<string>): {
 
   const templateName = computed(() => {
     const fm = frontmatter.value
-    if (!fm) return DEFAULT_blueprint_name
+    if (!fm) return DEFAULT_BLUEPRINT_NAME
     return (
       readString(readNested(fm, 'template.name')) ??
       readString(readNested(fm, 'parent_spec.name')) ??
       readString(readNested(fm, 'parent.name')) ??
-      DEFAULT_blueprint_name
+      DEFAULT_BLUEPRINT_NAME
     )
   })
 
   const templateVersion = computed(() => {
     const fm = frontmatter.value
-    if (!fm) return DEFAULT_blueprint_version
+    if (!fm) return DEFAULT_BLUEPRINT_VERSION
 
     const explicit = readString(readNested(fm, 'template.version'))
     if (explicit) return explicit
@@ -79,7 +79,7 @@ export function useModelFrontmatter(rawContent: Ref<string>): {
       readString(readNested(fm, 'parent_spec.name')) ??
       readString(readNested(fm, 'parent.name'))
     const derived = tplName?.match(/V_\d+-\d+-\d+/i)
-    return derived ? derived[0] : DEFAULT_blueprint_version
+    return derived ? derived[0] : DEFAULT_BLUEPRINT_VERSION
   })
 
   const modelVersion = computed(() => {

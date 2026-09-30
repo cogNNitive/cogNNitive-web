@@ -10,7 +10,7 @@ metadata:
   workflow: skills
 license: MIT
 compatibility: opencode
-bundled_templates: []
+bundled_blueprints: []
 ---
 
 # nn Skills Lifecycle

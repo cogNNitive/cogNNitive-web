@@ -6,7 +6,7 @@ metadata:
   source_type: "original"
   mcp: "innfo-mcp"
 license: MIT
-bundled_templates:
+bundled_blueprints:
   - name: workspace_spec_NN
     path: templates/workspace_spec_NN.md
 description: |

@@ -193,7 +193,7 @@ async function checkPathAtCommit(skill) {
 /**
  * Verifies version parity between manifest and remote SKILL.md frontmatter.
  * @param {{ name: string, repo: string, path: string, commit: string, version: string }} skill
- * @returns {Promise<string | { bundled_templates: any[] }>}
+ * @returns {Promise<string | { bundled_blueprints: any[] }>}
  */
 async function checkVersionParity(skill) {
   const url = `https://raw.githubusercontent.com/${skill.repo}/${skill.commit}/${skill.path}/SKILL.md`;
@@ -211,7 +211,7 @@ async function checkVersionParity(skill) {
   if (String(declared) !== String(skill.version)) {
     return `${skill.name}: version mismatch — manifest '${skill.version}' vs SKILL.md '${declared}'`;
   }
-  return { bundled_templates: meta.bundled_templates || [] };
+  return { bundled_blueprints: meta.bundled_blueprints || [] };
 }
 
 /**
@@ -380,12 +380,12 @@ async function validateConsoleAsset(entry, policy) {
  *   templates?: string[],
  * }} skill
  * @param {typeof CHANNELS[string]} policy
- * @returns {Promise<{ violations: string[], bundled_templates: any[] }>}
+ * @returns {Promise<{ violations: string[], bundled_blueprints: any[] }>}
  */
 async function validateSkill(skill, policy) {
   const violations = structuralViolations(skill);
-  let bundled_templates = [];
-  if (violations.length > 0) return { violations, bundled_templates };
+  let bundled_blueprints = [];
+  if (violations.length > 0) return { violations, bundled_blueprints };
 
   const commitViolation = await checkCommitExists(skill);
   if (commitViolation) violations.push(commitViolation);
@@ -398,15 +398,15 @@ async function validateSkill(skill, policy) {
   const versionResult = await checkVersionParity(skill);
   if (typeof versionResult === 'string') {
     violations.push(versionResult);
-  } else if (versionResult && versionResult.bundled_templates) {
-    bundled_templates = versionResult.bundled_templates;
+  } else if (versionResult && versionResult.bundled_blueprints) {
+    bundled_blueprints = versionResult.bundled_blueprints;
   }
 
   for (const mcp of (skill.mcp || [])) {
     violations.push(...await validateMcp(mcp, policy));
   }
 
-  return { violations, bundled_templates };
+  return { violations, bundled_blueprints };
 }
 
 /**
@@ -528,9 +528,9 @@ async function validateManifest(manifestData, policy) {
   const knownSkillBundledTemplates = new Set();
 
   for (const skill of skills) {
-    const { violations: skillViolations, bundled_templates } = await validateSkill(skill, policy);
+    const { violations: skillViolations, bundled_blueprints } = await validateSkill(skill, policy);
     violations.push(...skillViolations);
-    for (const bt of bundled_templates) {
+    for (const bt of bundled_blueprints) {
       const name = typeof bt === 'string' ? bt : (bt && bt.name);
       if (name) knownSkillBundledTemplates.add(name);
     }

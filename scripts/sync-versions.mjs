@@ -146,7 +146,7 @@ function renderSamplesObjectBody(versions) {
   }).join('\n');
 }
 
-const SAMPLES_BLOCK_RE = /export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = \{[\s\S]*?\n\}/;
+const SAMPLES_BLOCK_RE = /export const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = \{[\s\S]*?\n\}/;
 
 function syncSamplesTs({ versions, samplesTsPath, check }) {
   if (!fs.existsSync(samplesTsPath)) {
@@ -155,11 +155,11 @@ function syncSamplesTs({ versions, samplesTsPath, check }) {
 
   const current = fs.readFileSync(samplesTsPath, 'utf8');
   if (!SAMPLES_BLOCK_RE.test(current)) {
-    return { ok: false, error: `Could not find SHIPPED_TEMPLATE_VERSIONS block in ${samplesTsPath}` };
+    return { ok: false, error: `Could not find SHIPPED_BLUEPRINT_VERSIONS block in ${samplesTsPath}` };
   }
 
   const body = renderSamplesObjectBody(versions);
-  const replacement = `${GENERATED_HEADER}\nexport const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {\n${body}\n}`;
+  const replacement = `${GENERATED_HEADER}\nexport const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = {\n${body}\n}`;
   const updated = current.replace(new RegExp(`(?:${GENERATED_HEADER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n)?${SAMPLES_BLOCK_RE.source}`), replacement);
 
   if (check) {
@@ -330,7 +330,7 @@ export function syncVersions({
   if (!samplesResult.ok) {
     if (samplesResult.drift) {
       errors.push(
-        `SHIPPED_TEMPLATE_VERSIONS in ${samplesTsPath} is stale. ` +
+        `SHIPPED_BLUEPRINT_VERSIONS in ${samplesTsPath} is stale. ` +
         `Run \`npm run sync:versions\` to regenerate it.`
       );
     } else {

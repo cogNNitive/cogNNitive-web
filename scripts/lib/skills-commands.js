@@ -43,7 +43,7 @@ const { registerMcpAuto } = require('./mcp-config-adapter.js');
 
 const DEFAULT_MANIFEST_URL = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md';
 const DEFAULT_SKILLS_DIR = path.join(os.homedir(), '.agents', 'skills');
-const DEFAULT_TEMPLATES_DIR = path.join(os.homedir(), '.agents', 'templates');
+const DEFAULT_TEMPLATES_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
 const DEFAULT_MCP_DIR = path.join(os.homedir(), '.agents', 'mcp');
 const DEFAULT_CONSOLE_DIR = path.join(os.homedir(), '.agents', 'console');
 const DEFAULT_STATE_FILE = path.join(os.homedir(), '.agents', 'bootstrap-state.json');

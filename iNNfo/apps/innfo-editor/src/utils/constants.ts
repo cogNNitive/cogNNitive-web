@@ -12,12 +12,10 @@
  */
 export const DEFAULT_INNFO_VERSION = 'V_0-3-0'
 
-/** Default template/blueprint name for new documents. */
-export const DEFAULT_blueprint_name = ''
+/** Default blueprint name for new documents. */
 export const DEFAULT_BLUEPRINT_NAME = ''
 
-/** Default template/blueprint version. */
-export const DEFAULT_blueprint_version = 'V_0-2-0'
+/** Default blueprint version. */
 export const DEFAULT_BLUEPRINT_VERSION = 'V_0-2-0'
 
 /** Maximum marker score value (scores range from 0 to this value). */
@@ -42,7 +40,7 @@ export function buildSpecificationUrl(version: string = DEFAULT_INNFO_VERSION): 
  * Builds the canonical raw GitHub URL for an L2 blueprint version, grouped
  * under its own `specs/bluepriNNts/{name}/` folder alongside its samples.
  */
-export function buildTemplateUrl(name: string, version: string = DEFAULT_blueprint_version): string {
+export function buildTemplateUrl(name: string, version: string = DEFAULT_BLUEPRINT_VERSION): string {
   return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${name}/${name}_${version}_NN.md`
 }
 
@@ -86,5 +84,5 @@ export function buildSubmodelTemplateUrl(template: string): string {
   if (KNOWN_TEMPLATES.has(baseName)) {
     return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${baseName}/spec_NN.md`
   }
-  return buildBlueprintUrl(normalized, DEFAULT_blueprint_version)
+  return buildBlueprintUrl(normalized, DEFAULT_BLUEPRINT_VERSION)
 }

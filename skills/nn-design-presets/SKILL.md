@@ -7,7 +7,7 @@ version: "V_1-3-0"
 last_updated: 2026-09-10
 metadata:
   source_type: original
-bundled_templates: []
+bundled_blueprints: []
 ---
 
 # cogNNitive Design Presets

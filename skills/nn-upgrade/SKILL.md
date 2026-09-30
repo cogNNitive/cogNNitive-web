@@ -7,7 +7,7 @@ metadata:
   source_type: original
 license: MIT
 compatibility: opencode, claude-code, cursor, any agent supporting skills
-bundled_templates: []
+bundled_blueprints: []
 ---
 
 # nn-upgrade

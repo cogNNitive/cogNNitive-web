@@ -21,7 +21,7 @@
  *   --json          Emit machine-readable JSON output
  *   --manifest-url  Override default manifest URL
  *   --skills-dir    Override ~/.agents/skills directory
- *   --templates-dir Override ~/.agents/templates directory
+ *   --blueprints-dir Override ~/.agents/bluepriNNts directory
  *   --state-file    Override ~/.agents/bootstrap-state.json
  */
 
@@ -39,7 +39,7 @@ const DEFAULT_MANIFEST_URL = process.env.SM_MANIFEST_URL ||
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md';
 
 const DEFAULT_SKILLS_DIR = path.join(os.homedir(), '.agents', 'skills');
-const DEFAULT_TEMPLATES_DIR = path.join(os.homedir(), '.agents', 'templates');
+const DEFAULT_BLUEPRINTS_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
 const DEFAULT_MCP_DIR = path.join(os.homedir(), '.agents', 'mcp');
 const DEFAULT_STATE_FILE = path.join(os.homedir(), '.agents', 'bootstrap-state.json');
 const LEGACY_STATE_FILE = path.join(os.homedir(), '.agents', 'skills-state.json');
@@ -563,11 +563,11 @@ function scanWorkspaceSources(workspaceDir) {
  *
  * @param {object} options
  * @param {string} [options.workspaceDir]
- * @param {string} [options.templatesDir]
+ * @param {string} [options.blueprintsDir]
  * @returns {{ validCount: number, blockerCount: number, warningCount: number, items: Array<any> }}
  */
 function validateTemplateCompositions(options = {}) {
-  const { workspaceDir, templatesDir } = options;
+  const { workspaceDir, blueprintsDir } = options;
   const searchDirs = [];
 
   if (workspaceDir) {
@@ -575,8 +575,8 @@ function validateTemplateCompositions(options = {}) {
     const wsSpecs = path.join(workspaceDir, 'specs');
     if (fs.existsSync(wsSpecsTemplates)) searchDirs.push(wsSpecsTemplates);
     if (fs.existsSync(wsSpecs)) searchDirs.push(wsSpecs);
-  } else if (templatesDir && fs.existsSync(templatesDir)) {
-    searchDirs.push(templatesDir);
+  } else if (blueprintsDir && fs.existsSync(blueprintsDir)) {
+    searchDirs.push(blueprintsDir);
   } else {
     const repoRoot = path.resolve(__dirname, '../../../..');
     const repoSpecsTemplates = path.join(repoRoot, 'specs', 'templates');
@@ -942,7 +942,7 @@ async function runCheck(options = {}) {
   const isJson = options.json || process.argv.includes('--json');
   const manifestUrl = options.manifestUrl || process.env.SM_MANIFEST_URL || DEFAULT_MANIFEST_URL;
   const skillsDir = options.skillsDir || DEFAULT_SKILLS_DIR;
-  const templatesDir = options.templatesDir || DEFAULT_TEMPLATES_DIR;
+  const blueprintsDir = options.blueprintsDir || DEFAULT_BLUEPRINTS_DIR;
   const mcpDir = options.mcpDir || DEFAULT_MCP_DIR;
   const stateFile = options.stateFile || DEFAULT_STATE_FILE;
   const workspaceDir = options.workspaceDir || null;
@@ -1256,8 +1256,8 @@ async function runCheck(options = {}) {
   for (const tmpl of manifest.blueprints) {
     results.summary.templatesTotal++;
     const fileName = tmpl.name.endsWith('.md') ? tmpl.name : `${tmpl.name}.md`;
-    const tmplPath = path.join(templatesDir, fileName);
-    const tmplExists = fs.existsSync(tmplPath) || fs.existsSync(path.join(templatesDir, tmpl.name));
+    const tmplPath = path.join(blueprintsDir, fileName);
+    const tmplExists = fs.existsSync(tmplPath) || fs.existsSync(path.join(blueprintsDir, tmpl.name));
     const recorded = state.blueprints[tmpl.name];
     let tmplStatus = 'up-to-date';
 
@@ -1282,7 +1282,7 @@ async function runCheck(options = {}) {
   // 5. Template Composition Integrity Validation
   const compositionResults = validateTemplateCompositions({
     workspaceDir,
-    templatesDir,
+    blueprintsDir,
   });
   results.summary.templatesCompositionValid = compositionResults.validCount;
   results.summary.templatesCompositionBlockers = compositionResults.blockerCount;
@@ -1461,7 +1461,7 @@ async function main() {
   const isJson = process.argv.includes('--json');
   const manifestUrl = getArg('--manifest-url');
   const skillsDir = getArg('--skills-dir');
-  const templatesDir = getArg('--templates-dir');
+  const blueprintsDir = getArg('--blueprints-dir');
   const mcpDir = getArg('--mcp-dir');
   const stateFile = getArg('--state-file');
   const workspaceDir = getArg('--workspace-dir');
@@ -1473,7 +1473,7 @@ async function main() {
       json: isJson,
       manifestUrl,
       skillsDir,
-      templatesDir,
+      blueprintsDir,
       mcpDir,
       stateFile,
       workspaceDir,

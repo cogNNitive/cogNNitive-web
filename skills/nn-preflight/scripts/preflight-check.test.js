@@ -1448,7 +1448,7 @@ agent-bootstrap:
 
       const res = await runScriptAsync([
         '--skills-dir', skillsDir,
-        '--templates-dir', templatesDir,
+        '--blueprints-dir', templatesDir,
         '--state-file', stateFile,
         '--manifest-url', `${server.url}/manifest.md`,
         '--freshness-url', `${server.url}/use/freshness.json`,
