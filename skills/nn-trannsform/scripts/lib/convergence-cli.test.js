@@ -46,6 +46,7 @@ function testConvergeProposal() {
         '## NN Source Family: youtube_monthly',
         'strategy:: upsert',
         'key:: video_id',
+        'concept:: VideoMetric',
         '',
       ].join('\n'),
     );
@@ -62,6 +63,18 @@ function testConvergeProposal() {
     assert.deepStrictEqual(proposal.added, [{ key: 'jkl', fields: { views: '400' } }]);
     assert.deepStrictEqual(proposal.changed, [{ key: 'abc', field: 'views', from: '100', to: '150' }]);
     assert.deepStrictEqual(proposal.removed, [{ key: 'ghi' }]);
+
+    // Apply plan: deterministic apply_change ops (upsert keeps changes in review).
+    const planRun = cli(['--converge', 'youtube_monthly', '--plan', '--src', dir]);
+    assert.strictEqual(planRun.status, 0, planRun.stderr);
+    const plan = JSON.parse(planRun.stdout);
+    assert.strictEqual(plan.concept, 'VideoMetric');
+    assert.deepStrictEqual(plan.ops[0], {
+      op: 'add_element',
+      args: { conceptName: 'VideoMetric', elementName: 'jkl', fields: { views: '400' } },
+    });
+    assert.deepStrictEqual(plan.ops[1], { op: 'bump_version', args: { bump: 'patch' } });
+    assert.strictEqual(plan.review.length, 1);
 
     // Read-only guarantee: sources are byte-unchanged.
     assert.ok(fs.readFileSync(fromPath).equals(beforeFrom), 'from snapshot unchanged');

@@ -481,9 +481,9 @@ Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-val
 When a source family declares a convergence strategy (`## NN Source Family:` in the domaiNN manifest), a new snapshot produces a **read-only convergence proposal** via `node skills/nn-trannsform/scripts/index.js --converge <family>`. Apply it through this same reviewed loop — never hand-edit the source (sources are immutable citation targets):
 
 1. Present the proposal as a Change Preview with Diff: the added keys, the changed values (`key.field: from -> to`), and the flagged removed keys.
-2. On confirmation, apply one `innfo-mcp_apply_change` per element (or the matching batch), then re-validate with `innfo-mcp_validate_knowledge`.
-3. Produce **one** version bump for the affected model.
-4. Mark the family applied so re-running `--converge` is a no-op: `node skills/nn-trannsform/scripts/index.js --converge-mark <family> --version <V_x-y-z>`.
+2. Run `--converge <family> --plan` to get the exact ordered `apply_change` operation list (it requires the family to declare `concept::`). Apply the plan's `ops` with `innfo-mcp_apply_change`, then re-validate with `innfo-mcp_validate_knowledge`. `upsert` plans never overwrite a changed value — those arrive under `review` for an explicit user decision.
+3. The plan ends in **one** `bump_version` for the affected model.
+4. Mark the family applied so re-running `--converge` is a no-op: `node skills/nn-trannsform/scripts/index.js --converge-mark <family> --version <model-version>`.
 
 Removed keys are flag-only: never delete or archive a model element from a convergence proposal without an explicit user decision.
 

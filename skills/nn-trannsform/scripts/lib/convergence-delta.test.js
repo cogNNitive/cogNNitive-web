@@ -15,6 +15,7 @@ const {
   validateKey,
   computeDelta,
   buildProposal,
+  buildApplyPlan,
   resolveFamilySnapshots,
 } = require('./convergence-delta.js');
 
@@ -28,6 +29,7 @@ function testParseSourceFamilies() {
     '## NN Source Family: youtube_analytics_monthly',
     'strategy:: upsert',
     'key:: video_id',
+    'concept:: VideoMetric',
     '',
     '## NN Source Family: brand_prose',
     'strategy:: cite-only',
@@ -35,11 +37,16 @@ function testParseSourceFamilies() {
   ].join('\n');
   const families = parseSourceFamilies(manifest);
   assert.strictEqual(families.length, 2);
-  assert.deepStrictEqual(families[0], { family: 'youtube_analytics_monthly', strategy: 'upsert', key: 'video_id' });
-  assert.deepStrictEqual(families[1], { family: 'brand_prose', strategy: 'cite-only', key: null });
+  assert.deepStrictEqual(families[0], {
+    family: 'youtube_analytics_monthly',
+    strategy: 'upsert',
+    key: 'video_id',
+    concept: 'VideoMetric',
+  });
+  assert.deepStrictEqual(families[1], { family: 'brand_prose', strategy: 'cite-only', key: null, concept: null });
 
   const defaulted = parseSourceFamilies('## NN Source Family: x\nfoo:: bar\n');
-  assert.deepStrictEqual(defaulted[0], { family: 'x', strategy: 'cite-only', key: null });
+  assert.deepStrictEqual(defaulted[0], { family: 'x', strategy: 'cite-only', key: null, concept: null });
   console.log('PASS: parseSourceFamilies');
 }
 
@@ -118,6 +125,32 @@ function testBuildProposal() {
   console.log('PASS: buildProposal');
 }
 
+function testBuildApplyPlan() {
+  const common = { family: 'fam', key: 'video_id', fromFile: 'a.csv', toFile: 'b.csv' };
+
+  const replaceProposal = buildProposal({ ...common, strategy: 'replace-values', fromContent: CSV_FROM, toContent: CSV_TO });
+  const replacePlan = buildApplyPlan(replaceProposal, 'VideoMetric');
+  assert.deepStrictEqual(replacePlan.ops[0], {
+    op: 'add_element',
+    args: { conceptName: 'VideoMetric', elementName: 'jkl', fields: { views: '400', title: 'Delta' } },
+  });
+  assert.deepStrictEqual(replacePlan.ops[1], {
+    op: 'update_field',
+    args: { conceptName: 'VideoMetric', elementName: 'abc', fieldName: 'views', value: '150' },
+  });
+  assert.deepStrictEqual(replacePlan.ops[2], { op: 'bump_version', args: { bump: 'patch' } });
+  assert.strictEqual(replacePlan.review.length, 0);
+
+  const upsertProposal = buildProposal({ ...common, strategy: 'upsert', fromContent: CSV_FROM, toContent: CSV_TO });
+  const upsertPlan = buildApplyPlan(upsertProposal, 'VideoMetric');
+  assert.strictEqual(upsertPlan.ops.filter((o) => o.op === 'update_field').length, 0);
+  assert.strictEqual(upsertPlan.review.length, 1);
+  assert.deepStrictEqual(upsertPlan.removed, [{ key: 'ghi' }]);
+
+  assert.throws(() => buildApplyPlan(replaceProposal, null), /concept:: is required/);
+  console.log('PASS: buildApplyPlan');
+}
+
 function testResolveFamilySnapshots() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'conv-snap-'));
   try {
@@ -145,6 +178,7 @@ function runAll() {
     testValidateKey();
     testComputeDelta();
     testBuildProposal();
+    testBuildApplyPlan();
     testResolveFamilySnapshots();
     console.log('\nAll convergence-delta tests passed.');
   } catch (err) {

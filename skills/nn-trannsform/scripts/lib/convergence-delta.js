@@ -34,10 +34,12 @@ function sha256(text) {
 /**
  * Parses `## NN Source Family:` blocks from a manifest's text.
  * Each block declares `strategy:: <cite-only|upsert|replace-values>` and, for a
- * non-default strategy, a required `key:: <column>`.
+ * non-default strategy, a required `key:: <column>`. An optional `concept::`
+ * names the target Concept, which `buildApplyPlan` needs to emit `apply_change`
+ * operations.
  *
  * @param {string} manifestText
- * @returns {Array<{ family: string, strategy: string, key: string | null }>}
+ * @returns {Array<{ family: string, strategy: string, key: string | null, concept: string | null }>}
  */
 function parseSourceFamilies(manifestText) {
   const families = [];
@@ -52,10 +54,12 @@ function parseSourceFamilies(manifestText) {
     const body = manifestText.slice(matches[i].start, end);
     const strategyMatch = body.match(/^strategy::\s*(\S+)\s*$/im);
     const keyMatch = body.match(/^key::\s*(\S+)\s*$/im);
+    const conceptMatch = body.match(/^concept::\s*(\S+)\s*$/im);
     families.push({
       family: matches[i].family,
       strategy: strategyMatch ? strategyMatch[1].toLowerCase() : 'cite-only',
       key: keyMatch ? keyMatch[1] : null,
+      concept: conceptMatch ? conceptMatch[1] : null,
     });
   }
   return families;
@@ -255,6 +259,44 @@ function buildProposal(options) {
   return { ...base, ...refs, ...delta, conflicts: [], applied: null, empty: false };
 }
 
+/**
+ * Maps a proposal to the exact `innfo-mcp_apply_change` operation plan that
+ * applies it through the reviewed mutation path:
+ *   - one `add_element` per new key;
+ *   - one `update_field` per changed value, ONLY for `replace-values`
+ *     (`upsert` leaves changed values under `review` for a human decision);
+ *   - a single final `bump_version`.
+ * Removed keys are never an operation (flag-only). Requires the target concept.
+ *
+ * @param {object} proposal
+ * @param {string} concept
+ * @returns {{ ops: Array<{ op: string, args: object }>, review: Array<object>, removed: Array<object> }}
+ */
+function buildApplyPlan(proposal, concept) {
+  if (!concept) throw new Error('A target concept:: is required to build an apply plan.');
+  if (proposal.empty) return { ops: [], review: [], removed: [] };
+  const ops = [];
+  for (const added of proposal.added) {
+    ops.push({
+      op: 'add_element',
+      args: { conceptName: concept, elementName: added.key, fields: added.fields },
+    });
+  }
+  const review = [];
+  for (const change of proposal.changed) {
+    if (proposal.strategy === 'replace-values') {
+      ops.push({
+        op: 'update_field',
+        args: { conceptName: concept, elementName: change.key, fieldName: change.field, value: change.to },
+      });
+    } else {
+      review.push(change);
+    }
+  }
+  if (ops.length > 0) ops.push({ op: 'bump_version', args: { bump: 'patch' } });
+  return { ops, review, removed: proposal.removed };
+}
+
 module.exports = {
   STRATEGIES,
   SNAPSHOT_EXTS,
@@ -266,4 +308,5 @@ module.exports = {
   validateKey,
   computeDelta,
   buildProposal,
+  buildApplyPlan,
 };

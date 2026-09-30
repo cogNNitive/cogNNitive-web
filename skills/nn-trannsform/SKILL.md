@@ -285,6 +285,7 @@ manifest:
 ## NN Source Family: youtube_analytics_monthly
 strategy:: upsert
 key:: video_id
+concept:: VideoMetric
 ```
 
 - `cite-only` (default): no convergence; new snapshots are just citable.
@@ -293,6 +294,7 @@ key:: video_id
 - `key`: required unless `cite-only` — one single column/field, unique and
   non-empty across the snapshot. Missing/empty/duplicate key aborts with a
   non-zero exit and no proposal.
+- `concept`: optional target Concept, needed to emit an apply plan.
 
 Produce a read-only proposal (never writes `sources/` or the model):
 
@@ -307,9 +309,14 @@ node scripts/index.js --converge <family> [--json] [--src <project-dir>]
 - **Idempotent**: an already-applied proposal (or identical snapshots) yields an
   empty proposal.
 
-Apply the proposal through the reviewed mutation path (`apply_change` +
-`validate_model` + one version bump), then mark it applied so re-running is a
-no-op:
+Add `--plan` to emit the exact `innfo-mcp_apply_change` operation plan (requires
+`concept::`): one `add_element` per new key, one `update_field` per changed value
+**only for `replace-values`** (`upsert` returns changed values under `review`),
+and a single final `bump_version`. Removed keys are never an operation.
+
+Apply the proposal through the reviewed mutation path (run the plan's `ops` via
+`innfo-mcp_apply_change` + `validate_model`), then mark it applied so re-running
+is a no-op:
 
 ```bash
 node scripts/index.js --converge-mark <family> --version <V_x-y-z> [--src <project-dir>]

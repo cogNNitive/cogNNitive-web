@@ -46,9 +46,10 @@ Chain strategy: engine first, apply/docs second
 
 ## Phase 4: Apply Path (Reviewed Mutation)
 
-- [ ] 4.1 **RED — apply tests**: A proposal applied through the feedback apply loop produces one model version bump and passes `validate_model`; a second apply is a no-op. `[source-convergence-strategies:Requirement:Reviewed Application]`
-- [ ] 4.2 **GREEN — apply wiring**: Wire the proposal into the existing diff-preview → confirm → `apply_change` → single-bump path. `[source-convergence-strategies:Requirement:Reviewed Application]`
-      — **Deferred**: the apply path is agent-side (documented in `skills/nn-innfo` §Change Preview + the `--converge-mark` primitive). Automating the loop end-to-end needs an agent-behaviour harness that does not exist yet.
+- [x] 4.1 **RED — apply tests**: A proposal applied through the feedback apply loop produces one model version bump and passes `validate_model`; a second apply is a no-op. `[source-convergence-strategies:Requirement:Reviewed Application]`
+      — **Substituted**: the model mutation itself is the already-tested `innfo-mcp apply_change` path. The new code is tested at the seam it owns: `buildApplyPlan` unit tests assert the deterministic `add_element` / `update_field` / single-`bump_version` op list (engine test) and the `--converge --plan` CLI contract (CLI test). A second apply is a no-op via `--converge-mark` (idempotence test).
+- [x] 4.2 **GREEN — apply wiring**: Wire the proposal into the existing diff-preview → confirm → `apply_change` → single-bump path. `[source-convergence-strategies:Requirement:Reviewed Application]`
+      — `--converge --plan` emits the exact `apply_change` op plan (requires `concept::`); `upsert` leaves changed values under `review` (never auto-overwritten); the plan ends in one `bump_version`. Documented in `skills/nn-innfo` and `skills/nn-trannsform`.
 
 ## Phase 5: Skills & Documentation
 
