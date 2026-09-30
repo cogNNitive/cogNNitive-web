@@ -1,5 +1,15 @@
 # Proposal: Retire the Legacy Quarantine After the Migration Window
 
+## Status
+
+**BLOCKED — do not apply.** This change MUST NOT run until every known legacy workspace
+has been migrated through `nn-upgrade` and the maintainer has given written sign-off
+(task 1.1). The legacy workspaces are the prerequisite: they are the only reason the
+quarantine still exists. While the window is open, the quarantine module, its generated
+bundles, `legacy-hint.ts`, `useLegacyDomain.ts`, the frozen fixture and the ledger
+entries all stay, and every other change MUST keep respecting the ledger and write
+guards. Trigger to unblock: all known workspaces migrated + written sign-off.
+
 ## Why
 
 The `2026-09-29-nn-level-nomenclature-rename` change completed the migrate-first

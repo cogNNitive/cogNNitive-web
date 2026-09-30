@@ -1,5 +1,9 @@
 # Tasks: Retire the Legacy Quarantine After the Migration Window
 
+**Status: BLOCKED pending legacy-workspace migration + maintainer sign-off. Do not start.**
+Every known legacy workspace MUST first be migrated through `nn-upgrade`; task 1.1 is the
+gate. Until then the quarantine stays and the ledger/write guards must remain green.
+
 ## How to apply
 
 - At session start load `nn-dev-development` (`.agents/skills/nn-dev-development/SKILL.md`; the AGENTS.md mandate) and run its concurrency scan before any repo write.
