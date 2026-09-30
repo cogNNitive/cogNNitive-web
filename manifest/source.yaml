@@ -240,7 +240,7 @@ channels:
     refs:
       - key: skills
         repo: cogNNitive/cogNNitive
-        version: "2.6.0"
+        version: "2.7.0"
       - key: blueprints
         repo: cogNNitive/cogNNitive
         version: "0.18.0"
