@@ -9,14 +9,14 @@ agent-bootstrap:
     - name: nn-start
       repo: cogNNitive/cogNNitive
       path: skills/nn-start
-      version: "V_3-4-1"
+      version: "V_3-4-2"
       ref: "skills-v2.4.0"
       commit: "5eec2098c41e2b4875b5bb27c9ea15e5156d3779"
       description: Central system governance, setup, environment readiness gate (Preflight), and start router.
     - name: nn-trannsform
       repo: cogNNitive/cogNNitive
       path: skills/nn-trannsform
-      version: "V_3-4-0"
+      version: "V_3-4-1"
       ref: "skills-v2.4.0"
       commit: "5eec2098c41e2b4875b5bb27c9ea15e5156d3779"
       requires: [nn-innfo, nn-preflight]
@@ -24,7 +24,7 @@ agent-bootstrap:
     - name: nn-innfo
       repo: cogNNitive/cogNNitive
       path: skills/nn-innfo
-      version: "V_0-5-3"
+      version: "V_0-5-4"
       ref: "skills-v2.4.0"
       commit: "5eec2098c41e2b4875b5bb27c9ea15e5156d3779"
       description: Author, edit, and validate iNNfo models with built-in step-by-step Model Creation Wizard.
