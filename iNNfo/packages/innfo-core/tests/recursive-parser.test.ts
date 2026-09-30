@@ -247,8 +247,8 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
 
       const result = await recursiveParse(root)
       // Only one model should be loaded
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('exists')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'exists')).toBe(true)
 
       // Warning for missing file
       const missingIssues = result.issues.filter((i) => i.message.includes('not found'))
@@ -269,8 +269,8 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
 
       const result = await recursiveParse(root)
       expect(result.issues).toHaveLength(0)
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('nested')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'nested')).toBe(true)
     })
 
     it('resolves markdown-link references with ./ paths (films index.md case)', async () => {
@@ -310,8 +310,8 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       const result = await recursiveParse(root)
       // Plain source docs are skipped silently; only the real model is loaded.
       expect(result.issues).toHaveLength(0)
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('FilmCatalog_V_0-3-0_film')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'FilmCatalog_V_0-3-0_film')).toBe(true)
     })
 
     it('resolves `_source_NN.md` files inside a `sources/` subdirectory (current films workspace)', async () => {
@@ -363,8 +363,8 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       // No "Name is not allowed" — every nested reference resolves through its directory.
       expect(result.issues.filter((i) => i.message.includes('Name is not allowed'))).toHaveLength(0)
       // All 4 sources + template + catalog model register as roots.
-      expect(result.rootIds).toHaveLength(6)
-      const names = result.rootIds.map((id) => result.nodes[id].name)
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      const names = Object.values(result.nodes).map((n) => n.name)
       expect(names).toEqual(
         expect.arrayContaining([
           'Singin_in_the_Rain_source',
@@ -386,8 +386,8 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('nested')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'nested')).toBe(true)
     })
 
     it('reports a clear skip issue when a nested target directory is missing', async () => {
@@ -396,7 +396,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(0)
+      expect(result.rootIds).toHaveLength(1)
       const missingIssue = result.issues.find((i) => i.message.includes('not found'))
       expect(missingIssue).toBeDefined()
       expect(missingIssue!.path).toBe('./kNNowledge/missing_NN.md')
@@ -408,7 +408,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(0)
+      expect(result.rootIds).toHaveLength(1)
       const messages = result.issues.map((i) => i.message)
       expect(messages.some((m) => m.includes('Name is not allowed'))).toBe(false)
       expect(messages.some((m) => m.includes('not found'))).toBe(true)
@@ -454,7 +454,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       const result = await recursiveParse(root)
 
       // Both root nodes should exist
-      expect(result.rootIds).toHaveLength(2)
+      expect(result.rootIds).toHaveLength(1)
 
       // The parser MUST NOT tell the user to rename the element — shared
       // identity across models is the intended shape of a multi-model
@@ -542,7 +542,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(2)
+      expect(result.rootIds).toHaveLength(1)
       const elementNames = Object.values(result.nodes)
         .filter((n) => n.kind === 'element')
         .map((n) => n.name)
@@ -588,7 +588,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
     const result = await recursiveParse(root)
 
-    const wNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
+    const wNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
     const xNodes = Object.values(result.nodes).filter((n) => n.name === 'x')
     const pNode = Object.values(result.nodes).find((n) => n.name === 'p')
 
@@ -620,7 +620,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
   it('cycle-back-to-entrypoint: a reference chain looping back to the entrypoint is a cycle, proving ancestorKeys is seeded from it', async () => {
     const root = fakeDir('workspace', [
       ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
-      ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[workspace_NN.md]]\n'))],
+      ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[domaiNN_NN.md]]\n'))],
     ])
 
     const result = await recursiveParse(root)
@@ -688,7 +688,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
     const result = await recursiveParse(root)
 
-    const wNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
+    const wNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
     const xNode = Object.values(result.nodes).find((n) => n.name === 'x')
     const pNode = Object.values(result.nodes).find((n) => n.name === 'p')
 
@@ -697,169 +697,25 @@ describe('diamond vs cycle (ancestorKeys)', () => {
   })
 })
 
-describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
-  function makeOverviewRoot(manifestRef: string, provenanceRef: string): string {
-    return `---\nspec_version: "V_0-1-2"\nlevel: 3\nknowledge_version: "V_0-1-0"\ntitle: "Overview"\nparent_spec:\n  name: "base_V_0-1-0"\n  url: "https://example.test/base_V_0-1-0_spec_NN.md"\n---\n\n# NN Overview\n\n## NN Overview: Ghostbusters\nmanifest:: ${manifestRef}\nprovenance:: ${provenanceRef}\n`
-  }
-
-  function fakeParsedModel(content: string): ParsedModel {
-    return {
-      frontmatter: {} as ParsedModel['frontmatter'],
-      taxonomy: [],
-      elements: new Map(),
-      matrices: [],
-      nodeMarkers: {},
-      rawContent: content,
-    }
-  }
-
-  function fakeDriver(files: Record<string, string>): ModelDriver {
-    return {
-      async readModel(uri: string) {
-        const content = files[uri]
-        if (content === undefined) {
-          throw Object.assign(new Error('File not found'), { code: 'ENOENT' })
-        }
-        return fakeParsedModel(content)
-      },
-      async writeModel() {
-        throw new Error('not implemented in fakeDriver')
-      },
-      async listChildren(uri: string) {
-        if (uri !== '') return []
-        return Object.keys(files).map((name) => ({ name, uri: name, kind: 'element' as const }))
-      },
-      async listAssets() {
-        return []
-      },
-    }
-  }
-
-  const overviewRootSchema: TemplateSchema = {
-    concepts: [
-      {
-        name: 'Overview',
-        type: 'text',
-        fields: [
-          { name: 'manifest', type: 'model', target_blueprint: 'workspace_V_0-2-0' },
-          { name: 'provenance', type: 'model', target_blueprint: 'cogNNitive_V_0-2-0' },
-        ],
-      },
-    ],
-    markers: [],
-    matrices: [],
-    taxonomy: [],
-  }
-
-  const overviewRootResolver: TemplateSchemaResolver = ({ frontmatter }) => {
-    const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec
-      ?.name
-    return name === 'base_V_0-1-0' ? overviewRootSchema : null
-  }
-
-  it('base-root-takes-precedence: an overview root and a workspace manifest both exist — overview root wins', async () => {
+describe('single canonical entrypoint (domaiNN_NN.md)', () => {
+  it('only-root-is-the-entrypoint: domaiNN_NN.md is the sole root; wikilinks become children', async () => {
     const root = fakeDir('workspace', [
-      [
-        'gb_base_NN.md',
-        fakeFile('gb_base_NN.md', makeOverviewRoot('domaiNN_NN.md', 'gb_cognnitive_NN.md')),
-      ],
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Ghostbusters Workspace'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['a_NN.md']))],
+      ['a_NN.md', fakeFile('a_NN.md', makeModel('A'))],
     ])
-
-    const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: overviewRootResolver,
-    })
-
-    const overviewNode = Object.values(result.nodes).find((n) => n.name === 'gb_base')
-    const manifestNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
-    expect(overviewNode).toBeDefined()
-    expect(overviewNode!.parentId).toBeNull()
-    // the manifest is reached as the overview root's CHILD, not as a second root
-    expect(manifestNode).toBeDefined()
-    expect(manifestNode!.parentId).toBe(overviewNode!.id)
-    expect(result.rootIds).toHaveLength(1)
-    expect(result.rootIds[0]).toBe(overviewNode!.id)
-  })
-
-  it('no-base-root-unchanged: only workspace*.md exists — resolves exactly as before this capability existed', async () => {
-    const root = fakeDir('workspace', [
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Plain Workspace'))],
-    ])
-
     const result = await recursiveParse(root)
-
-    expect(result.rootIds).toHaveLength(1)
-    const rootNode = result.nodes[result.rootIds[0]]
-    expect(rootNode.name).toBe('workspace')
+    expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+    expect(Object.values(result.nodes).some((n) => n.name === 'a')).toBe(true)
     expect(result.issues).toHaveLength(0)
   })
 
-  it('base-root-driver-path: the same precedence holds via the ModelDriver code path', async () => {
-    const driver = fakeDriver({
-      'gb_base_NN.md': makeOverviewRoot('domaiNN_NN.md', 'gb_cognnitive_NN.md'),
-      'domaiNN_NN.md': makeModel('Ghostbusters Workspace'),
-    })
-    // The plain-handle root is irrelevant when a driver is supplied, but recursiveParse
-    // still requires one; an empty directory is sufficient since the driver serves reads.
-    const root = fakeDir('workspace', [])
-
-    const result = await recursiveParse(root, driver, {
-      resolveTemplateSchema: overviewRootResolver,
-    })
-
-    const overviewNode = Object.values(result.nodes).find((n) => n.name === 'gb_base')
-    const manifestNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
-    expect(overviewNode).toBeDefined()
-    expect(overviewNode!.parentId).toBeNull()
-    expect(manifestNode).toBeDefined()
-    expect(manifestNode!.parentId).toBe(overviewNode!.id)
-    expect(result.rootIds).toHaveLength(1)
-  })
-
-  it('base-root-in-ignored-dir-ignored: an overview-root-shaped file nested under archive/ is not discovered as the entrypoint', async () => {
-    const archiveDir = fakeDir('archive', [
-      ['x_base_NN.md', fakeFile('x_base_NN.md', makeOverviewRoot('domaiNN_NN.md', 'x_cognnitive_NN.md'))],
-    ])
+  it('legacy-names-are-not-entrypoints: *_base_NN.md is only a standalone fallback, never the entrypoint', async () => {
     const root = fakeDir('workspace', [
-      ['archive', archiveDir],
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Plain Workspace'))],
+      ['gb_base_NN.md', fakeFile('gb_base_NN.md', makeModel('Legacy Overview'))],
     ])
-
     const result = await recursiveParse(root)
-
-    // The nested overview-root-shaped file never surfaces as a node at all —
-    // only the root-level workspace manifest is discovered as the entrypoint.
-    expect(Object.values(result.nodes).some((n) => n.name === 'x_base')).toBe(false)
-    expect(result.rootIds).toHaveLength(1)
-    expect(result.nodes[result.rootIds[0]].name).toBe('workspace')
-  })
-
-  it('overview-root-children: parsing an overview root reaches both its manifest and provenance children via type:: knowledge traversal', async () => {
-    const root = fakeDir('workspace', [
-      [
-        'gb_base_NN.md',
-        fakeFile('gb_base_NN.md', makeOverviewRoot('domaiNN_NN.md', 'gb_cognnitive_NN.md')),
-      ],
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Ghostbusters Workspace'))],
-      ['gb_cognnitive_NN.md', fakeFile('gb_cognnitive_NN.md', makeModel('Ghostbusters Provenance'))],
-    ])
-
-    const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: overviewRootResolver,
-    })
-
-    const overviewNode = Object.values(result.nodes).find((n) => n.name === 'gb_base')
-    const manifestNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
-    const provenanceNode = Object.values(result.nodes).find((n) => n.name === 'gb_cognnitive')
-
-    expect(overviewNode).toBeDefined()
-    expect(manifestNode).toBeDefined()
-    expect(provenanceNode).toBeDefined()
-    expect(overviewNode!.childIds).toContain(manifestNode!.id)
-    expect(overviewNode!.childIds).toContain(provenanceNode!.id)
-    expect(manifestNode!.parentId).toBe(overviewNode!.id)
-    expect(provenanceNode!.parentId).toBe(overviewNode!.id)
-    expect(result.issues.filter((i) => i.code === 'CYCLE_DETECTED')).toHaveLength(0)
+    expect(Object.values(result.nodes).some((n) => n.name === 'domaiNN')).toBe(false)
+    expect(result.issues.length).toBeGreaterThan(0)
   })
 })
 
