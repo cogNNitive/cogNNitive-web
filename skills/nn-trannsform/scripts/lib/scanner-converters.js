@@ -557,8 +557,213 @@ function convertOkFormat(ext, filePath, baseName) {
       return `# ${baseName}\n\n${htmlToPlainText(content)}`;
     case '.txt':
     default:
-      return content;
+      return reflowExtractedText(content);
   }
+}
+
+/**
+ * Heuristic reflow for text extracted from binary documents (PDF/DOCX/TXT).
+ *
+ * `pdf-parse` emits one logical line per visual line, preserving mid-sentence
+ * breaks, the double spaces of justified text, zero-width characters, page
+ * numbers, and no heading structure. This normalises that into readable
+ * markdown with citable section headings:
+ *
+ *   1. strip zero-width / soft-hyphen characters and NBSP
+ *   2. re-join words hyphen-split across a line break
+ *   3. collapse inner whitespace and blank-line runs
+ *   4. promote clause headings to `##` / `###` (numbered Titles, ALL-CAPS
+ *      lines, `Schedule N`, and `n.m` sub-clauses)
+ *   5. drop isolated page-number lines
+ *   6. re-join wrapped lines into paragraphs, keeping item boundaries
+ *
+ * The transformation is word-preserving: it only rewrites whitespace and adds
+ * heading markers, so no clause content is invented or dropped. Dense numeric
+ * blocks (spreadsheet-like tables) are left untouched to avoid mangling them.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+const HEADING_RE = {
+  schedule: /^Schedule\s+\d+$/i,
+  numberedTitle: /^(\d{1,2})\.\s*([A-Z][A-Z0-9 ,&'’()\-\/]{2,})$/,
+  subClause: /^(\d{1,2}\.\d{1,2})\s*(.*)$/,
+  standaloneCaps: /^[A-Z][A-Z0-9 ,&'’()\-\/]*$/,
+};
+
+/**
+ * Classifies a single line as a clause heading.
+ * @param {string} line
+ * @returns {{ heading: string, rest?: string, caps?: boolean } | null}
+ */
+function classifyExtractedHeading(line) {
+  if (HEADING_RE.schedule.test(line)) return { heading: `## ${line}` };
+
+  const numbered = line.match(HEADING_RE.numberedTitle);
+  if (numbered) return { heading: `## ${numbered[1]}. ${numbered[2].trim()}` };
+
+  const sub = line.match(HEADING_RE.subClause);
+  if (sub && sub[2] && /^[A-ZÀ-Þ]/.test(sub[2])) {
+    return { heading: `### ${sub[1]}`, rest: sub[2].trim() };
+  }
+
+  const words = line.split(/\s+/);
+  const isMarker = /^(WHEREAS|CLAUSES|AGREED)$/i.test(line);
+  if (
+    line.length >= 3 &&
+    line.length <= 60 &&
+    HEADING_RE.standaloneCaps.test(line) &&
+    /[A-Z]{2}/.test(line) &&
+    words.length <= 8 &&
+    (words.length >= 2 || isMarker)
+  ) {
+    return { heading: `## ${line}`, caps: true };
+  }
+
+  return null;
+}
+
+/** A spreadsheet-like row: digit-dense relative to letters (never merged into prose). */
+function isDenseNumericLine(line) {
+  const digits = (line.match(/[0-9]/g) || []).length;
+  if (digits < 6) return false;
+  const letters = (line.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+  return digits >= letters * 2;
+}
+
+/** A wrapped line begins a new paragraph: typographic-quote definition item, list, or numbered clause. */
+const NEW_ITEM_RE = /^(?:[“„]|\([A-Za-z0-9]{1,3}\)|\d+(?:\.\d+)*[.)]?\s|[•‣▪◦]\s)/;
+
+/**
+ * A line that is already structural Markdown and must not be reflowed.
+ * Protects DOCX (mammoth) / TXT output: keeps `#` headings, lists, tables,
+ * blockquotes and code fences intact instead of joining them into prose.
+ */
+const MD_BLOCK_RE = /^(?:#{1,6}\s|>\s?|[-*+]\s|\d{1,2}[.)]\s|\||```|~~~)/;
+
+/**
+ * Reflows raw extracted text into readable, sectioned markdown.
+ * @param {string} text
+ * @returns {string}
+ */
+function reflowExtractedText(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  let t = text.replace(/\r\n?/g, '\n');
+  t = t.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '');
+  t = t.replace(/\u00A0/g, ' ');
+  // Re-join a word hyphen-split across a line break: "partici-\npativo" -> "participativo".
+  t = t.replace(/([A-Za-zÀ-ÖØ-öø-ÿ])-\n([a-zà-öø-ÿ])/g, '$1$2');
+
+  const rawLines = t
+    .split('\n')
+    .map((l) => l.replace(/[ \t]{2,}/g, ' ').trim());
+  // Merge a stray single-letter fragment left on its own line ("B" + "ETWEEN").
+  for (let i = 0; i < rawLines.length - 1; i++) {
+    if (/^[A-Z]$/.test(rawLines[i]) && /^[A-Z]/.test(rawLines[i + 1])) {
+      rawLines[i + 1] = rawLines[i] + rawLines[i + 1];
+      rawLines[i] = null;
+    }
+  }
+
+  const lines = [];
+  for (const line of rawLines) {
+    if (line === null) continue;
+    if (line === '') {
+      if (lines.length && lines[lines.length - 1] !== '') lines.push('');
+      continue;
+    }
+    lines.push(line);
+  }
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+
+  const blocks = [];
+  let block = [];
+  for (const line of lines) {
+    if (line === '') {
+      if (block.length) {
+        blocks.push(block);
+        block = [];
+      }
+      continue;
+    }
+    block.push(line);
+  }
+  if (block.length) blocks.push(block);
+
+  const out = [];
+  for (const chunk of blocks) {
+    let paragraph = [];
+    const flush = () => {
+      if (paragraph.length) {
+        out.push(paragraph.join(' '));
+        paragraph = [];
+      }
+    };
+
+    for (let i = 0; i < chunk.length; i++) {
+      const line = chunk[i];
+      const heading = classifyExtractedHeading(line);
+      if (heading) {
+        flush();
+        if (heading.caps) {
+          // An ALL-CAPS title wrapped over consecutive lines is one heading.
+          let text = line;
+          while (i + 1 < chunk.length) {
+            const next = classifyExtractedHeading(chunk[i + 1]);
+            if (next && next.caps) text += ` ${chunk[++i]}`;
+            else break;
+          }
+          out.push(`## ${text}`);
+        } else {
+          out.push(heading.heading);
+          if (heading.rest) paragraph = [heading.rest];
+        }
+        continue;
+      }
+
+      // Already-structural Markdown (DOCX/TXT): preserve the line verbatim.
+      if (MD_BLOCK_RE.test(line)) {
+        flush();
+        out.push(line);
+        continue;
+      }
+
+      // Spreadsheet-like row: keep it on its own line, never merged into prose.
+      if (isDenseNumericLine(line)) {
+        flush();
+        out.push(line);
+        continue;
+      }
+
+      // Isolated page number (a lone 1-3 digit line) is extraction noise.
+      if (/^\d{1,3}$/.test(line)) continue;
+
+      const prev = paragraph[paragraph.length - 1];
+      const startsNew =
+        paragraph.length === 0 ||
+        NEW_ITEM_RE.test(line) ||
+        /[.!?]$/.test(prev || '');
+      if (startsNew) {
+        flush();
+        paragraph = [line];
+      } else {
+        paragraph.push(line);
+      }
+    }
+    flush();
+  }
+
+  // Assemble: blank line between blocks, but keep consecutive table rows and
+  // list items tight so a Markdown table/list does not break apart.
+  const isTight = (s) =>
+    s.startsWith('|') || /^[-*+]\s/.test(s) || /^\d{1,2}[.)]\s/.test(s);
+  let result = '';
+  for (let i = 0; i < out.length; i++) {
+    if (i > 0) result += isTight(out[i - 1]) && isTight(out[i]) ? '\n' : '\n\n';
+    result += out[i];
+  }
+  return ensureTableSeparators(result.trim());
 }
 
 /**
@@ -569,7 +774,123 @@ function convertOkFormat(ext, filePath, baseName) {
 async function convertDocx(filePath) {
   const mammoth = require('mammoth');
   const result = await mammoth.convertToMarkdown({ path: filePath });
-  return { body: result.value };
+  return { body: reflowExtractedText(result.value) };
+}
+
+/** Horizontal gap (px) that separates two table columns within a line. */
+const PDF_COL_GAP = 8;
+/** Vertical tolerance (px) for grouping text items into one visual line. */
+const PDF_Y_TOL = 2;
+
+/** True when a line's cells look like a table row (short, mostly containing digits). */
+function isTabularCells(cells) {
+  if (cells.length < 4) return false;
+  if (!cells.every((c) => c.length <= 40)) return false;
+  if (cells.length >= 5) return true;
+  const withDigit = cells.filter((c) => /[0-9]/.test(c)).length;
+  return withDigit / cells.length >= 0.5;
+}
+
+/**
+ * Reconstructs page text from pdf.js text items, preserving the document's own
+ * spacing (`item.str` is verbatim) and splitting lines by vertical position.
+ * Within a line, a large horizontal gap between items marks a table column, so
+ * a tabular line is emitted as a pipe-delimited Markdown row.
+ * Pure function — unit-tested with synthetic pdf.js items.
+ *
+ * @param {Array<{ str: string, width?: number, transform: number[] }>} items
+ * @returns {string}
+ */
+function layoutItemsToText(items) {
+  if (!Array.isArray(items)) return '';
+
+  const lines = [];
+  let current = null;
+  for (const item of items) {
+    if (!item || typeof item.str !== 'string' || item.str === '' || !Array.isArray(item.transform)) continue;
+    const y = item.transform[5];
+    if (!current || Math.abs(current.y - y) > PDF_Y_TOL) {
+      current = { y, items: [] };
+      lines.push(current);
+    }
+    current.items.push(item);
+  }
+
+  const out = [];
+  for (const line of lines) {
+    const cells = [];
+    let text = '';
+    let end = null;
+    for (const item of line.items) {
+      const x = item.transform[4];
+      const w = typeof item.width === 'number' ? item.width : 0;
+      if (end !== null && x - end > PDF_COL_GAP) {
+        cells.push(text);
+        text = '';
+      }
+      text += item.str;
+      end = x + w;
+    }
+    cells.push(text);
+
+    const clean = cells.map((c) => c.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    if (isTabularCells(clean)) {
+      out.push(`| ${clean.join(' | ')} |`);
+    } else {
+      const joined = cells.join(' ').replace(/[ \t]+/g, ' ').trim();
+      if (joined) out.push(joined);
+    }
+  }
+  return out.join('\n');
+}
+
+/**
+ * Inserts a Markdown table separator (`| --- |`) after the first row of any
+ * pipe-delimited block, unless one is already present.
+ * @param {string} text
+ * @returns {string}
+ */
+function ensureTableSeparators(text) {
+  const lines = text.split('\n');
+  const out = [];
+  let prevWasRow = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isRow = line.startsWith('|');
+    if (isRow && !prevWasRow) {
+      out.push(line);
+      const next = lines[i + 1];
+      if (!(next && /^\|[\s\-:|]+\|$/.test(next))) {
+        const cols = Math.max((line.match(/\|/g) || []).length - 1, 1);
+        out.push('|' + Array(cols).fill(' --- ').join('|') + '|');
+      }
+    } else {
+      out.push(line);
+    }
+    prevWasRow = isRow;
+  }
+  return out.join('\n');
+}
+
+/**
+ * Extracts PDF text positionally via pdf.js (bundled with pdf-parse), so table
+ * columns survive as Markdown rows. Falls back to pdf-parse's flat text.
+ * @param {Buffer} buffer
+ * @returns {Promise<string>}
+ */
+async function extractPdfWithLayout(buffer) {
+  const pdfjs = require('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js');
+  pdfjs.disableWorker = true;
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const content = await page.getTextContent();
+    pages.push(layoutItemsToText(content.items));
+  }
+  const meta = await doc.getMetadata().catch(() => null);
+  doc.destroy();
+  return { text: pages.join('\n\n'), info: meta ? meta.info : null };
 }
 
 /**
@@ -581,8 +902,19 @@ async function convertDocx(filePath) {
 async function convertPdf(filePath, baseName) {
   try {
     const pdfParse = require('pdf-parse');
-    const data = await pdfParse(fs.readFileSync(filePath));
-    return { body: `# ${baseName}\n\n${data.text}`, info: data.info };
+    const buffer = fs.readFileSync(filePath);
+    let text;
+    let info = null;
+    try {
+      const laid = await extractPdfWithLayout(buffer);
+      text = laid.text;
+      info = laid.info;
+    } catch {
+      const parsed = await pdfParse(buffer);
+      text = parsed.text;
+      info = parsed.info;
+    }
+    return { body: `# ${baseName}\n\n${reflowExtractedText(text)}`, info };
   } catch (pdfErr) {
     return {
       body: `# ${baseName}\n\n*PDF Content Ingested (Placeholder)*\n\n[PDF: ${path.basename(filePath)} needs manual verification or a PDF parser package to extract text fully.]`,
@@ -696,6 +1028,8 @@ module.exports = {
   parseCsv,
   stripFrontmatter,
   htmlToPlainText,
+  reflowExtractedText,
+  layoutItemsToText,
   convertJson,
   convertFeedbackJson,
   validateFeedbackJson,

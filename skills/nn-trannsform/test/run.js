@@ -124,6 +124,16 @@ async function main() {
     const watchDigestStoreResult = await watchDigestStoreTest.run();
     totalPassed += watchDigestStoreResult.passed;
     totalFailed += watchDigestStoreResult.failed;
+
+    const pdfReflowTest = require('./unit/test-pdf-reflow');
+    const pdfReflowResult = await pdfReflowTest.run();
+    totalPassed += pdfReflowResult.passed;
+    totalFailed += pdfReflowResult.failed;
+
+    const pdfLayoutTest = require('./unit/test-pdf-layout');
+    const pdfLayoutResult = await pdfLayoutTest.run();
+    totalPassed += pdfLayoutResult.passed;
+    totalFailed += pdfLayoutResult.failed;
   }
 
   if (mode === 'all' || mode === 'integration') {
