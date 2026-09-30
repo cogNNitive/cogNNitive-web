@@ -284,5 +284,14 @@
 
 - [x] Absorbed `origin/dev` (3 backlog commits) into the tracker: merge `d84a8dc3` (conflict resolved by keeping dev's retirement of the derived backlog model). Tracker 73 ahead of `origin/dev`, 0 behind.
 - [x] FULL Gate G on the tracker head: build core, `npm test` (core 965/966, mcp 298, editor 711), `npm run typecheck`, `verify.js`, `check-integrity.js`, `check:spec-urls`, `check:spec-version`, `check:versions`, `check:samples`, `simulation/run-all.mjs` (51/0), empty `USERPROFILE`/`HOME` preflight — **all green EXCEPT `Check Stable Manifest Doc Fresh`**, which R resolves (merge -> tag -> pin).
-- [ ] **R (maintainer-owned)**: merge tracker -> `dev` -> `git push origin dev:main`; tag the merged SHA (`blueprints-v0.18.0`, `innfo-mcp-v0.12.0`, the suite tag derived by `channel-refs`, `skills-v*`); re-pin `manifest/source.yaml` + `min_version`; regenerate `docs/use/manifest*.md` and the CDN bundle; then `validate-manifest --channel stable` passes.
+- [x] **R (release) DONE 2026-09-30** — `main` at `e6c01090`, all gates green.
+  - Merge: tracker -> `dev` -> `main` via `git push origin HEAD:dev` + `HEAD:main` (fast-forward; `origin/main` was an ancestor).
+  - Tags cut on the merged SHA: `blueprints-v0.18.0`, `innfo-mcp-v0.12.0`, `skills-v2.5.0`, `v0.12.0` (iNNfo suite), `innfo-console-v0.6.0` (+ the earlier `innfo-console-v0.5.0`, superseded by the 0.6.0 rebuild).
+  - S8 11.3/11.5 landed before the merge: `innfo-mcp` 0.11.0 -> 0.12.0 via `sync:versions`; manifest MCP `min_version: "0.12.0"` with semver + `<=` validation (`checkMinVersion` in `manifest-rules.js`, unit-tested); CDN `latest` 0.12.0.
+  - Re-pin: `manifest/source.yaml` channel refs blueprints 0.17.0 -> 0.18.0, skills 2.4.0 -> 2.5.0, console 0.4.0 -> 0.6.0; regenerated `docs/use/manifest*.md`; `validate-manifest.js` OK for stable AND preview (9 skills, 16 blueprints, 1 mcp, 3 console assets).
+  - Fixed en route: `parseManifest` still read `agent-bootstrap.templates` while the generator emits `blueprints` (leftover S7) — hid all 16 blueprints from `validate-manifest`; fixed the parser + skills-manager state/consumers + tests. Green the `quality` CI gate: removed two dead duplicate `else-if` branches (serializer.ts, spec.ts, leftover rename artifacts), silenced a pre-existing unused `STATE_ICONS`, and added coverage (listBlueprints fallbacks + knowledge-io spec) to hold the mcp branch-coverage ratchet on Linux.
+  - **Definition of Done**: tag · CI on `main` · Pages deploy · CDN/manifest pins — ALL GREEN (run 36714279579: verify, quality, spec-integrity, deploy-pages).
+- [ ] **S8 11.6 (prose)**: skill prose vocabulary in `nn-innfo`, `nn-start`, `nn-upgrade`, `nn-trannsform` (not guard-enforced) — optional follow-up.
+- [ ] **S11**: [maintainer] sign-off, then delete the quarantine/bundles/hint/ledger entries.
+- [ ] Optional: full `model*` UI/submodel identifier uniformity (see boundary notes above).
 
