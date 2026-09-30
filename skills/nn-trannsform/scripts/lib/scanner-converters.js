@@ -557,7 +557,7 @@ function convertOkFormat(ext, filePath, baseName) {
       return `# ${baseName}\n\n${htmlToPlainText(content)}`;
     case '.txt':
     default:
-      return content;
+      return reflowExtractedText(content);
   }
 }
 
@@ -633,6 +633,13 @@ function isDenseNumericLine(line) {
 
 /** A wrapped line begins a new paragraph: typographic-quote definition item, list, or numbered clause. */
 const NEW_ITEM_RE = /^(?:[“„]|\([A-Za-z0-9]{1,3}\)|\d+(?:\.\d+)*[.)]?\s|[•‣▪◦]\s)/;
+
+/**
+ * A line that is already structural Markdown and must not be reflowed.
+ * Protects DOCX (mammoth) / TXT output: keeps `#` headings, lists, tables,
+ * blockquotes and code fences intact instead of joining them into prose.
+ */
+const MD_BLOCK_RE = /^(?:#{1,6}\s|>\s?|[-*+]\s|\d{1,2}[.)]\s|\||```|~~~)/;
 
 /**
  * Reflows raw extracted text into readable, sectioned markdown.
@@ -715,6 +722,13 @@ function reflowExtractedText(text) {
         continue;
       }
 
+      // Already-structural Markdown (DOCX/TXT): preserve the line verbatim.
+      if (MD_BLOCK_RE.test(line)) {
+        flush();
+        out.push(line);
+        continue;
+      }
+
       // Spreadsheet-like row: keep it on its own line, never merged into prose.
       if (isDenseNumericLine(line)) {
         flush();
@@ -740,7 +754,16 @@ function reflowExtractedText(text) {
     flush();
   }
 
-  return out.join('\n\n').trim();
+  // Assemble: blank line between blocks, but keep consecutive table rows and
+  // list items tight so a Markdown table/list does not break apart.
+  const isTight = (s) =>
+    s.startsWith('|') || /^[-*+]\s/.test(s) || /^\d{1,2}[.)]\s/.test(s);
+  let result = '';
+  for (let i = 0; i < out.length; i++) {
+    if (i > 0) result += isTight(out[i - 1]) && isTight(out[i]) ? '\n' : '\n\n';
+    result += out[i];
+  }
+  return result.trim();
 }
 
 /**
@@ -751,7 +774,7 @@ function reflowExtractedText(text) {
 async function convertDocx(filePath) {
   const mammoth = require('mammoth');
   const result = await mammoth.convertToMarkdown({ path: filePath });
-  return { body: result.value };
+  return { body: reflowExtractedText(result.value) };
 }
 
 /**
