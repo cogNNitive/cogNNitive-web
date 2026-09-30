@@ -878,8 +878,13 @@ export async function resolveParentChainNode(
     // 3. Built-in Canonical Fallback Registry (Tier 4 / Offline fallback)
     if (content === null && !isLocalPath(currentUrl)) {
       const isRemote = /^https?:\/\//i.test(currentUrl)
+      // Host-agnostic: the canonical raw host moved from the private monorepo
+      // (cogNNitive/cogNNitive) to the public distribution repo
+      // (cogNNitive/cogNNitive-web); either is a valid canonical source for the
+      // offline fallback registry. Matching any cogNNitive raw repo keeps this
+      // working across future host moves.
       const isCanonicalRemote =
-        isRemote && /raw\.githubusercontent\.com\/cogNNitive\/cogNNitive\//i.test(currentUrl)
+        isRemote && /raw\.githubusercontent\.com\/cogNNitive\/[^/]+\/(main|v[\d.]+)\//i.test(currentUrl)
       if (!isRemote || isCanonicalRemote) {
         attempted.push(`canonical fallback registry for "${currentName}"`)
         const canonical =
