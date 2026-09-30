@@ -436,7 +436,7 @@ describe('baseline single shared implementation (robustness-coda 1.3)', () => {
       message: 'Concept  "Task"  is not defined in template',
       severity: 'error' as const,
       code: 'UNKNOWN_CONCEPT',
-      filePath: 'models\\team_NN.md',
+      filePath: 'kNNowledge\\team_NN.md',
     }
     expect(mcp.fingerprint(diag)).toBe(core.fingerprint(diag))
     expect(mcp.fingerprint(diag)).toBe(
