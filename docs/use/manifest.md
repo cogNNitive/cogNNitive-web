@@ -62,7 +62,7 @@ agent-bootstrap:
     - name: nn-design-presets
       repo: cogNNitive/cogNNitive
       path: skills/nn-design-presets
-      version: "V_1-3-0"
+      version: "V_1-4-0"
       ref: "skills-v2.7.0"
       commit: "42104b73e05dff968dc0bcf87d5c557391a7936b"
       description: cogNNitive visual design presets — palettes, typography, spacing.
@@ -77,7 +77,7 @@ agent-bootstrap:
     - name: nn-video-script
       repo: cogNNitive/cogNNitive
       path: skills/nn-video-script
-      version: "V_0-2-0"
+      version: "V_0-3-0"
       ref: "skills-v2.7.0"
       commit: "42104b73e05dff968dc0bcf87d5c557391a7936b"
       requires: [nn-innfo]
