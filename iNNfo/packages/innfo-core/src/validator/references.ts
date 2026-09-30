@@ -166,7 +166,7 @@ export function validateElementFieldReferences(
             value = value.slice(2, -2).trim()
           }
 
-          if (fieldDef?.type === 'knowledge') {
+          if (fieldDef?.type === 'model') {
             const cleanPath = value.trim()
             if (options?.resolveSubmodel) {
               const res = options.resolveSubmodel(cleanPath, options.referringPath)
