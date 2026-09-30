@@ -175,7 +175,7 @@ function parseFrontmatter(text) {
  *   version: string | undefined,
  *   entrypoint: string | undefined,
  *   skills: any[],
- *   templates: any[],
+ *   blueprints: any[],
  *   workflows: any[],
  *   mcp: any[],
  *   consoleAssets: any[],
