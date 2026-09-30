@@ -289,6 +289,41 @@ async function checkMcpUrlPinned(entry) {
   return null;
 }
 
+const SEMVER_RE = /^\d+\.\d+\.\d+$/
+
+/**
+ * Compares two x.y.z semver strings. Returns -1, 0 or 1.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function compareSemver(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] !== pb[i]) return pa[i] < pb[i] ? -1 : 1
+  }
+  return 0
+}
+
+/**
+ * Checks an optional `min_version` on an MCP entry: it must be a valid semver
+ * and must not exceed the pinned version (a minimum consumer requirement).
+ * @param {{ name: string, version: string, min_version?: string }} entry
+ * @returns {string | null}
+ */
+function checkMinVersion(entry) {
+  if (entry.min_version === undefined || entry.min_version === null) return null
+  const mv = String(entry.min_version)
+  if (!SEMVER_RE.test(mv)) {
+    return `${entry.name}: min_version '${mv}' is not a valid semver (x.y.z)`
+  }
+  if (SEMVER_RE.test(String(entry.version)) && compareSemver(mv, String(entry.version)) > 0) {
+    return `${entry.name}: min_version '${mv}' exceeds the pinned version '${entry.version}'`
+  }
+  return null
+}
+
 /**
  * Validates an MCP server bundle entry against structural, existence, and channel policies.
  * @param {{ name: string, repo: string, path: string, version: string, ref: string, commit: string, url?: string }} entry
@@ -306,6 +341,9 @@ async function validateMcp(entry, policy) {
 
   const urlViolation = await checkMcpUrlPinned(entry);
   if (urlViolation) violations.push(urlViolation);
+
+  const minVersionViolation = checkMinVersion(entry);
+  if (minVersionViolation) violations.push(minVersionViolation);
 
   const url = `https://api.github.com/repos/${entry.repo}/contents/${entry.path}?ref=${entry.commit}`;
   const res = await apiRequest(url);
@@ -576,6 +614,8 @@ module.exports = {
   checkPathAtCommit,
   checkVersionParity,
   checkMcpUrlPinned,
+  checkMinVersion,
+  compareSemver,
   checkBlueprintMainCoherence,
   validateMcp,
   validateConsoleAsset,
