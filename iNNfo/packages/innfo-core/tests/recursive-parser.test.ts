@@ -84,9 +84,9 @@ function makeWorkspaceEntrypoint(workspaceId?: string): string {
 
 /* ── Tests ───────────────────────────────────────────────────── */
 
-describe('recursiveParse (index.md-driven)', () => {
-  describe('FR-001: Workspace with valid index.md', () => {
-    it('parses a single model listed in index.md', async () => {
+describe('recursiveParse (domaiNN_NN.md-driven)', () => {
+  describe('FR-001: Workspace with valid domaiNN_NN.md', () => {
+    it('parses a single model listed in domaiNN_NN.md', async () => {
       const root = fakeDir('workspace', [
         ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['gb_NN.md']))],
         ['gb_NN.md', fakeFile('gb_NN.md', makeModel('Ghostbusters'))],
@@ -96,12 +96,13 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(result.rootIds).toHaveLength(1)
       const rootNode = result.nodes[result.rootIds[0]]
       expect(rootNode).toBeDefined()
-      expect(rootNode.name).toBe('gb')
+      expect(rootNode.name).toBe('domaiNN')
       expect(rootNode.kind).toBe('root')
+      expect(rootNode.childIds.map((id) => result.nodes[id].name)).toContain('gb')
       expect(result.issues).toHaveLength(0)
     })
 
-    it('parses multiple models listed in index.md', async () => {
+    it('parses multiple models listed in domaiNN_NN.md', async () => {
       const root = fakeDir('workspace', [
         ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', makeModel('Model A'))],
@@ -109,9 +110,10 @@ describe('recursiveParse (index.md-driven)', () => {
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(2)
-      const names = result.rootIds.map((id) => result.nodes[id].name).sort()
-      expect(names).toEqual(['modelA', 'modelB'])
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      const rootNode = result.nodes[result.rootIds[0]]
+      const childNames = rootNode.childIds.map((id) => result.nodes[id].name).sort()
+      expect(childNames).toEqual(['modelA', 'modelB'])
       expect(result.issues).toHaveLength(0)
     })
 
@@ -149,7 +151,7 @@ describe('recursiveParse (index.md-driven)', () => {
   })
 
   describe('FR-001: Missing domaiNN_NN.md', () => {
-    it('scans for standalone _NN.md files when index.md is missing', async () => {
+    it('scans for standalone _NN.md files when domaiNN_NN.md is missing', async () => {
       const root = fakeDir('workspace', [
         ['gb_NN.md', fakeFile('gb_NN.md', makeModel('Ghostbusters'))],
       ])
@@ -165,7 +167,7 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
-    it('loads multiple standalone _NN.md files when index.md is missing', async () => {
+    it('loads multiple standalone _NN.md files when domaiNN_NN.md is missing', async () => {
       const root = fakeDir('workspace', [
         ['modelA_NN.md', fakeFile('modelA_NN.md', makeModel('Model A'))],
         ['modelB_NN.md', fakeFile('modelB_NN.md', makeModel('Model B'))],
