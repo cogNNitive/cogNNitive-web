@@ -43,12 +43,12 @@ const path = require('path');
  * ------------------------------------------------------------------------- */
 
 /* Required meta keys for innfo-model (design contract, spec: Artifact Shape).
-   model, knowledge_version, source_model, generated_at, months, historyMonths,
+   model, knowledge_version, source_knowledge, generated_at, months, historyMonths,
    charts, slug, title, startMonth/startYear MUST map into innfo-model. */
 const REQUIRED_META_KEYS = [
   'model',
   'knowledge_version',
-  'source_model',
+  'source_knowledge',
   'generated_at',
   'months',
   'historyMonths',

@@ -50,7 +50,7 @@ function loadContract(): SlotContractApi {
 const REQUIRED_KEYS_EXPECTED = [
   'model',
   'knowledge_version',
-  'source_model',
+  'source_knowledge',
   'generated_at',
   'months',
   'historyMonths',
@@ -72,7 +72,7 @@ describe('metrics slot contract: meta -> innfo-model map', () => {
     const meta = {
       model: 'kNNowledge/Ghostbusters_V_0-1-0_metrics_NN.md',
       knowledge_version: 'V_0-1-0',
-      source_model: 'kNNowledge/source-figures_NN.md',
+      source_knowledge: 'kNNowledge/source-figures_NN.md',
       generated_at: '2026-09-11',
       months: 12,
       historyMonths: 0,
@@ -91,7 +91,7 @@ describe('metrics slot contract: meta -> innfo-model map', () => {
     const meta = {
       model: 'kNNowledge/Ghostbusters_V_0-1-0_metrics_NN.md',
       knowledge_version: 'V_0-1-0',
-      source_model: 'kNNowledge/source-figures_NN.md',
+      source_knowledge: 'kNNowledge/source-figures_NN.md',
       generated_at: '2026-09-11',
       months: 12,
       historyMonths: 0,

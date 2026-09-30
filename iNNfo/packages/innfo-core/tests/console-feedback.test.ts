@@ -23,7 +23,7 @@ function loadSchema(): Record<string, unknown> {
 function validFeedback(): Record<string, unknown> {
   return {
     meta: {
-      source_model: 'Ghostbusters',
+      source_knowledge: 'Ghostbusters',
       source_knowledge_version: 'V_0-2-1',
       artifact: 'Ghostbusters_V_0-2-1_console.html',
       artifact_version: '0.1.0',

@@ -476,12 +476,12 @@
     if (!isObject(meta)) {
       errors.push('meta: required object is missing')
     } else {
-      if (!meta.source_model || typeof meta.source_model !== 'string') {
-        errors.push('meta.source_model: required non-empty string is missing')
+      if (!meta.source_knowledge || typeof meta.source_knowledge !== 'string') {
+        errors.push('meta.source_knowledge: required non-empty string is missing')
       }
-      if (!MODEL_VERSION_PATTERN.test(String(meta.source_model_version || ''))) {
+      if (!MODEL_VERSION_PATTERN.test(String(meta.source_knowledge_version || ''))) {
         errors.push(
-          'meta.source_model_version: must match V_x-y-z (got ' + meta.source_model_version + ')',
+          'meta.source_knowledge_version: must match V_x-y-z (got ' + meta.source_knowledge_version + ')',
         )
       }
       if (!meta.artifact || typeof meta.artifact !== 'string') {
@@ -610,8 +610,8 @@
 
   function buildReviewDoc(args) {
     var input = isObject(args) ? args : {}
-    var model = String(input.model || input.source_model || 'Model')
-    var rawVersion = String(input.version || input.source_model_version || '1-0-0')
+    var model = String(input.model || input.source_knowledge || 'Model')
+    var rawVersion = String(input.version || input.source_knowledge_version || '1-0-0')
     var version = rawVersion.replace(/^V_/, '').replace(/\./g, '-')
     var reviewer = slugifyReviewer(input.reviewer || input.author || getReviewerName())
     var exportedAt =
@@ -832,7 +832,7 @@
     var version = el(
       'span',
       'innfo-banner-version',
-      ' ' + String(meta.modelVersion || meta.model_version || ''),
+      ' ' + String(meta.modelVersion || meta.knowledge_version || ''),
     )
     var needsBadge = el(
       'span',
@@ -1253,7 +1253,7 @@
     var lines = []
     lines.push('# Timeline & P&L Projection Export')
     lines.push('# Model: ' + (meta.model || ''))
-    lines.push('# Version: ' + (meta.model_version || meta.modelVersion || ''))
+    lines.push('# Version: ' + (meta.knowledge_version || meta.modelVersion || ''))
     lines.push('# Generated: ' + (meta.generated_at || meta.generated || ''))
     lines.push('')
     var header = ['Group', 'Metric', 'Type', 'Unit', 'Growth Rule']
@@ -2646,11 +2646,11 @@
 
     var state = {
       modelTitle: String(meta.title || meta.model || 'Model'),
-      modelVersion: String(meta.modelVersion || meta.model_version || 'V_0-0-0'),
+      modelVersion: String(meta.modelVersion || meta.knowledge_version || 'V_0-0-0'),
       artifactName: String(meta.title || 'console') + '_console.html',
       draftKey: getDraftKey(
         String(meta.title || meta.model || 'model'),
-        String(meta.modelVersion || meta.model_version || 'V_0-0-0'),
+        String(meta.modelVersion || meta.knowledge_version || 'V_0-0-0'),
       ),
     }
 

@@ -3,7 +3,7 @@
   "meta": {
     "model": "models/<model>_V_0-1-0_metrics_NN.md",
     "knowledge_version": "V_0-1-0",
-    "source_model": "models/<source-figures>_NN.md",
+    "source_knowledge": "models/<source-figures>_NN.md",
     "generated_at": "YYYY-MM-DD",
     "months": 12,
     "historyMonths": 2,

@@ -102,7 +102,7 @@ describe('apply feedback replaces the version-and-archive step', () => {
     const procedure = readFileSync(procedurePath, 'utf8').toLowerCase()
     expect(procedure).toContain('staleness')
     expect(procedure).toContain('apply_change')
-    expect(procedure).toContain('validate_model')
+    expect(procedure).toContain('validate_knowledge')
     expect(procedure).toContain('bump the patch version')
     expect(procedure).toContain('{model}_v_{version}_console.html')
   })

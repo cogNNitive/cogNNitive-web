@@ -1,7 +1,7 @@
 {
   "meta": {
-    "source_model": "Ghostbusters",
-    "source_model_version": "V_0-1-0",
+    "source_knowledge": "Ghostbusters",
+    "source_knowledge_version": "V_0-1-0",
     "artifact": "Ghostbusters_V_0-1-0_console.html",
     "artifact_version": "0.1.0",
     "exported_at": "2026-09-11T12:00:00Z",

@@ -96,7 +96,7 @@ describe('verify.harness.js --check-slots on the Ghostbusters console', () => {
           meta: {
             model: 'm',
             knowledge_version: 'V_0-1-0',
-            source_model: 's',
+            source_knowledge: 's',
             generated_at: '2026-09-11',
             months: 12,
             historyMonths: 0,
@@ -157,7 +157,7 @@ describe('verify.harness.js --check-slots on the Ghostbusters console', () => {
           meta: {
             model: 'm',
             knowledge_version: 'V_0-1-0',
-            source_model: 's',
+            source_knowledge: 's',
             generated_at: '2026-09-11',
             months: 12,
             historyMonths: 0,
@@ -196,7 +196,7 @@ describe('verify.harness.js --check-slots on the Ghostbusters console', () => {
           meta: {
             model: 'm',
             knowledge_version: 'V_0-1-0',
-            source_model: 's',
+            source_knowledge: 's',
             generated_at: '2026-09-11',
             months: 12,
             historyMonths: 0,
