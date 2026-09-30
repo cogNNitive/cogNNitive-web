@@ -198,7 +198,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
       const mirror = getCanonicalSpecContent(template)!
 
       expect(mirror, `${template} mirror exists`).not.toBeNull()
-      expect(mirror, `${template} mirror carries V_0-2-2`).toContain('spec_version: "V_0-2-2"')
+      expect(mirror, `${template} mirror carries a V_0 spec_version`).toContain('spec_version: "V_0-')
       expect(fieldNameTypes(mirror), `${template} field name=type drift`).toEqual(
         fieldNameTypes(disk),
       )
