@@ -704,3 +704,74 @@ drifts). Mind the CI Node pin and `engine-strict=true` when adding any dev depen
 
 **Suggested trigger:** `/sdd-explore third-party-license-compliance` (after the project
 license is chosen).
+
+---
+
+## `docs/opencode-ecosystem-listing` — list cogNNitive in the OpenCode ecosystem Projects directory
+
+**Type:** docs / community · **Size:** small · **Status:** someday-maybe
+
+**Why:** cogNNitive runs *on* OpenCode (agents, skills, MCP servers), yet it is absent from
+OpenCode's community ecosystem page ([opencode.ai/docs/ecosystem](https://opencode.ai/docs/ecosystem/)),
+whose **Projects** section lists tools built on the OpenCode SDK/API. A listing there is free
+discovery for exactly the audience already running OpenCode.
+
+**Behaviour (as requested):** add cogNNitive to the **Projects** table of the Ecosystem page
+(name + one-line description) by submitting a PR to the OpenCode repo.
+
+**Approach:** the page is generated from `packages/web/src/content/docs/ecosystem.mdx` in
+`anomalyco/opencode` (the page's own "Edit page" link points there). Fork, add one row to the
+Projects table, open a PR. The same page points to `awesome-opencode` and `opencode.cafe` as
+alternative community listings that accept entries with less ceremony — consider those too, or
+instead. Open questions: the entry name (`cogNNitive`), target URL (`https://cognnitive.com`),
+and whether it best fits **Projects** (built on the SDK) vs **Agents**/**Plugins**.
+
+**Suggested trigger:** maintainer decision in chat (one PR; no SDD cycle needed).
+
+---
+
+## `docs/docs7-external-distribution` — publish a public mirror of the product docs on Context7 Docs7 as an external discovery channel
+
+**Type:** docs / distribution · **Size:** small-medium · **Status:** deferred
+
+**Why:** documentation today is self-hosted on GitHub Pages (`cognnitive.com`, `docs/CNAME`) and largely a *generated* artifact of the engine itself — the Docsify suites, `ai-index.yaml` and `llms.txt` are derived from `_NN.md` models and verified in CI, with `cognnitive.com/use` served *raw* as the agent-bootstrap manifest. That is the SSOT and it works, but it has no external discovery beyond the project's own SEO. Context7's **Docs7** (`docs7` CLI, `docs.json` + MDX, hosted by Upstash) indexes docs to 100k+ active Context7 users and reports AI-crawler traffic and unanswered agent questions — reach and visibility the project does not have.
+
+**Scope decision (from the 2026-09-30 analysis):** **do NOT migrate the core.** Migrating would trade the self-owned, generated→verified pipeline for a third-party hosted SaaS — contradicting the project's *zero vendor lock-in / 100% Markdown in your Git* pillar, and forcing either a second source of truth or a rewrite of the generator (losing freshness, docs-facts, and the pinned raw manifest). Adopt Docs7 **only as an external distribution channel**: publish a mirror of the *public product* docs (landing / use-cases / iNNfo) to capture Context7 traffic, keeping GitHub Pages as SSOT and the pipeline intact.
+
+**Approach (open):** stand up a `docs.json` + MDX mirror in its own folder and deploy via `@upstash/docs7` (CLI `docs7 deploy`, or the GitHub integration with a Context7 teamspace), pointing a custom domain only if it does not conflict with the Pages origin. Decide whether the mirror is hand-maintained or generated from the existing Jekyll/Docsify pages (the latter fits the repo's generated-artifact contract, but docs7 expects MDX). Keep `cognnitive.com/use` on Pages, untouched. Verify Docs7's free/open-source and self-host options before committing — an unrecoverable paid dependency would defeat the point.
+
+**Deferred reason:** maintainer decision 2026-09-30 — the project is not finished yet; revisit after launch, once the public docs surface is stable enough to mirror.
+
+**Suggested trigger:** `/sdd-explore docs7-external-distribution` (after project launch).
+
+---
+
+## `refactor/identifier-migration` — mechanical identifier migration (`template` → `app` identifiers) *(deferred)*
+
+**Type:** refactor · **Size:** large · **Status:** deferred
+
+**Why:** the user-facing vocabulary pass made `app` canonical and kept resolution-bearing identifiers stable as documented deprecated aliases; the actual identifier migration is intentionally deferred because paths, URLs, tool names, manifest keys and version tags all carry resolution semantics.
+
+**Behaviour (as requested):** mechanically migrate the identifiers recorded in `iNNfo/specs/vocabulary.json` under `terms.app.planned_migrations`: `specs/templates/ → specs/apps/`, MCP tool names (e.g. `get_template`), the manifest `templates:` key, and `templates-v*` tags — with a coordinated alias/version strategy so existing pins keep resolving.
+
+**Approach:** follow the deprecation lifecycle from the canonical-vocabulary dictionary; sequence after the user-facing rename; never a blind find-and-replace. Requires coordinated updates across the catalog, `manifest/source.yaml`, `_spec_NN.md` parent pointers, hydration paths, and the editor resolver constants.
+
+**Risks:** large; touches resolution across editor, MCP and skills. Do not attempt as one change; reuse the `planned_migrations` list as the checklist.
+
+**Note (2026-09-30):** the in-flight `2026-09-29-nn-level-nomenclature-rename` change (S7 path/manifest move, T internal identifiers) is already executing this migration — reconcile and close this item when that change archives.
+
+**Suggested trigger:** `/sdd-explore identifier-migration`.
+
+---
+
+## `feature/innfo-uri-protocol` — `innfo://` custom URI scheme and deep-linking parser *(deferred)*
+
+**Type:** functional · **Size:** medium · **Status:** deferred
+
+**Why:** the iNNfo ecosystem can benefit from a native internal URI scheme (`innfo://`) and deep-linking for cross-referencing models, elements, and procedures across workspaces, avoiding manual modal path pasting.
+
+**Behaviour (as requested):** define and implement the `innfo://` scheme (`innfo://model/<id>`, `innfo://element/<id>`, `innfo://procedure/<id>`), wire custom URI interception and routing in both `innfo-editor` and the static console/runtime views, and register the OS-level protocol handler.
+
+**Approach:** establish a regex/parser utility in `innfo-core` to parse `innfo://` URIs, intercept click events on matching anchors in `innfo-editor` and the consoles, and route them to the internal model navigation engine.
+
+**Suggested trigger:** `/sdd-explore innfo-uri-protocol`.

@@ -92,6 +92,6 @@ The unified backlog MUST gain a new work item recording the future mechanical id
 
 #### Scenario: Follow-up item exists
 
-- GIVEN `_NN/models/cogNNitive_backlog_V_0-1-6_backlog_NN.md`
+- GIVEN `openspec/backlog.md`
 - WHEN read after this change
 - THEN it contains a new work item for the identifier migration with the dictionary's "planned migrations" section as its source
