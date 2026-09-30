@@ -21,7 +21,7 @@
 @@ Title Overlay
 - layer_type: text
 - layer_level: 50
-- layer_generation_text: "{{headline_text}}"<!-- Short 2-4 word uppercase headline for the opening card -->
+- layer_text_content: "{{headline_text}}"<!-- Short 2-4 word uppercase headline for the opening card -->
 - layer_effects: ["fade_in"]
 
 ## Scene 2: Core Breakdown
@@ -40,4 +40,4 @@
 @@ Outro Card
 - layer_type: text
 - layer_level: 50
-- layer_generation_text: "{{outro_cta_text}}"<!-- 2-5 word call to action text -->
+- layer_text_content: "{{outro_cta_text}}"<!-- 2-5 word call to action text -->

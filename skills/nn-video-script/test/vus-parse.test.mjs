@@ -110,21 +110,16 @@ async function runTests() {
     console.log('✔ CLI exits 1 and lists issues for an invalid script');
   }
 
-  // Test 5: the shipped workspace sample runs through the real parser (no skip).
-  // The sample currently uses `layer_generation_text`, which V_0-3-3 does not
-  // define, so the parser reports exactly that one issue. This pins that the
-  // parser really runs on workspace content; once the sample is corrected,
-  // change this assertion to expect exit 0.
+  // Test 5: the shipped workspace sample runs through the real parser (no skip)
+  // and is valid against the vendored spec.
   {
     const res = spawnSync('node', [vusParsePath, WORKSPACE_SAMPLE], {
       encoding: 'utf8',
       env: envWithoutVidgennRoot(),
     });
     assert.ok(!/SKIP/.test(res.stdout), 'workspace sample must not be skipped');
-    assert.strictEqual(res.status, 1, `unexpected status ${res.status}: ${res.stderr}${res.stdout}`);
-    assert.ok(/1 issue\(s\)/.test(res.stderr), `expected exactly one issue, got: ${res.stderr}`);
-    assert.ok(/layer_generation_text/.test(res.stderr), `expected the layer_generation_text issue, got: ${res.stderr}`);
-    console.log('✔ Workspace sample is parsed for real and its one known issue is reported');
+    assert.strictEqual(res.status, 0, `sample must parse clean, got status ${res.status}: ${res.stderr}${res.stdout}`);
+    console.log('✔ Workspace sample is parsed for real and is valid');
   }
 
 
