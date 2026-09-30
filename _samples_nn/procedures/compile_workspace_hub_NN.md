@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/procedures_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Compile Workspace Console Hub Procedure"
 ---
 
@@ -34,7 +34,7 @@ output:: [[Structured Workspace Catalog]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Parse the workspace root `index.md` / `workspace_NN.md` and scan `models/` to identify all declared Level 3 models, their parent templates (Business, Procedures, Organization, etc.), versions, and descriptions.
+Parse the workspace root `index.md` / `domaiNN_NN.md` and scan `kNNowledge/` to identify all declared Level 3 models, their parent templates (Business, Procedures, Organization, etc.), versions, and descriptions.
 
 ## NN Work: Discover Artifact Consoles
 parent:: [[Compile Workspace Hub]]
@@ -83,12 +83,12 @@ LLM agent or build tool that executes the aggregation procedure and writes `arti
 ## NN Artifact: Workspace Root Directory
 type:: spec
 format:: directory
-Root directory of the workspace containing `index.md`, `models/`, and `artifacts/`.
+Root directory of the workspace containing `index.md`, `kNNowledge/`, and `artifacts/`.
 
 ## NN Artifact: Workspace Manifest
 type:: data
 format:: markdown
-The root `index.md` or `workspace_NN.md` describing the workspace structure.
+The root `index.md` or `domaiNN_NN.md` describing the workspace structure.
 
 ## NN Artifact: Structured Workspace Catalog
 type:: data

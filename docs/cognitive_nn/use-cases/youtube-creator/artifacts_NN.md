@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "artifacts"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
-model_version: "V_1-0-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
+knowledge_version: "V_1-0-0"
 title: "YouTube Content Creator Artifacts Catalog"
 ---
 
@@ -18,7 +18,7 @@ summary:: Verified spoken narrative with embedded visual cue triggers for studio
 status:: verified
 tags:: [teleprompter, studio, script]
 produced_by:: Episode 42 Video Production Pipeline
-sources:: [models/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md]
+sources:: [kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md]
 file_path:: artifacts/production_teleprompter_cue_sheet.md
 
 ## NN Artifact: B-Roll Shooting Checklist
@@ -27,7 +27,7 @@ summary:: Sequenced shot list and camera setup requirements for studio and macro
 status:: verified
 tags:: [b-roll, camera, filming]
 produced_by:: Episode 42 Video Production Pipeline
-sources:: [models/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md]
+sources:: [kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md]
 file_path:: artifacts/broll_shooting_checklist.md
 
 ## NN Artifact: YouTube Description & Bibliography
@@ -36,5 +36,5 @@ summary:: Formatted video description with academic paper citations and timestam
 status:: verified
 tags:: [bibliography, youtube, description]
 produced_by:: Episode 42 Video Production Pipeline
-sources:: [models/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md]
+sources:: [kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md]
 file_path:: artifacts/youtube_description_bibliography.md

@@ -4,7 +4,7 @@ spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/sp
 level: 3
 parent_spec:
   name: "procedures"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/base/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
 title: "Episode 42 Video Production & B-Roll Pipeline"
 ---
 

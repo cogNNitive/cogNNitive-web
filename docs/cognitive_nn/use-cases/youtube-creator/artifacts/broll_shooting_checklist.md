@@ -1,6 +1,6 @@
 # B-Roll Shooting Checklist & Visual Cue Sheet (Episode 42)
 
-> **Generated from model:** [`Episode_42_Production_V_1-0-0_procedures_NN.md`](../models/Episode_42_Production_V_1-0-0_procedures_NN.md)
+> **Generated from model:** [`Episode_42_Production_V_1-0-0_procedures_NN.md`](../kNNowledge/Episode_42_Production_V_1-0-0_procedures_NN.md)
 
 ---
 

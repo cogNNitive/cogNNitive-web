@@ -1,6 +1,6 @@
 # Commercial Pricing & Staffing Schedule (Schedule B)
 
-> **Generated from models:** [`Fintech_RFP_Response_V_1-0-0_commercial_NN.md`](../models/Fintech_RFP_Response_V_1-0-0_commercial_NN.md) & [`Consulting_Team_Matrix_V_1-0-0_organization_NN.md`](../models/Consulting_Team_Matrix_V_1-0-0_organization_NN.md)
+> **Generated from models:** [`Fintech_RFP_Response_V_1-0-0_commercial_NN.md`](../kNNowledge/Fintech_RFP_Response_V_1-0-0_commercial_NN.md) & [`Consulting_Team_Matrix_V_1-0-0_organization_NN.md`](../kNNowledge/Consulting_Team_Matrix_V_1-0-0_organization_NN.md)
 
 ---
 

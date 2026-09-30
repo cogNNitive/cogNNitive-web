@@ -1,6 +1,6 @@
 # Executive Pitch & Strategy Summary
 
-> **Generated from model:** [`SaaS_Founder_V_1-0-0_business_NN.md`](../models/SaaS_Founder_V_1-0-0_business_NN.md)  
+> **Generated from model:** [`SaaS_Founder_V_1-0-0_business_NN.md`](../kNNowledge/SaaS_Founder_V_1-0-0_business_NN.md)  
 > **Status:** Live & Audited · 100% Traceable to Discovery Transcripts
 
 ---

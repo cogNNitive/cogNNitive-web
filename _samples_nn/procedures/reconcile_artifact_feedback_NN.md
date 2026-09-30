@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/procedures_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Artifact Dual-Emission, Review & Feedback Reconciliation Procedure"
 ---
 
@@ -80,7 +80,7 @@ output_status:: verified
 tool:: [[iNNfo MCP Server]]
 scope:: internal
 tags:: [lineage, provenance, derived-from, dependencies]
-Reads baseline artifact registration in `workspace_NN.md` to map `sources::`, determining whether changed data originates in domain models, satellite financial models, or raw transcripts.
+Reads baseline artifact registration in `domaiNN_NN.md` to map `sources::`, determining whether changed data originates in domain models, satellite financial models, or raw transcripts.
 
 ## NN Work: Step 3 - Four-Layer Discrepancy Triaging
 parent:: [[Artifact Feedback Reconciliation Workflow]]
@@ -158,7 +158,7 @@ description:: Plain text extraction, XML comments, Track Changes, and reviewer m
 
 ## NN Artifact: Workspace Manifest and Lineage Record
 format:: iNNfo
-storage:: workspace_NN.md
+storage:: domaiNN_NN.md
 description:: Central workspace lineage index recording models, sources, artifacts, and procedures.
 
 ## NN Artifact: Upstream Dependency Map
@@ -178,7 +178,7 @@ description:: Provenance of human decisions regarding intent and scope.
 
 ## NN Artifact: Updated Domain Model
 format:: iNNfo
-storage:: models/
+storage:: kNNowledge/
 description:: Validated Level 3 domain model reflecting updated business truths.
 
 # NN Tools

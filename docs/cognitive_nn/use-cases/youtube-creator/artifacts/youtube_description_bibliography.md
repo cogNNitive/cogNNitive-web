@@ -1,7 +1,7 @@
 # Automated YouTube Description & Verified Bibliography (Episode 42)
 
 > **Generated automatically by cogNNitive**  
-> **Source Model:** [`Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md`](../models/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md)
+> **Source Model:** [`Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md`](../kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md)
 
 ---
 
