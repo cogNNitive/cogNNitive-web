@@ -6,7 +6,7 @@ import { resolveTemplateSchema, validateTemplateAgainstMetaschema } from '../src
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-const projectsV2 = readSpec('templates/projects/spec_NN.md')
+const projectsV2 = readSpec('bluepriNNts/projects/spec_NN.md')
 const iNNfoV2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 describe('projects_V_0-2-0 — standalone L2 resolution', () => {

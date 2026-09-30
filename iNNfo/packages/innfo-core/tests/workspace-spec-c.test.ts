@@ -7,7 +7,7 @@ import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-const WORKSPACE_SPEC = readSpec('templates/workspace_spec_NN.md')
+const WORKSPACE_SPEC = readSpec('bluepriNNts/workspace_spec_NN.md')
 const INNFO_V2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 /** Minimal in-memory FS handle, mirroring workspace-taxonomy-submodels.test.ts. */

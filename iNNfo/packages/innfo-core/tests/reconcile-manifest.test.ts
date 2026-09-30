@@ -327,7 +327,7 @@ describe('reconcileManifest', () => {
       candidate('acme_cogNNitive_NN.md', { level: 3, parent_spec: { name: 'cogNNitive_V_0-2-0' } }),
       candidate(MANIFEST_PATH, { level: 3, parent_spec: { name: 'workspace_V_0-2-0' } }),
       candidate('archive/old_NN.md', { level: 3, parent_spec: { name: 'business_V_0-2-0' } }),
-      candidate('templates/business_V_0-2-0_spec_NN.md', {
+      candidate('bluepriNNts/business_V_0-2-0_spec_NN.md', {
         level: 2,
         parent_spec: { name: 'iNNfo_V_0-2-0' },
       }),

@@ -215,7 +215,7 @@ describe('validator', () => {
     '',
   ].join('\n')
 
-  const bizTemplateContent = readSpec('templates/business/spec_NN.md')
+  const bizTemplateContent = readSpec('bluepriNNts/business/spec_NN.md')
   const bizTemplateFm = parseFrontmatter(bizTemplateContent)!
 
   // Canonical `business` is a composition shell — its schema is resolved from

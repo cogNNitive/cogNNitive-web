@@ -70,8 +70,8 @@ describe('parent spec resolution failure diagnostics', () => {
   })
 
   it('validates the official Ghostbusters sample successfully against the updated Business template', () => {
-    const modelContent = readSpec('templates/business/samples/Ghostbusters_V_0-2-1_business_NN.md')
-    const templateContent = readSpec('templates/business/spec_NN.md')
+    const modelContent = readSpec('bluepriNNts/business/samples/Ghostbusters_V_0-2-1_business_NN.md')
+    const templateContent = readSpec('bluepriNNts/business/spec_NN.md')
 
     // Canonical `business` composes its schema from the five decomposed templates (shared fixture).
     const resolveInclude = decomposedResolver()

@@ -10,7 +10,7 @@ import {
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-const ORG_V2 = readSpec('templates/organization/spec_NN.md')
+const ORG_V2 = readSpec('bluepriNNts/organization/spec_NN.md')
 const INNFO_V2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 describe('organization_V_0-2-0 — standalone L2 template', () => {

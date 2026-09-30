@@ -191,8 +191,8 @@ describe('Canonical Template Registry & Offline Fallback', () => {
 
   it('mirrors the workspace and artifacts V_0-2-2 templates without drift', () => {
     for (const [template, specPath] of [
-      ['workspace', 'templates/workspace_spec_NN.md'],
-      ['artifacts', 'templates/artifacts/spec_NN.md'],
+      ['workspace', 'bluepriNNts/workspace_spec_NN.md'],
+      ['artifacts', 'bluepriNNts/artifacts/spec_NN.md'],
     ] as const) {
       const disk = readFileSync(join(specsRoot, specPath), 'utf-8')
       const mirror = getCanonicalSpecContent(template)!

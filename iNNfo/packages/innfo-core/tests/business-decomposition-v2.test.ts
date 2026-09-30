@@ -10,7 +10,7 @@ import { readSpec, decomposedTemplates, decomposedResolver } from './fixtures/de
 const decomposed = decomposedTemplates()
 const BUSINESS_MODEL = decomposed['business-model']
 const ANALYSIS = decomposed.analysis
-const BUSINESS_V2 = readSpec('templates/business/spec_NN.md')
+const BUSINESS_V2 = readSpec('bluepriNNts/business/spec_NN.md')
 const INNFO_V2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 const resolver = decomposedResolver()
@@ -126,7 +126,7 @@ describe('analysis_V_0-1-0 — standalone strategic-review template', () => {
 describe('analysis_V_0-2-0 — sample model validates', () => {
   it('the Ghostbusters analysis sample has no "not defined in template" errors', () => {
     const modelContent = readSpec(
-      'templates/analysis/samples/Ghostbusters_V_0-2-0_analysis_NN.md',
+      'bluepriNNts/analysis/samples/Ghostbusters_V_0-2-0_analysis_NN.md',
     )
     const model = parseModel(modelContent)
     const template = {
@@ -223,7 +223,7 @@ describe('business_V_0-2-0 — collision is still an ERROR (REQ-B4)', () => {
 
 describe('Ghostbusters_V_0-2-0 — sample validates against the composed umbrella', () => {
   it('parsing the sample against the resolved umbrella yields no "not defined in template" errors', () => {
-    const modelContent = readSpec('templates/business/samples/Ghostbusters_V_0-2-0_business_NN.md')
+    const modelContent = readSpec('bluepriNNts/business/samples/Ghostbusters_V_0-2-0_business_NN.md')
     const model = parseModel(modelContent)
     const template = {
       name: 'business_V_0-2-0',

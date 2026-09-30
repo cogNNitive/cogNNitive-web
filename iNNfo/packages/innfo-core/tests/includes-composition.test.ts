@@ -317,9 +317,9 @@ describe('base_V_0-1-0 — composite template composition (PR6)', () => {
   // frozen `base` shell over it legitimately reports COMPOSITION_COLLISIONs.
   // The live composition contract is covered by business-decomposition-v2.test.ts.
   it.skip('base-composes-workspace-and-cognnitive: resolving base_V_0-1-0 unions both peers with no collisions', () => {
-    const baseContent = readSpec('templates/base/spec_NN.md')
-    const workspaceContent = readSpec('templates/workspace_spec_NN.md')
-    const cognnitiveContent = readSpec('templates/cogNNitive/spec_NN.md')
+    const baseContent = readSpec('bluepriNNts/base/spec_NN.md')
+    const workspaceContent = readSpec('bluepriNNts/workspace_spec_NN.md')
+    const cognnitiveContent = readSpec('bluepriNNts/cogNNitive/spec_NN.md')
 
     const lookup = (name: string): string | null => {
       const m: Record<string, string> = {
