@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
+spec_version: "V_0-3-0"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 level: 3
 parent_spec:
   name: "backlog_V_0-1-4"
   url: "specs/backlog_V_0-1-4_spec_NN.md"
-model_version: "V_0-1-6"
+knowledge_version: "V_0-1-6"
 title: "cogNNitive Backlog"
 ---
 

@@ -132,7 +132,7 @@ else on this list — it is the cheapest, highest-leverage item here.
 highest on-disk template_version for "business": expected 'V_0-2-5' to be 'V_0-2-4'
 ```
 
-`6e7481f` bumped `iNNfo/specs/templates/business/spec_NN.md` to `V_0-2-5` but
+`6e7481f` bumped `iNNfo/specs/bluepriNNts/business/spec_NN.md` to `V_0-2-5` but
 did not update `SHIPPED_TEMPLATE_VERSIONS` in
 `iNNfo/apps/innfo-editor/src/config/samples.ts:36`.
 
@@ -271,7 +271,7 @@ still says:
 
 Lower severity, same cause: `openspec/specs/template-package-structure/spec.md:13`
 uses it as an illustrative example, `docs/innfo/documentation/offline-consoles.md`
-has a table row for it, and `iNNfo/specs/templates/business-model/spec_NN.md:541`
+has a table row for it, and `iNNfo/specs/bluepriNNts/business-model/spec_NN.md:541`
 names it in a field description. Archived changes referencing it are history and
 are fine as they are.
 
@@ -346,7 +346,7 @@ user forms the expectation, and the gap is invisible until they go looking.
 - `src/composables/useFileSystem.ts` has no importers outside its own test,
   while `HomeView.vue:193-209` re-implements its directory walk.
 - `innfo-core/src/schema/canonical-registry.ts` is 2116 lines of hand-maintained
-  template markdown mirroring `iNNfo/specs/templates/*` with no sync check.
+  template markdown mirroring `iNNfo/specs/bluepriNNts/*` with no sync check.
 - `validateWorkspaceReferences(result)` throws a raw
   `TypeError: Cannot read properties of undefined (reading 'nodeSchema')` when
   the required `WorkspaceIndex` argument is omitted.

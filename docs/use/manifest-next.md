@@ -85,111 +85,111 @@ agent-bootstrap:
   templates:
     - name: workspace
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/workspace_spec_NN.md
+      path: iNNfo/specs/bluepriNNts/workspace_spec_NN.md
       version: "V_0-2-2"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: projects
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/projects/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: procedures
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/procedures/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: organization
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/organization/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: business
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/business/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/business/spec_NN.md
       version: "V_0-2-5"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: business-model
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/business-model/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: analysis
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/analysis/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: innovation
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/innovation/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: blank
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/blank/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: documentation
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/documentation/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: metrics
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/metrics/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: repository
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/repository/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: video
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/video/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/video/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: sources
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/sources/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: artifacts
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/artifacts/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
       version: "V_0-2-2"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
     - name: design-presets
       repo: cogNNitive/cogNNitive
-      path: iNNfo/specs/templates/design-presets/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
       version: "V_0-2-1"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
   console-assets:
-    - file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
       version: "0.4.0"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e41e6cb5acb8321803e05e7d31f921a50c29d455/iNNfo/specs/templates/console/innfo-console.bundle.js
-    - file: iNNfo/specs/templates/console/artifact_blueprint.html
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e41e6cb5acb8321803e05e7d31f921a50c29d455/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
+    - file: iNNfo/specs/bluepriNNts/console/artifact_blueprint.html
       version: "0.4.0"
       ref: "main"
       commit: "e41e6cb5acb8321803e05e7d31f921a50c29d455"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e41e6cb5acb8321803e05e7d31f921a50c29d455/iNNfo/specs/templates/console/artifact_blueprint.html
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e41e6cb5acb8321803e05e7d31f921a50c29d455/iNNfo/specs/bluepriNNts/console/artifact_blueprint.html
     - file: scripts/export-console.mjs
       version: "0.4.0"
       ref: "main"

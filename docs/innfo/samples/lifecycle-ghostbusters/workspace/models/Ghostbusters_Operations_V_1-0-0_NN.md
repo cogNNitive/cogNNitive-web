@@ -3,7 +3,7 @@ level: 3
 spec_version: "V_0-1-0"
 parent_spec:
   name: "business_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 model_version: "V_1-0-0"
 title: "Ghostbusters Operations and Pricing Model"
 ---

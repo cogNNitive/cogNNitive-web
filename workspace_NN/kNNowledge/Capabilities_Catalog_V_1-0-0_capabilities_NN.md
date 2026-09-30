@@ -1,11 +1,11 @@
-﻿---
-spec_version: "V_0-2-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
+---
+spec_version: "V_0-3-0"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 level: 3
 parent_spec:
   name: "capabilities"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/cogNNitive_nn/specs/capabilities_V_0-1-0_spec_NN.md"
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "cogNNitive Platform Capabilities & Value Catalog"
 ---
 

@@ -64,14 +64,14 @@ parent_spec:
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
 includes:
   - name: "business"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/V_0-2-0/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md"
     alias:
       concepts:
         "Task": "BusinessTask"
       fields:
         "Item.status": "Item.business_status"
   - name: "projects"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/projects/V_0-2-0/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/V_0-2-0/spec_NN.md"
     alias:
       concepts:
         "Task": "ProjectTask"

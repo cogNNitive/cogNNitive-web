@@ -25,7 +25,7 @@ async function runTests() {
   {
     const canonicalProcPath = path.join(
       repoRoot,
-      'iNNfo/specs/templates/video/procedures/generate_video_script_NN.md'
+      'iNNfo/specs/bluepriNNts/video/procedures/generate_video_script_NN.md'
     );
     assert.ok(fs.existsSync(canonicalProcPath), 'generate_video_script_NN.md must exist');
     const content = fs.readFileSync(canonicalProcPath, 'utf8');
@@ -41,7 +41,7 @@ async function runTests() {
   {
     const legacyProcPath = path.join(
       repoRoot,
-      'iNNfo/specs/templates/video/procedures/generate_anydeo_script_NN.md'
+      'iNNfo/specs/bluepriNNts/video/procedures/generate_anydeo_script_NN.md'
     );
     assert.ok(fs.existsSync(legacyProcPath), 'generate_anydeo_script_NN.md must exist as a deprecation redirect');
     const content = fs.readFileSync(legacyProcPath, 'utf8');
@@ -53,7 +53,7 @@ async function runTests() {
 
   // 3. spec_NN.md verification
   {
-    const specPath = path.join(repoRoot, 'iNNfo/specs/templates/video/spec_NN.md');
+    const specPath = path.join(repoRoot, 'iNNfo/specs/bluepriNNts/video/spec_NN.md');
     assert.ok(fs.existsSync(specPath), 'spec_NN.md must exist');
     const content = fs.readFileSync(specPath, 'utf8');
 

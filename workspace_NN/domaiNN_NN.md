@@ -1,10 +1,10 @@
 ---
 level: 3
 parent_spec:
-  name: " workspace\
- url: \../iNNfo/specs/templates/workspace_spec_NN.md\
-model_version: \V_0-1-0\
-title: \cogNNitive Monorepo Workspace\
+  name: "domaiNN"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
+knowledge_version: "V_0-1-0"
+title: "cogNNitive Monorepo Workspace"
 ---
 
 > [!NOTE]
@@ -26,9 +26,9 @@ title: \cogNNitive Monorepo Workspace\
 # NN Workspace
 name:: \cogNNitive Ecosystem\
 environment:: development
-models_dir:: models/
+knowledge_dir:: models/
 sources_dir:: sources/
-templates_dir:: ../iNNfo/specs/templates/
+blueprints_dir:: ../iNNfo/specs/bluepriNNts/
 skills_dir:: ../skills/
 
 Self-hosted root workspace for the cogNNitive monorepo, governing specifications, domain templates, project models, procedures, AI agent skills, and maintenance tools under unified dogfooding architecture.
@@ -36,61 +36,61 @@ Self-hosted root workspace for the cogNNitive monorepo, governing specifications
 # NN Specs
 
 ## NN Specs: iNNfo Level 1 Meta-template
-path:: ../iNNfo/specs/iNNfo_V_0-2-1_NN.md
+path:: ../iNNfo/specs/iNNfo_V_0-3-0_NN.md
 level:: 1
 
 ## NN Specs: Workspace Specification N2
-path:: ../iNNfo/specs/templates/workspace_spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
 level:: 2
 
 # NN Templates
 
 ## NN Templates: Business Model Template
-path:: ../iNNfo/specs/templates/business/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/business/spec_NN.md
 category:: Strategy
 
 ## NN Templates: Business Model Canvas Template
-path:: ../iNNfo/specs/templates/business-model/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/business-model/spec_NN.md
 category:: Strategy
 
 ## NN Templates: Operational Analysis Template
-path:: ../iNNfo/specs/templates/analysis/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/analysis/spec_NN.md
 category:: Diagnostics
 
 ## NN Templates: Organizational Structure Template
-path:: ../iNNfo/specs/templates/organization/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/organization/spec_NN.md
 category:: Governance
 
 ## NN Templates: Standard Operating Procedures Template
-path:: ../iNNfo/specs/templates/procedures/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/procedures/spec_NN.md
 category:: Execution
 
 ## NN Templates: Projects and Campaigns Template
-path:: ../iNNfo/specs/templates/projects/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/projects/spec_NN.md
 category:: Planning
 
 ## NN Templates: Metrics Dashboard Template
-path:: ../iNNfo/specs/templates/metrics/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/metrics/spec_NN.md
 category:: Telemetry
 
 ## NN Templates: Innovation Pipeline Template
-path:: ../iNNfo/specs/templates/innovation/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/innovation/spec_NN.md
 category:: Strategy
 
 ## NN Templates: Documentation Template
-path:: ../iNNfo/specs/templates/documentation/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/documentation/spec_NN.md
 category:: Knowledge
 
 ## NN Templates: Repository Lifecycle Template
-path:: ../iNNfo/specs/templates/repository/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/repository/spec_NN.md
 category:: Engineering
 
 ## NN Templates: Sources Catalog Template
-path:: ../iNNfo/specs/templates/sources/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/sources/spec_NN.md
 category:: Ingestion
 
 ## NN Templates: Artifacts Catalog Template
-path:: ../iNNfo/specs/templates/artifacts/spec_NN.md
+path:: ../iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
 category:: Delivery
 
 # NN Models

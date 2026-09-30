@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: " repository\
- url: \iNNfo/specs/templates/repository/spec_NN.md\
-model_version: \V_0-1-1\
+ url: \iNNfo/specs/bluepriNNts/repository/spec_NN.md\
+knowledge_version: \V_0-1-1\
 title: \cogNNitive Repository Model\
 ---
 

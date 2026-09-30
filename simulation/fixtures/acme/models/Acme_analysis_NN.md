@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "analysis_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/analysis/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
 model_version: "V_0-2-1"
 title: "Acme Operational Analysis"
 ---

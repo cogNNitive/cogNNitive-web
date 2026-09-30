@@ -15,23 +15,23 @@
 
 | Tool | Description |
 |------|-------------|
-| `list_models` | Scan the models directory and list all iNNfo models |
-| `read_model` | Parse and return an iNNfo model's full structure by its id. For surgical work prefer bounded slices: pass concept (+ element) with max_lines (default 150); slices over the cap truncate with truncated=true unless override_reason records a manual override |
-| `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded model. Provide either url or model_id — the URL is never taken from an internal constant |
-| `get_template` | Resolve an iNNfo template (level-2) from an explicit url or from a loaded model. Provide either url or model_id — template names/URLs are never hardcoded |
-| `validate_model` | Validate an iNNfo model against its template. Provide id (file on disk) or content (raw text). The template is resolved from the model parent_spec.url, or from an optional template_url |
-| `apply_change` | Apply an intent-level change to a model and re-validate. Returns updated model or validation errors |
-| `validate_model_url` | Validate an iNNfo model fetched from a URL without writing to disk. Accepts a model URL and optional template_url. Returns validation results. |
-| `validate_template` | Validate a Level 2 template against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
-| `init_model` | Initialize or repair a level-3 model file: writes canonical YAML frontmatter and, when the file has no concept sections and the template resolves, scaffolds a starter body (index block + one section per Concept) from the template schema. Returns templateResolved / scaffolded / warnings. |
-| `list_templates` | List all available Level 2 spec templates across local workspace, global environment, and installed skills |
-| `hydrate_template` | Hydrate (copy) a Level 2 spec template from global or skill store into active workspace templates directory |
-| `sync_workspace_manifest` | Reconcile the workspace manifest ## NN Models entries against discovered Level-3 model files: additively appends new entries, archives entries whose file disappeared, and reactivates tool-owned entries whose file returned. Never touches hand-authored entries lacking the <!-- nn:auto --> ownership marker. Defaults to a dry run. |
-| `check_workspace` | Run one consolidated workspace integrity pass over every Level-3 model: validate each against its template and traceability, self-heal missing template packages/specs (write-once hydration), classify each pinned template version against the published catalog, and return one report with a per-model status and a workspace aggregate. Non-blocking and informational — validation failures never fail the tool. |
+| `list_knowledge` | Scan the knowledge directory and list all iNNfo knowledge documents |
+| `read_knowledge` | Parse and return an iNNfo knowledge document's full structure by its id. For surgical work prefer bounded slices: pass concept (+ element) with max_lines (default 150); slices over the cap truncate with truncated=true unless override_reason records a manual override |
+| `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
+| `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
+| `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
+| `apply_change` | Apply an intent-level change to a knowledge document and re-validate. Returns updated knowledge or validation errors |
+| `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
+| `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
+| `init_knowledge` | Initialize or repair a level-3 knowledge document file: writes canonical YAML frontmatter and, when the file has no concept sections and the blueprint resolves, scaffolds a starter body (index block + one section per Concept) from the blueprint schema. Returns blueprintResolved / scaffolded / warnings. |
+| `list_blueprints` | List all available Level 2 spec blueprints across local domain, global environment, and installed skills |
+| `hydrate_blueprint` | Hydrate (copy) a Level 2 spec blueprint from global or skill store into active domain blueprints directory |
+| `sync_domain_manifest` | Reconcile the domain manifest ## NN Knowledge entries against discovered Level-3 knowledge files: additively appends new entries, archives entries whose file disappeared, and reactivates tool-owned entries whose file returned. Never touches hand-authored entries lacking the <!-- nn:auto --> ownership marker. Defaults to a dry run. |
+| `check_domain` | Run one consolidated domain integrity pass over every Level-3 knowledge document: validate each against its blueprint and traceability, self-heal missing blueprint packages/specs (write-once hydration), classify each pinned blueprint version against the published catalog, and return one report with a per-knowledge status and a domain aggregate. Non-blocking and informational — validation failures never fail the tool. |
 | `query_units` | Run a read-only content query over one workspace file and return matching knowledge-unit URIs: "path?filter=value[&filter...][&projection]". Filters use exact match (trimmed, case-insensitive); a trailing bare segment projects one column/field over the matches. Capped at 100 results with truncated=true. Pass max_values_chars to cap projected value characters for slice-only surgical reads. Never writes files. |
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "reviewer" \| "document"), resolved from the heading the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
-| `list_template_procedures` | List all procedures defined in a template and its transitively included templates up to depth 10 |
-| `list_template_skills` | List all agent skills defined in a template and its transitively included templates up to depth 10 |
+| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
+| `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10 |
 <!-- /generated:mcp-tools -->
 
 ### `apply_change` operations

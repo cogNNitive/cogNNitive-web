@@ -64,7 +64,7 @@ node scripts/preflight-check.js
 ### Tier 3 Checks (Workspace Template Upgrades — Informational)
 1. **Template upgrade detection**: when `--workspace-dir` is provided and the workspace
    contains Level-3 models, classifies each model's pinned template against the committed
-   Level-2 template catalog (`iNNfo/specs/templates/catalog.json`). Reports `current` /
+   Level-2 template catalog (`iNNfo/specs/bluepriNNts/catalog.json`). Reports `current` /
    `upgrade-available` (with `major`/`minor`/`patch` gap) / `ahead` / `unlisted`. Available
    upgrades are informational and never flip the exit code. Offline catalog → non-blocking
    `offline` notice. Migration is handled by `nn-upgrade`.
