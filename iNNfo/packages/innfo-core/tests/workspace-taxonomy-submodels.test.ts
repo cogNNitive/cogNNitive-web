@@ -96,7 +96,7 @@ description:: Core engine component.
       const result = await recursiveParse(rootHandle)
 
       expect(Object.keys(result.nodes).length).toBeGreaterThan(0)
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
       expect(rootNode).toBeDefined()
       const subNode = Object.values(result.nodes).find((n) => n.name === 'subsystem_a_01')
       expect(subNode).toBeDefined()
@@ -191,11 +191,11 @@ description:: Path to submodel file.
       const schema = extractTemplateSchema(parseModel(templateContent))
       const modelRefConcept = schema.concepts.find((c) => c.name === 'Models')
       expect(modelRefConcept).toBeDefined()
-      expect(modelRefConcept?.type).toBe('model')
+      expect(modelRefConcept?.type).toBe('knowledge')
 
       const pathField = modelRefConcept?.fields?.find((f) => f.name === 'submodel_path')
       expect(pathField).toBeDefined()
-      expect(pathField?.type).toBe('model')
+      expect(pathField?.type).toBe('knowledge')
     })
 
     it('validates document containing type:: knowledge fields without unknown-type errors', () => {
@@ -439,11 +439,11 @@ title: Model B
       const result = await recursiveParse(rootHandle)
       const index = buildWorkspaceIndex(result)
 
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')!
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')!
       const aNode = Object.values(result.nodes).find((n) => n.name === 'model_a_01')!
       const bNode = Object.values(result.nodes).find((n) => n.name === 'model_b_01')!
 
-      expect(index.pathToNodeId['domaiNN_NN.md']).toBe(rootNode.id)
+      expect(index.pathToNodeId['domainn_nn.md']).toBe(rootNode.id)
       expect(index.pathToNodeId['model_a_01.md']).toBe(aNode.id)
       expect(index.pathToNodeId['model_b_01.md']).toBe(bNode.id)
 
@@ -642,7 +642,7 @@ path:: model_a_01.md
       const result = await recursiveParse(rootHandle)
       const index = buildWorkspaceIndex(result)
 
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')!
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')!
       const modelANode = Object.values(result.nodes).find((n) => n.name === 'model_a_01')!
       const modelBNode = Object.values(result.nodes).find((n) => n.name === 'model_b_01')!
 
@@ -778,7 +778,7 @@ description:: Living-dining room.
       const result = await recursiveParse(rootHandle)
       const index = buildWorkspaceIndex(result)
 
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')!
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')!
       const exactKey = 'salón–comedor'
       const normalizedKey = 'salón-comedor'
 

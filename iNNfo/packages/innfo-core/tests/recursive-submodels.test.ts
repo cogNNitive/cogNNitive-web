@@ -57,10 +57,10 @@ describe('Recursive Submodels & Specification Alignment (Phase 4 innfo-core)', (
   describe('Path Resolution & Normalization', () => {
     it('normalizes Windows backslashes, collapses slashes and strips leading ./', () => {
       expect(normalizePathKey('.\\kNNowledge\\subsystems\\auth_NN.md')).toBe(
-        'kNNowledge/subsystems/auth_nn.md',
+        'knnowledge/subsystems/auth_nn.md',
       )
       expect(normalizePathKey('kNNowledge//subsystems///auth_NN.md')).toBe(
-        'kNNowledge/subsystems/auth_nn.md',
+        'knnowledge/subsystems/auth_nn.md',
       )
       expect(normalizePathKey('./auth_NN.md')).toBe('auth_nn.md')
     })
@@ -133,7 +133,7 @@ description:: Administrator role.
 
       expect(result.issues).toHaveLength(0)
 
-      const wsNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')
+      const wsNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
       const sysNode = Object.values(result.nodes).find((n) => n.name === 'system_01')
       const authNode = Object.values(result.nodes).find((n) => n.name === 'auth_01')
 
@@ -717,7 +717,7 @@ path:: startups/acme_business_01.md
       expect(businessNodes).toHaveLength(1)
       const businessNode = businessNodes[0]!
 
-      const workspaceNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')
+      const workspaceNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
       const startupNode = Object.values(result.nodes).find((n) => n.name === 'acme_startup_01')
       expect(workspaceNode!.childIds).toContain(businessNode.id)
       expect(startupNode!.childIds).toContain(businessNode.id)
