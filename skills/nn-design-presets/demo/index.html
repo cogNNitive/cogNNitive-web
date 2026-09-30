@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es" data-preset="morado-nazareno">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cogNNitive Design Presets — Interactive Showcase</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       CSS VARIABLES DEFINITION PER PRESET
+       ========================================================================== */
+    
+    /* 1. MORADO NAZARENO */
+    html[data-preset="morado-nazareno"] {
+      --bg-page: #FFFFFF;
+      --bg-surface: #FFFFFF;
+      --bg-inert: #FAFAFC;
+      --bg-card: #FFFFFF;
+      --brand-primary: #4D0E4E;
+      --brand-hover: #631264;
+      --brand-secondary: #7A1C7C;
+      --border-color: #E5E5EA;
+      --border-width: 1px;
+      --ink-primary: #111112;
+      --ink-muted: #636366;
+      --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-card: 0 4px 20px rgba(77, 14, 78, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+      --shadow-btn: 0 2px 6px rgba(77, 14, 78, 0.25);
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --backdrop-filter: none;
+      --badge-bg: rgba(77, 14, 78, 0.08);
+      --badge-color: #4D0E4E;
+    }
+
+    /* 2. SLEEK DARK MODE */
+    html[data-preset="sleek-dark"] {
+      --bg-page: #090D16;
+      --bg-surface: #0F172A;
+      --bg-inert: #131B2E;
+      --bg-card: #131B2E;
+      --brand-primary: #06B6D4;
+      --brand-hover: #22D3EE;
+      --brand-secondary: #8B5CF6;
+      --border-color: #1E293B;
+      --border-width: 1px;
+      --ink-primary: #F8FAFC;
+      --ink-muted: #94A3B8;
+      --font-sans: 'Outfit', 'Inter', system-ui, sans-serif;
+      --font-serif: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      --shadow-btn: 0 0 15px rgba(6, 182, 212, 0.4);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --backdrop-filter: none;
+      --badge-bg: rgba(6, 182, 212, 0.15);
+      --badge-color: #22D3EE;
+    }
+
+    /* 3. GLASSMORPHISM */
+    html[data-preset="glassmorphism"] {
+      --bg-page: linear-gradient(135deg, #0b091a 0%, #161233 50%, #0d1b2a 100%);
+      --bg-surface: rgba(255, 255, 255, 0.05);
+      --bg-inert: rgba(255, 255, 255, 0.03);
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --brand-primary: #EC4899;
+      --brand-hover: #F472B6;
+      --brand-secondary: #3B82F6;
+      --border-color: rgba(255, 255, 255, 0.14);
+      --border-width: 1px;
+      --ink-primary: #FFFFFF;
+      --ink-muted: rgba(255, 255, 255, 0.7);
+      --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif: 'Space Grotesk', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --shadow-btn: 0 0 20px rgba(236, 72, 153, 0.4);
+      --radius-sm: 8px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --backdrop-filter: blur(16px) saturate(180%);
+      --badge-bg: rgba(236, 72, 153, 0.2);
+      --badge-color: #F472B6;
+    }
+
+    /* 4. NEO BRUTALISM */
+    html[data-preset="neo-brutalism"] {
+      --bg-page: #FFFDF5;
+      --bg-surface: #FFFDF5;
+      --bg-inert: #FFE600;
+      --bg-card: #FFFFFF;
+      --brand-primary: #FFE600;
+      --brand-hover: #FFF066;
+      --brand-secondary: #FF3366;
+      --border-color: #000000;
+      --border-width: 3px;
+      --ink-primary: #000000;
+      --ink-muted: #222222;
+      --font-sans: 'Space Grotesk', sans-serif;
+      --font-serif: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --shadow-card: 5px 5px 0px #000000;
+      --shadow-btn: 4px 4px 0px #000000;
+      --radius-sm: 0px;
+      --radius-md: 4px;
+      --radius-lg: 6px;
+      --backdrop-filter: none;
+      --badge-bg: #00F0FF;
+      --badge-color: #000000;
+    }
+
+    /* 5. NORDIC WARM EDITORIAL */
+    html[data-preset="nordic-warm-editorial"] {
+      --bg-page: #FDFBF7;
+      --bg-surface: #FDFBF7;
+      --bg-inert: #F4EFEA;
+      --bg-card: #FFFFFF;
+      --brand-primary: #2D4A3E;
+      --brand-hover: #1E342B;
+      --brand-secondary: #C85A32;
+      --border-color: #E7E5E4;
+      --border-width: 1px;
+      --ink-primary: #1C1917;
+      --ink-muted: #78716C;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-serif: 'Lora', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-card: 0 4px 20px -2px rgba(28, 25, 23, 0.05);
+      --shadow-btn: 0 2px 5px rgba(45, 74, 62, 0.15);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --backdrop-filter: none;
+      --badge-bg: rgba(200, 90, 50, 0.12);
+      --badge-color: #C85A32;
+    }
+
+    /* 6. NN SHAD-CN */
+    html[data-preset="nn-shad-cn"] {
+      --bg-page: #FFFFFF;
+      --bg-surface: #FFFFFF;
+      --bg-inert: #F4F4F5;
+      --bg-card: #FFFFFF;
+      --brand-primary: #171717;
+      --brand-hover: #0A0A0A;
+      --brand-secondary: #52525B;
+      --border-color: #E5E5E5;
+      --border-width: 1px;
+      --ink-primary: #0A0A0A;
+      --ink-muted: #737373;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-serif: 'Inter', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow-btn: 0 0 0 2px rgba(10, 10, 10, 0.25);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --backdrop-filter: none;
+      --badge-bg: rgba(23, 23, 23, 0.06);
+      --badge-color: #171717;
+    }
+
+    /* ==========================================================================
+       GLOBAL BASE STYLES
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    body {
+      background: var(--bg-page);
+      color: var(--ink-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+
+    /* TOP PRESET SELECTOR BAR */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-surface);
+      backdrop-filter: var(--backdrop-filter);
+      border-bottom: var(--border-width) solid var(--border-color);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preset-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      background: var(--bg-inert);
+      color: var(--ink-primary);
+      border: var(--border-width) solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-btn.active {
+      background: var(--brand-primary);
+      color: html[data-preset="neo-brutalism"] & ? #000 : #FFFFFF;
+      border-color: var(--brand-primary);
+      box-shadow: var(--shadow-btn);
+    }
+    
+    html[data-preset="neo-brutalism"] .preset-btn.active {
+      color: #000000;
+    }
+    
+    html[data-preset="morado-nazareno"] .preset-btn.active,
+    html[data-preset="sleek-dark"] .preset-btn.active,
+    html[data-preset="glassmorphism"] .preset-btn.active,
+    html[data-preset="nordic-warm-editorial"] .preset-btn.active {
+      color: #FFFFFF;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+
+    /* HERO SECTION */
+    .hero {
+      text-align: center;
+      margin-bottom: 50px;
+      padding: 40px 20px;
+      background: var(--bg-card);
+      backdrop-filter: var(--backdrop-filter);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--badge-bg);
+      color: var(--badge-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      border: html[data-preset="neo-brutalism"] & ? "2px solid #000" : "none";
+    }
+
+    html[data-preset="neo-brutalism"] .badge {
+      border: 2px solid #000;
+    }
+
+    .hero-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .serif-accent {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+      color: var(--brand-secondary);
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--ink-muted);
+      max-width: 650px;
+      margin: 0 auto 28px auto;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* BUTTONS */
+    .btn {
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: var(--border-width) solid transparent;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--brand-primary);
+      color: #FFFFFF;
+      box-shadow: var(--shadow-btn);
+    }
+    
+    html[data-preset="neo-brutalism"] .btn-primary {
+      color: #000000;
+      border: 3px solid #000000;
+    }
+    html[data-preset="neo-brutalism"] .btn-primary:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px #000;
+    }
+
+    .btn-secondary {
+      background: var(--bg-inert);
+      color: var(--ink-primary);
+      border-color: var(--border-color);
+    }
+    
+    html[data-preset="neo-brutalism"] .btn-secondary {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0px #000;
+    }
+
+    /* CARDS GRID */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: var(--backdrop-filter);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--badge-bg);
+      color: var(--badge-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+
+    html[data-preset="neo-brutalism"] .card-icon {
+      border: 2px solid #000;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card-desc {
+      color: var(--ink-muted);
+      font-size: 0.92rem;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-text {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: var(--border-width) solid var(--border-color);
+      background: var(--bg-inert);
+      color: var(--ink-primary);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .input-text:focus {
+      border-color: var(--brand-primary);
+    }
+
+    /* CODE INSPECTOR BLOCK */
+    .inspector {
+      background: var(--bg-inert);
+      border: var(--border-width) solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      box-shadow: var(--shadow-card);
+      overflow-x: auto;
+    }
+
+    .inspector-title {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .token-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .token-name {
+      color: var(--brand-secondary);
+    }
+
+    .token-val {
+      color: var(--ink-primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP PRESET SELECTOR TOOLBAR -->
+  <header class="toolbar">
+    <div class="toolbar-title">
+      🎨 cogNNitive Design Presets Showcase
+    </div>
+    <div class="preset-buttons">
+      <button class="preset-btn active" onclick="setPreset('morado-nazareno')">🟣 Morado Nazareno</button>
+      <button class="preset-btn" onclick="setPreset('sleek-dark')">🌙 Sleek Dark Mode</button>
+      <button class="preset-btn" onclick="setPreset('glassmorphism')">✨ Glassmorphism</button>
+      <button class="preset-btn" onclick="setPreset('neo-brutalism')">⚡ Neo-Brutalism</button>
+      <button class="preset-btn" onclick="setPreset('nordic-warm-editorial')">🌿 Nordic Warm</button>
+      <button class="preset-btn" onclick="setPreset('nn-shad-cn')">⬛ NN Shad-CN</button>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- HERO COMPONENT -->
+    <section class="hero">
+      <span class="badge" id="preset-badge">ESTILO ACTIVO: MORADO NAZARENO</span>
+      <h1 class="hero-title">
+        Diseño Adaptativo <span class="serif-accent">Inteligente</span> &amp; Elegante
+      </h1>
+      <p class="hero-subtitle">
+        Probá los 5 presets de diseño oficial del sistema cogNNitive. Cambiá de estilo en tiempo real para visualizar paleta de colores, tipografía, bordes y sombras.
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-primary">Comenzar Proyecto</button>
+        <button class="btn btn-secondary">Ver Documentación</button>
+      </div>
+    </section>
+
+    <!-- CARDS GRID -->
+    <section class="grid">
+      <div class="card">
+        <div>
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Desarrollo Veloz</h3>
+          <p class="card-desc">Sistemas de diseño basados en tokens atómicos unificados para web y aplicaciones.</p>
+        </div>
+        <button class="btn btn-secondary" style="width:100%; justify-content:center;">Explorar Tokens</button>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-icon">🎯</div>
+          <h3 class="card-title">Probar Componentes</h3>
+          <p class="card-desc">Interactuá con formularios e inputs ajustados a la identidad de tu preset elegido.</p>
+        </div>
+        <div class="form-group">
+          <input type="text" class="input-text" placeholder="Ingresá tu correo..." value="usuario@cognnitive.io">
+          <button class="btn btn-primary">Enviar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-icon">💎</div>
+          <h3 class="card-title">Calidad Editorial</h3>
+          <p class="card-desc">Combinaciones tipográficas curadas para máxima legibilidad y presencia de marca.</p>
+        </div>
+        <span class="badge" style="align-self:flex-start;">100% Responsive</span>
+      </div>
+    </section>
+
+    <!-- LIVE CSS TOKEN INSPECTOR -->
+    <section class="inspector">
+      <div class="inspector-title">
+        🔍 Token Inspector en Vivo (<span id="active-preset-name">morado-nazareno</span>)
+      </div>
+      <div id="token-list">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const presetsData = {
+      'morado-nazareno': {
+        name: 'Morado Nazareno',
+        badge: 'ESTILO ACTIVO: MORADO NAZARENO (BRAND CLASSIC)',
+        tokens: {
+          '--brand-primary': '#4D0E4E',
+          '--brand-secondary': '#7A1C7C',
+          '--bg-page': '#FFFFFF',
+          '--font-sans': 'Plus Jakarta Sans',
+          '--font-serif': 'Playfair Display',
+          '--radius-md': '12px'
+        }
+      },
+      'sleek-dark': {
+        name: 'Sleek Dark Mode',
+        badge: 'ESTILO ACTIVO: SLEEK DARK MODE (CYBER HIGH-TECH)',
+        tokens: {
+          '--brand-primary': '#06B6D4 (Cyan)',
+          '--brand-secondary': '#8B5CF6 (Violet)',
+          '--bg-page': '#090D16',
+          '--font-sans': 'Outfit / Inter',
+          '--font-mono': 'JetBrains Mono',
+          '--radius-md': '10px'
+        }
+      },
+      'glassmorphism': {
+        name: 'Minimalist Glassmorphism',
+        badge: 'ESTILO ACTIVO: MINIMALIST GLASSMORPHISM',
+        tokens: {
+          '--brand-primary': '#EC4899 (Neon Pink)',
+          '--brand-secondary': '#3B82F6 (Electric Blue)',
+          '--bg-card': 'rgba(255, 255, 255, 0.06)',
+          '--backdrop-filter': 'blur(16px)',
+          '--font-sans': 'Plus Jakarta Sans',
+          '--radius-md': '16px'
+        }
+      },
+      'neo-brutalism': {
+        name: 'Neo-Brutalism',
+        badge: 'ESTILO ACTIVO: NEO-BRUTALISM (BOLD POP)',
+        tokens: {
+          '--brand-primary': '#FFE600 (Canary Yellow)',
+          '--brand-secondary': '#FF3366 (Pop Red)',
+          '--border-width': '3px solid #000000',
+          '--shadow-card': '5px 5px 0px #000000',
+          '--font-sans': 'Space Grotesk',
+          '--radius-md': '4px'
+        }
+      },
+      'nordic-warm-editorial': {
+        name: 'Nordic Warm Editorial',
+        badge: 'ESTILO ACTIVO: NORDIC WARM EDITORIAL',
+        tokens: {
+          '--brand-primary': '#2D4A3E (Forest Green)',
+          '--brand-secondary': '#C85A32 (Terracotta)',
+          '--bg-page': '#FDFBF7 (Linen)',
+          '--font-sans': 'Inter',
+          '--font-serif': 'Lora (Serif)',
+          '--radius-md': '8px'
+        }
+      },
+      'nn-shad-cn': {
+        name: 'NN Shad-CN',
+        badge: 'ESTILO ACTIVO: NN SHAD-CN (MONOCHROME NEUTRAL)',
+        tokens: {
+          '--brand-primary': '#171717 (Near Black)',
+          '--bg-page': '#FFFFFF (Light) / #0A0A0A (Dark)',
+          '--ink-primary': '#0A0A0A',
+          '--ink-muted': '#737373',
+          '--border': '#E5E5E5',
+          '--font-sans': 'Inter',
+          '--font-mono': 'JetBrains Mono',
+          '--radius-md': '8px',
+          'semantic': 'danger #E7000B · success #16A34A · warning #D97706 · info #2563EB'
+        }
+      }
+    };
+
+    function setPreset(presetKey) {
+      document.documentElement.setAttribute('data-preset', presetKey);
+      
+      // Update buttons active status
+      const buttons = document.querySelectorAll('.preset-btn');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(presetKey)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update badge and token inspector
+      const data = presetsData[presetKey];
+      if (data) {
+        document.getElementById('preset-badge').textContent = data.badge;
+        document.getElementById('active-preset-name').textContent = data.name;
+
+        const tokenContainer = document.getElementById('token-list');
+        tokenContainer.innerHTML = Object.entries(data.tokens)
+          .map(([k, v]) => `
+            <div class="token-row">
+              <span class="token-name">${k}</span>
+              <span class="token-val">${v}</span>
+            </div>
+          `).join('');
+      }
+    }
+
+    // Initialize with default
+    setPreset('morado-nazareno');
+  </script>
+</body>
+</html>

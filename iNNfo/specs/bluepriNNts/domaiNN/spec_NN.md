@@ -1,10 +1,10 @@
 ---
 spec_version: "V_0-3-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "DomaiNN Blueprint"
 blueprint_name: "domaiNN"
 blueprint_version: "V_0-1-0"
@@ -166,7 +166,7 @@ The entry point of a domaiNN is a root document named exactly `domaiNN_NN.md`. L
 level: 3
 parent_spec:
   name: "domaiNN"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "<DomaiNN Name>"
 ---

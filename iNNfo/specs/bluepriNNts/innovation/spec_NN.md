@@ -1,10 +1,10 @@
 ---
 spec_version: "V_0-3-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 blueprint_version: "V_0-3-0"
 title: "Innovation App"
 procedures:
@@ -391,7 +391,7 @@ To create an innovation portfolio model, create a level 3 FILE mode document wit
 level: 3
 parent_spec:
   name: "innovation_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
 knowledge_version: "V_1-0-0"
 title: "<Innovation Portfolio Title>"
 ---

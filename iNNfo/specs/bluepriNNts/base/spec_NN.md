@@ -1,17 +1,17 @@
 ---
 spec_version: "V_0-1-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
 title: "Base Workspace Overview Template"
 template_version: "V_0-1-0"
 includes:
   - name: "workspace_V_0-2-0"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
   - name: "cogNNitive_V_0-2-0"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
 relationship_types:
   hierarchy:
     enabled: true
@@ -124,7 +124,7 @@ To create an overview root, place a `<name>_base_NN.md` at the workspace root:
 level: 3
 parent_spec:
   name: "base_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
 model_version: "V_x-y-z"
 title: "<Workspace Name> Overview"
 workspace_id: "<workspace-slug>"

@@ -9,7 +9,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Analysis App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
         }
       ]
     },
@@ -21,7 +21,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Artifacts Catalog App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
         }
       ]
     },
@@ -33,7 +33,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Blank App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
         }
       ]
     },
@@ -45,7 +45,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Business App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
         }
       ]
     },
@@ -57,7 +57,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Business Model App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
         }
       ]
     },
@@ -69,7 +69,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Design Presets App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
         }
       ]
     },
@@ -81,7 +81,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Documentation Specification App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
         }
       ]
     },
@@ -93,7 +93,7 @@
           "blueprint_version": "V_0-1-0",
           "spec_version": "V_0-3-0",
           "title": "DomaiNN Blueprint",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
         }
       ]
     },
@@ -105,7 +105,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Innovation App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
         }
       ]
     },
@@ -117,7 +117,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Metrics App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
         }
       ]
     },
@@ -129,7 +129,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Organization App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
         }
       ]
     },
@@ -141,7 +141,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Procedures App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
         }
       ]
     },
@@ -153,7 +153,7 @@
           "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "Projects App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
         }
       ]
     },
@@ -165,7 +165,7 @@
           "blueprint_version": "V_0-2-0",
           "spec_version": "V_0-3-0",
           "title": "Repository App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
         }
       ]
     },
@@ -177,7 +177,7 @@
           "blueprint_version": "V_0-2-0",
           "spec_version": "V_0-3-0",
           "title": "Sources Catalog App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"
         }
       ]
     },
@@ -189,7 +189,7 @@
           "blueprint_version": "V_0-6-0",
           "spec_version": "V_0-3-0",
           "title": "Video App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
         }
       ]
     }

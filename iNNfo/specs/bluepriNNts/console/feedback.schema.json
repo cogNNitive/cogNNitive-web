@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/feedback.schema.json",
+  "$id": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/templates/console/feedback.schema.json",
   "title": "innfo-console Reviewer Feedback",
   "description": "Reviewer-to-knowledge feedback exported from an innfo-console artifact. Export filenames MUST match {PrimaryKnowledge}_V_{version}_{slug}_feedback_{YYYYMMDD-HHMMSS}.json where {version} is V_x-y-z with hyphen separators and the stamp is UTC.",
   "type": "object",
