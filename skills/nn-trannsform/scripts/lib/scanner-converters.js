@@ -763,7 +763,7 @@ function reflowExtractedText(text) {
     if (i > 0) result += isTight(out[i - 1]) && isTight(out[i]) ? '\n' : '\n\n';
     result += out[i];
   }
-  return result.trim();
+  return ensureTableSeparators(result.trim());
 }
 
 /**
@@ -777,6 +777,122 @@ async function convertDocx(filePath) {
   return { body: reflowExtractedText(result.value) };
 }
 
+/** Horizontal gap (px) that separates two table columns within a line. */
+const PDF_COL_GAP = 8;
+/** Vertical tolerance (px) for grouping text items into one visual line. */
+const PDF_Y_TOL = 2;
+
+/** True when a line's cells look like a table row (short, mostly containing digits). */
+function isTabularCells(cells) {
+  if (cells.length < 4) return false;
+  if (!cells.every((c) => c.length <= 40)) return false;
+  if (cells.length >= 5) return true;
+  const withDigit = cells.filter((c) => /[0-9]/.test(c)).length;
+  return withDigit / cells.length >= 0.5;
+}
+
+/**
+ * Reconstructs page text from pdf.js text items, preserving the document's own
+ * spacing (`item.str` is verbatim) and splitting lines by vertical position.
+ * Within a line, a large horizontal gap between items marks a table column, so
+ * a tabular line is emitted as a pipe-delimited Markdown row.
+ * Pure function — unit-tested with synthetic pdf.js items.
+ *
+ * @param {Array<{ str: string, width?: number, transform: number[] }>} items
+ * @returns {string}
+ */
+function layoutItemsToText(items) {
+  if (!Array.isArray(items)) return '';
+
+  const lines = [];
+  let current = null;
+  for (const item of items) {
+    if (!item || typeof item.str !== 'string' || item.str === '' || !Array.isArray(item.transform)) continue;
+    const y = item.transform[5];
+    if (!current || Math.abs(current.y - y) > PDF_Y_TOL) {
+      current = { y, items: [] };
+      lines.push(current);
+    }
+    current.items.push(item);
+  }
+
+  const out = [];
+  for (const line of lines) {
+    const cells = [];
+    let text = '';
+    let end = null;
+    for (const item of line.items) {
+      const x = item.transform[4];
+      const w = typeof item.width === 'number' ? item.width : 0;
+      if (end !== null && x - end > PDF_COL_GAP) {
+        cells.push(text);
+        text = '';
+      }
+      text += item.str;
+      end = x + w;
+    }
+    cells.push(text);
+
+    const clean = cells.map((c) => c.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    if (isTabularCells(clean)) {
+      out.push(`| ${clean.join(' | ')} |`);
+    } else {
+      const joined = cells.join(' ').replace(/[ \t]+/g, ' ').trim();
+      if (joined) out.push(joined);
+    }
+  }
+  return out.join('\n');
+}
+
+/**
+ * Inserts a Markdown table separator (`| --- |`) after the first row of any
+ * pipe-delimited block, unless one is already present.
+ * @param {string} text
+ * @returns {string}
+ */
+function ensureTableSeparators(text) {
+  const lines = text.split('\n');
+  const out = [];
+  let prevWasRow = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isRow = line.startsWith('|');
+    if (isRow && !prevWasRow) {
+      out.push(line);
+      const next = lines[i + 1];
+      if (!(next && /^\|[\s\-:|]+\|$/.test(next))) {
+        const cols = Math.max((line.match(/\|/g) || []).length - 1, 1);
+        out.push('|' + Array(cols).fill(' --- ').join('|') + '|');
+      }
+    } else {
+      out.push(line);
+    }
+    prevWasRow = isRow;
+  }
+  return out.join('\n');
+}
+
+/**
+ * Extracts PDF text positionally via pdf.js (bundled with pdf-parse), so table
+ * columns survive as Markdown rows. Falls back to pdf-parse's flat text.
+ * @param {Buffer} buffer
+ * @returns {Promise<string>}
+ */
+async function extractPdfWithLayout(buffer) {
+  const pdfjs = require('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js');
+  pdfjs.disableWorker = true;
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const content = await page.getTextContent();
+    pages.push(layoutItemsToText(content.items));
+  }
+  const meta = await doc.getMetadata().catch(() => null);
+  doc.destroy();
+  return { text: pages.join('\n\n'), info: meta ? meta.info : null };
+}
+
 /**
  * Converts PDF file to markdown using pdf-parse with fallback placeholder.
  * @param {string} filePath
@@ -786,8 +902,19 @@ async function convertDocx(filePath) {
 async function convertPdf(filePath, baseName) {
   try {
     const pdfParse = require('pdf-parse');
-    const data = await pdfParse(fs.readFileSync(filePath));
-    return { body: `# ${baseName}\n\n${reflowExtractedText(data.text)}`, info: data.info };
+    const buffer = fs.readFileSync(filePath);
+    let text;
+    let info = null;
+    try {
+      const laid = await extractPdfWithLayout(buffer);
+      text = laid.text;
+      info = laid.info;
+    } catch {
+      const parsed = await pdfParse(buffer);
+      text = parsed.text;
+      info = parsed.info;
+    }
+    return { body: `# ${baseName}\n\n${reflowExtractedText(text)}`, info };
   } catch (pdfErr) {
     return {
       body: `# ${baseName}\n\n*PDF Content Ingested (Placeholder)*\n\n[PDF: ${path.basename(filePath)} needs manual verification or a PDF parser package to extract text fully.]`,
@@ -902,6 +1029,7 @@ module.exports = {
   stripFrontmatter,
   htmlToPlainText,
   reflowExtractedText,
+  layoutItemsToText,
   convertJson,
   convertFeedbackJson,
   validateFeedbackJson,
