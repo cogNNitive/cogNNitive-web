@@ -74,10 +74,10 @@ title: Root Workspace
 # NN Models
 
 ## NN Models: Subsystem A
-path:: models/subsystem_a_01.md
+path:: kNNowledge/subsystem_a_01.md
 status:: active
 `,
-        'models/subsystem_a_01.md': `---
+        'kNNowledge/subsystem_a_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -115,9 +115,9 @@ knowledge_version: V_0-1-0
 title: Legacy Index Workspace
 ---
 # NN index
-* [[models/subsystem_b_01.md]]
+* [[kNNowledge/subsystem_b_01.md]]
 `,
-        'models/subsystem_b_01.md': `---
+        'kNNowledge/subsystem_b_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -241,7 +241,7 @@ title: Workspace Model
 
 # NN Models
 ## NN Models: Engine
-path:: models/engine_01.md
+path:: kNNowledge/engine_01.md
 `
 
       const res = validateDocument(modelContent, {

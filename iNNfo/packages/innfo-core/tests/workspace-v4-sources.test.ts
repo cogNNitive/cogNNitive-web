@@ -34,7 +34,7 @@ title: "Test Polymorphic Workspace"
 * [[Tag]]
 
 # NN Workspace
-models_dir:: models/
+models_dir:: kNNowledge/
 sources_dir:: sources/nn/
 
 Test workspace demonstrating polymorphic sources.
@@ -42,7 +42,7 @@ Test workspace demonstrating polymorphic sources.
 # NN Models
 
 ## NN Models: Operations Model
-path:: models/Operations_V_0-1-0_business_NN.md
+path:: kNNowledge/Operations_V_0-1-0_business_NN.md
 template:: business_V_0-1-0
 status:: active
 author:: Lead Architect

@@ -24,7 +24,7 @@ function resultWith(sources: unknown, fieldName = 'sources'): RecursiveParseResu
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'models/Plan_V_1-0-0_NN.md' },
+    source: { path: 'kNNowledge/Plan_V_1-0-0_NN.md' },
   }
   const element: ModelNode = {
     id: 'elem-1',
@@ -37,7 +37,7 @@ function resultWith(sources: unknown, fieldName = 'sources'): RecursiveParseResu
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'models/Plan_V_1-0-0_NN.md' },
+    source: { path: 'kNNowledge/Plan_V_1-0-0_NN.md' },
   }
   return { nodes: { 'root-1': root, 'elem-1': element }, rootIds: ['root-1'], issues: [] }
 }
@@ -67,7 +67,7 @@ describe('validateWorkspaceSources', () => {
     expect(diags).toHaveLength(1)
     expect(diags[0].severity).toBe('error')
     expect(diags[0].message).toContain('sources/nn/missing.md')
-    expect(diags[0].path).toBe('models/Plan_V_1-0-0_NN.md#Enterprise Clients.sources')
+    expect(diags[0].path).toBe('kNNowledge/Plan_V_1-0-0_NN.md#Enterprise Clients.sources')
   })
 
   it('warns when the heading slug is absent (plus the legacy deprecation warning)', () => {
@@ -288,7 +288,7 @@ note:: keep
   function workspaceResultFor(serialized: string): RecursiveParseResult {
     const { nodes } = normalizeSingleModel(
       serialized,
-      'models/Fixture_V_1-0-0_NN.md',
+      'kNNowledge/Fixture_V_1-0-0_NN.md',
       'Fixture_V_1-0-0_NN',
     )
     return { nodes, rootIds: Object.keys(nodes), issues: [] }
@@ -447,7 +447,7 @@ conflicts:: [present.md#intro]
     const serialized = serializeModel(model)
     const { nodes } = normalizeSingleModel(
       serialized,
-      'models/Fixture_V_1-0-0_NN.md',
+      'kNNowledge/Fixture_V_1-0-0_NN.md',
       'Fixture_V_1-0-0_NN',
     )
     const element = Object.values(nodes).find((n) => n.kind === 'element')!
@@ -459,7 +459,7 @@ conflicts:: [present.md#intro]
 describe('validateWorkspaceSources — LEGACY_DERIVATION_KEY (D3)', () => {
   it('fires for a workspace Models entry carrying derived_from', () => {
     const diags = validateWorkspaceSources(
-      resultWithSchema('Models', 'derived_from', 'models/other.md', WORKSPACE_SCHEMA),
+      resultWithSchema('Models', 'derived_from', 'kNNowledge/other.md', WORKSPACE_SCHEMA),
       resolver({}),
     )
     expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(true)
@@ -476,7 +476,7 @@ describe('validateWorkspaceSources — LEGACY_DERIVATION_KEY (D3)', () => {
 
   it('stays silent for the frozen cogNNitive ModelRecords schema', () => {
     const diags = validateWorkspaceSources(
-      resultWithSchema('Models', 'derived_from', 'models/other.md', COGNNITIVE_SCHEMA),
+      resultWithSchema('Models', 'derived_from', 'kNNowledge/other.md', COGNNITIVE_SCHEMA),
       resolver({}),
     )
     expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(false)
@@ -484,7 +484,7 @@ describe('validateWorkspaceSources — LEGACY_DERIVATION_KEY (D3)', () => {
 
   it('stays silent for an element with no resolved schema', () => {
     const diags = validateWorkspaceSources(
-      resultWithSchema('Models', 'derived_from', 'models/other.md', undefined),
+      resultWithSchema('Models', 'derived_from', 'kNNowledge/other.md', undefined),
       resolver({}),
     )
     expect(diags.some((d) => d.code === 'LEGACY_DERIVATION_KEY')).toBe(false)

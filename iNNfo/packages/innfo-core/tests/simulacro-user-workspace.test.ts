@@ -6,7 +6,7 @@ import { parseModel, validateModel, resolveTemplateSchema } from '../src/index.j
 describe('User Workspace Refactorization (fixtures/simulacro-refactorizacion)', () => {
   const fixtureRoot = path.join(__dirname, 'fixtures/simulacro-refactorizacion');
   const wsPath = path.join(fixtureRoot, 'domaiNN_NN.md');
-  const modelPath = path.join(fixtureRoot, 'models/solaris_business_NN.md');
+  const modelPath = path.join(fixtureRoot, 'kNNowledge/solaris_business_NN.md');
   const tplPath = path.join(fixtureRoot, 'bluepriNNts/business/spec_NN.md');
   const skillPath = path.join(fixtureRoot, 'skills/nn-innfo/SKILL.md');
 

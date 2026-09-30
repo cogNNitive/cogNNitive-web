@@ -62,7 +62,7 @@ title: Root Workspace
 ---
 # NN Models
 ## NN Models: Primary Business
-path:: models/business_NN.md
+path:: kNNowledge/business_NN.md
 
 # NN Sources
 ## NN Sources: Sources Catalog
@@ -135,9 +135,9 @@ title: Artifacts Catalog
 ## NN Artifact: Executive Summary
 format:: model
 summary:: Executive deliverable summary.
-artifact_model:: artifacts/models/exec_summary_NN.md
+artifact_model:: artifacts/kNNowledge/exec_summary_NN.md
 `,
-      'artifacts/models/exec_summary_NN.md': `---
+      'artifacts/kNNowledge/exec_summary_NN.md': `---
 level: 3
 parent_spec:
   name: business
@@ -148,7 +148,7 @@ title: Executive Summary Model
 # NN Section
 Content.
 `,
-      'models/business_NN.md': `---
+      'kNNowledge/business_NN.md': `---
 level: 3
 parent_spec:
   name: business
@@ -179,7 +179,7 @@ description:: Elimination services.
 
     // Submodels have in-degree >= 1
     const bizNode = Object.values(result.nodes).find(
-      (n) => n.kind === 'root' && n.source?.path === 'models/business_NN.md',
+      (n) => n.kind === 'root' && n.source?.path === 'kNNowledge/business_NN.md',
     )
     expect(bizNode).toBeDefined()
     expect(topo.inDegree[bizNode!.id]).toBeGreaterThanOrEqual(1)
@@ -208,9 +208,9 @@ title: Root
 ---
 # NN Models
 ## NN Models: Model A
-path:: models/a_NN.md
+path:: kNNowledge/a_NN.md
 `,
-      'models/a_NN.md': `---
+      'kNNowledge/a_NN.md': `---
 level: 3
 parent_spec:
   name: business

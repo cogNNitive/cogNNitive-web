@@ -56,30 +56,30 @@ function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHand
 describe('Recursive Submodels & Specification Alignment (Phase 4 innfo-core)', () => {
   describe('Path Resolution & Normalization', () => {
     it('normalizes Windows backslashes, collapses slashes and strips leading ./', () => {
-      expect(normalizePathKey('.\\models\\subsystems\\auth_NN.md')).toBe(
-        'models/subsystems/auth_nn.md',
+      expect(normalizePathKey('.\\kNNowledge\\subsystems\\auth_NN.md')).toBe(
+        'kNNowledge/subsystems/auth_nn.md',
       )
-      expect(normalizePathKey('models//subsystems///auth_NN.md')).toBe(
-        'models/subsystems/auth_nn.md',
+      expect(normalizePathKey('kNNowledge//subsystems///auth_NN.md')).toBe(
+        'kNNowledge/subsystems/auth_nn.md',
       )
       expect(normalizePathKey('./auth_NN.md')).toBe('auth_nn.md')
     })
 
     it('resolves relative paths with ./ and ../ relative to referring path directory', () => {
-      expect(resolveSubmodelPath('./tokens_NN.md', 'models/subsystems/auth_NN.md')).toBe(
-        'models/subsystems/tokens_NN.md',
+      expect(resolveSubmodelPath('./tokens_NN.md', 'kNNowledge/subsystems/auth_NN.md')).toBe(
+        'kNNowledge/subsystems/tokens_NN.md',
       )
-      expect(resolveSubmodelPath('../common/logger_NN.md', 'models/subsystems/auth_NN.md')).toBe(
-        'models/common/logger_NN.md',
+      expect(resolveSubmodelPath('../common/logger_NN.md', 'kNNowledge/subsystems/auth_NN.md')).toBe(
+        'kNNowledge/common/logger_NN.md',
       )
-      expect(resolveSubmodelPath('[[../shared/config_NN.md]]', 'models/system_NN.md')).toBe(
+      expect(resolveSubmodelPath('[[../shared/config_NN.md]]', 'kNNowledge/system_NN.md')).toBe(
         'shared/config_NN.md',
       )
     })
 
     it('resolves canonical workspace-relative paths', () => {
-      expect(resolveSubmodelPath('models/auth_NN.md', 'domaiNN_NN.md')).toBe('models/auth_NN.md')
-      expect(resolveSubmodelPath('[[models/auth_NN.md]]')).toBe('models/auth_NN.md')
+      expect(resolveSubmodelPath('kNNowledge/auth_NN.md', 'domaiNN_NN.md')).toBe('kNNowledge/auth_NN.md')
+      expect(resolveSubmodelPath('[[kNNowledge/auth_NN.md]]')).toBe('kNNowledge/auth_NN.md')
     })
   })
 
@@ -97,10 +97,10 @@ title: Root Workspace
 ---
 # NN Models
 ## NN Models: System Service
-path:: models/system_01.md
+path:: kNNowledge/system_01.md
 author:: architect@example.com
 `,
-        'models/system_01.md': `---
+        'kNNowledge/system_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -113,7 +113,7 @@ title: System Service
 ## NN Subsystems: Auth Subsystem
 path:: ./subsystems/auth_01.md
 `,
-        'models/subsystems/auth_01.md': `---
+        'kNNowledge/subsystems/auth_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -169,9 +169,9 @@ title: Root
 ---
 # NN Models
 ## NN Models: Service A
-path:: models/service_a_01.md
+path:: kNNowledge/service_a_01.md
 `,
-        'models/service_a_01.md': `---
+        'kNNowledge/service_a_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -184,7 +184,7 @@ title: Service A
 ## NN Models: Service B
 path:: ./service_b_01.md
 `,
-        'models/service_b_01.md': `---
+        'kNNowledge/service_b_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -400,7 +400,7 @@ title: Architecture Model
 ---
 # NN Services
 ## NN Services: Payment Service
-submodel_file:: [[models/nonexistent_payment_01.md]]
+submodel_file:: [[kNNowledge/nonexistent_payment_01.md]]
 `
 
       const mockResolver: SubmodelResolver = (refPath: string) => {
@@ -437,7 +437,7 @@ title: Architecture Model
 ---
 # NN Services
 ## NN Services: Payment Service
-submodel_file:: models/legacy_payment_01.md
+submodel_file:: kNNowledge/legacy_payment_01.md
 `
 
       const mockResolver: SubmodelResolver = () => {
@@ -475,7 +475,7 @@ title: Architecture Model
 ---
 # NN Services
 ## NN Services: Payment Service
-submodel_file:: [[models/payment_01.md]]
+submodel_file:: [[kNNowledge/payment_01.md]]
 `
 
       const mockResolver: SubmodelResolver = () => {

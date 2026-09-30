@@ -34,7 +34,7 @@ function resultWith(
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'models/Handbook_NN.md' },
+    source: { path: 'kNNowledge/Handbook_NN.md' },
     templateSchema,
   }
   const element: ModelNode = {
@@ -48,7 +48,7 @@ function resultWith(
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'models/Handbook_NN.md' },
+    source: { path: 'kNNowledge/Handbook_NN.md' },
   }
   return { nodes: { 'root-1': root, 'elem-1': element }, rootIds: ['root-1'], issues: [] }
 }

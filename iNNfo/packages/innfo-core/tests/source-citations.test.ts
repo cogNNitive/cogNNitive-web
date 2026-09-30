@@ -22,7 +22,7 @@ function elementNode(fields: Record<string, unknown>): ModelNode {
     markers: {},
     relationships: [],
     rawSections: {},
-    source: { path: 'models/Plan_V_1-0-0_NN.md' },
+    source: { path: 'kNNowledge/Plan_V_1-0-0_NN.md' },
   }
 }
 

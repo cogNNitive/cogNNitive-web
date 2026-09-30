@@ -68,12 +68,12 @@ function makeModel(title: string, body?: string): string {
 
 function makeIndex(wikilinks: string[]): string {
   const items = wikilinks.map((w) => `* [[${w}]]`).join('\n')
-  return `---\nspec_version: "V_0-1-2"\nlevel: 0\ntitle: "Workspace Index"\n---\n\n# NN index\n\n${items}\n`
+  return `---\nspec_version: "V_0-3-0"\nlevel: 3\nknowledge_version: "V_0-1-0"\nparent_spec:\n  name: "domaiNN"\n  url: "https://example.com/domaiNN"\ntitle: "Root"\n---\n\n# NN index\n\n${items}\n`
 }
 
 function makeIndexWithMdLinks(links: string[]): string {
   const items = links.map((p) => `* [${p}](./${p})`).join('\n')
-  return `---\nspec_version: "V_0-1-2"\nlevel: 0\ntitle: "Workspace Index"\n---\n\n# NN index\n\n${items}\n`
+  return `---\nspec_version: "V_0-3-0"\nlevel: 3\nknowledge_version: "V_0-1-0"\nparent_spec:\n  name: "domaiNN"\n  url: "https://example.com/domaiNN"\ntitle: "Root"\n---\n\n# NN index\n\n${items}\n`
 }
 
 function makeWorkspaceEntrypoint(workspaceId?: string): string {
@@ -263,7 +263,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
-        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./models/nested_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./kNNowledge/nested_NN.md']))],
         ['kNNowledge', modelsDir],
       ])
 
@@ -299,7 +299,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
             makeIndexWithMdLinks([
               'sources/nn/Casablanca.md',
               'sources/nn/The_Goonies.md',
-              'models/FilmCatalog_V_0-3-0_film_NN.md',
+              'kNNowledge/FilmCatalog_V_0-3-0_film_NN.md',
             ]),
           ),
         ],
@@ -350,7 +350,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
               'sources/The_Goonies_source_NN.md',
               'sources/Una_noche_en_la_opera_source_NN.md',
               'film_V_0-5-0_NN.md',
-              'models/FilmCatalog_V_0-3-0_film_NN.md',
+              'kNNowledge/FilmCatalog_V_0-3-0_film_NN.md',
             ]),
           ),
         ],
@@ -381,7 +381,7 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
-        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['models\\nested_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['kNNowledge\\nested_NN.md']))],
         ['kNNowledge', modelsDir],
       ])
 
@@ -392,14 +392,14 @@ describe('recursiveParse (domaiNN_NN.md-driven)', () => {
 
     it('reports a clear skip issue when a nested target directory is missing', async () => {
       const root = fakeDir('workspace', [
-        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./models/missing_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./kNNowledge/missing_NN.md']))],
       ])
 
       const result = await recursiveParse(root)
       expect(result.rootIds).toHaveLength(0)
       const missingIssue = result.issues.find((i) => i.message.includes('not found'))
       expect(missingIssue).toBeDefined()
-      expect(missingIssue!.path).toBe('./models/missing_NN.md')
+      expect(missingIssue!.path).toBe('./kNNowledge/missing_NN.md')
     })
 
     it('does not surface "Name is not allowed" for references that escape the root', async () => {
