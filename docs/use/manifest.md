@@ -65,7 +65,7 @@ agent-bootstrap:
       version: "V_1-3-0"
       ref: "skills-v2.5.0"
       commit: "87f7387398c9e3b734d2d168c03f4fdf8d7a4402"
-      description: cogNNitive visual design presets â€” palettes, typography, spacing.
+      description: cogNNitive visual design presets — palettes, typography, spacing.
     - name: nn-skills-lifecycle
       repo: cogNNitive/cogNNitive
       path: skills/nn-skills-lifecycle
