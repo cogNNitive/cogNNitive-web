@@ -19,25 +19,25 @@ import {
 
 function fixtureTree() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-versions-test-'));
-  const templatesDir = path.join(root, 'iNNfo', 'specs', 'templates');
-  fs.mkdirSync(templatesDir, { recursive: true });
+  const blueprintsDir = path.join(root, 'iNNfo', 'specs', 'templates');
+  fs.mkdirSync(blueprintsDir, { recursive: true });
 
-  fs.mkdirSync(path.join(templatesDir, 'alpha'), { recursive: true });
+  fs.mkdirSync(path.join(blueprintsDir, 'alpha'), { recursive: true });
   fs.writeFileSync(
-    path.join(templatesDir, 'alpha', 'spec_NN.md'),
+    path.join(blueprintsDir, 'alpha', 'spec_NN.md'),
     '---\nspec_version: "V_9-0-0"\nblueprint_version: "V_0-1-0"\n---\n# Alpha\n',
     'utf8'
   );
 
-  fs.mkdirSync(path.join(templatesDir, 'beta'), { recursive: true });
+  fs.mkdirSync(path.join(blueprintsDir, 'beta'), { recursive: true });
   fs.writeFileSync(
-    path.join(templatesDir, 'beta', 'spec_NN.md'),
+    path.join(blueprintsDir, 'beta', 'spec_NN.md'),
     '---\nspec_version: V_9-0-0\nblueprint_version: V_0-3-2\n---\n# Beta\n',
     'utf8'
   );
 
   fs.writeFileSync(
-    path.join(templatesDir, 'workspace_spec_NN.md'),
+    path.join(blueprintsDir, 'workspace_spec_NN.md'),
     '---\nspec_version: V_9-0-0\nblueprint_version: V_0-4-0\n---\n# Workspace\n',
     'utf8'
   );
@@ -164,7 +164,7 @@ function fixtureTree() {
     'utf8'
   );
 
-  return { root, templatesDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath };
+  return { root, blueprintsDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath };
 }
 
 async function runTests() {
@@ -179,8 +179,8 @@ async function runTests() {
 
   // Test 2: collectTemplateVersions & collectSkillVersions & readMcpPackageVersion
   {
-    const { root, templatesDir, skillsDir, mcpPkgPath } = fixtureTree();
-    const tVersions = collectTemplateVersions(templatesDir);
+    const { root, blueprintsDir, skillsDir, mcpPkgPath } = fixtureTree();
+    const tVersions = collectTemplateVersions(blueprintsDir);
     assert.strictEqual(tVersions.alpha, 'V_0-1-0');
     assert.strictEqual(tVersions.beta, 'V_0-3-2');
     assert.strictEqual(tVersions.workspace, 'V_0-4-0');
@@ -198,10 +198,10 @@ async function runTests() {
 
   // Test 3: syncVersions writes template, skill, and MCP package versions
   {
-    const { root, samplesTsPath, sourceYamlPath, templatesDir, skillsDir, mcpPkgPath, corePkgPath } = fixtureTree();
+    const { root, samplesTsPath, sourceYamlPath, blueprintsDir, skillsDir, mcpPkgPath, corePkgPath } = fixtureTree();
     const res = syncVersions({
       check: false,
-      templatesDir,
+      blueprintsDir,
       skillsDir,
       samplesTsPath,
       sourceYamlPath,
@@ -241,14 +241,14 @@ async function runTests() {
 
   // Test 4: syncVersions is idempotent — running twice produces no diff
   {
-    const { root, samplesTsPath, sourceYamlPath, templatesDir, skillsDir, mcpPkgPath, corePkgPath } = fixtureTree();
-    syncVersions({ check: false, templatesDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath });
+    const { root, samplesTsPath, sourceYamlPath, blueprintsDir, skillsDir, mcpPkgPath, corePkgPath } = fixtureTree();
+    syncVersions({ check: false, blueprintsDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath });
     const firstSamples = fs.readFileSync(samplesTsPath, 'utf8');
     const firstSource = fs.readFileSync(sourceYamlPath, 'utf8');
     const firstCore = fs.readFileSync(corePkgPath, 'utf8');
     const firstMcp = fs.readFileSync(mcpPkgPath, 'utf8');
 
-    syncVersions({ check: false, templatesDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath });
+    syncVersions({ check: false, blueprintsDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath });
     const secondSamples = fs.readFileSync(samplesTsPath, 'utf8');
     const secondSource = fs.readFileSync(sourceYamlPath, 'utf8');
     const secondCore = fs.readFileSync(corePkgPath, 'utf8');
@@ -264,8 +264,8 @@ async function runTests() {
 
   // Test 5: --check mode reports drift for all targets
   {
-    const { root, samplesTsPath, sourceYamlPath, templatesDir, skillsDir, mcpPkgPath, corePkgPath } = fixtureTree();
-    const res = syncVersions({ check: true, templatesDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath });
+    const { root, samplesTsPath, sourceYamlPath, blueprintsDir, skillsDir, mcpPkgPath, corePkgPath } = fixtureTree();
+    const res = syncVersions({ check: true, blueprintsDir, skillsDir, samplesTsPath, sourceYamlPath, mcpPkgPath, corePkgPath });
     assert.strictEqual(res.ok, false, 'Expected drift to be detected');
     const joined = res.errors.join('\n');
     assert.ok(joined.includes('nn-alpha'), 'error must name drifted skill');

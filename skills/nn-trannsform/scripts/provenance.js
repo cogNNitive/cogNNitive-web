@@ -13,7 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const modelLib = require('./lib/provenance-model');
+const modelLib = require('./lib/provenance-knowledge');
 const indexLib = require('./lib/workspace-index');
 
 /**

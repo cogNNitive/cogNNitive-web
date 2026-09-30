@@ -10,7 +10,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { checkTemplateInventory } = require('./verify.js');
+const { checkBlueprintInventory } = require('./verify.js');
 
 function main() {
   console.log('Running verify-inventory unit tests...');
@@ -30,11 +30,11 @@ blueprints:
       const sourceYamlPath = path.join(tmpDir, 'source.yaml');
       fs.writeFileSync(sourceYamlPath, sourceYaml, 'utf8');
 
-      const templatesDir = path.join(tmpDir, 'templates');
-      fs.mkdirSync(path.join(templatesDir, 'registered-tmpl'), { recursive: true });
-      fs.mkdirSync(path.join(templatesDir, 'colliding-skill'), { recursive: true });
+      const blueprintsDir = path.join(tmpDir, 'templates');
+      fs.mkdirSync(path.join(blueprintsDir, 'registered-tmpl'), { recursive: true });
+      fs.mkdirSync(path.join(blueprintsDir, 'colliding-skill'), { recursive: true });
 
-      const result = checkTemplateInventory(templatesDir, sourceYamlPath);
+      const result = checkBlueprintInventory(blueprintsDir, sourceYamlPath);
       assert.strictEqual(
         result.ok,
         false,
@@ -59,10 +59,10 @@ blueprints:
       const sourceYamlPath = path.join(tmpDir, 'source.yaml');
       fs.writeFileSync(sourceYamlPath, sourceYaml, 'utf8');
 
-      const templatesDir = path.join(tmpDir, 'templates');
-      fs.mkdirSync(path.join(templatesDir, 'registered-tmpl'), { recursive: true });
+      const blueprintsDir = path.join(tmpDir, 'templates');
+      fs.mkdirSync(path.join(blueprintsDir, 'registered-tmpl'), { recursive: true });
 
-      const result = checkTemplateInventory(templatesDir, sourceYamlPath);
+      const result = checkBlueprintInventory(blueprintsDir, sourceYamlPath);
       assert.strictEqual(result.ok, true);
       assert.deepStrictEqual(result.missing, []);
       console.log('✔ Normal registered template passed');
@@ -87,11 +87,11 @@ frozen_blueprints:
       const sourceYamlPath = path.join(tmpDir, 'source.yaml');
       fs.writeFileSync(sourceYamlPath, sourceYaml, 'utf8');
 
-      const templatesDir = path.join(tmpDir, 'templates');
-      fs.mkdirSync(path.join(templatesDir, 'registered-tmpl'), { recursive: true });
-      fs.mkdirSync(path.join(templatesDir, 'cogNNitive'), { recursive: true });
+      const blueprintsDir = path.join(tmpDir, 'templates');
+      fs.mkdirSync(path.join(blueprintsDir, 'registered-tmpl'), { recursive: true });
+      fs.mkdirSync(path.join(blueprintsDir, 'cogNNitive'), { recursive: true });
 
-      const result = checkTemplateInventory(templatesDir, sourceYamlPath);
+      const result = checkBlueprintInventory(blueprintsDir, sourceYamlPath);
       assert.strictEqual(
         result.ok,
         true,
@@ -120,11 +120,11 @@ seam_dirs:
       const sourceYamlPath = path.join(tmpDir, 'source.yaml');
       fs.writeFileSync(sourceYamlPath, sourceYaml, 'utf8');
 
-      const templatesDir = path.join(tmpDir, 'templates');
-      fs.mkdirSync(path.join(templatesDir, 'registered-tmpl'), { recursive: true });
-      fs.mkdirSync(path.join(templatesDir, 'console'), { recursive: true });
+      const blueprintsDir = path.join(tmpDir, 'templates');
+      fs.mkdirSync(path.join(blueprintsDir, 'registered-tmpl'), { recursive: true });
+      fs.mkdirSync(path.join(blueprintsDir, 'console'), { recursive: true });
 
-      const result = checkTemplateInventory(templatesDir, sourceYamlPath);
+      const result = checkBlueprintInventory(blueprintsDir, sourceYamlPath);
       assert.strictEqual(
         result.ok,
         true,

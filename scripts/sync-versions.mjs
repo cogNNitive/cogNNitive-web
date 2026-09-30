@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 
-const DEFAULT_TEMPLATES_DIR = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
+const DEFAULT_BLUEPRINTS_DIR = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 const DEFAULT_SKILLS_DIR = path.join(REPO_ROOT, 'skills');
 const DEFAULT_SAMPLES_TS_PATH = path.join(
   REPO_ROOT, 'iNNfo', 'apps', 'innfo-editor', 'src', 'config', 'samples.ts'
@@ -65,27 +65,27 @@ function readSpecVersion(filePath) {
 }
 
 /**
- * Walks `templatesDir` for `<slug>/spec_NN.md` files plus the root
+ * Walks `blueprintsDir` for `<slug>/spec_NN.md` files plus the root
  * `workspace_spec_NN.md`, returning a map of slug -> blueprint_version.
- * @param {string} templatesDir
+ * @param {string} blueprintsDir
  * @param {(filePath: string) => string | undefined} read
  * @returns {Record<string, string>}
  */
-function collectVersions(templatesDir, read) {
+function collectVersions(blueprintsDir, read) {
   /** @type {Record<string, string>} */
   const versions = {};
-  if (!fs.existsSync(templatesDir)) return versions;
+  if (!fs.existsSync(blueprintsDir)) return versions;
 
-  const workspaceSpecPath = path.join(templatesDir, 'workspace_spec_NN.md');
+  const workspaceSpecPath = path.join(blueprintsDir, 'workspace_spec_NN.md');
   if (fs.existsSync(workspaceSpecPath)) {
     const v = read(workspaceSpecPath);
     if (v) versions.workspace = v;
   }
 
-  const entries = fs.readdirSync(templatesDir, { withFileTypes: true });
+  const entries = fs.readdirSync(blueprintsDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const specPath = path.join(templatesDir, entry.name, 'spec_NN.md');
+    const specPath = path.join(blueprintsDir, entry.name, 'spec_NN.md');
     if (!fs.existsSync(specPath)) continue;
     const v = read(specPath);
     if (v) versions[entry.name] = v;
@@ -94,12 +94,12 @@ function collectVersions(templatesDir, read) {
   return versions;
 }
 
-export function collectTemplateVersions(templatesDir = DEFAULT_TEMPLATES_DIR) {
-  return collectVersions(templatesDir, readTemplateVersion);
+export function collectTemplateVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
+  return collectVersions(blueprintsDir, readTemplateVersion);
 }
 
-export function collectSpecVersions(templatesDir = DEFAULT_TEMPLATES_DIR) {
-  return collectVersions(templatesDir, readSpecVersion);
+export function collectSpecVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
+  return collectVersions(blueprintsDir, readSpecVersion);
 }
 
 /**
@@ -302,15 +302,15 @@ function syncMcpDepRange({ mcpVersion, mcpPkgPath, check }) {
 
 export function syncVersions({
   check = false,
-  templatesDir = DEFAULT_TEMPLATES_DIR,
+  blueprintsDir = DEFAULT_BLUEPRINTS_DIR,
   skillsDir = DEFAULT_SKILLS_DIR,
   samplesTsPath = DEFAULT_SAMPLES_TS_PATH,
   sourceYamlPath = DEFAULT_SOURCE_YAML_PATH,
   mcpPkgPath = DEFAULT_MCP_PKG_PATH,
   corePkgPath = DEFAULT_CORE_PKG_PATH,
 } = {}) {
-  const versions = collectTemplateVersions(templatesDir);
-  const specVersions = collectSpecVersions(templatesDir);
+  const versions = collectTemplateVersions(blueprintsDir);
+  const specVersions = collectSpecVersions(blueprintsDir);
   /** @type {Record<string, string>} */
   let skillVersions = {};
   const errors = [];

@@ -22,7 +22,7 @@ const { execSync } = require('node:child_process');
 // "NN" is not a numeric placeholder in this repo; see
 // `iNNfo/specs/bluepriNNts/*/spec_NN.md` and `workspace_spec_NN.md` on disk).
 const SKILLS_RE = /^skills\//;
-const TEMPLATE_SPEC_RE = /^iNNfo\/specs\/bluepriNNts\/.*spec_NN\.md$/;
+const BLUEPRINT_SPEC_RE = /^iNNfo\/specs\/bluepriNNts\/.*spec_NN\.md$/;
 const MANIFEST_PATH = 'manifest/source.yaml';
 
 /**
@@ -57,7 +57,7 @@ function checkTagPinFreshness(repoRoot = process.cwd(), { base = 'origin/main', 
 
   const manifestTouched = changed.includes(MANIFEST_PATH);
   const skillsPaths = changed.filter((p) => SKILLS_RE.test(p));
-  const templatePaths = changed.filter((p) => TEMPLATE_SPEC_RE.test(p));
+  const templatePaths = changed.filter((p) => BLUEPRINT_SPEC_RE.test(p));
 
   const errors = [];
   if (skillsPaths.length > 0 && !manifestTouched) {

@@ -128,13 +128,13 @@ agent-bootstrap:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-test-'));
     try {
       const skillsDir = path.join(tmpDir, 'skills');
-      const templatesDir = path.join(tmpDir, 'templates');
+      const blueprintsDir = path.join(tmpDir, 'templates');
       const mcpDir = path.join(tmpDir, 'mcp');
       const stateFile = path.join(tmpDir, 'bootstrap-state.json');
 
       fs.mkdirSync(path.join(skillsDir, 'nn-innfo'), { recursive: true });
-      fs.mkdirSync(templatesDir, { recursive: true });
-      fs.writeFileSync(path.join(templatesDir, 'workspace_spec_NN.md'), '# template');
+      fs.mkdirSync(blueprintsDir, { recursive: true });
+      fs.writeFileSync(path.join(blueprintsDir, 'workspace_spec_NN.md'), '# template');
       fs.mkdirSync(mcpDir, { recursive: true });
       fs.writeFileSync(path.join(mcpDir, 'innfo-mcp.bundle.js'), '// bundle');
 
@@ -1431,11 +1431,11 @@ agent-bootstrap:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-freshness-zero-'));
     try {
       const skillsDir = path.join(tmpDir, 'skills');
-      const templatesDir = path.join(tmpDir, 'templates');
+      const blueprintsDir = path.join(tmpDir, 'templates');
       const stateFile = path.join(tmpDir, 'bootstrap-state.json');
       fs.mkdirSync(path.join(skillsDir, 'nn-innfo'), { recursive: true });
-      fs.mkdirSync(templatesDir, { recursive: true });
-      fs.writeFileSync(path.join(templatesDir, 'workspace_spec_NN.md'), '# template');
+      fs.mkdirSync(blueprintsDir, { recursive: true });
+      fs.writeFileSync(path.join(blueprintsDir, 'workspace_spec_NN.md'), '# template');
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: `${server.url}/manifest.md`,
         skills: {
@@ -1448,7 +1448,7 @@ agent-bootstrap:
 
       const res = await runScriptAsync([
         '--skills-dir', skillsDir,
-        '--blueprints-dir', templatesDir,
+        '--blueprints-dir', blueprintsDir,
         '--state-file', stateFile,
         '--manifest-url', `${server.url}/manifest.md`,
         '--freshness-url', `${server.url}/use/freshness.json`,

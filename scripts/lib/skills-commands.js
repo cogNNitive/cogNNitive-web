@@ -43,7 +43,7 @@ const { registerMcpAuto } = require('./mcp-config-adapter.js');
 
 const DEFAULT_MANIFEST_URL = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md';
 const DEFAULT_SKILLS_DIR = path.join(os.homedir(), '.agents', 'skills');
-const DEFAULT_TEMPLATES_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
+const DEFAULT_BLUEPRINTS_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
 const DEFAULT_MCP_DIR = path.join(os.homedir(), '.agents', 'mcp');
 const DEFAULT_CONSOLE_DIR = path.join(os.homedir(), '.agents', 'console');
 const DEFAULT_STATE_FILE = path.join(os.homedir(), '.agents', 'bootstrap-state.json');
@@ -263,17 +263,17 @@ async function installSkillAtCommit(skill, skillsDir, state) {
 /**
  * Installs or updates a template from GitHub at specified commit.
  * @param {object} template
- * @param {string} templatesDir
+ * @param {string} blueprintsDir
  * @param {object} state
  * @returns {Promise<void>}
  */
-async function installTemplateAtCommit(template, templatesDir, state) {
+async function installTemplateAtCommit(template, blueprintsDir, state) {
   const isMdFile = template.path.endsWith('.md') || template.path.endsWith('.markdown');
   const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-  const flatDestPath = path.join(templatesDir, fileName);
-  const pkgDestPath = path.join(templatesDir, template.name);
+  const flatDestPath = path.join(blueprintsDir, fileName);
+  const pkgDestPath = path.join(blueprintsDir, template.name);
 
-  fs.mkdirSync(templatesDir, { recursive: true });
+  fs.mkdirSync(blueprintsDir, { recursive: true });
 
   let recordedPath = isMdFile ? flatDestPath : pkgDestPath;
 
@@ -468,7 +468,7 @@ async function consentOrAbort(label, names, menu, yes) {
 
 /**
  * Executes status command comparing installed commits against pinned commits.
- * @param {{ skillsDir: string, templatesDir: string, consoleDir?: string, stateFile: string }} args
+ * @param {{ skillsDir: string, blueprintsDir: string, consoleDir?: string, stateFile: string }} args
  * @returns {Promise<void>}
  */
 async function cmdStatus(args) {
@@ -504,7 +504,7 @@ async function cmdStatus(args) {
 
   for (const template of templates) {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-    const pathPresent = fs.existsSync(path.join(args.templatesDir, fileName)) || fs.existsSync(path.join(args.templatesDir, template.name));
+    const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
     const entry = state.templates[template.name];
     let status;
     if (pathPresent) {
@@ -564,7 +564,7 @@ async function cmdStatus(args) {
 
 /**
  * Executes install command installing missing skills and templates with consent.
- * @param {{ skillsDir: string, templatesDir: string, consoleDir?: string, stateFile: string, yes: boolean, agent?: string, scope?: string }} args
+ * @param {{ skillsDir: string, blueprintsDir: string, consoleDir?: string, stateFile: string, yes: boolean, agent?: string, scope?: string }} args
  * @returns {Promise<void>}
  */
 async function cmdInstall(args) {
@@ -576,7 +576,7 @@ async function cmdInstall(args) {
   const toInstallSkills = skills.filter(skill => !fs.existsSync(path.join(args.skillsDir, skill.name)));
   const toInstallTemplates = templates.filter(template => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-    return !fs.existsSync(path.join(args.templatesDir, fileName)) && !fs.existsSync(path.join(args.templatesDir, template.name));
+    return !fs.existsSync(path.join(args.blueprintsDir, fileName)) && !fs.existsSync(path.join(args.blueprintsDir, template.name));
   });
   const toInstallConsole = (consoleAssets || []).filter(asset => {
     const fileName = path.basename(asset.file || asset.url);
@@ -617,7 +617,7 @@ async function cmdInstall(args) {
 
   for (const template of toInstallTemplates) {
     try {
-      await installTemplateAtCommit(template, args.templatesDir, state);
+      await installTemplateAtCommit(template, args.blueprintsDir, state);
       console.log(`  installed template ${template.name} (${template.version}) @ ${template.commit.slice(0, 7)}`);
     } catch (err) {
       failures++;
@@ -654,7 +654,7 @@ async function cmdInstall(args) {
 
 /**
  * Executes update command updating outdated skills and templates with consent.
- * @param {{ skillsDir: string, templatesDir: string, consoleDir?: string, stateFile: string, positional: string[], yes: boolean, agent?: string, scope?: string }} args
+ * @param {{ skillsDir: string, blueprintsDir: string, consoleDir?: string, stateFile: string, positional: string[], yes: boolean, agent?: string, scope?: string }} args
  * @returns {Promise<void>}
  */
 async function cmdUpdate(args) {
@@ -671,7 +671,7 @@ async function cmdUpdate(args) {
 
   const isOutdatedTemplate = (template) => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-    const pathPresent = fs.existsSync(path.join(args.templatesDir, fileName)) || fs.existsSync(path.join(args.templatesDir, template.name));
+    const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
     const entry = state.templates[template.name];
     return pathPresent && (!entry || entry.commit !== template.commit);
   };
@@ -734,7 +734,7 @@ async function cmdUpdate(args) {
 
   for (const template of selectedTemplates) {
     try {
-      await installTemplateAtCommit(template, args.templatesDir, state);
+      await installTemplateAtCommit(template, args.blueprintsDir, state);
       console.log(`  updated template ${template.name} -> ${template.version} (${template.commit.slice(0, 7)})`);
     } catch (err) {
       failures++;
@@ -828,7 +828,7 @@ async function cmdSync(args) {
  *
  * @param {{
  *   skillsDir: string,
- *   templatesDir: string,
+ *   blueprintsDir: string,
  *   mcpDir?: string,
  *   consoleDir?: string,
  *   stateFile: string,
@@ -850,7 +850,7 @@ async function cmdBootstrap(args) {
   const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
   fs.mkdirSync(args.skillsDir, { recursive: true });
-  fs.mkdirSync(args.templatesDir, { recursive: true });
+  fs.mkdirSync(args.blueprintsDir, { recursive: true });
   fs.mkdirSync(mcpDir, { recursive: true });
   fs.mkdirSync(consoleDir, { recursive: true });
 
@@ -885,10 +885,10 @@ async function cmdBootstrap(args) {
   console.log(`\nInstalling/verifying ${manifest.templates.length} template(s)...`);
   for (const tmpl of manifest.templates) {
     const fileName = tmpl.name.endsWith('.md') ? tmpl.name : `${tmpl.name}.md`;
-    const tmplPresent = fs.existsSync(path.join(args.templatesDir, fileName)) || fs.existsSync(path.join(args.templatesDir, tmpl.name));
+    const tmplPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, tmpl.name));
     const entry = state.templates[tmpl.name];
     if (!tmplPresent || !entry || entry.commit !== tmpl.commit) {
-      await installTemplateAtCommit(tmpl, args.templatesDir, state);
+      await installTemplateAtCommit(tmpl, args.blueprintsDir, state);
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) @ ${tmpl.commit.slice(0, 7)}`);
     } else {
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) up-to-date`);
@@ -1202,7 +1202,7 @@ module.exports = {
   },
   DEFAULT_MANIFEST_URL,
   DEFAULT_SKILLS_DIR,
-  DEFAULT_TEMPLATES_DIR,
+  DEFAULT_BLUEPRINTS_DIR,
   DEFAULT_MCP_DIR,
   DEFAULT_CONSOLE_DIR,
   DEFAULT_STATE_FILE,

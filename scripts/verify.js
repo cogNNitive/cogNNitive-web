@@ -51,11 +51,11 @@ function extractDeclaredTemplates(sourceText) {
   return declaredTemplates;
 }
 
-function checkTemplateInventory(templatesDir, sourceYamlPath) {
+function checkBlueprintInventory(blueprintsDir, sourceYamlPath) {
   const sourceText = fs.readFileSync(sourceYamlPath, 'utf8');
   const declaredTemplates = extractDeclaredTemplates(sourceText);
 
-  const diskFolders = fs.readdirSync(templatesDir, { withFileTypes: true })
+  const diskFolders = fs.readdirSync(blueprintsDir, { withFileTypes: true })
     .filter(d => d.isDirectory() && d.name !== 'assets')
     .map(d => d.name);
 
@@ -282,11 +282,11 @@ function runVerification(options = {}) {
   run('node scripts/generate-vocabulary-doc.mjs --check', 'Check Canonical Vocabulary Doc Fresh');
 
 // 1. Template Inventory Guard: ensure every template folder is declared in manifest/source.yaml
-  const templatesDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'bluepriNNts');
+  const blueprintsDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'bluepriNNts');
   const sourceYamlPath = path.join(__dirname, '..', 'manifest', 'source.yaml');
 
-  if (fs.existsSync(templatesDir) && fs.existsSync(sourceYamlPath)) {
-    const { ok, missing, diskFolders } = checkTemplateInventory(templatesDir, sourceYamlPath);
+  if (fs.existsSync(blueprintsDir) && fs.existsSync(sourceYamlPath)) {
+    const { ok, missing, diskFolders } = checkBlueprintInventory(blueprintsDir, sourceYamlPath);
     if (!ok) {
       console.error(`❌ Template Inventory Mismatch! Folders exist in specs/bluepriNNts/ but are missing from manifest/source.yaml: ${missing.join(', ')}`);
       process.exit(1);
@@ -411,7 +411,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  checkTemplateInventory,
+  checkBlueprintInventory,
   runVerification,
   extractDeclaredTemplates,
   checkHandTypedFactsAtRef,

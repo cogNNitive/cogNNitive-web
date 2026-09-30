@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const modelLib = require('./provenance-model');
+const modelLib = require('./provenance-knowledge');
 const { extractHeadingSlugs, slugifyUnitHeading } = require('../markdown-utils');
 
 /**

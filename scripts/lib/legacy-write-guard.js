@@ -55,7 +55,7 @@ const ALLOWLIST = [
   { pattern: 'iNNfo/packages/innfo-core/src/validator/content.ts', reason: 'V_0-3-0 gate: detects and rejects retired frontmatter keys / the retired `type:: model` keyword with an explicit migration message' },
   { pattern: 'iNNfo/packages/innfo-core/src/schema/canonical-registry.ts', reason: 'offline fallback registry: embeds canonical spec copies + the permanent lowercase legacy URL/alias maps' },
   { pattern: 'skills/nn-trannsform/scripts/provenance.js', reason: 'detects the legacy `_workspace_NN.md` lineage record by name for one-time in-place migration to `_cogNNitive_NN.md`' },
-  { pattern: 'skills/nn-trannsform/scripts/lib/provenance-model.js', reason: 'legacy `_workspace_NN.md` lineage-record suffix documented for one-time migration' },
+  { pattern: 'skills/nn-trannsform/scripts/lib/provenance-knowledge.js', reason: 'legacy `_workspace_NN.md` lineage-record suffix documented for one-time migration' },
   { pattern: 'scripts/lib/legacy-write-guard.js', reason: 'this guard carries the token table itself' },
 ];
 
