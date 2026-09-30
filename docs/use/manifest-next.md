@@ -11,14 +11,14 @@ agent-bootstrap:
       path: skills/nn-start
       version: "V_3-4-1"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       description: Central system governance, setup, environment readiness gate (Preflight), and start router.
     - name: nn-trannsform
       repo: cogNNitive/cogNNitive
       path: skills/nn-trannsform
       version: "V_3-4-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       requires: [nn-innfo, nn-preflight]
       description: Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
     - name: nn-innfo
@@ -26,7 +26,7 @@ agent-bootstrap:
       path: skills/nn-innfo
       version: "V_0-5-3"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
       blueprints: [domaiNN]
       mcp:
@@ -35,21 +35,21 @@ agent-bootstrap:
           path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
           version: "0.12.0"
           ref: "main"
-          commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
-          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e14483ec5169fc1d8912929174a353cae0cdd615/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
+          commit: "d53c898c18143de9820844b299750a89ef738c15"
+          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/d53c898c18143de9820844b299750a89ef738c15/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
     - name: nn-preflight
       repo: cogNNitive/cogNNitive
       path: skills/nn-preflight
       version: "V_0-2-1"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
     - name: nn-upgrade
       repo: cogNNitive/cogNNitive
       path: skills/nn-upgrade
       version: "V_0-2-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       requires: [nn-preflight]
       description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
     - name: nn-site-generator
@@ -57,21 +57,21 @@ agent-bootstrap:
       path: skills/nn-site-generator
       version: "V_0-2-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       description: Create or edit websites, add analytics, add contact forms.
     - name: nn-design-presets
       repo: cogNNitive/cogNNitive
       path: skills/nn-design-presets
       version: "V_1-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       description: cogNNitive visual design presets — palettes, typography, spacing.
     - name: nn-skills-lifecycle
       repo: cogNNitive/cogNNitive
       path: skills/nn-skills-lifecycle
       version: "V_1-2-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       requires: [nn-preflight]
       description: Audit, update, and maintain cogNNitive skills.
     - name: nn-video-script
@@ -79,7 +79,7 @@ agent-bootstrap:
       path: skills/nn-video-script
       version: "V_0-2-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
       requires: [nn-innfo]
       description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
   blueprints:
@@ -88,113 +88,113 @@ agent-bootstrap:
       path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: projects
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: procedures
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: organization
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: business
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/business/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: business-model
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: analysis
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: innovation
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: blank
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: documentation
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: metrics
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: repository
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: video
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/video/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: sources
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: artifacts
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
     - name: design-presets
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
   console-assets:
     - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
       version: "0.6.0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e14483ec5169fc1d8912929174a353cae0cdd615/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/d53c898c18143de9820844b299750a89ef738c15/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     - file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
       version: "0.6.0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e14483ec5169fc1d8912929174a353cae0cdd615/iNNfo/specs/bluepriNNts/console/artifact_shell.html
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/d53c898c18143de9820844b299750a89ef738c15/iNNfo/specs/bluepriNNts/console/artifact_shell.html
     - file: scripts/export-console.mjs
       version: "0.6.0"
       ref: "main"
-      commit: "e14483ec5169fc1d8912929174a353cae0cdd615"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/e14483ec5169fc1d8912929174a353cae0cdd615/scripts/export-console.mjs
+      commit: "d53c898c18143de9820844b299750a89ef738c15"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/d53c898c18143de9820844b299750a89ef738c15/scripts/export-console.mjs
   workflows:
     - id: model
       label: Create an iNNfo model
