@@ -131,6 +131,24 @@ function run() {
       "a dense numeric row is never merged into the surrounding prose",
     );
 
+    // --- markdown safety (DOCX/TXT passthrough) ---
+    const mdDoc = reflowExtractedText(
+      "# Title\n\nIntro paragraph line one\nand line two.\n\n- item a\n- item b\n",
+    );
+    ok(mdDoc.includes("# Title"), "preserves an existing markdown heading");
+    ok(
+      mdDoc.includes("Intro paragraph line one and line two."),
+      "still reflows wrapped prose around markdown blocks",
+    );
+    ok(mdDoc.includes("- item a\n- item b"), "keeps list items tight");
+
+    const mdTable = reflowExtractedText("| a | b |\n|---|---|\n| 1 | 2 |");
+    eq(
+      mdTable,
+      "| a | b |\n|---|---|\n| 1 | 2 |",
+      "keeps a markdown table contiguous (no blank lines between rows)",
+    );
+
     console.log(`\n  pdf-reflow tests: ${passed} passed, ${failed} failed`);
   } catch (e) {
     console.error(`  ERROR: ${e.message}`);
