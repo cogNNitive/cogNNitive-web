@@ -28,7 +28,7 @@ import { useToast } from '../shared/useToast'
 import { useHashSync } from '../composables/useHashSync'
 import { useViewSync } from '../composables/useViewSync'
 import { ValidationService } from '../services/ValidationService'
-import type { ModelNode } from '../model/types'
+import type { KnowledgeNode } from '../model/types'
 import { isImageFieldName, isImageFieldValue } from '../utils/imageDetection'
 import { MATRIX_DEFS_KEY } from '../composables/useMatrixDefinitions'
 
@@ -78,7 +78,7 @@ useViewSync()
 const validationReport = computed(() => modelStore.validationReport)
 const validating = ref(false)
 
-// Validation report is set silently on import (auto-run in setGraph → validateModel).
+// Validation report is set silently on import (auto-run in setGraph → validateKnowledge).
 // The overlay only opens on explicit Validate button click (runValidation).
 
 const isEditingTable = ref(false)
@@ -176,7 +176,7 @@ const inferTypeFromValue = (key: string, val: any): string => {
   return 'string'
 }
 
-const getConceptFieldsForNode = (node: ModelNode) => {
+const getConceptFieldsForNode = (node: KnowledgeNode) => {
   const isElement = node.kind === 'element' || (node.kind !== 'concept' && node.kind !== 'root')
   const conceptName = isElement ? node.type : (node.conceptBinding?.name ?? node.name)
   let metamodelFields = metamodelStore.getConceptFields(conceptName)
@@ -270,8 +270,8 @@ const childItems = computed(() => {
   if (!node) return []
   return node.childIds
     .map((id: string) => modelStore.getNode(id))
-    .filter((n: ModelNode | undefined): n is ModelNode => !!n)
-    .map((n: ModelNode) => ({
+    .filter((n: KnowledgeNode | undefined): n is KnowledgeNode => !!n)
+    .map((n: KnowledgeNode) => ({
       id: n.id,
       name: n.name,
       description: n.rawSections?.description || '',

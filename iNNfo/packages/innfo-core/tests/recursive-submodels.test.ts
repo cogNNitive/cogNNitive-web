@@ -8,8 +8,8 @@ import {
 } from '../src/index'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 import type { SubmodelResolver } from '../src/validator'
-import type { TemplateSchemaResolver } from '../src/recursiveParser/types'
-import type { TemplateSchema } from '../src/schema'
+import type { BlueprintSchemaResolver } from '../src/recursiveParser/types'
+import type { BlueprintSchema } from '../src/schema'
 
 function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHandleLike {
   const fileHandles = new Map<string, FileHandleLike>()
@@ -496,8 +496,8 @@ submodel_file:: [[kNNowledge/payment_01.md]]
     })
   })
 
-  describe('C1 — type:: knowledge field traversal (RecursiveParseOptions.resolveTemplateSchema)', () => {
-    const startupSchema: TemplateSchema = {
+  describe('C1 — type:: knowledge field traversal (RecursiveParseOptions.resolveBlueprintSchema)', () => {
+    const startupSchema: BlueprintSchema = {
       concepts: [
         {
           name: 'Startup',
@@ -513,7 +513,7 @@ submodel_file:: [[kNNowledge/payment_01.md]]
     /** Simulates the POST-includes composed schema: `business_model` is only
      *  present because it was merged in from an included peer template — the
      *  template's OWN concept declares no fields of its own. */
-    const composedStartupSchema: TemplateSchema = {
+    const composedStartupSchema: BlueprintSchema = {
       concepts: [
         {
           name: 'Startup',
@@ -526,7 +526,7 @@ submodel_file:: [[kNNowledge/payment_01.md]]
       taxonomy: [],
     }
 
-    function makeResolver(templatesByName: Record<string, TemplateSchema>): TemplateSchemaResolver {
+    function makeResolver(templatesByName: Record<string, BlueprintSchema>): BlueprintSchemaResolver {
       return ({ frontmatter }) => {
         const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec
           ?.name
@@ -585,7 +585,7 @@ title: Acme Business Model
     it('c1-model-field-followed: a type:: knowledge field is extracted and enqueued when a resolver is supplied', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
       })
 
       const startupNode = Object.values(result.nodes).find((n) => n.name === 'acme_startup_01')
@@ -600,7 +600,7 @@ title: Acme Business Model
     it('c1-included-model-field-followed: a model field inherited via the composed (includes-merged) schema is still followed', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': composedStartupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': composedStartupSchema }),
       })
 
       const startupNode = Object.values(result.nodes).find((n) => n.name === 'acme_startup_01')
@@ -623,9 +623,9 @@ title: Acme Business Model
       expect(result.issues).toHaveLength(0)
     })
 
-    it('c1-schema-stashed-on-node: the composed schema is stashed on ModelNode.templateSchema only when a resolver is supplied', async () => {
+    it('c1-schema-stashed-on-node: the composed schema is stashed on KnowledgeNode.templateSchema only when a resolver is supplied', async () => {
       const withResolver = await recursiveParse(createFakeDirectoryHandle(files), undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
       })
       const startupNodeWith = Object.values(withResolver.nodes).find(
         (n) => n.name === 'acme_startup_01',
@@ -662,13 +662,13 @@ title: Notes
 ## NN Notes: Entry
 `,
       }
-      const throwingResolver: TemplateSchemaResolver = () => {
+      const throwingResolver: BlueprintSchemaResolver = () => {
         throw new Error('host resolver boom')
       }
 
       const root = createFakeDirectoryHandle(throwingFiles)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: throwingResolver,
+        resolveBlueprintSchema: throwingResolver,
       })
 
       // bare path:: field extraction is unaffected by the throwing resolver
@@ -710,7 +710,7 @@ path:: startups/acme_business_01.md
       }
       const root = createFakeDirectoryHandle(diamondFiles)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
       })
 
       const businessNodes = Object.values(result.nodes).filter((n) => n.name === 'acme_business_01')

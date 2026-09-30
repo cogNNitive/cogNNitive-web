@@ -2,8 +2,8 @@ export * from './types/index.js'
 export {
   parseYaml,
   parseFrontmatter,
-  parseModel,
-  serializeModel,
+  parseKnowledge,
+  serializeKnowledge,
   parseIndexBlock,
   parseMarkdownTable,
   getSectionType,
@@ -14,26 +14,26 @@ export {
   FIELD_DEFINITION,
   MARKER_DEFINITION,
   MATRIX_DEFINITION,
-  extractTemplateSchema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchema,
+  extractBlueprintSchemaFromContent,
   extractMetaschema,
   validateTemplateAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   CANONICAL_TEMPLATES,
   findCanonicalTemplate,
   getCanonicalSpecContent,
   listCanonicalTemplates,
 } from './schema/index.js'
 export type {
-  TemplateSchema,
+  BlueprintSchema,
   SchemaCheckOptions,
   IncludeResolver,
-  ResolvedTemplateSchema,
+  ResolvedBlueprintSchema,
 } from './schema/index.js'
 export {
-  validateModel,
+  validateKnowledge,
   validateDocument,
   validateFormatContent,
   validateFormatSyntax,
@@ -65,7 +65,7 @@ export { buildAgentModificationBlock } from './agentModification.js'
 export type { AgentModificationContext } from './agentModification.js'
 export { deriveMatrixWidgetType, normalizeMatrixDecl, scaleRangeFor } from './matrix.js'
 export type { MatrixWidgetType } from './matrix.js'
-export { mergeModels } from './merge.js'
+export { mergeKnowledge } from './merge.js'
 export * from './identity.js'
 export * from './metamodel.js'
 export * from './fs-types.js'

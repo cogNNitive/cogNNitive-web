@@ -5,7 +5,7 @@ import WorkspaceExplorer from '../../src/components/layout/WorkspaceExplorer.vue
 import { useModelStore } from '../../src/stores/modelStore'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
 describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
 
   it('renders filesystem explorer without category filter chips', async () => {
     const modelStore = useModelStore()
-    const node: ModelNode = {
+    const node: KnowledgeNode = {
       id: 'system_01.md',
       name: 'System Architecture',
       parentId: null,
@@ -93,7 +93,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
     const modelStore = useModelStore()
     const uiStore = useUiStore()
 
-    const node: ModelNode = {
+    const node: KnowledgeNode = {
       id: 'system_01.md',
       name: 'System Architecture',
       parentId: null,

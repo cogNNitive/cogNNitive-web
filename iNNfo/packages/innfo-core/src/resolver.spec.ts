@@ -6,9 +6,9 @@ import {
   resolveTemplatePath,
   getTemplateSearchPaths,
   UnresolvedTemplateError,
-  validateModel,
-  parseModel,
-  resolveTemplateSchema,
+  validateKnowledge,
+  parseKnowledge,
+  resolveBlueprintSchema,
 } from './index.js'
 import type { SpecDocument } from './types/index.js'
 
@@ -140,7 +140,7 @@ parent_spec:
 ## NN Project: Alpha
 * status:: active
 `
-    const parsed = parseModel(modelContent)
+    const parsed = parseKnowledge(modelContent)
     const templateDoc: SpecDocument = {
       level: 2,
       name: 'projects_V_0-1-0_NN',
@@ -152,13 +152,13 @@ parent_spec:
       },
     }
 
-    const res = validateModel(parsed, templateDoc, null)
+    const res = validateKnowledge(parsed, templateDoc, null)
     expect(res.valid).toBe(true)
     expect(res.errors.length).toBe(0)
   })
 })
 
-describe('Composition & Alias Engine (resolver / resolveTemplateSchema)', () => {
+describe('Composition & Alias Engine (resolver / resolveBlueprintSchema)', () => {
   it('applies concept and field aliases during template composition', () => {
     const baseA = `---
 level: 2
@@ -194,7 +194,7 @@ includes:
 ---
 `
 
-    const { schema, errors } = resolveTemplateSchema(composite, (ref) =>
+    const { schema, errors } = resolveBlueprintSchema(composite, (ref) =>
       ref.name === 'base_a' ? baseA : null,
     )
 
@@ -238,7 +238,7 @@ includes:
 ---
 `
 
-    const { errors } = resolveTemplateSchema(composite, (ref) => {
+    const { errors } = resolveBlueprintSchema(composite, (ref) => {
       if (ref.name === 'base_a') return baseA
       if (ref.name === 'base_b') return baseB
       return null
@@ -297,7 +297,7 @@ includes:
 ---
 `
 
-    const { errors } = resolveTemplateSchema(composite, (ref) => {
+    const { errors } = resolveBlueprintSchema(composite, (ref) => {
       if (ref.name === 'base_a') return baseA
       if (ref.name === 'base_b') return baseBWithField
       return null
@@ -326,7 +326,7 @@ includes:
 ---
 `
 
-    const { errors } = resolveTemplateSchema(tplA, (ref) => {
+    const { errors } = resolveBlueprintSchema(tplA, (ref) => {
       if (ref.name === 'tpl_b') return tplB
       if (ref.name === 'tpl_a') return tplA
       return null
@@ -345,7 +345,7 @@ includes:
     url: "x"
 ---
 `
-    const { errors } = resolveTemplateSchema(getTpl(1), (ref) => {
+    const { errors } = resolveBlueprintSchema(getTpl(1), (ref) => {
       const match = ref.name.match(/^tpl_(\d+)$/)
       if (match) {
         return getTpl(parseInt(match[1], 10))

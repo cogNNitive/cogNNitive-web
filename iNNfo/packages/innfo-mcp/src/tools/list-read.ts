@@ -9,8 +9,8 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { listModels as coreListModels, parseModel, ElementsMap } from '@cognnitive/innfo-core'
-import type { ModelInfo, ParsedModel } from '@cognnitive/innfo-core'
+import { listModels as coreListModels, parseKnowledge, ElementsMap } from '@cognnitive/innfo-core'
+import type { ModelInfo, ParsedKnowledge } from '@cognnitive/innfo-core'
 
 /**
  * Default line cap for surgical slice reads (llm-context-efficiency).
@@ -34,7 +34,7 @@ export interface ReadModelSliceOptions {
 }
 
 /** A parsed model with slice metadata for budgeted surgical reads. */
-export type SlicedModel = ParsedModel & {
+export type SlicedModel = ParsedKnowledge & {
   /** True when `rawContent` was cut to the line cap. */
   truncated: boolean
   /** Echo of `override_reason` when the cap was bypassed. */
@@ -120,7 +120,7 @@ export async function readModel(
   if (!filePath) return null
   try {
     const content = await readFile(filePath, 'utf-8')
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     return applySlice(model, options)
   } catch (err) {
     /* v8 ignore start */
@@ -136,7 +136,7 @@ export async function readModel(
  * Extracts the requested concept/element section from `rawContent`,
  * filters `elements` to the slice, and enforces the line cap.
  */
-export function applySlice(model: ParsedModel, options?: ReadModelSliceOptions): SlicedModel {
+export function applySlice(model: ParsedKnowledge, options?: ReadModelSliceOptions): SlicedModel {
   const sliced = model as SlicedModel
   const concept = options?.concept?.trim() || undefined
   const element = options?.element?.trim() || undefined
@@ -197,7 +197,7 @@ export function applySlice(model: ParsedModel, options?: ReadModelSliceOptions):
 }
 
 /** Preserve the model's canonical concept key casing when filtering. */
-function conceptKey(model: ParsedModel, concept: string): string {
+function conceptKey(model: ParsedKnowledge, concept: string): string {
   for (const key of model.elements.keys()) {
     if (key.toLowerCase() === concept.toLowerCase()) return key
   }

@@ -3,10 +3,10 @@ import type {
   ConceptField,
   Marker,
   MatrixDecl,
-  ParsedModel,
+  ParsedKnowledge,
   TaxonomyEdge,
 } from '../types/index.js'
-import { parseModel } from '../parser/index.js'
+import { parseKnowledge } from '../parser/index.js'
 
 /**
  * Root primitives of the Metaplantilla Nivel 1 (V_0-1-0). A level-2 template
@@ -43,7 +43,7 @@ export const FIELD_DEFINITION = 'Field Definition'
 export const MARKER_DEFINITION = 'Marker Definition'
 export const MATRIX_DEFINITION = 'Matrix Definition'
 
-export interface TemplateSchema {
+export interface BlueprintSchema {
   concepts: Concept[]
   markers: Marker[]
   matrices: MatrixDecl[]
@@ -87,7 +87,7 @@ function cleanWikilink(v: unknown): string | undefined {
  * Returns empty arrays when the document does not instantiate the root
  * primitives (e.g. a plain level-3 model).
  */
-export function extractTemplateSchema(parsed: ParsedModel): TemplateSchema {
+export function extractBlueprintSchema(parsed: ParsedKnowledge): BlueprintSchema {
   const concepts: Concept[] = []
   const fieldsByConcept = new Map<string, ConceptField[]>()
 
@@ -187,6 +187,6 @@ export function extractTemplateSchema(parsed: ParsedModel): TemplateSchema {
  * Templates instantiate the root primitives in their body; there is no
  * legacy frontmatter fallback.
  */
-export function extractTemplateSchemaFromContent(content: string): TemplateSchema {
-  return extractTemplateSchema(parseModel(content))
+export function extractBlueprintSchemaFromContent(content: string): BlueprintSchema {
+  return extractBlueprintSchema(parseKnowledge(content))
 }

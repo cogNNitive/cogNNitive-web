@@ -20,7 +20,7 @@
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { resolveEffectiveMetamodel } from '../model/metamodel'
 import { useModelStore } from '../stores/modelStore'
-import type { MetamodelConcept, ModelNode } from '../model/types'
+import type { MetamodelConcept, KnowledgeNode } from '../model/types'
 
 // ── Color palette ──────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ const _peerCache = new Map<string, string | null>()
 function findTemplatePeer(
   rootId: string,
   rootIds: string[],
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
 ): string | null {
   if (_peerCache.has(rootId)) return _peerCache.get(rootId)!
 
@@ -158,7 +158,7 @@ export function useConceptVisuals() {
    * For elements (`kind === 'element'`):  `node.type` holds the concept name.
    * For concepts/roots:                   `conceptBinding.name ?? node.name`.
    */
-  function getConceptForNode(node: ModelNode): MetamodelConcept | undefined {
+  function getConceptForNode(node: KnowledgeNode): MetamodelConcept | undefined {
     const conceptName =
       node.kind === 'element' ? node.type : (node.conceptBinding?.name ?? node.name)
 
@@ -175,18 +175,18 @@ export function useConceptVisuals() {
   }
 
   /** Returns the icon identifier for a node, falling back to 'file-text'. */
-  function resolveIcon(node: ModelNode): string {
+  function resolveIcon(node: KnowledgeNode): string {
     return getConceptForNode(node)?.icon ?? 'file-text'
   }
 
   /** Returns the color hex for a node, falling back to slate (#94a3b8). */
-  function resolveColor(node: ModelNode): string {
+  function resolveColor(node: KnowledgeNode): string {
     const concept = getConceptForNode(node)
     return concept?.color ? getHexColor(concept.color) : COLOR_HEX.slate
   }
 
   /** Returns the tailwind-compatible color name for a node. */
-  function resolveColorName(node: ModelNode): string {
+  function resolveColorName(node: KnowledgeNode): string {
     const concept = getConceptForNode(node)
     return concept?.color ?? 'slate'
   }

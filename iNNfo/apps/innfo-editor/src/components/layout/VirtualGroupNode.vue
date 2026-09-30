@@ -141,19 +141,19 @@ import { useMetamodelStore } from '../../stores/metamodelStore'
 import { useModelStore } from '../../stores/modelStore'
 import Pill from '../editor/Pill.vue'
 import ConceptTreeNode from './ConceptTreeNode.vue'
-import type { ModelNode } from '../../model/types'
+import type { KnowledgeNode } from '../../model/types'
 
 export interface TreeGroup {
   name: string
   ghost: boolean
-  elements: ModelNode[]
+  elements: KnowledgeNode[]
   children: TreeGroup[]
 }
 
 const props = withDefaults(
   defineProps<{
     conceptName: string
-    elements?: ModelNode[]
+    elements?: KnowledgeNode[]
     subGroups?: TreeGroup[]
     selectedId: string | null
     depth?: number
@@ -232,7 +232,7 @@ const hasParentHierarchy = computed(() =>
   props.elements.some((el) => el.fields?.parent?.value),
 )
 
-const treeRoots = computed<ModelNode[]>(() => {
+const treeRoots = computed<KnowledgeNode[]>(() => {
   if (!hasParentHierarchy.value) return []
   const allNames = new Set(props.elements.map((el) => el.name))
   return props.elements.filter((el) => {
@@ -241,7 +241,7 @@ const treeRoots = computed<ModelNode[]>(() => {
   })
 })
 
-function getSemanticChildren(parentName: string): ModelNode[] {
+function getSemanticChildren(parentName: string): KnowledgeNode[] {
   return props.elements.filter((el) => el.fields?.parent?.value === parentName)
 }
 
@@ -251,7 +251,7 @@ function toggleTreeCollapsed(id: string): void {
   treeCollapsed.value = { ...treeCollapsed.value, [id]: !treeCollapsed.value[id] }
 }
 
-function rootRowClasses(node: ModelNode): Record<string, boolean> {
+function rootRowClasses(node: KnowledgeNode): Record<string, boolean> {
   return {
     'font-semibold bg-slate-100 dark:bg-slate-800/80': node.id === props.selectedId,
     'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60': node.id !== props.selectedId,

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'fs'
 import { join, dirname, relative } from 'path'
 import { fileURLToPath } from 'url'
-import { parseModel, serializeModel } from '../src/parser/index.js'
+import { parseKnowledge, serializeKnowledge } from '../src/parser/index.js'
 
 /**
  * Requirement 1 (round-trip identity) and Requirement 2 (idempotency) of
@@ -59,7 +59,7 @@ describe('round-trip fidelity over the shipped corpus', () => {
     const mismatches: string[] = []
     for (const file of files) {
       const original = readFileSync(file, 'utf-8')
-      const serialized = serializeModel(parseModel(original))
+      const serialized = serializeKnowledge(parseKnowledge(original))
       if (serialized !== original) {
         mismatches.push(`${relative(REPO_ROOT, file)} — ${firstDifference(original, serialized)}`)
       }
@@ -70,8 +70,8 @@ describe('round-trip fidelity over the shipped corpus', () => {
   it('serializing twice changes nothing further', () => {
     const notIdempotent: string[] = []
     for (const file of files) {
-      const once = serializeModel(parseModel(readFileSync(file, 'utf-8')))
-      const twice = serializeModel(parseModel(once))
+      const once = serializeKnowledge(parseKnowledge(readFileSync(file, 'utf-8')))
+      const twice = serializeKnowledge(parseKnowledge(once))
       if (twice !== once) {
         notIdempotent.push(`${relative(REPO_ROOT, file)} — ${firstDifference(once, twice)}`)
       }

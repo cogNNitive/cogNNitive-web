@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel } from '../src/parser/index'
-import { validateModel } from '../src/validator/model'
+import { parseKnowledge } from '../src/parser/index'
+import { validateKnowledge } from '../src/validator/knowledge'
 import type { SpecDocument } from '../src/types'
 
-describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', () => {
+describe('Template Freshness Diagnostic in innfo-core validateKnowledge (Phase 1)', () => {
   const sampleModelContent = [
     '---',
     'spec_version: "V_0-2-0"',
@@ -50,10 +50,10 @@ describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', 
   }
 
   it('produces a ValidationCheck with code TEMPLATE_CACHE_STALE and promptHint when template mismatch is detected', () => {
-    const model = parseModel(sampleModelContent)
+    const model = parseKnowledge(sampleModelContent)
     const remoteUpstreamContent = localTemplateRawContent + '\n# Remote update with new features\n'
 
-    const result = validateModel(model, localTemplate, null, {
+    const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: true,
       remoteContent: remoteUpstreamContent,
     })
@@ -81,10 +81,10 @@ describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', 
   })
 
   it('verifies summary.errors remains 0 when template cache is stale (non-blocking warning)', () => {
-    const model = parseModel(sampleModelContent)
+    const model = parseKnowledge(sampleModelContent)
     const remoteUpstreamContent = localTemplateRawContent + '\n# Additional remote notes\n'
 
-    const result = validateModel(model, localTemplate, null, {
+    const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: true,
       remoteContent: remoteUpstreamContent,
     })
@@ -95,10 +95,10 @@ describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', 
   })
 
   it('falls back gracefully without failing validation when network is offline/unreachable', () => {
-    const model = parseModel(sampleModelContent)
+    const model = parseKnowledge(sampleModelContent)
 
     // Simulate network error / offline fetch returning null or throwing
-    const result = validateModel(model, localTemplate, null, {
+    const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: true,
       remoteContent: null,
       fetchRemoteTemplate: () => {
@@ -113,9 +113,9 @@ describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', 
   })
 
   it('emits no staleness warning when remote content matches local cached content', () => {
-    const model = parseModel(sampleModelContent)
+    const model = parseKnowledge(sampleModelContent)
 
-    const result = validateModel(model, localTemplate, null, {
+    const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: true,
       remoteContent: localTemplateRawContent,
     })
@@ -129,9 +129,9 @@ describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', 
   })
 
   it('supports explicit freshness result with verdict stale', () => {
-    const model = parseModel(sampleModelContent)
+    const model = parseKnowledge(sampleModelContent)
 
-    const result = validateModel(model, localTemplate, null, {
+    const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: true,
       freshness: {
         verdict: 'stale',
@@ -153,10 +153,10 @@ describe('Template Freshness Diagnostic in innfo-core validateModel (Phase 1)', 
   })
 
   it('ignores freshness comparison when checkFreshness is false', () => {
-    const model = parseModel(sampleModelContent)
+    const model = parseKnowledge(sampleModelContent)
     const remoteUpstreamContent = localTemplateRawContent + '\n# Some remote diff\n'
 
-    const result = validateModel(model, localTemplate, null, {
+    const result = validateKnowledge(model, localTemplate, null, {
       checkFreshness: false,
       remoteContent: remoteUpstreamContent,
     })

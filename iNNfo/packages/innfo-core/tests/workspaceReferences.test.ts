@@ -8,15 +8,15 @@ import {
 } from '../src/validator/workspaceReferences'
 import { buildWorkspaceIndex, type WorkspaceIndex } from '../src/recursiveParser/workspaceIndex'
 import type { ParseIssue, RecursiveParseResult } from '../src/recursiveParser/types'
-import type { ModelNode, Concept } from '../src/types'
-import type { TemplateSchema } from '../src/schema'
+import type { KnowledgeNode, Concept } from '../src/types'
+import type { BlueprintSchema } from '../src/schema'
 import { validateFormatContent } from '../src/validator/content'
 
-function field(value: unknown): ModelNode['fields'][string] {
+function field(value: unknown): KnowledgeNode['fields'][string] {
   return { value, editAttribution: { author: { kind: 'system', id: 'test' }, timestamp: '' } }
 }
 
-function makeSchema(concepts: Concept[]): TemplateSchema {
+function makeSchema(concepts: Concept[]): BlueprintSchema {
   return { concepts, markers: [], matrices: [], taxonomy: [] }
 }
 
@@ -40,8 +40,8 @@ function makeRootAndElement(opts: {
   elementType: string
   fields: Record<string, unknown>
   description?: string
-}): { result: RecursiveParseResult; root: ModelNode; element: ModelNode } {
-  const root: ModelNode = {
+}): { result: RecursiveParseResult; root: KnowledgeNode; element: KnowledgeNode } {
+  const root: KnowledgeNode = {
     id: 'root-1',
     name: 'root_01',
     parentId: null,
@@ -54,7 +54,7 @@ function makeRootAndElement(opts: {
     rawSections: {},
     source: { path: 'root_01.md' },
   }
-  const element: ModelNode = {
+  const element: KnowledgeNode = {
     id: 'elem-1',
     name: 'Jane Doe',
     parentId: 'root-1',
@@ -216,10 +216,10 @@ function makeRoot(opts: {
   id: string
   path: string
   title?: string
-  templateSchema?: TemplateSchema
+  templateSchema?: BlueprintSchema
   parentSpec?: { name: string; url?: string }
   childIds?: string[]
-}): ModelNode {
+}): KnowledgeNode {
   return {
     id: opts.id,
     name: opts.id,
@@ -247,7 +247,7 @@ function makeElement(opts: {
   parentPath: string
   elementType: string
   fields?: Record<string, unknown>
-}): ModelNode {
+}): KnowledgeNode {
   return {
     id: opts.id,
     name: opts.name,
@@ -265,10 +265,10 @@ function makeElement(opts: {
 
 /** Assembles a `RecursiveParseResult` from flat nodes and derives its `WorkspaceIndex` via PR4's real `buildWorkspaceIndex` (dogfooding the index this validator consumes). */
 function workspace(
-  nodesArr: ModelNode[],
+  nodesArr: KnowledgeNode[],
   issues: ParseIssue[] = [],
 ): { result: RecursiveParseResult; index: WorkspaceIndex } {
-  const nodes: Record<string, ModelNode> = {}
+  const nodes: Record<string, KnowledgeNode> = {}
   for (const n of nodesArr) nodes[n.id] = n
   const rootIds = nodesArr.filter((n) => n.kind === 'root').map((n) => n.id)
   const result: RecursiveParseResult = { nodes, rootIds, issues }

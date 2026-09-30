@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
-import type { TemplateSchema } from '../src/schema'
+import type { BlueprintSchema } from '../src/schema'
 import { recursiveParse } from '../src/recursiveParser'
 
 /**
@@ -70,7 +70,7 @@ function planModel(propertyLine: string): string {
   ].join('\n')
 }
 
-const PRODUCTO_SCHEMA: TemplateSchema = {
+const PRODUCTO_SCHEMA: BlueprintSchema = {
   concepts: [
     {
       name: 'Producto',
@@ -94,7 +94,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
     ])
 
     const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: () => PRODUCTO_SCHEMA,
+      resolveBlueprintSchema: () => PRODUCTO_SCHEMA,
     })
 
     const widget = Object.values(result.nodes).find((n) => n.name === 'Widget')
@@ -107,7 +107,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
   })
 
   it('does not double-count a field that is already matched by the name-based path', async () => {
-    const schemaWithSourcesAsCitation: TemplateSchema = {
+    const schemaWithSourcesAsCitation: BlueprintSchema = {
       concepts: [
         {
           name: 'Producto',
@@ -125,7 +125,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
     ])
 
     const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: () => schemaWithSourcesAsCitation,
+      resolveBlueprintSchema: () => schemaWithSourcesAsCitation,
     })
 
     const widget = Object.values(result.nodes).find((n) => n.name === 'Widget')
@@ -135,7 +135,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
 
   it('fills node.sources for a schema-typed citation field declared directly on the entrypoint model', async () => {
     // Regression test: the entrypoint model (workspace_NN.md) is registered
-    // via parseAndRegisterModel BEFORE the worklist loop starts, and its own
+    // via parseAndRegisterKnowledge BEFORE the worklist loop starts, and its own
     // path never passes through that loop's `resolvedPath` gate — so schema-
     // typed citation fields defined directly on the entrypoint were silently
     // dropped until the fix in workspace.ts (right after entrypointSchema is
@@ -156,7 +156,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
     const root = fakeDir('workspace', [['domaiNN_NN.md', fakeFile('domaiNN_NN.md', entrypoint)]])
 
     const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: () => PRODUCTO_SCHEMA,
+      resolveBlueprintSchema: () => PRODUCTO_SCHEMA,
     })
 
     const widget = Object.values(result.nodes).find((n) => n.name === 'Widget')

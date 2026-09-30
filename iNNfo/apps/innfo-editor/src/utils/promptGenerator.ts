@@ -1,7 +1,7 @@
-import type { ModelNode, MetamodelConcept } from '../model/types'
+import type { KnowledgeNode, MetamodelConcept } from '../model/types'
 
 export interface PromptContext {
-  block?: ModelNode
+  block?: KnowledgeNode
   schema?: MetamodelConcept
   conceptName?: string
   elementName?: string
@@ -16,7 +16,7 @@ export interface PromptContext {
   customInstructions?: string
 }
 
-function getNodeDescription(node?: ModelNode): string | undefined {
+function getNodeDescription(node?: KnowledgeNode): string | undefined {
   if (!node?.fields) return undefined
   const desc = node.fields['description']?.value
   return typeof desc === 'string' ? desc : undefined

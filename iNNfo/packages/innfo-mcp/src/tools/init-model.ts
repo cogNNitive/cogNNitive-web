@@ -1,6 +1,6 @@
 import { readFile, writeFile, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { resolveTemplateSchema, validateDocument } from '@cognnitive/innfo-core'
+import { resolveBlueprintSchema, validateDocument } from '@cognnitive/innfo-core'
 import type { SpecDocument, ValidationError } from '@cognnitive/innfo-core'
 import { resolveTemplateWithCache, findModelFile, normalizeId } from './spec.js'
 import { normalizeVersion } from './resolver-node.js'
@@ -173,7 +173,7 @@ export async function initModel(
       templateResolved = true
       const hasConceptSections = /^#\s+NN\s+(?!index\b)\S/im.test(body)
       if (!hasConceptSections) {
-        const composed = resolveTemplateSchema(
+        const composed = resolveBlueprintSchema(
           resolved.template.rawContent,
           resolved.resolveInclude,
         )

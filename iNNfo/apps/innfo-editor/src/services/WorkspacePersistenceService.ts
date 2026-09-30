@@ -6,11 +6,11 @@ import {
   formatVersionString,
 } from '../utils/version'
 import { buildSpecificationUrl } from '../utils/constants'
-import { parseFrontmatter, parseModel, serializeModel, mergeModels } from '@cognnitive/innfo-core'
+import { parseFrontmatter, parseKnowledge, serializeKnowledge, mergeKnowledge } from '@cognnitive/innfo-core'
 import { reconcileWorkspaceManifest } from './WorkspaceSyncService'
 import type { DirectoryHandleLike, FileHandleLike } from '../model/fs-types'
 import type { BumpLevel } from '../utils/version'
-import type { ModelDriver } from '@cognnitive/innfo-core'
+import type { KnowledgeDriver } from '@cognnitive/innfo-core'
 import type { useModelStore } from '../stores/modelStore'
 import type { useUiStore } from '../stores/uiStore'
 
@@ -207,7 +207,7 @@ export async function _ensureGeneralSpec(
  */
 export async function saveActiveFile(
   handle: DirectoryHandleLike | null,
-  driver: ModelDriver | null | undefined,
+  driver: KnowledgeDriver | null | undefined,
   modelStore: ModelStore,
   uiStore: UiStore,
   backupEnabled: boolean,
@@ -236,10 +236,10 @@ export async function saveActiveFile(
             const diskFile = await existingHandle.getFile()
             const diskText = await diskFile.text()
             if (diskText && diskText.trim() !== contentToWrite.trim()) {
-              const diskParsed = parseModel(diskText)
-              const memoryParsed = parseModel(contentToWrite)
-              const merged = mergeModels(diskParsed, memoryParsed)
-              contentToWrite = serializeModel(merged)
+              const diskParsed = parseKnowledge(diskText)
+              const memoryParsed = parseKnowledge(contentToWrite)
+              const merged = mergeKnowledge(diskParsed, memoryParsed)
+              contentToWrite = serializeKnowledge(merged)
               node.rawContent = contentToWrite
             }
           } catch (err) {

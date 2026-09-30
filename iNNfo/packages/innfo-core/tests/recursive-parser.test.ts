@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
-import type { ModelDriver } from '../src/types'
-import type { ParsedModel } from '../src/types'
-import type { TemplateSchema } from '../src/schema'
-import type { TemplateSchemaResolver } from '../src/recursiveParser/types'
-import { recursiveParse, normalizeSingleModel, readWorkspaceId } from '../src/recursiveParser'
+import type { KnowledgeDriver } from '../src/types'
+import type { ParsedKnowledge } from '../src/types'
+import type { BlueprintSchema } from '../src/schema'
+import type { BlueprintSchemaResolver } from '../src/recursiveParser/types'
+import { recursiveParse, normalizeSingleKnowledge, readWorkspaceId } from '../src/recursiveParser'
 import { validateDocument } from '../src/validator'
 
 /* ── Fake handle helpers ─────────────────────────────────────── */
@@ -719,7 +719,7 @@ describe('single canonical entrypoint (domaiNN_NN.md)', () => {
   })
 })
 
-describe('normalizeSingleModel', () => {
+describe('normalizeSingleKnowledge', () => {
   it('parses a single model file directly and returns normalized nodes and issues', () => {
     const modelContent = makeModel(
       'Standalone Model',
@@ -734,7 +734,7 @@ describe('normalizeSingleModel', () => {
   Description of single node.
 `,
     )
-    const { nodes, issues } = normalizeSingleModel(
+    const { nodes, issues } = normalizeSingleKnowledge(
       modelContent,
       'standalone_NN.md',
       'standalone_NN',
@@ -754,7 +754,7 @@ describe('normalizeSingleModel', () => {
   it('returns empty nodes when content is not a model (missing spec_version)', () => {
     const plainMarkdown =
       '# Standalone Document\n\nThis is not a model because it has no spec_version in frontmatter.'
-    const { nodes, issues } = normalizeSingleModel(plainMarkdown, 'doc.md', 'doc')
+    const { nodes, issues } = normalizeSingleKnowledge(plainMarkdown, 'doc.md', 'doc')
     expect(issues).toHaveLength(0)
     expect(Object.keys(nodes)).toHaveLength(0)
   })
@@ -774,7 +774,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
 **TAM:** ~500.000 procesos de reparto anuales.
 `,
     )
-    const { nodes, issues } = normalizeSingleModel(modelContent, 'text_NN.md', 'text_NN')
+    const { nodes, issues } = normalizeSingleKnowledge(modelContent, 'text_NN.md', 'text_NN')
     expect(issues).toHaveLength(0)
 
     const rootNode = nodes['text_NN']
@@ -788,7 +788,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
   it('reports an issue when a _NN-named file lacks valid iNNfo frontmatter', () => {
     const broken =
       'X---\nspec_version: "V_0-1-2"\ntitle: "Broken"\n---\n\n# NN Business summary\n\ntext'
-    const { nodes, issues } = normalizeSingleModel(broken, 'broken_NN.md', 'broken_NN')
+    const { nodes, issues } = normalizeSingleKnowledge(broken, 'broken_NN.md', 'broken_NN')
     expect(Object.keys(nodes)).toHaveLength(0)
     expect(issues.some((i) => i.message.includes('spec_version'))).toBe(true)
     expect(issues.some((i) => i.path === 'broken_NN.md')).toBe(true)
@@ -823,7 +823,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
       '| --- | --- |\n' +
       '| Revenue—Cost Structure | ✅ |\n'
 
-    const { nodes, issues } = normalizeSingleModel(modelContent, 'dash_NN.md', 'dash_NN')
+    const { nodes, issues } = normalizeSingleKnowledge(modelContent, 'dash_NN.md', 'dash_NN')
 
     const warning = issues.find((i) => i.message.includes('separator character differs'))
     expect(warning).toBeDefined()

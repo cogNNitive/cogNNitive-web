@@ -3,11 +3,11 @@ import {
   recursiveParse,
   validateTaxonomyHierarchy,
   validateDocument,
-  extractTemplateSchema,
-  parseModel,
+  extractBlueprintSchema,
+  parseKnowledge,
   buildWorkspaceIndex,
 } from '../src/index'
-import type { TemplateSchema, ModelNode, RecursiveParseResult } from '../src/index'
+import type { BlueprintSchema, KnowledgeNode, RecursiveParseResult } from '../src/index'
 import { normalizeElementsIntoGraph } from '../src/recursiveParser/normalize'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 import type { ParseContext } from '../src/recursiveParser/types'
@@ -165,7 +165,7 @@ title: Standalone Model
   })
 
   describe('4.2 Core Validation: type:: knowledge concepts and fields', () => {
-    it('parses type:: knowledge concept and field definitions cleanly in extractTemplateSchema', () => {
+    it('parses type:: knowledge concept and field definitions cleanly in extractBlueprintSchema', () => {
       const templateContent = `---
 spec_version: V_1-0-0
 level: 2
@@ -188,7 +188,7 @@ type:: knowledge
 description:: Path to submodel file.
 `
 
-      const schema = extractTemplateSchema(parseModel(templateContent))
+      const schema = extractBlueprintSchema(parseKnowledge(templateContent))
       const modelRefConcept = schema.concepts.find((c) => c.name === 'Models')
       expect(modelRefConcept).toBeDefined()
       expect(modelRefConcept?.type).toBe('knowledge')
@@ -276,7 +276,7 @@ title: Index-Free Model
 ## NN Subcomponent: Subsystem Alpha
 `
 
-      const parsed = parseModel(modelContent)
+      const parsed = parseKnowledge(modelContent)
       expect(parsed.taxonomy).toHaveLength(0) // No # NN index section
 
       const parentTemplateTaxonomy = [{ parent: 'Component', child: 'Subcomponent' }]
@@ -289,7 +289,7 @@ title: Index-Free Model
     })
 
     it('validates taxonomy hierarchy cleanly against parent template taxonomy when model has no index section', () => {
-      const parsedModel = parseModel(`---
+      const parsedModel = parseKnowledge(`---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
@@ -541,7 +541,7 @@ title: Acme Org
       // model name regardless of directory (identity.ts:30-32) — a parser
       // limitation orthogonal to buildWorkspaceIndex's own derivation rules,
       // which this test exercises directly.
-      const nodeA: ModelNode = {
+      const nodeA: KnowledgeNode = {
         id: 'biz-a',
         name: 'biz_01',
         parentId: null,
@@ -559,7 +559,7 @@ title: Acme Org
         rawSections: {},
         source: { path: 'a/biz_01.md' },
       }
-      const nodeB: ModelNode = {
+      const nodeB: KnowledgeNode = {
         id: 'biz-b',
         name: 'biz_01',
         parentId: null,
@@ -706,7 +706,7 @@ title: Model A
 `,
       }
 
-      const composedSchema: TemplateSchema = {
+      const composedSchema: BlueprintSchema = {
         concepts: [],
         markers: [],
         matrices: [],
@@ -715,7 +715,7 @@ title: Model A
 
       const rootHandle = createFakeDirectoryHandle(files)
       const result = await recursiveParse(rootHandle, undefined, {
-        resolveTemplateSchema: () => composedSchema,
+        resolveBlueprintSchema: () => composedSchema,
       })
       const index = buildWorkspaceIndex(result)
 
@@ -723,15 +723,15 @@ title: Model A
       expect(index.nodeSchema[modelANode.id]).toBe(composedSchema)
     })
 
-    it('index-node-schema-from-fallback-resolver: without a stashed schema, buildWorkspaceIndex falls back to its own resolveTemplateSchema argument', () => {
-      const fallbackSchema: TemplateSchema = {
+    it('index-node-schema-from-fallback-resolver: without a stashed schema, buildWorkspaceIndex falls back to its own resolveBlueprintSchema argument', () => {
+      const fallbackSchema: BlueprintSchema = {
         concepts: [],
         markers: [],
         matrices: [],
         taxonomy: [],
       }
 
-      const rootNode: ModelNode = {
+      const rootNode: KnowledgeNode = {
         id: 'root-1',
         name: 'workspace_01',
         parentId: null,

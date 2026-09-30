@@ -1,4 +1,4 @@
-import type { Concept, ParsedModel } from '../types/index.js'
+import type { Concept, ParsedKnowledge } from '../types/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import { conceptsByElementName, IMPLICIT_REF_FIELDS } from './elementIndex.js'
 import { matchesTargetTemplate } from './templateMatching.js'
@@ -26,7 +26,7 @@ export type SubmodelResolver = (
 ) => { exists: boolean; templateName?: string; templateUrl?: string } | null
 
 /** Collect all element names model-wide (lowercased for case-insensitive matching). */
-function collectElementNames(model: ParsedModel): Set<string> {
+function collectElementNames(model: ParsedKnowledge): Set<string> {
   const names = new Set<string>()
   for (const [, elements] of model.elements.entries()) {
     for (const el of elements) {
@@ -41,7 +41,7 @@ function collectElementNames(model: ParsedModel): Set<string> {
  * name, used as a fallback lookup when an exact (case-insensitive) match
  * fails, to tolerate hyphen/dash typographic variants (Fix 3).
  */
-function collectNormalizedElementNames(model: ParsedModel): Map<string, string> {
+function collectNormalizedElementNames(model: ParsedKnowledge): Map<string, string> {
   const names = new Map<string, string>()
   for (const [, elements] of model.elements.entries()) {
     for (const el of elements) {
@@ -74,7 +74,7 @@ function resolveElementName(
  * Validate that all references in matrix cells point to existing element names.
  * Returns diagnostics for dangling references (R-IE-04).
  */
-export function validateReferences(model: ParsedModel): ReferenceDiagnostic[] {
+export function validateReferences(model: ParsedKnowledge): ReferenceDiagnostic[] {
   const diagnostics: ReferenceDiagnostic[] = []
   const elementNames = collectElementNames(model)
   const normalizedElementNames = collectNormalizedElementNames(model)
@@ -126,7 +126,7 @@ export function validateReferences(model: ParsedModel): ReferenceDiagnostic[] {
  * be among them (R-IE-04).
  */
 export function validateElementFieldReferences(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateConcepts: Concept[],
   options?: {
     resolveSubmodel?: SubmodelResolver

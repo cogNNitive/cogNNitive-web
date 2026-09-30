@@ -2,19 +2,19 @@ import { computed } from 'vue'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { resolveEffectiveMetamodel } from '../model/metamodel'
 import { useModelStore } from '../stores/modelStore'
-import type { MetamodelConcept, ModelNode } from '../model/types'
+import type { MetamodelConcept, KnowledgeNode } from '../model/types'
 
 export interface TreeGroup {
   name: string
   ghost: boolean
-  elements: ModelNode[]
+  elements: KnowledgeNode[]
   children: TreeGroup[]
 }
 
 interface TreeGroupsInput {
   taxonomyRoots: string[]
   taxonomyChildren: Map<string, string[]>
-  childrenByType: Map<string, ModelNode[]>
+  childrenByType: Map<string, KnowledgeNode[]>
   templateByName: Map<string, MetamodelConcept>
   templateOrder: Map<string, number>
   hasContent: (conceptName: string) => boolean
@@ -133,7 +133,7 @@ export function useModelConcepts() {
 
     // Fast path: use indexed lookup from modelStore
     const indexedByType = modelStore.nodesByRootAndType.get(rootId)
-    const childrenByType = new Map<string, ModelNode[]>()
+    const childrenByType = new Map<string, KnowledgeNode[]>()
 
     if (indexedByType) {
       for (const [type, list] of indexedByType.entries()) {

@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { recursiveParse } from '../src/recursiveParser/index.js'
 import { validateWorkspaceSources } from '../src/validator/workspaceSources.js'
 import { extractHeadings } from '../src/sourceRef.js'
-import { parseModel } from '../src/parser/index.js'
-import { resolveTemplateSchema } from '../src/schema/index.js'
+import { parseKnowledge } from '../src/parser/index.js'
+import { resolveBlueprintSchema } from '../src/schema/index.js'
 import type { DirectoryHandleLike } from '../src/types/index.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -60,7 +60,7 @@ function warmTemplateCache(): Map<string, unknown> {
     if (!spec.endsWith('_NN.md') || !existsSync(spec)) continue
     const slug = entry.isDirectory() ? entry.name : entry.name.replace(/_NN\.md$/, '')
     try {
-      const { schema } = resolveTemplateSchema(readFileSync(spec, 'utf-8'), (ref: string) => {
+      const { schema } = resolveBlueprintSchema(readFileSync(spec, 'utf-8'), (ref: string) => {
         const included = join(TEMPLATES, ref, 'spec_NN.md')
         return existsSync(included) ? readFileSync(included, 'utf-8') : null
       })
@@ -93,7 +93,7 @@ describe('Canonical Use Case Workspaces', () => {
 
       it('parses recursively with no error or fatal diagnostics', async () => {
         const parsed = await recursiveParse(nodeHandle(wsPath), undefined, {
-          resolveTemplateSchema: ({ frontmatter }: { frontmatter?: { parent_spec?: { name?: string } } }) => {
+          resolveBlueprintSchema: ({ frontmatter }: { frontmatter?: { parent_spec?: { name?: string } } }) => {
             const declared = frontmatter?.parent_spec?.name
             if (!declared) return null
             const key = declared.toLowerCase()
@@ -132,7 +132,7 @@ describe('Canonical Use Case Workspaces', () => {
         if (!existsSync(modelsDir)) return
         const offenders: string[] = []
         for (const file of readdirSync(modelsDir).filter((f) => f.endsWith('.md'))) {
-          const parsed = parseModel(readFileSync(join(modelsDir, file), 'utf-8'))
+          const parsed = parseKnowledge(readFileSync(join(modelsDir, file), 'utf-8'))
           for (const collision of parsed.slugCollisions ?? []) {
             offenders.push(`${file}: "${collision.slug}" (${collision.elements.join(', ')})`)
           }

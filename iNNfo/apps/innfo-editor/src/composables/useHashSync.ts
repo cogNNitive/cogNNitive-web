@@ -1,7 +1,7 @@
 import { watch, onMounted, onUnmounted } from 'vue'
 import { useUiStore } from '../stores/uiStore'
 import { useModelStore } from '../stores/modelStore'
-import type { ModelNode } from '../model/types'
+import type { KnowledgeNode } from '../model/types'
 
 /**
  * Synchronises the URL hash (`#conceptName.elementName`, `#nodeName` or
@@ -87,7 +87,7 @@ export function useHashSync(): void {
    * (breadth-first from roots) order — used to reconstruct a virtual
    * concept group id from its `#@ConceptName` hash.
    */
-  function findFirstElementOfType(type: string): ModelNode | undefined {
+  function findFirstElementOfType(type: string): KnowledgeNode | undefined {
     const seen = new Set<string>()
     const queue = [...modelStore.rootIds]
     while (queue.length > 0) {

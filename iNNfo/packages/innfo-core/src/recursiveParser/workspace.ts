@@ -1,6 +1,6 @@
 import type { DirectoryHandleLike, FileHandleLike } from '../fs-types.js'
-import type { ModelDriver, ModelNode } from '../types/index.js'
-import type { TemplateSchema } from '../schema/index.js'
+import type { KnowledgeDriver, KnowledgeNode } from '../types/index.js'
+import type { BlueprintSchema } from '../schema/index.js'
 import { IdentityRegistry } from '../identity.js'
 import type {
   ParseContext,
@@ -9,9 +9,9 @@ import type {
   WorklistItem,
 } from './types.js'
 import { stripMdSuffix, normalizePathKey, resolveSubmodelPath, basename } from './paths.js'
-import { parseAndRegisterModel } from './model.js'
+import { parseAndRegisterKnowledge } from './knowledge.js'
 import { attachSchemaTypedCitations } from './normalize.js'
-import { parseModel, parseFrontmatter, stripFrontmatter } from '../parser/index.js'
+import { parseKnowledge, parseFrontmatter, stripFrontmatter } from '../parser/index.js'
 import { computeModelDagTopology } from './topology.js'
 import { detectLegacy, type DomainReader } from '../legacy/detect.js'
 import { CANONICAL_DOMAIN_ENTRYPOINT } from '../layout.js'
@@ -117,7 +117,7 @@ function isWorkspaceManifest(name: string): boolean {
  * An overview root (A2) wins when one is present; otherwise falls back to
  * today's `workspace*.md` selection, unchanged.
  */
-function makeDomainReader(root: DirectoryHandleLike, driver?: ModelDriver): DomainReader {
+function makeDomainReader(root: DirectoryHandleLike, driver?: KnowledgeDriver): DomainReader {
   return {
     async list(dir: string): Promise<string[]> {
       if (driver) {
@@ -167,7 +167,7 @@ function makeDomainReader(root: DirectoryHandleLike, driver?: ModelDriver): Doma
 
 async function findCanonicalDomainEntrypoint(
   root: DirectoryHandleLike,
-  driver?: ModelDriver,
+  driver?: KnowledgeDriver,
 ): Promise<{ path: string; name: string; content: string } | null> {
   const target = CANONICAL_DOMAIN_ENTRYPOINT
   if (driver) {
@@ -203,7 +203,7 @@ export interface ExtractedSubmodelRef {
 export function extractSubmodelRefs(
   content: string,
   referringPath: string,
-  templateSchema?: TemplateSchema,
+  templateSchema?: BlueprintSchema,
 ): ExtractedSubmodelRef[] {
   const modelRefs: ExtractedSubmodelRef[] = []
 
@@ -251,7 +251,7 @@ export function extractSubmodelRefs(
 
   // 1. Extract path:: / file_ref:: or fields typed as model
   try {
-    const parsed = parseModel(content)
+    const parsed = parseKnowledge(content)
     const modelFieldNames = new Set<string>([
       'path',
       'file_ref',
@@ -320,13 +320,13 @@ export function extractSubmodelRefs(
 /**
  * Links the referring model to the just-resolved child in the node graph.
  * DP1: the FIRST parent wins `parentId`; every parent gets the child in `childIds`,
- * so non-primary (diamond) edges are recoverable without a new ModelNode field (AD-02).
+ * so non-primary (diamond) edges are recoverable without a new KnowledgeNode field (AD-02).
  */
 function linkParentChild(
   ctx: ParseContext,
   referringPath: string,
   childNormKey: string,
-): { parentNode?: ModelNode; childNode?: ModelNode } {
+): { parentNode?: KnowledgeNode; childNode?: KnowledgeNode } {
   const referringNorm = normalizePathKey(resolveSubmodelPath(referringPath))
   const byPath = (key: string) =>
     Object.values(ctx.nodes).find(
@@ -343,7 +343,7 @@ function linkParentChild(
 
 /**
  * Resolves a node's composed template schema via the host-supplied
- * `options.resolveTemplateSchema`, when one was supplied. A throwing or
+ * `options.resolveBlueprintSchema`, when one was supplied. A throwing or
  * absent resolver degrades that node to today's behavior (no `type:: knowledge`
  * field following) instead of aborting the whole parse (AD-04).
  */
@@ -352,11 +352,11 @@ function schemaFor(
   path: string,
   name: string,
   content: string,
-): TemplateSchema | undefined {
-  if (!options?.resolveTemplateSchema) return undefined
+): BlueprintSchema | undefined {
+  if (!options?.resolveBlueprintSchema) return undefined
   try {
     const fm = (parseFrontmatter(content) ?? {}) as Record<string, unknown>
-    return options.resolveTemplateSchema({ path, name, content, frontmatter: fm }) ?? undefined
+    return options.resolveBlueprintSchema({ path, name, content, frontmatter: fm }) ?? undefined
   } catch (err) {
     /* v8 ignore start */
     // swallow deliberately: an unresolvable template schema degrades to "no
@@ -373,7 +373,7 @@ function schemaFor(
  */
 export async function recursiveParse(
   root: DirectoryHandleLike,
-  driver?: ModelDriver,
+  driver?: KnowledgeDriver,
   options?: RecursiveParseOptions,
 ): Promise<RecursiveParseResult> {
   const visitedPaths = new Set<string>()
@@ -414,7 +414,7 @@ export async function recursiveParse(
   if (primary) {
     entrypointContent = primary.content
     entrypointPath = primary.path
-    await parseAndRegisterModel(
+    await parseAndRegisterKnowledge(
       primary.content,
       primary.path,
       primary.name,
@@ -444,7 +444,7 @@ export async function recursiveParse(
           const file = await fileHandle.getFile()
           const content = await file.text()
           visitedPaths.add(normalizePathKey(ref.path))
-          await parseAndRegisterModel(content, ref.path, ref.name, ctx, elementNameToModel)
+          await parseAndRegisterKnowledge(content, ref.path, ref.name, ctx, elementNameToModel)
         } catch (scanErr) {
           ctx.issues.push({
             path: ref.path,
@@ -459,7 +459,7 @@ export async function recursiveParse(
           if (child.name.endsWith(INNFO_FILE_SUFFIX) && !isIgnoredPath(child.name)) {
             const parsed = await driver.readModel(child.uri || child.name)
             visitedPaths.add(normalizePathKey(child.name))
-            await parseAndRegisterModel(parsed.rawContent, child.name, stripMdSuffix(child.name), ctx, elementNameToModel)
+            await parseAndRegisterKnowledge(parsed.rawContent, child.name, stripMdSuffix(child.name), ctx, elementNameToModel)
           }
         }
       } catch (scanErr) {
@@ -577,7 +577,7 @@ export async function recursiveParse(
       continue
     }
 
-    await parseAndRegisterModel(content, resolvedPath, item.name, ctx, elementNameToModel)
+    await parseAndRegisterKnowledge(content, resolvedPath, item.name, ctx, elementNameToModel)
 
     // Establish parent-child relationship in graph between referring model and this model
     const { childNode } = linkParentChild(ctx, item.referringPath, normKey)

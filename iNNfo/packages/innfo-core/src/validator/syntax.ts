@@ -1,5 +1,5 @@
 import { SyntaxCheck } from '../types/index.js'
-import { parseModel } from '../parser/index.js'
+import { parseKnowledge } from '../parser/index.js'
 
 /**
  * Validates iNNfo document syntax.
@@ -7,7 +7,7 @@ import { parseModel } from '../parser/index.js'
  */
 export function validateFormatSyntax(content: string): SyntaxCheck[] {
   const checks: SyntaxCheck[] = []
-  const parsed = parseModel(content)
+  const parsed = parseKnowledge(content)
 
   // Check frontmatter is parseable
   const hasFrontmatter = Object.keys(parsed.frontmatter).length > 0

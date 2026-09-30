@@ -4,8 +4,8 @@ import { recursiveParse } from '../../src/model/recursiveParser'
 import { recursiveSerialize } from '../../src/model/recursiveSerializer'
 import { useModelStore } from '../../src/stores/modelStore'
 import { buildFakeTree, type FakeTree } from '../helpers/fakeFs'
-import type { ModelNode } from '../../src/model/types'
-import type { ParsedModel, ModelDriver } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../../src/model/types'
+import type { ParsedKnowledge, KnowledgeDriver } from '@cognnitive/innfo-core'
 
 const fileDocMd = `---
 spec_version: "V_0-3-0"
@@ -79,11 +79,11 @@ describe('recursiveSerializer', () => {
     const parsed = await recursiveParse(root)
 
     let writtenContent: string | null = null
-    const mockDriver: ModelDriver = {
+    const mockDriver: KnowledgeDriver = {
       readModel: async (_uri: string) => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedModel) => {
+      writeModel: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],
@@ -127,11 +127,11 @@ describe('recursiveSerializer', () => {
 
     // Since we have no root handle in the serializer, round-trip through driver
     let roundtripContent: string | null = null
-    const capturingDriver: ModelDriver = {
+    const capturingDriver: KnowledgeDriver = {
       readModel: async (_uri: string) => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedModel) => {
+      writeModel: async (_uri: string, model: ParsedKnowledge) => {
         roundtripContent = model.rawContent
       },
       listChildren: async () => [],
@@ -195,11 +195,11 @@ matrices:
     docNode.fields[`Problems-Values Matrix||${problem1.id}||${valueA.id}`] = { value: 'X' }
 
     let writtenContent: string | null = null
-    const capturingDriver: ModelDriver = {
+    const capturingDriver: KnowledgeDriver = {
       readModel: async () => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedModel) => {
+      writeModel: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],
@@ -273,11 +273,11 @@ title: "Matrix Definitions Test"
     }
 
     let writtenContent: string | null = null
-    const capturingDriver: ModelDriver = {
+    const capturingDriver: KnowledgeDriver = {
       readModel: async () => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedModel) => {
+      writeModel: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],
@@ -299,7 +299,7 @@ title: "Matrix Definitions Test"
     setActivePinia(createPinia())
     const modelStore = useModelStore()
 
-    const sharedElement: ModelNode = {
+    const sharedElement: KnowledgeNode = {
       id: 'Root/Shared',
       name: 'Shared Item',
       parentId: 'ConceptA',
@@ -312,7 +312,7 @@ title: "Matrix Definitions Test"
       rawSections: {},
       source: { path: 'kNNowledge/Doc_NN.md' },
     }
-    const conceptA: ModelNode = {
+    const conceptA: KnowledgeNode = {
       id: 'ConceptA',
       name: 'ConceptA',
       parentId: 'Root',
@@ -325,7 +325,7 @@ title: "Matrix Definitions Test"
       rawSections: {},
       source: { path: 'kNNowledge/Doc_NN.md' },
     }
-    const conceptB: ModelNode = {
+    const conceptB: KnowledgeNode = {
       id: 'ConceptB',
       name: 'ConceptB',
       parentId: 'Root',
@@ -339,7 +339,7 @@ title: "Matrix Definitions Test"
       rawSections: {},
       source: { path: 'kNNowledge/Doc_NN.md' },
     }
-    const root: ModelNode = {
+    const root: KnowledgeNode = {
       id: 'Root',
       name: 'Doc',
       parentId: null,
@@ -354,7 +354,7 @@ title: "Matrix Definitions Test"
       rawContent: fileDocMd,
     }
 
-    const nodes: Record<string, ModelNode> = {
+    const nodes: Record<string, KnowledgeNode> = {
       Root: root,
       ConceptA: conceptA,
       ConceptB: conceptB,
@@ -363,11 +363,11 @@ title: "Matrix Definitions Test"
     modelStore.setGraph(nodes, ['Root'])
 
     let writtenContent: string | null = null
-    const capturingDriver: ModelDriver = {
+    const capturingDriver: KnowledgeDriver = {
       readModel: async () => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedModel) => {
+      writeModel: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],

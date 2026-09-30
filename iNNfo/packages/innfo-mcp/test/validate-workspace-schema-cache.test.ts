@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
 import { resolveTemplateWithCache } from '../src/tools/spec.js'
-import { buildTemplateSchemaResolverFromCache, validateModel } from '../src/tools/validate.js'
+import { buildBlueprintSchemaResolverFromCache, validateKnowledge } from '../src/tools/validate.js'
 
 const rootDir = join(import.meta.dirname!, '..', 'temp-test-schema-cache')
 const specsDir = join(rootDir, 'specs')
 
-describe('buildTemplateSchemaResolverFromCache', () => {
+describe('buildBlueprintSchemaResolverFromCache', () => {
   beforeEach(async () => {
     await rm(rootDir, { recursive: true, force: true })
     await mkdir(specsDir, { recursive: true })
@@ -43,7 +43,7 @@ describe('buildTemplateSchemaResolverFromCache', () => {
       'business_V_0-1-1',
     )
 
-    const resolver = buildTemplateSchemaResolverFromCache(cache)
+    const resolver = buildBlueprintSchemaResolverFromCache(cache)
     const schema = resolver({
       path: 'startup_NN.md',
       name: 'startup_NN',
@@ -77,7 +77,7 @@ describe('buildTemplateSchemaResolverFromCache', () => {
       'business_V_0-1-1',
     )
 
-    const resolver = buildTemplateSchemaResolverFromCache(cache)
+    const resolver = buildBlueprintSchemaResolverFromCache(cache)
     const schema = resolver({
       path: 'unrelated_NN.md',
       name: 'unrelated_NN',
@@ -89,7 +89,7 @@ describe('buildTemplateSchemaResolverFromCache', () => {
   })
 
   it('returns null for a null cache (host resolution failed) instead of throwing', () => {
-    const resolver = buildTemplateSchemaResolverFromCache(null)
+    const resolver = buildBlueprintSchemaResolverFromCache(null)
     const schema = resolver({
       path: 'x_NN.md',
       name: 'x_NN',
@@ -100,7 +100,7 @@ describe('buildTemplateSchemaResolverFromCache', () => {
   })
 })
 
-describe('validateModel workspace mode (PR5a wiring)', () => {
+describe('validateKnowledge workspace mode (PR5a wiring)', () => {
   beforeEach(async () => {
     await rm(rootDir, { recursive: true, force: true })
     await mkdir(specsDir, { recursive: true })
@@ -140,7 +140,7 @@ describe('validateModel workspace mode (PR5a wiring)', () => {
     ].join('\n')
     await writeFile(join(rootDir, 'startup_01_NN.md'), modelContent, 'utf-8')
 
-    const withoutWorkspace = await validateModel(
+    const withoutWorkspace = await validateKnowledge(
       rootDir,
       'startup_01',
       undefined,
@@ -150,7 +150,7 @@ describe('validateModel workspace mode (PR5a wiring)', () => {
         checkFreshness: false,
       },
     )
-    const withWorkspace = await validateModel(rootDir, 'startup_01', undefined, undefined, true, {
+    const withWorkspace = await validateKnowledge(rootDir, 'startup_01', undefined, undefined, true, {
       checkFreshness: false,
     })
 

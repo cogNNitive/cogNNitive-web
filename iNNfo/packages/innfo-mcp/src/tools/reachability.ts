@@ -1,6 +1,6 @@
 import { readFile, readdir, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { parseModel } from '@cognnitive/innfo-core'
+import { parseKnowledge } from '@cognnitive/innfo-core'
 import type { ReachabilityGraph } from '@cognnitive/innfo-core'
 import { parseSpecName, normalizeVersion } from './resolver-node.js'
 import { getMarkdownFiles } from './fs-utils.js'
@@ -53,7 +53,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
 
           try {
             const content = await readFile(filePath, 'utf-8')
-            const parsed = parseModel(content)
+            const parsed = parseKnowledge(content)
             const fm = parsed.frontmatter
             const parentName =
               fm?.parent_spec?.name ||
@@ -150,7 +150,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
       if (matchesCandidateFile(file, specKey)) {
         try {
           const content = await readFile(file, 'utf-8')
-          const parsed = parseModel(content)
+          const parsed = parseKnowledge(content)
           const fm = parsed.frontmatter
           for (const inc of fm?.includes ?? []) {
             if (inc.name) {

@@ -1,5 +1,5 @@
-import { parseModel } from '../parser/index.js'
-import type { ParsedModel, ModelNode } from '../types/index.js'
+import { parseKnowledge } from '../parser/index.js'
+import type { ParsedKnowledge, KnowledgeNode } from '../types/index.js'
 import { IdentityRegistry } from '../identity.js'
 import { normalizeMatrixDecl } from '../matrix.js'
 import { resolveGraphEdgeTarget } from './paths.js'
@@ -18,14 +18,14 @@ import type { ParseContext, ParseIssue } from './types.js'
  * @param refPath - Source file path or URL of the model
  * @param refName - Derived name/identifier of the model (e.g. rootId)
  * @param identity - Optional identity registry for ID qualification
- * @returns An object containing the normalized ModelNode records and parsed issues
+ * @returns An object containing the normalized KnowledgeNode records and parsed issues
  */
-export function normalizeSingleModel(
+export function normalizeSingleKnowledge(
   content: string,
   refPath: string,
   refName: string,
   identity?: IdentityRegistry,
-): { nodes: Record<string, ModelNode>; issues: ParseIssue[] } {
+): { nodes: Record<string, KnowledgeNode>; issues: ParseIssue[] } {
   const resolvedIdentity = identity ?? new IdentityRegistry()
   const ctx: ParseContext = {
     nodes: {},
@@ -33,9 +33,9 @@ export function normalizeSingleModel(
     issues: [],
   }
 
-  let parsed: ParsedModel
+  let parsed: ParsedKnowledge
   try {
-    parsed = parseModel(content)
+    parsed = parseKnowledge(content)
   } catch (err) {
     ctx.issues.push({
       path: refPath,
@@ -68,7 +68,7 @@ export function normalizeSingleModel(
 
   // Create root node for this model
   const qualifiedId = ctx.identity.register(null, refName)
-  const rootNode: ModelNode = {
+  const rootNode: KnowledgeNode = {
     id: qualifiedId,
     name: refName,
     parentId: null,
@@ -169,16 +169,16 @@ export function normalizeSingleModel(
   return { nodes: ctx.nodes, issues: ctx.issues }
 }
 
-export async function parseAndRegisterModel(
+export async function parseAndRegisterKnowledge(
   content: string,
   refPath: string,
   refName: string,
   ctx: ParseContext,
   elementNameToModel: Map<string, string>,
 ): Promise<void> {
-  let result: { nodes: Record<string, ModelNode>; issues: ParseIssue[] }
+  let result: { nodes: Record<string, KnowledgeNode>; issues: ParseIssue[] }
   try {
-    result = normalizeSingleModel(content, refPath, refName, ctx.identity)
+    result = normalizeSingleKnowledge(content, refPath, refName, ctx.identity)
   } catch (err) {
     ctx.issues.push({
       path: refPath,

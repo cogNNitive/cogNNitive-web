@@ -136,7 +136,7 @@ import { Boxes } from 'lucide-vue-next'
 import WidgetField from '../../shared/widgets/WidgetField.vue'
 import { useModelStore } from '../../stores/modelStore'
 import { useUiStore } from '../../stores/uiStore'
-import type { ModelNode } from '../../model/types'
+import type { KnowledgeNode } from '../../model/types'
 import Pill from './Pill.vue'
 import FileRefPill from './FileRefPill.vue'
 import { parseForPill, type KnowledgeUnit } from '../../utils/sourceRef'
@@ -233,7 +233,7 @@ interface FieldEntry {
   isMarkdownType: boolean
   isAssetType: boolean
   isReferenceType: boolean
-  refNode?: ModelNode | null
+  refNode?: KnowledgeNode | null
 }
 
 /**

@@ -4,10 +4,10 @@ import { setActivePinia, createPinia } from 'pinia'
 import Header from '../../src/components/layout/Header.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 import pkg from '../../package.json'
 
-function makeNode(id: string, fields: Record<string, any>): ModelNode {
+function makeNode(id: string, fields: Record<string, any>): KnowledgeNode {
   return {
     id,
     name: id,

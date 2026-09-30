@@ -1,19 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { validateWorkspaceSources, type SourceResolver } from '../src/validator/workspaceSources'
 import { extractHeadings } from '../src/sourceRef'
-import { parseModel, serializeModel } from '../src/parser'
+import { parseKnowledge, serializeKnowledge } from '../src/parser'
 import { applyMutation } from '../src/mutate'
-import { normalizeSingleModel } from '../src/recursiveParser'
+import { normalizeSingleKnowledge } from '../src/recursiveParser'
 import type { RecursiveParseResult } from '../src/recursiveParser/types'
-import type { ModelNode } from '../src/types'
-import type { TemplateSchema } from '../src/schema'
+import type { KnowledgeNode } from '../src/types'
+import type { BlueprintSchema } from '../src/schema'
 
-function field(value: unknown): ModelNode['fields'][string] {
+function field(value: unknown): KnowledgeNode['fields'][string] {
   return { value, editAttribution: { author: { kind: 'system', id: 'test' }, timestamp: '' } }
 }
 
 function resultWith(sources: unknown, fieldName = 'sources'): RecursiveParseResult {
-  const root: ModelNode = {
+  const root: KnowledgeNode = {
     id: 'root-1',
     name: 'root_01',
     parentId: null,
@@ -26,7 +26,7 @@ function resultWith(sources: unknown, fieldName = 'sources'): RecursiveParseResu
     rawSections: {},
     source: { path: 'kNNowledge/Plan_V_1-0-0_NN.md' },
   }
-  const element: ModelNode = {
+  const element: KnowledgeNode = {
     id: 'elem-1',
     name: 'Enterprise Clients',
     parentId: 'root-1',
@@ -269,7 +269,7 @@ describe('validateWorkspaceSources knowledge-unit pointers', () => {
 // workspace validation), never just one side of it (design.md Decision 2).
 // Citation diagnostics only exist in workspace scope, so this MUST go through
 // `validateWorkspaceSources` (the engine `collectWorkspaceDiagnostics` calls),
-// never a per-file `validateModel`.
+// never a per-file `validateKnowledge`.
 describe('add_element sources round-trip through workspace validation (H2/H3 integration)', () => {
   const LEVEL3_MODEL = `---
 spec_version: "V_0-2-1"
@@ -286,7 +286,7 @@ note:: keep
 `
 
   function workspaceResultFor(serialized: string): RecursiveParseResult {
-    const { nodes } = normalizeSingleModel(
+    const { nodes } = normalizeSingleKnowledge(
       serialized,
       'kNNowledge/Fixture_V_1-0-0_NN.md',
       'Fixture_V_1-0-0_NN',
@@ -295,7 +295,7 @@ note:: keep
   }
 
   it('a citation written via add_element resolves cleanly through workspace validation', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const mutation = applyMutation(model, 'add_element', {
       conceptName: 'Phase',
       elementName: 'Second',
@@ -303,7 +303,7 @@ note:: keep
     })
     expect(mutation.success).toBe(true)
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     const parseResult = workspaceResultFor(serialized)
 
     const diags = validateWorkspaceSources(
@@ -314,7 +314,7 @@ note:: keep
   })
 
   it('a citation to a nonexistent file yields an explicit diagnostic naming the unresolved target, reached only through workspace scope', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const mutation = applyMutation(model, 'add_element', {
       conceptName: 'Phase',
       elementName: 'Second',
@@ -322,7 +322,7 @@ note:: keep
     })
     expect(mutation.success).toBe(true)
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     const parseResult = workspaceResultFor(serialized)
 
     const diags = validateWorkspaceSources(parseResult, resolver({}))
@@ -333,7 +333,7 @@ note:: keep
   })
 
   it('a line-range anchor citation is rejected with KU_MALFORMED, not silently accepted', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const mutation = applyMutation(model, 'add_element', {
       conceptName: 'Phase',
       elementName: 'Second',
@@ -341,7 +341,7 @@ note:: keep
     })
     expect(mutation.success).toBe(true)
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     const parseResult = workspaceResultFor(serialized)
 
     const diags = validateWorkspaceSources(
@@ -359,9 +359,9 @@ function resultWithSchema(
   conceptType: string,
   fieldName: string,
   value: unknown,
-  schema: TemplateSchema | undefined,
+  schema: BlueprintSchema | undefined,
 ): RecursiveParseResult {
-  const root: ModelNode = {
+  const root: KnowledgeNode = {
     id: 'root-1',
     name: 'root_01',
     parentId: null,
@@ -375,7 +375,7 @@ function resultWithSchema(
     source: { path: 'domaiNN_NN.md' },
     templateSchema: schema,
   }
-  const element: ModelNode = {
+  const element: KnowledgeNode = {
     id: 'elem-1',
     name: 'Item One',
     parentId: 'root-1',
@@ -391,7 +391,7 @@ function resultWithSchema(
   return { nodes: { 'root-1': root, 'elem-1': element }, rootIds: ['root-1'], issues: [] }
 }
 
-const schemaWith = (concepts: TemplateSchema['concepts']): TemplateSchema => ({
+const schemaWith = (concepts: BlueprintSchema['concepts']): BlueprintSchema => ({
   concepts,
   markers: [],
   matrices: [],
@@ -431,7 +431,7 @@ describe('validateWorkspaceSources — conflicts:: (D5)', () => {
   })
 
   it('a conflicts:: pointer never appears in node.sources or any relationship edge after normalization', () => {
-    const model = parseModel(`---
+    const model = parseKnowledge(`---
 spec_version: "V_0-2-1"
 level: 3
 parent_spec:
@@ -444,8 +444,8 @@ title: "Fixture Model"
 ## NN Phase: First
 conflicts:: [present.md#intro]
 `)
-    const serialized = serializeModel(model)
-    const { nodes } = normalizeSingleModel(
+    const serialized = serializeKnowledge(model)
+    const { nodes } = normalizeSingleKnowledge(
       serialized,
       'kNNowledge/Fixture_V_1-0-0_NN.md',
       'Fixture_V_1-0-0_NN',

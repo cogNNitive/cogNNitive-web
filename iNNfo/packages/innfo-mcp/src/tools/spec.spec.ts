@@ -11,7 +11,7 @@ import {
   listTemplateSkills,
   findModelFile,
 } from './spec'
-import { validateModel, validateTemplate } from './mutate'
+import { validateKnowledge, validateTemplate } from './mutate'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-spec')
 const specsDir = join(rootDir, 'specs')
@@ -167,7 +167,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(template).toBeNull()
   })
 
-  it('validateModel without a resolvable parent_spec.url validates structurally with a warning', async () => {
+  it('validateKnowledge without a resolvable parent_spec.url validates structurally with a warning', async () => {
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
@@ -181,7 +181,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       '# _NN index',
     ].join('\n')
 
-    const result = await validateModel(rootDir, undefined, content)
+    const result = await validateKnowledge(rootDir, undefined, content)
 
     expect(result.warnings.some((w) => /no template resolved/i.test(w.message))).toBe(true)
   })

@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import BlockMatrixSummary from '../../src/components/editor/BlockMatrixSummary.vue'
 import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
 /**
  * Helper: creates a minimal root node with rawContent containing
@@ -12,7 +12,7 @@ import type { ModelNode } from '../../src/model/types'
 function makeRootNode(
   matrices: Array<{ name: string; source: string; target: string }>,
   cellFields: Record<string, { value: string }> = {},
-): ModelNode {
+): KnowledgeNode {
   const frontmatter = `---
 spec_version: V_0-1-5
 name: TestRoot
@@ -54,7 +54,7 @@ ${matrices.map((m) => `  - name: ${m.name}\n    source: ${m.source}\n    target:
   }
 }
 
-function makeElementNode(id: string, name: string, conceptType: string): ModelNode {
+function makeElementNode(id: string, name: string, conceptType: string): KnowledgeNode {
   return {
     id,
     name,

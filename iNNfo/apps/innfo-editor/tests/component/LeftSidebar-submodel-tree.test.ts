@@ -4,13 +4,13 @@ import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
 function makeModelRootNode(
   id: string,
   path: string,
-  overrides: Partial<ModelNode> = {},
-): ModelNode {
+  overrides: Partial<KnowledgeNode> = {},
+): KnowledgeNode {
   return {
     id,
     name: id,
@@ -67,7 +67,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
       },
     )
 
-    const initiativeElement: ModelNode = {
+    const initiativeElement: KnowledgeNode = {
       id: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01',
       name: 'Municipal Franchise Expansion',
       kind: 'element',
@@ -161,7 +161,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
       },
     })
 
-    const elem: ModelNode = {
+    const elem: KnowledgeNode = {
       id: 'kNNowledge/root_NN.md/elem_01',
       name: 'Element 1',
       kind: 'element',

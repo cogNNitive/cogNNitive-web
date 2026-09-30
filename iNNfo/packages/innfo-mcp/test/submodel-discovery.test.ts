@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { findModelFile } from '../src/tools/spec.js'
 import { readModel } from '../src/tools/list-read.js'
-import { validateModel } from '../src/tools/mutate.js'
+import { validateKnowledge } from '../src/tools/mutate.js'
 
 describe('MCP Submodel Discovery & Resolver (Task 4.2)', () => {
   let tempDir: string
@@ -52,7 +52,7 @@ title: Security Tokens
     })
   })
 
-  describe('validateModel with SubmodelResolver warnings', () => {
+  describe('validateKnowledge with SubmodelResolver warnings', () => {
     beforeEach(async () => {
       // Create specs directory with parent template declaring a model-typed field
       const specsDir = join(tempDir, 'specs')
@@ -136,7 +136,7 @@ title: App Model
 submodel_link:: [[kNNowledge/missing_subcomponent_NN.md]]
 `
 
-      const res = await validateModel(
+      const res = await validateKnowledge(
         tempDir,
         undefined,
         modelContent,
@@ -164,7 +164,7 @@ title: App Model
 submodel_link:: [[kNNowledge/mismatched_subcomponent_NN.md]]
 `
 
-      const res = await validateModel(
+      const res = await validateKnowledge(
         tempDir,
         undefined,
         modelContent,
@@ -192,7 +192,7 @@ title: App Model
 submodel_link:: [[kNNowledge/valid_subcomponent_NN.md]]
 `
 
-      const res = await validateModel(
+      const res = await validateKnowledge(
         tempDir,
         undefined,
         modelContent,

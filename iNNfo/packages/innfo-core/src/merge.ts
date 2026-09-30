@@ -1,4 +1,4 @@
-import type { ParsedModel, ElementNode, MatrixData } from './types/index.js'
+import type { ParsedKnowledge, ElementNode, MatrixData } from './types/index.js'
 import { ElementsMap } from './types/index.js'
 
 /**
@@ -13,7 +13,7 @@ import { ElementsMap } from './types/index.js'
  * - NodeMarkers: item marker scores are merged.
  * - Level-3 models: taxonomy is cleared to prevent illegal `# NN index` emission.
  */
-export function mergeModels(disk: ParsedModel, memory: ParsedModel): ParsedModel {
+export function mergeKnowledge(disk: ParsedKnowledge, memory: ParsedKnowledge): ParsedKnowledge {
   // 1. Frontmatter
   const frontmatter = {
     ...disk.frontmatter,

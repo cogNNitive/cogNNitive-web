@@ -24,16 +24,16 @@ import {
   extractHeadings,
 } from '@cognnitive/innfo-core'
 import type {
-  ParsedModel,
+  ParsedKnowledge,
   SourceResolver,
-  TemplateSchema,
+  BlueprintSchema,
   ResolvedUnit,
   SourceRef,
   HeadingInfo,
 } from '@cognnitive/innfo-core'
 import { readModel } from './list-read.js'
 import { findModelFile, resolveTemplateWithCache } from './spec.js'
-import { createWorkspaceSourceResolver, buildTemplateSchemaResolverFromCache } from './validate.js'
+import { createWorkspaceSourceResolver, buildBlueprintSchemaResolverFromCache } from './validate.js'
 
 /** Hard cap on a returned excerpt's character length. */
 export const EXCERPT_CHAR_CAP = 500
@@ -124,7 +124,7 @@ interface FoundElement {
   fields: Record<string, unknown>
 }
 
-function findElement(model: ParsedModel, elementId: string): FoundElement | undefined {
+function findElement(model: ParsedKnowledge, elementId: string): FoundElement | undefined {
   for (const [concept, nodes] of model.elements.entries()) {
     const match = nodes.find((n) => n.name.toLowerCase() === elementId.toLowerCase())
     if (match) return { concept, fields: match.fields }
@@ -135,13 +135,13 @@ function findElement(model: ParsedModel, elementId: string): FoundElement | unde
 /**
  * Field selection (design D6): explicit `fieldName` skips schema resolution
  * entirely (works standalone, no A3 dependency). When omitted, the schema
- * comes from `resolveTemplateWithCache` + `buildTemplateSchemaResolverFromCache`
+ * comes from `resolveTemplateWithCache` + `buildBlueprintSchemaResolverFromCache`
  * — a single-model read, never a full `recursiveParse` — and falls back to
  * `SOURCE_FIELD_NAMES` only when no schema resolves.
  */
 async function resolveFieldNames(
   rootDir: string,
-  model: ParsedModel,
+  model: ParsedKnowledge,
   element: FoundElement,
   explicitFieldName?: string,
 ): Promise<string[]> {
@@ -163,13 +163,13 @@ async function resolveFieldNames(
 
 async function resolveSchemaForModel(
   rootDir: string,
-  model: ParsedModel,
-): Promise<TemplateSchema | undefined> {
+  model: ParsedKnowledge,
+): Promise<BlueprintSchema | undefined> {
   const parent = model.frontmatter.parent_spec
   if (!parent?.url || !parent?.name) return undefined
   const { cache } = await resolveTemplateWithCache(rootDir, parent.url, parent.name)
   if (!cache) return undefined
-  const resolveSchema = buildTemplateSchemaResolverFromCache(cache)
+  const resolveSchema = buildBlueprintSchemaResolverFromCache(cache)
   return (
     resolveSchema({ path: '', name: parent.name, content: '', frontmatter: model.frontmatter }) ??
     undefined

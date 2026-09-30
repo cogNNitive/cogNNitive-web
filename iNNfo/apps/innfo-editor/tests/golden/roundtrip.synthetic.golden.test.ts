@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { recursiveParse } from '../../src/model/recursiveParser'
 import { recursiveSerialize } from '../../src/model/recursiveSerializer'
 import { buildFakeTree } from '../helpers/fakeFs'
-import type { ParsedModel, ModelDriver } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../../src/model/types'
+import type { ParsedKnowledge, KnowledgeDriver } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../../src/model/types'
 
 const fileDocMd = `---
 spec_version: "V_0-1-1"
@@ -37,7 +37,7 @@ title: "Workspace Index"
 * [[Doc_NN.md]]
 `
 
-function structureOf(nodes: Record<string, ModelNode>, rootIds: string[]) {
+function structureOf(nodes: Record<string, KnowledgeNode>, rootIds: string[]) {
   const nodeSummaries = Object.values(nodes)
     .sort((a, b) => a.id.localeCompare(b.id))
     .map((n) => ({
@@ -65,11 +65,11 @@ async function assertRoundTripStable(
   expect(firstParse.issues).toHaveLength(0)
 
   let capturedContent: string | null = null
-  const capturingDriver: ModelDriver = {
+  const capturingDriver: KnowledgeDriver = {
     readModel: async () => {
       throw new Error('not expected')
     },
-    writeModel: async (_uri: string, model: ParsedModel) => {
+    writeModel: async (_uri: string, model: ParsedKnowledge) => {
       capturedContent = model.rawContent
     },
     listChildren: async () => [],

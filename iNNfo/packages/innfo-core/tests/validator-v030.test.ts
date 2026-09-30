@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel, serializeModel } from '../src/parser/index.js'
-import { extractTemplateSchema, extractTemplateSchemaFromContent } from '../src/schema/index.js'
+import { parseKnowledge, serializeKnowledge } from '../src/parser/index.js'
+import { extractBlueprintSchema, extractBlueprintSchemaFromContent } from '../src/schema/index.js'
 import { validateFormatContent } from '../src/validator/content.js'
-import { validateModel } from '../src/validator/model.js'
+import { validateKnowledge } from '../src/validator/knowledge.js'
 
 describe('Task 7.5: V_0-3-0 Language Validator and Parser Tests', () => {
   it('parses ConceptField.target_blueprint and type:: knowledge from Level 2 blueprint', () => {
@@ -23,7 +23,7 @@ concept:: CoreEngine
 type:: knowledge
 target_blueprint:: business_V_0-2-0
 `
-    const schema = extractTemplateSchemaFromContent(bpContent)
+    const schema = extractBlueprintSchemaFromContent(bpContent)
     expect(schema.concepts).toHaveLength(1)
     expect(schema.concepts[0].type).toBe('knowledge')
     expect(schema.concepts[0].fields).toHaveLength(1)
@@ -93,7 +93,7 @@ type:: model
   })
 
   it('serializes a model with knowledge_version and no legacy keys', () => {
-    const parsed = parseModel(`---
+    const parsed = parseKnowledge(`---
 spec_version: "V_0-3-0"
 level: 3
 knowledge_version: "0.1.0"
@@ -108,7 +108,7 @@ title: "Serialized Knowledge"
 `)
     // Mutate title to force constructed serialization
     parsed.frontmatter.title = 'Mutated Knowledge'
-    const serialized = serializeModel(parsed)
+    const serialized = serializeKnowledge(parsed)
     expect(serialized).toContain('knowledge_version: "0.1.0"')
     expect(serialized).not.toContain('model_version:')
     expect(serialized).not.toContain('target_blueprint:')

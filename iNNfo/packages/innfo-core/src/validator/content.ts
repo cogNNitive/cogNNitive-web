@@ -1,5 +1,5 @@
 import { ValidationCheck, ValidationReport } from '../types/index.js'
-import { parseModel, stripFrontmatter } from '../parser/index.js'
+import { parseKnowledge, stripFrontmatter } from '../parser/index.js'
 import { VERSION_RE, WIKILINK_RE, SECTION_NN_RE, RESERVED_CONCEPT_NAMES } from './constants.js'
 import { CONCEPT_DEFINITION } from '../schema/index.js'
 import { QUALIFIED_REF_RE } from './workspaceReferences.js'
@@ -19,7 +19,7 @@ export function validateFormatContent(
   expectedSpecVersion?: string,
 ): ValidationReport {
   const checks: ValidationCheck[] = []
-  const parsed = parseModel(content)
+  const parsed = parseKnowledge(content)
   const fm = parsed.frontmatter
 
   // ── R-MM-02: Reject reserved concept names ───────────────────

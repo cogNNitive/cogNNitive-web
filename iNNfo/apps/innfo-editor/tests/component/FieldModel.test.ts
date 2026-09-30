@@ -4,9 +4,9 @@ import { setActivePinia, createPinia } from 'pinia'
 import FieldModel from '../../src/shared/widgets/FieldModel.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,
@@ -20,7 +20,7 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
     rawSections: {},
     source: { path: id },
     ...overrides,
-  } as ModelNode
+  } as KnowledgeNode
 }
 
 describe('FieldModel.vue', () => {

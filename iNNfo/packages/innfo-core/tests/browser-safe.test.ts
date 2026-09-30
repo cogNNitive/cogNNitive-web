@@ -15,7 +15,7 @@ describe('Browser Entry Point', () => {
     expect(browserExports).not.toHaveProperty('resolveParentChain')
   })
 
-  it('exports normalizeSingleModel', () => {
-    expect(browserExports).toHaveProperty('normalizeSingleModel')
+  it('exports normalizeSingleKnowledge', () => {
+    expect(browserExports).toHaveProperty('normalizeSingleKnowledge')
   })
 })

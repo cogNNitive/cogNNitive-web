@@ -101,7 +101,7 @@ export function useGraphData(localNodeId: Ref<string>) {
     const result: GEdge[] = []
     const nodeSet = new Set(allNodes.value.map((n) => n.id))
 
-    // Build edges from ModelNode.relationships[]
+    // Build edges from KnowledgeNode.relationships[]
     for (const node of Object.values(modelStore.nodes)) {
       if (node.relationships && node.relationships.length > 0) {
         for (const rel of node.relationships) {

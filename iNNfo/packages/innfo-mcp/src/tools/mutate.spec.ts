@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
-import { validateModel, validateModelUrl, applyChange, validateTemplate } from './mutate'
+import { validateKnowledge, validateKnowledgeUrl, applyChange, validateTemplate } from './mutate'
 import { buildAgentModificationBlock } from '@cognnitive/innfo-core'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-mutate')
@@ -102,21 +102,21 @@ describe('mutate tools', () => {
     await rm(rootDir, { recursive: true, force: true })
   })
 
-  describe('validateModel', () => {
+  describe('validateKnowledge', () => {
     it('rejects when neither id nor content is provided', async () => {
-      const result = await validateModel(rootDir)
+      const result = await validateKnowledge(rootDir)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Provide either id or content')
     })
 
     it('reports a model-not-found error in id mode', async () => {
-      const result = await validateModel(rootDir, 'DoesNotExist')
+      const result = await validateKnowledge(rootDir, 'DoesNotExist')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Model not found: DoesNotExist')
     })
 
     it('reports a clear PARENT_RESOLUTION_FAILED error when the declared parent_spec.url cannot be resolved', async () => {
-      const result = await validateModel(rootDir, undefined, MUTABLE_MODEL_CONTENT)
+      const result = await validateKnowledge(rootDir, undefined, MUTABLE_MODEL_CONTENT)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /PARENT_RESOLUTION_FAILED/.test(e.message))).toBe(true)
       expect(result.errors.some((e) => /business_V_0-2-0/.test(e.message))).toBe(true)
@@ -124,7 +124,7 @@ describe('mutate tools', () => {
     })
 
     it('lists the searched directories in the PARENT_RESOLUTION_FAILED message', async () => {
-      const result = await validateModel(rootDir, undefined, MUTABLE_MODEL_CONTENT)
+      const result = await validateKnowledge(rootDir, undefined, MUTABLE_MODEL_CONTENT)
       expect(result.valid).toBe(false)
       const err = result.errors.find((e) => /business_V_0-2-0/.test(e.message))
       expect(err).toBeDefined()
@@ -135,7 +135,7 @@ describe('mutate tools', () => {
 
     it('validates a model loaded from disk by id', async () => {
       await writeFile(join(rootDir, 'OnDisk_NN.md'), MUTABLE_MODEL_CONTENT, 'utf-8')
-      const result = await validateModel(rootDir, 'OnDisk')
+      const result = await validateKnowledge(rootDir, 'OnDisk')
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /PARENT_RESOLUTION_FAILED/.test(e.message))).toBe(true)
       expect(result.errors.every((e) => 'filePath' in e)).toBe(true)
@@ -144,7 +144,7 @@ describe('mutate tools', () => {
     it('validates a model successfully against its resolved template', async () => {
       await stubBusinessTemplate()
       await writeFile(join(rootDir, 'OnDisk_NN.md'), MUTABLE_MODEL_CONTENT, 'utf-8')
-      const result = await validateModel(rootDir, 'OnDisk')
+      const result = await validateKnowledge(rootDir, 'OnDisk')
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])
     })
@@ -196,14 +196,14 @@ describe('mutate tools', () => {
         '',
       ].join('\n')
 
-      const result = await validateModel(rootDir, undefined, contentWithRelativeParent)
+      const result = await validateKnowledge(rootDir, undefined, contentWithRelativeParent)
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])
     })
 
     it('delegates level-2 content to validateTemplate (D1 auto-detection)', async () => {
       // Level 2 with no parent_spec.url triggers the PARENT_RESOLUTION_FAILED diagnostic
-      // that is specific to validateTemplate — this only fires if validateModel truly
+      // that is specific to validateTemplate — this only fires if validateKnowledge truly
       // delegated, since plain model validation reports "Missing parent_spec" instead.
       const level2Content = [
         '---',
@@ -212,13 +212,13 @@ describe('mutate tools', () => {
         'title: "A Template"',
         '---',
       ].join('\n')
-      const result = await validateModel(rootDir, undefined, level2Content)
+      const result = await validateKnowledge(rootDir, undefined, level2Content)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/PARENT_RESOLUTION_FAILED/)
     })
   })
 
-  describe('validateModelUrl', () => {
+  describe('validateKnowledgeUrl', () => {
     it('fetches model content from the URL and validates it', async () => {
       // Only the model URL resolves; the subsequent parent_spec.url lookup for
       // the template (a second, distinct fetch) is left rejected by the
@@ -235,7 +235,7 @@ describe('mutate tools', () => {
         return Promise.reject(new Error('not stubbed'))
       })
 
-      const result = await validateModelUrl(rootDir, 'https://example.com/Mutable_NN.md')
+      const result = await validateKnowledgeUrl(rootDir, 'https://example.com/Mutable_NN.md')
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /PARENT_RESOLUTION_FAILED/.test(e.message))).toBe(true)
       expect(result.warnings.some((w) => /no template resolved/i.test(w.message))).toBe(false)
@@ -248,7 +248,7 @@ describe('mutate tools', () => {
         statusText: 'Not Found',
       } as Response)
 
-      const result = await validateModelUrl(rootDir, 'https://example.com/missing_NN.md')
+      const result = await validateKnowledgeUrl(rootDir, 'https://example.com/missing_NN.md')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/Failed to fetch model URL: 404 Not Found/)
     })
@@ -256,7 +256,7 @@ describe('mutate tools', () => {
     it('reports an error when the fetch itself throws', async () => {
       vi.spyOn(global, 'fetch').mockRejectedValue(new Error('DNS failure'))
 
-      const result = await validateModelUrl(rootDir, 'https://example.com/unreachable_NN.md')
+      const result = await validateKnowledgeUrl(rootDir, 'https://example.com/unreachable_NN.md')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/Model URL unreachable/)
     })

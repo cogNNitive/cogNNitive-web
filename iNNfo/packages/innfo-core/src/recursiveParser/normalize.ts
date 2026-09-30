@@ -1,12 +1,12 @@
 import type {
   ElementNode,
-  ParsedModel,
+  ParsedKnowledge,
   FieldValue,
   LocalMetamodel,
-  ModelNode,
+  KnowledgeNode,
   TaxonomyEdge,
 } from '../types/index.js'
-import { extractTemplateSchema, findDeclaredField, type TemplateSchema } from '../schema/index.js'
+import { extractBlueprintSchema, findDeclaredField, type BlueprintSchema } from '../schema/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import {
   SOURCE_FIELD_NAMES,
@@ -26,7 +26,7 @@ import { addFieldAndMentionEdges } from './relationships.js'
  * do not parse are left for the workspace source validator to report; they do
  * not populate `node.sources`.
  */
-export function attachSourceCitations(node: ModelNode): void {
+export function attachSourceCitations(node: KnowledgeNode): void {
   for (const [fieldName, fv] of Object.entries(node.fields)) {
     if (!SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())) continue
     const refs: SourceRef[] = []
@@ -53,7 +53,7 @@ export function attachSourceCitations(node: ModelNode): void {
  * field named `sources`/`source` keeps working even when the schema declares
  * it as something else.
  */
-export function attachSchemaTypedCitations(node: ModelNode, schema: TemplateSchema | undefined): void {
+export function attachSchemaTypedCitations(node: KnowledgeNode, schema: BlueprintSchema | undefined): void {
   if (!schema) return
   for (const [fieldName, fv] of Object.entries(node.fields)) {
     if (SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())) continue
@@ -82,8 +82,8 @@ export function nowIso(): string {
  *  `Concept Definition` / `Marker Definition` elements (level-2 templates
  *  instantiate the root primitives of the Metaplantilla Nivel 1). Level-3
  *  models declare no local metamodel. */
-export function toLocalMetamodel(parsed: ParsedModel): LocalMetamodel {
-  const schema = extractTemplateSchema(parsed)
+export function toLocalMetamodel(parsed: ParsedKnowledge): LocalMetamodel {
+  const schema = extractBlueprintSchema(parsed)
   return { concepts: schema.concepts, markers: schema.markers, taxonomy: schema.taxonomy }
 }
 
@@ -99,7 +99,7 @@ export function toFieldValues(fields: Record<string, unknown>): Record<string, F
 }
 
 /** Builds a taxonomy parent-lookup: child name -> parent name. */
-export function buildTaxonomyParentMap(parsed: ParsedModel): Map<string, string> {
+export function buildTaxonomyParentMap(parsed: ParsedKnowledge): Map<string, string> {
   const parentOf = new Map<string, string>()
   for (const edge of parsed.taxonomy) {
     parentOf.set(edge.child, edge.parent)
@@ -108,13 +108,13 @@ export function buildTaxonomyParentMap(parsed: ParsedModel): Map<string, string>
 }
 
 /**
- * Normalizes a single already-parsed ParsedModel's elements into ModelNodes,
+ * Normalizes a single already-parsed ParsedKnowledge's elements into ModelNodes,
  * attached under `rootId`. Elements form a flat or taxonomy-derived
  * hierarchy beneath the document root; unrecognized parents fall back to
  * being direct children of the root.
  */
 export function normalizeElementsIntoGraph(
-  parsed: ParsedModel,
+  parsed: ParsedKnowledge,
   rootId: string,
   sourcePath: string,
   ctx: ParseContext,
@@ -196,7 +196,7 @@ export function normalizeElementsIntoGraph(
       const qualifiedId = ctx.identity.register(parentQualifiedId, el.name)
       qualifiedIdByElementName.set(el.name, qualifiedId)
 
-      const node: ModelNode = {
+      const node: KnowledgeNode = {
         id: qualifiedId,
         name: el.name,
         parentId: parentQualifiedId,
@@ -302,7 +302,7 @@ export function normalizeElementsIntoGraph(
  * convention: `{modelDir}/assets/{element-slug}/{filename}`.
  */
 export function resolveElementAssets(
-  parsed: ParsedModel,
+  parsed: ParsedKnowledge,
   rootId: string,
   sourcePath: string,
   ctx: ParseContext,
@@ -310,7 +310,7 @@ export function resolveElementAssets(
 ): void {
   // Build a map of concept name -> asset field definitions
   const assetFieldsByConcept = new Map<string, Array<{ name: string; type: string }>>()
-  const schemaConcepts = extractTemplateSchema(parsed).concepts
+  const schemaConcepts = extractBlueprintSchema(parsed).concepts
   for (const concept of schemaConcepts) {
     const assetFields = (concept.fields ?? []).filter(
       (f) => f.type === 'image' || f.type === 'file' || f.type === 'video' || f.type === 'audio',

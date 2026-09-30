@@ -4,7 +4,7 @@ import { rm, mkdir, writeFile } from 'node:fs/promises'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import type { SpecCache } from '@cognnitive/innfo-core'
 import { collectWorkspaceDiagnostics, filterDiagnosticsForModel, fingerprint } from './validate'
-import { validateModel } from './mutate'
+import { validateKnowledge } from './mutate'
 
 vi.mock('@cognnitive/innfo-core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@cognnitive/innfo-core')>()
@@ -206,16 +206,16 @@ describe('collectWorkspaceDiagnostics / filterDiagnosticsForModel (AD-4 split)',
     expect(Array.isArray(diagnostics)).toBe(true)
   })
 
-  it('validateModel(workspace: true) composes the split and still filters to the requested model', async () => {
+  it('validateKnowledge(workspace: true) composes the split and still filters to the requested model', async () => {
     await writeWorkspace()
-    const alpha = await validateModel(
+    const alpha = await validateKnowledge(
       rootDir,
       'alpha_V_0-1-0_linked_test',
       undefined,
       undefined,
       true,
     )
-    const beta = await validateModel(
+    const beta = await validateKnowledge(
       rootDir,
       'beta_V_0-1-0_linked_test',
       undefined,
@@ -331,7 +331,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
       'utf-8',
     )
 
-    const result = await validateModel(
+    const result = await validateKnowledge(
       rootDir,
       undefined,
       MISSING_PARENT_CONTENT,
@@ -352,7 +352,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
   })
 
   it('Known error suppressed with backlog link (triangulation)', async () => {
-    const before = await validateModel(rootDir, undefined, MISSING_PARENT_CONTENT)
+    const before = await validateKnowledge(rootDir, undefined, MISSING_PARENT_CONTENT)
     // An unresolvable parent surfaces twice: core [PARENT_RESOLUTION_FAILED]
     // plus the MCP resolution-detail error. Both are known → both baselined.
     expect(before.errors.length).toBeGreaterThan(0)
@@ -370,7 +370,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
       'utf-8',
     )
 
-    const result = await validateModel(
+    const result = await validateKnowledge(
       rootDir,
       undefined,
       MISSING_PARENT_CONTENT,
@@ -390,7 +390,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
   })
 
   it('Missing baseline means full output (triangulation)', async () => {
-    const result = await validateModel(
+    const result = await validateKnowledge(
       rootDir,
       undefined,
       MISSING_PARENT_CONTENT,
@@ -409,7 +409,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
   })
 
   it('Info diagnostics surface in warnings (triangulation): BOM warns without failing', async () => {
-    const result = await validateModel(rootDir, undefined, '\uFEFF' + MISSING_PARENT_CONTENT)
+    const result = await validateKnowledge(rootDir, undefined, '\uFEFF' + MISSING_PARENT_CONTENT)
 
     const bom = result.warnings.find((w) => w.code === 'BOM_WARNING')
     expect(bom).toBeDefined()

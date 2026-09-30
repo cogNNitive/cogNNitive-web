@@ -14,14 +14,14 @@ import {
 } from '../services/WorkspacePersistenceService'
 import type { DirectoryHandleLike } from '../model/fs-types'
 import type { BumpLevel } from '../utils/version'
-import type { ModelDriver } from '@cognnitive/innfo-core'
+import type { KnowledgeDriver } from '@cognnitive/innfo-core'
 import type { ActiveView } from './uiStore'
 
 export type { DirectoryHandleLike }
 
 export interface WorkspaceState {
   handle: DirectoryHandleLike | null
-  driver: ModelDriver | null
+  driver: KnowledgeDriver | null
   hasHandle: boolean
   isParsing: boolean
   hasParsed: boolean
@@ -53,7 +53,7 @@ export interface WorkspaceState {
  */
 export const useWorkspaceStore = defineStore('workspace', () => {
   const handle = ref<DirectoryHandleLike | null>(null)
-  const driver = ref<ModelDriver | null>(null)
+  const driver = ref<KnowledgeDriver | null>(null)
   const hasHandle = ref(false)
   const isParsing = ref(false)
   const hasParsed = ref(false)

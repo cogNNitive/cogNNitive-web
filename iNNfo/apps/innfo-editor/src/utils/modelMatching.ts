@@ -1,10 +1,10 @@
 import { parseFrontmatter } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../model/types'
+import type { KnowledgeNode } from '../model/types'
 
 /**
  * Returns true if the node represents a Level 2 template, Level 1 spec, or spec node.
  */
-export function isTemplateNode(node: ModelNode | undefined): boolean {
+export function isTemplateNode(node: KnowledgeNode | undefined): boolean {
   if (!node) return true
   if (node.id.startsWith('spec:')) return true
   if (node.rawContent) {
@@ -46,13 +46,13 @@ export function extractModelBasename(raw: string): string {
 }
 
 /**
- * Finds a matching ModelNode in a collection of nodes by comparing ID, name,
+ * Finds a matching KnowledgeNode in a collection of nodes by comparing ID, name,
  * source path, or basename, handling cross-platform slash differences and .md extensions.
  */
 export function findMatchingModelNode(
-  nodes: Record<string, ModelNode | undefined> | Array<ModelNode | undefined>,
+  nodes: Record<string, KnowledgeNode | undefined> | Array<KnowledgeNode | undefined>,
   target: string | null | undefined,
-): ModelNode | undefined {
+): KnowledgeNode | undefined {
   if (!target || typeof target !== 'string') return undefined
 
   const cleanTarget = normalizeModelPath(target).toLowerCase()

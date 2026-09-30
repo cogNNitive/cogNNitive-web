@@ -1,4 +1,4 @@
-import type { LocalMetamodel, MetamodelConcept, MetamodelMarker, ModelNode, TaxonomyEdge } from './types/index.js'
+import type { LocalMetamodel, MetamodelConcept, MetamodelMarker, KnowledgeNode, TaxonomyEdge } from './types/index.js'
 
 /**
  * Builds the ancestor chain for `nodeId`, root-first (e.g. `[Root, Root/A,
@@ -12,9 +12,9 @@ import type { LocalMetamodel, MetamodelConcept, MetamodelMarker, ModelNode, Taxo
  * that this in-browser app resolves against (see recursiveParser.ts note
  * on the same constraint for FS drivers).
  */
-function buildAncestorChain(nodeId: string, nodes: Record<string, ModelNode>): ModelNode[] {
-  const chain: ModelNode[] = []
-  let current: ModelNode | undefined = nodes[nodeId]
+function buildAncestorChain(nodeId: string, nodes: Record<string, KnowledgeNode>): KnowledgeNode[] {
+  const chain: KnowledgeNode[] = []
+  let current: KnowledgeNode | undefined = nodes[nodeId]
   while (current) {
     chain.unshift(current)
     current = current.parentId ? nodes[current.parentId] : undefined
@@ -46,7 +46,7 @@ function buildAncestorChain(nodeId: string, nodes: Record<string, ModelNode>): M
  */
 export function resolveEffectiveMetamodel(
   nodeId: string,
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
   allRootIds?: string[],
 ): LocalMetamodel {
   const chain = buildAncestorChain(nodeId, nodes)

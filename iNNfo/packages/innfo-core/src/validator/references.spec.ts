@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { validateElementFieldReferences } from './references.js'
-import { ElementsMap, type Concept, type ParsedModel } from '../types/index.js'
+import { ElementsMap, type Concept, type ParsedKnowledge } from '../types/index.js'
 
 function modelWithSubmodelField(submodelValue: string): {
-  model: ParsedModel
+  model: ParsedKnowledge
   templateConcepts: Concept[]
 } {
   const elements = new ElementsMap()
@@ -16,8 +16,8 @@ function modelWithSubmodelField(submodelValue: string): {
       markers: {},
     },
   ])
-  const model: ParsedModel = {
-    frontmatter: { spec_version: 'V_0-2-0', spec_url: '', level: 3 } as ParsedModel['frontmatter'],
+  const model: ParsedKnowledge = {
+    frontmatter: { spec_version: 'V_0-2-0', spec_url: '', level: 3 } as ParsedKnowledge['frontmatter'],
     taxonomy: [],
     elements,
     matrices: [],

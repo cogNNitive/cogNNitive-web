@@ -37,7 +37,7 @@ export function commitFieldValue(
 /**
  * Same as `commitFieldValue` but for a node's `markers` (numeric/string
  * marker values from the item-markers matrix) — markers don't carry
- * per-value edit-attribution in `ModelNode.markers` (it's a plain
+ * per-value edit-attribution in `KnowledgeNode.markers` (it's a plain
  * `Record<string, number | string>`), so this only updates the value and
  * marks the node dirty.
  */

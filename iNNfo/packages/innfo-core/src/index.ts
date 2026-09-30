@@ -4,8 +4,8 @@ export * from './layout.js'
 export {
   parseYaml,
   parseFrontmatter,
-  parseModel,
-  serializeModel,
+  parseKnowledge,
+  serializeKnowledge,
   parseIndexBlock,
   parseMarkdownTable,
   getSectionType,
@@ -20,13 +20,13 @@ export {
   FIELD_DEFINITION,
   MARKER_DEFINITION,
   MATRIX_DEFINITION,
-  extractTemplateSchema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchema,
+  extractBlueprintSchemaFromContent,
   extractMetaschema,
   validateTemplateAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   canonicalizeDefinition,
   applyAliasToSchema,
   findDeclaredField,
@@ -36,10 +36,10 @@ export {
   listCanonicalTemplates,
 } from './schema/index.js'
 export type {
-  TemplateSchema,
+  BlueprintSchema,
   SchemaCheckOptions,
   IncludeResolver,
-  ResolvedTemplateSchema,
+  ResolvedBlueprintSchema,
   CanonicalTemplate,
 } from './schema/index.js'
 
@@ -56,7 +56,7 @@ export {
 export type { SpecResolver, MultiStoreResolverOptions, SpecTemplateLocation } from './resolver.js'
 
 export {
-  validateModel,
+  validateKnowledge,
   validateDocument,
   validateFormatContent,
   validateFormatSyntax,
@@ -72,7 +72,7 @@ export type {
   ReferenceDiagnostic,
   DocumentValidation,
   SubmodelResolver,
-  ValidateModelOptions,
+  ValidateKnowledgeOptions,
   QualifiedRef,
   SourceResolver,
   SourceResolution,
@@ -159,4 +159,4 @@ export { loadBaseline, fingerprint, diffNewOnly, normalizeBaselinePath } from '.
 export type { ValidationBaseline, BaselineEntry, BaselineDiff } from './validator/baseline.js'
 export { deriveMatrixWidgetType, normalizeMatrixDecl, scaleRangeFor } from './matrix.js'
 export type { MatrixWidgetType } from './matrix.js'
-export { mergeModels } from './merge.js'
+export { mergeKnowledge } from './merge.js'

@@ -1,4 +1,4 @@
-import type { Concept, Marker, MatrixDecl, ParsedModel } from '../types/index.js'
+import type { Concept, Marker, MatrixDecl, ParsedKnowledge } from '../types/index.js'
 import type { Diagnostics } from '../diagnostics.js'
 import { checkElementsAgainstSchema } from '../schema/index.js'
 import { RESERVED_CONCEPT_NAMES } from './constants.js'
@@ -11,7 +11,7 @@ export type ElementGroup = [string, Array<{ name: string; fields: Record<string,
  * `level`, `parent_spec`, level-3 `knowledge_version` + no-schema-in-frontmatter,
  * slug collisions, reserved concept names, and the removed FOLDER mode.
  */
-export function checkFrontmatterInvariants(model: ParsedModel, d: Diagnostics): void {
+export function checkFrontmatterInvariants(model: ParsedKnowledge, d: Diagnostics): void {
   const fm = model.frontmatter
 
   if (!fm.level) {
@@ -111,7 +111,7 @@ const REQUIRED_GUIDANCE_H3S = ['Summary', 'Description', 'Methodologies', 'Promp
  * Warn (never error) when a template Concept has no `## <Concept>` guidance
  * section, or one that is missing required `### ` subsections.
  */
-export function checkTemplateDocumentation(
+export function checkBlueprintDocumentation(
   templateConcepts: Concept[],
   templateRawContent: string,
   d: Diagnostics,
@@ -169,7 +169,7 @@ export function matchConcept(name: string, concepts: Concept[]): Concept | undef
  * known Concept, for the shared schema-conformance pass.
  */
 export function checkElementGroups(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateConcepts: Concept[],
   d: Diagnostics,
 ): ElementGroup[] {
@@ -214,7 +214,7 @@ export function checkSchemaConformance(
  * matrix is a WARNING.
  */
 export function checkMatrixCells(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateMatrices: MatrixDecl[],
   d: Diagnostics,
 ): void {
@@ -247,7 +247,7 @@ export function checkMatrixCells(
  * outside the Marker's declared `values` set is a WARNING.
  */
 export function checkNodeMarkers(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateConcepts: Concept[],
   templateMarkers: Marker[],
   d: Diagnostics,

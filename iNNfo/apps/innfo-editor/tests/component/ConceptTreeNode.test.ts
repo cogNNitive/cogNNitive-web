@@ -5,9 +5,9 @@ import { setActivePinia, createPinia } from 'pinia'
 import ConceptTreeNode from '../../src/components/layout/ConceptTreeNode.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,

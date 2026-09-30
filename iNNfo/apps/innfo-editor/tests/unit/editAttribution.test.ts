@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useModelStore } from '../../src/stores/modelStore'
 import { commitFieldValue } from '../../src/shared/editAttribution'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string): ModelNode {
+function makeNode(id: string): KnowledgeNode {
   return {
     id,
     name: id,

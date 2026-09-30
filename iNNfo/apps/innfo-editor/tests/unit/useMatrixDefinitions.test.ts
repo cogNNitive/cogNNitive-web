@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 import {
   MATRIX_DEFS_KEY,
   readMatrixDefsField,
@@ -12,7 +12,7 @@ import {
   useMatrixDefinitions,
 } from '../../src/composables/useMatrixDefinitions'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,
@@ -25,7 +25,7 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
     rawSections: {},
     source: { path: id },
     ...overrides,
-  } as ModelNode
+  } as KnowledgeNode
 }
 
 describe('MATRIX_DEFS_KEY', () => {

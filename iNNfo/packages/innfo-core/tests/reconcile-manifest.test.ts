@@ -6,7 +6,7 @@ import {
   reconcileManifest,
   type DiscoveredModel,
 } from '../src/workspace/reconcileManifest'
-import { parseModel } from '../src/parser'
+import { parseKnowledge } from '../src/parser'
 
 const MANIFEST_PATH = 'domaiNN_NN.md'
 
@@ -413,7 +413,7 @@ describe('reconcileManifest', () => {
     ]
 
     const result = reconcileManifest(manifestContent, discovered)
-    const reparsed = parseModel(result.content)
+    const reparsed = parseKnowledge(result.content)
     const entries = reparsed.elements.get('Models') ?? []
 
     expect(entries).toHaveLength(2)

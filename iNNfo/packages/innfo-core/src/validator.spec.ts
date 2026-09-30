@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateModel, parseModel } from './index.js'
+import { validateKnowledge, parseKnowledge } from './index.js'
 import type { SpecDocument } from './types/index.js'
 
 describe('Validator Composition Collision Diagnostic Reporting (validator.spec.ts)', () => {
@@ -50,7 +50,7 @@ parent_spec:
 ## NN Task: T1
 `
 
-    const parsedModel = parseModel(modelContent)
+    const parsedModel = parseKnowledge(modelContent)
     const compositeDoc: SpecDocument = {
       name: 'composite_tpl',
       level: 2,
@@ -62,7 +62,7 @@ parent_spec:
       },
     }
 
-    const result = validateModel(parsedModel, compositeDoc, null, (ref) => {
+    const result = validateKnowledge(parsedModel, compositeDoc, null, (ref) => {
       if (ref.name === 'base_a') return baseA
       if (ref.name === 'base_b') return baseB
       return null
@@ -132,7 +132,7 @@ parent_spec:
 ## NN ProjectTask: PT1
 `
 
-    const parsedModel = parseModel(modelContent)
+    const parsedModel = parseKnowledge(modelContent)
     const compositeDoc: SpecDocument = {
       name: 'composite_tpl',
       level: 2,
@@ -144,7 +144,7 @@ parent_spec:
       },
     }
 
-    const result = validateModel(parsedModel, compositeDoc, null, (ref) => {
+    const result = validateKnowledge(parsedModel, compositeDoc, null, (ref) => {
       if (ref.name === 'base_a') return baseA
       if (ref.name === 'base_b') return baseB
       return null

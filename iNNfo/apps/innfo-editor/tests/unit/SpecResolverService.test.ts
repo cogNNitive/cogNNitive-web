@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { warmTemplateCache } from '../../src/services/SpecResolverService'
 
 describe('warmTemplateCache', () => {
-  it('resolves a template named by a seed ref from the workspace specs/ directory into a composed TemplateSchema map, keyed lowercased', async () => {
+  it('resolves a template named by a seed ref from the workspace specs/ directory into a composed BlueprintSchema map, keyed lowercased', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
 
     const specMd = [

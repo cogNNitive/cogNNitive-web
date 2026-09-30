@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { compactTreeGroup, type TreeGroup } from '../../src/composables/useModelConcepts'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeElementNode(id: string, type: string): ModelNode {
+function makeElementNode(id: string, type: string): KnowledgeNode {
   return {
     id,
     name: id,

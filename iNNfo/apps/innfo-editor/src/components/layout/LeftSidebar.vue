@@ -288,7 +288,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import type { ModelNode, MetamodelConcept } from '../../model/types'
+import type { KnowledgeNode, MetamodelConcept } from '../../model/types'
 import { parseFrontmatter, computeModelDagTopology } from '@cognnitive/innfo-core'
 import { parseFormatFilename, compareSemVer, type SemVer } from '../../utils/version'
 import { resolveEffectiveMetamodel } from '../../model/metamodel'
@@ -380,7 +380,7 @@ const modelDagTopology = computed(() => {
   return computeModelDagTopology(modelStore.nodes)
 })
 
-function isModelRoot(node: ModelNode | undefined): boolean {
+function isModelRoot(node: KnowledgeNode | undefined): boolean {
   if (!node || isTemplateNode(node)) return false
   return node.kind === 'root' || node.parentId === null || modelStore.rootIds.includes(node.id)
 }

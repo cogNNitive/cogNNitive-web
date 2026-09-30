@@ -14,9 +14,9 @@ import type {
   SpecFrontmatter,
 } from '../../../../packages/innfo-core/src/types'
 import { resolveEffectiveMetamodel } from '../../src/model/metamodel'
-import type { ModelNode, LocalMetamodel } from '../../src/model/types'
+import type { KnowledgeNode, LocalMetamodel } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,

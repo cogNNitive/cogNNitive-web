@@ -1,4 +1,4 @@
-import type { TemplateSchema } from './extract.js'
+import type { BlueprintSchema } from './extract.js'
 
 /**
  * Looks up a field's declared type on the template schema, by concept and
@@ -11,7 +11,7 @@ import type { TemplateSchema } from './extract.js'
  * a private module boundary.
  */
 export function findDeclaredField(
-  schema: TemplateSchema | undefined,
+  schema: BlueprintSchema | undefined,
   conceptType: string | undefined,
   fieldName: string,
 ): { name: string; type: string } | undefined {

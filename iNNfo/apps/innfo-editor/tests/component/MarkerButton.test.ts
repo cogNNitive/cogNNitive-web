@@ -3,9 +3,9 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import MarkerButton from '../../src/components/editor/MarkerButton.vue'
 import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, name: string, markers: Record<string, number | string>): ModelNode {
+function makeNode(id: string, name: string, markers: Record<string, number | string>): KnowledgeNode {
   return {
     id,
     name,

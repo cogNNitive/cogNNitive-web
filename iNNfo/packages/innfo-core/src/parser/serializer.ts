@@ -1,4 +1,4 @@
-import { ParsedModel, MatrixData, SpecFrontmatter } from '../types/index.js'
+import { ParsedKnowledge, MatrixData, SpecFrontmatter } from '../types/index.js'
 import { parseFrontmatter } from './yaml.js'
 import { stringify as yamlStringify } from 'yaml'
 import { printTaxonomyNode } from './taxonomy.js'
@@ -12,7 +12,7 @@ import {
 /**
  * Serializes a property value into the unified `key:: value` form.
  *
- * `rawText`, when provided, is the exact RHS text `parseModel` originally
+ * `rawText`, when provided, is the exact RHS text `parseKnowledge` originally
  * read for this field (`ElementNode.rawFields[key]`). When re-parsing it
  * still produces the current `value` — i.e. the field was not touched by a
  * mutation since it was read — it is re-emitted byte-for-byte, preserving
@@ -47,7 +47,7 @@ function serializePropertyValue(value: unknown, rawText?: string): string {
 }
 
 /** True when re-parsing `rawText` yields the same value currently held —
- *  i.e. nothing mutated this field since `parseModel` read it. */
+ *  i.e. nothing mutated this field since `parseKnowledge` read it. */
 function rawTextStillMatches(rawText: string, value: unknown): boolean {
   try {
     return JSON.stringify(parsePropertyValue(rawText)) === JSON.stringify(value)
@@ -145,7 +145,7 @@ function isSafeListItem(v: unknown): boolean {
 
 /**
  * True when re-parsing `rawFrontmatter` yields the frontmatter currently
- * held — i.e. nothing mutated it since `parseModel` read it, so the author's
+ * held — i.e. nothing mutated it since `parseKnowledge` read it, so the author's
  * own text (key order, quoting, and any key outside the constructed path's
  * allow-list) can be re-emitted verbatim.
  */
@@ -158,7 +158,7 @@ function rawFrontmatterStillMatches(rawFrontmatter: string, fm: SpecFrontmatter)
   }
 }
 
-export function serializeModel(model: ParsedModel): string {
+export function serializeKnowledge(model: ParsedKnowledge): string {
   const lines: string[] = []
   const fm = model.frontmatter
   const useRawFrontmatter =

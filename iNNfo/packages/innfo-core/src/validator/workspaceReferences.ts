@@ -1,4 +1,4 @@
-import type { ConceptField, ModelNode } from '../types/index.js'
+import type { ConceptField, KnowledgeNode } from '../types/index.js'
 import type { RecursiveParseResult } from '../recursiveParser/types.js'
 import type { WorkspaceIndex } from '../recursiveParser/workspaceIndex.js'
 import type { ReferenceDiagnostic } from './references.js'
@@ -88,9 +88,9 @@ export function parseQualifiedRef(value: string): QualifiedRef | null {
 /** A typed-field value that parsed as a qualified reference, with everything `checkOne` needs. */
 export interface QualifiedRefCandidate {
   /** The document root that owns `element` (walked up from `element.parentId`). */
-  root: ModelNode
+  root: KnowledgeNode
   /** The element node whose field held the qualified reference. */
-  element: ModelNode
+  element: KnowledgeNode
   /** The element's owning concept name (`element.type`). */
   concept: string
   /** The template's field definition that declared this value `reference`/`model` typed. */
@@ -99,9 +99,9 @@ export interface QualifiedRefCandidate {
 }
 
 /** Walks `parentId` up from `node` until a `kind === 'root'` node is found. */
-function findRootAncestor(result: RecursiveParseResult, node: ModelNode): ModelNode | undefined {
+function findRootAncestor(result: RecursiveParseResult, node: KnowledgeNode): KnowledgeNode | undefined {
   const seen = new Set<string>()
-  let current: ModelNode | undefined = node
+  let current: KnowledgeNode | undefined = node
   while (current && current.kind !== 'root') {
     if (seen.has(current.id)) return undefined
     seen.add(current.id)
@@ -114,8 +114,8 @@ function findRootAncestor(result: RecursiveParseResult, node: ModelNode): ModelN
  *  workspace-scope passes need: the owning document root, the element, its
  *  concept name, the template field definition, and the raw stored value. */
 interface TypedFieldValue {
-  root: ModelNode
-  element: ModelNode
+  root: KnowledgeNode
+  element: KnowledgeNode
   concept: string
   fieldDef: ConceptField
   raw: unknown
@@ -160,9 +160,9 @@ function* iterateTypedFieldValues(
 
 /**
  * AD-07: re-scans the values `normalizeElementsIntoGraph` already
- * materialized on `ModelNode.fields` — zero additional parses. Iterates
+ * materialized on `KnowledgeNode.fields` — zero additional parses. Iterates
  * every element node, resolves its owning document root and the root's
- * stashed/resolved `TemplateSchema` (`index.nodeSchema`), and collects every
+ * stashed/resolved `BlueprintSchema` (`index.nodeSchema`), and collects every
  * `reference`/`model` typed field value that parses as a qualified
  * cross-model reference (typed fields only, v1 — prose and untyped fields
  * are never scanned).
@@ -188,7 +188,7 @@ export function collectQualifiedReferenceCandidates(
 }
 
 /** Builds the `elements.<Concept>.<Element>.fields.<field>` diagnostic path, prefixed by the referring model's file path so a workspace-scope diagnostic is attributable to a file. */
-function diagnosticPath(root: ModelNode, concept: string, element: ModelNode, fieldDef: ConceptField): string {
+function diagnosticPath(root: KnowledgeNode, concept: string, element: KnowledgeNode, fieldDef: ConceptField): string {
   return `${root.source.path}#elements.${concept}.${element.name}.fields.${fieldDef.name}`
 }
 
@@ -253,8 +253,8 @@ function missingFileHint(modelTitle: string, index: WorkspaceIndex): string {
  * more than one model).
  */
 function checkOne(
-  root: ModelNode,
-  element: ModelNode,
+  root: KnowledgeNode,
+  element: KnowledgeNode,
   concept: string,
   fieldDef: ConceptField,
   ref: QualifiedRef,
@@ -391,7 +391,7 @@ export function validateMultivalueSyntax(
  * Element Name]]`) found in `reference`/`model` typed element fields across
  * the whole parsed workspace. Must run after the host's own
  * `recursiveParse()` and `buildWorkspaceIndex()` — never in place of
- * per-file `validateDocument`/`validateModel`, which deliberately bypasses
+ * per-file `validateDocument`/`validateKnowledge`, which deliberately bypasses
  * the qualified form (AD-06).
  */
 export function validateWorkspaceReferences(

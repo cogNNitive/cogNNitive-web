@@ -1,18 +1,18 @@
 /**
  * useUrlDocLoader — Load a FORMAT model document from a URL.
  *
- * Fetches the raw markdown, parses it with @cognnitive/innfo-core's `parseModel`,
+ * Fetches the raw markdown, parses it with @cognnitive/innfo-core's `parseKnowledge`,
  * builds a minimal in-memory graph, and optionally populates modelStore.
  *
  * URL-loaded workspaces have NO File System handle — save is disabled.
  */
-import { normalizeSingleModel } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../model/types'
+import { normalizeSingleKnowledge } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../model/types'
 import { useModelStore } from '../stores/modelStore'
 import { resolveParentSpecs } from '../services/SpecResolverService'
 
 export interface UrlDocLoaderResult {
-  nodes: Record<string, ModelNode>
+  nodes: Record<string, KnowledgeNode>
   rootIds: string[]
   sourceUrl: string
   error: string | null
@@ -47,7 +47,7 @@ export function useUrlDocLoader() {
       const rawName = segments[segments.length - 1] ?? 'root'
       const rootId = rawName.replace(/\.md$/i, '')
 
-      const { nodes } = normalizeSingleModel(text, url, rootId)
+      const { nodes } = normalizeSingleKnowledge(text, url, rootId)
 
       result.nodes = nodes
       result.rootIds = [rootId]
@@ -98,7 +98,7 @@ export function useUrlDocLoader() {
       const text = `---\n${yaml}\n---\n\n${body}`
 
       const rootId = filename.replace(/\.md$/i, '')
-      const { nodes } = normalizeSingleModel(text, filename, rootId)
+      const { nodes } = normalizeSingleKnowledge(text, filename, rootId)
 
       result.nodes = nodes
       result.rootIds = [rootId]
@@ -117,7 +117,7 @@ export function useUrlDocLoader() {
    * resolves parent specs, and populates modelStore.
    */
   async function loadWorkspaceIntoStore(urls: string[]): Promise<UrlDocLoaderResult> {
-    const combinedNodes: Record<string, ModelNode> = {}
+    const combinedNodes: Record<string, KnowledgeNode> = {}
     const allRootIds: string[] = []
     let firstError: string | null = null
 

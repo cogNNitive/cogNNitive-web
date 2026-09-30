@@ -1,8 +1,8 @@
-import { parseFrontmatter, parseModel, validateModel, getCanonicalSpecContent } from '@cognnitive/innfo-core'
+import { parseFrontmatter, parseKnowledge, validateKnowledge, getCanonicalSpecContent } from '@cognnitive/innfo-core'
 import { normalizeMatrixDecl } from '@cognnitive/innfo-core'
-import { extractTemplateSchemaFromContent, resolveTemplateSchema } from '@cognnitive/innfo-core'
-import type { LocalMetamodel, ParentRef, TemplateSchema } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../model/types'
+import { extractBlueprintSchemaFromContent, resolveBlueprintSchema } from '@cognnitive/innfo-core'
+import type { LocalMetamodel, ParentRef, BlueprintSchema } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../model/types'
 import type { DirectoryHandleLike, FileHandleLike } from '../model/fs-types'
 import { MATRIX_DEFS_KEY } from '../composables/useMatrixDefinitions'
 
@@ -330,8 +330,8 @@ async function fetchTemplateText(
 
 /**
  * Pre-parse warm-up (C1/AD-04): resolves and composes every template a
- * SYNCHRONOUS `resolveTemplateSchema` callback might be asked for during
- * `recursiveParse`, into a `lowercased parent_spec.name -> composed TemplateSchema`
+ * SYNCHRONOUS `resolveBlueprintSchema` callback might be asked for during
+ * `recursiveParse`, into a `lowercased parent_spec.name -> composed BlueprintSchema`
  * map. Seeded from `seed` (typically the entrypoint's own `parent_spec`) plus
  * any `parent_spec` discovered on a shallow (root-level only) pass over the
  * handle — a workspace with deeper `type:: knowledge` targets simply warms fewer
@@ -341,8 +341,8 @@ async function fetchTemplateText(
 export async function warmTemplateCache(
   handle?: DirectoryHandleLike,
   seed?: Array<{ name: string; url?: string }>,
-): Promise<Map<string, TemplateSchema>> {
-  const cache = new Map<string, TemplateSchema>()
+): Promise<Map<string, BlueprintSchema>> {
+  const cache = new Map<string, BlueprintSchema>()
   if (!handle) return cache
 
   const refs = new Map<string, { name: string; url?: string }>()
@@ -377,8 +377,8 @@ export async function warmTemplateCache(
       const includeMap = await buildIncludeMap(resolved.text, handle)
       const resolveInclude = (r: { name: string }) => includeMap.get(r.name) ?? null
       const schema = includeMap.size
-        ? resolveTemplateSchema(resolved.text, resolveInclude).schema
-        : extractTemplateSchemaFromContent(resolved.text)
+        ? resolveBlueprintSchema(resolved.text, resolveInclude).schema
+        : extractBlueprintSchemaFromContent(resolved.text)
       cache.set(ref.name.toLowerCase(), schema)
     } catch {
       // best-effort warm-up; a miss here just means a colder cache for this node
@@ -409,7 +409,7 @@ export async function warmTemplateCache(
  * matrices visible in the tree.
  */
 export async function resolveParentSpecs(
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
   rootIds: string[],
   handle?: DirectoryHandleLike,
   issues?: Array<{ path: string; message: string }>,
@@ -485,8 +485,8 @@ export async function resolveParentSpecs(
       const includeMap = await buildIncludeMap(text, handle)
       const resolveInclude = (r: { name: string }) => includeMap.get(r.name) ?? null
       const schema = includeMap.size
-        ? resolveTemplateSchema(text, resolveInclude).schema
-        : extractTemplateSchemaFromContent(text)
+        ? resolveBlueprintSchema(text, resolveInclude).schema
+        : extractBlueprintSchemaFromContent(text)
       if (!schema.concepts.length && !schema.matrices.length) continue
 
       // Schema conformance of the model against its (composed) template, so the
@@ -499,7 +499,7 @@ export async function resolveParentSpecs(
             frontmatter: parseFrontmatter(text) ?? ({} as any),
             rawContent: text,
           }
-          const r = validateModel(parseModel(root.rawContent), templateDoc, null, resolveInclude)
+          const r = validateKnowledge(parseKnowledge(root.rawContent), templateDoc, null, resolveInclude)
           root.schemaValidation = { errors: r.errors, warnings: r.warnings }
         } catch {
           /* schema validation is best-effort here */

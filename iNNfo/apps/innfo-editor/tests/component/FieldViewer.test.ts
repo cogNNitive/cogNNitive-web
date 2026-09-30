@@ -5,9 +5,9 @@ import FieldViewer from '../../src/components/editor/FieldViewer.vue'
 import FileRefPill from '../../src/components/editor/FileRefPill.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, fieldValues: Record<string, unknown>): ModelNode {
+function makeNode(id: string, fieldValues: Record<string, unknown>): KnowledgeNode {
   return {
     id,
     name: id,

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
-import { validateModel } from '../src/tools/validate.js'
+import { validateKnowledge } from '../src/tools/validate.js'
 
 const rootDir = join(import.meta.dirname!, '..', 'temp-test-workspace-sources')
 
@@ -61,7 +61,7 @@ describe('validate_model workspace mode — sources:: Citations', () => {
   })
 
   it('reports a dangling sources:: file as an error; a resolvable legacy ref warns deprecation only', async () => {
-    const result = await validateModel(rootDir, 'Plan_V_1-0-0_NN', undefined, undefined, true)
+    const result = await validateKnowledge(rootDir, 'Plan_V_1-0-0_NN', undefined, undefined, true)
 
     const dangling = [...result.errors, ...result.warnings].find(
       (d) => d.message.includes('missing.md') && /dangling/i.test(d.message),
@@ -77,7 +77,7 @@ describe('validate_model workspace mode — sources:: Citations', () => {
   })
 
   it('does not run source validation in single-file (non-workspace) mode', async () => {
-    const result = await validateModel(rootDir, 'Plan_V_1-0-0_NN', undefined, undefined, false)
+    const result = await validateKnowledge(rootDir, 'Plan_V_1-0-0_NN', undefined, undefined, false)
     const anySource = [...result.errors, ...result.warnings].find((d) =>
       d.message.includes('missing.md'),
     )
@@ -123,7 +123,7 @@ Budget details.
       'utf-8',
     )
 
-    const result = await validateModel(rootDir, 'finance_NN', undefined, undefined, true)
+    const result = await validateKnowledge(rootDir, 'finance_NN', undefined, undefined, true)
     const dangling = result.errors.filter((e) => e.code === 'KU_DANGLING_FILE')
     expect(dangling).toHaveLength(0)
   })
@@ -166,7 +166,7 @@ Root policy details.
       'utf-8',
     )
 
-    const result = await validateModel(rootDir, 'fallback_NN', undefined, undefined, true)
+    const result = await validateKnowledge(rootDir, 'fallback_NN', undefined, undefined, true)
     const dangling = result.errors.filter((e) => e.code === 'KU_DANGLING_FILE')
     expect(dangling).toHaveLength(0)
   })
@@ -202,7 +202,7 @@ sources:: [missing_folder/report.md#summary, annual_repots.md#intro]
       'utf-8',
     )
 
-    const result = await validateModel(rootDir, 'Error_V_1-0-0_NN', undefined, undefined, true)
+    const result = await validateKnowledge(rootDir, 'Error_V_1-0-0_NN', undefined, undefined, true)
     const danglingErrors = result.errors.filter((e) => /dangling/i.test(e.message))
     expect(danglingErrors.length).toBeGreaterThanOrEqual(2)
 

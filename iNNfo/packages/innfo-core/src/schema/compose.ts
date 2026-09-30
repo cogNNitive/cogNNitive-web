@@ -6,8 +6,8 @@ import type {
   MatrixDecl,
   ValidationError,
 } from '../types/index.js'
-import { parseModel } from '../parser/index.js'
-import { type TemplateSchema, extractTemplateSchema } from './extract.js'
+import { parseKnowledge } from '../parser/index.js'
+import { type BlueprintSchema, extractBlueprintSchema } from './extract.js'
 
 /* ── Additive template composition (`includes`) ─────────────────
  *
@@ -33,8 +33,8 @@ import { type TemplateSchema, extractTemplateSchema } from './extract.js'
  *  (innfo-mcp / the editor) so this module stays I/O-free. */
 export type IncludeResolver = (ref: IncludedTemplateRef) => string | null
 
-export interface ResolvedTemplateSchema {
-  schema: TemplateSchema
+export interface ResolvedBlueprintSchema {
+  schema: BlueprintSchema
   /** Collisions, cycles and unresolved includes encountered while composing. */
   errors: ValidationError[]
 }
@@ -80,10 +80,10 @@ export function canonicalizeDefinition(def: Concept | Marker | MatrixDecl): stri
 }
 
 /**
- * Applies frontmatter `alias` map to a TemplateSchema, renaming concepts, field scopes,
+ * Applies frontmatter `alias` map to a BlueprintSchema, renaming concepts, field scopes,
  * matrix source/target concepts, marker applies_to concepts, and taxonomy edges.
  */
-export function applyAliasToSchema(schema: TemplateSchema, alias?: AliasMap): TemplateSchema {
+export function applyAliasToSchema(schema: BlueprintSchema, alias?: AliasMap): BlueprintSchema {
   if (!alias || (!alias.concepts && !alias.fields)) {
     return schema
   }
@@ -218,8 +218,8 @@ function mergeDefinition<T extends Concept | Marker | MatrixDecl>(
 }
 
 function mergeSchemaInto(
-  acc: TemplateSchema,
-  incoming: TemplateSchema,
+  acc: BlueprintSchema,
+  incoming: BlueprintSchema,
   incomingSource: string,
   provenance: Provenance,
   errors: ValidationError[],
@@ -275,16 +275,16 @@ function mergeSchemaInto(
  * the included schemas. Returns the merged schema plus any composition
  * errors (name collisions, cycles, unresolved includes). When the template
  * declares no `includes`, or no resolver is supplied, this is just
- * `extractTemplateSchema` with an empty error list.
+ * `extractBlueprintSchema` with an empty error list.
  */
-export function resolveTemplateSchema(
+export function resolveBlueprintSchema(
   templateContent: string,
   resolveInclude?: IncludeResolver,
   _seen: Set<string> = new Set(),
   _depth: number = 0,
-): ResolvedTemplateSchema {
-  const parsed = parseModel(templateContent)
-  const local = extractTemplateSchema(parsed)
+): ResolvedBlueprintSchema {
+  const parsed = parseKnowledge(templateContent)
+  const local = extractBlueprintSchema(parsed)
   const includes = parsed.frontmatter?.includes ?? []
   if (!resolveInclude || includes.length === 0) {
     return { schema: local, errors: [] }
@@ -305,7 +305,7 @@ export function resolveTemplateSchema(
 
   const selfLabel = String(parsed.frontmatter?.title ?? 'this template')
   const errors: ValidationError[] = []
-  const base: TemplateSchema = { concepts: [], markers: [], matrices: [], taxonomy: [] }
+  const base: BlueprintSchema = { concepts: [], markers: [], matrices: [], taxonomy: [] }
   const provenance: Provenance = {
     concept: new Map(),
     marker: new Map(),
@@ -332,7 +332,7 @@ export function resolveTemplateSchema(
       })
       continue
     }
-    const nested = resolveTemplateSchema(
+    const nested = resolveBlueprintSchema(
       content,
       resolveInclude,
       new Set([..._seen, key]),
@@ -340,7 +340,7 @@ export function resolveTemplateSchema(
     )
     errors.push(...nested.errors)
     const aliasedSchema = ref.alias ? applyAliasToSchema(nested.schema, ref.alias) : nested.schema
-    const includedLabel = String(parseModel(content).frontmatter?.title ?? ref.name)
+    const includedLabel = String(parseKnowledge(content).frontmatter?.title ?? ref.name)
     mergeSchemaInto(base, aliasedSchema, includedLabel, provenance, errors, false)
   }
 

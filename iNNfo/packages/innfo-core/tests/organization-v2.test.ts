@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   validateTemplateAgainstMetaschema,
   parseFrontmatter,
 } from '../src/index'
@@ -15,7 +15,7 @@ const INNFO_V2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 describe('organization_V_0-2-0 — standalone L2 template', () => {
   it('resolves as a valid standalone L2 schema (no includes, no-op resolver)', () => {
-    const { schema, errors } = resolveTemplateSchema(ORG_V2, () => null)
+    const { schema, errors } = resolveBlueprintSchema(ORG_V2, () => null)
     expect(errors).toEqual([])
 
     const concepts = schema.concepts.map((c) => c.name)
@@ -35,7 +35,7 @@ describe('organization_V_0-2-0 — standalone L2 template', () => {
   })
 
   it('re-attaches the ported Person fields', () => {
-    const { schema } = resolveTemplateSchema(ORG_V2, () => null)
+    const { schema } = resolveBlueprintSchema(ORG_V2, () => null)
     const person = schema.concepts.find((c) => c.name === 'Person')!
     const fields = (person.fields ?? []).map((f) => f.name)
     expect(fields).toEqual(

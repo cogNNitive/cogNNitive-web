@@ -1,12 +1,12 @@
 import {
-  ParsedModel,
+  ParsedKnowledge,
   SpecDocument,
   ValidationCheck,
   ValidationError,
   ValidationResult,
   ValidationSummary,
 } from '../types/index.js'
-import { resolveTemplateSchema } from '../schema/index.js'
+import { resolveBlueprintSchema } from '../schema/index.js'
 import type { IncludeResolver } from '../schema/index.js'
 import { Diagnostics } from '../diagnostics.js'
 import { validateReferences, validateElementFieldReferences } from './references.js'
@@ -15,14 +15,14 @@ import { validateTaxonomyHierarchy } from './hierarchy.js'
 import { computeSha256 } from './crypto.js'
 import {
   checkFrontmatterInvariants,
-  checkTemplateDocumentation,
+  checkBlueprintDocumentation,
   checkElementGroups,
   checkSchemaConformance,
   checkMatrixCells,
   checkNodeMarkers,
-} from './model-checks.js'
+} from './knowledge-checks.js'
 
-export interface ValidateModelOptions {
+export interface ValidateKnowledgeOptions {
   resolveInclude?: IncludeResolver
   resolveSubmodel?: SubmodelResolver
   referringPath?: string
@@ -103,7 +103,7 @@ function buildReportMetadata(
 /**
  * Validates model contents against its template specification (level 2/3).
  *
- * Orchestrates the individual checks in `model-checks.ts`, routing every
+ * Orchestrates the individual checks in `knowledge-checks.ts`, routing every
  * diagnostic through a single `Diagnostics` accumulator. `resolveInclude`
  * returns the raw content of a template named in the resolved template's
  * `includes` list (supplied by the host — innfo-mcp / the editor — which owns
@@ -111,16 +111,16 @@ function buildReportMetadata(
  *
  * `_formatSpec` is retained for call-site compatibility and unused; the
  * `resolveIncludeOrOptions` position accepts either a bare `IncludeResolver`
- * (legacy) or a `ValidateModelOptions` object.
+ * (legacy) or a `ValidateKnowledgeOptions` object.
  */
-export function validateModel(
-  model: ParsedModel,
+export function validateKnowledge(
+  model: ParsedKnowledge,
   template: SpecDocument | null,
   _formatSpec: SpecDocument | null,
-  resolveIncludeOrOptions?: IncludeResolver | ValidateModelOptions,
-  options?: ValidateModelOptions,
+  resolveIncludeOrOptions?: IncludeResolver | ValidateKnowledgeOptions,
+  options?: ValidateKnowledgeOptions,
 ): ValidationResult {
-  const opts: ValidateModelOptions =
+  const opts: ValidateKnowledgeOptions =
     typeof resolveIncludeOrOptions === 'function'
       ? { resolveInclude: resolveIncludeOrOptions, ...options }
       : (resolveIncludeOrOptions ?? options ?? {})
@@ -142,7 +142,7 @@ export function validateModel(
   // Level-2 templates declare their schema as `… Definition` body elements;
   // when the template declares `includes`, the effective schema is the
   // additive union of every composed template plus its own definitions.
-  const composed = resolveTemplateSchema(template.rawContent, opts.resolveInclude)
+  const composed = resolveBlueprintSchema(template.rawContent, opts.resolveInclude)
   for (const diag of composed.errors) {
     d.add({ ...diag, path: `parent.${diag.path}` })
   }
@@ -152,7 +152,7 @@ export function validateModel(
     matrices: templateMatrices,
   } = composed.schema
 
-  checkTemplateDocumentation(templateConcepts, template.rawContent || '', d)
+  checkBlueprintDocumentation(templateConcepts, template.rawContent || '', d)
 
   const knownConceptGroups = checkElementGroups(model, templateConcepts, d)
   checkSchemaConformance(knownConceptGroups, templateConcepts, d)

@@ -3,9 +3,9 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import WidgetField from '../../src/shared/widgets/WidgetField.vue'
 import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, fieldKey: string, value: unknown): ModelNode {
+function makeNode(id: string, fieldKey: string, value: unknown): KnowledgeNode {
   return {
     id,
     name: id,

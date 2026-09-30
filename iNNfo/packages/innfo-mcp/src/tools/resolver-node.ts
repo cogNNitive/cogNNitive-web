@@ -946,7 +946,7 @@ export async function resolveParentChainNode(
   }
 
   // Additive composition: pull in every template named by a resolved level-2
-  // template's `includes` list (recursively), so `resolveTemplateSchema` in
+  // template's `includes` list (recursively), so `resolveBlueprintSchema` in
   // innfo-core can compose their schemas offline. Best-effort — an
   // unresolvable include is left out and surfaces later as a validation error.
   await resolveIncludesInto(specs, specsDir, timeout, undefined, cacheDir)

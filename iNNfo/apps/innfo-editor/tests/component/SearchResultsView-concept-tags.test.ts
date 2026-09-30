@@ -4,9 +4,9 @@ import { setActivePinia, createPinia } from 'pinia'
 import SearchResultsView from '../../src/components/editor/SearchResultsView.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(partial: Partial<ModelNode> & { id: string }): ModelNode {
+function makeNode(partial: Partial<KnowledgeNode> & { id: string }): KnowledgeNode {
   return {
     name: partial.id,
     parentId: null,
@@ -17,7 +17,7 @@ function makeNode(partial: Partial<ModelNode> & { id: string }): ModelNode {
     relationships: [],
     rawSections: {},
     ...partial,
-  } as ModelNode
+  } as KnowledgeNode
 }
 
 /**

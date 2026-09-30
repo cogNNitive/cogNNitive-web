@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel } from '../src/parser/index'
-import { validateModel } from '../src/validator/model'
+import { parseKnowledge } from '../src/parser/index'
+import { validateKnowledge } from '../src/validator/knowledge'
 import { readSpec, decomposedResolver } from './fixtures/decomposed'
 
 describe('parent spec resolution failure diagnostics', () => {
@@ -24,8 +24,8 @@ describe('parent spec resolution failure diagnostics', () => {
   ].join('\n')
 
   it('emits [PARENT_RESOLUTION_FAILED] error when parent spec is missing', () => {
-    const model = parseModel(modelContent)
-    const result = validateModel(model, null, null)
+    const model = parseKnowledge(modelContent)
+    const result = validateKnowledge(model, null, null)
 
     expect(result.valid).toBe(false)
     const parentError = result.errors.find((e) => e.message.includes('[PARENT_RESOLUTION_FAILED]'))
@@ -34,8 +34,8 @@ describe('parent spec resolution failure diagnostics', () => {
   })
 
   it('suppresses downstream concept validation warnings when parent resolution fails', () => {
-    const model = parseModel(modelContent)
-    const result = validateModel(model, null, null)
+    const model = parseKnowledge(modelContent)
+    const result = validateKnowledge(model, null, null)
 
     // Downstream concept warnings (e.g. "Concept 'X' is undocumented in parent template") must be suppressed
     const conceptWarnings = result.warnings.filter((w) => w.path.startsWith('parent.concepts.'))
@@ -43,7 +43,7 @@ describe('parent spec resolution failure diagnostics', () => {
   })
 
   it('does not emit [PARENT_RESOLUTION_FAILED] when parent template is provided', () => {
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     const mockTemplate = {
       name: 'missing_parent',
       level: 2 as const,
@@ -64,7 +64,7 @@ describe('parent spec resolution failure diagnostics', () => {
       ].join('\n'),
     }
 
-    const result = validateModel(model, mockTemplate, null)
+    const result = validateKnowledge(model, mockTemplate, null)
     const parentError = result.errors.find((e) => e.message.includes('[PARENT_RESOLUTION_FAILED]'))
     expect(parentError).toBeUndefined()
   })
@@ -76,7 +76,7 @@ describe('parent spec resolution failure diagnostics', () => {
     // Canonical `business` composes its schema from the five decomposed templates (shared fixture).
     const resolveInclude = decomposedResolver()
 
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     const mockTemplate = {
       name: 'business_V_0-2-1',
       level: 2 as const,
@@ -84,7 +84,7 @@ describe('parent spec resolution failure diagnostics', () => {
       rawContent: templateContent,
     }
 
-    const result = validateModel(model, mockTemplate, null, resolveInclude)
+    const result = validateKnowledge(model, mockTemplate, null, resolveInclude)
     const undefinedConceptErrors = result.errors.filter((e) => e.message.includes('is not defined in template'))
     expect(undefinedConceptErrors).toEqual([])
   })

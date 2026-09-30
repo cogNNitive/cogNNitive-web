@@ -291,7 +291,7 @@ export async function getTemplateFromUrl(
  * Like `getTemplateFromUrl`, but also returns the full resolved `SpecCache`
  * (parent chain + every `includes` target) and an `IncludeResolver` bound to
  * it — so a caller can pass template composition through to innfo-core's
- * `validateModel` / `resolveTemplateSchema` without re-reading anything.
+ * `validateKnowledge` / `resolveBlueprintSchema` without re-reading anything.
  */
 export async function resolveTemplateWithCache(
   rootDir: string,

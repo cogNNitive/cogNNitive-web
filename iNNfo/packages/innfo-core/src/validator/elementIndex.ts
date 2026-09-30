@@ -1,4 +1,4 @@
-import type { ParsedModel } from '../types/index.js'
+import type { ParsedKnowledge } from '../types/index.js'
 
 /**
  * Element fields treated as implicit references even when the template
@@ -7,7 +7,7 @@ import type { ParsedModel } from '../types/index.js'
 export const IMPLICIT_REF_FIELDS = new Set(['location', 'room', 'component', 'parent_component'])
 
 /** Map from lowercased element name -> set of concept names containing it. */
-export function conceptsByElementName(model: ParsedModel): Map<string, Set<string>> {
+export function conceptsByElementName(model: ParsedKnowledge): Map<string, Set<string>> {
   const map = new Map<string, Set<string>>()
   for (const [conceptName, elements] of model.elements.entries()) {
     for (const el of elements) {

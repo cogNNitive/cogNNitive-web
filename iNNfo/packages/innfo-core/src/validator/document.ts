@@ -1,10 +1,10 @@
 import type { SpecDocument, ValidationCheck, ValidationError, ValidationReport } from '../types/index.js'
 import type { IncludeResolver } from '../schema/index.js'
-import { parseModel } from '../parser/index.js'
+import { parseKnowledge } from '../parser/index.js'
 import { hasBom } from '../parser/markdown.js'
 import { Diagnostics } from '../diagnostics.js'
 import { validateFormatContent } from './content.js'
-import { validateModel } from './model.js'
+import { validateKnowledge } from './knowledge.js'
 import type { SubmodelResolver } from './references.js'
 
 /**
@@ -41,7 +41,7 @@ export interface DocumentValidation {
  * The single validation entry point for an iNNfo document. Runs BOTH the
  * document-hygiene linter (`validateFormatContent`) and, for level-2/3
  * documents with a resolved template, the schema-conformance validator
- * (`validateModel`), then merges the results.
+ * (`validateKnowledge`), then merges the results.
  *
  * Both the MCP (`validate_model`) and the editor call this so a document is
  * held to one set of rules everywhere. Previously the MCP ran only the schema
@@ -81,10 +81,10 @@ export function validateDocument(
   }
 
   let schema: DocumentValidation['schema'] = null
-  const parsed = parseModel(content)
+  const parsed = parseKnowledge(content)
   const level = parsed.frontmatter?.level
   if ((level === 2 || level === 3) && (opts.template !== undefined || opts.formatSpec !== undefined)) {
-    const result = validateModel(
+    const result = validateKnowledge(
       parsed,
       opts.template ?? null,
       opts.formatSpec ?? null,

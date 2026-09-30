@@ -4,9 +4,9 @@ import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeModelRootNode(id: string, path: string): ModelNode {
+function makeModelRootNode(id: string, path: string): KnowledgeNode {
   return {
     id,
     name: id,

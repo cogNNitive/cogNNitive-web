@@ -1,4 +1,4 @@
-import type { ParsedModel } from './parser.js'
+import type { ParsedKnowledge } from './parser.js'
 
 export interface FileDriverOptions {
   encoding?: string
@@ -11,9 +11,9 @@ export interface ModelEntry {
 }
 
 /** Structural contract for pluggable model read/write backends (e.g. a caller-supplied write target). */
-export interface ModelDriver {
-  readModel(uri: string): Promise<ParsedModel>
-  writeModel(uri: string, model: ParsedModel): Promise<void>
+export interface KnowledgeDriver {
+  readModel(uri: string): Promise<ParsedKnowledge>
+  writeModel(uri: string, model: ParsedKnowledge): Promise<void>
   listChildren(uri: string): Promise<ModelEntry[]>
   listAssets(uri: string): Promise<string[]>
 }

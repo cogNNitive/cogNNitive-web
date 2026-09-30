@@ -81,7 +81,7 @@ import {
   getMergedBlockFields,
 } from '../../utils/metamodelHelper'
 import BlockSheet from './BlockSheet.vue'
-import type { ModelNode } from '../../model/types'
+import type { KnowledgeNode } from '../../model/types'
 
 const props = defineProps<{
   nodeId: string | null
@@ -139,7 +139,7 @@ const activeConceptType = computed(() => {
   return 'text'
 })
 
-const getConceptFieldsForNode = (node: ModelNode) => {
+const getConceptFieldsForNode = (node: KnowledgeNode) => {
   return getConceptFieldsForNodeHelper(node, metamodelStore.getConceptFields)
 }
 
@@ -149,8 +149,8 @@ const activeConceptFields = computed(() => {
   return getConceptFieldsForNode(node)
 })
 
-// Build a BlockData-compatible object from a ModelNode
-const blockFromNode = (node: ModelNode) => {
+// Build a BlockData-compatible object from a KnowledgeNode
+const blockFromNode = (node: KnowledgeNode) => {
   return {
     id: node.id,
     name: node.name,
@@ -159,8 +159,8 @@ const blockFromNode = (node: ModelNode) => {
   }
 }
 
-const childIcon = (_child: ModelNode) => ''
-const childColor = (_child: ModelNode) => ''
+const childIcon = (_child: KnowledgeNode) => ''
+const childColor = (_child: KnowledgeNode) => ''
 
 const handleDelete = async (): Promise<void> => {
   if (!props.nodeId) return

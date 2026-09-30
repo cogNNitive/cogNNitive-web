@@ -1,6 +1,6 @@
-import type { TemplateSchema } from '../schema/index.js'
+import type { BlueprintSchema } from '../schema/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
-import type { ParseIssue, RecursiveParseResult, TemplateSchemaResolver } from './types.js'
+import type { ParseIssue, RecursiveParseResult, BlueprintSchemaResolver } from './types.js'
 import { normalizePathKey, stripMdSuffix, basename } from './paths.js'
 import { readWorkspaceId } from './workspaceId.js'
 import { computeModelDagTopology, type ModelDagTopology } from './topology.js'
@@ -16,9 +16,9 @@ export interface WorkspaceIndex {
   nodeTemplate: Record<string, { name: string; url?: string }>
   /** root node id -> (lowercased element name -> owning concept name[]) */
   nodeElementConcepts: Record<string, Record<string, string[]>>
-  /** root node id -> composed TemplateSchema (from ModelNode.templateSchema, or the fallback resolver) */
-  nodeSchema: Record<string, TemplateSchema>
-  /** diamond: child node id -> parent ids other than ModelNode.parentId */
+  /** root node id -> composed BlueprintSchema (from KnowledgeNode.templateSchema, or the fallback resolver) */
+  nodeSchema: Record<string, BlueprintSchema>
+  /** diamond: child node id -> parent ids other than KnowledgeNode.parentId */
   extraParents: Record<string, string[]>
   /** DAG topology across all workspace root models (in-degrees, out-degrees, edges, roots) */
   topology?: ModelDagTopology
@@ -40,14 +40,14 @@ export interface WorkspaceIndex {
  */
 export function buildWorkspaceIndex(
   result: RecursiveParseResult,
-  resolveTemplateSchema?: TemplateSchemaResolver,
+  resolveBlueprintSchema?: BlueprintSchemaResolver,
 ): WorkspaceIndex {
   const pathToNodeId: Record<string, string> = {}
   const titleToNodeIds: Record<string, string[]> = {}
   const fileNameToNodeIds: Record<string, string[]> = {}
   const nodeTemplate: Record<string, { name: string; url?: string }> = {}
   const nodeElementConcepts: Record<string, Record<string, string[]>> = {}
-  const nodeSchema: Record<string, TemplateSchema> = {}
+  const nodeSchema: Record<string, BlueprintSchema> = {}
   const extraParents: Record<string, string[]> = {}
   const issues: ParseIssue[] = []
 
@@ -80,13 +80,13 @@ export function buildWorkspaceIndex(
 
     if (root.templateSchema) {
       nodeSchema[root.id] = root.templateSchema
-    } else if (resolveTemplateSchema) {
+    } else if (resolveBlueprintSchema) {
       const frontmatter: Record<string, unknown> = {}
       for (const [key, fieldValue] of Object.entries(root.fields)) {
         frontmatter[key] = fieldValue.value
       }
       try {
-        const schema = resolveTemplateSchema({
+        const schema = resolveBlueprintSchema({
           path: path ?? '',
           name: root.name,
           content: root.rawContent ?? '',
@@ -130,7 +130,7 @@ export function buildWorkspaceIndex(
       nodeElementConcepts[root.id] = elementConcepts
     }
 
-    // extraParents (AD-02): derived, never stored on ModelNode.
+    // extraParents (AD-02): derived, never stored on KnowledgeNode.
     for (const childId of root.childIds) {
       const child = result.nodes[childId]
       if (child && child.parentId !== root.id) {

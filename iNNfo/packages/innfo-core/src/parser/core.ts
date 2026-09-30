@@ -1,5 +1,5 @@
 import {
-  ParsedModel,
+  ParsedKnowledge,
   ElementsMap,
   MatrixData,
   SpecFrontmatter,
@@ -83,7 +83,7 @@ function splitTopLevelSections(text: string): string[] {
   return sections
 }
 
-export function parseModel(content: string): ParsedModel {
+export function parseKnowledge(content: string): ParsedKnowledge {
   const normalizedContent = normalizeSource(content)
   const parseWarnings: string[] = []
   const frontmatter = parseFrontmatter(normalizedContent, (msg) => parseWarnings.push(msg))
@@ -96,7 +96,7 @@ export function parseModel(content: string): ParsedModel {
   const rawConceptTags: Record<string, string> = {}
 
   // Raw frontmatter + preamble capture, for round-trip fidelity. The
-  // constructed emit path in `serializeModel` is an allow-list of known keys
+  // constructed emit path in `serializeKnowledge` is an allow-list of known keys
   // plus one hardcoded `> [!NOTE]` banner, so anything else the author wrote
   // there is lost on save unless the original text is carried through.
   const frontmatterMatch = normalizedContent.match(YAML_BLOCK_RE)
@@ -126,7 +126,7 @@ export function parseModel(content: string): ParsedModel {
     const bodyContent = section.replace(/^#\s+.*$/m, '').trim()
 
     // AD-2: record document order of top-level `# NN` sections so
-    // `serializeModel` can walk them back in the author's original order,
+    // `serializeKnowledge` can walk them back in the author's original order,
     // instead of the fixed elements→rawSections→matrices emit order.
     let sectionKey: string | undefined
     if (type === 'index') {

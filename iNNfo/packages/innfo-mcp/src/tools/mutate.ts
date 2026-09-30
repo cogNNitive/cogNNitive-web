@@ -14,11 +14,9 @@
 export type { ApplyChangeResult } from './apply-change.js'
 export { applyChange } from './apply-change.js'
 export {
-  validateModel,
-  validateModelUrl,
-  validateTemplate,
   validateKnowledge,
   validateKnowledgeUrl,
+  validateTemplate,
   validateBlueprint,
 } from './validate.js'
 export { initModel, initKnowledge } from './init-model.js'

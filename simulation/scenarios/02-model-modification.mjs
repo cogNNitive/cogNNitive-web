@@ -14,14 +14,14 @@ const MODEL = join(SIM, 'fixtures', 'acme', 'models', 'Acme_analysis_NN.md')
 const TEMPLATE = join(ROOT, 'iNNfo', 'specs', 'templates', 'analysis', 'spec_NN.md')
 
 export default async function run() {
-  const { parseModel, serializeModel, applyMutation, extractTemplateSchemaFromContent } = await loadCore()
+  const { parseKnowledge, serializeKnowledge, applyMutation, extractBlueprintSchemaFromContent } = await loadCore()
   const s = createScenario('S02', 'Modifying a model', 
     'A user adds a risk, edits it, renames an assumption other elements reference, and deletes a stale entry — expecting the file to stay coherent.')
 
   try {
     const original = await readFile(MODEL, 'utf-8')
-    const schema = extractTemplateSchemaFromContent(await readFile(TEMPLATE, 'utf-8'))
-    let model = parseModel(original)
+    const schema = extractBlueprintSchemaFromContent(await readFile(TEMPLATE, 'utf-8'))
+    let model = parseKnowledge(original)
 
     s.expect(
       'Model loads with its elements addressable by concept',
@@ -119,8 +119,8 @@ export default async function run() {
     )
 
     // --- Serialize and re-parse --------------------------------------------
-    const out = serializeModel(model)
-    const reparsed = parseModel(out)
+    const out = serializeKnowledge(model)
+    const reparsed = parseKnowledge(out)
     s.expect(
       'Serialized model re-parses with the same element inventory',
       {
@@ -148,11 +148,11 @@ export default async function run() {
     )
 
     // --- A failed mutation must not corrupt the model -----------------------
-    const snapshot = serializeModel(model)
+    const snapshot = serializeKnowledge(model)
     const bad = applyMutation(model, 'not_a_real_op', {}, schema)
     s.expect(
       'An unknown operation is rejected and leaves the model untouched',
-      { success: bad.success, errors: bad.errors, unchanged: serializeModel(model) === snapshot },
+      { success: bad.success, errors: bad.errors, unchanged: serializeKnowledge(model) === snapshot },
       (v) => v.success === false && v.unchanged === true,
       'failed mutations are atomic — the document is byte-identical afterwards',
     )

@@ -5,9 +5,9 @@ import {
   findMatchingModelNode,
   modelStemMatches,
 } from '../../src/utils/modelMatching'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, path: string, name?: string): ModelNode {
+function makeNode(id: string, path: string, name?: string): KnowledgeNode {
   return {
     id,
     name: name || id,

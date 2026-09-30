@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel, parseYaml, parseFrontmatter, serializeModel, parseMarkdownTable, parseTableRow } from '../src/parser'
+import { parseKnowledge, parseYaml, parseFrontmatter, serializeKnowledge, parseMarkdownTable, parseTableRow } from '../src/parser'
 
 describe('Standardised Parser (TDD)', () => {
   it('parses complex nested frontmatter with standard YAML features', () => {
@@ -53,7 +53,7 @@ importance:: "medium"
 
   Partner description.
 `
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     const list = model.elements.get('Stakeholders')
     expect(list).toBeDefined()
     expect(list).toHaveLength(2)
@@ -93,7 +93,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
 ## NN Stakeholders: Customer
   Customer description.
 `
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     expect(model.rawSections).toBeDefined()
     // `text` concepts have no elements but their body IS the content.
     expect(model.elements.get('Market size')).toBeUndefined()
@@ -126,10 +126,10 @@ En España fallecieron 439.146 personas en 2024 (INE).
 
 **TAM:** ~500.000 procesos de reparto anuales.
 `
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     expect(model.rawSections!['Market size']).toContain('**TAM:**')
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     expect(serialized).toContain('# NN Market size')
     expect(serialized).toContain('En España fallecieron 439.146 personas en 2024 (INE).')
     expect(serialized).toContain('**TAM:** ~500.000 procesos de reparto anuales.')
@@ -152,17 +152,17 @@ importance:: "high"
 - one
 - two
 `
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     const customer = model.elements.get('Stakeholders')![0]
     expect(customer.description).toContain('- one')
     expect(customer.description).toContain('- two')
     expect(customer.fields.importance).toBe('high')
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     expect(serialized).toContain('- one')
     expect(serialized).toContain('- two')
 
-    const reparsed = parseModel(serialized)
+    const reparsed = parseKnowledge(serialized)
     expect(reparsed.elements.get('Stakeholders')![0].description).toContain('- one')
   })
 
@@ -181,7 +181,7 @@ title: "Field vs Prose"
 category:: priority
 - note
 `
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     const customer = model.elements.get('Stakeholders')![0]
     expect(customer.fields.category).toBe('priority')
     expect(customer.description).toContain('- note')
@@ -202,7 +202,7 @@ tags:: el-tag1 , EL-tag2, , el-tag3
 
 This is an element with tags.
 `
-    const parsed = parseModel(modelContent)
+    const parsed = parseKnowledge(modelContent)
 
     // Check Concept tags
     expect(parsed.conceptTags).toBeDefined()
@@ -214,7 +214,7 @@ This is an element with tags.
     expect(elements![0].tags).toEqual(['el-tag1', 'el-tag2', 'el-tag3'])
 
     // Check Serialization round-trip
-    const serialized = serializeModel(parsed)
+    const serialized = serializeKnowledge(parsed)
     // Tag VALUES are normalized (lowercased, trimmed) — asserted above. The
     // tag SOURCE TEXT is preserved verbatim: re-emitting the author's own
     // line is what keeps a save byte-identical, and the canonical bracket
@@ -222,7 +222,7 @@ This is an element with tags.
     expect(serialized).toContain('tags:: tag1, Tag2,   TAG3 , tag1')
     expect(serialized).toContain('tags:: el-tag1 , EL-tag2, , el-tag3')
 
-    const reParsed = parseModel(serialized)
+    const reParsed = parseKnowledge(serialized)
     expect(reParsed.conceptTags!['Some Concept']).toEqual(['tag1', 'tag2', 'tag3', 'tag1'])
     expect(reParsed.elements.get('Some Concept')![0].tags).toEqual([
       'el-tag1',
@@ -246,13 +246,13 @@ tags:: [frontend, core]
 
 Alpha description.
 `
-    const parsed = parseModel(modelContent)
+    const parsed = parseKnowledge(modelContent)
 
     expect(parsed.conceptTags!['Task']).toEqual(['management', 'priority'])
     expect(parsed.elements.get('Task')![0].tags).toEqual(['frontend', 'core'])
 
-    const serialized = serializeModel(parsed)
-    const reParsed = parseModel(serialized)
+    const serialized = serializeKnowledge(parsed)
+    const reParsed = parseKnowledge(serialized)
     expect(reParsed.conceptTags!['Task']).toEqual(['management', 'priority'])
     expect(reParsed.elements.get('Task')![0].tags).toEqual(['frontend', 'core'])
   })

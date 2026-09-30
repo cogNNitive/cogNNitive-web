@@ -22,7 +22,7 @@ export default async function run() {
     validateDocument,
     extractHeadings,
     SOURCE_FIELD_NAMES,
-    resolveTemplateSchema,
+    resolveBlueprintSchema,
   } = await loadCore()
   const s = createScenario('S07', 'Opening the shipped sample workspace',
     'A new user opens the workspace we ship. Everything they see on day one is what this scenario measures.')
@@ -33,9 +33,9 @@ export default async function run() {
     // schema resolver. Without it every model parses schema-less, and the
     // citation check silently degrades to name matching — which is the very
     // behaviour this scenario is supposed to measure.
-    const templateCache = warmTemplateCache(resolveTemplateSchema)
+    const templateCache = warmTemplateCache(resolveBlueprintSchema)
     const parsed = await recursiveParse(createNodeDirectoryHandle(WS), undefined, {
-      resolveTemplateSchema: ({ frontmatter }) => {
+      resolveBlueprintSchema: ({ frontmatter }) => {
         const name = frontmatter?.parent_spec?.name
         if (!name) return null
         const key = name.toLowerCase()
@@ -137,10 +137,10 @@ export default async function run() {
 /**
  * Compose every shipped template's schema, keyed by the `parent_spec.name`
  * a model declares. This is the Node equivalent of the editor's
- * `warmTemplateCache`, and it must stay synchronous: `resolveTemplateSchema`
+ * `warmTemplateCache`, and it must stay synchronous: `resolveBlueprintSchema`
  * is called from inside the parse.
  */
-function warmTemplateCache(resolveTemplateSchema) {
+function warmTemplateCache(resolveBlueprintSchema) {
   const cache = new Map()
   for (const dir of readdirSync(TEMPLATES, { withFileTypes: true })) {
     const spec = dir.isDirectory()
@@ -151,7 +151,7 @@ function warmTemplateCache(resolveTemplateSchema) {
     const name = content.match(/^title:\s*"?([^"\n]+)"?$/m)?.[1]
     const slug = dir.isDirectory() ? dir.name : dir.name.replace(/_NN\.md$/, '')
     try {
-      const { schema } = resolveTemplateSchema(content, (ref) => {
+      const { schema } = resolveBlueprintSchema(content, (ref) => {
         const inc = join(TEMPLATES, ref, 'spec_NN.md')
         return existsSync(inc) ? readFileSync(inc, 'utf-8') : null
       })

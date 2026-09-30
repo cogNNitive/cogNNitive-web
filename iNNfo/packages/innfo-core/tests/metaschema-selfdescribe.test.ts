@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   extractMetaschema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchemaFromContent,
   validateTemplateAgainstMetaschema,
 } from '../src/index'
 
@@ -23,7 +23,7 @@ describe('Metaschema (Self-Description)', () => {
 
   it('the metaschema describes the four root primitives with their fields', () => {
     const meta = extractMetaschema(iNNfo)!
-    const schema = extractTemplateSchemaFromContent(meta)
+    const schema = extractBlueprintSchemaFromContent(meta)
     const names = schema.concepts.map((c) => c.name).sort()
     expect(names).toEqual([
       'Concept Definition',
@@ -145,7 +145,7 @@ describe('iNNfo_V_0-2-0 — metaschema still self-consistent', () => {
   it('carries a resolvable metaschema block describing the four root primitives', () => {
     const meta = extractMetaschema(iNNfoV2)
     expect(meta).not.toBeNull()
-    const names = extractTemplateSchemaFromContent(meta!)
+    const names = extractBlueprintSchemaFromContent(meta!)
       .concepts.map((c) => c.name)
       .sort()
     expect(names).toEqual([
@@ -185,7 +185,7 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
   it('carries a resolvable metaschema block describing the four root primitives', () => {
     const meta = extractMetaschema(iNNfoV21)
     expect(meta).not.toBeNull()
-    const names = extractTemplateSchemaFromContent(meta!)
+    const names = extractBlueprintSchemaFromContent(meta!)
       .concepts.map((c) => c.name)
       .sort()
     expect(names).toEqual([
@@ -198,7 +198,7 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
 
   it('declares target_blueprint on Field Definition — closes the V_0-2-0 regression (design.md §5)', () => {
     const meta = extractMetaschema(iNNfoV21)!
-    const schema = extractTemplateSchemaFromContent(meta)
+    const schema = extractBlueprintSchemaFromContent(meta)
     const targetTemplateField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
       .fields!.find((f) => f.name === 'target_template')

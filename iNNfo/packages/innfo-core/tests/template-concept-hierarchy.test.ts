@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { extractTemplateSchemaFromContent } from '../src/schema'
+import { extractBlueprintSchemaFromContent } from '../src/schema'
 import { validateFormatContent, validateTaxonomyHierarchy } from '../src/validator'
-import { parseModel } from '../src/parser'
+import { parseKnowledge } from '../src/parser'
 import type { Concept, TaxonomyEdge } from '../src/types'
 
 describe('Template Concept Hierarchy via parent:: field', () => {
-  describe('extractTemplateSchema', () => {
+  describe('extractBlueprintSchema', () => {
     it('extracts parent field and constructs taxonomy dynamically from concept definitions', () => {
       const templateContent = `---
 title: Sample Hierarchy Template
@@ -30,7 +30,7 @@ parent:: Offerings
 type:: text
 weight:: 30
 `
-      const schema = extractTemplateSchemaFromContent(templateContent)
+      const schema = extractBlueprintSchemaFromContent(templateContent)
 
       expect(schema.concepts).toHaveLength(3)
       const solutions = schema.concepts.find((c) => c.name === 'Solutions')
@@ -67,7 +67,7 @@ type:: category
 ## NN Concept Definition: Segments
 type:: text
 `
-      const schema = extractTemplateSchemaFromContent(legacyTemplate)
+      const schema = extractBlueprintSchemaFromContent(legacyTemplate)
 
       expect(schema.concepts.every((c) => c.parent === undefined)).toBe(true)
       expect(schema.taxonomy).toEqual([
@@ -202,7 +202,7 @@ description:: Our app
 ## NN Features: Auth
 parent_component:: [[CloudApp]]
 `
-      const parsedModel = parseModel(modelContent)
+      const parsedModel = parseKnowledge(modelContent)
       const templateConcepts: Concept[] = [
         { name: 'Solutions', type: 'category' },
         { name: 'Features', type: 'text', fields: [{ name: 'parent_component', type: 'reference' }] },

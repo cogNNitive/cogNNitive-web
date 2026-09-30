@@ -5,7 +5,7 @@ import { normalizePathKey } from './paths.js'
  * Reads the optional `workspace_id` frontmatter field from the workspace's
  * resolved entrypoint node.
  *
- * `normalizeSingleModel` already materializes the entrypoint's whole
+ * `normalizeSingleKnowledge` already materializes the entrypoint's whole
  * frontmatter onto the root node's `fields` (see `recursiveParser/model.ts`),
  * so no additional parse work is needed here: this finds the root node whose
  * `source.path` normalizes to `result.entrypointPath` and reads

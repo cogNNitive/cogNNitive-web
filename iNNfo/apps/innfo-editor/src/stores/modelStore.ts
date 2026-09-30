@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { ModelNode, ModelRelationship } from '../model/types'
+import type { KnowledgeNode, ModelRelationship } from '../model/types'
 import type { DirectoryHandleLike } from '../model/fs-types'
 
 import { DEFAULT_INNFO_VERSION, buildSpecificationUrl } from '../utils/constants'
@@ -21,7 +21,7 @@ import {
   validateWorkspaceReferences,
 } from '@cognnitive/innfo-core'
 import type {
-  ModelDriver,
+  KnowledgeDriver,
   ParseIssue,
   ValidationReport,
   ReferenceDiagnostic,
@@ -31,7 +31,7 @@ import { resolveParentSpecs, warmTemplateCache } from '../services/SpecResolverS
 import { useUiStore } from './uiStore'
 
 export interface ModelState {
-  nodes: Record<string, ModelNode>
+  nodes: Record<string, KnowledgeNode>
   rootIds: string[]
   dirtyIds: Set<string>
   parseIssues: ParseIssue[]
@@ -45,7 +45,7 @@ export interface ModelState {
  * regardless of storageMode, lives in this one graph (R2, R3).
  */
 export const useModelStore = defineStore('model', () => {
-  const nodes = ref<Record<string, ModelNode>>({})
+  const nodes = ref<Record<string, KnowledgeNode>>({})
   const rootIds = ref<string[]>([])
   const dirtyIds = ref<Set<string>>(new Set<string>())
   const parseIssues = ref<ParseIssue[]>([])
@@ -54,15 +54,15 @@ export const useModelStore = defineStore('model', () => {
 
   // ── Getters ─────────────────────────────────────────────────────────────
 
-  function getNode(id: string): ModelNode | undefined {
+  function getNode(id: string): KnowledgeNode | undefined {
     return nodes.value[id]
   }
 
-  function getChildren(id: string): ModelNode[] {
+  function getChildren(id: string): KnowledgeNode[] {
     return (nodes.value[id]?.childIds ?? []).map((cid) => nodes.value[cid]).filter(Boolean)
   }
 
-  function getRoots(): ModelNode[] {
+  function getRoots(): KnowledgeNode[] {
     return rootIds.value
       .filter((id) => !id.startsWith('spec:'))
       .map((id) => nodes.value[id])
@@ -150,10 +150,10 @@ export const useModelStore = defineStore('model', () => {
 
   /**
    * Map of elements grouped by root ID and concept type:
-   * rootId -> (conceptType -> ModelNode[])
+   * rootId -> (conceptType -> KnowledgeNode[])
    */
-  const nodesByRootAndType = computed<Map<string, Map<string, ModelNode[]>>>(() => {
-    const rootMap = new Map<string, Map<string, ModelNode[]>>()
+  const nodesByRootAndType = computed<Map<string, Map<string, KnowledgeNode[]>>>(() => {
+    const rootMap = new Map<string, Map<string, KnowledgeNode[]>>()
 
     function findRoot(id: string): string | null {
       let curr = nodes.value[id]
@@ -178,7 +178,7 @@ export const useModelStore = defineStore('model', () => {
 
       let typeMap = rootMap.get(rootId)
       if (!typeMap) {
-        typeMap = new Map<string, ModelNode[]>()
+        typeMap = new Map<string, KnowledgeNode[]>()
         rootMap.set(rootId, typeMap)
       }
       let list = typeMap.get(node.type)
@@ -194,8 +194,8 @@ export const useModelStore = defineStore('model', () => {
   /**
    * Map of elements indexed by parent field name (for parent-based hierarchies).
    */
-  const nodesByParentName = computed<Map<string, ModelNode[]>>(() => {
-    const map = new Map<string, ModelNode[]>()
+  const nodesByParentName = computed<Map<string, KnowledgeNode[]>>(() => {
+    const map = new Map<string, KnowledgeNode[]>()
     for (const node of Object.values(nodes.value)) {
       const parentVal = node.fields?.parent?.value
       if (typeof parentVal === 'string' && parentVal.trim()) {
@@ -248,11 +248,11 @@ export const useModelStore = defineStore('model', () => {
   // ── Actions ─────────────────────────────────────────────────────────────
 
   /** Replaces the whole graph (used by a fresh recursive parse). */
-  function setGraph(newNodes: Record<string, ModelNode>, newRootIds: string[]): void {
+  function setGraph(newNodes: Record<string, KnowledgeNode>, newRootIds: string[]): void {
     nodes.value = newNodes
     rootIds.value = newRootIds
     dirtyIds.value = new Set<string>()
-    validateModel()
+    validateKnowledge()
   }
 
   /**
@@ -267,7 +267,7 @@ export const useModelStore = defineStore('model', () => {
    * re-validating every other model in the workspace on the main thread
    * (F-15).
    */
-  function validateModel(scopedRootIds?: string[]): void {
+  function validateKnowledge(scopedRootIds?: string[]): void {
     const nonTemplateRoots = rootIds.value.filter(
       (id) => !id.startsWith('spec:') && nodes.value[id],
     )
@@ -342,7 +342,7 @@ export const useModelStore = defineStore('model', () => {
     validationReports.value = reports
   }
 
-  function upsertNode(node: ModelNode): void {
+  function upsertNode(node: KnowledgeNode): void {
     nodes.value[node.id] = node
   }
 
@@ -431,7 +431,7 @@ export const useModelStore = defineStore('model', () => {
       '',
     ].join('\n')
 
-    const newNode: ModelNode = {
+    const newNode: KnowledgeNode = {
       id,
       name: title,
       kind: 'root',
@@ -458,7 +458,7 @@ export const useModelStore = defineStore('model', () => {
   /**
    * Merges workspace-scope cross-model reference diagnostics
    * (`validateWorkspaceReferences`) into the aggregate `validationReport`
-   * built by `validateModel()`. Runs after `setGraph` (which rebuilds the
+   * built by `validateKnowledge()`. Runs after `setGraph` (which rebuilds the
    * report from scratch) so these are never clobbered by the per-file pass.
    */
   function mergeWorkspaceDiagnostics(diagnostics: ReferenceDiagnostic[]): void {
@@ -494,13 +494,13 @@ export const useModelStore = defineStore('model', () => {
    * walking/parsing lands in Phase 3 (recursiveParser.ts); this wires
    * the call so workspaceStore.open() has a single integration point.
    */
-  async function parseFromHandle(handle: DirectoryHandleLike, driver?: ModelDriver): Promise<void> {
+  async function parseFromHandle(handle: DirectoryHandleLike, driver?: KnowledgeDriver): Promise<void> {
     // C1: warm a synchronously-servable template cache BEFORE the parse so
     // recursiveParse can follow `type:: knowledge` fields (AD-04). A cold/partial
     // cache is not an error — it degrades that node to today's traversal.
     const templateCache = await warmTemplateCache(handle)
     const result = await recursiveParse(handle, driver, {
-      resolveTemplateSchema: ({ frontmatter }) => {
+      resolveBlueprintSchema: ({ frontmatter }) => {
         const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec
           ?.name
         return name ? (templateCache.get(name.toLowerCase()) ?? null) : null
@@ -700,7 +700,7 @@ export const useModelStore = defineStore('model', () => {
 
     markDirty(currentId)
 
-    // Tracks which root(s) this rename actually touched, so validateModel()
+    // Tracks which root(s) this rename actually touched, so validateKnowledge()
     // below only re-validates them instead of every root in the workspace.
     const affectedRootIds = new Set<string>()
     const trackAffectedRoot = (id: string): void => {
@@ -774,7 +774,7 @@ export const useModelStore = defineStore('model', () => {
       }
     }
 
-    validateModel(Array.from(affectedRootIds))
+    validateKnowledge(Array.from(affectedRootIds))
   }
 
   return {
@@ -794,7 +794,7 @@ export const useModelStore = defineStore('model', () => {
     nodesByParentName,
     getSourceCitations,
     setGraph,
-    validateModel,
+    validateKnowledge,
     upsertNode,
     getModelRootForNode,
     markDirty,

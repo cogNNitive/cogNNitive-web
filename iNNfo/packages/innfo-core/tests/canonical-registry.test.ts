@@ -6,7 +6,7 @@ import {
   getCanonicalSpecContent,
   listCanonicalTemplates,
   CANONICAL_TEMPLATES,
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
 } from '../src/schema'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
@@ -106,7 +106,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
     expect(content).toContain('# NN Concept Definition')
     expect(content).toContain('## NN Concept Definition: Work')
 
-    const schema = resolveTemplateSchema(content!, () => null)
+    const schema = resolveBlueprintSchema(content!, () => null)
     expect(schema.schema.concepts.map((c) => c.name)).toEqual(
       expect.arrayContaining(['Work', 'Artifact', 'Tools', 'Roles']),
     )

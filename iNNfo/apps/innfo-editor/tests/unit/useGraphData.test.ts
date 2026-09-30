@@ -5,9 +5,9 @@ import { mount } from '@vue/test-utils'
 import { useModelStore } from '../../src/stores/modelStore'
 import { useGraphData, ORIGIN_COLORS } from '../../src/components/editor/composables/useGraphData'
 import GraphViewer from '../../src/components/editor/GraphViewer.vue'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id.split('/').pop() || id,

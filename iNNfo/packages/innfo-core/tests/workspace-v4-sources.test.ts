@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { parseModel, validateModel } from '../src/index.js';
+import { parseKnowledge, validateKnowledge } from '../src/index.js';
 
 describe('Workspace Template V_0-4-0 & Polymorphic Sources', () => {
   const specPath = path.resolve(__dirname, '../../../specs/bluepriNNts/workspace_spec_NN.md');
 
   it('parses the workspace_spec_NN.md template correctly', () => {
     const specContent = fs.readFileSync(specPath, 'utf8');
-    const parsed = parseModel(specContent);
+    const parsed = parseKnowledge(specContent);
     expect(parsed.frontmatter?.template_version).toMatch(/^V_0-[4-6]-\d+$/);
     expect(parsed.elements.has('Concept Definition')).toBe(true);
     expect(parsed.elements.has('Field Definition')).toBe(true);
@@ -69,7 +69,7 @@ status:: ready
 tags:: [compliance, externo]
 `;
 
-    const parsed = parseModel(sampleWorkspace);
+    const parsed = parseKnowledge(sampleWorkspace);
     expect(parsed.frontmatter?.title).toBe('Test Polymorphic Workspace');
     expect(parsed.elements.get('Sources')?.length).toBe(2);
 
@@ -96,7 +96,7 @@ tags:: [compliance, externo]
       rawContent: specContent,
     };
 
-    const result = validateModel(parsed, templateDoc, null);
+    const result = validateKnowledge(parsed, templateDoc, null);
     if (!result.valid) console.log('Validation errors:', JSON.stringify(result.errors, null, 2));
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);

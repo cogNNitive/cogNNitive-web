@@ -11,13 +11,13 @@ export {
   FIELD_DEFINITION,
   MARKER_DEFINITION,
   MATRIX_DEFINITION,
-  extractTemplateSchema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchema,
+  extractBlueprintSchemaFromContent,
 } from './extract.js'
-export type { TemplateSchema } from './extract.js'
+export type { BlueprintSchema } from './extract.js'
 
-export { resolveTemplateSchema, canonicalizeDefinition, applyAliasToSchema } from './compose.js'
-export type { IncludeResolver, ResolvedTemplateSchema } from './compose.js'
+export { resolveBlueprintSchema, canonicalizeDefinition, applyAliasToSchema } from './compose.js'
+export type { IncludeResolver, ResolvedBlueprintSchema } from './compose.js'
 
 export { findDeclaredField } from './declaredField.js'
 

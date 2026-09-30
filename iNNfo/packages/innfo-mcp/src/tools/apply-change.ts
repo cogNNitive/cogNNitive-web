@@ -1,14 +1,14 @@
 import { readFile, writeFile, rm, stat, rename, readdir } from 'node:fs/promises'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import {
-  parseModel,
-  serializeModel,
-  validateModel as coreValidate,
+  parseKnowledge,
+  serializeKnowledge,
+  validateKnowledge as coreValidate,
   applyMutation as coreApplyMutation,
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   buildAgentModificationBlock,
 } from '@cognnitive/innfo-core'
-import type { SpecDocument, ParsedModel, TemplateSchema } from '@cognnitive/innfo-core'
+import type { SpecDocument, ParsedKnowledge, BlueprintSchema } from '@cognnitive/innfo-core'
 import { findModelFile } from './spec.js'
 import { isLocalPath, toLocalFilePath, saveSpecOnce } from './resolver-node.js'
 import { createSpecsBackupZip } from './spec-backup.js'
@@ -17,7 +17,7 @@ import { DEFAULT_WORKSPACE_IGNORE } from './validate.js'
 
 export interface ApplyChangeResult {
   success: boolean
-  model?: ParsedModel
+  model?: ParsedKnowledge
   newPath?: string
   errors?: Array<{ path: string; message: string }>
   warnings?: Array<{ path: string; message: string }>
@@ -113,7 +113,7 @@ function escapeRegex(s: string): string {
 }
 
 function cascadeModelReferences(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   oldBase: string,
   newBase: string,
 ): boolean {
@@ -221,7 +221,7 @@ function cascadeModelReferences(
 async function bumpVersion(
   rootDir: string,
   filePath: string,
-  model: ParsedModel,
+  model: ParsedKnowledge,
   args: Record<string, unknown>,
   id: string,
 ): Promise<ApplyChangeResult> {
@@ -326,11 +326,11 @@ async function bumpVersion(
 
         // Read and update the template file's frontmatter
         const rawParentContent = await readFile(localParentPath, 'utf-8')
-        const parentModel = parseModel(rawParentContent)
+        const parentModel = parseKnowledge(rawParentContent)
         if (parentModel.frontmatter.level === 2) {
           parentModel.frontmatter.spec_version = parentVerString
         }
-        parentContent = serializeModel(parentModel)
+        parentContent = serializeKnowledge(parentModel)
         localParentTemplate = {
           name: newParentName,
           level: parentModel.frontmatter.level ?? 0,
@@ -391,7 +391,7 @@ async function bumpVersion(
   }
 
   // 4. Pre-mutation validation of referencing workspace models
-  const affectedModels: Array<{ filePath: string; model: ParsedModel }> = []
+  const affectedModels: Array<{ filePath: string; model: ParsedKnowledge }> = []
   const oldBaseResolved = resolve(filePath)
   const oldStem = base.replace(/\.md$/i, '')
   const allModelFiles = await findAllWorkspaceModelFiles(rootDir, DEFAULT_WORKSPACE_IGNORE)
@@ -401,7 +401,7 @@ async function bumpVersion(
     try {
       const raw = await readFile(mFile, 'utf-8')
       if (!raw.includes(base) && !raw.includes(oldStem)) continue
-      const parsed = parseModel(raw)
+      const parsed = parseKnowledge(raw)
       const changed = cascadeModelReferences(parsed, base, newBase)
       if (changed) {
         let depTemplate: SpecDocument | null = null
@@ -547,7 +547,7 @@ export async function applyChange(
     return { success: false, errors: [{ path: '', message: `Model not found: ${id}` }] }
   }
 
-  let model: ParsedModel
+  let model: ParsedKnowledge
   try {
     model = await loadModel(filePath)
   } catch (err) {
@@ -566,10 +566,10 @@ export async function applyChange(
       )
       if (idxTemplate) {
         // Compose the taxonomy across `includes` too, not just the composite.
-        const { schema } = resolveTemplateSchema(idxTemplate.rawContent, idxInclude)
+        const { schema } = resolveBlueprintSchema(idxTemplate.rawContent, idxInclude)
         args.taxonomy = schema.taxonomy.length
           ? schema.taxonomy
-          : parseModel(idxTemplate.rawContent).taxonomy
+          : parseKnowledge(idxTemplate.rawContent).taxonomy
       }
     } catch (err) {
       // log + continue: template not resolvable — generate_index falls back to
@@ -582,13 +582,13 @@ export async function applyChange(
   // `rename_element`, pass the resolved parent-template schema so the
   // reference rewrite is gated on `type:: reference` fields (C3): plain
   // string fields are never rewritten as bare scalars.
-  let renameSchema: TemplateSchema | undefined
+  let renameSchema: BlueprintSchema | undefined
   if (op === 'rename_element') {
     try {
       const { template: schemaTemplate, resolveInclude: schemaInclude } =
         await resolveTemplateForModel(rootDir, model)
       if (schemaTemplate) {
-        renameSchema = resolveTemplateSchema(schemaTemplate.rawContent, schemaInclude).schema
+        renameSchema = resolveBlueprintSchema(schemaTemplate.rawContent, schemaInclude).schema
       }
     } catch (err) {
       // log + continue: without the resolved schema the rename runs untyped

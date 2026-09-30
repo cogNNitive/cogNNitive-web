@@ -8,7 +8,7 @@ import { recursiveSerialize } from '../../model/recursiveSerializer'
 import { parseFormatFilename } from '../../utils/version'
 import { addToHistory } from '../../stores/historyStore'
 import { useToast } from '../../shared/useToast'
-import { serializeModel } from '@cognnitive/innfo-core'
+import { serializeKnowledge } from '@cognnitive/innfo-core'
 import { _ensureGeneralSpec } from '../../services/WorkspacePersistenceService'
 import type { DirectoryHandleLike } from '../../model/fs-types'
 
@@ -83,7 +83,7 @@ async function handleSaveWorkspace(): Promise<void> {
         throw new Error('Not implemented')
       },
       writeModel: async (path: string, parsed: any) => {
-        const content = serializeModel(parsed)
+        const content = serializeKnowledge(parsed)
         const isRoot =
           rootNode.value &&
           (path === rootNode.value.source.path ||

@@ -22,5 +22,5 @@ export {
   getSectionType,
   parseTagList,
 } from './sections.js'
-export { serializeModel } from './serializer.js'
-export { parseModel, deriveElementSlugs } from './core.js'
+export { serializeKnowledge } from './serializer.js'
+export { parseKnowledge, deriveElementSlugs } from './core.js'

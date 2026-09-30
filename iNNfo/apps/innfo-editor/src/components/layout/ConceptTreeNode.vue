@@ -160,7 +160,7 @@ import {
 import Pill from '../editor/Pill.vue'
 import VirtualGroupNode from './VirtualGroupNode.vue'
 import { useModelConcepts } from '../../composables/useModelConcepts'
-import type { ModelNode } from '../../model/types'
+import type { KnowledgeNode } from '../../model/types'
 
 const props = withDefaults(
   defineProps<{
@@ -204,9 +204,9 @@ watch(
   { immediate: true },
 )
 
-const node = computed<ModelNode | undefined>(() => modelStore.getNode(props.nodeId))
+const node = computed<KnowledgeNode | undefined>(() => modelStore.getNode(props.nodeId))
 
-const children = computed<ModelNode[]>(() => {
+const children = computed<KnowledgeNode[]>(() => {
   const astKids = modelStore.getChildren(props.nodeId)
   if (astKids.length > 0) {
     // R8 (PR1 diamond-vs-cycle fix): a child referenced by more than one
@@ -243,7 +243,7 @@ interface ElementSubmodel {
   path: string
 }
 
-function resolveConceptForNode(n: ModelNode | undefined): any {
+function resolveConceptForNode(n: KnowledgeNode | undefined): any {
   if (!n) return undefined
   const nType = (n.type || '').toLowerCase()
   const nTypeBase = nType.replace(/s$/, '')
@@ -475,7 +475,7 @@ const isGhost = computed(() => {
 
 type RenderItem =
   | { kind: 'node'; key: string; nodeId: string }
-  | { kind: 'vg'; key: string; name: string; nodes: ModelNode[] }
+  | { kind: 'vg'; key: string; name: string; nodes: KnowledgeNode[] }
 
 const groupedChildren = computed<RenderItem[]>(() => {
   const kids = children.value
@@ -491,8 +491,8 @@ const groupedChildren = computed<RenderItem[]>(() => {
   }
 
   // Group element children by their type (concept name)
-  const groups = new Map<string, ModelNode[]>()
-  const ungrouped: ModelNode[] = []
+  const groups = new Map<string, KnowledgeNode[]>()
+  const ungrouped: KnowledgeNode[] = []
 
   for (const child of kids) {
     if (child.kind !== 'concept' && child.type) {

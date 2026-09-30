@@ -11,5 +11,5 @@ export type {
   MetamodelConcept,
   MetamodelMarker,
   LocalMetamodel,
-  ModelNode,
+  KnowledgeNode,
 } from '@cognnitive/innfo-core'

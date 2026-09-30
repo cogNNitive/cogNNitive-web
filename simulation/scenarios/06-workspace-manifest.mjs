@@ -20,7 +20,7 @@ export default async function run() {
     recursiveParse,
     buildWorkspaceIndex,
     validateWorkspaceReferences,
-    extractTemplateSchemaFromContent,
+    extractBlueprintSchemaFromContent,
   } = await loadCore()
   const s = createScenario('S06', 'Workspace manifest reconciliation',
     'A user adds a model file by hand and expects the workspace index to notice — without losing their own edits.')
@@ -73,7 +73,7 @@ export default async function run() {
     const parsed = await recursiveParse(createNodeDirectoryHandle(WS))
 
     // The host supplies template schemas; here they come off disk.
-    const analysisSchema = extractTemplateSchemaFromContent(
+    const analysisSchema = extractBlueprintSchemaFromContent(
       await readFile(join(WS, '..', '..', '..', 'iNNfo', 'specs', 'templates', 'analysis', 'spec_NN.md'), 'utf-8'),
     )
     const index = buildWorkspaceIndex(parsed, (node) =>

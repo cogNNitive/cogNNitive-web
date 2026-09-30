@@ -8,7 +8,7 @@ import {
   mergeMatrixDefs,
   resolveMatrixIndexByName,
 } from '../../src/composables/useMatrixDefinitions'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
 import MatricesGrid from '../../src/components/editor/MatricesGrid.vue'
 
@@ -40,7 +40,7 @@ vi.mock('@tanstack/vue-virtual', () => ({
   }),
 }))
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,
@@ -53,7 +53,7 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
     rawSections: {},
     source: { path: id },
     ...overrides,
-  } as ModelNode
+  } as KnowledgeNode
 }
 
 function defs(names: string[]): { value: Array<Record<string, unknown>> } {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel, serializeModel } from '../src/parser/index.js'
-import { mergeModels } from '../src/merge.js'
+import { parseKnowledge, serializeKnowledge } from '../src/parser/index.js'
+import { mergeKnowledge } from '../src/merge.js'
 
-describe('Semantic AST Merge (mergeModels)', () => {
+describe('Semantic AST Merge (mergeKnowledge)', () => {
   it('merges an element added by agent on disk with memory model', () => {
     const diskContent = `---
 spec_version: "V_0-2-1"
@@ -48,11 +48,11 @@ director:: Wachowskis
 movie:: [[Matrix]]
 `
 
-    const diskParsed = parseModel(diskContent)
-    const memParsed = parseModel(memoryContent)
+    const diskParsed = parseKnowledge(diskContent)
+    const memParsed = parseKnowledge(memoryContent)
 
-    const merged = mergeModels(diskParsed, memParsed)
-    const serialized = serializeModel(merged)
+    const merged = mergeKnowledge(diskParsed, memParsed)
+    const serialized = serializeKnowledge(merged)
 
     // The merged model should have:
     // 1. director field from memory
@@ -97,11 +97,11 @@ status:: active
 status:: pending
 `
 
-    const diskParsed = parseModel(diskContent)
-    const memParsed = parseModel(memoryContent)
+    const diskParsed = parseKnowledge(diskContent)
+    const memParsed = parseKnowledge(memoryContent)
 
-    const merged = mergeModels(diskParsed, memParsed)
-    const serialized = serializeModel(merged)
+    const merged = mergeKnowledge(diskParsed, memParsed)
+    const serialized = serializeKnowledge(merged)
 
     expect(serialized).toContain('## NN Items: Item A')
     expect(serialized).toContain('## NN Items: Item B')
@@ -148,11 +148,11 @@ title: "Test"
 | Item 2 | - | high |
 `
 
-    const diskParsed = parseModel(diskContent)
-    const memParsed = parseModel(memoryContent)
+    const diskParsed = parseKnowledge(diskContent)
+    const memParsed = parseKnowledge(memoryContent)
 
-    const merged = mergeModels(diskParsed, memParsed)
-    const serialized = serializeModel(merged)
+    const merged = mergeKnowledge(diskParsed, memParsed)
+    const serialized = serializeKnowledge(merged)
 
     expect(serialized).toContain('| Item 1 | 5 | - |')
     expect(serialized).toContain('| Item 2 | - | high |')
@@ -187,13 +187,13 @@ title: "Test"
 ## NN Items: Item 1
 `
 
-    const diskParsed = parseModel(diskContent)
-    const memParsed = parseModel(memoryContent)
+    const diskParsed = parseKnowledge(diskContent)
+    const memParsed = parseKnowledge(memoryContent)
     // simulate taxonomy added to memory model
     memParsed.taxonomy = [{ parent: 'Items', child: 'Item 1' }]
 
-    const merged = mergeModels(diskParsed, memParsed)
-    const serialized = serializeModel(merged)
+    const merged = mergeKnowledge(diskParsed, memParsed)
+    const serialized = serializeKnowledge(merged)
 
     expect(serialized).not.toContain('# NN index')
   })

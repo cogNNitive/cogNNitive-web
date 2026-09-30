@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeSingleModel } from '../src/recursiveParser/model'
+import { normalizeSingleKnowledge } from '../src/recursiveParser/knowledge'
 
 describe('Relationship Edges & Origins (relationship-types)', () => {
   it('R1 & R2: tags matrix relationships with origin: "matrix"', () => {
@@ -28,7 +28,7 @@ description:: Final approval
 | Review | - | blocks |
 | Approve | - | - |
 `
-    const { nodes, issues } = normalizeSingleModel(md, 'test_NN.md', 'test')
+    const { nodes, issues } = normalizeSingleKnowledge(md, 'test_NN.md', 'test')
     expect(issues).toHaveLength(0)
 
     const reviewNode = Object.values(nodes).find((n) => n.name === 'Review')
@@ -78,7 +78,7 @@ note:: Follows [[Alpha]]
 ## NN Task: Gamma
 depends_on:: [[Alpha]]
 `
-    const { nodes } = normalizeSingleModel(md, 'test_NN.md', 'test')
+    const { nodes } = normalizeSingleKnowledge(md, 'test_NN.md', 'test')
 
     const alpha = Object.values(nodes).find((n) => n.name === 'Alpha')!
     const beta = Object.values(nodes).find((n) => n.name === 'Beta')!
@@ -132,7 +132,7 @@ description:: The first element
 ## NN Item: Second Item
 description:: See details in [[First Item]] for guidance.
 `
-    const { nodes } = normalizeSingleModel(md, 'test_NN.md', 'test')
+    const { nodes } = normalizeSingleKnowledge(md, 'test_NN.md', 'test')
 
     const first = Object.values(nodes).find((n) => n.name === 'First Item')!
     const second = Object.values(nodes).find((n) => n.name === 'Second Item')!
@@ -175,7 +175,7 @@ description:: Valid passport
 ## NN Item: Visa
 note:: Requires [[passport]]
 `
-    const { nodes } = normalizeSingleModel(md, 'test_NN.md', 'test')
+    const { nodes } = normalizeSingleKnowledge(md, 'test_NN.md', 'test')
 
     const passport = Object.values(nodes).find((n) => n.name === 'Passport')!
     const visa = Object.values(nodes).find((n) => n.name === 'Visa')!
@@ -204,7 +204,7 @@ type:: text
 ## NN Item: Alpha
 description:: Mentions [[NonExistentTarget]] and [[see [[Nested]] here]]
 `
-    const { nodes, issues } = normalizeSingleModel(md, 'model_NN.md', 'model')
+    const { nodes, issues } = normalizeSingleKnowledge(md, 'model_NN.md', 'model')
 
     const alpha = Object.values(nodes).find((n) => n.name === 'Alpha')!
     expect(alpha.relationships).toHaveLength(0)
@@ -232,7 +232,7 @@ type:: text
 note:: Text with [[]] and [[   ]] empty targets
 description:: Clean text [[]]
 `
-    const { nodes, issues } = normalizeSingleModel(md, 'test_NN.md', 'test')
+    const { nodes, issues } = normalizeSingleKnowledge(md, 'test_NN.md', 'test')
 
     const alpha = Object.values(nodes).find((n) => n.name === 'Alpha')!
     expect(alpha.relationships).toHaveLength(0)
@@ -264,7 +264,7 @@ description:: Also refers to [[Target]]
 |------|--------|
 | Source | linked |
 `
-    const { nodes } = normalizeSingleModel(md, 'test_NN.md', 'test')
+    const { nodes } = normalizeSingleKnowledge(md, 'test_NN.md', 'test')
 
     const source = Object.values(nodes).find((n) => n.name === 'Source')!
     const target = Object.values(nodes).find((n) => n.name === 'Target')!
@@ -315,7 +315,7 @@ type:: text
 # NN Item
 ## NN Item: Dummy
 `
-    const { nodes } = normalizeSingleModel(md, 'source_NN.md', 'source')
+    const { nodes } = normalizeSingleKnowledge(md, 'source_NN.md', 'source')
 
     const root = Object.values(nodes).find((n) => n.parentId === null)!
     expect(root.relationships).toHaveLength(1)

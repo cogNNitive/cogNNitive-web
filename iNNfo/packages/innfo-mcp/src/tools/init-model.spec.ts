@@ -155,7 +155,7 @@ describe('initModel', () => {
 
   it('escapes quotes and newlines in frontmatter title properly and roundtrips', async () => {
     await stubBusinessTemplate()
-    const { parseModel } = await import('@cognnitive/innfo-core')
+    const { parseKnowledge } = await import('@cognnitive/innfo-core')
 
     // Test quotes in title
     const resQuotes = await initModel(rootDir, 'QuotesModel', {
@@ -165,7 +165,7 @@ describe('initModel', () => {
     })
     expect(resQuotes.success).toBe(true)
     const onDiskQuotes = await readFile(resQuotes.filePath!, 'utf-8')
-    const parsedQuotes = parseModel(onDiskQuotes)
+    const parsedQuotes = parseKnowledge(onDiskQuotes)
     expect(parsedQuotes.frontmatter?.title).toBe('The "Real" Deal')
 
     // Test newline in title
@@ -176,7 +176,7 @@ describe('initModel', () => {
     })
     expect(resNewlines.success).toBe(true)
     const onDiskNewlines = await readFile(resNewlines.filePath!, 'utf-8')
-    const parsedNewlines = parseModel(onDiskNewlines)
+    const parsedNewlines = parseKnowledge(onDiskNewlines)
     expect(parsedNewlines.frontmatter.title).toBe('Line1\nLine2')
   })
 

@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { validateWorkspaceSources, type SourceResolver } from '../src/validator/workspaceSources.js'
 import { parseKnowledgeUnitRef, serializeKnowledgeUnitRef } from '../src/sourceRef.js'
 import type { RecursiveParseResult } from '../src/recursiveParser/types.js'
-import type { ModelNode } from '../src/types/index.js'
-import type { TemplateSchema } from '../src/schema/index.js'
-import { parseModel, serializeModel } from '../src/parser/index.js'
+import type { KnowledgeNode } from '../src/types/index.js'
+import type { BlueprintSchema } from '../src/schema/index.js'
+import { parseKnowledge, serializeKnowledge } from '../src/parser/index.js'
 
 /**
  * Citation provenance typing (AD-5): whether a field carries provenance is a
@@ -13,7 +13,7 @@ import { parseModel, serializeModel } from '../src/parser/index.js'
  * template schema did not resolve.
  */
 
-function field(value: unknown): ModelNode['fields'][string] {
+function field(value: unknown): KnowledgeNode['fields'][string] {
   return { value, editAttribution: { author: { kind: 'system', id: 'test' }, timestamp: '' } }
 }
 
@@ -21,9 +21,9 @@ function field(value: unknown): ModelNode['fields'][string] {
 function resultWith(
   fieldName: string,
   value: unknown,
-  templateSchema?: TemplateSchema,
+  templateSchema?: BlueprintSchema,
 ): RecursiveParseResult {
-  const root: ModelNode = {
+  const root: KnowledgeNode = {
     id: 'root-1',
     name: 'doc_01',
     parentId: null,
@@ -37,7 +37,7 @@ function resultWith(
     source: { path: 'kNNowledge/Handbook_NN.md' },
     templateSchema,
   }
-  const element: ModelNode = {
+  const element: KnowledgeNode = {
     id: 'elem-1',
     name: 'Proton Pack',
     parentId: 'root-1',
@@ -53,7 +53,7 @@ function resultWith(
   return { nodes: { 'root-1': root, 'elem-1': element }, rootIds: ['root-1'], issues: [] }
 }
 
-function schemaWith(fieldName: string, type: string): TemplateSchema {
+function schemaWith(fieldName: string, type: string): BlueprintSchema {
   return {
     concepts: [
       {
@@ -119,15 +119,15 @@ describe('citation lists are deduplicated on write', () => {
     ].join('\n')
 
   it('removes a repeated pointer, first occurrence winning', () => {
-    const serialized = serializeModel(
-      parseModel(doc('[sources/nn/a.md@## Intro, sources/nn/b.md@## Other, sources/nn/a.md@## Intro]')),
+    const serialized = serializeKnowledge(
+      parseKnowledge(doc('[sources/nn/a.md@## Intro, sources/nn/b.md@## Other, sources/nn/a.md@## Intro]')),
     )
     expect(serialized).toContain('sources:: [sources/nn/a.md@## Intro, sources/nn/b.md@## Other]')
   })
 
   it('leaves a duplicate-free citation list byte-identical', () => {
     const source = doc('[sources/nn/a.md@## Intro, sources/nn/b.md@## Other]')
-    expect(serializeModel(parseModel(source))).toBe(source)
+    expect(serializeKnowledge(parseKnowledge(source))).toBe(source)
   })
 })
 

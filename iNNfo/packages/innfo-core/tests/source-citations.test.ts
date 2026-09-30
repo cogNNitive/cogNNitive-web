@@ -3,14 +3,14 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { attachSourceCitations } from '../src/recursiveParser/normalize'
-import { parseModel, serializeModel } from '../src/parser'
-import type { ModelNode } from '../src/types'
+import { parseKnowledge, serializeKnowledge } from '../src/parser'
+import type { KnowledgeNode } from '../src/types'
 
-function field(value: unknown): ModelNode['fields'][string] {
+function field(value: unknown): KnowledgeNode['fields'][string] {
   return { value, editAttribution: { author: { kind: 'system', id: 'test' }, timestamp: '' } }
 }
 
-function elementNode(fields: Record<string, unknown>): ModelNode {
+function elementNode(fields: Record<string, unknown>): KnowledgeNode {
   return {
     id: 'elem-1',
     name: 'Enterprise Clients',
@@ -95,52 +95,52 @@ title: "Fixture Model"
 ${propertyLine}
 `
 
-describe('serializePropertyValue citation round-trip (H3b, via parseModel/serializeModel)', () => {
+describe('serializePropertyValue citation round-trip (H3b, via parseKnowledge/serializeKnowledge)', () => {
   it('round-trips a multi-value sources list byte-identically', () => {
-    const model1 = parseModel(LEVEL3_TEMPLATE('sources:: [a.md#x, b.md#y]'))
+    const model1 = parseKnowledge(LEVEL3_TEMPLATE('sources:: [a.md#x, b.md#y]'))
     const element1 = model1.elements.get('Stakeholder')?.[0]
     expect(element1?.fields.sources).toEqual(['a.md#x', 'b.md#y'])
 
-    const serialized1 = serializeModel(model1)
+    const serialized1 = serializeKnowledge(model1)
     expect(serialized1).toContain('sources:: [a.md#x, b.md#y]')
 
-    const model2 = parseModel(serialized1)
+    const model2 = parseKnowledge(serialized1)
     expect(model2.elements.get('Stakeholder')?.[0].fields.sources).toEqual(['a.md#x', 'b.md#y'])
-    expect(serializeModel(model2)).toBe(serialized1)
+    expect(serializeKnowledge(model2)).toBe(serialized1)
   })
 
   it('round-trips a scalar source value byte-identically, with no spurious quoting', () => {
-    const model1 = parseModel(LEVEL3_TEMPLATE('sources:: a.md#x'))
+    const model1 = parseKnowledge(LEVEL3_TEMPLATE('sources:: a.md#x'))
     expect(model1.elements.get('Stakeholder')?.[0].fields.sources).toBe('a.md#x')
 
-    const serialized1 = serializeModel(model1)
+    const serialized1 = serializeKnowledge(model1)
     expect(serialized1).toContain('sources:: a.md#x')
     expect(serialized1).not.toContain('"a.md#x"')
 
-    const model2 = parseModel(serialized1)
+    const model2 = parseKnowledge(serialized1)
     expect(model2.elements.get('Stakeholder')?.[0].fields.sources).toBe('a.md#x')
-    expect(serializeModel(model2)).toBe(serialized1)
+    expect(serializeKnowledge(model2)).toBe(serialized1)
   })
 
   it('round-trips an empty sources list', () => {
-    const model1 = parseModel(LEVEL3_TEMPLATE('sources:: []'))
+    const model1 = parseKnowledge(LEVEL3_TEMPLATE('sources:: []'))
     expect(model1.elements.get('Stakeholder')?.[0].fields.sources).toEqual([])
 
-    const serialized1 = serializeModel(model1)
+    const serialized1 = serializeKnowledge(model1)
     expect(serialized1).toContain('sources:: []')
 
-    const model2 = parseModel(serialized1)
+    const model2 = parseKnowledge(serialized1)
     expect(model2.elements.get('Stakeholder')?.[0].fields.sources).toEqual([])
-    expect(serializeModel(model2)).toBe(serialized1)
+    expect(serializeKnowledge(model2)).toBe(serialized1)
   })
 
   it('falls back to JSON.stringify for a comma-containing item, unchanged from today', () => {
-    const model = parseModel(LEVEL3_TEMPLATE('note:: keep'))
+    const model = parseKnowledge(LEVEL3_TEMPLATE('note:: keep'))
     const element = model.elements.get('Stakeholder')?.[0]
     expect(element).toBeDefined()
     element!.fields.sources = ['a,b.md#x']
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     expect(serialized).toContain(`sources:: ${JSON.stringify(['a,b.md#x'])}`)
   })
 
@@ -150,10 +150,10 @@ describe('serializePropertyValue citation round-trip (H3b, via parseModel/serial
   it('serializes non-citation array fields with the same bracket-list grammar as citation fields', () => {
     const fieldNames = ['options', 'values', 'applies_to', 'target_concepts', 'needs']
     for (const fieldName of fieldNames) {
-      const model = parseModel(LEVEL3_TEMPLATE('note:: keep'))
+      const model = parseKnowledge(LEVEL3_TEMPLATE('note:: keep'))
       const element = model.elements.get('Stakeholder')?.[0]
       element!.fields[fieldName] = ['.md', '.csv']
-      const serialized = serializeModel(model)
+      const serialized = serializeKnowledge(model)
       expect(serialized).toContain(`${fieldName}:: [.md, .csv]`)
     }
   })
@@ -161,8 +161,8 @@ describe('serializePropertyValue citation round-trip (H3b, via parseModel/serial
   // AD-1: canonical scalar values are written unquoted (`category:: cost`,
   // not `category:: "cost"`) whenever that round-trips safely.
   it('serializes a non-citation scalar field unquoted, matching canonical form', () => {
-    const model1 = parseModel(LEVEL3_TEMPLATE('category:: cost'))
-    const serialized1 = serializeModel(model1)
+    const model1 = parseKnowledge(LEVEL3_TEMPLATE('category:: cost'))
+    const serialized1 = serializeKnowledge(model1)
     expect(serialized1).toContain('category:: cost')
     expect(serialized1).not.toContain('category:: "cost"')
   })
@@ -201,9 +201,9 @@ describe('corpus round-trip: parse -> serialize is a fixed point for every real 
   // has its own, unrelated, pre-existing round-trip characteristics.
   it.each(corpus)('every element field round-trips byte-identically: %s', (file) => {
     const raw = readFileSync(file, 'utf8')
-    const model1 = parseModel(raw)
-    const serialized1 = serializeModel(model1)
-    const model2 = parseModel(serialized1)
+    const model1 = parseKnowledge(raw)
+    const serialized1 = serializeKnowledge(model1)
+    const model2 = parseKnowledge(serialized1)
 
     for (const [conceptName, elements1] of model1.elements.entries()) {
       const elements2 = model2.elements.get(conceptName) ?? []

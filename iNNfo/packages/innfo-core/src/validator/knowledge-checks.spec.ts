@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { Diagnostics } from '../diagnostics.js'
-import { ElementsMap, type ParsedModel } from '../types/index.js'
-import { checkFrontmatterInvariants, checkTemplateDocumentation } from './model-checks.js'
+import { ElementsMap, type ParsedKnowledge } from '../types/index.js'
+import { checkFrontmatterInvariants, checkBlueprintDocumentation } from './knowledge-checks.js'
 
-function frontmatterModel(fm: Record<string, unknown>): ParsedModel {
+function frontmatterModel(fm: Record<string, unknown>): ParsedKnowledge {
   return {
-    frontmatter: fm as ParsedModel['frontmatter'],
+    frontmatter: fm as ParsedKnowledge['frontmatter'],
     taxonomy: [],
     elements: new ElementsMap(),
     matrices: [],
@@ -100,7 +100,7 @@ describe('diagnostic-signal-quality (H8) — aggregate template documentation wa
       { name: 'Process', type: 'list' as const },
     ]
     const templateRaw = '# NN Concept Definition\n## NN Concept Definition: Actor\ntype:: list\n'
-    checkTemplateDocumentation(concepts, templateRaw, d)
+    checkBlueprintDocumentation(concepts, templateRaw, d)
 
     expect(d.warnings).toHaveLength(1)
     expect(d.warnings[0].severity).toBe('warning')
@@ -115,7 +115,7 @@ describe('diagnostic-signal-quality (H8) — aggregate template documentation wa
     const d = new Diagnostics()
     const concepts = [{ name: 'Solo', type: 'list' as const }]
     const templateRaw = '# NN Concept Definition\n'
-    checkTemplateDocumentation(concepts, templateRaw, d)
+    checkBlueprintDocumentation(concepts, templateRaw, d)
 
     expect(d.warnings).toHaveLength(1)
     expect(d.warnings[0].severity).toBe('warning')
@@ -134,7 +134,7 @@ describe('diagnostic-signal-quality (H8) — aggregate template documentation wa
       '### Methodologies',
       '### Prompts',
     ].join('\n')
-    checkTemplateDocumentation(concepts, templateRaw, d)
+    checkBlueprintDocumentation(concepts, templateRaw, d)
 
     expect(d.warnings).toHaveLength(0)
     expect(d.valid).toBe(true)

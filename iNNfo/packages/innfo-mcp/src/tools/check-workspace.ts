@@ -34,7 +34,7 @@ import { deriveNameFromUrl } from './spec.js'
 import {
   collectWorkspaceDiagnostics,
   filterDiagnosticsForModel,
-  validateModel,
+  validateKnowledge,
 } from './validate.js'
 import {
   resolveParentChainNode,
@@ -268,16 +268,16 @@ async function validateAll(
     let fileWarnings: IntegrityDiagnostic[] = []
     if (model.id) {
       try {
-        const result = await validateModel(ctx.rootDir, model.id, undefined, undefined, false, {
+        const result = await validateKnowledge(ctx.rootDir, model.id, undefined, undefined, false, {
           checkFreshness: false,
         })
         fileErrors = toIntegrityDiagnostics(result.errors)
         fileWarnings = toIntegrityDiagnostics(result.warnings)
       } catch (err) {
         /* v8 ignore start */
-        // swallow deliberately: validateModel never rejects by contract, but
+        // swallow deliberately: validateKnowledge never rejects by contract, but
         // never let it fail the pass.
-        console.warn(`[check-workspace] validateModel threw for ${model.id}: ${err}`)
+        console.warn(`[check-workspace] validateKnowledge threw for ${model.id}: ${err}`)
         /* v8 ignore stop */
       }
     }

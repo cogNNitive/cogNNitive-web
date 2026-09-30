@@ -3,7 +3,7 @@ import { normalizeSeparators, scaleRangeFor } from '@cognnitive/innfo-core'
 import { useModelStore } from '../../../stores/modelStore'
 import { commitFieldValue } from '../../../shared/editAttribution'
 import type { MatrixDef } from '../../../composables/useMatrixDefinitions'
-import type { ModelNode } from '../../../model/types'
+import type { KnowledgeNode } from '../../../model/types'
 
 export interface UseMatrixCells {
   matrixCellKey(row: string, col: string): string
@@ -33,7 +33,7 @@ export interface CellEndpoint {
  */
 export function useMatrixCells(
   activeMatrix: Ref<MatrixDef | null>,
-  rootNode: Ref<ModelNode | null | undefined>,
+  rootNode: Ref<KnowledgeNode | null | undefined>,
   onChange: (key: string, value: unknown) => void,
 ): UseMatrixCells {
   const modelStore = useModelStore()

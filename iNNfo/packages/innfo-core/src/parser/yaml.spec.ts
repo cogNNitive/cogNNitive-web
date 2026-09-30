@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { parseYaml, parseFrontmatter } from './yaml.js'
-import { parseModel } from './core.js'
+import { parseKnowledge } from './core.js'
 
 describe('parseYaml error surfacing', () => {
   it('still returns {} on malformed YAML but reports through onError', () => {
@@ -23,15 +23,15 @@ describe('parseYaml error surfacing', () => {
     expect(onError).toHaveBeenCalledOnce()
   })
 
-  it('parseModel records a frontmatter parse error in parseWarnings instead of swallowing it', () => {
-    const model = parseModel('---\nbroken: : :\n  - nope\n---\n\n# NN index\n')
+  it('parseKnowledge records a frontmatter parse error in parseWarnings instead of swallowing it', () => {
+    const model = parseKnowledge('---\nbroken: : :\n  - nope\n---\n\n# NN index\n')
     expect(model.parseWarnings ?? []).toEqual(
       expect.arrayContaining([expect.stringMatching(/Frontmatter YAML failed to parse/)]),
     )
   })
 
   it('a clean document produces no parse warnings', () => {
-    const model = parseModel('---\nlevel: 3\n---\n\n# NN index\n')
+    const model = parseKnowledge('---\nlevel: 3\n---\n\n# NN index\n')
     expect(model.parseWarnings).toBeUndefined()
   })
 
@@ -54,7 +54,7 @@ describe('parseYaml error surfacing', () => {
 
   it('parses model starting with UTF-8 BOM cleanly', () => {
     const content = '\uFEFF---\nknowledge_version: V_0-1-0\nlevel: 3\n---\n\n# NN index\n* [[ConceptA]]\n\n# NN ConceptA\n## NN ConceptA: Item1\n'
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     expect(model.frontmatter.knowledge_version).toBe('V_0-1-0')
     expect(model.elements.get('ConceptA')).toHaveLength(1)
     expect(model.parseWarnings).toBeUndefined()
