@@ -53,6 +53,11 @@ Chain strategy: decide/scaffold -> publish pipeline -> canonical URL re-root + p
       unauthenticated.
 - [ ] 3.5 Flip `cogNNitive` to private; confirm the site and the specs still resolve.
       `[public-web-distribution:Requirement:Private Source Remains SSOT]`
+- [ ] 3.6 Absorb the `nn-nomenclature-commercial-web` copy refresh in the same sweep:
+      update `docs/index.html`, `use-cases.html` / `use-cases.md`, the contact and legal
+      pages, `llms.txt`, `ai-index.yaml`, and the sitemap if affected, so the public web
+      files are rewritten once (hosting + nomenclature together).
+      `[public-web-distribution:Requirement:Build Output Only]`
 
 ## Phase 4: Drift guard and docs
 

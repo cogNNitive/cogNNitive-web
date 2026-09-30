@@ -31,7 +31,7 @@ Chain strategy: engine first, apply/docs second
 
 ## Phase 2: CLI — `--converge`
 
-- [ ] 2.1 **RED — CLI tests**: `--converge <family>` resolves the two newest snapshots, reads the declared strategy, and emits the proposal JSON; exits non-zero on invalid key. `[source-convergence-strategies:Requirement:Declared Convergence Strategy]`
+- [ ] 2.1 **RED — CLI tests**: `--converge <family>` resolves the two newest snapshots, reads the declared strategy, and emits the proposal JSON; exits non-zero on invalid key; skips items already decided `ignore` in the session-start digest state (`.cognnitive/watch-digest.json`). `[source-convergence-strategies:Requirement:Declared Convergence Strategy]`
 - [ ] 2.2 **GREEN — wire `--converge`**: Implement the mode in `scripts/index.js`. `[source-convergence-strategies:Requirement:Declared Convergence Strategy]`
 - [ ] 2.3 **GREEN — idempotence**: Record the applied target version; a proposal already applied, or identical snapshots, yields an empty proposal. `[source-convergence-strategies:Requirement:Idempotent Proposal]`
 - [ ] 2.4 **Verify Phase 2**: `npm run lint`, `npm run typecheck`, `nn-trannsform` tests green.

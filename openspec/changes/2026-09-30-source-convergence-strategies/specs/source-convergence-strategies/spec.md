@@ -1,20 +1,13 @@
-# Source Convergence Strategies Specification
+# Delta for Source Convergence Strategies
 
-## Purpose
-
-Make the step from "a new snapshot arrived" to "the knowledge model reflects it"
-explicit, declarative, and reviewable — without ever mutating a source file. A source
-family declares a convergence strategy; a deterministic command computes a keyed delta
-proposal between the two newest snapshots; the proposal is applied through the normal
-reviewed model-mutation path.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Declared Convergence Strategy
 
-A source family MAY declare a convergence strategy: `cite-only` (default), `upsert`, or
-`replace-values`. A non-default strategy MUST also declare a `key`. When no strategy is
-declared, the system MUST behave as `cite-only` (snapshots accumulate; no proposal).
+The system MUST accept a convergence strategy declared per source family — `cite-only`
+(default), `upsert`, or `replace-values` — and MUST require a `key` for a non-default
+strategy. When no strategy is declared, the system MUST behave as `cite-only`
+(snapshots accumulate; no proposal).
 
 #### Scenario: Non-default strategy produces a proposal
 - GIVEN a source family declaring `upsert` with `key:: video_id`

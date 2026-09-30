@@ -28,6 +28,11 @@ reviewable procedure. This change makes that step first-class and declarative.
   diff preview and a single version bump — the same shape as `apply_feedback`.
 - **Sources stay immutable.** Convergence never writes to `sources/import/` or
   `sources/nn/`. A new drop is still an immutable snapshot; the model is what changes.
+- **Reuses the session-start digest machinery.** Convergence consumes the same immutable
+  snapshots the session-start external watch digest surfaces
+  (`external-watch-roots-session-digest`, shipped) and reads the same workspace-local
+  `.cognnitive/watch-digest.json` state so an item the user already `ignore`d is not
+  re-proposed for convergence. It adds no second scanner and no second state store.
 - **Idempotent.** Running `--converge` twice with the same snapshots yields an empty
   proposal the second time; a proposal already applied yields an empty proposal.
 
@@ -65,8 +70,10 @@ Additive and read-only until applied. Revert the commits; no persisted workspace
 changes and no source files are ever mutated by the feature itself.
 
 ### Dependencies
-- Builds on the per-source archive / snapshot series (`source-versioning-archive`) and
-  the feedback-apply loop (`innfo-console-feedback`). No blocking dependency.
+- Builds on the per-source archive / snapshot series (`source-versioning-archive`), the
+  session-start external watch digest (`external-watch-roots-session-digest`, shipped:
+  `--scan-external --json` and `.cognnitive/watch-digest.json`), and the feedback-apply
+  loop (`innfo-console-feedback`). No blocking dependency.
 
 ### Risks
 

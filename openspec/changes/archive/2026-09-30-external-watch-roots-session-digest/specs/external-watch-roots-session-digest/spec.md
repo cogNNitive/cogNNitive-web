@@ -1,21 +1,13 @@
-# External Watch Roots Session Digest Specification
+# Delta for External Watch Roots Session Digest
 
-## Purpose
-
-Surface newly arrived or changed external primary sources **at session start**,
-without the user having to ask for a scan, and let the user decide per item what to
-do. The scanner, the immutable timestamped ingestion, and the impact check already
-exist; this capability adds the session-start trigger, the digest rendering, the
-three-way decision, and the persisted decision state.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Session-Start Digest
 
-When a session opens inside a domaiNN whose manifest declares an
-`## NN External Watch Roots:` section, the system MUST offer exactly one digest of
-the changed items, each classified as `NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, or
-`DISCONNECTED`, and each offering three actions: `ignore`, `postpone`, or `import`.
+The system MUST offer exactly one session-start digest when a session opens inside a
+domaiNN whose manifest declares an `## NN External Watch Roots:` section. The digest
+MUST list each changed item classified as `NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, or
+`DISCONNECTED`, and MUST offer three actions: `ignore`, `postpone`, or `import`.
 The digest MUST be derived from the existing external scan; it MUST NOT introduce a
 second scanning mechanism.
 

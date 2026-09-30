@@ -1,13 +1,6 @@
-# MCP Live Preview
+# Delta for MCP Live Preview
 
-## Purpose
-
-Define the in-process loopback preview server `innfo-mcp` exposes during an authoring
-session, the change stream it publishes, and the read-only live-refresh consumer in
-`innfo-editor`, so a single browser tab opened once keeps reflecting the agent's model
-mutations without manual navigation.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Loopback Preview Server
 

@@ -1,27 +1,26 @@
-# Tasks: Self-Hosted Video Engine
+# Tasks: Vendor the VUS Parser and Retire the VidGeNN Pin
 
 ## Review Workload Forecast
 
 | Field | Value |
 |-------|-------|
-| Estimated changed lines | ~2500-3500 total |
-| 400-line budget risk | High |
-| Chained PRs recommended | Yes (3 slices: parser+spec → skill repoint → render engine) |
+| Estimated changed lines | ~900-1,300 total (parser port + vendored spec + repoint + purge) |
+| 400-line budget risk | Medium |
+| Chained PRs recommended | Yes (2 slices: parser+spec → skill repoint + purge) |
 | Delivery strategy | chained |
-| Chain strategy | slice 1 unblocks `vus-parse`; slice 2 repoints the skill/manifest; slice 3 renders |
+| Chain strategy | slice 1 unblocks `vus-parse`; slice 2 repoints the skill/manifest and purges |
 
-Decision needed before apply: Yes — a golden render reference from VidGeNN for the
-engine slice (Phase 3.5).
+Decision needed before apply: No.
 Chained PRs recommended: Yes
-Chain strategy: parser+spec first, then repoint, then the render engine.
-400-line budget risk: High
+Chain strategy: parser+spec first, then repoint + purge.
+400-line budget risk: Medium
 
 ---
 
 ## Phase 0: Restore Point (pre-migration)
 
 - [ ] 0.1 Cut an annotated checkpoint tag before any migration commit:
-      `git tag -a checkpoint/self-hosted-video-engine-<YYYYMMDD> -m "Pre migration: retire VidGeNN"`.
+      `git tag -a checkpoint/vus-parser-vendoring-<YYYYMMDD> -m "Pre migration: retire the VidGeNN pin"`.
       `[nn-dev-development:§6]`
 
 ## Phase 1: Vendored Spec + Parser Package (TDD first)
@@ -50,38 +49,38 @@ Chain strategy: parser+spec first, then repoint, then the render engine.
 - [ ] 2.3 **GREEN — drop the external pin**: remove the `vus_spec` external block from
       `SKILL.md` and the `external_specs` entry from `manifest/source.yaml`.
       `[video-script-skill:Requirement:Self-Hosted Spec Pin]`
-- [ ] 2.4 **Verify Phase 2**: `check-script` + `vus-parse` on the workspace sample;
+- [ ] 2.4 **GREEN — flip the capability spec**: update
+      `openspec/specs/video-script-skill/spec.md` so the pin resolves to the vendored
+      file, with no `VidGeNN` reference. `[video-script-skill:Requirement:Self-Hosted Spec Pin]`
+- [ ] 2.5 **Verify Phase 2**: `check-script` + `vus-parse` on the workspace sample;
       `check:spec-urls` and `check-integrity` green.
 
-## Phase 3: Render Engine (TDD first)
+## Phase 3: Procedure + Docs Purge
 
-- [ ] 3.1 **RED — rendered master fixture**: a minimal 2-scene script renders to a
-      playable `master.mp4`; assert duration, resolution, and a non-empty audio stream.
-      `[video-render-engine:Requirement:Rendered Master Artifact]`
-- [ ] 3.2 **GREEN — plan + resolve**: `plan.ts` / `resolve.ts` — AST → scene plan with
-      escape-guarded asset resolution. `[video-render-engine:Requirement:Scene Planning]`
-- [ ] 3.3 **GREEN — FFmpeg composition**: `compose/*` — per-scene graph (ken_burns,
-      drawtext, overlay), concat, and audio mux. `[video-render-engine:Requirement:FFmpeg Composition]`
-- [ ] 3.4 **GREEN — provider ingestion**: `ingest/*` — TTS, talking-avatar, and image
-      assets via the providers the script declares. `[video-render-engine:Requirement:Provider Asset Ingestion]`
-- [ ] 3.5 **Verify Phase 3**: golden-frame comparison against an existing VidGeNN render
-      of the same script. `[video-render-engine:Requirement:FFmpeg Composition]`
-- [ ] 3.6 **GREEN — finalize flow**: `renders/{ref}/master.mp4` is promotable by the
-      unchanged `finalize-video.mjs`. `[video-render-engine:Requirement:Rendered Master Artifact]`
-
-## Phase 4: Procedure + Docs Purge
-
-- [ ] 4.1 `generate_anydeo_script_NN.md`: make *Render Video* internal and delete the
-      `VidGeNN` tool entry. `[video-render-engine:Requirement:Internal Render Step]`
-- [ ] 4.2 `docs/innfo/documentation/template-video.md` and the video docs: remove
+- [ ] 3.1 `generate_anydeo_script_NN.md`: delete the residual `tool:: [[VidGeNN]]`
+      reference (the canonical `generate_video_script_NN.md` already renders internally
+      via `video-engine-cli.mjs`; no render change is in scope). `[video-script-skill:Requirement:Owned Skill With No External Dependency]`
+- [ ] 3.2 `docs/innfo/documentation/template-video.md` and the video docs: remove
       VidGeNN / Anydeo references.
-- [ ] 4.3 Grep gate: zero `VidGeNN` / `Anydeo` hits across the monorepo (git history
+- [ ] 3.3 Grep gate: zero `VidGeNN` / `Anydeo` hits across the monorepo (git history
       excluded).
-- [ ] 4.4 Release: cut a `skills-v*` / `templates-v*` tag **and** re-pin
-      `manifest/source.yaml` in the same batch (`nn-dev-development` §4e).
+- [ ] 3.4 Release: cut a `skills-v*` tag **and** re-pin `manifest/source.yaml` in the
+      same batch (`nn-dev-development` §4e).
 
-## Phase 5: Final Gates
+## Phase 4: Final Gates
 
-- [ ] 5.1 `npm run lint`, `npm run typecheck`, the full test suite, and
+- [ ] 4.1 `npm run lint`, `npm run typecheck`, the full test suite, and
       `node scripts/check-integrity.js`.
-- [ ] 5.2 Archive VidGeNN (maintainer action, after green).
+- [ ] 4.2 Archive VidGeNN (maintainer action, after green).
+
+---
+
+## Scope note (2026-09-30)
+
+The previous version of this change also planned a Node + FFmpeg **render engine** (Phase 3)
+and a golden-frame comparison against VidGeNN. That work is **already shipped** as the
+`cognnitive-video-engine` capability (`video-engine-cli.mjs`, `remotion-scene-compiler.mjs`,
+`asset-synthesizer.mjs`, `tts-generator.mjs`), and the canonical procedure
+`generate_video_script_NN.md` already orchestrates it internally. The render capability and
+its tasks were removed; `specs/video-render-engine/` was deleted. What remains is the VUS
+parser + vendored spec + pin removal + purge.

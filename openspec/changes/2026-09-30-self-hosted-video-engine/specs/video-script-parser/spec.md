@@ -1,12 +1,6 @@
-# Video Script Parser
+# Delta for Video Script Parser
 
-## Purpose
-
-Define the cogNNitive-owned VUS parser package and the vendored VUS specification it
-reads, removing the dependency on the external `VidGeNN` repository for parsing and for
-VUS-syntax facts.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Vendored VUS Spec
 

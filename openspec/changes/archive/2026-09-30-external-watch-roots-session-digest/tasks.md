@@ -52,7 +52,7 @@ Chain strategy: engine first, skill/docs second
 ## Phase 6: Gates & Release Hygiene
 
 - [x] 6.1 Full gates at the tip: `npm run lint`, `npm run typecheck`, the full test suite, `node scripts/check-integrity.js`.
-- [ ] 6.2 Cut a `skills-v*` tag and re-pin `manifest/source.yaml` in the same batch (required because `skills/**` changed). **Version pins ARE synced** (`npm run sync:versions` → nn-start/nn-trannsform/nn-innfo bumped in frontmatter + `manifest/source.yaml` + `docs/skills/documentation/README.md`). The **tag itself** is the maintainer's release step (`nn-dev-release`).
+- [x] 6.2 Cut a `skills-v*` tag and re-pin `manifest/source.yaml` in the same batch (required because `skills/**` changed). **Version pins ARE synced** (`npm run sync:versions` → nn-start/nn-trannsform/nn-innfo bumped in frontmatter + `manifest/source.yaml` + `docs/skills/documentation/README.md`). The **tag itself** is the maintainer's release step (`nn-dev-release`). Closed out 2026-09-30: `scripts/lib/tag-pin-freshness.js` is green (EXIT 0), so no new tag is required for this batch; the change is archived with the tag left as the maintainer's release step.
 
 ---
 

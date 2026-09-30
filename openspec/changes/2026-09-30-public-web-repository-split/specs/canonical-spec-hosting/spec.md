@@ -2,12 +2,13 @@
 
 ### Requirement: Canonical Spec Hosting Base URL
 
-All canonical iNNfo specifications (Level 1 core specs, Level 2 templates, Level 3 sample
-models, and procedure sub-models) MUST be hosted on the public distribution host rather
-than on the repository that holds the source. The exact host is recorded by open decision
-2 of the `public-web-distribution` change (the public distribution repository, or its
-same-origin Pages path). No canonical specification, template, sample model, or
-documentation MAY reference a `raw.githubusercontent.com/cogNNitive/cogNNitive` URL.
+All canonical iNNfo specifications MUST be hosted on the public distribution host rather
+than on the repository that holds the source; this covers Level 1 core specs, Level 2
+templates, Level 3 sample models, and procedure sub-models. The exact host is recorded by
+open decision 2 of the `public-web-distribution` change (the public distribution
+repository, or its same-origin Pages path). No canonical specification, template, sample
+model, or documentation MAY reference a `raw.githubusercontent.com/cogNNitive/cogNNitive`
+URL.
 
 #### Scenario: Level 1 and defiNNe spec frontmatter
 - GIVEN any Level 1 or defiNNe specification file

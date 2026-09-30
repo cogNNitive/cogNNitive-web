@@ -44,6 +44,12 @@ artifacts that are already public today.
   gitignored build outputs).
 - **Free-tier hosting.** A public site repository is what keeps the website published
   without a paid plan for Pages-on-private-repositories.
+- **Absorbs the commercial copy refresh.** The rename wave's planned follow-up
+  `nn-nomenclature-commercial-web` (commercial web copy: `docs/index.html`,
+  `use-cases.html` / `use-cases.md`, the contact and legal pages, `llms.txt`,
+  `ai-index.yaml`, and the sitemap if affected) is folded in here. The public web
+  surface is rewritten once — hosting split and nomenclature copy in the same
+  coordinated change — instead of twice, since both touch the same `docs/**` files.
 
 ## Capabilities
 
@@ -112,7 +118,8 @@ Revert the commits on `dev`. The monorepo can resume deploying Pages from itself
 
 ### Out of scope
 - Open-sourcing the editor app or any `iNNfo/` source.
-- Changing the site's look, content, or generated-facts pipeline.
+- Changing the site's visual design or the generated-facts pipeline (the nomenclature
+  copy refresh is in scope; the look is not).
 - Registering a second canonical host per artifact type.
 
 ### Open decisions
