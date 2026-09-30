@@ -124,6 +124,8 @@ function validateAllowlist(allowlist = ALLOWLIST) {
  * @param {string} [options.repoRoot]
  * @param {string[]} [options.files]
  * @param {(file: string) => string} [options.readFile]
+ * @param {Array<{ id: string, re: RegExp, label: string }>} [options.tokens]
+ * @param {Array<{ pattern: string, reason: string }>} [options.allowlist]
  * @returns {{ ok: boolean, errors: string[], hits: Array<{ file: string, token: string, label: string, line: number }> }}
  */
 function checkLegacyWriteGuard(options = {}) {
