@@ -1,0 +1,20 @@
+# AI index — cogNNitive Knowledge Evolution Framework
+# LLMs and AI agents use this file to discover the site's purpose and structure.
+version: "1.0"
+site:
+  title: "cogNNitive — Knowledge Evolution Framework"
+  description: "Turn ideas scattered in brains and files into a living, structured knowledge base with zero vendor lock-in and radical traceability."
+  url: "https://cognnitive.com"
+  type: gateway
+ecosystem:
+  - name: cogNNitive
+    role: monorepo
+    url: "https://github.com/cogNNitive/cogNNitive"
+    description: "iNNfo specification engine (parser, validator, MCP server), agent skills, and the iNNfo Modeler app"
+pages:
+  - url: "https://cognnitive.com/"
+    content: "Landing page — gateway, ecosystem overview, bootstrap instructions"
+  - url: "https://cognnitive.com/use-cases"
+    content: "Real-world use cases across roles"
+  - url: "https://cognnitive.com/use"
+    content: "Agent bootstrap manifest"

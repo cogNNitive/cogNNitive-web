@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cogNNitive Modeler</title>
+    <style>
+      /* Inline loading splash - shown while the bundle loads, replaced by Vue on mount */
+      #app-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        z-index: 9999;
+      }
+      #app-loader svg {
+        width: 120px;
+        height: 90px;
+        animation: innfo-spin 1.4s linear infinite;
+      }
+      @keyframes innfo-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #app-loader svg {
+          animation: none;
+        }
+      }
+    </style>
+    <script>
+      (function() {
+        var search = window.location.search;
+        if (search.includes('p=')) {
+          var params = new URLSearchParams(search);
+          var p = params.get('p');
+          if (p) {
+            var decoded = decodeURIComponent(p);
+            var newUrl = '/innfo/app' + (decoded.startsWith('/') ? decoded : '/' + decoded);
+            window.history.replaceState(null, '', newUrl);
+          }
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/innfo/app/assets/index-D7SR_JEJ.js"></script>
+    <link rel="stylesheet" crossorigin href="/innfo/app/assets/index-BmfoYrP3.css">
+  </head>
+  <body>
+    <div id="app">
+      <!-- Replaced by Vue on mount; prevents blank page while the bundle loads -->
+      <div id="app-loader" role="status" aria-label="Loading cogNNitive Modeler">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" aria-hidden="true">
+          <path d="M 160 490 L 160 295 Q 160 270 180 285 L 330 475 Q 350 490 350 470 L 350 235 Q 350 210 370 225 L 530 415 Q 550 430 550 410 L 550 90 L 495 145 L 550 90 L 605 145"
+                fill="none"
+                stroke="#4D0E4E"
+                stroke-width="82"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+  </body>
+</html>

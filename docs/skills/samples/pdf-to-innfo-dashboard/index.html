@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF to iNNfo Model & Dashboard — Try it · cogNNitive</title>
+  <meta name="description" content="Transform a Wikipedia article PDF into an iNNfo model with specialization and export an interactive Charts.js dashboard. Demonstrates the full traNNsform + iNNfo pipeline.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;1,400;1,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-inert: #FAFAFC;
+      --brand: #4D0E4E;
+      --brand-light: #6A1B6B;
+      --border: #F2F2F7;
+      --ink: #111112;
+      --ink-muted: #636366;
+      --sans: 'Plus Jakarta Sans', 'Geist Sans', system-ui, sans-serif;
+      --serif: 'Playfair Display', Georgia, serif;
+      --mono: 'JetBrains Mono', 'Geist Mono', monospace;
+      --max-w: 880px;
+      --radius: 10px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 48px;
+      --space-xxl: 80px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans); font-size: 16px; line-height: 1.6;
+      color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 var(--space-lg); }
+    .wide { max-width: 1080px; }
+
+    nav { padding: var(--space-md) 0; border-bottom: 1px solid var(--border); background: var(--canvas); position: sticky; top: 0; z-index: 100; }
+    nav .container { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 800; font-size: 22px; color: var(--brand); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-back { font-size: 14px; color: var(--ink-muted); text-decoration: none; font-weight: 500; }
+    .nav-back:hover { color: var(--brand); }
+
+    .hero { padding: 80px 0 var(--space-xl); }
+    .hero h1 { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: var(--space-sm); }
+    .hero h1 .accent { font-family: var(--serif); font-weight: 600; font-style: italic; color: var(--brand); }
+    .hero .subtitle { font-size: 18px; color: var(--ink-muted); margin-bottom: var(--space-md); }
+    .hero .arrow { display: inline-flex; align-items: center; gap: var(--space-sm); font-size: 15px; font-weight: 600; color: var(--brand); background: #F6EEF6; padding: 8px 20px; border-radius: var(--radius); }
+    .hero .pipeline { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-md); font-size: 13px; color: var(--ink-muted); }
+    .hero .pipeline .skill-badge { background: var(--canvas-inert); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; font-family: var(--mono); font-size: 12px; color: var(--brand); }
+    .hero .pipeline .arrow-chev { color: var(--ink-muted); font-weight: 300; }
+
+    section { padding: var(--space-xl) 0; }
+    section + section { border-top: 1px solid var(--border); }
+    .section-label { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-sm); }
+    .section-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: var(--space-md); }
+    .section-title .accent { font-family: var(--serif); font-weight: 400; font-style: italic; color: var(--brand); }
+    .section-desc { color: var(--ink-muted); max-width: 640px; font-size: 16px; }
+
+    .input-box { background: var(--canvas-inert); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-lg); margin: var(--space-lg) 0; }
+    .input-box .filename { font-weight: 600; font-size: 14px; margin-bottom: var(--space-sm); color: var(--brand); }
+    .input-box .preview { font-family: var(--mono); font-size: 13px; line-height: 1.7; color: var(--ink-muted); white-space: pre-wrap; max-height: 280px; overflow-y: auto; background: #fff; padding: var(--space-md); border-radius: 6px; border: 1px solid var(--border); margin-bottom: var(--space-md); }
+    .input-box .preview strong { color: var(--ink); }
+    .btn-download { display: inline-flex; align-items: center; gap: var(--space-sm); background: var(--brand); color: #fff; text-decoration: none; padding: 10px 24px; border-radius: var(--radius); font-weight: 600; font-size: 14px; transition: background 0.2s; }
+    .btn-download:hover { background: var(--brand-light); }
+    .btn-outline { display: inline-flex; align-items: center; gap: var(--space-sm); background: transparent; color: var(--brand); border: 1px solid var(--brand); text-decoration: none; padding: 10px 24px; border-radius: var(--radius); font-weight: 600; font-size: 14px; transition: background 0.2s; margin-left: var(--space-sm); }
+    .btn-outline:hover { background: #F6EEF6; }
+
+    .steps { display: flex; flex-direction: column; gap: var(--space-lg); margin-top: var(--space-lg); }
+    .step-card { counter-increment: step; border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-lg); position: relative; padding-left: 72px; background: var(--canvas); }
+    .steps { counter-reset: step; }
+    .step-card::before { content: counter(step); position: absolute; left: var(--space-lg); top: var(--space-lg); font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--brand); background: #F6EEF6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .step-card h4 { font-size: 18px; font-weight: 600; margin-bottom: var(--space-sm); }
+    .step-card p { font-size: 14px; color: var(--ink-muted); line-height: 1.6; margin-bottom: var(--space-sm); }
+    .step-card p:last-child { margin-bottom: 0; }
+    .step-card .code-snip { background: var(--canvas-inert); border-radius: 6px; padding: var(--space-md); font-family: var(--mono); font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: var(--ink); margin-top: var(--space-sm); }
+
+    .output-box { background: #F8F4F8; border: 1px solid var(--brand); border-radius: var(--radius); padding: var(--space-lg); margin-top: var(--space-lg); }
+    .output-box .label { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-sm); }
+    .output-preview { font-family: var(--mono); font-size: 13px; line-height: 1.7; color: var(--ink); background: #fff; padding: var(--space-md); border-radius: 6px; border: 1px solid var(--border); }
+    .output-preview .schema-desc { color: var(--ink-muted); font-size: 12px; margin-bottom: var(--space-sm); }
+
+    .file-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-lg); }
+    .file-card { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-md); background: var(--canvas); }
+    .file-card .file-icon { font-size: 24px; margin-bottom: var(--space-sm); }
+    .file-card .file-name { font-weight: 600; font-size: 14px; color: var(--ink); }
+    .file-card .file-desc { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+    @media (max-width: 640px) { .file-grid { grid-template-columns: 1fr; } }
+
+    .tip { background: #FFF9E6; border: 1px solid #F0D78E; border-radius: var(--radius); padding: var(--space-md) var(--space-lg); margin-top: var(--space-lg); font-size: 14px; color: #6B5200; }
+    .tip strong { color: #4A3800; }
+
+    footer { border-top: 1px solid var(--border); padding: var(--space-xl) 0 var(--space-lg); text-align: center; font-size: 13px; color: var(--ink-muted); }
+    footer a { color: var(--brand); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 30px; }
+      .section-title { font-size: 22px; }
+      .step-card { padding-left: var(--space-lg); padding-top: 56px; }
+      .step-card::before { left: var(--space-lg); top: var(--space-md); }
+      .hero .pipeline .skill-badge { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="/" class="logo">cogNNitive</a>
+    <a href="/" class="nav-back">&larr; Back to home</a>
+  </div>
+</nav>
+
+<main class="container wide">
+
+  <!-- Hero -->
+  <section class="hero">
+    <span class="section-label">Sample Workflow</span>
+    <h1>PDF to <span class="accent">iNNfo Dashboard</span></h1>
+    <p class="subtitle">Take a Wikipedia article PDF, run it through the full cogNNitive pipeline: normalize with traNNsform, model with iNNfo, and export an interactive Charts.js dashboard.</p>
+    <div class="arrow">&#x1F4D1; Wikipedia PDF &rarr; &#x1F4CA; Interactive Dashboard</div>
+    <div class="pipeline">
+      <span class="skill-badge">nn-trannsform</span>
+      <span class="arrow-chev">&rarr;</span>
+      <span class="skill-badge">nn-innfo</span>
+      <span class="arrow-chev">&rarr;</span>
+      <span class="skill-badge">nn-trannsform</span>
+      <span class="arrow-chev">&rarr;</span>
+      <span class="skill-badge">&#x1F4CA; Dashboard</span>
+    </div>
+  </section>
+
+  <!-- Prerequisites banner -->
+  <div style="background:#F6EEF6;border:1px solid var(--brand);border-radius:var(--radius);padding:var(--space-md) var(--space-lg);margin-bottom:0;display:flex;align-items:center;gap:var(--space-md);flex-wrap:wrap;">
+    <span style="font-size:15px;">&#x26A0;&#xFE0F; <strong>First time?</strong> Check the <a href="/setup/" target="_blank" rel="noopener noreferrer" style="color:var(--brand);font-weight:600;">setup guide</a> and run <code>I want to use https://cognnitive.com/use</code> in OpenCode first — it installs everything. No Git or terminal needed.</span>
+  </div>
+
+  <!-- Input -->
+  <section>
+    <span class="section-label">1 &mdash; The input</span>
+    <h2 class="section-title">What you'll <span class="accent">transform</span></h2>
+    <p class="section-desc">The Wikipedia article for <strong>What's Up, Doc? (1972)</strong> — a Peter Bogdanovich screwball comedy starring Barbra Streisand and Ryan O'Neal. Save it as PDF or use the Markdown source provided.</p>
+
+    <div class="input-box">
+      <div class="filename">&#x1F4D1; Whats_Up_Doc_1972_film.pdf</div>
+      <div class="preview"><strong>What's Up, Doc?</strong> — 1972 American screwball comedy film directed by Peter Bogdanovich<br><br>
+<strong>Starring:</strong> Barbra Streisand, Ryan O'Neal, Kenneth Mars, Madeline Kahn<br>
+<strong>Release:</strong> March 9, 1972 | <strong>Runtime:</strong> 94 min | <strong>Budget:</strong> $4M | <strong>Box office:</strong> $66M<br><br>
+Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to compete for a research grant. He meets the charming trouble-magnet Judy Maxwell, and a case of mistaken identical plaid overnight bags leads to a chaotic chase through San Francisco involving secret government documents, stolen jewels, and a decorated Volkswagen Beetle stolen from a wedding party.</div>
+      <a href="https://en.wikipedia.org/wiki/What%27s_Up%2C_Doc%3F_%281972_film%29" target="_blank" rel="noopener noreferrer" class="btn-download">&#x1F4E5; Open Wikipedia article</a>
+      <a href="input/whats-up-doc-1972_source.md" download class="btn-outline">&#x1F4C4; Download source text</a>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section>
+    <span class="section-label">2 &mdash; The workflow</span>
+    <h2 class="section-title">Follow the <span class="accent">steps</span></h2>
+    <p class="section-desc">Run these steps in your AI agent (OpenCode, Claude Code, etc.). This sample chains two skills: <strong>nn-trannsform</strong> for document processing and HTML export, and <strong>nn-innfo</strong> for model authoring.</p>
+
+    <div class="steps">
+      <div class="step-card">
+        <h4>Save and place the PDF</h4>
+        <p>Open the Wikipedia article and save it as PDF (File &rarr; Print &rarr; Save as PDF). Place it in <code>traNNsform/input/</code>. Alternatively, download the source text and use it directly.</p>
+        <div class="code-snip">curl -o traNNsform/input/Whats_Up_Doc_1972_film.pdf "https://en.wikipedia.org/api/rest_v1/page/pdf/What%27s_Up%2C_Doc%3F_%281972_film%29"</div>
+      </div>
+
+      <div class="step-card">
+        <h4>Run the pipeline</h4>
+        <p>Tell your agent to execute the pdf-to-innfo-dashboard workflow on the PDF.</p>
+        <div class="code-snip">Run the sample workflow workflows/samples/pdf-to-innfo-dashboard.workflow.md on traNNsform/input/Whats_Up_Doc_1972_film.pdf. Read the PDF, normalize it, create an iNNfo specialization and model, then export an interactive dashboard to traNNsform/output/. Name the model WhatsUpDoc_1972_V_0-1-0_film_NN.md and the dashboard WhatsUpDoc_1972_dashboard.html.</div>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent ingests the PDF</h4>
+        <p>The agent detects the PDF and uses <strong>pdf-parse</strong> (Node.js) to extract the full text. If the agent reads PDFs natively, it does so directly. The content is normalized to structured Markdown with source traceability.</p>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent designs the specialization</h4>
+        <p>Using <strong>nn-innfo</strong>, the agent analyzes the extracted content and identifies film-specific concepts: Film metadata, Cast &amp; Crew, Plot beats, Production details, Awards &amp; Reception. It proposes a level-2 specialization with typed fields and matrices.</p>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent authors the iNNfo model</h4>
+        <p>The agent writes the specialization (level 2) and model (level 3) files, validates them via <code>innfo-mcp validate_model</code>, and confirms the schema is correct. You get two validated <code>*_NN.md</code> files.</p>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent exports the dashboard</h4>
+        <p>Using <strong>nn-trannsform</strong>'s export pipeline, the agent reads the model, resolves the specialization, and generates a standalone HTML dashboard with Charts.js visualizations: cast grid, budget vs. box office bar chart, awards timeline, and plot summary.</p>
+        <div class="code-snip">open traNNsform/output/WhatsUpDoc_1972_dashboard.html</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pipeline diagram -->
+  <section>
+    <span class="section-label">3 &mdash; The architecture</span>
+    <h2 class="section-title">How the <span class="accent">pipeline</span> fits together</h2>
+    <p class="section-desc">Three skills working in sequence: import, model, export.</p>
+
+    <div class="file-grid">
+      <div class="file-card">
+        <div class="file-icon">&#x1F4D1;</div>
+        <div class="file-name">Stage 1: Import</div>
+        <div class="file-desc"><strong>nn-trannsform</strong> &mdash; Normalize the PDF to structured Markdown via pdf-parse</div>
+      </div>
+      <div class="file-card">
+        <div class="file-icon">&#x1F9E0;</div>
+        <div class="file-name">Stage 2: Analyze</div>
+        <div class="file-desc"><strong>nn-innfo</strong> &mdash; Extract film-specific concepts from the content and design the specialization schema</div>
+      </div>
+      <div class="file-card">
+        <div class="file-icon">&#x1F4DD;</div>
+        <div class="file-name">Stage 3: Author</div>
+        <div class="file-desc"><strong>nn-innfo</strong> &mdash; Write specialization + model, validate via innfo-mcp</div>
+      </div>
+      <div class="file-card">
+        <div class="file-icon">&#x1F4CA;</div>
+        <div class="file-name">Stage 4: Export</div>
+        <div class="file-desc"><strong>nn-trannsform</strong> &mdash; Generate interactive HTML dashboard with Chart.js</div>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--space-lg); padding: var(--space-md); background: var(--canvas-inert); border-radius: var(--radius); font-family: var(--mono); font-size: 13px; line-height: 1.8; text-align: center;">
+      PDF &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-trannsform import</span> &#x27A1;&#xFE0F; Normalized MD &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-innfo analyze</span> &#x27A1;&#xFE0F; Concepts &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-innfo author</span> &#x27A1;&#xFE0F; *_NN.md &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-trannsform export</span> &#x27A1;&#xFE0F; dashboard.html
+    </div>
+
+    <div style="margin-top: var(--space-lg); background: #F0F4F8; border: 1px solid #B8D0E0; border-radius: var(--radius); padding: var(--space-md) var(--space-lg); font-size: 14px; color: #1A3A5C;">
+      <strong>&#x1F4E6; Artifacts produced:</strong>
+      <ul style="margin-top: var(--space-sm); padding-left: var(--space-lg);">
+        <li><code>traNNsform/md/Whats_Up_Doc_1972_normalized.md</code> &mdash; Normalized source</li>
+        <li><code>WhatsUpDoc_1972_film_V_0-1-0_spec_NN.md</code> &mdash; Film specialization (level 2)</li>
+        <li><code>WhatsUpDoc_1972_V_0-1-0_film_NN.md</code> &mdash; Film model (level 3)</li>
+        <li><code>traNNsform/output/WhatsUpDoc_1972_dashboard.html</code> &mdash; Interactive dashboard</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Output -->
+  <section>
+    <span class="section-label">4 &mdash; The result</span>
+    <h2 class="section-title">What you'll <span class="accent">get</span></h2>
+    <p class="section-desc">The agent produces an interactive HTML dashboard visualizing the film's data from the iNNfo model:</p>
+
+    <div class="output-box">
+      <div class="label">&#x1F4CA; WhatsUpDoc_1972_dashboard.html</div>
+      <div class="output-preview">
+        <div class="schema-desc">Excerpt from the generated dashboard structure:</div>
+<strong>&lt;!-- Dashboard: What's Up, Doc? (1972) --&gt;</strong>
+
+<strong>## Key Metrics</strong>
+  &#x1F3AC;  Year: 1972  |  &#x23F1; Runtime: 94 min  |  &#x1F4B0; Budget: $4M  |  &#x1F4B5; Box Office: $66M  |  &#x2B50; AFI #61
+
+<strong>## Cast Grid</strong>
+  &#x1F463; Barbra Streisand &mdash; Judy Maxwell
+  &#x1F463; Ryan O'Neal &mdash; Dr. Howard Bannister
+  &#x1F463; Madeline Kahn &mdash; Mrs. Van Hoskins
+  &#x1F463; Kenneth Mars &mdash; Hugh Simon
+  (plus 6 more)
+
+<strong>## Budget vs. Box Office</strong>
+  [Bar chart: $4M (budget) vs $66M (box office) &mdash; 16.5x return]
+
+<strong>## Awards &amp; Recognition</strong>
+  [Timeline or radar chart: WGA Award, AFI Comedy #61, AFI Love Stories #68, WGA Funniest #58]
+
+<strong>## Plot Summary</strong>
+  Musicologist + mistaken bags + San Francisco chase + courtroom chaos + plane romance.
+      </div>
+    </div>
+  </section>
+
+  <!-- Tip -->
+  <div class="tip">
+    <strong>&#x1F4A1; Try it with any Wikipedia article:</strong> Replace the film PDF with any Wikipedia article (person, event, place, technology, etc.) and run the same workflow. The specialization adapts to the content — the pipeline is content-agnostic.
+  </div>
+
+</main>
+
+<footer>
+  <div class="container">
+    <p><a href="/">cogNNitive</a> &middot; Open source under MIT license &middot; <a href="/documentation/">Documentation</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

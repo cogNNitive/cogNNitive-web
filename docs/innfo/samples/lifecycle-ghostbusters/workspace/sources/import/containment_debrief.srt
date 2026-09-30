@@ -1,0 +1,7 @@
+1
+00:00:01,000 --> 00:00:20,000
+Dr. Egon Spengler: The high-voltage laser containment system in the basement is currently operating at 94% capacity following the Sedgewick Hotel operation.
+
+2
+00:00:21,000 --> 00:00:40,000
+Dr. Ray Stantz: That means we need an emergency grid expansion before capturing any Class V free-roaming vapors.

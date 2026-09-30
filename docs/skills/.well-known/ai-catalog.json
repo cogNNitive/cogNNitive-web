@@ -1,0 +1,15 @@
+{
+  "@context": "https://schema.org",
+  "@type": "DataCatalog",
+  "name": "cogNNitive",
+  "description": "AI Agent Skills ecosystem — modular skills that power AI agents with specialized capabilities",
+  "generator": {
+    "@type": "SoftwareApplication",
+    "url": "https://cognnitive.com/skills/nn-design-presets"
+  },
+  "url": "https://cognnitive.com/skills",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "keywords": ["ai-agent", "skills", "nn-start", "document-transformation", "design-presets", "video-script"],
+  "dateModified": "2026-06-27"
+}

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup — cogNNitive</title>
+  <meta name="description" content="Prerequisites and installation guide for running agent skills samples.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-inert: #FAFAFC;
+      --brand: #4D0E4E;
+      --brand-light: #6A1B6B;
+      --border: #F2F2F7;
+      --ink: #111112;
+      --ink-muted: #636366;
+      --green: #1A7D36;
+      --green-bg: #E8F5EC;
+      --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --max-w: 800px;
+      --radius: 10px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 48px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans); font-size: 16px; line-height: 1.6;
+      color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 var(--space-lg); }
+
+    nav { padding: var(--space-md) 0; border-bottom: 1px solid var(--border); background: var(--canvas); position: sticky; top: 0; z-index: 100; }
+    nav .container { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 800; font-size: 22px; color: var(--brand); text-decoration: none; letter-spacing: -0.02em; }
+
+    .hero { padding: 60px 0 var(--space-xl); }
+    .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: var(--space-sm); }
+    .hero h1 .accent { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-style: italic; color: var(--brand); }
+    .hero p { color: var(--ink-muted); font-size: 16px; }
+
+    .checklist { margin-top: var(--space-xl); }
+    .check-item { display: flex; gap: var(--space-md); padding: var(--space-lg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: var(--space-md); align-items: flex-start; }
+    .check-marker { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--green-bg); color: var(--green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-top: 2px; }
+    .check-body h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .check-body p { font-size: 14px; color: var(--ink-muted); }
+    .check-body .code-snip { background: var(--canvas-inert); border-radius: 6px; padding: 12px var(--space-md); font-family: var(--mono); font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-top: var(--space-sm); color: var(--ink); }
+    .check-body a { color: var(--brand); }
+
+    .verify-box { background: var(--canvas-inert); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-lg); margin-top: var(--space-xl); }
+    .verify-box h3 { font-size: 16px; font-weight: 600; margin-bottom: var(--space-sm); }
+    .verify-box .code-snip { background: #fff; border-radius: 6px; padding: var(--space-md); font-family: var(--mono); font-size: 13px; line-height: 1.5; white-space: pre-wrap; border: 1px solid var(--border); margin-bottom: var(--space-sm); }
+    .verify-box .code-snip:last-child { margin-bottom: 0; }
+
+    footer { border-top: 1px solid var(--border); padding: var(--space-xl) 0; text-align: center; font-size: 13px; color: var(--ink-muted); margin-top: var(--space-xl); }
+    footer a { color: var(--brand); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 28px; }
+      .check-item { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="/" class="logo">cogNNitive</a>
+  </div>
+</nav>
+
+<main class="container">
+
+  <section class="hero">
+    <span style="font-size:13px;font-weight:600;color:var(--brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-sm);display:block;">Prerequisites</span>
+    <h1>Before you <span class="accent">begin</span></h1>
+    <p>To run any sample, just tell your AI agent to use the bootstrap URL. No Git or terminal needed.</p>
+  </section>
+
+  <div class="checklist">
+
+    <div class="check-item">
+      <div class="check-marker">1</div>
+      <div class="check-body">
+        <h3>Install OpenCode Desktop</h3>
+        <p>Download and install the OpenCode Desktop application from <a href="https://opencode.ai" target="_blank" rel="noopener noreferrer">opencode.ai</a>. Follow the instructions for your platform, then open the app — that's all you need. No terminal, no Git.</p>
+      </div>
+    </div>
+
+    <div class="check-item">
+      <div class="check-marker">2</div>
+      <div class="check-body">
+        <h3>Tell your AI agent</h3>
+        <p>Open OpenCode Desktop and paste this exact line into the chat:</p>
+        <div class="code-snip" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--brand);color:#fff;font-weight:600;">
+          <span>I want to use https://cognnitive.com/use</span>
+          <button type="button" class="copy-cmd-btn" data-copy="I want to use https://cognnitive.com/use" style="font-size:12px;font-weight:600;color:var(--brand);background:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;">Copy</button>
+        </div>
+        <p style="margin-top:var(--space-sm);">The agent fetches the bootstrap manifest, downloads all skills over HTTPS, registers the MCP server, and presents a workflow menu — everything automatic. It's the same line whether it's your first time or you're coming back.</p>
+      </div>
+    </div>
+
+    <div class="check-item">
+      <div class="check-marker">3</div>
+      <div class="check-body">
+        <h3>Choose &amp; follow</h3>
+        <p>Pick what you want to do from the workflow menu and follow the instructions your agent provides. No terminal, no Git, no manual setup.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="verify-box">
+    <h3>&#x2705; Verify everything works</h3>
+    <p style="font-size:14px;color:var(--ink-muted);margin-bottom:var(--space-md);">After the agent completes bootstrap, try loading a skill:</p>
+    <div class="code-snip">&gt; Load the nn-trannsform skill</div>
+    <div class="code-snip" style="margin-top:8px;"><span class="comment" style="color:#8E8E93;"># Expected: "🔧 You're using skill: nn-trannsform"</span></div>
+  </div>
+
+  <div style="margin-top:var(--space-xl);padding:var(--space-lg);background:#F6EEF6;border-radius:var(--radius);text-align:center;">
+    <p style="font-size:15px;font-weight:600;color:var(--brand);">&#x2714; Ready? <a href="/samples/meeting-to-summary/" style="color:var(--brand);">Go to samples &rarr;</a></p>
+  </div>
+
+  <script>
+    document.querySelectorAll('.copy-cmd-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        navigator.clipboard.writeText(btn.dataset.copy).then(function () {
+          var original = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = original; }, 1500);
+        });
+      });
+    });
+  </script>
+
+</main>
+
+<footer>
+  <div class="container">
+    <p><a href="/">cogNNitive</a> &middot; Open source under MIT license &middot; <a href="/documentation/">Documentation</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

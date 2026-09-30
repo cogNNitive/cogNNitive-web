@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "source_model": "Ghostbusters_Operations_NN.md",
+    "source_model_version": "V_1-0-0",
+    "artifact": "Paranormal_Containment_Brief.md",
+    "artifact_version": "V_1-0-0",
+    "exported_at": "2026-09-12T12:00:00Z",
+    "author": "Walter Peck (EPA)",
+    "feedback_slug": "epa-review",
+    "viewer": "iNNfo Modeler"
+  },
+  "items": [
+    {
+      "id": "fb-001",
+      "kind": "correction",
+      "target": "FacilityCapacity: Basement Containment Grid",
+      "status": "pending",
+      "comment": "Submit environmental safety compliance documentation for the high-voltage laser confinement unit."
+    }
+  ]
+}

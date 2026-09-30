@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About — iNNfo</title>
+    <meta
+      name="description"
+      content="Learn about iNNfo, the hub for the iNNfo ecosystem — the iNNfo Modeler, innfo-core, innfo-mcp, and the spec chain."
+    />
+    <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets" />
+    <link rel="canonical" href="https://cognnitive.com/innfo/about" />
+    <link rel="alternate" type="text/markdown" href="about.md" />
+    <link rel="icon" type="image/svg+xml" href="/innfo/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/innfo/css/style.css" />
+    <script src="/innfo/js/analytics.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "iNNfo",
+        "url": "https://cognnitive.com/innfo/",
+        "description": "The hub for the iNNfo ecosystem. iNNfo Modeler, innfo-core, innfo-mcp, and the spec chain.",
+        "author": { "@type": "Organization", "name": "cogNNitive" },
+        "inLanguage": "en",
+        "isAccessibleForFree": true
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Work-in-Progress / Experimental Banner -->
+    <aside id="site-wip-banner" class="site-wip-banner" role="status" aria-label="Experimental preview notice">
+      <div class="site-wip-banner-content">
+        <span class="site-wip-banner-icon" aria-hidden="true">✨</span>
+        <span><strong>Work in Progress:</strong> iNNfo & cogNNitive are experimental and actively evolving. Expect updates & occasional dust — feedback is warmly welcome!</span>
+      </div>
+      <button type="button" class="site-wip-banner-close" aria-label="Dismiss banner" onclick="dismissWipBanner()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </aside>
+    <script>
+      (function() {
+        var banner = document.getElementById('site-wip-banner');
+        if (sessionStorage.getItem('nn_site_wip_banner_dismissed') === 'true') {
+          if (banner) banner.style.display = 'none';
+        }
+      })();
+      function dismissWipBanner() {
+        var banner = document.getElementById('site-wip-banner');
+        if (banner) banner.style.display = 'none';
+        sessionStorage.setItem('nn_site_wip_banner_dismissed', 'true');
+      }
+    </script>
+
+    <header class="header">
+      <div class="container">
+        <div class="header-inner">
+          <a href="https://cognnitive.com/innfo" class="logo"><img src="/innfo/favicon.svg" alt="iNNfo Logo" /> iNNfo <span>hub</span></a>
+          <nav class="nav" aria-label="Main navigation">
+            <a href="https://cognnitive.com/innfo">Home</a>
+            <a href="https://cognnitive.com/innfo/about" aria-current="page">About</a>
+            <a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer">Docs</a>
+            <a
+              href="https://cognnitive.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Contact</a
+            >
+          </nav>
+          <a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer" class="btn btn-primary header-cta">Get Started</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section">
+        <div class="container">
+          <div class="section-header">
+            <h1>About <span class="serif-accent">iNNfo</span></h1>
+            <p>The monorepo that ties the iNNfo ecosystem together.</p>
+          </div>
+
+          <div style="max-width: 720px; margin: 0 auto">
+            <h2 style="font-size: 22px; margin-bottom: var(--space-md)">Architecture</h2>
+            <p style="margin-bottom: var(--space-lg)">
+              iNNfo is organized as an npm workspaces monorepo — one editor app, two shared
+              packages, and the spec chain:
+            </p>
+
+            <div
+              style="
+                background: var(--canvas-inert);
+                border: 1px solid var(--border-soft);
+                border-radius: var(--radius);
+                padding: var(--space-lg);
+                margin-bottom: var(--space-xl);
+                font-family: var(--mono);
+                font-size: 14px;
+                line-height: 1.8;
+              "
+            >
+              iNNfo/<br />
+              ├── apps/<br />
+              │&nbsp;&nbsp; └── innfo-editor/ &nbsp;<span
+                style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
+                >// Vue 3 workspace editor — the iNNfo Modeler</span
+              ><br />
+              ├── packages/<br />
+              │&nbsp;&nbsp; ├── innfo-core/ &nbsp;&nbsp;&nbsp;<span
+                style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
+                >// TS parser, resolver, validator</span
+              ><br />
+              │&nbsp;&nbsp; └── innfo-mcp/ &nbsp;&nbsp;&nbsp;&nbsp;<span
+                style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
+                >// MCP server for AI agents</span
+              ><br />
+              ├── specs/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
+                >// defiNNe, iNNfo, templates, samples</span
+              ><br />
+              └── docs/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
+                >// This website</span
+              >
+            </div>
+
+            <h2 style="font-size: 22px; margin-bottom: var(--space-md)">App</h2>
+
+            <div class="card" style="margin-bottom: var(--space-md)">
+              <span class="card-tag">@cognnitive/innfo-editor v0.1.0</span>
+              <h3 style="margin-top: var(--space-sm)">iNNfo Modeler</h3>
+              <p>
+                A Vue 3 workspace editor with Pinia state management and Vue Router. Uses the File
+                System Access API to open a workspace folder, runs a single recursive parse pass into
+                one normalized model graph, and edits nodes through block sheets, a table view, and
+                metamodel-driven forms. Validation runs automatically on every parse; a graph viewer,
+                matrix grids, and an AI-guidance sidebar round out the workspace. Directory handles
+                persist in IndexedDB for a fast reopen.
+              </p>
+            </div>
+
+            <h2
+              style="font-size: 22px; margin-bottom: var(--space-md); margin-top: var(--space-xl)"
+            >
+              Packages
+            </h2>
+
+            <div class="card" style="margin-bottom: var(--space-md)">
+              <span class="card-tag">@cognnitive/innfo-core v0.1.0</span>
+              <h3 style="margin-top: var(--space-sm)">innfo-core</h3>
+              <p>
+                Framework-agnostic TypeScript library: the iNNfo parser, model types (Concept,
+                Element, Field, Marker, Matrix, Relationship), IO drivers for the browser and Node, a
+                validator against template schemas, and a parent-spec-chain resolver. Both the Modeler
+                and the MCP server run on top of it.
+              </p>
+            </div>
+
+            <div class="card" style="margin-bottom: var(--space-md)">
+              <span class="card-tag">@cognnitive/innfo-mcp v0.1.0</span>
+              <h3 style="margin-top: var(--space-sm)">innfo-mcp</h3>
+              <p>
+                A Model Context Protocol server (stdio) wrapping innfo-core. It exposes a focused set
+                of semantic tools so any MCP-capable AI agent can read, validate, and
+                safely mutate iNNfo models. Spec and template resolution follow the model's parent
+                chain, with no hardcoded URLs. See the
+                <a href="/innfo/documentation/#/innfo-mcp">full tool reference</a> for the current list.
+              </p>
+            </div>
+
+            <h2
+              style="font-size: 22px; margin-bottom: var(--space-md); margin-top: var(--space-xl)"
+            >
+              Specifications
+            </h2>
+            <p style="margin-bottom: var(--space-lg)">
+              The ecosystem defines four specification levels, each building on the previous:
+            </p>
+
+            <div class="grid-2" style="margin-bottom: var(--space-xl)">
+              <div class="card">
+                <span class="card-tag">Level 0</span>
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">defiNNe</h3>
+                <p>Meta-specification: structure, SemVer, RFC 2119. The root of the chain.</p>
+              </div>
+              <div class="card">
+                <span class="card-tag">Level 1</span>
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">iNNfo</h3>
+                <p>
+                  The central specification. A single-file <code>_NN.md</code> model with YAML
+                  frontmatter, concepts, elements, markers, and relationships.
+                </p>
+              </div>
+              <div class="card">
+                <span class="card-tag">Level 2</span>
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">Templates</h3>
+                <p>
+                  business, procedures, organization — each declares concepts, markers, and
+                  relationship types on top of iNNfo.
+                </p>
+              </div>
+              <div class="card">
+                <span class="card-tag">Level 3</span>
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">Models</h3>
+                <p>
+                  Concrete instances like Ghostbusters or Engineering Team. Lightweight — just data
+                  and a parent pointer.
+                </p>
+              </div>
+            </div>
+
+            <h2 style="font-size: 22px; margin-bottom: var(--space-md)">
+              Open Knowledge Format compatibility
+            </h2>
+            <p style="margin-bottom: var(--space-lg)">
+              The iNNfo specification is <strong>100% compatible</strong> with
+              <a
+                href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                >OKF v0.1</a
+              >
+              (Open Knowledge Format) by Google Cloud Platform. Every iNNfo document is a valid OKF
+              knowledge bundle.
+            </p>
+
+            <div class="grid-2" style="margin-bottom: var(--space-xl)">
+              <div class="card">
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">Shared substrate</h3>
+                <p>
+                  Both formats use Markdown files with YAML frontmatter as their core representation.
+                  No proprietary tooling, no centralized schema registry — just text files in version
+                  control. OKF's "if you can <code>cat</code> a file, you can read OKF" applies equally
+                  to iNNfo.
+                </p>
+              </div>
+              <div class="card">
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">Conformance met</h3>
+                <p>
+                  OKF v0.1 conformance (§9) requires: (1) parseable YAML frontmatter on every
+                  non-reserved <code>.md</code> file, (2) a non-empty <code>type</code> field, (3)
+                  reserved filenames follow OKF conventions. iNNfo satisfies all three: every
+                  <code>_NN.md</code> has frontmatter, the <code>level</code>+template system provides
+                  type semantics, and <code>index.md</code> follows the same progressive-disclosure
+                  pattern.
+                </p>
+              </div>
+              <div class="card">
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">Extensions tolerated</h3>
+                <p>
+                  OKF explicitly states consumers MUST NOT reject bundles because of unknown
+                  additional frontmatter keys, unknown <code>type</code> values, or missing optional
+                  fields. iNNfo's richer frontmatter — <code>spec_version</code>, <code>level</code>,
+                  <code>parent</code>, <code>concepts</code>, <code>markers</code>,
+                  <code>matrices</code> — is fully tolerated by OKF consumers.
+                </p>
+              </div>
+              <div class="card">
+                <h3 style="margin-top: var(--space-sm); font-size: 18px">
+                  A workspace = an OKF Bundle
+                </h3>
+                <p>
+                  An iNNfo workspace produces exactly the directory-of-Markdown-files structure that
+                  OKF defines as a <em>knowledge bundle</em> (§3). Each <code>_NN.md</code> maps to an
+                  OKF <em>concept document</em> (§4) with <code>index.md</code> as the directory
+                  listing (§6). Wikilinks and standard Markdown links coexist for cross-linking.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="section section-inert">
+        <div class="container">
+          <div class="section-header">
+            <h2>Get in <span class="serif-accent">Touch</span></h2>
+            <p>Contributions, questions, ideas — we're always open.</p>
+          </div>
+          <div
+            class="contact-links"
+            style="text-align: center; padding: var(--space-xl) var(--space-lg)"
+          >
+            <a
+              href="https://cognnitive.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary"
+              >Contact Us</a
+            >
+            <span
+              class="contact-url-display"
+              style="
+                display: block;
+                margin-top: var(--space-md);
+                font-size: 14px;
+                color: var(--ink-muted);
+                word-break: break-all;
+              "
+              >https://cognnitive.com/contact</span
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="https://cognnitive.com/innfo" class="logo">iNNfo</a>
+            <p>The hub for the iNNfo ecosystem.</p>
+          </div>
+          <div>
+            <h4>Ecosystem</h4>
+            <ul>
+              <li><a href="https://cognnitive.com/innfo">Home</a></li>
+              <li><a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer">Documentation</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>cogNNitive</h4>
+            <ul>
+              <li><a href="https://cognnitive.com" target="_blank">cognnitive.com</a></li>
+              <li><a href="https://github.com/cogNNitive" target="_blank">GitHub</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; 2026 cogNNitive. All rights reserved.</span>
+          <span class="credit"
+            >Creado con
+            <a href="https://cognnitive.com/skills/nn-design-presets"
+              >cogNNitive web design skill</a
+            ></span
+          >
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

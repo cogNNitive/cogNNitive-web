@@ -1,0 +1,75 @@
+# AI Content Index — https://cognnitive.com/skills
+site:
+  name: "cogNNitive"
+  url: "https://cognnitive.com/skills"
+  description: "Modular agent skills that give AI agents specialized capabilities"
+  generator: "https://cognnitive.com/skills/nn-design-presets"
+  language: "en"
+  updated: "2026-09-22"
+pages:
+  - path: "/"
+    title: "cogNNitive — Agent Skills"
+    description: "Skills catalog landing page with skill cards, architecture overview, and installation instructions"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/index.md"
+  - path: "/documentation/"
+    title: "cogNNitive — Skills Documentation"
+    description: "Technical documentation for all agent skills"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/README.md"
+  - path: "/documentation/skills/nn-start"
+    title: "nn-start"
+    description: "Front controller, setup, environment readiness gate, and skill routing"
+    last_modified: "2026-09-28"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-start.md"
+  - path: "/documentation/skills/nn-preflight"
+    title: "nn-preflight"
+    description: "Environment readiness gate (Node.js, MCP availability, workspace layout)"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-preflight.md"
+  - path: "/documentation/skills/nn-innfo"
+    title: "nn-innfo"
+    description: "iNNfo model authoring, validation, and Model Creation Wizard"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-innfo.md"
+  - path: "/documentation/skills/nn-trannsform"
+    title: "nn-trannsform"
+    description: "Document ingestion and transformation pipeline"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-trannsform.md"
+  - path: "/documentation/skills/nn-site-generator"
+    title: "nn-site-generator"
+    description: "Static website generation and Docsify suites"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-site-generator.md"
+  - path: "/documentation/skills/nn-skills-lifecycle"
+    title: "nn-skills-lifecycle"
+    description: "Skill ecosystem lifecycle, manifest pinning, and lockfile updates"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-skills-lifecycle.md"
+  - path: "/documentation/skills/nn-design-presets"
+    title: "nn-design-presets"
+    description: "Design tokens, Morado Nazareno palette, and typography scales"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-design-presets.md"
+  - path: "/documentation/skills/nn-upgrade"
+    title: "nn-upgrade"
+    description: "Guided, consent-gated workspace migration to the latest templates"
+    last_modified: "2026-09-22"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-upgrade.md"
+  - path: "/documentation/skills/nn-video-script"
+    title: "nn-video-script"
+    description: "cogNNitive-video VUS video script authoring, gating, and finalization inside a Series/Video hierarchy"
+    last_modified: "2026-09-28"
+    format: markdown
+    url: "https://cognnitive.com/skills/documentation/skills/nn-video-script.md"

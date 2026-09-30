@@ -1,0 +1,23 @@
+{
+  "@context": "https://www.w3.org/ns/ai-catalog",
+  "name": "cogNNitive — Knowledge Evolution Framework",
+  "description": "Turn ideas scattered in brains and files into a living, structured knowledge base. Installs AI agent skills, registers MCP servers, and discovers workflows.",
+  "url": "https://cognnitive.com",
+  "type": "GatewayPage",
+  "ecosystem": [
+    {
+      "name": "cogNNitive",
+      "role": "monorepo",
+      "url": "https://github.com/cogNNitive/cogNNitive"
+    }
+  ],
+  "bootstrap": {
+    "command": "I want to use https://cognnitive.com/use",
+    "manifest": "docs/use/manifest.md",
+    "steps": [
+      "Install OpenCode from https://opencode.ai/download",
+      "Tell your agent: I want to use https://cognnitive.com/use",
+      "Choose what you want to do and follow the instructions"
+    ]
+  }
+}

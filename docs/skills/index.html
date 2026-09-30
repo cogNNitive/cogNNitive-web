@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cogNNitive — Agent Skills for AI Coding Agents</title>
+  <meta name="description" content="Modular skills ecosystem for AI coding agents — Claude Code, Cursor, Google Antigravity, Codex, and OpenCode Desktop (recommended). Model Router, Skills Manager, traNNsform, and Web Design Guide.">
+  <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets">
+  <link rel="alternate" type="text/markdown" href="https://cognnitive.com/skills/index.md" title="cogNNitive — Markdown source">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "cogNNitive",
+    "url": "https://cognnitive.com/skills",
+    "description": "AI Agent Skills ecosystem for AI coding agents — modular skills that power AI agents with specialized capabilities. OpenCode Desktop recommended.",
+    "author": { "@type": "Organization", "name": "cogNNitive" },
+    "inLanguage": "en",
+    "isAccessibleForFree": true
+  }
+  </script>
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-inert: #FAFAFC;
+      --brand: #4D0E4E;
+      --brand-light: #6A1B6B;
+      --brand-subtle: #F6EEF6;
+      --border: #F2F2F7;
+      --ink: #111112;
+      --ink-muted: #636366;
+      --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --max-w: 1200px;
+      --radius: 10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--canvas);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    /* Unified Header */
+    .header {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--canvas);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--brand);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .logo img { height: 28px; width: auto; }
+    .nav { display: flex; gap: 24px; align-items: center; }
+    .nav-link {
+      text-decoration: none;
+      color: var(--ink-muted);
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--brand); }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand);
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--brand-light); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--canvas-inert);
+      color: var(--ink);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      background: linear-gradient(180deg, var(--brand-subtle) 0%, var(--canvas) 100%);
+    }
+    .hero h1 {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--ink);
+      max-width: 860px;
+      margin: 0 auto 20px;
+    }
+    .hero h1 .accent { color: var(--brand); }
+    .hero p {
+      font-size: 19px;
+      color: var(--ink-muted);
+      max-width: 680px;
+      margin: 0 auto 32px;
+    }
+    .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* Sections General */
+    section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+    .section-title { text-align: center; margin-bottom: 48px; }
+    .section-title h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+    .section-title p { font-size: 16px; color: var(--ink-muted); margin-top: 8px; }
+
+    /* Skills Grid */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+    .card {
+      background: var(--canvas);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(77, 14, 78, 0.06); }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: var(--brand-subtle);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .card p { font-size: 15px; color: var(--ink-muted); line-height: 1.5; margin-bottom: 16px; }
+    .card-link { color: var(--brand); font-weight: 600; text-decoration: none; font-size: 14px; }
+    .card-link:hover { text-decoration: underline; }
+
+    /* Diagram Card */
+    .diagram-card {
+      background: var(--canvas-inert);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+      overflow-x: auto;
+    }
+    .mermaid { display: flex; justify-content: center; }
+
+    /* Steps Box */
+    .steps-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .step-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      background: var(--canvas);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: var(--radius);
+    }
+    .step-badge {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .step-text h4 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .step-text p { font-size: 15px; color: var(--ink-muted); margin-bottom: 8px; }
+    .code-box {
+      background: var(--canvas-inert);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--brand);
+      display: inline-block;
+    }
+
+    /* Footer */
+    footer { padding: 48px 0; background: var(--canvas-inert); text-align: center; }
+    footer p { font-size: 14px; color: var(--ink-muted); }
+    footer a { color: var(--brand); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* Site Work-in-Progress / Experimental Banner */
+    .site-wip-banner {
+      background: #FAF5FF;
+      color: #4D0E4E;
+      border-bottom: 1px solid rgba(77, 14, 78, 0.12);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      z-index: 101;
+    }
+    .site-wip-banner-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .site-wip-banner-icon {
+      font-size: 14px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .site-wip-banner-close {
+      background: none;
+      border: none;
+      color: #4D0E4E;
+      opacity: 0.65;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s, background-color 0.2s;
+      flex-shrink: 0;
+    }
+    .site-wip-banner-close:hover {
+      opacity: 1;
+      background: rgba(77, 14, 78, 0.08);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Work-in-Progress / Experimental Banner -->
+  <aside id="site-wip-banner" class="site-wip-banner" role="status" aria-label="Experimental preview notice">
+    <div class="site-wip-banner-content">
+      <span class="site-wip-banner-icon" aria-hidden="true">✨</span>
+      <span><strong>Work in Progress:</strong> cogNNitive are experimental and actively evolving. Expect updates & occasional dust — feedback is warmly welcome!</span>
+    </div>
+    <button type="button" class="site-wip-banner-close" aria-label="Dismiss banner" onclick="dismissWipBanner()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </aside>
+  <script>
+    (function() {
+      var banner = document.getElementById('site-wip-banner');
+      if (sessionStorage.getItem('nn_site_wip_banner_dismissed') === 'true') {
+        if (banner) banner.style.display = 'none';
+      }
+    })();
+    function dismissWipBanner() {
+      var banner = document.getElementById('site-wip-banner');
+      if (banner) banner.style.display = 'none';
+      sessionStorage.setItem('nn_site_wip_banner_dismissed', 'true');
+    }
+  </script>
+
+  <!-- Unified Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="https://cognnitive.com" class="logo">
+        <img src="favicon.svg" alt="cogNNitive Logo" />
+        <span>Skills</span>
+      </a>
+      <nav class="nav">
+        <a href="https://cognnitive.com" class="nav-link">cogNNitive</a>
+        <a href="https://cognnitive.com/innfo" class="nav-link">iNNfo</a>
+        <a href="https://cognnitive.com/skills" class="nav-link active">Skills</a>
+        <a href="documentation" class="nav-link">Docs</a>
+      </nav>
+      <div class="header-actions">
+        <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open App</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <h1>Modular skills that give your <span class="accent">AI coding agent</span> specialized powers.</h1>
+        <p>Teach your AI agent domain capabilities: model evaluation, skills management, document transformation, and web design.</p>
+        <div class="hero-actions">
+          <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open iNNfo Modeler App &rarr;</a>
+          <a href="documentation" class="btn-secondary">Explore Skills Documentation</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Skills -->
+    <section>
+      <div class="container">
+        <div class="section-title">
+          <h2>Featured Skills</h2>
+          <p>Autonomous modules that power your AI agent with specialized capabilities.</p>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-icon">🎯</div>
+            <h3>Model Router</h3>
+            <p>Evaluates whether the AI model you are using is the right fit for each task. Recommends the optimal model based on cost and capability.</p>
+            <a href="documentation/#/skills/opencode-model-router" class="card-link">View Documentation &rarr;</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">🛠️</div>
+            <h3>Skills Manager</h3>
+            <p>Meta-skill that manages all skills in your repository. Scans, checks installation integrity, and manages skill lifecycles.</p>
+            <a href="documentation/#/skills/skills-manager" class="card-link">View Documentation &rarr;</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔄</div>
+            <h3>traNNsform</h3>
+            <p>Document ingestion and transformation pipeline. Converts PDFs, DOCX, and spreadsheets into structured Markdown.</p>
+            <a href="documentation/#/skills/trannsform" class="card-link">View Documentation &rarr;</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">🎨</div>
+            <h3>Web Design Guide</h3>
+            <p>Complete design system with Morado Nazareno palette and presets for building responsive sites and Docsify documentation.</p>
+            <a href="documentation/#/skills/web-design-guide" class="card-link">View Documentation &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Option 20 Master Diagram -->
+    <section style="background: var(--canvas-inert);">
+      <div class="container">
+        <div class="section-title">
+          <h2>Skills Integration Architecture</h2>
+          <p>How agent skills integrate OpenCode, innfo-mcp, and the iNNfo Modeler App into a single pipeline.</p>
+        </div>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart TD
+    subgraph Step1["Step 1: Ingestion & Setup"]
+        U["👤 User in OpenCode"] -->|Bootstrap Prompt| Router["⚡ Agent Skills (Router & traNNsform)"]
+        RawDocs["📄 Raw Documents (PDF, DOCX)"] --> Router
+    end
+
+    subgraph Step2["Step 2: Validation & Engine"]
+        Router --> Models["📘 Structured Models (_NN.md)"]
+        Models <--> MCP["⚙️ innfo-mcp Server + Core Engine"]
+    end
+
+    subgraph Step3["Step 3: Delivery & Access"]
+        MCP <--> Modeler["🛠️ iNNfo Modeler App (Web Editor)"]
+        MCP <--> AgentChat["💬 OpenCode Conversational Queries"]
+    end
+
+    subgraph Step4["Step 4: Artifact Generation"]
+        Modeler & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
+    end
+
+    classDef s1 fill:#FAFAFC,stroke:#636366,color:#111112;
+    classDef s2 fill:#F6EEF6,stroke:#4D0E4E,color:#4D0E4E;
+    classDef s3 fill:#FAFAFC,stroke:#6A1B6B,color:#111112;
+    classDef s4 fill:#4D0E4E,stroke:#4D0E4E,color:#FFFFFF;
+
+    class U,Router,RawDocs s1;
+    class Models,MCP s2;
+    class Modeler,AgentChat s3;
+    class Artifacts s4;
+          </pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to Install & Use -->
+    <section>
+      <div class="container">
+        <div class="section-title">
+          <h2>How to Install & Use</h2>
+          <p>Works with any AI coding agent — Claude Code, Cursor, Antigravity, Codex, and OpenCode Desktop (recommended).</p>
+        </div>
+        <div class="steps-wrapper">
+          <div class="step-card">
+            <div class="step-text">
+              <h4>Ready in one step</h4>
+              <p>Say the bootstrap phrase to your agent's chat and it installs all skills automatically.</p>
+              <div class="code-box">I want to use https://cognnitive.com/use</div>
+              <p style="margin-top: 16px; margin-bottom: 0;"><a href="https://cognnitive.com/innfo/documentation/#/installing-ai-agents" class="card-link">See the full install guide for every supported agent &rarr;</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 cogNNitive. Open Source under MIT License. Works with your favorite AI coding agent — <a href="https://opencode.ai">OpenCode Desktop</a> recommended.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

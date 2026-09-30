@@ -1,0 +1,10 @@
+{
+  "@context": "https://schema.org",
+  "@type": "DataCatalog",
+  "name": "iNNfo",
+  "description": "Central hub for the cogNNitive iNNfo ecosystem.",
+  "generator": {
+    "@type": "SoftwareApplication",
+    "url": "https://cognnitive.com/skills/nn-design-presets"
+  }
+}

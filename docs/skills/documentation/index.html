@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cogNNitive — Documentation</title>
+  <meta name="description" content="Technical documentation for the cogNNitive skills ecosystem for AI coding agents.">
+  <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets">
+  <link rel="alternate" type="text/markdown" href="https://cognnitive.com/skills/documentation/README.md" title="cogNNitive Documentation — Markdown source">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <script src="/js/analytics.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "cogNNitive — Documentation",
+    "description": "Technical documentation for the cogNNitive skills ecosystem for AI coding agents",
+    "url": "https://cognnitive.com/skills/documentation/",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "cogNNitive",
+      "url": "https://cognnitive.com/skills"
+    },
+    "inLanguage": "en",
+    "isAccessibleForFree": true
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "cogNNitive",
+    "url": "https://cognnitive.com/skills",
+    "description": "AI Agent Skills ecosystem for AI coding agents"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <style>
+    :root {
+      --theme-color: #4D0E4E;
+      --base-background: #FFFFFF;
+      --textColor: #111112;
+      --sidebar-background: #FFFFFF;
+      --sidebar-border-color: #F2F2F7;
+      --code-background: #FAFAFC;
+      --code-color: #4D0E4E;
+      --selection-color: #F0E6F0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Geist Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--sidebar-border-color);
+    }
+
+    .sidebar ul li a {
+      color: #636366;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .sidebar ul li.active > a {
+      color: var(--theme-color);
+      font-weight: 700;
+      border-left: 3px solid var(--theme-color);
+    }
+
+    .sidebar .sidebar-nav ul li a:hover {
+      color: var(--theme-color);
+    }
+
+    .sidebar > h1 {
+      font-size: 20px !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      padding: 20px 24px !important;
+      margin: 0 !important;
+      border-bottom: 1px solid var(--sidebar-border-color) !important;
+    }
+
+    .sidebar > h1 a {
+      color: var(--theme-color) !important;
+    }
+
+    .sidebar > h1 img {
+      height: 28px;
+      width: auto;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .markdown-section h1 {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--textColor);
+    }
+
+    .markdown-section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      color: var(--textColor);
+      border-bottom: none;
+    }
+
+    .markdown-section h3 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--textColor);
+    }
+
+    .markdown-section code {
+      font-family: 'JetBrains Mono', 'Geist Mono', monospace;
+      font-size: 13px;
+      background: var(--code-background);
+      color: var(--code-color);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .markdown-section pre {
+      background: var(--code-background) !important;
+      border: 1px solid var(--sidebar-border-color);
+      border-radius: 8px;
+    }
+
+    .markdown-section pre code {
+      background: transparent;
+      color: var(--textColor);
+      padding: 0;
+    }
+
+    .markdown-section table {
+      border-collapse: collapse;
+    }
+
+    .markdown-section th {
+      background: #F6EEF6;
+      color: var(--theme-color);
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .markdown-section td, .markdown-section th {
+      border: 1px solid var(--sidebar-border-color);
+      padding: 10px 14px;
+    }
+
+    .markdown-section tr:nth-child(2n) {
+      background: var(--code-background);
+    }
+
+    .markdown-section blockquote {
+      border-left: 4px solid var(--theme-color);
+      color: var(--textColor);
+      background: #F6EEF6;
+      padding: 12px 20px;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .markdown-section a {
+      color: var(--theme-color);
+    }
+
+    .markdown-section a:hover {
+      text-decoration: underline;
+    }
+
+    .sidebar-toggle { background: transparent; }
+
+    .docsify-footer {
+      border-top: 1px solid var(--sidebar-border-color);
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #636366;
+    }
+
+    .docsify-footer .credit a {
+      color: var(--theme-color);
+      text-decoration: none;
+    }
+
+    .docsify-footer .credit a:hover {
+      text-decoration: underline;
+    }
+
+    .app-nav {
+      margin: 16px 24px 0 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+
+    .app-nav li {
+      display: inline-block;
+      margin: 0 8px;
+    }
+
+    .app-nav a {
+      color: #636366;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .app-nav a:hover, .app-nav a.active {
+      color: var(--theme-color);
+    }
+
+    .search input {
+      border: 1px solid var(--sidebar-border-color) !important;
+      border-radius: 6px !important;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+      font-size: 13px !important;
+      padding: 6px 12px !important;
+    }
+
+    .search input:focus {
+      border-color: var(--theme-color) !important;
+      outline: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+  </script>
+  <script>
+    window.$docsify = {
+      name: 'Agent Skills',
+      logo: '/favicon.svg',
+      repo: 'https://github.com/cogNNitive/cogNNitive',
+      loadSidebar: true,
+      loadNavbar: true,
+      subMaxLevel: 3,
+      auto2top: true,
+      coverpage: false,
+      search: 'auto',
+      formatUpdated: '{YYYY}-{MM}-{DD}',
+      markdown: {
+        renderer: {
+          code: function (code, lang) {
+            if (lang === 'mermaid') {
+              return '<div class="mermaid">' + code + '</div>';
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      },
+      plugins: [
+        function (hook, vm) {
+          hook.doneEach(function () {
+            if (typeof mermaid !== 'undefined') {
+              var elements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
+              if (elements.length > 0) {
+                mermaid.run({ nodes: elements });
+              }
+            }
+            if (window.umami) {
+              window.umami.track({ url: window.location.pathname + window.location.search });
+            }
+          });
+        }
+      ]
+    };
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/front-matter.min.js"></script>
+<footer class="docsify-footer">
+  <p class="credit">Built with <a href="https://cognnitive.com/skills/">cogNNitive design presets</a></p>
+</footer>
+
+<!--
+  Generator: https://cognnitive.com/skills/nn-design-presets
+  Markdown source: /documentation/README.md
+  AI index: /ai-index.yaml
+  LLM entry: /llms.txt
+-->
+</body>
+</html>

@@ -1,0 +1,66 @@
+# cogNNitive — Full Content
+
+> Modular agent skills for AI coding agents — Claude Code, Cursor, Google Antigravity, Codex, and OpenCode Desktop (recommended). Model authoring, document transformation, site generation, design presets, and lifecycle governance.
+
+## Home
+
+cogNNitive provides modular skills that power your AI agent with specialized capabilities: iNNfo model authoring, skills management, document transformation, site generation, and web design.
+
+Site: https://cognnitive.com/skills
+
+### Skills
+
+**nn-start** — Front controller and system governance. Handles setup, the environment readiness gate (Preflight), and routes requests to the right skill.
+
+**nn-preflight** — Environment readiness gate. Checks Node.js version, MCP availability, and workspace layout in three tiers.
+
+**nn-innfo** — Author, edit, and validate iNNfo models, including the conversational Model Creation Wizard.
+
+**nn-trannsform** — Multi-modal document ingestion (PDF, DOCX, XLSX), normalization, and multi-step procedure execution.
+
+**nn-site-generator** — Static website generation, markdown twin hydration, and Docsify documentation suites.
+
+**nn-skills-lifecycle** — Skill ecosystem lifecycle, manifest pinning, and lockfile updates.
+
+**nn-design-presets** — Complete design system with the Morado Nazareno (#4D0E4E) palette, systematic typography, and an 8px grid. Includes guides for commercial layouts and technical documentation with Docsify.
+
+**nn-upgrade** — Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates.
+
+**nn-video-script** — Forked, iNNfo-aware authoring of cogNNitive-video VUS video scripts inside a workspace's Series/Video production hierarchy: authoring, gating, and finalization.
+
+### Architecture
+
+Skills are loaded on demand by the agent. When a task matches a skill's triggers, the agent loads its instructions and executes the specialized workflow. Each skill is self-contained with its own domain rules and can be installed, updated, and removed independently.
+
+### Installation
+
+No Git or terminal needed. Tell your AI agent:
+
+```
+I want to use https://cognnitive.com/use
+```
+
+OpenCode fetches the bootstrap manifest, downloads all skills from GitHub, registers the MCP server, and presents a workflow menu — all automatic.
+
+## Design Tokens (nn-design-presets)
+
+- Canvas Base: #FFFFFF
+- Canvas Inert: #FAFAFC
+- Brand Primary: #4D0E4E (Morado Nazareno)
+- Border Soft: #F2F2F7
+- Ink Primary: #111112
+- Ink Muted: #636366
+
+### Spacing
+
+8px base grid. Scale: 4px (xs), 8px (sm), 16px (md), 24px (lg), 48px (xl), 64-96px (xxl). Max container: 1280px.
+
+### Typography
+
+H1: 48px/1.15/800/-0.03em. H2: 32px/1.25/700/-0.02em. H3: 22px/1.35/600/-0.01em. Body: 16px/1.6/400. Caption: 13px/1.4/500/+0.01em.
+
+Playfair Display italic for accent words. Geist Mono/JetBrains Mono for code (14px).
+
+### Attribution
+
+Pages generated with this skill include `<meta name="generator" content="https://cognnitive.com/skills/nn-design-presets">`.

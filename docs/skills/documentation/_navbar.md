@@ -1,0 +1,5 @@
+* 🌐 **Ecosystem**: [cognnitive.com](/)
+* 📘 **iNNfo Specs & Engine**: [cognnitive.com/innfo](/innfo/documentation/)
+* ⚡ **Agent Skills Catalog**: [cognnitive.com/skills](/skills/documentation/)
+* 🛠️ **iNNfo Modeler App**: [Open App](/innfo/app/)
+* 🚀 **Bootstrap**: [Install in Agent](/use)

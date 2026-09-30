@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iNNfo — The Knowledge Modeling Hub</title>
+    <meta
+      name="description"
+      content="Model, edit, and validate knowledge models with the iNNfo Modeler browser app and OpenCode AI agents."
+    />
+    <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets" />
+    <link rel="canonical" href="https://cognnitive.com/innfo/" />
+    <link rel="alternate" type="text/markdown" href="index.md" />
+    <link rel="icon" type="image/svg+xml" href="/innfo/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "iNNfo",
+        "url": "https://cognnitive.com/innfo/",
+        "description": "The hub for the iNNfo ecosystem. iNNfo Modeler, innfo-core, innfo-mcp, and OpenCode AI agent modeling.",
+        "author": { "@type": "Organization", "name": "cogNNitive" },
+        "inLanguage": "en",
+        "isAccessibleForFree": true
+      }
+    </script>
+    <style>
+      :root {
+        --canvas: #FFFFFF;
+        --canvas-inert: #FAFAFC;
+        --brand: #4D0E4E;
+        --brand-light: #6A1B6B;
+        --brand-subtle: #F6EEF6;
+        --border: #F2F2F7;
+        --ink: #111112;
+        --ink-muted: #636366;
+        --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', monospace;
+        --max-w: 1200px;
+        --radius: 10px;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+      body {
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--ink);
+        background: var(--canvas);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+      /* Unified Header */
+      .header {
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border);
+        background: var(--canvas);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .header-inner { display: flex; align-items: center; justify-content: space-between; }
+      .logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 20px;
+        color: var(--brand);
+        text-decoration: none;
+        letter-spacing: -0.02em;
+      }
+      .logo img { height: 28px; width: auto; }
+      .nav { display: flex; gap: 24px; align-items: center; }
+      .nav-link {
+        text-decoration: none;
+        color: var(--ink-muted);
+        font-size: 14px;
+        font-weight: 600;
+        transition: color 0.2s;
+      }
+      .nav-link:hover, .nav-link.active { color: var(--brand); }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--brand);
+        color: #fff;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+      .btn-primary:hover { background: var(--brand-light); }
+      .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--canvas-inert);
+        color: var(--ink);
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid var(--border);
+        transition: background 0.2s;
+      }
+      .btn-secondary:hover { background: var(--border); }
+
+      /* Hero Section */
+      .hero {
+        padding: 80px 0 60px;
+        text-align: center;
+        background: linear-gradient(180deg, var(--brand-subtle) 0%, var(--canvas) 100%);
+      }
+      .hero h1 {
+        font-size: 44px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        color: var(--ink);
+        max-width: 860px;
+        margin: 0 auto 20px;
+      }
+      .hero h1 .accent { color: var(--brand); }
+      .hero p {
+        font-size: 19px;
+        color: var(--ink-muted);
+        max-width: 680px;
+        margin: 0 auto 32px;
+      }
+      .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+      /* Sections General */
+      section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+      .section-title { text-align: center; margin-bottom: 48px; }
+      .section-title h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+      .section-title p { font-size: 16px; color: var(--ink-muted); margin-top: 8px; }
+
+      /* Features Grid */
+      .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+      .card {
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(77, 14, 78, 0.06); }
+      .card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: var(--brand-subtle);
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      .card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+      .card p { font-size: 15px; color: var(--ink-muted); line-height: 1.5; }
+
+      /* Diagram Container */
+      .diagram-card {
+        background: var(--canvas-inert);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px;
+        max-width: 900px;
+        margin: 0 auto;
+        overflow-x: auto;
+      }
+      .mermaid { display: flex; justify-content: center; }
+
+      /* App Showcase Box */
+      .app-showcase {
+        background: var(--canvas-inert);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 48px;
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .app-showcase h3 { font-size: 28px; font-weight: 800; margin-bottom: 16px; color: var(--ink); }
+      .app-showcase p { font-size: 16px; color: var(--ink-muted); max-width: 600px; margin: 0 auto 28px; }
+
+      /* Steps Box */
+      .steps-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .step-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        padding: 24px;
+        border-radius: var(--radius);
+      }
+      .step-badge {
+        background: var(--brand);
+        color: #fff;
+        font-weight: 800;
+        font-size: 14px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        flex-shrink: 0;
+      }
+      .step-text h4 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+      .step-text p { font-size: 15px; color: var(--ink-muted); margin-bottom: 8px; }
+      .code-box {
+        background: var(--canvas-inert);
+        border: 1px solid var(--border);
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--brand);
+        display: inline-block;
+      }
+
+      /* Footer */
+      footer { padding: 48px 0; background: var(--canvas-inert); text-align: center; }
+      footer p { font-size: 14px; color: var(--ink-muted); }
+      footer a { color: var(--brand); text-decoration: none; }
+      footer a:hover { text-decoration: underline; }
+
+      /* Site Work-in-Progress / Experimental Banner */
+      .site-wip-banner {
+        background: #FAF5FF;
+        color: #4D0E4E;
+        border-bottom: 1px solid rgba(77, 14, 78, 0.12);
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        position: relative;
+        z-index: 101;
+      }
+      .site-wip-banner-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
+      }
+      .site-wip-banner-icon {
+        font-size: 14px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .site-wip-banner-close {
+        background: none;
+        border: none;
+        color: #4D0E4E;
+        opacity: 0.65;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s, background-color 0.2s;
+        flex-shrink: 0;
+      }
+      .site-wip-banner-close:hover {
+        opacity: 1;
+        background: rgba(77, 14, 78, 0.08);
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+      });
+    </script>
+  </head>
+  <body>
+
+    <!-- Work-in-Progress / Experimental Banner -->
+    <aside id="site-wip-banner" class="site-wip-banner" role="status" aria-label="Experimental preview notice">
+      <div class="site-wip-banner-content">
+        <span class="site-wip-banner-icon" aria-hidden="true">✨</span>
+        <span><strong>Work in Progress:</strong> iNNfo & cogNNitive are experimental and actively evolving. Expect updates & occasional dust — feedback is warmly welcome!</span>
+      </div>
+      <button type="button" class="site-wip-banner-close" aria-label="Dismiss banner" onclick="dismissWipBanner()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </aside>
+    <script>
+      (function() {
+        var banner = document.getElementById('site-wip-banner');
+        if (sessionStorage.getItem('nn_site_wip_banner_dismissed') === 'true') {
+          if (banner) banner.style.display = 'none';
+        }
+      })();
+      function dismissWipBanner() {
+        var banner = document.getElementById('site-wip-banner');
+        if (banner) banner.style.display = 'none';
+        sessionStorage.setItem('nn_site_wip_banner_dismissed', 'true');
+      }
+    </script>
+
+    <!-- Unified Header -->
+    <header class="header">
+      <div class="container header-inner">
+        <a href="https://cognnitive.com" class="logo">
+          <img src="/innfo/favicon.svg" alt="iNNfo Logo" />
+          <span>iNNfo</span>
+        </a>
+        <nav class="nav">
+          <a href="https://cognnitive.com" class="nav-link">cogNNitive</a>
+          <a href="https://cognnitive.com/innfo" class="nav-link active">iNNfo</a>
+          <a href="https://cognnitive.com/skills" class="nav-link">Skills</a>
+          <a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer" class="nav-link">Docs</a>
+        </nav>
+        <div class="header-actions">
+          <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open App</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="container">
+          <h1>Transform your documentation into <span class="accent">structured, validated</span> knowledge models.</h1>
+          <p>Model, edit, and query knowledge visually in your browser or conversationally with your OpenCode AI agent.</p>
+          <div class="hero-actions">
+            <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open iNNfo Modeler App &rarr;</a>
+            <a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer" class="btn-secondary">Explore Documentation</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- What You Can Do With iNNfo -->
+      <section>
+        <div class="container">
+          <div class="section-title">
+            <h2>What You Can Do With iNNfo</h2>
+            <p>Simple, power-packed features designed for living documentation.</p>
+          </div>
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-icon">🌲</div>
+              <h3>Visual Modeling</h3>
+              <p>Explore your documentation as interactive graph trees, block sheets, matrices, and visual diagrams.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">✅</div>
+              <h3>Automatic Validation</h3>
+              <p>Catch broken links, missing properties, and outdated specs automatically as you edit.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🤖</div>
+              <h3>AI & Web Editing</h3>
+              <p>Edit visually in the browser app or ask your OpenCode AI agent to create and update models for you.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Option 20 Master Diagram -->
+      <section style="background: var(--canvas-inert);">
+        <div class="container">
+          <div class="section-title">
+            <h2>Information & Engine Architecture</h2>
+            <p>From ingestion to validation, interactive browser access, and artifact generation.</p>
+          </div>
+          <div class="diagram-card">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Step1["Step 1: Ingestion & Setup"]
+        U["👤 User in OpenCode"] -->|Bootstrap Prompt| Router["⚡ Agent Skills (Router & traNNsform)"]
+        RawDocs["📄 Raw Documents (PDF, DOCX)"] --> Router
+    end
+
+    subgraph Step2["Step 2: Validation & Engine"]
+        Router --> Models["📘 Structured Models (_NN.md)"]
+        Models <--> MCP["⚙️ innfo-mcp Server + Core Engine"]
+    end
+
+    subgraph Step3["Step 3: Delivery & Access"]
+        MCP <--> Modeler["🛠️ iNNfo Modeler App (Web Editor)"]
+        MCP <--> AgentChat["💬 OpenCode Conversational Queries"]
+    end
+
+    subgraph Step4["Step 4: Artifact Generation"]
+        Modeler & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
+    end
+
+    classDef s1 fill:#FAFAFC,stroke:#636366,color:#111112;
+    classDef s2 fill:#F6EEF6,stroke:#4D0E4E,color:#4D0E4E;
+    classDef s3 fill:#FAFAFC,stroke:#6A1B6B,color:#111112;
+    classDef s4 fill:#4D0E4E,stroke:#4D0E4E,color:#FFFFFF;
+
+    class U,Router,RawDocs s1;
+    class Models,MCP s2;
+    class Modeler,AgentChat s3;
+    class Artifacts s4;
+            </pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- App Showcase Section -->
+      <section>
+        <div class="container">
+          <div class="app-showcase">
+            <h3>iNNfo Modeler App</h3>
+            <p>A zero-install, browser-based workspace editor. Select any folder containing Markdown models and start editing immediately.</p>
+            <a href="https://cognnitive.com/innfo/app/" class="btn-primary" style="padding: 14px 32px; font-size: 16px;">Open iNNfo Modeler App &rarr;</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- How to Use in OpenCode -->
+      <section style="background: var(--canvas-inert);">
+        <div class="container">
+          <div class="section-title">
+            <h2>Use iNNfo Directly in OpenCode</h2>
+            <p>Prefer text or conversational editing? Use iNNfo with your OpenCode AI agent.</p>
+          </div>
+          <div class="steps-wrapper">
+            <div class="step-card">
+              <span class="step-badge">Step 1</span>
+              <div class="step-text">
+                <h4>Open OpenCode Desktop</h4>
+                <p>Launch OpenCode Desktop and open your project folder containing your documentation.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <span class="step-badge">Step 2</span>
+              <div class="step-text">
+                <h4>Prompt Your Agent</h4>
+                <p>Tell your agent to activate the cogNNitive bootstrap:</p>
+                <div class="code-box">I want to use https://cognnitive.com/use</div>
+              </div>
+            </div>
+            <div class="step-card">
+              <span class="step-badge">Step 3</span>
+              <div class="step-text">
+                <h4>Create & Edit Models</h4>
+                <p>Ask OpenCode to "create an iNNfo model for this project" or "validate my documentation".</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2026 iNNfo / cogNNitive. Open Source under MIT License. Built for <a href="https://opencode.ai">OpenCode</a>.</p>
+      </div>
+    </footer>
+
+  </body>
+</html>

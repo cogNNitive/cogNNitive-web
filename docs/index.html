@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cogNNitive — Knowledge Evolution Framework</title>
+  <meta name="description" content="Leverage ideas, information and data scattered through brains and computer files into a living knowledge base powered by AI that constantly evolves.">
+  <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets">
+  <link rel="alternate" type="text/markdown" href="index.md" title="cogNNitive — Markdown source">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "cogNNitive",
+    "url": "https://cognnitive.com",
+    "description": "Knowledge Management made ridiculously simple for humans and AI.",
+    "author": { "@type": "Organization", "name": "cogNNitive" },
+    "inLanguage": "en",
+    "isAccessibleForFree": true
+  }
+  </script>
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-inert: #FAFAFC;
+      --brand: #4D0E4E;
+      --brand-light: #6A1B6B;
+      --brand-subtle: #F6EEF6;
+      --border: #F2F2F7;
+      --ink: #111112;
+      --ink-muted: #636366;
+      --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --max-w: 1200px;
+      --radius: 10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--canvas);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    /* Unified Header */
+    .header {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--canvas);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--brand);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .logo img { height: 28px; width: auto; }
+    .nav { display: flex; gap: 24px; align-items: center; }
+    .nav-link {
+      text-decoration: none;
+      color: var(--ink-muted);
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--brand); }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand);
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--brand-light); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--canvas-inert);
+      color: var(--ink);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* Hero Section */
+    .hero {
+      padding: 40px 0 60px;
+      text-align: center;
+      background: linear-gradient(180deg, var(--brand-subtle) 0%, var(--canvas) 100%);
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--ink);
+      max-width: 900px;
+      margin: 0 auto 20px;
+    }
+    .hero h1 .accent { color: var(--brand); }
+    .hero p {
+      font-size: 20px;
+      color: var(--ink-muted);
+      max-width: 680px;
+      margin: 0 auto 32px;
+    }
+    .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    /* Sections General */
+    section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+    .section-title { text-align: center; margin-bottom: 48px; }
+    .section-title h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+    .section-title p { font-size: 16px; color: var(--ink-muted); margin-top: 8px; }
+
+    /* Pillars Grid */
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .card {
+      background: var(--canvas);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(77, 14, 78, 0.06); }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: var(--brand-subtle);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .card p { font-size: 15px; color: var(--ink-muted); line-height: 1.5; }
+
+    /* Diagram Card Container */
+    .diagram-card {
+      background: var(--canvas-inert);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+      overflow-x: auto;
+    }
+    .mermaid { display: flex; justify-content: center; }
+
+    /* Benefits Grid (6 Key Benefits) */
+    .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+    .benefit-item { display: flex; gap: 16px; padding: 24px; background: var(--canvas-inert); border: 1px solid var(--border); border-radius: var(--radius); }
+    .benefit-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--brand);
+      background: var(--brand-subtle);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .benefit-content h4 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .benefit-content p { font-size: 14px; color: var(--ink-muted); }
+
+    /* How to Use It (OpenCode Exclusive) */
+    .steps-wrapper { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .step-card { display: flex; align-items: flex-start; gap: 20px; background: var(--canvas); border: 1px solid var(--border); padding: 24px; border-radius: var(--radius); }
+    .step-badge { background: var(--brand); color: #fff; font-weight: 800; font-size: 14px; padding: 6px 14px; border-radius: 20px; flex-shrink: 0; }
+    .step-text h4 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .step-text p { font-size: 15px; color: var(--ink-muted); margin-bottom: 12px; }
+    .code-box { background: var(--canvas-inert); border: 1px solid var(--border); padding: 10px 16px; border-radius: 6px; font-family: var(--mono); font-size: 14px; color: var(--brand); display: inline-block; }
+
+    /* Quadratic-Inspired Interactive Architecture Showcase */
+    .showcase-section {
+      padding: 96px 0 80px;
+      background: var(--canvas);
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      background: var(--brand-subtle);
+      border: 1px solid rgba(77, 14, 78, 0.15);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .flow-canvas {
+      position: relative;
+      border-radius: 28px;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      overflow: hidden;
+      box-shadow: 0 30px 80px -25px rgba(77, 14, 78, 0.15), 0 20px 40px -20px rgba(0, 0, 0, 0.05);
+      margin-bottom: 48px;
+      background: linear-gradient(135deg, #FDF4FD 0%, #FAF0FA 40%, #EDE9FE 100%);
+    }
+    .flow-canvas-bg {
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 70% 55% at 15% 15%, rgba(77, 14, 78, 0.22), transparent 60%),
+        radial-gradient(ellipse 65% 50% at 85% 85%, rgba(139, 92, 246, 0.25), transparent 60%),
+        radial-gradient(ellipse 50% 45% at 85% 15%, rgba(6, 182, 212, 0.18), transparent 55%);
+      pointer-events: none;
+    }
+    .flow-canvas-grid {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(77, 14, 78, 0.12) 1px, transparent 1px);
+      background-size: 16px 16px;
+      opacity: 0.65;
+      pointer-events: none;
+    }
+    .flow-canvas-inner {
+      position: relative;
+      padding: 48px 36px;
+      z-index: 1;
+    }
+    .flow-pipeline-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+      gap: 0;
+    }
+    @media (max-width: 960px) {
+      .flow-pipeline-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      .flow-connector {
+        transform: rotate(90deg);
+        margin: 10px auto;
+      }
+    }
+    .flow-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px -15px rgba(17, 24, 39, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      position: relative;
+    }
+    .flow-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px -12px rgba(77, 14, 78, 0.18);
+    }
+    .flow-phase-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .flow-phase-tag.p1 {
+      background: #EBF3FF;
+      color: #0066CC;
+      border: 1px solid rgba(0, 102, 204, 0.2);
+    }
+    .flow-phase-tag.p2 {
+      background: var(--brand-subtle);
+      color: var(--brand);
+      border: 1px solid rgba(77, 14, 78, 0.2);
+    }
+    .flow-phase-tag.p3 {
+      background: #E8F8F0;
+      color: #059669;
+      border: 1px solid rgba(5, 150, 105, 0.2);
+    }
+    .flow-card-preview {
+      min-height: 200px;
+      padding: 36px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #FAFAFC;
+      border-bottom: 1px solid #F2F2F7;
+      position: relative;
+    }
+    .flow-card-body {
+      padding: 20px 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .flow-card-body h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .flow-card-body p {
+      font-size: 13.5px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+    .flow-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+    }
+    .flow-connector svg {
+      width: 60px;
+      height: 24px;
+      color: var(--brand);
+    }
+    .dash-flow-anim {
+      stroke-dasharray: 4 6;
+      animation: dashFlow 1.2s linear infinite;
+    }
+    .dash-feedback-anim {
+      stroke-dasharray: 5 7;
+      animation: dashFeedback 2s linear infinite;
+    }
+    @keyframes dashFlow {
+      from { stroke-dashoffset: 20; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes dashFeedback {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: 24; }
+    }
+    .pulse-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: var(--brand);
+      margin-left: 4px;
+      vertical-align: middle;
+      animation: blinkCursor 0.9s infinite;
+    }
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .heartbeat-word {
+      display: inline-block;
+      color: var(--brand);
+      font-weight: 700;
+      transform-origin: center;
+      margin: 0 0.25em;
+      padding: 0 0.1em;
+      animation: heartbeat 2.2s ease-in-out infinite;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      12% { transform: scale(1.07); }
+      24% { transform: scale(1); }
+      36% { transform: scale(1.05); }
+      48%, 70% { transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .heartbeat-word { animation: none; }
+      .dash-flow-anim, .dash-feedback-anim { animation: none; }
+    }
+    .source-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      max-width: 230px;
+    }
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      width: 100%;
+    }
+    .source-chip {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 7px;
+      padding: 4px 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #374151;
+      transition: all 0.2s;
+    }
+    .source-chip:hover {
+      border-color: #007AFF;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,122,255,0.12);
+    }
+    .source-chip svg {
+      width: 16px;
+      height: 16px;
+    }
+    .import-paths-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      width: 100%;
+      justify-content: center;
+      margin-top: 4px;
+    }
+    .path-pill {
+      font-family: var(--mono);
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #E2E8F0;
+    }
+    .path-pill.highlight {
+      background: #EBF3FF;
+      color: #0066CC;
+      border-color: rgba(0,102,204,0.3);
+      font-weight: 600;
+    }
+    .manage-model-card {
+      width: 100%;
+      background: #140815;
+      border: 1px solid rgba(77, 14, 78, 0.35);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(77, 14, 78, 0.12);
+      text-align: left;
+    }
+    .manage-model-header {
+      background: #230F25;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(77,14,78,0.3);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #E2E8F0;
+    }
+    .model-tree-box {
+      width: 100%;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-family: var(--mono);
+      font-size: 10px;
+      line-height: 1.4;
+      color: #1F2937;
+      text-align: left;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    .tree-node {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 0;
+    }
+    .tree-node.root {
+      font-weight: 700;
+      color: var(--brand);
+      border-bottom: 1px dashed rgba(77,14,78,0.15);
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+    .tree-branch {
+      margin-left: 12px;
+      padding-left: 8px;
+      border-left: 2px solid rgba(77,14,78,0.18);
+    }
+    .tree-leaf {
+      margin-left: 10px;
+      padding-left: 6px;
+      border-left: 1.5px dashed rgba(77,14,78,0.25);
+    }
+    .tree-tag {
+      font-size: 8.5px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: var(--brand-subtle);
+      color: var(--brand);
+      font-weight: 600;
+    }
+    .access-modes-row {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+      justify-content: center;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .access-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: var(--brand-subtle);
+      color: var(--brand);
+      border: 1px solid rgba(77,14,78,0.18);
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .export-deliverables-card {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .deliverable-item {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #1F2937;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .deliverable-item .icon-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .deliverable-item .tag {
+      font-size: 9px;
+      font-family: var(--mono);
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid rgba(5,150,105,0.2);
+    }
+    .feedback-loop-track {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px dashed rgba(77, 14, 78, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+    .feedback-loop-banner {
+      background: linear-gradient(90deg, rgba(235,243,255,0.9) 0%, rgba(246,238,246,0.9) 50%, rgba(232,248,240,0.9) 100%);
+      border: 1px solid rgba(77, 14, 78, 0.15);
+      border-radius: 999px;
+      padding: 6px 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(77, 14, 78, 0.05);
+    }
+    .feedback-loop-banner svg {
+      color: var(--brand);
+      animation: spinLoop 8s linear infinite;
+    }
+    @keyframes spinLoop {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .feedback-loop-svg {
+      width: 100%;
+      max-width: 780px;
+      height: 28px;
+    }
+
+    /* Comparison Section: Old Way vs cogNNitive Way */
+    .compare-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    @media (max-width: 768px) {
+      .compare-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .compare-card {
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px -8px rgba(0,0,0,0.06);
+    }
+    .compare-card.highlight {
+      border-color: rgba(77, 14, 78, 0.35);
+      background: #FCF9FC;
+      box-shadow: 0 12px 32px -12px rgba(77, 14, 78, 0.15);
+    }
+    .compare-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .compare-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .compare-badge.bad {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+    .compare-badge.good {
+      background: #DCFCE7;
+      color: #166534;
+    }
+    .compare-code {
+      background: #1E1E24;
+      color: #E2E8F0;
+      padding: 14px;
+      border-radius: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin-bottom: 16px;
+      flex: 1;
+    }
+    .compare-narrative {
+      background: #F8FAFC;
+      color: #475569;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px dashed #CBD5E1;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      flex: 1;
+      font-style: italic;
+    }
+    .compare-footer {
+      font-size: 13px;
+      color: var(--ink-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    /* Hero Rotator in Headline */
+    .hero-rotator-inline {
+      display: inline-grid;
+      color: var(--brand);
+      padding: 0 4px;
+      vertical-align: baseline;
+      text-align: center;
+    }
+    .hero-rotator-inline > span {
+      grid-area: 1 / 1;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(4px);
+      transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+    }
+    .hero-rotator-inline > span.active {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-rotator-inline > span { transition: none; }
+    }
+    @media (max-width: 640px) {
+      .hero-rotator-inline > span { white-space: normal; }
+    }
+
+    /* Use Cases 4-Grid */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .use-case-card {
+      background: var(--canvas);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .use-case-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(77, 14, 78, 0.1);
+      border-color: rgba(77, 14, 78, 0.3);
+    }
+    .use-case-avatar {
+      font-size: 32px;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    .use-case-role {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .use-case-tagline {
+      font-size: 13px;
+      color: var(--brand);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .use-case-desc {
+      font-size: 14px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+      flex: 1;
+    }
+    .use-case-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: auto;
+    }
+    .use-case-roi {
+      font-size: 11px;
+      font-weight: 700;
+      color: #059669;
+      background: #ECFDF5;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .use-case-cta {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    /* Site Work-in-Progress / Experimental Banner */
+    .site-wip-banner {
+      background: #FAF5FF;
+      color: #4D0E4E;
+      border-bottom: 1px solid rgba(77, 14, 78, 0.12);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      z-index: 101;
+    }
+    .site-wip-banner-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .site-wip-banner-icon {
+      font-size: 14px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .site-wip-banner-close {
+      background: none;
+      border: none;
+      color: #4D0E4E;
+      opacity: 0.65;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s, background-color 0.2s;
+      flex-shrink: 0;
+    }
+    .site-wip-banner-close:hover {
+      opacity: 1;
+      background: rgba(77, 14, 78, 0.08);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      mermaid.initialize({ startOnLoad: true, theme: "neutral" });
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Work-in-Progress / Experimental Banner -->
+  <aside id="site-wip-banner" class="site-wip-banner" role="status" aria-label="Experimental preview notice">
+    <div class="site-wip-banner-content">
+      <span class="site-wip-banner-icon" aria-hidden="true">✨</span>
+      <span><strong>Work in Progress:</strong> cogNNitive & iNNfo are experimental and actively evolving. Expect updates & occasional dust — feedback is warmly welcome!</span>
+    </div>
+    <button type="button" class="site-wip-banner-close" aria-label="Dismiss banner" onclick="dismissWipBanner()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </aside>
+  <script>
+    (function() {
+      var banner = document.getElementById('site-wip-banner');
+      if (sessionStorage.getItem('nn_site_wip_banner_dismissed') === 'true') {
+        if (banner) banner.style.display = 'none';
+      }
+    })();
+    function dismissWipBanner() {
+      var banner = document.getElementById('site-wip-banner');
+      if (banner) banner.style.display = 'none';
+      sessionStorage.setItem('nn_site_wip_banner_dismissed', 'true');
+    }
+  </script>
+
+  <!-- Unified Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="https://cognnitive.com" class="logo">
+        <img src="logo.svg" alt="cogNNitive Logo" />
+        <span>cogNNitive</span>
+      </a>
+      <nav class="nav">
+        <a href="https://cognnitive.com" class="nav-link active">cogNNitive</a>
+        <a href="use-cases.html" class="nav-link">Use Cases</a>
+        <a href="https://cognnitive.com/innfo" class="nav-link">iNNfo</a>
+        <a href="https://cognnitive.com/skills" class="nav-link">Skills</a>
+        <a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer" class="nav-link">Docs</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+      <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+        <a href="contact.html" class="btn-secondary" style="padding: 8px 16px; font-size: 13px;">Contact Us</a>
+        <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open App</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section with Integrated Action Rotator -->
+    <section class="hero">
+      <div class="container">
+        <h1>Turn <span id="hero-rotator" class="hero-rotator-inline" aria-live="polite"><span class="active">💡 ideas</span><span aria-hidden="true">📅 meetings</span><span aria-hidden="true">📄 documents</span><span aria-hidden="true">📊 data</span><span aria-hidden="true">📁 files</span><span aria-hidden="true">📽️ slides</span><span aria-hidden="true">✉️ emails</span><span aria-hidden="true">📰 articles</span><span aria-hidden="true">📕 PDFs</span><span aria-hidden="true">🚀 ANYTHING!</span></span> into Actionable Knowledge using AI</h1>
+        <p>The open Knowledge Evolution Framework that unifies your scattered inputs into structured, living models with radical traceability.</p>
+        <div class="hero-actions">
+          <a href="#how-to-use" class="btn-primary">🚀 Getting Started &rarr;</a>
+          <a href="contact.html" class="btn-secondary">💬 Contact Us</a>
+          <a href="https://cognnitive.com/innfo/app/" class="btn-secondary">Open Modeler App</a>
+          <a href="https://cognnitive.com/skills" class="btn-secondary">Explore Skills</a>
+        </div>
+
+        <!-- The Living Knowledge Pipeline (Hero Showcase) -->
+        <div class="flow-canvas" style="margin-top: 56px; text-align: left;">
+          <div class="flow-canvas-bg"></div>
+          <div class="flow-canvas-grid"></div>
+          <div class="flow-canvas-inner">
+            <div class="flow-pipeline-grid">
+              
+              <!-- Phase 1: IMPORT -->
+              <div class="flow-card">
+                <span class="flow-phase-tag p1">Phase 1: IMPORT</span>
+                <div class="flow-card-preview">
+                  <div class="source-wrapper">
+                    <div class="source-grid">
+                      <div class="source-chip" title="Conversational Thoughts &amp; Ideas">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-5.04z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-5.04z"></path></svg>
+                        <span>Thoughts</span>
+                      </div>
+                      <div class="source-chip" title="Portable Document Format">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/></svg>
+                        <span>PDF</span>
+                      </div>
+                      <div class="source-chip" title="Whisper Audio Transcription">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        <span>Audio/OCR</span>
+                      </div>
+                      <div class="source-chip" title="Word Documents">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8l2 8 2-6 2 6 2-8"/></svg>
+                        <span>DOCX</span>
+                      </div>
+                      <div class="source-chip" title="Spreadsheets &amp; Data">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                        <span>CSV/XLSX</span>
+                      </div>
+                      <div class="source-chip" title="Notion, Web &amp; Wikis">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                        <span>Notion/Web</span>
+                      </div>
+                    </div>
+                    <div class="import-paths-bar">
+                      <span class="path-pill highlight" title="Immutable Originals">sources/import/</span>
+                      <span class="path-pill" title="Intermediate Extraction Scratchpad">staging/</span>
+                      <span class="path-pill highlight" title="Normalized Markdown with #heading-slugs">sources/normalized/</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flow-card-body">
+                  <h3><span>1. Ingestion &amp; Lineage</span></h3>
+                  <p>Ingest files, recordings, and raw notes into immutable <code>sources/import/</code>, stage extraction buffers, and normalize into clean Markdown in <code>sources/normalized/</code>.</p>
+                </div>
+              </div>
+
+              <!-- Connector 1 -->
+              <div class="flow-connector">
+                <svg viewBox="0 0 70 24" fill="none" aria-hidden="true">
+                  <path d="M2 12 H68" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="dash-flow-anim"></path>
+                </svg>
+              </div>
+
+              <!-- Phase 2: MANAGE -->
+              <div class="flow-card">
+                <span class="flow-phase-tag p2">Phase 2: MANAGE</span>
+                <div class="flow-card-preview">
+                  <div class="model-tree-box">
+                    <div class="tree-node root">
+                      <span>📦</span>
+                      <span><strong>Model:</strong> Business_NN.md</span>
+                    </div>
+                    <div class="tree-branch">
+                      <div class="tree-node">
+                        <span>📑</span>
+                        <span><strong>Concept:</strong> ProductFeature</span>
+                      </div>
+                      <div class="tree-leaf">
+                        <div class="tree-node">
+                          <span>🔹</span>
+                          <span><strong>Element:</strong> RealTimeSync <span class="tree-tag">sources::</span></span>
+                        </div>
+                        <div class="tree-node" style="color: #64748B; font-size: 9px;">
+                          <span>▫️</span>
+                          <span><strong>Fields:</strong> status, priority, owner</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="access-modes-row">
+                    <span class="access-badge" title="Obsidian / VS Code / Notepad">📝 Text Editors</span>
+                    <span class="access-badge" title="Visual Graph Navigation">🛠️ Web App</span>
+                    <span class="access-badge" title="OpenCode / Antigravity / Claude Code">🤖 AI Agents</span>
+                  </div>
+                </div>
+                <div class="flow-card-body">
+                  <h3><span>2. Semantic Modeling (SSOT)</span></h3>
+                  <p>Structure knowledge into predictable **Models** with fine-grained citations (<code>sources:: [doc.md#slug]</code>). Access and edit freely via text editors, web app, or AI agents.</p>
+                </div>
+              </div>
+
+              <!-- Connector 2 -->
+              <div class="flow-connector">
+                <svg viewBox="0 0 70 24" fill="none" aria-hidden="true">
+                  <path d="M2 12 H68" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="dash-flow-anim"></path>
+                </svg>
+              </div>
+
+              <!-- Phase 3: EXPORT & Feedback Loop -->
+              <div class="flow-card">
+                <span class="flow-phase-tag p3">Phase 3: EXPORT</span>
+                <div class="flow-card-preview">
+                  <div class="export-deliverables-card">
+                    <div class="deliverable-item">
+                      <div class="icon-badge">
+                        <span>📊</span>
+                        <span>Interactive Dashboard</span>
+                      </div>
+                      <span class="tag">export/html</span>
+                    </div>
+                    <div class="deliverable-item">
+                      <div class="icon-badge">
+                        <span>📑</span>
+                        <span>Exec Brief &amp; BibTeX</span>
+                      </div>
+                      <span class="tag">export/docx</span>
+                    </div>
+                    <div class="deliverable-item" style="background: #FDF4FD; border-color: rgba(77,14,78,0.2);">
+                      <div class="icon-badge">
+                        <span style="color: var(--brand);">&#x2714;</span>
+                        <span style="font-size: 9.5px; font-family: var(--mono); color: var(--brand);">derived_from: [Model_NN]</span>
+                      </div>
+                      <span class="tag" style="background: var(--brand-subtle); color: var(--brand);">Lineage</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flow-card-body">
+                  <h3><span>3. Artifacts &amp; Feedback</span></h3>
+                  <p>Project role-tailored **Artifacts** — dashboards, executive briefs, and specifications into <code>export/</code>. Annotated stakeholder reviews re-ingest into sources to continuously evolve models.</p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Animated Closed Feedback Loop Track -->
+            <div class="feedback-loop-track">
+              <svg class="feedback-loop-svg" viewBox="0 0 780 28" fill="none" aria-hidden="true">
+                <path d="M 720 4 C 750 4, 760 14, 730 20 L 50 20 C 20 20, 30 10, 60 4" stroke="#4D0E4E" stroke-width="2" stroke-linecap="round" class="dash-feedback-anim" opacity="0.65" />
+                <polygon points="56,1 46,6 56,11" fill="#4D0E4E" opacity="0.8" />
+              </svg>
+              <div class="feedback-loop-banner">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                </svg>
+                <span>Closed Feedback Loop: Annotated artifacts &amp; revisions re-ingest into <code>sources/import/</code> to evolve the SSOT</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Real-World Use Cases Section -->
+    <section>
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">⚡ Real-World Impact</span>
+          <h2>Who is cogNNitive For?</h2>
+          <p>Real problems, tangible workflows, and verifiable outcomes across industries.</p>
+        </div>
+        <div class="grid-4">
+          <!-- Card 1: Founder -->
+          <a href="use-cases.html#founder" class="use-case-card">
+            <span class="use-case-avatar">🚀</span>
+            <div class="use-case-role">Startup Founders</div>
+            <div class="use-case-tagline">Living Business Models</div>
+            <p class="use-case-desc">Turn messy investor feedback, pitch decks, and discovery transcripts into an auditable business model where pivots update the whole company in 1 hour.</p>
+            <div class="use-case-footer">
+              <span class="use-case-roi">Pivot in 1h vs 2wks</span>
+              <span class="use-case-cta">Explore &rarr;</span>
+            </div>
+          </a>
+
+          <!-- Card 2: Sales Director -->
+          <a href="use-cases.html#sales" class="use-case-card">
+            <span class="use-case-avatar">💼</span>
+            <div class="use-case-role">Sales Directors</div>
+            <div class="use-case-tagline">Consulting &amp; Proposals</div>
+            <p class="use-case-desc">Unify scattered rate cards, service packages, and credentials in Git. Generate tailored RFP responses with mathematically verified citations.</p>
+            <div class="use-case-footer">
+              <span class="use-case-roi">RFP: 5 days &rarr; 3 hours</span>
+              <span class="use-case-cta">Explore &rarr;</span>
+            </div>
+          </a>
+
+          <!-- Card 3: Designer -->
+          <a href="use-cases.html#designer" class="use-case-card">
+            <span class="use-case-avatar">🎨</span>
+            <div class="use-case-role">Freelance Designers</div>
+            <div class="use-case-tagline">Zero Scope Creep</div>
+            <p class="use-case-desc">Capture kickoff audio and structure information architecture citing exact client requirements. Export clickable HTML previews for formal sign-off.</p>
+            <div class="use-case-footer">
+              <span class="use-case-roi">0 Unpaid Revisions</span>
+              <span class="use-case-cta">Explore &rarr;</span>
+            </div>
+          </a>
+
+          <!-- Card 4: Creator -->
+          <a href="use-cases.html#creator" class="use-case-card">
+            <span class="use-case-avatar">🎬</span>
+            <div class="use-case-role">YouTube Creators</div>
+            <div class="use-case-tagline">Research &amp; Video Scripts</div>
+            <p class="use-case-desc">Import papers, videos, and datasets. Write scripts with fine-grained claim citations and auto-generate shooting B-roll cues and video descriptions.</p>
+            <div class="use-case-footer">
+              <span class="use-case-roi">0-Minute Fact Check</span>
+              <span class="use-case-cta">Explore &rarr;</span>
+            </div>
+          </a>
+        </div>
+        <div style="text-align: center; margin-top: 36px;">
+          <a href="use-cases.html" class="btn-secondary">View Detailed Walkthrough of All 4 Use Cases &rarr;</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Operational Architecture: Clean & High-Level -->
+    <section style="background: var(--canvas-inert);">
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">Operational Architecture</span>
+          <h2>Knowledge Lifecycle Architecture</h2>
+          <p>A continuous, auditable flow from raw inputs to living models, project artifacts, and feedback.</p>
+        </div>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart LR
+    subgraph P1["1. IMPORT &amp; NORMALIZE"]
+        RAW["📁 Raw Inputs\n(Audio, Docs, Sheets, Notes)"] --> NORM["📝 sources/normalized/\n(Markdown + Citations)"]
+    end
+
+    subgraph P2["2. MANAGE (Living SSOT)"]
+        NORM --> MOD["🧠 models/*_NN.md\n(Concepts, Elements, Fields)"]
+        MOD <--> EDIT["👥 Text Editors · Web App · AI Agents"]
+    end
+
+    subgraph P3["3. EXPORT &amp; FEEDBACK"]
+        MOD --> ART["📊 export/\n(Dashboards, Briefs, Specs)"]
+        ART -.->|"Closed-Loop Feedback"| RAW
+    end
+
+    classDef p1 fill:#EBF3FF,stroke:#007AFF,color:#003D82;
+    classDef p2 fill:#F6EEF6,stroke:#4D0E4E,color:#4D0E4E;
+    classDef p3 fill:#E8F8F0,stroke:#34C759,color:#105C29;
+
+    class RAW,NORM p1;
+    class MOD,EDIT p2;
+    class ART p3;
+          </pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 Key Benefits: End-User Value Focused -->
+    <section>
+      <div class="container">
+        <div class="section-title">
+          <h2>6 Key Benefits</h2>
+          <p>Why modern teams and AI builders choose cogNNitive to organize their knowledge.</p>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <div class="benefit-num">1</div>
+            <div class="benefit-content">
+              <h4>Immediate Clarity &amp; Speed</h4>
+              <p>Turn chaotic meetings, raw recordings, and scattered files into structured, actionable knowledge in minutes.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">2</div>
+            <div class="benefit-content">
+              <h4>Zero Vendor Lock-in</h4>
+              <p>100% plain Markdown files in your own Git repository. You retain complete ownership of your knowledge forever.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">3</div>
+            <div class="benefit-content">
+              <h4>AI You Can Actually Trust</h4>
+              <p>Deterministic section-level citations eliminate hallucinations and ensure your AI pair-programmer operates on ground truth.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">4</div>
+            <div class="benefit-content">
+              <h4>Effortless Company Updates</h4>
+              <p>When business assumptions, prices, or specs change, update the model and all downstream artifacts reflect the change automatically.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">5</div>
+            <div class="benefit-content">
+              <h4>Universal Freedom of Access</h4>
+              <p>Work visually with the web modeler app, textually in VS Code / Obsidian, or conversationally via your AI agent.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">6</div>
+            <div class="benefit-content">
+              <h4>100% Free &amp; Open Source</h4>
+              <p>Built for the open community under the MIT license. No hidden cloud subscriptions or artificial limits.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to Use It (OpenCode & Getting Started) -->
+    <section id="how-to-use" style="background: var(--canvas-inert);">
+      <div class="container">
+        <div class="section-title">
+          <h2>How to Get Started</h2>
+          <p>Get started with cogNNitive in 3 simple steps inside your favorite AI agent workspace.</p>
+        </div>
+        <div class="steps-wrapper">
+          <div class="step-card">
+            <span class="step-badge">Step 1</span>
+            <div class="step-text">
+              <h4>Open Your Workspace</h4>
+              <p>Launch OpenCode Desktop, VS Code, or Antigravity and open your project workspace folder.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <span class="step-badge">Step 2</span>
+            <div class="step-text">
+              <h4>Prompt Your Agent</h4>
+              <p>Tell your AI agent the single bootstrap phrase in the chat:</p>
+              <div class="code-box">I want to use https://cognnitive.com/use</div>
+            </div>
+          </div>
+          <div class="step-card">
+            <span class="step-badge">Step 3</span>
+            <div class="step-text">
+              <h4>Enjoy Living Knowledge</h4>
+              <p>Your agent automatically installs the skills, configures tools, and presents your interactive workflow menu.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The A ⇄ K Paradigm: Virtuous Knowledge Loop -->
+    <section>
+      <div class="container">
+        <div class="section-title">
+          <h2>The <span style="font-family: var(--mono); color: var(--brand);">A &#8644; K</span> Paradigm</h2>
+          <p><em>Turn Anything into structured Knowledge, and back into Anything using AI.</em></p>
+        </div>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart LR
+    A1["📄 Anything In (A)<br/>(Raw meetings, notes, PDFs, data)"] -->|"Structure &amp; Verify"| K["🧠 Structured Knowledge (K)<br/>(Living models, concepts, citations)"]
+    K -->|"Project Tailored Artifacts"| A2["📊 Anything Out (A)<br/>(Dashboards, executive briefs, specs)"]
+    A2 -.->|"Virtuous Feedback Loop"| A1
+
+    classDef a fill:#FAFAFC,stroke:#636366,color:#111112;
+    classDef k fill:#F6EEF6,stroke:#4D0E4E,color:#4D0E4E,font-weight:bold;
+
+    class A1,A2 a;
+    class K k;
+          </pre>
+        </div>
+        <div class="grid-3" style="margin-top: 32px;">
+          <div class="card">
+            <div class="card-icon">📄</div>
+            <h3>Anything In (A)</h3>
+            <p>Any file or thought you have: meetings, audio transcripts, PDFs, spreadsheets, or raw brainstorming notes.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🧠</div>
+            <h3>Structured Knowledge (K)</h3>
+            <p>The single source of truth — predictable models, clear concepts, typed attributes, and verifiable citations.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">📊</div>
+            <h3>Anything Out (A)</h3>
+            <p>AI generates the exact artifact you need — interactive dashboards, executive briefs, specs, or task lists.</p>
+          </div>
+        </div>
+        <p style="text-align: center; max-width: 760px; margin: 40px auto 0; color: var(--ink-muted); font-size: 15px;">
+          The virtuous loop is fully reversible (<span style="font-family: var(--mono); color: var(--brand);">A &#8644; K</span>): inputs and outputs stay decoupled through a single semantic core, and every pass enriches the underlying knowledge.
+        </p>
+      </div>
+    </section>
+
+    <!-- End-to-End Traceability & Verifiable Lineage Section -->
+    <section style="background: var(--canvas-inert); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">&#x2728; Mathematical Traceability &amp; OKF Standard</span>
+          <h2>Every Insight Traceable. Zero Hallucinations.</h2>
+    <!-- Extreme Traceability & Verifiable Lineage Section -->
+    <section style="background: var(--canvas-inert); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">&#x2728; Radical Precision</span>
+          <h2>Extreme Traceability &amp; Lineage</h2>
+          <p>Transform scattered audio, spreadsheets, documents, and chats into verified models with permanent section anchors.</p>
+        </div>
+
+        <div class="grid-3" style="margin-top: 40px;">
+          <!-- Card 1 -->
+          <div class="card" style="border: 1px solid rgba(77, 14, 78, 0.15); box-shadow: 0 8px 24px -10px rgba(77, 14, 78, 0.08);">
+            <div class="card-icon" style="background: var(--brand-subtle); color: var(--brand);">&#x1F50E;</div>
+            <h3 style="font-size: 18px; margin-bottom: 10px;">1. Multimodal Normalization</h3>
+            <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6;">
+              Normalize audio transcripts (<code style="font-family: var(--mono); font-size: 12px;">.srt/.vtt</code>), spreadsheets (<code style="font-family: var(--mono); font-size: 12px;">.csv/.xlsx</code>), conversation logs, and PDFs into clean Markdown under <code style="font-family: var(--mono); font-size: 12px;">sources/normalized/</code>.
+            </p>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="card" style="border: 1px solid rgba(77, 14, 78, 0.15); box-shadow: 0 8px 24px -10px rgba(77, 14, 78, 0.08);">
+            <div class="card-icon" style="background: var(--brand-subtle); color: var(--brand);">&#x1F517;</div>
+            <h3 style="font-size: 18px; margin-bottom: 10px;">2. Permanent Section Anchors</h3>
+            <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6;">
+              Models link assertions directly to sources using clear heading syntax (<code style="font-family: var(--mono); font-size: 12px;">sources:: [report.md#budget]</code>). Volatile line numbers are rejected in favor of permanent anchors.
+            </p>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="card" style="border: 1px solid rgba(77, 14, 78, 0.15); box-shadow: 0 8px 24px -10px rgba(77, 14, 78, 0.08);">
+            <div class="card-icon" style="background: var(--brand-subtle); color: var(--brand);">&#x1F4DA;</div>
+            <h3 style="font-size: 18px; margin-bottom: 10px;">3. Project Artifacts &amp; Lineage</h3>
+            <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6;">
+              Generate interactive HTML dashboards, executive briefs, and formal specifications with verified citations and automatic lineage tracking (<code style="font-family: var(--mono); font-size: 12px;">derived_from: [Model_NN]</code>).
+            </p>
+          </div>
+        </div>
+
+        <div class="diagram-card" style="margin-top: 36px; padding: 24px; background: #FFFFFF; border: 1px solid var(--border); border-radius: 14px;">
+          <pre class="mermaid">
+flowchart LR
+    subgraph Sources["1. SOURCES (sources/normalized/)"]
+        S1["🎥 Subtitles &amp; Audio Transcripts"]
+        S2["📊 Spreadsheets &amp; Data Tables"]
+        S3["📑 Documents, PDFs &amp; Chats"]
+    end
+
+    subgraph Model["2. MODELS (models/*_NN.md)"]
+        M["🧠 Living Concepts &amp; Elements<br/><span style='font-size:11px;'>sources:: [source.md#slug]</span>"]
+    end
+
+    subgraph Output["3. ARTIFACTS (export/)"]
+        O1["📊 Interactive HTML Dashboards"]
+        O2["📑 Executive Briefs &amp; Specs"]
+    end
+
+    Sources -->|"Permanent Section Citations"| M
+    M -->|"Deterministic Projection"| Output
+    Output -.->|"Feedback Re-ingestion"| Sources
+
+    classDef s fill:#FAFAFC,stroke:#636366,color:#111112;
+    classDef m fill:#F6EEF6,stroke:#4D0E4E,color:#4D0E4E,font-weight:bold;
+    classDef o fill:#FFFFFF,stroke:#6A1B6B,color:#111112;
+
+    class S1,S2,S3 s;
+    class M m;
+    class O1,O2 o;
+          </pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparative Section: Old Way vs cogNNitive Way -->
+    <section class="showcase-section">
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">&#x26A1; Paradigm Shift</span>
+          <h2>Goodbye Fragmented Documentation</h2>
+          <p>The difference between unmaintained chaotic notes nobody trusts and an active semantic foundation.</p>
+        </div>
+
+        <div class="compare-container">
+          <!-- Old Way: Unstructured Narrative -->
+          <div class="compare-card">
+            <div class="compare-header">
+              <span class="compare-badge bad">&#x2716; The Old Way</span>
+              <span style="font-size: 12px; color: #9CA3AF; font-family: var(--mono);">unstructured-notes.txt</span>
+            </div>
+            <div class="compare-narrative">
+              "Met with Dave on Tuesday — think we agreed on $45k budget for Q3, but Sarah mentioned in Slack we should cap at $38k. Check the old Notion doc (link broken?). Wait, did we decide to charge per seat or usage-based? See attached PDF v2_final_FINAL.pdf for details, though the pricing table might be outdated. Ask Dave if this still applies..."
+            </div>
+            <div class="compare-footer">
+              <span style="color: #EF4444; font-weight: bold;">&#x26A0;</span>
+              <span>Chaotic narrative. Stale in 2 weeks. Zero agent verifiability. Guaranteed hallucinations.</span>
+            </div>
+          </div>
+
+          <!-- cogNNitive Way -->
+          <div class="compare-card highlight">
+            <div class="compare-header">
+              <span class="compare-badge good">&#x2714; The cogNNitive Way</span>
+              <span style="font-size: 12px; color: var(--brand); font-family: var(--mono);">Business_V_1-0-0_business_NN.md</span>
+            </div>
+            <pre class="compare-code" style="background: #140815; border: 1px solid rgba(77,14,78,0.2);"><code>### 🔹 PricingTier [Element]
+- tier_name:: Growth
+- price_monthly:: 49
+- billing_model:: per-seat
+- sources:: [meeting_q3.md#approved-pricing]
+
+### 🔹 BudgetCap [Element]
+- q3_ceiling:: 45000
+- approved_by:: Dave
+- sources:: [finance_sync.md#executive-signoff]</code></pre>
+            <div class="compare-footer">
+              <span style="color: #10B981; font-weight: bold;">&#x2714;</span>
+              <span>Strict compliance. Machine-readable. Ground truth for humans and AI agents.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- What cogNNitive is NOT (Non-Goals) -->
+    <section style="background: var(--canvas-inert);">
+      <div class="container">
+        <div class="section-title">
+          <h2>What cogNNitive is NOT</h2>
+          <p>Clear boundaries keep the ecosystem honest, simple, and yours. If it isn't listed here, it isn't the product.</p>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a database</h4>
+              <p>Models are plain Markdown files in your own Git repository. No proprietary storage engine, no hidden silo, no lock-in.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a hosted platform</h4>
+              <p>No mandatory cloud service or managed infrastructure that owns your knowledge. Everything runs locally or in your browser.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Models never execute code</h4>
+              <p><code style="font-family: var(--mono);">_NN.md</code> files are data, not programs — no macros, scripts, arbitrary commands, or auto-installed plugins. Opening a model never runs anything.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a real-time collaboration platform</h4>
+              <p>No live multi-user editing, presence, or sync protocol. Collaboration is the engineering way: files in Git, branches, and reviews.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a vector database / RAG platform</h4>
+              <p>It structures knowledge so retrieval works, but it does not store embeddings or manage retrieval infrastructure. Connect the vector tool of your choice.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a document authoring suite</h4>
+              <p>It does not replace your wiki, CMS, or word processor. It organizes the knowledge those tools produce into validated, linked models.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a universal format</h4>
+              <p>OKF-compatible and plain Markdown, but not the single format for all knowledge. Your source of truth stays yours.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-num">&#x2716;</div>
+            <div class="benefit-content">
+              <h4>Not a one-shot AI converter</h4>
+              <p>The A &#8644; K cycle is reversible and iterative. A single unvalidated lossy conversion is not the product — living, validated models are.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Knowledge Evolution Framework: Living & Dynamic Knowledge -->
+    <section>
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">Knowledge Evolution Framework</span>
+          <h2>A <span class="heartbeat-word">Living Knowledge Base</span> Powered by AI</h2>
+          <p>Three foundational pillars that define how cogNNitive turns scattered inputs into living information.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">🧠</div>
+            <h3>Knowledge</h3>
+            <p>The ideas in your team's brains and the data in your computer files — meetings, docs, chats, sheets — captured and structured so humans and AI agents can query and build upon it with 100% confidence.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🌱</div>
+            <h3>Evolution</h3>
+            <p>Knowledge is never frozen. Every pass validates, enriches, and updates it, creating a <span class="heartbeat-word">living knowledge base</span> that continuously evolves as your project grows.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🧰</div>
+            <h3>Framework</h3>
+            <p>A set of processes and tools — iNNfo models, agent skills, and the visual Modeler app — that guide knowledge from scattered input to verified, traceable output, maximizing value provided.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact & Consultation CTA Section -->
+    <section class="contact-cta-section" style="background: linear-gradient(180deg, var(--canvas) 0%, var(--brand-subtle) 100%); padding: 72px 0;">
+      <div class="container" style="text-align: center; max-width: 860px;">
+        <span class="badge-pill" style="display: inline-block; background: var(--brand-subtle); color: var(--brand); font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(77,14,78,0.15); margin-bottom: 16px;">💬 LET'S TALK</span>
+        <h2 style="font-size: 36px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 16px;">Ready to Evolve Your Team's Knowledge?</h2>
+        <p style="font-size: 18px; color: var(--ink-muted); line-height: 1.6; margin-bottom: 32px;">Whether you want to implement cogNNitive in your organization, build custom AI agent skills, or schedule a 1-on-1 strategy call, we're ready to collaborate.</p>
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+          <a href="contact.html" class="btn-primary" style="font-size: 15px; padding: 12px 26px;">📬 Open Contact Form &rarr;</a>
+          <a href="mailto:lucas@lucascervera.com" class="btn-secondary" style="font-size: 15px; padding: 12px 26px;">✉️ Email Us Directly</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer with Dynamic Version & Timestamp -->
+  <footer style="padding: 32px 0; border-top: 1px solid var(--border); background: var(--canvas);">
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <p>&copy; 2026 cogNNitive. Open Source under MIT License. Built for <a href="https://opencode.ai" style="color: var(--brand); font-weight: 600; text-decoration: none;">OpenCode</a>.</p>
+        <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 13px;">
+          <a href="privacy.html" style="color: var(--brand); text-decoration: none;">Privacy Policy</a>
+          <span style="color: var(--ink-muted);">&bull;</span>
+          <a href="legal.html" style="color: var(--brand); text-decoration: none;">Legal Notice</a>
+          <span style="color: var(--ink-muted);">&bull;</span>
+          <a href="contact.html" style="color: var(--brand); text-decoration: none;">Contact</a>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--ink-muted); display: flex; align-items: center; gap: 10px;">
+        <span style="font-family: var(--mono); background: var(--brand-subtle); color: var(--brand); padding: 2px 6px; border-radius: 4px; font-weight: 600;">v0.7.0</span>
+        <span>&bull;</span>
+        <span>Control de versiones en Git</span>
+        <span>&bull;</span>
+        <span>Última actualización: <time datetime="2026-09-12">Septiembre 2026</time></span>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      var el = document.getElementById("hero-rotator");
+      if (!el) return;
+      var words = el.querySelectorAll("span");
+      if (!words.length) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var i = 0;
+      setInterval(function() {
+        words[i].classList.remove("active");
+        words[i].setAttribute("aria-hidden", "true");
+        i = (i + 1) % words.length;
+        words[i].classList.add("active");
+        words[i].removeAttribute("aria-hidden");
+      }, 2200);
+    })();
+  </script>
+
+</body>
+</html>

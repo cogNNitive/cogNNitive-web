@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>cogNNitive — iNNfo</title>
+    <script>
+      (function() {
+        var path = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        if (path.startsWith('/innfo/app')) {
+          var subpath = path.slice('/innfo/app'.length);
+          var target = '/innfo/app/?p=' + encodeURIComponent(subpath + search + hash);
+          window.location.replace(target);
+        } else if (path.startsWith('/app')) {
+          var subpath = path.slice(4);
+          var target = '/innfo/app/?p=' + encodeURIComponent(subpath + search + hash);
+          window.location.replace(target);
+        } else {
+          window.location.replace('/');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to cogNNitive...</p>
+  </body>
+</html>

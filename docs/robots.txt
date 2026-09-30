@@ -1,0 +1,7 @@
+﻿# cogNNitive Knowledge Evolution Framework
+# Allow all crawlers, full access
+
+User-agent: *
+Allow: /
+
+Sitemap: https://cognnitive.com/sitemap.xml

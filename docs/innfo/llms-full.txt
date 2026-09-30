@@ -1,0 +1,75 @@
+# iNNfo â€” Full Site Content
+
+> The hub for the iNNfo ecosystem.
+> Generator: https://cognnitive.com/skills/nn-design-presets
+
+---
+
+# iNNfo â€” the iNNfo modeling hub
+
+Model, edit, and validate iNNfo knowledge models. iNNfo is the hub for the iNNfo ecosystem.
+
+## What is iNNfo?
+
+A monorepo that ties the iNNfo ecosystem together:
+- **iNNfo Modeler** (`innfo-editor`) â€” a Vue 3 workspace editor. Open any folder, parse it into one normalized model tree, edit, and validate in the browser.
+- **@cognnitive/innfo-core** â€” the shared TypeScript parser, resolver, validator.
+- **@cognnitive/innfo-mcp** â€” an MCP server exposing iNNfo as semantic tools for AI agents.
+- **Spec Chain** â€” defiNNe -> iNNfo -> Templates -> Models.
+
+## How the iNNfo Modeler works
+
+1. Open workspace â€” pick a folder via the File System Access API (or resume a recent one)
+2. Single parse pass â€” one recursive pass folds every `_NN.md` file and its structural children into one normalized tree
+3. Edit & validate â€” sidebar tree + block sheets / table view + automatic validation against the iNNfo spec
+
+## Ecosystem Architecture
+
+- Level 0: defiNNe â€” Meta-specification, RFC 2119, versioning
+- Level 1: iNNfo â€” Central spec; single-file `_NN.md` models with YAML frontmatter
+- Level 2: Templates â€” business, procedures, organization
+- Level 3: Models â€” Concrete data instances
+
+## Built for AI agents
+
+- **innfo-mcp** â€” a stdio MCP server exposing iNNfo as semantic tools for AI agents.
+- **Use iNNfo with AI** â€” a built-in checklist to connect your workspace to Claude Code, Google Antigravity, or OpenCode.
+
+## Monorepo structure
+
+```
+iNNfo/
+â”œâ”€â”€ apps/
+â”‚   â””â”€â”€ innfo-editor/     <- Vue 3 workspace editor (the iNNfo Modeler)
+â”œâ”€â”€ packages/
+â”‚   â”œâ”€â”€ innfo-core/       <- TS parser, resolver, validator
+â”‚   â””â”€â”€ innfo-mcp/        <- MCP server for AI agents
+â”œâ”€â”€ specs/                <- defiNNe, iNNfo, templates, samples
+â””â”€â”€ docs/                 <- This website
+```
+
+---
+
+# About iNNfo
+
+The monorepo that ties the iNNfo ecosystem together.
+
+## Architecture
+
+npm workspaces monorepo â€” one editor app (`innfo-editor`), two packages (`innfo-core`, `innfo-mcp`), the spec chain (`specs/`), and this website (`docs/`).
+
+## App
+
+**iNNfo Modeler** (`@cognnitive/innfo-editor`) â€” a Vue 3 workspace editor with the File System Access API, a single recursive parse pass into one normalized model graph, block sheets / table view / metamodel-driven forms, automatic validation, a graph viewer, matrix grids, and IndexedDB handle persistence.
+
+## Packages
+
+- **@cognnitive/innfo-core** â€” framework-agnostic TypeScript library: the iNNfo parser, model types, IO drivers, validator, and parent-spec-chain resolver.
+- **@cognnitive/innfo-mcp** â€” an MCP server (stdio) wrapping innfo-core with semantic tools for AI agents.
+
+## Specifications
+
+- Level 0: defiNNe â€” Meta-specification
+- Level 1: iNNfo â€” Central spec; single-file `_NN.md` models
+- Level 2: Templates â€” business, procedures, organization
+- Level 3: Models â€” Concrete data instances (Ghostbusters, Engineering Team)

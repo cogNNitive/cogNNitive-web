@@ -1,0 +1,16 @@
+# cogNNitive — LLM context
+
+## About
+cogNNitive turns ideas, insights, and data scattered through human brains and computer files into a living, structured knowledge base powered by AI. This site is the bootstrap entry point: it tells AI agents what skills to install, where to download them, and what workflows are available.
+
+## Key repos
+
+- cogNNitive: https://github.com/cogNNitive/cogNNitive — monorepo: iNNfo specification engine (parser, validator, MCP server), agent skills, iNNfo Modeler app, and this site
+
+## Bootstrap
+1. Install OpenCode from https://opencode.ai/download
+2. Tell your agent: "I want to use https://cognnitive.com/use"
+3. Choose what you want to do and follow the instructions
+
+## Manifest file
+docs/use/manifest.md (YAML frontmatter contains the agent-bootstrap block with skills, templates, and workflows)

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iNNfo Docs</title>
+    <meta
+      name="description"
+      content="iNNfo documentation — innfo-editor, innfo-core, innfo-mcp, and the iNNfo ecosystem."
+    />
+    <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets" />
+    <link rel="icon" type="image/svg+xml" href="/innfo/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/innfo/css/style.css" />
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css" />
+    <script src="/innfo/js/analytics.js" defer></script>
+    <style>
+      :root {
+        --theme-color: #4d0e4e;
+        --base-background: #ffffff;
+        --textColor: #111112;
+        --sidebar-background: #ffffff;
+        --sidebar-border-color: #f2f2f7;
+        --code-background: #fafafc;
+        --code-color: #4d0e4e;
+      }
+      .app-name-link {
+        color: #4d0e4e;
+        font-weight: 800;
+      }
+      .app-name-link img {
+        height: 28px;
+        width: auto;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .sidebar {
+        border-right: 1px solid #f2f2f7;
+      }
+      .sidebar ul li a {
+        color: #636366;
+      }
+      .sidebar ul li.active > a {
+        color: #4d0e4e;
+        font-weight: 600;
+        border-right: 2px solid #4d0e4e;
+      }
+      .markdown-section pre {
+        background: #fafafc;
+        border: 1px solid #f2f2f7;
+        border-radius: 10px;
+      }
+      .markdown-section code {
+        color: #4d0e4e;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+    </script>
+    <script>
+      window.$docsify = {
+        name: 'iNNfo',
+        logo: '/innfo/favicon.svg',
+        repo: 'https://github.com/cogNNitive/cogNNitive',
+        loadSidebar: true,
+        loadNavbar: true,
+        auto2top: true,
+        coverpage: false,
+        search: 'auto',
+        formatUpdated: '{YYYY}-{MM}-{DD}',
+        markdown: {
+          renderer: {
+            code: function (code, lang) {
+              if (lang === 'mermaid') {
+                return '<div class="mermaid">' + code + '</div>';
+              }
+              return this.origin.code.apply(this, arguments);
+            },
+          },
+        },
+        plugins: [
+          function (hook, vm) {
+            hook.doneEach(function () {
+              if (typeof mermaid !== 'undefined') {
+                var elements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
+                if (elements.length > 0) {
+                  mermaid.run({ nodes: elements });
+                }
+              }
+              if (window.umami) {
+                window.umami.track({ url: window.location.pathname + window.location.search });
+              }
+            });
+          },
+        ],
+      };
+    </script>
+    <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  </body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Notes to Executive Summary — Try it · cogNNitive</title>
+  <meta name="description" content="Transform a YouTube video transcript into a structured executive summary using the traNNsform skill. Step-by-step sample with downloadable input.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;1,400;1,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-inert: #FAFAFC;
+      --brand: #4D0E4E;
+      --brand-light: #6A1B6B;
+      --border: #F2F2F7;
+      --ink: #111112;
+      --ink-muted: #636366;
+      --sans: 'Plus Jakarta Sans', 'Geist Sans', system-ui, sans-serif;
+      --serif: 'Playfair Display', Georgia, serif;
+      --mono: 'JetBrains Mono', 'Geist Mono', monospace;
+      --max-w: 880px;
+      --radius: 10px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 48px;
+      --space-xxl: 80px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans); font-size: 16px; line-height: 1.6;
+      color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 var(--space-lg); }
+    .wide { max-width: 1080px; }
+
+    /* Nav */
+    nav { padding: var(--space-md) 0; border-bottom: 1px solid var(--border); background: var(--canvas); position: sticky; top: 0; z-index: 100; }
+    nav .container { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 800; font-size: 22px; color: var(--brand); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-back { font-size: 14px; color: var(--ink-muted); text-decoration: none; font-weight: 500; }
+    .nav-back:hover { color: var(--brand); }
+
+    /* Hero */
+    .hero { padding: 80px 0 var(--space-xl); }
+    .hero h1 { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: var(--space-sm); }
+    .hero h1 .accent { font-family: var(--serif); font-weight: 600; font-style: italic; color: var(--brand); }
+    .hero .subtitle { font-size: 18px; color: var(--ink-muted); margin-bottom: var(--space-md); }
+    .hero .arrow { display: inline-flex; align-items: center; gap: var(--space-sm); font-size: 15px; font-weight: 600; color: var(--brand); background: #F6EEF6; padding: 8px 20px; border-radius: var(--radius); }
+
+    /* Section */
+    section { padding: var(--space-xl) 0; }
+    section + section { border-top: 1px solid var(--border); }
+    .section-label { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-sm); }
+    .section-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: var(--space-md); }
+    .section-title .accent { font-family: var(--serif); font-weight: 400; font-style: italic; color: var(--brand); }
+    .section-desc { color: var(--ink-muted); max-width: 640px; font-size: 16px; }
+
+    /* Input preview */
+    .input-box { background: var(--canvas-inert); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-lg); margin: var(--space-lg) 0; }
+    .input-box .filename { font-weight: 600; font-size: 14px; margin-bottom: var(--space-sm); color: var(--brand); }
+    .input-box .preview { font-family: var(--mono); font-size: 13px; line-height: 1.7; color: var(--ink-muted); white-space: pre-wrap; max-height: 240px; overflow-y: auto; background: #fff; padding: var(--space-md); border-radius: 6px; border: 1px solid var(--border); margin-bottom: var(--space-md); }
+    .input-box .preview strong { color: var(--ink); }
+    .btn-download { display: inline-flex; align-items: center; gap: var(--space-sm); background: var(--brand); color: #fff; text-decoration: none; padding: 10px 24px; border-radius: var(--radius); font-weight: 600; font-size: 14px; transition: background 0.2s; }
+    .btn-download:hover { background: var(--brand-light); }
+
+    /* Steps cards */
+    .steps { display: flex; flex-direction: column; gap: var(--space-lg); margin-top: var(--space-lg); }
+    .step-card { counter-increment: step; border: 1px solid var(--border); border-radius: var(--radius); padding: var(--space-lg); position: relative; padding-left: 72px; background: var(--canvas); }
+    .steps { counter-reset: step; }
+    .step-card::before { content: counter(step); position: absolute; left: var(--space-lg); top: var(--space-lg); font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--brand); background: #F6EEF6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .step-card h4 { font-size: 18px; font-weight: 600; margin-bottom: var(--space-sm); }
+    .step-card p { font-size: 14px; color: var(--ink-muted); line-height: 1.6; margin-bottom: var(--space-sm); }
+    .step-card p:last-child { margin-bottom: 0; }
+    .step-card .code-snip { background: var(--canvas-inert); border-radius: 6px; padding: var(--space-md); font-family: var(--mono); font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: var(--ink); margin-top: var(--space-sm); }
+
+    /* Output preview */
+    .output-box { background: #F8F4F8; border: 1px solid var(--brand); border-radius: var(--radius); padding: var(--space-lg); margin-top: var(--space-lg); }
+    .output-box .label { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-sm); }
+    .output-box .preview { font-family: var(--mono); font-size: 13px; line-height: 1.7; color: var(--ink); white-space: pre-wrap; background: #fff; padding: var(--space-md); border-radius: 6px; border: 1px solid var(--border); }
+
+    /* Tip */
+    .tip { background: #FFF9E6; border: 1px solid #F0D78E; border-radius: var(--radius); padding: var(--space-md) var(--space-lg); margin-top: var(--space-lg); font-size: 14px; color: #6B5200; }
+    .tip strong { color: #4A3800; }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--border); padding: var(--space-xl) 0 var(--space-lg); text-align: center; font-size: 13px; color: var(--ink-muted); }
+    footer a { color: var(--brand); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 30px; }
+      .section-title { font-size: 22px; }
+      .step-card { padding-left: var(--space-lg); padding-top: 56px; }
+      .step-card::before { left: var(--space-lg); top: var(--space-md); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="/" class="logo">cogNNitive</a>
+    <a href="/" class="nav-back">&larr; Back to home</a>
+  </div>
+</nav>
+
+<main class="container wide">
+
+  <!-- Hero -->
+  <section class="hero">
+    <span class="section-label">Sample Workflow</span>
+    <h1>Meeting Notes to <span class="accent">Executive Summary</span></h1>
+    <p class="subtitle">Transform a YouTube video transcript into a clean, stakeholder-ready executive summary with decisions, action items, blockers, and next steps.</p>
+    <div class="arrow">&#x1F4E4; Transcript &rarr; &#x1F4CB; Executive Summary</div>
+  </section>
+
+  <!-- Prerequisites banner -->
+  <div style="background:#F6EEF6;border:1px solid var(--brand);border-radius:var(--radius);padding:var(--space-md) var(--space-lg);margin-bottom:0;display:flex;align-items:center;gap:var(--space-md);flex-wrap:wrap;">
+    <span style="font-size:15px;">&#x26A0;&#xFE0F; <strong>First time?</strong> Check the <a href="/setup/" target="_blank" rel="noopener noreferrer" style="color:var(--brand);font-weight:600;">setup guide</a> to install OpenCode and clone the repository before running this sample.</span>
+  </div>
+
+  <!-- Input -->
+  <section>
+    <span class="section-label">1 &mdash; The input</span>
+    <h2 class="section-title">What you'll <span class="accent">transform</span></h2>
+    <p class="section-desc">A transcript of the <strong>"Better Off Ted — Let's Do It"</strong> scene. Phil presents the Viridian solar-powered oven project with a fatal design flaw: the plastic leeches toxins when exposed to sunlight — the only time solar ovens work.</p>
+
+    <div class="input-box">
+      <div class="filename">&#x1F4C4; better-off-ted-transcript.md</div>
+      <div class="preview"><strong>Better Off Ted - "Let's Do It" (Meeting Transcript)</strong>
+
+Source: https://www.youtube.com/watch?v=NeFafCEqeh0
+Duration: 0:56
+
+<strong>Phil</strong>: as you all know we've been working on viridian's new solar-powered ovens
+<strong>Phil</strong>: we've had a great amount of success with it so far...
+<strong>Phil</strong>: we're working on a contract for solar-powered ovens which the military plans to airdrop into remote villages as a goodwill gesture
+<strong>Phil</strong>: it'll be the only thing the military drops that doesn't kill people
+<strong>Phil</strong>: the problem is it kills people the plastic we're using leeches toxins into food
+<strong>Phil</strong>: however the toxins are only released when the ovens are exposed to sunlight which is the only time solar ovens work
+<strong>Phil</strong>: well luckily it can be fixed... we can do anything because this is the greatest scientific team that's ever been assembled let's do it</div>
+      <a href="input/better-off-ted-transcript.md" download class="btn-download">&#x1F4E5; Download input</a>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section>
+    <span class="section-label">2 &mdash; The workflow</span>
+    <h2 class="section-title">Follow the <span class="accent">steps</span></h2>
+    <p class="section-desc">Run these steps in your AI agent (OpenCode, Claude Code, etc.).</p>
+
+    <div class="steps">
+      <div class="step-card">
+        <h4>Place the input</h4>
+        <p>Copy the downloaded transcript into <code>traNNsform/input/</code> (or create it if it doesn't exist).</p>
+        <div class="code-snip">cp better-off-ted-transcript.md traNNsform/input/</div>
+      </div>
+
+      <div class="step-card">
+        <h4>Run the workflow</h4>
+        <p>Tell your agent to execute the meeting-to-summary workflow on the transcript.</p>
+        <div class="code-snip">Run the sample workflow meeting-to-summary on traNNsform/input/better-off-ted-transcript.md. Read the transcript, extract decisions, action items, and blockers, and produce an executive summary in traNNsform/output/. Name the file BetterOffTed_executive_summary.md.</div>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent ingests the source</h4>
+        <p>The agent reads the transcript, detects speaker turns and dialogue structure, and extracts metadata (source URL, duration, show name).</p>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent extracts signals</h4>
+        <p>The agent scans for decisions ("let's do it", "it can be fixed"), action items ("we can do anything"), and blockers ("toxins released when exposed to sunlight").</p>
+      </div>
+
+      <div class="step-card">
+        <h4>Agent writes the summary</h4>
+        <p>The agent composes a structured Markdown file with: executive brief, decisions, action items table, blockers &amp; risks, and next meeting agenda.</p>
+      </div>
+
+      <div class="step-card">
+        <h4>Review your output</h4>
+        <p>Find the result at <code>traNNsform/output/BetterOffTed_executive_summary.md</code>. The agent will confirm and offer to adjust the level of detail.</p>
+        <div class="code-snip">cat traNNsform/output/BetterOffTed_executive_summary.md</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Output -->
+  <section>
+    <span class="section-label">3 &mdash; The result</span>
+    <h2 class="section-title">What you'll <span class="accent">get</span></h2>
+    <p class="section-desc">The agent produces a structured executive summary like this:</p>
+
+    <div class="output-box">
+      <div class="label">&#x1F4CB; BetterOffTed_executive_summary.md</div>
+      <div class="preview"><strong># Better Off Ted — Executive Summary</strong>
+Source: https://www.youtube.com/watch?v=NeFafCEqeh0 | Duration: 0:56
+
+<strong>## Executive Brief</strong>
+Phil presented the Viridian solar-powered oven project. While the team has made progress on a military contract to airdrop ovens as a goodwill gesture, a critical safety issue was identified: the plastic casing leeches toxins into food when exposed to sunlight — which is the only condition under which solar ovens function.
+
+<strong>## Decisions</strong>
+- Proceed with fixing the toxicity issue rather than scrapping the project
+- The team is confident they can solve it
+
+<strong>## Action Items</strong>
+| Owner  | Task                                               | Deadline |
+|--------|---------------------------------------------------|----------|
+| @phil  | Investigate alternative non-toxic materials        | TBD      |
+
+<strong>## Blockers</strong>
+- Fundamental design conflict: sunlight triggers both the oven function AND the toxin release
+
+<strong>## Risks</strong>
+- Military airdrop scheduled; unresolved toxicity could cause harm
+- Team morale affected by recurring "everything leeches toxins" pattern
+
+<strong>## Next Meeting</strong>
+- Review material alternatives and toxicity test results</div>
+    </div>
+  </section>
+
+  <!-- Tip -->
+  <div class="tip">
+    <strong>&#x1F4A1; Try it with your own content:</strong> Drop any meeting transcript, podcast transcript, or interview text into <code>traNNsform/input/</code> and run the same workflow with your filename.
+  </div>
+
+</main>
+
+<footer>
+  <div class="container">
+    <p><a href="/">cogNNitive</a> &middot; Open source under MIT license &middot; <a href="/documentation/">Documentation</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

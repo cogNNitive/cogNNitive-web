@@ -1,0 +1,30 @@
+# iNNfo Technical Documentation
+> Specifications, core engine packages, visual modeler, and agent MCP integration.
+
+## Documentation Index
+
+- [Home](README): Documentation entry point and overview.
+- [innfo-editor](innfo-editor): Interactive browser-based graphical editor for iNNfo models.
+- [innfo-core](innfo-core): Core parser, resolver, validator, and AST engine.
+- [innfo-mcp](innfo-mcp): Model Context Protocol server exposing iNNfo capabilities to AI agents.
+- [OpenCode Agent](opencode-innfo-agent): Integration guide for OpenCode and Antigravity agent workflows.
+- [Ecosystem](ecosystem): Holistic view of cogNNitive ecosystem layers (iNNfo engine, modeler app, agent skills).
+- [Specifications](specifications): Formal specification of the iNNfo format and meta-template layers.
+- [OKF Compatibility](ecosystem?id=open-knowledge-format-compatibility): Alignment and compatibility with the Open Knowledge Format standard.
+- [Discipline Overlaps](discipline-overlaps): How cogNNitive overlaps with established disciplines — Model-Driven Engineering, Knowledge Management, Enterprise Architecture, Ontology Engineering, Docs as Code, and Personal Knowledge Management.
+- [External Tooling & Integrations](integrations): Integration of independent external tools (MCP vs CLI), with the WaveSpeed image-generation case study.
+- [Why cogNNitive](value-proposition): The problem with chatting straight to a model, and the four pillars cogNNitive addresses — efficiency, traceability, review comfort, and no vendor lock-in.
+- [Usage](usage): Practical workflow examples and CLI usage.
+- [Relationships & Connections](relationships): Graph relationships, bidirectional edges, and matrices in iNNfo.
+- [Sources, Citations & Lineage](sources-citations-lineage): How the pipeline tracks where knowledge comes from, with three terms — Source, Citation, Lineage.
+- [Import Modes & Dynamic Sources](import-modes): How new files enter the base — one-off, snapshot series, watched folders, reviewer feedback — and how the impact check keeps living sources from silently breaking citations.
+- [Lifecycle Walkthrough (Case Study)](lifecycle-walkthrough): End-to-end walkthrough of the 3-phase knowledge lifecycle using the Ghostbusters Inc. sample workspace.
+- [Tags & Open Taxonomy](tags-and-taxonomy): Cross-cutting categorization, centralized workspace taxonomies, and multi-dimensional view filtering.
+- [Collaboration with Git](collaboration-git): Gated workspace-to-Git review workflow with private defaults, branch-per-change PR gates, version map, and offline backup.
+- [Workspace Backup Strategies](workspace-backups): Layered workspace safety model: user-led snapshots, out-of-tree migration backups, and the optional Git collaboration layer.
+- [Overview](templates): Overview of the iNNfo Level 2 bluepriNNts (apps) that model knowledge for a domain.
+- [Video App](template-video): The video production bluepriNNt and its generated scenes and artifacts.
+- [Offline Consoles](offline-consoles): How generated consoles boot offline from file:// via static script tags and a vendored UMD bundle.
+- [Console Needs & Visuals](console-needs-and-visuals): Capability needs and app-driven concept color/icon in generated consoles.
+- [Validator Behavior](validator-behavior): Deterministic validation, differential baseline_path output, version inference, and workspace-first resolution.
+- [Live Model Preview](live-preview): The opt-in MCP loopback server and SSE change stream that turns the editor tab into a read-only live mirror of the agent's mutations.

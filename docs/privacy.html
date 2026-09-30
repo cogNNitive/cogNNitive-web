@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — cogNNitive</title>
+  <meta name="description" content="Privacy Policy for cogNNitive and related services in compliance with GDPR and Spanish LOPDGDD regulations.">
+  <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #FFFFFF;
+      --canvas-inert: #FAFAFC;
+      --brand: #4D0E4E;
+      --brand-light: #6A1B6B;
+      --brand-subtle: #F6EEF6;
+      --border: #F2F2F7;
+      --ink: #111112;
+      --ink-muted: #636366;
+      --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --max-w: 880px;
+      --radius: 10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--ink);
+      background: var(--canvas);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .content-container { max-width: var(--max-w); margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* Unified Header */
+    .header {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--canvas);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 20px;
+      color: var(--brand);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .logo img { height: 28px; width: auto; }
+    .nav { display: flex; gap: 24px; align-items: center; }
+    .nav-link {
+      text-decoration: none;
+      color: var(--ink-muted);
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--brand); }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand);
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--brand-light); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--canvas-inert);
+      color: var(--ink);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* Page Header */
+    .legal-hero {
+      background: linear-gradient(180deg, var(--brand-subtle) 0%, var(--canvas) 100%);
+      padding: 56px 0 32px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .legal-hero h1 {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .legal-hero p {
+      font-size: 15px;
+      color: var(--ink-muted);
+    }
+
+    /* Legal Content */
+    .legal-body h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--brand);
+      margin-top: 36px;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .legal-body h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    .legal-body p {
+      margin-bottom: 16px;
+      font-size: 15px;
+      color: #2C2C2E;
+    }
+    .legal-body ul {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+    .legal-body li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    .legal-card {
+      background: var(--canvas-inert);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .legal-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .legal-card th {
+      text-align: left;
+      padding: 8px 12px;
+      color: var(--brand);
+      border-bottom: 1px solid var(--border);
+      width: 30%;
+    }
+    .legal-card td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--ink);
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      background: var(--canvas-inert);
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 14px;
+      color: var(--ink-muted);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    footer a { color: var(--brand); text-decoration: none; font-weight: 500; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <!-- Unified Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="https://cognnitive.com" class="logo">
+        <img src="logo.svg" alt="cogNNitive Logo" />
+        <span>cogNNitive</span>
+      </a>
+      <nav class="nav">
+        <a href="https://cognnitive.com" class="nav-link">cogNNitive</a>
+        <a href="use-cases.html" class="nav-link">Use Cases</a>
+        <a href="https://cognnitive.com/innfo" class="nav-link">iNNfo</a>
+        <a href="https://cognnitive.com/skills" class="nav-link">Skills</a>
+        <a href="https://cognnitive.com/innfo/documentation/" target="_blank" rel="noopener noreferrer" class="nav-link">Docs</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+      <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+        <a href="contact.html" class="btn-secondary">Contact Us</a>
+        <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open App</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="legal-hero">
+      <div class="container">
+        <h1>Privacy Policy</h1>
+        <p>Política de Privacidad y Protección de Datos Personales (RGPD & LOPDGDD)</p>
+        <p style="font-size: 13px; margin-top: 4px; color: var(--ink-muted);">Última actualización: Septiembre 2026</p>
+      </div>
+    </div>
+
+    <div class="content-container legal-body">
+      <p>En <strong>cogNNitive</strong> respetamos y protegemos la privacidad y los datos personales de todos los usuarios que visitan y utilizan nuestro sitio web. La presente Política de Privacidad detalla el tratamiento de datos personales conforme al <strong>Reglamento General de Protección de Datos (RGPD - Reglamento UE 2016/679)</strong> y la <strong>Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD)</strong>.</p>
+
+      <h2>1. Responsable del Tratamiento de los Datos</h2>
+      <div class="legal-card">
+        <table>
+          <tbody>
+            <tr>
+              <th>Identidad / Titular:</th>
+              <td>Lucas Rodríguez Cervera</td>
+            </tr>
+            <tr>
+              <th>NIF / CIF:</th>
+              <td>529872020G</td>
+            </tr>
+            <tr>
+              <th>Sitio Web:</th>
+              <td><a href="https://cognnitive.com">https://cognnitive.com</a></td>
+            </tr>
+            <tr>
+              <th>Correo Electrónico:</th>
+              <td><a href="mailto:lucas@lucascervera.com">lucas@lucascervera.com</a></td>
+            </tr>
+            <tr>
+              <th>Finalidad Principal:</th>
+              <td>Gestión de consultas, soporte e información sobre el proyecto cogNNitive.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>2. Datos Personales que Recopilamos</h2>
+      <p>A través de nuestro formulario de contacto o mediante comunicación directa por correo electrónico, podemos recopilar y tratar las siguientes categorías de datos personales:</p>
+      <ul>
+        <li><strong>Datos identificativos y de contacto:</strong> Nombre y apellidos, dirección de correo electrónico, empresa u organización (opcional), número de teléfono (opcional).</li>
+        <li><strong>Información del mensaje o consulta:</strong> El contenido, preguntas, detalles del proyecto o solicitud transmitidos voluntariamente por el interesado.</li>
+        <li><strong>Datos técnicos y de navegación:</strong> Dirección IP anonimizada, metadatos de acceso y agente de usuario registrados de forma técnica para garantizar la seguridad y estabilidad del servidor.</li>
+      </ul>
+
+      <h2>3. Finalidad y Base Jurídica del Tratamiento</h2>
+      <p>Tratamos sus datos personales con las siguientes finalidades y bajo las siguientes bases de legitimación:</p>
+      <ul>
+        <li><strong>Atención de consultas y solicitudes de contacto:</strong> Responder a las dudas, propuestas de colaboración o solicitudes enviadas a través de la web. <br><em>Base jurídica:</em> <strong>Consentimiento expreso</strong> del interesado (Art. 6.1.a RGPD) al enviar el formulario o remitir un mensaje.</li>
+        <li><strong>Comunicaciones operativas o soporte técnico:</strong> Gestionar el seguimiento de consultas previas y dar soporte sobre las herramientas del proyecto. <br><em>Base jurídica:</em> <strong>Interés legítimo</strong> y ejecución de medidas precontractuales o de soporte solicitadas por el usuario (Art. 6.1.b / 6.1.f RGPD).</li>
+        <li><strong>Cumplimiento de obligaciones legales:</strong> Atender requerimientos legales aplicables. <br><em>Base jurídica:</em> Cumplimiento de una obligación legal (Art. 6.1.c RGPD).</li>
+      </ul>
+
+      <h2>4. Conservación de los Datos</h2>
+      <p>Los datos personales proporcionados se conservarán durante el tiempo estrictamente necesario para atender y resolver su consulta o solicitud, y posteriormente durante los plazos legalmente exigidos para la atención de posibles responsabilidades derivadas del tratamiento. Una vez finalizados dichos plazos, los datos serán suprimidos o anonimizados de forma segura.</p>
+
+      <h2>5. Destinatarios y Encargados del Tratamiento</h2>
+      <p>Los datos personales no serán cedidos ni vendidos a terceros, salvo obligación legal expresa. Para la correcta operativa técnica del sitio web y del formulario, se utilizan prestadores de servicios tecnológicos que actúan como encargados del tratamiento bajo acuerdos conformes a la normativa europea:</p>
+      <ul>
+        <li><strong>Google Ireland Limited / Google LLC:</strong> Para la infraestructura del formulario de contacto (Google Forms / Google Workspace), con garantías adecuadas de protección de datos (Cláusulas Contractuales Tipo de la Comisión Europea).</li>
+        <li><strong>GitHub Inc. (GitHub Pages):</strong> Proveedor de alojamiento web para la entrega de archivos estáticos.</li>
+      </ul>
+
+      <h2>6. Derechos del Interesado</h2>
+      <p>Conforme al RGPD y a la LOPDGDD, usted dispone en todo momento de los siguientes derechos sobre sus datos personales:</p>
+      <ul>
+        <li><strong>Derecho de Acceso:</strong> Conocer qué datos personales suyos estamos tratando.</li>
+        <li><strong>Derecho de Rectificación:</strong> Solicitar la corrección de datos inexactos o incompletos.</li>
+        <li><strong>Derecho de Supresión (Derecho al olvido):</strong> Solicitar que sus datos sean eliminados cuando ya no sean necesarios para los fines que fueron recogidos.</li>
+        <li><strong>Derecho de Oposición:</strong> Oponerse al tratamiento de sus datos cuando proceda.</li>
+        <li><strong>Derecho a la Limitación del Tratamiento:</strong> Solicitar la limitación del tratamiento en los supuestos previstos por la ley.</li>
+        <li><strong>Derecho a la Portabilidad:</strong> Recibir los datos facilitados en un formato estructurado, de uso común y lectura mecánica.</li>
+        <li><strong>Derecho a Retirar el Consentimiento:</strong> Retirar el consentimiento otorgado en cualquier momento, sin que ello afecte a la licitud del tratamiento previo.</li>
+      </ul>
+      <p>Para ejercer cualquiera de estos derechos, puede remitir una solicitud por correo electrónico a <a href="mailto:lucas@lucascervera.com"><strong>lucas@lucascervera.com</strong></a> con el asunto <em>"Protección de Datos / Ejercicio de Derechos"</em>, indicando su nombre y el derecho que desea ejercer.</p>
+      <p>Si considera que sus derechos no han sido debidamente atendidos, tiene derecho a presentar una reclamación ante la autoridad de control competente: la <strong>Agencia Española de Protección de Datos (AEPD)</strong> a través de su sede electrónica en <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">www.aepd.es</a>.</p>
+
+      <h2>7. Seguridad de los Datos</h2>
+      <p>Adoptamos las medidas técnicas y organizativas necesarias para salvaguardar la seguridad, integridad y confidencialidad de sus datos personales, evitando su alteración, pérdida, tratamiento o acceso no autorizado.</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 cogNNitive. Open Source under MIT License. Built for <a href="https://opencode.ai">OpenCode</a>.</p>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <span>&bull;</span>
+        <a href="legal.html">Legal Notice</a>
+        <span>&bull;</span>
+        <a href="contact.html">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

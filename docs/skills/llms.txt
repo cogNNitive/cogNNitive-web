@@ -1,0 +1,17 @@
+# cogNNitive — Agent Skills
+
+> Modular agent skills that give AI agents specialized capabilities: iNNfo model authoring, document transformation, site generation, design presets, and lifecycle governance.
+
+## Pages
+
+- [Home](https://cognnitive.com/skills/index.md): Skills catalog landing page with skill cards, architecture overview, and installation instructions
+- [Documentation](https://cognnitive.com/skills/documentation/README.md): Full documentation for all skills
+- [nn-start](https://cognnitive.com/skills/documentation/skills/nn-start.md): Front controller, setup, environment readiness gate, and skill routing
+- [nn-preflight](https://cognnitive.com/skills/documentation/skills/nn-preflight.md): Environment readiness gate (Node.js, MCP availability, workspace layout)
+- [nn-innfo](https://cognnitive.com/skills/documentation/skills/nn-innfo.md): iNNfo model authoring, validation, and Model Creation Wizard
+- [nn-trannsform](https://cognnitive.com/skills/documentation/skills/nn-trannsform.md): Document ingestion and transformation pipeline (PDF, DOCX, XLSX to Markdown)
+- [nn-site-generator](https://cognnitive.com/skills/documentation/skills/nn-site-generator.md): Static website generation and Docsify suites
+- [nn-skills-lifecycle](https://cognnitive.com/skills/documentation/skills/nn-skills-lifecycle.md): Skill ecosystem lifecycle, manifest pinning, and lockfile updates
+- [nn-design-presets](https://cognnitive.com/skills/documentation/skills/nn-design-presets.md): Design tokens, Morado Nazareno palette, and typography scales
+- [nn-upgrade](https://cognnitive.com/skills/documentation/skills/nn-upgrade.md): Guided, consent-gated workspace migration to the latest templates
+- [nn-video-script](https://cognnitive.com/skills/documentation/skills/nn-video-script.md): cogNNitive-video VUS video script authoring, gating, and finalization inside a Series/Video hierarchy
