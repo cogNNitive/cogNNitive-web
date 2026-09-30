@@ -20,16 +20,18 @@ const path = require('node:path');
 const PUBLISH_EXCLUDED = new Set(['.git', '.nojekyll']);
 
 /**
- * Recursively collects `<relative posix path> -> sha256-ish content hash`
- * for every file under `dir`, skipping PUBLISH_EXCLUDED top-level entries.
+ * Recursively collects `<relative posix path> -> file bytes` for every file
+ * under `dir`, skipping PUBLISH_EXCLUDED top-level entries.
  *
  * @param {string} dir
- * @returns {Map<string, string>}
+ * @returns {Map<string, Buffer>}
  */
 function collectTree(dir) {
+  /** @type {Map<string, Buffer>} */
   const out = new Map();
   if (!fs.existsSync(dir)) return out;
 
+  /** @param {string} absDir @param {string} relPrefix */
   const walk = (absDir, relPrefix) => {
     for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
       if (relPrefix === '' && PUBLISH_EXCLUDED.has(entry.name)) continue;
@@ -56,7 +58,9 @@ function collectTree(dir) {
  * @returns {{ added: string[], modified: string[], removed: string[], identical: boolean }}
  */
 function diffTrees(sourceDir, targetDir) {
+  /** @type {Map<string, Buffer>} */
   const source = collectTree(sourceDir);
+  /** @type {Map<string, Buffer>} */
   const target = collectTree(targetDir);
 
   const added = [];
@@ -65,7 +69,7 @@ function diffTrees(sourceDir, targetDir) {
 
   for (const [rel, content] of source) {
     if (!target.has(rel)) added.push(rel);
-    else if (!content.equals(target.get(rel))) modified.push(rel);
+    else if (!content.equals(/** @type {Buffer} */ (target.get(rel)))) modified.push(rel);
   }
   for (const rel of target.keys()) {
     if (!source.has(rel)) removed.push(rel);
