@@ -1,5 +1,5 @@
 /**
- * Anydeo Peggy Parser Integration Test
+ * VUS Peggy Parser Integration Test
  * @spec-source: V_0-2-5 | role: quality_check
  */
 

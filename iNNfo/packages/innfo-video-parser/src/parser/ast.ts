@@ -1,5 +1,5 @@
 /**
- * Anydeo Universal Specification (VUS) Formal AST
+ * Universal Specification (VUS) Formal AST
  * @spec-source: V_0-2-3 | role: architecture
  */
 

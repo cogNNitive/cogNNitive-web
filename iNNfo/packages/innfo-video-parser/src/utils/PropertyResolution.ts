@@ -1,7 +1,7 @@
 import { Project, Scene, Layer } from '../domain/types.js'
 
 /**
- * Centralized property resolution logic for Anydeo scripts.
+ * Centralized property resolution logic for VUS scripts.
  * Cascades from Layer -> Scene Template Layer -> Scene -> Scene Template -> Video Config -> SSoT Defaults.
  * @spec-source:V_0-3-3 | role: property_engine
  */

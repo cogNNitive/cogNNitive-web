@@ -45,7 +45,7 @@ export class SemanticValidator {
 
   /**
    * Performs strict semantic validation on the project structure to catch logic mapping errors.
-   * Compliant with Anydeo v0.6.0.
+   * Compliant with VUS v0.6.0.
    *
    * @spec-impact V_0-1-1 | scope: scene,layer
    */
@@ -115,7 +115,7 @@ export class SemanticValidator {
             path: `section[${sIdx}].scene[${idx}]`,
             context: `Scene: ${scene.scene_name || 'Untitled'}`,
             message: `Scene '${scene.scene_name}' has no visual layers.`,
-            details: `Anydeo V_0-1-1 requires all visual content to be defined at the layer level (@@ notation).`,
+            details: `VUS V_0-1-1 requires all visual content to be defined at the layer level (@@ notation).`,
           })
           // 'pending' does not block processing, just UI hint
         }

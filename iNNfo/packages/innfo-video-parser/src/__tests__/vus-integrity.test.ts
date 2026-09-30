@@ -7,13 +7,13 @@ import { version as SYSTEM_VERSION } from '../version.js'
  *
  * VUS Integrity Test
  *
- * Ensures the Unified Anydeo Specification (VUS) adheres to its own rules
+ * Ensures the Unified VUS adheres to its own rules
  * and maintains Single Source of Truth consistency.
  */
 describe(`VUS ${SYSTEM_VERSION} Integrity`, () => {
   it('should have correct metadata and versioning', () => {
     expect(rules.system.version).toBe(SYSTEM_VERSION)
-    expect(rules.system.name).toContain('Anydeo Universal Specification')
+    expect(rules.system.name).toContain('Universal Specification')
   })
 
   it('should have required categories defined', () => {

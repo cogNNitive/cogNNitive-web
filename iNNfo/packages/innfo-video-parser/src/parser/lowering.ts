@@ -1,5 +1,5 @@
 /**
- * Anydeo Universal Specification (VUS) Lowering
+ * Universal Specification (VUS) Lowering
  * Maps formal AST nodes to the runtime Project schema.
  * @spec-source: V_0-3-1 | role: architecture
  */

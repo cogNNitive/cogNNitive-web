@@ -81,7 +81,7 @@ export class UnknownPropertyRule implements SceneValidationRule, LayerValidation
           path: pathStr,
           context: `Scene: ${scene.scene_name || 'Untitled'}`,
           message: `Unknown or non-canonical property '${prop}'.`,
-          details: `Anydeo ${SYSTEM_VERSION} (VUS) requires strictly scoped keys (e.g., 'scene_voice'). For custom variables, use the 'var_' prefix.`,
+          details: `VUS ${SYSTEM_VERSION} (VUS) requires strictly scoped keys (e.g., 'scene_voice'). For custom variables, use the 'var_' prefix.`,
         })
         hasErrors = true
       } else if (def.scope && def.scope !== 'scene' && def.scope !== 'common') {
@@ -142,7 +142,7 @@ export class UnknownPropertyRule implements SceneValidationRule, LayerValidation
           path: pathStr,
           context: `Scene: ${scene.scene_name || 'Untitled'} > Layer: ${(layer as any).layer_name || 'Untitled'}`,
           message: `Unknown or non-canonical layer property '${prop}'.`,
-          details: `Anydeo ${SYSTEM_VERSION} (VUS) requires strictly scoped keys (e.g., 'layer_type'). For custom variables, use the 'var_' prefix.`,
+          details: `VUS ${SYSTEM_VERSION} (VUS) requires strictly scoped keys (e.g., 'layer_type'). For custom variables, use the 'var_' prefix.`,
         })
         hasErrors = true
       } else if (def.scope && def.scope !== 'layer' && def.scope !== 'common') {

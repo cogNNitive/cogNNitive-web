@@ -124,7 +124,7 @@ export class ShortcutImporter {
       }
 
       // [FIX V_0-2-0]: Skip property lines (- key: val) so they remain in parent scope
-      // We use a regex that matches common Anydeo property starts.
+      // We use a regex that matches common VUS property starts.
       const isProperty = /^-?\s*[a-zA-Z0-9_-]+\s*[:=]/.test(trimmed)
       if (isProperty && currentBlockLines.length === 0) {
         output += line + '\n'

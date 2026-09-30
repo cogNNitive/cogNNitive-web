@@ -34,7 +34,7 @@ export interface UIMetadata {
 }
 
 /**
- * Domain types for Anydeo V4.0
+ * Domain types for VUS V4.0
  */
 
 export const NoteSchema = z.object({

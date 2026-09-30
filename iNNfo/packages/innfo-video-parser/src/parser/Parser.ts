@@ -9,7 +9,7 @@ import rules from '../rules/index.js'
 import { parse as peggyParse } from './vus_parser.js'
 import { lowerAst } from './lowering.js'
 
-// Script parser for the Anydeo Universal Specification (VUS)
+// Script parser for the Universal Specification (VUS)
 
 export interface ParseResult {
   project: Project
@@ -84,7 +84,7 @@ export class ScriptParser {
         } else {
           formalProject = validationResult.data
 
-          // Post-process with standard Anydeo resolution logic (after validation to keep references clean)
+          // Post-process with standard VUS resolution logic (after validation to keep references clean)
           this._postProcessProject(formalProject)
 
           SemanticValidator.validate(formalProject, formalIssues, styleDictionary)

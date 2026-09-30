@@ -3,7 +3,7 @@ import vus from '../../specs/V_0-3-3.json' with { type: 'json' }
 const vusTyped = vus as any
 
 const rules = {
-  title: 'Anydeo Master Rules',
+  title: 'VUS Master Rules',
   description: vusTyped.info.description,
   type: 'object',
   render: vusTyped.api_options.render,

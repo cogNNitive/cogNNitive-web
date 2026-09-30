@@ -2,7 +2,7 @@
  * @spec-source:V_0-3-3 | role: quality_check
  */
 /**
- * Parser specific types for Anydeo V3.0
+ * Parser specific types for VUS V3.0
  */
 
 export interface ParserBlock {
