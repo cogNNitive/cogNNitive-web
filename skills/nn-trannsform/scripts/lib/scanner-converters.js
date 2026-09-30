@@ -562,6 +562,188 @@ function convertOkFormat(ext, filePath, baseName) {
 }
 
 /**
+ * Heuristic reflow for text extracted from binary documents (PDF/DOCX/TXT).
+ *
+ * `pdf-parse` emits one logical line per visual line, preserving mid-sentence
+ * breaks, the double spaces of justified text, zero-width characters, page
+ * numbers, and no heading structure. This normalises that into readable
+ * markdown with citable section headings:
+ *
+ *   1. strip zero-width / soft-hyphen characters and NBSP
+ *   2. re-join words hyphen-split across a line break
+ *   3. collapse inner whitespace and blank-line runs
+ *   4. promote clause headings to `##` / `###` (numbered Titles, ALL-CAPS
+ *      lines, `Schedule N`, and `n.m` sub-clauses)
+ *   5. drop isolated page-number lines
+ *   6. re-join wrapped lines into paragraphs, keeping item boundaries
+ *
+ * The transformation is word-preserving: it only rewrites whitespace and adds
+ * heading markers, so no clause content is invented or dropped. Dense numeric
+ * blocks (spreadsheet-like tables) are left untouched to avoid mangling them.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+const HEADING_RE = {
+  schedule: /^Schedule\s+\d+$/i,
+  numberedTitle: /^(\d{1,2})\.\s*([A-Z][A-Z0-9 ,&'’()\-\/]{2,})$/,
+  subClause: /^(\d{1,2}\.\d{1,2})\s*(.*)$/,
+  standaloneCaps: /^[A-Z][A-Z0-9 ,&'’()\-\/]*$/,
+};
+
+/**
+ * Classifies a single line as a clause heading.
+ * @param {string} line
+ * @returns {{ heading: string, rest?: string, caps?: boolean } | null}
+ */
+function classifyExtractedHeading(line) {
+  if (HEADING_RE.schedule.test(line)) return { heading: `## ${line}` };
+
+  const numbered = line.match(HEADING_RE.numberedTitle);
+  if (numbered) return { heading: `## ${numbered[1]}. ${numbered[2].trim()}` };
+
+  const sub = line.match(HEADING_RE.subClause);
+  if (sub && sub[2] && /^[A-ZÀ-Þ]/.test(sub[2])) {
+    return { heading: `### ${sub[1]}`, rest: sub[2].trim() };
+  }
+
+  const words = line.split(/\s+/);
+  const isMarker = /^(WHEREAS|CLAUSES|AGREED)$/i.test(line);
+  if (
+    line.length >= 3 &&
+    line.length <= 60 &&
+    HEADING_RE.standaloneCaps.test(line) &&
+    /[A-Z]{2}/.test(line) &&
+    words.length <= 8 &&
+    (words.length >= 2 || isMarker)
+  ) {
+    return { heading: `## ${line}`, caps: true };
+  }
+
+  return null;
+}
+
+/** A spreadsheet-like row: digit-dense relative to letters (never merged into prose). */
+function isDenseNumericLine(line) {
+  const digits = (line.match(/[0-9]/g) || []).length;
+  if (digits < 6) return false;
+  const letters = (line.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+  return digits >= letters * 2;
+}
+
+/** A wrapped line begins a new paragraph: typographic-quote definition item, list, or numbered clause. */
+const NEW_ITEM_RE = /^(?:[“„]|\([A-Za-z0-9]{1,3}\)|\d+(?:\.\d+)*[.)]?\s|[•‣▪◦]\s)/;
+
+/**
+ * Reflows raw extracted text into readable, sectioned markdown.
+ * @param {string} text
+ * @returns {string}
+ */
+function reflowExtractedText(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  let t = text.replace(/\r\n?/g, '\n');
+  t = t.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '');
+  t = t.replace(/\u00A0/g, ' ');
+  // Re-join a word hyphen-split across a line break: "partici-\npativo" -> "participativo".
+  t = t.replace(/([A-Za-zÀ-ÖØ-öø-ÿ])-\n([a-zà-öø-ÿ])/g, '$1$2');
+
+  const rawLines = t
+    .split('\n')
+    .map((l) => l.replace(/[ \t]{2,}/g, ' ').trim());
+  // Merge a stray single-letter fragment left on its own line ("B" + "ETWEEN").
+  for (let i = 0; i < rawLines.length - 1; i++) {
+    if (/^[A-Z]$/.test(rawLines[i]) && /^[A-Z]/.test(rawLines[i + 1])) {
+      rawLines[i + 1] = rawLines[i] + rawLines[i + 1];
+      rawLines[i] = null;
+    }
+  }
+
+  const lines = [];
+  for (const line of rawLines) {
+    if (line === null) continue;
+    if (line === '') {
+      if (lines.length && lines[lines.length - 1] !== '') lines.push('');
+      continue;
+    }
+    lines.push(line);
+  }
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+
+  const blocks = [];
+  let block = [];
+  for (const line of lines) {
+    if (line === '') {
+      if (block.length) {
+        blocks.push(block);
+        block = [];
+      }
+      continue;
+    }
+    block.push(line);
+  }
+  if (block.length) blocks.push(block);
+
+  const out = [];
+  for (const chunk of blocks) {
+    let paragraph = [];
+    const flush = () => {
+      if (paragraph.length) {
+        out.push(paragraph.join(' '));
+        paragraph = [];
+      }
+    };
+
+    for (let i = 0; i < chunk.length; i++) {
+      const line = chunk[i];
+      const heading = classifyExtractedHeading(line);
+      if (heading) {
+        flush();
+        if (heading.caps) {
+          // An ALL-CAPS title wrapped over consecutive lines is one heading.
+          let text = line;
+          while (i + 1 < chunk.length) {
+            const next = classifyExtractedHeading(chunk[i + 1]);
+            if (next && next.caps) text += ` ${chunk[++i]}`;
+            else break;
+          }
+          out.push(`## ${text}`);
+        } else {
+          out.push(heading.heading);
+          if (heading.rest) paragraph = [heading.rest];
+        }
+        continue;
+      }
+
+      // Spreadsheet-like row: keep it on its own line, never merged into prose.
+      if (isDenseNumericLine(line)) {
+        flush();
+        out.push(line);
+        continue;
+      }
+
+      // Isolated page number (a lone 1-3 digit line) is extraction noise.
+      if (/^\d{1,3}$/.test(line)) continue;
+
+      const prev = paragraph[paragraph.length - 1];
+      const startsNew =
+        paragraph.length === 0 ||
+        NEW_ITEM_RE.test(line) ||
+        /[.!?]$/.test(prev || '');
+      if (startsNew) {
+        flush();
+        paragraph = [line];
+      } else {
+        paragraph.push(line);
+      }
+    }
+    flush();
+  }
+
+  return out.join('\n\n').trim();
+}
+
+/**
  * Converts DOCX file to markdown using mammoth.
  * @param {string} filePath
  * @returns {Promise<{ body: string, [key: string]: any }>}
@@ -582,7 +764,7 @@ async function convertPdf(filePath, baseName) {
   try {
     const pdfParse = require('pdf-parse');
     const data = await pdfParse(fs.readFileSync(filePath));
-    return { body: `# ${baseName}\n\n${data.text}`, info: data.info };
+    return { body: `# ${baseName}\n\n${reflowExtractedText(data.text)}`, info: data.info };
   } catch (pdfErr) {
     return {
       body: `# ${baseName}\n\n*PDF Content Ingested (Placeholder)*\n\n[PDF: ${path.basename(filePath)} needs manual verification or a PDF parser package to extract text fully.]`,
@@ -696,6 +878,7 @@ module.exports = {
   parseCsv,
   stripFrontmatter,
   htmlToPlainText,
+  reflowExtractedText,
   convertJson,
   convertFeedbackJson,
   validateFeedbackJson,
