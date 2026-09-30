@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "Design Presets App"
-blueprint_version: "V_0-2-0"
+blueprint_version: "V_0-3-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -65,7 +65,7 @@ description:: Typography stack and font families for Web and UI interfaces.
 ## NN Field Definition: typography_video_title
 concept:: DesignPreset
 type:: string
-description:: Font family, weight, and styling for video title overlays in Anydeo.
+description:: Font family, weight, and styling for video title overlays in cogNNitive-video.
 
 ## NN Field Definition: typography_video_subtitle
 concept:: DesignPreset
@@ -98,7 +98,7 @@ Visual identity should not be trapped in unstructured text guides or isolated wi
 ## Objectives
 
 - Provide a standardized Level-2 template for design systems and visual presets.
-- Define multi-modal tokens spanning Web UI, Anydeo Video Overlays, and Generative Illustration.
+- Define multi-modal tokens spanning Web UI, cogNNitive-video Video Overlays, and Generative Illustration.
 - Enable direct binding from Video elements and Series via `preset:: [[PresetName]]`.
 - Serve as the structured data foundation for `skills/nn-design-presets` and `skills/nn-video-script`.
 
@@ -119,8 +119,8 @@ Visual identity should not be trapped in unstructured text guides or isolated wi
 | DesignPreset | `category` | select | web / video / illustration / unified |
 | DesignPreset | `palette` | string | Hex color tokens for key roles |
 | DesignPreset | `typography_ui` | string | Web / UI font families and weights |
-| DesignPreset | `typography_video_title` | string | Anydeo title overlay font configuration |
-| DesignPreset | `typography_video_subtitle` | string | Anydeo subtitle overlay font configuration |
+| DesignPreset | `typography_video_title` | string | cogNNitive-video title overlay font configuration |
+| DesignPreset | `typography_video_subtitle` | string | cogNNitive-video subtitle overlay font configuration |
 | DesignPreset | `illustration_prompt_anchor` | string | Generative image style prompt modifiers |
 | DesignPreset | `illustration_negative_prompt` | string | Generative image negative prompt tokens |
 | DesignPreset | `sample_preview` | image | Preview image asset |

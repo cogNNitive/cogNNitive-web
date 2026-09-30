@@ -34,7 +34,7 @@ Testing the first scene narration with exactly fifty characters.
 Testing the second scene with an avatar and MiniMax speech synthesis.
 `;
 
-describe('Asset Cost Estimator & VidGeNN Model Catalog', () => {
+describe('Asset Cost Estimator & Video Model Catalog', () => {
   it('exposes standard pricing catalog with MiniMax TTS, WaveSpeed, Replicate, and Avatar models', () => {
     assert.ok(PROVIDER_PRICING_CATALOG.image['wavespeed-ai/z-image/turbo']);
     assert.ok(PROVIDER_PRICING_CATALOG.image['wavespeed/wan-27-t2i']);
@@ -80,7 +80,7 @@ describe('Asset Cost Estimator & VidGeNN Model Catalog', () => {
     assert.ok(md.includes('| **Scene 1** |'));
     assert.ok(md.includes('| **Scene 2** |'));
     assert.ok(md.includes('Talking Avatar'));
-    assert.ok(md.includes('Provider & Quality Tiers Comparison (VidGeNN / cogNNitive Video)'));
+    assert.ok(md.includes('Provider & Quality Tiers Comparison (cogNNitive Video)'));
     assert.ok(md.includes('WaveSpeed & MiniMax Fast Tier'));
     assert.ok(md.includes('Replicate & Wan Cinema Tier'));
     assert.ok(md.includes('User Consultation & Approval Checklist'));

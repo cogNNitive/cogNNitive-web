@@ -37,6 +37,8 @@ export default tseslint.config(
       '**/*.min.js',
       '**/*.bundle.js',
       'iNNfo/packages/innfo-mcp/bin/**',
+      // Peggy-generated parser (rebuilt via `npm run build:grammar`), not hand-written source.
+      'iNNfo/packages/innfo-video-parser/src/parser/vus_parser.js',
       'iNNfo/apps/innfo-editor/scratch_graph_test.mjs',
     ],
   },
@@ -87,6 +89,15 @@ export default tseslint.config(
 
       // Component files here are intentionally single-word (Header, Badge, ...).
       'vue/multi-word-component-names': 'off',
+    },
+  },
+
+  {
+    // Ported VUS parser: switch-case lexical declarations are kept as-is so the
+    // port stays behaviourally comparable with its upstream; tracked as debt.
+    files: ['iNNfo/packages/innfo-video-parser/src/**/*.ts'],
+    rules: {
+      'no-case-declarations': 'warn',
     },
   },
 

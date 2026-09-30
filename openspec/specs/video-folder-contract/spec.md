@@ -31,10 +31,10 @@ A script's asset paths MUST NOT resolve above its own Series folder. Paths that 
 
 ### Requirement: Ephemeral Engine Directories Are Not Artifacts
 
-`renders/` and `.anydeo/` MUST be gitignored and MUST NOT be treated as iNNfo Artifacts. They hold transient engine output, not workspace-owned deliverables.
+`renders/` and `.cognnitive-video/` MUST be gitignored and MUST NOT be treated as iNNfo Artifacts. They hold transient engine output, not workspace-owned deliverables.
 
 #### Scenario: Engine directories excluded from artifact discovery
-- GIVEN a video folder containing `renders/` and `.anydeo/`
+- GIVEN a video folder containing `renders/` and `.cognnitive-video/`
 - WHEN artifact/manifest discovery runs
 - THEN neither directory nor its contents are treated as candidate Artifacts
 
@@ -50,4 +50,4 @@ The generic procedure MUST include a finalize/register step that copies `master`
 #### Scenario: Ephemeral render directory is not itself referenced
 - GIVEN the finalize/register step has completed
 - WHEN the Video Element's fields are inspected
-- THEN none of them reference a path inside `renders/` or `.anydeo/`
+- THEN none of them reference a path inside `renders/` or `.cognnitive-video/`

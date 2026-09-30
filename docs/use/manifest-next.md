@@ -81,7 +81,7 @@ agent-bootstrap:
       ref: "main"
       commit: "d53c898c18143de9820844b299750a89ef738c15"
       requires: [nn-innfo]
-      description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
+      description: Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
   blueprints:
     - name: domaiNN
       repo: cogNNitive/cogNNitive

@@ -52,7 +52,7 @@ skills:
   - name: nn-design-presets
     repo: cogNNitive/cogNNitive
     path: skills/nn-design-presets
-    version: "V_1-3-0"
+    version: "V_1-4-0"
     ref_key: skills
     description: cogNNitive visual design presets — palettes, typography, spacing.
   - name: nn-skills-lifecycle
@@ -65,17 +65,10 @@ skills:
   - name: nn-video-script
     repo: cogNNitive/cogNNitive
     path: skills/nn-video-script
-    version: "V_0-2-0"
+    version: "V_0-3-0"
     ref_key: skills
     requires: [nn-innfo]
-    description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
-    external_specs:
-      - name: vus
-        repo: innV0/VidGeNN
-        path: packages/core/specs/V_0-3-3.json
-        version: "V_0-3-3"
-        sha256: "d617aadcc85ad5816ca0b447e28032b14c1fc64bac65f550fa4149bd4f7cedda"
-        commit: "4c05a5849aaf3928c0a6ce19175c309787865058"
+    description: Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
 
 blueprints:
   - name: domaiNN

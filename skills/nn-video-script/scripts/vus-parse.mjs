@@ -3,18 +3,13 @@
 /**
  * skills/nn-video-script/scripts/vus-parse.mjs
  *
- * Runs `npx tsx` against `$VIDGENN_ROOT/packages/core/src/index.ts` to invoke
- * the real `ScriptParser` and requires zero issues (design.md "Data Flow" /
- * "Interfaces / Contracts"). VidGeNN core ships TypeScript source only, so
- * the actual import happens in a child process spawned under tsx
+ * Runs the in-repo VUS parser (`@cognnitive/innfo-video-parser`) over a script
+ * and requires zero issues. The package ships TypeScript source, so the actual
+ * import happens in a child process spawned under the `tsx` loader
  * (vus-parse-runner.mjs) — this file itself runs under plain `node`.
  *
- * Gated on VIDGENN_ROOT: when unset, this NEVER probes a default path (see
- * the `preflight-tests-leak-real-home-dir` lesson) — it prints an explicit
- * skip line and exits 0 (a skip is not a failure).
- *
- * Zero dependencies beyond the `tsx` devDependency already used elsewhere in
- * this monorepo (VidGeNN's own `spec-audit` script uses the same toolchain).
+ * The parser lives in this monorepo: there is no external checkout and no
+ * environment variable to set, and the run never skips.
  *
  * Usage:
  *   node vus-parse.mjs <script.md>
@@ -29,18 +24,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RUNNER_PATH = path.join(__dirname, 'vus-parse-runner.mjs');
 
 /**
- * @param {{ scriptPath: string, vidgennRoot?: string }} args
- * @returns {{ skipped: true, reason: string } | { skipped: false, issues: any[] }}
+ * @param {{ scriptPath: string }} args
+ * @returns {{ skipped: false, issues: any[] }}
  */
-export function runVusParse({ scriptPath, vidgennRoot = process.env.VIDGENN_ROOT }) {
-  if (!vidgennRoot) {
-    return { skipped: true, reason: 'VIDGENN_ROOT is not set; skipping VUS parser validation.' };
-  }
-
-  const result = spawnSync('npx', ['tsx', RUNNER_PATH, vidgennRoot, path.resolve(scriptPath)], {
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-  });
+export function runVusParse({ scriptPath }) {
+  const result = spawnSync(
+    process.execPath,
+    ['--import', import.meta.resolve('tsx/esm'), RUNNER_PATH, path.resolve(scriptPath)],
+    { encoding: 'utf8' },
+  );
 
   if (result.status !== 0) {
     throw new Error(`vus-parse-runner failed (exit ${result.status}): ${result.stderr || result.stdout}`);
@@ -64,11 +56,6 @@ function main() {
   }
 
   const result = runVusParse({ scriptPath });
-
-  if (result.skipped) {
-    console.log(`SKIP: ${result.reason}`);
-    process.exit(0);
-  }
 
   if (result.issues.length > 0) {
     console.error(`❌ [vus-parse] ${result.issues.length} issue(s) reported by ScriptParser:`);

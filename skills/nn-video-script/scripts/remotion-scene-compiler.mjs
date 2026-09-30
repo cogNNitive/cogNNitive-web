@@ -116,7 +116,7 @@ export class RemotionSceneCompiler {
       fromFrame,
       durationInFrames,
       config: {
-        title: props.title || props.layer_title || props.layer_generation_text || props.heading || props.text || '',
+        title: props.title || props.layer_title || props.layer_text_content || props.heading || '',
         subtitle: props.subtitle || props.layer_subtitle || '',
         speakerTag: props.speakerTag || props.speaker_tag || props.layer_speaker_tag || '',
         accentColor: props.accentColor || props.accent_color || props.layer_accent_color || '#3b82f6',
@@ -141,7 +141,7 @@ export class RemotionSceneCompiler {
       fromFrame,
       durationInFrames,
       config: {
-        heading: props.heading || props.layer_heading || props.title || props.layer_title || props.layer_generation_text || props.text || '',
+        heading: props.heading || props.layer_heading || props.title || props.layer_title || props.layer_text_content || '',
         subheading: props.subheading || props.layer_subheading || props.subtitle || props.layer_subtitle || '',
         theme: props.theme || props.layer_theme || 'dark',
         animationStyle: props.animationStyle || props.animation_style || props.layer_animation_style || 'spring-up',
@@ -165,7 +165,7 @@ export class RemotionSceneCompiler {
       fromFrame,
       durationInFrames,
       config: {
-        label: props.label || props.layer_label || props.title || props.layer_title || props.layer_generation_text || props.text || '',
+        label: props.label || props.layer_label || props.title || props.layer_title || props.layer_text_content || '',
         description: props.description || props.layer_description || '',
         icon: props.icon || props.layer_icon || 'info',
         highlightColor: props.highlightColor || props.highlight_color || props.layer_highlight_color || '#eab308',
@@ -526,7 +526,7 @@ export class RemotionSceneCompiler {
               durationInFrames: overlayDuration,
               props: {
                 ...layerProps,
-                title: layerProps.lower_third_name || layerProps.title || layerProps.layer_title || layerProps.layer_generation_text || layerProps.text || layer.name,
+                title: layerProps.lower_third_name || layerProps.title || layerProps.layer_title || layerProps.layer_text_content || layer.name,
                 subtitle: layerProps.lower_third_role || layerProps.subtitle || layerProps.layer_subtitle,
                 speakerTag: layerProps.lower_third_badge || layerProps.speaker_tag || layerProps.speakerTag || layerProps.layer_speaker_tag,
                 accentColor: layerProps.lower_third_color || layerProps.accent_color || layerProps.accentColor || layerProps.layer_accent_color,
@@ -542,7 +542,7 @@ export class RemotionSceneCompiler {
               durationInFrames: overlayDuration,
               props: {
                 ...layerProps,
-                heading: layerProps.kinetic_title_text || layerProps.heading || layerProps.layer_heading || layerProps.title || layerProps.layer_title || layerProps.layer_generation_text || layer.name,
+                heading: layerProps.kinetic_title_text || layerProps.heading || layerProps.layer_heading || layerProps.title || layerProps.layer_title || layerProps.layer_text_content || layer.name,
                 subheading: layerProps.kinetic_title_subtitle || layerProps.subheading || layerProps.layer_subheading || layerProps.subtitle || layerProps.layer_subtitle,
                 theme: layerProps.theme || layerProps.layer_theme,
                 animationStyle: layerProps.animation_style || layerProps.animationStyle || layerProps.layer_animation_style,
@@ -557,7 +557,7 @@ export class RemotionSceneCompiler {
               durationInFrames: overlayDuration,
               props: {
                 ...layerProps,
-                label: layerProps.concept_main || layerProps.label || layerProps.layer_label || layerProps.title || layerProps.layer_title || layerProps.layer_generation_text || layer.name,
+                label: layerProps.concept_main || layerProps.label || layerProps.layer_label || layerProps.title || layerProps.layer_title || layerProps.layer_text_content || layer.name,
                 description: layerProps.concept_sub || layerProps.description || layerProps.layer_description || '',
                 icon: layerProps.icon || layerProps.layer_icon,
                 highlightColor: layerProps.highlight_color || layerProps.highlightColor || layerProps.layer_highlight_color,

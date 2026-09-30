@@ -1,0 +1,1221 @@
+{
+    "info": {
+        "id": "vus",
+        "name": "Anydeo Universal Specification",
+        "version": "V_0-3-3",
+        "label": "Syntactic Sugar Isolation",
+        "description": "Enforces strict canonical properties by requiring the parser to fully translate Syntactic Sugar and introduces video_original_script for traceability."
+    },
+    "categories": [
+        {
+            "id": "identity",
+            "label": "Identity",
+            "icon": "Fingerprint",
+            "color": "#71717a",
+            "description": "Project naming and global setup.",
+            "ui": { "defaultExpanded": true, "priority": 0 }
+        },
+        {
+            "id": "layer_core",
+            "label": "Layer Configuration",
+            "icon": "Layers",
+            "color": "#ec4899",
+            "description": "Essential layer settings (Source, Type, Level).",
+            "ui": { "defaultExpanded": true, "priority": 1 }
+        },
+        {
+            "id": "audio",
+            "label": "Audio",
+            "icon": "Volume2",
+            "color": "#8b5cf6",
+            "description": "Voice narration, background music, and audio mixing."
+        },
+        {
+            "id": "asset_metadata",
+            "label": "Asset Metadata",
+            "icon": "Info",
+            "color": "#64748b",
+            "description": "Authorship, licensing and AI generation flags."
+        },
+        {
+            "id": "avatar",
+            "label": "Avatar Controls",
+            "icon": "User",
+            "color": "#f43f5e",
+            "description": "Digital avatar settings."
+        },
+        {
+            "id": "style_effects",
+            "label": "Style & Effects",
+            "icon": "Sparkles",
+            "color": "#f59e0b",
+            "description": "Cinematic motion, transitions, text branding and effects."
+        },
+        {
+            "id": "config",
+            "label": "Configuration",
+            "icon": "Settings2",
+            "color": "#6366f1",
+            "description": "Technical settings and timing logic."
+        },
+        {
+            "id": "publish",
+            "label": "Publication & SEO",
+            "icon": "Share2",
+            "color": "#3b82f6",
+            "description": "Publication metadata and settings."
+        }
+    ],
+    "api_options": {
+        "resolutions": [
+            { "value": "1920x1080", "label": "1920x1080 (16:9) - Horizontal" },
+            { "value": "1080x1920", "label": "1080x1920 (9:16) - Vertical" },
+            { "value": "1080x1080", "label": "1080x1080 (1:1) - Square" }
+        ],
+        "fps_options": [
+            { "value": "24", "label": "24" },
+            { "value": "30", "label": "30" },
+            { "value": "60", "label": "60" }
+        ],
+        "asset_types": [
+            { "value": "image", "label": "Image", "icon": "Image", "description": "Standard static image layer. Best for backgrounds or overlays using local or uploaded files." },
+            { "value": "stock_image", "label": "Stock Image", "icon": "Library", "description": "Intelligent search for professional photography. Describe what you need and we will find the perfect match." },
+            { "value": "ai_image", "label": "AI Image", "icon": "Sparkles", "description": "Generative visual creation. Turn your text prompts into unique, high-quality images for your video." },
+            { "value": "video", "label": "Video", "icon": "Video", "description": "Standard video layer. Supports local files, recordings, and direct uploads." },
+            { "value": "stock_video", "label": "Stock Video", "icon": "Clapperboard", "description": "Search for high-quality professional video clips to enhance your project's visual variety." },
+            { "value": "ai_video", "label": "AI Video", "icon": "Zap", "description": "Generative cinematic clips. Create moving visuals from simple text descriptions." },
+            { "value": "text", "label": "Text Layer", "icon": "Type", "description": "High-quality typography with full control over style, positioning and animations. Supports standard, animated and AI-enhanced text." },
+            { "value": "text_static", "label": "Static Text", "icon": "Type", "description": "Standard static text layer." },
+            { "value": "text_dynamic", "label": "Dynamic Text", "icon": "Type", "description": "Animated or dynamic text layer." },
+            { "value": "text_ai_embedded", "label": "AI Embedded Text", "icon": "Type", "description": "AI generated embedded text layer." },
+            { "value": "talking_avatar", "label": "Talking Avatar", "icon": "UserCircle", "description": "AI-driven character that speaks your narration with realistic lip-sync and expressions." },
+            { "value": "audio", "label": "Audio / Sound", "icon": "Volume2", "description": "Background tracks and sound effects to set the mood of your scene." }
+        ],
+        "tts_models": [
+            {
+                "value": "replicate/minimax/speech-2.8-hd",
+                "label": "MiniMax Speech 2.8 HD",
+                "provider": "replicate",
+                "version": "minimax/speech-2.8-hd:bb4b16034cd66abe0d3147d50a63890e0144328136ca082f3f141f42ed0d4be9",
+                "description": "State-of-the-art TTS with human-like prosody.",
+                "tier": "cinematic",
+                "default": true,
+                "metrics": { "speed": 8, "quality": 10 },
+                "inputs_mapping": { "text": "text", "voice": "voice_id" },
+                "parameters": [
+                    { "key": "voice_id", "label": "Voice ID", "type": "select", "options_key": "voices", "default": "Friendly_Person" },
+                    { "key": "speed", "label": "Speed", "type": "number", "min": 0.5, "max": 2, "step": 0.1, "default": 1.1 },
+                    { "key": "language", "label": "Language", "type": "select", "options_key": "voices", "default": "Spanish" }
+                ]
+            },
+            {
+                "value": "wavespeed/minimax/speech-2.5-hd-preview",
+                "label": "MiniMax Speech 2.5 HD (WaveSpeed)",
+                "provider": "minimax",
+                "description": "State-of-the-art TTS with high-definition emotional range. Supports multiple languages and expressive styles.",
+                "docs_url": "https://www.minimaxir.com/",
+                "tier": "premium",
+                "metrics": { "speed": 10, "quality": 10 },
+                "inputs_mapping": { "text": "text", "voice": "voice" },
+                "parameters": [
+                    { "key": "voice_id", "label": "Voice ID", "type": "select", "options_key": "voices", "default": "Friendly_Person" },
+                    { "key": "speed", "label": "Speed", "type": "number", "min": 0.5, "max": 2, "step": 0.1, "default": 1.0 },
+                    { "key": "language", "label": "Language", "type": "select", "options_key": "languages", "default": "Spanish" },
+                    { "key": "emotion", "label": "Emotion", "type": "select", "options_key": "emotions", "default": "neutral" }
+                ]
+            }
+        ],
+        "voices": [
+            { "value": "Deep_Voice_Man", "label": "Deep Voice Man" },
+            { "value": "Imposing_Manner", "label": "Imposing Manner" },
+            { "value": "Elegant_Man", "label": "Elegant Man" },
+            { "value": "Casual_Guy", "label": "Casual Guy" },
+            { "value": "Friendly_Person", "label": "Friendly Person" },
+            { "value": "Decent_Boy", "label": "Decent Boy" },
+            { "value": "Lively_Girl", "label": "Lively Girl" },
+            { "value": "Exuberant_Girl", "label": "Exuberant Girl" },
+            { "value": "Inspirational_girl", "label": "Inspirational Girl" },
+            { "value": "Young_Knight", "label": "Young Knight" },
+            { "value": "Abbess", "label": "Abbess" },
+            { "value": "Wise_Woman", "label": "Wise Woman" },
+            { "value": "Aussie_Bloke", "label": "Aussie Bloke" },
+            { "value": "Professional_Woman", "label": "Professional Woman" },
+            { "value": "Friendly_Lady", "label": "Friendly Lady" },
+            { "value": "Gentle_Man", "label": "Gentle Man" },
+            { "value": "Calm_Lady", "label": "Calm Lady" },
+            { "value": "English_expressive_narrator", "label": "English expressive narrator" },
+            { "value": "English_radiant_girl", "label": "English radiant girl" },
+            { "value": "English_magnetic_voiced_man", "label": "English magnetic voiced man" },
+            { "value": "English_compelling_lady1", "label": "English compelling lady1" },
+            { "value": "English_Aussie_Bloke", "label": "English Aussie Bloke" },
+            { "value": "English_captivating_female1", "label": "English captivating female1" },
+            { "value": "English_Upbeat_Woman", "label": "English Upbeat Woman" },
+            { "value": "English_Trustworth_Man", "label": "English Trustworth Man" },
+            { "value": "English_CalmWoman", "label": "English Calm Woman" },
+            { "value": "English_UpsetGirl", "label": "English Upset Girl" },
+            { "value": "English_Gentle-voiced_man", "label": "English Gentle-voiced man" },
+            { "value": "English_Whispering_girl_v3", "label": "English Whispering girl v3" },
+            { "value": "English_Diligent_Man", "label": "English Diligent Man" },
+            { "value": "English_Graceful_Lady", "label": "English Graceful Lady" },
+            { "value": "English_Husky_MetalHead", "label": "English Husky Metal Head" },
+            { "value": "English_ReservedYoungMan", "label": "English Reserved Young Man" },
+            { "value": "English_PlayfulGirl", "label": "English Playful Girl" },
+            { "value": "English_ManWithDeepVoice", "label": "English Man With Deep Voice" },
+            { "value": "English_GentleTeacher", "label": "English Gentle Teacher" },
+            { "value": "English_MaturePartner", "label": "English Mature Partner" },
+            { "value": "English_FriendlyPerson", "label": "English Friendly Person" },
+            { "value": "English_MatureBoss", "label": "English Mature Boss" },
+            { "value": "English_Debator", "label": "English Debator" },
+            { "value": "English_Abbess", "label": "English Abbess" },
+            { "value": "English_LovelyGirl", "label": "English Lovely Girl" },
+            { "value": "English_Steadymentor", "label": "English Steadymentor" },
+            { "value": "English_Deep-VoicedGentleman", "label": "English Deep-Voiced Gentleman" },
+            { "value": "English_DeterminedMan", "label": "English Determined Man" },
+            { "value": "English_Wiselady", "label": "English Wiselady" },
+            { "value": "English_CaptivatingStoryteller", "label": "English Captivating Storyteller" },
+            { "value": "English_AttractiveGirl", "label": "English Attractive Girl" },
+            { "value": "English_DecentYoungMan", "label": "English Decent Young Man" },
+            { "value": "English_SentimentalLady", "label": "English Sentimental Lady" },
+            { "value": "English_ImposingManner", "label": "English Imposing Manner" },
+            { "value": "English_SadTeen", "label": "English Sad Teen" },
+            { "value": "English_ThoughtfulMan", "label": "English Thoughtful Man" },
+            { "value": "English_PassionateWarrior", "label": "English Passionate Warrior" },
+            { "value": "English_DecentBoy", "label": "English Decent Boy" },
+            { "value": "English_WiseScholar", "label": "English Wise Scholar" },
+            { "value": "English_Soft-spokenGirl", "label": "English Soft-spoken Girl" },
+            { "value": "English_SereneWoman", "label": "English Serene Woman" },
+            { "value": "English_ConfidentWoman", "label": "English Confident Woman" },
+            { "value": "English_PatientMan", "label": "English Patient Man" },
+            { "value": "English_Comedian", "label": "English Comedian" },
+            { "value": "English_GorgeousLady", "label": "English Gorgeous Lady" },
+            { "value": "English_BossyLeader", "label": "English Bossy Leader" },
+            { "value": "English_LovelyLady", "label": "English Lovely Lady" },
+            { "value": "English_Strong-WilledBoy", "label": "English Strong-Willed Boy" },
+            { "value": "English_Deep-tonedMan", "label": "English Deep-toned Man" },
+            { "value": "English_StressedLady", "label": "English Stressed Lady" },
+            { "value": "English_AssertiveQueen", "label": "English Assertive Queen" },
+            { "value": "English_AnimeCharacter", "label": "English Anime Character" },
+            { "value": "English_Jovialman", "label": "English Jovialman" },
+            { "value": "English_WhimsicalGirl", "label": "English Whimsical Girl" },
+            { "value": "English_CharmingQueen", "label": "English Charming Queen" },
+            { "value": "English_Kind-heartedGirl", "label": "English Kind-hearted Girl" },
+            { "value": "English_FriendlyNeighbor", "label": "English Friendly Neighbor" },
+            { "value": "English_Sweet_Female_4", "label": "English Sweet Female 4" },
+            { "value": "English_Magnetic_Male_2", "label": "English Magnetic Male 2" },
+            { "value": "English_Lively_Male_11", "label": "English Lively Male 11" },
+            { "value": "English_Friendly_Female_3", "label": "English Friendly Female 3" },
+            { "value": "English_Steady_Female_1", "label": "English Steady Female 1" },
+            { "value": "English_Lively_Male_10", "label": "English Lively Male 10" },
+            { "value": "English_Magnetic_Male_12", "label": "English Magnetic Male 12" },
+            { "value": "English_Steady_Female_5", "label": "English Steady Female 5" },
+            { "value": "English_Insightful_Speaker", "label": "English Insightful Speaker" },
+            { "value": "English_patient_man_v1", "label": "English patient man v1" },
+            { "value": "English_Persuasive_Man", "label": "English Persuasive Man" },
+            { "value": "English_Explanatory_Man", "label": "English Explanatory Man" },
+            { "value": "English_intellect_female_1", "label": "English intellect female 1" },
+            { "value": "English_energetic_male_1", "label": "English energetic male 1" },
+            { "value": "English_witty_female_1", "label": "English witty female 1" },
+            { "value": "English_Lucky_Robot", "label": "English Lucky Robot" },
+            { "value": "English_Cute_Girl", "label": "English Cute Girl" },
+            { "value": "English_Sharp_Commentator", "label": "English Sharp Commentator" },
+            { "value": "English_Honest_Man", "label": "English Honest Man" }
+        ],
+        "languages": [
+            { "value": "Spanish", "label": "Spanish" },
+            { "value": "English", "label": "English" },
+            { "value": "French", "label": "French" },
+            { "value": "German", "label": "German" },
+            { "value": "Italian", "label": "Italian" },
+            { "value": "Portuguese", "label": "Portuguese" }
+        ],
+        "emotions": [
+            { "value": "auto", "label": "Auto" },
+            { "value": "neutral", "label": "Neutral" },
+            { "value": "happy", "label": "Happy" },
+            { "value": "sad", "label": "Sad" },
+            { "value": "angry", "label": "Angry" },
+            { "value": "fearful", "label": "Fearful" },
+            { "value": "disgusted", "label": "Disgusted" },
+            { "value": "surprised", "label": "Surprised" }
+        ],
+        "avatar_models": [
+            {
+                "value": "replicate/wan-2.1-s2v",
+                "label": "Wan 2.1 S2V (Standard)",
+                "provider": "replicate",
+                "version": "wan-video/wan-2.1-s2v:09607e6e761d2f015b0d740f938ec59199f54aa623384465a5054b230405acf4",
+                "description": "Best for static images tailored to narration.",
+                "tier": "balanced",
+                "default": true,
+                "metrics": { "speed": 6, "quality": 8 },
+                "inputs_mapping": { "visual": "image", "audio": "audio", "prompt": "prompt" },
+                "parameters": [
+                    { "key": "resolution", "label": "Resolution", "type": "select", "options": ["480p", "720p", "1080p"], "default": "720p" },
+                    { "key": "interpolate", "label": "Interpolate", "type": "boolean", "default": true }
+                ]
+            },
+            {
+                "value": "wavespeed/infinitetalk",
+                "label": "WaveSpeed InfiniteTalk (Ultra-Fast)",
+                "provider": "wavespeed",
+                "version": "wavespeed-ai/infinitetalk-fast",
+                "description": "High-performance digital avatar engine with extremely low latency. Powered by WaveSpeed Fast Inference.",
+                "docs_url": "https://wavespeed.ai/",
+                "tier": "performance",
+                "metrics": { "speed": 10, "quality": 9 },
+                "inputs_mapping": { "visual": "image", "audio": "audio" },
+                "parameters": [
+                    { "key": "resolution", "label": "Resolution", "type": "select", "options": ["480p", "720p", "1080p"], "default": "720p" },
+                    { "key": "face_scaling", "label": "Face Scaling", "type": "number", "min": 1.0, "max": 2.5, "step": 0.1, "default": 1.2 },
+                    { "key": "interpolate", "label": "Interpolate", "type": "boolean", "default": true }
+                ]
+            }
+        ],
+        "forge_models": [
+            {
+                "value": "replicate/flux-schnell",
+                "label": "Flux Schnell",
+                "provider": "replicate",
+                "version": "black-forest-labs/flux-schnell",
+                "description": "Ultra-fast high quality image generation.",
+                "inputs_mapping": { "prompt": "prompt" }
+            },
+            {
+                "value": "replicate/flux-pro",
+                "label": "Flux Pro",
+                "provider": "replicate",
+                "version": "black-forest-labs/flux-pro",
+                "description": "Elite quality professional image generation.",
+                "inputs_mapping": { "prompt": "prompt" }
+            },
+            {
+                "value": "replicate/recraft-v3",
+                "label": "Recraft V3",
+                "provider": "replicate",
+                "version": "recraft-ai/recraft-v3",
+                "description": "Professional Typography & Vector Design.",
+                "inputs_mapping": { "prompt": "prompt" }
+            },
+            {
+                "value": "wavespeed/qwen-image-edit",
+                "label": "WaveSpeed Qwen Edit",
+                "provider": "wavespeed",
+                "description": "Precise AI Image Editing powered by WaveSpeed.",
+                "inputs_mapping": { "visual": "image", "prompt": "prompt" }
+            },
+            {
+                "value": "replicate/wan-t2v",
+                "label": "Wan 2.1 Video",
+                "provider": "replicate",
+                "version": "wan-video/wan-2.1-t2v-1.3b",
+                "description": "Fast video generation from text.",
+                "inputs_mapping": { "prompt": "prompt" }
+            },
+            {
+                "value": "wavespeed/wan-i2v",
+                "label": "Wan 2.1 I2V (WaveSpeed)",
+                "provider": "wavespeed",
+                "description": "Fast & Economic Image to Video.",
+                "inputs_mapping": { "visual": "image", "prompt": "prompt" }
+            },
+            {
+                "value": "wavespeed/wan-27-t2i",
+                "label": "Wan 2.7 T2I (WaveSpeed)",
+                "provider": "wavespeed",
+                "version": "alibaba/wan-2.7/text-to-image-pro",
+                "description": "High-quality text-to-image generation powered by Alibaba Wan 2.7.",
+                "inputs_mapping": { "prompt": "prompt" }
+            },
+            {
+                "value": "wavespeed/nano-banana-edit",
+                "label": "Nano Banana 2 Edit (WaveSpeed)",
+                "provider": "wavespeed",
+                "version": "google/nano-banana-2/edit-fast",
+                "description": "Ultra-fast high quality image editing.",
+                "inputs_mapping": { "visual": "image", "prompt": "prompt" }
+            }
+        ],
+        "speeds": [
+            { "value": 0.25, "label": "Extremely slow" },
+            { "value": 0.5,  "label": "Very slow" },
+            { "value": 0.75, "label": "Slow" },
+            { "value": 1.0,  "label": "Medium" },
+            { "value": 1.5,  "label": "Fast" },
+            { "value": 2.0,  "label": "Very fast" },
+            { "value": 4.0,  "label": "Extremely fast" },
+            { "value": -1.0, "label": "Full Scene Duration" }
+        ],
+        "render": {
+            "output_directory": "exports",
+            "filename_template": "{title} ({timestamp}) [{resolution}]",
+            "timestamp_format": "YYYY-MM-DD_HH-mm-ss"
+        }
+    },
+    "properties": {
+        "video_anydeo_specification": {
+            "type": "string",
+            "label": "Specification Version",
+            "category": "identity",
+            "scope": "video",
+            "required": true,
+            "default": "V_0-3-3",
+            "description": "The exact version of the specification used in this script. V_0-3-3 requires strict syntactic sugar translation and adds video_original_script.",
+            "immutable": true
+        },
+        "video_name": {
+            "type": "string",
+            "label": "Video Name",
+            "category": "identity",
+            "scope": "video",
+            "required": true,
+            "default": "Untitled Video",
+            "description": "The main name used for the exported video and metadata."
+        },
+        "video_resolution": {
+            "type": "select",
+            "label": "Resolution",
+            "category": "identity",
+            "scope": "video",
+            "options_key": "resolutions",
+            "default": "1920x1080",
+            "description": "Determines aspect ratio and pixel dimensions."
+        },
+        "video_status": {
+            "type": "select",
+            "label": "Project Status",
+            "category": "identity",
+            "scope": "video",
+            "required": false,
+            "default": "draft",
+            "options": [
+                { "value": "draft", "label": "Draft" },
+                { "value": "preprocessed", "label": "Preprocessed" },
+                { "value": "review", "label": "Under Review" },
+                { "value": "approved", "label": "Approved" },
+                { "value": "archived", "label": "Archived" }
+            ],
+            "description": "The current lifecycle state of the project."
+        },
+        "video_fps": {
+            "type": "select",
+            "label": "FPS",
+            "category": "identity",
+            "scope": "video",
+            "options_key": "fps_options",
+            "default": "30",
+            "description": "Frames Per Second."
+        },
+        "video_author": {
+            "type": "string",
+            "label": "Author",
+            "category": "identity",
+            "scope": "video",
+            "default": "Anydeo User",
+            "description": "Creator of the video."
+        },
+        "video_tags": {
+            "type": "string",
+            "label": "Video Tags",
+            "category": "publish",
+            "scope": "video",
+            "default": "anydeo, ai-video",
+            "description": "Keywords for discovery and SEO."
+        },
+        "video_script_source": {
+            "type": "string",
+            "label": "Script Source File",
+            "category": "identity",
+            "scope": "video",
+            "description": "Path to the instructions or source file used to generate the script (e.g., assets/instructions.md)."
+        },
+        "video_original_script": {
+            "type": "string",
+            "label": "Original Script Copy",
+            "category": "identity",
+            "scope": "video",
+            "description": "Path to the unmodified copy of the original .anydeo script, saved with an _original_{timestamp} suffix before any syntactic sugar was processed."
+        },
+        "video_sources": {
+            "type": "object",
+            "label": "Video Sources / Bibliography",
+            "category": "asset_metadata",
+            "scope": "video",
+            "description": "Centralized project repository of bibliographic references and media sources."
+        },
+        "video_publish": {
+            "type": "boolean",
+            "label": "Publication Integration",
+            "category": "publish",
+            "scope": "video",
+            "default": false,
+            "description": "Enables the assisted publication portal and SEO tracking."
+        },
+        "video_publish_description": {
+            "type": "textarea",
+            "label": "Publication Description",
+            "category": "publish",
+            "scope": "video",
+            "description": "The full description to be used when publishing. Supports metadata interpolation."
+        },
+        "video_render_quality": {
+            "type": "select",
+            "label": "Render Quality",
+            "category": "config",
+            "scope": "video",
+            "default": "ultrafast_preview",
+            "options": [
+                { "value": "ultrafast_preview", "label": "UltraFast (Preview)" },
+                { "value": "fast_draft", "label": "Fast (Draft)" },
+                { "value": "balanced", "label": "Balanced" },
+                { "value": "quality_final", "label": "High Quality (Final)" },
+                { "value": "high_quality", "label": "Elite (Pro Res)" }
+            ],
+            "description": "Determines the speed vs. quality tradeoff. Changing this will invalidate the scene cache."
+        },
+        "section_title": {
+            "type": "string",
+            "label": "Section Title",
+            "category": "identity",
+            "scope": "section",
+            "required": true,
+            "default": "Untitled Section",
+            "description": "The heading title or identifier for this section."
+        },
+        "scene_name": {
+            "type": "string",
+            "label": "Scene Name",
+            "category": "identity",
+            "scope": "scene",
+            "required": true,
+            "description": "Unique identifier for this specific scene."
+        },
+        "scene_templates": {
+            "type": "multiselect",
+            "label": "Scene Templates",
+            "category": "identity",
+            "scope": "scene",
+            "options_key": "templates",
+            "description": "List of templates to inherit from.",
+            "default": []
+        },
+        "scene_content": {
+            "type": "textarea",
+            "label": "Content",
+            "category": "identity",
+            "scope": "scene",
+            "required": true,
+            "description": "The text to be narrated by the AI voice. MUST be plain text. Markdown headers are strictly prohibited."
+        },
+        "scene_sources": {
+            "type": "array",
+            "label": "Scene Sources / Citations",
+            "category": "asset_metadata",
+            "scope": "scene",
+            "description": "List of citekeys or URLs providing bibliographic backing for the scene content without polluting the narration text."
+        },
+        "scene_status": {
+            "type": "select",
+            "label": "Scene Status",
+            "category": "identity",
+            "scope": "scene",
+            "required": false,
+            "default": "draft",
+            "options": [
+                { "value": "draft", "label": "Draft" },
+                { "value": "review", "label": "Under Review" },
+                { "value": "approved", "label": "Approved" },
+                { "value": "rejected", "label": "Rejected" }
+            ],
+            "description": "The current lifecycle state of the scene."
+        },
+        "scene_tts_model": {
+            "type": "select",
+            "label": "TTS Model",
+            "category": "audio",
+            "scope": "scene",
+            "options_key": "tts_models",
+            "default": "replicate/minimax/speech-2.8-hd",
+            "description": "The AI model used for text-to-speech generation.",
+            "showIf": { "scene_voice_source": "tts" }
+        },
+        "scene_voice": {
+            "type": "select",
+            "label": "Voice ID",
+            "category": "audio",
+            "scope": "scene",
+            "options_key": "voices",
+            "default": "Friendly_Person",
+            "description": "The specific AI voice to use for narration in this scene.",
+            "ui": { "hiddenInInspector": true },
+            "showIf": { "scene_voice_source": "tts" }
+        },
+        "scene_voice_source": {
+            "type": "select",
+            "label": "Voice Source",
+            "category": "audio",
+            "scope": "scene",
+            "default": "tts",
+            "options": [
+                { "value": "tts", "label": "AI TTS" },
+                { "value": "recording", "label": "User Recording" }
+            ],
+            "description": "Determines if the narration is generated via AI TTS or recorded by the user."
+        },
+        "scene_voice_recording": {
+            "type": "asset",
+            "label": "Voice Recording",
+            "category": "audio",
+            "scope": "scene",
+            "description": "Path to the user-recorded audio file.",
+            "showIf": { "scene_voice_source": "recording" }
+        },
+        "scene_image_model": {
+            "type": "select",
+            "label": "Scene Image Model",
+            "category": "layer_core",
+            "scope": "scene",
+            "options_key": "forge_models",
+            "default": "replicate/flux-schnell",
+            "description": "Default AI model for image generation in this scene.",
+            "showIf": { "scene_video_source": "ai" }
+        },
+        "scene_video_model": {
+            "type": "select",
+            "label": "Scene Video Model",
+            "category": "layer_core",
+            "scope": "scene",
+            "options_key": "forge_models",
+            "default": "replicate/wan-t2v",
+            "description": "Default AI model for video generation in this scene.",
+            "showIf": { "scene_video_source": "ai" }
+        },
+        "scene_video_source": {
+            "type": "select",
+            "label": "Video Source",
+            "category": "visual",
+            "scope": "scene",
+            "default": "ai",
+            "options": [
+                { "value": "ai", "label": "AI Generated" },
+                { "value": "recording", "label": "User Recording" }
+            ],
+            "description": "Determines if the scene visual is generated via AI or recorded by the user."
+        },
+        "scene_video_recording": {
+            "type": "asset",
+            "label": "Video Recording",
+            "category": "visual",
+            "scope": "scene",
+            "description": "Path to the user-recorded video file.",
+            "showIf": { "scene_video_source": "recording" }
+        },
+        "scene_voice_volume": {
+            "type": "number",
+            "label": "Voice Volume",
+            "category": "audio",
+            "scope": "scene",
+            "default": 1,
+            "ui": { "min": 0, "max": 1, "step": 0.1 }
+        },
+        "scene_background_audio": {
+            "type": "asset",
+            "label": "Background Music",
+            "category": "audio",
+            "scope": "scene",
+            "description": "Path or URL to background music."
+        },
+        "scene_background_audio_volume": {
+            "type": "number",
+            "label": "BG Music Volume",
+            "category": "audio",
+            "scope": "scene",
+            "default": 0.3,
+            "ui": { "min": 0, "max": 1, "step": 0.1 }
+        },
+        "scene_duration_mode": {
+            "type": "select",
+            "label": "Duration Mode",
+            "category": "config",
+            "scope": "scene",
+            "default": "auto_voice",
+            "options": [
+                { "value": "auto_voice", "label": "Automatic (Voice Based)" },
+                { "value": "auto_media", "label": "Automatic (Media Based)" },
+                { "value": "custom", "label": "Manual / Custom" }
+            ],
+            "description": "How the scene duration is calculated."
+        },
+        "scene_video_recording": {
+            "type": "asset",
+            "label": "Video Recording",
+            "category": "visual",
+            "scope": "scene",
+            "description": "Path to the user-recorded video file.",
+            "showIf": { "scene_video_source": "recording" }
+        },
+        "scene_duration": {
+            "type": "number",
+            "label": "Scene Duration",
+            "category": "timing",
+            "scope": "scene",
+            "default": 10.0,
+            "description": "The length of the scene in seconds.",
+            "showIf": { "scene_video_source": "ai" }
+        },
+        "scene_background_color": {
+            "type": "color",
+            "label": "Background Color",
+            "category": "config",
+            "scope": "scene",
+            "default": "#000000",
+            "description": "Solid background color rendered behind all layers."
+        },
+        "scene_effects": {
+            "type": "multiselect",
+            "label": "Scene Visual Effects",
+            "category": "style_effects",
+            "scope": "scene",
+            "options": [
+                { "value": "none", "label": "None" },
+                { "value": "zoom_in", "label": "Zoom In" },
+                { "value": "zoom_out", "label": "Zoom Out" },
+                { "value": "pan_left", "label": "Pan Left" },
+                { "value": "pan_right", "label": "Pan Right" },
+                { "value": "tilt_up", "label": "Tilt Up" },
+                { "value": "tilt_down", "label": "Tilt Down" },
+                { "value": "ken_burns", "label": "Ken Burns" },
+                { "value": "handheld", "label": "Handheld" },
+                { "value": "breathing", "label": "Breathing" },
+                { "value": "grayscale", "label": "Grayscale" }
+            ],
+            "description": "Cinematic effects applied to the entire scene or its primary background."
+        },
+        "scene_effect_speed": {
+            "type": "select",
+            "label": "Scene Effect Speed",
+            "category": "style_effects",
+            "scope": "scene",
+            "default": 1.0,
+            "options_key": "speeds",
+            "description": "Multiplier for the animation speed of the scene effects."
+        },
+        "scene_visual_style": {
+            "type": "string",
+            "label": "Scene Visual Style",
+            "category": "style_effects",
+            "scope": "scene",
+            "ui": { "widget": "select", "options_key": "visual_styles" },
+            "description": "Style key (e.g., 'photo', 'doodle') referencing a visual style defined in assets/_instructions.md."
+        },
+        "scene_narrative_style": {
+            "type": "string",
+            "label": "Scene Narrative Style",
+            "category": "style_effects",
+            "scope": "scene",
+            "ui": { "widget": "select", "options_key": "narrative_styles" },
+            "description": "Style key (e.g., 'energetic', 'calm') referencing a narrative style defined in assets/_instructions.md."
+        },
+        "scene_sources": {
+            "type": "array",
+            "label": "Scene Sources / Citations",
+            "category": "asset_metadata",
+            "scope": "scene",
+            "description": "List of citekeys or URLs corresponding to entries in the global repository or external links backing the scene narration."
+        },
+
+
+
+        "layer_name": {
+            "type": "string",
+            "label": "Layer Name",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": "New Layer",
+            "description": "Friendly name for identifying this layer."
+        },
+        "layer_active": {
+            "type": "boolean",
+            "label": "Active",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": true,
+            "description": "If false, the layer is completely ignored by the engine and UI. Use to suppress template-provided layers.",
+            "ui": { "hiddenInInspector": true }
+        },
+        "layer_level": {
+            "type": "number",
+            "label": "Level",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 10,
+            "description": "Determines stacking order."
+        },
+        "layer_type": {
+            "type": "select",
+            "label": "Asset Type",
+            "category": "layer_core",
+            "scope": "layer",
+            "options_key": "asset_types",
+            "default": "image",
+            "description": "Computational type of the asset in this layer.",
+            "ui": { "hiddenInInspector": true }
+        },
+        "layer_fit_mode": {
+            "type": "select",
+            "label": "Fit Mode / Layout",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": "smart_blur",
+            "options": [
+                { "value": "fill", "label": "Fill" },
+                { "value": "cover", "label": "Cover" },
+                { "value": "fit", "label": "Fit" },
+                { "value": "contain", "label": "Contain" },
+                { "value": "smart_blur", "label": "Smart Blur" },
+                { "value": "stretch", "label": "Stretch" }
+            ],
+            "description": "How the asset fills its layer container.",
+            "depends_on": { "layer_type": { "op": "not_in", "value": ["audio", "text"] } }
+        },
+        "layer_avatar_model": {
+            "type": "select",
+            "label": "Avatar Model",
+            "category": "avatar",
+            "scope": "layer",
+            "options_key": "avatar_models",
+            "default": "replicate/wan-2.1-s2v",
+            "depends_on": { "layer_type": "talking_avatar" }
+        },
+        "layer_text_content": {
+            "type": "string",
+            "label": "Text Content",
+            "category": "layer_core",
+            "scope": "layer",
+            "description": "The text to be displayed.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_style": {
+            "type": "string",
+            "label": "Text Style / Prompt",
+            "category": "style_effects",
+            "scope": "layer",
+            "description": "Visual style for the text.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_rendering_method": {
+            "type": "select",
+            "label": "Text Rendering Method",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "static",
+            "options": [
+                { "value": "static", "label": "Static / Burn-in" },
+                { "value": "dynamic", "label": "Dynamic / Overlay" },
+                { "value": "ai_embedded", "label": "AI Embedded (Forge)" }
+            ],
+            "description": "The technology used to render text on this layer.",
+            "ui": { "hiddenInInspector": true },
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_align_horizontal": {
+            "type": "select",
+            "label": "Horizontal Alignment",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "center",
+            "options": [
+                { "value": "left", "label": "Left" },
+                { "value": "center", "label": "Center" },
+                { "value": "right", "label": "Right" }
+            ],
+            "description": "Horizontal alignment of the text within its container.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_align_vertical": {
+            "type": "select",
+            "label": "Vertical Alignment",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "middle",
+            "options": [
+                { "value": "top", "label": "Top" },
+                { "value": "middle", "label": "Middle" },
+                { "value": "bottom", "label": "Bottom" }
+            ],
+            "description": "Vertical alignment of the text within its container.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_font": {
+            "type": "string",
+            "label": "Font Family",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "Inter",
+            "description": "The font family to use for the text.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_size": {
+            "type": "number",
+            "label": "Font Size",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 40,
+            "ui": { "min": 8, "max": 200, "step": 1 },
+            "description": "The size of the text in pixels (or relative units).",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_color": {
+            "type": "string",
+            "label": "Text Color",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "#ffffff",
+            "ui": { "widget": "color" },
+            "description": "The color of the text.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_box": {
+            "type": "boolean",
+            "label": "Show Background Box",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": false,
+            "description": "Whether to show a background box behind the text.",
+            "depends_on": { "layer_type": "text" }
+        },
+        "layer_text_box_color": {
+            "type": "string",
+            "label": "Box Color",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "#000000",
+            "ui": { "widget": "color" },
+            "description": "The color of the background box.",
+            "depends_on": { "layer_text_box": true }
+        },
+        "layer_text_box_opacity": {
+            "type": "number",
+            "label": "Box Opacity",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 0.7,
+            "ui": { "min": 0, "max": 1, "step": 0.1 },
+            "description": "The opacity of the background box.",
+            "depends_on": { "layer_text_box": true }
+        },
+        "layer_asset_source": {
+            "type": "asset",
+            "label": "Asset Source",
+            "category": "layer_core",
+            "scope": "layer",
+            "description": "URL or local path to the image/video asset.",
+            "ui": { "widget": "asset_picker" },
+            "depends_on": { "layer_type": { "op": "not_in", "value": ["text", "ai_image", "ai_video"] } }
+        },
+        "layer_visual_style": {
+            "type": "string",
+            "label": "Generation / Style Preset",
+            "category": "layer_core",
+            "scope": "layer",
+            "ui": { "widget": "select", "options_key": "visual_styles" },
+            "description": "Style key (e.g., 'photo', 'doodle') referencing a visual style defined in assets/_instructions.md.",
+            "depends_on": { "layer_type": "ai_image" }
+        },
+        "layer_narrative_style": {
+            "type": "string",
+            "label": "Layer Narrative Style",
+            "category": "style_effects",
+            "scope": "layer",
+            "ui": { "widget": "select", "options_key": "narrative_styles" },
+            "description": "Style key referencing a narrative style defined in assets/_instructions.md.",
+            "depends_on": { "layer_type": { "op": "in", "value": ["talking_avatar", "audio"] } }
+        },
+        "layer_crop": {
+            "type": "string",
+            "label": "Crop / Mask",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": "none",
+            "description": "Applies a visual crop or mask to the layer (e.g., 'circle', 'rounded').",
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_crop_top": {
+            "type": "number",
+            "label": "Crop Top",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "min": 0, "max": 100, "step": 0.5, "widget": "slider", "unit": "%" },
+            "description": "Percentage to crop from the top of the layer asset.",
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_crop_right": {
+            "type": "number",
+            "label": "Crop Right",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "min": 0, "max": 100, "step": 0.5, "widget": "slider", "unit": "%" },
+            "description": "Percentage to crop from the right of the layer asset.",
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_crop_bottom": {
+            "type": "number",
+            "label": "Crop Bottom",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "min": 0, "max": 100, "step": 0.5, "widget": "slider", "unit": "%" },
+            "description": "Percentage to crop from the bottom of the layer asset.",
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_crop_left": {
+            "type": "number",
+            "label": "Crop Left",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "min": 0, "max": 100, "step": 0.5, "widget": "slider", "unit": "%" },
+            "description": "Percentage to crop from the left of the layer asset.",
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_generation_subject": {
+            "type": "string",
+            "label": "Generation / Search Context",
+            "category": "layer_core",
+            "scope": "layer",
+            "ui": { "widget": "textarea" },
+            "depends_on": { "layer_type": "ai_image" }
+        },
+        "layer_generation_strength": {
+            "type": "number",
+            "label": "Transformation Strength",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 5,
+            "ui": { "min": 1, "max": 10, "step": 1 },
+            "description": "Intensity of the AI transformation (1-10). Higher values deviate more from the source."
+        },
+        "layer_generation_embedded_text": {
+            "type": "string",
+            "label": "Embedded Text Prompt",
+            "category": "layer_core",
+            "scope": "layer",
+            "description": "Text to be visually embedded into AI-generated media (e.g. signs, shirts).",
+            "depends_on": { "layer_type": { "op": "in", "value": ["text_in_image", "ai_image"] } }
+        },
+        "layer_generation_embedded_text_style": {
+            "type": "string",
+            "label": "Embedded Text Style",
+            "category": "layer_core",
+            "scope": "layer",
+            "description": "Visual style prompt for the embedded text (e.g. 'neon green script').",
+            "depends_on": { "layer_type": { "op": "in", "value": ["text_in_image", "ai_image"] } }
+        },
+        "layer_generation_model": {
+            "type": "select",
+            "label": "Generation Model",
+            "category": "layer_core",
+            "scope": "layer",
+            "options_key": "forge_models",
+            "ui": { "widget": "model_picker" },
+            "depends_on": { "layer_type": { "op": "in", "value": ["ai_image", "ai_video", "text_in_image"] } }
+        },
+        "layer_opacity": {
+            "type": "number",
+            "label": "Opacity",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 1,
+            "ui": { "min": 0, "max": 1, "step": 0.1, "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_scale": {
+            "type": "number",
+            "label": "Scale",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 1,
+            "ui": { "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_rotation": {
+            "type": "number",
+            "label": "Rotation (Degrees)",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "min": 0, "max": 360, "step": 1, "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_volume": {
+            "type": "number",
+            "label": "Audio Volume",
+            "category": "audio",
+            "scope": "layer",
+            "default": 1.0,
+            "ui": { "min": 0, "max": 1, "step": 0.1 },
+            "depends_on": { "layer_type": { "op": "in", "value": ["audio", "video"] } }
+        },
+
+        "layer_effects": {
+            "type": "multiselect",
+            "label": "Visual Effects",
+            "category": "style_effects",
+            "scope": "layer",
+            "options": [
+                { "value": "none", "label": "None" },
+                { "value": "zoom_in", "label": "Zoom In" },
+                { "value": "zoom_out", "label": "Zoom Out" },
+                { "value": "pan_left", "label": "Pan Left" },
+                { "value": "pan_right", "label": "Pan Right" },
+                { "value": "tilt_up", "label": "Tilt Up" },
+                { "value": "tilt_down", "label": "Tilt Down" },
+                { "value": "ken_burns", "label": "Ken Burns" },
+                { "value": "handheld", "label": "Handheld" },
+                { "value": "breathing", "label": "Breathing" },
+                { "value": "grayscale", "label": "Grayscale" }
+            ],
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_effect_speed": {
+            "type": "select",
+            "label": "Effect Speed",
+            "category": "style_effects",
+            "scope": "layer",
+            "default": 1.0,
+            "options_key": "speeds",
+            "description": "Multiplier for the animation speed of the layer effects.",
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_x": {
+            "type": "number",
+            "label": "X Position",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_y": {
+            "type": "number",
+            "label": "Y Position",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 0,
+            "ui": { "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_width": {
+            "type": "number",
+            "label": "Width",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 100,
+            "ui": { "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_height": {
+            "type": "number",
+            "label": "Height",
+            "category": "layer_core",
+            "scope": "layer",
+            "default": 100,
+            "ui": { "hiddenInInspector": true },
+            "depends_on": { "layer_type": { "op": "neq", "value": "audio" } }
+        },
+        "layer_asset_is_ai": {
+            "type": "boolean",
+            "label": "AI Generated",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "default": false,
+            "description": "Flag indicating if the asset was generated using AI.",
+            "hidden": true,
+            "ui": { "hiddenInInspector": true }
+        },
+        "layer_asset_raw_url": {
+            "type": "string",
+            "label": "Raw URL",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "description": "The original source URL before processing or local storage.",
+            "ui": { "hiddenInInspector": true }
+        },
+        "layer_asset_author": {
+            "type": "string",
+            "label": "Asset Author",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "description": "The creator or owner of the asset."
+        },
+        "layer_asset_license": {
+            "type": "string",
+            "label": "Asset License",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "description": "Licensing information for the asset."
+        },
+        "layer_asset_source_service": {
+            "type": "string",
+            "label": "Source Service",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "description": "The service or platform where the asset was obtained (e.g., Replicate, Pexels)."
+        },
+        "layer_asset_citation_key": {
+            "type": "string",
+            "label": "Citation Key",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "description": "Reference key (citekey) pointing to an entry in the project's global video_sources repository."
+        },
+        "layer_asset_access_date": {
+            "type": "string",
+            "label": "Access Date",
+            "category": "asset_metadata",
+            "scope": "layer",
+            "description": "The date and timestamp when the asset was accessed or downloaded."
+        }
+    },
+    "model_manifest_schema": {
+        "description": "Required shape for model manifest files in model_registry/. Each JSON file defines one AI model.",
+        "required": ["id", "type", "display_name", "provider"],
+        "properties": {
+            "id": { "type": "string", "description": "Unique model identifier, e.g. heygen_v2" },
+            "type": { "type": "string", "enum": ["tts", "avatar", "image", "video", "lipsync"], "description": "Model category" },
+            "display_name": { "type": "string", "description": "Human-readable name shown in the UI" },
+            "provider": { "type": "string", "description": "API provider name, e.g. heygen, elevenlabs" },
+            "api_model_id": { "type": "string", "description": "The exact model ID string sent to the API" },
+            "description": { "type": "string" },
+            "parameters": {
+                "type": "array",
+                "description": "Property definitions for this model's parameters, following the VUS property schema shape",
+                "items": {
+                    "required": ["key", "type", "label"],
+                    "properties": {
+                        "key": { "type": "string" },
+                        "type": { "type": "string" },
+                        "label": { "type": "string" },
+                        "default": {},
+                        "description": { "type": "string" },
+                        "options": { "type": "array" },
+                        "min": { "type": "number" },
+                        "max": { "type": "number" },
+                        "step": { "type": "number" },
+                        "required": { "type": "boolean" }
+                    }
+                }
+            }
+        }
+    },
+    "property_set_schema": {
+        "description": "Shape of a named property set in the project data. Sets are reusable bundles of property values that templates can include.",
+        "required": ["name", "properties"],
+        "properties": {
+            "name": { "type": "string", "description": "Unique name for this set within the project" },
+            "description": { "type": "string" },
+            "properties": { "type": "object", "description": "Key-value property values in this set" }
+        }
+    }
+}

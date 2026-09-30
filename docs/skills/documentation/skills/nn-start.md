@@ -63,7 +63,7 @@ The cogNNitive ecosystem is streamlined into 9 specialized skills:
 | **[`nn-site-generator`](skills/nn-site-generator.md)** | Website generation, layout hydration & Docsify suites | `/nn-site-generator`, `generate site`, `create website` |
 | **[`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md)** | Skill installation, updates & manifest governance | `/nn-skills-lifecycle`, `install skill`, `update skills` |
 | **[`nn-design-presets`](skills/nn-design-presets.md)** | Design system tokens (Morado Nazareno, 8px grid) | `design preset`, `morado-nazareno`, visual artifact styling |
-| **[`nn-video-script`](skills/nn-video-script.md)** | Anydeo VUS script authoring & validation in the Series/Video hierarchy | `video script`, `VUS`, `series script`, `finalize video` |
+| **[`nn-video-script`](skills/nn-video-script.md)** | cogNNitive-video VUS script authoring & validation in the Series/Video hierarchy | `video script`, `VUS`, `series script`, `finalize video` |
 
 ---
 

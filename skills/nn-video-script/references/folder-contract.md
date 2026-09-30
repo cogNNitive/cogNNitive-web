@@ -32,7 +32,7 @@ Assets are scoped at exactly three levels:
     shared/                              # series scope
     assets/<video-slug>/                 # video scope = Element-owned folder
       script.md  asset_plan.md  master.mp4  thumbnail.png  voiceover.<ext>  media/
-      renders/<ref>/  .anydeo/           # ephemeral — see below
+      renders/<ref>/  .cognnitive-video/           # ephemeral — see below
 ```
 
 ## The no-upward-escape rule
@@ -56,12 +56,12 @@ the check.
 
 ## Ephemeral engine directories are not Artifacts
 
-`renders/` and `.anydeo/` — wherever they occur inside a video or series
+`renders/` and `.cognnitive-video/` — wherever they occur inside a video or series
 folder — are gitignored, transient engine output. They are never treated as
 iNNfo Artifacts, never scanned as knowledge inputs or sources, and never
 referenced by a Video Element's own fields once finalize has run. The
 generic procedure (and this skill's own tooling) is responsible for ensuring
-`.gitignore` covers `**/renders/` and `**/.anydeo/` in any workspace that
+`.gitignore` covers `**/renders/` and `**/.cognnitive-video/` in any workspace that
 produces videos.
 
 ## The finalize/register step

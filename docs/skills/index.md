@@ -20,7 +20,7 @@ Teach your AI agent domain capabilities: iNNfo model authoring, document transfo
 - **nn-site-generator**: Static website generation, markdown twin hydration, and Docsify documentation suites.
 - **nn-design-presets**: Complete design system with the Morado Nazareno palette, systematic typography, and an 8px grid.
 - **nn-skills-lifecycle**: Skill ecosystem lifecycle, manifest pinning, and lockfile auditing.
-- **nn-video-script**: Author, gate, and finalize Anydeo VUS video scripts inside an iNNfo workspace's Series/Video hierarchy.
+- **nn-video-script**: Author, gate, and finalize cogNNitive-video VUS video scripts inside an iNNfo workspace's Series/Video hierarchy.
 
 ---
 

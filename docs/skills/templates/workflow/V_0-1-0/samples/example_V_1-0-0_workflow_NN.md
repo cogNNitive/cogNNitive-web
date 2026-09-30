@@ -13,7 +13,7 @@ documentation_location: "docs/templates/workflow/V_0-1-0/"
 > [!NOTE]
 > Workflow que transforma un video raw en un comercial completo: normaliza el
 > contenido fuente, genera un modelo de negocio iNNfo, y produce un script de
-> AnyDeo.
+> Video.
 > **Version:** V_1-0-0 | **Template:** workflow V_0-1-0
 
 # NN index
@@ -28,7 +28,7 @@ documentation_location: "docs/templates/workflow/V_0-1-0/"
 
 ## NN Workflow: Video a Comercial Workflow
 name:: "Video a Comercial"
-description:: "Transforma un video raw en un comercial completo mediante 3 stages: normalización, modelado iNNfo, y generación de script AnyDeo"
+description:: "Transforma un video raw en un comercial completo mediante 3 stages: normalización, modelado iNNfo, y generación de script Video"
 version:: "V_1-0-0"
 
 # NN Stage
@@ -49,11 +49,11 @@ template:: "business"
 input:: "sources/"
 output:: "models/"
 
-## NN Stage: AnyDeo Script
-id:: "anydeo-script"
-description:: "Toma el modelo iNNfo y genera un script de AnyDeo para el comercial final"
+## NN Stage: Video Script
+id:: "video-script"
+description:: "Toma el modelo iNNfo y genera un script de Video para el comercial final"
 skill:: [[traNNsform Normalization]]
-template:: "anydeo"
+template:: "video"
 input:: "models/"
 output:: "scripts/"
 
@@ -83,9 +83,9 @@ description:: "Contenido normalizado a Markdown estructurado"
 type:: format-model
 description:: "Modelo de negocio iNNfo con template business"
 
-## NN ArtifactType: AnyDeo Script
+## NN ArtifactType: Video Script
 type:: script
-description:: "Script de AnyDeo listo para producción del comercial"
+description:: "Script de Video listo para producción del comercial"
 
 # NN Transformation
 
@@ -99,10 +99,10 @@ from_type:: [[Normalized Markdown]]
 to_type:: [[iNNfo Business Model]]
 method:: "autoría de modelo iNNfo con template business a partir de sources normalizados"
 
-## NN Transformation: iNNfo Model to AnyDeo Script
+## NN Transformation: iNNfo Model to Video Script
 from_type:: [[iNNfo Business Model]]
-to_type:: [[AnyDeo Script]]
-method:: "aplicación de template anydeo sobre el modelo iNNfo para generar script de comercial"
+to_type:: [[Video Script]]
+method:: "aplicación de template video sobre el modelo iNNfo para generar script de comercial"
 
 # NN matrices: Stage-Skill matrix
 
@@ -110,25 +110,25 @@ method:: "aplicación de template anydeo sobre el modelo iNNfo para generar scri
 | :--- | :---: | :---: |
 | Raw Ingestion | X | |
 | FORMAT Model | | X |
-| AnyDeo Script | X | |
+| Video Script | X | |
 
 # NN matrices: Stage-Artifact matrix
 
-| Stage \ ArtifactType | Raw Video | Normalized Markdown | iNNfo Business Model | AnyDeo Script |
+| Stage \ ArtifactType | Raw Video | Normalized Markdown | iNNfo Business Model | Video Script |
 | :--- | :---: | :---: | :---: | :---: |
 | Raw Ingestion | X | | | |
 | FORMAT Model | | | X | |
-| AnyDeo Script | | | | X |
+| Video Script | | | | X |
 
 ---
 
 ## Workflow Data Flow
 
 ```
-raw/  ──[Raw Ingestion]──▶  sources/  ──[FORMAT Model]──▶  models/  ──[AnyDeo Script]──▶  scripts/
+raw/  ──[Raw Ingestion]──▶  sources/  ──[FORMAT Model]──▶  models/  ──[Video Script]──▶  scripts/
  │  tipo: raw                │  tipo: markdown             │  tipo: format-model        │  tipo: script
  │  skill: nn-trannsform     │  skill: nn-innfo            │  skill: nn-trannsform      │
- │  modo: normalize-only     │  template: business         │  template: anydeo          │
+ │  modo: normalize-only     │  template: business         │  template: video          │
 ```
 
 ## Directory Layout
@@ -142,6 +142,6 @@ project/
 ├── models/                     ← Generado por Stage 2
 │   └── VideoComercial_V_1-0-0_business_NN.md
 ├── scripts/                    ← Generado por Stage 3
-│   └── comercial_anydeo.any
+│   └── comercial_video.any
 └── example_V_1-0-0_workflow_NN.md
 ```

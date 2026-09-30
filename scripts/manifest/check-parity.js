@@ -15,7 +15,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { parseFocusedYaml, parseFrontmatter } = require('../lib/yaml-parser.js');
 
 /**
@@ -50,46 +49,6 @@ function checkWorkspaceParity(repoRoot = process.cwd()) {
       const bundlePath = path.join(repoRoot, mcp.path);
       if (!fs.existsSync(bundlePath)) {
         errors.push(`MCP '${mcp.name}': bundle file not found at ${bundlePath}`);
-      }
-    }
-
-    // Check external_specs if declared on skill
-    if (Array.isArray(skill.external_specs)) {
-      let skillMeta = {};
-      try {
-        skillMeta = parseFocusedYaml(parseFrontmatter(fs.readFileSync(skillMdPath, 'utf8')));
-      } catch {}
-      for (const spec of skill.external_specs) {
-        const pinKey = `${spec.name}_spec`;
-        const localPin = skillMeta[pinKey];
-        if (!localPin || String(localPin.version) !== String(spec.version) || String(localPin.sha256) !== String(spec.sha256)) {
-          errors.push(`Skill '${skill.name}': external_spec '${spec.name}' mismatch between manifest and SKILL.md`);
-        }
-        if (!/^packages\/core\/specs\/V_\d+-\d+-\d+\.json$/.test(spec.path || '')) {
-          errors.push(`Skill '${skill.name}': external_spec '${spec.name}' path '${spec.path}' must match ^packages/core/specs/V_\\d+-\\d+-\\d+\\.json$`);
-        }
-        if (path.posix.basename(spec.path || '') !== `${spec.version}.json`) {
-          errors.push(`Skill '${skill.name}': external_spec '${spec.name}' basename '${path.posix.basename(spec.path || '')}' does not match '${spec.version}.json'`);
-        }
-        const vidgennRoot = process.env.VIDGENN_ROOT;
-        if (vidgennRoot && fs.existsSync(vidgennRoot)) {
-          const specFilePath = path.join(vidgennRoot, spec.path);
-          if (fs.existsSync(specFilePath)) {
-            const raw = fs.readFileSync(specFilePath, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-            const hash = crypto.createHash('sha256').update(raw).digest('hex');
-            if (hash !== spec.sha256) {
-              errors.push(`Skill '${skill.name}': external_spec '${spec.name}' sha256 mismatch with local file at ${specFilePath}`);
-            }
-            try {
-              const parsed = JSON.parse(raw);
-              if (parsed.info && parsed.info.version && parsed.info.version !== spec.version) {
-                errors.push(`Skill '${skill.name}': external_spec '${spec.name}' version mismatch with local file at ${specFilePath}`);
-              }
-            } catch {}
-          } else {
-            errors.push(`Skill '${skill.name}': external_spec file not found at ${specFilePath}`);
-          }
-        }
       }
     }
   }

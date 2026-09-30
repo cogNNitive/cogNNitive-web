@@ -21,6 +21,6 @@ Are you troubled by strange noises in the middle of the night? Join the team tha
 @@ Callout Text
 - layer_type: text
 - layer_level: 50
-- layer_generation_text: "NOW HIRING: FIELD TECHNICIANS"
+- layer_text_content: "NOW HIRING: FIELD TECHNICIANS"
 - layer_effects: ["zoom_in"]
 - layer_effect_speed: 1.5

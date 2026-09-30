@@ -353,7 +353,7 @@ describe('reconcileManifest', () => {
         level: 3,
         parent_spec: { name: 'procedures' },
       }),
-      candidate('procedures/generar_guion_anydeo_V_0-1-0_procedures_NN.md', {
+      candidate('procedures/generar_guion_video_V_0-1-0_procedures_NN.md', {
         level: 3,
         parent_spec: { name: 'procedures' },
       }),

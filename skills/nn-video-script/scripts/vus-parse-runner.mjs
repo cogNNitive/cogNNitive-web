@@ -1,37 +1,53 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env node
 
 /**
  * skills/nn-video-script/scripts/vus-parse-runner.mjs
  *
- * Internal helper, always executed via `npx tsx` (never `node` directly) so
- * it can dynamically import VidGeNN's TypeScript-only core package. Never
- * invoked by hand — vus-parse.mjs spawns it as a child process.
+ * Internal helper. Imports the in-repo VUS parser
+ * (`@cognnitive/innfo-video-parser`, TypeScript source) and parses one script.
+ * It must run under the `tsx` loader (vus-parse.mjs spawns it with
+ * `node --import tsx/esm`). Never invoked by hand.
  *
- * argv: [vidgennRoot, scriptPath]
+ * argv: [scriptPath]
  * stdout: JSON.stringify({ issues })
  */
 
 import fs from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const [vidgennRoot, scriptPath] = process.argv.slice(2);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PARSER_ENTRY = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'iNNfo',
+  'packages',
+  'innfo-video-parser',
+  'src',
+  'index.ts',
+);
 
-if (!vidgennRoot || !scriptPath) {
-  console.error('Usage: vus-parse-runner.mjs <vidgennRoot> <scriptPath>');
+const [scriptPath] = process.argv.slice(2);
+
+if (!scriptPath) {
+  console.error('Usage: vus-parse-runner.mjs <scriptPath>');
   process.exit(2);
 }
 
-const entryUrl = pathToFileURL(`${vidgennRoot.replace(/\\/g, '/')}/packages/core/src/index.ts`).href;
-
-let ScriptParser;
+let parse;
 try {
-  ({ ScriptParser } = await import(entryUrl));
+  ({ parse } = await import(pathToFileURL(PARSER_ENTRY).href));
 } catch (err) {
-  console.error(`Failed to import ScriptParser from ${entryUrl}: ${err.message}`);
+  console.error(`Failed to import the VUS parser from ${PARSER_ENTRY}: ${err.message}`);
   process.exit(2);
 }
+
+// The parser logs diagnostics with console.log; keep stdout clean for the JSON payload.
+console.log = console.error;
 
 const content = fs.readFileSync(scriptPath, 'utf8');
-const { issues } = ScriptParser.parse(content, scriptPath);
+const { issues } = parse(content, scriptPath);
 
 process.stdout.write(JSON.stringify({ issues }));

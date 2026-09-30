@@ -151,7 +151,7 @@ describe('syncWorkspaceManifest', () => {
       'utf-8',
     )
     await writeFile(
-      join(rootDir, 'procedures', 'generar_guion_anydeo_V_0-1-0_procedures_NN.md'),
+      join(rootDir, 'procedures', 'generar_guion_video_V_0-1-0_procedures_NN.md'),
       ['---', 'level: 3', 'parent_spec:', '  name: "procedures"', 'title: "Generar guion"', '---'].join(
         '\n',
       ),

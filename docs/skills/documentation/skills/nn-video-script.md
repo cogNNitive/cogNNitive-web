@@ -1,6 +1,6 @@
 ---
-title: "nn-video-script — Anydeo VUS Script Authoring"
-description: "Forked, iNNfo-aware authoring of Anydeo VUS (Video Universal Specification) scripts inside a workspace's Series/Video production hierarchy."
+title: "nn-video-script — cogNNitive-video VUS Script Authoring"
+description: "Forked, iNNfo-aware authoring of cogNNitive-video VUS (Video Universal Specification) scripts inside a workspace's Series/Video production hierarchy."
 html_url: https://cognnitive.com/skills/documentation/#/skills/nn-video-script
 generator: https://cognnitive.com/skills/nn-design-presets
 ---
@@ -9,12 +9,10 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 **Skill**: `nn-video-script` · **Role**: Video Script Authoring & Validation
 
-Forked from VidGeNN's `anydeo-script-builder`, adapted to author Anydeo VUS
-scripts inside an iNNfo workspace's Series/Video production hierarchy.
-Replaces the video template's previously dangling reference to a skill that
-only ever existed in VidGeNN. The dependency direction is one-way:
-cogNNitive reads VidGeNN's pinned spec as read-only reference material;
-nothing in VidGeNN references this fork back.
+Authors cogNNitive-video VUS scripts inside an iNNfo workspace's Series/Video
+production hierarchy. The VUS parser and the pinned VUS spec ship in this
+repository (`@cognnitive/innfo-video-parser`), so validation runs with no
+external checkout or environment variable.
 
 ---
 
@@ -33,7 +31,7 @@ integrity check), same as every other cogNNitive skill.
 2. **Validate**, in order: the placeholder/escape gate
    (`scripts/check-script.mjs`), then the real VUS parser
    (`scripts/vus-parse.mjs`).
-3. **Finalize**, once VidGeNN has rendered the script: promote
+3. **Finalize**, once the cogNNitive-video engine has rendered the script: promote
    `master`/`thumbnail`/`voiceover` out of the render folder into the
    video's own folder (`scripts/finalize-video.mjs`).
 4. **Closing retrospective**: proactively offer to analyze the authoring

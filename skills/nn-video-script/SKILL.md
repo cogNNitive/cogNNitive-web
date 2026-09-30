@@ -2,7 +2,7 @@
 name: nn-video-script
 description: |
   iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Supports Remotion scene compilation, deterministic SHA-256 asset caching, headless MP4 rendering, and thumbnail composition. Triggers: video script, cognnitive video, remotion video, series script, nn-video-script, {{slot}}, script_template.md, finalize video, render video script.
-version: "V_0-2-0"
+version: "V_0-3-0"
 last_updated: 2026-09-29
 license: MIT
 vus_spec:

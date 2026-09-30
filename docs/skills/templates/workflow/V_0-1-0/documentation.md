@@ -123,7 +123,7 @@ The orchestrator reads these values literally and passes them to the loaded skil
 
 ## Sample
 
-See [`samples/example_V_1-0-0_workflow_NN.md`](./samples/example_V_1-0-0_workflow_NN.md) for a complete three-stage workflow example (Raw Ingestion → FORMAT Model → AnyDeo Script).
+See [`samples/example_V_1-0-0_workflow_NN.md`](./samples/example_V_1-0-0_workflow_NN.md) for a complete three-stage workflow example (Raw Ingestion → FORMAT Model → Video Script).
 
 ## Template Location
 
