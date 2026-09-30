@@ -3,8 +3,8 @@
  * `target_blueprint` value: exact name, exact url, url suffix variants
  * (`/<expected>`, `/<expected>.md`, `/<expected>_NN.md`), or name suffix.
  */
-export function matchesTargetBlueprint(expectedTemplate: string, actual: { name?: string; url?: string }): boolean {
-  const expected = expectedTemplate.trim().toLowerCase()
+export function matchesTargetBlueprint(expectedBlueprint: string, actual: { name?: string; url?: string }): boolean {
+  const expected = expectedBlueprint.trim().toLowerCase()
   const actualName = (actual.name ?? '').trim().toLowerCase()
   const actualUrl = (actual.url ?? '').trim().toLowerCase()
   return (

@@ -1,7 +1,7 @@
 import type { Concept, ParsedKnowledge } from '../types/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import { conceptsByElementName, IMPLICIT_REF_FIELDS } from './elementIndex.js'
-import { matchesTargetBlueprint } from './templateMatching.js'
+import { matchesTargetBlueprint } from './blueprintMatching.js'
 
 export interface ReferenceDiagnostic {
   path: string
@@ -195,7 +195,7 @@ export function validateElementFieldReferences(
                       code: 'SUBMODEL_TEMPLATE_MISMATCH',
                       promptHint: `Field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_blueprint}" but "${cleanPath}" uses "${actualLabel}": update target_blueprint or fix parent_spec in the referenced file.`,
                       meta: {
-                        expectedTemplate: fieldDef.target_blueprint,
+                        expectedBlueprint: fieldDef.target_blueprint,
                         actualBlueprint: actualLabel,
                         refPath: cleanPath,
                       },

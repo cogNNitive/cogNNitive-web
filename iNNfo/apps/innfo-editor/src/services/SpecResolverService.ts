@@ -91,7 +91,7 @@ async function resolvePathInHandle(
  * (served by vite at `/specs`, see `vite.config.ts` `serveLocalSpecs`) or
  * from the offline canonical registry.
  */
-async function tryBundledTemplate(
+async function tryBundledBlueprint(
   parentName: string,
   parentUrl?: string,
 ): Promise<string | null> {
@@ -199,7 +199,7 @@ async function fetchIncludeText(
       /* not a resolvable local path */
     }
   }
-  const dev = await tryBundledTemplate(ref.name, ref.url)
+  const dev = await tryBundledBlueprint(ref.name, ref.url)
   if (dev) return dev
   if (ref.url && isHttpUrl(ref.url)) {
     try {
@@ -304,7 +304,7 @@ async function fetchBlueprintText(
   }
 
   if (!text) {
-    const devLocal = await tryBundledTemplate(parentName, parentUrl)
+    const devLocal = await tryBundledBlueprint(parentName, parentUrl)
     if (devLocal) {
       text = devLocal
       specFilename = `spec:${parentName}`

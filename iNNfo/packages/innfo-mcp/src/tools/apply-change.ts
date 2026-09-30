@@ -404,11 +404,11 @@ async function bumpVersion(
       const parsed = parseKnowledge(raw)
       const changed = cascadeModelReferences(parsed, base, newBase)
       if (changed) {
-        let depTemplate: SpecDocument | null = null
+        let depBlueprint: SpecDocument | null = null
         let depResolveInclude: (ref: { name: string; url: string }) => string | null = () => null
         try {
           const r = await resolveBlueprintForKnowledge(rootDir, parsed)
-          depTemplate = r.template
+          depBlueprint = r.template
           depResolveInclude = r.resolveInclude
         } catch (err) {
           return {
@@ -423,7 +423,7 @@ async function bumpVersion(
             ],
           }
         }
-        const check = coreValidate(parsed, depTemplate, null, depResolveInclude)
+        const check = coreValidate(parsed, depBlueprint, null, depResolveInclude)
         if (!check.valid) {
           return {
             success: false,

@@ -4,7 +4,7 @@ import type { WorkspaceIndex } from '../recursiveParser/workspaceIndex.js'
 import type { ReferenceDiagnostic } from './references.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import { stripMdSuffix, basename } from '../recursiveParser/paths.js'
-import { matchesTargetBlueprint } from './templateMatching.js'
+import { matchesTargetBlueprint } from './blueprintMatching.js'
 
 /**
  * `[[Model Title :: Element Name]]` — the ONLY cross-model reference form

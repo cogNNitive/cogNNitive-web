@@ -525,14 +525,14 @@ async function validateManifest(manifestData, policy) {
   const { skills = [], blueprints = [], workflows = [], mcp = [], consoleAssets = [] } = manifestData;
   const mcpCount = mcp.length + skills.reduce((n, s) => n + ((s.mcp || []).length), 0);
   const violations = [];
-  const knownSkillBundledTemplates = new Set();
+  const knownSkillBundledBlueprints = new Set();
 
   for (const skill of skills) {
     const { violations: skillViolations, bundled_blueprints } = await validateSkill(skill, policy);
     violations.push(...skillViolations);
     for (const bt of bundled_blueprints) {
       const name = typeof bt === 'string' ? bt : (bt && bt.name);
-      if (name) knownSkillBundledTemplates.add(name);
+      if (name) knownSkillBundledBlueprints.add(name);
     }
   }
 
@@ -548,7 +548,7 @@ async function validateManifest(manifestData, policy) {
     violations.push(...await validateConsoleAsset(asset, policy));
   }
 
-  const closureViolations = checkClosureViolations(manifestData, knownSkillBundledTemplates);
+  const closureViolations = checkClosureViolations(manifestData, knownSkillBundledBlueprints);
   violations.push(...closureViolations);
 
   return {
