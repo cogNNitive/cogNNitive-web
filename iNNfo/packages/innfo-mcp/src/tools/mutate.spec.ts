@@ -789,8 +789,8 @@ describe('mutate tools', () => {
       )
 
       // Create spec package for active business_V_0-2-0 and orphaned legacy_V_0-1-0
-      const activePkgDir = join(specsDir, 'templates', 'business', 'V_0-2-0')
-      const orphanPkgDir = join(specsDir, 'templates', 'legacy', 'V_0-1-0')
+      const activePkgDir = join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'legacy', 'V_0-1-0')
       await mkdir(activePkgDir, { recursive: true })
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(activePkgDir, 'spec_NN.md'), '---\nspec_version: "V_0-2-0"\n---')
@@ -807,7 +807,7 @@ describe('mutate tools', () => {
 
     it('creates timestamped backup zip snapshot packaging candidate specs', async () => {
       const { createSpecsBackupZip } = await import('./mutate')
-      const orphanPkgDir = join(specsDir, 'templates', 'legacy', 'V_0-1-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'legacy', 'V_0-1-0')
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(orphanPkgDir, 'spec_NN.md'), 'Orphan spec content')
 
@@ -838,7 +838,7 @@ describe('mutate tools', () => {
 
     it('pruneOrphanedSpecs in dry_run mode reports deletion candidates without deleting', async () => {
       const { pruneOrphanedSpecs } = await import('./mutate')
-      const orphanPkgDir = join(specsDir, 'templates', 'orphan_package', 'V_0-1-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'orphan_package', 'V_0-1-0')
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(orphanPkgDir, 'spec_NN.md'), 'Orphan content')
 
@@ -857,7 +857,7 @@ describe('mutate tools', () => {
 
     it('pruneOrphanedSpecs with dry_run false creates backup zip and deletes orphaned specs', async () => {
       const { pruneOrphanedSpecs } = await import('./mutate')
-      const orphanPkgDir = join(specsDir, 'templates', 'to_delete', 'V_0-1-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'to_delete', 'V_0-1-0')
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(orphanPkgDir, 'spec_NN.md'), 'To delete')
 
@@ -890,8 +890,8 @@ describe('mutate tools', () => {
       )
 
       // Create canonical package directory for canonical_pkg V_1-0-0
-      const activePkgDir = join(specsDir, 'templates', 'canonical_pkg', 'V_1-0-0')
-      const subPkgDir = join(specsDir, 'templates', 'sub_pkg', 'V_0-5-0')
+      const activePkgDir = join(specsDir, 'bluepriNNts', 'canonical_pkg', 'V_1-0-0')
+      const subPkgDir = join(specsDir, 'bluepriNNts', 'sub_pkg', 'V_0-5-0')
       await mkdir(activePkgDir, { recursive: true })
       await mkdir(subPkgDir, { recursive: true })
 

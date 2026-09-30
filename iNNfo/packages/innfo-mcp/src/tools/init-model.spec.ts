@@ -386,7 +386,7 @@ describe('initModel', () => {
           '..',
           '..',
           'specs',
-          'templates',
+          'bluepriNNts',
           'blank',
           'spec_NN.md',
         ),

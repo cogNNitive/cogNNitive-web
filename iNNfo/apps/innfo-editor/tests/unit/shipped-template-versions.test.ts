@@ -16,7 +16,7 @@ import {
  * filename. The root `workspace_spec_NN.md` is deliberately out of scope — this
  * guard only walks `{slug}/` subdirectories.
  */
-const templatesDir = join(import.meta.dirname!, '..', '..', '..', '..', 'specs', 'templates')
+const templatesDir = join(import.meta.dirname!, '..', '..', '..', '..', 'specs', 'bluepriNNts')
 
 function frontmatterTemplateVersion(absPath: string): string | null {
   const text = readFileSync(absPath, 'utf-8')
