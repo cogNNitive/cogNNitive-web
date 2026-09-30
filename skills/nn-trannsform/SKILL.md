@@ -1,8 +1,8 @@
 ---
 name: nn-trannsform
 description: "Bootstrap projects, scan raw documents, normalize them to Markdown with mandatory Source frontmatter, apply V_0-1-0 template-based transformations, and execute multi-step transformation procedures compliant with procedures_V_0-1-0_NN.md. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), procedure orchestration, and export generation. Triggers: trannsform, transform, workflow, pipeline, procedure, normalize, scan documents, document ingestion, document transformation, document processing, markdown conversion, project bootstrap"
-version: "V_3-4-0"
-last_updated: 2026-09-12
+version: "V_3-4-1"
+last_updated: 2026-09-30
 empty_sections_mode: "ask-per-section"
 license: MIT
 metadata:
@@ -249,6 +249,18 @@ Workspaces can watch external file drops without daemons or external mutations:
    Dynamic sources are ingested into `sources/import/<stem>_<YYYYMMDD-HHmmss>.<ext>` and normalized into `sources/nn/import/<stem>_<YYYYMMDD-HHmmss>.md`. Existing citations remain permanently valid without broken links.
 4. **Source Family Evolution & Impact Guidance**:
    The impact checker detects when models reference older snapshots of an evolving source family and advises when newer snapshots are available.
+
+#### 2a-3b. Session-Start Digest (`--watch-digest` / `--digest-decide`)
+
+A domaiNN that declares `## NN External Watch Roots:` can be checked **at session start**, not only before authoring. `nn-start` offers one digest of what changed and lets the user decide per item.
+
+1. **Machine-readable scan** — `node scripts/index.js --scan-external --json` prints the classified roots as stable JSON (changed items only).
+2. **Digest** — `node scripts/index.js --watch-digest [--json]` renders the scan filtered to items still awaiting a decision. It is **read-only**: it never writes to `sources/`. It prints nothing when no roots are declared, so it never blocks or delays session start.
+3. **Decide** — `node scripts/index.js --digest-decide "<key>" --status <ignore|postpone|import> [--note "<text>"]`.
+   - `ignore` — suppress this exact content (by sha256) permanently.
+   - `postpone` — re-offer next session (default).
+   - `import` — copy the file as an immutable timestamped snapshot into `sources/import/` and normalize it.
+4. **State** — decisions persist in `.cognnitive/watch-digest.json` (workspace-local cache; never a source, never a citation target), keyed by `(root, relPath, sha256)`. An edited file (new hash) is re-offered; an unchanged, ignored file is not.
 
 #### 2a-4. Curating a CSV for Row-Level Citation
 

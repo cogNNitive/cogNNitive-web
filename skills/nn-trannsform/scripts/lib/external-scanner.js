@@ -372,6 +372,34 @@ function importExternalFiles(candidates, projectDir, options = {}) {
   return imported;
 }
 
+/**
+ * Renders a scan result as a stable, machine-readable object (changed items only).
+ * @param {ReturnType<typeof scanAllWatchRoots>} scanResult
+ * @returns {{
+ *   generatedAt: string,
+ *   roots: Array<{ root: string, cadence: string, status: string, items: Array<object> }>
+ * }}
+ */
+function serializeScanResult(scanResult) {
+  return {
+    generatedAt: new Date().toISOString(),
+    roots: ((scanResult && scanResult.roots) || []).map((r) => ({
+      root: r.root,
+      cadence: r.cadence,
+      status: r.status,
+      items: (r.items || [])
+        .filter((it) => it.deltaStatus !== 'UNCHANGED')
+        .map((it) => ({
+          relPath: it.relPath,
+          sha256: it.sha256,
+          mtimeMs: it.mtimeMs,
+          size: it.sizeBytes,
+          status: it.deltaStatus,
+        })),
+    })),
+  };
+}
+
 module.exports = {
   TIMESTAMP_REGEX,
   formatTimestamp,
@@ -381,5 +409,6 @@ module.exports = {
   parseWatchRoots,
   scanExternalDirectory,
   scanAllWatchRoots,
+  serializeScanResult,
   importExternalFiles,
 };

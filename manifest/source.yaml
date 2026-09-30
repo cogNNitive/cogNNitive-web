@@ -6,20 +6,20 @@ skills:
   - name: nn-start
     repo: cogNNitive/cogNNitive
     path: skills/nn-start
-    version: "V_3-4-1"
+    version: "V_3-4-2"
     ref_key: skills
     description: Central system governance, setup, environment readiness gate (Preflight), and start router.
   - name: nn-trannsform
     repo: cogNNitive/cogNNitive
     path: skills/nn-trannsform
-    version: "V_3-4-0"
+    version: "V_3-4-1"
     ref_key: skills
     requires: [nn-innfo, nn-preflight]
     description: Ingest documents (PDF, DOCX, XLSX), transform using templates, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
   - name: nn-innfo
     repo: cogNNitive/cogNNitive
     path: skills/nn-innfo
-    version: "V_0-5-3"
+    version: "V_0-5-4"
     ref_key: skills
     description: Author, edit, and validate iNNfo models with built-in step-by-step Model Creation Wizard.
     templates: [workspace]

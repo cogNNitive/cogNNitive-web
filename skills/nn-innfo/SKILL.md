@@ -1,7 +1,7 @@
 ---
 name: nn-innfo
-version: "V_0-5-3"
-last_updated: 2026-09-22
+version: "V_0-5-4"
+last_updated: 2026-09-30
 metadata:
   source_type: "original"
   mcp: "innfo-mcp"
@@ -686,6 +686,7 @@ When authoring or auditing models that rely on external data drops (e.g. client 
 2. **Pre-Authoring Scan Check**: Before updating or creating a model citing dynamic sources, offer to scan external roots:
    > *"This workspace defines external watch roots. Would you like to scan for new or evolved primary sources before authoring?"*
 3. **Execution**: Invoke `node skills/nn-trannsform/scripts/index.js --scan-external --check-impact` to inspect external changes, import timestamped snapshots (`YYYYMMDD-HHmmss`), and check source family evolutions.
+4. **Shared Digest State**: Consult `.cognnitive/watch-digest.json` and skip any item the session-start digest already offered or decided (`ignore`/`import`), so the user is not asked twice for the same content.
 
 innfo-mcp_sync_workspace_manifest({ dry_run: true })
 // review result.changes / result.diff with the user before continuing

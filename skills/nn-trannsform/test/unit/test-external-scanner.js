@@ -9,6 +9,7 @@ const {
   parseWatchRoots,
   scanExternalDirectory,
   scanAllWatchRoots,
+  serializeScanResult,
   importExternalFiles,
 } = require('../../scripts/lib/external-scanner');
 
@@ -155,6 +156,30 @@ async function run() {
       fs.rmSync(tempExtDir, { recursive: true, force: true });
       fs.rmSync(tempWorkDir, { recursive: true, force: true });
     }
+  });
+
+  it('serializes a scan result as stable JSON with changed items only', () => {
+    const result = {
+      roots: [
+        {
+          root: 'D:/Drops',
+          cadence: 'dynamic',
+          status: 'CONNECTED',
+          items: [
+            { relPath: 'a.csv', sha256: 'h1', mtimeMs: 1, sizeBytes: 10, deltaStatus: 'NEW' },
+            { relPath: 'b.csv', sha256: 'h2', mtimeMs: 2, sizeBytes: 20, deltaStatus: 'UNCHANGED' },
+          ],
+        },
+        { root: 'Z:/Gone', cadence: 'static', status: 'DISCONNECTED', items: [] },
+      ],
+    };
+    const serialized = serializeScanResult(result);
+    assert.strictEqual(serialized.roots.length, 2);
+    assert.strictEqual(serialized.roots[0].items.length, 1, 'UNCHANGED items are omitted');
+    assert.strictEqual(serialized.roots[0].items[0].relPath, 'a.csv');
+    assert.strictEqual(serialized.roots[0].items[0].status, 'NEW');
+    assert.strictEqual(serialized.roots[1].status, 'DISCONNECTED');
+    assert.strictEqual(JSON.parse(JSON.stringify(serialized)).roots.length, 2);
   });
 
   return { passed, failed };

@@ -2,8 +2,8 @@
 name: nn-start
 description: Primary Front Controller, ecosystem entry point, system governance, setup, environment readiness gate (Preflight), and skill router for cogNNitive. Invoke with /nn-start.
 disable-model-invocation: false
-version: "V_3-4-1"
-last_updated: 2026-09-24
+version: "V_3-4-2"
+last_updated: 2026-09-30
 license: MIT
 compatibility: opencode, claude-code, cursor, any agent supporting skills
 metadata:
@@ -37,6 +37,7 @@ Before launching any specialized workflow, `nn-start` verifies the environment:
 2. **Node.js**: Checks `node --version` (>= 18 required).
 3. **MCP Server**: Verifies `innfo-mcp` responsiveness via `innfo-mcp_list_models` (or resolves bundle at `~/.agents/mcp/innfo-mcp.bundle.js` or `.cogNNitive/mcp-bundle.js`).
 4. **Workspace Layout**: Ensures workspace contains standard folders (`sources/`, `models/`, `procedures/`, `export/`, `conversations/`, `index.md`). Ingestion branches are `sources/import/`, `sources/conversations/`, and `sources/export/` normalized into `sources/nn/` (legacy `sources/original/` and `artifacts/` supported via non-breaking fallback).
+5. **External Watch Roots Digest**: If the domaiNN manifest declares `## NN External Watch Roots:`, run `node skills/nn-trannsform/scripts/index.js --watch-digest`. If it reports items, present them with `[a] ignore` / `[b] postpone` / `[c] import` per item (`postpone` is the default; `import` copies an immutable timestamped snapshot into `sources/import/`). The digest is read-only and MUST NOT block session start: with no roots, or if the scan is unavailable, continue silently. Decisions persist via `--digest-decide` in `.cognnitive/watch-digest.json`.
 
 ---
 

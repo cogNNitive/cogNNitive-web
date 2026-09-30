@@ -27,6 +27,9 @@ playwright-report/
 **/.playwright-mcp/
 .opencode/
 **/.opencode/
+# Workspace-local cache (watch-root digest state, skill registry) — never tracked
+.cognnitive/
+**/.cognnitive/
 # Engram memory sync export (contains local absolute paths + raw session
 # observations; repo is public, keep this local-only per-profile instead)
 .engram/

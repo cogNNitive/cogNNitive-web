@@ -119,6 +119,11 @@ async function main() {
     const externalScannerResult = await externalScannerTest.run();
     totalPassed += externalScannerResult.passed;
     totalFailed += externalScannerResult.failed;
+
+    const watchDigestStoreTest = require('./unit/test-watch-digest-store');
+    const watchDigestStoreResult = await watchDigestStoreTest.run();
+    totalPassed += watchDigestStoreResult.passed;
+    totalFailed += watchDigestStoreResult.failed;
   }
 
   if (mode === 'all' || mode === 'integration') {
