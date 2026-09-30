@@ -42,9 +42,16 @@ export function useUrlDocLoader() {
 
       const text = await response.text()
 
-      // Derive a stable root id from the URL's last path segment
-      const segments = url.replace(/\/+$/, '').split('/')
-      const rawName = segments[segments.length - 1] ?? 'root'
+      // Derive a stable root id from the URL's last path segment. Parse the
+      // pathname so preview URLs carrying `?token=…` still yield a clean id.
+      let pathname = url
+      try {
+        pathname = new URL(url, 'http://localhost').pathname
+      } catch {
+        // keep the raw string — malformed URLs just fall back to a best guess
+      }
+      const segments = pathname.replace(/\/+$/, '').split('/')
+      const rawName = decodeURIComponent(segments[segments.length - 1] ?? 'root')
       const rootId = rawName.replace(/\.md$/i, '')
 
       const { nodes } = normalizeSingleKnowledge(text, url, rootId)

@@ -34,11 +34,11 @@ Chain strategy: server slice first, editor slice second
 
 ## Phase 3: Editor — Read-Only Live Consumer (TDD first)
 
-- [ ] 3.1 **RED — live consumer tests**: Write `useLivePreview.test.ts` with an `EventSource` mock: an event re-fetches the named model and calls `setGraph`; the previously selected node is preserved after re-render; the read-only flag is set on entry. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
-- [ ] 3.2 **GREEN — `useLivePreview` composable**: Implement the `EventSource` consumer reusing `useUrlDocLoader`, preserving `uiStore.selectedNodeId`, and marking `workspaceStore.previewReadOnly`. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
-- [ ] 3.3 **GREEN — read-only enforcement**: Disable editing controls and block save and version bump when `previewReadOnly` is set (`Header.vue`, edit entry points). `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
-- [ ] 3.4 **GREEN — entry from URL**: Parse `models`, `live` and `token` in `HomeView.vue` and enter read-only live mode. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
-- [ ] 3.5 **Verify Phase 3**: `npm run lint`, `npm run typecheck`, `innfo-editor` unit tests green.
+- [x] 3.1 **RED — live consumer tests**: Write `useLivePreview.test.ts` with an `EventSource` mock: an event re-fetches the named model and calls `setGraph`; the previously selected node is preserved after re-render; the read-only flag is set on entry. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
+- [x] 3.2 **GREEN — `useLivePreview` composable**: Implement the `EventSource` consumer reusing `useUrlDocLoader`, preserving `uiStore.selectedNodeId`, and marking `workspaceStore.previewReadOnly`. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
+- [x] 3.3 **GREEN — read-only enforcement**: Disable editing controls and block save and version bump when `previewReadOnly` is set (`Header.vue`, edit entry points). `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
+- [x] 3.4 **GREEN — entry from URL**: Parse `models`, `live` and `token` in `HomeView.vue` and enter read-only live mode. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
+- [x] 3.5 **Verify Phase 3**: `npm run lint`, `npm run typecheck`, `innfo-editor` unit tests green.
 
 ## Phase 4: Skill & Documentation
 

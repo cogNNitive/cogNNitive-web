@@ -8,7 +8,7 @@ import {
   type Component,
   watch,
 } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import Header from '../components/layout/Header.vue'
 import SampleBanner from '../components/layout/SampleBanner.vue'
 import LegacyDomainBanner from '../components/layout/LegacyDomainBanner.vue'
@@ -27,6 +27,7 @@ import { useMetamodelStore } from '../stores/metamodelStore'
 import { useToast } from '../shared/useToast'
 import { useHashSync } from '../composables/useHashSync'
 import { useViewSync } from '../composables/useViewSync'
+import { useLivePreview } from '../composables/useLivePreview'
 import { ValidationService } from '../services/ValidationService'
 import type { KnowledgeNode } from '../model/types'
 import { isImageFieldName, isImageFieldValue } from '../utils/imageDetection'
@@ -57,6 +58,7 @@ const ConsoleHubView = defineAsyncComponent(
 )
 
 const router = useRouter()
+const route = useRoute()
 const workspaceStore = useWorkspaceStore()
 const knowledgeStore = useKnowledgeStore()
 const confirmStore = useConfirmStore()
@@ -557,14 +559,26 @@ function onBeforeUnload(e: BeforeUnloadEvent): string | void {
   }
 }
 
+// ── MCP live preview ──
+// When opened with `?live=<origin>&token=<t>`, subscribe to the MCP change
+// stream so this tab mirrors the agent's mutations in read-only mode.
+const livePreview = useLivePreview()
+
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('beforeunload', onBeforeUnload)
+
+  const live = typeof route.query.live === 'string' ? route.query.live : null
+  const token = typeof route.query.token === 'string' ? route.query.token : null
+  if (live && token) {
+    livePreview.start({ live, token })
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('beforeunload', onBeforeUnload)
+  livePreview.stop()
 })
 </script>
 

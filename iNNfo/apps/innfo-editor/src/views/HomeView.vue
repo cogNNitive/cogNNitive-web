@@ -71,6 +71,12 @@ const hasDeepLink = !!(
 )
 const isDeepLinkLoading = ref(hasDeepLink)
 
+// MCP live preview: `live` + `token` mark the session as a read-only mirror.
+const hasLivePreview = typeof route.query.live === 'string' && typeof route.query.token === 'string'
+if (hasLivePreview) {
+  workspace.setPreviewReadOnly(true)
+}
+
 function getInitialDeepLinkMessage(): string {
   if (route.query.workspace) return 'Loading workspace preset...'
   if (route.query.models) return 'Loading models...'
