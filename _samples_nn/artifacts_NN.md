@@ -31,5 +31,5 @@ summary:: Structured synthesis of 1984 NYC paranormal elimination operations, cl
 status:: verified
 produced_by:: Compile Workspace Hub
 sources:: [sources/nn/nyc-paranormal-activity-report-1984.md]
-artifact_model:: artifacts/kNNowledge/executive_remediation_report_NN.md
+artifact_model:: artifacts/models/executive_remediation_report_NN.md
 tags:: [report, executive, compliance]

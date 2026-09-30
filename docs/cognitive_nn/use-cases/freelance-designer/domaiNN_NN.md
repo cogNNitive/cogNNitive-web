@@ -1,8 +1,8 @@
 ---
 level: 3
 parent_spec:
-  name: "workspace"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+  name: "domaiNN"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
 knowledge_version: "V_1-0-0"
 title: "Freelance Web Designer Workspace"
 ---
@@ -11,7 +11,7 @@ title: "Freelance Web Designer Workspace"
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
 # NN Workspace
-models_dir:: kNNowledge/
+knowledge_dir:: kNNowledge/
 sources_dir:: sources/nn/
 
 Client design project workspace capturing kickoff briefs, brand style guides, design tokens, and interactive sign-off deliverables.

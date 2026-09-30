@@ -1,8 +1,8 @@
 ---
 level: 3
 parent_spec:
-  name: "workspace"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+  name: "domaiNN"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
 knowledge_version: "V_1-0-0"
 title: "YouTube Content Creator Workspace"
 ---
@@ -11,7 +11,7 @@ title: "YouTube Content Creator Workspace"
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
 # NN Workspace
-models_dir:: kNNowledge/
+knowledge_dir:: kNNowledge/
 sources_dir:: sources/nn/
 
 Technical video production workspace connecting research papers, benchmark datasets, fact-checked video scripts, and multi-asset studio deliverables.
