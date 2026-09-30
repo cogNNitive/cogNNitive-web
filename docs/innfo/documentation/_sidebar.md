@@ -32,3 +32,4 @@
   - [Offline Consoles](offline-consoles)
   - [Console Needs & Visuals](console-needs-and-visuals)
   - [Validator Behavior](validator-behavior)
+  - [Live Model Preview](live-preview)

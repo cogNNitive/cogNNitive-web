@@ -623,6 +623,21 @@ Upon completing the creation or modification of a model, the agent MUST print th
 
 If there is an active model in context, use its `model_id` and show interactive links to its main sections.
 
+### Live preview URL (when the MCP exposes it)
+
+When the innfo-mcp process runs with `INNFO_PREVIEW=1`, every successful mutating
+tool call (`apply_change`, `sync_domain_manifest`) returns a `preview_app_url`
+field in its envelope. **Print `preview_app_url` verbatim** in addition to (not
+instead of) the static deep links above.
+
+That URL opens the editor tab as a **read-only live mirror** of the session: it
+subscribes to the MCP change stream and re-renders the affected model on every
+later mutation, preserving the current view and selected node. It is bound to
+the session — it stops working when the MCP process exits — and editing inside
+it is disabled by design, so the user changes the model by prompting the agent,
+never in the preview tab. When the field is absent, print the static deep links
+only.
+
 Example of dynamic checklist to generate:
 ```markdown
 📋 Visual Expectation Checklist in iNNfo Modeler (assuming workspace is already open):

@@ -42,8 +42,8 @@ Chain strategy: server slice first, editor slice second
 
 ## Phase 4: Skill & Documentation
 
-- [ ] 4.1 **Skill copy**: Update `skills/nn-innfo/SKILL.md` §12 to print the live `preview_app_url` next to the static deep links. `[mcp-live-preview:Requirement:Preview URL Advertisement]`
-- [ ] 4.2 **Docs**: Add a page under `docs/innfo/documentation/**` describing the live tab, the read-only contract, and the session bound. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
+- [x] 4.1 **Skill copy**: Update `skills/nn-innfo/SKILL.md` §12 to print the live `preview_app_url` next to the static deep links. `[mcp-live-preview:Requirement:Preview URL Advertisement]`
+- [x] 4.2 **Docs**: Add a page under `docs/innfo/documentation/**` describing the live tab, the read-only contract, and the session bound. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
 
 ## Phase 5: End-to-End & Gates
 
