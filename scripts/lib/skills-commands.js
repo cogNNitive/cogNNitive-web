@@ -72,16 +72,16 @@ function requestFor(url) {
 
 /**
  * Initializes a new empty skill manager state structure.
- * @returns {{ manifest: string, skills: Record<string, any>, templates: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
+ * @returns {{ manifest: string, skills: Record<string, any>, blueprints: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
  */
 function emptyState() {
-  return { manifest: getManifestUrl(), skills: {}, templates: {}, mcp: {}, console: {}, projections: {} };
+  return { manifest: getManifestUrl(), skills: {}, blueprints: {}, mcp: {}, console: {}, projections: {} };
 }
 
 /**
   * Loads the current machine skill state from JSON file, supporting legacy migrations.
   * @param {string} file
-  * @returns {{ manifest: string, skills: Record<string, any>, templates: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
+  * @returns {{ manifest: string, skills: Record<string, any>, blueprints: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
   */
 function loadState(file) {
   if (fs.existsSync(file)) {
@@ -91,7 +91,7 @@ function loadState(file) {
       return {
         manifest: data.manifest || getManifestUrl(),
         skills: data.skills || {},
-        templates: data.templates || {},
+        blueprints: data.blueprints || {},
         mcp: data.mcp || {},
         console: data.console || {},
         projections: data.projections || {},
@@ -112,7 +112,7 @@ function loadState(file) {
       const state = {
         manifest: legacyData.manifest || getManifestUrl(),
         skills: legacyData.skills || {},
-        templates: {},
+        blueprints: {},
         mcp: {},
         console: {},
         projections: {},
@@ -277,7 +277,7 @@ async function installBlueprintAtCommit(template, blueprintsDir, state) {
 
   let recordedPath = isMdFile ? flatDestPath : pkgDestPath;
 
-  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'actioNN-templates-'));
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'actioNN-blueprints-'));
   try {
     const tarball = path.join(tmpRoot, 'tmpl.tar.gz');
     const url = `https://codeload.github.com/${template.repo}/tar.gz/${template.commit}`;
@@ -326,7 +326,7 @@ async function installBlueprintAtCommit(template, blueprintsDir, state) {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
 
-  state.templates[template.name] = {
+  state.blueprints[template.name] = {
     commit: template.commit,
     version: template.version,
     path: recordedPath,
@@ -473,7 +473,7 @@ async function consentOrAbort(label, names, menu, yes) {
  */
 async function cmdStatus(args) {
   const manifestRaw = await fetchString(getManifestUrl());
-  const { skills, templates, consoleAssets } = parseManifest(manifestRaw);
+  const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
   const state = loadState(args.stateFile);
 
   const rows = [];
@@ -502,10 +502,10 @@ async function cmdStatus(args) {
     if (status === 'outdated') outdatedSkills.push(skill);
   }
 
-  for (const template of templates) {
+  for (const template of blueprints) {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
     const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
-    const entry = state.templates[template.name];
+    const entry = state.blueprints[template.name];
     let status;
     if (pathPresent) {
       if (!entry) status = 'untracked';
@@ -556,7 +556,7 @@ async function cmdStatus(args) {
       console.log(`  skill ${skill.name}: ${await fetchCompareSummary(skill, installed)}`);
     }
     for (const template of outdatedBlueprints) {
-      const installed = state.templates[template.name].commit;
+      const installed = state.blueprints[template.name].commit;
       console.log(`  template ${template.name}: ${await fetchCompareSummary(template, installed)}`);
     }
   }
@@ -569,12 +569,12 @@ async function cmdStatus(args) {
  */
 async function cmdInstall(args) {
   const manifestRaw = await fetchString(getManifestUrl());
-  const { skills, templates, consoleAssets } = parseManifest(manifestRaw);
+  const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
   const state = loadState(args.stateFile);
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
 
   const toInstallSkills = skills.filter(skill => !fs.existsSync(path.join(args.skillsDir, skill.name)));
-  const toInstallBlueprints = templates.filter(template => {
+  const toInstallBlueprints = blueprints.filter(template => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
     return !fs.existsSync(path.join(args.blueprintsDir, fileName)) && !fs.existsSync(path.join(args.blueprintsDir, template.name));
   });
@@ -659,7 +659,7 @@ async function cmdInstall(args) {
  */
 async function cmdUpdate(args) {
   const manifestRaw = await fetchString(getManifestUrl());
-  const { skills, templates, consoleAssets } = parseManifest(manifestRaw);
+  const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
   const state = loadState(args.stateFile);
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
 
@@ -672,7 +672,7 @@ async function cmdUpdate(args) {
   const isOutdatedBlueprint = (template) => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
     const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
-    const entry = state.templates[template.name];
+    const entry = state.blueprints[template.name];
     return pathPresent && (!entry || entry.commit !== template.commit);
   };
 
@@ -684,12 +684,12 @@ async function cmdUpdate(args) {
   };
 
   let selectedSkills = skills.filter(isOutdatedSkill);
-  let selectedBlueprints = templates.filter(isOutdatedBlueprint);
+  let selectedBlueprints = blueprints.filter(isOutdatedBlueprint);
   let selectedConsole = (consoleAssets || []).filter(isOutdatedConsole);
 
   if (args.positional.length > 0) {
     selectedSkills = skills.filter(s => args.positional.includes(s.name) && isOutdatedSkill(s));
-    selectedBlueprints = templates.filter(t => args.positional.includes(t.name) && isOutdatedBlueprint(t));
+    selectedBlueprints = blueprints.filter(t => args.positional.includes(t.name) && isOutdatedBlueprint(t));
     selectedConsole = (consoleAssets || []).filter(a => args.positional.includes(path.basename(a.file || a.url)) && isOutdatedConsole(a));
   }
 
@@ -856,14 +856,14 @@ async function cmdBootstrap(args) {
 
   const names = [
     ...manifest.skills.map(s => `skill:${s.name}`),
-    ...manifest.templates.map(t => `template:${t.name}`),
+    ...manifest.blueprints.map(t => `template:${t.name}`),
     ...(manifest.consoleAssets || []).map(a => `console:${path.basename(a.file || a.url)}`),
   ];
 
   const proceed = await consentOrAbort(
     'bootstrap cogNNitive ecosystem',
     names,
-    `Bootstrapping ${manifest.skills.length} skills, ${manifest.templates.length} templates, MCP servers, and console assets.\n\n[a] Bootstrap now (Recommended)\n[b] Cancel\n`,
+    `Bootstrapping ${manifest.skills.length} skills, ${manifest.blueprints.length} templates, MCP servers, and console assets.\n\n[a] Bootstrap now (Recommended)\n[b] Cancel\n`,
     args.yes
   );
   if (!proceed) return;
@@ -882,11 +882,11 @@ async function cmdBootstrap(args) {
   }
 
   // 2. Templates
-  console.log(`\nInstalling/verifying ${manifest.templates.length} template(s)...`);
-  for (const tmpl of manifest.templates) {
+  console.log(`\nInstalling/verifying ${manifest.blueprints.length} template(s)...`);
+  for (const tmpl of manifest.blueprints) {
     const fileName = tmpl.name.endsWith('.md') ? tmpl.name : `${tmpl.name}.md`;
     const tmplPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, tmpl.name));
-    const entry = state.templates[tmpl.name];
+    const entry = state.blueprints[tmpl.name];
     if (!tmplPresent || !entry || entry.commit !== tmpl.commit) {
       await installBlueprintAtCommit(tmpl, args.blueprintsDir, state);
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) @ ${tmpl.commit.slice(0, 7)}`);

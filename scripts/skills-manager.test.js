@@ -68,7 +68,7 @@ agent-bootstrap:
   fs.writeFileSync(stateFile, JSON.stringify({
     manifest: server.url,
     skills: { 'nn-router': { commit: 'd60a7109315820085ab127b70412992db6986c88', version: '2.9' } },
-    templates: {},
+    blueprints: {},
   }, null, 2), 'utf-8');
 
   try {
@@ -127,7 +127,7 @@ agent-bootstrap:
 
     const migrated = JSON.parse(fs.readFileSync(targetStateFile, 'utf-8'));
     assert(migrated.skills['nn-router'], 'Migrated state should contain skills from legacy state');
-    assert(migrated.templates, 'Migrated state should contain templates object');
+    assert(migrated.blueprints, 'Migrated state should contain blueprints object');
     console.log('✔ Legacy state file migration test passed');
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -165,7 +165,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates:
+  blueprints:
     - name: workspace
       repo: cogNNitive/cogNNitive
       path: iNNfo/specs/templates/workspace_V_0-3-0_spec_NN.md
@@ -204,7 +204,7 @@ agent-bootstrap:
     const stateContent = fs.readFileSync(targetStateFile, 'utf-8');
     assert.strictEqual(stateContent.charCodeAt(0), 123, 'State file written without BOM');
     const parsedState = JSON.parse(stateContent);
-    assert(parsedState.templates.workspace, 'State records bootstrapped template');
+    assert(parsedState.blueprints.workspace, 'State records bootstrapped template');
 
     console.log('✔ Bootstrap command with --yes test passed');
   } finally {
@@ -266,7 +266,7 @@ agent-bootstrap:
   fs.writeFileSync(stateFile, JSON.stringify({
     manifest: server.url,
     skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-    templates: {},
+    blueprints: {},
   }, null, 2), 'utf-8');
 
   try {
@@ -333,7 +333,7 @@ agent-bootstrap:
   fs.mkdirSync(foreignDir, { recursive: true });
   fs.writeFileSync(path.join(foreignDir, 'SKILL.md'), '# Foreign Content', 'utf-8');
 
-  const state = { manifest: 'dummy', skills: { 'nn-sample': { version: '1.0' } }, templates: {}, projections: {} };
+  const state = { manifest: 'dummy', skills: { 'nn-sample': { version: '1.0' } }, blueprints: {}, projections: {} };
 
   const projections = projectSkillsToAgents({
     canonicalSkillsDir,

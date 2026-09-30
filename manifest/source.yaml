@@ -54,7 +54,7 @@ skills:
     path: skills/nn-design-presets
     version: "V_1-3-0"
     ref_key: skills
-    description: cogNNitive visual design presets — palettes, typography, spacing.
+    description: cogNNitive visual design presets â€” palettes, typography, spacing.
   - name: nn-skills-lifecycle
     repo: cogNNitive/cogNNitive
     path: skills/nn-skills-lifecycle
@@ -189,7 +189,7 @@ seam_dirs:
   - name: console
     repo: cogNNitive/cogNNitive
     path: iNNfo/specs/bluepriNNts/console/
-    description: Shared console seam — artifact shell, InnfoConsole UMD runtime, and feedback JSON schema for the reviewer feedback loop.
+    description: Shared console seam â€” artifact shell, InnfoConsole UMD runtime, and feedback JSON schema for the reviewer feedback loop.
 
 # Published console bundle: the single-file runtime + renderers (visuals,
 # innfo-runtime, model-viewer, procedure-stepper) that generated console
@@ -200,17 +200,17 @@ console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
     file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
-    version: "0.4.0"
+    version: "0.5.0"
     ref_key: innfo-console
   - name: innfo-console-shell
     repo: cogNNitive/cogNNitive
     file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
-    version: "0.4.0"
+    version: "0.5.0"
     ref_key: innfo-console
   - name: innfo-console-export-cli
     repo: cogNNitive/cogNNitive
     file: scripts/export-console.mjs
-    version: "0.4.0"
+    version: "0.5.0"
     ref_key: innfo-console
 
 workflows:
@@ -233,7 +233,7 @@ workflows:
 # these zero-dependency scripts does not support `/` inside a mapping key.)
 channels:
   stable:
-    # The tag is derived as "<key>-v<version>" — never typed. skills and blueprints
+    # The tag is derived as "<key>-v<version>" â€” never typed. skills and blueprints
     # carry their own channel version (a batch number that exists nowhere else in
     # the repo); innfo-mcp and innfo-console derive theirs from the artifact
     # version declared above, because there it is the same fact, not a copy.

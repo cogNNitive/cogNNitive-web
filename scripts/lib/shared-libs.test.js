@@ -84,7 +84,7 @@ Some markdown body.`;
   assert.strictEqual(manifestData.version, '1.0');
   assert.strictEqual(manifestData.skills.length, 1);
   assert.strictEqual(manifestData.skills[0].name, 'test-skill');
-  assert.deepStrictEqual(manifestData.templates, []);
+  assert.deepStrictEqual(manifestData.blueprints, []);
   assert.deepStrictEqual(manifestData.workflows, []);
   assert.deepStrictEqual(manifestData.mcp, []);
 

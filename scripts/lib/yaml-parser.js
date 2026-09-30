@@ -190,7 +190,7 @@ function parseManifest(text) {
   if (!Array.isArray(bootstrap.skills)) {
     throw new Error('agent-bootstrap.skills is not a list');
   }
-  const templates = Array.isArray(bootstrap.templates) ? bootstrap.templates : [];
+  const blueprints = Array.isArray(bootstrap.blueprints) ? bootstrap.blueprints : [];
   const workflows = Array.isArray(bootstrap.workflows) ? bootstrap.workflows : [];
   const mcp = Array.isArray(bootstrap.mcp) ? bootstrap.mcp : [];
   const consoleAssets = Array.isArray(bootstrap['console-assets']) ? bootstrap['console-assets'] : [];
@@ -198,7 +198,7 @@ function parseManifest(text) {
     version: bootstrap.version,
     entrypoint: bootstrap.entrypoint,
     skills: bootstrap.skills,
-    templates,
+    blueprints,
     workflows,
     mcp,
     consoleAssets,
