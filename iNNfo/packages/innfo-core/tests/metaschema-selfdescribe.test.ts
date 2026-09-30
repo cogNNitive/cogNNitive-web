@@ -11,7 +11,7 @@ const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
 describe('Metaschema (Self-Description)', () => {
-  const iNNfo = readSpec('iNNfo_V_0-1-0_NN.md')
+  const iNNfo = readSpec('iNNfo_V_0-3-0_NN.md')
 
   it('the level-1 spec carries a resolvable metaschema block', () => {
     const meta = extractMetaschema(iNNfo)
@@ -53,12 +53,12 @@ describe('Metaschema (Self-Description)', () => {
       'list',
       'steps',
       'sequence',
-      'model',
+      'knowledge',
     ])
     const fieldTypeField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
       .fields!.find((f) => f.name === 'type')!
-    expect(fieldTypeField.options).toContain('model')
+    expect(fieldTypeField.options).toContain('knowledge')
     const targetTemplateField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
       .fields!.find((f) => f.name === 'target_blueprint')
@@ -201,7 +201,7 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
     const schema = extractTemplateSchemaFromContent(meta)
     const targetTemplateField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
-      .fields!.find((f) => f.name === 'target_blueprint')
+      .fields!.find((f) => f.name === 'target_template')
     expect(targetTemplateField).toBeDefined()
     expect(targetTemplateField?.type).toBe('string')
   })
