@@ -57,8 +57,8 @@ const LEVEL0_CONTENT = [
 ].join('\n')
 
 const CATALOG = {
-  generator: 'template-catalog.mjs',
-  templates: {
+  generator: 'blueprint-catalog.mjs',
+  blueprints: {
     business: {
       name: 'business',
       adopted: 'V_0-2-0',
