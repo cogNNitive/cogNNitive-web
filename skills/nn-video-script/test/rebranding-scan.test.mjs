@@ -4,8 +4,9 @@
  * skills/nn-video-script/test/rebranding-scan.test.mjs
  *
  * Automated test / lint checking:
- * 1. Active canonical procedure `generate_video_script_NN.md` contains 0 active VidGeNN tool references.
- * 2. `generate_anydeo_script_NN.md` has a clear deprecation redirect pointing to `generate_video_script_NN.md`.
+ * 1. The canonical procedure `generate_video_script_NN.md` renders through the cogNNitive Video Engine.
+ * 2. The retired deprecation-redirect procedure is gone and the video template no longer routes to it.
+ *    (The repo-wide ban on the retired product names lives in scripts/lib/brand-purge-guard.js.)
  * 3. Video template `spec_NN.md` declares `generate-video-script` and `cogNNitive Video`.
  * 4. `SKILL.md` references the cogNNitive Video Script Engine and its CLI commands.
  */
@@ -30,25 +31,20 @@ async function runTests() {
     assert.ok(fs.existsSync(canonicalProcPath), 'generate_video_script_NN.md must exist');
     const content = fs.readFileSync(canonicalProcPath, 'utf8');
 
-    // Must use cogNNitive Video Engine and not have VidGeNN as an active tool
+    // Must use the cogNNitive Video Engine
     assert.ok(content.includes('cogNNitive Video Tool'), 'Must reference cogNNitive Video Tool');
     assert.ok(content.includes('video-engine-cli.mjs'), 'Must reference video-engine-cli.mjs');
-    assert.ok(!content.includes('tool:: [[VidGeNN]]'), 'Must not declare VidGeNN as an active tool');
     console.log('✔ Canonical procedure generate_video_script_NN.md uses cogNNitive Video Engine');
   }
 
-  // 2. Deprecation redirect check
+  // 2. Retired redirect procedure check
   {
-    const legacyProcPath = path.join(
-      repoRoot,
-      'iNNfo/specs/bluepriNNts/video/procedures/generate_anydeo_script_NN.md'
-    );
-    assert.ok(fs.existsSync(legacyProcPath), 'generate_anydeo_script_NN.md must exist as a deprecation redirect');
-    const content = fs.readFileSync(legacyProcPath, 'utf8');
-
-    assert.ok(content.includes('DEPRECATED'), 'Must declare deprecation status');
-    assert.ok(content.includes('generate_video_script_NN.md'), 'Must redirect to generate_video_script_NN.md');
-    console.log('✔ Legacy procedure generate_anydeo_script_NN.md cleanly redirects to canonical procedure');
+    const procDir = path.join(repoRoot, 'iNNfo/specs/bluepriNNts/video/procedures');
+    const legacy = fs.readdirSync(procDir).filter((f) => /deprecat|legacy/i.test(f) || /^generate_(?!video_script)/.test(f));
+    assert.deepStrictEqual(legacy, [], `No retired redirect procedures may remain: ${legacy.join(', ')}`);
+    const spec = fs.readFileSync(path.join(repoRoot, 'iNNfo/specs/bluepriNNts/video/spec_NN.md'), 'utf8');
+    assert.ok(!/\(Deprecated\)/i.test(spec), 'spec_NN.md must not list deprecated procedures');
+    console.log('✔ Retired redirect procedure is removed and no longer routed');
   }
 
   // 3. spec_NN.md verification

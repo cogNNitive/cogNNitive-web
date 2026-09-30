@@ -5,15 +5,12 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-5-0"
+blueprint_version: "V_0-6-0"
 title: "Video App"
 procedures:
   - id: "generate-video-script"
     name: "Generate Video Script"
     path: "procedures/generate_video_script_NN.md"
-  - id: "generate-anydeo-script"
-    name: "Generate Anydeo Script (Deprecated)"
-    path: "procedures/generate_anydeo_script_NN.md"
   - id: "publish-web-portal"
     name: "Publish Video Web Portal"
     path: "procedures/publish_web_portal_NN.md"

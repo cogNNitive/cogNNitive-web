@@ -38,7 +38,7 @@ export const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = {
   blank: 'V_0-3-0',
   business: 'V_0-3-0',
   'business-model': 'V_0-3-0',
-  'design-presets': 'V_0-2-0',
+  'design-presets': 'V_0-3-0',
   documentation: 'V_0-3-0',
   domaiNN: 'V_0-1-0',
   innovation: 'V_0-3-0',
@@ -48,5 +48,5 @@ export const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = {
   projects: 'V_0-3-0',
   repository: 'V_0-2-0',
   sources: 'V_0-2-0',
-  video: 'V_0-5-0',
+  video: 'V_0-6-0',
 }
