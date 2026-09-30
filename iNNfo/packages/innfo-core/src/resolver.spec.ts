@@ -24,7 +24,7 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
     globalDir = path.join(tmpDir, 'global_templates')
     skillsDir = path.join(tmpDir, 'skills')
 
-    fs.mkdirSync(path.join(workspaceDir, 'bluepriNNts'), { recursive: true })
+    fs.mkdirSync(path.join(workspaceDir, 'specs', 'bluepriNNts'), { recursive: true })
     fs.mkdirSync(globalDir, { recursive: true })
     fs.mkdirSync(path.join(skillsDir, 'nn-innfo', 'bluepriNNts'), { recursive: true })
   })
@@ -35,7 +35,7 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
 
   it('resolves workspace-local template first (Precedence 1)', async () => {
     const tmplName = 'test_spec_NN'
-    fs.writeFileSync(path.join(workspaceDir, 'bluepriNNts', `${tmplName}.md`), '# NN concept: Local')
+    fs.writeFileSync(path.join(workspaceDir, 'specs', 'bluepriNNts', `${tmplName}.md`), '# NN concept: Local')
     fs.writeFileSync(path.join(globalDir, `${tmplName}.md`), '# NN concept: Global')
     fs.writeFileSync(
       path.join(skillsDir, 'nn-innfo', 'bluepriNNts', `${tmplName}.md`),
@@ -49,7 +49,7 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
     })
     expect(loc).not.toBeNull()
     expect(loc?.source).toBe('workspace')
-    expect(loc?.filePath).toBe(path.join(workspaceDir, 'bluepriNNts', `${tmplName}.md`))
+    expect(loc?.filePath).toBe(path.join(workspaceDir, 'specs', 'bluepriNNts', `${tmplName}.md`))
   })
 
   it('falls back to global templates when missing in workspace (Precedence 2)', async () => {
@@ -98,7 +98,7 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
     // The diagnostics must list the real precedence list, not an approximation:
     // every tier resolveTemplatePath walks has to appear in the searched paths.
     const checkedPaths = await getTemplateSearchPaths(missingName, opts)
-    expect(checkedPaths).toContain(path.join(workspaceDir, 'bluepriNNts', `${missingName}.md`))
+    expect(checkedPaths).toContain(path.join(workspaceDir, 'specs', 'bluepriNNts', `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(workspaceDir, `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(workspaceDir, 'specs', `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(globalDir, `${missingName}.md`))
