@@ -10,8 +10,8 @@ import { join } from 'node:path'
 import { createScenario, SIM, ROOT } from '../lib/harness.mjs'
 import { loadCore } from '../lib/core.mjs'
 
-const MODEL = join(SIM, 'fixtures', 'acme', 'models', 'Acme_analysis_NN.md')
-const TEMPLATE = join(ROOT, 'iNNfo', 'specs', 'templates', 'analysis', 'spec_NN.md')
+const MODEL = join(SIM, 'fixtures', 'acme', 'kNNowledge', 'Acme_analysis_NN.md')
+const TEMPLATE = join(ROOT, 'iNNfo', 'specs', 'bluepriNNts', 'analysis', 'spec_NN.md')
 
 export default async function run() {
   const { parseKnowledge, serializeKnowledge, applyMutation, extractBlueprintSchemaFromContent } = await loadCore()

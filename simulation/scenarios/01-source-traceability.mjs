@@ -44,7 +44,7 @@ export default async function run() {
       'Workspace parses from the canonical entrypoint',
       { entrypointPath: parsed.entrypointPath, nodes: Object.keys(parsed.nodes).length, issues: parsed.issues.length },
       (v) => v.nodes > 0 && v.issues === 0,
-      'workspace_NN.md resolves as entrypoint, models load, no parse issues',
+      'domaiNN_NN.md resolves as entrypoint, models load, no parse issues',
     )
 
     const diagnostics = validateWorkspaceSources(parsed, makeResolver(WS, extractHeadings))

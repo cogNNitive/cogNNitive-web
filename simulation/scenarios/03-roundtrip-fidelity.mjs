@@ -15,7 +15,7 @@ import { join } from 'node:path'
 import { createScenario, ROOT } from '../lib/harness.mjs'
 import { loadCore } from '../lib/core.mjs'
 
-const SAMPLES = join(ROOT, '_samples_nn', 'models')
+const SAMPLES = join(ROOT, '_samples_nn', 'kNNowledge')
 
 export default async function run() {
   const { parseKnowledge, serializeKnowledge } = await loadCore()

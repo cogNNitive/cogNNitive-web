@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "workspace"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Acme Simulation Workspace"
 ---
 
@@ -13,14 +13,14 @@ title: "Acme Simulation Workspace"
 # NN Workspace
 
 ## NN Workspace: Acme Simulation Workspace
-models_dir:: models/
+knowledge_dir:: kNNowledge/
 sources_dir:: sources/nn/
 Synthetic workspace used by the simulation to exercise source ingestion, citation traceability and model mutation end to end.
 
 # NN Models
 
 ## NN Models: Acme Operational Analysis
-path:: models/Acme_analysis_NN.md
+path:: kNNowledge/Acme_analysis_NN.md
 template:: analysis
 status:: active
 author:: Simulation Harness

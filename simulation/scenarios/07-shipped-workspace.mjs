@@ -13,7 +13,7 @@ import { createScenario, ROOT } from '../lib/harness.mjs'
 import { loadCore } from '../lib/core.mjs'
 
 const WS = join(ROOT, '_samples_nn')
-const TEMPLATES = join(ROOT, 'iNNfo', 'specs', 'templates')
+const TEMPLATES = join(ROOT, 'iNNfo', 'specs', 'bluepriNNts')
 
 export default async function run() {
   const {
@@ -63,10 +63,10 @@ export default async function run() {
     )
 
     // Per-file document hygiene, the same pass the editor and MCP both run.
-    const files = (await readdir(join(WS, 'models'))).filter((f) => f.endsWith('.md')).sort()
+    const files = (await readdir(join(WS, 'kNNowledge'))).filter((f) => f.endsWith('.md')).sort()
     const perFile = []
     for (const f of files) {
-      const report = validateDocument(await readFile(join(WS, 'models', f), 'utf-8'), { fileName: f })
+      const report = validateDocument(await readFile(join(WS, 'kNNowledge', f), 'utf-8'), { fileName: f })
       perFile.push({ file: f, errors: report.errors.map((e) => e.code ?? e.path), warnings: report.warnings.length })
     }
     s.expect(
@@ -104,7 +104,7 @@ export default async function run() {
     // The rule is "do not advertise what you do not ship", so read what the
     // workspace ACTUALLY declares rather than assuming a fixed artifact: a
     // workspace that declares none trivially satisfies it.
-    const workspaceDoc = await readFile(join(WS, 'workspace_NN.md'), 'utf-8')
+    const workspaceDoc = await readFile(join(WS, 'domaiNN_NN.md'), 'utf-8')
     const declaredArtifacts = [...workspaceDoc.matchAll(/^path:: (artifacts\/\S+)$/gm)].map((m) => m[1])
     const missingArtifacts = declaredArtifacts.filter((p) => !existsSync(join(WS, p)))
     s.expect(

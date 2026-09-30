@@ -12,8 +12,8 @@
       "steps": [
         {
           "label": "Workspace parses from the canonical entrypoint",
-          "expectation": "workspace_NN.md resolves as entrypoint, models load, no parse issues",
-          "actual": "{\n  \"entrypointPath\": \"workspace_NN.md\",\n  \"nodes\": 8,\n  \"issues\": 0\n}",
+          "expectation": "domaiNN_NN.md resolves as entrypoint, models load, no parse issues",
+          "actual": "{\n  \"entrypointPath\": \"domaiNN_NN.md\",\n  \"nodes\": 8,\n  \"issues\": 0\n}",
           "outcome": "PASS",
           "error": null
         },
@@ -55,7 +55,7 @@
         {
           "label": "Element carrying the citation",
           "expectation": null,
-          "actual": "{\n  \"name\": \"Demand Grows In Q4\",\n  \"fields\": {\n    \"sources\": {\n      \"value\": [\n        \"market-report-2026.md@## Q4 Outlook\"\n      ],\n      \"editAttribution\": {\n        \"author\": {\n          \"kind\": \"system\",\n          \"id\": \"parser\"\n        },\n        \"timestamp\": \"2026-09-17T05:48:58.757Z\"\n      }\n    }\n  }\n}",
+          "actual": "{\n  \"name\": \"Demand Grows In Q4\",\n  \"fields\": {\n    \"sources\": {\n      \"value\": [\n        \"market-report-2026.md@## Q4 Outlook\"\n      ],\n      \"editAttribution\": {\n        \"author\": {\n          \"kind\": \"system\",\n          \"id\": \"parser\"\n        },\n        \"timestamp\": \"2026-09-30T11:16:27.774Z\"\n      }\n    }\n  }\n}",
           "outcome": "OBSERVED",
           "error": null
         },
@@ -195,7 +195,7 @@
         {
           "label": "A no-op save leaves every shipped model byte-identical",
           "expectation": "parse -> serialize is the identity on canonical, spec-conformant files",
-          "actual": "[\n  {\n    \"file\": \"Ghostbusters_analysis_NN.md\",\n    \"identical\": true,\n    \"lines\": \"88->88\"\n  },\n  {\n    \"file\": \"Ghostbusters_business-model_NN.md\",\n    \"identical\": true,\n    \"lines\": \"103->103\"\n  },\n  {\n    \"file\": \"Ghostbusters_business_NN.md\",\n    \"identical\": true,\n    \"lines\": \"946->946\"\n  },\n  {\n    \"file\": \"Ghostbusters_documentation_NN.md\",\n    \"identical\": true,\n    \"lines\": \"150->150\"\n  },\n  {\n    \"file\": \"Ghostbusters_innovation_NN.md\",\n    \"identical\": true,\n    \"lines\": \"199->199\"\n  },\n  {\n    \"file\": \"Ghostbusters_metrics_NN.md\",\n    \"identical\": true,\n    \"lines\": \"201->201\"\n  },\n  {\n    \"file\": \"Ghostbusters_organization_NN.md\",\n    \"identical\": true,\n    \"lines\": \"197->197\"\n  },\n  {\n    \"file\": \"Ghostbusters_procedures_NN.md\",\n    \"identical\": true,\n    \"lines\": \"234->234\"\n  },\n  {\n    \"file\": \"Ghostbusters_projects_NN.md\",\n    \"identical\": true,\n    \"lines\": \"186->186\"\n  },\n  {\n    \"file\": \"Ghostbusters_repository_NN.md\",\n    \"identical\": true,\n    \"lines\": \"59->59\"\n  },\n  {\n    \"file\": \"Ghostbusters_video-generator_NN.md\",\n    \"identical\": true,\n    \"lines\": \"66->66\"\n  }\n]",
+          "actual": "[\n  {\n    \"file\": \"Ghostbusters_analysis_NN.md\",\n    \"identical\": true,\n    \"lines\": \"88->88\"\n  },\n  {\n    \"file\": \"Ghostbusters_business-model_NN.md\",\n    \"identical\": true,\n    \"lines\": \"103->103\"\n  },\n  {\n    \"file\": \"Ghostbusters_business_NN.md\",\n    \"identical\": true,\n    \"lines\": \"946->946\"\n  },\n  {\n    \"file\": \"Ghostbusters_design-presets_NN.md\",\n    \"identical\": true,\n    \"lines\": \"54->54\"\n  },\n  {\n    \"file\": \"Ghostbusters_documentation_NN.md\",\n    \"identical\": true,\n    \"lines\": \"150->150\"\n  },\n  {\n    \"file\": \"Ghostbusters_innovation_NN.md\",\n    \"identical\": true,\n    \"lines\": \"199->199\"\n  },\n  {\n    \"file\": \"Ghostbusters_metrics_NN.md\",\n    \"identical\": true,\n    \"lines\": \"201->201\"\n  },\n  {\n    \"file\": \"Ghostbusters_organization_NN.md\",\n    \"identical\": true,\n    \"lines\": \"197->197\"\n  },\n  {\n    \"file\": \"Ghostbusters_procedures_NN.md\",\n    \"identical\": true,\n    \"lines\": \"234->234\"\n  },\n  {\n    \"file\": \"Ghostbusters_projects_NN.md\",\n    \"identical\": true,\n    \"lines\": \"186->186\"\n  },\n  {\n    \"file\": \"Ghostbusters_repository_NN.md\",\n    \"identical\": true,\n    \"lines\": \"59->59\"\n  },\n  {\n    \"file\": \"Ghostbusters_video_NN.md\",\n    \"identical\": true,\n    \"lines\": \"26->26\"\n…",
           "outcome": "PASS",
           "error": null
         },
@@ -223,7 +223,7 @@
         {
           "label": "Second-pass stability (is the canonical form at least a fixed point?)",
           "expectation": null,
-          "actual": "[\n  \"Ghostbusters_analysis_NN.md\",\n  \"Ghostbusters_business-model_NN.md\",\n  \"Ghostbusters_business_NN.md\",\n  \"Ghostbusters_documentation_NN.md\",\n  \"Ghostbusters_innovation_NN.md\"\n]",
+          "actual": "[\n  \"Ghostbusters_analysis_NN.md\",\n  \"Ghostbusters_business-model_NN.md\",\n  \"Ghostbusters_business_NN.md\",\n  \"Ghostbusters_design-presets_NN.md\",\n  \"Ghostbusters_documentation_NN.md\"\n]",
           "outcome": "OBSERVED",
           "error": null
         },
@@ -349,7 +349,7 @@
         {
           "label": "A newly added model file is registered in the manifest",
           "expectation": "one `added` change and a new `## NN Models:` entry",
-          "actual": "{\n  \"changes\": [\n    {\n      \"kind\": \"added\",\n      \"path\": \"models/Acme_metrics_NN.md\",\n      \"name\": \"Acme Operational Metrics\"\n    }\n  ],\n  \"containsNew\": true\n}",
+          "actual": "{\n  \"changes\": [\n    {\n      \"kind\": \"added\",\n      \"path\": \"kNNowledge/Acme_metrics_NN.md\",\n      \"name\": \"Acme Operational Metrics\"\n    }\n  ],\n  \"containsNew\": true\n}",
           "outcome": "PASS",
           "error": null
         },
@@ -363,7 +363,7 @@
         {
           "label": "A human-owned entry whose file is gone is reported, never silently deleted",
           "expectation": "the tool reports it rather than editing something it does not own",
-          "actual": "[\n  {\n    \"kind\": \"skipped-not-owned\",\n    \"path\": \"models/Acme_analysis_NN.md\",\n    \"name\": \"Acme Operational Analysis\",\n    \"reason\": \"file missing, entry not tool-owned\"\n  }\n]",
+          "actual": "[\n  {\n    \"kind\": \"skipped-not-owned\",\n    \"path\": \"kNNowledge/Acme_analysis_NN.md\",\n    \"name\": \"Acme Operational Analysis\",\n    \"reason\": \"file missing, entry not tool-owned\"\n  }\n]",
           "outcome": "PASS",
           "error": null
         },
@@ -398,7 +398,7 @@
         {
           "label": "The shipped workspace parses without issues",
           "expectation": "all sample models load with no error or warning issues — this is the first thing a new user sees",
-          "actual": "{\n  \"entrypoint\": \"workspace_NN.md\",\n  \"models\": 18,\n  \"actionableIssueCount\": 0,\n  \"infoNotes\": 26,\n  \"issueKinds\": {}\n}",
+          "actual": "{\n  \"entrypoint\": \"domaiNN_NN.md\",\n  \"models\": 18,\n  \"actionableIssueCount\": 0,\n  \"infoNotes\": 28,\n  \"issueKinds\": {}\n}",
           "outcome": "PASS",
           "error": null
         },
@@ -412,7 +412,7 @@
         {
           "label": "Every citation in the shipped workspace resolves",
           "expectation": "a new user opening the sample sees no broken provenance",
-          "actual": "[]",
+          "actual": "[\n  {\n    \"code\": \"KU_DEPRECATED_HASH\",\n    \"severity\": \"warning\",\n    \"path\": \"artifacts_NN.md#Workspace Hub Interactive Dashboard.sources\"\n  },\n  {\n    \"code\": \"KU_DEPRECATED_HASH\",\n    \"severity\": \"warning\",\n    \"path\": \"artifacts_NN.md#Executive Remediation Report 1984.sources\"\n  }\n]",
           "outcome": "PASS",
           "error": null
         },
@@ -442,7 +442,7 @@
     {
       "id": "S08",
       "title": "Consuming innfo-core from plain Node",
-      "intent": "An integrator runs `npm i @cognnitive/innfo-core` and writes `import { parseModel } from ...` in a Node script.",
+      "intent": "An integrator runs `npm i @cognnitive/innfo-core` and writes `import { parseKnowledge } from ...` in a Node script.",
       "steps": [
         {
           "label": "The published package imports under plain Node ESM",
@@ -454,7 +454,7 @@
         {
           "label": "Once bundled, the public API surface is complete and usable",
           "expectation": "the API itself is fine — only the module format blocks plain-Node consumption",
-          "actual": "{\n  \"exportCount\": 113,\n  \"sample\": [\n    \"parseModel\",\n    \"serializeModel\",\n    \"applyMutation\",\n    \"validateDocument\"\n  ]\n}",
+          "actual": "{\n  \"exportCount\": 126,\n  \"sample\": [\n    \"parseKnowledge\",\n    \"serializeKnowledge\",\n    \"applyMutation\",\n    \"validateDocument\"\n  ]\n}",
           "outcome": "PASS",
           "error": null
         },
