@@ -8,7 +8,7 @@ Defines the programmatic rendering and media synthesis engine (`cognnitive-video
 
 ### Requirement: Programmatic Remotion Scene Compilation
 
-The system MUST provide a scene compiler that transforms VUS / markdown video scripts into a valid Remotion Composition Manifest. The compiler MUST generate frame-accurate sequence tracks, transitions, lower-thirds (`lowerThirds`), kinetic typography titles (`kineticTitles`), and concept callouts (`conceptCallouts`).
+The system MUST provide a scene compiler that transforms VUS / markdown video scripts into a valid Remotion Composition Manifest. The compiler MUST generate frame-accurate sequence tracks, transitions, lower-thirds (`lowerThirds`), kinetic typography titles (`kineticTitles`), and concept callouts (`conceptCallouts`). Text layers are authored with the canonical VUS field `layer_text_content`; the compiler MUST source overlay text from `layer_text_content` and MUST NOT read the legacy `layer_generation_text` field or a `text` fallback.
 
 #### Scenario: Compile multi-scene VUS script into Remotion composition manifest
 - GIVEN a valid VUS script containing narrative scenes and visual cues
@@ -19,6 +19,11 @@ The system MUST provide a scene compiler that transforms VUS / markdown video sc
 - GIVEN a script specifying lower thirds, kinetic titles, and concept callouts
 - WHEN the scene compiler compiles the script into the manifest
 - THEN every visual overlay element contains calculated start frame, duration in frames, and component configuration matching the script definitions
+
+#### Scenario: Text layer content resolves into overlay props
+- GIVEN a text layer authored with `layer_text_content`
+- WHEN the scene compiler builds the matching overlay (lowerThird, kineticTitle, or conceptCallout)
+- THEN the overlay's title/heading/label equals the `layer_text_content` value, never falling back to the layer name
 
 ---
 

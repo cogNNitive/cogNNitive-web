@@ -41,7 +41,7 @@ Learn how artificial neural networks process multidimensional vectors.
 @@ Title
 - layer_type: text
 - layer_level: 50
-- layer_generation_text: "NEURAL NETWORKS"
+- layer_text_content: "NEURAL NETWORKS"
 
 ## Scene 2: Deep Dive
 @base Architecture
