@@ -743,3 +743,35 @@ and whether it best fits **Projects** (built on the SDK) vs **Agents**/**Plugins
 **Deferred reason:** maintainer decision 2026-09-30 — the project is not finished yet; revisit after launch, once the public docs surface is stable enough to mirror.
 
 **Suggested trigger:** `/sdd-explore docs7-external-distribution` (after project launch).
+
+---
+
+## `refactor/identifier-migration` — mechanical identifier migration (`template` → `app` identifiers) *(deferred)*
+
+**Type:** refactor · **Size:** large · **Status:** deferred
+
+**Why:** the user-facing vocabulary pass made `app` canonical and kept resolution-bearing identifiers stable as documented deprecated aliases; the actual identifier migration is intentionally deferred because paths, URLs, tool names, manifest keys and version tags all carry resolution semantics.
+
+**Behaviour (as requested):** mechanically migrate the identifiers recorded in `iNNfo/specs/vocabulary.json` under `terms.app.planned_migrations`: `specs/templates/ → specs/apps/`, MCP tool names (e.g. `get_template`), the manifest `templates:` key, and `templates-v*` tags — with a coordinated alias/version strategy so existing pins keep resolving.
+
+**Approach:** follow the deprecation lifecycle from the canonical-vocabulary dictionary; sequence after the user-facing rename; never a blind find-and-replace. Requires coordinated updates across the catalog, `manifest/source.yaml`, `_spec_NN.md` parent pointers, hydration paths, and the editor resolver constants.
+
+**Risks:** large; touches resolution across editor, MCP and skills. Do not attempt as one change; reuse the `planned_migrations` list as the checklist.
+
+**Note (2026-09-30):** the in-flight `2026-09-29-nn-level-nomenclature-rename` change (S7 path/manifest move, T internal identifiers) is already executing this migration — reconcile and close this item when that change archives.
+
+**Suggested trigger:** `/sdd-explore identifier-migration`.
+
+---
+
+## `feature/innfo-uri-protocol` — `innfo://` custom URI scheme and deep-linking parser *(deferred)*
+
+**Type:** functional · **Size:** medium · **Status:** deferred
+
+**Why:** the iNNfo ecosystem can benefit from a native internal URI scheme (`innfo://`) and deep-linking for cross-referencing models, elements, and procedures across workspaces, avoiding manual modal path pasting.
+
+**Behaviour (as requested):** define and implement the `innfo://` scheme (`innfo://model/<id>`, `innfo://element/<id>`, `innfo://procedure/<id>`), wire custom URI interception and routing in both `innfo-editor` and the static console/runtime views, and register the OS-level protocol handler.
+
+**Approach:** establish a regex/parser utility in `innfo-core` to parse `innfo://` URIs, intercept click events on matching anchors in `innfo-editor` and the consoles, and route them to the internal model navigation engine.
+
+**Suggested trigger:** `/sdd-explore innfo-uri-protocol`.
