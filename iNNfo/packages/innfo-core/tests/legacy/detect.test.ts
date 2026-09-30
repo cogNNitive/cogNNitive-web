@@ -68,8 +68,8 @@ describe('detectLegacy (Task 5.1)', () => {
 
   it('detects legacy entrypoint: workspace_NN.md', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\n---\n# Workspace\n',
-      'kNNowledge/sample_NN.md': '---\nknowledge_version: "0.1.0"\n---\n',
+      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\n---\n# Workspace\n',
+      'models/sample_NN.md': '---\nmodel_version: "0.1.0"\n---\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
@@ -82,8 +82,8 @@ describe('detectLegacy (Task 5.1)', () => {
 
   it('detects legacy entrypoint: overview-root *_base_NN.md (OVERVIEW_ROOT_RE)', async () => {
     const reader = createMemoryDomainReader({
-      'Ghostbusters_V_0-1-0_base_NN.md': '---\nblueprint_version: "0.1.0"\n---\n# Overview\n',
-      'kNNowledge/sample_NN.md': '---\nknowledge_version: "0.1.0"\n---\n',
+      'Ghostbusters_V_0-1-0_base_NN.md': '---\ntemplate_version: "0.1.0"\n---\n# Overview\n',
+      'models/sample_NN.md': '---\nmodel_version: "0.1.0"\n---\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
@@ -94,26 +94,26 @@ describe('detectLegacy (Task 5.1)', () => {
     }
   })
 
-  it('detects legacy folders: kNNowledge/ and specs/bluepriNNts/', async () => {
+  it('detects legacy folders: models/ and specs/templates/', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\n---\n',
-      'kNNowledge/core_NN.md': '# Core\n',
-      'specs/bluepriNNts/base/spec_NN.md': '# Base Spec\n',
+      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\n---\n',
+      'models/core_NN.md': '# Core\n',
+      'specs/templates/base/spec_NN.md': '# Base Spec\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
     if (result.kind === 'legacy') {
       const folderSignals = result.signals.filter((s) => s.type === 'legacy-folder')
       const details = folderSignals.map((s) => s.detail)
-      expect(details.some((d) => d.includes('kNNowledge/'))).toBe(true)
-      expect(details.some((d) => d.includes('specs/bluepriNNts/'))).toBe(true)
+      expect(details.some((d) => d.includes('models/'))).toBe(true)
+      expect(details.some((d) => d.includes('specs/templates/'))).toBe(true)
     }
   })
 
-  it('detects legacy frontmatter keys (knowledge_version, blueprint_version, target_blueprint, etc.)', async () => {
+  it('detects legacy frontmatter keys (model_version, template_version, target_template, etc.)', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\ntemplate_name: "domaiNN"\nmodels_dir: "models"\ntemplates_dir: "templates"\n---\n',
-      'kNNowledge/item_NN.md': '---\nknowledge_version: "0.1.0"\n---\n',
+      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\ntemplate_name: "domaiNN"\nmodels_dir: "models"\ntemplates_dir: "templates"\n---\n',
+      'models/item_NN.md': '---\nmodel_version: "0.1.0"\n---\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
@@ -123,36 +123,36 @@ describe('detectLegacy (Task 5.1)', () => {
     }
   })
 
-  it('detects legacy keyword: type:: knowledge', async () => {
+  it('detects legacy keyword: type:: model', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\n---\n',
-      'specs/bluepriNNts/custom/spec_NN.md': '# Spec\n\n- Model Definition\n  - type:: knowledge\n',
+      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\n---\n',
+      'specs/templates/custom/spec_NN.md': '# Spec\n\n- Model Definition\n  - type:: model\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
     if (result.kind === 'legacy') {
       const keywordSignal = result.signals.find((s) => s.type === 'legacy-keyword')
       expect(keywordSignal).toBeDefined()
-      expect(keywordSignal?.detail).toContain('type:: knowledge')
+      expect(keywordSignal?.detail).toContain('type:: model')
     }
   })
 
-  it('detects legacy parent_spec url containing /specs/bluepriNNts/', async () => {
+  it('detects legacy parent_spec url containing /specs/templates/', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\nparent_spec:\n  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/bluepriNNts/workspace/spec_NN.md"\n---\n',
+      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\nparent_spec:\n  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/templates/workspace/spec_NN.md"\n---\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
     if (result.kind === 'legacy') {
       const parentSignal = result.signals.find((s) => s.type === 'legacy-parent-spec')
       expect(parentSignal).toBeDefined()
-      expect(parentSignal?.detail).toContain('/specs/bluepriNNts/')
+      expect(parentSignal?.detail).toContain('/specs/templates/')
     }
   })
 
   it('detects legacy L1 parent below V_0-3-0', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\nparent_spec:\n  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"\n---\n',
+      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\nparent_spec:\n  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"\n---\n',
     })
     const result = await detectLegacy(reader)
     expect(result.kind).toBe('legacy')
@@ -175,7 +175,7 @@ describe('detectLegacy (Task 5.1)', () => {
   it('detects mixed domain when both legacy and canonical elements coexist', async () => {
     const reader = createMemoryDomainReader({
       'domaiNN_NN.md': '---\nblueprint_version: "0.1.0"\n---\n',
-      'kNNowledge/legacy_NN.md': '---\nknowledge_version: "0.1.0"\n---\n',
+      'models/legacy_NN.md': '---\nmodel_version: "0.1.0"\n---\n',
       'kNNowledge/current_NN.md': '---\nknowledge_version: "0.1.0"\n---\n',
     })
     const result = await detectLegacy(reader)

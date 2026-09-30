@@ -1,23 +1,23 @@
 ---
 spec_version: "V_0-2-5"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-blueprint_version: "V_0-2-5"
+template_version: "V_0-2-5"
 title: "Business App"
 includes:
   - name: "business-model"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business-model/spec_NN.md"
   - name: "analysis"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/analysis/spec_NN.md"
   - name: "organization"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/organization/spec_NN.md"
   - name: "projects"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/projects/spec_NN.md"
   - name: "metrics"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
 relationship_types:
   hierarchy:
     enabled: true
@@ -137,8 +137,8 @@ To create a business model, create a level 3 FILE mode document with:
 level: 3
 parent_spec:
   name: "business_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
-knowledge_version: "V_x-y-z"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
+model_version: "V_x-y-z"
 title: "<Your Business Name>"
 ---
 
@@ -168,7 +168,7 @@ Concept / Field / Marker / Matrix Definition to validate and render the model.
 ### Canonical Sample
 
 The official sample for this template is
-`specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-3_business_NN.md` — the
+`specs/templates/business/samples/Ghostbusters_V_0-2-3_business_NN.md` — the
 `V_0-2-1` Ghostbusters sample re-pointed at this version.
 `Ghostbusters_V_0-2-1_business_NN.md` is kept for consumers still pinned to
 `V_0-2-1`. `V_0-2-1` added the `Compile Strategic Master` procedure; `V_0-2-2`
@@ -190,7 +190,7 @@ composition.
 # From the Ghostbusters V_0-2-3 sample:
 parent_spec:
   name: "business_V_0-2-3"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
 
 # This template's parent:
 parent_spec:

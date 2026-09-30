@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: workspace
   url: templates/workspace_spec_NN.md
-knowledge_version: V_0-1-0
+model_version: V_0-1-0
 title: Solaris Technologies Workspace
 ---
 
@@ -21,7 +21,7 @@ title: Solaris Technologies Workspace
 # NN Workspace
 name:: Solaris Technologies Workspace
 environment:: development
-models_dir:: kNNowledge/
+models_dir:: models/
 sources_dir:: sources/nn/
 templates_dir:: templates/
 skills_dir:: skills/
@@ -37,7 +37,7 @@ category:: Strategy
 # NN Models
 
 ## NN Models: Solaris Core Business Model
-path:: kNNowledge/solaris_business_NN.md
+path:: models/solaris_business_NN.md
 template:: business
 status:: active
 author:: Chief Architect

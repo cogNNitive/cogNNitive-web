@@ -1,12 +1,12 @@
 ---
 spec_version: "V_0-2-1"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
 title: "Workspace Specification App"
-blueprint_version: "V_0-5-1"
+template_version: "V_0-5-1"
 relationship_types:
   hierarchy:
     enabled: true
@@ -46,31 +46,31 @@ weight:: 100
 
 ## NN Concept Definition: Models
 icon:: file-symlink
-type:: knowledge
+type:: model
 color:: purple
 weight:: 95
 
 ## NN Concept Definition: Templates
 icon:: copy
-type:: knowledge
+type:: model
 color:: grey
 weight:: 90
 
 ## NN Concept Definition: Specs
 icon:: book-open
-type:: knowledge
+type:: model
 color:: grey
 weight:: 85
 
 ## NN Concept Definition: Sources
 icon:: file-input
-type:: knowledge
+type:: model
 color:: grey
 weight:: 80
 
 ## NN Concept Definition: Procedures
 icon:: workflow
-type:: knowledge
+type:: model
 color:: grey
 weight:: 75
 
@@ -82,7 +82,7 @@ weight:: 72
 
 ## NN Concept Definition: Artifacts
 icon:: file-output
-type:: knowledge
+type:: model
 color:: grey
 weight:: 70
 
@@ -122,7 +122,7 @@ description:: Execution context of the workspace.
 ## NN Field Definition: models_dir
 concept:: Workspace
 type:: string
-description:: Base relative path for domain models in the workspace (default: kNNowledge/).
+description:: Base relative path for domain models in the workspace (default: models/).
 
 ## NN Field Definition: sources_dir
 concept:: Workspace
@@ -143,7 +143,7 @@ description:: Base relative path for agent skills in the workspace (default: ski
 
 ## NN Field Definition: path
 concept:: Specs
-type:: knowledge
+type:: model
 description:: Workspace-relative path to the formal specification document (e.g. specs/iNNfo_V_0-2-1_NN.md).
 
 ## NN Field Definition: level
@@ -156,7 +156,7 @@ description:: Abstraction level of the spec (0=primitive meta-meta, 1=meta-templ
 
 ## NN Field Definition: path
 concept:: Templates
-type:: knowledge
+type:: model
 description:: Workspace-relative path to the template spec_NN.md file (e.g. templates/business/spec_NN.md).
 
 ## NN Field Definition: category
@@ -168,7 +168,7 @@ description:: Domain classification or strategic focus of the template.
 
 ## NN Field Definition: path
 concept:: Models
-type:: knowledge
+type:: model
 description:: Workspace-relative path to the referenced model file.
 
 ## NN Field Definition: template
@@ -203,14 +203,14 @@ description:: The Procedure run that produced this model (PROV wasGeneratedBy).
 
 ## NN Field Definition: path
 concept:: Sources
-type:: knowledge
+type:: model
 description:: Workspace-relative path to the sources catalog model document (e.g. sources_NN.md).
 
 <!-- Procedures fields: link to procedures catalog model -->
 
 ## NN Field Definition: path
 concept:: Procedures
-type:: knowledge
+type:: model
 description:: Workspace-relative path to the procedures catalog model document (e.g. procedures_NN.md).
 
 <!-- Executions fields: pipeline execution traces and provenance runs -->
@@ -244,7 +244,7 @@ description:: Output models or deliverables produced during the execution.
 
 ## NN Field Definition: path
 concept:: Artifacts
-type:: knowledge
+type:: model
 description:: Workspace-relative path to the artifacts catalog model document (e.g. artifacts_NN.md).
 
 <!-- Skills fields: link to AI agent skills -->
@@ -311,12 +311,12 @@ color:: green
 A workspace manifest is the single source of truth for workspace topology, execution context, and data lineage:
 * **Workspace** sets directory conventions and environment parameters (`models_dir`, `sources_dir`, `templates_dir`, `skills_dir`).
 * **Models** links to domain model files with metadata and derivation edges.
-* **Templates** links to available template packages via `type:: knowledge`.
-* **Specs** links to formal grammar specifications via `type:: knowledge`.
-* **Sources** links to `sources_NN.md` catalog via `type:: knowledge`.
-* **Procedures** links to `procedures_NN.md` catalog via `type:: knowledge`.
+* **Templates** links to available template packages via `type:: model`.
+* **Specs** links to formal grammar specifications via `type:: model`.
+* **Sources** links to `sources_NN.md` catalog via `type:: model`.
+* **Procedures** links to `procedures_NN.md` catalog via `type:: model`.
 * **Executions** logs append-only execution history and provenance traces via `type:: list`.
-* **Artifacts** links to `artifacts_NN.md` catalog via `type:: knowledge`.
+* **Artifacts** links to `artifacts_NN.md` catalog via `type:: model`.
 * **Skills** links to agent capability definitions (`SKILL.md`) via `type:: file`.
 * **Tools** links to executable maintenance scripts via `type:: file`.
 * **Tags** provides a centralized taxonomy catalog (`color`, `icon`, `description`) used across the workspace.
@@ -361,14 +361,14 @@ The Workspace concept holds environment settings, directory layout paths, and ex
 Inventory of domain models (Level 3) belonging to the workspace.
 
 ### Description
-Lists all active, draft, or archived domain model documents in `kNNowledge/`, tracking author attribution, template conformance, and PROV derivation lineage.
+Lists all active, draft, or archived domain model documents in `models/`, tracking author attribution, template conformance, and PROV derivation lineage.
 
 ### Methodologies
 - Entity lifecycle tracking (`draft`, `active`, `archived`).
 - W3C PROV-DM derivation linking to primary Sources and generating Procedures.
 
 ### Prompts
-- "Scan and catalog all domain models under kNNowledge/ with their template bindings."
+- "Scan and catalog all domain models under models/ with their template bindings."
 
 ## Templates
 
@@ -425,7 +425,7 @@ Points to `procedures_NN.md` containing executable transformation workflows, aut
 
 ### Methodologies
 - **Workspace In-Place Migration & Upgrade Procedure**:
-  1. *Discovery*: Scan `kNNowledge/`, `specs/`, `sources/`, `procedures/` for legacy frontmatters.
+  1. *Discovery*: Scan `models/`, `specs/`, `sources/`, `procedures/` for legacy frontmatters.
   2. *Normalization*: Strip invalid `# NN index` from Level 3 models, format text concepts without headings, deduplicate slugs.
   3. *Re-binding*: Point `parent_spec` to canonical unified URLs and bind local templates.
   4. *Synthesis & Validation*: Regenerate `workspace_NN.md` manifest and validate with 0 errors/warnings.
@@ -515,8 +515,8 @@ Declares workspace-wide taxonomy tags, hex colors, and icon identifiers used to 
 level: 3
 parent_spec:
   name: "workspace"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
-knowledge_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
+model_version: "V_0-1-0"
 title: "<Workspace Name>"
 ---
 
@@ -530,7 +530,7 @@ Description of the workspace: its purpose, scope, and conventions.
 # NN Models
 
 ## NN Models: Core Business Model
-path:: kNNowledge/business_NN.md
+path:: models/business_NN.md
 template:: business
 status:: active
 author:: Lead Architect

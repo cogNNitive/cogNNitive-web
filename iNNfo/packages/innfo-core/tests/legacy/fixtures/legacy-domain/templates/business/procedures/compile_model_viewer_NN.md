@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
+model_version: "V_0-1-0"
 title: "Compile Model Viewer Procedure"
 ---
 
@@ -34,7 +34,7 @@ output:: [[Loaded Shell]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Fetch the reference shell from `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/assets/model_viewer.html` (all CSS inline; the vanilla-JS renderer lives in `console/render-model-viewer.js` loaded via static `<script src>` tags). It contains two empty blocks — `<script type="application/json" id="innfo-schema">` and `<script type="application/json" id="innfo-model">` — that this procedure populates.
+Fetch the reference shell from `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/assets/model_viewer.html` (all CSS inline; the vanilla-JS renderer lives in `console/render-model-viewer.js` loaded via static `<script src>` tags). It contains two empty blocks — `<script type="application/json" id="innfo-schema">` and `<script type="application/json" id="innfo-model">` — that this procedure populates.
 
 ## NN Work: Resolve Model Schema
 parent:: [[Compile Model Viewer]]
@@ -100,7 +100,7 @@ The active level 3 model conforming to `business_V_0-2-3` (or any template that 
 ## NN Artifact: Model Viewer Reference Shell
 type:: asset
 format:: html
-The static consultation shell at `iNNfo/specs/bluepriNNts/business/assets/model_viewer.html`: inline CSS, two empty JSON blocks, and the template-agnostic renderer in `console/render-model-viewer.js` (UMD `window.InnfoModelViewer`, static script tags only) — it renders whatever schema and model data it is given.
+The static consultation shell at `iNNfo/specs/templates/business/assets/model_viewer.html`: inline CSS, two empty JSON blocks, and the template-agnostic renderer in `console/render-model-viewer.js` (UMD `window.InnfoModelViewer`, static script tags only) — it renders whatever schema and model data it is given.
 
 ## NN Artifact: Loaded Shell
 type:: data

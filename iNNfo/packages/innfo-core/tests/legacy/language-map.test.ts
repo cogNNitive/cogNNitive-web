@@ -9,13 +9,13 @@ describe('language-map (Task 5.4)', () => {
       expect(migratePath('Ghostbusters_V_0-1-0_base_NN.md')).toBe('domaiNN_NN.md')
     })
 
-    it('migrates kNNowledge/ -> kNNowledge/', () => {
-      expect(migratePath('kNNowledge/core_NN.md')).toBe('kNNowledge/core_NN.md')
-      expect(migratePath('kNNowledge/sub/item_NN.md')).toBe('kNNowledge/sub/item_NN.md')
+    it('migrates models/ -> kNNowledge/', () => {
+      expect(migratePath('models/core_NN.md')).toBe('kNNowledge/core_NN.md')
+      expect(migratePath('models/sub/item_NN.md')).toBe('kNNowledge/sub/item_NN.md')
     })
 
-    it('migrates specs/bluepriNNts/ and templates/ -> specs/bluepriNNts/', () => {
-      expect(migratePath('specs/bluepriNNts/base/spec_NN.md')).toBe('specs/bluepriNNts/base/spec_NN.md')
+    it('migrates specs/templates/ and templates/ -> specs/bluepriNNts/', () => {
+      expect(migratePath('specs/templates/base/spec_NN.md')).toBe('specs/bluepriNNts/base/spec_NN.md')
       expect(migratePath('templates/custom/spec_NN.md')).toBe('specs/bluepriNNts/custom/spec_NN.md')
     })
 
@@ -28,20 +28,20 @@ describe('language-map (Task 5.4)', () => {
   describe('migrateContent', () => {
     it('renames frontmatter keys while keeping values unchanged', () => {
       const input = `---
-knowledge_version: "0.3.1"
-blueprint_version: "0.1.0"
+model_version: "0.3.1"
+template_version: "0.1.0"
 template_name: "domaiNN"
 models_dir: "models"
-templates_dir: "specs/bluepriNNts"
-target_blueprint: "base"
+templates_dir: "specs/templates"
+target_template: "base"
 ---
 # Content
 `
-      const output = migrateContent(input, 'kNNowledge/test_NN.md')
+      const output = migrateContent(input, 'models/test_NN.md')
       expect(output).toContain('knowledge_version: "0.3.1"')
-      expect(output).not.toContain('knowledge_version:')
+      expect(output).not.toContain('model_version:')
       expect(output).toContain('blueprint_version: "0.1.0"')
-      expect(output).not.toContain('blueprint_version:')
+      expect(output).not.toContain('template_version:')
       expect(output).toContain('blueprint_name: "domaiNN"')
       expect(output).not.toContain('template_name:')
       expect(output).toContain('knowledge_dir: "kNNowledge"')
@@ -49,14 +49,14 @@ target_blueprint: "base"
       expect(output).toContain('blueprints_dir: "specs/bluepriNNts"')
       expect(output).not.toContain('templates_dir:')
       expect(output).toContain('target_blueprint: "base"')
-      expect(output).not.toContain('target_blueprint:')
+      expect(output).not.toContain('target_template:')
     })
 
-    it('migrates keyword type:: knowledge -> type:: knowledge', () => {
-      const input = `# Concept\n- Field\n  - type:: knowledge\n`
+    it('migrates keyword type:: model -> type:: knowledge', () => {
+      const input = `# Concept\n- Field\n  - type:: model\n`
       const output = migrateContent(input, 'specs/bluepriNNts/custom/spec_NN.md')
       expect(output).toContain('type:: knowledge')
-      expect(output).not.toContain('type:: knowledge')
+      expect(output).not.toContain('type:: model')
     })
 
     it('migrates headings and wikilinks: Workspace, Models, Templates -> domaiNN, kNNowledge, bluepriNNts', () => {
@@ -71,7 +71,7 @@ target_blueprint: "base"
     })
 
     it('migrates path:: and markdown relative links', () => {
-      const input = `- Ref: path:: kNNowledge/core_NN.md\n- Spec: path:: specs/bluepriNNts/base/spec_NN.md\n- Link: [Core](./kNNowledge/core_NN.md)\n- Link2: [[kNNowledge/sub/core_NN.md]]\n- Entrypoint: path:: workspace_NN.md\n`
+      const input = `- Ref: path:: models/core_NN.md\n- Spec: path:: specs/templates/base/spec_NN.md\n- Link: [Core](./models/core_NN.md)\n- Link2: [[models/sub/core_NN.md]]\n- Entrypoint: path:: workspace_NN.md\n`
       const output = migrateContent(input, 'workspace_NN.md')
       expect(output).toContain('path:: kNNowledge/core_NN.md')
       expect(output).toContain('path:: specs/bluepriNNts/base/spec_NN.md')
@@ -83,7 +83,7 @@ target_blueprint: "base"
     it('migrates parent_spec and L1 parent URLs to canonical V_0-3-0 and bluepriNNts', () => {
       const input = `---
 parent_spec:
-  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/bluepriNNts/workspace/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/templates/workspace/spec_NN.md"
 parent: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
 ---
 `
@@ -95,10 +95,10 @@ parent: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/iNN
     it('migrates JSON feedback and export-meta keys', () => {
       const feedbackJson = JSON.stringify({
         source_model: "Company",
-        source_knowledge_version: "0.1.0",
-        target_blueprint: "business",
+        source_model_version: "0.1.0",
+        target_template: "business",
         model: "Enterprise",
-        knowledge_version: "0.2.0"
+        model_version: "0.2.0"
       }, null, 2)
 
       const output = migrateContent(feedbackJson, 'feedback.json')

@@ -1,11 +1,11 @@
 ---
 spec_version: "V_0-2-1"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business-model/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-blueprint_version: "V_0-2-3"
+template_version: "V_0-2-3"
 title: "Business Model App"
 relationship_types:
   hierarchy:
@@ -772,8 +772,8 @@ To create a business model, create a level 3 FILE mode document with:
 level: 3
 parent_spec:
   name: "business-model_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
-knowledge_version: "V_x-y-z"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business-model/spec_NN.md"
+model_version: "V_x-y-z"
 title: "<Your Business Name>"
 ---
 
@@ -802,7 +802,7 @@ The application will resolve the `parent` URL, download this template, and use i
 
 This template has no sample of its own — its concepts are exercised by the
 `business` umbrella sample at
-`specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-0_business_NN.md`, whose
+`specs/templates/business/samples/Ghostbusters_V_0-2-0_business_NN.md`, whose
 `parent_spec` is `business_V_0-2-0` (which `includes` this template and
 `analysis`).
 

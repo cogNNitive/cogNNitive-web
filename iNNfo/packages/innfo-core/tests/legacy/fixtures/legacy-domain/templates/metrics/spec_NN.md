@@ -1,11 +1,11 @@
 ---
 spec_version: "V_0-2-1"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-blueprint_version: "V_0-2-1"
+template_version: "V_0-2-1"
 title: "Metrics App"
 relationship_types:
   hierarchy:
@@ -253,8 +253,8 @@ To create a metrics model, create a level 3 FILE mode document with:
 level: 3
 parent_spec:
   name: "metrics_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
-knowledge_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
+model_version: "V_0-1-0"
 title: "<Metrics Model Title>"
 ---
 
@@ -273,7 +273,7 @@ title: "<Metrics Model Title>"
 
 ### Canonical Sample
 
-The official sample for this template is at `specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-1-0_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, the three evaluable matrices, and the item-markers matrix.
+The official sample for this template is at `specs/templates/metrics/samples/Ghostbusters_V_0-1-0_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, the three evaluable matrices, and the item-markers matrix.
 
 ### Parent Chain
 
@@ -281,7 +281,7 @@ The official sample for this template is at `specs/bluepriNNts/metrics/samples/G
 # From the Ghostbusters metrics sample:
 parent_spec:
   name: "metrics_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/metrics/spec_NN.md"
 
 # This template's parent:
 parent_spec:

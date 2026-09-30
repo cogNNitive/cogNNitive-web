@@ -117,8 +117,8 @@ Before executing options **[b]**, **[c]**, **[d]**, or **[x]**, the agent MUST e
 
 1. **Verify Session Context:** Check if a model is currently being edited/active in the session.
 2. **Dynamic Discovery:** If no model is active, call `innfo-mcp_list_models` to scan the workspace:
-   - **If 0 models found:** Inform the user that no models exist in `kNNowledge/` and suggest creating one (redirecting to option **[a]**).
-   - **If 1 model found (Auto-Bind with Informative Grace):** Bind it automatically as the active model (`active_model_path`) without asking. Announce: *"Vinculando `kNNowledge/{ModelName}_NN.md` (único modelo detectado en el workspace). Voy a avanzar con este modelo; si querés usar otro o crear uno nuevo, avisame antes de empezar."* Proceed immediately.
+   - **If 0 models found:** Inform the user that no models exist in `models/` and suggest creating one (redirecting to option **[a]**).
+   - **If 1 model found (Auto-Bind with Informative Grace):** Bind it automatically as the active model (`active_model_path`) without asking. Announce: *"Vinculando `models/{ModelName}_NN.md` (único modelo detectado en el workspace). Voy a avanzar con este modelo; si querés usar otro o crear uno nuevo, avisame antes de empezar."* Proceed immediately.
    - **If multiple models found:** Present a numbered list of all models found and ask the user to select one: *"Multiple models detected. Please select which one you want to work with:"*. Set the selected file as `active_model_path` and proceed.
 3. **Session Persistence:** Once a model is selected or created, save its path in context. Subsequent actions (validation, edits, audits) MUST default to this active model. To switch models, the user can explicitly ask to "switch model" or select the change option in the quick actions menu.
 
@@ -246,7 +246,7 @@ With structure approved, offer the drafting mode:
 - **[b] Full Generation:** The agent drafts the complete draft in a single file for subsequent audit, following the plan approved in B1.
 
 **B3. Model Naming & Scaffolding**:
-Prompt for `{ModelName}` and create `{ModelName}_V_0-1-0_{Template}_NN.md` with workspace structure (`kNNowledge/`, `sources/nn/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
+Prompt for `{ModelName}` and create `{ModelName}_V_0-1-0_{Template}_NN.md` with workspace structure (`models/`, `sources/nn/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
 
 **B4. Validation & Visual Checklist**:
 Validate via `innfo-mcp_validate_model` and output the Visual Expectation Checklist (§12).
@@ -311,9 +311,9 @@ The `innfo-mcp` server exposes 15 deterministic tools built on `@cognnitive/innf
 
 Stable reference URLs (the version lives in the file name — `main` is already content-pinned):
 - **iNNfo (Level 1):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md`
-- **Business (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md`
-- **Procedures (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md`
-- **Organization (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md`
+- **Business (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md`
+- **Procedures (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/procedures_V_0-2-0_NN.md`
+- **Organization (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/organization/organization_V_0-2-0_NN.md`
 
 ### The `parent_spec.url` Rule for Level 3 Models
 
@@ -332,7 +332,7 @@ Stable reference URLs (the version lives in the file name — `main` is already 
    - Simple relative paths: `client_interview_transcript.md#feedback` resolves canonically to `sources/nn/client_interview_transcript.md`.
    - Subfolders: `interviews/interview_transcript.md#overview` resolves to `sources/nn/interviews/interview_transcript.md`.
    - The explicit `sources/nn/` prefix is still tolerated for backward compatibility.
-    - **A Model is a first-class Source.** `kNNowledge/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains provenance: `artifact → kNNowledge/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`kNNowledge/…`); only unqualified paths default to `sources/nn/`.
+    - **A Model is a first-class Source.** `models/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains provenance: `artifact → models/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`models/…`); only unqualified paths default to `sources/nn/`.
     - **Curated CSVs are citable.** `sources/nn/<file>.csv@<row-id>` addresses the row whose first-column value equals `<row-id>` (e.g. `metricas_q3.csv@104`); append `&<column>` for one cell (`metricas_q3.csv@104&mrr_usd`). Raw uploads under `sources/original/` are never citable.
    - **Heading-level convention (authoring rule).** So model-heading slugs are stable and meaningful: `# NN <Concept>` (H1 = Concept), `## NN <Concept>: <Element>` (H2 = Element), and `###`+ only inside an element's description/prose — never as standalone structural blocks. The slug algorithm is level-agnostic; this is discipline, not validation.
    - Global PIDs use schema identifiers: `doi:10.1145/3290605.3300233`.
@@ -415,7 +415,7 @@ innfo-mcp_apply_change({
 ```
 
 - **Automated Behavior**:
-  1. Updates `knowledge_version` in the frontmatter and renames the model file atomically.
+  1. Updates `model_version` in the frontmatter and renames the model file atomically.
   2. If `parent_version` is provided, physically renames the local app file, updates its `spec_version` (in frontmatter), updates `parent_spec.name`/`url` in the model frontmatter, and copies the renamed app to the `specs/` directory.
   3. Consistently updates references in workspace `index.md`.
   4. Everything is validated via pre-check before performing any write (if validation fails, aborts without writing).
@@ -441,7 +441,7 @@ When a Concept or Element must be renamed:
 
 Every field must declare an explicit `type` (`string`, `select`, `reference`, `markdown_inline`, `markdown_file`, `image`, `file`, `video`, `audio`, `model`).
 
-> 💡 **Submodel Fields (`type:: knowledge`)**: When you need a field to reference or contain another iNNfo model document (`*_NN.md`) with app enforcement (e.g. `target_blueprint:: business`), use `type:: knowledge`. Never claim that `type:: knowledge` or submodel composition does not exist — it is a fully supported normative primitive in iNNfo (V_0-2-1+).
+> 💡 **Submodel Fields (`type:: model`)**: When you need a field to reference or contain another iNNfo model document (`*_NN.md`) with app enforcement (e.g. `target_template:: business`), use `type:: model`. Never claim that `type:: model` or submodel composition does not exist — it is a fully supported normative primitive in iNNfo (V_0-2-1+).
 
 > ⚠️ **List syntax — NEVER use quotes without brackets.** For any field with multiple values (`reference`, `sources::`, or any other list type), the only valid format is `[a, b, c]` — no quotes around each value. The format `"a", "b"` (individual quotes, no enclosing brackets) **corrupts parsing silently**: the validator treats it as a single unreadable string instead of a list, and ends up reporting a generic dangling reference without explaining the real cause. If you see that error and the field has loose quotes with no `[...]`, this is almost certainly the cause.
 
@@ -564,17 +564,17 @@ When the project scales to multiple sub-models, present the **4 Architectural Al
 💡 Architecture Scaling Selection (1 to N Models):
 
   [a] (Recommended) Option 4: Hybrid Master Aggregator with `file_ref::` references
-      - Files: `kNNowledge/Master_V_0-1-0_NN.md` and `kNNowledge/subsystems/`
+      - Files: `models/Master_V_0-1-0_NN.md` and `models/subsystems/`
       - iNNfo code: The main model references subsystems via `file_ref:: ./subsystems/auth_V_0-1-0_NN.md`
 
   [b] Option 1: Single Monolithic Model
-      - File: `kNNowledge/System_V_0-1-0_NN.md`
+      - File: `models/System_V_0-1-0_NN.md`
 
   [c] Option 2: Independent Models in the same directory
-      - Files: `kNNowledge/DomainA_V_0-1-0_NN.md`, `kNNowledge/DomainB_V_0-1-0_NN.md`
+      - Files: `models/DomainA_V_0-1-0_NN.md`, `models/DomainB_V_0-1-0_NN.md`
 
   [d] Option 3: Multi-Folder Hybrid per Project
-      - Files: `projects/domainA/kNNowledge/index.md`, `projects/domainB/kNNowledge/index.md`
+      - Files: `projects/domainA/models/index.md`, `projects/domainB/models/index.md`
 
   [x] Cancel
 
@@ -735,7 +735,7 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 8. **Architecture Assistant Mode:** In the `[d]` audit, explain business/functional risks and offer 1-click fixes.
 9. **Contextual Shortcuts:** End every response by offering 2-3 suggested next actions (Quick Actions).
 10. **Full MCP Delegation:** Query types, schemas, and validation from the `innfo-mcp` server; do not guess or duplicate the grammar.
-11. **Index Block Scope (`# NN index`):** The `# NN index` is reserved exclusively for workspace manifest documents (`workspace_NN.md` / `index.md`) and Level 2 templates (defining the taxonomy hierarchy of Concepts). Level 3 domain data models (`kNNowledge/*_NN.md`) MUST NOT contain a root `# NN index` block; navigation in Level 3 models is derived dynamically from Concept and Element headings.
+11. **Index Block Scope (`# NN index`):** The `# NN index` is reserved exclusively for workspace manifest documents (`workspace_NN.md` / `index.md`) and Level 2 templates (defining the taxonomy hierarchy of Concepts). Level 3 domain data models (`models/*_NN.md`) MUST NOT contain a root `# NN index` block; navigation in Level 3 models is derived dynamically from Concept and Element headings.
 12. **Mandatory WikiLink syntax in references:** In every reference field (`type:: reference`), the value MUST be formatted using WikiLink syntax (`key:: [[Element]]`). Plain text without WikiLink brackets is forbidden.
 13. **Element descriptions in prose:** The description/explanation of an element in a Level 3 model must NEVER be written as a `description::` field. It must always be free-form Markdown prose below the `key:: value` field list, separated by a blank line.
 14. **Active Model Selection Gate:** Never perform editing, validation, audits, or model procedure execution without a validated active model in context. Run workspace discovery first if none is set.
@@ -754,13 +754,13 @@ Deterministic instructions for identifying and mechanically repairing legacy syn
    - Detect files containing UTF-8 Byte Order Marks (`\uFEFF` / `0xFEFF`).
    - Strip leading BOM characters upon reading and saving, strictly enforcing UTF-8 without BOM.
 2. **Obsolete Level 3 `# NN index` Removal**:
-   - The `# NN index` heading is reserved exclusively for workspace manifest documents (`workspace_NN.md` / `index.md`) and Level 2 templates, NOT Level 3 domain data models (`kNNowledge/*_NN.md`).
+   - The `# NN index` heading is reserved exclusively for workspace manifest documents (`workspace_NN.md` / `index.md`) and Level 2 templates, NOT Level 3 domain data models (`models/*_NN.md`).
    - When linting or refactoring Level 3 models, remove any root `# NN index` navigation blocks. Navigation in Level 3 models is derived dynamically from Concept headings (`# NN <Concept>`) and Element headings (`## NN <Concept>: <Element>`).
 3. **Heading and Slug Collision Detection**:
    - Detect duplicate `## NN <Concept>: <Element>` headings within a model file that yield identical slugs (e.g. `## NN Person: Alice` and another `## NN Person: Alice`).
    - Prompt the user for disambiguation or rename duplicate elements deterministically using `innfo-mcp_apply_change` (`rename_element`).
 4. **Frontmatter Standardization (V_0-2-0)**:
-   - Ensure Level 3 frontmatter contains only valid metadata: `knowledge_version`, `parent_spec: { name, url }`, `title`, and optional workspace/provenance tags.
+   - Ensure Level 3 frontmatter contains only valid metadata: `model_version`, `parent_spec: { name, url }`, `title`, and optional workspace/provenance tags.
    - Remove forbidden legacy frontmatter structures such as `concepts: []` or `fields: []` embedded in YAML frontmatter.
 
 ---

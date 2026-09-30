@@ -1,9 +1,9 @@
 {
   "_comment": "MODEL_DATA.template.json — innfo-model snapshot contract (Series-as-Data). The Create Timeline procedure snapshots an L3 metrics model into this shape: meta carries the required innfo-model keys, rows mirror the model rows with growth rules, and series{} carries PRE-COMPUTED month values per chart as pure JSON numbers (no executable JS — the runtime only renders). Months are capped at 120 (MONTHS_CAP in scripts/verify.harness.js).",
   "meta": {
-    "model": "kNNowledge/<model>_V_0-1-0_metrics_NN.md",
-    "knowledge_version": "V_0-1-0",
-    "source_model": "kNNowledge/<source-figures>_NN.md",
+    "model": "models/<model>_V_0-1-0_metrics_NN.md",
+    "model_version": "V_0-1-0",
+    "source_model": "models/<source-figures>_NN.md",
     "generated_at": "YYYY-MM-DD",
     "months": 12,
     "historyMonths": 2,
