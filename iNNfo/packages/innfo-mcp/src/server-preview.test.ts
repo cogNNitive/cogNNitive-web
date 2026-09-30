@@ -145,4 +145,37 @@ describe('innfo-mcp preview wiring (INNFO_PREVIEW=1)', () => {
     expect(served.status).toBe(200)
     expect(served.body).toContain('Work: Review')
   })
+
+  it('delivers exactly one model-changed event for a real apply_change mutation', async () => {
+    await stubBlueprintChain()
+    await writeFile(join(rootDir, 'Preview_NN.md'), KNOWLEDGE, 'utf-8')
+
+    // Establish the preview server + subscription first, then mutate.
+    const first = await client.callTool({
+      name: 'apply_change',
+      arguments: { id: 'Preview', op: 'add_element', args: { conceptName: 'Work', elementName: 'Warmup' } },
+    })
+    const { preview_url: previewUrl } = JSON.parse(textOf(first as CallToolResult)) as {
+      preview_url: string
+    }
+    const eventsUrl = `${new URL(previewUrl).origin}/events?token=${new URL(previewUrl).searchParams.get('token')}`
+
+    const chunks: string[] = []
+    const req = http.get(eventsUrl, (res) => {
+      res.setEncoding('utf-8')
+      res.on('data', (c: string) => chunks.push(c))
+    })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    await client.callTool({
+      name: 'apply_change',
+      arguments: { id: 'Preview', op: 'add_element', args: { conceptName: 'Work', elementName: 'Review' } },
+    })
+
+    await vi.waitFor(() => {
+      expect(chunks.join('')).toContain('"model":"Preview"')
+    })
+    expect(chunks.join('').match(/event: model-changed/g)).toHaveLength(1)
+    req.destroy()
+  })
 })

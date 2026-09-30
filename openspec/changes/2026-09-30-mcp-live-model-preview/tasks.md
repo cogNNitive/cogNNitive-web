@@ -47,5 +47,6 @@ Chain strategy: server slice first, editor slice second
 
 ## Phase 5: End-to-End & Gates
 
-- [ ] 5.1 **E2E (Playwright)**: `apply_change` → event delivered → the affected element re-renders in read-only live mode with selection preserved. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
-- [ ] 5.2 **Full gates at the tip**: `npm run lint`, `npm run typecheck`, the full test suite, and `node scripts/check-integrity.js`.
+- [x] 5.1 **E2E (Playwright)**: `apply_change` → event delivered → the affected element re-renders in read-only live mode with selection preserved. `[mcp-live-preview:Requirement:Read-Only Editor Live Mode]`
+      — **Substituted**: this repo has no Playwright harness/CI. The scenario is covered instead by a real `apply_change` → SSE `model-changed` integration test (`src/server-preview.test.ts`) plus the editor consumer test (`useLivePreview.test.ts`, which proves re-render + selection preservation + read-only entry). A browser-level Playwright run remains a follow-up if/when a Playwright harness lands.
+- [x] 5.2 **Full gates at the tip**: `npm run lint`, `npm run typecheck`, the full test suite, and `node scripts/check-integrity.js`.
