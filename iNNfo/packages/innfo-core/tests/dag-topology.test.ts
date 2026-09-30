@@ -220,7 +220,7 @@ title: Model A
 ---
 # NN Submodels
 ## NN Submodels: Back To Root
-path:: ../workspace_NN.md
+path:: ../domaiNN_NN.md
 `,
     }
 
