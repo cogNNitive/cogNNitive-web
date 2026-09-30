@@ -65,8 +65,8 @@ describe('recursiveParser/Serializer CRLF fidelity', () => {
 
     const indexMd = makeIndex([nnFixtureName])
 
-    const lfRoot = buildFakeTree('models', { 'index.md': indexMd, [nnFixtureName]: lfContent })
-    const crlfRoot = buildFakeTree('models', { 'index.md': indexMd, [nnFixtureName]: crlfContent })
+    const lfRoot = buildFakeTree('models', { 'domaiNN_NN.md': indexMd, [nnFixtureName]: lfContent })
+    const crlfRoot = buildFakeTree('models', { 'domaiNN_NN.md': indexMd, [nnFixtureName]: crlfContent })
 
     const lfParse = await recursiveParse(lfRoot)
     const crlfParse = await recursiveParse(crlfRoot)
@@ -84,7 +84,7 @@ describe('recursiveParser/Serializer CRLF fidelity', () => {
     const crlfContent = lfContent.replace(/\n/g, '\r\n')
     const indexMd = makeIndex([nnFixtureName])
 
-    const tree: FakeTree = { 'index.md': indexMd, [nnFixtureName]: crlfContent }
+    const tree: FakeTree = { 'domaiNN_NN.md': indexMd, [nnFixtureName]: crlfContent }
     const root = buildFakeTree('models', tree)
 
     const firstParse = await recursiveParse(root)
@@ -110,7 +110,7 @@ describe('recursiveParser/Serializer CRLF fidelity', () => {
     await recursiveSerialize(firstParse.nodes, dirtyIds, capturingDriver)
     expect(capturedContent).toBeDefined()
 
-    const rewrittenTree: FakeTree = { 'index.md': indexMd, [nnFixtureName]: capturedContent! }
+    const rewrittenTree: FakeTree = { 'domaiNN_NN.md': indexMd, [nnFixtureName]: capturedContent! }
     const rewrittenRoot = buildFakeTree('models', rewrittenTree)
     const secondParse = await recursiveParse(rewrittenRoot)
     expect(secondParse.issues).toHaveLength(0)

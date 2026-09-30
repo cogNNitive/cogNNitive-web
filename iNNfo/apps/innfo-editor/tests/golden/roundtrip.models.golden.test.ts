@@ -48,7 +48,7 @@ describe('recursiveSerializer golden round-trip: frozen kNNowledge/* fixtures', 
       const content = readFileSync(join(modelsDir, fileName), 'utf-8')
       // Map legacy _NN.md suffix to _NN.md for the virtual tree
       const nnName = fileName.replace(/_F\.md$/i, '_NN.md')
-      const tree = { 'index.md': makeIndex([nnName]), [nnName]: content }
+      const tree = { 'domaiNN_NN.md': makeIndex([nnName]), [nnName]: content }
       const root = buildFakeTree('models', tree)
 
       const firstParse = await recursiveParse(root)
@@ -77,7 +77,7 @@ describe('recursiveSerializer golden round-trip: frozen kNNowledge/* fixtures', 
       expect(capturedContent).not.toBeNull()
 
       // Re-parse the captured content
-      const rewrittenTree = { 'index.md': makeIndex([nnName]), [nnName]: capturedContent! }
+      const rewrittenTree = { 'domaiNN_NN.md': makeIndex([nnName]), [nnName]: capturedContent! }
       const rewrittenRoot = buildFakeTree('models', rewrittenTree)
       const secondParse = await recursiveParse(rewrittenRoot)
       const secondCollisionIssues = secondParse.issues.filter(

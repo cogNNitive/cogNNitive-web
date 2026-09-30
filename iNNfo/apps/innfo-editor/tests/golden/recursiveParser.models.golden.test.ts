@@ -5,7 +5,7 @@ import { recursiveParse } from '../../src/model/recursiveParser'
 import { buildFakeTree } from '../helpers/fakeFs'
 
 // Frozen snapshot of the top-level `kNNowledge/*` FILE fixtures, sourced from
-// committed HEAD. Each fixture is wrapped with an index.md for the new parser.
+// committed HEAD. Each fixture is wrapped with an domaiNN_NN.md for the new parser.
 // Legacy _NN.md filenames are mapped to _NN.md in the virtual tree so the
 // V_0-1-0 suffix check recognizes them. The disk files remain untouched.
 const modelsDir = join(import.meta.dirname!, '..', 'fixtures', 'models')
@@ -23,7 +23,7 @@ describe('recursiveParser golden: frozen kNNowledge/* fixtures', () => {
       // Map legacy _NN.md suffix to _NN.md for the virtual tree
       const nnName = fileName.replace(/_F\.md$/i, '_NN.md')
       const root = buildFakeTree('models', {
-        'index.md': makeIndex([nnName]),
+        'domaiNN_NN.md': makeIndex([nnName]),
         [nnName]: content,
       })
 

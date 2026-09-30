@@ -59,7 +59,7 @@ async function assertRoundTripStable(
   modelFile: string,
   modelContent: string,
 ): Promise<void> {
-  const tree = { 'index.md': index, [modelFile]: modelContent }
+  const tree = { 'domaiNN_NN.md': index, [modelFile]: modelContent }
   const root = buildFakeTree('workspace', tree)
   const firstParse = await recursiveParse(root)
   expect(firstParse.issues).toHaveLength(0)
@@ -83,7 +83,7 @@ async function assertRoundTripStable(
   await recursiveSerialize(firstParse.nodes, new Set(rootIds), capturingDriver)
   expect(capturedContent).not.toBeNull()
 
-  const rewrittenTree = { 'index.md': index, [modelFile]: capturedContent! }
+  const rewrittenTree = { 'domaiNN_NN.md': index, [modelFile]: capturedContent! }
   const rewrittenRoot = buildFakeTree('workspace', rewrittenTree)
   const secondParse = await recursiveParse(rewrittenRoot)
   expect(secondParse.issues).toHaveLength(0)
