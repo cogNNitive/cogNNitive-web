@@ -34,6 +34,8 @@ describe('package entry point', () => {
     const scene = project.sections[0].scenes[0] as any
     scene.properties = { ...scene.properties, my_custom_prop: 'x' }
     const issues = validate(project)
-    expect(issues.some((i) => i.message.includes("Unknown or non-canonical property 'my_custom_prop'"))).toBe(true)
+    expect(
+      issues.some((i) => i.message.includes("Unknown or non-canonical property 'my_custom_prop'")),
+    ).toBe(true)
   })
 })
