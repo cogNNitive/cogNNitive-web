@@ -17,7 +17,7 @@ npm run test:unit
 npm run test:integration
 ```
 
-Tests cover: config read/write/merge, format detection, file hashing, flat frontmatter generation (with mirrored subfolder output), dependency checking, HTML metadata extraction, recursive project bootstrap (subfolders preserved), lineage-record filesystem sync (# NN Models/# NN Artifacts from models/ + export/, append-only # NN Procedures, --check drift and archive validation), provenance model generation, source versioning archive snapshots (`sources/archive/`), and conversation lifecycle (silent reservation, trivial discard, title suggestions, promotion to sources/conversations/ and normalization to sources/nn/conversations/).
+Tests cover: config read/write/merge, format detection, file hashing, flat frontmatter generation (with mirrored subfolder output), dependency checking, HTML metadata extraction, recursive project bootstrap (subfolders preserved), lineage-record filesystem sync (# NN Models/# NN Artifacts from models/ + export/, append-only # NN Procedures, --check drift and archive validation), provenance model generation, source versioning archive snapshots (`sources/archive/`), and conversation lifecycle (silent reservation, trivial discard, title suggestions, promotion to sources/conversations/ and normalization to sources/nn/conversations/). Unit coverage also includes `scanner-converters.js` PDF text reflow (extraction-artifact cleanup, wrapped-line re-join, clause-heading promotion, page-number removal).
 
 ## Manual Test Guide
 
