@@ -727,3 +727,19 @@ instead. Open questions: the entry name (`cogNNitive`), target URL (`https://cog
 and whether it best fits **Projects** (built on the SDK) vs **Agents**/**Plugins**.
 
 **Suggested trigger:** maintainer decision in chat (one PR; no SDD cycle needed).
+
+---
+
+## `docs/docs7-external-distribution` — publish a public mirror of the product docs on Context7 Docs7 as an external discovery channel
+
+**Type:** docs / distribution · **Size:** small-medium · **Status:** deferred
+
+**Why:** documentation today is self-hosted on GitHub Pages (`cognnitive.com`, `docs/CNAME`) and largely a *generated* artifact of the engine itself — the Docsify suites, `ai-index.yaml` and `llms.txt` are derived from `_NN.md` models and verified in CI, with `cognnitive.com/use` served *raw* as the agent-bootstrap manifest. That is the SSOT and it works, but it has no external discovery beyond the project's own SEO. Context7's **Docs7** (`docs7` CLI, `docs.json` + MDX, hosted by Upstash) indexes docs to 100k+ active Context7 users and reports AI-crawler traffic and unanswered agent questions — reach and visibility the project does not have.
+
+**Scope decision (from the 2026-09-30 analysis):** **do NOT migrate the core.** Migrating would trade the self-owned, generated→verified pipeline for a third-party hosted SaaS — contradicting the project's *zero vendor lock-in / 100% Markdown in your Git* pillar, and forcing either a second source of truth or a rewrite of the generator (losing freshness, docs-facts, and the pinned raw manifest). Adopt Docs7 **only as an external distribution channel**: publish a mirror of the *public product* docs (landing / use-cases / iNNfo) to capture Context7 traffic, keeping GitHub Pages as SSOT and the pipeline intact.
+
+**Approach (open):** stand up a `docs.json` + MDX mirror in its own folder and deploy via `@upstash/docs7` (CLI `docs7 deploy`, or the GitHub integration with a Context7 teamspace), pointing a custom domain only if it does not conflict with the Pages origin. Decide whether the mirror is hand-maintained or generated from the existing Jekyll/Docsify pages (the latter fits the repo's generated-artifact contract, but docs7 expects MDX). Keep `cognnitive.com/use` on Pages, untouched. Verify Docs7's free/open-source and self-host options before committing — an unrecoverable paid dependency would defeat the point.
+
+**Deferred reason:** maintainer decision 2026-09-30 — the project is not finished yet; revisit after launch, once the public docs surface is stable enough to mirror.
+
+**Suggested trigger:** `/sdd-explore docs7-external-distribution` (after project launch).
