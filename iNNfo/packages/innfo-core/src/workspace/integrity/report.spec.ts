@@ -10,7 +10,7 @@ import {
 } from './report.js'
 import type { TemplateCatalog } from './versionStatus.js'
 
-const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts'
+const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts'
 
 const CATALOG: TemplateCatalog = {
   blueprints: {

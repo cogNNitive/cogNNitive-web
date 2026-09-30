@@ -33,7 +33,7 @@ export const MARKER_CYCLE_COUNT = MAX_MARKER_SCORE + 1
  * vs. main-branch strategy to choose between (see `spec-versioning`, A4).
  */
 export function buildSpecificationUrl(version: string = DEFAULT_INNFO_VERSION): string {
-  return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_${version}_NN.md`
+  return `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_${version}_NN.md`
 }
 
 /**
@@ -41,7 +41,7 @@ export function buildSpecificationUrl(version: string = DEFAULT_INNFO_VERSION): 
  * under its own `specs/bluepriNNts/{name}/` folder alongside its samples.
  */
 export function buildBlueprintUrl(name: string, version: string = DEFAULT_BLUEPRINT_VERSION): string {
-  return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${name}/${name}_${version}_NN.md`
+  return `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${name}/${name}_${version}_NN.md`
 }
 
 const KNOWN_BLUEPRINTS = new Set([
@@ -73,12 +73,12 @@ const KNOWN_BLUEPRINTS = new Set([
 export function buildSubmodelBlueprintUrl(template: string): string {
   const normalized = (template || '').trim()
   if (KNOWN_BLUEPRINTS.has(normalized)) {
-    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${normalized}/spec_NN.md`
+    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${normalized}/spec_NN.md`
   }
   // Known templates may arrive version-suffixed (e.g. "business_V_0-2-0").
   const baseName = normalized.match(/^(.*?)(?:_V_\d+-\d+-\d+)?$/i)?.[1] || normalized
   if (KNOWN_BLUEPRINTS.has(baseName)) {
-    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${baseName}/spec_NN.md`
+    return `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${baseName}/spec_NN.md`
   }
   return buildBlueprintUrl(normalized, DEFAULT_BLUEPRINT_VERSION)
 }

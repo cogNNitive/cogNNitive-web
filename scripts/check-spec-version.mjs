@@ -72,10 +72,15 @@ const ACTIVE_IGNORE = new Set([
 ])
 
 const FORMAT_VERSION_RE = /V_\d+-\d+-\d+/g
+// Canonical spec hosting moved to the public distribution host
+// (cogNNitive/cogNNitive-web) by the public-web-repository-split change.
 const GITHUB_RAW_URL_RE =
-  /https:\/\/raw\.githubusercontent\.com\/cogNNitive\/cogNNitive\/(?:main|v[\d.]+)\/iNNfo\/([^\s"')\]]+)/g
+  /https:\/\/raw\.githubusercontent\.com\/cogNNitive\/cogNNitive-web\/(?:main|v[\d.]+)\/iNNfo\/([^\s"')\]]+)/g
 
-const LEGACY_SLUG_RE = /cogNNitive\/iNNfo(?![\w-])/g
+// Any reference tying a canonical spec path to the private monorepo is legacy:
+// both the pre-rename `cogNNitive/iNNfo` slug and the `cogNNitive/cogNNitive`
+// spec base that the public-web-repository-split change moved off the monorepo.
+const LEGACY_SLUG_RE = /cogNNitive\/(?:cogNNitive|iNNfo)(?:\/(?:main|blob|raw|v[\d.]+))?\/iNNfo(?![\w-])/g
 
 const ALLOWLISTED_EXACT_PATHS = new Set(['scripts/check-spec-version.mjs'])
 

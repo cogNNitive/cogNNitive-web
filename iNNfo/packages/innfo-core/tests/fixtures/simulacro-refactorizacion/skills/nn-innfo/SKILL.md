@@ -310,10 +310,10 @@ The `innfo-mcp` server exposes 15 deterministic tools built on `@cognnitive/innf
 ## 2. Canonical Specification Reference
 
 Stable reference URLs (the version lives in the file name — `main` is already content-pinned):
-- **iNNfo (Level 1):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md`
-- **Business (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md`
-- **Procedures (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md`
-- **Organization (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md`
+- **iNNfo (Level 1):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md`
+- **Business (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md`
+- **Procedures (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md`
+- **Organization (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md`
 
 ### The `parent_spec.url` Rule for Level 3 Models
 

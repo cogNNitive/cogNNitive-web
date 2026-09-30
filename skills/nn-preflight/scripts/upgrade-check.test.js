@@ -54,9 +54,9 @@ function buildWorkspace() {
   const model = (file, url) => {
     fs.writeFileSync(path.join(ws, file), `---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "${url}"\nknowledge_version: "V_0-1-0"\n---\n# NN x\n`, 'utf-8');
   };
-  model('models/Old_V_0-1-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md');
-  model('models/Current_V_0-2-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md');
-  model('models/Ahead_V_0-3-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-3-0_NN.md');
+  model('models/Old_V_0-1-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md');
+  model('models/Current_V_0-2-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md');
+  model('models/Ahead_V_0-3-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-3-0_NN.md');
   model('models/Custom_V_0-1-0_my_spec_NN.md', 'https://raw.githubusercontent.com/user/repo/main/specs/Custom_V_0-1-0_my_spec_NN.md');
   // Non-model files that must be ignored:
   fs.writeFileSync(path.join(ws, 'models', 'index.md'), '# nope');

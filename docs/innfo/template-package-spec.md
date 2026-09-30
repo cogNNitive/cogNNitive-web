@@ -61,17 +61,17 @@ spec_version: "V_0-2-1"
 title: "Composite Business & Project Spec"
 parent_spec:
   name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
 includes:
   - name: "business"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md"
     alias:
       concepts:
         "Task": "BusinessTask"
       fields:
         "Item.status": "Item.business_status"
   - name: "projects"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/V_0-2-0/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/V_0-2-0/spec_NN.md"
     alias:
       concepts:
         "Task": "ProjectTask"

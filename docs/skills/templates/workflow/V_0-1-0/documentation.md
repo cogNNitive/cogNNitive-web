@@ -86,7 +86,7 @@ Definitions:
 ```yaml
 ---
 spec_version: "V_0-1-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
 level: 3
 parent_spec:
   name: "workflow_V_0-1-0"

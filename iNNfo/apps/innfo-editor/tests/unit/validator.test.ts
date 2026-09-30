@@ -3,11 +3,11 @@ import { validateFormatContent } from '../../src/shared/validator'
 
 const validModel = `---
 spec_version: "V_0-2-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
 level: 3
 parent_spec:
   name: "business_V_0-1-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/business_V_0-1-1_FORMAT.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/business_V_0-1-1_FORMAT.md"
 knowledge_version: "V_0-1-2"
 title: "Ghostbusters"
 type: "BusinessModel"
@@ -21,11 +21,11 @@ type: "BusinessModel"
 
 const validModelNoType = `---
 spec_version: "V_0-2-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
 level: 2
 parent_spec:
   name: "business_V_0-1-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/business_V_0-1-1_FORMAT.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/business_V_0-1-1_FORMAT.md"
 knowledge_version: "V_0-1-2"
 title: "Ghostbusters"
 ---

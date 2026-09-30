@@ -57,6 +57,7 @@ const ALLOWLIST = [
   { pattern: 'skills/nn-trannsform/scripts/provenance.js', reason: 'detects the legacy `_workspace_NN.md` lineage record by name for one-time in-place migration to `_cogNNitive_NN.md`' },
   { pattern: 'skills/nn-trannsform/scripts/lib/provenance-knowledge.js', reason: 'legacy `_workspace_NN.md` lineage-record suffix documented for one-time migration' },
   { pattern: 'scripts/lib/legacy-write-guard.js', reason: 'this guard carries the token table itself' },
+  { pattern: 'scripts/guard-template-immutability.js', reason: 'reads the retired `template_version` key only as a fallback to recognize the composition-root templates (base/cogNNitive/workspace) whose frontmatter still uses it' },
 ];
 
 const SCOPE_RE = [

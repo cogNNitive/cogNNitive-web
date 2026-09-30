@@ -64,9 +64,9 @@ En plantillas de Nivel 2, la composición de plantillas se realiza mediante la p
 ```yaml
 includes:
   - name: "business-model"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md"
   - name: "analysis"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md"
 ```
 
 ### ¿Por qué vive en el Front Matter?
@@ -108,5 +108,5 @@ Esta problemática ha sido validada empíricamente en el ecosistema de herramien
 
 ## Enlaces Relacionados
 
-- [Documentación del Motor iNNfo](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/docs/documentation/specifications.md)
-- [Especificación iNNfo V_0-2-1](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md)
+- [Documentación del Motor iNNfo](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/docs/documentation/specifications.md)
+- [Especificación iNNfo V_0-2-1](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md)

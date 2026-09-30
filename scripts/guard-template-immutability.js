@@ -76,11 +76,18 @@ function compareSemver(a, b) {
   return 0;
 }
 
-/** Extract the frontmatter `blueprint_version` from raw file content, or null. */
+/**
+ * Extract the frontmatter template version from raw file content, or null.
+ * Prefers `blueprint_version`; the composition roots (`base`, `cogNNitive`,
+ * `workspace_spec_NN.md`) declare `template_version` instead, so fall back to
+ * it rather than treating those canonical templates as version-less.
+ */
 function templateVersionOf(content) {
   try {
     const fm = parseFocusedYaml(parseFrontmatter(content));
-    return fm && fm.blueprint_version != null ? String(fm.blueprint_version) : null;
+    if (!fm) return null;
+    const v = fm.blueprint_version != null ? fm.blueprint_version : fm.template_version;
+    return v != null ? String(v) : null;
   } catch {
     return null;
   }
@@ -192,6 +199,18 @@ function normalizeBadgeForComparison(content) {
   if (!content) return content;
   return content
     .replace(/https:\/\/(?:innfo\.)?cognnitive\.com\/innfo\/app\/(?:innfo-doc)?/g, 'https://cognnitive.com/innfo/app/')
+    // Canonical spec/bundle hosting host is not content: a host migration (e.g.
+    // the public-web-repository-split move off the private monorepo) must not
+    // require a blueprint_version bump. Normalize the host so only real content
+    // changes trip the guard.
+    .replace(
+      /https:\/\/raw\.githubusercontent\.com\/cogNNitive\/cogNNitive(?:-web)?\//g,
+      'https://raw.githubusercontent.com/cogNNitive/HOST/',
+    )
+    .replace(
+      /https:\/\/github\.com\/cogNNitive\/cogNNitive(?:-web)?\//g,
+      'https://github.com/cogNNitive/HOST/',
+    )
     .replace(/\r\n/g, '\n');
 }
 

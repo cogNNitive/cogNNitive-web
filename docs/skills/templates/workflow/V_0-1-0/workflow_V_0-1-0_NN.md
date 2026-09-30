@@ -1,10 +1,10 @@
 ---
 spec_version: "V_0-1-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
 template_version: "V_0-1-0"
 title: "Workflow Template"
 documentation_location: "docs/templates/workflow/V_0-1-0/"
@@ -162,7 +162,7 @@ relies on `parent_spec.url` and the spec resolver instead:
 ```yaml
 ---
 spec_version: "V_0-1-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md"
 level: 3
 parent_spec:
   name: "workflow_V_0-1-0"

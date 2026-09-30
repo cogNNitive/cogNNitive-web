@@ -9,7 +9,7 @@ const specsDir = join(rootDir, 'specs')
 const modelsDir = join(rootDir, 'models')
 
 const TEMPLATE_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md'
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md'
 
 const TEMPLATE_CONTENT = [
   '---',
@@ -19,7 +19,7 @@ const TEMPLATE_CONTENT = [
   'title: "Business Template"',
   'parent_spec:',
   '  name: "iNNfo_V_0-2-1"',
-  '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"',
+  '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"',
   '---',
   '',
   '# NN Concept Definition',
@@ -44,7 +44,7 @@ const LEVEL1_CONTENT = [
   'title: "Local iNNfo Spec"',
   'parent_spec:',
   '  name: "defiNNe_V_0-1-0"',
-  '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"',
+  '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"',
   '---',
 ].join('\n')
 

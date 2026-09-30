@@ -3,7 +3,7 @@
 The cogNNitive ecosystem pins a canonical vocabulary so every editor label, doc, and
 skill refers to the same concept by the same name. The authoritative source is the
 machine-readable dictionary at
-[`iNNfo/specs/vocabulary.json`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/vocabulary.json);
+[`iNNfo/specs/vocabulary.json`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/vocabulary.json);
 this page is the human-readable rendering of it.
 
 ## Level Hierarchy & Canonical Terms

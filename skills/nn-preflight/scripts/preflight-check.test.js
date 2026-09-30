@@ -895,7 +895,7 @@ agent-bootstrap:
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(
         path.join(ws, 'models', 'Old_V_0-1-0_business_NN.md'),
-        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
         'utf-8',
       );
 
@@ -938,7 +938,7 @@ agent-bootstrap:
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(
         path.join(ws, 'models', 'Old_V_0-1-0_business_NN.md'),
-        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
         'utf-8',
       );
 

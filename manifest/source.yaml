@@ -4,20 +4,20 @@ entrypoint: "domaiNN_NN.md"
 
 skills:
   - name: nn-start
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-start
     version: "V_3-4-2"
     ref_key: skills
     description: Central system governance, setup, environment readiness gate (Preflight), and start router.
   - name: nn-trannsform
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-trannsform
     version: "V_3-4-2"
     ref_key: skills
     requires: [nn-innfo, nn-preflight]
     description: Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
   - name: nn-innfo
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-innfo
     version: "V_0-5-4"
     ref_key: skills
@@ -25,45 +25,45 @@ skills:
     blueprints: [domaiNN]
     mcp:
       - name: innfo-mcp
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
         version: "0.12.0"
         min_version: "0.12.0"
         ref_key: innfo-mcp
   - name: nn-preflight
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-preflight
     version: "V_0-2-1"
     ref_key: skills
     description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
   - name: nn-upgrade
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-upgrade
     version: "V_0-2-0"
     ref_key: skills
     requires: [nn-preflight]
     description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
   - name: nn-site-generator
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-site-generator
     version: "V_0-2-0"
     ref_key: skills
     description: Create or edit websites, add analytics, add contact forms.
   - name: nn-design-presets
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-design-presets
     version: "V_1-4-0"
     ref_key: skills
     description: cogNNitive visual design presets — palettes, typography, spacing.
   - name: nn-skills-lifecycle
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-skills-lifecycle
     version: "V_1-2-0"
     ref_key: skills
     requires: [nn-preflight]
     description: Audit, update, and maintain cogNNitive skills.
   - name: nn-video-script
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: skills/nn-video-script
     version: "V_0-3-0"
     ref_key: skills
@@ -72,82 +72,82 @@ skills:
 
 blueprints:
   - name: domaiNN
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: projects
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: procedures
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: organization
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: business
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/business/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: business-model
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: analysis
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: innovation
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: blank
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: documentation
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: metrics
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: repository
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: video
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/video/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: sources
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: artifacts
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
   - name: design-presets
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
     version: "V_0-3-0"
     ref_key: blueprints
@@ -158,17 +158,17 @@ blueprints:
 # verify.js blueprint inventory guard satisfied while the folders stay on disk.
 frozen_blueprints:
   - name: cogNNitive
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md
     version: "V_0-2-1"
     ref_key: blueprints
   - name: base
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/base/spec_NN.md
     version: "V_0-1-0"
     ref_key: blueprints
   - name: workspace
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/workspace_spec_NN.md
     version: "V_0-2-2"
     ref_key: blueprints
@@ -180,7 +180,7 @@ frozen_blueprints:
 # manifest generators skip them (no spec_NN.md to enumerate), same as `assets`.
 seam_dirs:
   - name: console
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     path: iNNfo/specs/bluepriNNts/console/
     description: Shared console seam — artifact shell, InnfoConsole UMD runtime, and feedback JSON schema for the reviewer feedback loop.
 
@@ -191,17 +191,17 @@ seam_dirs:
 # ~/.agents/console by skills-manager. Pinned by tag + commit.
 console_assets:
   - name: innfo-console
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     version: "0.6.0"
     ref_key: innfo-console
   - name: innfo-console-shell
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
     version: "0.6.0"
     ref_key: innfo-console
   - name: innfo-console-export-cli
-    repo: cogNNitive/cogNNitive
+    repo: cogNNitive/cogNNitive-web
     file: scripts/export-console.mjs
     version: "0.6.0"
     ref_key: innfo-console
@@ -232,26 +232,26 @@ channels:
     # version declared above, because there it is the same fact, not a copy.
     refs:
       - key: skills
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         version: "2.8.0"
       - key: blueprints
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         version: "0.19.0"
       - key: innfo-mcp
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
       - key: innfo-console
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
   preview:
     refs:
       - key: skills
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         ref: main
       - key: blueprints
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         ref: main
       - key: innfo-mcp
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         ref: main
       - key: innfo-console
-        repo: cogNNitive/cogNNitive
+        repo: cogNNitive/cogNNitive-web
         ref: main

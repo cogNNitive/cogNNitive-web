@@ -70,7 +70,12 @@ describe('viewer slot payloads', () => {
       { cwd: repoRoot, encoding: 'utf8' },
     )
     const onDisk = readAsset(assets.viewer)
-    expect(onDisk).toBe(tracked)
+    // The only sanctioned difference is the canonical hosting host (the
+    // public-web-repository-split re-root moved raw URLs off the private
+    // monorepo); normalizing it keeps this a content-identity check.
+    const normalizeHost = (s: string) =>
+      s.replace(/cogNNitive\/cogNNitive(?:-web)?\//g, 'cogNNitive/HOST/')
+    expect(normalizeHost(onDisk)).toBe(normalizeHost(tracked))
   })
 })
 

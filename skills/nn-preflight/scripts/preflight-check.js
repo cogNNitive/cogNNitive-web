@@ -55,7 +55,7 @@ const LEGACY_STATE_FILE = path.join(os.homedir(), '.agents', 'skills-state.json'
 const DEFAULT_BLUEPRINT_CATALOG_URL =
   'https://cognnitive.com/innfo/blueprints/catalog.json';
 const FALLBACK_BLUEPRINT_CATALOG_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json';
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/catalog.json';
 
 /**
  * Canonical channel freshness summary published by CI on every push to main.

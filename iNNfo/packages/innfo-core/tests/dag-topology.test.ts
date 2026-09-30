@@ -56,7 +56,7 @@ describe('DAG Topology Scanner & Root Discovery (innfo-core)', () => {
 level: 3
 parent_spec:
   name: workspace
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
 knowledge_version: V_0-1-0
 title: Root Workspace
 ---
@@ -80,7 +80,7 @@ path:: artifacts_NN.md
 level: 3
 parent_spec:
   name: sources
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md
 knowledge_version: V_0-1-0
 title: Sources Catalog
 ---
@@ -102,7 +102,7 @@ Evidence content.
 level: 3
 parent_spec:
   name: procedures
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md
 knowledge_version: V_0-1-0
 title: Procedures Catalog
 ---
@@ -115,7 +115,7 @@ procedure_model:: procedures/ingest_pipeline_NN.md
 level: 3
 parent_spec:
   name: procedures
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md
 knowledge_version: V_0-1-0
 title: Ingest Pipeline Stepper
 ---
@@ -127,7 +127,7 @@ next:: Step 2
 level: 3
 parent_spec:
   name: artifacts
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
 knowledge_version: V_0-1-0
 title: Artifacts Catalog
 ---
@@ -141,7 +141,7 @@ artifact_model:: artifacts/kNNowledge/exec_summary_NN.md
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
 knowledge_version: V_0-1-0
 title: Executive Summary Model
 ---
@@ -152,7 +152,7 @@ Content.
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
 knowledge_version: V_0-1-0
 title: Business Model
 ---
@@ -202,7 +202,7 @@ description:: Elimination services.
 level: 3
 parent_spec:
   name: workspace
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
 knowledge_version: V_0-1-0
 title: Root
 ---
@@ -214,7 +214,7 @@ path:: kNNowledge/a_NN.md
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
 knowledge_version: V_0-1-0
 title: Model A
 ---
@@ -238,7 +238,7 @@ path:: ../domaiNN_NN.md
 level: 3
 parent_spec:
   name: workspace
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
 knowledge_version: V_0-1-0
 title: Depth 0
 ---
@@ -253,7 +253,7 @@ path:: depth1.md
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
 knowledge_version: V_0-1-0
 title: Depth ${i}
 ---

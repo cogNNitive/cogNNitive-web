@@ -242,7 +242,7 @@ export async function initKnowledge(
   const frontmatter = [
     '---',
     `spec_version: ${esc(specVersion)}`,
-    'spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"',
+    'spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"',
     'level: 3',
     'parent_spec:',
     `  name: ${esc(blueprintName)}`,

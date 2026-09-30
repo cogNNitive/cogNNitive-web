@@ -135,7 +135,7 @@ function generate(rootDir) {
       continue;
     }
 
-    const url = fm.spec_url || `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/${relPosix}`;
+    const url = fm.spec_url || `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${relPosix}`;
 
     if (!byName.has(name)) byName.set(name, []);
     byName.get(name).push({

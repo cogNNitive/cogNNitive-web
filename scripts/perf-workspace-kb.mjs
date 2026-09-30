@@ -93,11 +93,11 @@ function generateWorkspace({ models, rows, units, sources }) {
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
-      'spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"',
+      'spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"',
       'level: 3',
       'parent_spec:',
       '  name: "business_V_0-2-0"',
-    '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"',
+    '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"',
     'knowledge_version: "V_0-0-1"',
       'title: "Perf Model"',
       '---',

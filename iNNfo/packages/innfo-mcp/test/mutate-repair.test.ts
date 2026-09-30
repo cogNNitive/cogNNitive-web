@@ -25,7 +25,7 @@ describe('MCP model repair tools', () => {
     const res = await initKnowledge(tempDir, 'arenzano_residential_V_0-5-1_residential', {
       blueprint_name: 'residential_V_0-2-0',
       template_url:
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/latest/level2/residential/residential_NN.md',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/latest/level2/residential/residential_NN.md',
       title: 'Arenzano Residential',
       knowledge_version: 'V_0-5-1',
     })
@@ -45,7 +45,7 @@ describe('MCP model repair tools', () => {
     const res = await initKnowledge(tempDir, 'broken_model', {
       blueprint_name: 'business_V_0-2-0',
       template_url:
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/latest/level2/business/business_NN.md',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/latest/level2/business/business_NN.md',
     })
 
     expect(res.success).toBe(true)

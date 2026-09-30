@@ -27,25 +27,25 @@ describe('constants — V_0-3-0 adoption', () => {
   describe('buildSubmodelBlueprintUrl', () => {
     it('accepts a bare template name and maps to the canonical spec_NN.md template URL', () => {
       expect(buildSubmodelBlueprintUrl('business')).toBe(
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       )
     })
 
     it('honors an embedded template version suffix', () => {
       expect(buildSubmodelBlueprintUrl('business_V_0-2-0')).toBe(
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       )
     })
 
     it('falls back to the versioned template URL for unknown templates', () => {
       expect(buildSubmodelBlueprintUrl('acme-custom')).toBe(
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/acme-custom/acme-custom_V_0-2-0_NN.md',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/acme-custom/acme-custom_V_0-2-0_NN.md',
       )
     })
 
     it('maps a version-suffixed known template to its canonical spec_NN.md URL', () => {
       expect(buildSubmodelBlueprintUrl('procedures_V_0-2-0')).toBe(
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md',
       )
     })
   })

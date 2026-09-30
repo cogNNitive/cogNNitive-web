@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Compile Model Viewer Procedure"
 ---
@@ -34,7 +34,7 @@ output:: [[Loaded Shell]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Fetch the reference shell from `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/assets/model_viewer.html` (all CSS inline; the vanilla-JS renderer lives in `console/render-model-viewer.js` loaded via static `<script src>` tags). It contains two empty blocks — `<script type="application/json" id="innfo-schema">` and `<script type="application/json" id="innfo-model">` — that this procedure populates.
+Fetch the reference shell from `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/assets/model_viewer.html` (all CSS inline; the vanilla-JS renderer lives in `console/render-model-viewer.js` loaded via static `<script src>` tags). It contains two empty blocks — `<script type="application/json" id="innfo-schema">` and `<script type="application/json" id="innfo-model">` — that this procedure populates.
 
 ## NN Work: Resolve Model Schema
 parent:: [[Compile Model Viewer]]

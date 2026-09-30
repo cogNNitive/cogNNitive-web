@@ -90,13 +90,13 @@ describe('Canonical Template Registry & Offline Fallback', () => {
 
   it('resolves templates by remote raw GitHub URLs', () => {
     const url =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md'
     const template = findCanonicalBlueprint(url)
     expect(template).not.toBeNull()
     expect(template?.name).toBe('business')
 
     const procUrl =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md'
     expect(findCanonicalBlueprint(procUrl)?.name).toBe('procedures')
   })
 
@@ -119,7 +119,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
 
   it('resolves the new V_0-2-2 core-language aliases', () => {
     const url =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md'
 
     expect(findCanonicalBlueprint('iNNfo_V_0-2-2_NN')?.name).toBe('innfo')
     expect(findCanonicalBlueprint('innfo_v_0-2-2')?.name).toBe('innfo')
@@ -129,7 +129,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
 
   it('resolves defiNNition (Level 0) and iNNfo V_0-3-0 (Level 1) canonical identities', () => {
     const defUrl =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md'
     const def = findCanonicalBlueprint('defiNNition')
     expect(def).not.toBeNull()
     expect(def?.name).toBe('defiNNition')
@@ -138,7 +138,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
     expect(findCanonicalBlueprint(defUrl)?.name).toBe('defiNNition')
 
     const innfoUrl =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md'
     const innfo3 = findCanonicalBlueprint('iNNfo_V_0-3-0_NN')
     expect(innfo3).not.toBeNull()
     expect(innfo3?.name).toBe('innfo')
@@ -152,7 +152,7 @@ describe('Canonical Template Registry & Offline Fallback', () => {
     expect(content).not.toBeNull()
     expect(content).toContain('spec_version: "V_0-3-0"')
     expect(content).toContain(
-      'parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"',
+      'parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"',
     )
   })
 

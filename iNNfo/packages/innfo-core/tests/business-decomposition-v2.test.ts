@@ -274,7 +274,7 @@ knowledge_version: "V_1-0-0"
 title: "ACME Corp"
 parent_spec:
   name: "business_V_0-2-4"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 ---
 
 # NN Business summary

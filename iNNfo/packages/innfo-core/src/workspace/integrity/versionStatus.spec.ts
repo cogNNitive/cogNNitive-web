@@ -23,7 +23,7 @@ const CATALOG: TemplateCatalog = {
   },
 }
 
-const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts'
+const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts'
 
 describe('parseSemVer', () => {
   it('extracts a triple from a V_x-y-z token', () => {

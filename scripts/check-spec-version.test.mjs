@@ -30,7 +30,7 @@ function testSpecFilesExist() {
   assert.match(innfoContent, /^level:\s*1/m, 'iNNfo level must be 1')
   assert.match(
     innfoContent,
-    /^parent:\s*["']https:\/\/raw\.githubusercontent\.com\/cogNNitive\/cogNNitive\/main\/iNNfo\/specs\/defiNNition_V_0-1-0_NN\.md["']/m,
+    /^parent:\s*["']https:\/\/raw\.githubusercontent\.com\/cogNNitive\/cogNNitive-web\/main\/iNNfo\/specs\/defiNNition_V_0-1-0_NN\.md["']/m,
     'iNNfo V_0-3-0 parent must point to defiNNition_V_0-1-0_NN.md on main',
   )
   console.log('✔ Test 1: Level 0 defiNNition and Level 1 iNNfo V_0-3-0 spec files exist with correct frontmatter')

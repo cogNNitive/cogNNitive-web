@@ -33,7 +33,7 @@ describe('MCP — includes composition + init_model scaffolding', () => {
   })
 
   const l1Url = () =>
-    'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md'
+    'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md'
 
   async function writeTemplate(name: string, body: string, extraFm = ''): Promise<string> {
     const file = join(specsDir, `${name}_NN.md`)

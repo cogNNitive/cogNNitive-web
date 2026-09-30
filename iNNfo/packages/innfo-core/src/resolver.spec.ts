@@ -131,7 +131,7 @@ level: 3
 knowledge_version: V_0-1-0
 parent_spec:
   name: projects_V_0-1-0_NN
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/projects_V_0-1-0_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/projects_V_0-1-0_NN.md
 ---
 
 # NN index

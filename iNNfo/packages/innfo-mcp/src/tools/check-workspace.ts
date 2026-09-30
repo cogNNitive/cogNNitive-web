@@ -46,7 +46,7 @@ import {
 export const CATALOG_PAGES_URL = 'https://cognnitive.com/innfo/templates/catalog.json'
 /** Raw fallback URL for the catalog (AD-3, tier 2). */
 export const CATALOG_RAW_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json'
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/catalog.json'
 
 const CATALOG_TIMEOUT_MS = 2500
 const FRESHNESS_TIMEOUT_MS = 10000

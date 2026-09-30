@@ -371,7 +371,7 @@ async function validateConsoleAsset(entry, policy) {
   // (name/repo/path) so structuralViolations and the shared checks apply.
   const normalized = {
     name: String(entry.file || entry.url || '').split('/').pop() || 'console-asset',
-    repo: entry.repo || 'cogNNitive/cogNNitive',
+    repo: entry.repo || 'cogNNitive/cogNNitive-web',
     path: entry.file || entry.path,
     version: entry.version,
     ref: entry.ref,

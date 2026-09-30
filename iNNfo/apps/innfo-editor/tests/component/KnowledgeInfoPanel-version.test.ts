@@ -48,7 +48,7 @@ const rootContentWithParentSpec = `---
 spec_version: "V_0-2-0"
 parent_spec:
   name: "business_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/v0.2.0/level2/business/business_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/v0.2.0/level2/business/business_V_0-2-0_NN.md"
 knowledge_version: "V_1-0-0"
 title: "Business Model"
 ---

@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "procedures"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_1-0-0"
 title: "Consulting Sales Procedures Catalog"
 ---

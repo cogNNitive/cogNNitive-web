@@ -348,13 +348,13 @@ title: "DomaiNN Index"
         path: 'kNNowledge/sub_business_NN.md',
         template: 'business',
         templateUrl:
-          'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
+          'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       })
 
       const node = knowledgeStore.getNode(newId)
       expect(node?.rawContent).toContain('spec_version: "V_0-3-0"')
       expect(node?.rawContent).toContain(
-        'url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"',
+        'url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"',
       )
       expect(node?.rawContent).toMatch(/knowledge_version: "V_\d+-\d+-\d+"/)
     })

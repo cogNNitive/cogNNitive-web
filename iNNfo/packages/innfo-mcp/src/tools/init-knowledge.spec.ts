@@ -400,7 +400,7 @@ describe('initKnowledge', () => {
       await stubRealBlankTemplate()
 
       const result = await initKnowledge(rootDir, 'BlankModel', {
-        template_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md',
+        template_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md',
         blueprint_name: 'blank_V_0-2-0',
       })
 

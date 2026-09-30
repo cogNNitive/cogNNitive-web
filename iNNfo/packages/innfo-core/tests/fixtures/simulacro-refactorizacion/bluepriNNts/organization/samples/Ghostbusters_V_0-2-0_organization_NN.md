@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "organization_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md"
 knowledge_version: "V_0-2-0"
 title: "Ghostbusters Inc. Organization Model"
 ---

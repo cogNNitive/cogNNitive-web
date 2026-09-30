@@ -39,7 +39,7 @@ When a model file lacks a frontmatter or has a corrupt YAML block, it cannot be 
   "arguments": {
     "id": "arenzano_residential_V_0-5-1_residential",
     "template_name": "residential_V_0-5-1",
-    "template_url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/residential/residential_V_0-1-0_NN.md",
+    "template_url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/residential/residential_V_0-1-0_NN.md",
     "title": "Arenzano Residential",
     "model_version": "V_0-5-1"
   }

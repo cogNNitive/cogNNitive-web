@@ -16,7 +16,7 @@ export function renderVocabularyDoc(vocab) {
   lines.push('The cogNNitive ecosystem pins a canonical vocabulary so every editor label, doc, and');
   lines.push('skill refers to the same concept by the same name. The authoritative source is the');
   lines.push('machine-readable dictionary at');
-  lines.push('[`iNNfo/specs/vocabulary.json`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/vocabulary.json);');
+  lines.push('[`iNNfo/specs/vocabulary.json`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/vocabulary.json);');
   lines.push('this page is the human-readable rendering of it.');
   lines.push('');
   lines.push('## Level Hierarchy & Canonical Terms');

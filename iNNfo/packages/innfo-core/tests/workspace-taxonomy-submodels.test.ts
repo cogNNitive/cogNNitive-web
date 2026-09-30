@@ -171,7 +171,7 @@ spec_version: V_1-0-0
 level: 2
 parent_spec:
   name: iNNfo_V_0-1-0
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-1-0_NN.md
 title: Workspace Template
 ---
 # NN Concept Definition

@@ -67,7 +67,7 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Typo Model"
 ---
@@ -98,7 +98,7 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Cross Template Model"
 ---
@@ -130,7 +130,7 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Novel Concept Model"
 ---
@@ -160,7 +160,7 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Structural Sections Model"
 ---

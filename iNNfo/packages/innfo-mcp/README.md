@@ -73,17 +73,17 @@ blueprint_version: "V_0-2-0"
 title: "Composite Domain Blueprint"
 parent_spec:
   name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 includes:
   - name: "business"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/V_0-2-0/spec_NN.md"
     alias:
       concepts:
         "Task": "BusinessTask"
       fields:
         "Item.status": "Item.business_status"
   - name: "projects"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/V_0-2-0/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/V_0-2-0/spec_NN.md"
     alias:
       concepts:
         "Task": "ProjectTask"

@@ -10,7 +10,8 @@
  * Callers build `${SAMPLE_BASE}/{blueprintName}/samples/{file}`, matching the
  * `specs/bluepriNNts/{name}/samples/` layout (see `spec-versioning`, R-SV-01).
  */
-export const REMOTE_SPEC_BASE = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs'
+export const REMOTE_SPEC_BASE =
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs'
 const REMOTE_SAMPLE_BASE = `${REMOTE_SPEC_BASE}/bluepriNNts`
 
 export const SAMPLE_BASE: string = import.meta.env.DEV ? '/specs/bluepriNNts' : REMOTE_SAMPLE_BASE
