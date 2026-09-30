@@ -9,7 +9,7 @@ import {
   hydrateTemplate,
   listTemplateProcedures,
   listTemplateSkills,
-  findModelFile,
+  findKnowledgeFile,
 } from './spec'
 import { validateKnowledge, validateTemplate } from './mutate'
 
@@ -369,7 +369,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(scriptProc?.path).toBe('procedures/generate_script_NN.md')
   })
 
-  it('M1: findModelFile skips specs/ by default but descends with includeSpecs', async () => {
+  it('M1: findKnowledgeFile skips specs/ by default but descends with includeSpecs', async () => {
     await writeFile(
       join(specsDir, 'business_V_0-2-0_NN.md'),
       [
@@ -385,10 +385,10 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const defaultMatch = await findModelFile(rootDir, 'business_V_0-2-0')
+    const defaultMatch = await findKnowledgeFile(rootDir, 'business_V_0-2-0')
     expect(defaultMatch).toBeNull()
 
-    const withSpecs = await findModelFile(rootDir, 'business_V_0-2-0', {
+    const withSpecs = await findKnowledgeFile(rootDir, 'business_V_0-2-0', {
       includeSpecs: true,
     })
     expect(withSpecs).toBe(join(specsDir, 'business_V_0-2-0_NN.md'))

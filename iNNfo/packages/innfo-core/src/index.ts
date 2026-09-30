@@ -146,7 +146,7 @@ export type {
   FreshnessField,
   TemplateResolution,
 } from './workspace/integrity/report.js'
-export { listModels, resolveSpecVersionFromFilename } from './helpers.js'
+export { listKnowledge, resolveSpecVersionFromFilename } from './helpers.js'
 export type { ModelInfo } from './helpers.js'
 export { applyMutation, updateReferenceString, updateWikiLinks } from './mutate.js'
 export type { MutationResult } from './mutate.js'

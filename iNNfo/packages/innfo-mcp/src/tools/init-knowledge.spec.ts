@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
-import { initModel } from './init-model'
+import { initKnowledge } from './init-knowledge'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-init-model')
 const specsDir = join(rootDir, 'specs')
@@ -58,7 +58,7 @@ async function stubBusinessTemplate() {
   await stubSpecChain()
 }
 
-describe('initModel', () => {
+describe('initKnowledge', () => {
   const origCache = process.env.INNFO_CACHE_DIR
 
   beforeEach(async () => {
@@ -80,7 +80,7 @@ describe('initModel', () => {
   it('creates a new model file with frontmatter and a body scaffolded from the resolved template', async () => {
     await stubBusinessTemplate()
 
-    const result = await initModel(rootDir, 'NewModel', {
+    const result = await initKnowledge(rootDir, 'NewModel', {
       template_url: TEMPLATE_URL,
       blueprint_name: blueprint_name,
       title: 'New Model',
@@ -103,7 +103,7 @@ describe('initModel', () => {
   })
 
   it('writes frontmatter without scaffolding a body when the template cannot be resolved', async () => {
-    const result = await initModel(rootDir, 'Orphan', {
+    const result = await initKnowledge(rootDir, 'Orphan', {
       template_url: TEMPLATE_URL,
       blueprint_name: blueprint_name,
     })
@@ -137,7 +137,7 @@ describe('initModel', () => {
       'utf-8',
     )
 
-    const result = await initModel(rootDir, 'Existing', {
+    const result = await initKnowledge(rootDir, 'Existing', {
       template_url: TEMPLATE_URL,
       blueprint_name: blueprint_name,
     })
@@ -158,7 +158,7 @@ describe('initModel', () => {
     const { parseKnowledge } = await import('@cognnitive/innfo-core')
 
     // Test quotes in title
-    const resQuotes = await initModel(rootDir, 'QuotesModel', {
+    const resQuotes = await initKnowledge(rootDir, 'QuotesModel', {
       template_url: TEMPLATE_URL,
       blueprint_name: blueprint_name,
       title: 'The "Real" Deal',
@@ -169,7 +169,7 @@ describe('initModel', () => {
     expect(parsedQuotes.frontmatter?.title).toBe('The "Real" Deal')
 
     // Test newline in title
-    const resNewlines = await initModel(rootDir, 'NewlineModel', {
+    const resNewlines = await initKnowledge(rootDir, 'NewlineModel', {
       template_url: TEMPLATE_URL,
       blueprint_name: blueprint_name,
       title: 'Line1\nLine2',
@@ -211,7 +211,7 @@ describe('initModel', () => {
     it('Version inferred: frontmatter carries the resolved parent spec_version with no override', async () => {
       await stubBusinessTemplate()
 
-      const result = await initModel(rootDir, 'Inferred', {
+      const result = await initKnowledge(rootDir, 'Inferred', {
         template_url: TEMPLATE_URL,
         blueprint_name: blueprint_name,
       })
@@ -224,7 +224,7 @@ describe('initModel', () => {
     it('Version inferred (triangulation): a different parent version yields that version, not a constant', async () => {
       await stubBusinessTemplateV010()
 
-      const result = await initModel(rootDir, 'InferredOld', {
+      const result = await initKnowledge(rootDir, 'InferredOld', {
         template_url: 'https://example.com/business_V_0-1-0_NN.md',
         blueprint_name: 'business_V_0-1-0',
       })
@@ -235,7 +235,7 @@ describe('initModel', () => {
     })
 
     it('Override wins: explicit knowledge_version is used when the parent cannot be resolved', async () => {
-      const result = await initModel(rootDir, 'OverrideOnly', {
+      const result = await initKnowledge(rootDir, 'OverrideOnly', {
         template_url: TEMPLATE_URL,
         blueprint_name: blueprint_name,
         knowledge_version: 'V_0-3-0',
@@ -249,7 +249,7 @@ describe('initModel', () => {
     it('Override wins (triangulation): a matching explicit version is accepted and carried', async () => {
       await stubBusinessTemplate()
 
-      const result = await initModel(rootDir, 'OverrideMatch', {
+      const result = await initKnowledge(rootDir, 'OverrideMatch', {
         template_url: TEMPLATE_URL,
         blueprint_name: blueprint_name,
         knowledge_version: 'V_0-2-0',
@@ -263,7 +263,7 @@ describe('initModel', () => {
       const { existsSync } = await import('node:fs')
       await stubBusinessTemplate()
 
-      const result = await initModel(rootDir, 'Mismatch', {
+      const result = await initKnowledge(rootDir, 'Mismatch', {
         template_url: TEMPLATE_URL,
         blueprint_name: blueprint_name,
         knowledge_version: 'V_9-9-9',
@@ -307,7 +307,7 @@ describe('initModel', () => {
     const targetFile = join(rootDir, 'ShouldNotExist_NN.md')
 
     // If validation fails prior to write, file should not exist on disk
-    const result = await initModel(rootDir, 'ShouldNotExist', {
+    const result = await initKnowledge(rootDir, 'ShouldNotExist', {
       template_url: 'https://example.com/broken_V_0-2-0_NN.md',
       blueprint_name: 'broken_V_0-2-0',
     })
@@ -362,7 +362,7 @@ describe('initModel', () => {
     it('omits the placeholder for a reference field with no concrete target instead of a dangling wikilink', async () => {
       await stubReferenceFieldTemplate()
 
-      const result = await initModel(rootDir, 'RefModel', {
+      const result = await initKnowledge(rootDir, 'RefModel', {
         template_url: 'https://example.com/reftpl_V_0-1-0_NN.md',
         blueprint_name: 'reftpl_V_0-1-0',
       })
@@ -399,7 +399,7 @@ describe('initModel', () => {
     it('scaffolds the real blank template clean on first attempt (a lone type:: text concept gets a real element marker)', async () => {
       await stubRealBlankTemplate()
 
-      const result = await initModel(rootDir, 'BlankModel', {
+      const result = await initKnowledge(rootDir, 'BlankModel', {
         template_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md',
         blueprint_name: 'blank_V_0-2-0',
       })

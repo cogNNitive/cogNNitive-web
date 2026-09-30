@@ -29,7 +29,7 @@ import {
   type CatalogSource,
 } from '@cognnitive/innfo-core'
 import type { SpecCache } from '@cognnitive/innfo-core'
-import { listModels } from './list-read.js'
+import { listKnowledge } from './list-read.js'
 import { deriveNameFromUrl } from './spec.js'
 import {
   collectWorkspaceDiagnostics,
@@ -158,7 +158,7 @@ export async function resolveCatalog(
  * `hydrated`, and a `SpecResolutionError` is `unresolved` — never throws out
  * of the port. Merges the returned `SpecCache` into the shared context.
  */
-async function resolveTemplateForModel(
+async function resolveBlueprintForKnowledge(
   ctx: CheckContext,
   model: WorkspaceModelRef,
 ): Promise<TemplateResolutionResult> {
@@ -211,7 +211,7 @@ export function toIntegrityDiagnostics(
 }
 
 async function discoverModels(ctx: CheckContext): Promise<WorkspaceModelRef[]> {
-  const infos = await listModels(ctx.rootDir)
+  const infos = await listKnowledge(ctx.rootDir)
   const refs: WorkspaceModelRef[] = []
   for (const info of infos) {
     try {
@@ -248,7 +248,7 @@ async function validateAll(
   // (and the one recursiveParse below) sees each model's template.
   for (const model of models) {
     if (!ctx.resolutions.has(model.path)) {
-      ctx.resolutions.set(model.path, await resolveTemplateForModel(ctx, model))
+      ctx.resolutions.set(model.path, await resolveBlueprintForKnowledge(ctx, model))
     }
   }
 
@@ -305,7 +305,7 @@ export function buildCheckWorkspacePorts(ctx: CheckContext): WorkspaceIntegrityP
     fetchCatalog: () => resolveCatalog(ctx.rootDir, ctx.offline),
     resolveTemplate: (model) => {
       const cached = ctx.resolutions.get(model.path)
-      return cached ? Promise.resolve(cached) : resolveTemplateForModel(ctx, model)
+      return cached ? Promise.resolve(cached) : resolveBlueprintForKnowledge(ctx, model)
     },
     checkFreshness: makeCheckFreshness(),
   }

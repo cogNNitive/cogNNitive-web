@@ -330,7 +330,7 @@ function serializeNodeContent(
 
 /**
  * Serializes dirty nodes back to disk. No tree walk — iterates nodes directly.
- * When `driver` is provided, writes go through `driver.writeModel()`.
+ * When `driver` is provided, writes go through `driver.writeKnowledge()`.
  * Without a driver, returns a report of what would be written (caller must
  * handle actual file writes).
  */
@@ -349,7 +349,7 @@ export async function recursiveSerialize(
 
     if (driver) {
       const parsed = parseKnowledge(content)
-      await driver.writeModel(node.source.path, parsed)
+      await driver.writeKnowledge(node.source.path, parsed)
     }
 
     report.push({ path: node.source.path, fidelity, nodeId: node.id })

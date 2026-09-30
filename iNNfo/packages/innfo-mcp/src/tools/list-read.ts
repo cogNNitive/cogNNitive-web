@@ -9,7 +9,7 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { listModels as coreListModels, parseKnowledge, ElementsMap } from '@cognnitive/innfo-core'
+import { listKnowledge as coreListModels, parseKnowledge, ElementsMap } from '@cognnitive/innfo-core'
 import type { ModelInfo, ParsedKnowledge } from '@cognnitive/innfo-core'
 
 /**
@@ -21,8 +21,8 @@ import type { ModelInfo, ParsedKnowledge } from '@cognnitive/innfo-core'
  */
 export const SLICE_LINE_CAP = 150
 
-/** Bounded slice-read options for `readModel` (all optional, no-op when omitted). */
-export interface ReadModelSliceOptions {
+/** Bounded slice-read options for `readKnowledge` (all optional, no-op when omitted). */
+export interface ReadKnowledgeSliceOptions {
   /** Concept to slice (e.g. `Models`); when omitted the whole model is returned. */
   concept?: string
   /** Element within the concept to slice (requires `concept` for scoped reads). */
@@ -61,7 +61,7 @@ export function normalizeId(id: string): string {
 /**
  * Scan a directory for iNNfo knowledge documents.
  */
-export async function listModels(rootDir: string): Promise<ModelInfo[]> {
+export async function listKnowledge(rootDir: string): Promise<ModelInfo[]> {
   const rootModels = await coreListModels(rootDir)
   const candidateDirs = [join(rootDir, 'kNNowledge'), join(rootDir, 'models')]
   for (const dir of candidateDirs) {
@@ -88,9 +88,6 @@ export async function listModels(rootDir: string): Promise<ModelInfo[]> {
   return rootModels
 }
 
-export const listKnowledge = listModels
-export const readKnowledge = readModel
-
 /**
  * Read and parse an iNNfo model by its id.
  * The id is the filename stem (e.g. `Ghostbusters_V_0-1-0_business`
@@ -110,13 +107,13 @@ export const readKnowledge = readModel
  * behavior (whole model, `truncated: false`). A unit over the cap returned
  * without a slice or override is a caller violation, never a server error.
  */
-export async function readModel(
+export async function readKnowledge(
   rootDir: string,
   id: string,
-  options?: ReadModelSliceOptions,
+  options?: ReadKnowledgeSliceOptions,
 ): Promise<SlicedModel | null> {
-  const { findModelFile } = await import('./spec.js')
-  const filePath = await findModelFile(rootDir, id)
+  const { findKnowledgeFile } = await import('./spec.js')
+  const filePath = await findKnowledgeFile(rootDir, id)
   if (!filePath) return null
   try {
     const content = await readFile(filePath, 'utf-8')
@@ -136,7 +133,7 @@ export async function readModel(
  * Extracts the requested concept/element section from `rawContent`,
  * filters `elements` to the slice, and enforces the line cap.
  */
-export function applySlice(model: ParsedKnowledge, options?: ReadModelSliceOptions): SlicedModel {
+export function applySlice(model: ParsedKnowledge, options?: ReadKnowledgeSliceOptions): SlicedModel {
   const sliced = model as SlicedModel
   const concept = options?.concept?.trim() || undefined
   const element = options?.element?.trim() || undefined

@@ -9,10 +9,10 @@ import {
   buildAgentModificationBlock,
 } from '@cognnitive/innfo-core'
 import type { SpecDocument, ParsedKnowledge, BlueprintSchema } from '@cognnitive/innfo-core'
-import { findModelFile } from './spec.js'
+import { findKnowledgeFile } from './spec.js'
 import { isLocalPath, toLocalFilePath, saveSpecOnce } from './resolver-node.js'
 import { createSpecsBackupZip } from './spec-backup.js'
-import { loadModel, saveModel, resolveTemplateForModel } from './model-io.js'
+import { loadKnowledge, saveKnowledge, resolveBlueprintForKnowledge } from './knowledge-io.js'
 import { DEFAULT_WORKSPACE_IGNORE } from './validate.js'
 
 export interface ApplyChangeResult {
@@ -295,7 +295,7 @@ async function bumpVersion(
   let newParentName: string | null = null
   // SpecDocument view of the just-bumped local parent, built once the new
   // frontmatter is serialized below. Used as the validation `template` when
-  // resolveTemplateForModel can't yet see the bump (the new file hasn't been
+  // resolveBlueprintForKnowledge can't yet see the bump (the new file hasn't been
   // written to disk at this point in the flow).
   let localParentTemplate: SpecDocument | null = null
 
@@ -364,14 +364,14 @@ async function bumpVersion(
   try {
     if (parentContent && newParentName) {
       template = localParentTemplate
-      const r = await resolveTemplateForModel(rootDir, model).catch(() => ({
+      const r = await resolveBlueprintForKnowledge(rootDir, model).catch(() => ({
         template: localParentTemplate,
         resolveInclude: () => null,
       }))
       template = r.template ?? localParentTemplate
       resolveInclude = r.resolveInclude
     } else {
-      const r = await resolveTemplateForModel(rootDir, model)
+      const r = await resolveBlueprintForKnowledge(rootDir, model)
       template = r.template
       resolveInclude = r.resolveInclude
     }
@@ -407,7 +407,7 @@ async function bumpVersion(
         let depTemplate: SpecDocument | null = null
         let depResolveInclude: (ref: { name: string; url: string }) => string | null = () => null
         try {
-          const r = await resolveTemplateForModel(rootDir, parsed)
+          const r = await resolveBlueprintForKnowledge(rootDir, parsed)
           depTemplate = r.template
           depResolveInclude = r.resolveInclude
         } catch (err) {
@@ -470,15 +470,15 @@ async function bumpVersion(
 
     // 2. Write target model file
     if (newPath === filePath) {
-      await saveModel(filePath, model)
+      await saveKnowledge(filePath, model)
     } else {
-      await saveModel(newPath, model)
+      await saveKnowledge(newPath, model)
       await rm(filePath, { force: true })
     }
 
     // 3. Write all affected referencing models
     for (const affected of affectedModels) {
-      await saveModel(affected.filePath, affected.model)
+      await saveKnowledge(affected.filePath, affected.model)
     }
 
     // 4. Update references in workspace index.md
@@ -542,14 +542,14 @@ export async function applyChange(
   op: string,
   args: Record<string, unknown>,
 ): Promise<ApplyChangeResult> {
-  const filePath = await findModelFile(rootDir, id)
+  const filePath = await findKnowledgeFile(rootDir, id)
   if (!filePath) {
     return { success: false, errors: [{ path: '', message: `Model not found: ${id}` }] }
   }
 
   let model: ParsedKnowledge
   try {
-    model = await loadModel(filePath)
+    model = await loadKnowledge(filePath)
   } catch (err) {
     return { success: false, errors: [{ path: '', message: `Failed to load model: ${err}` }] }
   }
@@ -560,7 +560,7 @@ export async function applyChange(
 
   if (op === 'generate_index') {
     try {
-      const { template: idxTemplate, resolveInclude: idxInclude } = await resolveTemplateForModel(
+      const { template: idxTemplate, resolveInclude: idxInclude } = await resolveBlueprintForKnowledge(
         rootDir,
         model,
       )
@@ -586,7 +586,7 @@ export async function applyChange(
   if (op === 'rename_element') {
     try {
       const { template: schemaTemplate, resolveInclude: schemaInclude } =
-        await resolveTemplateForModel(rootDir, model)
+        await resolveBlueprintForKnowledge(rootDir, model)
       if (schemaTemplate) {
         renameSchema = resolveBlueprintSchema(schemaTemplate.rawContent, schemaInclude).schema
       }
@@ -614,7 +614,7 @@ export async function applyChange(
   let template: SpecDocument | null
   let resolveInclude: (ref: { name: string; url: string }) => string | null = () => null
   try {
-    const r = await resolveTemplateForModel(rootDir, model)
+    const r = await resolveBlueprintForKnowledge(rootDir, model)
     template = r.template
     resolveInclude = r.resolveInclude
   } catch (err) {
@@ -636,7 +636,7 @@ export async function applyChange(
 
   // Write updated model
   try {
-    await saveModel(filePath, model)
+    await saveKnowledge(filePath, model)
     if (
       op === 'rename_element' &&
       typeof args.elementName === 'string' &&

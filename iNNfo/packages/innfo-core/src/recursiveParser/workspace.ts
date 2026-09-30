@@ -148,7 +148,7 @@ function makeDomainReader(root: DirectoryHandleLike, driver?: KnowledgeDriver): 
     async read(path: string): Promise<string | null> {
       if (driver) {
         try {
-          const m = await driver.readModel(path)
+          const m = await driver.readKnowledge(path)
           return m.rawContent
         } catch {
           return null
@@ -172,7 +172,7 @@ async function findCanonicalDomainEntrypoint(
   const target = CANONICAL_DOMAIN_ENTRYPOINT
   if (driver) {
     try {
-      const parsed = await driver.readModel(target)
+      const parsed = await driver.readKnowledge(target)
       return {
         path: target,
         name: stripMdSuffix(target),
@@ -457,7 +457,7 @@ export async function recursiveParse(
         const children = await driver.listChildren('')
         for (const child of children) {
           if (child.name.endsWith(INNFO_FILE_SUFFIX) && !isIgnoredPath(child.name)) {
-            const parsed = await driver.readModel(child.uri || child.name)
+            const parsed = await driver.readKnowledge(child.uri || child.name)
             visitedPaths.add(normalizePathKey(child.name))
             await parseAndRegisterKnowledge(parsed.rawContent, child.name, stripMdSuffix(child.name), ctx, elementNameToModel)
           }
@@ -554,7 +554,7 @@ export async function recursiveParse(
     let content: string
     try {
       if (driver) {
-        const parsed = await driver.readModel(resolvedPath)
+        const parsed = await driver.readKnowledge(resolvedPath)
         content = parsed.rawContent
       } else {
         const fileHandle = await resolveFileHandle(root, resolvedPath)

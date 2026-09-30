@@ -66,10 +66,10 @@ async function assertRoundTripStable(
 
   let capturedContent: string | null = null
   const capturingDriver: KnowledgeDriver = {
-    readModel: async () => {
+    readKnowledge: async () => {
       throw new Error('not expected')
     },
-    writeModel: async (_uri: string, model: ParsedKnowledge) => {
+    writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
       capturedContent = model.rawContent
     },
     listChildren: async () => [],

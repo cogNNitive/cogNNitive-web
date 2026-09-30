@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { findModelFile } from '../src/tools/spec.js'
-import { readModel } from '../src/tools/list-read.js'
+import { findKnowledgeFile } from '../src/tools/spec.js'
+import { readKnowledge } from '../src/tools/list-read.js'
 import { validateKnowledge } from '../src/tools/mutate.js'
 
 describe('MCP Submodel Discovery & Resolver (Task 4.2)', () => {
@@ -17,7 +17,7 @@ describe('MCP Submodel Discovery & Resolver (Task 4.2)', () => {
     await rm(tempDir, { recursive: true, force: true })
   })
 
-  describe('findModelFile & readModel with nested subdirectories', () => {
+  describe('findKnowledgeFile & readKnowledge with nested subdirectories', () => {
     it('discovers and reads submodels located in nested subdirectories', async () => {
       const nestedDir = join(tempDir, 'models', 'subsystems', 'auth')
       await mkdir(nestedDir, { recursive: true })
@@ -37,16 +37,16 @@ title: Security Tokens
 `
       await writeFile(filePath, content, 'utf-8')
 
-      // Test findModelFile by clean stem
-      const foundPath = await findModelFile(tempDir, 'Tokens_V_0-1-0_security')
+      // Test findKnowledgeFile by clean stem
+      const foundPath = await findKnowledgeFile(tempDir, 'Tokens_V_0-1-0_security')
       expect(foundPath).toBe(filePath)
 
-      // Test findModelFile by raw filename
-      const foundByFilename = await findModelFile(tempDir, 'Tokens_V_0-1-0_security_NN.md')
+      // Test findKnowledgeFile by raw filename
+      const foundByFilename = await findKnowledgeFile(tempDir, 'Tokens_V_0-1-0_security_NN.md')
       expect(foundByFilename).toBe(filePath)
 
-      // Test readModel by clean stem
-      const model = await readModel(tempDir, 'Tokens_V_0-1-0_security')
+      // Test readKnowledge by clean stem
+      const model = await readKnowledge(tempDir, 'Tokens_V_0-1-0_security')
       expect(model).toBeDefined()
       expect(model?.frontmatter.title).toBe('Security Tokens')
     })

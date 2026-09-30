@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { initModel } from '../src/tools/mutate'
+import { initKnowledge } from '../src/tools/mutate'
 
 describe('MCP model repair tools', () => {
   let tempDir: string
@@ -21,8 +21,8 @@ describe('MCP model repair tools', () => {
     await rm(tempDir, { recursive: true, force: true })
   })
 
-  it('initModel creates a file with valid YAML frontmatter', async () => {
-    const res = await initModel(tempDir, 'arenzano_residential_V_0-5-1_residential', {
+  it('initKnowledge creates a file with valid YAML frontmatter', async () => {
+    const res = await initKnowledge(tempDir, 'arenzano_residential_V_0-5-1_residential', {
       blueprint_name: 'residential_V_0-2-0',
       template_url:
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/latest/level2/residential/residential_NN.md',
@@ -38,11 +38,11 @@ describe('MCP model repair tools', () => {
     expect(content).toContain('> [!NOTE]')
   })
 
-  it('initModel preserves existing body content when frontmatter is missing', async () => {
+  it('initKnowledge preserves existing body content when frontmatter is missing', async () => {
     const filePath = join(tempDir, 'broken_model_NN.md')
     await writeFile(filePath, '# NN Team\n## NN Team: Alice\n')
 
-    const res = await initModel(tempDir, 'broken_model', {
+    const res = await initKnowledge(tempDir, 'broken_model', {
       blueprint_name: 'business_V_0-2-0',
       template_url:
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/latest/level2/business/business_NN.md',

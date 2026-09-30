@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
-import { normalizeId, listModels, readModel } from './list-read'
+import { normalizeId, listKnowledge, readKnowledge } from './list-read'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-list-read')
 
@@ -35,7 +35,7 @@ describe('normalizeId', () => {
   })
 })
 
-describe('listModels', () => {
+describe('listKnowledge', () => {
   beforeEach(async () => {
     await rm(rootDir, { recursive: true, force: true })
     await mkdir(rootDir, { recursive: true })
@@ -62,7 +62,7 @@ describe('listModels', () => {
     await writeFile(join(rootDir, 'index.md'), '', 'utf-8')
     await writeFile(join(rootDir, 'notes.txt'), '', 'utf-8')
 
-    const models = await listModels(rootDir)
+    const models = await listKnowledge(rootDir)
 
     expect(models.map((m) => m.id)).toEqual([
       'Alpha_V_1-0-0_business_NN',
@@ -72,12 +72,12 @@ describe('listModels', () => {
   })
 
   it('returns an empty array for a non-existent directory', async () => {
-    const models = await listModels(join(rootDir, 'does-not-exist'))
+    const models = await listKnowledge(join(rootDir, 'does-not-exist'))
     expect(models).toEqual([])
   })
 })
 
-describe('readModel', () => {
+describe('readKnowledge', () => {
   const validContent = [
     '---',
     'spec_version: "V_0-2-0"',
@@ -99,30 +99,30 @@ describe('readModel', () => {
 
   it('reads and parses a model located via the `_NN.md` candidate', async () => {
     await writeFile(join(rootDir, 'Sample_NN.md'), validContent, 'utf-8')
-    const model = await readModel(rootDir, 'Sample')
+    const model = await readKnowledge(rootDir, 'Sample')
     expect(model?.frontmatter.title).toBe('Readable Model')
   })
 
   it('reads and parses a model located via the plain `.md` candidate', async () => {
     await writeFile(join(rootDir, 'PlainOnly.md'), validContent, 'utf-8')
-    const model = await readModel(rootDir, 'PlainOnly')
+    const model = await readKnowledge(rootDir, 'PlainOnly')
     expect(model?.frontmatter.title).toBe('Readable Model')
   })
 
   it('reads a model whose filename matches the id verbatim (no extension)', async () => {
     await writeFile(join(rootDir, 'VerbatimName'), validContent, 'utf-8')
-    const model = await readModel(rootDir, 'VerbatimName')
+    const model = await readKnowledge(rootDir, 'VerbatimName')
     expect(model?.frontmatter.title).toBe('Readable Model')
   })
 
   it('returns null when no candidate file exists', async () => {
-    const model = await readModel(rootDir, 'Missing')
+    const model = await readKnowledge(rootDir, 'Missing')
     expect(model).toBeNull()
   })
 
   it('normalizes an id with a redundant _NN suffix before resolving candidates', async () => {
     await writeFile(join(rootDir, 'Sample_NN.md'), validContent, 'utf-8')
-    const model = await readModel(rootDir, 'Sample_NN')
+    const model = await readKnowledge(rootDir, 'Sample_NN')
     expect(model?.frontmatter.title).toBe('Readable Model')
   })
 
@@ -148,10 +148,10 @@ describe('readModel', () => {
     ].join('\n')
     await writeFile(join(rootDir, 'domaiNN_NN.md'), wsContent, 'utf-8')
 
-    const models = await listModels(rootDir)
+    const models = await listKnowledge(rootDir)
     expect(models.some((m) => m.id === 'domaiNN_NN')).toBe(true)
 
-    const model = await readModel(rootDir, 'domaiNN')
+    const model = await readKnowledge(rootDir, 'domaiNN')
     expect(model?.frontmatter.title).toBe('Root Workspace')
     const modelRefs = model?.elements.get('Models')
     expect(modelRefs).toHaveLength(1)
@@ -159,7 +159,7 @@ describe('readModel', () => {
   })
 })
 
-describe('readModel slices (llm-context-efficiency)', () => {
+describe('readKnowledge slices (llm-context-efficiency)', () => {
   const sliceRoot = join(import.meta.dirname!, '..', '..', 'temp-test-list-read-slice')
 
   function buildSlicedModelContent(): string {
@@ -190,7 +190,7 @@ describe('readModel slices (llm-context-efficiency)', () => {
   })
 
   it('surgical edit reads slices only: concept slice stays within the cap', async () => {
-    const sliced = await readModel(sliceRoot, 'Sliced', { concept: 'Beta' })
+    const sliced = await readKnowledge(sliceRoot, 'Sliced', { concept: 'Beta' })
     expect(sliced).not.toBeNull()
     expect(sliced?.elements.has('Beta')).toBe(true)
     expect(sliced?.elements.has('Alpha')).toBe(false)
@@ -200,7 +200,7 @@ describe('readModel slices (llm-context-efficiency)', () => {
   })
 
   it('caps enforced: oversized slice truncates at max_lines with truncated=true', async () => {
-    const sliced = await readModel(sliceRoot, 'Sliced', { concept: 'Alpha', max_lines: 150 })
+    const sliced = await readKnowledge(sliceRoot, 'Sliced', { concept: 'Alpha', max_lines: 150 })
     expect(sliced).not.toBeNull()
     const lineCount = (sliced?.rawContent ?? '').split('\n').length
     expect(lineCount).toBeLessThanOrEqual(150)
@@ -208,7 +208,7 @@ describe('readModel slices (llm-context-efficiency)', () => {
   })
 
   it('override for wide context: override_reason includes the wider unit and records the override', async () => {
-    const sliced = await readModel(sliceRoot, 'Sliced', {
+    const sliced = await readKnowledge(sliceRoot, 'Sliced', {
       concept: 'Alpha',
       override_reason: 'Need full concept for migration audit',
     })

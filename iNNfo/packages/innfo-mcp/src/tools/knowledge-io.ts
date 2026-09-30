@@ -7,7 +7,7 @@ import { resolveTemplateWithCache } from './spec.js'
  * Resolve a model's template from its `parent_spec.url` (source of truth).
  * Returns null when the model declares no resolvable parent.
  */
-export async function resolveTemplateForModel(
+export async function resolveBlueprintForKnowledge(
   rootDir: string,
   model: ParsedKnowledge,
 ): Promise<{
@@ -25,7 +25,7 @@ export async function resolveTemplateForModel(
 /**
  * Load a model: read + parse.
  */
-export async function loadModel(filePath: string): Promise<ParsedKnowledge> {
+export async function loadKnowledge(filePath: string): Promise<ParsedKnowledge> {
   const content = await readFile(filePath, 'utf-8')
   return parseKnowledge(content)
 }
@@ -33,7 +33,7 @@ export async function loadModel(filePath: string): Promise<ParsedKnowledge> {
 /**
  * Save a model: serialize + write.
  */
-export async function saveModel(filePath: string, model: ParsedKnowledge): Promise<void> {
+export async function saveKnowledge(filePath: string, model: ParsedKnowledge): Promise<void> {
   const content = serializeKnowledge(model)
   await writeFile(filePath, content, 'utf-8')
 }

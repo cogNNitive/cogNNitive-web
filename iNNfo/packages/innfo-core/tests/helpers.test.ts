@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { listModels } from '../src/index'
+import { listKnowledge } from '../src/index'
 
 const tempDirs: string[] = []
 
@@ -23,7 +23,7 @@ const MODEL_FRONTMATTER = [
   '',
 ].join('\n')
 
-describe('listModels (recursive scan)', () => {
+describe('listKnowledge (recursive scan)', () => {
   afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map((d) => rm(d, { recursive: true, force: true })))
   })
@@ -57,7 +57,7 @@ describe('listModels (recursive scan)', () => {
     // index.md must keep being skipped.
     await writeFile(join(root, 'domaiNN_NN.md'), '# Index', 'utf-8')
 
-    const models = await listModels(root)
+    const models = await listKnowledge(root)
     const ids = models.map((m) => m.id)
 
     expect(ids).toContain('Root_V_0-1-0_NN')
@@ -76,7 +76,7 @@ describe('listModels (recursive scan)', () => {
   })
 
   it('returns an empty list for a non-existent root', async () => {
-    const models = await listModels(join(tmpdir(), 'does-not-exist-innfo'))
+    const models = await listKnowledge(join(tmpdir(), 'does-not-exist-innfo'))
     expect(models).toEqual([])
   })
 
@@ -123,7 +123,7 @@ describe('listModels (recursive scan)', () => {
       'utf-8',
     )
 
-    const models = await listModels(root)
+    const models = await listKnowledge(root)
     const ids = models.map((m) => m.id)
 
     expect(ids).toEqual(['Acme_V_1-0-0_business_NN'])

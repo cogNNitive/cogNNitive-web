@@ -80,10 +80,10 @@ describe('recursiveSerializer', () => {
 
     let writtenContent: string | null = null
     const mockDriver: KnowledgeDriver = {
-      readModel: async (_uri: string) => {
+      readKnowledge: async (_uri: string) => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedKnowledge) => {
+      writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],
@@ -128,10 +128,10 @@ describe('recursiveSerializer', () => {
     // Since we have no root handle in the serializer, round-trip through driver
     let roundtripContent: string | null = null
     const capturingDriver: KnowledgeDriver = {
-      readModel: async (_uri: string) => {
+      readKnowledge: async (_uri: string) => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedKnowledge) => {
+      writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
         roundtripContent = model.rawContent
       },
       listChildren: async () => [],
@@ -196,10 +196,10 @@ matrices:
 
     let writtenContent: string | null = null
     const capturingDriver: KnowledgeDriver = {
-      readModel: async () => {
+      readKnowledge: async () => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedKnowledge) => {
+      writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],
@@ -274,10 +274,10 @@ title: "Matrix Definitions Test"
 
     let writtenContent: string | null = null
     const capturingDriver: KnowledgeDriver = {
-      readModel: async () => {
+      readKnowledge: async () => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedKnowledge) => {
+      writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],
@@ -364,10 +364,10 @@ title: "Matrix Definitions Test"
 
     let writtenContent: string | null = null
     const capturingDriver: KnowledgeDriver = {
-      readModel: async () => {
+      readKnowledge: async () => {
         throw new Error('not expected')
       },
-      writeModel: async (_uri: string, model: ParsedKnowledge) => {
+      writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
         writtenContent = model.rawContent
       },
       listChildren: async () => [],

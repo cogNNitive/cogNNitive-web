@@ -102,7 +102,7 @@ async function collectModels(dir: string, rootDir: string, models: ModelInfo[]):
  * `node_modules`, `.git`, and any dot-directory. Returns an array of
  * `ModelInfo` sorted by id.
  */
-export async function listModels(rootDir: string): Promise<ModelInfo[]> {
+export async function listKnowledge(rootDir: string): Promise<ModelInfo[]> {
   const models: ModelInfo[] = []
   await collectModels(rootDir, rootDir, models)
   models.sort((a, b) => a.id.localeCompare(b.id))

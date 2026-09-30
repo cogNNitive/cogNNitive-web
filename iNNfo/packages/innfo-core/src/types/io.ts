@@ -12,8 +12,8 @@ export interface ModelEntry {
 
 /** Structural contract for pluggable model read/write backends (e.g. a caller-supplied write target). */
 export interface KnowledgeDriver {
-  readModel(uri: string): Promise<ParsedKnowledge>
-  writeModel(uri: string, model: ParsedKnowledge): Promise<void>
+  readKnowledge(uri: string): Promise<ParsedKnowledge>
+  writeKnowledge(uri: string, model: ParsedKnowledge): Promise<void>
   listChildren(uri: string): Promise<ModelEntry[]>
   listAssets(uri: string): Promise<string[]>
 }

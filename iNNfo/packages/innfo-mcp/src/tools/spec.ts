@@ -63,7 +63,7 @@ export { normalizeId }
  * Searches the root directory, `kNNowledge/` and the conventional `kNNowledge/` subdirectory.
  * Supports nested relative paths (e.g. `subsystems/auth/tokens_NN.md`).
  */
-export async function findModelFile(
+export async function findKnowledgeFile(
   rootDir: string,
   id: string,
   opts?: { includeSpecs?: boolean },
@@ -129,8 +129,6 @@ export async function findModelFile(
   return null
 }
 
-export const findKnowledgeFile = findModelFile
-
 async function recursiveFindModel(
   dir: string,
   cleanId: string,
@@ -192,7 +190,7 @@ export async function readParentSpecUrl(
   rootDir: string,
   modelId: string,
 ): Promise<{ url: string; name: string } | null> {
-  const filePath = await findModelFile(rootDir, modelId)
+  const filePath = await findKnowledgeFile(rootDir, modelId)
   if (!filePath) return null
   const content = await readFile(filePath, 'utf-8').catch(() => null)
   if (!content) return null
@@ -655,7 +653,7 @@ export async function discoverTransitiveAssets(
 
   if (modelId) {
     const filePath =
-      (await findModelFile(rootDir, modelId)) ??
+      (await findKnowledgeFile(rootDir, modelId)) ??
       (isLocalPath(modelId) ? toLocalFilePath(modelId, rootDir) : null)
     if (filePath) {
       const content = await readFile(filePath, 'utf-8').catch(() => null)

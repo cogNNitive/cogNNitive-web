@@ -2,7 +2,7 @@ import { readFile, writeFile, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { resolveBlueprintSchema, validateDocument } from '@cognnitive/innfo-core'
 import type { SpecDocument, ValidationError } from '@cognnitive/innfo-core'
-import { resolveTemplateWithCache, findModelFile, normalizeId } from './spec.js'
+import { resolveTemplateWithCache, findKnowledgeFile, normalizeId } from './spec.js'
 import { normalizeVersion } from './resolver-node.js'
 import { isInsideRoot, isSafeRelativeId } from './path-guard.js'
 
@@ -83,7 +83,7 @@ function scaffoldBodyFromSchema(schema: {
   return lines.join('\n').trimEnd() + '\n'
 }
 
-export interface InitModelArgs {
+export interface InitKnowledgeArgs {
   template_url?: string
   blueprint_url?: string
   blueprint_name?: string
@@ -91,10 +91,10 @@ export interface InitModelArgs {
   knowledge_version?: string
 }
 
-export async function initModel(
+export async function initKnowledge(
   rootDir: string,
   id: string,
-  args: InitModelArgs,
+  args: InitKnowledgeArgs,
   opts?: {
     cacheDir?: string
     inPlace?: boolean
@@ -114,7 +114,7 @@ export async function initModel(
   const blueprintUrl = args.blueprint_url || args.template_url || ''
   const requestedVersion = args.knowledge_version
 
-  let filePath = await findModelFile(rootDir, id)
+  let filePath = await findKnowledgeFile(rootDir, id)
 
   if (!filePath) {
     const knowledgeDir = join(rootDir, 'kNNowledge')
@@ -295,6 +295,4 @@ export async function initModel(
     validation: { valid: doc.valid, errors: doc.errors, warnings: doc.warnings },
   }
 }
-
-export const initKnowledge = initModel
 

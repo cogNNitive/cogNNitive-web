@@ -37,10 +37,10 @@ import type {
   BaselineEntry,
   BaselineDiff,
 } from '@cognnitive/innfo-core'
-import { resolveTemplateWithCache, findModelFile, deriveNameFromUrl, getSpec } from './spec.js'
+import { resolveTemplateWithCache, findKnowledgeFile, deriveNameFromUrl, getSpec } from './spec.js'
 import { buildIncludeContentMap } from './resolver-node.js'
 import type { FreshnessResult } from './resolver-node.js'
-import { loadModel } from './model-io.js'
+import { loadKnowledge } from './knowledge-io.js'
 
 export const DEFAULT_WORKSPACE_IGNORE: Set<string> = new Set([
   'node_modules',
@@ -623,7 +623,7 @@ export async function validateKnowledge(
   if (content) {
     model = parseKnowledge(content)
   } else if (id) {
-    const filePath = await findModelFile(rootDir, id)
+    const filePath = await findKnowledgeFile(rootDir, id)
     if (!filePath) {
       return {
         valid: false,
@@ -635,7 +635,7 @@ export async function validateKnowledge(
         summary: null,
       }
     }
-    model = await loadModel(filePath)
+    model = await loadKnowledge(filePath)
   } else {
     return {
       valid: false,
@@ -654,7 +654,7 @@ export async function validateKnowledge(
     return { ...delegated, suppressedCount: 0, staleEntries: [], backlog: null, summary: null }
   }
 
-  const resolvedModelPath = id ? await findModelFile(rootDir, id) : null
+  const resolvedModelPath = id ? await findKnowledgeFile(rootDir, id) : null
   const modelPath = resolvedModelPath ?? (id ?? 'inline')
   const referringDir = resolvedModelPath ? dirname(resolvedModelPath) : rootDir
   const fileNameForCheck = id ? basename(resolvedModelPath ?? id) : 'inline_NN.md'
@@ -990,7 +990,7 @@ export async function validateTemplate(
   if (content) {
     templateContent = content
   } else if (id) {
-    const filePath = await findModelFile(rootDir, id, { includeSpecs: true })
+    const filePath = await findKnowledgeFile(rootDir, id, { includeSpecs: true })
     if (!filePath) {
       return {
         valid: false,
@@ -1101,7 +1101,7 @@ export async function validateTemplate(
   }
 
   const templatePath = id
-    ? ((await findModelFile(rootDir, id, { includeSpecs: true })) ?? id)
+    ? ((await findKnowledgeFile(rootDir, id, { includeSpecs: true })) ?? id)
     : 'inline'
   const decoratedErrors = errors.map((e) => ({ ...e, filePath: templatePath }))
   const decoratedWarnings = warnings.map((w) => ({ ...w, filePath: templatePath }))

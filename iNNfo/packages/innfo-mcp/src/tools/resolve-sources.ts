@@ -3,7 +3,7 @@
  * their underlying file, anchor, and content — "where did this value come
  * from?" without manually tracing `sources::` values by hand.
  *
- * Composes only existing exports (design.md's Approach section): `readModel`,
+ * Composes only existing exports (design.md's Approach section): `readKnowledge`,
  * `splitSourceFieldValue`, `parseKnowledgeUnitRef`/`parseSourceRef`,
  * `createWorkspaceSourceResolver`, `resolveHeadingSection`/`resolveUnit`, and
  * the shared frontmatter parser. When `fieldName` is omitted, field selection
@@ -31,8 +31,8 @@ import type {
   SourceRef,
   HeadingInfo,
 } from '@cognnitive/innfo-core'
-import { readModel } from './list-read.js'
-import { findModelFile, resolveTemplateWithCache } from './spec.js'
+import { readKnowledge } from './list-read.js'
+import { findKnowledgeFile, resolveTemplateWithCache } from './spec.js'
 import { createWorkspaceSourceResolver, buildBlueprintSchemaResolverFromCache } from './validate.js'
 
 /** Hard cap on a returned excerpt's character length. */
@@ -78,8 +78,8 @@ export async function resolveSources(
   rootDir: string,
   input: { model: string; elementId: string; fieldName?: string },
 ): Promise<ResolvedCitation[]> {
-  const modelPath = await findModelFile(rootDir, input.model)
-  const model = modelPath ? await readModel(rootDir, input.model) : null
+  const modelPath = await findKnowledgeFile(rootDir, input.model)
+  const model = modelPath ? await readKnowledge(rootDir, input.model) : null
   if (!modelPath || !model) {
     return [
       {

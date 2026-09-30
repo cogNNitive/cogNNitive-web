@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
-import { initModel, validateTemplate } from '../src/tools/mutate.js'
+import { initKnowledge, validateTemplate } from '../src/tools/mutate.js'
 import { readFileSync } from 'node:fs'
 
 const L1 = readFileSync(
@@ -125,7 +125,7 @@ describe('MCP — includes composition + init_model scaffolding', () => {
       ].join('\n'),
     )
 
-    const res = await initModel(root, 'my_model_V_1-0-0_demo_tpl', {
+    const res = await initKnowledge(root, 'my_model_V_1-0-0_demo_tpl', {
       template_url: tplUrl,
       blueprint_name: 'demo_tpl',
       title: 'My Model',

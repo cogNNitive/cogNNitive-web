@@ -79,10 +79,10 @@ async function handleSaveWorkspace(): Promise<void> {
     // Custom driver to intercept and execute writes into the chosen folder handle
     const writtenPaths = new Set<string>()
     const customDriver = {
-      readModel: async () => {
+      readKnowledge: async () => {
         throw new Error('Not implemented')
       },
-      writeModel: async (path: string, parsed: any) => {
+      writeKnowledge: async (path: string, parsed: any) => {
         const content = serializeKnowledge(parsed)
         const isRoot =
           rootNode.value &&

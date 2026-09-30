@@ -3,10 +3,10 @@
  * focused modules; this file keeps the import path (`./tools/mutate.js`)
  * stable for `server.ts` and the specs.
  *
- *   ./model-io.ts      load / save / template resolution shared helpers
- *   ./validate.ts      validate_model, validate_model_url, validate_template
+ *   ./knowledge-io.ts  load / save / blueprint resolution shared helpers
+ *   ./validate.ts      validate_knowledge, validate_knowledge_url, validate_blueprint
  *   ./apply-change.ts  apply_change + bump_version
- *   ./init-model.ts    init_model + body scaffolding
+ *   ./init-knowledge.ts init_knowledge + body scaffolding
  *   ./reachability.ts  reachability graph + prune_orphaned_specs
  *   ./spec-backup.ts   specs backup zip
  */
@@ -19,7 +19,7 @@ export {
   validateTemplate,
   validateBlueprint,
 } from './validate.js'
-export { initModel, initKnowledge } from './init-model.js'
+export { initKnowledge } from './init-knowledge.js'
 export { calculateSpecReachability, pruneOrphanedSpecs } from './reachability.js'
 export type { PruneOrphanedSpecsResult } from './reachability.js'
 export { createSpecsBackupZip } from './spec-backup.js'
