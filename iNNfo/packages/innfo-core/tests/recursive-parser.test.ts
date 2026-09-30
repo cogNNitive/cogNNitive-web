@@ -88,7 +88,7 @@ describe('recursiveParse (index.md-driven)', () => {
   describe('FR-001: Workspace with valid index.md', () => {
     it('parses a single model listed in index.md', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['gb_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['gb_NN.md']))],
         ['gb_NN.md', fakeFile('gb_NN.md', makeModel('Ghostbusters'))],
       ])
 
@@ -103,7 +103,7 @@ describe('recursiveParse (index.md-driven)', () => {
 
     it('parses multiple models listed in index.md', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', makeModel('Model A'))],
         ['modelB_NN.md', fakeFile('modelB_NN.md', makeModel('Model B'))],
       ])
@@ -133,7 +133,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['test_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['test_NN.md']))],
         ['test_NN.md', fakeFile('test_NN.md', modelContent)],
       ])
 
@@ -148,7 +148,7 @@ describe('recursiveParse (index.md-driven)', () => {
     })
   })
 
-  describe('FR-001: Missing index.md', () => {
+  describe('FR-001: Missing domaiNN_NN.md', () => {
     it('scans for standalone _NN.md files when index.md is missing', async () => {
       const root = fakeDir('workspace', [
         ['gb_NN.md', fakeFile('gb_NN.md', makeModel('Ghostbusters'))],
@@ -162,7 +162,7 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(rootNode.name).toBe('gb')
       // The missing index.md issue is still reported as the first warning (downgraded when models found)
       expect(result.issues.length).toBeGreaterThan(0)
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
     it('loads multiple standalone _NN.md files when index.md is missing', async () => {
@@ -175,7 +175,7 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(result.rootIds).toHaveLength(2)
       const names = result.rootIds.map((id) => result.nodes[id].name).sort()
       expect(names).toEqual(['modelA', 'modelB'])
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
     it('returns empty when no .md files with iNNfo frontmatter exist and index.md is missing', async () => {
@@ -184,7 +184,7 @@ describe('recursiveParse (index.md-driven)', () => {
       const result = await recursiveParse(root)
       expect(result.rootIds).toHaveLength(0)
       expect(result.issues.length).toBeGreaterThan(0)
-      expect(result.issues[0].message).toContain('Missing index.md')
+      expect(result.issues[0].message).toContain('Missing domaiNN_NN.md')
     })
 
     it('loads models with plain .md filenames (no _NN suffix)', async () => {
@@ -200,7 +200,7 @@ describe('recursiveParse (index.md-driven)', () => {
       const rootNode = result.nodes[result.rootIds[0]]
       expect(rootNode.name).toBe('DeLorean_Time_Travel')
       expect(rootNode.type).toBe('Time Travel Procedure')
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
     it('skips .md files without iNNfo frontmatter (no spec_version)', async () => {
@@ -239,7 +239,7 @@ describe('recursiveParse (index.md-driven)', () => {
   describe('FR-001: Wikilink to non-existent model', () => {
     it('emits a warning and skips missing file', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['exists_NN.md', 'missing_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['exists_NN.md', 'missing_NN.md']))],
         ['exists_NN.md', fakeFile('exists_NN.md', makeModel('Exists'))],
       ])
 
@@ -261,7 +261,7 @@ describe('recursiveParse (index.md-driven)', () => {
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['./models/nested_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./models/nested_NN.md']))],
         ['kNNowledge', modelsDir],
       ])
 
@@ -291,9 +291,9 @@ describe('recursiveParse (index.md-driven)', () => {
       const sourcesDir = fakeDir('sources', [['nn', nnDir]])
       const root = fakeDir('workspace', [
         [
-          'index.md',
+          'domaiNN_NN.md',
           fakeFile(
-            'index.md',
+            'domaiNN_NN.md',
             makeIndexWithMdLinks([
               'sources/nn/Casablanca.md',
               'sources/nn/The_Goonies.md',
@@ -339,9 +339,9 @@ describe('recursiveParse (index.md-driven)', () => {
       ])
       const root = fakeDir('films', [
         [
-          'index.md',
+          'domaiNN_NN.md',
           fakeFile(
-            'index.md',
+            'domaiNN_NN.md',
             makeIndexWithMdLinks([
               'sources/Singin_in_the_Rain_source_NN.md',
               'sources/Casablanca_source_NN.md',
@@ -379,7 +379,7 @@ describe('recursiveParse (index.md-driven)', () => {
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['models\\nested_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['models\\nested_NN.md']))],
         ['kNNowledge', modelsDir],
       ])
 
@@ -390,7 +390,7 @@ describe('recursiveParse (index.md-driven)', () => {
 
     it('reports a clear skip issue when a nested target directory is missing', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['./models/missing_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./models/missing_NN.md']))],
       ])
 
       const result = await recursiveParse(root)
@@ -402,7 +402,7 @@ describe('recursiveParse (index.md-driven)', () => {
 
     it('does not surface "Name is not allowed" for references that escape the root', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['../outside_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['../outside_NN.md']))],
       ])
 
       const result = await recursiveParse(root)
@@ -444,7 +444,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', modelA)],
         ['modelB_NN.md', fakeFile('modelB_NN.md', modelB)],
       ])
@@ -491,7 +491,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', modelA)],
       ])
 
@@ -534,7 +534,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', modelA)],
         ['modelB_NN.md', fakeFile('modelB_NN.md', modelB)],
       ])
@@ -552,17 +552,17 @@ describe('recursiveParse (index.md-driven)', () => {
 describe('readWorkspaceId', () => {
   it('workspace-id-read-from-entrypoint', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_01.md', fakeFile('workspace_01.md', makeWorkspaceEntrypoint('acme'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceEntrypoint('acme'))],
     ])
 
     const result = await recursiveParse(root)
-    expect(result.entrypointPath).toBe('workspace_01.md')
+    expect(result.entrypointPath).toBe('domaiNN_NN.md')
     expect(readWorkspaceId(result)).toBe('acme')
   })
 
   it('workspace-id-absent-is-undefined', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_01.md', fakeFile('workspace_01.md', makeWorkspaceEntrypoint())],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceEntrypoint())],
     ])
 
     const result = await recursiveParse(root)
@@ -579,7 +579,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('diamond-no-issue-both-edges: a diamond reached via two independent parents links both edges and emits no issue', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
       ['x_NN.md', fakeFile('x_NN.md', makeModel('X'))],
       ['p_NN.md', fakeFile('p_NN.md', makeModel('P', '\n[[x_NN.md]]\n'))],
     ])
@@ -603,7 +603,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('true-cycle-still-errors: a mutual reference through an ancestor chain is still flagged as a cycle', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['a_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
       ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[b_NN.md]]\n'))],
       ['b_NN.md', fakeFile('b_NN.md', makeModel('B', '\n[[a_NN.md]]\n'))],
     ])
@@ -617,7 +617,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('cycle-back-to-entrypoint: a reference chain looping back to the entrypoint is a cycle, proving ancestorKeys is seeded from it', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['a_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
       ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[workspace_NN.md]]\n'))],
     ])
 
@@ -629,7 +629,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('self-ref-is-filtered-at-extraction: a model linking to itself produces no issue and no duplicate node', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['a_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
       ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[./a_NN.md]]\n'))],
     ])
 
@@ -642,7 +642,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('max-depth-boundary-with-diamond: the first arrival sets depth; a second parent that also exceeds MAX_DEPTH is a silent no-op, not a second issue', async () => {
     const entries: DirEntries = [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['level_1_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['level_1_NN.md']))],
     ]
     for (let i = 1; i <= 8; i++) {
       entries.push([
@@ -679,7 +679,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('diamond-does-not-reparent: a diamond edge never overwrites the primary parentId', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
       ['x_NN.md', fakeFile('x_NN.md', makeModel('X'))],
       ['p_NN.md', fakeFile('p_NN.md', makeModel('P', '\n[[x_NN.md]]\n'))],
     ])
@@ -759,9 +759,9 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
     const root = fakeDir('workspace', [
       [
         'gb_base_NN.md',
-        fakeFile('gb_base_NN.md', makeOverviewRoot('workspace_NN.md', 'gb_cognnitive_NN.md')),
+        fakeFile('gb_base_NN.md', makeOverviewRoot('domaiNN_NN.md', 'gb_cognnitive_NN.md')),
       ],
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Ghostbusters Workspace'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Ghostbusters Workspace'))],
     ])
 
     const result = await recursiveParse(root, undefined, {
@@ -781,7 +781,7 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
 
   it('no-base-root-unchanged: only workspace*.md exists — resolves exactly as before this capability existed', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Plain Workspace'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Plain Workspace'))],
     ])
 
     const result = await recursiveParse(root)
@@ -794,8 +794,8 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
 
   it('base-root-driver-path: the same precedence holds via the ModelDriver code path', async () => {
     const driver = fakeDriver({
-      'gb_base_NN.md': makeOverviewRoot('workspace_NN.md', 'gb_cognnitive_NN.md'),
-      'workspace_NN.md': makeModel('Ghostbusters Workspace'),
+      'gb_base_NN.md': makeOverviewRoot('domaiNN_NN.md', 'gb_cognnitive_NN.md'),
+      'domaiNN_NN.md': makeModel('Ghostbusters Workspace'),
     })
     // The plain-handle root is irrelevant when a driver is supplied, but recursiveParse
     // still requires one; an empty directory is sufficient since the driver serves reads.
@@ -816,11 +816,11 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
 
   it('base-root-in-ignored-dir-ignored: an overview-root-shaped file nested under archive/ is not discovered as the entrypoint', async () => {
     const archiveDir = fakeDir('archive', [
-      ['x_base_NN.md', fakeFile('x_base_NN.md', makeOverviewRoot('workspace_NN.md', 'x_cognnitive_NN.md'))],
+      ['x_base_NN.md', fakeFile('x_base_NN.md', makeOverviewRoot('domaiNN_NN.md', 'x_cognnitive_NN.md'))],
     ])
     const root = fakeDir('workspace', [
       ['archive', archiveDir],
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Plain Workspace'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Plain Workspace'))],
     ])
 
     const result = await recursiveParse(root)
@@ -836,9 +836,9 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
     const root = fakeDir('workspace', [
       [
         'gb_base_NN.md',
-        fakeFile('gb_base_NN.md', makeOverviewRoot('workspace_NN.md', 'gb_cognnitive_NN.md')),
+        fakeFile('gb_base_NN.md', makeOverviewRoot('domaiNN_NN.md', 'gb_cognnitive_NN.md')),
       ],
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Ghostbusters Workspace'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeModel('Ghostbusters Workspace'))],
       ['gb_cognnitive_NN.md', fakeFile('gb_cognnitive_NN.md', makeModel('Ghostbusters Provenance'))],
     ])
 
