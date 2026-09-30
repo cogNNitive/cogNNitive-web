@@ -558,7 +558,7 @@ describe('mutate tools', () => {
       expect(onDisk).toBe(MUTABLE_MODEL_CONTENT)
     })
 
-    it('bump_version updates index.md references (bare filename and models/<filename> forms) to the new filename (Fix 5b)', async () => {
+    it('bump_version updates index.md references (bare filename and kNNowledge/<filename> forms) to the new filename (Fix 5b)', async () => {
       await stubBusinessTemplate()
       const oldPath = join(rootDir, 'Versioned_V_0-0-1_NN.md')
       await writeFile(oldPath, MUTABLE_MODEL_CONTENT, 'utf-8')
@@ -576,7 +576,7 @@ describe('mutate tools', () => {
           '',
           '# NN index',
           `* [${oldFilename}](./${oldFilename})`,
-          `* [models version](models/${oldFilename})`,
+          `* [models version](kNNowledge/${oldFilename})`,
           '',
         ].join('\n'),
         'utf-8',
@@ -591,7 +591,7 @@ describe('mutate tools', () => {
 
       const indexContent = await readFile(join(rootDir, 'index.md'), 'utf-8')
       expect(indexContent).toContain(newFilename)
-      expect(indexContent).toContain(`models/${newFilename}`)
+      expect(indexContent).toContain(`kNNowledge/${newFilename}`)
       expect(indexContent).not.toContain(oldFilename)
     })
 
@@ -739,7 +739,7 @@ describe('mutate tools', () => {
         '',
         '# NN Models',
         '## NN Models: AuthSubsystem',
-        'path:: models/auth_01.md',
+        'path:: kNNowledge/auth_01.md',
         '',
       ].join('\n')
       await writeFile(join(rootDir, 'workspace_01_NN.md'), workspaceContent, 'utf-8')
@@ -763,10 +763,10 @@ describe('mutate tools', () => {
         conceptName: 'Models',
         elementName: 'AuthSubsystem',
         fieldName: 'path',
-        value: 'models/auth_v2.md',
+        value: 'kNNowledge/auth_v2.md',
       })
       expect(updateRes.success).toBe(true)
-      expect(updateRes.model?.elements.get('Models')?.[0].fields['path']).toBe('models/auth_v2.md')
+      expect(updateRes.model?.elements.get('Models')?.[0].fields['path']).toBe('kNNowledge/auth_v2.md')
     })
   })
 

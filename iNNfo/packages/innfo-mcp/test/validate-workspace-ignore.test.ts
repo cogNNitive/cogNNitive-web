@@ -39,7 +39,7 @@ title: "Workspace Index"
 
 # NN index
 
-* [Main](./models/Main_V_1-0-0_NN.md)
+* [Main](./kNNowledge/Main_V_1-0-0_NN.md)
 `
     const MODEL = `---
 specification_version: "V_0-1-0"

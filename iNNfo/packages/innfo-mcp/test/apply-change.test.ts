@@ -63,7 +63,7 @@ title: "Marketing"
 # NN Marketing
 
 ## NN Marketing: Launch
-sources:: [models/strategy_V_0-1-0_NN.md@## Vision]
+sources:: [kNNowledge/strategy_V_0-1-0_NN.md@## Vision]
 description:: See details in [[strategy_V_0-1-0_NN]].
 `
 
@@ -106,7 +106,7 @@ describe('bump_version cascading references and pre-mutation validation', () => 
       join(rootDir, 'models', 'marketing_V_0-1-0_NN.md'),
       'utf-8',
     )
-    expect(marketingContent).toContain('models/strategy_V_0-2-0_NN.md@## Vision')
+    expect(marketingContent).toContain('kNNowledge/strategy_V_0-2-0_NN.md@## Vision')
     expect(marketingContent).toContain('[[strategy_V_0-2-0_NN]]')
     expect(marketingContent).not.toContain('strategy_V_0-1-0_NN.md')
   })
@@ -161,6 +161,6 @@ derived_from_inputs:: [strategy_V_0-1-0_NN.md]
       join(rootDir, 'models', 'marketing_V_0-1-0_NN.md'),
       'utf-8',
     )
-    expect(marketingContent).toContain('models/strategy_V_0-1-1_NN.md@## Vision')
+    expect(marketingContent).toContain('kNNowledge/strategy_V_0-1-1_NN.md@## Vision')
   })
 })

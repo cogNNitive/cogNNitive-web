@@ -96,7 +96,7 @@ export const readKnowledge = readModel
  * The id is the filename stem (e.g. `Ghostbusters_V_0-1-0_business`
  * resolves to `Ghostbusters_V_0-1-0_business_NN.md`).
  *
- * Searches the root and the conventional `models/` subdirectory, trying
+ * Searches the root and the conventional `kNNowledge/` subdirectory, trying
  * `<cleanId>_NN.md`, `<cleanId>.md`, `<cleanId>`, `<id>` and `<id>.md`.
  *
  * Returns null if the file doesn't exist or can't be parsed.

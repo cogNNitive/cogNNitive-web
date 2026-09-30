@@ -387,7 +387,7 @@ describe('innfo-mcp server (dispatch/handler layer, real MCP client/server round
       // Create legacy entrypoint
       await writeFile(
         join(rootDir, 'domaiNN_NN.md'),
-        ['---', 'level: 2', 'workspace_version: "V_0-1-0"', '---'].join('\n'),
+        ['---', 'level: 2', 'model_version: "V_0-1-0"', '---'].join('\n'),
         'utf-8',
       )
 

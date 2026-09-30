@@ -60,7 +60,7 @@ export { normalizeId }
 /**
  * Locate a kNNowledge document on disk by id.
  *
- * Searches the root directory, `kNNowledge/` and the conventional `models/` subdirectory.
+ * Searches the root directory, `kNNowledge/` and the conventional `kNNowledge/` subdirectory.
  * Supports nested relative paths (e.g. `subsystems/auth/tokens_NN.md`).
  */
 export async function findModelFile(

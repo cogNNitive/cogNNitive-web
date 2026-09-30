@@ -133,7 +133,7 @@ title: App Model
 ---
 # NN Components
 ## NN Components: Engine
-submodel_link:: [[models/missing_subcomponent_NN.md]]
+submodel_link:: [[kNNowledge/missing_subcomponent_NN.md]]
 `
 
       const res = await validateModel(
@@ -161,7 +161,7 @@ title: App Model
 ---
 # NN Components
 ## NN Components: Engine
-submodel_link:: [[models/mismatched_subcomponent_NN.md]]
+submodel_link:: [[kNNowledge/mismatched_subcomponent_NN.md]]
 `
 
       const res = await validateModel(
@@ -189,7 +189,7 @@ title: App Model
 ---
 # NN Components
 ## NN Components: Engine
-submodel_link:: [[models/valid_subcomponent_NN.md]]
+submodel_link:: [[kNNowledge/valid_subcomponent_NN.md]]
 `
 
       const res = await validateModel(

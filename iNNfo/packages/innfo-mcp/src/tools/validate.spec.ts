@@ -440,7 +440,7 @@ describe('baseline single shared implementation (robustness-coda 1.3)', () => {
     }
     expect(mcp.fingerprint(diag)).toBe(core.fingerprint(diag))
     expect(mcp.fingerprint(diag)).toBe(
-      'models/team_NN.md::elements.Task::UNKNOWN_CONCEPT::Concept "Task" is not defined in template',
+      'kNNowledge/team_NN.md::elements.Task::UNKNOWN_CONCEPT::Concept "Task" is not defined in template',
     )
   })
 })

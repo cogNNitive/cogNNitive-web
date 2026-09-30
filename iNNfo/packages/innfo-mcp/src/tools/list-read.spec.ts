@@ -142,20 +142,20 @@ describe('readModel', () => {
       '',
       '# NN Models',
       '## NN Models: Auth Subsystem',
-      'path:: models/auth_01.md',
+      'path:: kNNowledge/auth_01.md',
       'type:: knowledge',
       '',
     ].join('\n')
     await writeFile(join(rootDir, 'domaiNN_NN.md'), wsContent, 'utf-8')
 
     const models = await listModels(rootDir)
-    expect(models.some((m) => m.id === 'workspace_NN')).toBe(true)
+    expect(models.some((m) => m.id === 'domaiNN_NN')).toBe(true)
 
-    const model = await readModel(rootDir, 'workspace')
+    const model = await readModel(rootDir, 'domaiNN')
     expect(model?.frontmatter.title).toBe('Root Workspace')
     const modelRefs = model?.elements.get('Models')
     expect(modelRefs).toHaveLength(1)
-    expect(modelRefs?.[0].fields['path']).toBe('models/auth_01.md')
+    expect(modelRefs?.[0].fields['path']).toBe('kNNowledge/auth_01.md')
   })
 })
 

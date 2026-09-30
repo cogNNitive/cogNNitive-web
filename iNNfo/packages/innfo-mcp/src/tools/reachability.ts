@@ -9,7 +9,7 @@ import { createSpecsBackupZip } from './spec-backup.js'
 /* ── Reachability Graph & Spec Pruning Engine ───────────────── */
 
 /**
- * Traverses L3 models (`models/`), root entrypoints (`domaiNN_NN.md`, `index.md`),
+ * Traverses L3 models (`kNNowledge/`), root entrypoints (`domaiNN_NN.md`, `index.md`),
  * and L2 templates (`templates/`) to build the workspace reference reachability graph.
  */
 export async function calculateSpecReachability(rootDir: string): Promise<ReachabilityGraph> {

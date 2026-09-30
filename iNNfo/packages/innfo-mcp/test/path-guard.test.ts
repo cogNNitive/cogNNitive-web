@@ -15,7 +15,7 @@ describe('isSafeRelativeId', () => {
   it('rejects parent-directory traversal in either separator', () => {
     expect(isSafeRelativeId('../secrets')).toBe(false)
     expect(isSafeRelativeId('..\\secrets')).toBe(false)
-    expect(isSafeRelativeId('models/../../etc/passwd')).toBe(false)
+    expect(isSafeRelativeId('kNNowledge/../../etc/passwd')).toBe(false)
   })
 
   it('rejects absolute, drive-qualified and UNC paths', () => {
@@ -31,7 +31,7 @@ describe('isSafeRelativeId', () => {
 
 describe('isInsideRoot', () => {
   it('accepts a path within the root', () => {
-    expect(isInsideRoot('/ws', '/ws/models/a_NN.md')).toBe(true)
+    expect(isInsideRoot('/ws', '/ws/kNNowledge/a_NN.md')).toBe(true)
   })
 
   it('rejects the root itself', () => {
