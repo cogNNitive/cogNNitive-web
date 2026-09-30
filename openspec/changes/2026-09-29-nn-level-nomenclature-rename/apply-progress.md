@@ -246,3 +246,26 @@
 ### S8 leftovers in Test (S9a scope)
 - `innfo-core` ~208 / `innfo-mcp` ~8 / `innfo-editor` ~41 failing tests: inline/real fixtures still use the retired keys + resolver layout semantics. Plan migrates real fixtures in S9a/S9b.
 
+---
+
+## Section 17: T Internal identifiers (mechanical, no behaviour change)
+
+### Completed (2026-09-30, on `feat/nn-rename-tracker`)
+- [x] **17.1 T-core**: `refactor(rename): Knowledge/Blueprint identifiers across core, mcp, editor, simulation` (`71bb210c`). Renamed the exported/internal identifiers whose sense was retired (Model -> Knowledge, Template -> Blueprint) and updated every import site in mcp/editor/simulation. `git mv` core files `recursiveParser/model.ts` -> `knowledge.ts`, `validator/model.ts` -> `knowledge.ts`, `validator/model-checks[.spec].ts` -> `knowledge-checks[.spec].ts`. Symbols: `ParsedModel->ParsedKnowledge`, `ModelNode->KnowledgeNode`, `ModelDriver->KnowledgeDriver`, `TemplateSchema->BlueprintSchema`, `TemplateSchemaResolver->BlueprintSchemaResolver`, `ResolvedTemplateSchema->ResolvedBlueprintSchema`, `extractTemplateSchemaFromContent/extractTemplateSchema/resolveTemplateSchema/buildTemplateSchemaResolverFromCache` -> Blueprint*, `parseModel/serializeModel/mergeModels/cloneModel/normalizeSingleModel/parseAndRegisterModel/validateModel` -> Knowledge*, `ValidateModelOptions->ValidateKnowledgeOptions`, `getModelWideElementNames->getKnowledgeWideElementNames`, `checkTemplateDocumentation->checkBlueprintDocumentation`.
+- [x] **17.2 T-mcp**: `refactor(rename): Knowledge/Blueprint identifiers in innfo-mcp (T-mcp)` (`db7d5a51`). `findModelFile->findKnowledgeFile`, file `model-io.ts` -> `knowledge-io.ts`, `init-model.ts[.spec]` -> `init-knowledge.ts[.spec]`, `loadModel/saveModel/initModel/readModel/writeModel/listModels/resolveTemplateForModel` -> Knowledge*(`resolveBlueprintForKnowledge`), `KnowledgeDriver.readKnowledge/writeKnowledge` aligned. Dropped the redundant tool-name aliases left by S6b (`validateKnowledge = validateModel`, etc.).
+- [x] **17.3 T-editor**: `refactor(rename): editor knowledgeStore and Blueprint identifiers (T-editor)` (`4e5c1f23`). `modelStore->knowledgeStore` (+`useModelStore`), `useModelConcepts`, `ModelInfoPanel`, `FieldModel`, `modelMatching`/`findMatchingModelNode`, `useTemplateVersionNotice`(+`UseTemplateVersionNoticeCtx`/`refreshTemplateVersionNotice`), `getModelRootForNode`. File renames for all of the above + their tests. `SHIPPED_TEMPLATE_VERSIONS` was already `SHIPPED_BLUEPRINT_VERSIONS` in code.
+- [x] **17.4 T-scripts/skills**: `refactor(rename): blueprint/knowledge identifiers in scripts and skills (T-scripts)` (`f783f307`). `TEMPLATE_SPEC_RE->BLUEPRINT_SPEC_RE`, `DEFAULT_TEMPLATES_DIR->DEFAULT_BLUEPRINTS_DIR`, `templatesDir->blueprintsDir`, `checkTemplateInventory->checkBlueprintInventory`, `provenance-model.js` -> `provenance-knowledge.js` (+requires + legacy-write-guard allowlist path). CLI flag `--templates-dir` left unchanged (no behaviour change).
+
+### Gate evidence (T)
+- `npm run typecheck` **PASS** (core build + mcp + editor) after each package.
+- `npm test`: core 965/966 (1 skipped), mcp 298/298, editor 711/711 — all green after every package.
+- `node scripts/verify.js` **PASS** except the known-red `Check Stable Manifest Doc Fresh` (needs R tags/network).
+- `node scripts/check-integrity.js` **PASS** except the same release gate.
+- `node scripts/lib/legacy-write-guard.js` = 0 hits; guard unit tests green.
+- Empty `USERPROFILE`/`HOME`: preflight-check, upgrade-check, migrate-domain suites green.
+
+### Boundary & leftovers
+- **In scope**: identifiers whose retired sense is the L3 document (`model`) or L2 schema (`template`).
+- **Explicitly excluded**: other senses (`metamodelStore`, `workspaceStore`, IndexedDB workspace), LLM/media names (`ttsModel`, `imageModel`), Vue `<template>`, string data tokens (`CONCEPT_TYPES`/`FIELD_TYPES` `'model'`, legacy keys), and the open-ended `submodel*` family (no authoritative basis in `vocabulary.json`, which is `documentation_only` and lists only paths/keys/tags/tools).
+- **Remaining template->blueprint identifiers not in the plan's T list** (optional follow-up, e.g. `validateTemplate`, `CANONICAL_TEMPLATES`/`findCanonicalTemplate`, `resolveTemplateWithCache`, `hydrateTemplate`, `listTemplateProcedures`/`listTemplateSkills`, `collectTemplateVersions`, `installTemplateAtCommit`, `walkTemplates`, `seenTemplates`, `outdatedTemplates`, `baseTemplatesDir`/`globalTemplatesDir`/`legacyTemplatesDir`, `ModelEntry`, `submodel*`). Not renamed here to keep the diff bounded; flag for a decision.
+
