@@ -25,7 +25,7 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
 }
 
 // Same model content for all cases: it pins `analysis_V_0-2-1`. `analysis`
-// ships V_0-2-1 in SHIPPED_TEMPLATE_VERSIONS, so whether the badge fires depends only on what
+// ships V_0-2-1 in SHIPPED_BLUEPRINT_VERSIONS, so whether the badge fires depends only on what
 // the workspace scan says is newest (see each test's handle setup below).
 const rootContent = `---
 spec_version: "V_0-3-0"
@@ -98,7 +98,7 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
       ['Root'],
     )
 
-    // No newer version anywhere: the bundled SHIPPED_TEMPLATE_VERSIONS map
+    // No newer version anywhere: the bundled SHIPPED_BLUEPRINT_VERSIONS map
     // also pins "analysis" at V_0-2-1 (see config/samples.ts), matching the
     // model's own pinned version.
     const workspaceStore = useWorkspaceStore()

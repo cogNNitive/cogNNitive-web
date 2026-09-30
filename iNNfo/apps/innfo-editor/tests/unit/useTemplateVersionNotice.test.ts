@@ -10,7 +10,7 @@ import {
   useTemplateVersionNotice,
 } from '../../src/composables/useTemplateVersionNotice'
 import { buildFakeTree } from '../helpers/fakeFs'
-import { SHIPPED_TEMPLATE_VERSIONS } from '../../src/config/samples'
+import { SHIPPED_BLUEPRINT_VERSIONS } from '../../src/config/samples'
 
 describe('parseTemplateName', () => {
   it('splits a versioned parent_spec.name into slug + version', () => {
@@ -133,10 +133,10 @@ describe('buildMigrationPrompt', () => {
 
 describe('useTemplateVersionNotice', () => {
   it('sets notice when the workspace scan finds a newer template version', async () => {
-    // Use `analysis`: it ships V_0-2-1 in SHIPPED_TEMPLATE_VERSIONS, so this
+    // Use `analysis`: it ships V_0-2-1 in SHIPPED_BLUEPRINT_VERSIONS, so this
     // case isolates the workspace-scan path.
     const handle = buildFakeTree('workspace', {
-      specs: { 'analysis_V_0-2-2_NN.md': '---\nlevel: 2\n---\n' },
+      specs: { 'analysis_V_0-3-0_NN.md': '---\nlevel: 2\n---\n' },
     })
     const { notice, refresh } = useTemplateVersionNotice({
       templateName: ref('analysis_V_0-2-1'),
@@ -149,17 +149,17 @@ describe('useTemplateVersionNotice', () => {
 
     expect(notice.value).not.toBeNull()
     expect(notice.value?.current).toBe('V_0-2-1')
-    expect(notice.value?.latest).toBe('V_0-2-2')
+    expect(notice.value?.latest).toBe('V_0-3-0')
     expect(notice.value?.prompt).toMatch(/^innfo: /)
   })
 
   it('leaves notice null when the model already pins the newest known version', async () => {
-    // `analysis` ships V_0-2-1 in the bundled map, matching the pin here.
+    // `analysis` ships V_0-3-0 in the bundled map, matching the pin here.
     const handle = buildFakeTree('workspace', {
-      specs: { 'analysis_V_0-2-1_NN.md': '---\nlevel: 2\n---\n' },
+      specs: { 'analysis_V_0-3-0_NN.md': '---\nlevel: 2\n---\n' },
     })
     const { notice, refresh } = useTemplateVersionNotice({
-      templateName: ref('analysis_V_0-2-1'),
+      templateName: ref('analysis_V_0-3-0'),
       modelFileName: ref('StartupValidation_NN.md'),
       handle: ref(handle),
     })
@@ -178,7 +178,7 @@ describe('useTemplateVersionNotice', () => {
     expect(notice.value).toBeNull()
   })
 
-  it('fires from the bundled SHIPPED_TEMPLATE_VERSIONS map alone (no workspace handle) for a stale procedures pin', async () => {
+  it('fires from the bundled SHIPPED_BLUEPRINT_VERSIONS map alone (no workspace handle) for a stale procedures pin', async () => {
     const { notice, refresh } = useTemplateVersionNotice({
       templateName: ref('procedures_V_0-1-0'),
       modelFileName: ref('CodeReviewProcess_V_0-1-0_procedures_NN.md'),
@@ -187,6 +187,6 @@ describe('useTemplateVersionNotice', () => {
     await refresh()
     expect(notice.value).not.toBeNull()
     expect(notice.value?.current).toBe('V_0-1-0')
-    expect(notice.value?.latest).toBe(SHIPPED_TEMPLATE_VERSIONS.procedures)
+    expect(notice.value?.latest).toBe(SHIPPED_BLUEPRINT_VERSIONS.procedures)
   })
 })

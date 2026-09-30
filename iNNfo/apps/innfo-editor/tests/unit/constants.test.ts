@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   DEFAULT_INNFO_VERSION,
-  DEFAULT_TEMPLATE_VERSION,
+  DEFAULT_BLUEPRINT_VERSION,
   buildSpecificationUrl,
   buildTemplateUrl,
   buildSubmodelTemplateUrl,
@@ -16,8 +16,8 @@ describe('constants — V_0-3-0 adoption', () => {
     expect(buildSpecificationUrl()).toMatch(/iNNfo_V_0-3-0_NN\.md$/)
   })
 
-  it('DEFAULT_TEMPLATE_VERSION is the current scaffolding fallback V_0-2-0', () => {
-    expect(DEFAULT_TEMPLATE_VERSION).toBe('V_0-2-0')
+  it('DEFAULT_BLUEPRINT_VERSION is the current scaffolding fallback V_0-2-0', () => {
+    expect(DEFAULT_BLUEPRINT_VERSION).toBe('V_0-2-0')
   })
 
   it('buildTemplateUrl() defaults to the V_0-2-0 template file', () => {
