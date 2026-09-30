@@ -280,7 +280,7 @@ function collectRepoFiles(dir, includeArchives) {
         if (rel === 'iNNfo/apps/innfo-editor/tests/fixtures/models') continue
         if (rel.startsWith('openspec/changes/')) continue
         // Quarantine: the frozen legacy-domain fixture intentionally keeps the
-        // pre-rename `specs/templates/...` URLs (it is the migrator's input).
+        // pre-rename template URLs (it is the migrator's input).
         if (rel.startsWith('iNNfo/packages/innfo-core/tests/legacy/fixtures/')) continue
         files.push(...collectRepoFiles(full, includeArchives))
       } else {
