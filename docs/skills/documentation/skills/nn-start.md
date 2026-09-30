@@ -49,19 +49,21 @@ Every agent interaction across cogNNitive strictly enforces these foundational r
 
 ---
 
-## 3. Canonical Skill Catalog (7 Core Skills)
+## 3. Canonical Skill Catalog (9 Core Skills)
 
-The cogNNitive ecosystem is streamlined into 7 specialized skills:
+The cogNNitive ecosystem is streamlined into 9 specialized skills:
 
 | Skill | Role & Scope | Invocation / Triggers |
 | :--- | :--- | :--- |
 | **[`nn-start`](skills/nn-start.md)** | Front Controller, governance, setup, preflight gate & routing | `NN`, `nn`, `/nn`, `/nn-start`, `setup` |
 | **[`nn-preflight`](skills/nn-preflight.md)** | Environment readiness gate (Tier 1/2 checks) | `preflight`, `readiness`, `environment check` |
 | **[`nn-innfo`](skills/nn-innfo.md)** | iNNfo model authoring, schema validation & Model Creation Wizard | `NN`, `nn`, `model`, `wizard`, `template`, `innfo` |
+| **[`nn-upgrade`](skills/nn-upgrade.md)** | Consent-gated migration of workspaces to the latest adopted iNNfo templates | `template upgrade`, `upgrade templates`, `workspace upgrade` |
 | **[`nn-trannsform`](skills/nn-trannsform.md)** | Document ingestion (PDF/DOCX/XLSX), normalization & procedures | `trannsform`, `transform`, `workflow`, `pipeline` |
 | **[`nn-site-generator`](skills/nn-site-generator.md)** | Website generation, layout hydration & Docsify suites | `/nn-site-generator`, `generate site`, `create website` |
 | **[`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md)** | Skill installation, updates & manifest governance | `/nn-skills-lifecycle`, `install skill`, `update skills` |
 | **[`nn-design-presets`](skills/nn-design-presets.md)** | Design system tokens (Morado Nazareno, 8px grid) | `design preset`, `morado-nazareno`, visual artifact styling |
+| **[`nn-video-script`](skills/nn-video-script.md)** | Anydeo VUS script authoring & validation in the Series/Video hierarchy | `video script`, `VUS`, `series script`, `finalize video` |
 
 ---
 
