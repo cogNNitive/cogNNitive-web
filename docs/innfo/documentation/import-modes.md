@@ -177,7 +177,7 @@ reviewer feedback. After applying, mark the family applied so re-running
 `--converge` is a no-op:
 
 ```bash
-node skills/nn-trannsform/scripts/index.js --converge-mark youtube_analytics_monthly --version V_0-2-0 --src <workspace>
+node skills/nn-trannsform/scripts/index.js --converge-mark youtube_analytics_monthly --version <model-version> --src <workspace>
 ```
 
 Removed keys are **flag-only**: convergence lists them but never deletes or
