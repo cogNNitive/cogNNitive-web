@@ -1,83 +1,55 @@
 {
-  "generatedAt": "2026-09-22T08:53:01.458Z",
-  "head": "f1200ca4d866b0508c6fb7fca9bec3befbe3b8d6",
+  "generatedAt": "2026-09-30T21:00:43.928Z",
+  "head": "5619a2d539654f9d98cc90c2281713243d876e64",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.0.0",
-      "pinnedTagDate": "2026-09-16T20:12:35+02:00",
-      "commitsSincePin": 12,
-      "filesTouched": [
-        "skills/nn-innfo/SKILL.md",
-        "skills/nn-innfo/templates/workspace_spec_NN.md",
-        "skills/nn-preflight/scripts/preflight-check.js",
-        "skills/nn-preflight/scripts/preflight-check.test.js",
-        "skills/nn-router/SKILL.md",
-        "skills/nn-trannsform/SKILL.md",
-        "skills/nn-trannsform/TESTING.md",
-        "skills/nn-trannsform/scripts/index.js",
-        "skills/nn-trannsform/scripts/lib/bootstrap.js",
-        "skills/nn-trannsform/scripts/lib/conversations.js",
-        "skills/nn-trannsform/scripts/lib/duplicate-guards.js",
-        "skills/nn-trannsform/scripts/lib/provenance-model.js",
-        "skills/nn-trannsform/scripts/lib/scanner-core.js",
-        "skills/nn-trannsform/scripts/scanner.js",
-        "skills/nn-trannsform/test/run.js",
-        "skills/nn-trannsform/test/unit/test-bootstrap-recursive.js",
-        "skills/nn-trannsform/test/unit/test-conversations-lifecycle.js",
-        "skills/nn-trannsform/test/unit/test-duplicate-body-hash.js",
-        "skills/nn-trannsform/test/unit/test-duplicate-guards.js",
-        "skills/nn-trannsform/test/unit/test-provenance.js",
-        "skills/nn-trannsform/test/unit/test-scanner-collision.js",
-        "skills/nn-trannsform/test/unit/test-scanner.js",
-        "skills/nn-workspace-git/test/skill-contract.test.js"
-      ]
+      "pinnedTag": "skills-v2.8.1",
+      "pinnedTagDate": "2026-09-30T22:40:50+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "templates-v0.10.3",
-      "pinnedTagDate": "2026-09-21T18:37:26+02:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/specs/templates/catalog.json",
-        "iNNfo/specs/templates/projects/spec_NN.md",
-        "iNNfo/specs/templates/workspace/assets/workspace_hub.html"
-      ]
+      "pinnedTag": null,
+      "commitsSincePin": null,
+      "unresolved": "no stable pin declared for this subsystem in manifest/source.yaml"
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.9.0",
-      "pinnedTagDate": "2026-09-16T18:14:00+02:00",
-      "commitsSincePin": 7,
+      "pinnedTag": "innfo-mcp-v0.12.0",
+      "pinnedTagDate": "2026-09-30T13:30:01+02:00",
+      "commitsSincePin": 8,
       "filesTouched": [
+        "iNNfo/packages/innfo-mcp/README.md",
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/package.json",
-        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/server-preview.test.ts",
         "iNNfo/packages/innfo-mcp/src/server.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/init-model.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/intent.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/intent.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/path-guard.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/check-workspace.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/check-workspace.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/init-knowledge.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/init-knowledge.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/knowledge-io.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/preview-server.test.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/preview-server.ts",
         "iNNfo/packages/innfo-mcp/src/tools/resolver-node.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/spec.spec.ts",
         "iNNfo/packages/innfo-mcp/src/tools/spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/validate.ts",
-        "iNNfo/packages/innfo-mcp/test/apply-change.test.ts",
-        "iNNfo/packages/innfo-mcp/test/defects-d1-d9-regression.test.ts",
-        "iNNfo/packages/innfo-mcp/test/path-guard.test.ts",
-        "iNNfo/packages/innfo-mcp/test/resolver-node.test.ts",
-        "iNNfo/packages/innfo-mcp/test/validate-workspace-sources.test.ts",
-        "iNNfo/packages/innfo-mcp/vitest.config.ts"
+        "iNNfo/packages/innfo-mcp/src/tools/workspace-sync.spec.ts",
+        "iNNfo/packages/innfo-mcp/test/concept-drift-and-gate.test.ts",
+        "iNNfo/packages/innfo-mcp/test/includes-and-scaffold.test.ts",
+        "iNNfo/packages/innfo-mcp/test/mutate-repair.test.ts"
       ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.2.0",
-      "pinnedTagDate": "2026-09-12T07:12:21+02:00",
+      "pinnedTag": "innfo-console-v0.6.0",
+      "pinnedTagDate": "2026-09-30T14:02:43+02:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/templates/console/innfo-console.bundle.js",
-        "iNNfo/specs/templates/console/innfo-runtime.js"
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/feedback.schema.json",
+        "iNNfo/specs/bluepriNNts/console/needs-registry.json"
       ]
     }
   }
