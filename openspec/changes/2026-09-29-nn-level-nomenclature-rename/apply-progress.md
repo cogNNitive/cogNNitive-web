@@ -224,6 +224,25 @@
 - **T**: internal identifier renames per package (mechanical).
 
 ### Known-red gates (tracker child policy)
-- Gates reading skill frontmatter `bundled_templates` until S8; `validate-manifest --channel stable` only after R.
-- `verify.js` step 15 (write guard) is intentionally absent until the 145-token cleanup lands.
+- `validate-manifest --channel stable` only after R (needs network/tags).
+
+---
+
+## Slice S8: Preflight, skills-manager, skill prose
+
+### Completed
+- [x] **11.1/11.2**: `nn-preflight` reads the new catalog key (`blueprints`), new catalog URLs (`innfo/blueprints/catalog.json` + `iNNfo/specs/bluepriNNts/catalog.json`), `DEFAULT_BLUEPRINTS_DIR = ~/.agents/bluepriNNts`, flag `--blueprints-dir` (replaces `--templates-dir`); `version-status.generated.cjs` regenerated from the fixed `versionStatus.ts` (`catalog.blueprints`, `bluepriNNts/.../spec_NN.md` pin regex). `preflight-check.test.js` + `upgrade-check.test.js` green.
+- [x] **11.4 (partial)**: skill frontmatter `bundled_templates` -> `bundled_blueprints` across `skills/*/SKILL.md`; `manifest-rules.js` + `types/manifest.d.ts` follow; `skills-manager`/`skills-commands` default dir `~/.agents/bluepriNNts`.
+- [x] **11.6**: skill `nn-workspace-git` -> `nn-domain-git` (dir + SKILL.md + test + docs prose).
+
+### Remaining S8
+- [ ] **11.3**: add `min_version` to the manifest MCP entry + validate it in the manifest scripts (semver, `<=` pin) — value is `0.12.0`, which needs **11.5**.
+- [ ] **11.5**: bump `innfo-mcp` 0.11.0 -> 0.12.0 via the derived-version flow + stage the new CDN bundle — **needs the release/CDN path** (maintainer/network).
+- [ ] **11.6 (prose)**: skill prose in `nn-innfo`, `nn-start`, `nn-upgrade`, `nn-trannsform` (vocabulary only; not guard-enforced).
+
+### Fix note
+- A case-insensitive PowerShell `-replace` during the token cleanup corrupted ALL-CAPS identifiers in the editor (`SHIPPED_TEMPLATE_VERSIONS` -> `SHIPPED_blueprint_versionS`, `DEFAULT_TEMPLATE_NAME/_VERSION`). Fixed in `57d12010`; a repo-wide scan for the corrupted forms is clean.
+
+### S8 leftovers in Test (S9a scope)
+- `innfo-core` ~208 / `innfo-mcp` ~8 / `innfo-editor` ~41 failing tests: inline/real fixtures still use the retired keys + resolver layout semantics. Plan migrates real fixtures in S9a/S9b.
 
