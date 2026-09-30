@@ -190,8 +190,6 @@ export function serializeKnowledge(model: ParsedKnowledge): string {
     }
     if (fm.knowledge_version) {
       lines.push(`knowledge_version: "${fm.knowledge_version}"`)
-    } else if (fm.knowledge_version) {
-      lines.push(`knowledge_version: "${fm.knowledge_version}"`)
     }
     if (fm.blueprint_version) lines.push(`blueprint_version: "${fm.blueprint_version}"`)
     if (fm.blueprint_name) lines.push(`blueprint_name: "${fm.blueprint_name}"`)

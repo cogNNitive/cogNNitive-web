@@ -379,7 +379,6 @@ export async function listBlueprints(
             const content = await readFile(filePath, 'utf-8')
             const fm = parseFrontmatter(content)
             if (fm?.blueprint_version) version = String(fm.blueprint_version)
-            else if (fm?.blueprint_version) version = String(fm.blueprint_version)
             else if (fm?.version) version = String(fm.version)
             else if (fm?.spec_version) version = String(fm.spec_version)
           } catch (err) {
@@ -418,7 +417,6 @@ export async function listBlueprints(
                 const content = await readFile(specFile, 'utf-8')
                 const fm = parseFrontmatter(content)
                 if (fm?.blueprint_version) version = String(fm.blueprint_version)
-                else if (fm?.blueprint_version) version = String(fm.blueprint_version)
                 else if (fm?.version) version = String(fm.version)
                 else if (fm?.spec_version) version = String(fm.spec_version)
               } catch (_) {

@@ -42,6 +42,7 @@
     event: '◉',
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- retained for the FSM stepper's future state-icon rendering
   var STATE_ICONS = {
     done: '✓',
     active: '▶',
