@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const consoleDir = join(here, '..', '..', '..', 'specs', 'templates', 'console')
+const consoleDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'console')
 const schemaPath = join(consoleDir, 'feedback.schema.json')
 const runtimePath = join(consoleDir, 'innfo-runtime.js')
 

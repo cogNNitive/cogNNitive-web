@@ -12,7 +12,7 @@ import type { DirectoryHandleLike } from '../src/types/index.js'
 const here = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(here, '..', '..', '..', '..')
 const USE_CASES_ROOT = join(REPO_ROOT, 'docs', 'cognitive_nn', 'use-cases')
-const TEMPLATES = join(REPO_ROOT, 'iNNfo', 'specs', 'templates')
+const TEMPLATES = join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts')
 
 const USE_CASE_SLUGS = [
   'startup-founder',
@@ -128,7 +128,7 @@ describe('Canonical Use Case Workspaces', () => {
       })
 
       it('all declared models have zero slug collisions', () => {
-        const modelsDir = join(wsPath, 'models')
+        const modelsDir = join(wsPath, 'kNNowledge')
         if (!existsSync(modelsDir)) return
         const offenders: string[] = []
         for (const file of readdirSync(modelsDir).filter((f) => f.endsWith('.md'))) {

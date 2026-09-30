@@ -12,7 +12,7 @@ import { createRequire } from 'node:module'
  */
 
 const here = dirname(fileURLToPath(import.meta.url))
-const runtimePath = join(here, '..', '..', '..', 'specs', 'templates', 'console', 'innfo-runtime.js')
+const runtimePath = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'console', 'innfo-runtime.js')
 const nodeRequire = createRequire(import.meta.url)
 
 type ResolvedCitation = {

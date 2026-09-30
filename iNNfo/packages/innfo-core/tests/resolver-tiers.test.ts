@@ -69,7 +69,7 @@ describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'resolver-retired-test-'))
     try {
       const workspaceDir = path.join(tmpDir, 'workspace')
-      const legacyTemplatesDir = path.join(workspaceDir, 'templates')
+      const legacyTemplatesDir = path.join(workspaceDir, 'bluepriNNts')
       await fs.mkdir(legacyTemplatesDir, { recursive: true })
 
       // Put blueprint only in retired templates/ folder
@@ -80,7 +80,7 @@ describe('Task 7.4: Resolver Tiers and Canonical BluepriNNt Resolution', () => {
         workspaceDir,
       })
       // Retired templates/ path should not be in search paths
-      const hasRetiredTemplates = searchPaths.some((p) => p.includes(path.join('workspace', 'templates')))
+      const hasRetiredTemplates = searchPaths.some((p) => p.includes(path.join('workspace', 'bluepriNNts')))
       expect(hasRetiredTemplates).toBe(false)
 
       const res = await resolveTemplatePath('legacy_spec_NN.md', {

@@ -15,14 +15,14 @@ import { createRequire } from 'node:module'
  */
 
 const req = createRequire(import.meta.url)
-const consoleDir = join(import.meta.dirname!, '..', '..', '..', 'specs', 'templates', 'console')
+const consoleDir = join(import.meta.dirname!, '..', '..', '..', 'specs', 'bluepriNNts', 'console')
 const viewerAsset = join(
   import.meta.dirname!,
   '..',
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'business',
   'assets',
   'model_viewer.html',

@@ -257,12 +257,12 @@ describe('recursiveParse (index.md-driven)', () => {
 
   describe('FR-001: index.md references with nested paths', () => {
     it('resolves a wikilink pointing into a subdirectory', async () => {
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
         ['index.md', fakeFile('index.md', makeIndex(['./models/nested_NN.md']))],
-        ['models', modelsDir],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
@@ -282,7 +282,7 @@ describe('recursiveParse (index.md-driven)', () => {
           fakeFile('The_Goonies.md', '# The Goonies\n\nPlain source document, not a model.'),
         ],
       ])
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         [
           'FilmCatalog_V_0-3-0_film_NN.md',
           fakeFile('FilmCatalog_V_0-3-0_film_NN.md', makeModel('Film Catalog')),
@@ -302,7 +302,7 @@ describe('recursiveParse (index.md-driven)', () => {
           ),
         ],
         ['sources', sourcesDir],
-        ['models', modelsDir],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
@@ -331,7 +331,7 @@ describe('recursiveParse (index.md-driven)', () => {
           fakeFile('Una_noche_en_la_opera_source_NN.md', makeModel('Opera Source')),
         ],
       ])
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         [
           'FilmCatalog_V_0-3-0_film_NN.md',
           fakeFile('FilmCatalog_V_0-3-0_film_NN.md', makeModel('Film Catalog')),
@@ -354,7 +354,7 @@ describe('recursiveParse (index.md-driven)', () => {
         ],
         ['film_V_0-5-0_NN.md', fakeFile('film_V_0-5-0_NN.md', makeModel('Film Template'))],
         ['sources', sourcesDir],
-        ['models', modelsDir],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
@@ -375,12 +375,12 @@ describe('recursiveParse (index.md-driven)', () => {
     })
 
     it('resolves backslash-separated references on the same shape as forward slashes', async () => {
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
         ['index.md', fakeFile('index.md', makeIndex(['models\\nested_NN.md']))],
-        ['models', modelsDir],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)

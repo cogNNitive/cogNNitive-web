@@ -4,14 +4,14 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const consoleDir = join(here, '..', '..', '..', 'specs', 'templates', 'console')
+const consoleDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'console')
 const viewerAsset = join(
   here,
   '..',
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'business',
   'assets',
   'model_viewer.html',

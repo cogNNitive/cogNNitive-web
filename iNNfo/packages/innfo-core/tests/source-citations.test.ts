@@ -170,7 +170,7 @@ describe('serializePropertyValue citation round-trip (H3b, via parseModel/serial
 
 describe('corpus round-trip: parse -> serialize is a fixed point for every real model sample', () => {
   const here = dirname(fileURLToPath(import.meta.url))
-  const templatesDir = join(here, '..', '..', '..', 'specs', 'templates')
+  const templatesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts')
 
   function findSampleModels(dir: string): string[] {
     const out: string[] = []

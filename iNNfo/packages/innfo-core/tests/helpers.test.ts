@@ -35,9 +35,9 @@ describe('listModels (recursive scan)', () => {
     await writeFile(join(root, 'Root_V_0-1-0_NN.md'), MODEL_FRONTMATTER + '# Root', 'utf-8')
 
     // Nested model inside a normal subdirectory tree.
-    await mkdir(join(root, 'models', 'subdir'), { recursive: true })
+    await mkdir(join(root, 'kNNowledge', 'subdir'), { recursive: true })
     await writeFile(
-      join(root, 'models', 'subdir', 'Nested_V_0-2-0_NN.md'),
+      join(root, 'kNNowledge', 'subdir', 'Nested_V_0-2-0_NN.md'),
       MODEL_FRONTMATTER + '# Nested',
       'utf-8',
     )
@@ -72,7 +72,7 @@ describe('listModels (recursive scan)', () => {
     const nested = models.find((m) => m.id === 'Nested_V_0-2-0_NN')
     expect(nested).toBeDefined()
     expect(nested!.version).toBe('0-2-0')
-    expect(nested!.path).toBe(join(root, 'models', 'subdir', 'Nested_V_0-2-0_NN.md'))
+    expect(nested!.path).toBe(join(root, 'kNNowledge', 'subdir', 'Nested_V_0-2-0_NN.md'))
   })
 
   it('returns an empty list for a non-existent root', async () => {

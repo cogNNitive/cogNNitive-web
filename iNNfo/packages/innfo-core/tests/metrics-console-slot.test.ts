@@ -15,12 +15,12 @@ const harnessPath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'scripts',
   'verify.harness.js',
 )
-const metricsDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics')
+const metricsDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics')
 const nodeRequire = createRequire(import.meta.url)
 
 interface SlotContractApi {

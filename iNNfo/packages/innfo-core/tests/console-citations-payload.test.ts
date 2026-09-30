@@ -30,7 +30,7 @@ const procedurePath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'workspace',
   'procedures',
   'compile_model_console_NN.md',

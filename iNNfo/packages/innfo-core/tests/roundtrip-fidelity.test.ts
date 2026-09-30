@@ -30,7 +30,7 @@ function findModelDocuments(dir: string): string[] {
 /** Every shipped document: the sample workspace, plus each template's own samples. */
 function corpus(): string[] {
   const samples = findModelDocuments(join(REPO_ROOT, '_samples_nn'))
-  const templateSamples = findModelDocuments(join(REPO_ROOT, 'iNNfo', 'specs', 'templates')).filter(
+  const templateSamples = findModelDocuments(join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts')).filter(
     (f) => /[\\/]samples[\\/]/.test(f),
   )
   return [...samples, ...templateSamples]

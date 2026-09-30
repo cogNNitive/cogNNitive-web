@@ -21,12 +21,12 @@ const harnessPath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'scripts',
   'verify.harness.js',
 )
-const samplesDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics', 'samples')
+const samplesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics', 'samples')
 const sampleConsole = 'Ghostbusters_V_0-1-0_console.html'
 
 const CHROME_CANDIDATES = [

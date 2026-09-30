@@ -15,18 +15,18 @@ const runtimePath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'console',
   'innfo-runtime.js',
 )
-const samplesDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics', 'samples')
+const samplesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics', 'samples')
 const procedurePath = join(
   here,
   '..',
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'procedures',
   'create_timeline_NN.md',
@@ -37,7 +37,7 @@ const applyProcedurePath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'procedures',
   'apply_feedback_NN.md',

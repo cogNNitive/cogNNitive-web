@@ -21,7 +21,7 @@ import type { DirectoryHandleLike } from '../src/types/index.js'
 const here = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(here, '..', '..', '..', '..')
 const WS = join(REPO_ROOT, '_samples_nn')
-const TEMPLATES = join(REPO_ROOT, 'iNNfo', 'specs', 'templates')
+const TEMPLATES = join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts')
 
 /**
  * Minimal Node-backed `DirectoryHandleLike`. The recursive parser is written
@@ -138,7 +138,7 @@ describe('the shipped sample workspace', () => {
   })
 
   it('Requirement 5: no shipped sample reports a slug collision', () => {
-    const modelsDir = join(WS, 'models')
+    const modelsDir = join(WS, 'kNNowledge')
     const offenders: string[] = []
     for (const file of readdirSync(modelsDir).filter((f) => f.endsWith('.md'))) {
       const parsed = parseModel(readFileSync(join(modelsDir, file), 'utf-8'))

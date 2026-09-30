@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const templatesDir = join(here, '..', '..', '..', 'specs', 'templates')
+const templatesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts')
 const repoRoot = join(here, '..', '..', '..', '..')
 
 const assets = {

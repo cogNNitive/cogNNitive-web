@@ -24,7 +24,7 @@ describe('User Workspace Refactorization (fixtures/simulacro-refactorizacion)', 
     // package in this fixture holds.
     const templates = ['business', 'business-model', 'analysis', 'organization', 'projects', 'metrics', 'repository'];
     for (const t of templates) {
-      const tDir = path.join(fixtureRoot, 'templates', t);
+      const tDir = path.join(fixtureRoot, 'bluepriNNts', t);
       expect(fs.existsSync(path.join(tDir, 'spec_NN.md')), `Missing spec_NN.md in ${t}`).toBe(true);
       expect(fs.existsSync(path.join(tDir, 'samples')), `Missing samples in ${t}`).toBe(true);
     }
@@ -51,7 +51,7 @@ describe('User Workspace Refactorization (fixtures/simulacro-refactorizacion)', 
     const template = parseModel(tplContent);
 
     const resolveInclude = (inc: { name: string }) => {
-      const p = path.join(fixtureRoot, 'templates', inc.name, 'spec_NN.md');
+      const p = path.join(fixtureRoot, 'bluepriNNts', inc.name, 'spec_NN.md');
       return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
     };
 

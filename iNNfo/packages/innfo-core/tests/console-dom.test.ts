@@ -25,7 +25,7 @@ import { createRequire } from 'node:module'
  */
 
 const req = createRequire(import.meta.url)
-const consoleDir = join(import.meta.dirname!, '..', '..', '..', 'specs', 'templates', 'console')
+const consoleDir = join(import.meta.dirname!, '..', '..', '..', 'specs', 'bluepriNNts', 'console')
 
 type ConsoleApi = {
   boot: (doc: Document) => void
