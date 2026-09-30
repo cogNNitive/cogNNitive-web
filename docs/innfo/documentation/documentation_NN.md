@@ -41,8 +41,12 @@ parent:: [[iNNfo Documentation]]
 section_order:: 3
 parent:: [[iNNfo Documentation]]
 
-## NN Section: Runtime & Internals
+## NN Section: Templates
 section_order:: 4
+parent:: [[iNNfo Documentation]]
+
+## NN Section: Runtime & Internals
+section_order:: 5
 parent:: [[iNNfo Documentation]]
 
 # NN Page
@@ -127,6 +131,14 @@ order:: 50
 parent:: [[Architecture]]
 description:: Integration of independent external tools (MCP vs CLI), with the WaveSpeed image-generation case study.
 
+## NN Page: Why cogNNitive
+title:: Why cogNNitive
+source:: value-proposition.md
+route:: value-proposition
+order:: 5
+parent:: [[Guides]]
+description:: The problem with chatting straight to a model, and the four pillars cogNNitive addresses — efficiency, traceability, review comfort, and no vendor lock-in.
+
 ## NN Page: Usage Guide
 title:: Usage
 source:: usage.md
@@ -150,6 +162,14 @@ route:: sources-citations-lineage
 order:: 30
 parent:: [[Guides]]
 description:: How the pipeline tracks where knowledge comes from, with three terms — Source, Citation, Lineage.
+
+## NN Page: Import Modes & Dynamic Sources
+title:: Import Modes & Dynamic Sources
+source:: import-modes.md
+route:: import-modes
+order:: 32
+parent:: [[Guides]]
+description:: How new files enter the base — one-off, snapshot series, watched folders, reviewer feedback — and how the impact check keeps living sources from silently breaking citations.
 
 ## NN Page: Lifecycle Walkthrough
 title:: Lifecycle Walkthrough (Case Study)
@@ -182,6 +202,22 @@ route:: workspace-backups
 order:: 60
 parent:: [[Guides]]
 description:: Layered workspace safety model: user-led snapshots, out-of-tree migration backups, and the optional Git collaboration layer.
+
+## NN Page: Templates Overview
+title:: Overview
+source:: templates.md
+route:: templates
+order:: 10
+parent:: [[Templates]]
+description:: Overview of the iNNfo Level 2 bluepriNNts (apps) that model knowledge for a domain.
+
+## NN Page: Video App
+title:: Video App
+source:: template-video.md
+route:: template-video
+order:: 20
+parent:: [[Templates]]
+description:: The video production bluepriNNt and its generated scenes and artifacts.
 
 ## NN Page: Offline Consoles
 title:: Offline Consoles

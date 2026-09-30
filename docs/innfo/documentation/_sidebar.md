@@ -14,9 +14,11 @@
   - [External Tooling & Integrations](integrations)
 
 - **Guides**
+  - [Why cogNNitive](value-proposition)
   - [Usage](usage)
   - [Relationships & Connections](relationships)
   - [Sources, Citations & Lineage](sources-citations-lineage)
+  - [Import Modes & Dynamic Sources](import-modes)
   - [Lifecycle Walkthrough (Case Study)](lifecycle-walkthrough)
   - [Tags & Open Taxonomy](tags-and-taxonomy)
   - [Collaboration with Git](collaboration-git)
