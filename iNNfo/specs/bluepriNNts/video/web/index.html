@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Series — Source Notes & Catalog</title>
+  <!-- Tailwind CSS Play CDN & Typography Plugin -->
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <!-- Alpine.js & Marked.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Local data fallback for direct double-click file:// opening -->
+  <script src="data/videos.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-white text-zinc-900 min-h-screen font-sans antialiased selection:bg-zinc-100 selection:text-zinc-900" x-data="videoPortal()" x-init="loadData()" x-cloak>
+
+  <!-- MINIMALIST NAVIGATION -->
+  <nav class="border-b border-zinc-100 px-6 py-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="#" @click.prevent="currentVideo = null" class="text-sm font-semibold tracking-tight text-zinc-900 hover:text-zinc-600 transition flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-zinc-900 inline-block"></span>
+        <span>Cognitive Series</span>
+      </a>
+      <span class="text-xs text-zinc-400 font-mono">PUBLIC SHOW NOTES</span>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION (MINIMALIST & WHITE) -->
+  <header class="py-16 px-6 border-b border-zinc-100 bg-zinc-50/50">
+    <div class="max-w-3xl mx-auto text-center">
+      <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-900">Episodes & Knowledge Archive</h1>
+      <p class="mt-3 text-base text-zinc-500 leading-relaxed">A curated collection of technical video briefings, companion transcripts, cited research papers, and implementation notes.</p>
+      
+      <!-- SEARCH & FILTER BAR -->
+      <div class="mt-8 flex flex-col gap-4">
+        <div class="relative">
+          <input type="text" x-model="search" placeholder="Search by topic, keyword, source or title..."
+                 class="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 transition shadow-sm">
+          <svg class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        
+        <!-- Filter Tags -->
+        <div class="flex flex-wrap gap-1.5 justify-center items-center">
+          <button @click="selectedTag = ''" 
+                  :class="selectedTag === '' ? 'bg-zinc-900 text-white font-medium' : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300'" 
+                  class="px-3 py-1 text-xs rounded-full transition shadow-xs">All Topics</button>
+          <template x-for="tag in allTags" :key="tag">
+            <button @click="selectedTag = tag" 
+                    :class="selectedTag === tag ? 'bg-zinc-900 text-white font-medium' : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300'" 
+                    class="px-3 py-1 text-xs rounded-full transition shadow-xs" x-text="tag"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- VIDEO CATALOG (CARDS GRID) -->
+  <main class="max-w-6xl mx-auto px-6 py-12" x-show="!currentVideo">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <template x-for="video in filteredVideos" :key="video.id">
+        <article class="bg-white border border-zinc-200 rounded-xl overflow-hidden hover:border-zinc-400 transition-all duration-200 flex flex-col cursor-pointer group" @click="openVideo(video)">
+          <div class="aspect-video bg-zinc-100 relative overflow-hidden border-b border-zinc-100">
+            <img :src="video.thumbnail || 'https://placehold.co/600x400/f4f4f5/71717a?text=Video'" class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" :alt="video.title">
+            <div class="absolute bottom-2.5 right-2.5 bg-zinc-900/80 backdrop-blur text-white text-[10px] font-mono px-2 py-0.5 rounded">
+              <span x-text="video.duration || 'Video'"></span>
+            </div>
+          </div>
+          <div class="p-5 flex flex-col flex-1">
+            <div class="flex flex-wrap gap-1 mb-2.5">
+              <template x-for="tag in video.tags" :key="tag">
+                <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600" x-text="tag"></span>
+              </template>
+            </div>
+            <h2 class="text-base font-semibold text-zinc-900 group-hover:text-zinc-600 transition leading-snug" x-text="video.title"></h2>
+            <p class="mt-2 text-xs text-zinc-500 leading-relaxed line-clamp-2" x-text="video.description"></p>
+            <div class="mt-auto pt-4 border-t border-zinc-100 flex justify-between items-center text-xs text-zinc-400 font-mono">
+              <span x-text="video.date"></span>
+              <span class="text-zinc-900 font-sans font-medium group-hover:underline">Read show notes →</span>
+            </div>
+          </div>
+        </article>
+      </template>
+    </div>
+
+    <template x-if="filteredVideos.length === 0">
+      <div class="text-center py-20 text-zinc-400">
+        <p class="text-sm">No videos found matching your filter criteria.</p>
+      </div>
+    </template>
+  </main>
+
+  <!-- VIDEO DETAIL & SHOW NOTES -->
+  <section class="max-w-4xl mx-auto px-6 py-10" x-show="currentVideo" style="display: none;">
+    <button @click="currentVideo = null" class="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      <span>Back to catalog</span>
+    </button>
+    
+    <article class="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-10 shadow-xs">
+      <!-- EMBEDDED YOUTUBE PLAYER -->
+      <template x-if="getYoutubeEmbed(currentVideo?.youtube_url)">
+        <div class="aspect-video w-full rounded-xl overflow-hidden mb-8 bg-zinc-900 border border-zinc-200 shadow-xs">
+          <iframe class="w-full h-full" :src="getYoutubeEmbed(currentVideo.youtube_url)" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+      </template>
+
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        <template x-for="tag in currentVideo?.tags" :key="tag">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700 font-medium" x-text="tag"></span>
+        </template>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 mb-2" x-text="currentVideo?.title"></h1>
+      <div class="text-xs text-zinc-400 font-mono mb-8" x-text="'Published ' + currentVideo?.date"></div>
+      
+      <!-- MARKDOWN CONTENT AREA -->
+      <div class="prose prose-zinc max-w-none text-zinc-700 text-sm leading-relaxed border-t border-zinc-100 pt-8" x-html="renderedMarkdown"></div>
+    </article>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-zinc-100 py-8 px-6 mt-16 text-center text-xs text-zinc-400 font-mono">
+    <span>Generated with cogNNitive Video Template · Hosted on GitHub Pages</span>
+  </footer>
+
+  <script>
+    function videoPortal() {
+      return {
+        videos: [],
+        search: '',
+        selectedTag: '',
+        currentVideo: null,
+        renderedMarkdown: '',
+        async loadData() {
+          // 1. Try modern fetch (works on HTTP/HTTPS/GitHub Pages)
+          try {
+            const res = await fetch('data/videos.json');
+            if (res.ok) {
+              this.videos = await res.json();
+              return;
+            }
+          } catch (e) {
+            // fetch blocked by file:// CORS security policy
+          }
+          // 2. Fallback to window.VIDEOS_DATA (works on double-click file://)
+          if (window.VIDEOS_DATA && Array.isArray(window.VIDEOS_DATA)) {
+            this.videos = window.VIDEOS_DATA;
+          }
+        },
+        get allTags() {
+          return [...new Set(this.videos.flatMap(v => v.tags || []))];
+        },
+        get filteredVideos() {
+          return this.videos.filter(v => {
+            const query = this.search.toLowerCase();
+            const matchesSearch = !query || 
+                                  v.title?.toLowerCase().includes(query) ||
+                                  v.description?.toLowerCase().includes(query) ||
+                                  (v.tags && v.tags.some(t => t.toLowerCase().includes(query)));
+            const matchesTag = !this.selectedTag || (v.tags && v.tags.includes(this.selectedTag));
+            return matchesSearch && matchesTag;
+          });
+        },
+        async openVideo(video) {
+          this.currentVideo = video;
+          this.renderedMarkdown = '<p class="text-zinc-400">Loading show notes...</p>';
+          try {
+            const res = await fetch(video.content_file);
+            if (res.ok) {
+              const mdText = await res.text();
+              this.renderedMarkdown = marked.parse(mdText);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
+          } catch (err) {
+            // Fallback for file:// protocol
+            if (video.raw_markdown) {
+              this.renderedMarkdown = marked.parse(video.raw_markdown);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
+          }
+          if (video.raw_markdown) {
+            this.renderedMarkdown = marked.parse(video.raw_markdown);
+          } else {
+            this.renderedMarkdown = '<p class="text-zinc-400">No companion notes found for this episode.</p>';
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        getYoutubeEmbed(url) {
+          if (!url) return null;
+          const id = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]{11})/)?.[1];
+          return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

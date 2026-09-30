@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentation Portal Console</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-2: #f4f4f5;
+        --text: #0a0a0a;
+        --muted: #737373;
+        --faint: #a1a1a1;
+        --border: #e5e5e5;
+        --primary: #171717;
+        --primary-hover: #0a0a0a;
+        --success: #16a34a;
+        --danger: #e7000b;
+        --warning: #d97706;
+        --link: #2563eb;
+        --radius-sm: 6px;
+        --radius: 8px;
+        --radius-lg: 10px;
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Courier New', monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0a0a;
+          --surface: #0a0a0a;
+          --surface-2: #27272a;
+          --text: #fafafa;
+          --muted: #a1a1a1;
+          --faint: #737373;
+          --border: #27272a;
+          --primary: #e5e5e5;
+          --primary-hover: #ffffff;
+          --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.6);
+        }
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+      #app-root { display: flex; flex-direction: column; min-height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <div id="app-root">
+      <header id="console-header"></header>
+      <main id="console-main"></main>
+    </div>
+
+    <!-- Declarative configuration slot -->
+    <script id="innfo-config" type="application/json">
+      {
+        "layout": "docs-portal-console",
+        "title": "Living Documentation & Knowledge Portal",
+        "needs": [
+          "concept-rail",
+          "fulltext-search",
+          "reference-popup",
+          "hash-routing",
+          "feedback-export"
+        ]
+      }
+    </script>
+
+    <!-- Schema JSON Contract Slot -->
+    <script id="innfo-schema" type="application/json">
+      {}
+    </script>
+
+    <!-- Model JSON Contract Slot -->
+    <script id="innfo-model" type="application/json">
+      {}
+    </script>
+
+    <!-- Console Runtime Loader -->
+    <script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+    <script src="../console/innfo-console.bundle.js"></script>
+    <script src="innfo-console.bundle.js"></script>
+  </body>
+</html>

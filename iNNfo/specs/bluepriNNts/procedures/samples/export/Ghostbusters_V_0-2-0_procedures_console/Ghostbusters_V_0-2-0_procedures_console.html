@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iNNfo Console</title>
+    <!--
+    artifact_shell.html — thin console shell for innfo-console artifacts.
+
+    Generating agents MUST only:
+      1. Declare capabilities in the innfo-config needs[] list below
+         (pins resolve via needs-registry.json — never hand-edit URLs).
+      2. Paste the Schema JSON Contract into #innfo-schema.
+      3. Paste the Model JSON Contract into #innfo-model.
+    Nothing else in this file is edited. The shared runtime
+    (innfo-runtime.js, window.InnfoConsole) renders banner, rail, search,
+    cards, matrices, drafts, and the export modal. Do NOT inline runtime
+    code here — the no-inline-runtime scan rejects it.
+
+    Runtime loading (static script tags only — file:// compatible, no modules,
+    no network fetch calls):
+      - Primary: jsDelivr pin @innfo-console-v0.4.0 (tag cut at release;
+        pre-tag dev uses @main with the SRI hash recorded by the release).
+      - Fallback: raw.githubusercontent mirror, then the vendored copy
+        shipped next to the generated console for offline double-click.
+      The runtime no-ops on re-execution, so the fallback tags below are
+      safe: exactly one copy boots.
+  -->
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-2: #f4f4f5;
+        --text: #0a0a0a;
+        --muted: #737373;
+        --faint: #a1a1a1;
+        --border: #e5e5e5;
+        --primary: #171717;
+        --primary-hover: #0a0a0a;
+        --success: #16a34a;
+        --danger: #e7000b;
+        --warning: #d97706;
+        --link: #2563eb;
+        --radius-sm: 6px;
+        --radius: 8px;
+        --radius-lg: 10px;
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --mono: 'SF Mono', ui-monospace, 'Courier New', monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0a0a;
+          --surface: #0a0a0a;
+          --surface-2: #27272a;
+          --text: #fafafa;
+          --muted: #a1a1a1;
+          --faint: #737373;
+          --border: #27272a;
+          --primary: #e5e5e5;
+          --primary-hover: #fafafa;
+          --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.85em;
+      }
+      #innfo-banner {
+        padding: 20px 28px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+      #innfo-banner strong {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+      #innfo-banner .innfo-banner-version,
+      #innfo-banner .innfo-banner-needs,
+      #innfo-banner .innfo-banner-drafts {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+      #innfo-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 0;
+        align-items: start;
+      }
+      @media (max-width: 820px) {
+        #innfo-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      #innfo-rail {
+        position: sticky;
+        top: 0;
+        border-right: 1px solid var(--border);
+        background: var(--surface);
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 100vh;
+        overflow-y: auto;
+      }
+      @media (max-width: 820px) {
+        #innfo-rail {
+          position: static;
+          max-height: none;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+      }
+      .innfo-rail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        background: transparent;
+        border: none;
+        border-left: 3px solid transparent;
+        border-radius: 6px;
+        padding: 7px 10px;
+        cursor: pointer;
+        font-size: 0.84rem;
+        color: var(--text);
+        font: inherit;
+      }
+      .innfo-rail-item:hover {
+        background: var(--surface-2);
+      }
+      .innfo-rail-item.active {
+        background: var(--surface-2);
+        border-left-color: var(--primary);
+        font-weight: 700;
+      }
+      main {
+        padding: 24px 28px 96px;
+        max-width: 1080px;
+        min-width: 0;
+      }
+      .innfo-toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      #innfo-search {
+        flex: 1 1 280px;
+        max-width: 420px;
+        padding: 8px 12px;
+        font: inherit;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      #innfo-search:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--text);
+      }
+      #innfo-export-open {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        height: 36px;
+      }
+      #innfo-export-open:hover {
+        background: var(--surface-2);
+      }
+      .innfo-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        scroll-margin-top: 12px;
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-card h3 {
+        margin: 0 0 4px 0;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .innfo-card-concept {
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin: 0 0 8px 0;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .innfo-card-fields {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 4px 12px;
+        font-size: 0.84rem;
+        margin: 10px 0 0;
+      }
+      .innfo-card-fields dt {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .innfo-card-fields dd {
+        margin: 0;
+      }
+      .innfo-matrix {
+        margin: 24px 0;
+      }
+      .innfo-matrix h3 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .innfo-matrix table {
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        width: 100%;
+      }
+      .innfo-matrix th,
+      .innfo-matrix td {
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        text-align: left;
+      }
+      .innfo-matrix thead th,
+      .innfo-matrix tbody th:first-child {
+        background: var(--surface-2);
+        font-weight: 600;
+      }
+      #innfo-export-modal {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        max-width: 560px;
+        width: 100%;
+        background: var(--surface);
+        color: var(--text);
+      }
+      #innfo-export-modal::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+      #innfo-export-modal input {
+        width: 100%;
+        padding: 8px 12px;
+        margin: 8px 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      #innfo-export-modal pre {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px;
+        white-space: pre-wrap;
+        font-size: 0.8rem;
+      }
+      #innfo-ref-dialog {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 0;
+        max-width: 480px;
+        width: 100%;
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+      }
+      #innfo-ref-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.35);
+      }
+      #innfo-ref-dialog .innfo-ref-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      #innfo-ref-dialog .innfo-ref-head h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+      #innfo-ref-dialog .innfo-ref-close {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        border-radius: var(--radius-sm);
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      #innfo-ref-dialog .innfo-ref-body {
+        padding: 16px 20px 20px;
+      }
+      #innfo-ref-dialog .innfo-ref-tag {
+        display: inline-block;
+        font-size: 0.64rem;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        padding: 1px 8px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+      }
+      #innfo-ref-dialog .innfo-ref-desc {
+        margin: 0 0 12px;
+        font-size: 0.88rem;
+      }
+      #innfo-ref-dialog .innfo-ref-fields {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 3px 14px;
+        margin: 0;
+        font-size: 0.8rem;
+      }
+      #innfo-ref-dialog .innfo-ref-fields dt {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      #innfo-ref-dialog .innfo-ref-fields dd {
+        margin: 0;
+      }
+      .innfo-ref-pill {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        color: var(--link);
+        border-radius: 999px;
+        padding: 1px 8px;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .innfo-ref-pill:hover {
+        border-color: var(--link);
+        background: rgba(37, 99, 235, 0.06);
+      }
+      /* Generic document view (renderDocument) */
+      #innfo-doc .doc-root {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 20px 22px;
+        margin-bottom: 14px;
+        box-shadow: var(--shadow-card);
+      }
+      #innfo-doc .doc-root h2 {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #innfo-doc .doc-root p.desc,
+      #innfo-doc .doc-step p.desc {
+        margin: 0 0 10px;
+        font-size: 0.9rem;
+      }
+      #innfo-doc .doc-step {
+        border-left: 3px solid var(--border);
+        padding: 12px 16px;
+        margin: 0 0 10px 8px;
+        background: var(--surface);
+      }
+      #innfo-doc .doc-step h3 {
+        margin: 0 0 6px;
+        font-size: 0.98rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #innfo-doc .doc-icon {
+        color: var(--muted);
+      }
+      #innfo-doc .doc-fields {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 3px 14px;
+        margin: 8px 0 0;
+        font-size: 0.8rem;
+      }
+      #innfo-doc .doc-fields dt {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      #innfo-doc .doc-fields dd {
+        margin: 0;
+      }
+      .empty-state {
+        color: var(--muted);
+        font-size: 0.9rem;
+        padding: 40px 0;
+      }
+      .innfo-reviewer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-left: auto;
+        cursor: pointer;
+        user-select: none;
+      }
+      .innfo-reviewer-chip:hover {
+        border-color: var(--muted);
+      }
+      .innfo-reviewer-label {
+        color: var(--muted);
+      }
+      .innfo-reviewer-name {
+        font-weight: 600;
+        color: var(--text);
+      }
+      .innfo-reviewer-edit {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.82rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        opacity: 0.7;
+      }
+      .innfo-reviewer-edit:hover {
+        opacity: 1;
+      }
+      .innfo-card-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--danger);
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 1px 7px;
+        min-width: 18px;
+        height: 18px;
+        line-height: 1;
+      }
+      .innfo-rail-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--danger);
+        color: #ffffff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 1px 6px;
+        min-width: 16px;
+        height: 16px;
+        line-height: 1;
+        margin-left: 6px;
+      }
+      .innfo-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .innfo-card-head h3 {
+        margin: 0;
+      }
+      .innfo-concept-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .innfo-concept-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .innfo-concept-count {
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+      .innfo-element-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .innfo-cite-icon-wrap {
+        display: inline-flex;
+        align-items: center;
+      }
+      .innfo-view-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 20px;
+        padding-bottom: 4px;
+      }
+      .innfo-view-tab {
+        appearance: none;
+        border: 1px solid transparent;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .innfo-view-tab:hover {
+        color: var(--text);
+        background: var(--surface-2);
+      }
+      .innfo-view-tab.active {
+        color: var(--text);
+        border-bottom-color: var(--primary);
+        background: var(--surface-2);
+      }
+      .innfo-tab-panel {
+        display: none;
+      }
+      .innfo-tab-panel.active {
+        display: block;
+      }
+      .innfo-review-head {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        background: var(--surface);
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-review-head h2 {
+        margin: 0 0 14px 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+      .innfo-review-stats {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .innfo-review-stat {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 16px;
+        background: var(--surface-2);
+        border-radius: var(--radius-sm);
+        min-width: 90px;
+      }
+      .innfo-stat-num {
+        font-size: 1.4rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--text);
+      }
+      .innfo-stat-lbl {
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .innfo-review-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .innfo-btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 16px;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+      }
+      .innfo-btn:hover {
+        background: var(--surface-2);
+      }
+      .innfo-btn-primary {
+        background: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+      }
+      .innfo-btn-primary:hover {
+        background: var(--primary-hover);
+      }
+      .innfo-review-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .innfo-review-item {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        background: var(--surface);
+        box-shadow: var(--shadow-card);
+      }
+      .innfo-review-item-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .innfo-review-item-id {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .innfo-review-kind-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+      }
+      .innfo-review-kind-badge.kind-correction {
+        background: rgba(231, 0, 11, 0.1);
+        color: var(--danger);
+        border-color: rgba(231, 0, 11, 0.3);
+      }
+      .innfo-review-kind-badge.kind-comment {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--link);
+        border-color: rgba(37, 99, 235, 0.3);
+      }
+      .innfo-review-card-link {
+        appearance: none;
+        border: none;
+        background: transparent;
+        color: var(--link);
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+      }
+      .innfo-review-card-link:hover {
+        color: var(--primary);
+      }
+      .innfo-review-status-select {
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-left: auto;
+      }
+      .innfo-review-delete-btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .innfo-review-delete-btn:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+      .innfo-review-item-field {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .innfo-review-item-note {
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+      .innfo-highlight {
+        animation: innfo-pulse-glow 2.5s ease-out;
+      }
+      @keyframes innfo-pulse-glow {
+        0% {
+          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.5);
+          border-color: var(--link);
+        }
+        100% {
+          box-shadow: var(--shadow-card);
+          border-color: var(--border);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header id="innfo-banner" aria-label="Console review banner"></header>
+
+    <div id="innfo-layout">
+      <nav id="innfo-rail" aria-label="Concept rail"></nav>
+      <main>
+        <div class="innfo-toolbar">
+          <input
+            id="innfo-search"
+            type="search"
+            placeholder="Search elements…"
+            aria-label="Search elements"
+          />
+          <button id="innfo-export-open" type="button">Export feedback</button>
+        </div>
+        <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
+        <div id="innfo-tab-explorer" class="innfo-tab-panel active">
+          <div id="innfo-doc"></div>
+          <div id="innfo-content"></div>
+          <div id="innfo-matrices"></div>
+          <div id="innfo-charts"></div>
+        </div>
+        <div id="innfo-tab-domain" class="innfo-tab-panel"></div>
+        <div id="innfo-tab-studio" class="innfo-tab-panel"></div>
+        <div id="innfo-tab-review" class="innfo-tab-panel"></div>
+      </main>
+    </div>
+
+    <dialog id="innfo-export-modal" aria-label="Export reviewer feedback">
+      <h2>Export reviewer feedback</h2>
+      <label
+        >Reviewer identifier (required)
+        <input data-innfo="identifier" type="text" placeholder="e.g. round-2" />
+      </label>
+      <h3>Instructions</h3>
+      <pre data-innfo="instructions"></pre>
+      <h3>Agent prompt</h3>
+      <pre data-innfo="agent-prompt"></pre>
+      <button data-innfo="download" type="button">Download feedback JSON</button>
+    </dialog>
+
+    <dialog id="innfo-ref-dialog" aria-label="Referenced element details"></dialog>
+
+    <script type="application/json" id="innfo-config">
+{
+  "needs": [
+    "concept-rail",
+    "fulltext-search",
+    "matrix-grids",
+    "hash-routing",
+    "reference-popup",
+    "document-view",
+    "feedback-export"
+  ],
+  "runtime": {
+    "cdn": "https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.4.0/iNNfo/specs/templates/console/innfo-console.bundle.js",
+    "fallback": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js"
+  }
+}
+</script>
+    <script type="application/json" id="innfo-schema">
+{
+  "concepts": [
+    {
+      "name": "Work"
+    },
+    {
+      "name": "Artifact"
+    },
+    {
+      "name": "Tools"
+    },
+    {
+      "name": "Roles"
+    }
+  ],
+  "markers": [],
+  "matrices": []
+}
+</script>
+    <script type="application/json" id="innfo-model">
+{
+  "meta": {
+    "model": "Ghostbusters_V_0-2-0_procedures_NN.md",
+    "title": "Ghostbusters Inc. Standard Containment Procedure Model",
+    "modelVersion": "V_0-2-0",
+    "sha256": "f2a2c73f7a20f4e843f49a61a3b0616d3f92148846c087816d9efe57800a7a1f",
+    "generated": "2026-09-29T12:47:02.821Z",
+    "slug": "ghostbusters-v-0-2-0-procedures"
+  },
+  "elements": [
+    {
+      "id": "Standard Ghost Containment Protocol",
+      "concept": "Work",
+      "name": "Standard Ghost Containment Protocol",
+      "description": "step_type:: task",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Emergency Call Triage",
+      "concept": "Work",
+      "name": "Emergency Call Triage",
+      "description": "parent:: [[Standard Ghost Containment Protocol]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Site PKE Scanning",
+      "concept": "Work",
+      "name": "Site PKE Scanning",
+      "description": "parent:: [[Standard Ghost Containment Protocol]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Proton Stream Target Lock",
+      "concept": "Work",
+      "name": "Proton Stream Target Lock",
+      "description": "parent:: [[Standard Ghost Containment Protocol]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Muon Trap Deployment",
+      "concept": "Work",
+      "name": "Muon Trap Deployment",
+      "description": "parent:: [[Standard Ghost Containment Protocol]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Subterranean Facility Transfer",
+      "concept": "Work",
+      "name": "Subterranean Facility Transfer",
+      "description": "parent:: [[Standard Ghost Containment Protocol]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Subterranean Containment Grid Shutdown Recovery",
+      "concept": "Work",
+      "name": "Subterranean Containment Grid Shutdown Recovery",
+      "description": "step_type:: task",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Emergency Alarm Intercept",
+      "concept": "Work",
+      "name": "Emergency Alarm Intercept",
+      "description": "parent:: [[Subterranean Containment Grid Shutdown Recovery]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Backup Generator Coupling",
+      "concept": "Work",
+      "name": "Backup Generator Coupling",
+      "description": "parent:: [[Subterranean Containment Grid Shutdown Recovery]]",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Client Emergency Intake Call",
+      "concept": "Artifact",
+      "name": "Client Emergency Intake Call",
+      "description": "Incoming telephonic request for spectral removal from hotel managers or private citizens.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Dispatch Ticket",
+      "concept": "Artifact",
+      "name": "Dispatch Ticket",
+      "description": "Work order detailing client location, reported spectral class, and assigned field team.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "PKE Survey Map",
+      "concept": "Artifact",
+      "name": "PKE Survey Map",
+      "description": "Topographical reading of ambient psychokinetic energy lines and entity concentration vectors.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Class-V Entity Entrapment Beam",
+      "concept": "Artifact",
+      "name": "Class-V Entity Entrapment Beam",
+      "description": "Focused particle accelerator beam immobilizing a spectral entity in mid-air.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Sealed Ghost Trap Unit",
+      "concept": "Artifact",
+      "name": "Sealed Ghost Trap Unit",
+      "description": "Heavy-duty portable muon canister holding a captured entity under vacuum seal.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Vault Containment Log",
+      "concept": "Artifact",
+      "name": "Vault Containment Log",
+      "description": "Digital and physical ledger recording captured entity class, date, and grid cell location.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Power Failure Alarm",
+      "concept": "Artifact",
+      "name": "Power Failure Alarm",
+      "description": "Emergency optical and acoustic signal triggered by main grid voltage loss.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "System Fault Diagnostic",
+      "concept": "Artifact",
+      "name": "System Fault Diagnostic",
+      "description": "Technical status readout indicating fault location and grid pressure drop rate.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Restored High-Voltage Grid",
+      "concept": "Artifact",
+      "name": "Restored High-Voltage Grid",
+      "description": "Fully pressurized subterranean containment vault running on stable power.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Headquarters Dispatch Console",
+      "concept": "Tools",
+      "name": "Headquarters Dispatch Console",
+      "description": "Central phone terminal, dispatch logbook, and street map for commercial routing.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "PKE Meter",
+      "concept": "Tools",
+      "name": "PKE Meter",
+      "description": "Handheld psychokinetic energy sensor with extendable antenna wings and LED frequency indicators.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Proton Pack Particle Accelerator",
+      "concept": "Tools",
+      "name": "Proton Pack Particle Accelerator",
+      "description": "Unlicensed nuclear-powered backpack accelerator generating charged particle streams.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Muon Ghost Trap",
+      "concept": "Tools",
+      "name": "Muon Ghost Trap",
+      "description": "Foot-pedal operated high-density suction trap with iris doors and containment cartridge.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "High-Voltage Subterranean Containment Grid",
+      "concept": "Tools",
+      "name": "High-Voltage Subterranean Containment Grid",
+      "description": "Laser-confined subterranean storage vault housing captured spectral entities.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Grid Status Warning Panel",
+      "concept": "Tools",
+      "name": "Grid Status Warning Panel",
+      "description": "Wall-mounted visual alarm board displaying containment chamber pressure and grid load.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Auxiliary Diesel Generator",
+      "concept": "Tools",
+      "name": "Auxiliary Diesel Generator",
+      "description": "Heavy-duty backup generator supplying emergency electrical power to the containment grid.",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Executive Secretary & Operations Manager",
+      "concept": "Roles",
+      "name": "Executive Secretary & Operations Manager",
+      "description": "scope:: internal",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Senior Paranormal Technician",
+      "concept": "Roles",
+      "name": "Senior Paranormal Technician",
+      "description": "scope:: internal",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Chief Science Officer",
+      "concept": "Roles",
+      "name": "Chief Science Officer",
+      "description": "scope:: internal",
+      "fields": {},
+      "markers": {}
+    },
+    {
+      "id": "Field Operations Lead",
+      "concept": "Roles",
+      "name": "Field Operations Lead",
+      "description": "scope:: internal",
+      "fields": {},
+      "markers": {}
+    }
+  ],
+  "matrices": []
+}
+</script>
+
+    <script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.4.0/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+    <script src="./innfo-console.bundle.js"></script>
+  </body>
+</html>

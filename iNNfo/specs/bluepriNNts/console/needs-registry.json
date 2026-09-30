@@ -1,0 +1,80 @@
+{
+  "version": "0.1.0",
+  "runtime": {
+    "version": "0.1.0",
+    "cdn": "https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/innfo-console.bundle.js",
+    "fallback": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/innfo-console.bundle.js",
+    "vendored": "./innfo-console.bundle.js"
+  },
+  "renderers": {
+    "model-viewer": {
+      "id": "model-viewer",
+      "file": "render-model-viewer.js",
+      "version": "0.1.0",
+      "cdn": "https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/render-model-viewer.js",
+      "fallback": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/render-model-viewer.js",
+      "vendored": "./render-model-viewer.js"
+    },
+    "procedure-stepper": {
+      "id": "procedure-stepper",
+      "file": "render-procedure-stepper.js",
+      "version": "0.1.0",
+      "cdn": "https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/render-procedure-stepper.js",
+      "fallback": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/render-procedure-stepper.js",
+      "vendored": "./render-procedure-stepper.js"
+    },
+    "visuals": {
+      "id": "visuals",
+      "file": "visuals.js",
+      "version": "0.1.0",
+      "cdn": "https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/visuals.js",
+      "fallback": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/visuals.js",
+      "vendored": "./visuals.js"
+    }
+  },
+  "needs": {
+    "charts": {
+      "description": "uPlot chart renderer reading pure-data series from innfo-model.series{chartId:number[]}; x-axis months window from meta.months/historyMonths/startMonth/startYear. Rendered by the shared console runtime (innfo-runtime.js renderCharts) vendored into innfo-console.bundle.js — no template-specific code, no evaluation of slot JS.",
+      "renderer": "innfo-runtime",
+      "since": "0.1.0"
+    },
+    "feedback-export": {
+      "description": "Reviewer suggest/edit drafts in localStorage and the Export modal with identifier gate, instructions and agent-prompt tabs, timestamped JSON download.",
+      "since": "0.1.0"
+    },
+    "concept-rail": {
+      "description": "Left rail of template concepts with per-concept element counts.",
+      "since": "0.1.0"
+    },
+    "fulltext-search": {
+      "description": "Search box filtering element names and field values.",
+      "since": "0.1.0"
+    },
+    "matrix-grids": {
+      "description": "Matrix sections rendered as rows-by-cols tables from the model slots.",
+      "since": "0.1.0"
+    },
+    "hash-routing": {
+      "description": "In-page relationship links resolving to element anchors via location hash.",
+      "since": "0.1.0"
+    },
+    "reference-popup": {
+      "description": "Reference-typed field values render as pills that open a detail dialog with the referenced element's info (name, concept, description, fields).",
+      "since": "0.1.0"
+    },
+    "document-view": {
+      "description": "Generic readable-document renderer: builds a tree from parent/next fields and renders each root chain as a document (root + steps with concept colors and step-type icons).",
+      "since": "0.1.0"
+    },
+    "guided-procedure": {
+      "description": "Guided Procedure Execution (fsm-stepper): navigable tree of root Work elements and their step chains with condition guards, I/O, tools, and role assignment.",
+      "renderer": "procedure-stepper",
+      "since": "0.1.0"
+    },
+    "timeline-grid": {
+      "description": "Interactive monthly P&L and metrics timeline grid with growth rules, variable overrides, formula recalculation, and CSV export.",
+      "renderer": "innfo-runtime",
+      "since": "0.1.0"
+    }
+  }
+}
