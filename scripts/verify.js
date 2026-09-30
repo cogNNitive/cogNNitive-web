@@ -40,7 +40,7 @@ function extractDeclaredTemplates(sourceText) {
   /** @type {Set<string>} */
   const declaredTemplates = new Set();
   const matchRegex = /-\s+name:\s+([^\s\n]+)/g;
-  for (const block of ['templates:', 'frozen_templates:', 'seam_dirs:']) {
+  for (const block of ['blueprints:', 'frozen_blueprints:', 'seam_dirs:']) {
     const templatesMatch = sourceText.match(new RegExp(`(?:^|\\n)${block}\\s*\\r?\\n([\\s\\S]*?)(?=\\r?\\n[a-z_]+:|$)`));
     const templatesBlock = templatesMatch ? templatesMatch[1] : '';
     let match;

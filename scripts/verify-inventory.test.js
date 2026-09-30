@@ -23,7 +23,7 @@ function main() {
 skills:
   - name: colliding-skill
     path: actioNN/skills/colliding-skill
-templates:
+blueprints:
   - name: registered-tmpl
     path: iNNfo/specs/templates/registered-tmpl
 `;
@@ -52,7 +52,7 @@ templates:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-inventory-'));
     try {
       const sourceYaml = `---
-templates:
+blueprints:
   - name: registered-tmpl
     path: iNNfo/specs/templates/registered-tmpl
 `;
@@ -71,15 +71,15 @@ templates:
     }
   }
 
-  // 3. Folder declared only under frozen_templates: passes guard (frozen partition)
+  // 3. Folder declared only under frozen_blueprints: passes guard (frozen partition)
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-inventory-'));
     try {
       const sourceYaml = `---
-templates:
+blueprints:
   - name: registered-tmpl
     path: iNNfo/specs/templates/registered-tmpl
-frozen_templates:
+frozen_blueprints:
   - name: cogNNitive
     path: iNNfo/specs/templates/cogNNitive/cogNNitive_V_0-2-0_NN.md
     version: "V_0-2-1"
@@ -95,10 +95,10 @@ frozen_templates:
       assert.strictEqual(
         result.ok,
         true,
-        'frozen-only folder must satisfy the inventory guard via the frozen_templates: partition',
+        'frozen-only folder must satisfy the inventory guard via the frozen_blueprints: partition',
       );
       assert.deepStrictEqual(result.missing, []);
-      console.log('✔ Frozen-only folder passed via frozen_templates: partition');
+      console.log('✔ Frozen-only folder passed via frozen_blueprints: partition');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
@@ -109,7 +109,7 @@ frozen_templates:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-inventory-'));
     try {
       const sourceYaml = `---
-templates:
+blueprints:
   - name: registered-tmpl
     path: iNNfo/specs/templates/registered-tmpl
 seam_dirs:
