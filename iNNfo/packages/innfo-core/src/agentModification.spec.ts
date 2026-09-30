@@ -56,13 +56,13 @@ describe('buildAgentModificationBlock', () => {
       'rationale',
       'approved_by',
       'author',
-      'model',
+      'knowledge',
       'knowledge_version',
       'timestamp',
     ])
   })
 
-  it('inserts version_transition between model and knowledge_version for bump_version only, keeping author after approved_by', () => {
+  it('inserts version_transition between knowledge and knowledge_version for bump_version only, keeping author after approved_by', () => {
     const block = buildAgentModificationBlock(
       'bump_version',
       { version: 'V_0-2-0' },
@@ -74,7 +74,7 @@ describe('buildAgentModificationBlock', () => {
       'rationale',
       'approved_by',
       'author',
-      'model',
+      'knowledge',
       'version_transition',
       'knowledge_version',
       'timestamp',
@@ -111,7 +111,7 @@ describe('buildAgentModificationBlock', () => {
     ).toContain('approved_by:: user')
   })
 
-  it('emits author:: between approved_by:: and model:: when the caller supplies one', () => {
+  it('emits author:: between approved_by:: and knowledge:: when the caller supplies one', () => {
     const block = buildAgentModificationBlock(
       'add_concept',
       { conceptName: 'Risks' },
@@ -119,7 +119,7 @@ describe('buildAgentModificationBlock', () => {
     )!
     const keys = fields(block).map(([k]) => k)
     expect(keys.indexOf('author')).toBe(keys.indexOf('approved_by') + 1)
-    expect(keys.indexOf('author')).toBe(keys.indexOf('model') - 1)
+    expect(keys.indexOf('author')).toBe(keys.indexOf('knowledge') - 1)
     expect(block).toContain('author:: OpenCode')
     // The two attribution keys coexist and stay distinct.
     expect(block).toContain('approved_by:: user')
