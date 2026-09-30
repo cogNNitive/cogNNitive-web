@@ -83,7 +83,7 @@ const VUS_SPEC_CLI = path.join(__dirname, '..', 'scripts', 'vus-spec.mjs');
 // 3. The CLI serves the vendored spec with no environment variable and no skip line.
 {
   const env = { ...process.env };
-  delete env.VIDGENN_ROOT;
+  for (const name of ['EXTERNAL_SPEC_ROOT', 'VUS_ROOT', 'SPEC_ROOT']) delete env[name];
   const res = spawnSync('node', [VUS_SPEC_CLI, 'voices'], { encoding: 'utf8', env });
   assert.strictEqual(res.status, 0, `vus-spec voices must succeed, got: ${res.stderr}`);
   assert.ok(!/SKIP/.test(res.stdout), 'vus-spec must not print a skip line');

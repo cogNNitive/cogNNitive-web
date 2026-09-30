@@ -57,36 +57,41 @@ function writeTmpScript(content) {
   return scriptPath;
 }
 
-function envWithoutVidgennRoot() {
+// Environment variables that once pointed the CLI at an external spec checkout.
+const DECOY_ROOT_VARS = ['EXTERNAL_SPEC_ROOT', 'VUS_ROOT', 'SPEC_ROOT'];
+
+function cleanEnv() {
   const env = { ...process.env };
-  delete env.VIDGENN_ROOT;
+  for (const name of DECOY_ROOT_VARS) delete env[name];
   return env;
 }
 
 async function runTests() {
   console.log('Running vus-parse unit tests...');
 
-  // Test 1: CLI runs to completion with VIDGENN_ROOT unset. It must not skip.
+  // Test 1: CLI runs to completion with no external root variable set. It must not skip.
   {
     const scriptPath = writeTmpScript(VALID_SAMPLE_SCRIPT);
     const res = spawnSync('node', [vusParsePath, scriptPath], {
       encoding: 'utf8',
-      env: envWithoutVidgennRoot(),
+      env: cleanEnv(),
     });
     assert.strictEqual(res.status, 0, `CLI must exit 0, got stderr: ${res.stderr}`);
     assert.ok(!/SKIP/.test(res.stdout), `CLI must not skip, got stdout: ${res.stdout}`);
     assert.ok(/zero issues/.test(res.stdout), `CLI must report zero issues, got stdout: ${res.stdout}`);
-    console.log('✔ CLI parses a valid script with VIDGENN_ROOT unset and does not skip');
+    console.log('✔ CLI parses a valid script with no external root variable set and does not skip');
   }
 
-  // Test 2: a stale/foreign VIDGENN_ROOT is ignored, never consulted.
+  // Test 2: a stale/foreign root variable is ignored, never consulted.
   {
     const scriptPath = writeTmpScript(VALID_SAMPLE_SCRIPT);
-    const env = { ...process.env, VIDGENN_ROOT: path.join(os.tmpdir(), 'does-not-exist-vidgenn') };
+    const bogus = path.join(os.tmpdir(), 'does-not-exist-external-root');
+    const env = { ...process.env };
+    for (const name of DECOY_ROOT_VARS) env[name] = bogus;
     const res = spawnSync('node', [vusParsePath, scriptPath], { encoding: 'utf8', env });
-    assert.strictEqual(res.status, 0, `CLI must ignore VIDGENN_ROOT, got stderr: ${res.stderr}`);
+    assert.strictEqual(res.status, 0, `CLI must ignore external root variables, got stderr: ${res.stderr}`);
     assert.ok(!/SKIP/.test(res.stdout));
-    console.log('✔ VIDGENN_ROOT is ignored');
+    console.log('✔ external root variables are ignored');
   }
 
   // Test 3 (function-level): runVusParse never reports skipped.
@@ -103,7 +108,7 @@ async function runTests() {
     const scriptPath = writeTmpScript(INVALID_SAMPLE_SCRIPT);
     const res = spawnSync('node', [vusParsePath, scriptPath], {
       encoding: 'utf8',
-      env: envWithoutVidgennRoot(),
+      env: cleanEnv(),
     });
     assert.strictEqual(res.status, 1, `CLI must exit 1 on issues, got status ${res.status}: ${res.stdout}`);
     assert.ok(/issue\(s\)/.test(res.stderr), `CLI must list the issues, got stderr: ${res.stderr}`);
@@ -115,7 +120,7 @@ async function runTests() {
   {
     const res = spawnSync('node', [vusParsePath, WORKSPACE_SAMPLE], {
       encoding: 'utf8',
-      env: envWithoutVidgennRoot(),
+      env: cleanEnv(),
     });
     assert.ok(!/SKIP/.test(res.stdout), 'workspace sample must not be skipped');
     assert.strictEqual(res.status, 0, `sample must parse clean, got status ${res.status}: ${res.stderr}${res.stdout}`);
