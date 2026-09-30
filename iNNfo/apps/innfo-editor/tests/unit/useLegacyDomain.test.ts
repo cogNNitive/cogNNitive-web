@@ -28,7 +28,7 @@ describe('useLegacyDomain and LegacyDomainBanner (D11)', () => {
           {
             type: 'legacy-folder',
             path: 'models',
-            detail: "Legacy 'models/' folder detected; canonical folder is 'kNNowledge/'",
+            detail: "Legacy 'kNNowledge/' folder detected; canonical folder is 'kNNowledge/'",
           },
         ],
       } as any,

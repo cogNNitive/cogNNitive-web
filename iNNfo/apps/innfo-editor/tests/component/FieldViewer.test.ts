@@ -217,7 +217,7 @@ describe('FieldViewer.vue — R-SC-06', () => {
     modelStore.setGraph(
       {
         Root: makeNode('Root', {
-          submodel: 'models/auth_01.md',
+          submodel: 'kNNowledge/auth_01.md',
         }),
       },
       ['Root'],
@@ -233,10 +233,10 @@ describe('FieldViewer.vue — R-SC-06', () => {
 
     const modelPill = wrapper.find('[data-testid="model-field-pill"]')
     expect(modelPill.exists()).toBe(true)
-    expect(modelPill.text()).toContain('models/auth_01.md')
+    expect(modelPill.text()).toContain('kNNowledge/auth_01.md')
 
     await modelPill.trigger('click')
     expect(uiStore.sidebarMode).toBe('focused_model')
-    expect(uiStore.focusedModelId).toBe('models/auth_01.md')
+    expect(uiStore.focusedModelId).toBe('kNNowledge/auth_01.md')
   })
 })

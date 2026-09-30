@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Create Timeline Procedure"
 ---
 
@@ -76,7 +76,7 @@ input:: [[Metrics Model]]
 output:: [[Model Data Block]]
 output_status:: verified
 tool:: [[AI Agent]]
-Copy values (metricValue), units (metricUnit, variableUnit) and verbatim formula text (metricFormula) from the Level 3 model into the innfo-model snapshot. `meta` carries the required keys (model, model_version, source_model, generated_at, months, historyMonths, charts, slug, title, startMonth/startYear); `rows` mirror the model rows with growth `{ mode: fixed | compound | additive }` derived from the Evolution concept; rows with measured past carry `history: [v0, v1, ...]` so the console renders actuals distinctly from computed months. PRE-COMPUTE every chart as pure-JSON month arrays into `series{ "<chartId>": number[] }` — series-as-data: the runtime only renders, it never evaluates. Cap the projected horizon at 120 months (MONTHS_CAP in the verify harness). Scenario variants live in the model as variant rows; the console renders the single neutral flow.
+Copy values (metricValue), units (metricUnit, variableUnit) and verbatim formula text (metricFormula) from the Level 3 model into the innfo-model snapshot. `meta` carries the required keys (model, knowledge_version, source_model, generated_at, months, historyMonths, charts, slug, title, startMonth/startYear); `rows` mirror the model rows with growth `{ mode: fixed | compound | additive }` derived from the Evolution concept; rows with measured past carry `history: [v0, v1, ...]` so the console renders actuals distinctly from computed months. PRE-COMPUTE every chart as pure-JSON month arrays into `series{ "<chartId>": number[] }` — series-as-data: the runtime only renders, it never evaluates. Cap the projected horizon at 120 months (MONTHS_CAP in the verify harness). Scenario variants live in the model as variant rows; the console renders the single neutral flow.
 
 ## NN Work: Map Dependency Graph
 parent:: [[Create Timeline]]
@@ -120,7 +120,7 @@ input:: [[Console HTML]]
 output:: [[Feedback JSON]]
 output_status:: verified
 tool:: [[AI Agent]]
-Keep the `feedback-export` capability enabled so the reviewer can download a feedback JSON conforming to `console/feedback.schema.json` (`meta` carries source_model, source_model_version, artifact, artifact_version, exported_at, author, feedback_slug, viewer; items carry id `fb-NNN`, kind correction|comment|new|delete, target, status). The reviewer drops the export into `sources/import/feedback/`; `nn-trannsform --scan` normalizes it under `sources/nn/import/feedback/` and cites it.
+Keep the `feedback-export` capability enabled so the reviewer can download a feedback JSON conforming to `console/feedback.schema.json` (`meta` carries source_model, source_knowledge_version, artifact, artifact_version, exported_at, author, feedback_slug, viewer; items carry id `fb-NNN`, kind correction|comment|new|delete, target, status). The reviewer drops the export into `sources/import/feedback/`; `nn-trannsform --scan` normalizes it under `sources/nn/import/feedback/` and cites it.
 
 ## NN Work: Verify In Browser
 parent:: [[Create Timeline]]
@@ -142,7 +142,7 @@ input:: [[Verification Report]]
 output:: [[Regenerated Console]]
 output_status:: verified
 tool:: [[innfo-mcp apply_change]]
-Apply Feedback replaces the old Version-And-Archive step: the console is a frozen snapshot and only changes through the feedback loop. Run the Apply Feedback procedure (`../procedures/apply_feedback_NN.md`): staleness check (`meta.source_model_version` vs the live model — block with a report naming both versions until the reviewer confirms), diff preview per pending item, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_model` (failure aborts the run: no version bump and no console rewrite), bump the patch version once, and regenerate the stable-name console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only.
+Apply Feedback replaces the old Version-And-Archive step: the console is a frozen snapshot and only changes through the feedback loop. Run the Apply Feedback procedure (`../procedures/apply_feedback_NN.md`): staleness check (`meta.source_knowledge_version` vs the live model — block with a report naming both versions until the reviewer confirms), diff preview per pending item, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_model` (failure aborts the run: no version bump and no console rewrite), bump the patch version once, and regenerate the stable-name console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only.
 
 # NN Artifact
 

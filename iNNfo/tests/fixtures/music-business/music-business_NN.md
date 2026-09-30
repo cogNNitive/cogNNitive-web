@@ -5,7 +5,7 @@ level: 3
 parent:
   name: "business_V_0-1-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/v0.1.1/specs/business_V_0-1-1_NN.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Vinyl Records Inc."
 ---
 

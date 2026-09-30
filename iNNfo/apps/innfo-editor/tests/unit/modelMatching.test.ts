@@ -25,25 +25,25 @@ function makeNode(id: string, path: string, name?: string): ModelNode {
 
 describe('modelMatching utility', () => {
   it('normalizes paths, trims wikilinks and backslashes', () => {
-    expect(normalizeModelPath('[[models/test.md]]')).toBe('models/test.md')
-    expect(normalizeModelPath('models\\test_NN.md')).toBe('models/test_NN.md')
-    expect(normalizeModelPath('  [[  models\\nested\\doc.md ]] ')).toBe('models/nested/doc.md')
+    expect(normalizeModelPath('[[kNNowledge/test.md]]')).toBe('kNNowledge/test.md')
+    expect(normalizeModelPath('models\\test_NN.md')).toBe('kNNowledge/test_NN.md')
+    expect(normalizeModelPath('  [[  models\\nested\\doc.md ]] ')).toBe('kNNowledge/nested/doc.md')
   })
 
   it('extracts basename correctly', () => {
-    expect(extractModelBasename('models/rehabilitacion_NN.md')).toBe('rehabilitacion_NN')
+    expect(extractModelBasename('kNNowledge/rehabilitacion_NN.md')).toBe('rehabilitacion_NN')
     expect(extractModelBasename('models\\nested\\rehabilitacion.md')).toBe('rehabilitacion')
     expect(extractModelBasename('[[rehabilitacion]]')).toBe('rehabilitacion')
   })
 
   it('finds matching node by Windows path against POSIX target', () => {
     const node = makeNode(
-      'models/rehabilitacion_NN.md',
+      'kNNowledge/rehabilitacion_NN.md',
       'models\\rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
     )
     const match = findMatchingModelNode(
       [node],
-      'models/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
+      'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
     )
     expect(match).toBeDefined()
     expect(match?.id).toBe(node.id)
@@ -53,14 +53,14 @@ describe('modelMatching utility', () => {
     const node = makeNode('rehabilitacion_node', 'rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md')
     const match = findMatchingModelNode(
       [node],
-      'models/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
+      'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
     )
     expect(match).toBeDefined()
   })
 
   it('finds matching node when target has wikilinks', () => {
-    const node = makeNode('models/foo.md', 'models/foo.md', 'Foo Model')
-    const match = findMatchingModelNode([node], '[[models/foo.md]]')
+    const node = makeNode('kNNowledge/foo.md', 'kNNowledge/foo.md', 'Foo Model')
+    const match = findMatchingModelNode([node], '[[kNNowledge/foo.md]]')
     expect(match).toBeDefined()
   })
 
@@ -72,7 +72,7 @@ describe('modelMatching utility', () => {
       modelStemMatches('rejas_rehabilitacion_NN.md', 'rejas_rehabilitacion'),
     ).toBe(true)
     expect(
-      modelStemMatches('models/rehabilitacion_reja_pozuello_V_0-1-0_rejas_rehabilitacion_NN.md', 'rejas_rehabilitacion'),
+      modelStemMatches('kNNowledge/rehabilitacion_reja_pozuello_V_0-1-0_rejas_rehabilitacion_NN.md', 'rejas_rehabilitacion'),
     ).toBe(true)
   })
 

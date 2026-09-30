@@ -43,10 +43,10 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
     const uiStore = useUiStore()
 
     const innovationRoot = makeModelRootNode(
-      'models/Ghostbusters_V_0-2-0_innovation_NN.md',
-      'models/Ghostbusters_V_0-2-0_innovation_NN.md',
+      'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
+      'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
       {
-        childIds: ['models/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01'],
+        childIds: ['kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01'],
         localMetamodel: {
           concepts: [
             {
@@ -68,7 +68,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
     )
 
     const initiativeElement: ModelNode = {
-      id: 'models/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01',
+      id: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01',
       name: 'Municipal Franchise Expansion',
       kind: 'element',
       type: 'Initiative',
@@ -76,18 +76,18 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
       childIds: [],
       fields: {
         business_model: {
-          value: '[[models/Ghostbusters_V_0-2-0_business_NN.md]]',
+          value: '[[kNNowledge/Ghostbusters_V_0-2-0_business_NN.md]]',
         },
       },
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'models/Ghostbusters_V_0-2-0_innovation_NN.md' },
+      source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
     }
 
     const businessSubmodel = makeModelRootNode(
-      'models/Ghostbusters_V_0-2-0_business_NN.md',
-      'models/Ghostbusters_V_0-2-0_business_NN.md',
+      'kNNowledge/Ghostbusters_V_0-2-0_business_NN.md',
+      'kNNowledge/Ghostbusters_V_0-2-0_business_NN.md',
     )
 
     modelStore.setGraph(
@@ -115,8 +115,8 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
     const modelStore = useModelStore()
     const uiStore = useUiStore()
 
-    const standaloneA = makeModelRootNode('models/standalone_A_NN.md', 'models/standalone_A_NN.md')
-    const standaloneB = makeModelRootNode('models/standalone_B_NN.md', 'models/standalone_B_NN.md')
+    const standaloneA = makeModelRootNode('kNNowledge/standalone_A_NN.md', 'kNNowledge/standalone_A_NN.md')
+    const standaloneB = makeModelRootNode('kNNowledge/standalone_B_NN.md', 'kNNowledge/standalone_B_NN.md')
 
     modelStore.setGraph(
       {
@@ -141,8 +141,8 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
     const modelStore = useModelStore()
     const uiStore = useUiStore()
 
-    const rootModel = makeModelRootNode('models/root_NN.md', 'models/root_NN.md', {
-      childIds: ['models/root_NN.md/elem_01'],
+    const rootModel = makeModelRootNode('kNNowledge/root_NN.md', 'kNNowledge/root_NN.md', {
+      childIds: ['kNNowledge/root_NN.md/elem_01'],
       localMetamodel: {
         concepts: [
           {
@@ -162,22 +162,22 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
     })
 
     const elem: ModelNode = {
-      id: 'models/root_NN.md/elem_01',
+      id: 'kNNowledge/root_NN.md/elem_01',
       name: 'Element 1',
       kind: 'element',
       type: 'Elem',
       parentId: rootModel.id,
       childIds: [],
       fields: {
-        sub: { value: 'models/sub_NN.md' },
+        sub: { value: 'kNNowledge/sub_NN.md' },
       },
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'models/root_NN.md' },
+      source: { path: 'kNNowledge/root_NN.md' },
     }
 
-    const subModel = makeModelRootNode('models/sub_NN.md', 'models/sub_NN.md')
+    const subModel = makeModelRootNode('kNNowledge/sub_NN.md', 'kNNowledge/sub_NN.md')
 
     modelStore.setGraph(
       {
@@ -188,7 +188,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
       [rootModel.id, subModel.id],
     )
 
-    uiStore.focusModel('models/sub_NN.md')
+    uiStore.focusModel('kNNowledge/sub_NN.md')
     expect(uiStore.sidebarMode).toBe('focused_model')
 
     const wrapper = mount(LeftSidebar, {

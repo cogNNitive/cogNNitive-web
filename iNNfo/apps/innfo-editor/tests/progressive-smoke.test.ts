@@ -53,8 +53,12 @@ La segunda descripción del problema.
 `
 
 const INDEX_MD = `---
-spec_version: "V_0-1-2"
-level: 0
+spec_version: "V_0-3-0"
+level: 3
+knowledge_version: "V_0-1-0"
+parent_spec:
+  name: "domaiNN"
+  url: "https://example.test/domaiNN"
 title: "Workspace Index"
 ---
 
@@ -105,7 +109,7 @@ describe('Paso 1 — La aplicación carga', () => {
 })
 
 // ────────────────────────────────────────────────────────────────
-// PASO 2: Cargar un modelo (single-file con index.md)
+// PASO 2: Cargar un modelo (single-file con domaiNN_NN.md)
 // ────────────────────────────────────────────────────────────────
 
 describe('Paso 2 — Cargar modelo', () => {
@@ -113,9 +117,9 @@ describe('Paso 2 — Cargar modelo', () => {
     setActivePinia(createPinia())
   })
 
-  it('2a: parsea un workspace con index.md y produce exactamente 1 root', async () => {
+  it('2a: parsea un workspace con domaiNN_NN.md y produce exactamente 1 root', async () => {
     const tree: FakeTree = {
-      'index.md': INDEX_MD,
+      'domaiNN_NN.md': INDEX_MD,
       'MiModelo_NN.md': SINGLE_FILE_MODEL,
     }
     const handle = buildFakeTree('workspace', tree)
@@ -127,46 +131,48 @@ describe('Paso 2 — Cargar modelo', () => {
 
   it('2b: el modelo tiene el nombre correcto', async () => {
     const tree: FakeTree = {
-      'index.md': INDEX_MD,
+      'domaiNN_NN.md': INDEX_MD,
       'MiModelo_NN.md': SINGLE_FILE_MODEL,
     }
     const handle = buildFakeTree('workspace', tree)
     const result = await recursiveParse(handle)
 
-    const rootNode = Object.values(result.nodes).find((n) => n.parentId === null)
-    expect(rootNode).toBeDefined()
-    expect(rootNode!.name).toBe('MiModelo')
+    const modelNode = Object.values(result.nodes).find((n) => n.name === 'MiModelo')
+    expect(modelNode).toBeDefined()
   })
 
   it('2c: el modelo contiene el root y los elementos inline declarados', async () => {
     const tree: FakeTree = {
-      'index.md': INDEX_MD,
+      'domaiNN_NN.md': INDEX_MD,
       'MiModelo_NN.md': SINGLE_FILE_MODEL,
     }
     const handle = buildFakeTree('workspace', tree)
     const result = await recursiveParse(handle)
 
-    const rootNode = Object.values(result.nodes).find((n) => n.parentId === null)
-    expect(rootNode).toBeDefined()
-    expect(rootNode!.name).toBe('MiModelo')
+    const modelNode = Object.values(result.nodes).find((n) => n.name === 'MiModelo')
+    expect(modelNode).toBeDefined()
 
     const nombres = Object.values(result.nodes).map((n) => n.name)
     expect(nombres).toContain('Problema Uno')
     expect(nombres).toContain('Problema Dos')
-    expect(Object.keys(result.nodes).length).toBe(3) // root + 2 elementos
+    expect(Object.keys(result.nodes).length).toBe(4) // entrypoint + model + 2 elements
   })
 
   it('2d: carga un modelo real desde la carpeta fixtures/models', async () => {
     const { readFileSync } = await import('node:fs')
     const { join } = await import('node:path')
     const ghostbustersContent = readFileSync(
-      join(import.meta.dirname!, 'fixtures', 'models', 'Ghostbusters_V_0-1-1_business_F.md'),
+      join(import.meta.dirname!, 'fixtures', 'models', 'Ghostbusters_V_0-1-1_business_NN.md'),
       'utf-8',
     )
 
     const ghostbustersIndex = `---
-spec_version: "V_0-1-2"
-level: 0
+spec_version: "V_0-3-0"
+level: 3
+knowledge_version: "V_0-1-0"
+parent_spec:
+  name: "domaiNN"
+  url: "https://example.test/domaiNN"
 title: "Workspace Index"
 ---
 
@@ -176,7 +182,7 @@ title: "Workspace Index"
 `
 
     const tree: FakeTree = {
-      'index.md': ghostbustersIndex,
+      'domaiNN_NN.md': ghostbustersIndex,
       'Ghostbusters_NN.md': ghostbustersContent,
     }
     const handle = buildFakeTree('workspace', tree)
@@ -203,7 +209,7 @@ describe('Paso 3 — workspaceStore abre un modelo', () => {
     const workspaceStore = useWorkspaceStore()
     const modelStore = useModelStore()
     const tree: FakeTree = {
-      'index.md': INDEX_MD,
+      'domaiNN_NN.md': INDEX_MD,
       'MiModelo_NN.md': SINGLE_FILE_MODEL,
     }
     const handle = buildFakeTree('workspace', tree)
@@ -219,7 +225,7 @@ describe('Paso 3 — workspaceStore abre un modelo', () => {
   it('3b: workspaceStore no re-parsea si se llama open() dos veces', async () => {
     const workspaceStore = useWorkspaceStore()
     const tree: FakeTree = {
-      'index.md': INDEX_MD,
+      'domaiNN_NN.md': INDEX_MD,
       'MiModelo_NN.md': SINGLE_FILE_MODEL,
     }
     const handle = buildFakeTree('workspace', tree)
@@ -236,17 +242,21 @@ describe('Paso 3 — workspaceStore abre un modelo', () => {
 // ────────────────────────────────────────────────────────────────
 
 describe('Paso 4 — Fixtures reales desde tests/fixtures/ en la raíz', () => {
-  it('4a: carga el modelo FILE real de tests/fixtures/file-model_F.md', async () => {
+  it('4a: carga el modelo FILE real de tests/fixtures/file-model_NN.md', async () => {
     const { readFileSync } = await import('node:fs')
     const { join } = await import('node:path')
     const content = readFileSync(
-      join(import.meta.dirname!, '..', '..', '..', 'tests', 'fixtures', 'file-model_F.md'),
+      join(import.meta.dirname!, '..', '..', '..', 'tests', 'fixtures', 'file-model_NN.md'),
       'utf-8',
     )
 
     const indexMd = `---
-spec_version: "V_0-1-2"
-level: 0
+spec_version: "V_0-3-0"
+level: 3
+knowledge_version: "V_0-1-0"
+parent_spec:
+  name: "domaiNN"
+  url: "https://example.test/domaiNN"
 title: "Workspace Index"
 ---
 
@@ -255,7 +265,7 @@ title: "Workspace Index"
 * [[file-model_NN.md]]
 `
 
-    const tree: FakeTree = { 'index.md': indexMd, 'file-model_NN.md': content }
+    const tree: FakeTree = { 'domaiNN_NN.md': indexMd, 'file-model_NN.md': content }
     const handle = buildFakeTree('workspace', tree)
     const result = await recursiveParse(handle)
 
@@ -269,6 +279,6 @@ title: "Workspace Index"
     expect(nombres).toContain('Competencia agresiva')
     expect(nombres).toContain('Onboarding exprés')
     expect(nombres).toContain('Infraestructura optimizada')
-    expect(Object.keys(result.nodes).length).toBe(6) // root + 5 elementos
+    expect(Object.keys(result.nodes).length).toBe(7) // entrypoint + model + 5 elements
   })
 })

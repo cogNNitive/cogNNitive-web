@@ -42,112 +42,112 @@ describe('submodelPath utility', () => {
   describe('deriveSuggestedSubmodelPath', () => {
     it('constructs hierarchical path for concept element with target template', () => {
       const path = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_V_0-1-0_NN.md',
+        parentPath: 'kNNowledge/Company_V_0-1-0_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         targetTemplate: 'business',
       })
-      expect(path).toBe('models/Company_V_0-1-0/projects/alpha/business_01.md')
+      expect(path).toBe('kNNowledge/Company_V_0-1-0/projects/alpha/business_01.md')
     })
 
     it('generates distinct non-colliding paths for sibling elements under same concept', () => {
       const alphaPath = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_V_0-1-0_NN.md',
+        parentPath: 'kNNowledge/Company_V_0-1-0_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         targetTemplate: 'business',
       })
       const betaPath = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_V_0-1-0_NN.md',
+        parentPath: 'kNNowledge/Company_V_0-1-0_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Beta',
         targetTemplate: 'business',
       })
-      expect(alphaPath).toBe('models/Company_V_0-1-0/projects/alpha/business_01.md')
-      expect(betaPath).toBe('models/Company_V_0-1-0/projects/beta/business_01.md')
+      expect(alphaPath).toBe('kNNowledge/Company_V_0-1-0/projects/alpha/business_01.md')
+      expect(betaPath).toBe('kNNowledge/Company_V_0-1-0/projects/beta/business_01.md')
       expect(alphaPath).not.toBe(betaPath)
     })
 
     it('resolves parent stem with versioned template suffix', () => {
       const path = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Ghostbusters_V_0-2-0_innovation_NN.md',
+        parentPath: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
         conceptSlug: 'initiatives',
         elementSlug: 'initiative-01',
         targetTemplate: 'business',
       })
-      expect(path).toBe('models/Ghostbusters_V_0-2-0/initiatives/initiative-01/business_01.md')
+      expect(path).toBe('kNNowledge/Ghostbusters_V_0-2-0/initiatives/initiative-01/business_01.md')
     })
 
     it('resolves parent stem with simple _NN.md suffix', () => {
       const path = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_NN.md',
+        parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         targetTemplate: 'business',
       })
-      expect(path).toBe('models/Company/projects/alpha/business_01.md')
+      expect(path).toBe('kNNowledge/Company/projects/alpha/business_01.md')
     })
 
     it('resolves leaf stem fallback precedence: targetTemplate (if not base) -> fieldName -> submodel', () => {
       // 1. targetTemplate != base
       const path1 = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_NN.md',
+        parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         fieldName: 'custom_field',
         targetTemplate: 'architecture',
       })
-      expect(path1).toBe('models/Company/projects/alpha/architecture_01.md')
+      expect(path1).toBe('kNNowledge/Company/projects/alpha/architecture_01.md')
 
       // 2. targetTemplate == base, falls back to fieldName
       const path2 = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_NN.md',
+        parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         fieldName: 'architecture_model',
         targetTemplate: 'base',
       })
-      expect(path2).toBe('models/Company/projects/alpha/architecture-model_01.md')
+      expect(path2).toBe('kNNowledge/Company/projects/alpha/architecture-model_01.md')
 
       // 3. no targetTemplate, falls back to fieldName
       const path3 = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_NN.md',
+        parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
         fieldName: 'my_submodel',
       })
-      expect(path3).toBe('models/Company/projects/alpha/my-submodel_01.md')
+      expect(path3).toBe('kNNowledge/Company/projects/alpha/my-submodel_01.md')
 
       // 4. no targetTemplate and no fieldName, defaults to 'submodel'
       const path4 = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_NN.md',
+        parentPath: 'kNNowledge/Company_NN.md',
         conceptSlug: 'Projects',
         elementSlug: 'Alpha',
       })
-      expect(path4).toBe('models/Company/projects/alpha/submodel_01.md')
+      expect(path4).toBe('kNNowledge/Company/projects/alpha/submodel_01.md')
     })
 
     it('constructs partial hierarchy when only elementSlug is present', () => {
       const path = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_NN.md',
+        parentPath: 'kNNowledge/Company_NN.md',
         elementSlug: 'Alpha',
         targetTemplate: 'business',
       })
-      expect(path).toBe('models/Company/alpha/business_01.md')
+      expect(path).toBe('kNNowledge/Company/alpha/business_01.md')
     })
 
     it('falls back to flat path when concept and element context are missing', () => {
       const path = deriveSuggestedSubmodelPath({
-        parentPath: 'models/System_NN.md',
+        parentPath: 'kNNowledge/System_NN.md',
         targetTemplate: 'architecture',
       })
-      expect(path).toBe('models/System_architecture_01.md')
+      expect(path).toBe('kNNowledge/System_architecture_01.md')
 
       const versionedPath = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Ghostbusters_V_0-2-0_innovation_NN.md',
+        parentPath: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
         targetTemplate: 'business',
       })
-      expect(versionedPath).toBe('models/Ghostbusters_V_0-2-0_business_01.md')
+      expect(versionedPath).toBe('kNNowledge/Ghostbusters_V_0-2-0_business_01.md')
     })
 
     it('preserves path directory prefixes or lack thereof', () => {
@@ -158,22 +158,22 @@ describe('submodelPath utility', () => {
       expect(noDir).toBe('System_architecture_01.md')
 
       const deepDir = deriveSuggestedSubmodelPath({
-        parentPath: 'workspace/models/sub/System_NN.md',
+        parentPath: 'workspace/kNNowledge/sub/System_NN.md',
         conceptSlug: 'nodes',
         elementSlug: 'gateway',
         targetTemplate: 'architecture',
       })
-      expect(deepDir).toBe('workspace/models/sub/System/nodes/gateway/architecture_01.md')
+      expect(deepDir).toBe('workspace/kNNowledge/sub/System/nodes/gateway/architecture_01.md')
     })
 
     it('strips the embedded template version from the leaf stem', () => {
       const path = deriveSuggestedSubmodelPath({
-        parentPath: 'models/Company_V_0-1-0_innovation_NN.md',
+        parentPath: 'kNNowledge/Company_V_0-1-0_innovation_NN.md',
         conceptSlug: 'Patente',
         elementSlug: 'Sombrero paraguas',
         targetTemplate: 'business_V_0-2-0',
       })
-      expect(path).toBe('models/Company_V_0-1-0/patente/sombrero-paraguas/business_01.md')
+      expect(path).toBe('kNNowledge/Company_V_0-1-0/patente/sombrero-paraguas/business_01.md')
     })
   })
 })

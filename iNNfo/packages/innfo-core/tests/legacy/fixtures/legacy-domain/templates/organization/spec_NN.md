@@ -1,11 +1,11 @@
 ---
 spec_version: "V_0-2-1"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/organization/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-2-2"
+blueprint_version: "V_0-2-2"
 title: "Organization App"
 procedures:
   - id: "audit-skill-gaps"
@@ -213,8 +213,8 @@ To create an organization model, create a level 3 FILE mode document with:
 level: 3
 parent_spec:
   name: "organization_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/organization/spec_NN.md"
-model_version: "V_x-y-z"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
+knowledge_version: "V_x-y-z"
 title: "<Organization Name>"
 ---
 
@@ -280,7 +280,7 @@ validate and render your model.
 
 ### Canonical Sample
 
-The official sample for this template is at `specs/templates/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md`. It exercises all concept types, lists, and the positions-roles, persons-positions, and functions-positions matrices.
+The official sample for this template is at `specs/bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md`. It exercises all concept types, lists, and the positions-roles, persons-positions, and functions-positions matrices.
 
 # Concept Guidance Documentation
 

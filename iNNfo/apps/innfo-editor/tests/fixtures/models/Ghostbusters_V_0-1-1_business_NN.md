@@ -5,7 +5,7 @@ level: 3
 parent:
   name: "business_V_0-1-1"
   url: "https://raw.githubusercontent.com/cogNNitive/iNNfo/v0.1.1/specs/business_V_0-1-1_NN.md"
-model_version: "V_0-1-1"
+knowledge_version: "V_0-1-1"
 title: "Ghostbusters"
 mode: "FILE"
 last_saved: "2026-07-01T00:00:00.000Z"

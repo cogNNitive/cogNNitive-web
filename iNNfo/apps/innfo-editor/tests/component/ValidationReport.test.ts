@@ -100,7 +100,7 @@ describe('ValidationReport.vue', () => {
         markers: {},
         relationships: [],
         rawSections: {},
-        source: { path: 'models/my_test_model_NN.md' },
+        source: { path: 'kNNowledge/my_test_model_NN.md' },
       },
     }
 
@@ -115,7 +115,7 @@ describe('ValidationReport.vue', () => {
     const copiedText = writeTextMock.mock.calls[0][0]
     expect(copiedText).toContain('# iNNfo Model Validation & Fix Request')
     expect(copiedText).toContain('MyTestModel')
-    expect(copiedText).toContain('models/my_test_model_NN.md')
+    expect(copiedText).toContain('kNNowledge/my_test_model_NN.md')
     expect(copiedText).toContain('Detected Defects & Warnings')
     expect(copiedText).toContain('Missing version field in frontmatter')
     expect(copiedText).toContain('## AI Task & Instructions')
@@ -135,13 +135,13 @@ describe('ValidationReport.vue', () => {
         markers: {},
         relationships: [],
         rawSections: {},
-        source: { path: 'models/my_test_model_NN.md' },
+        source: { path: 'kNNowledge/my_test_model_NN.md' },
       },
     }
     modelStore.parseIssues = [
-      { path: 'models/my_test_model_NN.md#Alpha', message: 'Warning message', severity: 'warning' },
-      { path: 'models/my_test_model_NN.md#Beta', message: 'Info message', severity: 'info' },
-      { path: 'models/my_test_model_NN.md#Gamma', message: 'Default message' },
+      { path: 'kNNowledge/my_test_model_NN.md#Alpha', message: 'Warning message', severity: 'warning' },
+      { path: 'kNNowledge/my_test_model_NN.md#Beta', message: 'Info message', severity: 'info' },
+      { path: 'kNNowledge/my_test_model_NN.md#Gamma', message: 'Default message' },
     ]
 
     const wrapper = mount(ValidationReport, {

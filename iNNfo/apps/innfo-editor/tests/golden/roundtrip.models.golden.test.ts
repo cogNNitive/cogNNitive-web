@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { recursiveParse } from '../../src/model/recursiveParser'
@@ -42,11 +42,11 @@ function structureOf(nodes: Record<string, ModelNode>, rootIds: string[]) {
   }
 }
 
-describe('recursiveSerializer golden round-trip: frozen models/* fixtures', () => {
+describe('recursiveSerializer golden round-trip: frozen kNNowledge/* fixtures', () => {
   for (const fileName of fixtureFiles) {
     it(`parse -> serialize -> re-parse is structurally equivalent for ${fileName}`, async () => {
       const content = readFileSync(join(modelsDir, fileName), 'utf-8')
-      // Map legacy _F.md suffix to _NN.md for the virtual tree
+      // Map legacy _NN.md suffix to _NN.md for the virtual tree
       const nnName = fileName.replace(/_F\.md$/i, '_NN.md')
       const tree = { 'index.md': makeIndex([nnName]), [nnName]: content }
       const root = buildFakeTree('models', tree)
@@ -54,7 +54,7 @@ describe('recursiveSerializer golden round-trip: frozen models/* fixtures', () =
       const firstParse = await recursiveParse(root)
       // Issues include identity collisions (duplicate names now throw),
       // cross-model name warnings, and slug collision warnings.
-      // Any of these are acceptable for legacy _F.md fixtures.
+      // Any of these are acceptable for legacy _NN.md fixtures.
 
       // Use a capturing driver for round-trip
       let capturedContent: string | null = null

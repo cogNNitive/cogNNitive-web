@@ -31,7 +31,7 @@ describe('FieldModel.vue', () => {
   it('renders a sidebar-styled pillbadge in read mode with basename text and full-path title', () => {
     const wrapper = mount(FieldModel, {
       props: {
-        modelValue: './models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
+        modelValue: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
         readonly: true,
       },
     })
@@ -40,7 +40,7 @@ describe('FieldModel.vue', () => {
     expect(pill.exists()).toBe(true)
     expect(pill.text()).toBe('jose-luis-olmo-mora_V_0-1-0_business_NN.md')
     expect(pill.attributes('title')).toBe(
-      './models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
+      './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
     )
     expect(pill.classes()).toContain('bg-primary/10')
     expect(pill.classes()).toContain('text-primary')
@@ -62,28 +62,28 @@ describe('FieldModel.vue', () => {
     const modelStore = useModelStore()
     const uiStore = useUiStore()
     const projectRoot = makeNode('Root')
-    const businessModelRoot = makeNode('models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN', {
+    const businessModelRoot = makeNode('kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN', {
       name: 'jose-luis-olmo-mora',
-      source: { path: './models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md' },
+      source: { path: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md' },
     })
     modelStore.setGraph(
       {
         Root: projectRoot,
-        'models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN': businessModelRoot,
+        'kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN': businessModelRoot,
       },
-      ['Root', 'models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN'],
+      ['Root', 'kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN'],
     )
 
     const wrapper = mount(FieldModel, {
       props: {
-        modelValue: './models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
+        modelValue: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
         readonly: true,
       },
     })
 
     await wrapper.find('[data-testid="model-field-pill"]').trigger('click')
 
-    expect(uiStore.focusedModelId).toBe('models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN')
+    expect(uiStore.focusedModelId).toBe('kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN')
     expect(uiStore.sidebarMode).toBe('focused_model')
   })
 
@@ -92,21 +92,21 @@ describe('FieldModel.vue', () => {
 
     const wrapper = mount(FieldModel, {
       props: {
-        modelValue: 'models/unknown.md',
+        modelValue: 'kNNowledge/unknown.md',
         readonly: true,
       },
     })
 
     await wrapper.find('[data-testid="model-field-pill"]').trigger('click')
 
-    expect(uiStore.focusedModelId).toBe('models/unknown.md')
+    expect(uiStore.focusedModelId).toBe('kNNowledge/unknown.md')
     expect(uiStore.sidebarMode).toBe('focused_model')
   })
 
   it('renders an input in edit mode', () => {
     const wrapper = mount(FieldModel, {
       props: {
-        modelValue: 'models/auth_01.md',
+        modelValue: 'kNNowledge/auth_01.md',
         readonly: false,
       },
     })
@@ -114,19 +114,19 @@ describe('FieldModel.vue', () => {
     expect(wrapper.find('[data-testid="model-field-pill"]').exists()).toBe(false)
     const input = wrapper.find('input')
     expect(input.exists()).toBe(true)
-    expect((input.element as HTMLInputElement).value).toBe('models/auth_01.md')
+    expect((input.element as HTMLInputElement).value).toBe('kNNowledge/auth_01.md')
   })
 
   it('shows an autocomplete dropdown of workspace models filtered by query', async () => {
     const modelStore = useModelStore()
     modelStore.setGraph(
       {
-        'models/auth_01': makeNode('models/auth_01', { source: { path: 'models/auth_01.md' } }),
-        'models/billing_02': makeNode('models/billing_02', {
-          source: { path: 'models/billing_02.md' },
+        'kNNowledge/auth_01': makeNode('kNNowledge/auth_01', { source: { path: 'kNNowledge/auth_01.md' } }),
+        'kNNowledge/billing_02': makeNode('kNNowledge/billing_02', {
+          source: { path: 'kNNowledge/billing_02.md' },
         }),
       },
-      ['models/auth_01', 'models/billing_02'],
+      ['kNNowledge/auth_01', 'kNNowledge/billing_02'],
     )
 
     const wrapper = mount(FieldModel, {
@@ -152,9 +152,9 @@ describe('FieldModel.vue', () => {
     const modelStore = useModelStore()
     modelStore.setGraph(
       {
-        'models/auth_01': makeNode('models/auth_01', { source: { path: 'models/auth_01.md' } }),
+        'kNNowledge/auth_01': makeNode('kNNowledge/auth_01', { source: { path: 'kNNowledge/auth_01.md' } }),
       },
-      ['models/auth_01'],
+      ['kNNowledge/auth_01'],
     )
 
     const wrapper = mount(FieldModel, {
@@ -169,7 +169,7 @@ describe('FieldModel.vue', () => {
     await option.trigger('mousedown')
 
     expect(wrapper.emitted('update:modelValue')).toBeTruthy()
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['models/auth_01.md'])
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['kNNowledge/auth_01.md'])
   })
 
   describe('inline submodel creation', () => {
@@ -242,15 +242,15 @@ describe('FieldModel.vue', () => {
 
     it('keeps the pill and hides the creation trigger in readonly mode when the model resolves', () => {
       const modelStore = useModelStore()
-      const root = makeNode('models/auth_01.md', {
+      const root = makeNode('kNNowledge/auth_01.md', {
         name: 'auth',
-        source: { path: 'models/auth_01.md' },
+        source: { path: 'kNNowledge/auth_01.md' },
       })
-      modelStore.setGraph({ 'models/auth_01.md': root }, ['models/auth_01.md'])
+      modelStore.setGraph({ 'kNNowledge/auth_01.md': root }, ['kNNowledge/auth_01.md'])
 
       const wrapper = mount(FieldModel, {
         props: {
-          modelValue: 'models/auth_01.md',
+          modelValue: 'kNNowledge/auth_01.md',
           readonly: true,
           fieldDefinition: {
             name: 'business_model',
@@ -266,13 +266,13 @@ describe('FieldModel.vue', () => {
 
     it('invokes window.prompt pre-filled with suggested path derived from parent model path, concept, element, and target_blueprint', async () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md', {
+      const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
-        source: { path: 'models/Ghostbusters_V_0-2-0_innovation_NN.md' },
+        source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
       })
-      const elementNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01', {
+      const elementNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01', {
         name: 'Municipal Franchise Expansion',
-        parentId: 'models/Ghostbusters_V_0-2-0_innovation_NN.md',
+        parentId: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
         kind: 'element',
         type: 'initiatives',
       })
@@ -304,28 +304,28 @@ describe('FieldModel.vue', () => {
 
       expect(promptSpy).toHaveBeenCalledWith(
         expect.stringContaining('business'),
-        'models/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
+        'kNNowledge/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
       )
       promptSpy.mockRestore()
     })
 
     it('generates distinct non-colliding suggested paths for sibling elements under the same concept', async () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md', {
+      const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
-        source: { path: 'models/Ghostbusters_V_0-2-0_innovation_NN.md' },
+        source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
       })
-      const conceptNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md/initiatives', {
+      const conceptNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiatives', {
         name: 'initiatives',
         kind: 'concept',
         parentId: rootNode.id,
       })
-      const alphaNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md/alpha', {
+      const alphaNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/alpha', {
         name: 'Alpha',
         parentId: conceptNode.id,
         kind: 'element',
       })
-      const betaNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md/beta', {
+      const betaNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/beta', {
         name: 'Beta',
         parentId: conceptNode.id,
         kind: 'element',
@@ -359,7 +359,7 @@ describe('FieldModel.vue', () => {
 
       expect(promptSpy).toHaveBeenLastCalledWith(
         expect.stringContaining('business'),
-        'models/Ghostbusters_V_0-2-0/initiatives/alpha/business_01.md',
+        'kNNowledge/Ghostbusters_V_0-2-0/initiatives/alpha/business_01.md',
       )
 
       const wrapperBeta = mount(FieldModel, {
@@ -379,7 +379,7 @@ describe('FieldModel.vue', () => {
 
       expect(promptSpy).toHaveBeenLastCalledWith(
         expect.stringContaining('business'),
-        'models/Ghostbusters_V_0-2-0/initiatives/beta/business_01.md',
+        'kNNowledge/Ghostbusters_V_0-2-0/initiatives/beta/business_01.md',
       )
 
       promptSpy.mockRestore()
@@ -387,9 +387,9 @@ describe('FieldModel.vue', () => {
 
     it('falls back to flat path when field is rendered without element/concept ancestry', async () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/Company_NN.md', {
+      const rootNode = makeNode('kNNowledge/Company_NN.md', {
         kind: 'root',
-        source: { path: 'models/Company_NN.md' },
+        source: { path: 'kNNowledge/Company_NN.md' },
       })
       modelStore.setGraph(
         {
@@ -418,7 +418,7 @@ describe('FieldModel.vue', () => {
 
       expect(promptSpy).toHaveBeenCalledWith(
         expect.stringContaining('architecture'),
-        'models/Company_architecture_01.md',
+        'kNNowledge/Company_architecture_01.md',
       )
       promptSpy.mockRestore()
     })
@@ -426,13 +426,13 @@ describe('FieldModel.vue', () => {
     it('confirms prompt: invokes scaffoldSubmodel, emits update:modelValue, and calls uiStore.focusModel', async () => {
       const modelStore = useModelStore()
       const uiStore = useUiStore()
-      const rootNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md', {
+      const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
-        source: { path: 'models/Ghostbusters_V_0-2-0_innovation_NN.md' },
+        source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
       })
-      const elementNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01', {
+      const elementNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01', {
         name: 'Municipal Franchise Expansion',
-        parentId: 'models/Ghostbusters_V_0-2-0_innovation_NN.md',
+        parentId: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md',
         kind: 'element',
         type: 'initiatives',
       })
@@ -447,7 +447,7 @@ describe('FieldModel.vue', () => {
       const promptSpy = vi
         .spyOn(window, 'prompt')
         .mockReturnValue(
-          'models/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
+          'kNNowledge/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
         )
       const focusSpy = vi.spyOn(uiStore, 'focusModel')
 
@@ -469,14 +469,14 @@ describe('FieldModel.vue', () => {
 
       expect(
         modelStore.nodes[
-          'models/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md'
+          'kNNowledge/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md'
         ],
       ).toBeDefined()
       expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([
-        'models/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
+        'kNNowledge/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
       ])
       expect(focusSpy).toHaveBeenCalledWith(
-        'models/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
+        'kNNowledge/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md',
       )
 
       promptSpy.mockRestore()

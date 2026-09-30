@@ -197,7 +197,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
       kind: 'element',
       fields: {
         business_model: {
-          value: './models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
+          value: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
         },
       },
     })
@@ -216,7 +216,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
     const modelPill = wrapper.find('[data-testid="model-field-pill"]')
     expect(modelPill.exists()).toBe(true)
     expect(modelPill.text()).toBe('jose-luis-olmo-mora_V_0-1-0_business_NN.md')
-    expect(modelPill.attributes('title')).toBe('./models/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md')
+    expect(modelPill.attributes('title')).toBe('./kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md')
     expect(modelPill.classes()).toContain('bg-primary/10')
     expect(modelPill.classes()).toContain('text-primary')
   })

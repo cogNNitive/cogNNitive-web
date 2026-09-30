@@ -9,7 +9,7 @@ describe('Workspace Template V_0-4-0 & Polymorphic Sources', () => {
   it('parses the workspace_spec_NN.md template correctly', () => {
     const specContent = fs.readFileSync(specPath, 'utf8');
     const parsed = parseModel(specContent);
-    expect(parsed.frontmatter?.template_version).toMatch(/^V_0-[4-6]-\d+$/);
+    expect(parsed.frontmatter?.blueprint_version).toMatch(/^V_0-[4-6]-\d+$/);
     expect(parsed.elements.has('Concept Definition')).toBe(true);
     expect(parsed.elements.has('Field Definition')).toBe(true);
   });

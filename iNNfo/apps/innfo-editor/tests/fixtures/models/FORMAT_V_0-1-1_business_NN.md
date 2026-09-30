@@ -1,323 +1,21 @@
 ---
 spec_version: "V_0-1-1"
-model_version: "V_0-1-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/iNNfo/v0.1.1/specs/business_V_0-1-1_NN.md"
+knowledge_version: "V_0-1-1"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/iNNfo/v0.1.1/specs/FORMAT_V_0-1-1_FORMAT.md"
 level: 3
 parent:
   name: "business_V_0-1-1"
   url: "https://raw.githubusercontent.com/cogNNitive/iNNfo/v0.1.1/specs/business_V_0-1-1_NN.md"
 mode: "FILE"
-template:
-  name: "business"
-  version: "V_0-1-0"
-  title: "FORMAT Template"
-  last_updated: "2026-06-26T20:53:19.840Z"
-  concepts:
-    - name: "Business summary"
-      icon: "file-text"
-      type: "text"
-      color: "violet"
-      weight: 100
-    - name: "Market"
-      icon: "store"
-      type: "category"
-      color: "violet"
-      weight: 90
-    - name: "Stakeholders"
-      icon: "users"
-      type: "weight"
-      color: "violet"
-      weight: 80
-    - name: "Segments"
-      icon: "pie-chart"
-      type: "weight"
-      color: "violet"
-      weight: 90
-    - name: "Profiles"
-      icon: "user"
-      type: "weight"
-      color: "violet"
-      weight: 80
-    - name: "Persona"
-      icon: "user-round"
-      type: "text"
-      color: "violet"
-      weight: 50
-    - name: "Segmentation"
-      icon: "split"
-      type: "weight"
-      color: "violet"
-      weight: 60
-    - name: "Market trends"
-      icon: "trending-up"
-      type: "weight"
-      color: "violet"
-      weight: 70
-    - name: "Market size"
-      icon: "ruler"
-      type: "text"
-      color: "violet"
-      weight: 70
-    - name: "Competition"
-      icon: "swords"
-      type: "weight"
-      color: "violet"
-      weight: 60
-    - name: "Roles"
-      icon: "user-cog"
-      type: "weight"
-      color: "violet"
-      weight: 30
-    - name: "Problems"
-      icon: "circle-alert"
-      type: "weight"
-      color: "violet"
-      weight: 90
-    - name: "Value propositions"
-      icon: "gem"
-      type: "weight"
-      color: "violet"
-      weight: 95
-    - name: "Messages"
-      icon: "message-square"
-      type: "weight"
-      color: "violet"
-      weight: 40
-    - name: "Channels"
-      icon: "share-2"
-      type: "weight"
-      color: "violet"
-      weight: 70
-    - name: "Relationships"
-      icon: "handshake"
-      type: "text"
-      color: "violet"
-      weight: 60
-    - name: "Products and services"
-      icon: "package"
-      type: "category"
-      color: "violet"
-      weight: 95
-    - name: "Offerings"
-      icon: "shopping-bag"
-      type: "weight"
-      color: "violet"
-      weight: 90
-    - name: "Pricing"
-      icon: "dollar-sign"
-      type: "text"
-      color: "violet"
-      weight: 85
-    - name: "Revenue"
-      icon: "trending-up"
-      type: "weight"
-      color: "green"
-      weight: 100
-    - name: "Costs"
-      icon: "credit-card"
-      type: "weight"
-      color: "red"
-      weight: 80
-    - name: "Funding sources"
-      icon: "banknote"
-      type: "text"
-      color: "green"
-      weight: 60
-    - name: "Projections"
-      icon: "chart-line"
-      type: "text"
-      color: "green"
-      weight: 70
-    - name: "Unit economics"
-      icon: "calculator"
-      type: "text"
-      color: "green"
-      weight: 75
-    - name: "Customer Aquisition Cost"
-      icon: "user-plus"
-      type: "text"
-      color: "red"
-      weight: 70
-    - name: "Life Time Value"
-      icon: "clock"
-      type: "text"
-      color: "green"
-      weight: 70
-    - name: "Business idea"
-      icon: "lightbulb"
-      type: "category"
-      color: "violet"
-      weight: 80
-    - name: "Inspiration"
-      icon: "sparkles"
-      type: "text"
-      color: "violet"
-      weight: 50
-    - name: "Opportunity"
-      icon: "target"
-      type: "text"
-      color: "violet"
-      weight: 80
-    - name: "Challenges"
-      icon: "triangle-alert"
-      type: "weight"
-      color: "red"
-      weight: 70
-    - name: "Business status"
-      icon: "activity"
-      type: "text"
-      color: "violet"
-      weight: 50
-    - name: "Vision"
-      icon: "eye"
-      type: "text"
-      color: "violet"
-      weight: 60
-    - name: "Mission"
-      icon: "flag"
-      type: "text"
-      color: "violet"
-      weight: 60
-    - name: "Organizational values"
-      icon: "heart"
-      type: "weight"
-      color: "violet"
-      weight: 40
-    - name: "Organizational goals"
-      icon: "goal"
-      type: "weight"
-      color: "violet"
-      weight: 70
-    - name: "Metrics"
-      icon: "bar-chart"
-      type: "weight"
-      color: "violet"
-      weight: 60
-    - name: "Milestones"
-      icon: "flag-triangle-right"
-      type: "weight"
-      color: "violet"
-      weight: 60
-    - name: "Features"
-      icon: "sparkles"
-      type: "weight"
-      color: "violet"
-      weight: 70
-    - name: "Roadmap"
-      icon: "map"
-      type: "text"
-      color: "violet"
-      weight: 60
-    - name: "Activities"
-      icon: "zap"
-      type: "weight"
-      color: "violet"
-      weight: 50
-    - name: "Resources"
-      icon: "box"
-      type: "weight"
-      color: "violet"
-      weight: 60
-    - name: "Functions"
-      icon: "building-2"
-      type: "weight"
-      color: "violet"
-      weight: 50
-    - name: "Positions"
-      icon: "briefcase"
-      type: "weight"
-      color: "violet"
-      weight: 50
-    - name: "Team"
-      icon: "users-round"
-      type: "category"
-      color: "violet"
-      weight: 50
-    - name: "Analysis"
-      icon: "search"
-      type: "category"
-      color: "amber"
-      weight: 70
-    - name: "Assumptions"
-      icon: "file-question"
-      type: "weight"
-      color: "amber"
-      weight: 60
-    - name: "Risks"
-      icon: "shield-alert"
-      type: "weight"
-      color: "red"
-      weight: 70
-    - name: "SWOT"
-      icon: "grid-3x3"
-      type: "text"
-      color: "amber"
-      weight: 60
-    - name: "Unfair advantage"
-      icon: "trophy"
-      type: "text"
-      color: "amber"
-      weight: 70
-  markers:
-    - name: "weight"
-      symbol: "*"
-      icon: "weight"
-      color: "violet"
-    - name: "completion"
-      symbol: ">"
-      icon: "check-circle"
-      color: "green"
-    - name: "certainty"
-      symbol: "?"
-      icon: "help-circle"
-      color: "amber"
-    - name: "priority"
-      symbol: "!"
-      icon: "alert-triangle"
-      color: "red"
-    - name: "rating"
-      symbol: "+"
-      icon: "thumbs-up"
-      color: "blue"
-  matrices:
-    - name: "Journey map"
-      source: "Journey"
-      target: "Emotions"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "Segmentation-Profiles Matrix"
-      source: "Segmentation"
-      target: "Profiles"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "Problems-Value propositions Matrix"
-      source: "Problems"
-      target: "Value propositions"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "Value propositions-Messages Matrix"
-      source: "Value propositions"
-      target: "Messages"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "Messages-Channels Matrix"
-      source: "Messages"
-      target: "Channels"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "Features-Milestones Matrix"
-      source: "Features"
-      target: "Milestones"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "Activities-Resources Matrix"
-      source: "Activities"
-      target: "Resources"
-      params: "Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min"
-    - name: "item-markers matrix"
-      source: "elements"
-      target: "markers"
 title: "FORMAT"
-last_saved: "2026-06-26T20:53:19.840Z"
+last_saved: "2026-06-26T20:53:24.782Z"
 
----> [!NOTE]
+---
+
+> [!NOTE]
 > This is a **FORMAT document** — a plain-text Markdown file that carries its own schema in the YAML frontmatter. New to FORMAT? The [onboarding guide](https://format.innv0.com/docs/onboarding) walks you through what this is and how to open it in the visual editor.
 
-# NN Business summary
+# <!-- _NN --> Business summary
 
 innV0 es una compañía que desarrolla y comercializa **plantillas estructuradas** basadas en el formato abierto FORMAT. Cada plantilla es un producto independiente con su propio público objetivo, propuesta de valor y lógica de monetización. Comparten un backend común: el **engine FORMAT** (especificación open-source + editor de navegador), que se distribuye gratuitamente como habilitador del ecosistema.
 
@@ -329,124 +27,124 @@ Actualmente hay dos líneas de producto:
 
 Cada plantilla se puede consumir gratis (engine local), en la nube (SaaS colaborativo) o en enterprise (on-premise). El modelo de ingresos combina suscripciones SaaS por producto, licencias enterprise y servicios profesionales.
 
-# NN Stakeholders
+# <!-- _NN --> Stakeholders
 
-## NN Stakeholders: Strategy Founders (Business Template)
+* <!-- _NN Stakeholders: --> Strategy Founders (Business Template)
 scope:: external
 weight:: 85
 interest:: "Validar su modelo de negocio con IA. Un archivo = contexto completo."
 influence:: high
-## NN Stakeholders: Strategy Consultants (Business Template)
+* <!-- _NN Stakeholders: --> Strategy Consultants (Business Template)
 scope:: external
 weight:: 80
 interest:: "Gestionar múltiples modelos de cliente. Formato portable para análisis con IA."
 influence:: high
-## NN Stakeholders: Product Managers (Business Template)
+* <!-- _NN Stakeholders: --> Product Managers (Business Template)
 scope:: external
 weight:: 70
 interest:: "Trazar features a problemas validados. Alinear roadmap con estrategia."
 influence:: medium
-## NN Stakeholders: Engineering Leads (Procedures Template)
+* <!-- _NN Stakeholders: --> Engineering Leads (Procedures Template)
 scope:: external
 weight:: 75
 interest:: "Documentar deploys, code review, incident response como procedimientos versionados."
 influence:: medium
-## NN Stakeholders: Ops & Compliance Teams (Procedures Template)
+* <!-- _NN Stakeholders: --> Ops & Compliance Teams (Procedures Template)
 scope:: external
 weight:: 85
 interest:: "SOPs auditables, procedimientos estandarizados, trazabilidad regulatoria."
 influence:: very high
-## NN Stakeholders: Enterprise Decision Makers (ambos)
+* <!-- _NN Stakeholders: --> Enterprise Decision Makers (ambos)
 scope:: external
 weight:: 90
 interest:: "On-premise, SSO, audit trails, custom templates. Una plataforma para toda la organización."
 influence:: very high
-## NN Stakeholders: Open Source Community
+* <!-- _NN Stakeholders: --> Open Source Community
 scope:: external
 weight:: 65
 interest:: "Contribuidores del engine FORMAT. Creadores de nuevas templates."
 influence:: medium
-## NN Stakeholders: Core Team (innV0)
+* <!-- _NN Stakeholders: --> Core Team (innV0)
 scope:: internal
 weight:: 100
 interest:: "Desarrollar el engine, las templates, la comunidad y los ingresos."
 influence:: critical
 
-# NN Segments
+# <!-- _NN --> Segments
 
-## NN Segments: Consultancies (Business)
+* <!-- _NN Segments: --> Consultancies (Business)
 weight:: 80
 size:: "50K+ firmas"
 need:: "Multi-cliente, informes profesionales, análisis IA"
 revenue_potential:: "Alto — $99–$299/mes por firma"
 
-## NN Segments: Enterprise (ambas templates)
+* <!-- _NN Segments: --> Enterprise (ambas templates)
 weight:: 95
 size:: "20K+ empresas 200+ empleados"
 need:: "On-premise, SSO, compliance, templates custom, toda la org"
 revenue_potential:: "Muy alto — $10K–$100K/año"
 
-## NN Segments: Founders & Solopreneurs (Business)
+* <!-- _NN Segments: --> Founders & Solopreneurs (Business)
 weight:: 80
 size:: "Millones globalmente"
 need:: "Contexto IA gratuito para fundraising y validación"
 revenue_potential:: "Bajo directo (gratis) — alto indirecto (adopción)"
 
-## NN Segments: SMB Strategy Teams (Business)
+* <!-- _NN Segments: --> SMB Strategy Teams (Business)
 weight:: 85
 size:: "Cientos de miles"
 need:: "Edición colaborativa, Git integration, AI audits"
 revenue_potential:: "Medio — $29–$99/mes por equipo"
 
-## NN Segments: Engineering Teams (Procedures)
+* <!-- _NN Segments: --> Engineering Teams (Procedures)
 weight:: 75
 size:: "Millones de desarrolladores"
 need:: "SOPs de deploy, incident response, code review como código"
 revenue_potential:: "Medio — $19–$79/mes por equipo"
 
-## NN Segments: Ops & Compliance (Procedures)
+* <!-- _NN Segments: --> Ops & Compliance (Procedures)
 weight:: 85
 size:: "200K+ equipos en industrias reguladas"
 need:: "Procedimientos auditables, roles, pasos secuenciados, trazabilidad"
 revenue_potential:: "Alto — $49–$149/mes por equipo"
 
-## NN Segments: Template Creators (ecosistema futuro)
+* <!-- _NN Segments: --> Template Creators (ecosistema futuro)
 weight:: 50
 size:: "Nichos por industria"
 need:: "Marketplace para vender templates especializadas"
 revenue_potential:: "Comisión 20-30% por venta"
 
-# NN Profiles
+# <!-- _NN --> Profiles
 
-## NN Profiles: Solo técnico, pre-seed, 25-40 años, $0-$50/mes
+* <!-- _NN Profiles: --> Solo técnico, pre-seed, 25-40 años, $0-$50/mes
 weight:: 80
 demographics:: "25-40 años, background técnico, etapa pre-seed o bootstrapped"
 need:: "Documentar modelo de negocio rápido, usar con ChatGPT/Claude para advice estratégico"
 budget:: "$0–$50/mes en herramientas"
 behavior:: "Descubre tools por Product Hunt, GitHub, Hacker News. Adopta gratis, paga cuando escala."
 template:: Business
-## NN Profiles: Consultor estratégico, MBA, 30-55 años, $100-$500/mes
+* <!-- _NN Profiles: --> Consultor estratégico, MBA, 30-55 años, $100-$500/mes
 weight:: 85
 demographics:: "30-55 años, MBA, trabaja en boutique o Big4 consulting"
 need:: "Gestionar 5-15 modelos de cliente, producir informes de coherencia, apalancar IA para análisis"
 budget:: "$100–$500/mes en herramientas"
 behavior:: "Evalúa herramientas rigurosamente. Necesita exportación a PPT/PDF para entrega a cliente."
 template:: Business
-## NN Profiles: Líder de ops, 30-50 años, industria regulada, $50-$200/mes
+* <!-- _NN Profiles: --> Líder de ops, 30-50 años, industria regulada, $50-$200/mes
 weight:: 80
 demographics:: "30-50 años, industria regulada (fintech, salud, manufactura), rol de ops/compliance"
 need:: "Estandarizar procesos, auditoría, roles claros, trazabilidad regulatoria"
 budget:: "$50–$200/mes en herramientas"
 behavior:: "Adopta por necesidad regulatoria. Valora trazabilidad y compliance por encima de UX."
 template:: Procedures
-## NN Profiles: Engineering manager, 28-45 años, técnico, $20-$100/mes
+* <!-- _NN Profiles: --> Engineering manager, 28-45 años, técnico, $20-$100/mes
 weight:: 75
 demographics:: "28-45 años, lidera equipo de ingeniería, background developer"
 need:: "SOPs de deploy, runbooks, incident response documentados y versionados"
 budget:: "$20–$100/mes en herramientas"
 behavior:: "Valora integración con Git, PRs para cambios de proceso, diffs de procedimientos."
 template:: Procedures
-## NN Profiles: Enterprise architect, 40-60 años, C-level/VP, $10K-$100K/año
+* <!-- _NN Profiles: --> Enterprise architect, 40-60 años, C-level/VP, $10K-$100K/año
 weight:: 90
 demographics:: "40-60 años, director/VP, industria regulada (finance, healthcare, defense)"
 need:: "On-premise, SSO, audit trail, templates custom, compliance"
@@ -454,7 +152,7 @@ budget:: "$10K–$100K/año para herramientas estratégicas"
 behavior:: "Requiere procurement process, security review, vendor assessment. Ciclo de decisión largo."
 template:: "Ambos"
 
-# NN Persona
+# <!-- _NN --> Persona
 
 **Alex Moreno** — Fundador solitario, 32, Barcelona. Construyó un MVP SaaS B2B y prepara ronda pre-seed.
 
@@ -472,40 +170,40 @@ María usa Procedures Template. Cada procedimiento es un archivo Markdown versio
 
 *Usa el engine gratis con Procedures Template. Su empresa pagaría por Enterprise para SSO y audit trail.*
 
-# NN Segmentation
+# <!-- _NN --> Segmentation
 
-## NN Segmentation: Por Plantilla (línea de negocio)
+* <!-- _NN Segmentation: --> Por Plantilla (línea de negocio)
 weight:: 95
 criteria:: "Business (estrategia) vs Procedures (procesos) — audiencias mutuamente excluyentes"
-## NN Segmentation: Por Tamaño de Organización
+* <!-- _NN Segmentation: --> Por Tamaño de Organización
 weight:: 85
 criteria:: "Solo (1), SMB (2-20), Mid-market (20-200), Enterprise (200+)"
-## NN Segmentation: Por Madurez Técnica
+* <!-- _NN Segmentation: --> Por Madurez Técnica
 weight:: 70
 criteria:: "Bajo-código (editor UI), Developer (Git + IA), Enterprise (compliance)"
-## NN Segmentation: Por Industria
+* <!-- _NN Segmentation: --> Por Industria
 weight:: 60
 criteria:: "Tech (40%), Consultoría (25%), Fintech/Salud (20%), Otros (15%)"
 
-# NN Market trends
+# <!-- _NN --> Market trends
 
-## NN Market trends: IA necesita contexto estructurado
+* <!-- _NN Market trends: --> IA necesita contexto estructurado
 weight:: 95
 description:: "Toda empresa necesita alimentar IA con contexto de negocio. FORMAT + templates es el formato."
-## NN Market trends: Knowledge management se fusiona con IA
+* <!-- _NN Market trends: --> Knowledge management se fusiona con IA
 weight:: 85
 description:: "Herramientas de documentación (Notion, Confluence) compiten con herramientas de IA. Las templates de FORMAT cubren ambos."
-## NN Market trends: Open-source / local-first como ventaja
+* <!-- _NN Market trends: --> Open-source / local-first como ventaja
 weight:: 80
 description:: "Empresas no quieren subir datos estratégicos a servidores de terceros. FORMAT engine corre 100% local."
-## NN Market trends: Procesos como código
+* <!-- _NN Market trends: --> Procesos como código
 weight:: 75
 description:: "SOPs versionados en Git, PRs para cambios de proceso, diff de procedimientos. Procedures template capitaliza esto."
-## NN Market trends: Fragmentación de herramientas
+* <!-- _NN Market trends: --> Fragmentación de herramientas
 weight:: 70
 description:: "Cada equipo usa herramientas distintas. FORMAT unifica el backend. Templates especializan el frontend."
 
-# NN Market size
+# <!-- _NN --> Market size
 
 **Business Template SAM:** $1.8B (modelado de negocio + contexto IA + planning estratégico)
 **Procedures Template SAM:** $1.2B (documentación de procesos + SOPs + compliance ops)
@@ -519,170 +217,170 @@ description:: "Cada equipo usa herramientas distintas. FORMAT unifica el backend
 | Equipos Procedures Cloud | 15 | 100 | 600 |
 | Deployments Enterprise | 0 | 3 | 20 |
 
-# NN Competition
+# <!-- _NN --> Competition
 
-## NN Competition: Strategyzer / Canvanizer (Business)
+* <!-- _NN Competition: --> Strategyzer / Canvanizer (Business)
 weight:: 70
 threat:: medium
 diff:: "Canvases estáticos, no IA-ready, sin matrices relacionales ni versionado"
-## NN Competition: Notion / Confluence (ambas)
+* <!-- _NN Competition: --> Notion / Confluence (ambas)
 weight:: 80
 threat:: medium
 diff:: "No estructurado, sin coherencia scoring, sin formato estandarizado para IA"
-## NN Competition: Miro / Mural (Business)
+* <!-- _NN Competition: --> Miro / Mural (Business)
 weight:: 65
 threat:: low
 diff:: "Visual, no machine-readable, sin Git, sin parseo IA"
-## NN Competition: Process.st / SweetProcess (Procedures)
+* <!-- _NN Competition: --> Process.st / SweetProcess (Procedures)
 weight:: 70
 threat:: medium
 diff:: "SaaS cerrados, caros, sin versionado Git, sin IA context"
-## NN Competition: Confluence Whiteboards (Procedures)
+* <!-- _NN Competition: --> Confluence Whiteboards (Procedures)
 weight:: 60
 threat:: low
 diff:: "Propietario, sin formato portable, sin especificación abierta"
 
-# NN Problems
+# <!-- _NN --> Problems
 
-## NN Problems: IA no tiene contexto de negocio
+* <!-- _NN Problems: --> IA no tiene contexto de negocio
 weight:: 90
 description:: "Cada conversación con IA arranca de cero. El usuario gasta 10 min reexplicando su negocio antes de obtener respuestas útiles."
-## NN Problems: Fragmentación de información estratégica
+* <!-- _NN Problems: --> Fragmentación de información estratégica
 weight:: 85
 description:: "Slides, Notion, Google Docs, spreadsheets — no hay una fuente única de verdad. La IA no puede leerlas coherentemente."
-## NN Problems: Procedimientos no documentados (conocimiento tribal)
+* <!-- _NN Problems: --> Procedimientos no documentados (conocimiento tribal)
 weight:: 80
 description:: "El conocimiento de procesos vive en cabezas. Cuando alguien se va, el conocimiento se pierde. Sin procedimientos auditables."
-## NN Problems: Modelos de negocio estáticos
+* <!-- _NN Problems: --> Modelos de negocio estáticos
 weight:: 75
 description:: "Se crean una vez y nunca se actualizan. Obsoletos al guardarlos. Sin versionado ni historia."
-## NN Problems: Sin validación de coherencia
+* <!-- _NN Problems: --> Sin validación de coherencia
 weight:: 70
 description:: "No hay forma automática de saber si la estrategia es consistente. Problems pueden no alinearse con features. Métricas sin conectar a goals."
-## NN Problems: Compliance y auditoría sin trazabilidad
+* <!-- _NN Problems: --> Compliance y auditoría sin trazabilidad
 weight:: 75
 description:: "Procedimientos en documentos sueltos. Sin historial de cambios. Los auditores no pueden verificar versiones anteriores."
 
-# NN Value propositions
+# <!-- _NN --> Value propositions
 
-## NN Value propositions: Engine FORMAT gratis + open-source
+* <!-- _NN Value propositions: --> Engine FORMAT gratis + open-source
 weight:: 95
 description:: "El engine es gratuito. Corre 100% en el navegador. Sin servidor, sin cuenta, sin upload. La especificación es abierta."
-## NN Value propositions: Business Template: Un archivo = contexto IA completo
+* <!-- _NN Value propositions: --> Business Template: Un archivo = contexto IA completo
 weight:: 90
 description:: "Pega tu archivo .md en ChatGPT/Claude/Gemini. La IA entende tu negocio entero al instante: segmentos, problemas, soluciones, finanzas."
-## NN Value propositions: Procedures Template: Procesos como código
+* <!-- _NN Value propositions: --> Procedures Template: Procesos como código
 weight:: 85
 description:: "Cada procedimiento es un archivo Markdown versionado en Git. PRs para cambios de proceso. Diff de procedimientos. Historial de auditoría."
-## NN Value propositions: Estrategia versionada (Business)
+* <!-- _NN Value propositions: --> Estrategia versionada (Business)
 weight:: 80
 description:: "Tu modelo de negocio vive en Git. Branch, diff, y PR tu estrategia. Cada cambio es trazable y reversible."
-## NN Value propositions: Coherencia automatizada (Business)
+* <!-- _NN Value propositions: --> Coherencia automatizada (Business)
 weight:: 75
 description:: "Motor de IA que scorea la consistencia entre problems, value propositions, features y metrics. Encuentra gaps antes de construir."
-## NN Value propositions: Matrices relacionales (Business)
+* <!-- _NN Value propositions: --> Matrices relacionales (Business)
 weight:: 75
 description:: "Cada concepto se conecta a otros mediante matrices con scoring. Traza cualquier feature hasta un problema validado del cliente."
-## NN Value propositions: Trazabilidad regulatoria (Procedures)
+* <!-- _NN Value propositions: --> Trazabilidad regulatoria (Procedures)
 weight:: 80
 description:: "Cada cambio en un procedimiento queda registrado. Versiones inmutables. Ideal para SOC2, ISO27001, auditorías."
-## NN Value propositions: Multi-cliente para consultoras (Business)
+* <!-- _NN Value propositions: --> Multi-cliente para consultoras (Business)
 weight:: 65
 description:: "Gestioná 5-15 modelos de cliente simultáneamente. Cada uno es un archivo independiente. IA con contexto completo por cliente."
 
-# NN Offerings
+# <!-- _NN --> Offerings
 
-## NN Offerings: FORMAT Engine (Open Source)
+* <!-- _NN Offerings: --> FORMAT Engine (Open Source)
 weight:: 100
 revenue_model:: "Gratis — habilita el ecosistema"
 description:: "Especificación abierta + editor de navegador. Parseo, renderizado, matrices, marcadores, graph visualization. MIT license. Corre offline."
 status:: "shipping"
-## NN Offerings: Business Template Cloud
+* <!-- _NN Offerings: --> Business Template Cloud
 weight:: 95
 revenue_model:: "Suscripción SaaS — línea de negocio 1"
 description:: "Edición colaborativa de modelos de negocio, AI audits, exportación PDF/PPT, Git integration, librerías compartidas."
 status:: "en desarrollo"
-## NN Offerings: Procedures Template Cloud
+* <!-- _NN Offerings: --> Procedures Template Cloud
 weight:: 90
 revenue_model:: "Suscripción SaaS — línea de negocio 2"
 description:: "Editor colaborativo de procedimientos, secuencia de pasos, roles, aprobaciones, historial de auditoría, exportación."
 status:: "en desarrollo"
-## NN Offerings: Enterprise Suite
+* <!-- _NN Offerings: --> Enterprise Suite
 weight:: 85
 revenue_model:: "Licencia anual (ambas templates)"
 description:: "Self-hosted, SSO, RBAC, audit trails, templates custom, SLAs, soporte dedicado. Cubre Business y Procedures."
 status:: "planeado"
-## NN Offerings: Professional Services
+* <!-- _NN Offerings: --> Professional Services
 weight:: 65
 revenue_model:: "Consultoría por hora/proyecto"
 description:: "Workshops de modelado, templates custom, integración con agentes IA, training y onboarding."
 status:: "planeado"
-## NN Offerings: Template Marketplace (futuro)
+* <!-- _NN Offerings: --> Template Marketplace (futuro)
 weight:: 50
 revenue_model:: "Comisión 20-30%"
 description:: "Marketplace de templates de terceros: industria-specific (healthcare, fintech), methodology-specific (Lean Canvas, Blue Ocean)."
 status:: "futuro"
 
-# NN Pricing
+# <!-- _NN --> Pricing
 
-## NN Pricing: Engine (Open Source)
+* <!-- _NN Pricing: --> Engine (Open Source)
 weight:: 100
 price:: "$0"
 target:: "Todos — adopción sin fricción"
 constraints:: "Solo archivos locales, sin colaboración, sin cloud"
-## NN Pricing: Business Starter
+* <!-- _NN Pricing: --> Business Starter
 weight:: 80
 price:: "$29/mes (hasta 3 usuarios)"
 target:: "Founders, startups early-stage"
 constraints:: "5 modelos activos, AI audits básicos, Git integration"
-## NN Pricing: Business Professional
+* <!-- _NN Pricing: --> Business Professional
 weight:: 85
 price:: "$99/mes (hasta 10 usuarios)"
 target:: "Consultoras, equipos de estrategia"
 constraints:: "Modelos ilimitados, AI audits avanzados, exportación PDF/PPT"
-## NN Pricing: Procedures Standard
+* <!-- _NN Pricing: --> Procedures Standard
 weight:: 80
 price:: "$49/mes (hasta 10 usuarios)"
 target:: "Equipos de ops, engineering"
 constraints:: "Procedimientos ilimitados, historial de auditoría, roles"
-## NN Pricing: Procedures Professional
+* <!-- _NN Pricing: --> Procedures Professional
 weight:: 75
 price:: "$149/mes (usuarios ilimitados)"
 target:: "Compliance, industrias reguladas"
 constraints:: "Aprobaciones, reportes de compliance, exportación regulatoria"
-## NN Pricing: Enterprise Suite
+* <!-- _NN Pricing: --> Enterprise Suite
 weight:: 90
 price:: "$10K–$100K/año (self-hosted)"
 target:: "Enterprise, gobierno, industria regulada"
 constraints:: "Ambas templates, on-premise, SSO, audit, custom, soporte dedicado"
-## NN Pricing: Consulting
+* <!-- _NN Pricing: --> Consulting
 weight:: 60
 price:: "$200–$500/hora"
 target:: "Enterprise onboarding, templates custom"
 
-# NN Revenue
+# <!-- _NN --> Revenue
 
-## NN Revenue: Business Template Cloud
+* <!-- _NN Revenue: --> Business Template Cloud
 weight:: 100
 type:: "recurring"
 projection:: "Year 1: $35K Â· Year 2: $400K Â· Year 3: $1.6M"
 description:: "Línea de negocio principal. Target 55% de ingresos totales Year 3."
-## NN Revenue: Procedures Template Cloud
+* <!-- _NN Revenue: --> Procedures Template Cloud
 weight:: 85
 type:: "recurring"
 projection:: "Year 1: $12K Â· Year 2: $150K Â· Year 3: $700K"
 description:: "Segunda línea de negocio. Target 25% de ingresos totales Year 3."
-## NN Revenue: Enterprise Licenses
+* <!-- _NN Revenue: --> Enterprise Licenses
 weight:: 85
 type:: "annual contract"
 projection:: "Year 1: $0 Â· Year 2: $200K Â· Year 3: $1.2M"
 description:: "Contratos anuales de alto valor. Ambas templates. Target 20% de ingresos Year 3."
-## NN Revenue: Professional Services
+* <!-- _NN Revenue: --> Professional Services
 weight:: 60
 type:: "variable"
 projection:: "Year 1: $10K Â· Year 2: $80K Â· Year 3: $250K"
 description:: "Consultoría, training, templates custom. Target 5% de ingresos Year 3."
-## NN Revenue: Marketplace Commissions
+* <!-- _NN Revenue: --> Marketplace Commissions
 weight:: 35
 type:: "variable"
 projection:: "Year 1: $0 Â· Year 2: $0 Â· Year 3: $40K"
@@ -698,29 +396,29 @@ description:: "Futuro. Comisión sobre templates de terceros."
 | Marketplace | $40,000 | 1.1% |
 | **Total** | **$3,790,000** | **100%** |
 
-# NN Costs
+# <!-- _NN --> Costs
 
-## NN Costs: Engineering (ambas templates + engine)
+* <!-- _NN Costs: --> Engineering (ambas templates + engine)
 weight:: 95
 type:: "fixed"
 estimate:: "$200K–$350K/año (2-4 FTEs)"
 description:: "Desarrollo del engine, templates Business y Procedures, infraestructura"
-## NN Costs: Cloud Infrastructure
+* <!-- _NN Costs: --> Cloud Infrastructure
 weight:: 80
 type:: "variable"
 estimate:: "$15K–$80K/año (escala con usuarios)"
 description:: "Servidores para cloud SaaS de ambas templates, APIs de IA, storage"
-## NN Costs: Marketing & Growth
+* <!-- _NN Costs: --> Marketing & Growth
 weight:: 75
 type:: "variable"
 estimate:: "$30K–$80K/año"
 description:: "Content marketing segmentado por template, SEO, developer relations, comunidad"
-## NN Costs: Design & UX
+* <!-- _NN Costs: --> Design & UX
 weight:: 60
 type:: "variable"
 estimate:: "$30K–$60K/año"
 description:: "UI/UX de ambas templates, dashboard renderers, documentación visual"
-## NN Costs: Operations
+* <!-- _NN Costs: --> Operations
 weight:: 50
 type:: "fixed"
 estimate:: "$15K–$30K/año"
@@ -736,13 +434,13 @@ description:: "Herramientas, suscripciones, contabilidad, legal"
 | Operations | $15K | $20K | $30K |
 | **Total** | **$290K** | **$445K** | **$600K** |
 
-# NN Funding sources
+# <!-- _NN --> Funding sources
 
 Bootstrapped. El engine open-source y el contenido orgánico (GitHub, blogs, Product Hunt) mantienen el CAC bajo. Las suscripciones Cloud de ambas templates deben financiar el crecimiento antes de necesitar ronda externa.
 
 Si Enterprise traction valida el modelo antes de lo esperado, una ronda seed de $500K-$1M podría acelerar el equipo de ventas enterprise.
 
-# NN Projections
+# <!-- _NN --> Projections
 
 | Métrica | Year 1 | Year 2 | Year 3 |
 | :--- | ---: | ---: | ---: |
@@ -758,7 +456,7 @@ Si Enterprise traction valida el modelo antes de lo esperado, una ronda seed de 
 
 Break-even proyectado en Month 22-26, cuando las suscripciones combinadas de ambas templates cruzan la línea de costos.
 
-# NN Unit economics
+# <!-- _NN --> Unit economics
 
 **Business Starter ($29/mes):**
 - CAC estimado: $120 (adquisición orgánica)
@@ -782,7 +480,7 @@ Break-even proyectado en Month 22-26, cuando las suscripciones combinadas de amb
 
 **Clave:** El engine gratuito es el driver de tráfico más eficiente. Conversión estimada free → paid: 2-3% para Business, 4-5% para Procedures (necesidad más inmediata).
 
-# NN Customer Aquisition Cost
+# <!-- _NN --> Customer Aquisition Cost
 
 | Canal | Business CAC | Procedures CAC | Volumen |
 | :--- | ---: | ---: | ---: |
@@ -794,7 +492,7 @@ Break-even proyectado en Month 22-26, cuando las suscripciones combinadas de amb
 
 **Blended CAC target:** $80-100 (Business), $60-80 (Procedures), $4,000 (Enterprise).
 
-# NN Life Time Value
+# <!-- _NN --> Life Time Value
 
 | Tier | Monthly Price | Avg Months | LTV | LTV/CAC |
 | :--- | ---: | ---: | ---: | ---: |
@@ -804,13 +502,13 @@ Break-even proyectado en Month 22-26, cuando las suscripciones combinadas de amb
 | Procedures Professional | $149 | 36 | $5,364 | 35.8x |
 | Enterprise | $1,667 | 48 | $80,000 | 20x |
 
-# NN Inspiration
+# <!-- _NN --> Inspiration
 
 El problema es personal: cada vez que abríamos ChatGPT para preguntar algo estratégico, gastábamos 10 min reexplicando el negocio. Las respuestas eran genéricas porque la IA carecía de contexto. Nos dimos cuenta que el problema no era la IA — era cómo empaquetamos el conocimiento.
 
 FORMAT nació de esa convicción: un archivo, machine-readable, versionado, y usable instantáneamente como contexto de IA. Las templates nacieron de ver que diferentes audiencias necesitaban diferentes estructuras.
 
-# NN Opportunity
+# <!-- _NN --> Opportunity
 
 Dos mercados grandes convergen con una misma solución de backend:
 1. **Business**: IA necesita contexto estratégico estructurado
@@ -818,155 +516,155 @@ Dos mercados grandes convergen con una misma solución de backend:
 
 Ambos comparten el mismo engine. Ambos tienen disposición a pagar. Ambos se refuerzan mutuamente: un enterprise que adopta Business Template puede extender a Procedures Template (y viceversa).
 
-# NN Challenges
+# <!-- _NN --> Challenges
 
-## NN Challenges: Dos productos que dividen atención
+* <!-- _NN Challenges: --> Dos productos que dividen atención
 weight:: 85
 mitigation:: "Engine común minimiza esfuerzo duplicado. Priorizar Business (mayor mercado) sobre Procedures."
-## NN Challenges: Adoption requiere cambio de hábito
+* <!-- _NN Challenges: --> Adoption requiere cambio de hábito
 weight:: 80
 mitigation:: "Editor visual baja la barrera. Templates gratuitas eliminan riesgo. Samples (Ghostbusters, FORMAT) muestran el patrón."
-## NN Challenges: Enterprise sales cycle largo
+* <!-- _NN Challenges: --> Enterprise sales cycle largo
 weight:: 75
 mitigation:: "Comenzar con Cloud self-serve. Enterprise después de validar product-market fit."
-## NN Challenges: Single founder risk
+* <!-- _NN Challenges: --> Single founder risk
 weight:: 70
 mitigation:: "Comunidad open-source contribuye. Documentar arquitectura. Contratar cuando Cloud genere ingresos."
-## NN Challenges: Competencia indirecta de Notion/Confluence
+* <!-- _NN Challenges: --> Competencia indirecta de Notion/Confluence
 weight:: 65
 mitigation:: "Diferenciarse por IA-readiness, open-source, versionado Git. No competir por features — competir por paradigma."
 
-# NN Business status
+# <!-- _NN --> Business status
 
 FORMAT engine: **shipping** (V_0-1-4 spec). Business y Procedures templates: **en uso** como templates open-source. Cloud tiers: **en desarrollo**. Enterprise: **planeado**.
 
 Revenue actual: $0 (pre-monetización, construyendo adopción).
 
-# NN Vision
+# <!-- _NN --> Vision
 
 Un mundo donde cada equipo — sea de estrategia, ops, engineering, o compliance — tenga sus conocimientos estructurados en archivos FORMAT. Donde los agentes de IA no necesiten presentaciones. Donde la coherencia estratégica y la trazabilidad regulatoria se verifiquen automáticamente.
 
 innV0 es la compañía que hace esto posible: un engine abierto y gratuito, y templates especializadas que diferentes audiencias pagan por usar.
 
-# NN Mission
+# <!-- _NN --> Mission
 
 Dar a cada equipo un formato estándar para estructurar su conocimiento de forma que sea instantáneamente usable por cualquier modelo de IA — eliminando la fragmentación de contexto, habilitando validación automatizada, y haciendo el conocimiento versionable y portable.
 
-# NN Organizational values
+# <!-- _NN --> Organizational values
 
-## NN Organizational values: Open by default
+* <!-- _NN Organizational values: --> Open by default
 weight:: 95
 description:: "Engine open-source. Especificación abierta. Sin lock-in. Confianza por transparencia."
-## NN Organizational values: Templates as products
+* <!-- _NN Organizational values: --> Templates as products
 weight:: 90
 description:: "Cada template es un producto. Público propio. Monetización propia. El engine es infraestructura."
-## NN Organizational values: Dogfood todo
+* <!-- _NN Organizational values: --> Dogfood todo
 weight:: 80
 description:: "Modelamos innV0 con Business Template. Documentamos nuestros procesos con Procedures Template."
-## NN Organizational values: Privacidad es feature
+* <!-- _NN Organizational values: --> Privacidad es feature
 weight:: 85
 description:: "Local-first. Sin telemetría sin permiso. Controles enterprise para gobierno de datos."
 
-# NN Organizational goals
+# <!-- _NN --> Organizational goals
 
-## NN Organizational goals: 10K GitHub stars Year 1
+* <!-- _NN Organizational goals: --> 10K GitHub stars Year 1
 weight:: 80
 metric:: "GitHub stars"
-## NN Organizational goals: Business Cloud beta Year 1
+* <!-- _NN Organizational goals: --> Business Cloud beta Year 1
 weight:: 95
 metric:: "Beta lanzada"
-## NN Organizational goals: Procedures Cloud beta Year 2
+* <!-- _NN Organizational goals: --> Procedures Cloud beta Year 2
 weight:: 85
 metric:: "Beta lanzada"
-## NN Organizational goals: 50 equipos pagos Cloud Year 1 (ambas templates)
+* <!-- _NN Organizational goals: --> 50 equipos pagos Cloud Year 1 (ambas templates)
 weight:: 85
 metric:: "Paying teams"
-## NN Organizational goals: Enterprise GA Year 2
+* <!-- _NN Organizational goals: --> Enterprise GA Year 2
 weight:: 80
 metric:: "Enterprise release"
-## NN Organizational goals: Break-even Year 2
+* <!-- _NN Organizational goals: --> Break-even Year 2
 weight:: 90
 metric:: "Revenue > costs"
 
-# NN Metrics
+# <!-- _NN --> Metrics
 
-## NN Metrics: MAU engine (gratis)
+* <!-- _NN Metrics: --> MAU engine (gratis)
 weight:: 80
 target:: "Y1: 5K Â· Y2: 25K Â· Y3: 100K"
-## NN Metrics: Free → Paid conversion (por template)
+* <!-- _NN Metrics: --> Free → Paid conversion (por template)
 weight:: 90
 target:: "Business 2-3% Â· Procedures 4-5%"
-## NN Metrics: MRR combinado
+* <!-- _NN Metrics: --> MRR combinado
 weight:: 100
 target:: "Y1: $4.8K Â· Y2: $62K Â· Y3: $290K"
-## NN Metrics: Churn mensual
+* <!-- _NN Metrics: --> Churn mensual
 weight:: 85
 target:: "< 5% Business Â· < 4% Procedures"
-## NN Metrics: NPS por template
+* <!-- _NN Metrics: --> NPS por template
 weight:: 70
 target:: "> 40 ambas templates"
 
-# NN Milestones
+# <!-- _NN --> Milestones
 
-## NN Milestones: V_0-2-0 — Engine polish + graph view
+* <!-- _NN Milestones: --> V_0-2-0 — Engine polish + graph view
 weight:: 80
 timeframe:: "Shipping"
-## NN Milestones: V_0-3-0 — AI agent skills
+* <!-- _NN Milestones: --> V_0-3-0 — AI agent skills
 weight:: 75
 timeframe:: "Shipping"
-## NN Milestones: V_0-4-0 — Business Cloud alpha
+* <!-- _NN Milestones: --> V_0-4-0 — Business Cloud alpha
 weight:: 95
 timeframe:: "Q3 2026"
-## NN Milestones: V_0-5-0 — Business Cloud beta + billing
+* <!-- _NN Milestones: --> V_0-5-0 — Business Cloud beta + billing
 weight:: 90
 timeframe:: "Q4 2026"
-## NN Milestones: V_1-1-0 — Procedures Cloud alpha
+* <!-- _NN Milestones: --> V_1-1-0 — Procedures Cloud alpha
 weight:: 85
 timeframe:: "Q1 2027"
-## NN Milestones: V_2-0-0 — Enterprise Suite
+* <!-- _NN Milestones: --> V_2-0-0 — Enterprise Suite
 weight:: 80
 timeframe:: "Q2 2027"
-## NN Milestones: V_3-0-0 — Template Marketplace
+* <!-- _NN Milestones: --> V_3-0-0 — Template Marketplace
 weight:: 50
 timeframe:: "Q4 2027"
 
-# NN Features
+# <!-- _NN --> Features
 
-## NN Features: Markdown Editor (engine)
+* <!-- _NN Features: --> Markdown Editor (engine)
 weight:: 100
 status:: "shipping"
-## NN Features: Graph Visualization (engine)
+* <!-- _NN Features: --> Graph Visualization (engine)
 weight:: 85
 status:: "shipping"
-## NN Features: Relational Matrix Grid (engine)
+* <!-- _NN Features: --> Relational Matrix Grid (engine)
 weight:: 90
 status:: "shipping"
-## NN Features: Marker Scoring (engine)
+* <!-- _NN Features: --> Marker Scoring (engine)
 weight:: 80
 status:: "shipping"
-## NN Features: Version Bump (engine)
+* <!-- _NN Features: --> Version Bump (engine)
 weight:: 75
 status:: "shipping"
-## NN Features: Real-time Collaboration (Cloud)
+* <!-- _NN Features: --> Real-time Collaboration (Cloud)
 weight:: 90
 status:: "planned — ambas templates"
-## NN Features: AI Coherence Audits (Cloud — Business)
+* <!-- _NN Features: --> AI Coherence Audits (Cloud — Business)
 weight:: 85
 status:: "planned — Business template"
-## NN Features: Procedure Approval Flow (Cloud — Procedures)
+* <!-- _NN Features: --> Procedure Approval Flow (Cloud — Procedures)
 weight:: 80
 status:: "planned — Procedures template"
-## NN Features: PDF/PPT Export (Cloud)
+* <!-- _NN Features: --> PDF/PPT Export (Cloud)
 weight:: 70
 status:: "planned — ambas templates"
-## NN Features: SSO / LDAP (Enterprise)
+* <!-- _NN Features: --> SSO / LDAP (Enterprise)
 weight:: 80
 status:: "planned — Enterprise"
-## NN Features: Custom Metamodel Builder (Enterprise)
+* <!-- _NN Features: --> Custom Metamodel Builder (Enterprise)
 weight:: 75
 status:: "planned — Enterprise"
 
-# NN Roadmap
+# <!-- _NN --> Roadmap
 
 **Fase 1 — Engine + Comunidad (Actual):**
 Consolidar el engine open-source. Crecimiento orgánico. Samples y documentación. Las templates Business y Procedures existen como archivos, el valor está en el engine.
@@ -983,111 +681,111 @@ Self-hosted, SSO, audit. Ambas templates como suite. Contratos anuales de alto v
 **Fase 5 — Marketplace (Q4 2027+):**
 Templates de terceros. Efectos de red. Comisión por venta.
 
-# NN Activities
+# <!-- _NN --> Activities
 
-## NN Activities: Engine Development
+* <!-- _NN Activities: --> Engine Development
 weight:: 100
 frequency:: "continuo"
-## NN Activities: Business Template Cloud Development
+* <!-- _NN Activities: --> Business Template Cloud Development
 weight:: 95
 frequency:: "continuo (post-engine)"
-## NN Activities: Procedures Template Cloud Development
+* <!-- _NN Activities: --> Procedures Template Cloud Development
 weight:: 80
 frequency:: "continuo (post-Business)"
-## NN Activities: Content Marketing (dual: Business + Procedures)
+* <!-- _NN Activities: --> Content Marketing (dual: Business + Procedures)
 weight:: 80
 frequency:: "semanal"
-## NN Activities: Community Management
+* <!-- _NN Activities: --> Community Management
 weight:: 70
 frequency:: "diario"
-## NN Activities: Enterprise Sales
+* <!-- _NN Activities: --> Enterprise Sales
 weight:: 65
 frequency:: "desde Year 2"
 
-# NN Resources
+# <!-- _NN --> Resources
 
-## NN Resources: FORMAT Engine (open source)
+* <!-- _NN Resources: --> FORMAT Engine (open source)
 weight:: 100
 type:: "intelectual"
-## NN Resources: Business Template (especificación + docs)
+* <!-- _NN Resources: --> Business Template (especificación + docs)
 weight:: 90
 type:: "intelectual"
-## NN Resources: Procedures Template (especificación + docs)
+* <!-- _NN Resources: --> Procedures Template (especificación + docs)
 weight:: 85
 type:: "intelectual"
-## NN Resources: AI Agent Skills
+* <!-- _NN Resources: --> AI Agent Skills
 weight:: 80
 type:: "intelectual"
-## NN Resources: GitHub Community
+* <!-- _NN Resources: --> GitHub Community
 weight:: 70
 type:: "comunidad"
 
-# NN Functions
+# <!-- _NN --> Functions
 
-## NN Functions: Product Engineering (engine + templates)
+* <!-- _NN Functions: --> Product Engineering (engine + templates)
 weight:: 100
-## NN Functions: Cloud Platform Engineering
+* <!-- _NN Functions: --> Cloud Platform Engineering
 weight:: 85
-## NN Functions: Developer Relations
+* <!-- _NN Functions: --> Developer Relations
 weight:: 70
-## NN Functions: Marketing & Growth (multi-template)
+* <!-- _NN Functions: --> Marketing & Growth (multi-template)
 weight:: 75
-## NN Functions: Enterprise Sales
+* <!-- _NN Functions: --> Enterprise Sales
 weight:: 60
 
-# NN Positions
+# <!-- _NN --> Positions
 
-## NN Positions: Founder / Full-Stack
+* <!-- _NN Positions: --> Founder / Full-Stack
 weight:: 100
 status:: "filled"
-## NN Positions: Cloud Backend Engineer
+* <!-- _NN Positions: --> Cloud Backend Engineer
 weight:: 80
 hiring:: "Year 2"
-## NN Positions: Marketing & Community
+* <!-- _NN Positions: --> Marketing & Community
 weight:: 70
 hiring:: "Year 2"
 
-# NN Assumptions
+# <!-- _NN --> Assumptions
 
-## NN Assumptions: Engine gratuito genera adopción orgánica suficiente
+* <!-- _NN Assumptions: --> Engine gratuito genera adopción orgánica suficiente
 weight:: 90
 certainty:: 70
 validation:: "Traction actual en GitHub y crecimiento orgánico lo respaldan"
-## NN Assumptions: 2-3% de usuarios Business se convierten a Cloud
+* <!-- _NN Assumptions: --> 2-3% de usuarios Business se convierten a Cloud
 weight:: 80
 certainty:: 40
 validation:: "Benchmark de freemium SaaS. Business tiene ciclo de evaluación más largo."
-## NN Assumptions: 4-5% de usuarios Procedures se convierten a Cloud
+* <!-- _NN Assumptions: --> 4-5% de usuarios Procedures se convierten a Cloud
 weight:: 75
 certainty:: 45
 validation:: "Necesidad más inmediata (compliance, auditoría) debería dar mejor conversión."
-## NN Assumptions: Enterprise paga $10K-$100K/año por suite
+* <!-- _NN Assumptions: --> Enterprise paga $10K-$100K/año por suite
 weight:: 75
 certainty:: 30
 validation:: "Comparable a Confluence y LucidChart. Validar con conversaciones."
 
-# NN Risks
+# <!-- _NN --> Risks
 
-## NN Risks: Cloud no gana tracción
+* <!-- _NN Risks: --> Cloud no gana tracción
 weight:: 80
 severity:: high
 mitigation:: "Beta con usuarios antes de build completo. Engine free como fallback."
 contingency:: "Pivot a consultoría usando el engine como diferenciador."
-## NN Risks: Dos templates diluyen foco
+* <!-- _NN Risks: --> Dos templates diluyen foco
 weight:: 75
 severity:: medium
 mitigation:: "Priorizar Business Cloud. Procedures Cloud después de validar Business."
-## NN Risks: Enterprise sales cycle muy largo para bootstrapped
+* <!-- _NN Risks: --> Enterprise sales cycle muy largo para bootstrapped
 weight:: 70
 severity:: medium
 mitigation:: "Cloud self-serve primero. Enterprise desde Year 2."
 contingency:: "Seed round para equipo de ventas enterprise."
-## NN Risks: Competidor grande copia el patrón
+* <!-- _NN Risks: --> Competidor grande copia el patrón
 weight:: 60
 severity:: medium
 mitigation:: "Open-source spec crea network effects. Comunidad > feature set."
 
-# NN SWOT
+# <!-- _NN --> SWOT
 
 **Strengths:**
 - Engine open-source, local-first (trust advantage)
@@ -1113,7 +811,7 @@ mitigation:: "Open-source spec crea network effects. Comunidad > feature set."
 - File System API limitado (no Firefox/Safari)
 - Ciclos enterprise largos drenando recursos
 
-# NN Unfair advantage
+# <!-- _NN --> Unfair advantage
 
 **El moat no es el engine — es el ecosistema de templates.**
 
@@ -1121,7 +819,7 @@ Cada template que creamos (Business, Procedures, futuras) es un producto indepen
 
 Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, procesos, compliance), más valioso se vuelve el ecosistema. Y como la especificación es abierta, cualquiera puede crear templates — pero nosotros somos quienes definimos las oficiales y construimos el Cloud alrededor de ellas.
 
-# NN matrices: item-markers matrix
+# <!-- _NN matrices: --> item-markers matrix
 
 | Item \ Marker | weight | completion | certainty | priority | rating |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -1257,7 +955,7 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | Enterprise sales cycle muy largo para bootstrapped | - | - | - | - | - |
 | Competidor grande copia el patrón | - | - | - | - | - |
 
-# NN matrices: metamatrix
+# <!-- _NN matrices: --> metamatrix
 
 | Matrix Name | Source | Target | Widget Type | Widget Parameters |
 | :--- | :--- | :--- | :--- | :--- |
@@ -1270,12 +968,12 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | Activities-Resources Matrix | Activities | Resources | cycle | Max;Very High;High;Slightly High;Neutral;Slightly Low;Low;Very Low;Min |
 | item-markers matrix | elements | markers | cycle | - |
 
-# NN matrices: journey map
+# <!-- _NN matrices: --> journey map
 
 | Journey \ Emotions |  |
 | :--- |  |
 
-# NN matrices: segmentation-profiles matrix
+# <!-- _NN matrices: --> segmentation-profiles matrix
 
 | Segmentation \ Profiles | Solo técnico, pre-seed, 25-40 años, $0-$50/mes | Consultor estratégico, MBA, 30-55 años, $100-$500/mes | Líder de ops, 30-50 años, industria regulada, $50-$200/mes | Engineering manager, 28-45 años, técnico, $20-$100/mes | Enterprise architect, 40-60 años, C-level/VP, $10K-$100K/año |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -1284,7 +982,7 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | Por Madurez Técnica | - | - | - | - | - |
 | Por Industria | - | - | - | - | - |
 
-# NN matrices: problems-value propositions matrix
+# <!-- _NN matrices: --> problems-value propositions matrix
 
 | Problems \ Value propositions | Engine FORMAT gratis + open-source | Business Template: Un archivo = contexto IA completo | Procedures Template: Procesos como código | Estrategia versionada (Business) | Coherencia automatizada (Business) | Matrices relacionales (Business) | Trazabilidad regulatoria (Procedures) | Multi-cliente para consultoras (Business) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -1295,7 +993,7 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | Sin validación de coherencia | - | - | - | - | - | - | - | - |
 | Compliance y auditoría sin trazabilidad | - | - | - | - | - | - | - | - |
 
-# NN matrices: value propositions-messages matrix
+# <!-- _NN matrices: --> value propositions-messages matrix
 
 | Value propositions \ Messages |  |
 | :--- |  |
@@ -1308,12 +1006,12 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | Trazabilidad regulatoria (Procedures) |  |
 | Multi-cliente para consultoras (Business) |  |
 
-# NN matrices: messages-channels matrix
+# <!-- _NN matrices: --> messages-channels matrix
 
 | Messages \ Channels |  |
 | :--- |  |
 
-# NN matrices: features-milestones matrix
+# <!-- _NN matrices: --> features-milestones matrix
 
 | Features \ Milestones | V_0-2-0 — Engine polish + graph view | V_0-3-0 — AI agent skills | V_0-4-0 — Business Cloud alpha | V_0-5-0 — Business Cloud beta + billing | V_1-1-0 — Procedures Cloud alpha | V_2-0-0 — Enterprise Suite | V_3-0-0 — Template Marketplace |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -1329,7 +1027,7 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | SSO / LDAP (Enterprise) | - | - | - | - | - | - | - |
 | Custom Metamodel Builder (Enterprise) | - | - | - | - | - | - | - |
 
-# NN matrices: activities-resources matrix
+# <!-- _NN matrices: --> activities-resources matrix
 
 | Activities \ Resources | FORMAT Engine (open source) | Business Template (especificación + docs) | Procedures Template (especificación + docs) | AI Agent Skills | GitHub Community |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -1340,7 +1038,7 @@ Cuanto más adopta la gente FORMAT para distintas necesidades (estrategia, proce
 | Community Management | - | - | - | Very High | Max |
 | Enterprise Sales | - | - | - | - | - |
 
-# NN matrices: item-markers matrix
+# <!-- _NN matrices: --> item-markers matrix
 
 | elements \ markers |  |
 | :--- |  |

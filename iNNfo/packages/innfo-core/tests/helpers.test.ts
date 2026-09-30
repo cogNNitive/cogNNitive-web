@@ -100,7 +100,7 @@ describe('listModels (recursive scan)', () => {
 
     // Editor/core test fixture: same frontmatter shape, but not `_NN.md` — excluded.
     await writeFile(
-      join(root, 'Ghostbusters_V_0-1-1_business_F.md'),
+      join(root, 'Ghostbusters_V_0-1-1_business_NN.md'),
       [
         '---',
         'level: 3',

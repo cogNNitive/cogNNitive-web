@@ -24,7 +24,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'models/system_01.md' },
+      source: { path: 'kNNowledge/system_01.md' },
       rawContent: '---\ntitle: "System Architecture"\n---\n# NN index\n',
     }
     modelStore.setGraph({ 'system_01.md': node }, ['system_01.md'])
@@ -70,7 +70,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
           markers: {},
           relationships: [],
           rawSections: {},
-          source: { path: 'models/arch.md' },
+          source: { path: 'kNNowledge/arch.md' },
         },
       },
       ['doc_01.md', 'arch_01.md'],
@@ -103,7 +103,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'models/system_01.md' },
+      source: { path: 'kNNowledge/system_01.md' },
     }
     modelStore.setGraph({ 'system_01.md': node }, ['system_01.md'])
     uiStore.setActiveView('info')
@@ -122,7 +122,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
     fileTreeNode.vm.$emit('select-file', {
       name: 'system_01.md',
       kind: 'file',
-      path: 'models/system_01.md',
+      path: 'kNNowledge/system_01.md',
     })
 
     expect(uiStore.selectedNodeId).toBe('system_01.md')

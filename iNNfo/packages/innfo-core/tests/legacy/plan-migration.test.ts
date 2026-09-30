@@ -60,8 +60,8 @@ describe('planMigration (Task 5.6)', () => {
 
   it('yields stable planHash across repeated runs on same input', async () => {
     const files = {
-      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\ntemplate_name: "workspace"\n---\n# Workspace\n',
-      'models/sample_NN.md': '---\nmodel_version: "0.1.0"\n---\n# Sample\n',
+      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\ntemplate_name: "workspace"\n---\n# Workspace\n',
+      'kNNowledge/sample_NN.md': '---\nknowledge_version: "0.1.0"\n---\n# Sample\n',
     }
     const reader1 = createMemoryDomainReader(files)
     const reader2 = createMemoryDomainReader(files)
@@ -77,7 +77,7 @@ describe('planMigration (Task 5.6)', () => {
   it('returns status: blocked on invalid/malformed frontmatter', async () => {
     const reader = createMemoryDomainReader({
       'workspace_NN.md': '---invalid: [yaml: "broken\n---\n# Broken\n',
-      'models/item_NN.md': '---\nmodel_version: "0.1.0"\n---\n',
+      'kNNowledge/item_NN.md': '---\nknowledge_version: "0.1.0"\n---\n',
     })
 
     const result = await planMigration(reader, stubDeps)
@@ -88,8 +88,8 @@ describe('planMigration (Task 5.6)', () => {
 
   it('preserves custom headings on blueprints with no schema map (passthrough)', async () => {
     const reader = createMemoryDomainReader({
-      'workspace_NN.md': '---\ntemplate_version: "0.1.0"\n---\n# Workspace\n',
-      'models/custom_NN.md': '---\nmodel_version: "0.1.0"\nblueprint_name: "custom_app"\n---\n# Custom Heading Never Renamed\n\n- Custom Field:: value\n',
+      'workspace_NN.md': '---\nblueprint_version: "0.1.0"\n---\n# Workspace\n',
+      'kNNowledge/custom_NN.md': '---\nknowledge_version: "0.1.0"\nblueprint_name: "custom_app"\n---\n# Custom Heading Never Renamed\n\n- Custom Field:: value\n',
     })
 
     const result = await planMigration(reader, stubDeps)

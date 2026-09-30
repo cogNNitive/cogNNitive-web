@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { recursiveParse } from '../../src/model/recursiveParser'
@@ -8,14 +8,14 @@ import type { FakeTree } from '../helpers/fakeFs'
 import type { ParsedModel, ModelDriver } from '@cognnitive/innfo-core'
 import type { ModelNode } from '../../src/model/types'
 
-// The frozen fixtures under tests/fixtures/models/ are LF-only (git
+// The frozen fixtures under tests/fixtures/kNNowledge/ are LF-only (git
 // normalizes line endings on checkout), so the golden round-trip suite
 // never exercises a CRLF source document. This suite takes an existing LF
 // fixture and converts it to CRLF IN-MEMORY (never committing a CRLF file)
 // to confirm the app's recursive parser + serializer handle CRLF input
 // with the same fidelity as its LF twin.
 const modelsDir = join(import.meta.dirname!, '..', 'fixtures', 'models')
-const fixtureFile = 'mini-file_V_0-0-1_business_F.md'
+const fixtureFile = 'mini-file_V_0-0-1_business_NN.md'
 const nnFixtureName = fixtureFile.replace(/_F\.md$/i, '_NN.md')
 
 /** Migrate legacy _F content to _NN on the fly for V_0-1-0+ parser. */

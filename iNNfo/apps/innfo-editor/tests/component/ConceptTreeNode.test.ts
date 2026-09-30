@@ -293,9 +293,9 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
   describe('Element-Owned Submodel Nesting (ADR-01/03 & Phase 3)', () => {
     it('renders nested child submodel node when element has a type:: knowledge field', () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md', {
+      const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
-        source: { path: 'models/Ghostbusters_V_0-2-0_innovation_NN.md' },
+        source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
         localMetamodel: {
           concepts: [
             {
@@ -314,21 +314,21 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           relationshipTypes: [],
         },
       })
-      const elementNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01', {
+      const elementNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md/initiative_01', {
         name: 'Municipal Franchise Expansion',
         parentId: rootNode.id,
         kind: 'element',
         type: 'Initiative',
         fields: {
           business_model: {
-            value: '[[models/Ghostbusters_V_0-2-0_business_NN.md]]',
+            value: '[[kNNowledge/Ghostbusters_V_0-2-0_business_NN.md]]',
           },
         },
       })
-      const submodelNode = makeNode('models/Ghostbusters_V_0-2-0_business_NN.md', {
+      const submodelNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_business_NN.md', {
         name: 'Ghostbusters Inc. Municipal Franchise Business Model',
         kind: 'root',
-        source: { path: 'models/Ghostbusters_V_0-2-0_business_NN.md' },
+        source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_business_NN.md' },
       })
 
       modelStore.setGraph(
@@ -354,9 +354,9 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
 
     it('displays submodel name, Boxes icon, and target_blueprint badge', () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/root_NN.md', {
+      const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
-        source: { path: 'models/root_NN.md' },
+        source: { path: 'kNNowledge/root_NN.md' },
         localMetamodel: {
           concepts: [
             {
@@ -375,21 +375,21 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           relationshipTypes: [],
         },
       })
-      const elementNode = makeNode('models/root_NN.md/elem_01', {
+      const elementNode = makeNode('kNNowledge/root_NN.md/elem_01', {
         name: 'Initiative 1',
         parentId: rootNode.id,
         kind: 'element',
         type: 'Initiative',
         fields: {
           business_model: {
-            value: 'models/sub_business_NN.md',
+            value: 'kNNowledge/sub_business_NN.md',
           },
         },
       })
-      const submodelNode = makeNode('models/sub_business_NN.md', {
+      const submodelNode = makeNode('kNNowledge/sub_business_NN.md', {
         name: 'Sub Business Model',
         kind: 'root',
-        source: { path: 'models/sub_business_NN.md' },
+        source: { path: 'kNNowledge/sub_business_NN.md' },
       })
 
       modelStore.setGraph(
@@ -421,9 +421,9 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
       const uiStore = useUiStore()
       const focusSpy = vi.spyOn(uiStore, 'focusModel')
 
-      const rootNode = makeNode('models/root_NN.md', {
+      const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
-        source: { path: 'models/root_NN.md' },
+        source: { path: 'kNNowledge/root_NN.md' },
         localMetamodel: {
           concepts: [
             {
@@ -436,17 +436,17 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           relationshipTypes: [],
         },
       })
-      const elementNode = makeNode('models/root_NN.md/elem_01', {
+      const elementNode = makeNode('kNNowledge/root_NN.md/elem_01', {
         name: 'Initiative 1',
         parentId: rootNode.id,
         kind: 'element',
         type: 'Initiative',
-        fields: { sub: { value: 'models/sub_NN.md' } },
+        fields: { sub: { value: 'kNNowledge/sub_NN.md' } },
       })
-      const submodelNode = makeNode('models/sub_NN.md', {
+      const submodelNode = makeNode('kNNowledge/sub_NN.md', {
         name: 'Sub Model',
         kind: 'root',
-        source: { path: 'models/sub_NN.md' },
+        source: { path: 'kNNowledge/sub_NN.md' },
       })
 
       modelStore.setGraph(
@@ -476,9 +476,9 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
 
     it('collapsing parent element hides nested submodels', async () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/root_NN.md', {
+      const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
-        source: { path: 'models/root_NN.md' },
+        source: { path: 'kNNowledge/root_NN.md' },
         localMetamodel: {
           concepts: [
             {
@@ -491,17 +491,17 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           relationshipTypes: [],
         },
       })
-      const elementNode = makeNode('models/root_NN.md/elem_01', {
+      const elementNode = makeNode('kNNowledge/root_NN.md/elem_01', {
         name: 'Initiative 1',
         parentId: rootNode.id,
         kind: 'element',
         type: 'Initiative',
-        fields: { sub: { value: 'models/sub_NN.md' } },
+        fields: { sub: { value: 'kNNowledge/sub_NN.md' } },
       })
-      const submodelNode = makeNode('models/sub_NN.md', {
+      const submodelNode = makeNode('kNNowledge/sub_NN.md', {
         name: 'Sub Model',
         kind: 'root',
-        source: { path: 'models/sub_NN.md' },
+        source: { path: 'kNNowledge/sub_NN.md' },
       })
 
       modelStore.setGraph(
@@ -532,9 +532,9 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
 
     it('empty or unresolved submodel references do not render phantom child nodes', () => {
       const modelStore = useModelStore()
-      const rootNode = makeNode('models/root_NN.md', {
+      const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
-        source: { path: 'models/root_NN.md' },
+        source: { path: 'kNNowledge/root_NN.md' },
         localMetamodel: {
           concepts: [
             {
@@ -550,14 +550,14 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           relationshipTypes: [],
         },
       })
-      const elementNode = makeNode('models/root_NN.md/elem_01', {
+      const elementNode = makeNode('kNNowledge/root_NN.md/elem_01', {
         name: 'Initiative 1',
         parentId: rootNode.id,
         kind: 'element',
         type: 'Initiative',
         fields: {
           empty_sub: { value: '' },
-          missing_sub: { value: 'models/non_existent_NN.md' },
+          missing_sub: { value: 'kNNowledge/non_existent_NN.md' },
         },
       })
 
@@ -583,9 +583,9 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     it('does not render quick open model button on node row referencing a submodel', async () => {
       const modelStore = useModelStore()
 
-      const rootNode = makeNode('models/root_NN.md', {
+      const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
-        source: { path: 'models/root_NN.md' },
+        source: { path: 'kNNowledge/root_NN.md' },
         localMetamodel: {
           concepts: [
             {
@@ -598,19 +598,19 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           relationshipTypes: [],
         },
       })
-      const elementNode = makeNode('models/root_NN.md/elem_01', {
+      const elementNode = makeNode('kNNowledge/root_NN.md/elem_01', {
         name: 'Diagnóstico y Especificación Técnica',
         parentId: rootNode.id,
         kind: 'element',
         type: 'Models',
         fields: {
-          path: { value: 'models/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md' },
+          path: { value: 'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md' },
         },
       })
-      const targetModel = makeNode('models/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md', {
+      const targetModel = makeNode('kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md', {
         name: 'Rehabilitación Reja Pozuelo',
         kind: 'root',
-        source: { path: 'models/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md' },
+        source: { path: 'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md' },
       })
 
       modelStore.setGraph(
@@ -647,7 +647,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         kind: 'element',
         type: 'Models',
         fields: {
-          path: { value: 'models/rehabilitacion_reja_pozuello_V_0-1-0_rejas_rehabilitacion_NN.md' },
+          path: { value: 'kNNowledge/rehabilitacion_reja_pozuello_V_0-1-0_rejas_rehabilitacion_NN.md' },
         },
       })
       modelStore.setGraph(
@@ -683,7 +683,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         kind: 'element',
         type: 'Models',
         fields: {
-          'model ref': { value: 'models/discografia_V_0-1-0_discografia_NN.md' },
+          'model ref': { value: 'kNNowledge/discografia_V_0-1-0_discografia_NN.md' },
         },
       })
       modelStore.setGraph(
@@ -719,13 +719,13 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         kind: 'element',
         type: 'Models',
         fields: {
-          'model ref': { value: 'models/discografia_V_0-1-0_discografia_NN.md' },
+          'model ref': { value: 'kNNowledge/discografia_V_0-1-0_discografia_NN.md' },
         },
       })
-      const submodelRoot = makeNode('models/discografia_V_0-1-0_discografia_NN.md', {
+      const submodelRoot = makeNode('kNNowledge/discografia_V_0-1-0_discografia_NN.md', {
         kind: 'root',
-        source: { path: 'models/discografia_V_0-1-0_discografia_NN.md' },
-        childIds: ['models/discografia_V_0-1-0_discografia_NN.md/disco_1'],
+        source: { path: 'kNNowledge/discografia_V_0-1-0_discografia_NN.md' },
+        childIds: ['kNNowledge/discografia_V_0-1-0_discografia_NN.md/disco_1'],
         localMetamodel: {
           concepts: [
             { name: 'Disco', type: 'concept', icon: 'disc', color: 'blue' },
@@ -735,7 +735,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           markers: [],
         },
       })
-      const discoElement = makeNode('models/discografia_V_0-1-0_discografia_NN.md/disco_1', {
+      const discoElement = makeNode('kNNowledge/discografia_V_0-1-0_discografia_NN.md/disco_1', {
         name: 'Appetite for Destruction',
         parentId: submodelRoot.id,
         kind: 'element',
@@ -769,11 +769,11 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     it('unfolds submodel concepts when element references a model via wikilink format in business_model field', async () => {
       const modelStore = useModelStore()
 
-      const projectRoot = makeNode('models/programa_V_0-1-0_NN.md', {
+      const projectRoot = makeNode('kNNowledge/programa_V_0-1-0_NN.md', {
         kind: 'root',
-        source: { path: 'models/programa_V_0-1-0_NN.md' },
+        source: { path: 'kNNowledge/programa_V_0-1-0_NN.md' },
       })
-      const elementNode = makeNode('models/programa_V_0-1-0_NN.md/elem_containment', {
+      const elementNode = makeNode('kNNowledge/programa_V_0-1-0_NN.md/elem_containment', {
         name: 'Proyecto de High-Voltage Containment',
         parentId: projectRoot.id,
         kind: 'element',
@@ -782,11 +782,11 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           'business_model': { value: '[[containment-facility_V_0-1-0_business_NN.md]]' },
         },
       })
-      const submodelRoot = makeNode('models/containment-facility_V_0-1-0_business_NN.md', {
+      const submodelRoot = makeNode('kNNowledge/containment-facility_V_0-1-0_business_NN.md', {
         name: 'Containment Facility Business Model',
         kind: 'root',
-        source: { path: 'models/containment-facility_V_0-1-0_business_NN.md' },
-        childIds: ['models/containment-facility_V_0-1-0_business_NN.md/initiative_1'],
+        source: { path: 'kNNowledge/containment-facility_V_0-1-0_business_NN.md' },
+        childIds: ['kNNowledge/containment-facility_V_0-1-0_business_NN.md/initiative_1'],
         localMetamodel: {
           concepts: [
             { name: 'Propuesta', type: 'concept', icon: 'lightbulb', color: 'emerald' },
@@ -796,7 +796,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           markers: [],
         },
       })
-      const subElement = makeNode('models/containment-facility_V_0-1-0_business_NN.md/initiative_1', {
+      const subElement = makeNode('kNNowledge/containment-facility_V_0-1-0_business_NN.md/initiative_1', {
         name: 'Servicio de Mitigacion Espectral',
         parentId: submodelRoot.id,
         kind: 'element',

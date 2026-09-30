@@ -1,9 +1,9 @@
-﻿---
+---
 level: 3
 parent_spec:
   name: business
   url: ../templates/business/spec_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Solaris Core Business Model
 ---
 

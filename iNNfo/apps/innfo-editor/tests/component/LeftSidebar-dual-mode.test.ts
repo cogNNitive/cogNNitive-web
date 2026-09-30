@@ -38,7 +38,7 @@ describe('LeftSidebar — Dual Mode Navigation (R-DMS-01)', () => {
     modelStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
-        'auth_01.md': makeModelRootNode('auth_01.md', 'models/auth_01.md'),
+        'auth_01.md': makeModelRootNode('auth_01.md', 'kNNowledge/auth_01.md'),
       },
       ['workspace_01.md', 'auth_01.md'],
     )
@@ -62,7 +62,7 @@ describe('LeftSidebar — Dual Mode Navigation (R-DMS-01)', () => {
 
   it('renders active and draft counts correctly in metrics pill when draft models exist', () => {
     const modelStore = useModelStore()
-    const draftNode = makeModelRootNode('draft_01.md', 'models/draft_01.md')
+    const draftNode = makeModelRootNode('draft_01.md', 'kNNowledge/draft_01.md')
     draftNode.rawContent = `---
 title: "draft_01.md"
 status: "draft"
@@ -94,7 +94,7 @@ status: "draft"
     modelStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
-        'auth_01.md': makeModelRootNode('auth_01.md', 'models/auth_01.md'),
+        'auth_01.md': makeModelRootNode('auth_01.md', 'kNNowledge/auth_01.md'),
       },
       ['workspace_01.md', 'auth_01.md'],
     )

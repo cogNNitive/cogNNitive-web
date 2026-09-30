@@ -59,7 +59,7 @@ path:: kNNowledge/core.md
     const legacyDoc = `---
 spec_version: "V_0-3-0"
 level: 3
-model_version: "0.1.0"
+knowledge_version: "0.1.0"
 parent_spec:
   name: "domaiNN_V_0-1-0_NN.md"
   url: "https://cognnitive.com/innfo/specs/bluepriNNts/domaiNN/V_0-1-0/spec_NN.md"
@@ -84,10 +84,10 @@ title: "Legacy Keyword Blueprint"
 
 # NN Concept Definition
 ## NN Concept Definition: OldEngine
-type:: model
+type:: knowledge
 `
     const report = validateFormatContent(legacyBp, 'legacy_bp_NN.md')
-    // In V_0-3-0, type:: model is retired
+    // In V_0-3-0, type:: knowledge is retired
     const hasError = report.checks.some((c) => !c.passed && (c.message?.includes('model') || c.id.includes('type') || c.severity === 'error'))
     expect(hasError).toBe(true)
   })
@@ -110,7 +110,7 @@ title: "Serialized Knowledge"
     parsed.frontmatter.title = 'Mutated Knowledge'
     const serialized = serializeModel(parsed)
     expect(serialized).toContain('knowledge_version: "0.1.0"')
-    expect(serialized).not.toContain('model_version:')
+    expect(serialized).not.toContain('knowledge_version:')
     expect(serialized).not.toContain('target_blueprint:')
   })
 })

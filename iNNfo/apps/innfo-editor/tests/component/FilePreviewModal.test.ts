@@ -230,7 +230,7 @@ describe('FilePreviewModal', () => {
         { targetId: 'CaseStudy/Conclusion', label: 'references', origin: 'metamodel' },
       ],
       rawSections: {},
-      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      source: { path: 'kNNowledge/casestudy_V_0-1-0_business_NN.md' },
       sources: [
         {
           filePath: 'sources/nn/report.md',
@@ -345,7 +345,7 @@ describe('FilePreviewModal', () => {
         { targetId: 'Rel/E', label: 'references', origin: 'metamodel' },
       ],
       rawSections: {},
-      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      source: { path: 'kNNowledge/casestudy_V_0-1-0_business_NN.md' },
       sources: [
         {
           filePath: 'sources/nn/report.md',
@@ -430,7 +430,7 @@ describe('FilePreviewModal', () => {
       // (3 levels), so there is no 4th level to collapse.
       relationships: [],
       rawSections: {},
-      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      source: { path: 'kNNowledge/casestudy_V_0-1-0_business_NN.md' },
       sources: [
         {
           filePath: 'sources/nn/report.md',

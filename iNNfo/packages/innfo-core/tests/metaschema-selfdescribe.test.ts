@@ -201,7 +201,7 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
     const schema = extractTemplateSchemaFromContent(meta)
     const targetTemplateField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
-      .fields!.find((f) => f.name === 'target_template')
+      .fields!.find((f) => f.name === 'target_blueprint')
     expect(targetTemplateField).toBeDefined()
     expect(targetTemplateField?.type).toBe('string')
   })

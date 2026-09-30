@@ -413,7 +413,7 @@ describe('validateWorkspaceReferences — checkOne', () => {
     })
     const issues: ParseIssue[] = [
       {
-        path: 'submodels/acme_org.md',
+        path: 'subkNNowledge/acme_org.md',
         message: 'referenced but not found',
         severity: 'error',
         code: 'MODEL_NOT_FOUND',
@@ -423,7 +423,7 @@ describe('validateWorkspaceReferences — checkOne', () => {
     const { result, index } = workspace([referrer, founderElem], issues)
 
     // Sanity: the missing-file basename really is what checkOne must match against.
-    expect(index.missing).toContain('submodels/acme_org.md')
+    expect(index.missing).toContain('subkNNowledge/acme_org.md')
 
     const diagnostics = validateWorkspaceReferences(result, index)
 

@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "business_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-1_NN.md"
-model_version: "V_0-2-1"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-1_NN.md"
+knowledge_version: "V_0-2-1"
 title: "Ghostbusters"
 ---
 

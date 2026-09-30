@@ -201,7 +201,7 @@ title: My Specialized Business
     modelStore.setGraph(
       {
         'DeLoreanTimeTravel_V_0-1-0_spec_NN.md': makeNode('DeLoreanTimeTravel_V_0-1-0_spec_NN.md', {
-          source: { path: 'models/DeLoreanTimeTravel_V_0-1-0_spec_NN.md' },
+          source: { path: 'kNNowledge/DeLoreanTimeTravel_V_0-1-0_spec_NN.md' },
           childIds: ['bravo1'],
           rawContent: `---
 level: 3
@@ -222,7 +222,7 @@ title: DeLorean Time Travel Ventures
           parentId: 'DeLoreanTimeTravel_V_0-1-0_spec_NN.md',
           type: 'Bravo',
           kind: 'element',
-          source: { path: 'models/DeLoreanTimeTravel_V_0-1-0_spec_NN.md' },
+          source: { path: 'kNNowledge/DeLoreanTimeTravel_V_0-1-0_spec_NN.md' },
         }),
         'spec:biz_template_V_0-1-0': makeNode('spec:biz_template_V_0-1-0', {
           name: 'biz_template_V_0-1-0',

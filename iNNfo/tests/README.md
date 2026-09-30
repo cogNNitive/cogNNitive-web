@@ -13,20 +13,20 @@ tests/
 ├── README.md                        # ⬅ estás acá
 └── fixtures/
     ├── workspace-index.md           # Índice del workspace de prueba
-    ├── file-model_F.md         # Business — smoke test
-    ├── sample-model_F.md       # Business — validación mínima
+    ├── file-model_NN.md         # Business — smoke test
+    ├── sample-model_NN.md       # Business — validación mínima
     ├── music-business/
-    │   └── music-business_F.md  # Business — Vinyl Records Inc.
+    │   └── music-business_NN.md  # Business — Vinyl Records Inc.
     └── music-production/
-        └── music-production_F.md # Procedures — Song Recording
+        └── music-production_NN.md # Procedures — Song Recording
 ```
 
 ## Propósito de cada modelo
 
 | Modelo | Template | Propósito |
 |--------|----------|-----------|
-| `file-model_F.md` | business_V_0-1-1 | Smoke test — 5 elementos inline con Business summary, Problems, Value propositions |
-| `sample-model_F.md` | business_V_0-1-1 | Validación mínima de forma — 1 elemento Problem |
+| `file-model_NN.md` | business_V_0-1-1 | Smoke test — 5 elementos inline con Business summary, Problems, Value propositions |
+| `sample-model_NN.md` | business_V_0-1-1 | Validación mínima de forma — 1 elemento Problem |
 | `music-business/` | business_V_0-1-1 | Negocio discográfico completo — Problems, Value propositions, Channels, Stakeholders, matriz |
 | `music-production/` | procedures_V_0-1-1 | Workflow de grabación — Work steps, Artifacts, Tools, Roles, 3 matrices |
 
@@ -83,7 +83,7 @@ npx vitest run tests/progressive-smoke.test.ts --reporter=verbose
 
 ## Árbol esperado por paso
 
-### Paso 2 — Modelo FILE (`file-model_F.md`)
+### Paso 2 — Modelo FILE (`file-model_NN.md`)
 
 | Nodo | Tipo/Kind | StorageMode | Padre |
 |------|-----------|-------------|-------|
@@ -94,7 +94,7 @@ npx vitest run tests/progressive-smoke.test.ts --reporter=verbose
 | Onboarding exprés | element | FILE | file-model |
 | Infraestructura optimizada | element | FILE | file-model |
 
-### Modelo — Music Business (`music-business/music-business_F.md`)
+### Modelo — Music Business (`music-business/music-business_NN.md`)
 
 | Nodo | Tipo/Kind | StorageMode | Padre |
 |------|-----------|-------------|-------|
@@ -113,7 +113,7 @@ npx vitest run tests/progressive-smoke.test.ts --reporter=verbose
 | Collectors | element | FILE | Stakeholders |
 | problems-value propositions matrix | matrix | FILE | music-business |
 
-### Modelo — Music Production (`music-production/music-production_F.md`)
+### Modelo — Music Production (`music-production/music-production_NN.md`)
 
 | Nodo | Tipo/Kind | StorageMode | Padre |
 |------|-----------|-------------|-------|

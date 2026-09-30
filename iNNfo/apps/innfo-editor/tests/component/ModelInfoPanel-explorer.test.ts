@@ -37,7 +37,7 @@ describe('ModelInfoPanel.vue — Embedded Workspace File Explorer (specs/workspa
           kind: 'concept',
           childIds: [],
           rawContent: '---\ntitle: "My Architecture"\n---\n# NN index\n',
-          source: { path: 'models/arch_NN.md' },
+          source: { path: 'kNNowledge/arch_NN.md' },
         }),
       },
       ['Root'],

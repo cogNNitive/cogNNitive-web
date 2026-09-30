@@ -67,7 +67,7 @@ describe('ConsoleHubView — Open External (F-16)', () => {
           markers: {},
           relationships: [],
           rawSections: {},
-          source: { path: 'models/Business_NN.md' },
+          source: { path: 'kNNowledge/Business_NN.md' },
         },
       },
       ['Business']
@@ -285,7 +285,7 @@ describe('ConsoleHubView — Open External (F-16)', () => {
           markers: {},
           relationships: [],
           rawSections: {},
-          source: { path: 'models/INNTrevistas - Innovaciones Y Creadores De La Historia_NN.md' },
+          source: { path: 'kNNowledge/INNTrevistas - Innovaciones Y Creadores De La Historia_NN.md' },
         },
       },
       ['workspace-root', 'spec:workspace', 'spec:business', 'business-model']
