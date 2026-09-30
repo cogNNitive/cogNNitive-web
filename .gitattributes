@@ -8,3 +8,6 @@
 *.jpg binary
 *.svg text eol=lf
 *.bundle.js -diff
+
+# Vendored VUS spec is hash-pinned: never let git rewrite its bytes.
+iNNfo/packages/innfo-video-parser/specs/*.json -text
