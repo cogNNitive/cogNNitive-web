@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   # ── Workspace-level deterministic checks (template inventory, script
@@ -76,10 +74,10 @@ jobs:
         continue-on-error: true
         run: node scripts/freshness.js
 
-      # Hand the built docs to deploy-pages so Pages publishes exactly what this
-      # job verified instead of rebuilding. Only produced on main (the only ref
-      # deploy-pages runs on).
-      - name: Upload built docs (Pages artifact)
+      # Hand the built docs to publish-web so the public distribution repo
+      # publishes exactly what this job verified instead of rebuilding. Only
+      # produced on main (the only ref publish-web runs on).
+      - name: Upload built docs (publish artifact)
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
@@ -167,18 +165,18 @@ jobs:
       - name: Spec version inventory (informational)
         run: npm run check:spec-version -- --inventory
 
-  deploy-pages:
+  # One-way publish of the built site to the public distribution repo
+  # (`cogNNitive-web`), which owns the GitHub Pages deployment for
+  # `cognnitive.com`. The monorepo no longer serves Pages from itself: this job
+  # pushes the artifact `verify` already built and validated, append-only and
+  # idempotent (a byte-identical artifact is a no-op — no empty commit).
+  publish-web:
     needs: [verify, quality, spec-integrity]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Serialize only the Pages deployment — not the test jobs above, which
-    # must run to completion on every push.
     concurrency:
-      group: "pages"
+      group: "publish-web"
       cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -189,14 +187,16 @@ jobs:
           name: pages-docs
           path: docs
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: 'docs'
+          node-version: 22
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to cogNNitive-web
+        env:
+          WEB_PUBLISH_TOKEN: ${{ secrets.WEB_PUBLISH_TOKEN }}
+          INNFO_DOCS_OUT: ${{ github.workspace }}/docs
+          WEB_PUBLISH_REPO: cogNNitive/cogNNitive-web
+          WEB_PUBLISH_SUBDIR: docs
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/publish-web.mjs
