@@ -80,35 +80,35 @@ describe('Task 7.3: Canonical DomaiNN Entrypoint Resolution', () => {
 
     const result = await recursiveParse(dir)
     expect(result.entrypointPath).toBeUndefined()
-    expect(result.issues.some((i) => i.message.includes('No domaiNN_NN.md found') || i.message.includes('No domaiNN_NN.md found') || i.code === 'MISSING_ENTRYPOINT')).toBe(true)
+    expect(result.issues.some((i) => i.message.includes('No domaiNN_NN.md found') || i.message.includes('No index.md found') || i.code === 'MISSING_ENTRYPOINT')).toBe(true)
   })
 
   it('detects legacy entrypoint workspace_01.md, reports legacy with hint, and does not parse it', async () => {
     const legacyContent = md({
       level: 3,
-      knowledge_version: '0.1.0',
+      model_version: '0.1.0',
       parent_spec: { name: 'workspace_spec_NN.md', url: 'https://example.com' },
       title: 'Legacy Workspace',
     })
     const dir = fakeDir('root', [
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', legacyContent)],
+      ['workspace_01.md', fakeFile('workspace_01.md', legacyContent)],
     ])
 
     const result = await recursiveParse(dir)
     expect(result.isLegacy).toBe(true)
     expect(result.issues.some((i) => i.code === 'LEGACY_DOMAIN' || i.message.includes('nn-upgrade') || i.message.includes('legacy'))).toBe(true)
-    expect(result.entrypointPath).not.toBe('domaiNN_NN.md')
+    expect(result.entrypointPath).not.toBe('workspace_01.md')
   })
 
   it('detects legacy overview-root entrypoint acme_base_01.md, reports legacy, and does not parse it', async () => {
     const baseContent = md({
       level: 3,
-      knowledge_version: '0.1.0',
+      model_version: '0.1.0',
       title: 'Acme Base',
     })
     const dir = fakeDir('root', [
       ['acme_base_01.md', fakeFile('acme_base_01.md', baseContent)],
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', baseContent)],
+      ['workspace_01.md', fakeFile('workspace_01.md', baseContent)],
     ])
 
     const result = await recursiveParse(dir)
@@ -121,30 +121,30 @@ describe('Task 7.3: Canonical DomaiNN Entrypoint Resolution', () => {
     const indexContent = md({ title: 'Index' }, '\n# NN index\n* [[doc1_NN.md]]\n')
     const docContent = md({ title: 'Doc 1', level: 3, knowledge_version: '0.1.0', parent_spec: { name: 'custom', url: '' } }, '\n# NN custom\n')
     const dir = fakeDir('root', [
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', indexContent)],
+      ['index.md', fakeFile('index.md', indexContent)],
       ['doc1_NN.md', fakeFile('doc1_NN.md', docContent)],
     ])
 
     const result = await recursiveParse(dir)
-    expect(result.entrypointPath).not.toBe('domaiNN_NN.md')
+    expect(result.entrypointPath).not.toBe('index.md')
     expect(result.issues.some((i) => i.message.includes('domaiNN_NN.md') || i.message.includes('Missing') || i.message.includes('standalone') || i.message.includes('No domaiNN_NN.md'))).toBe(true)
   })
 
   it('reports legacy when legacy entrypoint workspace_01.md and index.md coexist (legacy takes precedence over fallback)', async () => {
     const legacyContent = md({
       level: 3,
-      knowledge_version: '0.1.0',
+      model_version: '0.1.0',
       title: 'Legacy Workspace',
     })
     const indexContent = md({ title: 'Index' })
     const dir = fakeDir('root', [
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', legacyContent)],
-      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', indexContent)],
+      ['workspace_01.md', fakeFile('workspace_01.md', legacyContent)],
+      ['index.md', fakeFile('index.md', indexContent)],
     ])
 
     const result = await recursiveParse(dir)
     expect(result.isLegacy).toBe(true)
     expect(result.issues.some((i) => i.code === 'LEGACY_DOMAIN' || i.message.includes('nn-upgrade'))).toBe(true)
-    expect(result.entrypointPath).not.toBe('domaiNN_NN.md')
+    expect(result.entrypointPath).not.toBe('index.md')
   })
 })
