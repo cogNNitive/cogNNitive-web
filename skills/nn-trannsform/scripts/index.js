@@ -17,6 +17,7 @@ const { promoteConversation, PROMOTION_OPTIONS } = require('./lib/conversations'
 const externalScanner = require('./lib/external-scanner');
 const watchDigestStore = require('./lib/watch-digest-store');
 const curateCsv = require('./lib/curate-csv');
+const convergence = require('./lib/convergence-delta');
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -46,13 +47,36 @@ async function main() {
     argv.unlink ||
     argv.purge ||
     argv['remove-source'] ||
-    argv['curate-csv'];
+    argv['curate-csv'] ||
+    argv.converge ||
+    argv['converge-mark'];
 
   if (hasArgs) {
     await handleCliMode(argv);
   } else {
     await handleInteractiveMode();
   }
+}
+
+/**
+ * Renders a convergence proposal (read-only) for humans. Use `--json` for the
+ * machine-readable form.
+ */
+function printConvergenceProposal(proposal) {
+  console.log(`Convergence proposal for family "${proposal.family}" (strategy: ${proposal.strategy}, key: ${proposal.key})`);
+  if (proposal.empty) {
+    console.log(`\n✅ No convergence needed (${proposal.reason}).`);
+    return;
+  }
+  console.log(`  from: ${proposal.from.file} (${proposal.from.sha256.slice(0, 12)})`);
+  console.log(`  to:   ${proposal.to.file} (${proposal.to.sha256.slice(0, 12)})`);
+  console.log(`\nAdded keys (${proposal.added.length}):`);
+  for (const a of proposal.added) console.log(`  + ${a.key}`);
+  console.log(`\nChanged values (${proposal.changed.length}):`);
+  for (const c of proposal.changed) console.log(`  ~ ${c.key}.${c.field}: ${c.from} -> ${c.to}`);
+  console.log(`\nRemoved keys (${proposal.removed.length}) — flag only, never deleted:`);
+  for (const r of proposal.removed) console.log(`  - ${r.key}`);
+  console.log(`\nThis is a read-only proposal. Apply it through the reviewed model mutation path, then mark it with --converge-mark.`);
 }
 
 async function handleCliMode(argv) {
@@ -212,6 +236,96 @@ async function handleCliMode(argv) {
     } catch (err) {
       console.error(`Error applying digest decision: ${err.message}`);
       process.exit(1);
+    }
+    process.exit(0);
+  }
+
+  if (argv['converge-mark']) {
+    const family = String(argv['converge-mark']);
+    const snaps = convergence.resolveFamilySnapshots(projectDir, family);
+    if (snaps.length < 2) {
+      console.error(`Error: family "${family}" needs at least two snapshots under sources/nn to mark as applied.`);
+      process.exit(1);
+    }
+    const to = snaps[snaps.length - 1];
+    const toSha = convergence.sha256(fs.readFileSync(to.absPath, 'utf8'));
+    watchDigestStore.recordConvergence(projectDir, family, {
+      appliedToSha: toSha,
+      appliedVersion: argv.version ? String(argv.version) : '',
+    });
+    console.log(
+      JSON.stringify(
+        { family, appliedToSha: toSha, appliedVersion: argv.version || '', state: watchDigestStore.statePath(projectDir) },
+        null,
+        2,
+      ),
+    );
+    process.exit(0);
+  }
+
+  if (argv.converge) {
+    const family = String(argv.converge);
+    const manifestPath = convergence.findFamilyManifest(projectDir);
+    if (!manifestPath) {
+      console.error(`Error: no domaiNN manifest declaring "## NN Source Family:" found under "${projectDir}".`);
+      process.exit(1);
+    }
+    const families = convergence.parseSourceFamilies(fs.readFileSync(manifestPath, 'utf8'));
+    const declared = families.find((f) => f.family === family);
+    if (!declared) {
+      console.error(`Error: family "${family}" is not declared in ${path.relative(projectDir, manifestPath).replace(/\\/g, '/')}.`);
+      process.exit(1);
+    }
+
+    if (declared.strategy === 'cite-only') {
+      console.log(JSON.stringify({ family, strategy: 'cite-only', empty: true, reason: 'cite-only' }, null, 2));
+      process.exit(0);
+    }
+    if (!declared.key) {
+      console.error(`Error: family "${family}" declares strategy "${declared.strategy}" but no key::.`);
+      process.exit(1);
+    }
+
+    const snaps = convergence.resolveFamilySnapshots(projectDir, family);
+    if (snaps.length < 2) {
+      console.error(`Error: family "${family}" needs at least two snapshots under sources/nn (found ${snaps.length}).`);
+      process.exit(1);
+    }
+    const from = snaps[snaps.length - 2];
+    const to = snaps[snaps.length - 1];
+    const toContent = fs.readFileSync(to.absPath, 'utf8');
+    const toSha = convergence.sha256(toContent);
+
+    if (watchDigestStore.ignoredShas(projectDir).has(toSha)) {
+      console.log(JSON.stringify({ family, strategy: declared.strategy, empty: true, reason: 'ignored' }, null, 2));
+      process.exit(0);
+    }
+
+    const recorded = watchDigestStore.getConvergence(projectDir, family);
+    let proposal;
+    try {
+      proposal = convergence.buildProposal({
+        family,
+        strategy: declared.strategy,
+        key: declared.key,
+        fromFile: from.relPath,
+        fromContent: fs.readFileSync(from.absPath, 'utf8'),
+        toFile: to.relPath,
+        toContent,
+        appliedToSha: recorded ? recorded.appliedToSha : null,
+      });
+    } catch (err) {
+      console.error(`Error: ${err.message}`);
+      for (const c of err.conflicts || []) {
+        console.error(`  - ${c.reason}${c.key ? ` (${c.key})` : ''}${c.row ? ` at row ${c.row}` : ''}`);
+      }
+      process.exit(1);
+    }
+
+    if (argv.json) {
+      console.log(JSON.stringify(proposal, null, 2));
+    } else {
+      printConvergenceProposal(proposal);
     }
     process.exit(0);
   }
