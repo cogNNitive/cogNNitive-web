@@ -6,7 +6,7 @@ import { buildAgentModificationBlock } from '@cognnitive/innfo-core'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-mutate')
 const specsDir = join(rootDir, 'specs')
-const modelsDir = join(rootDir, 'models')
+const modelsDir = join(rootDir, 'kNNowledge')
 
 /** Write the level-1 + level-0 spec chain locally so resolution never hits the network. */
 async function stubSpecChain() {
@@ -775,7 +775,7 @@ describe('mutate tools', () => {
       const { calculateSpecReachability } = await import('./mutate')
 
       // Create active model referencing business_V_0-2-0
-      const modelsDir = join(rootDir, 'models')
+      const modelsDir = join(rootDir, 'kNNowledge')
       await mkdir(modelsDir, { recursive: true })
       await writeFile(
         join(modelsDir, 'Alpha_V_0-1-0_NN.md'),
@@ -876,7 +876,7 @@ describe('mutate tools', () => {
       const { calculateSpecReachability } = await import('./mutate')
 
       // Create model pointing to parent package template via URL and name
-      const modelsDir = join(rootDir, 'models')
+      const modelsDir = join(rootDir, 'kNNowledge')
       await mkdir(modelsDir, { recursive: true })
       await writeFile(
         join(modelsDir, 'App_Model_V_1-0-0_NN.md'),
