@@ -13,4 +13,4 @@ cogNNitive turns ideas, insights, and data scattered through human brains and co
 3. Choose what you want to do and follow the instructions
 
 ## Manifest file
-docs/use/manifest.md (YAML frontmatter contains the agent-bootstrap block with skills, templates, and workflows)
+docs/use/manifest.md (YAML frontmatter contains the agent-bootstrap block with skills, bluepriNNts, and workflows)
