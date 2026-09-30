@@ -2,9 +2,20 @@
 
 ## Status
 
-Proposal-stage design. The architecture shape below is the recommended path; the five
-open decisions in `proposal.md` are unresolved and gate the final publish mechanism and
-the width of the URL re-root sweep.
+**Decisions resolved (Phase 0, 2026-09-30).** The architecture below is adopted; the
+publish mechanism and the width of the URL re-root sweep are settled.
+
+| # | Decision | Choice |
+|---|---|---|
+| 1 | What the public repo contains | **site + canonically hosted specs**, in ONE public repo (`cogNNitive-web`) |
+| 2 | Canonical base URL target | **public repo raw path** (`https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/...`) — minimal re-root (repo-name swap); pinned SHAs stay valid |
+| 3 | Publish mechanism | **cross-repo push**, append-only/fast-forward, with a **repo-scoped PAT or deploy key** |
+| 4 | Whether to split | **split** to a free public web repo (Pages-on-private rejected) |
+| 5 | Editor app visibility | **compiled-dist-only** (unchanged; source stays private) |
+
+Consequence of #2: the re-root is a repository-name swap, so `check-spec-version.mjs`'s
+exclusions extend to the private monorepo raw host and the checker's base host changes to
+`cogNNitive-web`; no path-scheme change for consumers.
 
 ## Context and constraints
 

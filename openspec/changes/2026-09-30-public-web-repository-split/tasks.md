@@ -18,9 +18,15 @@ Chain strategy: decide/scaffold -> publish pipeline -> canonical URL re-root + p
 
 ## Phase 0: Decision gate (blocking)
 
-- [ ] 0.1 Resolve open decisions 1-4 in `proposal.md`; record the chosen architecture in
+- [x] 0.1 Resolve open decisions 1-4 in `proposal.md`; record the chosen architecture in
       `design.md` and drop the "proposal-stage" status.
-- [ ] 0.2 Confirm the GitHub plan and whether the split is needed versus Pages-on-private.
+      — All 5 resolved: (1) one public repo with site + canonical specs; (2) canonical base =
+      public repo raw path; (3) cross-repo push, append-only, repo-scoped PAT/deploy key;
+      (4) split to `cogNNitive-web`; (5) editor stays compiled-dist-only. Recorded in
+      `design.md` (status now "Decisions resolved").
+- [x] 0.2 Confirm the GitHub plan and whether the split is needed versus Pages-on-private.
+      — **Split on the free tier** (Pages-on-private rejected). Creating the public repo and
+      the publish credential are maintainer actions (Phase 1).
 
 ## Phase 1: Stand up the public repository
 
