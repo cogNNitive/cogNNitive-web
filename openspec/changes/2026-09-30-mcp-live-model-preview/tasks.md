@@ -19,18 +19,18 @@ Chain strategy: server slice first, editor slice second
 
 ## Phase 1: Backend — Preview Server (TDD first)
 
-- [ ] 1.1 **RED — preview server tests**: Write `iNNfo/packages/innfo-mcp/src/tools/preview-server.test.ts` covering: flag off creates no listener; `/model/:id` serves a touched model and 404s an unknown id; `/model` and `/events` reject a missing/wrong token with 401; one mutation emits exactly one `model-changed` event. `[mcp-live-preview:Requirement:Loopback Preview Server]`
-- [ ] 1.2 **GREEN — HTTP server**: Implement `preview-server.ts` with `node:http` bound to `127.0.0.1`, ephemeral port, `/health` and `/model/:id` resolving within the session's touched-model set. `[mcp-live-preview:Requirement:Loopback Preview Server]`
-- [ ] 1.3 **GREEN — change stream**: Add the in-process emitter and the `/events` SSE endpoint emitting one `model-changed` event per mutation with model/concept/element. `[mcp-live-preview:Requirement:Change Event Stream]`
-- [ ] 1.4 **GREEN — wiring and lifecycle**: Read `INNFO_PREVIEW`, initialize lazily on the first mutating tool call, and close the server on process exit in `server.ts`. `[mcp-live-preview:Requirement:Loopback Preview Server]`
-- [ ] 1.5 **GREEN — envelope advertisement**: Append `preview_url` and `preview_app_url` to the mutating tools' envelopes when preview is enabled. `[mcp-live-preview:Requirement:Preview URL Advertisement]`
-- [ ] 1.6 **Verify Phase 1**: `npm run lint`, `npm run typecheck`, and the `innfo-mcp` test suite are green.
+- [x] 1.1 **RED — preview server tests**: Write `iNNfo/packages/innfo-mcp/src/tools/preview-server.test.ts` covering: flag off creates no listener; `/model/:id` serves a touched model and 404s an unknown id; `/model` and `/events` reject a missing/wrong token with 401; one mutation emits exactly one `model-changed` event. `[mcp-live-preview:Requirement:Loopback Preview Server]`
+- [x] 1.2 **GREEN — HTTP server**: Implement `preview-server.ts` with `node:http` bound to `127.0.0.1`, ephemeral port, `/health` and `/model/:id` resolving within the session's touched-model set. `[mcp-live-preview:Requirement:Loopback Preview Server]`
+- [x] 1.3 **GREEN — change stream**: Add the in-process emitter and the `/events` SSE endpoint emitting one `model-changed` event per mutation with model/concept/element. `[mcp-live-preview:Requirement:Change Event Stream]`
+- [x] 1.4 **GREEN — wiring and lifecycle**: Read `INNFO_PREVIEW`, initialize lazily on the first mutating tool call, and close the server on process exit in `server.ts`. `[mcp-live-preview:Requirement:Loopback Preview Server]`
+- [x] 1.5 **GREEN — envelope advertisement**: Append `preview_url` and `preview_app_url` to the mutating tools' envelopes when preview is enabled. `[mcp-live-preview:Requirement:Preview URL Advertisement]`
+- [x] 1.6 **Verify Phase 1**: `npm run lint`, `npm run typecheck`, and the `innfo-mcp` test suite are green.
 
 ## Phase 2: Backend — Access Control
 
-- [ ] 2.1 **RED — token and CORS tests**: Extend `preview-server.test.ts` with token generation/rejection and origin allow/deny cases. `[mcp-live-preview:Requirement:Endpoint Access Control]`
-- [ ] 2.2 **GREEN — enforce token and CORS**: 24-byte hex token per process; reject requests without it; echo `Access-Control-Allow-Origin` only for `https://cognnitive.com`, `http://localhost:5173`, `http://localhost:5174`. `[mcp-live-preview:Requirement:Endpoint Access Control]`
-- [ ] 2.3 **Verify Phase 2**: `npm run lint`, `npm run typecheck`, `innfo-mcp` tests green.
+- [x] 2.1 **RED — token and CORS tests**: Extend `preview-server.test.ts` with token generation/rejection and origin allow/deny cases. `[mcp-live-preview:Requirement:Endpoint Access Control]`
+- [x] 2.2 **GREEN — enforce token and CORS**: 24-byte hex token per process; reject requests without it; echo `Access-Control-Allow-Origin` only for `https://cognnitive.com`, `http://localhost:5173`, `http://localhost:5174`. `[mcp-live-preview:Requirement:Endpoint Access Control]`
+- [x] 2.3 **Verify Phase 2**: `npm run lint`, `npm run typecheck`, `innfo-mcp` tests green.
 
 ## Phase 3: Editor — Read-Only Live Consumer (TDD first)
 
