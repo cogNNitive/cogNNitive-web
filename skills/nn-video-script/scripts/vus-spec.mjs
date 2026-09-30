@@ -3,14 +3,16 @@
 /**
  * skills/nn-video-script/scripts/vus-spec.mjs
  *
- * Resolves `$VIDGENN_ROOT/packages/core/specs/<v>.json`, verifies the pinned
+ * Reads the VUS spec vendored in `@cognnitive/innfo-video-parser`
+ * (`iNNfo/packages/innfo-video-parser/specs/<v>.json`), verifies the pinned
  * sha256 declared in this skill's own SKILL.md frontmatter (`vus_spec:`), and
  * exposes `voices` / `props <scope>` queries against the pinned spec.
  *
  * This is the single place the skill reads VUS-syntax facts (voice IDs,
  * property names/scopes) at run time — see video-script-skill's
  * No-Prose-Copy requirement. Nothing here is restated as literal prose
- * anywhere else in this skill's documentation.
+ * anywhere else in this skill's documentation. The spec lives in this
+ * monorepo: no external checkout, no environment variable, never skips.
  *
  * Zero dependencies. Requires Node >= 18.
  *
@@ -26,6 +28,18 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SKILL_MD_PATH = path.join(__dirname, '..', 'SKILL.md');
+
+/** Specs directory of the in-repo VUS parser package. */
+export const VENDORED_SPECS_DIR = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'iNNfo',
+  'packages',
+  'innfo-video-parser',
+  'specs',
+);
 
 /**
  * Reads the `vus_spec: { version, sha256 }` block from SKILL.md frontmatter.
@@ -63,37 +77,34 @@ export function computeSha256(filePath) {
 }
 
 /**
- * @param {string} vidgennRoot
  * @param {string} version
+ * @param {string} [specsDir]
  */
-export function resolveVusSpecPath(vidgennRoot, version) {
-  return path.join(vidgennRoot, 'packages', 'core', 'specs', `${version}.json`);
+export function resolveVusSpecPath(version, specsDir = VENDORED_SPECS_DIR) {
+  return path.join(specsDir, `${version}.json`);
 }
 
 /**
- * @param {{ vidgennRoot?: string, skillMdPath?: string }} [args]
- * @returns {{ skipped: true, reason: string } | { skipped: false, pin: {version:string,sha256:string}, spec: any }}
+ * @param {{ specsDir?: string, skillMdPath?: string }} [args]
+ * @returns {{ pin: {version:string,sha256:string}, spec: any }}
  */
-export function loadVusSpec({ vidgennRoot = process.env.VIDGENN_ROOT, skillMdPath = DEFAULT_SKILL_MD_PATH } = {}) {
-  if (!vidgennRoot) {
-    return { skipped: true, reason: 'VIDGENN_ROOT is not set; skipping VUS spec pin verification.' };
-  }
+export function loadVusSpec({ specsDir = VENDORED_SPECS_DIR, skillMdPath = DEFAULT_SKILL_MD_PATH } = {}) {
   const pin = readPinnedVusSpec(skillMdPath);
-  const specPath = resolveVusSpecPath(vidgennRoot, pin.version);
+  const specPath = resolveVusSpecPath(pin.version, specsDir);
   if (!fs.existsSync(specPath)) {
     throw new Error(`Pinned VUS spec not found at ${specPath}`);
   }
   const actualSha256 = computeSha256(specPath);
   if (actualSha256 !== pin.sha256) {
     throw new Error(
-      `VUS spec hash drift at ${specPath}: pinned ${pin.sha256}, actual ${actualSha256}. The canonical source is packages/core/specs/, never .agent/skills/anydeo-script-builder/specs/.`,
+      `VUS spec hash drift at ${specPath}: pinned ${pin.sha256}, actual ${actualSha256}. The canonical source is iNNfo/packages/innfo-video-parser/specs/; a new spec version means vendoring a new file and updating the pin together.`,
     );
   }
   const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
   if (spec.info?.version !== pin.version) {
     throw new Error(`VUS spec info.version "${spec.info?.version}" does not match pinned version "${pin.version}"`);
   }
-  return { skipped: false, pin, spec };
+  return { pin, spec };
 }
 
 /** @param {any} spec */
@@ -114,11 +125,6 @@ export function listPropsForScope(spec, scope) {
 function main() {
   const [command, arg] = process.argv.slice(2);
   const result = loadVusSpec();
-
-  if (result.skipped) {
-    console.log(`SKIP: ${result.reason}`);
-    process.exit(0);
-  }
 
   if (command === 'voices') {
     console.log(JSON.stringify(listVoices(result.spec), null, 2));
