@@ -128,8 +128,14 @@ jobs:
       - name: Typecheck (innfo-mcp)
         run: npm --workspace=@cognnitive/innfo-mcp run typecheck
 
+      - name: Typecheck (video-parser)
+        run: npm --workspace=@cognnitive/innfo-video-parser run typecheck
+
       - name: Unit tests (core)
         run: npm --workspace=@cognnitive/innfo-core test
+
+      - name: Unit tests (video-parser)
+        run: npm --workspace=@cognnitive/innfo-video-parser test
 
       - name: Unit tests + coverage (innfo-mcp)
         run: npm --workspace=@cognnitive/innfo-mcp run test:coverage
