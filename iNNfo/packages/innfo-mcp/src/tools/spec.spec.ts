@@ -209,6 +209,41 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     )
   })
 
+  it('listBlueprints falls back to spec_version and scans package directories', async () => {
+    const globalDir = join(rootDir, 'global_templates')
+    const skillsDir = join(rootDir, 'skills')
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts'), { recursive: true })
+    await mkdir(globalDir, { recursive: true })
+    await mkdir(skillsDir, { recursive: true })
+
+    // flat file declaring only spec_version (blueprint_version/version absent)
+    await writeFile(
+      join(rootDir, 'specs', 'bluepriNNts', 'flat_spec.md'),
+      '---\nspec_version: "V_2-0-0"\n---',
+    )
+    // flat file with no frontmatter at all -> default version
+    await writeFile(join(rootDir, 'specs', 'bluepriNNts', 'bare.md'), 'no frontmatter here')
+    // package directory carrying only a spec_version spec
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts', 'pkg_a'), { recursive: true })
+    await writeFile(
+      join(rootDir, 'specs', 'bluepriNNts', 'pkg_a', 'spec_NN.md'),
+      '---\nspec_version: "V_3-0-0"\n---',
+    )
+    // a skip-listed directory must be ignored
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts', 'samples'), { recursive: true })
+    await writeFile(
+      join(rootDir, 'specs', 'bluepriNNts', 'samples', 'ignored.md'),
+      '---\nversion: V_9-9-9\n---',
+    )
+
+    const discovered = await listBlueprints(rootDir, { globalDir, skillsDir })
+
+    expect(discovered.find((t) => t.name === 'flat_spec')?.version).toBe('V_2-0-0')
+    expect(discovered.find((t) => t.name === 'bare')?.version).toBe('V_0-1-0')
+    expect(discovered.find((t) => t.name === 'pkg_a')?.version).toBe('V_3-0-0')
+    expect(discovered.some((t) => t.name === 'ignored')).toBe(false)
+  })
+
   it('hydrateBlueprint copies template from global or skill store into workspace ./specs/bluepriNNts/', async () => {
     const globalDir = join(rootDir, 'global_templates')
     const skillsDir = join(rootDir, 'skills')
