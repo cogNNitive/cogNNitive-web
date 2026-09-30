@@ -21,11 +21,11 @@ export function readSpec(relPath: string): string {
 
 /** The five decomposed templates `business` composes, mapped to their spec paths. */
 const DECOMPOSED_TEMPLATE_FILES = {
-  'business-model': 'templates/business-model/spec_NN.md',
-  analysis: 'templates/analysis/spec_NN.md',
-  organization: 'templates/organization/spec_NN.md',
-  projects: 'templates/projects/spec_NN.md',
-  metrics: 'templates/metrics/spec_NN.md',
+  'business-model': 'bluepriNNts/business-model/spec_NN.md',
+  analysis: 'bluepriNNts/analysis/spec_NN.md',
+  organization: 'bluepriNNts/organization/spec_NN.md',
+  projects: 'bluepriNNts/projects/spec_NN.md',
+  metrics: 'bluepriNNts/metrics/spec_NN.md',
 } as const
 
 /** Sorted names of the decomposed templates (the `business.includes` expectation). */
