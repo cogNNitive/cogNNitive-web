@@ -39,7 +39,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
     }
   }
 
-  const searchDirs = [join(rootDir, 'models'), rootDir, join(rootDir, 'templates')]
+  const searchDirs = [join(rootDir, 'kNNowledge'), rootDir, join(rootDir, 'bluepriNNts')]
   const scannedFiles = new Set<string>()
 
   for (const dir of searchDirs) {
@@ -66,7 +66,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
             if (parentUrl) {
               const urlStem = basename(parentUrl).replace(/\.(md|markdown)$/i, '')
               addReference(urlStem, filePath)
-              const tmplMatch = parentUrl.match(/\/templates\/([^/]+)\/([^/]+)/i)
+              const tmplMatch = parentUrl.match(/\/bluepriNNts\/([^/]+)\/([^/]+)/i)
               if (tmplMatch) {
                 const pkgBase = tmplMatch[1].toLowerCase()
                 const pkgVer = normalizeVersion(tmplMatch[2])
@@ -81,7 +81,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
                 if (inc.url) {
                   const urlStem = basename(inc.url).replace(/\.(md|markdown)$/i, '')
                   addReference(urlStem, filePath)
-                  const tmplMatch = inc.url.match(/\/templates\/([^/]+)\/([^/]+)/i)
+                  const tmplMatch = inc.url.match(/\/bluepriNNts\/([^/]+)\/([^/]+)/i)
                   if (tmplMatch) {
                     const pkgBase = tmplMatch[1].toLowerCase()
                     const pkgVer = normalizeVersion(tmplMatch[2])
@@ -119,7 +119,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
     const keyBase = keyParts[0].split(/_v_/i)[0]
     const keyVer = keyParts[1] ? normalizeVersion(keyParts[1]) : undefined
 
-    if (normPath.includes(`/templates/${keyBase}/`)) {
+    if (normPath.includes(`/bluepriNNts/${keyBase}/`)) {
       if (!keyVer) return true
       if (
         normPath.includes(`/${keyVer}/`) ||
@@ -160,7 +160,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
               if (inc.url) {
                 const urlStem = basename(inc.url).replace(/\.(md|markdown)$/i, '')
                 addReference(urlStem, file)
-                const tmplMatch = inc.url.match(/\/templates\/([^/]+)\/([^/]+)/i)
+                const tmplMatch = inc.url.match(/\/bluepriNNts\/([^/]+)\/([^/]+)/i)
                 if (tmplMatch) {
                   const pkgBase = tmplMatch[1].toLowerCase()
                   const pkgVer = normalizeVersion(tmplMatch[2])
@@ -189,7 +189,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
     for (const entry of entries) {
       const fullPath = join(specsDir, entry.name)
 
-      if (entry.name === 'templates') {
+      if (entry.name === 'bluepriNNts') {
         try {
           const tmplEntries = await readdir(fullPath, { withFileTypes: true })
           for (const nameDir of tmplEntries) {
