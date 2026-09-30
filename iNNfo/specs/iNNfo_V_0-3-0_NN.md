@@ -1,8 +1,8 @@
 ---
 spec_version: "V_0-3-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 level: 1
-parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"
+parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"
 title: "iNNfo Meta-bluepriNNt Specification"
 description: "Level-1 meta-bluepriNNt defining the four root primitives (Concept Definition, Field Definition, Matrix Definition, Marker Definition) and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."
 author: "innV0 Team"
@@ -338,11 +338,11 @@ Frontmatter:
 ```yaml
 ---
 spec_version: "V_0-3-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "<BluepriNNt Title>"
 blueprint_name: "<blueprint-name>"
 blueprint_version: "V_x-y-z"
@@ -364,7 +364,7 @@ the including bluepriNNt additively.
 ---
 includes:
   - name: "base"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
 ---
 ```
 
@@ -641,6 +641,6 @@ being defined in MOF and `Ecore.ecore` describing Ecore.
 ## Self-Description
 
 This document (`iNNfo_V_0-3-0_NN.md`) is itself a level 1 specification following
-defiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines
+defiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines
 the four root primitives — plus the mechanical metaschema above — that every
 level-2 bluepriNNt instantiates.

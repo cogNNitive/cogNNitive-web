@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "workspace_spec"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_V_0-3-0_spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_V_0-3-0_spec_NN.md"
 model_version: "V_0-1-0"
 title: "Ghostbusters Workspace"
 ---

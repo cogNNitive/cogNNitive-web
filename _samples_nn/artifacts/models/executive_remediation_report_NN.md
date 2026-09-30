@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Executive Remediation Report 1984"
 prov:wasGeneratedBy: "procedures/compile_workspace_hub_NN.md"

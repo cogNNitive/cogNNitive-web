@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "repository_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Ghostbusters Inc. Firmware & Telemetry Repository Model"
 ---

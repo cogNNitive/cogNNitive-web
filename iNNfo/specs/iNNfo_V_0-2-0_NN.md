@@ -1,8 +1,8 @@
 ---
 spec_version: "V_0-2-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
 level: 1
-parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"
+parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"
 title: "iNNfo Meta-template Specification"
 description: "Level-1 meta-template defining the four root primitives (Concept Definition, Field Definition, Matrix Definition, Marker Definition) and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."
 author: "innV0 Team"
@@ -304,7 +304,7 @@ MUST be reported by the application as dangling references.
 iNNfo is a level 1 specification. Its `parent` points to defiNNe:
 
 ```yaml
-parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"
+parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"
 ```
 
 All templates (level 2) MUST declare `parent_spec` pointing to iNNfo. All models
@@ -526,7 +526,7 @@ spec_url: "<immutable-url>"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md"
 title: "<Template Name>"
 template_version: "V_x-y-z"
 specializes: "<base-template-name>"          # reserved, inert
@@ -911,6 +911,6 @@ being defined in MOF and `Ecore.ecore` describing Ecore.
 ## Self-Description
 
 This document (`iNNfo_V_0-2-0_NN.md`) is itself a level 1 specification following
-defiNNe. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"` and defines
+defiNNe. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNe_V_0-1-0_NN.md"` and defines
 the four root primitives — plus the mechanical metaschema above — that every
 level-2 template instantiates.
