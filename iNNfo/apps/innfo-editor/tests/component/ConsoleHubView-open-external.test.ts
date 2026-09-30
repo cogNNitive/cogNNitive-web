@@ -181,8 +181,8 @@ describe('ConsoleHubView — Open External (F-16)', () => {
 </head>
 <body>
   <div id="app-root">Model Content</div>
-  <script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/templates/console/render-model-viewer.js"></script>
-  <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/render-model-viewer.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.1.0/iNNfo/specs/bluepriNNts/console/render-model-viewer.js"></script>
+  <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/console/render-model-viewer.js"></script>
   <script src="./render-model-viewer.js"></script>
 </body>
 </html>`,

@@ -10,8 +10,8 @@ import {
 /**
  * Disk-integrity guard for design.md D3 / O3: the bundled
  * `SHIPPED_TEMPLATE_VERSIONS` fallback map MUST stay in lock-step with the
- * `template_version` frontmatter of the files actually shipped under
- * `specs/templates/{slug}/`. Templates now use canonical unversioned filenames
+ * `blueprint_version` frontmatter of the files actually shipped under
+ * `specs/bluepriNNts/{slug}/`. Templates now use canonical unversioned filenames
  * (`spec_NN.md`), so the authoritative version is the frontmatter, never the
  * filename. The root `workspace_spec_NN.md` is deliberately out of scope — this
  * guard only walks `{slug}/` subdirectories.
@@ -20,7 +20,7 @@ const templatesDir = join(import.meta.dirname!, '..', '..', '..', '..', 'specs',
 
 function frontmatterTemplateVersion(absPath: string): string | null {
   const text = readFileSync(absPath, 'utf-8')
-  const match = text.match(/^template_version:\s*"?(V_\d+-\d+-\d+)"?\s*$/m)
+  const match = text.match(/^blueprint_version:\s*"?(V_\d+-\d+-\d+)"?\s*$/m)
   return match ? match[1] : null
 }
 
@@ -44,9 +44,9 @@ const onDiskVersionedSlugs = readdirSync(templatesDir)
   .filter((slug) => versionedFilesForSlug(slug).length > 0)
 
 describe('SHIPPED_TEMPLATE_VERSIONS — disk integrity (D3 / O3)', () => {
-  it('each map value equals the highest template_version shipped on disk for that slug', () => {
+  it('each map value equals the highest blueprint_version shipped on disk for that slug', () => {
     for (const [slug, mapped] of Object.entries(SHIPPED_TEMPLATE_VERSIONS)) {
-      expect(maxTemplateVersionOnDisk(slug), `highest on-disk template_version for "${slug}"`).toBe(
+      expect(maxTemplateVersionOnDisk(slug), `highest on-disk blueprint_version for "${slug}"`).toBe(
         mapped,
       )
     }

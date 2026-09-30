@@ -37,7 +37,7 @@ includes:
 
     const modelContent = `---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Sample Model"
 parent_spec:
   name: "composite_tpl"
@@ -116,7 +116,7 @@ includes:
 
     const modelContent = `---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Sample Model"
 parent_spec:
   name: "composite_tpl"

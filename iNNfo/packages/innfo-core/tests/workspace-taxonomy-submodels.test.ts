@@ -65,7 +65,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 > [!NOTE]
@@ -83,7 +83,7 @@ level: 3
 parent_spec:
   name: subsystem_spec_01
   url: https://example.com/subsystem_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Subsystem A
 ---
 # NN Components
@@ -111,7 +111,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Legacy Index Workspace
 ---
 # NN index
@@ -123,7 +123,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Subsystem B
 ---
 # NN Components
@@ -146,7 +146,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Standalone Model
 ---
 # NN Components
@@ -164,8 +164,8 @@ title: Standalone Model
     })
   })
 
-  describe('4.2 Core Validation: type:: model concepts and fields', () => {
-    it('parses type:: model concept and field definitions cleanly in extractTemplateSchema', () => {
+  describe('4.2 Core Validation: type:: knowledge concepts and fields', () => {
+    it('parses type:: knowledge concept and field definitions cleanly in extractTemplateSchema', () => {
       const templateContent = `---
 spec_version: V_1-0-0
 level: 2
@@ -177,14 +177,14 @@ title: Workspace Template
 # NN Concept Definition
 
 ## NN Concept Definition: Models
-type:: model
+type:: knowledge
 description:: Submodel reference primitive.
 
 # NN Field Definition
 
 ## NN Field Definition: submodel_path
 concept:: Models
-type:: model
+type:: knowledge
 description:: Path to submodel file.
 `
 
@@ -198,7 +198,7 @@ description:: Path to submodel file.
       expect(pathField?.type).toBe('model')
     })
 
-    it('validates document containing type:: model fields without unknown-type errors', () => {
+    it('validates document containing type:: knowledge fields without unknown-type errors', () => {
       const templateDoc = {
         name: 'workspace_spec_01',
         level: 2 as const,
@@ -218,12 +218,12 @@ title: Workspace Spec
 ---
 # NN Concept Definition
 ## NN Concept Definition: Models
-type:: model
+type:: knowledge
 
 # NN Field Definition
 ## NN Field Definition: path
 concept:: Models
-type:: model
+type:: knowledge
 `,
       }
 
@@ -233,7 +233,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Workspace Model
 ---
 > [!NOTE]
@@ -266,7 +266,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Index-Free Model
 ---
 # NN Component
@@ -295,7 +295,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model
 ---
 # NN Component
@@ -327,7 +327,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -344,7 +344,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -356,7 +356,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model B
 ---
 # NN Models
@@ -398,7 +398,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -415,7 +415,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -427,7 +427,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model B
 ---
 # NN Components
@@ -473,7 +473,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -490,7 +490,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Org
 ---
 # NN Components
@@ -502,7 +502,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Org
 ---
 # NN Components
@@ -600,7 +600,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -617,7 +617,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -629,7 +629,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model B
 ---
 # NN Models
@@ -658,7 +658,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -684,7 +684,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -698,7 +698,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -764,7 +764,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Rooms
@@ -794,7 +794,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 workspace_id: acme-portfolio
 ---
@@ -809,7 +809,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -832,7 +832,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -846,7 +846,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -869,7 +869,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -883,7 +883,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components

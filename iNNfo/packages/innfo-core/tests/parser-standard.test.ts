@@ -33,7 +33,7 @@ multi_line: |
     const modelContent = `---
 spec_version: "V_0-2-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Complex Model"
 ---
 
@@ -74,7 +74,7 @@ importance:: "medium"
     const modelContent = `---
 spec_version: "V_0-2-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Text Concept Model"
 ---
 
@@ -112,7 +112,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
     const modelContent = `---
 spec_version: "V_0-2-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Text Round Trip"
 ---
 
@@ -139,7 +139,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
     const modelContent = `---
 spec_version: "V_0-2-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Bullet Prose"
 ---
 
@@ -170,7 +170,7 @@ importance:: "high"
     const modelContent = `---
 spec_version: "V_0-2-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Field vs Prose"
 ---
 

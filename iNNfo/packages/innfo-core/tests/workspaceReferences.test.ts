@@ -633,7 +633,7 @@ describe('validateWorkspaceReferences — checkOne', () => {
     expect(diagnostics[0].message).toContain('target_concepts')
   })
 
-  it('template-mismatch-warns: a target_template mismatch reports one warning, no error', () => {
+  it('template-mismatch-warns: a target_blueprint mismatch reports one warning, no error', () => {
     const targetSchema = makeSchema([{ name: 'Person', type: 'text', fields: [] }])
     const target = makeRoot({
       id: 'target',
@@ -654,7 +654,7 @@ describe('validateWorkspaceReferences — checkOne', () => {
       {
         name: 'Models',
         type: 'model',
-        fields: [{ name: 'business_model', type: 'model', target_template: 'business_V_0-2-0' }],
+        fields: [{ name: 'business_model', type: 'model', target_blueprint: 'business_V_0-2-0' }],
       },
     ])
     const referrer = makeRoot({
@@ -767,7 +767,7 @@ describe('conv-wikilinks — qualified cross-model reference bypass (H4)', () =>
     return `---
 spec_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Referrer"
 parent_spec:
   name: "mini_V_1-0-0"

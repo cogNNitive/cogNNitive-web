@@ -54,9 +54,9 @@ describe('Header.vue', () => {
     modelStore.nodes = {
       Root: makeNode('Root', {
         spec_version: 'V_0-1-9',
-        template_name: 'CustomTemplate',
-        template_version: 'V_2-0-0',
-        model_version: 'V_1-2-3',
+        blueprint_name: 'CustomTemplate',
+        blueprint_version: 'V_2-0-0',
+        knowledge_version: 'V_1-2-3',
       }),
     }
 

@@ -161,7 +161,7 @@ values:: [low, high]
   it('rejects a marker scored on a Concept when applies_to is [Element]', () => {
     const model = parseModel(`---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "M"
 parent_spec:
   name: "markers_tpl"
@@ -189,7 +189,7 @@ parent_spec:
   it('warns on a marker score outside its declared value set', () => {
     const model = parseModel(`---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "M"
 parent_spec:
   name: "markers_tpl"
@@ -257,7 +257,7 @@ describe('validateDocument — one door (hygiene + schema)', () => {
     const content = `---
 spec_version: "V_0-1-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Empty"
 parent_spec:
   name: "x"
@@ -277,7 +277,7 @@ describe('recursiveParser — concept-scoped Marker scores', () => {
   it('preserves an item-markers row keyed by a Concept name on the document root', () => {
     const content = `---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "M"
 parent_spec:
   name: "t"
@@ -310,7 +310,7 @@ describe('base_V_0-1-0 — composite template composition (PR6)', () => {
   const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
   const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-  // SKIPPED under canonical templates: `base` is a frozen/retired composite
+  // SKIPPED under canonical blueprints: `base` is a frozen/retired composite
   // pinned to the workspace + cogNNitive vocabularies as they stood at V_0-2-0.
   // Canonical `workspace` is now V_0-3-0 (it absorbed Sources/Artifacts/
   // Procedures/lineage from the provenance consolidation), so composing the

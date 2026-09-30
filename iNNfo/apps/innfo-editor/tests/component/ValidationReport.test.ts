@@ -91,8 +91,8 @@ describe('ValidationReport.vue', () => {
             value: 'V_0-1-0',
             editAttribution: { author: { kind: 'system', id: 'p' }, timestamp: '' },
           },
-          template_name: 'TestTemplate',
-          template_version: {
+          blueprint_name: 'TestTemplate',
+          blueprint_version: {
             value: 'V_1-0',
             editAttribution: { author: { kind: 'system', id: 'p' }, timestamp: '' },
           },

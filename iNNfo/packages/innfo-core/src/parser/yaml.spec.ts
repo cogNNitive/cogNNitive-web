@@ -37,25 +37,25 @@ describe('parseYaml error surfacing', () => {
 
   it('handles UTF-8 BOM transparently in parseYaml', () => {
     const onError = vi.fn()
-    const result = parseYaml('\uFEFFmodel_version: V_0-1-0\nlevel: 3', onError)
-    expect(result).toEqual({ model_version: 'V_0-1-0', level: 3 })
+    const result = parseYaml('\uFEFFknowledge_version: V_0-1-0\nlevel: 3', onError)
+    expect(result).toEqual({ knowledge_version: 'V_0-1-0', level: 3 })
     expect(onError).not.toHaveBeenCalled()
   })
 
   it('handles UTF-8 BOM transparently in parseFrontmatter', () => {
     const onError = vi.fn()
-    const content = '\uFEFF---\nmodel_version: V_0-1-0\nlevel: 3\n---\n\n# NN index\n'
+    const content = '\uFEFF---\nknowledge_version: V_0-1-0\nlevel: 3\n---\n\n# NN index\n'
     const fm = parseFrontmatter(content, onError)
     expect(fm).toBeDefined()
-    expect(fm?.model_version).toBe('V_0-1-0')
+    expect(fm?.knowledge_version).toBe('V_0-1-0')
     expect(fm?.level).toBe(3)
     expect(onError).not.toHaveBeenCalled()
   })
 
   it('parses model starting with UTF-8 BOM cleanly', () => {
-    const content = '\uFEFF---\nmodel_version: V_0-1-0\nlevel: 3\n---\n\n# NN index\n* [[ConceptA]]\n\n# NN ConceptA\n## NN ConceptA: Item1\n'
+    const content = '\uFEFF---\nknowledge_version: V_0-1-0\nlevel: 3\n---\n\n# NN index\n* [[ConceptA]]\n\n# NN ConceptA\n## NN ConceptA: Item1\n'
     const model = parseModel(content)
-    expect(model.frontmatter.model_version).toBe('V_0-1-0')
+    expect(model.frontmatter.knowledge_version).toBe('V_0-1-0')
     expect(model.elements.get('ConceptA')).toHaveLength(1)
     expect(model.parseWarnings).toBeUndefined()
   })

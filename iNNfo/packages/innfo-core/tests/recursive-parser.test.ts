@@ -58,7 +58,7 @@ function md(frontmatter: Record<string, unknown>, body?: string): string {
 const BASE_FM = {
   spec_version: 'V_0-1-2',
   level: 3,
-  model_version: 'V_0-0-1',
+  knowledge_version: 'V_0-0-1',
   parent: { name: 'business_V_0-1-1', url: 'https://example.com/business' },
 }
 
@@ -697,7 +697,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
 describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
   function makeOverviewRoot(manifestRef: string, provenanceRef: string): string {
-    return `---\nspec_version: "V_0-1-2"\nlevel: 3\nmodel_version: "V_0-1-0"\ntitle: "Overview"\nparent_spec:\n  name: "base_V_0-1-0"\n  url: "https://example.test/base_V_0-1-0_spec_NN.md"\n---\n\n# NN Overview\n\n## NN Overview: Ghostbusters\nmanifest:: ${manifestRef}\nprovenance:: ${provenanceRef}\n`
+    return `---\nspec_version: "V_0-1-2"\nlevel: 3\nknowledge_version: "V_0-1-0"\ntitle: "Overview"\nparent_spec:\n  name: "base_V_0-1-0"\n  url: "https://example.test/base_V_0-1-0_spec_NN.md"\n---\n\n# NN Overview\n\n## NN Overview: Ghostbusters\nmanifest:: ${manifestRef}\nprovenance:: ${provenanceRef}\n`
   }
 
   function fakeParsedModel(content: string): ParsedModel {
@@ -739,8 +739,8 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
         name: 'Overview',
         type: 'text',
         fields: [
-          { name: 'manifest', type: 'model', target_template: 'workspace_V_0-2-0' },
-          { name: 'provenance', type: 'model', target_template: 'cogNNitive_V_0-2-0' },
+          { name: 'manifest', type: 'model', target_blueprint: 'workspace_V_0-2-0' },
+          { name: 'provenance', type: 'model', target_blueprint: 'cogNNitive_V_0-2-0' },
         ],
       },
     ],
@@ -832,7 +832,7 @@ describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
     expect(result.nodes[result.rootIds[0]].name).toBe('workspace')
   })
 
-  it('overview-root-children: parsing an overview root reaches both its manifest and provenance children via type:: model traversal', async () => {
+  it('overview-root-children: parsing an overview root reaches both its manifest and provenance children via type:: knowledge traversal', async () => {
     const root = fakeDir('workspace', [
       [
         'gb_base_NN.md',
@@ -941,7 +941,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
       '---\n' +
       'spec_version: "V_0-1-2"\n' +
       'level: 3\n' +
-      'model_version: "V_0-0-1"\n' +
+      'knowledge_version: "V_0-0-1"\n' +
       'title: "Dash Test"\n' +
       'parent: { name: "business_V_0-1-1", url: "https://example.com/business" }\n' +
       'matrices:\n' +
@@ -1014,7 +1014,7 @@ level: 3
 parent_spec:
   name: person_spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Person Model
 ---
 # NN Person

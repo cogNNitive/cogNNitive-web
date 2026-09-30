@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { recursiveParse } from '../../src/model/recursiveParser'
 import { recursiveSerialize } from '../../src/model/recursiveSerializer'
 import { buildFakeTree } from '../helpers/fakeFs'
@@ -12,7 +12,7 @@ level: 3
 parent:
   name: "business_V_0-1-1"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Single File Model"
 ---
 

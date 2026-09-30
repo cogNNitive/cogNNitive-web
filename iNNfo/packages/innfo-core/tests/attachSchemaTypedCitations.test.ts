@@ -53,7 +53,7 @@ function makeIndex(links: string[]): string {
   return `---\nspec_version: "V_0-1-2"\nlevel: 0\ntitle: "Workspace Index"\n---\n\n# NN index\n\n${items}\n`
 }
 
-const BASE_FM = `spec_version: "V_0-1-2"\nlevel: 3\nmodel_version: "V_0-0-1"\nparent:\n  name: "business_V_0-1-1"\n  url: "https://example.com/business"`
+const BASE_FM = `spec_version: "V_0-1-2"\nlevel: 3\nknowledge_version: "V_0-0-1"\nparent:\n  name: "business_V_0-1-1"\n  url: "https://example.com/business"`
 
 function planModel(propertyLine: string): string {
   return [

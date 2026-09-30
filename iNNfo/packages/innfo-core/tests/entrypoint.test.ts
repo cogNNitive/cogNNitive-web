@@ -86,7 +86,7 @@ describe('Task 7.3: Canonical DomaiNN Entrypoint Resolution', () => {
   it('detects legacy entrypoint workspace_01.md, reports legacy with hint, and does not parse it', async () => {
     const legacyContent = md({
       level: 3,
-      model_version: '0.1.0',
+      knowledge_version: '0.1.0',
       parent_spec: { name: 'workspace_spec_NN.md', url: 'https://example.com' },
       title: 'Legacy Workspace',
     })
@@ -103,7 +103,7 @@ describe('Task 7.3: Canonical DomaiNN Entrypoint Resolution', () => {
   it('detects legacy overview-root entrypoint acme_base_01.md, reports legacy, and does not parse it', async () => {
     const baseContent = md({
       level: 3,
-      model_version: '0.1.0',
+      knowledge_version: '0.1.0',
       title: 'Acme Base',
     })
     const dir = fakeDir('root', [
@@ -133,7 +133,7 @@ describe('Task 7.3: Canonical DomaiNN Entrypoint Resolution', () => {
   it('reports legacy when legacy entrypoint workspace_01.md and index.md coexist (legacy takes precedence over fallback)', async () => {
     const legacyContent = md({
       level: 3,
-      model_version: '0.1.0',
+      knowledge_version: '0.1.0',
       title: 'Legacy Workspace',
     })
     const indexContent = md({ title: 'Index' })

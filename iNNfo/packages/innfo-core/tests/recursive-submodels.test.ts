@@ -92,7 +92,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -106,7 +106,7 @@ level: 3
 parent_spec:
   name: system_spec_01
   url: https://example.com/system_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: System Service
 ---
 # NN Subsystems
@@ -119,7 +119,7 @@ level: 3
 parent_spec:
   name: auth_spec_01
   url: https://example.com/auth_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Auth Subsystem
 ---
 # NN Roles
@@ -164,7 +164,7 @@ level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root
 ---
 # NN Models
@@ -177,7 +177,7 @@ level: 3
 parent_spec:
   name: service_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service A
 ---
 # NN Models
@@ -190,7 +190,7 @@ level: 3
 parent_spec:
   name: service_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service B
 ---
 # NN Models
@@ -220,7 +220,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root
 ---
 # NN Models
@@ -235,7 +235,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service 1
 ---
 # NN Models
@@ -248,7 +248,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service 2
 ---
 # NN Models
@@ -261,7 +261,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Shared Database
 ---
 # NN Tables
@@ -306,7 +306,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Level 0
 ---
 # NN Models
@@ -320,7 +320,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Level ${i}
 ---
 # NN Models
@@ -353,7 +353,7 @@ level: 2
 parent_spec:
   name: iNNfo_V_0-1-0
   url: https://example.com/iNNfo_V_0-1-0_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Template
 ---
 
@@ -364,14 +364,14 @@ type:: list
 # NN Field Definition
 ## NN Field Definition: submodel_file
 concept:: Services
-type:: model
-target_template:: service_template_01
+type:: knowledge
+target_blueprint:: service_template_01
 `
 
     const templateWithSubmodelField = {
       spec_version: 'V_1-0-0',
       level: 2 as const,
-      model_version: 'V_0-1-0',
+      knowledge_version: 'V_0-1-0',
       title: 'Architecture Template',
       rawContent: templateContent,
       concepts: [
@@ -381,7 +381,7 @@ target_template:: service_template_01
             {
               name: 'submodel_file',
               type: 'model' as const,
-              target_template: 'service_template_01',
+              target_blueprint: 'service_template_01',
             },
           ],
         },
@@ -395,7 +395,7 @@ level: 3
 parent_spec:
   name: architecture_template
   url: https://example.com/arch.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Model
 ---
 # NN Services
@@ -432,7 +432,7 @@ level: 3
 parent_spec:
   name: architecture_template
   url: https://example.com/arch.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Model
 ---
 # NN Services
@@ -463,14 +463,14 @@ submodel_file:: models/legacy_payment_01.md
       expect(warning!.message).toContain('uses template "legacy_template_99"')
     })
 
-    it('passes cleanly with no submodel warnings when submodel exists and matches target_template', () => {
+    it('passes cleanly with no submodel warnings when submodel exists and matches target_blueprint', () => {
       const content = `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: architecture_template
   url: https://example.com/arch.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Model
 ---
 # NN Services
@@ -496,13 +496,13 @@ submodel_file:: [[models/payment_01.md]]
     })
   })
 
-  describe('C1 — type:: model field traversal (RecursiveParseOptions.resolveTemplateSchema)', () => {
+  describe('C1 — type:: knowledge field traversal (RecursiveParseOptions.resolveTemplateSchema)', () => {
     const startupSchema: TemplateSchema = {
       concepts: [
         {
           name: 'Startup',
           type: 'text',
-          fields: [{ name: 'business_model', type: 'model', target_template: 'business_V_0-1-0' }],
+          fields: [{ name: 'business_model', type: 'model', target_blueprint: 'business_V_0-1-0' }],
         },
       ],
       markers: [],
@@ -518,7 +518,7 @@ submodel_file:: [[models/payment_01.md]]
         {
           name: 'Startup',
           type: 'text',
-          fields: [{ name: 'business_model', type: 'model', target_template: 'business_V_0-1-0' }],
+          fields: [{ name: 'business_model', type: 'model', target_blueprint: 'business_V_0-1-0' }],
         },
       ],
       markers: [],
@@ -541,7 +541,7 @@ level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -555,7 +555,7 @@ level: 3
 parent_spec:
   name: startup_V_0-1-0
   url: https://example.com/startup.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Startup
 ---
 # NN Startup
@@ -569,7 +569,7 @@ level: 3
 parent_spec:
   name: business_V_0-1-0
   url: https://example.com/business.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Business Model
 ---
 # NN Business
@@ -582,7 +582,7 @@ title: Acme Business Model
       'startups/acme_business_01.md': businessContent,
     }
 
-    it('c1-model-field-followed: a type:: model field is extracted and enqueued when a resolver is supplied', async () => {
+    it('c1-model-field-followed: a type:: knowledge field is extracted and enqueued when a resolver is supplied', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root, undefined, {
         resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
@@ -609,7 +609,7 @@ title: Acme Business Model
       expect(startupNode!.childIds).toContain(businessNode!.id)
     })
 
-    it('c1-no-callback-is-today: without a resolver, the type:: model field is NOT followed (backward-compatible)', async () => {
+    it('c1-no-callback-is-today: without a resolver, the type:: knowledge field is NOT followed (backward-compatible)', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root)
 
@@ -655,7 +655,7 @@ level: 3
 parent_spec:
   name: notes_V_0-1-0
   url: https://example.com/notes.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Notes
 ---
 # NN Notes
@@ -675,7 +675,7 @@ title: Notes
       const notesNode = Object.values(result.nodes).find((n) => n.name === 'notes_01')
       expect(notesNode).toBeDefined()
 
-      // the type:: model field was not followed — schema resolution failed for that node
+      // the type:: knowledge field was not followed — schema resolution failed for that node
       const businessNode = Object.values(result.nodes).find((n) => n.name === 'acme_business_01')
       expect(businessNode).toBeUndefined()
 
@@ -688,14 +688,14 @@ title: Notes
       ).toHaveLength(0)
     })
 
-    it('c1-diamond-from-model-field: a model reached both directly and via a type:: model field is one node with two parent edges, not a cycle', async () => {
+    it('c1-diamond-from-model-field: a model reached both directly and via a type:: knowledge field is one node with two parent edges, not a cycle', async () => {
       const diamondWorkspaceContent = `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models

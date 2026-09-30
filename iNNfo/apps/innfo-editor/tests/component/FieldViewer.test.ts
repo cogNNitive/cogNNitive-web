@@ -211,7 +211,7 @@ describe('FieldViewer.vue — R-SC-06', () => {
     expect(wrapper.text()).toContain('interview.md')
   })
 
-  it('renders interactive model pill for type:: model field and triggers focusModel on click', async () => {
+  it('renders interactive model pill for type:: knowledge field and triggers focusModel on click', async () => {
     const modelStore = useModelStore()
     const uiStore = useUiStore()
     modelStore.setGraph(

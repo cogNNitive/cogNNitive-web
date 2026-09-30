@@ -90,13 +90,13 @@ describe('Canonical Template Registry & Offline Fallback', () => {
 
   it('resolves templates by remote raw GitHub URLs', () => {
     const url =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md'
     const template = findCanonicalTemplate(url)
     expect(template).not.toBeNull()
     expect(template?.name).toBe('business')
 
     const procUrl =
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md'
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md'
     expect(findCanonicalTemplate(procUrl)?.name).toBe('procedures')
   })
 

@@ -724,8 +724,8 @@ describe('mutate tools', () => {
     })
   })
 
-  describe('type:: model mutations', () => {
-    it('supports adding and mutating type:: model concepts and fields', async () => {
+  describe('type:: knowledge mutations', () => {
+    it('supports adding and mutating type:: knowledge concepts and fields', async () => {
       await stubBusinessTemplate()
       const workspaceContent = [
         '---',

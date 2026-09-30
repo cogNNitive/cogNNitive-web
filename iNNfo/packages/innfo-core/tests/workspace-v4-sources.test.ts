@@ -4,12 +4,12 @@ import path from 'path';
 import { parseModel, validateModel } from '../src/index.js';
 
 describe('Workspace Template V_0-4-0 & Polymorphic Sources', () => {
-  const specPath = path.resolve(__dirname, '../../../specs/templates/workspace_spec_NN.md');
+  const specPath = path.resolve(__dirname, '../../../specs/bluepriNNts/workspace_spec_NN.md');
 
   it('parses the workspace_spec_NN.md template correctly', () => {
     const specContent = fs.readFileSync(specPath, 'utf8');
     const parsed = parseModel(specContent);
-    expect(parsed.frontmatter?.template_version).toMatch(/^V_0-[4-6]-\d+$/);
+    expect(parsed.frontmatter?.blueprint_version).toMatch(/^V_0-[4-6]-\d+$/);
     expect(parsed.elements.has('Concept Definition')).toBe(true);
     expect(parsed.elements.has('Field Definition')).toBe(true);
   });
@@ -19,8 +19,8 @@ describe('Workspace Template V_0-4-0 & Polymorphic Sources', () => {
 level: 3
 parent_spec:
   name: "workspace_spec"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Test Polymorphic Workspace"
 ---
 
@@ -89,7 +89,7 @@ tags:: [compliance, externo]
       parentName: 'iNNfo_V_0-2-1',
       frontmatter: {
         spec_version: 'V_0-2-1',
-        spec_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md',
+        spec_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md',
         level: 2 as const,
         relationship_types: {},
       },

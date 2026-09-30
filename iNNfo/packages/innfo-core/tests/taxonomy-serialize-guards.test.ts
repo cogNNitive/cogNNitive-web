@@ -6,7 +6,7 @@ import type { ParsedModel } from '../src/types'
 /** Minimal ParsedModel with an overridable frontmatter / taxonomy. */
 function makeModel(overrides: Partial<ParsedModel>): ParsedModel {
   return {
-    frontmatter: { level: 3, model_version: 'V_0-1-0', title: 'Guard Repro' },
+    frontmatter: { level: 3, knowledge_version: 'V_0-1-0', title: 'Guard Repro' },
     elements: new Map(),
     taxonomy: [],
     matrices: [],

@@ -14,16 +14,16 @@ import {
  * `innfo-core` primitives keep provable parity with the CLI classifier.
  */
 const CATALOG: TemplateCatalog = {
-  templates: {
+  blueprints: {
     business: {
       name: 'business',
       adopted: 'V_0-2-0',
-      versions: [{ template_version: 'V_0-1-0' }, { template_version: 'V_0-2-0' }],
+      versions: [{ blueprint_version: 'V_0-1-0' }, { blueprint_version: 'V_0-2-0' }],
     },
   },
 }
 
-const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates'
+const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts'
 
 describe('parseSemVer', () => {
   it('extracts a triple from a V_x-y-z token', () => {
@@ -148,11 +148,11 @@ describe('classifyAgainstCatalog', () => {
 
   it('classifies an in-catalog version that is not the adopted one and not ahead as unlisted', () => {
     const catalog: TemplateCatalog = {
-      templates: {
+      blueprints: {
         business: {
           name: 'business',
           adopted: 'V_0-2-0',
-          versions: [{ template_version: 'V_0-2-0' }],
+          versions: [{ blueprint_version: 'V_0-2-0' }],
         },
       },
     }

@@ -48,7 +48,7 @@ describe('buildAgentModificationBlock', () => {
     expect(strip(a)).toBe(strip(b))
   })
 
-  it('emits keys in the fixed order scope, change, rationale, approved_by, author, model, model_version, timestamp', () => {
+  it('emits keys in the fixed order scope, change, rationale, approved_by, author, model, knowledge_version, timestamp', () => {
     const block = buildAgentModificationBlock('add_concept', { conceptName: 'Risks' }, CTX)!
     expect(fields(block).map(([k]) => k)).toEqual([
       'scope',
@@ -57,12 +57,12 @@ describe('buildAgentModificationBlock', () => {
       'approved_by',
       'author',
       'model',
-      'model_version',
+      'knowledge_version',
       'timestamp',
     ])
   })
 
-  it('inserts version_transition between model and model_version for bump_version only, keeping author after approved_by', () => {
+  it('inserts version_transition between model and knowledge_version for bump_version only, keeping author after approved_by', () => {
     const block = buildAgentModificationBlock(
       'bump_version',
       { version: 'V_0-2-0' },
@@ -76,11 +76,11 @@ describe('buildAgentModificationBlock', () => {
       'author',
       'model',
       'version_transition',
-      'model_version',
+      'knowledge_version',
       'timestamp',
     ])
     expect(block).toContain('version_transition:: V_0-1-0 → V_0-2-0')
-    expect(block).toContain('model_version:: V_0-2-0')
+    expect(block).toContain('knowledge_version:: V_0-2-0')
   })
 
   it('falls back to `rationale:: _` when the caller supplies none; never omits the key', () => {

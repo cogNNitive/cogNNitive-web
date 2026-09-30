@@ -36,7 +36,7 @@ level: 3
 parent:
   name: "business_V_0-1-1"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Mi Primer Modelo"
 ---
 

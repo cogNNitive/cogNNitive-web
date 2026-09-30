@@ -62,7 +62,7 @@ describe('pickLatestVersion', () => {
 })
 
 describe('scanWorkspaceForTemplateVersions', () => {
-  it('finds versioned template files under specs/templates/{slug}/, recursively', async () => {
+  it('finds versioned template files under specs/bluepriNNts/{slug}/, recursively', async () => {
     const handle = buildFakeTree('workspace', {
       specs: {
         templates: {

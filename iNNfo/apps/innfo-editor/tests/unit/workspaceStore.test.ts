@@ -91,7 +91,7 @@ describe('workspaceStore.open()', () => {
     const legacyHandle = buildFakeTree('legacy-workspace', {
       'index.md': '---\nspec_version: "V_0-2-0"\nlevel: 0\ntitle: "Old Index"\n---\n# NN index\n* [[models/doc_NN.md]]\n',
       models: {
-        'doc_NN.md': '---\nspec_version: "V_0-2-0"\nmodel_version: "V_0-1-0"\nlevel: 3\ntitle: "Old Model"\n---\n# NN Business\n',
+        'doc_NN.md': '---\nspec_version: "V_0-2-0"\nknowledge_version: "V_0-1-0"\nlevel: 3\ntitle: "Old Model"\n---\n# NN Business\n',
       },
     })
 

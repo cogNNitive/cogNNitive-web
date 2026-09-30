@@ -83,7 +83,7 @@ values:: [Max, High, Low]
 const miniModel = `---
 spec_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Mini Model"
 parent_spec:
   name: "mini_V_1-0-0"
@@ -262,7 +262,7 @@ describe('validateFormatContent index block elements check', () => {
       '---',
       'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-1-0"',
+      'knowledge_version: "V_0-1-0"',
       'title: "Test Model"',
       'parent_spec:',
       '  name: "business_V_0-3-0"',
@@ -292,7 +292,7 @@ describe('validateFormatContent index block elements check', () => {
       '---',
       'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-1-0"',
+      'knowledge_version: "V_0-1-0"',
       'title: "Test Model"',
       'parent_spec:',
       '  name: "business_V_0-3-0"',
@@ -327,7 +327,7 @@ describe('validateFormatContent index block elements check', () => {
       '---',
       'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-1-0"',
+      'knowledge_version: "V_0-1-0"',
       'title: "Test Model"',
       'parent_spec:',
       '  name: "business_V_0-3-0"',

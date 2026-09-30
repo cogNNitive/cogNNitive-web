@@ -49,7 +49,7 @@ function loadContract(): SlotContractApi {
 
 const REQUIRED_KEYS_EXPECTED = [
   'model',
-  'model_version',
+  'knowledge_version',
   'source_model',
   'generated_at',
   'months',
@@ -71,7 +71,7 @@ describe('metrics slot contract: meta -> innfo-model map', () => {
   it('maps a complete meta object as ok with zero missing keys', () => {
     const meta = {
       model: 'models/Ghostbusters_V_0-1-0_metrics_NN.md',
-      model_version: 'V_0-1-0',
+      knowledge_version: 'V_0-1-0',
       source_model: 'models/source-figures_NN.md',
       generated_at: '2026-09-11',
       months: 12,
@@ -90,7 +90,7 @@ describe('metrics slot contract: meta -> innfo-model map', () => {
   it('fails NAMING the missing key when one required meta key is absent', () => {
     const meta = {
       model: 'models/Ghostbusters_V_0-1-0_metrics_NN.md',
-      model_version: 'V_0-1-0',
+      knowledge_version: 'V_0-1-0',
       source_model: 'models/source-figures_NN.md',
       generated_at: '2026-09-11',
       months: 12,

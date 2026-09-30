@@ -231,7 +231,7 @@ title: "DomaiNN Index"
     expect(serialized).not.toContain('# NN index')
   })
 
-  it('C1: follows a type:: model field via the warmed template cache during parseFromHandle', async () => {
+  it('C1: follows a type:: knowledge field via the warmed template cache during parseFromHandle', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
 
     const domainMd = `---
@@ -280,8 +280,8 @@ title: "DomaiNN Index"
       '',
       '## NN Field Definition: submodel_ref',
       'concept:: Market',
-      'type:: model',
-      'target_template:: sub_template',
+      'type:: knowledge',
+      'target_blueprint:: sub_template',
     ].join('\n')
 
     const subModelMd = [

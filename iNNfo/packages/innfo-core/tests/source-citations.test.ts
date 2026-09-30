@@ -191,7 +191,7 @@ describe('corpus round-trip: parse -> serialize is a fixed point for every real 
 
   const corpus = findSampleModels(templatesDir)
 
-  it('finds at least one sample model under specs/templates/**/samples to verify against', () => {
+  it('finds at least one sample model under specs/bluepriNNts/**/samples to verify against', () => {
     expect(corpus.length).toBeGreaterThan(0)
   })
 

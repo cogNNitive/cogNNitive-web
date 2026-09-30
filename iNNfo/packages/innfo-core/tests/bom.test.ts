@@ -10,7 +10,7 @@ const BOM = '\uFEFF'
 const modelContent = `---
 spec_version: "V_0-2-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "BOM Model"
 ---
 # NN Stakeholders

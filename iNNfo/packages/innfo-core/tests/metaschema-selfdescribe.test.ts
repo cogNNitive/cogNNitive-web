@@ -61,7 +61,7 @@ describe('Metaschema (Self-Description)', () => {
     expect(fieldTypeField.options).toContain('model')
     const targetTemplateField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
-      .fields!.find((f) => f.name === 'target_template')
+      .fields!.find((f) => f.name === 'target_blueprint')
     expect(targetTemplateField).toBeDefined()
     expect(targetTemplateField?.type).toBe('string')
   })
@@ -196,12 +196,12 @@ describe('iNNfo_V_0-2-1 — metaschema still self-consistent (task G)', () => {
     ])
   })
 
-  it('declares target_template on Field Definition — closes the V_0-2-0 regression (design.md §5)', () => {
+  it('declares target_blueprint on Field Definition — closes the V_0-2-0 regression (design.md §5)', () => {
     const meta = extractMetaschema(iNNfoV21)!
     const schema = extractTemplateSchemaFromContent(meta)
     const targetTemplateField = schema.concepts
       .find((c) => c.name === 'Field Definition')!
-      .fields!.find((f) => f.name === 'target_template')
+      .fields!.find((f) => f.name === 'target_blueprint')
     expect(targetTemplateField).toBeDefined()
     expect(targetTemplateField?.type).toBe('string')
   })

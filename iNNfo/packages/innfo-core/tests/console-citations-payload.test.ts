@@ -80,7 +80,7 @@ describe('compile_model_console_NN.md — Inject Data into Shell step', () => {
 describe('compile_model_console_NN.md — asset seam', () => {
   it('points the reference shell at the workspace-level asset', () => {
     expect(procedure).toContain(
-      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace/assets/model_console.html',
+      'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace/assets/model_console.html',
     )
   })
 

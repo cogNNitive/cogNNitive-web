@@ -17,7 +17,7 @@ function frontmatterModel(fm: Record<string, unknown>): ParsedModel {
 const BASE_FM = {
   level: 3,
   parent_spec: { name: 'business_V_0-2-0', url: 'https://example.com/business_NN.md' },
-  model_version: 'V_0-1-0',
+  knowledge_version: 'V_0-1-0',
 }
 
 describe('misuse-class stable codes (robustness-coda 1.2)', () => {

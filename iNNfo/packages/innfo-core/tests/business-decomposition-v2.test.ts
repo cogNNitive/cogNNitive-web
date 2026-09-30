@@ -270,11 +270,11 @@ describe('business_V_0-2-4 — composed umbrella with Metrics-Organizational goa
   it('validates a Level 3 model declaring parent_spec: business_V_0-2-4 cleanly', () => {
     const sampleModel = `---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "ACME Corp"
 parent_spec:
   name: "business_V_0-2-4"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 ---
 
 # NN Business summary

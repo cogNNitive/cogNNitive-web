@@ -38,7 +38,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
     setActivePinia(createPinia())
   })
 
-  it('excludes submodels referenced by domain elements via type:: model from visibleRootIds in Workspace Mode', () => {
+  it('excludes submodels referenced by domain elements via type:: knowledge from visibleRootIds in Workspace Mode', () => {
     const modelStore = useModelStore()
     const uiStore = useUiStore()
 
@@ -56,7 +56,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
                 {
                   name: 'business_model',
                   type: 'model',
-                  target_template: 'business',
+                  target_blueprint: 'business',
                 },
               ],
             },

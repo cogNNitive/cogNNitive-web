@@ -155,7 +155,7 @@ type:: text
       const level3WithIndex = `---
 title: My Model
 level: 3
-model_version: V_1-0-0
+knowledge_version: V_1-0-0
 spec_version: V_0-1-0
 parent_spec:
   name: Business
@@ -187,7 +187,7 @@ description:: text
       const modelContent = `---
 title: Test Model
 level: 3
-model_version: V_1-0-0
+knowledge_version: V_1-0-0
 ---
 
 # NN index

@@ -10,14 +10,14 @@ import {
 } from './report.js'
 import type { TemplateCatalog } from './versionStatus.js'
 
-const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates'
+const CANON = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts'
 
 const CATALOG: TemplateCatalog = {
-  templates: {
+  blueprints: {
     business: {
       name: 'business',
       adopted: 'V_0-2-0',
-      versions: [{ template_version: 'V_0-1-0' }, { template_version: 'V_0-2-0' }],
+      versions: [{ blueprint_version: 'V_0-1-0' }, { blueprint_version: 'V_0-2-0' }],
     },
   },
 }

@@ -162,7 +162,7 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
       `---
 spec_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Review Flow"
 parent_spec:
   name: "procedures_V_0-3-0"

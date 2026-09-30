@@ -291,7 +291,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
   })
 
   describe('Element-Owned Submodel Nesting (ADR-01/03 & Phase 3)', () => {
-    it('renders nested child submodel node when element has a type:: model field', () => {
+    it('renders nested child submodel node when element has a type:: knowledge field', () => {
       const modelStore = useModelStore()
       const rootNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
@@ -305,7 +305,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
                 {
                   name: 'business_model',
                   type: 'model',
-                  target_template: 'business',
+                  target_blueprint: 'business',
                 },
               ],
             },
@@ -352,7 +352,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
       expect(nested.exists()).toBe(true)
     })
 
-    it('displays submodel name, Boxes icon, and target_template badge', () => {
+    it('displays submodel name, Boxes icon, and target_blueprint badge', () => {
       const modelStore = useModelStore()
       const rootNode = makeNode('models/root_NN.md', {
         kind: 'root',
@@ -366,7 +366,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
                 {
                   name: 'business_model',
                   type: 'model',
-                  target_template: 'business',
+                  target_blueprint: 'business',
                 },
               ],
             },

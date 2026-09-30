@@ -41,7 +41,7 @@ describe('rename_element propagation in applyMutation', () => {
   const sampleModelMarkdown = `---
 specification_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Test Model"
 ---
 
@@ -128,7 +128,7 @@ description:: Second task
     const modelMarkdown = `---
 specification_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Cost Model"
 ---
 

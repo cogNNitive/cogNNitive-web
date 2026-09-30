@@ -8,7 +8,7 @@ describe('parent spec resolution failure diagnostics', () => {
     '---',
     'spec_version: "V_0-2-0"',
     'level: 3',
-    'model_version: "V_0-1-2"',
+    'knowledge_version: "V_0-1-2"',
     'title: "Model With Missing Parent"',
     'parent_spec:',
     '  name: "missing_parent"',

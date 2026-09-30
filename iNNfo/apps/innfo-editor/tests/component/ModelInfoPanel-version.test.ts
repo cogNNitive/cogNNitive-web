@@ -25,7 +25,7 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
 
 const rootContentWithVersion = `---
 spec_version: "V_0-1-5"
-model_version: "V_1-2-3"
+knowledge_version: "V_1-2-3"
 title: "Versioned Model"
 ---
 
@@ -49,7 +49,7 @@ spec_version: "V_0-2-0"
 parent_spec:
   name: "business_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/v0.2.0/level2/business/business_V_0-2-0_NN.md"
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Business Model"
 ---
 
@@ -98,7 +98,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     expect(versionDisplay.text()).toContain('V_1-2-3')
   })
 
-  it('defaults to V_1-0-0 when no model_version in frontmatter', async () => {
+  it('defaults to V_1-0-0 when no knowledge_version in frontmatter', async () => {
     const modelStore = useModelStore()
     modelStore.setGraph(
       {
@@ -379,7 +379,7 @@ spec_version: "V_0-2-0"
 template:
   name: "business_V_0-2-0"
   version: "V_0-3-0"
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Nested Version Model"
 ---
 
@@ -418,7 +418,7 @@ title: "Nested Version Model"
 
       // The old regex-based extraction always produced a string (it read raw
       // text off the page). `parseFrontmatter` parses real YAML, so an
-      // unquoted scalar like `model_version: 1.5` arrives as a JS `number`,
+      // unquoted scalar like `knowledge_version: 1.5` arrives as a JS `number`,
       // and an unquoted `true`/`false` arrives as a JS `boolean`. Every
       // caller downstream (e.g. `parseVersionString(str: string)`, which
       // calls `.match()`) requires a string — without this adapter a numeric
@@ -435,10 +435,10 @@ title: "Nested Version Model"
       expect(readString(undefined)).toBeNull()
     })
 
-    it('renders a `model_version` unquoted numeric YAML scalar without crashing once wired to useModelFrontmatter', async () => {
+    it('renders a `knowledge_version` unquoted numeric YAML scalar without crashing once wired to useModelFrontmatter', async () => {
       const rootContentUnquotedNumericVersion = `---
 spec_version: "V_0-1-5"
-model_version: 1.5
+knowledge_version: 1.5
 title: "Numeric Version Model"
 ---
 
@@ -458,7 +458,7 @@ title: "Numeric Version Model"
       )
 
       // Must not throw: `parseVersionString` calls `.match()` on the raw
-      // model_version value. `parseFrontmatter` (unlike the old regex) parses
+      // knowledge_version value. `parseFrontmatter` (unlike the old regex) parses
       // unquoted `1.5` as a YAML number, so `readString()` must coerce it
       // back to a string before it ever reaches `.match()`.
       const wrapper = mount(ModelInfoPanel, {

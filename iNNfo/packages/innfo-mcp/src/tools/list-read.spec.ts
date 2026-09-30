@@ -126,7 +126,7 @@ describe('readModel', () => {
     expect(model?.frontmatter.title).toBe('Readable Model')
   })
 
-  it('discovers domaiNN_NN.md entrypoints and parses type:: model submodels', async () => {
+  it('discovers domaiNN_NN.md entrypoints and parses type:: knowledge submodels', async () => {
     // H6: the workspace manifest follows the same `_NN.md` + `level: 3` +
     // `parent_spec` convention as any other discoverable model
     // (`domaiNN_NN.md`, per `iNNfo/specs/bluepriNNts/base/spec_NN.md`).
@@ -143,7 +143,7 @@ describe('readModel', () => {
       '# NN Models',
       '## NN Models: Auth Subsystem',
       'path:: models/auth_01.md',
-      'type:: model',
+      'type:: knowledge',
       '',
     ].join('\n')
     await writeFile(join(rootDir, 'domaiNN_NN.md'), wsContent, 'utf-8')

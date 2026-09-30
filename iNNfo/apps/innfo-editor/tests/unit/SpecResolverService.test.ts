@@ -23,8 +23,8 @@ describe('warmTemplateCache', () => {
       '',
       '## NN Field Definition: submodel_ref',
       'concept:: Market',
-      'type:: model',
-      'target_template:: sub_template',
+      'type:: knowledge',
+      'target_blueprint:: sub_template',
     ].join('\n')
 
     const fakeTree = buildFakeTree('workspace', {

@@ -26,7 +26,7 @@ const LEVEL3_MODEL = `---
 spec_version: "V_0-2-0"
 spec_url: "https://example.test/iNNfo_V_0-2-0_NN.md"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 parent_spec:
   name: "iNNfo_V_0-2-0"
   url: "https://example.test/iNNfo_V_0-2-0_NN.md"

@@ -28,7 +28,7 @@ function modelWithSubmodelField(submodelValue: string): {
     {
       name: 'Docs',
       type: 'model',
-      fields: [{ name: 'submodel', type: 'model', target_template: 'procedures' }],
+      fields: [{ name: 'submodel', type: 'model', target_blueprint: 'procedures' }],
     },
   ]
   return { model, templateConcepts }
@@ -57,13 +57,13 @@ describe('submodel conformance coded warnings (validator-robustness Unit 2)', ()
     })
 
     // Sanity: the fixture really declares a different expected template.
-    expect(templateConcepts[0].fields?.[0].target_template).toBe('procedures')
+    expect(templateConcepts[0].fields?.[0].target_blueprint).toBe('procedures')
 
     const mismatchConcepts: Concept[] = [
       {
         name: 'Docs',
         type: 'model',
-        fields: [{ name: 'submodel', type: 'model', target_template: 'business' }],
+        fields: [{ name: 'submodel', type: 'model', target_blueprint: 'business' }],
       },
     ]
     const mismatch = validateElementFieldReferences(model, mismatchConcepts, {
@@ -99,7 +99,7 @@ describe('submodel conformance coded warnings (validator-robustness Unit 2)', ()
           {
             name: 'submodel',
             type: 'model',
-            target_template: 'https://example.com/specs/procedures_NN.md',
+            target_blueprint: 'https://example.com/specs/procedures_NN.md',
           },
         ],
       },

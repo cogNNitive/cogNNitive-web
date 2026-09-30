@@ -186,7 +186,7 @@ describe('FieldModel.vue', () => {
       expect(btn.text()).toContain('Create & bind new model')
     })
 
-    it('renders target_template badge inside creation button when specified', () => {
+    it('renders target_blueprint badge inside creation button when specified', () => {
       const wrapper = mount(FieldModel, {
         props: {
           modelValue: '',
@@ -194,7 +194,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -212,7 +212,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -230,7 +230,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -255,7 +255,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -264,7 +264,7 @@ describe('FieldModel.vue', () => {
       expect(wrapper.find('[data-testid="create-submodel-button"]').exists()).toBe(false)
     })
 
-    it('invokes window.prompt pre-filled with suggested path derived from parent model path, concept, element, and target_template', async () => {
+    it('invokes window.prompt pre-filled with suggested path derived from parent model path, concept, element, and target_blueprint', async () => {
       const modelStore = useModelStore()
       const rootNode = makeNode('models/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
@@ -295,7 +295,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -351,7 +351,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -371,7 +371,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -409,7 +409,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'architecture_model',
             type: 'model',
-            target_template: 'architecture',
+            target_blueprint: 'architecture',
           },
         },
       })
@@ -460,7 +460,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
@@ -496,7 +496,7 @@ describe('FieldModel.vue', () => {
           fieldDefinition: {
             name: 'business_model',
             type: 'model',
-            target_template: 'business',
+            target_blueprint: 'business',
           },
         },
       })
