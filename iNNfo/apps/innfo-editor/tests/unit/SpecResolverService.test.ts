@@ -39,7 +39,7 @@ describe('warmTemplateCache', () => {
     expect(schema).toBeDefined()
     expect(schema!.concepts[0]!.name).toBe('Market')
     expect(schema!.concepts[0]!.fields?.[0]!.name).toBe('submodel_ref')
-    expect(schema!.concepts[0]!.fields?.[0]!.type).toBe('model')
+    expect(schema!.concepts[0]!.fields?.[0]!.type).toBe('knowledge')
   })
 
   it('returns an empty map when no seed refs are supplied and no root-level file declares a parent_spec', async () => {
