@@ -538,7 +538,7 @@ function referenceFieldsByConcept(schema: TemplateSchema | undefined): Map<strin
   for (const concept of schema.concepts) {
     const refs = new Set<string>()
     for (const f of concept.fields ?? []) {
-      if (f.type === 'reference' || f.type === 'model') refs.add(f.name.toLowerCase())
+      if (f.type === 'reference' || f.type === 'knowledge') refs.add(f.name.toLowerCase())
     }
     map.set(concept.name.toLowerCase(), refs)
   }

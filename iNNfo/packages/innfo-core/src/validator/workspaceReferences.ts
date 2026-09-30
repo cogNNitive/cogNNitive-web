@@ -148,7 +148,7 @@ function* iterateTypedFieldValues(
 
     for (const [fieldName, fieldValue] of Object.entries(node.fields)) {
       const fieldDef = fieldDefs.find((f) => f.name.toLowerCase() === fieldName.toLowerCase())
-      if (!fieldDef || (fieldDef.type !== 'reference' && fieldDef.type !== 'model')) continue
+      if (!fieldDef || (fieldDef.type !== 'reference' && fieldDef.type !== 'knowledge')) continue
 
       const raw = fieldValue.value
       if (raw === undefined || raw === null || raw === '') continue

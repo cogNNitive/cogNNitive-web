@@ -451,7 +451,7 @@ title: Model B
       expect(index.titleToNodeIds['model a']).toEqual([aNode.id])
       expect(index.titleToNodeIds['model b']).toEqual([bNode.id])
 
-      expect(index.fileNameToNodeIds['workspace_01']).toEqual([rootNode.id])
+      expect(index.fileNameToNodeIds['domainn']).toEqual([rootNode.id])
       expect(index.fileNameToNodeIds['model_a_01']).toEqual([aNode.id])
       expect(index.fileNameToNodeIds['model_b_01']).toEqual([bNode.id])
 

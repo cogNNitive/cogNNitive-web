@@ -140,8 +140,8 @@ describe('collectQualifiedReferenceCandidates', () => {
     const schema = makeSchema([
       {
         name: 'Models',
-        type: 'model',
-        fields: [{ name: 'manifest', type: 'model' }],
+        type: 'knowledge',
+        fields: [{ name: 'manifest', type: 'knowledge' }],
       },
     ])
     const { result } = makeRootAndElement({
@@ -153,7 +153,7 @@ describe('collectQualifiedReferenceCandidates', () => {
     const candidates = collectQualifiedReferenceCandidates(result, index)
 
     expect(candidates).toHaveLength(1)
-    expect(candidates[0].fieldDef.type).toBe('model')
+    expect(candidates[0].fieldDef.type).toBe('knowledge')
   })
 
   it('prose-not-scanned: qualified-looking text in element prose (rawSections.description) is not a field value and is never collected', () => {
@@ -653,8 +653,8 @@ describe('validateWorkspaceReferences — checkOne', () => {
     const referrerSchema = makeSchema([
       {
         name: 'Models',
-        type: 'model',
-        fields: [{ name: 'business_model', type: 'model', target_blueprint: 'business_V_0-2-0' }],
+        type: 'knowledge',
+        fields: [{ name: 'business_model', type: 'knowledge', target_blueprint: 'business_V_0-2-0' }],
       },
     ])
     const referrer = makeRoot({

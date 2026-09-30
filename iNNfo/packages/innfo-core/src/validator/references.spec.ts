@@ -27,8 +27,8 @@ function modelWithSubmodelField(submodelValue: string): {
   const templateConcepts: Concept[] = [
     {
       name: 'Docs',
-      type: 'model',
-      fields: [{ name: 'submodel', type: 'model', target_blueprint: 'procedures' }],
+      type: 'knowledge',
+      fields: [{ name: 'submodel', type: 'knowledge', target_blueprint: 'procedures' }],
     },
   ]
   return { model, templateConcepts }
@@ -62,8 +62,8 @@ describe('submodel conformance coded warnings (validator-robustness Unit 2)', ()
     const mismatchConcepts: Concept[] = [
       {
         name: 'Docs',
-        type: 'model',
-        fields: [{ name: 'submodel', type: 'model', target_blueprint: 'business' }],
+        type: 'knowledge',
+        fields: [{ name: 'submodel', type: 'knowledge', target_blueprint: 'business' }],
       },
     ]
     const mismatch = validateElementFieldReferences(model, mismatchConcepts, {
@@ -94,11 +94,11 @@ describe('submodel conformance coded warnings (validator-robustness Unit 2)', ()
     const urlConcepts: Concept[] = [
       {
         name: 'Docs',
-        type: 'model',
+        type: 'knowledge',
         fields: [
           {
             name: 'submodel',
-            type: 'model',
+            type: 'knowledge',
             target_blueprint: 'https://example.com/specs/procedures_NN.md',
           },
         ],

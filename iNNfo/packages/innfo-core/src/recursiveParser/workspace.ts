@@ -266,7 +266,7 @@ export function extractSubmodelRefs(
     if (templateSchema?.concepts) {
       for (const c of templateSchema.concepts) {
         for (const f of c.fields ?? []) {
-          if (f.type === 'model') {
+          if (f.type === 'knowledge') {
             modelFieldNames.add(f.name.toLowerCase())
           }
         }

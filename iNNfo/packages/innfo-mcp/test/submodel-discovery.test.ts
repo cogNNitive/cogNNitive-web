@@ -71,8 +71,8 @@ type:: list
 # NN Field Definition
 ## NN Field Definition: submodel_link
 concept:: Components
-type:: model
-target_template:: subcomponent_template
+type:: knowledge
+target_blueprint:: subcomponent_template
 `
       await writeFile(join(specsDir, 'app_template_NN.md'), templateContent, 'utf-8')
 

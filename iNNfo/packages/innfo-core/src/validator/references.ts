@@ -148,7 +148,7 @@ export function validateElementFieldReferences(
         const fieldDef = fieldDefs.find((f) => f.name.toLowerCase() === fieldName.toLowerCase())
 
         const isRef =
-          (fieldDef && (fieldDef.type === 'reference' || fieldDef.type === 'model')) ||
+            (fieldDef && (fieldDef.type === 'reference' || fieldDef.type === 'knowledge')) ||
           IMPLICIT_REF_FIELDS.has(fieldName.toLowerCase())
         if (!isRef) continue
 
@@ -166,7 +166,7 @@ export function validateElementFieldReferences(
             value = value.slice(2, -2).trim()
           }
 
-          if (fieldDef?.type === 'model') {
+          if (fieldDef?.type === 'knowledge') {
             const cleanPath = value.trim()
             if (options?.resolveSubmodel) {
               const res = options.resolveSubmodel(cleanPath, options.referringPath)

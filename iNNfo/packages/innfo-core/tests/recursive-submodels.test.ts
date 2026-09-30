@@ -380,7 +380,7 @@ target_blueprint:: service_template_01
           fields: [
             {
               name: 'submodel_file',
-              type: 'model' as const,
+              type: 'knowledge' as const,
               target_blueprint: 'service_template_01',
             },
           ],
@@ -502,7 +502,7 @@ submodel_file:: [[kNNowledge/payment_01.md]]
         {
           name: 'Startup',
           type: 'text',
-          fields: [{ name: 'business_model', type: 'model', target_blueprint: 'business_V_0-1-0' }],
+          fields: [{ name: 'business_model', type: 'knowledge', target_blueprint: 'business_V_0-1-0' }],
         },
       ],
       markers: [],
@@ -518,7 +518,7 @@ submodel_file:: [[kNNowledge/payment_01.md]]
         {
           name: 'Startup',
           type: 'text',
-          fields: [{ name: 'business_model', type: 'model', target_blueprint: 'business_V_0-1-0' }],
+          fields: [{ name: 'business_model', type: 'knowledge', target_blueprint: 'business_V_0-1-0' }],
         },
       ],
       markers: [],
