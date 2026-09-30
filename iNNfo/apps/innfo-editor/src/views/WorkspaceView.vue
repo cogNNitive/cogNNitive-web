@@ -20,7 +20,7 @@ import SaveWorkspaceModal from '../components/layout/SaveWorkspaceModal.vue'
 import WorkspaceDashboard from '../components/layout/WorkspaceDashboard.vue'
 import ModelDashboard from '../components/editor/ModelDashboard.vue'
 import { useWorkspaceStore } from '../stores/workspaceStore'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { useConfirmStore } from '../stores/confirmStore'
 import { useUiStore, type ActiveView } from '../stores/uiStore'
 import { useMetamodelStore } from '../stores/metamodelStore'
@@ -45,7 +45,7 @@ const ConceptTableView = defineAsyncComponent(
 const MetamatrixConfig = defineAsyncComponent(
   () => import('../components/editor/MetamatrixConfig.vue'),
 )
-const ModelInfoPanel = defineAsyncComponent(() => import('../components/editor/ModelInfoPanel.vue'))
+const KnowledgeInfoPanel = defineAsyncComponent(() => import('../components/editor/KnowledgeInfoPanel.vue'))
 const AiWorkflowPanel = defineAsyncComponent(
   () => import('../components/editor/AiWorkflowPanel.vue'),
 )
@@ -58,12 +58,12 @@ const ConsoleHubView = defineAsyncComponent(
 
 const router = useRouter()
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const confirmStore = useConfirmStore()
 const uiStore = useUiStore()
 const metamodelStore = useMetamodelStore()
 const { show } = useToast()
-const validationService = new ValidationService(modelStore, show)
+const validationService = new ValidationService(knowledgeStore, show)
 
 // ── Hash sync ──
 // Syncs uiStore.selectedNodeId with the URL hash (#conceptName.elementName)
@@ -75,7 +75,7 @@ useHashSync()
 useViewSync()
 
 // ── Toolbar / validation state ──
-const validationReport = computed(() => modelStore.validationReport)
+const validationReport = computed(() => knowledgeStore.validationReport)
 const validating = ref(false)
 
 // Validation report is set silently on import (auto-run in setGraph → validateKnowledge).
@@ -96,11 +96,11 @@ const selectedNode = computed(() => {
     const parts = id.split(':')
     const parentId = parts[1]
     const conceptName = parts[2]
-    const parentNode = modelStore.getNode(parentId)
+    const parentNode = knowledgeStore.getNode(parentId)
     if (!parentNode) return null
 
     const childIds = parentNode.childIds.filter((cid) => {
-      const child = modelStore.getNode(cid)
+      const child = knowledgeStore.getNode(cid)
       return child?.type === conceptName && child?.kind === 'element'
     })
 
@@ -122,7 +122,7 @@ const selectedNode = computed(() => {
       source: parentNode.source,
     } as any
   }
-  return modelStore.getNode(id)
+  return knowledgeStore.getNode(id)
 })
 
 const selectedNodeName = computed(() => selectedNode.value?.name ?? '')
@@ -131,8 +131,8 @@ const conceptType = computed(() => {
   return selectedNode.value?.conceptBinding?.name ?? selectedNode.value?.type ?? null
 })
 const rootNode = computed(() => {
-  const ids = modelStore.rootIds
-  return ids.length > 0 ? modelStore.getNode(ids[0]) : null
+  const ids = knowledgeStore.rootIds
+  return ids.length > 0 ? knowledgeStore.getNode(ids[0]) : null
 })
 
 const isRootNode = computed(() => selectedNode.value?.kind === 'root')
@@ -207,7 +207,7 @@ const getConceptFieldsForNode = (node: KnowledgeNode) => {
 
   if (Array.isArray(node.childIds)) {
     for (const cid of node.childIds) {
-      const child = modelStore.getNode(cid)
+      const child = knowledgeStore.getNode(cid)
       if (child?.fields) {
         for (const [key, fv] of Object.entries(child.fields)) {
           if (!fieldsMap.has(key)) {
@@ -269,7 +269,7 @@ const childItems = computed(() => {
   const node = selectedNode.value
   if (!node) return []
   return node.childIds
-    .map((id: string) => modelStore.getNode(id))
+    .map((id: string) => knowledgeStore.getNode(id))
     .filter((n: KnowledgeNode | undefined): n is KnowledgeNode => !!n)
     .map((n: KnowledgeNode) => ({
       id: n.id,
@@ -381,8 +381,8 @@ function onEditorChange(): void {
 function onConceptNameChange(newName: string): void {
   const node = selectedNode.value
   if (!node || !selectedNodeId.value) return
-  modelStore.upsertNode({ ...node, name: newName })
-  modelStore.markDirty(selectedNodeId.value)
+  knowledgeStore.upsertNode({ ...node, name: newName })
+  knowledgeStore.markDirty(selectedNodeId.value)
 }
 
 function onNavigateToNode(nodeId: string): void {
@@ -403,13 +403,13 @@ function onAddItem(): void {
   let index = 1
   let elementName = `New ${type}`
   let targetId = `${parentId}/${elementName}`
-  while (modelStore.getNode(targetId)) {
+  while (knowledgeStore.getNode(targetId)) {
     index++
     elementName = `New ${type} ${index}`
     targetId = `${parentId}/${elementName}`
   }
 
-  const newId = modelStore.createChild(parentId, elementName, type, 'element')
+  const newId = knowledgeStore.createChild(parentId, elementName, type, 'element')
   if (newId) {
     uiStore.selectNode(newId)
   }
@@ -431,8 +431,8 @@ async function onDeleteSelectedNode(): Promise<void> {
   })
   if (!ok) return
   const parentId = node.parentId
-  modelStore.removeNodeTree(id)
-  uiStore.selectNode(parentId ?? modelStore.rootIds[0] ?? null)
+  knowledgeStore.removeNodeTree(id)
+  uiStore.selectNode(parentId ?? knowledgeStore.rootIds[0] ?? null)
 }
 
 /** Deletes one of the child elements rendered as instance sheets. */
@@ -446,7 +446,7 @@ async function onDeleteItem(index: number): Promise<void> {
     danger: true,
   })
   if (!ok) return
-  modelStore.removeNodeTree(item.id)
+  knowledgeStore.removeNodeTree(item.id)
 }
 
 /** Moves a child element up/down within its parent. */
@@ -455,15 +455,15 @@ function onMoveItem(index: number, direction: 1 | -1): void {
   const item = childItems.value[index]
   if (!node || !item) return
   const parentId = node.id.startsWith('virtual:') ? node.id.split(':')[1] : node.id
-  modelStore.reorderChild(parentId, item.id, direction)
+  knowledgeStore.reorderChild(parentId, item.id, direction)
 }
 
 /** Switches the active view (editor / graph / matrices / info). */
 function setActiveView(view: ActiveView): void {
   uiStore.setActiveView(view)
   if (view === 'matrices' && uiStore.activeMatrixIndex < 0) {
-    for (const id of modelStore.rootIds) {
-      const root = modelStore.getNode(id)
+    for (const id of knowledgeStore.rootIds) {
+      const root = knowledgeStore.getNode(id)
       if (!root) continue
       const defs = root.fields?.[MATRIX_DEFS_KEY]?.value ?? root.fields?.matrices?.value
       if (Array.isArray(defs) && defs.length > 0) {
@@ -495,7 +495,7 @@ async function runValidation(): Promise<void> {
 
   try {
     const report = await validationService.runValidation(selectedNodeId.value)
-    modelStore.validationReport = report
+    knowledgeStore.validationReport = report
     if (report) {
       uiStore.setShowValidationReport(true)
     }
@@ -509,7 +509,7 @@ async function runValidation(): Promise<void> {
 /** Exits the sample session and returns to home. */
 function onSampleCreate(): void {
   workspaceStore.reset()
-  modelStore.setGraph({}, [])
+  knowledgeStore.setGraph({}, [])
   uiStore.selectNode(null)
   router.push('/')
 }
@@ -521,12 +521,12 @@ function onSampleBannerDismiss(): void {
 
 /** Resets the workspace and returns to home. */
 function closeWorkspace(): void {
-  if (modelStore.dirtyIds.size > 0) {
+  if (knowledgeStore.dirtyIds.size > 0) {
     const confirmLeave = confirm('Tenés cambios sin guardar. ¿Estás seguro de que querés salir?')
     if (!confirmLeave) return
   }
   workspaceStore.reset()
-  modelStore.setGraph({}, [])
+  knowledgeStore.setGraph({}, [])
   uiStore.selectNode(null)
   router.push('/')
 }
@@ -550,7 +550,7 @@ async function onKeydown(e: KeyboardEvent): Promise<void> {
 }
 
 function onBeforeUnload(e: BeforeUnloadEvent): string | void {
-  if (modelStore.dirtyIds.size > 0) {
+  if (knowledgeStore.dirtyIds.size > 0) {
     e.preventDefault()
     e.returnValue = 'Tenés cambios sin guardar. ¿Estás seguro de que querés salir?'
     return e.returnValue
@@ -661,7 +661,7 @@ onUnmounted(() => {
         <!-- ── Info View ── -->
         <template v-else-if="uiStore.activeView === 'info'">
           <div class="flex-1 p-4 overflow-y-auto">
-            <ModelInfoPanel v-if="rootNode" :root-node-id="rootNode.id" />
+            <KnowledgeInfoPanel v-if="rootNode" :root-node-id="rootNode.id" />
             <p
               v-else
               class="flex items-center justify-center h-full text-sm text-slate-400 dark:text-slate-500"
@@ -680,7 +680,7 @@ onUnmounted(() => {
       </main>
 
       <RightGuidanceSidebar
-        :concept-name="selectedNodeId ? modelStore.getNode(selectedNodeId)?.name : null"
+        :concept-name="selectedNodeId ? knowledgeStore.getNode(selectedNodeId)?.name : null"
         :concept-type="conceptType"
       />
 

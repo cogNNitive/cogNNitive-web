@@ -3,7 +3,7 @@ import TextWidget from './TextWidget.vue'
 import WeightWidget from './WeightWidget.vue'
 import CategoryWidget from './CategoryWidget.vue'
 import FieldString from './FieldString.vue'
-import FieldModel from './FieldModel.vue'
+import FieldKnowledge from './FieldKnowledge.vue'
 import FieldNumber from './FieldNumber.vue'
 import FieldAsset from './FieldAsset.vue'
 import DateWidget from './DateWidget.vue'
@@ -30,7 +30,7 @@ export {
   WeightWidget,
   CategoryWidget,
   FieldString,
-  FieldModel,
+  FieldKnowledge,
   FieldNumber,
   FieldAsset,
   DateWidget,

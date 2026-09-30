@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -33,8 +33,8 @@ describe('LeftSidebar — Dedicated Content Tree Navigation (specs/editor-naviga
   })
 
   it('does NOT render view switcher tabs (editor, graph, consoles, explorer)', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
       },
@@ -51,8 +51,8 @@ describe('LeftSidebar — Dedicated Content Tree Navigation (specs/editor-naviga
   })
 
   it('permanently renders semantic model header and tree structure', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
       },
@@ -66,9 +66,9 @@ describe('LeftSidebar — Dedicated Content Tree Navigation (specs/editor-naviga
   })
 
   it('preserves tree accessibility regardless of uiStore.activeView', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
       },

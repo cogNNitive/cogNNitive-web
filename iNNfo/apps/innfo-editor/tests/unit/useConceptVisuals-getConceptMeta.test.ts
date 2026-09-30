@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { getConceptMeta } from '../../src/composables/useConceptVisuals'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -26,21 +26,21 @@ describe('getConceptMeta — name-based icon/color lookup (moved from LeftSideba
   })
 
   it('resolves icon/color for a concept declared on a root localMetamodel, case-insensitively', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const specRoot = makeNode('spec:business', {
       localMetamodel: {
         concepts: [{ name: 'Process', icon: 'workflow', color: 'blue' }],
         markers: [],
       } as any,
     })
-    modelStore.setGraph({ 'spec:business': specRoot }, ['spec:business'])
+    knowledgeStore.setGraph({ 'spec:business': specRoot }, ['spec:business'])
 
     expect(getConceptMeta('process')).toEqual({ icon: 'workflow', color: 'blue' })
   })
 
   it('returns {} when no root declares the concept', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root') }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root') }, ['Root'])
 
     expect(getConceptMeta('unknown-concept')).toEqual({})
   })

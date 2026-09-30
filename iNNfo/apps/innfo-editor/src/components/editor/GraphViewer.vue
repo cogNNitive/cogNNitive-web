@@ -93,7 +93,7 @@
 <script setup lang="ts">
 import { ref, computed, toRef, onMounted, onUnmounted, watch, getCurrentInstance } from 'vue'
 import { GitFork, Share2, LayoutGrid, Tag, FileText } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useGraphData, ORIGIN_COLORS } from './composables/useGraphData'
 import { useGraphRenderer } from './composables/useGraphRenderer'
 
@@ -186,11 +186,11 @@ const {
   appContext,
 })
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 watch(currentLayout, () => render())
 
-// Watch modelStore structure for reactivity (re-render on graph changes).
+// Watch knowledgeStore structure for reactivity (re-render on graph changes).
 // A structural signature of the visible edges (not just the node count) so a
 // new edge/relationship with the same node count still triggers a render (E3).
 const graphSignature = computed(() =>
@@ -199,7 +199,7 @@ const graphSignature = computed(() =>
     .join('~'),
 )
 watch(
-  [() => Object.keys(modelStore.nodes).length, graphSignature],
+  [() => Object.keys(knowledgeStore.nodes).length, graphSignature],
   () => {
     initConceptColors()
     render()

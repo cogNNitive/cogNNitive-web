@@ -19,7 +19,7 @@
 
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { resolveEffectiveMetamodel } from '../model/metamodel'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import type { MetamodelConcept, KnowledgeNode } from '../model/types'
 
 // ── Color palette ──────────────────────────────────────────────
@@ -134,10 +134,10 @@ function findTemplatePeer(
  * byte-for-byte duplicated.)
  */
 export function getConceptMeta(conceptType: string): { icon?: string; color?: string } {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const lower = conceptType?.toLowerCase()
-  for (const id of modelStore.rootIds) {
-    const r = modelStore.getNode(id)
+  for (const id of knowledgeStore.rootIds) {
+    const r = knowledgeStore.getNode(id)
     const concepts = r?.localMetamodel?.concepts
     if (Array.isArray(concepts)) {
       const c = concepts.find((x) => x.name.toLowerCase() === lower)
@@ -150,7 +150,7 @@ export function getConceptMeta(conceptType: string): { icon?: string; color?: st
 // ── Composable ─────────────────────────────────────────────────
 
 export function useConceptVisuals() {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   /**
    * Resolves the MetamodelConcept for any graph node.
@@ -167,7 +167,7 @@ export function useConceptVisuals() {
     const lowerName = conceptName.toLowerCase()
 
     // Walk ancestor chain + all roots (includes template structural roots)
-    const metamodel = resolveEffectiveMetamodel(node.id, modelStore.nodes, modelStore.rootIds)
+    const metamodel = resolveEffectiveMetamodel(node.id, knowledgeStore.nodes, knowledgeStore.rootIds)
     const match = metamodel.concepts.find((c) => c.name.toLowerCase() === lowerName)
     if (match) return match
 

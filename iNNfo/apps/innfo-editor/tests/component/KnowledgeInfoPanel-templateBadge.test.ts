@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import ModelInfoPanel from '../../src/components/editor/ModelInfoPanel.vue'
+import KnowledgeInfoPanel from '../../src/components/editor/KnowledgeInfoPanel.vue'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 import { buildFakeTree } from '../helpers/fakeFs'
 
@@ -51,14 +51,14 @@ title: "StartupValidation"
 # NN StartupValidation
 `
 
-describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
+describe('KnowledgeInfoPanel.vue — Template Version Badge (D3)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('shows the badge and copyable prompt when the workspace has a newer template version', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -82,7 +82,7 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
     }) as any
     workspaceStore.hasHandle = true
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
     await flushPromises()
@@ -97,8 +97,8 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
   })
 
   it('does not show the badge when the model already pins the newest known template version', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -125,7 +125,7 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
     }) as any
     workspaceStore.hasHandle = true
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
     await flushPromises()
@@ -134,8 +134,8 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
   })
 
   it('does not show the badge when no workspace handle is connected and no newer shipped version exists', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -148,7 +148,7 @@ describe('ModelInfoPanel.vue — Template Version Badge (D3)', () => {
     )
     // Deliberately no handle connected — demo mode.
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
     await flushPromises()

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { useModelStore } from './modelStore'
+import { useKnowledgeStore } from './knowledgeStore'
 import { useWorkspaceStore } from './workspaceStore'
 import { useUiStore } from './uiStore'
 import { resolveEffectiveMetamodel } from '../model/metamodel'
@@ -16,10 +16,10 @@ import type { DirectoryHandleLike } from './workspaceStore'
  * Thin Pinia adapter over `resolveEffectiveMetamodel()`. Replaces
  * file-format's `metamodelStore` imports: exposes `concepts`, `markers`,
  * `getConceptByName`, and `getConceptFields` by resolving the effective
- * metamodel from the root node (or active node) in `modelStore`.
+ * metamodel from the root node (or active node) in `knowledgeStore`.
  */
 export const useMetamodelStore = defineStore('metamodel', () => {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const uiStore = useUiStore()
 
   const rootId = computed(() => {
@@ -28,29 +28,29 @@ export const useMetamodelStore = defineStore('metamodel', () => {
       selected = selected.split(':')[1]
     }
     if (selected) {
-      let curr = modelStore.getNode(selected)
+      let curr = knowledgeStore.getNode(selected)
       while (curr?.parentId) {
-        curr = modelStore.getNode(curr.parentId)
+        curr = knowledgeStore.getNode(curr.parentId)
       }
       if (curr && !curr.id.startsWith('spec:')) return curr.id
     }
     return (
-      modelStore.rootIds.find((id) => {
-        const node = modelStore.getNode(id)
+      knowledgeStore.rootIds.find((id) => {
+        const node = knowledgeStore.getNode(id)
         return node && !id.startsWith('spec:')
-      }) ?? modelStore.rootIds[0]
+      }) ?? knowledgeStore.rootIds[0]
     )
   })
 
   const concepts = computed<MetamodelConcept[]>(() => {
     if (!rootId.value) return []
-    const metamodel = resolveEffectiveMetamodel(rootId.value, modelStore.nodes, modelStore.rootIds)
+    const metamodel = resolveEffectiveMetamodel(rootId.value, knowledgeStore.nodes, knowledgeStore.rootIds)
     return metamodel.concepts
   })
 
   const markers = computed<MetamodelMarker[]>(() => {
     if (!rootId.value) return []
-    const metamodel = resolveEffectiveMetamodel(rootId.value, modelStore.nodes, modelStore.rootIds)
+    const metamodel = resolveEffectiveMetamodel(rootId.value, knowledgeStore.nodes, knowledgeStore.rootIds)
     return metamodel.markers
   })
 
@@ -77,7 +77,7 @@ export const useMetamodelStore = defineStore('metamodel', () => {
   const ghostConcepts = computed<MetamodelConcept[]>(() => {
     if (!rootId.value) return []
     return concepts.value.filter(
-      (c) => !isConceptPresent(c.name, c.type, modelStore.nodes, modelStore.rootIds),
+      (c) => !isConceptPresent(c.name, c.type, knowledgeStore.nodes, knowledgeStore.rootIds),
     )
   })
 
@@ -115,15 +115,15 @@ export const useMetamodelStore = defineStore('metamodel', () => {
     const key = conceptName.toLowerCase()
 
     if (Object.keys(documentation.value).length === 0) {
-      const rootId = modelStore.rootIds[0]
+      const rootId = knowledgeStore.rootIds[0]
       if (rootId) {
-        const rootNode = modelStore.getNode(rootId)
+        const rootNode = knowledgeStore.getNode(rootId)
         if (rootNode?.rawContent) {
           const fm = parseFrontmatter(rootNode.rawContent)
           const parentName = fm?.parent_spec?.name
           if (parentName) {
             const templateId = `spec:${parentName}`
-            const specNode = modelStore.getNode(templateId)
+            const specNode = knowledgeStore.getNode(templateId)
             if (specNode && specNode.rawContent) {
               documentation.value = parseMetamodelDocumentation(specNode.rawContent)
             }
@@ -138,7 +138,7 @@ export const useMetamodelStore = defineStore('metamodel', () => {
     if (Object.keys(documentation.value).length === 0 && !docsLoading.value) {
       const ws = useWorkspaceStore()
       if (ws.handle) {
-        const rootNode = modelStore.getNode(modelStore.rootIds[0])
+        const rootNode = knowledgeStore.getNode(knowledgeStore.rootIds[0])
         if (rootNode) {
           const parsed = parseFormatFilename(rootNode.source.path)
           const templateName = parsed?.templateName ?? ''

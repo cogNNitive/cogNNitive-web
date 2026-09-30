@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { FolderOpen, X, AlertTriangle } from 'lucide-vue-next'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { recursiveSerialize } from '../../model/recursiveSerializer'
 import { parseFormatFilename } from '../../utils/version'
@@ -13,7 +13,7 @@ import { _ensureGeneralSpec } from '../../services/WorkspacePersistenceService'
 import type { DirectoryHandleLike } from '../../model/fs-types'
 
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const { show } = useToast()
 
@@ -22,8 +22,8 @@ const busy = ref(false)
 
 const isOpen = computed(() => uiStore.showSaveWorkspaceModal)
 
-const rootId = computed(() => modelStore.rootIds[0])
-const rootNode = computed(() => (rootId.value ? modelStore.getNode(rootId.value) : null))
+const rootId = computed(() => knowledgeStore.rootIds[0])
+const rootNode = computed(() => (rootId.value ? knowledgeStore.getNode(rootId.value) : null))
 
 function sanitizeFilename(name: string): string {
   const base = name.split(/[/\\]/).pop() || name
@@ -107,13 +107,13 @@ async function handleSaveWorkspace(): Promise<void> {
     }
 
     // Force serialize root node even if not marked dirty
-    const dirtyIds = new Set(modelStore.dirtyIds)
+    const dirtyIds = new Set(knowledgeStore.dirtyIds)
     if (rootId.value) {
       dirtyIds.add(rootId.value)
     }
 
     // Run serialization
-    await recursiveSerialize(modelStore.nodes, dirtyIds, customDriver)
+    await recursiveSerialize(knowledgeStore.nodes, dirtyIds, customDriver)
 
     // Fallback direct write for rootNode
     if (!writtenPaths.has(targetFilename) && rootNode.value) {
@@ -132,8 +132,8 @@ async function handleSaveWorkspace(): Promise<void> {
       const oldPath = rootNode.value.source.path
       rootNode.value.source.path = targetFilename
       if (oldPath && oldPath !== targetFilename) {
-        for (const node of Object.values(modelStore.nodes)) {
-          if (node.source && (node.source.path === oldPath || modelStore.getModelRootForNode(node.id) === rootId.value)) {
+        for (const node of Object.values(knowledgeStore.nodes)) {
+          if (node.source && (node.source.path === oldPath || knowledgeStore.getKnowledgeRootForNode(node.id) === rootId.value)) {
             node.source.path = targetFilename
           }
         }
@@ -142,7 +142,7 @@ async function handleSaveWorkspace(): Promise<void> {
 
     // Write all specs and templates to a local specs/ directory
     const specsDir = await handle.getDirectoryHandle('specs', { create: true })
-    for (const [id, node] of Object.entries(modelStore.nodes)) {
+    for (const [id, node] of Object.entries(knowledgeStore.nodes)) {
       if (id.startsWith('spec:') && node.rawContent) {
         const specName = node.name || id.substring(5)
         const filename = specName.endsWith('_NN') ? `${specName}.md` : `${specName}_NN.md`
@@ -204,11 +204,11 @@ To open this workspace:
     await workspaceStore.open(handle, { force: true })
 
     // Ensure the generic iNNfo spec is present locally
-    await _ensureGeneralSpec(handle, modelStore, uiStore)
+    await _ensureGeneralSpec(handle, knowledgeStore, uiStore)
 
     // Clear dirty flags
-    for (const id of Array.from(modelStore.dirtyIds)) {
-      modelStore.clearDirty(id)
+    for (const id of Array.from(knowledgeStore.dirtyIds)) {
+      knowledgeStore.clearDirty(id)
     }
 
     uiStore.setShowSaveWorkspaceModal(false)

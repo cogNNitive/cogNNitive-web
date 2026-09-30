@@ -31,7 +31,7 @@ import {
   getStoredHandle,
 } from '../stores/historyStore'
 import { useToast } from '../shared/useToast'
-import { modelStemMatches } from '../utils/modelMatching'
+import { modelStemMatches } from '../utils/knowledgeMatching'
 import { createDirectoryHandleFromFileList } from '../utils/fileListDirectoryHandle'
 
 import { resolveWorkspacePreset } from '../config/workspaces'

@@ -5,7 +5,7 @@ import { SHIPPED_BLUEPRINT_VERSIONS } from '../../src/config/samples'
 import {
   compareVersions,
   parseVersionedFilename,
-} from '../../src/composables/useTemplateVersionNotice'
+} from '../../src/composables/useBlueprintVersionNotice'
 
 /**
  * Disk-integrity guard for design.md D3 / O3: the bundled

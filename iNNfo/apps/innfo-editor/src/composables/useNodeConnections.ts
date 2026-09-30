@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { readMatrixDefsField } from './useMatrixDefinitions'
 import type { MatrixDecl } from '@cognnitive/innfo-core'
@@ -48,10 +48,10 @@ export function useNodeConnections(options: {
   isConcept?: boolean
   relationships?: ModelRelationship[]
 }) {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   const matrixConnections = computed<ResolvedNodeConnection[]>(() => {
-    const root = modelStore.getNode(options.rootNodeId)
+    const root = knowledgeStore.getNode(options.rootNodeId)
     if (!root) return []
 
     const defsField = readMatrixDefsField(root)
@@ -63,15 +63,15 @@ export function useNodeConnections(options: {
     const matrices: MatrixDecl[] = Array.isArray(rawMatrices) ? (rawMatrices as MatrixDecl[]) : []
     if (matrices.length === 0) return []
 
-    const node = options.nodeId ? modelStore.getNode(options.nodeId) : undefined
+    const node = options.nodeId ? knowledgeStore.getNode(options.nodeId) : undefined
     const items: ResolvedNodeConnection[] = []
 
     function resolveNodeId(idOrName?: string): string | undefined {
       if (!idOrName) return undefined
-      const direct = modelStore.getNode(idOrName)
+      const direct = knowledgeStore.getNode(idOrName)
       if (direct) return direct.id
       const clean = cleanTargetName(idOrName)
-      const found = Object.values(modelStore.nodes).find(
+      const found = Object.values(knowledgeStore.nodes).find(
         (n) => n.id === idOrName || n.name === idOrName || n.id.endsWith('/' + clean) || cleanTargetName(n.name) === clean,
       )
       return found ? found.id : idOrName
@@ -140,7 +140,7 @@ export function useNodeConnections(options: {
 
   const fieldConnections = computed<ResolvedNodeConnection[]>(() => {
     if (!options.nodeId) return []
-    const currentNode = modelStore.getNode(options.nodeId)
+    const currentNode = knowledgeStore.getNode(options.nodeId)
     if (!currentNode) return []
 
     const items: ResolvedNodeConnection[] = []
@@ -169,7 +169,7 @@ export function useNodeConnections(options: {
     }
 
     // Incoming field connections from other nodes pointing to current node
-    for (const node of Object.values(modelStore.nodes)) {
+    for (const node of Object.values(knowledgeStore.nodes)) {
       if (node.id === options.nodeId || !node.fields) continue
       for (const [fieldName, fv] of Object.entries(node.fields)) {
         const val = typeof fv === 'object' && fv !== null && 'value' in fv ? fv.value : fv
@@ -196,7 +196,7 @@ export function useNodeConnections(options: {
 
   const mentionConnections = computed<ResolvedNodeConnection[]>(() => {
     if (!options.nodeId) return []
-    const currentNode = modelStore.getNode(options.nodeId)
+    const currentNode = knowledgeStore.getNode(options.nodeId)
     if (!currentNode) return []
 
     const items: ResolvedNodeConnection[] = []
@@ -221,7 +221,7 @@ export function useNodeConnections(options: {
     }
 
     // Incoming mentions (backlinks) from other nodes pointing to current node
-    for (const node of Object.values(modelStore.nodes)) {
+    for (const node of Object.values(knowledgeStore.nodes)) {
       if (node.id === options.nodeId) continue
       const nodeDesc = (node as any)?.description || node.rawContent || ''
       if (typeof nodeDesc === 'string' && nodeDesc.includes('[[')) {

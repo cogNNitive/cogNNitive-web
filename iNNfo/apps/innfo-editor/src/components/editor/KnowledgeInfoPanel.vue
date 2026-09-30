@@ -478,7 +478,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import {
   FolderOpen,
@@ -503,7 +503,7 @@ import type { BumpLevel } from '../../utils/version'
 import { useToast } from '../../shared/useToast'
 import { useModelFrontmatter } from './composables/useModelFrontmatter'
 import { useVersionBump } from './composables/useVersionBump'
-import { useTemplateVersionNotice } from '../../composables/useTemplateVersionNotice'
+import { useBlueprintVersionNotice } from '../../composables/useBlueprintVersionNotice'
 import { REMOTE_SPEC_BASE } from '../../config/samples'
 
 const props = defineProps<{
@@ -512,7 +512,7 @@ const props = defineProps<{
 
 const router = useRouter()
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const { show } = useToast()
 const isPromptModalOpen = ref(false)
@@ -521,10 +521,10 @@ const showPlainTextView = ref(false)
 const selectedModelId = ref<string>('')
 
 const availableModels = computed(() => {
-  return modelStore.rootIds
+  return knowledgeStore.rootIds
     .filter((id) => !id.startsWith('spec:'))
     .map((id) => {
-      const node = modelStore.getNode(id)
+      const node = knowledgeStore.getNode(id)
       const path = node?.source?.path || ''
       const name = path.split('/').pop()?.split('\\').pop() || node?.name || id
       return { id, name }
@@ -545,7 +545,7 @@ const activeModelId = computed({
 })
 
 // ── Frontmatter resolution from root node rawContent ──
-const rootNode = computed(() => modelStore.getNode(activeModelId.value))
+const rootNode = computed(() => knowledgeStore.getNode(activeModelId.value))
 
 const rawContent = computed(() => rootNode.value?.rawContent ?? '')
 
@@ -553,7 +553,7 @@ const filePath = computed(() => {
   return rootNode.value?.source?.path || ''
 })
 
-const nodeCount = computed(() => Object.keys(modelStore.nodes).length)
+const nodeCount = computed(() => Object.keys(knowledgeStore.nodes).length)
 
 const { formatVersion, templateName, templateVersion, modelVersion, rawModelVersion, lastSaved } =
   useModelFrontmatter(rawContent)
@@ -589,13 +589,13 @@ function versionButtonTitle(level: BumpLevel): string {
 // ── Disabled states ─────────────────────────────────────────────────────
 
 const isVersionDisabled = computed(() => {
-  return !workspaceStore.handle || workspaceStore.saving || modelStore.rootIds.length === 0
+  return !workspaceStore.handle || workspaceStore.saving || knowledgeStore.rootIds.length === 0
 })
 
 const versionDisabledReason = computed(() => {
   if (!workspaceStore.handle) return 'Connect a workspace to save versions'
   if (workspaceStore.saving) return 'Workspace is currently saving'
-  if (modelStore.rootIds.length === 0) return 'No root node available'
+  if (knowledgeStore.rootIds.length === 0) return 'No root node available'
   return null
 })
 
@@ -628,8 +628,8 @@ const modelFileName = computed(() => {
 
 const workspaceHandle = computed(() => workspaceStore.handle ?? undefined)
 
-const { notice: templateVersionNotice, refresh: refreshTemplateVersionNotice } =
-  useTemplateVersionNotice({
+const { notice: templateVersionNotice, refresh: refreshBlueprintVersionNotice } =
+  useBlueprintVersionNotice({
     templateName,
     modelFileName,
     handle: workspaceHandle,
@@ -638,7 +638,7 @@ const { notice: templateVersionNotice, refresh: refreshTemplateVersionNotice } =
 watch(
   [templateName, workspaceHandle],
   () => {
-    void refreshTemplateVersionNotice()
+    void refreshBlueprintVersionNotice()
   },
   { immediate: true },
 )

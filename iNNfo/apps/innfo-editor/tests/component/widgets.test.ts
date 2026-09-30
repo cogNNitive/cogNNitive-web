@@ -175,14 +175,14 @@ describe('FieldNumber (field-type widget for number fields)', () => {
 })
 
 import FieldReference from '../../src/shared/widgets/FieldReference.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 
 describe('FieldReference (field-type widget for reference fields)', () => {
   it('renders BlockPill in readonly mode when target node exists with WikiLink syntax', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'Salón-Comedor': {
           id: 'Salón-Comedor',

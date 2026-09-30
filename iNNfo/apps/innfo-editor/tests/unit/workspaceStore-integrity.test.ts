@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { buildFakeTree } from '../helpers/fakeFs'
 
 const domainMd = `---
@@ -39,7 +39,7 @@ describe('workspaceStore integrity check (AD-6)', () => {
 
   it('open() never awaits the integrity check and does not reject open()', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const handle = buildFakeTree('workspace', {
       'domaiNN_NN.md': domainMd,
       kNNowledge: {
@@ -52,7 +52,7 @@ describe('workspaceStore integrity check (AD-6)', () => {
 
     await expect(workspaceStore.open(handle)).resolves.toBeUndefined()
     expect(workspaceStore.hasParsed).toBe(true)
-    expect(modelStore.rootIds.length).toBeGreaterThan(0)
+    expect(knowledgeStore.rootIds.length).toBeGreaterThan(0)
   })
 
   it('a rejecting integrity check never sets the workspace error state', async () => {

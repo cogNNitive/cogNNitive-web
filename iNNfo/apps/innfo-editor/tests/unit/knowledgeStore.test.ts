@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -19,38 +19,38 @@ function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): Knowledge
   }
 }
 
-describe('modelStore', () => {
+describe('knowledgeStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('holds exactly one normalized graph as the source of truth', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root')
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
-    expect(modelStore.getRoots()).toEqual([root])
-    expect(modelStore.getNode('Root')).toEqual(root)
+    expect(knowledgeStore.getRoots()).toEqual([root])
+    expect(knowledgeStore.getNode('Root')).toEqual(root)
   })
 
   it('exposes selectors for children lookup via parentId/childIds', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const child = makeNode('Root/Child', { parentId: 'Root' })
     const root = makeNode('Root', { childIds: ['Root/Child'] })
-    modelStore.setGraph({ Root: root, 'Root/Child': child }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/Child': child }, ['Root'])
 
-    expect(modelStore.getChildren('Root')).toEqual([child])
+    expect(knowledgeStore.getChildren('Root')).toEqual([child])
   })
 
   it('tracks dirty nodes independently per node', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root') }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root') }, ['Root'])
 
-    expect(modelStore.isDirty('Root')).toBe(false)
-    modelStore.markDirty('Root')
-    expect(modelStore.isDirty('Root')).toBe(true)
-    modelStore.clearDirty('Root')
-    expect(modelStore.isDirty('Root')).toBe(false)
+    expect(knowledgeStore.isDirty('Root')).toBe(false)
+    knowledgeStore.markDirty('Root')
+    expect(knowledgeStore.isDirty('Root')).toBe(true)
+    knowledgeStore.clearDirty('Root')
+    expect(knowledgeStore.isDirty('Root')).toBe(false)
   })
 
   it('resolves parent specifications locally first from specs/ directory handle', async () => {
@@ -118,13 +118,13 @@ title: "DomaiNN Index"
       },
     })
 
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
 
     // We expect parseFromHandle to resolve parent_spec from the local specs/ directory handle
-    await modelStore.parseFromHandle(fakeTree)
+    await knowledgeStore.parseFromHandle(fakeTree)
 
     // Verify that the synthetic spec node was created and populated with rawContent from local file
-    const specNode = modelStore.getNode('spec:test-template_V_1-0-0')
+    const specNode = knowledgeStore.getNode('spec:test-template_V_1-0-0')
     expect(specNode).toBeDefined()
     expect(specNode!.name).toBe('test-template_V_1-0-0')
     expect(specNode!.rawContent).toBe(specMd)
@@ -166,16 +166,16 @@ title: "DomaiNN Index"
       },
     })
 
-    const modelStore = useModelStore()
-    await modelStore.parseFromHandle(fakeTree)
+    const knowledgeStore = useKnowledgeStore()
+    await knowledgeStore.parseFromHandle(fakeTree)
 
     // Locate the root node
     const rootId = 'model'
-    const rootNode = modelStore.getNode(rootId)
+    const rootNode = knowledgeStore.getNode(rootId)
     expect(rootNode).toBeDefined()
 
     // Run serialization on the root node using recursiveSerialize
-    await recursiveSerialize(modelStore.nodes, new Set([rootId]))
+    await recursiveSerialize(knowledgeStore.nodes, new Set([rootId]))
     const serialized = rootNode!.rawContent ?? ''
 
     expect(serialized).toContain('## NN Problems: Problem One')
@@ -213,18 +213,18 @@ title: "DomaiNN Index"
       },
     })
 
-    const modelStore = useModelStore()
-    await modelStore.parseFromHandle(fakeTree)
+    const knowledgeStore = useKnowledgeStore()
+    await knowledgeStore.parseFromHandle(fakeTree)
 
     const rootId = 'model'
 
     // Create a new child under the concept 'Problems'
-    const newId = modelStore.createChild(rootId, 'Problem Two', 'Problems', 'element')
+    const newId = knowledgeStore.createChild(rootId, 'Problem Two', 'Problems', 'element')
     expect(newId).toBe(`${rootId}/Problem Two`)
 
     // Run serialization on the root node using recursiveSerialize
-    await recursiveSerialize(modelStore.nodes, new Set([rootId]))
-    const serialized = modelStore.getNode(rootId)!.rawContent ?? ''
+    await recursiveSerialize(knowledgeStore.nodes, new Set([rootId]))
+    const serialized = knowledgeStore.getNode(rootId)!.rawContent ?? ''
 
     expect(serialized).toContain('## NN Problems: Problem One')
     expect(serialized).toContain('## NN Problems: Problem Two')
@@ -310,24 +310,24 @@ title: "DomaiNN Index"
       },
     })
 
-    const modelStore = useModelStore()
-    await modelStore.parseFromHandle(fakeTree)
+    const knowledgeStore = useKnowledgeStore()
+    await knowledgeStore.parseFromHandle(fakeTree)
 
-    const subNode = Object.values(modelStore.nodes).find((n) => n.name === 'sub_model')
+    const subNode = Object.values(knowledgeStore.nodes).find((n) => n.name === 'sub_model')
     expect(subNode).toBeDefined()
   })
 
   describe('scaffoldSubmodel', () => {
     it('scaffolds Level 3 starter markdown content with valid YAML frontmatter', () => {
-      const modelStore = useModelStore()
-      const newId = modelStore.scaffoldSubmodel({
+      const knowledgeStore = useKnowledgeStore()
+      const newId = knowledgeStore.scaffoldSubmodel({
         path: 'kNNowledge/sub_business_NN.md',
         template: 'business',
         title: 'My Business Submodel',
         knowledgeVersion: '0.1.0',
       })
 
-      const node = modelStore.getNode(newId)
+      const node = knowledgeStore.getNode(newId)
       expect(node).toBeDefined()
       expect(node?.name).toBe('My Business Submodel')
       expect(node?.kind).toBe('root')
@@ -343,15 +343,15 @@ title: "DomaiNN Index"
     })
 
     it('writes spec_version/spec_url and an explicit parent_spec.url when provided', () => {
-      const modelStore = useModelStore()
-      const newId = modelStore.scaffoldSubmodel({
+      const knowledgeStore = useKnowledgeStore()
+      const newId = knowledgeStore.scaffoldSubmodel({
         path: 'kNNowledge/sub_business_NN.md',
         template: 'business',
         templateUrl:
           'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md',
       })
 
-      const node = modelStore.getNode(newId)
+      const node = knowledgeStore.getNode(newId)
       expect(node?.rawContent).toContain('spec_version: "V_0-3-0"')
       expect(node?.rawContent).toContain(
         'url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"',
@@ -360,38 +360,38 @@ title: "DomaiNN Index"
     })
 
     it('normalizes backslashes to forward slashes in node id and source.path', () => {
-      const modelStore = useModelStore()
-      const newId = modelStore.scaffoldSubmodel({
+      const knowledgeStore = useKnowledgeStore()
+      const newId = knowledgeStore.scaffoldSubmodel({
         path: 'kNNowledge\\nested\\sub_business_NN.md',
         template: 'business',
       })
 
       expect(newId).toBe('kNNowledge/nested/sub_business_NN.md')
-      const node = modelStore.getNode(newId)
+      const node = knowledgeStore.getNode(newId)
       expect(node?.id).toBe('kNNowledge/nested/sub_business_NN.md')
       expect(node?.source.path).toBe('kNNowledge/nested/sub_business_NN.md')
     })
 
-    it('registers node in modelStore.nodes and appends id to modelStore.rootIds', () => {
-      const modelStore = useModelStore()
-      const newId = modelStore.scaffoldSubmodel({
+    it('registers node in knowledgeStore.nodes and appends id to knowledgeStore.rootIds', () => {
+      const knowledgeStore = useKnowledgeStore()
+      const newId = knowledgeStore.scaffoldSubmodel({
         path: 'kNNowledge/another_NN.md',
         template: 'procedures',
       })
 
-      expect(modelStore.nodes[newId]).toBeDefined()
-      expect(modelStore.rootIds).toContain(newId)
+      expect(knowledgeStore.nodes[newId]).toBeDefined()
+      expect(knowledgeStore.rootIds).toContain(newId)
     })
 
     it('marks the newly created submodel node as dirty', () => {
-      const modelStore = useModelStore()
-      const newId = modelStore.scaffoldSubmodel({
+      const knowledgeStore = useKnowledgeStore()
+      const newId = knowledgeStore.scaffoldSubmodel({
         path: 'kNNowledge/dirty_test_NN.md',
         template: 'procedures',
       })
 
-      expect(modelStore.isDirty(newId)).toBe(true)
-      expect(modelStore.dirtyIds.has(newId)).toBe(true)
+      expect(knowledgeStore.isDirty(newId)).toBe(true)
+      expect(knowledgeStore.dirtyIds.has(newId)).toBe(true)
     })
   })
 })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import IconRenderer from '../editor/IconRenderer.vue'
 
 const props = withDefaults(
@@ -16,8 +16,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string[]): void
 }>()
 
-const modelStore = useModelStore()
-const availableTags = computed(() => modelStore.allTags)
+const knowledgeStore = useKnowledgeStore()
+const availableTags = computed(() => knowledgeStore.allTags)
 
 const inputValue = ref('')
 const isFocused = ref(false)
@@ -69,18 +69,18 @@ function handleBlur() {
         :key="tag"
         class="tag-chip"
         :style="
-          modelStore.workspaceTagsMap[tag.toLowerCase()]?.color
+          knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.color
             ? {
-                backgroundColor: modelStore.workspaceTagsMap[tag.toLowerCase()]?.color,
+                backgroundColor: knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.color,
                 color: '#ffffff',
               }
             : {}
         "
-        :title="modelStore.workspaceTagsMap[tag.toLowerCase()]?.description"
+        :title="knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.description"
       >
         <IconRenderer
-          v-if="modelStore.workspaceTagsMap[tag.toLowerCase()]?.icon"
-          :icon="modelStore.workspaceTagsMap[tag.toLowerCase()]?.icon!"
+          v-if="knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.icon"
+          :icon="knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.icon!"
           custom-class="w-3 h-3 text-white mr-1 shrink-0"
         />
         <span>{{ tag }}</span>
@@ -108,23 +108,23 @@ function handleBlur() {
         class="tag-option flex items-center gap-2"
       >
         <span
-          v-if="modelStore.workspaceTagsMap[tag.toLowerCase()]?.icon"
+          v-if="knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.icon"
           class="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
           :style="{
-            backgroundColor: modelStore.workspaceTagsMap[tag.toLowerCase()]?.color || '#64748b',
+            backgroundColor: knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.color || '#64748b',
           }"
         >
           <IconRenderer
-            :icon="modelStore.workspaceTagsMap[tag.toLowerCase()]?.icon!"
+            :icon="knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.icon!"
             custom-class="w-2.5 h-2.5 text-white"
           />
         </span>
         <span class="font-medium text-xs">{{ tag }}</span>
         <span
-          v-if="modelStore.workspaceTagsMap[tag.toLowerCase()]?.description"
+          v-if="knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.description"
           class="text-2xs text-slate-400 dark:text-slate-500 truncate ml-auto"
         >
-          {{ modelStore.workspaceTagsMap[tag.toLowerCase()]?.description }}
+          {{ knowledgeStore.workspaceTagsMap[tag.toLowerCase()]?.description }}
         </span>
       </li>
     </ul>

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import SearchResultsView from '../../src/components/editor/SearchResultsView.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -32,10 +32,10 @@ describe('SearchResultsView — concept-level tag filtering', () => {
   })
 
   function seedGraph() {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         'model_01.md': makeNode({
           id: 'model_01.md',
@@ -64,7 +64,7 @@ describe('SearchResultsView — concept-level tag filtering', () => {
     )
 
     uiStore.setActiveModel('model_01.md')
-    return { modelStore, uiStore }
+    return { knowledgeStore, uiStore }
   }
 
   function mountView() {
@@ -97,8 +97,8 @@ describe('SearchResultsView — concept-level tag filtering', () => {
   })
 
   it('unions concept-level tags with the element own tags', () => {
-    const { modelStore, uiStore } = seedGraph()
-    modelStore.nodes['Task/Alpha'].tags = ['mine']
+    const { knowledgeStore, uiStore } = seedGraph()
+    knowledgeStore.nodes['Task/Alpha'].tags = ['mine']
     uiStore.selectedTagFilters = ['urgent', 'mine']
 
     const wrapper = mountView()

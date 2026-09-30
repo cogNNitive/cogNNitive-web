@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import VirtualGroupNode from '../../src/components/layout/VirtualGroupNode.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -27,8 +27,8 @@ describe('VirtualGroupNode — ghost rendering', () => {
   })
 
   it('renders ghost header with dashed border style when ghost=true', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: {
@@ -58,8 +58,8 @@ describe('VirtualGroupNode — ghost rendering', () => {
   })
 
   it('emits "select" with virtual concept ID when ghost header is clicked', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: {
@@ -90,8 +90,8 @@ describe('VirtualGroupNode — ghost rendering', () => {
   })
 
   it('renders concept name in italic when ghost=true', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: {
@@ -120,8 +120,8 @@ describe('VirtualGroupNode — ghost rendering', () => {
   })
 
   it('shows zero count for ghost groups', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: {
@@ -147,8 +147,8 @@ describe('VirtualGroupNode — ghost rendering', () => {
   })
 
   it('renders ghost header with clickable data-testid', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: {
@@ -176,8 +176,8 @@ describe('VirtualGroupNode — ghost rendering', () => {
   })
 
   it('renders non-ghost variant normally (no dashed border)', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { childIds: ['Root/Child1'] }),
         'Root/Child1': makeNode('Root/Child1', {

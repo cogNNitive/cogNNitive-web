@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { Save } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { commitFieldValue } from '../../shared/editAttribution'
 
 const props = defineProps<{
@@ -52,7 +52,7 @@ const emit = defineEmits<{
   change: []
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const saved = ref(false)
 
@@ -61,10 +61,10 @@ const rawContent = computed(() => {
   // keyed by concept name. The selected node may be a virtual concept node
   // (not present in the store), so resolve content via the root node.
   if (props.conceptType === 'text') {
-    const root = props.rootNodeId ? modelStore.getNode(props.rootNodeId) : undefined
+    const root = props.rootNodeId ? knowledgeStore.getNode(props.rootNodeId) : undefined
     return root?.rawSections?.[props.conceptName] ?? ''
   }
-  const node = modelStore.getNode(props.nodeId)
+  const node = knowledgeStore.getNode(props.nodeId)
   return node?.rawContent ?? ''
 })
 
@@ -90,27 +90,27 @@ const saveContent = () => {
   const content = localContent.value
   if (content === null) return
 
-  const node = modelStore.getNode(props.nodeId)
+  const node = knowledgeStore.getNode(props.nodeId)
   if (!node) return
 
   if (props.conceptType === 'text') {
     // Write back into the root node's rawSections keyed by concept name.
     const rootId = props.rootNodeId || props.nodeId
-    const root = modelStore.getNode(rootId)
+    const root = knowledgeStore.getNode(rootId)
     if (root) {
       const rawSections = { ...(root.rawSections ?? {}) }
       rawSections[props.conceptName] = content
-      modelStore.upsertNode({ ...root, rawSections })
-      modelStore.markDirty(rootId)
-      commitFieldValue(modelStore, rootId, `_rawSection:${props.conceptName}`, content, {
+      knowledgeStore.upsertNode({ ...root, rawSections })
+      knowledgeStore.markDirty(rootId)
+      commitFieldValue(knowledgeStore, rootId, `_rawSection:${props.conceptName}`, content, {
         kind: 'user',
         id: 'anonymous',
       })
     }
   } else {
     // Update the node's rawContent and stamp editAttribution
-    modelStore.upsertNode({ ...node, rawContent: content })
-    commitFieldValue(modelStore, props.nodeId, '_rawContent', content, {
+    knowledgeStore.upsertNode({ ...node, rawContent: content })
+    commitFieldValue(knowledgeStore, props.nodeId, '_rawContent', content, {
       kind: 'user',
       id: 'anonymous',
     })

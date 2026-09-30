@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import ConceptTableView from '../../src/components/editor/ConceptTableView.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useToast } from '../../src/shared/useToast'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -28,7 +28,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('adds a new row to the table reactively when addElement is called', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       childIds: ['Root/ExistingItem'],
     })
@@ -38,7 +38,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
       type: 'Problems',
       kind: 'element',
     })
-    modelStore.setGraph({ Root: root, 'Root/ExistingItem': existing }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/ExistingItem': existing }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -65,7 +65,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('adds element using concept name instead of concept type when they differ', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('model', {
       childIds: ['model/Item1'],
     })
@@ -75,7 +75,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
       type: 'Concepto_Peso',
       kind: 'element',
     })
-    modelStore.setGraph({ model: root, 'model/Item1': existing }, ['model'])
+    knowledgeStore.setGraph({ model: root, 'model/Item1': existing }, ['model'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -98,14 +98,14 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('triggers drag and drop reordering', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       childIds: ['Root/ItemA', 'Root/ItemB', 'Root/ItemC'],
     })
     const itemA = makeNode('Root/ItemA', { parentId: 'Root', name: 'ItemA', type: 'Problems', kind: 'element' })
     const itemB = makeNode('Root/ItemB', { parentId: 'Root', name: 'ItemB', type: 'Problems', kind: 'element' })
     const itemC = makeNode('Root/ItemC', { parentId: 'Root', name: 'ItemC', type: 'Problems', kind: 'element' })
-    modelStore.setGraph({ Root: root, 'Root/ItemA': itemA, 'Root/ItemB': itemB, 'Root/ItemC': itemC }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/ItemA': itemA, 'Root/ItemB': itemB, 'Root/ItemC': itemC }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -136,11 +136,11 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
     await rows[0].trigger('drop', dropEvent)
 
     // Check store reordered children:
-    expect(modelStore.nodes['Root'].childIds).toEqual(['Root/ItemC', 'Root/ItemA', 'Root/ItemB'])
+    expect(knowledgeStore.nodes['Root'].childIds).toEqual(['Root/ItemC', 'Root/ItemA', 'Root/ItemB'])
   })
 
   it('opens FieldDetailModal on double click on a cell with a truncatable field type when not in edit mode', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       childIds: ['Root/ItemA'],
     })
@@ -155,7 +155,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
         },
       },
     })
-    modelStore.setGraph({ Root: root, 'Root/ItemA': itemA }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/ItemA': itemA }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -186,7 +186,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('renders a model pillbadge in the corresponding table column for model-type fields', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       childIds: ['Root/Item1'],
     })
@@ -201,7 +201,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
         },
       },
     })
-    modelStore.setGraph({ Root: root, 'Root/Item1': item1 }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/Item1': item1 }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -222,7 +222,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('renders element tags as chips in the Tags column', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       childIds: ['Root/ItemA', 'Root/ItemB'],
     })
@@ -240,7 +240,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
       kind: 'element',
       tags: [],
     })
-    modelStore.setGraph({ Root: root, 'Root/ItemA': itemA, 'Root/ItemB': itemB }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/ItemA': itemA, 'Root/ItemB': itemB }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -268,7 +268,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('updates element tags via TagInput in edit mode', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       childIds: ['Root/ItemA'],
     })
@@ -279,7 +279,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
       kind: 'element',
       tags: ['existing'],
     })
-    modelStore.setGraph({ Root: root, 'Root/ItemA': itemA }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/ItemA': itemA }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -299,13 +299,13 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
     await input.setValue('new-tag')
     await input.trigger('keydown.enter')
 
-    const updated = modelStore.getNode('Root/ItemA')
+    const updated = knowledgeStore.getNode('Root/ItemA')
     expect(updated?.tags).toEqual(['existing', 'new-tag'])
   })
 
   it('bounds the table height so the sticky header has its own scroll port', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', { childIds: [] }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', { childIds: [] }) }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -321,11 +321,11 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('sorts rows by element name as a view-only lens, toggling direction', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', { childIds: ['Root/ItemB', 'Root/ItemA'] })
     const itemA = makeNode('Root/ItemA', { parentId: 'Root', name: 'ItemA', type: 'Problems', kind: 'element' })
     const itemB = makeNode('Root/ItemB', { parentId: 'Root', name: 'ItemB', type: 'Problems', kind: 'element' })
-    modelStore.setGraph({ Root: root, 'Root/ItemA': itemA, 'Root/ItemB': itemB }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/ItemA': itemA, 'Root/ItemB': itemB }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -345,11 +345,11 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
     expect(firstRowText()).toContain('ItemB')
 
     // View-only lens: document order is untouched.
-    expect(modelStore.nodes['Root'].childIds).toEqual(['Root/ItemB', 'Root/ItemA'])
+    expect(knowledgeStore.nodes['Root'].childIds).toEqual(['Root/ItemB', 'Root/ItemA'])
   })
 
   it('sorts numeric fields numerically, not lexicographically', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', { childIds: ['Root/Nine', 'Root/Ten'] })
     const nine = makeNode('Root/Nine', {
       parentId: 'Root',
@@ -365,7 +365,7 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
       kind: 'element',
       fields: { priority: { value: 10 } },
     })
-    modelStore.setGraph({ Root: root, 'Root/Nine': nine, 'Root/Ten': ten }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/Nine': nine, 'Root/Ten': ten }, ['Root'])
 
     const wrapper = mount(ConceptTableView, {
       props: {
@@ -380,9 +380,9 @@ describe('ConceptTableView.vue — Reactivity and element addition', () => {
   })
 
   it('shows a success toast when an element is added at the end', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', { childIds: [] })
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
     const { toasts, clearAll } = useToast()
     clearAll()

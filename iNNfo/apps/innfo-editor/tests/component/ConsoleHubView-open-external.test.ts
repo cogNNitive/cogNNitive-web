@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import ConsoleHubView from '../../src/components/editor/ConsoleHubView.vue'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { buildFakeTree } from '../helpers/fakeFs'
 
 describe('ConsoleHubView — Open External (F-16)', () => {
@@ -45,14 +45,14 @@ describe('ConsoleHubView — Open External (F-16)', () => {
 
   it('selects and loads a model console when receiving innfo:select-console message', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     workspaceStore.handle = buildFakeTree('workspace', {
       artifacts: {
         'workspace_hub.html': '<html><body>Hub</body></html>',
         'business_console.html': '<html><body>Business Console Content</body></html>',
       },
     })
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         Business: {
           id: 'Business',
@@ -109,7 +109,7 @@ describe('ConsoleHubView — Open External (F-16)', () => {
     const wrapper = mount(ConsoleHubView)
     await flushPromises()
 
-    // Dispatch message for a model not registered in modelStore (e.g. from legacy hub launch click)
+    // Dispatch message for a model not registered in knowledgeStore (e.g. from legacy hub launch click)
     window.dispatchEvent(
       new MessageEvent('message', {
         data: {
@@ -226,8 +226,8 @@ describe('ConsoleHubView — Open External (F-16)', () => {
   })
 
   it('filters out spec nodes and workspace root manifests from model console switcher tabs', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'workspace-root': {
           id: 'workspace-root',

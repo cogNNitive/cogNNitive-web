@@ -303,7 +303,7 @@ import {
   ArrowLeft,
   Boxes,
 } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useMetamodelStore } from '../../stores/metamodelStore'
 import { useUiStore } from '../../stores/uiStore'
 import { useResizablePanel } from '../../composables/useResizablePanel'
@@ -319,8 +319,8 @@ import ConceptTreeNode from './ConceptTreeNode.vue'
 import VirtualGroupNode, { type TreeGroup } from './VirtualGroupNode.vue'
 import MatrixPill from '../editor/MatrixPill.vue'
 import Pill from '../editor/Pill.vue'
-import { findMatchingModelNode, isTemplateNode } from '../../utils/modelMatching'
-import { useModelConcepts } from '../../composables/useModelConcepts'
+import { findMatchingKnowledgeNode, isTemplateNode } from '../../utils/knowledgeMatching'
+import { useKnowledgeConcepts } from '../../composables/useKnowledgeConcepts'
 
 const emit = defineEmits<{
   'select-node': [nodeId: string]
@@ -328,12 +328,12 @@ const emit = defineEmits<{
   'select-view': [view: string]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const metamodelStore = useMetamodelStore()
 const uiStore = useUiStore()
 
 function getModelInfo(rootId: string): { baseName: string; version: SemVer } {
-  const rootNode = modelStore.getNode(rootId)
+  const rootNode = knowledgeStore.getNode(rootId)
   const path = rootNode?.source?.path || ''
   const filename = path.split('/').pop()?.split('\\').pop() || rootNode?.name || ''
 
@@ -373,20 +373,20 @@ function getModelInfo(rootId: string): { baseName: string; version: SemVer } {
 
 const breadcrumbs = computed(() => {
   const modelId = uiStore.focusedModelId || uiStore.activeModelId || ''
-  return uiStore.resolveModelAncestry(modelId, modelStore.nodes)
+  return uiStore.resolveModelAncestry(modelId, knowledgeStore.nodes)
 })
 
 const modelDagTopology = computed(() => {
-  return computeModelDagTopology(modelStore.nodes)
+  return computeModelDagTopology(knowledgeStore.nodes)
 })
 
 function isModelRoot(node: KnowledgeNode | undefined): boolean {
   if (!node || isTemplateNode(node)) return false
-  return node.kind === 'root' || node.parentId === null || modelStore.rootIds.includes(node.id)
+  return node.kind === 'root' || node.parentId === null || knowledgeStore.rootIds.includes(node.id)
 }
 
 const visibleRootIds = computed(() => {
-  const allModelRoots = Object.values(modelStore.nodes).filter(isModelRoot)
+  const allModelRoots = Object.values(knowledgeStore.nodes).filter(isModelRoot)
   if (allModelRoots.length === 0) return []
 
   if (uiStore.sidebarMode === 'focused_model') {
@@ -395,7 +395,7 @@ const visibleRootIds = computed(() => {
       return [focused]
     }
     if (focused) {
-      const match = findMatchingModelNode(allModelRoots, focused)
+      const match = findMatchingKnowledgeNode(allModelRoots, focused)
       if (match) return [match.id]
     }
     return [allModelRoots[0].id]
@@ -409,7 +409,7 @@ const visibleRootIds = computed(() => {
   // Group by baseName -> keep highest version
   const bestByBaseName = new Map<string, { id: string; version: SemVer }>()
   for (const rid of candidateIds) {
-    const node = modelStore.getNode(rid)
+    const node = knowledgeStore.getNode(rid)
     if (!node || isTemplateNode(node)) continue
     const info = getModelInfo(node.id)
     const existing = bestByBaseName.get(info.baseName)
@@ -432,12 +432,12 @@ const visibleRootIds = computed(() => {
 })
 
 const totalModelCount = computed(() => {
-  return Object.values(modelStore.nodes).filter(isModelRoot).length
+  return Object.values(knowledgeStore.nodes).filter(isModelRoot).length
 })
 
 const activeSubmodelCount = computed(() => {
   let count = 0
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (!isModelRoot(node)) continue
     if (!node.rawContent) {
       count++
@@ -455,7 +455,7 @@ const activeSubmodelCount = computed(() => {
 
 const draftSubmodelCount = computed(() => {
   let count = 0
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (!isModelRoot(node)) continue
     if (!node.rawContent) continue
     try {
@@ -508,10 +508,10 @@ function handleClickGhost(conceptName: string, targetRootId?: string): void {
   const targetName = concept?.name ?? terminalName
   const type = concept?.type ?? 'text'
   if (type === 'text') {
-    modelStore.addTextSection(targetName, rootId ?? undefined)
+    knowledgeStore.addTextSection(targetName, rootId ?? undefined)
     uiStore.selectNode(rootId ?? visibleRootIds.value[0])
   } else {
-    const id = modelStore.addConceptElement(targetName, `New ${targetName}`, rootId ?? undefined)
+    const id = knowledgeStore.addConceptElement(targetName, `New ${targetName}`, rootId ?? undefined)
     if (id) uiStore.selectNode(id)
   }
 }
@@ -559,25 +559,25 @@ watch(expandedGeneration, (val) => {
 
 // IMPORTANT: the pills must list the SAME matrices (and in the SAME order) as
 // MatricesGrid renders, because uiStore.activeMatrixIndex is an index into this
-// list. Resolving against `modelStore.rootIds` + `merge` keeps the sidebar and
+// list. Resolving against `knowledgeStore.rootIds` + `merge` keeps the sidebar and
 // the grid on one shared index space; using the filtered `visibleRootIds` +
 // `fallback` made clicks drift to the previous matrix whenever a hidden
 // (lower-version / spec) root declared matrices.
-const rootIdsForMatrices = computed(() => modelStore.rootIds)
+const rootIdsForMatrices = computed(() => knowledgeStore.rootIds)
 const { matrixDefs, getMatrixValueCount } = useMatrixDefinitions(rootIdsForMatrices, {
   strategy: 'merge',
 })
 
 /** Returns matrix definitions belonging to a specific model node. */
 function getMatricesForModel(rootId: string): MatrixDef[] {
-  const rootNode = modelStore.getNode(rootId)
+  const rootNode = knowledgeStore.getNode(rootId)
   if (!rootNode) return []
   return mergeMatrixDefs(rootNode)
 }
 
 /** True when a model's matrices have no source/target — template unresolved, defs came from model blocks. */
 function hasUnresolvedMatrixDefs(rootId: string): boolean {
-  const rootNode = modelStore.getNode(rootId)
+  const rootNode = knowledgeStore.getNode(rootId)
   if (!rootNode) return false
   return mergeMatrixDefs(rootNode).some((d) => !d.source || !d.target)
 }
@@ -610,7 +610,7 @@ const selectedMatrixDistribution = computed(() => {
   if (!selectedMatrix.value) return {} as Record<string, number>
   const counts: Record<string, number> = {}
   const prefix = selectedMatrix.value.name + '||'
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (!node.fields) continue
     for (const [key, fv] of Object.entries(node.fields)) {
       if (!key.startsWith(prefix)) continue
@@ -671,7 +671,7 @@ function isModelExpanded(rootId: string): boolean {
 }
 
 function getModelName(rootId: string): string {
-  const rootNode = modelStore.getNode(rootId)
+  const rootNode = knowledgeStore.getNode(rootId)
   const path = rootNode?.source?.path || ''
   if (!path) return 'model.md'
   return path.split('/').pop()?.split('\\').pop() || path
@@ -683,7 +683,7 @@ const {
   getEmptyConceptsForModel,
   activeConceptsByRoot,
   emptyConceptsByRoot,
-} = useModelConcepts()
+} = useKnowledgeConcepts()
 </script>
 
 <style scoped>

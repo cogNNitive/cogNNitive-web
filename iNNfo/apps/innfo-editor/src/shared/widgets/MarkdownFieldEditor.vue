@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { renderMarkdown } from '../../utils/markdown'
 import { FileText, Pencil, Save, X, ArrowLeftFromLine } from 'lucide-vue-next'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import type { FileHandleLike } from '@cognnitive/innfo-core'
 import MinimalMarkdownEditor from '../../components/ui/MinimalMarkdownEditor.vue'
 
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 }>()
 
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 // ── Mode detection ──────────────────────────────────────────────
 const isFileMode = computed(() => props.widgetType === 'markdown_file')
@@ -67,7 +67,7 @@ async function resolveMarkdownHandle(
   const rootHandle = workspaceStore.handle
   if (!rootHandle) return null
 
-  const node = modelStore.getNode(nodeId)
+  const node = knowledgeStore.getNode(nodeId)
   if (!node) return null
 
   const slug = node.slug || node.name.toLowerCase().replace(/[^a-z0-9-]/g, '_')

@@ -138,7 +138,7 @@ import {
   getHexColorLight,
 } from '../../composables/useConceptVisuals'
 import { useMetamodelStore } from '../../stores/metamodelStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import Pill from '../editor/Pill.vue'
 import ConceptTreeNode from './ConceptTreeNode.vue'
 import type { KnowledgeNode } from '../../model/types'
@@ -290,11 +290,11 @@ const isSelected = computed(() => {
   return false
 })
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 function onHeaderClick(): void {
   const firstEl = props.elements[0]
-  const parentId = firstEl?.parentId ?? modelStore.rootIds[0] ?? 'Root'
+  const parentId = firstEl?.parentId ?? knowledgeStore.rootIds[0] ?? 'Root'
   const virtualId = `virtual:${parentId}:${props.conceptName}`
   _emit('select', virtualId)
 }

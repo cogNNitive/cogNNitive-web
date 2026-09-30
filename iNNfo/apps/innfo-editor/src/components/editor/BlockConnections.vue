@@ -153,7 +153,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { HelpCircle, Tag, FileText } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { getHexColor } from '../../composables/useConceptVisuals'
@@ -179,7 +179,7 @@ const props = withDefaults(
   },
 )
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 
 const { fieldConnections, mentionConnections } = useNodeConnections({
@@ -228,7 +228,7 @@ function matchesMatrixName(label: string, matrixName: string): boolean {
 }
 
 const matrixGroups = computed<MatrixGroup[]>(() => {
-  const root = modelStore.getNode(props.rootNodeId)
+  const root = knowledgeStore.getNode(props.rootNodeId)
   if (!root) return []
 
   const defsField = readMatrixDefsField(root)
@@ -247,7 +247,7 @@ const matrixGroups = computed<MatrixGroup[]>(() => {
     rootNodeId: string,
     conceptInstanceName: string,
   ): number {
-    const rn = modelStore.getNode(rootNodeId)
+    const rn = knowledgeStore.getNode(rootNodeId)
     if (!rn?.fields) return 0
     let count = 0
     for (const [key, fv] of Object.entries(rn.fields)) {
@@ -265,7 +265,7 @@ const matrixGroups = computed<MatrixGroup[]>(() => {
   }
 
   function countTotalMatrixCells(matrixName: string, rootNodeId: string): number {
-    const rn = modelStore.getNode(rootNodeId)
+    const rn = knowledgeStore.getNode(rootNodeId)
     if (!rn?.fields) return 0
     let count = 0
     for (const [key, fv] of Object.entries(rn.fields)) {
@@ -282,10 +282,10 @@ const matrixGroups = computed<MatrixGroup[]>(() => {
 
   function resolveNodeId(idOrName?: string): string | undefined {
     if (!idOrName) return undefined
-    const direct = modelStore.getNode(idOrName)
+    const direct = knowledgeStore.getNode(idOrName)
     if (direct) return direct.id
     const clean = idOrName.split('/').pop() || idOrName
-    const found = Object.values(modelStore.nodes).find(
+    const found = Object.values(knowledgeStore.nodes).find(
       (n) => n.id === idOrName || n.name === idOrName || n.id.endsWith('/' + clean) || n.name === clean,
     )
     return found ? found.id : idOrName
@@ -297,7 +297,7 @@ const matrixGroups = computed<MatrixGroup[]>(() => {
     nodeName: string,
     isSource: boolean,
   ): ResolvedConnectionItem[] {
-    const rn = modelStore.getNode(rootNodeId)
+    const rn = knowledgeStore.getNode(rootNodeId)
     if (!rn?.fields) return []
     const items: ResolvedConnectionItem[] = []
     for (const [key, fv] of Object.entries(rn.fields)) {
@@ -337,7 +337,7 @@ const matrixGroups = computed<MatrixGroup[]>(() => {
     if (!isSource && !isTarget) continue
 
     const conceptColor = (() => {
-      const rootNode = modelStore.getNode(props.rootNodeId)
+      const rootNode = knowledgeStore.getNode(props.rootNodeId)
       if (rootNode?.rawContent) {
         const fmData = parseFrontmatter(rootNode.rawContent)
         const concepts = fmData?.concepts ?? []
@@ -347,7 +347,7 @@ const matrixGroups = computed<MatrixGroup[]>(() => {
       return getHexColor(undefined)
     })()
 
-    const node = props.nodeId ? modelStore.getNode(props.nodeId) : undefined
+    const node = props.nodeId ? knowledgeStore.getNode(props.nodeId) : undefined
     const count = props.isConcept || !node
       ? countTotalMatrixCells(m.name, props.rootNodeId)
       : countNonDashCells(m.name, props.rootNodeId, node.name)

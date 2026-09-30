@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { recursiveParse } from '../../src/model/recursiveParser'
 import { recursiveSerialize } from '../../src/model/recursiveSerializer'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { buildFakeTree, type FakeTree } from '../helpers/fakeFs'
 import type { KnowledgeNode } from '../../src/model/types'
 import type { ParsedKnowledge, KnowledgeDriver } from '@cognnitive/innfo-core'
@@ -297,7 +297,7 @@ title: "Matrix Definitions Test"
 
   it('does not duplicate an element reachable through two concept parents (diamond)', async () => {
     setActivePinia(createPinia())
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
 
     const sharedElement: KnowledgeNode = {
       id: 'Root/Shared',
@@ -360,7 +360,7 @@ title: "Matrix Definitions Test"
       ConceptB: conceptB,
       'Root/Shared': sharedElement,
     }
-    modelStore.setGraph(nodes, ['Root'])
+    knowledgeStore.setGraph(nodes, ['Root'])
 
     let writtenContent: string | null = null
     const capturingDriver: KnowledgeDriver = {

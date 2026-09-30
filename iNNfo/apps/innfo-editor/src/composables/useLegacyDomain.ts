@@ -2,13 +2,13 @@
 
 import { computed } from 'vue'
 import { detectLegacy, type DetectLegacyResult, type DomainReader, type LegacySignal } from '@cognnitive/innfo-core/legacy'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 
 export function useLegacyDomain() {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   const legacyIssue = computed(() => {
-    return modelStore.parseIssues.find((issue) => issue.code === 'LEGACY_DOMAIN')
+    return knowledgeStore.parseIssues.find((issue) => issue.code === 'LEGACY_DOMAIN')
   })
 
   const isLegacyDomain = computed(() => {

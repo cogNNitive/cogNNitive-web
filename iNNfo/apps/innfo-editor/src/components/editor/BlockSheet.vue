@@ -126,7 +126,7 @@ import BlockSheetElementBody from './BlockSheetElementBody.vue'
 import OpenCodePromptModal from './OpenCodePromptModal.vue'
 import { getMarkerDefinitions } from './MarkerIcons'
 import { renderMarkdown } from '../../utils/markdown'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useNodeMediaScan } from '../../composables/useNodeMediaScan'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { getColorClasses } from '../../utils/colors'
@@ -188,7 +188,7 @@ const emit = defineEmits<{
   'navigate-to-node': [nodeId: string]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const workspaceStore = useWorkspaceStore()
 const conceptVisuals = useConceptVisuals()
 
@@ -199,7 +199,7 @@ const isConcept = computed(() => props.kind === 'concept')
 const effectiveColorName = computed(() => {
   if (props.conceptColor) return props.conceptColor
   if (props.block.id) {
-    const node = modelStore.getNode(props.block.id)
+    const node = knowledgeStore.getNode(props.block.id)
     if (node) return conceptVisuals.resolveColorName(node)
   }
   const targetConcept = props.conceptName || props.conceptType
@@ -213,7 +213,7 @@ const effectiveColorName = computed(() => {
 const resolvedIcon = computed(() => {
   if (props.conceptIcon) return props.conceptIcon
   if (props.block.id) {
-    const node = modelStore.getNode(props.block.id)
+    const node = knowledgeStore.getNode(props.block.id)
     if (node) return conceptVisuals.resolveIcon(node)
   }
   const targetConcept = props.conceptName || props.conceptType
@@ -258,7 +258,7 @@ const renderedDescription = computed(() => {
 // ── Node from store (full model data) ───────────────────────────
 
 const nodeFromStore = computed(() =>
-  props.block.id ? modelStore.getNode(props.block.id) : undefined,
+  props.block.id ? knowledgeStore.getNode(props.block.id) : undefined,
 )
 
 // ── Relationships ───────────────────────────────────────────────
@@ -279,12 +279,12 @@ function lastSegment(idOrName?: string): string {
  */
 const hasIncomingReferences = computed(() => {
   if (!props.block.id) return false
-  const node = modelStore.getNode(props.block.id)
+  const node = knowledgeStore.getNode(props.block.id)
   if (!node) return false
   const nameLower = (node.name || '').toLowerCase()
   const cleanLower = lastSegment(node.name).toLowerCase()
 
-  for (const other of Object.values(modelStore.nodes)) {
+  for (const other of Object.values(knowledgeStore.nodes)) {
     if (other.id === props.block.id) continue
     const refs: string[] = []
     if (other.fields) {
@@ -310,31 +310,31 @@ const hasIncomingReferences = computed(() => {
 
 const hasRelationships = computed(() => {
   if (!props.block.id) return false
-  const node = modelStore.getNode(props.block.id)
+  const node = knowledgeStore.getNode(props.block.id)
   if (node && node.relationships && node.relationships.length > 0) return true
   return hasIncomingReferences.value
 })
 
 const relationshipsList = computed(() => {
   if (!props.block.id) return []
-  const node = modelStore.getNode(props.block.id)
+  const node = knowledgeStore.getNode(props.block.id)
   return node?.relationships ?? []
 })
 
 // ── Matrix summaries ────────────────────────────────────────────
 
 const rootNodeId = computed(() => {
-  if (!props.block.id) return modelStore.rootIds[0] ?? ''
-  let curr = modelStore.getNode(props.block.id)
+  if (!props.block.id) return knowledgeStore.rootIds[0] ?? ''
+  let curr = knowledgeStore.getNode(props.block.id)
   while (curr && curr.parentId) {
-    curr = modelStore.getNode(curr.parentId)
+    curr = knowledgeStore.getNode(curr.parentId)
   }
-  return curr ? curr.id : (modelStore.rootIds[0] ?? '')
+  return curr ? curr.id : (knowledgeStore.rootIds[0] ?? '')
 })
 
 const hasMatrices = computed(() => {
   if (!rootNodeId.value) return false
-  const root = modelStore.getNode(rootNodeId.value)
+  const root = knowledgeStore.getNode(rootNodeId.value)
   if (!root) return false
   const defs = readMatrixDefsField(root)
   if (defs.length > 0) return true
@@ -414,7 +414,7 @@ const onConceptNameInput = (newName: string) => {
 const currentTags = computed<string[]>(() => {
   if (isConcept.value) {
     if (!rootNodeId.value) return []
-    const root = modelStore.getNode(rootNodeId.value)
+    const root = knowledgeStore.getNode(rootNodeId.value)
     return root?.conceptTags?.[props.conceptName] ?? []
   }
   const node = nodeFromStore.value
@@ -422,7 +422,7 @@ const currentTags = computed<string[]>(() => {
 })
 
 const activeWorkspaceTags = computed(() => {
-  const wsMap = modelStore.workspaceTagsMap
+  const wsMap = knowledgeStore.workspaceTagsMap
   if (!wsMap || Object.keys(wsMap).length === 0) return []
   const badges: { name: string; icon?: string; color?: string; description?: string }[] = []
   for (const t of currentTags.value) {
@@ -455,16 +455,16 @@ const onTagsUpdate = (newTags: string[]) => {
   localTags.value = newTags
   props.block.tags = newTags
   if (props.block.id) {
-    const node = modelStore.getNode(props.block.id)
+    const node = knowledgeStore.getNode(props.block.id)
     if (node) {
-      modelStore.upsertNode({
+      knowledgeStore.upsertNode({
         ...node,
         tags: newTags,
       })
     }
-    modelStore.markDirty(props.block.id)
+    knowledgeStore.markDirty(props.block.id)
     if (rootNodeId.value) {
-      modelStore.markDirty(rootNodeId.value)
+      knowledgeStore.markDirty(rootNodeId.value)
     }
     emit('change')
   }
@@ -473,7 +473,7 @@ const onTagsUpdate = (newTags: string[]) => {
 const onConceptTagsUpdate = (newTags: string[]) => {
   localTags.value = newTags
   if (rootNodeId.value) {
-    const root = modelStore.getNode(rootNodeId.value)
+    const root = knowledgeStore.getNode(rootNodeId.value)
     if (root) {
       const conceptTags = { ...(root.conceptTags ?? {}) }
       if (newTags.length > 0) {
@@ -481,11 +481,11 @@ const onConceptTagsUpdate = (newTags: string[]) => {
       } else {
         delete conceptTags[props.conceptName]
       }
-      modelStore.upsertNode({
+      knowledgeStore.upsertNode({
         ...root,
         conceptTags,
       })
-      modelStore.markDirty(root.id)
+      knowledgeStore.markDirty(root.id)
       emit('change')
     }
   }
@@ -503,15 +503,15 @@ watch(
 const onDescriptionUpdate = (val: string) => {
   props.block.description = val
   if (props.block.id) {
-    const node = modelStore.getNode(props.block.id)
+    const node = knowledgeStore.getNode(props.block.id)
     if (node) {
-      modelStore.upsertNode({
+      knowledgeStore.upsertNode({
         ...node,
         rawSections: { ...node.rawSections, description: val },
       })
     }
   }
-  modelStore.markDirty(props.block.id || '')
+  knowledgeStore.markDirty(props.block.id || '')
   emit('change')
 }
 
@@ -525,7 +525,7 @@ const onNameChange = () => {
 
   props.block.name = newName
   if (props.block.id) {
-    modelStore.renameElementNode(props.block.id, newName)
+    knowledgeStore.renameElementNode(props.block.id, newName)
   }
   emit('change')
 }
@@ -537,17 +537,17 @@ const onNameInput = (event: Event) => {
 const handleSaveClick = async () => {
   onNameChange()
   if (!isConcept.value && props.block.id) {
-    const node = modelStore.getNode(props.block.id)
+    const node = knowledgeStore.getNode(props.block.id)
     if (node) {
-      modelStore.upsertNode({
+      knowledgeStore.upsertNode({
         ...node,
         tags: [...localTags.value],
       })
       props.block.tags = [...localTags.value]
     }
-    modelStore.markDirty(props.block.id)
+    knowledgeStore.markDirty(props.block.id)
     if (rootNodeId.value) {
-      modelStore.markDirty(rootNodeId.value)
+      knowledgeStore.markDirty(rootNodeId.value)
     }
   }
   emit('change')
@@ -576,7 +576,7 @@ const isPromptModalOpen = ref(false)
 
 const templateNode = computed(() => {
   if (!rootNodeId.value) return undefined
-  const rootNode = modelStore.getNode(rootNodeId.value)
+  const rootNode = knowledgeStore.getNode(rootNodeId.value)
   if (!rootNode?.rawContent) return undefined
 
   const fm = parseFrontmatter(rootNode.rawContent)
@@ -584,7 +584,7 @@ const templateNode = computed(() => {
   if (!parentName) return undefined
 
   const templateId = `spec:${parentName}`
-  return modelStore.getNode(templateId)
+  return knowledgeStore.getNode(templateId)
 })
 
 const templatePath = computed(() => templateNode.value?.source?.path || '')
@@ -595,7 +595,7 @@ const templateFilename = computed(() => {
 
 const modelPath = computed(() => {
   if (!rootNodeId.value) return ''
-  const rootNode = modelStore.getNode(rootNodeId.value)
+  const rootNode = knowledgeStore.getNode(rootNodeId.value)
   return rootNode?.source?.path || ''
 })
 

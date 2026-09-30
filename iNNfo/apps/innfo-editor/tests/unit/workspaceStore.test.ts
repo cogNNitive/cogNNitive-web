@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { buildFakeTree } from '../helpers/fakeFs'
 
 const domainMd = `---
@@ -36,9 +36,9 @@ describe('workspaceStore.open()', () => {
     setActivePinia(createPinia())
   })
 
-  it('triggers exactly one parse pass into modelStore on the first open()', async () => {
+  it('triggers exactly one parse pass into knowledgeStore on the first open()', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const handle = buildFakeTree('workspace', {
       'domaiNN_NN.md': domainMd,
       kNNowledge: {
@@ -50,7 +50,7 @@ describe('workspaceStore.open()', () => {
 
     expect(workspaceStore.parseCount).toBe(1)
     expect(workspaceStore.hasParsed).toBe(true)
-    expect(Object.keys(modelStore.nodes).length).toBeGreaterThan(0)
+    expect(Object.keys(knowledgeStore.nodes).length).toBeGreaterThan(0)
   })
 
   it('does not trigger a second parse pass when open() is invoked twice', async () => {
@@ -87,7 +87,7 @@ describe('workspaceStore.open()', () => {
 
   it('recognizes a legacy domain without marking emptyFolderError', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const legacyHandle = buildFakeTree('legacy-workspace', {
       'index.md': '---\nspec_version: "V_0-2-0"\nlevel: 0\ntitle: "Old Index"\n---\n# NN index\n* [[kNNowledge/doc_NN.md]]\n',
       models: {
@@ -99,7 +99,7 @@ describe('workspaceStore.open()', () => {
 
     expect(workspaceStore.emptyFolderError).toBe(false)
     expect(workspaceStore.hasParsed).toBe(true)
-    expect(modelStore.parseIssues.some((i) => i.code === 'LEGACY_DOMAIN')).toBe(true)
+    expect(knowledgeStore.parseIssues.some((i) => i.code === 'LEGACY_DOMAIN')).toBe(true)
   })
 
   it('sets emptyFolderError and a detailed error when a _NN.md file fails to parse', async () => {
@@ -131,10 +131,10 @@ describe('workspaceStore.open()', () => {
 
   it('updates source.path of all child nodes when performing a version bump', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
 
     const rootId = 'kNNowledge/Test_V_1-0-0_business_NN.md'
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         [rootId]: {
           id: rootId,
@@ -177,8 +177,8 @@ describe('workspaceStore.open()', () => {
 
     await workspaceStore.saveActiveFileWithVersionBump('patch', rootId)
 
-    const updatedRoot = modelStore.getNode(rootId)
-    const updatedChild = modelStore.getNode('child-1')
+    const updatedRoot = knowledgeStore.getNode(rootId)
+    const updatedChild = knowledgeStore.getNode('child-1')
 
     expect(updatedRoot?.source.path).toBe('kNNowledge/Test_V_1-0-1_business_NN.md')
     expect(updatedChild?.source.path).toBe('kNNowledge/Test_V_1-0-1_business_NN.md')
@@ -186,10 +186,10 @@ describe('workspaceStore.open()', () => {
 
   it('saveActiveFile writes dirty nodes back to handle when driver is null', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
 
     const rootId = 'kNNowledge/Test_V_1-0-0_business_NN.md'
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         [rootId]: {
           id: rootId,
@@ -236,16 +236,16 @@ describe('workspaceStore.open()', () => {
     workspaceStore.handle = handle
 
     // Modify status field value on the child node
-    const child = modelStore.getNode('child-1')
+    const child = knowledgeStore.getNode('child-1')
     if (child) {
       child.fields['status'] = {
         value: 'New Status',
         editAttribution: { author: { kind: 'user', id: 'test' }, timestamp: '' },
       }
     }
-    modelStore.markDirty('child-1') // This should also mark the root node dirty
+    knowledgeStore.markDirty('child-1') // This should also mark the root node dirty
 
-    expect(modelStore.dirtyIds.has(rootId)).toBe(true)
+    expect(knowledgeStore.dirtyIds.has(rootId)).toBe(true)
 
     await workspaceStore.saveActiveFile()
 
@@ -256,6 +256,6 @@ describe('workspaceStore.open()', () => {
 
     expect(text).toContain('New Status')
     expect(text).not.toContain('Old Status')
-    expect(modelStore.dirtyIds.has(rootId)).toBe(false)
+    expect(knowledgeStore.dirtyIds.has(rootId)).toBe(false)
   })
 })

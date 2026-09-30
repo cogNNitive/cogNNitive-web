@@ -8,14 +8,14 @@
  * Read mode reuses the same visual language as the active-model row in
  * LeftSidebar.vue (`bg-primary/10 text-primary`, FileText icon) and the
  * same node-matching logic as FieldViewer.vue's `handleModelPillClick` to
- * resolve the raw value to a `modelStore.nodes` entry before calling
+ * resolve the raw value to a `knowledgeStore.nodes` entry before calling
  * `uiStore.focusModel(...)`.
  */
 import { ref, computed, watch } from 'vue'
 import { FileText, Plus } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
-import { findMatchingModelNode } from '../../utils/modelMatching'
+import { findMatchingKnowledgeNode } from '../../utils/knowledgeMatching'
 import { deriveSuggestedSubmodelPath, slugify } from '../../utils/submodelPath'
 import { buildSubmodelTemplateUrl } from '../../utils/constants'
 
@@ -43,7 +43,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const showDropdown = ref(false)
 const query = ref(props.modelValue || '')
@@ -77,7 +77,7 @@ const displayName = computed(() => basename(cleanValue(props.modelValue || '')))
 const modelMissing = computed(() => {
   const clean = cleanValue(props.modelValue || '')
   if (!clean) return true
-  return !findMatchingModelNode(modelStore.nodes, clean)
+  return !findMatchingKnowledgeNode(knowledgeStore.nodes, clean)
 })
 
 /**
@@ -102,7 +102,7 @@ interface ModelSuggestion {
 
 const availableModels = computed<ModelSuggestion[]>(() => {
   const suggestions: ModelSuggestion[] = []
-  const allRoots = Object.values(modelStore.nodes).filter(
+  const allRoots = Object.values(knowledgeStore.nodes).filter(
     (n) => (n.kind === 'root' || n.parentId === null) && !n.id.startsWith('spec:'),
   )
   for (const node of allRoots) {
@@ -133,7 +133,7 @@ function handlePillClick(): void {
   const clean = cleanValue(props.modelValue || '')
   if (!clean) return
 
-  const matchingNode = findMatchingModelNode(modelStore.nodes, clean)
+  const matchingNode = findMatchingKnowledgeNode(knowledgeStore.nodes, clean)
   const resolvedId = matchingNode ? matchingNode.id : clean
   uiStore.focusModel(resolvedId)
   uiStore.selectNode(resolvedId)
@@ -165,7 +165,7 @@ function onBlur(): void {
 async function handleCreateSubmodel(): Promise<void> {
   const targetTemplate =
     props.fieldDefinition?.target_blueprint || 'base'
-  const targetNode = props.nodeId ? modelStore.getNode(props.nodeId) : undefined
+  const targetNode = props.nodeId ? knowledgeStore.getNode(props.nodeId) : undefined
   const isElement = targetNode?.kind === 'element'
   const elementSlug = isElement
     ? targetNode?.slug || (targetNode?.name ? slugify(targetNode.name) : undefined)
@@ -173,7 +173,7 @@ async function handleCreateSubmodel(): Promise<void> {
 
   let conceptName = targetNode?.conceptBinding?.name
   if (!conceptName && targetNode?.parentId) {
-    const parentNode = modelStore.getNode(targetNode.parentId)
+    const parentNode = knowledgeStore.getNode(targetNode.parentId)
     if (parentNode?.kind === 'concept') {
       conceptName = parentNode.conceptBinding?.name || parentNode.name
     }
@@ -188,8 +188,8 @@ async function handleCreateSubmodel(): Promise<void> {
   }
   const conceptSlug = conceptName ? slugify(conceptName) : undefined
 
-  const parentRootId = props.nodeId ? modelStore.getModelRootForNode(props.nodeId) : undefined
-  const parentRootNode = parentRootId ? modelStore.getNode(parentRootId) : undefined
+  const parentRootId = props.nodeId ? knowledgeStore.getKnowledgeRootForNode(props.nodeId) : undefined
+  const parentRootNode = parentRootId ? knowledgeStore.getNode(parentRootId) : undefined
   const parentPath = parentRootNode?.source?.path || 'kNNowledge/knowledge_NN.md'
 
   const suggestedPath = deriveSuggestedSubmodelPath({
@@ -206,7 +206,7 @@ async function handleCreateSubmodel(): Promise<void> {
   const cleanPath = userPath.trim().replace(/\\/g, '/')
   const title = `${targetNode?.name || 'Submodel'} - ${targetTemplate}`
 
-  const newModelId = modelStore.scaffoldSubmodel({
+  const newModelId = knowledgeStore.scaffoldSubmodel({
     path: cleanPath,
     template: targetTemplate,
     templateUrl: buildSubmodelTemplateUrl(targetTemplate),

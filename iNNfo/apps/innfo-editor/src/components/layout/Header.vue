@@ -573,7 +573,7 @@ import {
 } from 'lucide-vue-next'
 
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { useToast } from '../../shared/useToast'
 import Pill from '../editor/Pill.vue'
@@ -584,21 +584,21 @@ import { getConceptMeta } from '../../composables/useConceptVisuals'
 import { DEFAULT_INNFO_VERSION } from '../../utils/constants'
 
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const { show } = useToast()
 
 const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
 const commitDate = typeof __COMMIT_DATE__ !== 'undefined' ? __COMMIT_DATE__ : ''
 
-const hasErrors = computed(() => (modelStore.validationReport?.summary.errors ?? 0) > 0)
+const hasErrors = computed(() => (knowledgeStore.validationReport?.summary.errors ?? 0) > 0)
 const hasWarnings = computed(
   () =>
-    (modelStore.validationReport?.summary.warnings ?? 0) > 0 || modelStore.parseIssues.length > 0,
+    (knowledgeStore.validationReport?.summary.warnings ?? 0) > 0 || knowledgeStore.parseIssues.length > 0,
 )
-const totalErrors = computed(() => modelStore.validationReport?.summary.errors ?? 0)
+const totalErrors = computed(() => knowledgeStore.validationReport?.summary.errors ?? 0)
 const totalWarnings = computed(
-  () => (modelStore.validationReport?.summary.warnings ?? 0) + modelStore.parseIssues.length,
+  () => (knowledgeStore.validationReport?.summary.warnings ?? 0) + knowledgeStore.parseIssues.length,
 )
 
 const statusClass = computed(() => {
@@ -650,7 +650,7 @@ function triggerBlink(): void {
 }
 
 watch(
-  () => [workspaceStore.parseCount, modelStore.validationReport, modelStore.parseIssues.length],
+  () => [workspaceStore.parseCount, knowledgeStore.validationReport, knowledgeStore.parseIssues.length],
   () => {
     triggerBlink()
   },
@@ -665,20 +665,20 @@ const bumpError = ref('')
 
 const rootNode = computed(() => {
   const activeId =
-    (uiStore.activeModelId && modelStore.nodes[uiStore.activeModelId]
+    (uiStore.activeModelId && knowledgeStore.nodes[uiStore.activeModelId]
       ? uiStore.activeModelId
       : undefined) ??
-    modelStore.rootIds.find((id) => !id.startsWith('spec:')) ??
-    modelStore.rootIds[0]
+    knowledgeStore.rootIds.find((id) => !id.startsWith('spec:')) ??
+    knowledgeStore.rootIds[0]
   if (!activeId) return null
-  return modelStore.getNode(activeId) ?? null
+  return knowledgeStore.getNode(activeId) ?? null
 })
 
 const hasRootNode = computed(() => rootNode.value !== null)
 
 const availableConcepts = computed(() => {
   const concepts = new Set<string>()
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     const conceptName =
       node.conceptBinding?.name || (node.kind === 'concept' ? node.name : node.type)
     if (conceptName && conceptName !== 'root') {
@@ -692,7 +692,7 @@ const conceptMetaMap = computed(() => {
   const map: Record<string, { icon?: string; color?: string; nodeId?: string }> = {}
   for (const concept of availableConcepts.value) {
     const meta = getConceptMeta(concept)
-    const conceptNode = Object.values(modelStore.nodes).find(
+    const conceptNode = Object.values(knowledgeStore.nodes).find(
       (n) => n.name === concept || n.conceptBinding?.name === concept,
     )
     map[concept] = {
@@ -710,11 +710,11 @@ const selectedConceptCount = computed(() => {
 })
 
 const availableTags = computed(() => {
-  return modelStore.allTags
+  return knowledgeStore.allTags
 })
 
 const tagMetaMap = computed(() => {
-  return modelStore.workspaceTagsMap
+  return knowledgeStore.workspaceTagsMap
 })
 
 const selectedTagCount = computed(() => {
@@ -728,7 +728,7 @@ const isAllTagsSelected = computed(() => {
 const selectedPrimaryTags = computed<
   Array<{ name: string; icon?: string; color?: string; description?: string }>
 >(() => {
-  const wsMap = modelStore.workspaceTagsMap
+  const wsMap = knowledgeStore.workspaceTagsMap
   if (!wsMap || isAllTagsSelected.value) return []
   const result: Array<{ name: string; icon?: string; color?: string; description?: string }> = []
   for (const tag of uiStore.selectedTagFilters) {
@@ -799,7 +799,7 @@ const activeModelName = computed(() => {
   return node.name || (node.fields?.title?.value as string) || 'Model'
 })
 
-const unsavedChanges = computed(() => modelStore.dirtyIds.size > 0)
+const unsavedChanges = computed(() => knowledgeStore.dirtyIds.size > 0)
 const shouldShowSave = computed(() => unsavedChanges.value || !workspaceStore.hasHandle)
 
 // ── Save flow ───────────────────────────────────────────────────
@@ -821,7 +821,7 @@ async function handleSave(): Promise<void> {
 
 async function handleReload(): Promise<void> {
   if (workspaceStore.isParsing) return
-  if (modelStore.dirtyIds.size > 0) {
+  if (knowledgeStore.dirtyIds.size > 0) {
     const ok = confirm(
       'Tenés cambios sin guardar. Al recargar desde el archivo se van a perder.\n¿Estás seguro?',
     )

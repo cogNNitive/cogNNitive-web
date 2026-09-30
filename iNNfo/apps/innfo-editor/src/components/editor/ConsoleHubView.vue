@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useUiStore } from '../../stores/uiStore'
 import { resolveFileHandleForRead } from '../../services/WorkspacePersistenceService'
@@ -13,7 +13,7 @@ import {
   Terminal,
 } from 'lucide-vue-next'
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const workspaceStore = useWorkspaceStore()
 const uiStore = useUiStore()
 
@@ -41,12 +41,12 @@ function normalizeSlug(str: string): string {
     .replace(/^-|-$/g, '')
 }
 
-// Discovered models from modelStore (domain models only; exclude specs and workspace manifest)
+// Discovered models from knowledgeStore (domain models only; exclude specs and workspace manifest)
 const discoveredModels = computed(() => {
-  return modelStore.rootIds
+  return knowledgeStore.rootIds
     .filter((rootId) => !rootId.startsWith('spec:') && !rootId.startsWith('template:'))
     .filter((rootId) => {
-      const node = modelStore.getNode(rootId)
+      const node = knowledgeStore.getNode(rootId)
       if (!node) return false
 
       const templateName =
@@ -67,7 +67,7 @@ const discoveredModels = computed(() => {
       return true
     })
     .map((rootId) => {
-      const node = modelStore.getNode(rootId)
+      const node = knowledgeStore.getNode(rootId)
       const rawTitle =
         (typeof node?.fields?.['title']?.value === 'string' ? node.fields['title'].value : null) ||
         (typeof node?.fields?.['name']?.value === 'string' ? node.fields['name'].value : null)
@@ -143,8 +143,8 @@ function getCandidatePaths(target: string): string[] {
       'innfo/export/workspace_hub.html',
     ]
 
-    // Check registered artifacts in modelStore
-    for (const node of Object.values(modelStore.nodes)) {
+    // Check registered artifacts in knowledgeStore
+    for (const node of Object.values(knowledgeStore.nodes)) {
       const isArtifact = node.type === 'Artifacts' || node.conceptBinding?.name === 'Artifacts'
       const ref = typeof node.fields?.['artifact_ref']?.value === 'string' ? node.fields['artifact_ref'].value : ''
       if (isArtifact && ref.endsWith('.html') && (ref.includes('workspace') || ref.includes('hub'))) {
@@ -194,7 +194,7 @@ function getCandidatePaths(target: string): string[] {
   const sourceSlug = normalizeSlug(sourceBasename)
 
   // 2. Scan registered artifact references in graph
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     const isArtifact = node.type === 'Artifacts' || node.conceptBinding?.name === 'Artifacts'
     const ref = typeof node.fields?.['artifact_ref']?.value === 'string' ? node.fields['artifact_ref'].value : ''
     if (isArtifact && ref.endsWith('.html')) {

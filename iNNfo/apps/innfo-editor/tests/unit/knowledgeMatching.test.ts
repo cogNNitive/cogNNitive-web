@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   normalizeModelPath,
   extractModelBasename,
-  findMatchingModelNode,
+  findMatchingKnowledgeNode,
   modelStemMatches,
-} from '../../src/utils/modelMatching'
+} from '../../src/utils/knowledgeMatching'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, path: string, name?: string): KnowledgeNode {
@@ -23,7 +23,7 @@ function makeNode(id: string, path: string, name?: string): KnowledgeNode {
   }
 }
 
-describe('modelMatching utility', () => {
+describe('knowledgeMatching utility', () => {
   it('normalizes paths, trims wikilinks and backslashes', () => {
     expect(normalizeModelPath('[[kNNowledge/test.md]]')).toBe('kNNowledge/test.md')
     expect(normalizeModelPath('models\\test_NN.md')).toBe('models/test_NN.md')
@@ -41,7 +41,7 @@ describe('modelMatching utility', () => {
       'kNNowledge/rehabilitacion_NN.md',
       'models\\rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
     )
-    const match = findMatchingModelNode(
+    const match = findMatchingKnowledgeNode(
       [node],
       'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
     )
@@ -51,7 +51,7 @@ describe('modelMatching utility', () => {
 
   it('finds matching node by basename when target has full path', () => {
     const node = makeNode('rehabilitacion_node', 'rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md')
-    const match = findMatchingModelNode(
+    const match = findMatchingKnowledgeNode(
       [node],
       'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md',
     )
@@ -60,7 +60,7 @@ describe('modelMatching utility', () => {
 
   it('finds matching node when target has wikilinks', () => {
     const node = makeNode('kNNowledge/foo.md', 'kNNowledge/foo.md', 'Foo Model')
-    const match = findMatchingModelNode([node], '[[kNNowledge/foo.md]]')
+    const match = findMatchingKnowledgeNode([node], '[[kNNowledge/foo.md]]')
     expect(match).toBeDefined()
   })
 

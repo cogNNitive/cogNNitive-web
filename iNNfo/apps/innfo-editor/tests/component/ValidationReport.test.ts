@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import ValidationReport from '../../src/components/ValidationReport.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { ValidationReport as ValidationReportType } from '../../src/shared/validation-types'
 
 describe('ValidationReport.vue', () => {
@@ -73,9 +73,9 @@ describe('ValidationReport.vue', () => {
   })
 
   it('copies AI prompt with workspace metadata when Copy Prompt for AI button is clicked', async () => {
-    const modelStore = useModelStore()
-    modelStore.rootIds = ['root-1']
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.rootIds = ['root-1']
+    knowledgeStore.nodes = {
       'root-1': {
         id: 'root-1',
         name: 'MyTestModel',
@@ -122,9 +122,9 @@ describe('ValidationReport.vue', () => {
   })
 
   it('passes parser issue severity through or defaults to warning', () => {
-    const modelStore = useModelStore()
-    modelStore.rootIds = ['root-1']
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.rootIds = ['root-1']
+    knowledgeStore.nodes = {
       'root-1': {
         id: 'root-1',
         name: 'MyTestModel',
@@ -138,7 +138,7 @@ describe('ValidationReport.vue', () => {
         source: { path: 'kNNowledge/my_test_model_NN.md' },
       },
     }
-    modelStore.parseIssues = [
+    knowledgeStore.parseIssues = [
       { path: 'kNNowledge/my_test_model_NN.md#Alpha', message: 'Warning message', severity: 'warning' },
       { path: 'kNNowledge/my_test_model_NN.md#Beta', message: 'Info message', severity: 'info' },
       { path: 'kNNowledge/my_test_model_NN.md#Gamma', message: 'Default message' },

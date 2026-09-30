@@ -49,7 +49,7 @@ export function extractModelBasename(raw: string): string {
  * Finds a matching KnowledgeNode in a collection of nodes by comparing ID, name,
  * source path, or basename, handling cross-platform slash differences and .md extensions.
  */
-export function findMatchingModelNode(
+export function findMatchingKnowledgeNode(
   nodes: Record<string, KnowledgeNode | undefined> | Array<KnowledgeNode | undefined>,
   target: string | null | undefined,
 ): KnowledgeNode | undefined {
@@ -101,7 +101,7 @@ export function findMatchingModelNode(
 
 /**
  * Returns true when a model file name corresponds to a model id under the
- * same basename/suffix semantics used by findMatchingModelNode. Used to
+ * same basename/suffix semantics used by findMatchingKnowledgeNode. Used to
  * decide which workspace folder contains a model without parsing it
  * (deep-link workspace resolution).
  */

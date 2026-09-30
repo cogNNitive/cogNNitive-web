@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import ModelInfoPanel from '../../src/components/editor/ModelInfoPanel.vue'
+import KnowledgeInfoPanel from '../../src/components/editor/KnowledgeInfoPanel.vue'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 import { buildFakeTree } from '../helpers/fakeFs'
 
@@ -24,14 +24,14 @@ function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): Knowledge
   }
 }
 
-describe('ModelInfoPanel.vue — Embedded Workspace File Explorer (specs/workspace-file-explorer)', () => {
+describe('KnowledgeInfoPanel.vue — Embedded Workspace File Explorer (specs/workspace-file-explorer)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('renders embedded WorkspaceExplorer inside Workspace Directory section', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -54,7 +54,7 @@ describe('ModelInfoPanel.vue — Embedded Workspace File Explorer (specs/workspa
     }) as any
     workspaceStore.hasHandle = true
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
     await flushPromises()

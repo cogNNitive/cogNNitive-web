@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { Sparkles, Layout, Database, FileText, ArrowRight } from 'lucide-vue-next'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import WorkspaceIntegrityNotice from './WorkspaceIntegrityNotice.vue'
 
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 
 const availableModels = computed(() => {
-  return modelStore.rootIds
+  return knowledgeStore.rootIds
     .filter((id) => !id.startsWith('spec:'))
     .map((id) => {
-      const node = modelStore.getNode(id)
+      const node = knowledgeStore.getNode(id)
       const path = node?.source?.path || ''
       const filename = path.split('/').pop()?.split('\\').pop() || node?.name || id
       let title = filename

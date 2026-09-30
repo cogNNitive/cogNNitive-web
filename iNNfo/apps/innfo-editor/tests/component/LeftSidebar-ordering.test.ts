@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -27,8 +27,8 @@ describe('LeftSidebar — Concept and element ordering', () => {
   })
 
   it('orders concepts according to template concepts order', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'model.md': makeNode('model.md', {
           source: { path: 'model.md' },
@@ -82,8 +82,8 @@ title: Business Model
   })
 
   it('orders direct elements by document childIds order', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'model.md': makeNode('model.md', {
           source: { path: 'model.md' },
@@ -134,8 +134,8 @@ title: Business Model
   })
 
   it('does not repeat root concepts when taxonomy edges contain duplicates', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'model.md': makeNode('model.md', {
           source: { path: 'model.md' },

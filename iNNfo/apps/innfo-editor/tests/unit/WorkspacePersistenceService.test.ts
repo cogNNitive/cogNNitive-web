@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import { saveActiveFile } from '../../src/services/WorkspacePersistenceService'
 import { buildFakeTree } from '../helpers/fakeFs'
@@ -47,22 +47,22 @@ title: "Filmography"
       },
     })
 
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     // 1. Open workspace into memory
-    await modelStore.parseFromHandle(fakeTree)
-    const rootId = modelStore.rootIds[0]
+    await knowledgeStore.parseFromHandle(fakeTree)
+    const rootId = knowledgeStore.rootIds[0]
     expect(rootId).toBeDefined()
 
     // 2. User edits field in memory (e.g. adds director in UI)
-    const movieNode = Object.values(modelStore.nodes).find((n) => n.name === 'Casablanca')
+    const movieNode = Object.values(knowledgeStore.nodes).find((n) => n.name === 'Casablanca')
     expect(movieNode).toBeDefined()
     movieNode!.fields = {
       ...movieNode!.fields,
       director: { value: 'Michael Curtiz', type: 'string' } as any,
     }
-    modelStore.markDirty(movieNode!.id)
+    knowledgeStore.markDirty(movieNode!.id)
 
     // 3. Concurrently, an AI agent modifies the file on disk (adds a new scene)
     const diskContentWithAgentScene = `---
@@ -92,7 +92,7 @@ title: "Filmography"
     await writable.close()
 
     // 4. User triggers save
-    await saveActiveFile(fakeTree, null, modelStore, uiStore, false)
+    await saveActiveFile(fakeTree, null, knowledgeStore, uiStore, false)
 
     // 5. Read back saved content from disk
     const savedHandle = await knowledgeDir.getFileHandle('model_NN.md')

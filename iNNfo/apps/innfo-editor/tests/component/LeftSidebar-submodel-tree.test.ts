@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -39,7 +39,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
   })
 
   it('excludes submodels referenced by domain elements via type:: knowledge from visibleRootIds in Workspace Mode', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const innovationRoot = makeModelRootNode(
@@ -90,7 +90,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
       'kNNowledge/Ghostbusters_V_0-2-0_business_NN.md',
     )
 
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         [innovationRoot.id]: innovationRoot,
         [initiativeElement.id]: initiativeElement,
@@ -112,13 +112,13 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
   })
 
   it('keeps standalone root models not owned by any element visible in visibleRootIds', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const standaloneA = makeModelRootNode('kNNowledge/standalone_A_NN.md', 'kNNowledge/standalone_A_NN.md')
     const standaloneB = makeModelRootNode('kNNowledge/standalone_B_NN.md', 'kNNowledge/standalone_B_NN.md')
 
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         [standaloneA.id]: standaloneA,
         [standaloneB.id]: standaloneB,
@@ -138,7 +138,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
   })
 
   it('retains standard focused model display when switching to Focused Model mode', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const rootModel = makeModelRootNode('kNNowledge/root_NN.md', 'kNNowledge/root_NN.md', {
@@ -179,7 +179,7 @@ describe('LeftSidebar — Submodel Tree Filtering (ADR-02 / Phase 3)', () => {
 
     const subModel = makeModelRootNode('kNNowledge/sub_NN.md', 'kNNowledge/sub_NN.md')
 
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         [rootModel.id]: rootModel,
         [elem.id]: elem,

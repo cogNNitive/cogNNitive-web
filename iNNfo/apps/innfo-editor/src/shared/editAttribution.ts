@@ -1,7 +1,7 @@
-import type { useModelStore } from '../stores/modelStore'
+import type { useKnowledgeStore } from '../stores/knowledgeStore'
 import type { Author } from '../model/types'
 
-type ModelStore = ReturnType<typeof useModelStore>
+type ModelStore = ReturnType<typeof useKnowledgeStore>
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -10,19 +10,19 @@ function nowIso(): string {
 /**
  * Edit-attribution commit hook (R16): every widget commit calls this to
  * write `{ value, author, timestamp }` onto the field's `FieldValue` in
- * `modelStore` and marks the owning node dirty (so `recursiveSerialize`
+ * `knowledgeStore` and marks the owning node dirty (so `recursiveSerialize`
  * picks it up on the next save). Reading/loading a node for display never
  * calls this — only an explicit user (or ai/system) commit does, so
  * editAttribution never advances beyond parse-time state without an edit.
  */
 export function commitFieldValue(
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
   nodeId: string,
   fieldKey: string,
   value: unknown,
   author: Author,
 ): void {
-  const node = modelStore.getNode(nodeId)
+  const node = knowledgeStore.getNode(nodeId)
   if (!node) {
     throw new Error(`Cannot commit field "${fieldKey}": node "${nodeId}" not found`)
   }
@@ -31,7 +31,7 @@ export function commitFieldValue(
     value,
     editAttribution: { author, timestamp: nowIso() },
   }
-  modelStore.markDirty(nodeId)
+  knowledgeStore.markDirty(nodeId)
 }
 
 /**
@@ -42,15 +42,15 @@ export function commitFieldValue(
  * marks the node dirty.
  */
 export function commitMarkerValue(
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
   nodeId: string,
   markerKey: string,
   value: number | string,
 ): void {
-  const node = modelStore.getNode(nodeId)
+  const node = knowledgeStore.getNode(nodeId)
   if (!node) {
     throw new Error(`Cannot commit marker "${markerKey}": node "${nodeId}" not found`)
   }
   node.markers[markerKey] = value
-  modelStore.markDirty(nodeId)
+  knowledgeStore.markDirty(nodeId)
 }

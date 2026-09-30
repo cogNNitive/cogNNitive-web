@@ -28,7 +28,7 @@ import { computed } from 'vue'
 import MarkerTooltip from './MarkerTooltip.vue'
 import type { MarkerInfo } from './MarkerTooltip.vue'
 import { getMarkerIcon, getMarkerClasses, getMarkerDefinition } from './MarkerIcons'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { commitMarkerValue } from '../../shared/editAttribution'
 import { MARKER_CYCLE_COUNT } from '../../utils/constants'
 
@@ -65,11 +65,11 @@ const props = withDefaults(
 
 const emit = defineEmits<{ change: [] }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 const nodeScore = computed(() => {
   if (!props.nodeId) return 0
-  const node = modelStore.getNode(props.nodeId)
+  const node = knowledgeStore.getNode(props.nodeId)
   if (!node?.markers) return 0
   return (node.markers[props.markerName] as number) ?? 0
 })
@@ -92,7 +92,7 @@ const handleClick = (event: Event) => {
   if (!props.interactive || !props.nodeId) return
   event.stopPropagation()
   const next = (effectiveScore.value + 1) % MARKER_CYCLE_COUNT
-  commitMarkerValue(modelStore, props.nodeId, props.markerName, next)
+  commitMarkerValue(knowledgeStore, props.nodeId, props.markerName, next)
   emit('change')
 }
 </script>

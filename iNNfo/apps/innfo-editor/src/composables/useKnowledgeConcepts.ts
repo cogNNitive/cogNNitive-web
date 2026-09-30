@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { resolveEffectiveMetamodel } from '../model/metamodel'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import type { MetamodelConcept, KnowledgeNode } from '../model/types'
 
 export interface TreeGroup {
@@ -121,18 +121,18 @@ export function compactTreeGroup(group: TreeGroup): TreeGroup {
   }
 }
 
-export function useModelConcepts() {
-  const modelStore = useModelStore()
+export function useKnowledgeConcepts() {
+  const knowledgeStore = useKnowledgeStore()
 
   function getConceptsForModel(rootId: string): TreeGroup[] {
-    const rootNode = modelStore.getNode(rootId)
+    const rootNode = knowledgeStore.getNode(rootId)
     if (!rootNode) return []
 
     const modelPath = rootNode.source?.path
     const childIdOrder = new Map((rootNode.childIds ?? []).map((id, i) => [id, i]))
 
-    // Fast path: use indexed lookup from modelStore
-    const indexedByType = modelStore.nodesByRootAndType.get(rootId)
+    // Fast path: use indexed lookup from knowledgeStore
+    const indexedByType = knowledgeStore.nodesByRootAndType.get(rootId)
     const childrenByType = new Map<string, KnowledgeNode[]>()
 
     if (indexedByType) {
@@ -140,9 +140,9 @@ export function useModelConcepts() {
         childrenByType.set(type, [...list])
       }
     } else {
-      for (const node of Object.values(modelStore.nodes)) {
+      for (const node of Object.values(knowledgeStore.nodes)) {
         if (node.type && node.kind === 'element') {
-          const nodeRootId = modelStore.getModelRootForNode(node.id)
+          const nodeRootId = knowledgeStore.getKnowledgeRootForNode(node.id)
           const belongsToModel = nodeRootId
             ? nodeRootId === rootId
             : !modelPath || node.source?.path === modelPath
@@ -171,7 +171,7 @@ export function useModelConcepts() {
         const parentName = fm?.parent_spec?.name
         if (parentName) {
           const normalizedParent = parentName.replace(/_NN$/, '')
-          const specNode = Object.values(modelStore.nodes).find((n) => {
+          const specNode = Object.values(knowledgeStore.nodes).find((n) => {
             if (!n.localMetamodel?.concepts?.length) return false
             const nameCandidate = (n.name || n.id).replace(/_NN$/, '').replace(/^spec:/, '')
             return nameCandidate === normalizedParent
@@ -187,7 +187,7 @@ export function useModelConcepts() {
     }
 
     if (modelConcepts.length === 0 || taxonomyEdges.length === 0) {
-      const effective = resolveEffectiveMetamodel(rootId, modelStore.nodes, [rootId])
+      const effective = resolveEffectiveMetamodel(rootId, knowledgeStore.nodes, [rootId])
       if (modelConcepts.length === 0) {
         modelConcepts = effective.concepts
       }
@@ -256,7 +256,7 @@ export function useModelConcepts() {
 
   const conceptsByRoot = computed(() => {
     const map = new Map<string, TreeGroup[]>()
-    for (const rid of modelStore.rootIds) {
+    for (const rid of knowledgeStore.rootIds) {
       map.set(rid, getConceptsForModel(rid))
     }
     return map

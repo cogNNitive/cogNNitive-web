@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import FilePreviewModal from '../../src/components/editor/FilePreviewModal.vue'
 import MermaidWidget from '../../src/shared/widgets/MermaidWidget.vue'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { parseSourceRef } from '../../src/utils/sourceRef'
 import { buildFakeTree, type FakeTree } from '../helpers/fakeFs'
 
@@ -217,8 +217,8 @@ describe('FilePreviewModal', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = handle
 
-    const modelStore = useModelStore()
-    modelStore.nodes['CaseStudy/Intro'] = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes['CaseStudy/Intro'] = {
       id: 'CaseStudy/Intro',
       name: 'Intro',
       parentId: 'CaseStudy',
@@ -323,13 +323,13 @@ describe('FilePreviewModal', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = handle
 
-    const modelStore = useModelStore()
-    modelStore.nodes['Rel/A'] = { id: 'Rel/A', name: 'A', type: 'Section' } as any
-    modelStore.nodes['Rel/B'] = { id: 'Rel/B', name: 'B', type: 'Section' } as any
-    modelStore.nodes['Rel/C'] = { id: 'Rel/C', name: 'C', type: 'Section' } as any
-    modelStore.nodes['Rel/D'] = { id: 'Rel/D', name: 'D', type: 'Section' } as any
-    modelStore.nodes['Rel/E'] = { id: 'Rel/E', name: 'E', type: 'Section' } as any
-    modelStore.nodes['CaseStudy/Intro'] = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes['Rel/A'] = { id: 'Rel/A', name: 'A', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/B'] = { id: 'Rel/B', name: 'B', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/C'] = { id: 'Rel/C', name: 'C', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/D'] = { id: 'Rel/D', name: 'D', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/E'] = { id: 'Rel/E', name: 'E', type: 'Section' } as any
+    knowledgeStore.nodes['CaseStudy/Intro'] = {
       id: 'CaseStudy/Intro',
       name: 'Intro',
       parentId: 'CaseStudy',
@@ -417,8 +417,8 @@ describe('FilePreviewModal', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = handle
 
-    const modelStore = useModelStore()
-    modelStore.nodes['CaseStudy/Intro'] = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes['CaseStudy/Intro'] = {
       id: 'CaseStudy/Intro',
       name: 'Intro',
       parentId: 'CaseStudy',

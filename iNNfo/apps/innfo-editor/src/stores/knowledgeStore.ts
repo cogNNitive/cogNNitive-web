@@ -40,11 +40,11 @@ export interface ModelState {
 }
 
 /**
- * modelStore is the single normalized element graph. It replaces the
+ * knowledgeStore is the single normalized element graph. It replaces the
  * previously planned documentStore + folderStore split: every node,
  * regardless of storageMode, lives in this one graph (R2, R3).
  */
-export const useModelStore = defineStore('model', () => {
+export const useKnowledgeStore = defineStore('model', () => {
   const nodes = ref<Record<string, KnowledgeNode>>({})
   const rootIds = ref<string[]>([])
   const dirtyIds = ref<Set<string>>(new Set<string>())
@@ -349,10 +349,10 @@ export const useModelStore = defineStore('model', () => {
   /**
    * Finds the root model ID that owns the given node.
    */
-  function getModelRootForNode(nodeId: string): string | null {
+  function getKnowledgeRootForNode(nodeId: string): string | null {
     if (nodeId.startsWith('virtual:')) {
       const parentId = nodeId.split(':')[1]
-      return getModelRootForNode(parentId)
+      return getKnowledgeRootForNode(parentId)
     }
     let curr = nodes.value[nodeId]
     if (!curr) return null
@@ -371,7 +371,7 @@ export const useModelStore = defineStore('model', () => {
 
   function markDirty(id: string): void {
     dirtyIds.value.add(id)
-    const rootId = getModelRootForNode(id)
+    const rootId = getKnowledgeRootForNode(id)
     if (rootId) {
       dirtyIds.value.add(rootId)
     }
@@ -704,7 +704,7 @@ export const useModelStore = defineStore('model', () => {
     // below only re-validates them instead of every root in the workspace.
     const affectedRootIds = new Set<string>()
     const trackAffectedRoot = (id: string): void => {
-      const rootId = getModelRootForNode(id)
+      const rootId = getKnowledgeRootForNode(id)
       if (rootId) affectedRootIds.add(rootId)
     }
     trackAffectedRoot(currentId)
@@ -796,7 +796,7 @@ export const useModelStore = defineStore('model', () => {
     setGraph,
     validateKnowledge,
     upsertNode,
-    getModelRootForNode,
+    getKnowledgeRootForNode,
     markDirty,
     clearDirty,
     clearParseIssues,

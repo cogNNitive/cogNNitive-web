@@ -21,7 +21,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 
-import { useModelStore } from '../src/stores/modelStore'
+import { useKnowledgeStore } from '../src/stores/knowledgeStore'
 import { useWorkspaceStore } from '../src/stores/workspaceStore'
 import { routes } from '../src/router/index'
 import { recursiveParse } from '../src/model/recursiveParser'
@@ -77,7 +77,7 @@ describe('Paso 1 — La aplicación carga', () => {
   })
 
   it('1a: Pinia se inicializa sin errores', () => {
-    const store = useModelStore()
+    const store = useKnowledgeStore()
     expect(store).toBeDefined()
     expect(store.nodes).toEqual({})
     expect(store.rootIds).toEqual([])
@@ -205,9 +205,9 @@ describe('Paso 3 — workspaceStore abre un modelo', () => {
     setActivePinia(createPinia())
   })
 
-  it('3a: workspaceStore abre un workspace y modelStore tiene los nodos', async () => {
+  it('3a: workspaceStore abre un workspace y knowledgeStore tiene los nodos', async () => {
     const workspaceStore = useWorkspaceStore()
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const tree: FakeTree = {
       'domaiNN_NN.md': INDEX_MD,
       'MiModelo_NN.md': SINGLE_FILE_MODEL,
@@ -218,8 +218,8 @@ describe('Paso 3 — workspaceStore abre un modelo', () => {
 
     expect(workspaceStore.hasParsed).toBe(true)
     expect(workspaceStore.parseCount).toBe(1)
-    expect(Object.keys(modelStore.nodes).length).toBeGreaterThan(0)
-    expect(modelStore.rootIds.filter((id) => !id.startsWith('spec:'))).toHaveLength(1)
+    expect(Object.keys(knowledgeStore.nodes).length).toBeGreaterThan(0)
+    expect(knowledgeStore.rootIds.filter((id) => !id.startsWith('spec:'))).toHaveLength(1)
   })
 
   it('3b: workspaceStore no re-parsea si se llama open() dos veces', async () => {

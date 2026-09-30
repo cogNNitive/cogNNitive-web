@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { nextTick } from 'vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import {
   mergeMatrixDefs,
@@ -106,7 +106,7 @@ describe('matrix selection index space (sidebar ↔ grid)', () => {
     // only) used to list [A, B, C] while the grid merged [X, A, B, C], so
     // clicking pill idx=1 rendered the grid's matrixDefs[1] = "A matrix" — the
     // immediately previous pill. Both sides must share one index space.
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const v1 = makeNode('HolaMundo_V_0-0-1_business_NN', {
@@ -119,7 +119,7 @@ describe('matrix selection index space (sidebar ↔ grid)', () => {
       source: { path: 'HolaMundo_V_0-0-2_business_NN.md' },
       fields: { __matrix_defs: defs(['A matrix', 'B matrix', 'C matrix']) },
     })
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       { 'HolaMundo_V_0-0-1_business_NN': v1, 'HolaMundo_V_0-0-2_business_NN': v2 },
       ['HolaMundo_V_0-0-1_business_NN', 'HolaMundo_V_0-0-2_business_NN'],
     )
@@ -153,7 +153,7 @@ describe('matrix selection index space (sidebar ↔ grid)', () => {
   })
 
   it('keeps working for a plain single-model workspace', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const root = makeNode('Model', {
@@ -161,7 +161,7 @@ describe('matrix selection index space (sidebar ↔ grid)', () => {
       fields: { __matrix_defs: defs(['M1', 'M2', 'M3']) },
     })
     const spec = makeNode('spec:business', { kind: 'root', fields: {} })
-    modelStore.setGraph({ Model: root, 'spec:business': spec }, ['Model', 'spec:business'])
+    knowledgeStore.setGraph({ Model: root, 'spec:business': spec }, ['Model', 'spec:business'])
 
     const sidebar = mountSidebar()
     // Models start collapsed by default (feature: "collapsed initial state");
@@ -206,10 +206,10 @@ describe('resolveMatrixIndexByName', () => {
   })
 
   it('resolves a name against the merged list across all roots', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const v1 = makeNode('A', { kind: 'root', fields: { __matrix_defs: defs(['X matrix']) } })
     const v2 = makeNode('B', { kind: 'root', fields: { __matrix_defs: defs(['A matrix', 'B matrix']) } })
-    modelStore.setGraph({ A: v1, B: v2 }, ['A', 'B'])
+    knowledgeStore.setGraph({ A: v1, B: v2 }, ['A', 'B'])
 
     expect(resolveMatrixIndexByName('X matrix')).toBe(0)
     expect(resolveMatrixIndexByName('B matrix')).toBe(2)

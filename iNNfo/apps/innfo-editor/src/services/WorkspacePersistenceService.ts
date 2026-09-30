@@ -11,7 +11,7 @@ import { reconcileWorkspaceManifest } from './WorkspaceSyncService'
 import type { DirectoryHandleLike, FileHandleLike } from '../model/fs-types'
 import type { BumpLevel } from '../utils/version'
 import type { KnowledgeDriver } from '@cognnitive/innfo-core'
-import type { useModelStore } from '../stores/modelStore'
+import type { useKnowledgeStore } from '../stores/knowledgeStore'
 import type { useUiStore } from '../stores/uiStore'
 
 /**
@@ -23,7 +23,7 @@ import type { useUiStore } from '../stores/uiStore'
  * of taking data as explicit parameters rather than calling `useXStore()`.
  */
 
-type ModelStore = ReturnType<typeof useModelStore>
+type ModelStore = ReturnType<typeof useKnowledgeStore>
 type UiStore = ReturnType<typeof useUiStore>
 
 /** Resolve (creating intermediate directories as needed) a file handle for writing. */
@@ -90,15 +90,15 @@ export async function removeFileByPath(root: DirectoryHandleLike, refPath: strin
  */
 export async function _createBackup(
   handle: DirectoryHandleLike | null,
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
 ): Promise<void> {
   if (!handle) return
 
-  const dirtyRootIds = modelStore.rootIds.filter((id) => modelStore.dirtyIds.has(id))
+  const dirtyRootIds = knowledgeStore.rootIds.filter((id) => knowledgeStore.dirtyIds.has(id))
   if (dirtyRootIds.length === 0) return
 
   for (const rootId of dirtyRootIds) {
-    const rootNode = modelStore.getNode(rootId)
+    const rootNode = knowledgeStore.getNode(rootId)
     if (!rootNode?.rawContent) continue
 
     try {
@@ -139,17 +139,17 @@ export async function _createBackup(
  */
 export async function _ensureGeneralSpec(
   handle: DirectoryHandleLike,
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
   uiStore: UiStore,
 ): Promise<void> {
   const rootId =
-    (uiStore.activeModelId && modelStore.nodes[uiStore.activeModelId]
+    (uiStore.activeModelId && knowledgeStore.nodes[uiStore.activeModelId]
       ? uiStore.activeModelId
       : undefined) ??
-    modelStore.rootIds.find((id) => !id.startsWith('spec:')) ??
-    modelStore.rootIds[0]
+    knowledgeStore.rootIds.find((id) => !id.startsWith('spec:')) ??
+    knowledgeStore.rootIds[0]
   if (!rootId) return
-  const rootNode = modelStore.getNode(rootId)
+  const rootNode = knowledgeStore.getNode(rootId)
   if (!rootNode?.rawContent) return
 
   const fm = parseFrontmatter(rootNode.rawContent)
@@ -208,7 +208,7 @@ export async function _ensureGeneralSpec(
 export async function saveActiveFile(
   handle: DirectoryHandleLike | null,
   driver: KnowledgeDriver | null | undefined,
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
   uiStore: UiStore,
   backupEnabled: boolean,
 ): Promise<void> {
@@ -216,16 +216,16 @@ export async function saveActiveFile(
 
   // Non-blocking backup before write
   if (backupEnabled) {
-    await _createBackup(handle, modelStore)
+    await _createBackup(handle, knowledgeStore)
   }
 
-  const reports = await recursiveSerialize(modelStore.nodes, modelStore.dirtyIds, driver ?? undefined)
+  const reports = await recursiveSerialize(knowledgeStore.nodes, knowledgeStore.dirtyIds, driver ?? undefined)
 
   if (!driver) {
     // If no driver is set, write the dirty model files directly using the directory handle
     for (const report of reports) {
       if (report.nodeId.startsWith('spec:')) continue
-      const node = modelStore.getNode(report.nodeId)
+      const node = knowledgeStore.getNode(report.nodeId)
       if (node && node.rawContent !== undefined) {
         let contentToWrite = node.rawContent
 
@@ -261,7 +261,7 @@ export async function saveActiveFile(
   // Write-once: specs/ content is immutable by convention, so an
   // existing file is left as authoritative rather than overwritten.
   const specsDir = await handle.getDirectoryHandle('specs', { create: true })
-  for (const [id, node] of Object.entries(modelStore.nodes)) {
+  for (const [id, node] of Object.entries(knowledgeStore.nodes)) {
     if (id.startsWith('spec:') && node.rawContent) {
       const specName = node.name || id.substring(5)
       const filename = specName.endsWith('_NN') ? `${specName}.md` : `${specName}_NN.md`
@@ -280,11 +280,11 @@ export async function saveActiveFile(
   }
 
   // Also ensure the generic iNNfo spec is present
-  await _ensureGeneralSpec(handle, modelStore, uiStore)
+  await _ensureGeneralSpec(handle, knowledgeStore, uiStore)
 
   // Clear dirty flags after successful write
-  for (const id of Array.from(modelStore.dirtyIds)) {
-    modelStore.clearDirty(id)
+  for (const id of Array.from(knowledgeStore.dirtyIds)) {
+    knowledgeStore.clearDirty(id)
   }
 
   // Autorregistro (PR7): reconcile the workspace manifest against the
@@ -305,19 +305,19 @@ export async function saveActiveFile(
  */
 export async function renameActiveFile(
   handle: DirectoryHandleLike | null,
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
   uiStore: UiStore,
   newFilename: string,
   targetRootId?: string,
 ): Promise<void> {
   const rootId =
     targetRootId ??
-    (uiStore.activeModelId && modelStore.nodes[uiStore.activeModelId]
+    (uiStore.activeModelId && knowledgeStore.nodes[uiStore.activeModelId]
       ? uiStore.activeModelId
       : undefined) ??
-    modelStore.rootIds.find((id) => !id.startsWith('spec:')) ??
-    modelStore.rootIds[0]
-  const rootNode = rootId ? modelStore.getNode(rootId) : null
+    knowledgeStore.rootIds.find((id) => !id.startsWith('spec:')) ??
+    knowledgeStore.rootIds[0]
+  const rootNode = rootId ? knowledgeStore.getNode(rootId) : null
   if (!rootNode) throw new Error('No root node found to rename')
 
   const oldPath = rootNode.source.path.replace(/\\/g, '/')
@@ -356,10 +356,10 @@ export async function renameActiveFile(
   // Update in memory path for root node and all child nodes belonging to this model
   const oldPathRef = rootNode.source.path
   rootNode.source.path = cleanNewFilename
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (
       node.source &&
-      (node.source.path === oldPathRef || modelStore.getModelRootForNode(node.id) === rootId)
+      (node.source.path === oldPathRef || knowledgeStore.getKnowledgeRootForNode(node.id) === rootId)
     ) {
       node.source.path = cleanNewFilename
     }
@@ -376,7 +376,7 @@ export async function renameActiveFile(
  */
 export async function saveActiveFileWithVersionBump(
   handle: DirectoryHandleLike | null,
-  modelStore: ModelStore,
+  knowledgeStore: ModelStore,
   uiStore: UiStore,
   level: BumpLevel,
   targetRootId?: string,
@@ -385,12 +385,12 @@ export async function saveActiveFileWithVersionBump(
 
   const rootId =
     targetRootId ??
-    (uiStore.activeModelId && modelStore.nodes[uiStore.activeModelId]
+    (uiStore.activeModelId && knowledgeStore.nodes[uiStore.activeModelId]
       ? uiStore.activeModelId
       : undefined) ??
-    modelStore.rootIds.find((id) => !id.startsWith('spec:')) ??
-    modelStore.rootIds[0]
-  const rootNode = modelStore.getNode(rootId)
+    knowledgeStore.rootIds.find((id) => !id.startsWith('spec:')) ??
+    knowledgeStore.rootIds[0]
+  const rootNode = knowledgeStore.getNode(rootId)
   if (!rootNode) throw new Error('No root node found for version bump')
 
   const oldPath = rootNode.source.path.replace(/\\/g, '/')
@@ -447,15 +447,15 @@ export async function saveActiveFileWithVersionBump(
 
   // Update the root node's source path and all child nodes belonging to this model
   rootNode.source.path = cleanNewFilename
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (
       node.source &&
-      (node.source.path === oldFilename || modelStore.getModelRootForNode(node.id) === rootId)
+      (node.source.path === oldFilename || knowledgeStore.getKnowledgeRootForNode(node.id) === rootId)
     ) {
       node.source.path = cleanNewFilename
     }
   }
 
   // Mark root node dirty so the caller's saveActiveFile() persists changes
-  modelStore.markDirty(rootId)
+  knowledgeStore.markDirty(rootId)
 }

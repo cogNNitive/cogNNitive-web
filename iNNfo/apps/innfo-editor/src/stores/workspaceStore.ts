@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, markRaw } from 'vue'
-import { useModelStore } from './modelStore'
+import { useKnowledgeStore } from './knowledgeStore'
 import { useUiStore } from './uiStore'
 import { IndexedDbWorkspaceRepository } from '../repositories/IndexedDbWorkspaceRepository'
 import type { WorkspaceIntegrityReport } from '@cognnitive/innfo-core'
@@ -48,7 +48,7 @@ export interface WorkspaceState {
 /**
  * workspaceStore owns the FS directory handle, permission verification,
  * and IndexedDB handle recovery. `open()` is the single entry point that
- * triggers exactly one parse pass into modelStore (R1) — repeated calls
+ * triggers exactly one parse pass into knowledgeStore (R1) — repeated calls
  * or route navigation must not re-parse.
  */
 export const useWorkspaceStore = defineStore('workspace', () => {
@@ -94,7 +94,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   /**
    * Opens a workspace from a directory handle and runs exactly one parse
-   * pass into modelStore. Calling this again with hasParsed already true
+   * pass into knowledgeStore. Calling this again with hasParsed already true
    * is a no-op unless `force` is explicitly passed.
    */
   async function open(newHandle: DirectoryHandleLike, options: { force?: boolean } = {}): Promise<void> {
@@ -113,14 +113,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     isParsing.value = true
     try {
       await repository.value.storeHandle(newHandle)
-      const modelStore = useModelStore()
-      await modelStore.parseFromHandle(newHandle, driver.value ?? undefined)
+      const knowledgeStore = useKnowledgeStore()
+      await knowledgeStore.parseFromHandle(newHandle, driver.value ?? undefined)
 
       // Detect empty folder — no canonical domaiNN / kNNowledge roots found
-      const hasModelRoots = modelStore.rootIds.some(
-        (id) => !id.startsWith('spec:') && modelStore.nodes[id],
+      const hasModelRoots = knowledgeStore.rootIds.some(
+        (id) => !id.startsWith('spec:') && knowledgeStore.nodes[id],
       )
-      const isLegacyDomain = modelStore.parseIssues.some((issue) => issue.code === 'LEGACY_DOMAIN')
+      const isLegacyDomain = knowledgeStore.parseIssues.some((issue) => issue.code === 'LEGACY_DOMAIN')
 
       if (!hasModelRoots && !isLegacyDomain) {
         emptyFolderError.value = true
@@ -128,7 +128,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         // Surface per-file parse problems so "no models found" is explainable:
         // e.g. a _NN.md file that exists but failed to parse. The <root> issue
         // (missing index.md fallback notice) is expected and not an error.
-        const parseIssues = modelStore.parseIssues.filter(
+        const parseIssues = knowledgeStore.parseIssues.filter(
           (issue) => issue.path !== '<root>' && issue.code !== 'LEGACY_DOMAIN',
         )
         if (parseIssues.length > 0) {
@@ -158,9 +158,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       void _runIntegrityCheck().catch(() => {})
 
       // Persist session state after successful parse
-      const rootId = modelStore.rootIds[0]
+      const rootId = knowledgeStore.rootIds[0]
       if (rootId) {
-        const rootNode = modelStore.getNode(rootId)
+        const rootNode = knowledgeStore.getNode(rootId)
         if (rootNode?.source.path) {
           repository.value.setSessionState('lastFile', rootNode.source.path).catch(() => {})
         }
@@ -175,7 +175,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   /**
-   * Loads multiple FORMAT model documents from URLs into modelStore as a
+   * Loads multiple FORMAT model documents from URLs into knowledgeStore as a
    * unified virtual workspace (no File System handle — save is disabled).
    */
   async function loadVirtualWorkspace(
@@ -206,8 +206,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       parseCount.value += 1
 
       const uiStore = useUiStore()
-      const modelStore = useModelStore()
-      const firstRootId = modelStore.rootIds[0] || null
+      const knowledgeStore = useKnowledgeStore()
+      const firstRootId = knowledgeStore.rootIds[0] || null
       uiStore.selectNode(firstRootId)
       uiStore.setActiveView('editor')
 
@@ -222,7 +222,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   /**
-   * Loads a single FORMAT model document from a URL into modelStore.
+   * Loads a single FORMAT model document from a URL into knowledgeStore.
    */
   async function loadFromUrl(url: string, templateName?: string): Promise<void> {
     return loadVirtualWorkspace([url], undefined, templateName)
@@ -325,12 +325,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!handle.value) throw new Error('No workspace handle')
     saving.value = true
     try {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const uiStore = useUiStore()
       await persistSaveActiveFile(
         handle.value,
         driver.value,
-        modelStore,
+        knowledgeStore,
         uiStore,
         backupEnabled.value,
       )
@@ -346,9 +346,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    * Renames the active file on disk (if handle present) and updates the source path in memory.
    */
   async function renameActiveFile(newFilename: string, targetRootId?: string): Promise<void> {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
-    await persistRenameActiveFile(handle.value, modelStore, uiStore, newFilename, targetRootId)
+    await persistRenameActiveFile(handle.value, knowledgeStore, uiStore, newFilename, targetRootId)
   }
 
   /**
@@ -361,9 +361,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
    */
   async function saveActiveFileWithVersionBump(level: BumpLevel, targetRootId?: string): Promise<void> {
     if (!handle.value) throw new Error('No workspace handle')
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
-    await persistSaveActiveFileWithVersionBump(handle.value, modelStore, uiStore, level, targetRootId)
+    await persistSaveActiveFileWithVersionBump(handle.value, knowledgeStore, uiStore, level, targetRootId)
     await saveActiveFile()
   }
 

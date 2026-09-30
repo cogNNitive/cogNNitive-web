@@ -8,7 +8,7 @@ import {
 } from '@cognnitive/innfo-core'
 import type { KnowledgeNode } from './types'
 import type { KnowledgeDriver } from '@cognnitive/innfo-core'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { getActivePinia } from 'pinia'
 
 export interface WriteReport {
@@ -49,8 +49,8 @@ export function syncMatrixFieldsToParsedModel(
     try {
       const pinia = getActivePinia()
       if (pinia) {
-        const modelStore = useModelStore(pinia)
-        for (const n of Object.values(modelStore.nodes)) {
+        const knowledgeStore = useKnowledgeStore(pinia)
+        for (const n of Object.values(knowledgeStore.nodes)) {
           if (n && typeof n.id === 'string' && typeof n.name === 'string') {
             idToName.set(n.id, n.name)
           }
@@ -177,22 +177,22 @@ function serializeNodeContent(
   // Synchronize memory-modified child elements of the root node
   const childElements: KnowledgeNode[] = []
 
-  let modelStore: any = null
+  let knowledgeStore: any = null
   try {
     const pinia = getActivePinia()
     if (pinia) {
-      modelStore = useModelStore(pinia)
+      knowledgeStore = useKnowledgeStore(pinia)
     }
   } catch {
     // Pinia not active
   }
 
-  if (modelStore) {
+  if (knowledgeStore) {
     const seen = new Set<string>()
     function collectElements(id: string) {
       if (seen.has(id)) return
       seen.add(id)
-      const curr = modelStore.getNode(id)
+      const curr = knowledgeStore.getNode(id)
       if (!curr) return
       if (curr.kind === 'element') {
         childElements.push(curr)
@@ -205,14 +205,14 @@ function serializeNodeContent(
     collectElements(node.id)
 
     if (childElements.length === 0) {
-      const allNodes = nodes ? Object.values(nodes) : Object.values(modelStore.nodes)
+      const allNodes = nodes ? Object.values(nodes) : Object.values(knowledgeStore.nodes)
       for (const n of allNodes as KnowledgeNode[]) {
         if (
           n &&
           n.kind === 'element' &&
           (n.source?.path === node.source?.path ||
             n.id.startsWith(node.id + '/') ||
-            modelStore.getModelRootForNode(n.id) === node.id)
+            knowledgeStore.getKnowledgeRootForNode(n.id) === node.id)
         ) {
           childElements.push(n)
         }

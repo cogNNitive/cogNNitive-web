@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import TagInput from '../../src/components/ui/TagInput.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -82,10 +82,10 @@ describe('TagInput.vue — Component tests', () => {
     expect(emitted![0]).toEqual([['tag-b']])
   })
 
-  it('suggests tags from modelStore.allTags', async () => {
-    const modelStore = useModelStore()
+  it('suggests tags from knowledgeStore.allTags', async () => {
+    const knowledgeStore = useKnowledgeStore()
     const node1 = makeNode('Node1', { tags: ['backend', 'database'] })
-    modelStore.setGraph({ Node1: node1 }, ['Node1'])
+    knowledgeStore.setGraph({ Node1: node1 }, ['Node1'])
 
     const wrapper = mount(TagInput, {
       props: {

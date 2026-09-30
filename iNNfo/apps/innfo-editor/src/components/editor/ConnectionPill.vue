@@ -88,7 +88,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { LayoutGrid, Tag, FileText } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import Pill from './Pill.vue'
 
 const props = withDefaults(
@@ -115,14 +115,14 @@ defineEmits<{
   navigate: [nodeId: string]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 function resolveNodeId(idOrName?: string): string {
   if (!idOrName) return ''
-  const direct = modelStore.getNode(idOrName)
+  const direct = knowledgeStore.getNode(idOrName)
   if (direct) return direct.id
   const clean = idOrName.split('/').pop() || idOrName
-  const found = Object.values(modelStore.nodes).find(
+  const found = Object.values(knowledgeStore.nodes).find(
     (n) => n.id === idOrName || n.name === idOrName || n.id.endsWith('/' + clean) || n.name === clean,
   )
   return found ? found.id : idOrName

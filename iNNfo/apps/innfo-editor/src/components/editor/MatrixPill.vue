@@ -88,13 +88,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useMetamodelStore } from '../../stores/metamodelStore'
 import { getColorClasses } from '../../utils/colors'
 import { getHexColor, COLOR_HEX } from '../../composables/useConceptVisuals'
 import Pill from './Pill.vue'
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const metamodelStore = useMetamodelStore()
 
 const props = withDefaults(
@@ -153,7 +153,7 @@ function getConceptElementCount(typeName: string | undefined): number {
   if (!typeName) return 0
   const lowerType = typeName.toLowerCase()
   let count = 0
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (node.kind === 'element' && node.type?.toLowerCase() === lowerType) count++
   }
   return count

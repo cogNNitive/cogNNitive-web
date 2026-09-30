@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import ConceptTreeNode from '../../src/components/layout/ConceptTreeNode.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -30,8 +30,8 @@ describe('ConceptTreeNode.vue — Instance counter (R-TN-02)', () => {
   })
 
   it('shows instance count badge when node has children', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -57,8 +57,8 @@ describe('ConceptTreeNode.vue — Instance counter (R-TN-02)', () => {
   })
 
   it('does not show counter badge when node has no children', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { kind: 'concept', childIds: [] }),
       },
@@ -83,8 +83,8 @@ describe('ConceptTreeNode.vue — Ghost appearance (R-TN-04)', () => {
   })
 
   it('applies opacity 0.45 on row when node is empty (no content, no fields, no children)', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { kind: 'concept', childIds: [], rawContent: '' }),
       },
@@ -105,8 +105,8 @@ describe('ConceptTreeNode.vue — Ghost appearance (R-TN-04)', () => {
   })
 
   it('does NOT apply reduced opacity when node has children', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { kind: 'concept', childIds: ['Root/Child1'] }),
         'Root/Child1': makeNode('Root/Child1', { parentId: 'Root', kind: 'element' }),
@@ -126,8 +126,8 @@ describe('ConceptTreeNode.vue — Ghost appearance (R-TN-04)', () => {
   })
 
   it('does NOT apply reduced opacity when node has fallback description in rawSections', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'element',
@@ -157,8 +157,8 @@ describe('ConceptTreeNode.vue — BlockPill integration (R-TN-01)', () => {
   })
 
   it('renders the BlockPill component inside the tree row', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { kind: 'concept', childIds: [] }),
       },
@@ -177,8 +177,8 @@ describe('ConceptTreeNode.vue — BlockPill integration (R-TN-01)', () => {
   })
 
   it('passes the node name to BlockPill', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: { ...makeNode('Root', { kind: 'concept', childIds: [] }), name: 'MyConcept' },
       },
@@ -196,8 +196,8 @@ describe('ConceptTreeNode.vue — BlockPill integration (R-TN-01)', () => {
   })
 
   it('renders italic styling for empty nodes without literal "Empty" text', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { kind: 'concept', childIds: [], rawContent: '' }),
       },
@@ -243,8 +243,8 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
   }
 
   it('renders a diamond child only under its primary parent (ParentA), not under both', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         ParentA: makeNode('ParentA', { kind: 'concept', childIds: ['Diamond'] }),
         ParentB: makeNode('ParentB', { kind: 'concept', childIds: ['Diamond'] }),
@@ -267,8 +267,8 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
   })
 
   it('renders a diamond child only under its primary parent (ParentB) — triangulation with the opposite primary parent', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         ParentA: makeNode('ParentA', { kind: 'concept', childIds: ['Diamond'] }),
         ParentB: makeNode('ParentB', { kind: 'concept', childIds: ['Diamond'] }),
@@ -292,7 +292,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
 
   describe('Element-Owned Submodel Nesting (ADR-01/03 & Phase 3)', () => {
     it('renders nested child submodel node when element has a type:: knowledge field', () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
@@ -331,7 +331,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_business_NN.md' },
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -353,7 +353,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('displays submodel name, Boxes icon, and target_blueprint badge', () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/root_NN.md' },
@@ -392,7 +392,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         source: { path: 'kNNowledge/sub_business_NN.md' },
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -417,7 +417,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('renders nested submodel fallback node without isolate jump on click', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const uiStore = useUiStore()
       const focusSpy = vi.spyOn(uiStore, 'focusModel')
 
@@ -449,7 +449,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         source: { path: 'kNNowledge/sub_NN.md' },
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -475,7 +475,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('collapsing parent element hides nested submodels', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/root_NN.md' },
@@ -504,7 +504,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         source: { path: 'kNNowledge/sub_NN.md' },
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -531,7 +531,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('empty or unresolved submodel references do not render phantom child nodes', () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/root_NN.md' },
@@ -561,7 +561,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         },
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -581,7 +581,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('does not render quick open model button on node row referencing a submodel', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
 
       const rootNode = makeNode('kNNowledge/root_NN.md', {
         kind: 'root',
@@ -613,7 +613,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         source: { path: 'kNNowledge/rehabilitacion_reja_pozuelo_V_0-1-0_rejas_rehabilitacion_NN.md' },
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -635,7 +635,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('does not render quick open model button on Level-3 workspace element without localMetamodel', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
 
       const workspaceRoot = makeNode('workspace_NN.md', {
         kind: 'root',
@@ -650,7 +650,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           path: { value: 'kNNowledge/rehabilitacion_reja_pozuello_V_0-1-0_rejas_rehabilitacion_NN.md' },
         },
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [workspaceRoot.id]: workspaceRoot,
           [elementNode.id]: elementNode,
@@ -671,7 +671,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('does not render quick open model button when element has "model ref" or "model_ref" field', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
 
       const workspaceRoot = makeNode('workspace_NN.md', {
         kind: 'root',
@@ -686,7 +686,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
           'model ref': { value: 'kNNowledge/discografia_V_0-1-0_discografia_NN.md' },
         },
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [workspaceRoot.id]: workspaceRoot,
           [elementNode.id]: elementNode,
@@ -707,7 +707,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('recursively unfolds submodel concepts directly when submodel node exists in store', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
 
       const workspaceRoot = makeNode('workspace_NN.md', {
         kind: 'root',
@@ -742,7 +742,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         type: 'Disco',
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [workspaceRoot.id]: workspaceRoot,
           [elementNode.id]: elementNode,
@@ -767,7 +767,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
     })
 
     it('unfolds submodel concepts when element references a model via wikilink format in business_model field', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
 
       const projectRoot = makeNode('kNNowledge/programa_V_0-1-0_NN.md', {
         kind: 'root',
@@ -803,7 +803,7 @@ describe('ConceptTreeNode.vue — Diamond child renders once (R8)', () => {
         type: 'Propuesta',
       })
 
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [projectRoot.id]: projectRoot,
           [elementNode.id]: elementNode,

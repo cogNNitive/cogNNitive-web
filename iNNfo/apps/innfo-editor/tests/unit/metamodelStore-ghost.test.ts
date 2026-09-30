@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useMetamodelStore } from '../../src/stores/metamodelStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -26,8 +26,8 @@ describe('metamodelStore: ghostConcepts computed', () => {
   })
 
   it('returns all template concepts as ghosts when none are instantiated', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: {
@@ -53,8 +53,8 @@ describe('metamodelStore: ghostConcepts computed', () => {
   })
 
   it('excludes concepts that have instantiated elements', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           childIds: ['Root/Req1'],
@@ -81,8 +81,8 @@ describe('metamodelStore: ghostConcepts computed', () => {
   })
 
   it('excludes text concept present in rawSections', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           rawSections: { Description: 'Some text' },
@@ -104,8 +104,8 @@ describe('metamodelStore: ghostConcepts computed', () => {
   })
 
   it('excludes category concept that has children', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           childIds: ['Root/CategoryGroup'],
@@ -142,8 +142,8 @@ describe('metamodelStore: ghostConcepts computed', () => {
   })
 
   it('returns empty array when template has no concepts', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           localMetamodel: { concepts: [], markers: [] },
@@ -157,8 +157,8 @@ describe('metamodelStore: ghostConcepts computed', () => {
   })
 
   it('reactively updates when a new element is added', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           childIds: [],
@@ -178,7 +178,7 @@ describe('metamodelStore: ghostConcepts computed', () => {
     expect(store.ghostConcepts).toHaveLength(2)
 
     // Add an element of type Task
-    modelStore.addConceptElement('Task', 'My Task')
+    knowledgeStore.addConceptElement('Task', 'My Task')
     expect(store.ghostConcepts).toHaveLength(1)
     expect(store.ghostConcepts[0].name).toBe('Note')
   })

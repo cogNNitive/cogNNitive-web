@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import FieldModel from '../../src/shared/widgets/FieldModel.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import FieldKnowledge from '../../src/shared/widgets/FieldKnowledge.vue'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
@@ -23,13 +23,13 @@ function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): Knowledge
   } as KnowledgeNode
 }
 
-describe('FieldModel.vue', () => {
+describe('FieldKnowledge.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('renders a sidebar-styled pillbadge in read mode with basename text and full-path title', () => {
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
         readonly: true,
@@ -47,7 +47,7 @@ describe('FieldModel.vue', () => {
   })
 
   it('shows an em dash placeholder when there is no value in read mode', () => {
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: '',
         readonly: true,
@@ -58,15 +58,15 @@ describe('FieldModel.vue', () => {
     expect(wrapper.text()).toContain('—')
   })
 
-  it('resolves the value to a modelStore node and calls uiStore.focusModel on click', async () => {
-    const modelStore = useModelStore()
+  it('resolves the value to a knowledgeStore node and calls uiStore.focusModel on click', async () => {
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
     const projectRoot = makeNode('Root')
     const businessModelRoot = makeNode('kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN', {
       name: 'jose-luis-olmo-mora',
       source: { path: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md' },
     })
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         Root: projectRoot,
         'kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN': businessModelRoot,
@@ -74,7 +74,7 @@ describe('FieldModel.vue', () => {
       ['Root', 'kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN'],
     )
 
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: './kNNowledge/proyectos/jose-luis-olmo-mora_V_0-1-0_business_NN.md',
         readonly: true,
@@ -90,7 +90,7 @@ describe('FieldModel.vue', () => {
   it('falls back to focusModel with the cleaned raw value when no matching node is found', async () => {
     const uiStore = useUiStore()
 
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: 'kNNowledge/unknown.md',
         readonly: true,
@@ -104,7 +104,7 @@ describe('FieldModel.vue', () => {
   })
 
   it('renders an input in edit mode', () => {
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: 'kNNowledge/auth_01.md',
         readonly: false,
@@ -118,8 +118,8 @@ describe('FieldModel.vue', () => {
   })
 
   it('shows an autocomplete dropdown of workspace models filtered by query', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'kNNowledge/auth_01': makeNode('kNNowledge/auth_01', { source: { path: 'kNNowledge/auth_01.md' } }),
         'kNNowledge/billing_02': makeNode('kNNowledge/billing_02', {
@@ -129,7 +129,7 @@ describe('FieldModel.vue', () => {
       ['kNNowledge/auth_01', 'kNNowledge/billing_02'],
     )
 
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: '',
         readonly: false,
@@ -149,15 +149,15 @@ describe('FieldModel.vue', () => {
   })
 
   it('emits update:modelValue with the selected model path on suggestion click', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'kNNowledge/auth_01': makeNode('kNNowledge/auth_01', { source: { path: 'kNNowledge/auth_01.md' } }),
       },
       ['kNNowledge/auth_01'],
     )
 
-    const wrapper = mount(FieldModel, {
+    const wrapper = mount(FieldKnowledge, {
       props: {
         modelValue: '',
         readonly: false,
@@ -174,7 +174,7 @@ describe('FieldModel.vue', () => {
 
   describe('inline submodel creation', () => {
     it('renders the creation button in edit mode (!readonly)', () => {
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -187,7 +187,7 @@ describe('FieldModel.vue', () => {
     })
 
     it('renders target_blueprint badge inside creation button when specified', () => {
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -205,7 +205,7 @@ describe('FieldModel.vue', () => {
     })
 
     it('renders the creation trigger in readonly mode when the model is missing', () => {
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: true,
@@ -223,7 +223,7 @@ describe('FieldModel.vue', () => {
     })
 
     it('keeps the pill and shows the creation trigger in readonly mode when the value does not resolve to a workspace node', () => {
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: 'patentes_maestras_V_0-1-0/patente/sombrero-paraguas/business-v-0-2-0_01.md',
           readonly: true,
@@ -241,14 +241,14 @@ describe('FieldModel.vue', () => {
     })
 
     it('keeps the pill and hides the creation trigger in readonly mode when the model resolves', () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('kNNowledge/auth_01.md', {
         name: 'auth',
         source: { path: 'kNNowledge/auth_01.md' },
       })
-      modelStore.setGraph({ 'kNNowledge/auth_01.md': root }, ['kNNowledge/auth_01.md'])
+      knowledgeStore.setGraph({ 'kNNowledge/auth_01.md': root }, ['kNNowledge/auth_01.md'])
 
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: 'kNNowledge/auth_01.md',
           readonly: true,
@@ -265,7 +265,7 @@ describe('FieldModel.vue', () => {
     })
 
     it('invokes window.prompt pre-filled with suggested path derived from parent model path, concept, element, and target_blueprint', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
@@ -276,7 +276,7 @@ describe('FieldModel.vue', () => {
         kind: 'element',
         type: 'initiatives',
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -286,7 +286,7 @@ describe('FieldModel.vue', () => {
 
       const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null)
 
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -310,7 +310,7 @@ describe('FieldModel.vue', () => {
     })
 
     it('generates distinct non-colliding suggested paths for sibling elements under the same concept', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md' },
@@ -330,7 +330,7 @@ describe('FieldModel.vue', () => {
         parentId: conceptNode.id,
         kind: 'element',
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [conceptNode.id]: conceptNode,
@@ -342,7 +342,7 @@ describe('FieldModel.vue', () => {
 
       const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null)
 
-      const wrapperAlpha = mount(FieldModel, {
+      const wrapperAlpha = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -362,7 +362,7 @@ describe('FieldModel.vue', () => {
         'kNNowledge/Ghostbusters_V_0-2-0/initiatives/alpha/business_01.md',
       )
 
-      const wrapperBeta = mount(FieldModel, {
+      const wrapperBeta = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -386,12 +386,12 @@ describe('FieldModel.vue', () => {
     })
 
     it('falls back to flat path when field is rendered without element/concept ancestry', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const rootNode = makeNode('kNNowledge/Company_NN.md', {
         kind: 'root',
         source: { path: 'kNNowledge/Company_NN.md' },
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
         },
@@ -400,7 +400,7 @@ describe('FieldModel.vue', () => {
 
       const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null)
 
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -424,7 +424,7 @@ describe('FieldModel.vue', () => {
     })
 
     it('confirms prompt: invokes scaffoldSubmodel, emits update:modelValue, and calls uiStore.focusModel', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const uiStore = useUiStore()
       const rootNode = makeNode('kNNowledge/Ghostbusters_V_0-2-0_innovation_NN.md', {
         kind: 'root',
@@ -436,7 +436,7 @@ describe('FieldModel.vue', () => {
         kind: 'element',
         type: 'initiatives',
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         {
           [rootNode.id]: rootNode,
           [elementNode.id]: elementNode,
@@ -451,7 +451,7 @@ describe('FieldModel.vue', () => {
         )
       const focusSpy = vi.spyOn(uiStore, 'focusModel')
 
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,
@@ -468,7 +468,7 @@ describe('FieldModel.vue', () => {
       await wrapper.find('[data-testid="create-submodel-button"]').trigger('click')
 
       expect(
-        modelStore.nodes[
+        knowledgeStore.nodes[
           'kNNowledge/Ghostbusters_V_0-2-0/initiatives/municipal-franchise-expansion/business_01.md'
         ],
       ).toBeDefined()
@@ -484,12 +484,12 @@ describe('FieldModel.vue', () => {
     })
 
     it('cancelling prompt aborts creation without emitting or focusing', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const uiStore = useUiStore()
       const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null)
       const focusSpy = vi.spyOn(uiStore, 'focusModel')
 
-      const wrapper = mount(FieldModel, {
+      const wrapper = mount(FieldKnowledge, {
         props: {
           modelValue: '',
           readonly: false,

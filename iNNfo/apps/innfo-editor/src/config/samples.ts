@@ -19,7 +19,7 @@ export const SAMPLE_BASE: string = import.meta.env.DEV ? '/specs/bluepriNNts' : 
  * Bundled fallback of each shipped L2 blueprint's newest known
  * `blueprint_version`, keyed by blueprint slug (e.g. "business").
  *
- * Used by `useTemplateVersionNotice` (spec-versioning D3) as one half of the
+ * Used by `useBlueprintVersionNotice` (spec-versioning D3) as one half of the
  * union that decides whether a model's pinned template is stale — the other
  * half is a live scan of the connected workspace's local search dirs
  * (`specs/`, `.specs/`, `.spec-cache/`, see design.md A1). This map exists so

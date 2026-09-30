@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 import type { MatrixDef } from '../../src/composables/useMatrixDefinitions'
 import { useMatrixCells } from '../../src/components/editor/composables/useMatrixCells'
@@ -36,9 +36,9 @@ describe('useMatrixCells', () => {
   })
 
   it('matrixCellKey builds the MatrixName||row||col key, and getVal reads the stored value', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', { fields: { 'M1||Src0||Tgt0': { value: 'X' } } as any })
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
     const activeMatrix = ref<MatrixDef | null>(MATRIX)
     const rootNode = ref<KnowledgeNode | null>(root)
@@ -50,9 +50,9 @@ describe('useMatrixCells', () => {
   })
 
   it('setVal commits the value on the root node and invokes onChange with the key/value', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root')
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
     const activeMatrix = ref<MatrixDef | null>(MATRIX)
     const rootNode = ref<KnowledgeNode | null>(root)
@@ -68,14 +68,14 @@ describe('useMatrixCells', () => {
   })
 
   it('valueDistribution counts stored values across the given rows/cols, defaulting missing cells to "-"', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', {
       fields: {
         'M1||Src0||Tgt0': { value: 'X' },
         'M1||Src0||Tgt1': { value: 'X' },
       } as any,
     })
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
     const activeMatrix = ref<MatrixDef | null>(MATRIX)
     const rootNode = ref<KnowledgeNode | null>(root)
@@ -94,9 +94,9 @@ describe('useMatrixCells', () => {
   })
 
   it('valueDistribution uses the exact matrixCellKey() normalization get/set use (E2)', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root')
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
     const activeMatrix = ref<MatrixDef | null>(MATRIX)
     const rootNode = ref<KnowledgeNode | null>(root)
@@ -123,9 +123,9 @@ describe('useMatrixCells', () => {
   })
 
   it('keys cells by the stable node id, so same-named elements in different parents are independent cells (E1)', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root')
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
 
     const activeMatrix = ref<MatrixDef | null>(MATRIX)
     const rootNode = ref<KnowledgeNode | null>(root)
@@ -161,9 +161,9 @@ describe('useMatrixCells', () => {
   })
 
   it('getSetOptionsList reads declared "values", falling back to parsing "params"', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root')
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
     const rootNode = ref<KnowledgeNode | null>(root)
 
     const withValues = ref<MatrixDef | null>({ ...MATRIX, widgetType: 'set', values: ['A', 'B'] })
@@ -176,9 +176,9 @@ describe('useMatrixCells', () => {
   })
 
   it('isOutOfSetValue flags set-widget values outside the declared options', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root')
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
     const rootNode = ref<KnowledgeNode | null>(root)
     const activeMatrix = ref<MatrixDef | null>({ ...MATRIX, widgetType: 'set', values: ['A', 'B'] })
     const { isOutOfSetValue } = useMatrixCells(activeMatrix, rootNode, () => {})
@@ -189,9 +189,9 @@ describe('useMatrixCells', () => {
   })
 
   it('rotateCycle advances through set options, wrapping to "-" past the last option', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('Root', { fields: { 'M1||Src0||Tgt0': { value: 'B' } } as any })
-    modelStore.setGraph({ Root: root }, ['Root'])
+    knowledgeStore.setGraph({ Root: root }, ['Root'])
     const rootNode = ref<KnowledgeNode | null>(root)
     const activeMatrix = ref<MatrixDef | null>({ ...MATRIX, widgetType: 'set', values: ['A', 'B'] })
     const { rotateCycle, getVal } = useMatrixCells(activeMatrix, rootNode, () => {})

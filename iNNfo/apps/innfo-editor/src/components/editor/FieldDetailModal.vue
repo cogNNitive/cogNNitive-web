@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { computed, watch, onUnmounted } from 'vue'
 import { X } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import WidgetField from '../../shared/widgets/WidgetField.vue'
 
 const props = defineProps<{
@@ -74,9 +74,9 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
-const node = computed(() => modelStore.getNode(props.nodeId))
+const node = computed(() => knowledgeStore.getNode(props.nodeId))
 const elementName = computed(() => node.value?.name ?? '')
 
 const fieldLabel = computed(() => {

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import ModelInfoPanel from '../../src/components/editor/ModelInfoPanel.vue'
+import KnowledgeInfoPanel from '../../src/components/editor/KnowledgeInfoPanel.vue'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -56,14 +56,14 @@ title: "Business Model"
 # _F Business Model
 `
 
-describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
+describe('KnowledgeInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('shows current version from model frontmatter', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -75,7 +75,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
       ['Root'],
     )
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
 
@@ -99,8 +99,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
   })
 
   it('defaults to V_1-0-0 when no knowledge_version in frontmatter', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -112,7 +112,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
       ['Root'],
     )
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
 
@@ -129,8 +129,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
   })
 
   it('shows three bump buttons with version previews', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -146,7 +146,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     workspaceStore.handle = { name: 'test' } as any
     workspaceStore.hasHandle = true
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
 
@@ -174,8 +174,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
   })
 
   it('bump buttons show hover tooltip with version preview', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           kind: 'concept',
@@ -190,7 +190,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     workspaceStore.handle = { name: 'test' } as any
     workspaceStore.hasHandle = true
 
-    const wrapper = mount(ModelInfoPanel, {
+    const wrapper = mount(KnowledgeInfoPanel, {
       props: { rootNodeId: 'Root' },
     })
 
@@ -210,8 +210,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
 
   describe('Disabled states (R-VM-06)', () => {
     it('buttons are disabled when no workspace handle is connected', async () => {
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -223,7 +223,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
       )
       // Deliberately no handle set
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -242,8 +242,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     })
 
     it('shows tooltip explaining why buttons are disabled', async () => {
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -254,7 +254,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
         ['Root'],
       )
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -270,8 +270,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     })
 
     it('buttons are disabled when saving is in progress', async () => {
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -286,7 +286,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
       workspaceStore.hasHandle = true
       workspaceStore.saving = true // Saving in progress
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -302,12 +302,12 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     })
 
     it('buttons are disabled when there is no root node', async () => {
-      // Don't set up modelStore at all (no root)
+      // Don't set up knowledgeStore at all (no root)
       const workspaceStore = useWorkspaceStore()
       workspaceStore.handle = { name: 'test' } as any
       workspaceStore.hasHandle = true
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -323,8 +323,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     })
 
     it('does not render the Active Model Stack pills anymore', () => {
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -336,7 +336,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
         ['Root'],
       )
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -345,8 +345,8 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
     })
 
     it('shows the template name instead of the version in the Name field', () => {
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -358,7 +358,7 @@ describe('ModelInfoPanel.vue — Version Management (R-VM-01, R-VM-06)', () => {
         ['Root'],
       )
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -385,8 +385,8 @@ title: "Nested Version Model"
 
 # _F Nested Version Model
 `
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -398,7 +398,7 @@ title: "Nested Version Model"
         ['Root'],
       )
 
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 
@@ -444,8 +444,8 @@ title: "Numeric Version Model"
 
 # _F Numeric Version Model
 `
-      const modelStore = useModelStore()
-      modelStore.setGraph(
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(
         {
           Root: makeNode('Root', {
             kind: 'concept',
@@ -461,7 +461,7 @@ title: "Numeric Version Model"
       // knowledge_version value. `parseFrontmatter` (unlike the old regex) parses
       // unquoted `1.5` as a YAML number, so `readString()` must coerce it
       // back to a string before it ever reaches `.match()`.
-      const wrapper = mount(ModelInfoPanel, {
+      const wrapper = mount(KnowledgeInfoPanel, {
         props: { rootNodeId: 'Root' },
       })
 

@@ -7,8 +7,8 @@ import {
   pickLatestVersion,
   scanWorkspaceForTemplateVersions,
   buildMigrationPrompt,
-  useTemplateVersionNotice,
-} from '../../src/composables/useTemplateVersionNotice'
+  useBlueprintVersionNotice,
+} from '../../src/composables/useBlueprintVersionNotice'
 import { buildFakeTree } from '../helpers/fakeFs'
 import { SHIPPED_BLUEPRINT_VERSIONS } from '../../src/config/samples'
 
@@ -131,14 +131,14 @@ describe('buildMigrationPrompt', () => {
   })
 })
 
-describe('useTemplateVersionNotice', () => {
+describe('useBlueprintVersionNotice', () => {
   it('sets notice when the workspace scan finds a newer template version', async () => {
     // Use `analysis`: it ships V_0-2-1 in SHIPPED_BLUEPRINT_VERSIONS, so this
     // case isolates the workspace-scan path.
     const handle = buildFakeTree('workspace', {
       specs: { 'analysis_V_0-3-0_NN.md': '---\nlevel: 2\n---\n' },
     })
-    const { notice, refresh } = useTemplateVersionNotice({
+    const { notice, refresh } = useBlueprintVersionNotice({
       templateName: ref('analysis_V_0-2-1'),
       modelFileName: ref('StartupValidation_V_0-2-2_analysis_NN.md'),
       handle: ref(handle),
@@ -158,7 +158,7 @@ describe('useTemplateVersionNotice', () => {
     const handle = buildFakeTree('workspace', {
       specs: { 'analysis_V_0-3-0_NN.md': '---\nlevel: 2\n---\n' },
     })
-    const { notice, refresh } = useTemplateVersionNotice({
+    const { notice, refresh } = useBlueprintVersionNotice({
       templateName: ref('analysis_V_0-3-0'),
       modelFileName: ref('StartupValidation_NN.md'),
       handle: ref(handle),
@@ -169,7 +169,7 @@ describe('useTemplateVersionNotice', () => {
   })
 
   it('leaves notice null when the template name carries no version (self-contained model)', async () => {
-    const { notice, refresh } = useTemplateVersionNotice({
+    const { notice, refresh } = useBlueprintVersionNotice({
       templateName: ref(''),
       modelFileName: ref('Standalone_NN.md'),
     })
@@ -179,7 +179,7 @@ describe('useTemplateVersionNotice', () => {
   })
 
   it('fires from the bundled SHIPPED_BLUEPRINT_VERSIONS map alone (no workspace handle) for a stale procedures pin', async () => {
-    const { notice, refresh } = useTemplateVersionNotice({
+    const { notice, refresh } = useBlueprintVersionNotice({
       templateName: ref('procedures_V_0-1-0'),
       modelFileName: ref('CodeReviewProcess_V_0-1-0_procedures_NN.md'),
     })

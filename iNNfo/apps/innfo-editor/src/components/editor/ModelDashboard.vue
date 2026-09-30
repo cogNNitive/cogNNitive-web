@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { useMetamodelStore } from '../../stores/metamodelStore'
 import { FileText, Calendar, Layers, Database, ChevronRight, Maximize2, X } from 'lucide-vue-next'
@@ -15,11 +15,11 @@ const props = defineProps<{
   rootNodeId: string
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const metamodelStore = useMetamodelStore()
 
-const rootNode = computed(() => modelStore.getNode(props.rootNodeId))
+const rootNode = computed(() => knowledgeStore.getNode(props.rootNodeId))
 
 // Resolve model metadata
 const modelTitle = computed(() => {
@@ -55,9 +55,9 @@ const concepts = computed(() => metamodelStore.concepts)
 
 const conceptCounts = computed(() => {
   const counts: Record<string, number> = {}
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (node.type && node.kind === 'element') {
-      const nodeRootId = modelStore.getModelRootForNode(node.id)
+      const nodeRootId = knowledgeStore.getKnowledgeRootForNode(node.id)
       if (nodeRootId === props.rootNodeId) {
         counts[node.type] = (counts[node.type] || 0) + 1
       }
@@ -272,7 +272,7 @@ watch(showModal, async (isOpen) => {
       <div class="flex items-center gap-3.5 text-xs text-slate-500 shrink-0">
         <div class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center min-w-[100px]">
           <span class="text-3xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total Nodes</span>
-          <span class="text-lg font-black text-slate-800 dark:text-slate-100 font-mono">{{ Object.keys(modelStore.nodes).length }}</span>
+          <span class="text-lg font-black text-slate-800 dark:text-slate-100 font-mono">{{ Object.keys(knowledgeStore.nodes).length }}</span>
         </div>
         <div class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center min-w-[100px]">
           <span class="text-3xs text-slate-400 font-bold uppercase tracking-wider mb-1">Last Saved</span>

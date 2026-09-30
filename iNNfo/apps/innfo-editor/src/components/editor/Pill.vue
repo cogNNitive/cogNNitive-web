@@ -135,26 +135,26 @@
               :key="t"
               class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border shadow-xs"
               :style="
-                modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.color
+                knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.color
                   ? {
                       borderColor:
-                        modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.color + '55',
+                        knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.color + '55',
                       backgroundColor:
-                        modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.color + '15',
-                      color: modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.color,
+                        knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.color + '15',
+                      color: knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.color,
                     }
                   : {}
               "
               :class="
-                !modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.color
+                !knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.color
                   ? 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-600'
                   : ''
               "
-              :title="modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.description"
+              :title="knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.description"
             >
               <IconRenderer
-                v-if="modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.icon"
-                :icon="modelStore.workspaceTagsMap[t.toLowerCase().trim()]?.icon!"
+                v-if="knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.icon"
+                :icon="knowledgeStore.workspaceTagsMap[t.toLowerCase().trim()]?.icon!"
                 custom-class="w-3 h-3"
               />
               <span>#{{ t }}</span>
@@ -211,7 +211,7 @@ import {
   COLOR_HEX,
   getHexColor,
 } from '../../composables/useConceptVisuals'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import type { BlockKind, ConceptType } from '../../utils/conceptVisuals'
 
 const props = withDefaults(
@@ -248,7 +248,7 @@ const props = withDefaults(
     shape?: 'rounded' | 'pill'
     /** When true, prevents text wrapping and width-clamping (useful for rotated labels in table headers). */
     noWrap?: boolean
-    /** Explicit tags array. If omitted, resolved from blockId or nodeId in modelStore. */
+    /** Explicit tags array. If omitted, resolved from blockId or nodeId in knowledgeStore. */
     tags?: string[]
   }>(),
   {
@@ -266,21 +266,21 @@ const props = withDefaults(
   },
 )
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const conceptVisuals = useConceptVisuals()
 
 // ── Parent chain color/icon resolution ─────────────────────────
 function resolveNodeColor(nodeId: string | undefined): string {
   if (!nodeId) return ''
-  const node = modelStore.getNode(nodeId)
+  const node = knowledgeStore.getNode(nodeId)
   if (!node) return ''
   return conceptVisuals.resolveColor(node)
 }
 
 function resolveNodeColorName(nodeId: string | undefined): string {
   if (!nodeId) return ''
-  const node = modelStore.getNode(nodeId)
+  const node = knowledgeStore.getNode(nodeId)
   if (!node) return ''
   return conceptVisuals.resolveColorName(node)
 }
@@ -319,7 +319,7 @@ const effectiveColorHex = computed(() => {
 const effectiveIcon = computed(() => {
   if (props.icon) return props.icon
   if (props.nodeId) {
-    const node = modelStore.getNode(props.nodeId)
+    const node = knowledgeStore.getNode(props.nodeId)
     if (node) {
       return conceptVisuals.resolveIcon(node)
     }
@@ -344,7 +344,7 @@ const visuals = useBlockVisuals({
 // ── Empty state ─────────────────────────────────────────────────
 const isEmpty = computed(() => {
   if (props.hideEmpty) return false
-  const node = props.blockId ? modelStore.getNode(props.blockId) : null
+  const node = props.blockId ? knowledgeStore.getNode(props.blockId) : null
   const desc = props.description ?? (node as any)?.description ?? node?.rawContent ?? ''
   const fieldsObj = props.fields ?? node?.fields
   const hasDescription = !!desc && desc.trim().length > 0
@@ -365,7 +365,7 @@ const conceptLabel = computed(() => '')
 
 const getMarkerScore = (markerName: string): number => {
   if (!props.blockId) return 0
-  const node = modelStore.getNode(props.blockId)
+  const node = knowledgeStore.getNode(props.blockId)
   if (!node?.markers) return 0
   return (node.markers[markerName] as number) ?? 0
 }
@@ -389,7 +389,7 @@ const nodeTags = computed<string[]>(() => {
   }
   const targetId = props.blockId || props.nodeId
   if (!targetId) return []
-  const node = modelStore.getNode(targetId)
+  const node = knowledgeStore.getNode(targetId)
   if (node?.tags && Array.isArray(node.tags)) {
     return node.tags
   }
@@ -397,7 +397,7 @@ const nodeTags = computed<string[]>(() => {
 })
 
 const activeWorkspaceTags = computed<WorkspaceTagBadge[]>(() => {
-  const wsMap = modelStore.workspaceTagsMap
+  const wsMap = knowledgeStore.workspaceTagsMap
   if (!wsMap || Object.keys(wsMap).length === 0) return []
   const badges: WorkspaceTagBadge[] = []
   for (const t of nodeTags.value) {
@@ -458,7 +458,7 @@ watch(
     thumbnailUrl.value = ''
     releaseThumbnailUrl()
 
-    const node = props.blockId ? modelStore.getNode(props.blockId) : null
+    const node = props.blockId ? knowledgeStore.getNode(props.blockId) : null
     const explicitImg = getTemplateImageValue(node?.fields || props.fields)
     if (!explicitImg) return
 

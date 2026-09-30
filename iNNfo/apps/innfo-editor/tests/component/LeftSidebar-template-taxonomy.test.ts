@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -35,8 +35,8 @@ describe('LeftSidebar — concept hierarchy inherited from template (R-TAX-INHER
   })
 
   it('nests a model with no own index according to its resolved template index', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'model.md': makeNode('model.md', {
           source: { path: 'model.md' },
@@ -107,8 +107,8 @@ title: My Business
   })
 
   it('uses the resolved (specialized) template index, not another template present in the graph', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'model.md': makeNode('model.md', {
           source: { path: 'model.md' },
@@ -197,8 +197,8 @@ title: My Specialized Business
   })
 
   it('does not treat a model file as a template even if it ends with _spec_NN.md, if level: 3 is declared', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'DeLoreanTimeTravel_V_0-1-0_spec_NN.md': makeNode('DeLoreanTimeTravel_V_0-1-0_spec_NN.md', {
           source: { path: 'kNNowledge/DeLoreanTimeTravel_V_0-1-0_spec_NN.md' },

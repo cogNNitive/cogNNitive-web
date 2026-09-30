@@ -134,14 +134,14 @@
 import { computed } from 'vue'
 import { Boxes } from 'lucide-vue-next'
 import WidgetField from '../../shared/widgets/WidgetField.vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import type { KnowledgeNode } from '../../model/types'
 import Pill from './Pill.vue'
 import FileRefPill from './FileRefPill.vue'
 import { parseForPill, type KnowledgeUnit } from '../../utils/sourceRef'
 import { isImageFieldValue } from '../../utils/imageDetection'
-import { findMatchingModelNode } from '../../utils/modelMatching'
+import { findMatchingKnowledgeNode } from '../../utils/knowledgeMatching'
 
 function handleModelPillClick(val: unknown): void {
   if (!val || typeof val !== 'string') return
@@ -149,7 +149,7 @@ function handleModelPillClick(val: unknown): void {
     .replace(/^\[\[\s*/, '')
     .replace(/\s*\]\]$/, '')
     .trim()
-  const matchingNode = findMatchingModelNode(modelStore.nodes, clean)
+  const matchingNode = findMatchingKnowledgeNode(knowledgeStore.nodes, clean)
   const resolvedId = matchingNode ? matchingNode.id : clean
   uiStore.focusModel(resolvedId)
   uiStore.selectNode(resolvedId)
@@ -260,14 +260,14 @@ const props = withDefaults(
   },
 )
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 
 const getConceptFields = (typeName: string | undefined) => {
   if (!typeName) return []
-  const rootId = modelStore.rootIds[0]
+  const rootId = knowledgeStore.rootIds[0]
   if (!rootId) return []
-  const root = modelStore.getNode(rootId)
+  const root = knowledgeStore.getNode(rootId)
   return (
     root?.localMetamodel?.concepts?.find((c) => c.name.toLowerCase() === typeName.toLowerCase())
       ?.fields ?? []
@@ -279,7 +279,7 @@ const getConceptFields = (typeName: string | undefined) => {
  * with its current value from the store.
  */
 const fieldEntries = computed<FieldEntry[]>(() => {
-  const node = modelStore.getNode(props.nodeId)
+  const node = knowledgeStore.getNode(props.nodeId)
 
   return props.fieldDefinitions.map((def) => {
     const fv = node?.fields?.[def.name]
@@ -305,7 +305,7 @@ const fieldEntries = computed<FieldEntry[]>(() => {
       const searchNorm = searchName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
       refNode =
-        Object.values(modelStore.nodes).find((n) => {
+        Object.values(knowledgeStore.nodes).find((n) => {
           if (!n) return false
           if (modelPrefix) {
             const path = n.source?.path || ''

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import VirtualGroupNode from '../../src/components/layout/VirtualGroupNode.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -27,7 +27,7 @@ describe('VirtualGroupNode — progressive batch rendering', () => {
   })
 
   it('renders initial 60 items when given 250 elements and displays show-more button', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const nodes: Record<string, KnowledgeNode> = {
       Root: makeNode('Root', {
         parentId: null,
@@ -45,7 +45,7 @@ describe('VirtualGroupNode — progressive batch rendering', () => {
       elements.push(el)
     }
 
-    modelStore.setGraph(nodes, ['Root'])
+    knowledgeStore.setGraph(nodes, ['Root'])
 
     const wrapper = mount(VirtualGroupNode, {
       props: {
@@ -70,7 +70,7 @@ describe('VirtualGroupNode — progressive batch rendering', () => {
   })
 
   it('automatically expands renderLimit if selectedId is past the initial batch', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const nodes: Record<string, KnowledgeNode> = {
       Root: makeNode('Root', { parentId: null }),
     }
@@ -82,7 +82,7 @@ describe('VirtualGroupNode — progressive batch rendering', () => {
       elements.push(el)
     }
 
-    modelStore.setGraph(nodes, ['Root'])
+    knowledgeStore.setGraph(nodes, ['Root'])
 
     const wrapper = mount(VirtualGroupNode, {
       props: {

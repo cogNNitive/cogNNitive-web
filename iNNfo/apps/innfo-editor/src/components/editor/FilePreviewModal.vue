@@ -391,7 +391,7 @@ import {
   GitFork,
 } from 'lucide-vue-next'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import MermaidWidget from '../../shared/widgets/MermaidWidget.vue'
 import {
   resolveHeadingSection,
@@ -420,7 +420,7 @@ const emit = defineEmits<{
 }>()
 
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 const KIND_META = {
   source: {
@@ -498,7 +498,7 @@ const showOutgoing = ref(false)
 
 const hiddenOutgoingCount = computed(() => {
   if (props.kind !== 'source' && !isMarkdown.value) return 0
-  const citations = modelStore.getSourceCitations(props.filePath)
+  const citations = knowledgeStore.getSourceCitations(props.filePath)
   let total = 0
   for (const c of citations) {
     const outRels = (c.relationships ?? []).filter((r) => r.origin !== 'source')
@@ -521,8 +521,8 @@ const lineageMermaidCode = computed(() => {
   // 2. Focal node (Current source)
   const focalTitle = props.fileName + (props.slug ? ' (#' + props.slug + ')' : '')
 
-  // 3. Downstream citations from modelStore
-  const citations = modelStore.getSourceCitations(props.filePath)
+  // 3. Downstream citations from knowledgeStore
+  const citations = knowledgeStore.getSourceCitations(props.filePath)
 
   // Build Mermaid graph TD lines, rendered at natural size (no shrink-to-fit).
   const chartLines: string[] = [
@@ -575,7 +575,7 @@ const lineageMermaidCode = computed(() => {
         }
       } else {
         outRels.slice(0, 3).forEach((rel, rIdx) => {
-          const targetNode = modelStore.getNode(rel.targetId)
+          const targetNode = knowledgeStore.getNode(rel.targetId)
           const targetName = targetNode?.name ?? rel.targetId
           const targetType = targetNode?.type ?? 'Elemento'
           const targetId = `R_${idx}_${rIdx}`

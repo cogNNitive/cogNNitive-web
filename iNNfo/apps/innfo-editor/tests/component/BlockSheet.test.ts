@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import BlockSheet from '../../src/components/editor/BlockSheet.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { KnowledgeNode } from '../../src/model/types'
 
 function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
@@ -28,14 +28,14 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
 
   describe('Header and Layout', () => {
     it('renders element title with concept name and element name without tabs', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task1', {
         name: 'Task1',
         parentId: 'Root',
         type: 'Task',
       })
-      modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -56,7 +56,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
     })
 
     it('renders unified connections section when node has relationships', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task1', {
         name: 'Task1',
@@ -64,7 +64,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         type: 'Task',
         relationships: [{ label: 'depends_on', targetId: 'Root/Task2', origin: 'matrix' }],
       })
-      modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -83,7 +83,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
     })
 
     it('renders the Connections section for a node that is only a reference target (no outgoing edges)', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const platform = makeNode('Root/youtube.com', {
         name: 'youtube.com',
@@ -96,7 +96,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         type: 'Resource',
         fields: { platform: '[[youtube.com]]' },
       })
-      modelStore.setGraph(
+      knowledgeStore.setGraph(
         { Root: root, 'Root/youtube.com': platform, 'Root/Video': resource },
         ['Root'],
       )
@@ -120,9 +120,9 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
 
   describe('Fields Schema (concept layout)', () => {
     it('renders field metadata (type badge, options, targets) in the Fields Schema section', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
-      modelStore.setGraph({ Root: root }, ['Root'])
+      knowledgeStore.setGraph({ Root: root }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -148,9 +148,9 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
     })
 
     it('shows "No fields defined" when the concept declares no fields', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
-      modelStore.setGraph({ Root: root }, ['Root'])
+      knowledgeStore.setGraph({ Root: root }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -171,14 +171,14 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
 
   describe('assetItems (Media & Attachments)', () => {
     it('renders declared node.assets as attachment items in NodeMedia', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task1', {
         parentId: 'Root',
         type: 'Task',
         assets: ['docs/report.pdf'],
       })
-      modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -199,10 +199,10 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
     })
 
     it('shows the empty-state message when the node has no assets', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task2', { parentId: 'Root', type: 'Task' })
-      modelStore.setGraph({ Root: root, 'Root/Task2': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task2': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -223,7 +223,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
 
   describe('Inherited Concepts (OpenCode Prompt Helper)', () => {
     it('renders the warning banner and the OpenCode prompt copy box when editing an inherited concept', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
 
       // Setup mock root node with a parent_spec
       const root = makeNode('Root', {
@@ -243,7 +243,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         type: 'MyConcept',
       })
 
-      modelStore.setGraph({
+      knowledgeStore.setGraph({
         Root: root,
         'spec:business_V_0-1-1': specTemplate,
         'Root/MyConcept': conceptNode,
@@ -279,7 +279,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
 
   describe('Tags viewing and authoring', () => {
     it('renders element tags as chips in read mode', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task1', {
         name: 'Task1',
@@ -287,7 +287,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         type: 'Task',
         tags: ['frontend', 'urgent'],
       })
-      modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -312,7 +312,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
     })
 
     it('does not render element tags section when tags are empty or undefined', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task1', {
         name: 'Task1',
@@ -320,7 +320,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         type: 'Task',
         tags: [],
       })
-      modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -341,8 +341,8 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
       expect(wrapper.find('[data-testid="block-sheet-tags-read"]').exists()).toBe(false)
     })
 
-    it('renders TagInput in edit mode and synchronizes tag additions to modelStore', async () => {
-      const modelStore = useModelStore()
+    it('renders TagInput in edit mode and synchronizes tag additions to knowledgeStore', async () => {
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', { rawContent: '---\nspec_version: V_0-1-5\n---\n' })
       const element = makeNode('Root/Task1', {
         name: 'Task1',
@@ -350,7 +350,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         type: 'Task',
         tags: ['existing'],
       })
-      modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
       const wrapper = mount(BlockSheet, {
         props: {
@@ -378,13 +378,13 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
       await tagInput.setValue('new-tag')
       await tagInput.trigger('keydown.enter')
 
-      const updatedNode = modelStore.getNode('Root/Task1')
+      const updatedNode = knowledgeStore.getNode('Root/Task1')
       expect(updatedNode?.tags).toEqual(['existing', 'new-tag'])
-      expect(modelStore.isDirty('Root/Task1')).toBe(true)
+      expect(knowledgeStore.isDirty('Root/Task1')).toBe(true)
     })
 
     it('renders and allows editing concept tags', async () => {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const root = makeNode('Root', {
         rawContent: '---\nspec_version: V_0-1-5\n---\n',
         conceptTags: { Task: ['strategy'] },
@@ -394,7 +394,7 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
         parentId: 'Root',
         type: 'Task',
       })
-      modelStore.setGraph({ Root: root, 'Root/Task': concept }, ['Root'])
+      knowledgeStore.setGraph({ Root: root, 'Root/Task': concept }, ['Root'])
 
       // Read mode test
       const readWrapper = mount(BlockSheet, {
@@ -432,9 +432,9 @@ describe('BlockSheet.vue — Redesigned layout & assets', () => {
       await input.setValue('priority')
       await input.trigger('keydown.enter')
 
-      const updatedRoot = modelStore.getNode('Root')
+      const updatedRoot = knowledgeStore.getNode('Root')
       expect(updatedRoot?.conceptTags?.Task).toEqual(['strategy', 'priority'])
-      expect(modelStore.isDirty('Root')).toBe(true)
+      expect(knowledgeStore.isDirty('Root')).toBe(true)
     })
   })
 })

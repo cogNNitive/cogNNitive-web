@@ -19,7 +19,7 @@ import { computed, type ComputedRef, type Ref } from 'vue'
 import { normalizeMatrixDecl } from '@cognnitive/innfo-core'
 import type { MatrixWidgetType } from '@cognnitive/innfo-core'
 import type { KnowledgeNode } from '../model/types'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 
 export const MATRIX_DEFS_KEY = '__matrix_defs'
 
@@ -89,12 +89,12 @@ export function mergeMatrixDefs(root: KnowledgeNode | null | undefined): MatrixD
  * version/spec root declares matrices the sidebar hides).
  */
 export function computeMergedMatrixDefs(rootIds: string[]): MatrixDef[] {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const result: MatrixDef[] = []
   const seen = new Set<string>()
 
   for (const id of rootIds) {
-    const root = modelStore.getNode(id)
+    const root = knowledgeStore.getNode(id)
     if (!root) continue
     for (const d of mergeMatrixDefs(root)) {
       const key = d.name.toLowerCase()
@@ -112,15 +112,15 @@ export function computeMergedMatrixDefs(rootIds: string[]): MatrixDef[] {
  * Returns -1 when the matrix is not declared by any workspace root.
  */
 export function resolveMatrixIndexByName(matrixName: string): number {
-  const modelStore = useModelStore()
-  return computeMergedMatrixDefs(modelStore.rootIds).findIndex((d) => d.name === matrixName)
+  const knowledgeStore = useKnowledgeStore()
+  return computeMergedMatrixDefs(knowledgeStore.rootIds).findIndex((d) => d.name === matrixName)
 }
 
 export function useMatrixDefinitions(
   rootIds: Ref<string[]>,
   opts?: { strategy?: 'fallback' | 'merge' },
 ): { matrixDefs: ComputedRef<MatrixDef[]>; getMatrixValueCount: (matrixName: string) => number } {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const strategy = opts?.strategy ?? 'fallback'
 
   const matrixDefs = computed<MatrixDef[]>(() => {
@@ -129,7 +129,7 @@ export function useMatrixDefinitions(
     const seen = new Set<string>()
 
     for (const id of rootIds.value) {
-      const root = modelStore.getNode(id)
+      const root = knowledgeStore.getNode(id)
       if (!root) continue
       const defs = extractMatrixDefs(root)
       for (const d of defs) {
@@ -146,7 +146,7 @@ export function useMatrixDefinitions(
   function getMatrixValueCount(matrixName: string): number {
     let count = 0
     const prefix = `${matrixName}||`
-    for (const node of Object.values(modelStore.nodes)) {
+    for (const node of Object.values(knowledgeStore.nodes)) {
       if (!node.fields) continue
       for (const [key, fv] of Object.entries(node.fields)) {
         if (key.startsWith(prefix)) {

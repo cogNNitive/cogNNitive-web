@@ -25,7 +25,7 @@ import {
   ExternalLink,
 } from 'lucide-vue-next'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import InnovationVisual from './InnovationVisual.vue'
 
 const props = withDefaults(
@@ -79,7 +79,7 @@ const isFile = computed(
 )
 
 const ws = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const resolvedAssetUrl = ref('')
 const fileContent = ref('')
 const fileExists = ref(true)
@@ -98,7 +98,7 @@ const isLooping = ref(true)
 const isCopied = ref(false)
 let animationTimer: number | null = null
 
-const currentNode = computed(() => (props.nodeId ? modelStore.getNode(props.nodeId) : null))
+const currentNode = computed(() => (props.nodeId ? knowledgeStore.getNode(props.nodeId) : null))
 
 // ── Multi-Strategy File Resolution ──────────────────────────────
 async function findFileInDir(dirHandle: any, pathParts: string[]): Promise<any> {

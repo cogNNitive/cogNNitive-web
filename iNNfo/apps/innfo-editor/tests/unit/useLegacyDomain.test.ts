@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 import { useLegacyDomain } from '../../src/composables/useLegacyDomain'
 import LegacyDomainBanner from '../../src/components/layout/LegacyDomainBanner.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { detectLegacy } from '@cognnitive/innfo-core/legacy'
 
 describe('useLegacyDomain and LegacyDomainBanner (D11)', () => {
@@ -11,14 +11,14 @@ describe('useLegacyDomain and LegacyDomainBanner (D11)', () => {
     setActivePinia(createPinia())
   })
 
-  it('detects legacy domain signals from modelStore parseIssues', () => {
-    const modelStore = useModelStore()
+  it('detects legacy domain signals from knowledgeStore parseIssues', () => {
+    const knowledgeStore = useKnowledgeStore()
     const { isLegacyDomain, legacySignals, legacyHint } = useLegacyDomain()
 
     expect(isLegacyDomain.value).toBe(false)
     expect(legacySignals.value).toEqual([])
 
-    modelStore.parseIssues = [
+    knowledgeStore.parseIssues = [
       {
         path: '<root>',
         code: 'LEGACY_DOMAIN',
@@ -41,8 +41,8 @@ describe('useLegacyDomain and LegacyDomainBanner (D11)', () => {
   })
 
   it('renders LegacyDomainBanner when legacy domain is detected and allows dismissal', async () => {
-    const modelStore = useModelStore()
-    modelStore.parseIssues = [
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.parseIssues = [
       {
         path: '<root>',
         code: 'LEGACY_DOMAIN',

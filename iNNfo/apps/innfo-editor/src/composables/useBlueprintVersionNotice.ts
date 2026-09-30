@@ -1,5 +1,5 @@
 /**
- * useTemplateVersionNotice — detects when a model's `parent_spec` pins an
+ * useBlueprintVersionNotice — detects when a model's `parent_spec` pins an
  * older L2 `blueprint_version` than the newest one discoverable, and builds
  * the passive D3 migration notice (badge + copyable `innfo:` prompt).
  *
@@ -131,7 +131,7 @@ export function buildMigrationPrompt(opts: {
   )
 }
 
-export interface UseTemplateVersionNoticeCtx {
+export interface UseBlueprintVersionNoticeCtx {
   templateName: Ref<string>
   modelFileName: Ref<string>
   handle?: Ref<DirectoryHandleLike | undefined>
@@ -143,7 +143,7 @@ export interface UseTemplateVersionNoticeCtx {
  * Kept explicit (no internal `watchEffect`) so it stays trivially testable
  * with a fake `DirectoryHandleLike`.
  */
-export function useTemplateVersionNotice(ctx: UseTemplateVersionNoticeCtx): {
+export function useBlueprintVersionNotice(ctx: UseBlueprintVersionNoticeCtx): {
   notice: Ref<TemplateVersionNotice | null>
   refresh: () => Promise<void>
 } {
