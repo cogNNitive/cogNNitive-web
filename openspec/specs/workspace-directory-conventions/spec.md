@@ -18,9 +18,9 @@ The workspace directory conventions MUST recognize a `series/` tree for video pr
 
 ### Requirement: Gitignored Ephemeral Engine Directories
 
-The workspace directory conventions MUST list `renders/` and `.anydeo/` (wherever they occur inside a video or series folder) as gitignored, ephemeral engine-output directories that MUST NOT be scanned as knowledge inputs, sources, or exports.
+The workspace directory conventions MUST list `renders/` and `.cognnitive-video/` (wherever they occur inside a video or series folder) as gitignored, ephemeral engine-output directories that MUST NOT be scanned as knowledge inputs, sources, or exports.
 
 #### Scenario: Engine directories excluded from workspace scans
-- GIVEN a video folder containing `renders/` and `.anydeo/`
+- GIVEN a video folder containing `renders/` and `.cognnitive-video/`
 - WHEN a workspace-wide scan (e.g. `nn-trannsform`, manifest reconciliation) runs
 - THEN neither directory is treated as a source, export, or discoverable model candidate

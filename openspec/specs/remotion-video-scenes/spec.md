@@ -22,7 +22,7 @@
 - **REQ-3.3:** Outro transitions between adjacent sequences must perform a 15-frame cross-fade or clean cut.
 
 ### FR-004: Script Syntax & Metamodel Extension in cogNNitive
-- **REQ-4.1:** Video script markdown files (`.md` or `.anydeo.md`) must support scene block attributes:
+- **REQ-4.1:** Video script markdown files (`.md`) must support scene block attributes:
   - `scene_type:: chapter_title | image_motion | element_animation`
   - `motion_direction:: left-to-right | right-to-left | diagonal-up | zoom-in`
   - `chapter_number:: 01`

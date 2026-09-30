@@ -154,7 +154,7 @@ order:: 90
 parent:: [[Canonical Skills]]
 tags:: [docs, skills, video, vus, series]
 
-Forked, iNNfo-aware authoring of Anydeo VUS video scripts inside a workspace's Series/Video production hierarchy.
+Forked, iNNfo-aware authoring of cogNNitive-video VUS video scripts inside a workspace's Series/Video production hierarchy.
 
 ## NN Page: Sample Workflows
 title:: Sample Workflows

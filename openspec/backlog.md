@@ -275,7 +275,7 @@ dedicated template driving a video generation pipeline.
    **state**, **releases**, and **changes**, with a canonical Ghostbusters Inc. sample
    and catalog/manifest registration.
 2. **Video generator** — a template modelling the pipeline that turns a source (paper,
-   transcript, footage) into a video (script, storyboard, AnyDeo script, final asset),
+   transcript, footage) into a video (script, storyboard, video script, final asset),
    reusing existing video/transcript/script primitives.
 
 **Approach (open):** each follows the standalone structure of

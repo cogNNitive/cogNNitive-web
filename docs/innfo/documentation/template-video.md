@@ -1,6 +1,6 @@
 # Video App Template
 
-The **Video App Template** (`iNNfo/specs/bluepriNNts/video/spec_NN.md`) provides a unified schema for video scripting, asset management, automated voiceover synthesis (TTS), and digital talking avatar rendering powered by Anydeo VUS (`V_0-3-3`).
+The **Video App Template** (`iNNfo/specs/bluepriNNts/video/spec_NN.md`) provides a unified schema for video scripting, asset management, automated voiceover synthesis (TTS), and digital talking avatar rendering powered by cogNNitive-video VUS (`V_0-3-3`).
 
 ---
 
@@ -47,7 +47,7 @@ Talking avatar layers take a source portrait (`layer_asset_source`) and synchron
 | `replicate/wan-2.1-s2v` | Replicate | Cinematic | Speech-to-video diffusion model delivering high photorealism and natural head movements. |
 | `wavespeed/infinitetalk` | WaveSpeed | Performance | Ultra-fast inference with realistic lip-sync and configurable face scaling. |
 
-### Example Anydeo Script Snippet
+### Example VUS Script Snippet
 
 ```markdown
 @ Scene 01 - Product Intro

@@ -10,7 +10,7 @@
     {
       "path": "docs/skills/templates/workflow/V_0-1-0/samples/example_V_1-0-0_workflow_NN.md",
       "code": "",
-      "fingerprint": "docs/skills/templates/workflow/V_0-1-0/samples/example_V_1-0-0_workflow_NN.md::elements.ArtifactType::::Slug collision: \"anydeo-script\" is shared by elements: AnyDeo Script. Element names must be unique across the whole model"
+      "fingerprint": "docs/skills/templates/workflow/V_0-1-0/samples/example_V_1-0-0_workflow_NN.md::elements.ArtifactType::::Slug collision: \"video-script\" is shared by elements: Video Script. Element names must be unique across the whole model"
     },
     {
       "path": "docs/innfo/app/starter/Business_V_1-0-0_starter_NN.md",

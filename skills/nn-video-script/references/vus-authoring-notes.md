@@ -1,7 +1,7 @@
 # VUS Authoring Notes
 
-Syntax quirks distilled from building the iNNtrevistas series by hand against
-VidGeNN, before this skill existed. These are structural/mechanical notes —
+Syntax quirks distilled from building the iNNtrevistas series by hand, before this skill
+existed. These are structural/mechanical notes —
 never a source of voice IDs, model names, or other spec facts. For anything
 version-specific, always run `node scripts/vus-spec.mjs voices` or
 `node scripts/vus-spec.mjs props <scope>` against the pinned spec. Do not

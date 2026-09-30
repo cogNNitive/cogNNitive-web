@@ -4,7 +4,7 @@
  * skills/nn-video-script/scripts/asset-cost-estimator.mjs
  *
  * Pre-generation asset planning, provider & model catalog, and per-scene cost estimator.
- * Aligned with VidGeNN / Anydeo V_0-3-3 specification for MiniMax TTS, WaveSpeed & Replicate
+ * Aligned with VUS V_0-3-3 specification for MiniMax TTS, WaveSpeed & Replicate
  * visual engines, and Talking Avatar LipSync models (WaveSpeed InfiniteTalk, Replicate Wan-S2V).
  *
  * Zero external mandatory runtime dependencies. ESM module.
@@ -15,7 +15,7 @@ import path from 'node:path';
 import { RemotionSceneCompiler } from './remotion-scene-compiler.mjs';
 
 /**
- * Standard pricing catalog (USD) for supported video generation providers & models in VidGeNN / cogNNitive Video.
+ * Standard pricing catalog (USD) for supported video generation providers & models in cogNNitive Video.
  */
 export const PROVIDER_PRICING_CATALOG = {
   image: {
@@ -344,7 +344,7 @@ export function formatAssetPlanMarkdown(estimateResult) {
 
   md += `| **TOTAL** | **All ${summary.sceneCount} Scenes** | **~${summary.totalEstimatedDurationSeconds}s** | **\$${summary.totalImageCost.toFixed(4)}** | **\$${summary.totalTtsCost.toFixed(4)}** | **\$${summary.totalAvatarCost.toFixed(4)}** | **\$${summary.grandTotalCost.toFixed(4)}** |\n\n`;
 
-  md += `## 3. Provider & Quality Tiers Comparison (VidGeNN / cogNNitive Video)\n\n`;
+  md += `## 3. Provider & Quality Tiers Comparison (cogNNitive Video)\n\n`;
   md += `| Tier | Image Model (WaveSpeed / Replicate) | Voiceover TTS (MiniMax) | Talking Avatar LipSync | Est. Total | Tradeoffs |\n`;
   md += `|---|---|---|---|---|---|\n`;
 

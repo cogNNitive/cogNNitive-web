@@ -26,7 +26,7 @@ Site: https://cognnitive.com/skills
 
 **nn-upgrade** — Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates.
 
-**nn-video-script** — Forked, iNNfo-aware authoring of Anydeo VUS video scripts inside a workspace's Series/Video production hierarchy: authoring, gating, and finalization.
+**nn-video-script** — Forked, iNNfo-aware authoring of cogNNitive-video VUS video scripts inside a workspace's Series/Video production hierarchy: authoring, gating, and finalization.
 
 ### Architecture
 

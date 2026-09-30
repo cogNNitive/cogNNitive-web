@@ -68,7 +68,7 @@ skills:
     version: "V_0-2-0"
     ref_key: skills
     requires: [nn-innfo]
-    description: Author, gate, and finalize VidGeNN (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
+    description: Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
 
 blueprints:
   - name: domaiNN

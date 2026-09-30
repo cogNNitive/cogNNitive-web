@@ -10,7 +10,7 @@ All templates are validated against Level 1 (`iNNfo_V_0-2-1`) and are declared i
 
 | Template / App | Adopted Version | Description & Scope | Source Spec |
 |---|---|---|---|
-| **Video** | `V_0-3-2` | Video production, Anydeo VUS scripts, voiceover & talking avatars | [`specs/templates/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
+| **Video** | `V_0-3-2` | Video production, cogNNitive-video VUS scripts, voiceover & talking avatars | [`specs/templates/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
 | **Business** | `V_0-2-5` | Composite template combining Business Model and Analysis | [`specs/templates/business/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/business/spec_NN.md) |
 | **Business Model** | `V_0-2-3` | Value propositions, segments, and channels | [`specs/templates/business-model/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md) |
 | **Analysis** | `V_0-2-1` | Strategic analysis, SWOT, and evaluable matrices | [`specs/templates/analysis/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md) |

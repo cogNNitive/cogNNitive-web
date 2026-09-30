@@ -14,9 +14,9 @@
 `listTemplateProcedures` and `discoverTransitiveAssets` MUST discover executable SOP procedures declared in template frontmatter AND procedure markdown files residing within the template's `procedures/` package directory, deduplicating by procedure `id`.
 
 #### Scenario: Querying procedures of a package shipping a procedures folder
-- GIVEN a template package with `procedures/generate_anydeo_script_NN.md`
+- GIVEN a template package with `procedures/generate_video_script_NN.md`
 - WHEN `list_template_procedures` is called for that template or across workspace templates
-- THEN the returned procedures list MUST contain `generate-anydeo-script` with its title, path (`procedures/generate_anydeo_script_NN.md`), and source template.
+- THEN the returned procedures list MUST contain `generate-video-script` with its title, path (`procedures/generate_video_script_NN.md`), and source template.
 
 ### R-TPD-03: Manifest Template Package Asset Hydration
 `skills-manager` during install and update MUST preserve and extract the complete template package directory (`procedures/`, `assets/`, `samples/`) into `~/.agents/templates/<name>/`.
