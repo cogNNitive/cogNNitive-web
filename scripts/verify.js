@@ -400,6 +400,9 @@ function runVerification(options = {}) {
   // 14. Legacy Ledger & Quarantine Marker Guard
   run('node scripts/lib/legacy-ledger-guard.js', 'Legacy Ledger & Quarantine Guard');
 
+  // 14b. Retired product names must not reappear anywhere in tracked files
+  run('node scripts/lib/brand-purge-guard.js', 'Retired Product Name Guard');
+
   // 15. Legacy Write Guard: retired vocabulary tokens must not reappear in runtime source
   run('node scripts/lib/legacy-write-guard.js', 'Legacy Write Guard');
 

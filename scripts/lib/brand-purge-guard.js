@@ -45,8 +45,8 @@ const ALLOWED_TOKENS = [
     reason: 'VUS header literal as matched by the grammar, regexes and their tests.',
   },
   {
-    pattern: new RegExp('any' + 'deo_specification', 'gi'),
-    reason: 'VUS config property key defined by the vendored spec (video_..._specification).',
+    pattern: new RegExp('any' + 'deo[-_]specification', 'gi'),
+    reason: 'VUS config property key (and its hyphen alias) defined by the vendored spec.',
   },
 ];
 
