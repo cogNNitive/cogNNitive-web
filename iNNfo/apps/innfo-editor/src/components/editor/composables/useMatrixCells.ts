@@ -1,9 +1,9 @@
 import { computed, type ComputedRef, type Ref } from 'vue'
 import { normalizeSeparators, scaleRangeFor } from '@cognnitive/innfo-core'
-import { useModelStore } from '../../../stores/modelStore'
+import { useKnowledgeStore } from '../../../stores/knowledgeStore'
 import { commitFieldValue } from '../../../shared/editAttribution'
 import type { MatrixDef } from '../../../composables/useMatrixDefinitions'
-import type { ModelNode } from '../../../model/types'
+import type { KnowledgeNode } from '../../../model/types'
 
 export interface UseMatrixCells {
   matrixCellKey(row: string, col: string): string
@@ -28,15 +28,15 @@ export interface CellEndpoint {
 /**
  * useMatrixCells — cell read/write + widget-option helpers for MatricesGrid.vue.
  * Moved verbatim; `getVal`/`valueDistribution` still read across every
- * `modelStore.rootIds` (matches pre-extraction behavior — a cell value may be
+ * `knowledgeStore.rootIds` (matches pre-extraction behavior — a cell value may be
  * committed against a different root than the one used for writes).
  */
 export function useMatrixCells(
   activeMatrix: Ref<MatrixDef | null>,
-  rootNode: Ref<ModelNode | null | undefined>,
+  rootNode: Ref<KnowledgeNode | null | undefined>,
   onChange: (key: string, value: unknown) => void,
 ): UseMatrixCells {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   function matrixCellKey(row: string, col: string): string {
     if (!activeMatrix.value) return ''
@@ -46,8 +46,8 @@ export function useMatrixCells(
   function getVal(row: string, col: string): string | number | boolean {
     if (!activeMatrix.value) return ''
     const key = matrixCellKey(row, col)
-    for (const id of modelStore.rootIds) {
-      const r = modelStore.getNode(id)
+    for (const id of knowledgeStore.rootIds) {
+      const r = knowledgeStore.getNode(id)
       if (!r) continue
       const field = r.fields[key]
       if (field && field.value !== undefined && field.value !== null) {
@@ -62,7 +62,7 @@ export function useMatrixCells(
     const root = rootNode.value
     if (!root) return
     const key = matrixCellKey(row, col)
-    commitFieldValue(modelStore, root.id, key, value, { kind: 'user', id: 'anonymous' })
+    commitFieldValue(knowledgeStore, root.id, key, value, { kind: 'user', id: 'anonymous' })
     onChange(key, value)
   }
 
@@ -73,8 +73,8 @@ export function useMatrixCells(
       for (const col of cols) {
         const key = matrixCellKey(row.id, col.id)
         let val: unknown
-        for (const id of modelStore.rootIds) {
-          const r = modelStore.getNode(id)
+        for (const id of knowledgeStore.rootIds) {
+          const r = knowledgeStore.getNode(id)
           const field = r?.fields?.[key]
           if (field && field.value !== undefined && field.value !== null) {
             val = field.value

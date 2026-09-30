@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "artifacts"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Artifacts Catalog"
 ---
 
@@ -21,7 +21,7 @@ format:: html
 summary:: Unified interactive HTML application providing cross-model visualization, metrics dashboards, and live execution consoles.
 status:: verified
 produced_by:: Compile Workspace Hub
-sources:: [models/Ghostbusters_business-model_NN.md]
+sources:: [kNNowledge/Ghostbusters_business-model_NN.md]
 file_path:: artifacts/workspace_hub.html
 tags:: [dashboard, runtime, console]
 

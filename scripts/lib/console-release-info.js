@@ -42,7 +42,7 @@ function getConsoleReleaseInfo(repoRoot = process.cwd()) {
     );
   }
   const repoSlug = ref.repo || 'cogNNitive/cogNNitive';
-  const cdnUrl = `https://cdn.jsdelivr.net/gh/${repoSlug}@${ref.ref}/iNNfo/specs/templates/console/innfo-console.bundle.js`;
+  const cdnUrl = `https://cdn.jsdelivr.net/gh/${repoSlug}@${ref.ref}/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js`;
 
   return { version, cdnRef: ref.ref, cdnUrl };
 }

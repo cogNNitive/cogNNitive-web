@@ -1,5 +1,5 @@
-export { validateModel } from './model.js'
-export type { ValidateModelOptions } from './model.js'
+export { validateKnowledge } from './knowledge.js'
+export type { ValidateKnowledgeOptions } from './knowledge.js'
 export { validateDocument } from './document.js'
 export type { DocumentValidation } from './document.js'
 export { validateFormatContent } from './content.js'

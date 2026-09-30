@@ -26,7 +26,7 @@ export const router = createRouter({
  *
  * Accepts workspaces with a directory handle OR content already parsed
  * via URL load (hasParsed). URL-loaded workspaces have no handle but
- * still contain valid model data in modelStore.
+ * still contain valid model data in knowledgeStore.
  */
 router.beforeEach((to: RouteLocationNormalized) => {
   if (to.meta?.requiresHandle) {

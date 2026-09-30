@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "artifacts"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
-model_version: "V_1-0-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
+knowledge_version: "V_1-0-0"
 title: "SaaS Startup Founder Artifacts Catalog"
 ---
 
@@ -18,5 +18,5 @@ summary:: Comprehensive executive summary for seed investors with linked due dil
 status:: verified
 tags:: [pitch, due-diligence, investor]
 produced_by:: Customer Discovery Ingestion & Synthesis
-sources:: [models/SaaS_Founder_V_1-0-0_business_NN.md]
+sources:: [kNNowledge/SaaS_Founder_V_1-0-0_business_NN.md]
 file_path:: artifacts/pitch_deck_summary.md

@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "artifacts"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
+knowledge_version: "V_0-1-0"
 title: "cogNNitive Monorepo Artifacts Catalog"
 ---
 
@@ -29,5 +29,5 @@ format:: javascript
 summary:: Single-file client-side bundle containing InnfoConsole, model viewer, and procedure stepper for offline HTML artifacts. Derived from the Workspace Metamodel Specification (not a citable file pointer).
 status:: verified
 produced_by:: Release and Tag Subsystems
-file_path:: iNNfo/specs/templates/console/innfo-console.bundle.js
+file_path:: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
 tags:: [console, runtime, browser-umd]

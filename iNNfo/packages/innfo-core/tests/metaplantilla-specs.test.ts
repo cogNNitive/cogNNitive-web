@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseModel, parseFrontmatter, validateModel } from '../src/index'
+import { parseKnowledge, parseFrontmatter, validateKnowledge } from '../src/index'
 import {
-  extractTemplateSchema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchema,
+  extractBlueprintSchemaFromContent,
 } from '../src/index'
 import type { SpecDocument } from '../src/types'
 import { decomposedTemplateNames } from './fixtures/decomposed'
@@ -46,7 +46,7 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
     // business-model + analysis + organization + projects + metrics and keeps
     // only a few demonstrative body elements of its own. Full composed-schema
     // coverage lives in business-decomposition-v2.test.ts.
-    const content = readSpec('templates/business/spec_NN.md')
+    const content = readSpec('bluepriNNts/business/spec_NN.md')
     const fm = parseFrontmatter(content)!
     expect(fm.level).toBe(2)
     expect(fm.concepts).toBeUndefined()
@@ -58,13 +58,13 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
     )
 
     // Without resolving `includes`, the shell contributes no schema of its own.
-    const schema = extractTemplateSchemaFromContent(content)
+    const schema = extractBlueprintSchemaFromContent(content)
     expect(schema.concepts).toEqual([])
   })
 
   it('procedures template schema extracts concepts, fields, markers, matrices', () => {
-    const content = readSpec('templates/procedures/spec_NN.md')
-    const schema = extractTemplateSchemaFromContent(content)
+    const content = readSpec('bluepriNNts/procedures/spec_NN.md')
+    const schema = extractBlueprintSchemaFromContent(content)
     expect(schema.concepts.map((c) => c.name)).toEqual([
       'Procedure',
       'Work',
@@ -98,8 +98,8 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
   })
 
   it('organization template schema extracts concepts, fields, markers, matrices', () => {
-    const content = readSpec('templates/organization/spec_NN.md')
-    const schema = extractTemplateSchemaFromContent(content)
+    const content = readSpec('bluepriNNts/organization/spec_NN.md')
+    const schema = extractBlueprintSchemaFromContent(content)
     expect(schema.concepts.map((c) => c.name)).toEqual([
       'Organization',
       'Roles',
@@ -118,8 +118,8 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
   })
 
   it('projects template schema extracts concepts, fields, markers, matrices', () => {
-    const content = readSpec('templates/projects/spec_NN.md')
-    const schema = extractTemplateSchemaFromContent(content)
+    const content = readSpec('bluepriNNts/projects/spec_NN.md')
+    const schema = extractBlueprintSchemaFromContent(content)
     expect(schema.concepts.map((c) => c.name)).toEqual([
       'Project',
       'Milestone',
@@ -149,7 +149,7 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
   })
 
   it('validates a unified-syntax model against the migrated procedures template', () => {
-    const templateContent = readSpec('templates/procedures/spec_NN.md')
+    const templateContent = readSpec('bluepriNNts/procedures/spec_NN.md')
     const templateDoc: SpecDocument = {
       name: 'procedures_V_0-3-0',
       level: 2,
@@ -158,11 +158,11 @@ describe('Metaplantilla Nivel 1 (specs/)', () => {
       rawContent: templateContent,
     }
 
-    const model = parseModel(
+    const model = parseKnowledge(
       `---
 spec_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Review Flow"
 parent_spec:
   name: "procedures_V_0-3-0"
@@ -195,7 +195,7 @@ Reviews the pull request.
 `,
     )
 
-    const result = validateModel(model, templateDoc, null)
+    const result = validateKnowledge(model, templateDoc, null)
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
@@ -205,11 +205,11 @@ Reviews the pull request.
     // schema comes entirely from `includes`, so it has no metaschema-primitive
     // body elements of its own.
     for (const p of [
-      'templates/organization/spec_NN.md',
-      'templates/procedures/spec_NN.md',
-      'templates/projects/spec_NN.md',
+      'bluepriNNts/organization/spec_NN.md',
+      'bluepriNNts/procedures/spec_NN.md',
+      'bluepriNNts/projects/spec_NN.md',
     ]) {
-      const parsed = parseModel(readSpec(p))
+      const parsed = parseKnowledge(readSpec(p))
       expect(parsed.elements.has('Concept Definition')).toBe(true)
       expect(parsed.elements.has('Field Definition')).toBe(true)
       expect(parsed.elements.has('Marker Definition')).toBe(true)
@@ -217,10 +217,10 @@ Reviews the pull request.
     }
   })
 
-  it('parseModel + extractTemplateSchema agree with extractTemplateSchemaFromContent', () => {
-    const content = readSpec('templates/business/spec_NN.md')
-    const direct = extractTemplateSchema(parseModel(content))
-    const fromContent = extractTemplateSchemaFromContent(content)
+  it('parseKnowledge + extractBlueprintSchema agree with extractBlueprintSchemaFromContent', () => {
+    const content = readSpec('bluepriNNts/business/spec_NN.md')
+    const direct = extractBlueprintSchema(parseKnowledge(content))
+    const fromContent = extractBlueprintSchemaFromContent(content)
     expect(direct.concepts.length).toBe(fromContent.concepts.length)
     expect(direct.markers.length).toBe(fromContent.markers.length)
     expect(direct.matrices.length).toBe(fromContent.matrices.length)
@@ -228,24 +228,24 @@ Reviews the pull request.
 
   it('migrated samples use the unified syntax with no legacy markers', () => {
     for (const p of [
-      'templates/business/samples/Ghostbusters_V_0-1-0_business_NN.md',
-      'templates/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md',
-      'templates/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md',
-      'templates/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md',
+      'bluepriNNts/business/samples/Ghostbusters_V_0-1-0_business_NN.md',
+      'bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md',
+      'bluepriNNts/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md',
+      'bluepriNNts/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md',
     ]) {
       const content = readSpec(p)
       const body = content.replace(/^---[\s\S]*?---\n/, '')
       expect(body).not.toMatch(/# _NN/)
       expect(body).not.toMatch(/[*-]\s+_NN/)
       expect(body).not.toMatch(/```yaml/)
-      const parsed = parseModel(content)
+      const parsed = parseKnowledge(content)
       expect(parsed.elements.size).toBeGreaterThan(0)
     }
   })
 
   it('parses the migrated Ghostbusters sample with fields and matrices', () => {
-    const content = readSpec('templates/business/samples/Ghostbusters_V_0-1-0_business_NN.md')
-    const parsed = parseModel(content)
+    const content = readSpec('bluepriNNts/business/samples/Ghostbusters_V_0-1-0_business_NN.md')
+    const parsed = parseKnowledge(content)
     expect(parsed.elements.has('Stakeholders')).toBe(true)
     expect(parsed.elements.get('Stakeholders')!.length).toBeGreaterThan(5)
     expect(parsed.rawSections!['Business summary']).toContain('Ghostbusters is a professional')
@@ -254,8 +254,8 @@ Reviews the pull request.
   })
 
   it('parses the Ghostbusters procedures sample with key:: value properties', () => {
-    const content = readSpec('templates/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md')
-    const parsed = parseModel(content)
+    const content = readSpec('bluepriNNts/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md')
+    const parsed = parseKnowledge(content)
     const work = parsed.elements.get('Work')!
     const triage = work.find((e) => e.name === 'Emergency Call Triage')!
     expect(triage.fields['step_type']).toBe('event')
@@ -267,8 +267,8 @@ Reviews the pull request.
   })
 
   it('parses the migrated Ghostbusters organization sample with scope properties', () => {
-    const content = readSpec('templates/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md')
-    const parsed = parseModel(content)
+    const content = readSpec('bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md')
+    const parsed = parseKnowledge(content)
     const roles = parsed.elements.get('Roles')!
     expect(roles).toHaveLength(5)
     expect(roles[0].fields['scope']).toBe('internal')
@@ -276,8 +276,8 @@ Reviews the pull request.
   })
 
   it('parses the Ghostbusters projects sample with dependencies and RACI matrix', () => {
-    const content = readSpec('templates/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md')
-    const parsed = parseModel(content)
+    const content = readSpec('bluepriNNts/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md')
+    const parsed = parseKnowledge(content)
     const tasks = parsed.elements.get('Task')!
     expect(tasks).toHaveLength(4)
     const laserTask = tasks.find((t) => t.name === 'Install Auxiliary Laser Matrix')!

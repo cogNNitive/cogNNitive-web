@@ -161,7 +161,7 @@ describe('parseForPill (knowledge-unit pointers)', () => {
 
   it('parses a Markdown field pointer', async () => {
     const { parseForPill } = await import('../../src/utils/sourceRef')
-    const p = parseForPill('models/G.md@## NN Person: Dr. Egon Spengler&compensation')
+    const p = parseForPill('kNNowledge/G.md@## NN Person: Dr. Egon Spengler&compensation')
     expect(p?.unit).toMatchObject({ kind: 'header', level: 2 })
     expect(p?.subunits).toEqual(['compensation'])
   })

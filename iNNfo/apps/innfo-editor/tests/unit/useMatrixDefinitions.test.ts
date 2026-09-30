@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
+import type { KnowledgeNode } from '../../src/model/types'
 import {
   MATRIX_DEFS_KEY,
   readMatrixDefsField,
@@ -12,7 +12,7 @@ import {
   useMatrixDefinitions,
 } from '../../src/composables/useMatrixDefinitions'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,
@@ -25,7 +25,7 @@ function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
     rawSections: {},
     source: { path: id },
     ...overrides,
-  } as ModelNode
+  } as KnowledgeNode
 }
 
 describe('MATRIX_DEFS_KEY', () => {
@@ -140,7 +140,7 @@ describe('useMatrixDefinitions', () => {
   })
 
   it('strategy "fallback": aggregates extractMatrixDefs across rootIds, deduped by name (first root wins)', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const rootA = makeNode('A', {
       fields: {
         __matrix_defs: { value: [{ name: 'M1', source: 'Src', target: 'Tgt', widgetType: 'boolean', params: '' }] },
@@ -151,7 +151,7 @@ describe('useMatrixDefinitions', () => {
         __matrix_defs: { value: [{ name: 'M1', source: 'X', target: 'Y', widgetType: 'text', params: '' }, { name: 'M2', source: 'X', target: 'Y', widgetType: 'text', params: '' }] },
       } as any,
     })
-    modelStore.setGraph({ A: rootA, B: rootB }, ['A', 'B'])
+    knowledgeStore.setGraph({ A: rootA, B: rootB }, ['A', 'B'])
 
     const rootIds = ref(['A', 'B'])
     const { matrixDefs } = useMatrixDefinitions(rootIds, { strategy: 'fallback' })
@@ -161,14 +161,14 @@ describe('useMatrixDefinitions', () => {
   })
 
   it('strategy "merge": aggregates mergeMatrixDefs across rootIds, deduped by name', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const rootA = makeNode('A', {
       fields: {
         __matrix_defs: { value: [{ name: 'M1', source: 'Src', target: 'Tgt', widgetType: 'boolean', params: '' }] },
         matrices: { value: [{ name: 'M2', source: 'A', target: 'B' }] },
       } as any,
     })
-    modelStore.setGraph({ A: rootA }, ['A'])
+    knowledgeStore.setGraph({ A: rootA }, ['A'])
 
     const rootIds = ref(['A'])
     const { matrixDefs } = useMatrixDefinitions(rootIds, { strategy: 'merge' })
@@ -177,13 +177,13 @@ describe('useMatrixDefinitions', () => {
   })
 
   it('defaults to the "fallback" strategy when opts is omitted', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('A', {
       fields: {
         __matrix_defs: { value: [{ name: 'M1', source: 'Src', target: 'Tgt', widgetType: 'boolean', params: '' }] },
       } as any,
     })
-    modelStore.setGraph({ A: root }, ['A'])
+    knowledgeStore.setGraph({ A: root }, ['A'])
 
     const { matrixDefs } = useMatrixDefinitions(ref(['A']))
     expect(matrixDefs.value).toHaveLength(1)
@@ -192,7 +192,7 @@ describe('useMatrixDefinitions', () => {
   })
 
   it('getMatrixValueCount counts non-empty/non-dash/non-false cell values across all nodes for a matrix', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeNode('A', { fields: { __matrix_defs: { value: [] } } as any })
     const cellNode = makeNode('cell', {
       fields: {
@@ -203,7 +203,7 @@ describe('useMatrixDefinitions', () => {
         'M1||Src4||Tgt0': { value: 'Y' },
       } as any,
     })
-    modelStore.setGraph({ A: root, cell: cellNode }, ['A'])
+    knowledgeStore.setGraph({ A: root, cell: cellNode }, ['A'])
 
     const { getMatrixValueCount } = useMatrixDefinitions(ref(['A']))
     expect(getMatrixValueCount('M1')).toBe(2)

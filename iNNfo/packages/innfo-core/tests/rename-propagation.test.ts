@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel, serializeModel, applyMutation } from '../src'
+import { parseKnowledge, serializeKnowledge, applyMutation } from '../src'
 import { updateReferenceString } from '../src/mutate'
-import type { TemplateSchema } from '../src/schema'
+import type { BlueprintSchema } from '../src/schema'
 
 describe('updateReferenceString unit tests', () => {
   it('updates exact scalar reference match', () => {
@@ -41,7 +41,7 @@ describe('rename_element propagation in applyMutation', () => {
   const sampleModelMarkdown = `---
 specification_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Test Model"
 ---
 
@@ -56,7 +56,7 @@ related:: ["Task Two", "[[Task Two|second]]"]
 description:: Second task
 `
 
-  const taskSchema: TemplateSchema = {
+  const taskSchema: BlueprintSchema = {
     concepts: [
       {
         name: 'Task',
@@ -74,7 +74,7 @@ description:: Second task
   }
 
   it('without a schema, rewrites only wikilinks / index / matrix refs, never bare strings', () => {
-    const model = parseModel(sampleModelMarkdown)
+    const model = parseKnowledge(sampleModelMarkdown)
     const taskTwoBefore = model.elements.get('Task')?.find((e) => e.name === 'Task Two')
     if (taskTwoBefore) {
       taskTwoBefore.fields['refField'] = '[[Task Two]]'
@@ -95,13 +95,13 @@ description:: Second task
     // Wikilink array entry rewritten, bare array entry untouched
     expect(taskOne?.fields['related']).toEqual(['Task Two', '[[Renamed Task Two|second]]'])
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     expect(serialized).toContain('[[Renamed Task Two]]')
     expect(serialized).toContain('assignee:: Task Two')
   })
 
   it('with a schema, rewrites only `type: reference` fields plus wikilinks; plain fields untouched', () => {
-    const model = parseModel(sampleModelMarkdown)
+    const model = parseKnowledge(sampleModelMarkdown)
 
     const result = applyMutation(model, 'rename_element', {
       conceptName: 'Task',
@@ -119,7 +119,7 @@ description:: Second task
       'Task description referencing [[Renamed Task Two]]',
     )
 
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     expect(serialized).toContain('[[Renamed Task Two]]')
     expect(serialized).toContain('assignee:: Renamed Task Two')
   })
@@ -128,7 +128,7 @@ description:: Second task
     const modelMarkdown = `---
 specification_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Cost Model"
 ---
 
@@ -139,7 +139,7 @@ category:: cost
 parent_cost:: [[Cost]]
 `
 
-    const financeSchema: TemplateSchema = {
+    const financeSchema: BlueprintSchema = {
       concepts: [
         {
           name: 'Finance',
@@ -155,7 +155,7 @@ parent_cost:: [[Cost]]
       taxonomy: [],
     }
 
-    const model = parseModel(modelMarkdown)
+    const model = parseKnowledge(modelMarkdown)
     const result = applyMutation(model, 'rename_element', {
       conceptName: 'Finance',
       elementName: 'Cost',

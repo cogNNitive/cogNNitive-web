@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
-import type { TemplateSchema } from '../src/schema'
+import type { BlueprintSchema } from '../src/schema'
 import { recursiveParse } from '../src/recursiveParser'
 
 /**
@@ -53,7 +53,7 @@ function makeIndex(links: string[]): string {
   return `---\nspec_version: "V_0-1-2"\nlevel: 0\ntitle: "Workspace Index"\n---\n\n# NN index\n\n${items}\n`
 }
 
-const BASE_FM = `spec_version: "V_0-1-2"\nlevel: 3\nmodel_version: "V_0-0-1"\nparent:\n  name: "business_V_0-1-1"\n  url: "https://example.com/business"`
+const BASE_FM = `spec_version: "V_0-1-2"\nlevel: 3\nknowledge_version: "V_0-0-1"\nparent:\n  name: "business_V_0-1-1"\n  url: "https://example.com/business"`
 
 function planModel(propertyLine: string): string {
   return [
@@ -70,7 +70,7 @@ function planModel(propertyLine: string): string {
   ].join('\n')
 }
 
-const PRODUCTO_SCHEMA: TemplateSchema = {
+const PRODUCTO_SCHEMA: BlueprintSchema = {
   concepts: [
     {
       name: 'Producto',
@@ -86,7 +86,7 @@ const PRODUCTO_SCHEMA: TemplateSchema = {
 describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
   it('fills node.sources and adds an origin:"source" relationship for a schema-typed citation field', async () => {
     const root = fakeDir('workspace', [
-      ['index.md', fakeFile('index.md', makeIndex(['plan_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['plan_NN.md']))],
       [
         'plan_NN.md',
         fakeFile('plan_NN.md', planModel('precio_source:: sources/nn/pricing.md@## Q3 Pricing')),
@@ -94,7 +94,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
     ])
 
     const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: () => PRODUCTO_SCHEMA,
+      resolveBlueprintSchema: () => PRODUCTO_SCHEMA,
     })
 
     const widget = Object.values(result.nodes).find((n) => n.name === 'Widget')
@@ -107,7 +107,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
   })
 
   it('does not double-count a field that is already matched by the name-based path', async () => {
-    const schemaWithSourcesAsCitation: TemplateSchema = {
+    const schemaWithSourcesAsCitation: BlueprintSchema = {
       concepts: [
         {
           name: 'Producto',
@@ -120,12 +120,12 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
       taxonomy: [],
     }
     const root = fakeDir('workspace', [
-      ['index.md', fakeFile('index.md', makeIndex(['plan_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['plan_NN.md']))],
       ['plan_NN.md', fakeFile('plan_NN.md', planModel('sources:: sources/nn/pricing.md@## Q3 Pricing'))],
     ])
 
     const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: () => schemaWithSourcesAsCitation,
+      resolveBlueprintSchema: () => schemaWithSourcesAsCitation,
     })
 
     const widget = Object.values(result.nodes).find((n) => n.name === 'Widget')
@@ -135,7 +135,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
 
   it('fills node.sources for a schema-typed citation field declared directly on the entrypoint model', async () => {
     // Regression test: the entrypoint model (workspace_NN.md) is registered
-    // via parseAndRegisterModel BEFORE the worklist loop starts, and its own
+    // via parseAndRegisterKnowledge BEFORE the worklist loop starts, and its own
     // path never passes through that loop's `resolvedPath` gate — so schema-
     // typed citation fields defined directly on the entrypoint were silently
     // dropped until the fix in workspace.ts (right after entrypointSchema is
@@ -153,10 +153,10 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
       '',
     ].join('\n')
 
-    const root = fakeDir('workspace', [['workspace_01.md', fakeFile('workspace_01.md', entrypoint)]])
+    const root = fakeDir('workspace', [['domaiNN_NN.md', fakeFile('domaiNN_NN.md', entrypoint)]])
 
     const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: () => PRODUCTO_SCHEMA,
+      resolveBlueprintSchema: () => PRODUCTO_SCHEMA,
     })
 
     const widget = Object.values(result.nodes).find((n) => n.name === 'Widget')
@@ -170,7 +170,7 @@ describe('attachSchemaTypedCitations (wired through recursiveParse)', () => {
 
   it('leaves the graph unchanged when no template schema resolves', async () => {
     const root = fakeDir('workspace', [
-      ['index.md', fakeFile('index.md', makeIndex(['plan_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['plan_NN.md']))],
       [
         'plan_NN.md',
         fakeFile('plan_NN.md', planModel('precio_source:: sources/nn/pricing.md@## Q3 Pricing')),

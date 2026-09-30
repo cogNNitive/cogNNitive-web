@@ -1,7 +1,7 @@
 import { computed, type ComputedRef, type Ref } from 'vue'
 import { useWorkspaceStore } from '../../../stores/workspaceStore'
 import { isImageFieldValue } from '../../../utils/imageDetection'
-import type { ModelNode } from '../../../model/types'
+import type { KnowledgeNode } from '../../../model/types'
 import type { ScannedAsset } from '../../../composables/useMediaScanner'
 
 export interface BlockAssetItem {
@@ -22,7 +22,7 @@ const blobUrlCache = new Map<string, string>()
  * assets) — moved verbatim, no logic change.
  */
 export function useBlockAssets(
-  node: Ref<ModelNode | null | undefined>,
+  node: Ref<KnowledgeNode | null | undefined>,
   scannedAssets: Ref<ScannedAsset[]>,
 ): {
   resolveAssetUrl(relativePath: string): Promise<string>

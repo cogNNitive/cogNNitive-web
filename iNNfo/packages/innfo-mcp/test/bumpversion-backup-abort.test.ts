@@ -19,7 +19,7 @@ level: 3
 parent_spec:
   name: "missing_V_0-2-0"
   url: "https://example.test/missing_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Fixture"
 ---
 

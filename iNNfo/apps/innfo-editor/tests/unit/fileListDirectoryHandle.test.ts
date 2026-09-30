@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createDirectoryHandleFromFileList } from '../../src/utils/fileListDirectoryHandle'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { setActivePinia, createPinia } from 'pinia'
 
 function makeFile(relPath: string, content: string): File {
@@ -42,21 +42,25 @@ describe('createDirectoryHandleFromFileList (F-13)', () => {
     await expect(handle.getDirectoryHandle('missing')).rejects.toThrow(/not found/i)
   })
 
-  it('is consumable by the SAME parse pipeline as the primary flow (modelStore.parseFromHandle)', async () => {
+  it('is consumable by the SAME parse pipeline as the primary flow (knowledgeStore.parseFromHandle)', async () => {
     setActivePinia(createPinia())
     const files = [
       makeFile(
-        'workspace/Doc_NN.md',
-        '---\nspec_version: "V_0-1-2"\nmodel_version: "V_1-0-0"\ntitle: "Doc"\n---\n# _NN index\n',
+        'workspace/domaiNN_NN.md',
+        '---\nspec_version: "V_0-3-0"\nlevel: 1\ntitle: "Domain"\n---\n# NN index\n* [[kNNowledge/Doc_NN.md]]\n',
+      ),
+      makeFile(
+        'workspace/kNNowledge/Doc_NN.md',
+        '---\nspec_version: "V_0-3-0"\nknowledge_version: "V_1-0-0"\ntitle: "Doc"\n---\n# NN index\n',
       ),
     ]
     const handle = createDirectoryHandleFromFileList(files)
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
 
-    await modelStore.parseFromHandle(handle)
+    await knowledgeStore.parseFromHandle(handle)
 
-    expect(modelStore.rootIds.length).toBeGreaterThan(0)
-    const parsedPaths = Object.values(modelStore.nodes).map((n) => n.source?.path)
-    expect(parsedPaths).toContain('Doc_NN.md')
+    expect(knowledgeStore.rootIds.length).toBeGreaterThan(0)
+    const parsedPaths = Object.values(knowledgeStore.nodes).map((n) => n.source?.path)
+    expect(parsedPaths).toContain('kNNowledge/Doc_NN.md')
   })
 })

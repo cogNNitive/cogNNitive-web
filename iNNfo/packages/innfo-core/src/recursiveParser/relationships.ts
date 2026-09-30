@@ -1,5 +1,5 @@
-import type { ElementNode, ParsedModel, RelationshipOrigin } from '../types/index.js'
-import { extractTemplateSchema } from '../schema/index.js'
+import type { ElementNode, ParsedKnowledge, RelationshipOrigin } from '../types/index.js'
+import { extractBlueprintSchema } from '../schema/index.js'
 import type { ParseContext } from './types.js'
 
 export const WIKILINK_RE = /\[\[(.*?)\]\]/g
@@ -42,7 +42,7 @@ export function buildLowerNameIndex(ids: Map<string, string>): Map<string, strin
  * Emits non-fatal warnings for dangling targets (R6).
  */
 export function addFieldAndMentionEdges(
-  parsed: ParsedModel,
+  parsed: ParsedKnowledge,
   rootId: string,
   sourcePath: string,
   ctx: ParseContext,
@@ -54,7 +54,7 @@ export function addFieldAndMentionEdges(
   // 1. Map concept -> set of field names with type 'reference'
   const referenceFieldsByConcept = new Map<string, Set<string>>()
   try {
-    const schema = extractTemplateSchema(parsed)
+    const schema = extractBlueprintSchema(parsed)
     for (const concept of schema.concepts) {
       const refFields = (concept.fields ?? [])
         .filter((f) => f.type === 'reference')

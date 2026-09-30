@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import Header from '../../src/components/layout/Header.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 import pkg from '../../package.json'
 
-function makeNode(id: string, fields: Record<string, any>): ModelNode {
+function makeNode(id: string, fields: Record<string, any>): KnowledgeNode {
   return {
     id,
     name: id,
@@ -49,21 +49,21 @@ describe('Header.vue', () => {
   })
 
   it('does not render Spec, Template, Model pills in header directly', () => {
-    const modelStore = useModelStore()
-    modelStore.rootIds = ['Root']
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.rootIds = ['Root']
+    knowledgeStore.nodes = {
       Root: makeNode('Root', {
         spec_version: 'V_0-1-9',
-        template_name: 'CustomTemplate',
-        template_version: 'V_2-0-0',
-        model_version: 'V_1-2-3',
+        blueprint_name: 'CustomTemplate',
+        blueprint_version: 'V_2-0-0',
+        knowledge_version: 'V_1-2-3',
       }),
     }
 
     const wrapper = mount(Header)
     const text = wrapper.text()
 
-    // Spec, Template, Model pills are moved to ModelInfoPanel
+    // Spec, Template, Model pills are moved to KnowledgeInfoPanel
     expect(text).not.toContain('iNNfo_V_0-1-9_NN.md')
     expect(text).not.toContain('CustomTemplate_V_2-0-0')
     const infoButton = wrapper.find('[data-testid="header-info-button"]')
@@ -71,12 +71,12 @@ describe('Header.vue', () => {
   })
 
   it('triggers 5-second blinking animation on validation icon when warnings or errors exist', () => {
-    const modelStore = useModelStore()
-    modelStore.rootIds = ['Root']
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.rootIds = ['Root']
+    knowledgeStore.nodes = {
       Root: makeNode('Root', {}),
     }
-    modelStore.validationReport = {
+    knowledgeStore.validationReport = {
       checks: [],
       summary: { total: 1, passed: 0, errors: 1, warnings: 0 },
     }
@@ -89,11 +89,11 @@ describe('Header.vue', () => {
 
   describe('Search & Filter wrapper status badges', () => {
     function setupModelWithNodes() {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const uiStore = useUiStore()
 
-      modelStore.rootIds = ['Root']
-      modelStore.nodes = {
+      knowledgeStore.rootIds = ['Root']
+      knowledgeStore.nodes = {
         Root: makeNode('Root', {
           spec_version: 'V_0-1-0',
           title: 'Test Model',
@@ -127,13 +127,13 @@ describe('Header.vue', () => {
           tags: ['urgent', 'secondary-tag'],
         },
       }
-      return { modelStore, uiStore }
+      return { knowledgeStore, uiStore }
     }
 
     it('renders Concepts All and Tags All when all are selected', () => {
-      const { uiStore, modelStore } = setupModelWithNodes()
+      const { uiStore, knowledgeStore } = setupModelWithNodes()
       uiStore.selectedConceptFilters = ['all']
-      uiStore.selectedTagFilters = [...modelStore.allTags]
+      uiStore.selectedTagFilters = [...knowledgeStore.allTags]
 
       const wrapper = mount(Header)
       const conceptBadge = wrapper.find('[data-testid="header-concept-status-badge"]')
@@ -217,15 +217,15 @@ describe('Header.vue', () => {
 
   describe('Primary Workspace View Switcher', () => {
     function setupRootModel() {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       const uiStore = useUiStore()
-      modelStore.rootIds = ['Root']
-      modelStore.nodes = {
+      knowledgeStore.rootIds = ['Root']
+      knowledgeStore.nodes = {
         Root: makeNode('Root', {
           title: 'Workspace Model',
         }),
       }
-      return { modelStore, uiStore }
+      return { knowledgeStore, uiStore }
     }
 
     it('does not render view switcher when no root node is present', () => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { commitFieldValue } from '../editAttribution'
 import { resolveWidgetComponent, FallbackWidget } from './index'
 import { isImageFieldName, isImageFieldValue } from '../../utils/imageDetection'
@@ -27,7 +27,7 @@ const props = withDefaults(
       type: string
       options?: string[]
       target_concepts?: string[]
-      target_template?: string
+      target_blueprint?: string
       default?: unknown
     }
     readonly?: boolean
@@ -35,9 +35,9 @@ const props = withDefaults(
   { authorId: 'anonymous', readonly: false },
 )
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
-const currentValue = computed(() => modelStore.getNode(props.nodeId)?.fields[props.fieldKey]?.value)
+const currentValue = computed(() => knowledgeStore.getNode(props.nodeId)?.fields[props.fieldKey]?.value)
 
 const effectiveWidgetType = computed(() => {
   const t = props.widgetType || props.fieldDefinition?.type || 'string'
@@ -60,7 +60,7 @@ const effectiveWidgetType = computed(() => {
 const widgetComponent = computed(() => resolveWidgetComponent(effectiveWidgetType.value))
 
 function onCommit(value: unknown): void {
-  commitFieldValue(modelStore, props.nodeId, props.fieldKey, value, {
+  commitFieldValue(knowledgeStore, props.nodeId, props.fieldKey, value, {
     kind: 'user',
     id: props.authorId,
   })

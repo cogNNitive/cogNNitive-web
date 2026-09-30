@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { recursiveParse } from '../src/recursiveParser/index.js'
 import { validateWorkspaceSources } from '../src/validator/workspaceSources.js'
 import { extractHeadings } from '../src/sourceRef.js'
-import { parseModel } from '../src/parser/index.js'
-import { resolveTemplateSchema } from '../src/schema/index.js'
+import { parseKnowledge } from '../src/parser/index.js'
+import { resolveBlueprintSchema } from '../src/schema/index.js'
 import type { DirectoryHandleLike } from '../src/types/index.js'
 
 /**
@@ -21,7 +21,7 @@ import type { DirectoryHandleLike } from '../src/types/index.js'
 const here = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(here, '..', '..', '..', '..')
 const WS = join(REPO_ROOT, '_samples_nn')
-const TEMPLATES = join(REPO_ROOT, 'iNNfo', 'specs', 'templates')
+const TEMPLATES = join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts')
 
 /**
  * Minimal Node-backed `DirectoryHandleLike`. The recursive parser is written
@@ -59,7 +59,7 @@ function nodeHandle(dirPath: string, name = ''): DirectoryHandleLike {
 }
 
 /** Compose every shipped template schema, keyed by slug, as the hosts do. */
-function warmTemplateCache(): Map<string, unknown> {
+function warmBlueprintCache(): Map<string, unknown> {
   const cache = new Map<string, unknown>()
   for (const entry of readdirSync(TEMPLATES, { withFileTypes: true })) {
     const spec = entry.isDirectory()
@@ -68,7 +68,7 @@ function warmTemplateCache(): Map<string, unknown> {
     if (!spec.endsWith('_NN.md') || !existsSync(spec)) continue
     const slug = entry.isDirectory() ? entry.name : entry.name.replace(/_NN\.md$/, '')
     try {
-      const { schema } = resolveTemplateSchema(readFileSync(spec, 'utf-8'), (ref: string) => {
+      const { schema } = resolveBlueprintSchema(readFileSync(spec, 'utf-8'), (ref: string) => {
         const included = join(TEMPLATES, ref, 'spec_NN.md')
         return existsSync(included) ? readFileSync(included, 'utf-8') : null
       })
@@ -82,7 +82,7 @@ function warmTemplateCache(): Map<string, unknown> {
 }
 
 describe('the shipped sample workspace', () => {
-  const templateCache = warmTemplateCache()
+  const templateCache = warmBlueprintCache()
 
   it('resolves the shipped template schemas', () => {
     // Guard: an empty cache would silently degrade every check below to
@@ -93,7 +93,7 @@ describe('the shipped sample workspace', () => {
 
   async function openWorkspace() {
     return recursiveParse(nodeHandle(WS), undefined, {
-      resolveTemplateSchema: ({ frontmatter }: { frontmatter?: { parent_spec?: { name?: string } } }) => {
+      resolveBlueprintSchema: ({ frontmatter }: { frontmatter?: { parent_spec?: { name?: string } } }) => {
         const declared = frontmatter?.parent_spec?.name
         if (!declared) return null
         const key = declared.toLowerCase()
@@ -132,16 +132,16 @@ describe('the shipped sample workspace', () => {
   })
 
   it('Requirement 4: every artifact the workspace declares exists', () => {
-    const workspaceDoc = readFileSync(join(WS, 'workspace_NN.md'), 'utf-8')
+    const workspaceDoc = readFileSync(join(WS, 'domaiNN_NN.md'), 'utf-8')
     const declared = [...workspaceDoc.matchAll(/^path:: (artifacts\/\S+)$/gm)].map((m) => m[1])
     expect(declared.filter((p) => !existsSync(join(WS, p)))).toEqual([])
   })
 
   it('Requirement 5: no shipped sample reports a slug collision', () => {
-    const modelsDir = join(WS, 'models')
+    const modelsDir = join(WS, 'kNNowledge')
     const offenders: string[] = []
     for (const file of readdirSync(modelsDir).filter((f) => f.endsWith('.md'))) {
-      const parsed = parseModel(readFileSync(join(modelsDir, file), 'utf-8'))
+      const parsed = parseKnowledge(readFileSync(join(modelsDir, file), 'utf-8'))
       for (const collision of parsed.slugCollisions ?? []) {
         offenders.push(`${file}: "${collision.slug}" (${collision.elements.join(', ')})`)
       }

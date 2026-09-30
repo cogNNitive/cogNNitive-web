@@ -4,7 +4,7 @@ const path = require('path');
 /**
  * Lists templates in the traNNsformations directory
  */
-function listTemplates(projectDir) {
+function listBlueprints(projectDir) {
   const transDir = path.join(projectDir, 'traNNsformations');
   if (!fs.existsSync(transDir)) {
     fs.mkdirSync(transDir, { recursive: true });
@@ -48,7 +48,7 @@ async function applyTransformation(projectDir, templateName, options = {}) {
   const transDir = path.join(projectDir, 'traNNsformations');
   const mdDir = path.join(projectDir, 'sources', 'nn');
 
-  const cleanTemplateName = path.basename(templateName, '.md').replace(/\s+/g, '_');
+  const cleanBlueprintName = path.basename(templateName, '.md').replace(/\s+/g, '_');
   const exportDir = path.join(projectDir, 'export');
   const legacyArtDir = path.join(projectDir, 'artifacts');
   const outputDir = fs.existsSync(legacyArtDir) && !fs.existsSync(exportDir) ? legacyArtDir : exportDir;
@@ -81,7 +81,7 @@ async function applyTransformation(projectDir, templateName, options = {}) {
   const transformedOutput = runHeuristicTransformation(templateName, sourceContent);
 
   const timestamp = getFormattedTimestamp();
-  const outputFileName = `${cleanTemplateName}_${timestamp}.md`;
+  const outputFileName = `${cleanBlueprintName}_${timestamp}.md`;
   const outputPath = path.join(outputDir, outputFileName);
 
   fs.writeFileSync(outputPath, transformedOutput, 'utf8');
@@ -121,6 +121,6 @@ function getFormattedTimestamp() {
 }
 
 module.exports = {
-  listTemplates,
+  listBlueprints,
   applyTransformation
 };

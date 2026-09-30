@@ -4,6 +4,7 @@ entries:
     what: Legacy quarantine module interface and index
     paths:
       - iNNfo/packages/innfo-core/src/legacy/index.ts
+      - skills/nn-upgrade/scripts/lib/legacy-migrate.generated.cjs
     why: Core quarantine interface for legacy detection and migration planning
     removal: all-known-domains-migrated + maintainer-sign-off
     owner: 2026-09-29-nn-level-nomenclature-rename
@@ -12,6 +13,7 @@ entries:
     what: Legacy layout detector
     paths:
       - iNNfo/packages/innfo-core/src/legacy/detect.ts
+      - skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs
     why: MCP/editor/preflight must recognise legacy domains
     removal: all-known-domains-migrated + maintainer-sign-off
     owner: 2026-09-29-nn-level-nomenclature-rename
@@ -42,3 +44,21 @@ entries:
     why: Frozen legacy domain for migrator and detector test suites
     removal: all-known-domains-migrated + maintainer-sign-off
     owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: legacy-hint
+    what: MCP legacy domain detection and hint helper
+    paths:
+      - iNNfo/packages/innfo-mcp/src/tools/legacy-hint.ts
+    why: MCP tools must intercept calls against legacy domains with an nn-upgrade hint
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename
+
+  - id: editor-legacy-domain
+    what: Editor legacy domain detection composable and upgrade banner
+    paths:
+      - iNNfo/apps/innfo-editor/src/composables/useLegacyDomain.ts
+      - iNNfo/apps/innfo-editor/src/components/layout/LegacyDomainBanner.vue
+    why: Editor must display non-blocking upgrade banner when a legacy domain layout is opened
+    removal: all-known-domains-migrated + maintainer-sign-off
+    owner: 2026-09-29-nn-level-nomenclature-rename
+

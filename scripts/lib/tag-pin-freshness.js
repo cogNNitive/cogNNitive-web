@@ -2,27 +2,27 @@
  * scripts/lib/tag-pin-freshness.js
  *
  * Deterministic, git-only guard for the "tag/pin freshness" failure mode
- * (expediente: 2026-09-24 — a skill directory rename plus `template_version`
- * bumps across ~15 `spec_NN.md` files under `iNNfo/specs/templates/` were
- * merged `dev -> main` without cutting a new `skills-v*`/`templates-v*` tag
+ * (expediente: 2026-09-24 — a skill directory rename plus a spec version
+ * bump across ~15 `spec_NN.md` files under `iNNfo/specs/bluepriNNts/` were
+ * merged `dev -> main` without cutting a new `skills-v*`/`blueprints-v*` tag
  * or re-pinning `manifest/source.yaml` in the same batch;
  * `validate-manifest.js --channel stable` failed on CI afterward).
  *
  * This check does NOT talk to GitHub and does NOT validate that a tag was
  * actually cut — it only enforces the local half: if a diff touches
  * anything under `skills/` or a canonical `spec_NN.md` file anywhere under
- * `iNNfo/specs/templates/`, the same diff must also touch
+ * `iNNfo/specs/bluepriNNts/`, the same diff must also touch
  * `manifest/source.yaml`. Cutting the tag itself remains the maintainer's
  * job (see `nn-dev-release`).
  */
 
 const { execSync } = require('node:child_process');
 
-// Canonical templates ship as `<name>/spec_NN.md` (the literal filename —
+// Canonical blueprints ship as `<name>/spec_NN.md` (the literal filename —
 // "NN" is not a numeric placeholder in this repo; see
-// `iNNfo/specs/templates/*/spec_NN.md` and `workspace_spec_NN.md` on disk).
+// `iNNfo/specs/bluepriNNts/*/spec_NN.md` and `workspace_spec_NN.md` on disk).
 const SKILLS_RE = /^skills\//;
-const TEMPLATE_SPEC_RE = /^iNNfo\/specs\/templates\/.*spec_NN\.md$/;
+const BLUEPRINT_SPEC_RE = /^iNNfo\/specs\/bluepriNNts\/.*spec_NN\.md$/;
 const MANIFEST_PATH = 'manifest/source.yaml';
 
 /**
@@ -57,7 +57,7 @@ function checkTagPinFreshness(repoRoot = process.cwd(), { base = 'origin/main', 
 
   const manifestTouched = changed.includes(MANIFEST_PATH);
   const skillsPaths = changed.filter((p) => SKILLS_RE.test(p));
-  const templatePaths = changed.filter((p) => TEMPLATE_SPEC_RE.test(p));
+  const templatePaths = changed.filter((p) => BLUEPRINT_SPEC_RE.test(p));
 
   const errors = [];
   if (skillsPaths.length > 0 && !manifestTouched) {

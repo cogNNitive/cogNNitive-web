@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
-import { initModel, validateTemplate } from '../src/tools/mutate.js'
+import { initKnowledge, validateBlueprint } from '../src/tools/mutate.js'
 import { readFileSync } from 'node:fs'
 
 const L1 = readFileSync(
@@ -61,10 +61,10 @@ describe('MCP — includes composition + init_model scaffolding', () => {
       'includes:\n  - name: "base_roles_a"\n    url: ""\n  - name: "base_roles_b"\n    url: ""\n',
     )
 
-    const res = await validateTemplate(root, undefined, undefined, undefined) // needs id/content
+    const res = await validateBlueprint(root, undefined, undefined, undefined) // needs id/content
     expect(res.valid).toBe(false) // no input → error, sanity
 
-    const byContent = await validateTemplate(
+    const byContent = await validateBlueprint(
       root,
       undefined,
       await readFile(join(specsDir, 'composite_roles_NN.md'), 'utf-8'),
@@ -92,7 +92,7 @@ describe('MCP — includes composition + init_model scaffolding', () => {
       'includes:\n  - name: "twin_roles_a"\n    url: ""\n  - name: "twin_roles_b"\n    url: ""\n',
     )
 
-    const byContent = await validateTemplate(
+    const byContent = await validateBlueprint(
       root,
       undefined,
       await readFile(join(specsDir, 'composite_twin_roles_NN.md'), 'utf-8'),
@@ -125,9 +125,9 @@ describe('MCP — includes composition + init_model scaffolding', () => {
       ].join('\n'),
     )
 
-    const res = await initModel(root, 'my_model_V_1-0-0_demo_tpl', {
+    const res = await initKnowledge(root, 'my_model_V_1-0-0_demo_tpl', {
       template_url: tplUrl,
-      template_name: 'demo_tpl',
+      blueprint_name: 'demo_tpl',
       title: 'My Model',
     })
 
@@ -137,8 +137,8 @@ describe('MCP — includes composition + init_model scaffolding', () => {
     const content = await readFile(res.filePath, 'utf-8')
     // Version-aware scaffold (validator-robustness): frontmatter versions are
     // inferred from the resolved parent template (stamped V_0-1-0 above).
-    expect(content).toContain('spec_version: "V_0-1-0"')
-    expect(content).toContain('model_version: "V_0-1-0"')
+    expect(content).toContain('spec_version: "V_0-3-0"')
+    expect(content).toMatch(/(knowledge_version|knowledge_version): "V_0-1-0"/)
     expect(content).toContain('# NN index')
     expect(content).toContain('* [[Overview]]')
     expect(content).toContain('* [[Item]]')

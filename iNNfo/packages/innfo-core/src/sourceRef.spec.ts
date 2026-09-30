@@ -27,9 +27,9 @@ describe('parseSourceRef', () => {
     expect(r?.kind).toBe('source')
   })
 
-  it('recognises a models/ cross-domain reference', () => {
-    const r = parseSourceRef('models/Business_Plan_V_1-0-0_NN.md#stakeholders')
-    expect(r?.filePath).toBe('models/Business_Plan_V_1-0-0_NN.md')
+  it('recognises a kNNowledge/ cross-domain reference', () => {
+    const r = parseSourceRef('kNNowledge/Business_Plan_V_1-0-0_NN.md#stakeholders')
+    expect(r?.filePath).toBe('kNNowledge/Business_Plan_V_1-0-0_NN.md')
     expect(r?.kind).toBe('model')
     expect(r?.slug).toBe('stakeholders')
   })

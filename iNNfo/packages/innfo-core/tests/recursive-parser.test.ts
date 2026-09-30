@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
-import type { ModelDriver } from '../src/types'
-import type { ParsedModel } from '../src/types'
-import type { TemplateSchema } from '../src/schema'
-import type { TemplateSchemaResolver } from '../src/recursiveParser/types'
-import { recursiveParse, normalizeSingleModel, readWorkspaceId } from '../src/recursiveParser'
+import type { KnowledgeDriver } from '../src/types'
+import type { ParsedKnowledge } from '../src/types'
+import type { BlueprintSchema } from '../src/schema'
+import type { BlueprintSchemaResolver } from '../src/recursiveParser/types'
+import { recursiveParse, normalizeSingleKnowledge, readWorkspaceId } from '../src/recursiveParser'
 import { validateDocument } from '../src/validator'
 
 /* ── Fake handle helpers ─────────────────────────────────────── */
@@ -58,7 +58,7 @@ function md(frontmatter: Record<string, unknown>, body?: string): string {
 const BASE_FM = {
   spec_version: 'V_0-1-2',
   level: 3,
-  model_version: 'V_0-0-1',
+  knowledge_version: 'V_0-0-1',
   parent: { name: 'business_V_0-1-1', url: 'https://example.com/business' },
 }
 
@@ -68,12 +68,12 @@ function makeModel(title: string, body?: string): string {
 
 function makeIndex(wikilinks: string[]): string {
   const items = wikilinks.map((w) => `* [[${w}]]`).join('\n')
-  return `---\nspec_version: "V_0-1-2"\nlevel: 0\ntitle: "Workspace Index"\n---\n\n# NN index\n\n${items}\n`
+  return `---\nspec_version: "V_0-3-0"\nlevel: 3\nknowledge_version: "V_0-1-0"\nparent_spec:\n  name: "domaiNN"\n  url: "https://example.com/domaiNN"\ntitle: "Root"\n---\n\n# NN index\n\n${items}\n`
 }
 
 function makeIndexWithMdLinks(links: string[]): string {
   const items = links.map((p) => `* [${p}](./${p})`).join('\n')
-  return `---\nspec_version: "V_0-1-2"\nlevel: 0\ntitle: "Workspace Index"\n---\n\n# NN index\n\n${items}\n`
+  return `---\nspec_version: "V_0-3-0"\nlevel: 3\nknowledge_version: "V_0-1-0"\nparent_spec:\n  name: "domaiNN"\n  url: "https://example.com/domaiNN"\ntitle: "Root"\n---\n\n# NN index\n\n${items}\n`
 }
 
 function makeWorkspaceEntrypoint(workspaceId?: string): string {
@@ -84,11 +84,11 @@ function makeWorkspaceEntrypoint(workspaceId?: string): string {
 
 /* ── Tests ───────────────────────────────────────────────────── */
 
-describe('recursiveParse (index.md-driven)', () => {
-  describe('FR-001: Workspace with valid index.md', () => {
-    it('parses a single model listed in index.md', async () => {
+describe('recursiveParse (domaiNN_NN.md-driven)', () => {
+  describe('FR-001: Workspace with valid domaiNN_NN.md', () => {
+    it('parses a single model listed in domaiNN_NN.md', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['gb_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['gb_NN.md']))],
         ['gb_NN.md', fakeFile('gb_NN.md', makeModel('Ghostbusters'))],
       ])
 
@@ -96,22 +96,24 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(result.rootIds).toHaveLength(1)
       const rootNode = result.nodes[result.rootIds[0]]
       expect(rootNode).toBeDefined()
-      expect(rootNode.name).toBe('gb')
+      expect(rootNode.name).toBe('domaiNN')
       expect(rootNode.kind).toBe('root')
+      expect(rootNode.childIds.map((id) => result.nodes[id].name)).toContain('gb')
       expect(result.issues).toHaveLength(0)
     })
 
-    it('parses multiple models listed in index.md', async () => {
+    it('parses multiple models listed in domaiNN_NN.md', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', makeModel('Model A'))],
         ['modelB_NN.md', fakeFile('modelB_NN.md', makeModel('Model B'))],
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(2)
-      const names = result.rootIds.map((id) => result.nodes[id].name).sort()
-      expect(names).toEqual(['modelA', 'modelB'])
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      const rootNode = result.nodes[result.rootIds[0]]
+      const childNames = rootNode.childIds.map((id) => result.nodes[id].name).sort()
+      expect(childNames).toEqual(['modelA', 'modelB'])
       expect(result.issues).toHaveLength(0)
     })
 
@@ -133,7 +135,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['test_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['test_NN.md']))],
         ['test_NN.md', fakeFile('test_NN.md', modelContent)],
       ])
 
@@ -148,8 +150,8 @@ describe('recursiveParse (index.md-driven)', () => {
     })
   })
 
-  describe('FR-001: Missing index.md', () => {
-    it('scans for standalone _NN.md files when index.md is missing', async () => {
+  describe('FR-001: Missing domaiNN_NN.md', () => {
+    it('scans for standalone _NN.md files when domaiNN_NN.md is missing', async () => {
       const root = fakeDir('workspace', [
         ['gb_NN.md', fakeFile('gb_NN.md', makeModel('Ghostbusters'))],
       ])
@@ -162,10 +164,10 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(rootNode.name).toBe('gb')
       // The missing index.md issue is still reported as the first warning (downgraded when models found)
       expect(result.issues.length).toBeGreaterThan(0)
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
-    it('loads multiple standalone _NN.md files when index.md is missing', async () => {
+    it('loads multiple standalone _NN.md files when domaiNN_NN.md is missing', async () => {
       const root = fakeDir('workspace', [
         ['modelA_NN.md', fakeFile('modelA_NN.md', makeModel('Model A'))],
         ['modelB_NN.md', fakeFile('modelB_NN.md', makeModel('Model B'))],
@@ -175,7 +177,7 @@ describe('recursiveParse (index.md-driven)', () => {
       expect(result.rootIds).toHaveLength(2)
       const names = result.rootIds.map((id) => result.nodes[id].name).sort()
       expect(names).toEqual(['modelA', 'modelB'])
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
     it('returns empty when no .md files with iNNfo frontmatter exist and index.md is missing', async () => {
@@ -184,7 +186,7 @@ describe('recursiveParse (index.md-driven)', () => {
       const result = await recursiveParse(root)
       expect(result.rootIds).toHaveLength(0)
       expect(result.issues.length).toBeGreaterThan(0)
-      expect(result.issues[0].message).toContain('Missing index.md')
+      expect(result.issues[0].message).toContain('Missing domaiNN_NN.md')
     })
 
     it('loads models with plain .md filenames (no _NN suffix)', async () => {
@@ -200,7 +202,7 @@ describe('recursiveParse (index.md-driven)', () => {
       const rootNode = result.nodes[result.rootIds[0]]
       expect(rootNode.name).toBe('DeLorean_Time_Travel')
       expect(rootNode.type).toBe('Time Travel Procedure')
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
 
     it('skips .md files without iNNfo frontmatter (no spec_version)', async () => {
@@ -239,14 +241,14 @@ describe('recursiveParse (index.md-driven)', () => {
   describe('FR-001: Wikilink to non-existent model', () => {
     it('emits a warning and skips missing file', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['exists_NN.md', 'missing_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['exists_NN.md', 'missing_NN.md']))],
         ['exists_NN.md', fakeFile('exists_NN.md', makeModel('Exists'))],
       ])
 
       const result = await recursiveParse(root)
       // Only one model should be loaded
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('exists')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'exists')).toBe(true)
 
       // Warning for missing file
       const missingIssues = result.issues.filter((i) => i.message.includes('not found'))
@@ -257,18 +259,18 @@ describe('recursiveParse (index.md-driven)', () => {
 
   describe('FR-001: index.md references with nested paths', () => {
     it('resolves a wikilink pointing into a subdirectory', async () => {
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['./models/nested_NN.md']))],
-        ['models', modelsDir],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./kNNowledge/nested_NN.md']))],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
       expect(result.issues).toHaveLength(0)
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('nested')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'nested')).toBe(true)
     })
 
     it('resolves markdown-link references with ./ paths (films index.md case)', async () => {
@@ -282,7 +284,7 @@ describe('recursiveParse (index.md-driven)', () => {
           fakeFile('The_Goonies.md', '# The Goonies\n\nPlain source document, not a model.'),
         ],
       ])
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         [
           'FilmCatalog_V_0-3-0_film_NN.md',
           fakeFile('FilmCatalog_V_0-3-0_film_NN.md', makeModel('Film Catalog')),
@@ -291,25 +293,25 @@ describe('recursiveParse (index.md-driven)', () => {
       const sourcesDir = fakeDir('sources', [['nn', nnDir]])
       const root = fakeDir('workspace', [
         [
-          'index.md',
+          'domaiNN_NN.md',
           fakeFile(
-            'index.md',
+            'domaiNN_NN.md',
             makeIndexWithMdLinks([
               'sources/nn/Casablanca.md',
               'sources/nn/The_Goonies.md',
-              'models/FilmCatalog_V_0-3-0_film_NN.md',
+              'kNNowledge/FilmCatalog_V_0-3-0_film_NN.md',
             ]),
           ),
         ],
         ['sources', sourcesDir],
-        ['models', modelsDir],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
       // Plain source docs are skipped silently; only the real model is loaded.
       expect(result.issues).toHaveLength(0)
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('FilmCatalog_V_0-3-0_film')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'FilmCatalog_V_0-3-0_film')).toBe(true)
     })
 
     it('resolves `_source_NN.md` files inside a `sources/` subdirectory (current films workspace)', async () => {
@@ -331,7 +333,7 @@ describe('recursiveParse (index.md-driven)', () => {
           fakeFile('Una_noche_en_la_opera_source_NN.md', makeModel('Opera Source')),
         ],
       ])
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         [
           'FilmCatalog_V_0-3-0_film_NN.md',
           fakeFile('FilmCatalog_V_0-3-0_film_NN.md', makeModel('Film Catalog')),
@@ -339,30 +341,30 @@ describe('recursiveParse (index.md-driven)', () => {
       ])
       const root = fakeDir('films', [
         [
-          'index.md',
+          'domaiNN_NN.md',
           fakeFile(
-            'index.md',
+            'domaiNN_NN.md',
             makeIndexWithMdLinks([
               'sources/Singin_in_the_Rain_source_NN.md',
               'sources/Casablanca_source_NN.md',
               'sources/The_Goonies_source_NN.md',
               'sources/Una_noche_en_la_opera_source_NN.md',
               'film_V_0-5-0_NN.md',
-              'models/FilmCatalog_V_0-3-0_film_NN.md',
+              'kNNowledge/FilmCatalog_V_0-3-0_film_NN.md',
             ]),
           ),
         ],
         ['film_V_0-5-0_NN.md', fakeFile('film_V_0-5-0_NN.md', makeModel('Film Template'))],
         ['sources', sourcesDir],
-        ['models', modelsDir],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
       // No "Name is not allowed" — every nested reference resolves through its directory.
       expect(result.issues.filter((i) => i.message.includes('Name is not allowed'))).toHaveLength(0)
       // All 4 sources + template + catalog model register as roots.
-      expect(result.rootIds).toHaveLength(6)
-      const names = result.rootIds.map((id) => result.nodes[id].name)
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      const names = Object.values(result.nodes).map((n) => n.name)
       expect(names).toEqual(
         expect.arrayContaining([
           'Singin_in_the_Rain_source',
@@ -375,38 +377,38 @@ describe('recursiveParse (index.md-driven)', () => {
     })
 
     it('resolves backslash-separated references on the same shape as forward slashes', async () => {
-      const modelsDir = fakeDir('models', [
+      const modelsDir = fakeDir('kNNowledge', [
         ['nested_NN.md', fakeFile('nested_NN.md', makeModel('Nested Model'))],
       ])
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['models\\nested_NN.md']))],
-        ['models', modelsDir],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['kNNowledge\\nested_NN.md']))],
+        ['kNNowledge', modelsDir],
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(1)
-      expect(result.nodes[result.rootIds[0]].name).toBe('nested')
+      expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+      expect(Object.values(result.nodes).some((n) => n.name === 'nested')).toBe(true)
     })
 
     it('reports a clear skip issue when a nested target directory is missing', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['./models/missing_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['./kNNowledge/missing_NN.md']))],
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(0)
+      expect(result.rootIds).toHaveLength(1)
       const missingIssue = result.issues.find((i) => i.message.includes('not found'))
       expect(missingIssue).toBeDefined()
-      expect(missingIssue!.path).toBe('./models/missing_NN.md')
+      expect(missingIssue!.path).toBe('./kNNowledge/missing_NN.md')
     })
 
     it('does not surface "Name is not allowed" for references that escape the root', async () => {
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['../outside_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['../outside_NN.md']))],
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(0)
+      expect(result.rootIds).toHaveLength(1)
       const messages = result.issues.map((i) => i.message)
       expect(messages.some((m) => m.includes('Name is not allowed'))).toBe(false)
       expect(messages.some((m) => m.includes('not found'))).toBe(true)
@@ -444,7 +446,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', modelA)],
         ['modelB_NN.md', fakeFile('modelB_NN.md', modelB)],
       ])
@@ -452,7 +454,7 @@ describe('recursiveParse (index.md-driven)', () => {
       const result = await recursiveParse(root)
 
       // Both root nodes should exist
-      expect(result.rootIds).toHaveLength(2)
+      expect(result.rootIds).toHaveLength(1)
 
       // The parser MUST NOT tell the user to rename the element — shared
       // identity across models is the intended shape of a multi-model
@@ -491,7 +493,7 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', modelA)],
       ])
 
@@ -534,13 +536,13 @@ describe('recursiveParse (index.md-driven)', () => {
       )
 
       const root = fakeDir('workspace', [
-        ['index.md', fakeFile('index.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
+        ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['modelA_NN.md', 'modelB_NN.md']))],
         ['modelA_NN.md', fakeFile('modelA_NN.md', modelA)],
         ['modelB_NN.md', fakeFile('modelB_NN.md', modelB)],
       ])
 
       const result = await recursiveParse(root)
-      expect(result.rootIds).toHaveLength(2)
+      expect(result.rootIds).toHaveLength(1)
       const elementNames = Object.values(result.nodes)
         .filter((n) => n.kind === 'element')
         .map((n) => n.name)
@@ -552,17 +554,17 @@ describe('recursiveParse (index.md-driven)', () => {
 describe('readWorkspaceId', () => {
   it('workspace-id-read-from-entrypoint', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_01.md', fakeFile('workspace_01.md', makeWorkspaceEntrypoint('acme'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceEntrypoint('acme'))],
     ])
 
     const result = await recursiveParse(root)
-    expect(result.entrypointPath).toBe('workspace_01.md')
+    expect(result.entrypointPath).toBe('domaiNN_NN.md')
     expect(readWorkspaceId(result)).toBe('acme')
   })
 
   it('workspace-id-absent-is-undefined', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_01.md', fakeFile('workspace_01.md', makeWorkspaceEntrypoint())],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceEntrypoint())],
     ])
 
     const result = await recursiveParse(root)
@@ -579,14 +581,14 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('diamond-no-issue-both-edges: a diamond reached via two independent parents links both edges and emits no issue', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
       ['x_NN.md', fakeFile('x_NN.md', makeModel('X'))],
       ['p_NN.md', fakeFile('p_NN.md', makeModel('P', '\n[[x_NN.md]]\n'))],
     ])
 
     const result = await recursiveParse(root)
 
-    const wNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
+    const wNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
     const xNodes = Object.values(result.nodes).filter((n) => n.name === 'x')
     const pNode = Object.values(result.nodes).find((n) => n.name === 'p')
 
@@ -603,7 +605,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('true-cycle-still-errors: a mutual reference through an ancestor chain is still flagged as a cycle', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['a_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
       ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[b_NN.md]]\n'))],
       ['b_NN.md', fakeFile('b_NN.md', makeModel('B', '\n[[a_NN.md]]\n'))],
     ])
@@ -617,8 +619,8 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('cycle-back-to-entrypoint: a reference chain looping back to the entrypoint is a cycle, proving ancestorKeys is seeded from it', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['a_NN.md']))],
-      ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[workspace_NN.md]]\n'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
+      ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[domaiNN_NN.md]]\n'))],
     ])
 
     const result = await recursiveParse(root)
@@ -629,7 +631,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('self-ref-is-filtered-at-extraction: a model linking to itself produces no issue and no duplicate node', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['a_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['a_NN.md']))],
       ['a_NN.md', fakeFile('a_NN.md', makeModel('A', '\n[[./a_NN.md]]\n'))],
     ])
 
@@ -642,7 +644,7 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('max-depth-boundary-with-diamond: the first arrival sets depth; a second parent that also exceeds MAX_DEPTH is a silent no-op, not a second issue', async () => {
     const entries: DirEntries = [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['level_1_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['level_1_NN.md']))],
     ]
     for (let i = 1; i <= 8; i++) {
       entries.push([
@@ -679,14 +681,14 @@ describe('diamond vs cycle (ancestorKeys)', () => {
 
   it('diamond-does-not-reparent: a diamond edge never overwrites the primary parentId', async () => {
     const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeWorkspaceRoot(['x_NN.md', 'p_NN.md']))],
       ['x_NN.md', fakeFile('x_NN.md', makeModel('X'))],
       ['p_NN.md', fakeFile('p_NN.md', makeModel('P', '\n[[x_NN.md]]\n'))],
     ])
 
     const result = await recursiveParse(root)
 
-    const wNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
+    const wNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
     const xNode = Object.values(result.nodes).find((n) => n.name === 'x')
     const pNode = Object.values(result.nodes).find((n) => n.name === 'p')
 
@@ -695,173 +697,29 @@ describe('diamond vs cycle (ancestorKeys)', () => {
   })
 })
 
-describe('overview root entrypoint (OVERVIEW_ROOT_RE, PR6/A2)', () => {
-  function makeOverviewRoot(manifestRef: string, provenanceRef: string): string {
-    return `---\nspec_version: "V_0-1-2"\nlevel: 3\nmodel_version: "V_0-1-0"\ntitle: "Overview"\nparent_spec:\n  name: "base_V_0-1-0"\n  url: "https://example.test/base_V_0-1-0_spec_NN.md"\n---\n\n# NN Overview\n\n## NN Overview: Ghostbusters\nmanifest:: ${manifestRef}\nprovenance:: ${provenanceRef}\n`
-  }
-
-  function fakeParsedModel(content: string): ParsedModel {
-    return {
-      frontmatter: {} as ParsedModel['frontmatter'],
-      taxonomy: [],
-      elements: new Map(),
-      matrices: [],
-      nodeMarkers: {},
-      rawContent: content,
-    }
-  }
-
-  function fakeDriver(files: Record<string, string>): ModelDriver {
-    return {
-      async readModel(uri: string) {
-        const content = files[uri]
-        if (content === undefined) {
-          throw Object.assign(new Error('File not found'), { code: 'ENOENT' })
-        }
-        return fakeParsedModel(content)
-      },
-      async writeModel() {
-        throw new Error('not implemented in fakeDriver')
-      },
-      async listChildren(uri: string) {
-        if (uri !== '') return []
-        return Object.keys(files).map((name) => ({ name, uri: name, kind: 'element' as const }))
-      },
-      async listAssets() {
-        return []
-      },
-    }
-  }
-
-  const overviewRootSchema: TemplateSchema = {
-    concepts: [
-      {
-        name: 'Overview',
-        type: 'text',
-        fields: [
-          { name: 'manifest', type: 'model', target_template: 'workspace_V_0-2-0' },
-          { name: 'provenance', type: 'model', target_template: 'cogNNitive_V_0-2-0' },
-        ],
-      },
-    ],
-    markers: [],
-    matrices: [],
-    taxonomy: [],
-  }
-
-  const overviewRootResolver: TemplateSchemaResolver = ({ frontmatter }) => {
-    const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec
-      ?.name
-    return name === 'base_V_0-1-0' ? overviewRootSchema : null
-  }
-
-  it('base-root-takes-precedence: an overview root and a workspace manifest both exist — overview root wins', async () => {
+describe('single canonical entrypoint (domaiNN_NN.md)', () => {
+  it('only-root-is-the-entrypoint: domaiNN_NN.md is the sole root; wikilinks become children', async () => {
     const root = fakeDir('workspace', [
-      [
-        'gb_base_NN.md',
-        fakeFile('gb_base_NN.md', makeOverviewRoot('workspace_NN.md', 'gb_cognnitive_NN.md')),
-      ],
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Ghostbusters Workspace'))],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', makeIndex(['a_NN.md']))],
+      ['a_NN.md', fakeFile('a_NN.md', makeModel('A'))],
     ])
-
-    const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: overviewRootResolver,
-    })
-
-    const overviewNode = Object.values(result.nodes).find((n) => n.name === 'gb_base')
-    const manifestNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
-    expect(overviewNode).toBeDefined()
-    expect(overviewNode!.parentId).toBeNull()
-    // the manifest is reached as the overview root's CHILD, not as a second root
-    expect(manifestNode).toBeDefined()
-    expect(manifestNode!.parentId).toBe(overviewNode!.id)
-    expect(result.rootIds).toHaveLength(1)
-    expect(result.rootIds[0]).toBe(overviewNode!.id)
-  })
-
-  it('no-base-root-unchanged: only workspace*.md exists — resolves exactly as before this capability existed', async () => {
-    const root = fakeDir('workspace', [
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Plain Workspace'))],
-    ])
-
     const result = await recursiveParse(root)
-
-    expect(result.rootIds).toHaveLength(1)
-    const rootNode = result.nodes[result.rootIds[0]]
-    expect(rootNode.name).toBe('workspace')
+    expect(result.rootIds.map((id) => result.nodes[id].name)).toEqual(['domaiNN'])
+    expect(Object.values(result.nodes).some((n) => n.name === 'a')).toBe(true)
     expect(result.issues).toHaveLength(0)
   })
 
-  it('base-root-driver-path: the same precedence holds via the ModelDriver code path', async () => {
-    const driver = fakeDriver({
-      'gb_base_NN.md': makeOverviewRoot('workspace_NN.md', 'gb_cognnitive_NN.md'),
-      'workspace_NN.md': makeModel('Ghostbusters Workspace'),
-    })
-    // The plain-handle root is irrelevant when a driver is supplied, but recursiveParse
-    // still requires one; an empty directory is sufficient since the driver serves reads.
-    const root = fakeDir('workspace', [])
-
-    const result = await recursiveParse(root, driver, {
-      resolveTemplateSchema: overviewRootResolver,
-    })
-
-    const overviewNode = Object.values(result.nodes).find((n) => n.name === 'gb_base')
-    const manifestNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
-    expect(overviewNode).toBeDefined()
-    expect(overviewNode!.parentId).toBeNull()
-    expect(manifestNode).toBeDefined()
-    expect(manifestNode!.parentId).toBe(overviewNode!.id)
-    expect(result.rootIds).toHaveLength(1)
-  })
-
-  it('base-root-in-ignored-dir-ignored: an overview-root-shaped file nested under archive/ is not discovered as the entrypoint', async () => {
-    const archiveDir = fakeDir('archive', [
-      ['x_base_NN.md', fakeFile('x_base_NN.md', makeOverviewRoot('workspace_NN.md', 'x_cognnitive_NN.md'))],
-    ])
+  it('legacy-names-are-not-entrypoints: *_base_NN.md is only a standalone fallback, never the entrypoint', async () => {
     const root = fakeDir('workspace', [
-      ['archive', archiveDir],
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Plain Workspace'))],
+      ['gb_base_NN.md', fakeFile('gb_base_NN.md', makeModel('Legacy Overview'))],
     ])
-
     const result = await recursiveParse(root)
-
-    // The nested overview-root-shaped file never surfaces as a node at all —
-    // only the root-level workspace manifest is discovered as the entrypoint.
-    expect(Object.values(result.nodes).some((n) => n.name === 'x_base')).toBe(false)
-    expect(result.rootIds).toHaveLength(1)
-    expect(result.nodes[result.rootIds[0]].name).toBe('workspace')
-  })
-
-  it('overview-root-children: parsing an overview root reaches both its manifest and provenance children via type:: model traversal', async () => {
-    const root = fakeDir('workspace', [
-      [
-        'gb_base_NN.md',
-        fakeFile('gb_base_NN.md', makeOverviewRoot('workspace_NN.md', 'gb_cognnitive_NN.md')),
-      ],
-      ['workspace_NN.md', fakeFile('workspace_NN.md', makeModel('Ghostbusters Workspace'))],
-      ['gb_cognnitive_NN.md', fakeFile('gb_cognnitive_NN.md', makeModel('Ghostbusters Provenance'))],
-    ])
-
-    const result = await recursiveParse(root, undefined, {
-      resolveTemplateSchema: overviewRootResolver,
-    })
-
-    const overviewNode = Object.values(result.nodes).find((n) => n.name === 'gb_base')
-    const manifestNode = Object.values(result.nodes).find((n) => n.name === 'workspace')
-    const provenanceNode = Object.values(result.nodes).find((n) => n.name === 'gb_cognnitive')
-
-    expect(overviewNode).toBeDefined()
-    expect(manifestNode).toBeDefined()
-    expect(provenanceNode).toBeDefined()
-    expect(overviewNode!.childIds).toContain(manifestNode!.id)
-    expect(overviewNode!.childIds).toContain(provenanceNode!.id)
-    expect(manifestNode!.parentId).toBe(overviewNode!.id)
-    expect(provenanceNode!.parentId).toBe(overviewNode!.id)
-    expect(result.issues.filter((i) => i.code === 'CYCLE_DETECTED')).toHaveLength(0)
+    expect(Object.values(result.nodes).some((n) => n.name === 'domaiNN')).toBe(false)
+    expect(result.issues.length).toBeGreaterThan(0)
   })
 })
 
-describe('normalizeSingleModel', () => {
+describe('normalizeSingleKnowledge', () => {
   it('parses a single model file directly and returns normalized nodes and issues', () => {
     const modelContent = makeModel(
       'Standalone Model',
@@ -876,7 +734,7 @@ describe('normalizeSingleModel', () => {
   Description of single node.
 `,
     )
-    const { nodes, issues } = normalizeSingleModel(
+    const { nodes, issues } = normalizeSingleKnowledge(
       modelContent,
       'standalone_NN.md',
       'standalone_NN',
@@ -896,7 +754,7 @@ describe('normalizeSingleModel', () => {
   it('returns empty nodes when content is not a model (missing spec_version)', () => {
     const plainMarkdown =
       '# Standalone Document\n\nThis is not a model because it has no spec_version in frontmatter.'
-    const { nodes, issues } = normalizeSingleModel(plainMarkdown, 'doc.md', 'doc')
+    const { nodes, issues } = normalizeSingleKnowledge(plainMarkdown, 'doc.md', 'doc')
     expect(issues).toHaveLength(0)
     expect(Object.keys(nodes)).toHaveLength(0)
   })
@@ -916,7 +774,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
 **TAM:** ~500.000 procesos de reparto anuales.
 `,
     )
-    const { nodes, issues } = normalizeSingleModel(modelContent, 'text_NN.md', 'text_NN')
+    const { nodes, issues } = normalizeSingleKnowledge(modelContent, 'text_NN.md', 'text_NN')
     expect(issues).toHaveLength(0)
 
     const rootNode = nodes['text_NN']
@@ -930,7 +788,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
   it('reports an issue when a _NN-named file lacks valid iNNfo frontmatter', () => {
     const broken =
       'X---\nspec_version: "V_0-1-2"\ntitle: "Broken"\n---\n\n# NN Business summary\n\ntext'
-    const { nodes, issues } = normalizeSingleModel(broken, 'broken_NN.md', 'broken_NN')
+    const { nodes, issues } = normalizeSingleKnowledge(broken, 'broken_NN.md', 'broken_NN')
     expect(Object.keys(nodes)).toHaveLength(0)
     expect(issues.some((i) => i.message.includes('spec_version'))).toBe(true)
     expect(issues.some((i) => i.path === 'broken_NN.md')).toBe(true)
@@ -941,7 +799,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
       '---\n' +
       'spec_version: "V_0-1-2"\n' +
       'level: 3\n' +
-      'model_version: "V_0-0-1"\n' +
+      'knowledge_version: "V_0-0-1"\n' +
       'title: "Dash Test"\n' +
       'parent: { name: "business_V_0-1-1", url: "https://example.com/business" }\n' +
       'matrices:\n' +
@@ -965,7 +823,7 @@ En España fallecieron 439.146 personas en 2024 (INE).
       '| --- | --- |\n' +
       '| Revenue—Cost Structure | ✅ |\n'
 
-    const { nodes, issues } = normalizeSingleModel(modelContent, 'dash_NN.md', 'dash_NN')
+    const { nodes, issues } = normalizeSingleKnowledge(modelContent, 'dash_NN.md', 'dash_NN')
 
     const warning = issues.find((i) => i.message.includes('separator character differs'))
     expect(warning).toBeDefined()
@@ -1014,7 +872,7 @@ level: 3
 parent_spec:
   name: person_spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Person Model
 ---
 # NN Person

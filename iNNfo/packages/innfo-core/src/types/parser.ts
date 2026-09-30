@@ -7,6 +7,7 @@ export const CONCEPT_TYPES = [
   'weight',
   'steps',
   'sequence',
+  'knowledge',
   'model',
 ] as const
 export type ConceptType = (typeof CONCEPT_TYPES)[number]
@@ -23,6 +24,7 @@ export const FIELD_TYPES = [
   'url',
   'markdown_inline',
   'markdown_file',
+  'knowledge',
   'model',
   // A path PLUS an addressable knowledge unit, subject to the `KU_*` integrity
   // checks. Distinct from `file` ("a path") and `markdown_file` ("a content
@@ -44,7 +46,7 @@ export interface AliasMap {
   fields?: Record<string, string>
 }
 
-export interface IncludedTemplateRef {
+export interface IncludedBlueprintRef {
   name: string
   url: string
   alias?: AliasMap
@@ -64,7 +66,7 @@ export interface TemplateSkill {
   source_template?: string
 }
 
-export interface ResolvedTemplatePackage {
+export interface ResolvedBlueprintPackage {
   name: string
   version: string
   packagePath: string
@@ -85,7 +87,7 @@ export interface ConceptField {
   type: FieldType
   options?: string[]
   target_concepts?: string[]
-  target_template?: string
+  target_blueprint?: string
 }
 
 export interface Concept {
@@ -163,7 +165,7 @@ export interface SpecFrontmatter {
    * `specializes` field. Bare-string entries are tolerated on read and
    * normalized to `{ name, url: '' }`.
    */
-  includes?: IncludedTemplateRef[]
+  includes?: IncludedBlueprintRef[]
   procedures?: TemplateProcedure[]
   skills?: TemplateSkill[]
   alias?: AliasMap
@@ -178,7 +180,11 @@ export interface SpecFrontmatter {
   matrices?: MatrixDecl[]
   relationship_types?: RelationshipTypeDef[]
   relationship_declarations?: Partial<Record<RelationshipType, RelationshipDecl>>
-  model_version?: string
+  knowledge_version?: string
+  blueprint_version?: string
+  blueprint_name?: string
+  knowledge_dir?: string
+  blueprints_dir?: string
   mode?: string
   template?: string | Record<string, unknown>
   last_saved?: string
@@ -198,7 +204,7 @@ export interface ElementNode {
   /**
    * Whether a blank line separated this element from the next one in the
    * source (undefined for a programmatically constructed element, which
-   * `serializeModel` treats as `true`). The shipped corpus is not uniform:
+   * `serializeKnowledge` treats as `true`). The shipped corpus is not uniform:
    * most concepts blank-separate every element, but some description-only
    * concepts pack `## NN` headings back-to-back with none. Not meaningful
    * for the last element of a concept — a blank line always follows it,
@@ -209,13 +215,13 @@ export interface ElementNode {
    * Whether a blank line separated this element's last `key:: value` from its
    * prose description in the source. `description` is stored trimmed, so this
    * is the only record of that separation. The shipped corpus is split on it,
-   * so `serializeModel` replays what was there rather than assuming a rule.
+   * so `serializeKnowledge` replays what was there rather than assuming a rule.
    */
   descriptionBlankLine?: boolean
   /**
    * Exact source text of this element's `tags::` RHS. `parseTagList`
    * lowercases and trims, so the authored casing (`PR`, not `pr`) survives
-   * only here. `serializeModel` re-emits it verbatim when the current `tags`
+   * only here. `serializeKnowledge` re-emits it verbatim when the current `tags`
    * still match what it parses to; tag semantics stay case-insensitive.
    */
   rawTags?: string
@@ -228,7 +234,7 @@ export interface ElementNode {
   slugExplicit?: boolean
   /**
    * Exact source text (the RHS after `key:: `) for each field, as originally
-   * authored — before `parsePropertyValue` normalizes it. `serializeModel`
+   * authored — before `parsePropertyValue` normalizes it. `serializeKnowledge`
    * re-emits this verbatim when the field's current value still matches what
    * this raw text would parse to, so an untouched field keeps the author's
    * exact quoting/bracket choice (Requirement 5). A field whose value was
@@ -248,7 +254,7 @@ export interface MatrixData {
   name: string
   /** Left axis label, parsed from the table header's first cell
    *  (`| Source \ Target | ... |`). Empty for a label-less matrix, and
-   *  written back empty — `serializeModel` substitutes no placeholder. */
+   *  written back empty — `serializeKnowledge` substitutes no placeholder. */
   source: string
   /** Right axis label, parsed and written back the same way. */
   target: string
@@ -308,7 +314,7 @@ export interface RawSection {
   body: string
 }
 
-export interface ParsedModel {
+export interface ParsedKnowledge {
   frontmatter: SpecFrontmatter
   taxonomy: TaxonomyEdge[]
   elements: ElementsMap
@@ -328,12 +334,12 @@ export interface ParsedModel {
   rawConceptTags?: Record<string, string>
   /**
    * Document order of top-level `# NN` sections, as encountered by
-   * `parseModel`: `'index'` for `# NN index`, `<ConceptName>` for a concept
+   * `parseKnowledge`: `'index'` for `# NN index`, `<ConceptName>` for a concept
    * section (element-bearing or `text`), and `'matrices: <name>'` for a
-   * `# NN matrices: <name>` section. `serializeModel` walks this list first,
+   * `# NN matrices: <name>` section. `serializeKnowledge` walks this list first,
    * then appends any section not covered by it (created by a mutation after
    * parsing) in its current insertion order. Optional so a programmatically
-   * constructed `ParsedModel` (tests, `init_model` scaffolding) keeps
+   * constructed `ParsedKnowledge` (tests, `init_model` scaffolding) keeps
    * working unchanged.
    */
   sectionOrder?: string[]
@@ -342,14 +348,14 @@ export interface ParsedModel {
    * line of its body, keyed by the lowercased `sectionOrder` entry
    * (`'index'`, `'<conceptname>'`, `'matrices: <name>'`). The shipped corpus
    * is inconsistent here — some documents put a blank line after the heading
-   * and some do not — so `serializeModel` replays what was actually there
+   * and some do not — so `serializeKnowledge` replays what was actually there
    * instead of assuming a fixed rule. A missing entry falls back to the
    * per-section-kind default used for programmatically built models.
    */
   sectionBlankLine?: Record<string, boolean>
   /**
-   * The exact frontmatter block `parseModel` read, `---` fences included.
-   * `serializeModel` re-emits it byte-for-byte when re-parsing it still
+   * The exact frontmatter block `parseKnowledge` read, `---` fences included.
+   * `serializeKnowledge` re-emits it byte-for-byte when re-parsing it still
    * yields the frontmatter currently held — i.e. nothing mutated it since.
    *
    * This exists because the constructed emit path is an ALLOW-LIST of known

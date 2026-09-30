@@ -1,14 +1,14 @@
 import {
-  parseModel,
-  serializeModel,
-  type ParsedModel,
+  parseKnowledge,
+  serializeKnowledge,
+  type ParsedKnowledge,
   type MatrixCell,
   type ElementNode,
   ElementsMap,
 } from '@cognnitive/innfo-core'
-import type { ModelNode } from './types'
-import type { ModelDriver } from '@cognnitive/innfo-core'
-import { useModelStore } from '../stores/modelStore'
+import type { KnowledgeNode } from './types'
+import type { KnowledgeDriver } from '@cognnitive/innfo-core'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { getActivePinia } from 'pinia'
 
 export interface WriteReport {
@@ -20,8 +20,8 @@ export interface WriteReport {
 /**
  * Synchronizes matrix cell values stored in `node.fields` (key format:
  * `matrixName||<rowId>||<colId>`, where row/col are the stable qualified
- * element ids — see `normalizeSingleModel` in innfo-core) into
- * `parsed.matrices` so they are correctly serialized by `serializeModel`.
+ * element ids — see `normalizeSingleKnowledge` in innfo-core) into
+ * `parsed.matrices` so they are correctly serialized by `serializeKnowledge`.
  * The on-disk `row||col` display names are resolved back from the ids so the
  * serialized matrix table keeps the display-name format (E1, option B: the
  * in-memory lookup is id-based, the persisted key is name-based).
@@ -31,9 +31,9 @@ export interface WriteReport {
  *   key segment (legacy display-name keys or nodes no longer in the graph).
  */
 export function syncMatrixFieldsToParsedModel(
-  node: ModelNode,
-  parsed: ParsedModel,
-  nodes?: Record<string, ModelNode>,
+  node: KnowledgeNode,
+  parsed: ParsedKnowledge,
+  nodes?: Record<string, KnowledgeNode>,
 ): void {
   if (!node.fields) return
 
@@ -49,8 +49,8 @@ export function syncMatrixFieldsToParsedModel(
     try {
       const pinia = getActivePinia()
       if (pinia) {
-        const modelStore = useModelStore(pinia)
-        for (const n of Object.values(modelStore.nodes)) {
+        const knowledgeStore = useKnowledgeStore(pinia)
+        for (const n of Object.values(knowledgeStore.nodes)) {
           if (n && typeof n.id === 'string' && typeof n.name === 'string') {
             idToName.set(n.id, n.name)
           }
@@ -160,11 +160,11 @@ export function syncMatrixFieldsToParsedModel(
  * Rebuilds the serialized text for a root node. Returns the content and
  * fidelity indicator:
  * - 'exact': rawContent was preserved (no edit, byte-identical write)
- * - 'canonical': content was re-serialized through serializeModel (lossy path)
+ * - 'canonical': content was re-serialized through serializeKnowledge (lossy path)
  */
 function serializeNodeContent(
-  node: ModelNode,
-  nodes?: Record<string, ModelNode>,
+  node: KnowledgeNode,
+  nodes?: Record<string, KnowledgeNode>,
 ): {
   content: string
   fidelity: 'exact' | 'canonical'
@@ -172,27 +172,27 @@ function serializeNodeContent(
   if (node.rawContent === undefined) {
     throw new Error(`Node "${node.id}" has no rawContent to serialize from`)
   }
-  const parsed = parseModel(node.rawContent)
+  const parsed = parseKnowledge(node.rawContent)
 
   // Synchronize memory-modified child elements of the root node
-  const childElements: ModelNode[] = []
+  const childElements: KnowledgeNode[] = []
 
-  let modelStore: any = null
+  let knowledgeStore: any = null
   try {
     const pinia = getActivePinia()
     if (pinia) {
-      modelStore = useModelStore(pinia)
+      knowledgeStore = useKnowledgeStore(pinia)
     }
   } catch {
     // Pinia not active
   }
 
-  if (modelStore) {
+  if (knowledgeStore) {
     const seen = new Set<string>()
     function collectElements(id: string) {
       if (seen.has(id)) return
       seen.add(id)
-      const curr = modelStore.getNode(id)
+      const curr = knowledgeStore.getNode(id)
       if (!curr) return
       if (curr.kind === 'element') {
         childElements.push(curr)
@@ -205,14 +205,14 @@ function serializeNodeContent(
     collectElements(node.id)
 
     if (childElements.length === 0) {
-      const allNodes = nodes ? Object.values(nodes) : Object.values(modelStore.nodes)
-      for (const n of allNodes as ModelNode[]) {
+      const allNodes = nodes ? Object.values(nodes) : Object.values(knowledgeStore.nodes)
+      for (const n of allNodes as KnowledgeNode[]) {
         if (
           n &&
           n.kind === 'element' &&
           (n.source?.path === node.source?.path ||
             n.id.startsWith(node.id + '/') ||
-            modelStore.getModelRootForNode(n.id) === node.id)
+            knowledgeStore.getKnowledgeRootForNode(n.id) === node.id)
         ) {
           childElements.push(n)
         }
@@ -303,7 +303,7 @@ function serializeNodeContent(
         if (!existing) {
           // A `# NN matrices:` body block carries only the grid itself: name,
           // axis labels and cells. Widget metadata lives in the frontmatter
-          // `matrices:` declaration, which L3 models do not emit — serializeModel
+          // `matrices:` declaration, which L3 models do not emit — serializeKnowledge
           // reads none of it off MatrixData, so passing it here would be a no-op.
           parsed.matrices.push({
             name: def.name,
@@ -319,7 +319,7 @@ function serializeNodeContent(
   // Apply matrix cell edits from node.fields into parsed.matrices
   syncMatrixFieldsToParsedModel(node, parsed, nodes)
 
-  const serialized = serializeModel(parsed)
+  const serialized = serializeKnowledge(parsed)
   const fidelity: 'exact' | 'canonical' = serialized === node.rawContent ? 'exact' : 'canonical'
   if (fidelity === 'canonical') {
     console.warn(`[fidelity] Node "${node.id}" serialized through lossy canonical path`)
@@ -330,14 +330,14 @@ function serializeNodeContent(
 
 /**
  * Serializes dirty nodes back to disk. No tree walk — iterates nodes directly.
- * When `driver` is provided, writes go through `driver.writeModel()`.
+ * When `driver` is provided, writes go through `driver.writeKnowledge()`.
  * Without a driver, returns a report of what would be written (caller must
  * handle actual file writes).
  */
 export async function recursiveSerialize(
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
   dirtyIds: Set<string>,
-  driver?: ModelDriver,
+  driver?: KnowledgeDriver,
 ): Promise<WriteReport[]> {
   if (dirtyIds.size === 0) return []
   const report: WriteReport[] = []
@@ -348,8 +348,8 @@ export async function recursiveSerialize(
     const { content, fidelity } = serializeNodeContent(node, nodes)
 
     if (driver) {
-      const parsed = parseModel(content)
-      await driver.writeModel(node.source.path, parsed)
+      const parsed = parseKnowledge(content)
+      await driver.writeKnowledge(node.source.path, parsed)
     }
 
     report.push({ path: node.source.path, fidelity, nodeId: node.id })

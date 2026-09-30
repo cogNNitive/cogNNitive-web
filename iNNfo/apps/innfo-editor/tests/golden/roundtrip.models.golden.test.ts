@@ -1,11 +1,11 @@
-﻿import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { recursiveParse } from '../../src/model/recursiveParser'
 import { recursiveSerialize } from '../../src/model/recursiveSerializer'
 import { buildFakeTree } from '../helpers/fakeFs'
-import type { ParsedModel, ModelDriver } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../../src/model/types'
+import type { ParsedKnowledge, KnowledgeDriver } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../../src/model/types'
 
 // Frozen fixtures (see recursiveParser.models.golden.test.ts).
 const modelsDir = join(import.meta.dirname!, '..', 'fixtures', 'models')
@@ -18,7 +18,7 @@ function makeIndex(wikilinks: string[]): string {
 
 /** Structural summary used to compare two parses without noise from
  *  volatile fields (provenance timestamps, etc). */
-function structureOf(nodes: Record<string, ModelNode>, rootIds: string[]) {
+function structureOf(nodes: Record<string, KnowledgeNode>, rootIds: string[]) {
   const nodeSummaries = Object.values(nodes)
     .sort((a, b) => a.id.localeCompare(b.id))
     .map((n) => ({
@@ -42,27 +42,27 @@ function structureOf(nodes: Record<string, ModelNode>, rootIds: string[]) {
   }
 }
 
-describe('recursiveSerializer golden round-trip: frozen models/* fixtures', () => {
+describe('recursiveSerializer golden round-trip: frozen kNNowledge/* fixtures', () => {
   for (const fileName of fixtureFiles) {
     it(`parse -> serialize -> re-parse is structurally equivalent for ${fileName}`, async () => {
       const content = readFileSync(join(modelsDir, fileName), 'utf-8')
-      // Map legacy _F.md suffix to _NN.md for the virtual tree
+      // Map legacy _NN.md suffix to _NN.md for the virtual tree
       const nnName = fileName.replace(/_F\.md$/i, '_NN.md')
-      const tree = { 'index.md': makeIndex([nnName]), [nnName]: content }
+      const tree = { 'domaiNN_NN.md': makeIndex([nnName]), [nnName]: content }
       const root = buildFakeTree('models', tree)
 
       const firstParse = await recursiveParse(root)
       // Issues include identity collisions (duplicate names now throw),
       // cross-model name warnings, and slug collision warnings.
-      // Any of these are acceptable for legacy _F.md fixtures.
+      // Any of these are acceptable for legacy _NN.md fixtures.
 
       // Use a capturing driver for round-trip
       let capturedContent: string | null = null
-      const capturingDriver: ModelDriver = {
-        readModel: async () => {
+      const capturingDriver: KnowledgeDriver = {
+        readKnowledge: async () => {
           throw new Error('not expected')
         },
-        writeModel: async (_uri: string, model: ParsedModel) => {
+        writeKnowledge: async (_uri: string, model: ParsedKnowledge) => {
           capturedContent = model.rawContent
         },
         listChildren: async () => [],
@@ -77,7 +77,7 @@ describe('recursiveSerializer golden round-trip: frozen models/* fixtures', () =
       expect(capturedContent).not.toBeNull()
 
       // Re-parse the captured content
-      const rewrittenTree = { 'index.md': makeIndex([nnName]), [nnName]: capturedContent! }
+      const rewrittenTree = { 'domaiNN_NN.md': makeIndex([nnName]), [nnName]: capturedContent! }
       const rewrittenRoot = buildFakeTree('models', rewrittenTree)
       const secondParse = await recursiveParse(rewrittenRoot)
       const secondCollisionIssues = secondParse.issues.filter(

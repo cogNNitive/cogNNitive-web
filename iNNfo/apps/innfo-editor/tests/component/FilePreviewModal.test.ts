@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import FilePreviewModal from '../../src/components/editor/FilePreviewModal.vue'
 import MermaidWidget from '../../src/shared/widgets/MermaidWidget.vue'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { parseSourceRef } from '../../src/utils/sourceRef'
 import { buildFakeTree, type FakeTree } from '../helpers/fakeFs'
 
@@ -217,8 +217,8 @@ describe('FilePreviewModal', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = handle
 
-    const modelStore = useModelStore()
-    modelStore.nodes['CaseStudy/Intro'] = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes['CaseStudy/Intro'] = {
       id: 'CaseStudy/Intro',
       name: 'Intro',
       parentId: 'CaseStudy',
@@ -230,7 +230,7 @@ describe('FilePreviewModal', () => {
         { targetId: 'CaseStudy/Conclusion', label: 'references', origin: 'metamodel' },
       ],
       rawSections: {},
-      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      source: { path: 'kNNowledge/casestudy_V_0-1-0_business_NN.md' },
       sources: [
         {
           filePath: 'sources/nn/report.md',
@@ -323,13 +323,13 @@ describe('FilePreviewModal', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = handle
 
-    const modelStore = useModelStore()
-    modelStore.nodes['Rel/A'] = { id: 'Rel/A', name: 'A', type: 'Section' } as any
-    modelStore.nodes['Rel/B'] = { id: 'Rel/B', name: 'B', type: 'Section' } as any
-    modelStore.nodes['Rel/C'] = { id: 'Rel/C', name: 'C', type: 'Section' } as any
-    modelStore.nodes['Rel/D'] = { id: 'Rel/D', name: 'D', type: 'Section' } as any
-    modelStore.nodes['Rel/E'] = { id: 'Rel/E', name: 'E', type: 'Section' } as any
-    modelStore.nodes['CaseStudy/Intro'] = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes['Rel/A'] = { id: 'Rel/A', name: 'A', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/B'] = { id: 'Rel/B', name: 'B', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/C'] = { id: 'Rel/C', name: 'C', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/D'] = { id: 'Rel/D', name: 'D', type: 'Section' } as any
+    knowledgeStore.nodes['Rel/E'] = { id: 'Rel/E', name: 'E', type: 'Section' } as any
+    knowledgeStore.nodes['CaseStudy/Intro'] = {
       id: 'CaseStudy/Intro',
       name: 'Intro',
       parentId: 'CaseStudy',
@@ -345,7 +345,7 @@ describe('FilePreviewModal', () => {
         { targetId: 'Rel/E', label: 'references', origin: 'metamodel' },
       ],
       rawSections: {},
-      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      source: { path: 'kNNowledge/casestudy_V_0-1-0_business_NN.md' },
       sources: [
         {
           filePath: 'sources/nn/report.md',
@@ -417,8 +417,8 @@ describe('FilePreviewModal', () => {
     const workspaceStore = useWorkspaceStore()
     workspaceStore.handle = handle
 
-    const modelStore = useModelStore()
-    modelStore.nodes['CaseStudy/Intro'] = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes['CaseStudy/Intro'] = {
       id: 'CaseStudy/Intro',
       name: 'Intro',
       parentId: 'CaseStudy',
@@ -430,7 +430,7 @@ describe('FilePreviewModal', () => {
       // (3 levels), so there is no 4th level to collapse.
       relationships: [],
       rawSections: {},
-      source: { path: 'models/casestudy_V_0-1-0_business_NN.md' },
+      source: { path: 'kNNowledge/casestudy_V_0-1-0_business_NN.md' },
       sources: [
         {
           filePath: 'sources/nn/report.md',

@@ -193,7 +193,7 @@ async function checkPathAtCommit(skill) {
 /**
  * Verifies version parity between manifest and remote SKILL.md frontmatter.
  * @param {{ name: string, repo: string, path: string, commit: string, version: string }} skill
- * @returns {Promise<string | { bundled_templates: any[] }>}
+ * @returns {Promise<string | { bundled_blueprints: any[] }>}
  */
 async function checkVersionParity(skill) {
   const url = `https://raw.githubusercontent.com/${skill.repo}/${skill.commit}/${skill.path}/SKILL.md`;
@@ -211,7 +211,7 @@ async function checkVersionParity(skill) {
   if (String(declared) !== String(skill.version)) {
     return `${skill.name}: version mismatch — manifest '${skill.version}' vs SKILL.md '${declared}'`;
   }
-  return { bundled_templates: meta.bundled_templates || [] };
+  return { bundled_blueprints: meta.bundled_blueprints || [] };
 }
 
 /**
@@ -219,7 +219,7 @@ async function checkVersionParity(skill) {
  * @param {string} text
  * @returns {string}
  */
-function normalizeTemplateText(text) {
+function normalizeBlueprintText(text) {
   return text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
 }
 
@@ -244,7 +244,7 @@ function coherenceFetchViolation(template, revision, message) {
  * @param {{ name: string, repo: string, path: string, commit: string, ref?: string }} template
  * @returns {Promise<string[]>} empty array = pinned content is coherent with main
  */
-async function checkTemplateMainCoherence(template) {
+async function checkBlueprintMainCoherence(template) {
   const violations = [];
   const pinUrl = `https://raw.githubusercontent.com/${template.repo}/${template.commit}/${template.path}`;
   const mainUrl = `https://raw.githubusercontent.com/${template.repo}/main/${template.path}`;
@@ -264,7 +264,7 @@ async function checkTemplateMainCoherence(template) {
   }
 
   if (pinnedText !== null && mainText !== null &&
-      normalizeTemplateText(pinnedText) !== normalizeTemplateText(mainText)) {
+      normalizeBlueprintText(pinnedText) !== normalizeBlueprintText(mainText)) {
     violations.push(
       `${template.name}: content at ${template.path} differs between pinned commit ${template.commit} and main in ${template.repo} — pin is not coherent with main (reconcile the release with main before shipping)`
     );
@@ -289,6 +289,41 @@ async function checkMcpUrlPinned(entry) {
   return null;
 }
 
+const SEMVER_RE = /^\d+\.\d+\.\d+$/
+
+/**
+ * Compares two x.y.z semver strings. Returns -1, 0 or 1.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function compareSemver(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] !== pb[i]) return pa[i] < pb[i] ? -1 : 1
+  }
+  return 0
+}
+
+/**
+ * Checks an optional `min_version` on an MCP entry: it must be a valid semver
+ * and must not exceed the pinned version (a minimum consumer requirement).
+ * @param {{ name: string, version: string, min_version?: string }} entry
+ * @returns {string | null}
+ */
+function checkMinVersion(entry) {
+  if (entry.min_version === undefined || entry.min_version === null) return null
+  const mv = String(entry.min_version)
+  if (!SEMVER_RE.test(mv)) {
+    return `${entry.name}: min_version '${mv}' is not a valid semver (x.y.z)`
+  }
+  if (SEMVER_RE.test(String(entry.version)) && compareSemver(mv, String(entry.version)) > 0) {
+    return `${entry.name}: min_version '${mv}' exceeds the pinned version '${entry.version}'`
+  }
+  return null
+}
+
 /**
  * Validates an MCP server bundle entry against structural, existence, and channel policies.
  * @param {{ name: string, repo: string, path: string, version: string, ref: string, commit: string, url?: string }} entry
@@ -306,6 +341,9 @@ async function validateMcp(entry, policy) {
 
   const urlViolation = await checkMcpUrlPinned(entry);
   if (urlViolation) violations.push(urlViolation);
+
+  const minVersionViolation = checkMinVersion(entry);
+  if (minVersionViolation) violations.push(minVersionViolation);
 
   const url = `https://api.github.com/repos/${entry.repo}/contents/${entry.path}?ref=${entry.commit}`;
   const res = await apiRequest(url);
@@ -380,12 +418,12 @@ async function validateConsoleAsset(entry, policy) {
  *   templates?: string[],
  * }} skill
  * @param {typeof CHANNELS[string]} policy
- * @returns {Promise<{ violations: string[], bundled_templates: any[] }>}
+ * @returns {Promise<{ violations: string[], bundled_blueprints: any[] }>}
  */
 async function validateSkill(skill, policy) {
   const violations = structuralViolations(skill);
-  let bundled_templates = [];
-  if (violations.length > 0) return { violations, bundled_templates };
+  let bundled_blueprints = [];
+  if (violations.length > 0) return { violations, bundled_blueprints };
 
   const commitViolation = await checkCommitExists(skill);
   if (commitViolation) violations.push(commitViolation);
@@ -398,15 +436,15 @@ async function validateSkill(skill, policy) {
   const versionResult = await checkVersionParity(skill);
   if (typeof versionResult === 'string') {
     violations.push(versionResult);
-  } else if (versionResult && versionResult.bundled_templates) {
-    bundled_templates = versionResult.bundled_templates;
+  } else if (versionResult && versionResult.bundled_blueprints) {
+    bundled_blueprints = versionResult.bundled_blueprints;
   }
 
   for (const mcp of (skill.mcp || [])) {
     violations.push(...await validateMcp(mcp, policy));
   }
 
-  return { violations, bundled_templates };
+  return { violations, bundled_blueprints };
 }
 
 /**
@@ -415,7 +453,7 @@ async function validateSkill(skill, policy) {
  * @param {typeof CHANNELS[string]} policy
  * @returns {Promise<string[]>}
  */
-async function validateTemplate(template, policy) {
+async function validateBlueprint(template, policy) {
   const violations = structuralViolations(template);
   if (violations.length > 0) return violations;
 
@@ -458,27 +496,27 @@ async function validateTemplate(template, policy) {
   // the release must equal the content at the same path on main (normalized).
   // preview pins main and is gated out by requireProvenance === false.
   if (policy.requireProvenance) {
-    violations.push(...await checkTemplateMainCoherence(template));
+    violations.push(...await checkBlueprintMainCoherence(template));
   }
 
   return violations;
 }
 
 /**
- * Checks skill dependency closure (requires) and template closure across skills and workflows.
+ * Checks skill dependency closure (requires) and blueprint closure across skills and workflows.
  * @param {{
  *   skills?: any[],
- *   templates?: any[],
+ *   blueprints?: any[],
  *   workflows?: any[],
  * }} manifestData
- * @param {Iterable<string>} [bundledTemplateNames=[]]
+ * @param {Iterable<string>} [bundledBlueprintNames=[]]
  * @returns {string[]}
  */
-function checkClosureViolations(manifestData, bundledTemplateNames = []) {
-  const { skills = [], templates = [], workflows = [] } = manifestData;
+function checkClosureViolations(manifestData, bundledBlueprintNames = []) {
+  const { skills = [], blueprints = [], workflows = [] } = manifestData;
   const violations = [];
   const knownSkills = new Set(skills.map(s => s.name));
-  const knownTemplates = new Set([...templates.map(t => t.name), ...bundledTemplateNames]);
+  const knownBlueprints = new Set([...blueprints.map(t => t.name), ...bundledBlueprintNames]);
 
   // Skill dependency closure (requires)
   for (const skill of skills) {
@@ -487,17 +525,17 @@ function checkClosureViolations(manifestData, bundledTemplateNames = []) {
         violations.push(`${skill.name}: requires '${req}' which is not in the manifest`);
       }
     }
-    for (const tmpl of (skill.templates || [])) {
-      if (!knownTemplates.has(tmpl)) {
-        violations.push(`${skill.name}: references template '${tmpl}' which is not declared in top-level templates or bundled`);
+    for (const bp of (skill.blueprints || [])) {
+      if (!knownBlueprints.has(bp)) {
+        violations.push(`${skill.name}: references blueprint '${bp}' which is not declared in top-level blueprints or bundled`);
       }
     }
   }
 
-  // Workflow template dependency closure
+  // Workflow blueprint dependency closure
   for (const wf of workflows) {
-    if (wf.template && !knownTemplates.has(wf.template)) {
-      violations.push(`workflow '${wf.id || wf.label}': references template '${wf.template}' which is not declared in top-level templates or bundled`);
+    if (wf.blueprint && !knownBlueprints.has(wf.blueprint)) {
+      violations.push(`workflow '${wf.id || wf.label}': references blueprint '${wf.blueprint}' which is not declared in top-level blueprints or bundled`);
     }
   }
 
@@ -505,12 +543,12 @@ function checkClosureViolations(manifestData, bundledTemplateNames = []) {
 }
 
 /**
- * Validates all skills, templates, mcp entries, and dependency closures of a manifest against a policy.
+ * Validates all skills, blueprints, mcp entries, and dependency closures of a manifest against a policy.
  * @param {{
  *   version?: string,
  *   entrypoint?: string,
  *   skills?: any[],
- *   templates?: any[],
+ *   blueprints?: any[],
  *   workflows?: any[],
  *   mcp?: any[],
  *   consoleAssets?: any[],
@@ -518,26 +556,26 @@ function checkClosureViolations(manifestData, bundledTemplateNames = []) {
  * @param {typeof CHANNELS[string]} policy
  * @returns {Promise<{
  *   violations: string[],
- *   stats: { skillsCount: number, templatesCount: number, mcpCount: number, consoleCount: number },
+ *   stats: { skillsCount: number, blueprintsCount: number, mcpCount: number, consoleCount: number },
  * }>}
  */
 async function validateManifest(manifestData, policy) {
-  const { skills = [], templates = [], workflows = [], mcp = [], consoleAssets = [] } = manifestData;
+  const { skills = [], blueprints = [], workflows = [], mcp = [], consoleAssets = [] } = manifestData;
   const mcpCount = mcp.length + skills.reduce((n, s) => n + ((s.mcp || []).length), 0);
   const violations = [];
-  const knownSkillBundledTemplates = new Set();
+  const knownSkillBundledBlueprints = new Set();
 
   for (const skill of skills) {
-    const { violations: skillViolations, bundled_templates } = await validateSkill(skill, policy);
+    const { violations: skillViolations, bundled_blueprints } = await validateSkill(skill, policy);
     violations.push(...skillViolations);
-    for (const bt of bundled_templates) {
+    for (const bt of bundled_blueprints) {
       const name = typeof bt === 'string' ? bt : (bt && bt.name);
-      if (name) knownSkillBundledTemplates.add(name);
+      if (name) knownSkillBundledBlueprints.add(name);
     }
   }
 
-  for (const template of templates) {
-    violations.push(...await validateTemplate(template, policy));
+  for (const blueprint of blueprints) {
+    violations.push(...await validateBlueprint(blueprint, policy));
   }
 
   for (const mcpEntry of mcp) {
@@ -548,14 +586,14 @@ async function validateManifest(manifestData, policy) {
     violations.push(...await validateConsoleAsset(asset, policy));
   }
 
-  const closureViolations = checkClosureViolations(manifestData, knownSkillBundledTemplates);
+  const closureViolations = checkClosureViolations(manifestData, knownSkillBundledBlueprints);
   violations.push(...closureViolations);
 
   return {
     violations,
     stats: {
       skillsCount: skills.length,
-      templatesCount: templates.length,
+      blueprintsCount: blueprints.length,
       mcpCount,
       consoleCount: consoleAssets.length,
     },
@@ -576,11 +614,13 @@ module.exports = {
   checkPathAtCommit,
   checkVersionParity,
   checkMcpUrlPinned,
-  checkTemplateMainCoherence,
+  checkMinVersion,
+  compareSemver,
+  checkBlueprintMainCoherence,
   validateMcp,
   validateConsoleAsset,
   validateSkill,
-  validateTemplate,
+  validateBlueprint,
   checkClosureViolations,
   validateManifest,
 };

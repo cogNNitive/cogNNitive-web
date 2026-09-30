@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { Sparkles, Layout, Database, FileText, ArrowRight } from 'lucide-vue-next'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import WorkspaceIntegrityNotice from './WorkspaceIntegrityNotice.vue'
 
 const workspaceStore = useWorkspaceStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 
 const availableModels = computed(() => {
-  return modelStore.rootIds
+  return knowledgeStore.rootIds
     .filter((id) => !id.startsWith('spec:'))
     .map((id) => {
-      const node = modelStore.getNode(id)
+      const node = knowledgeStore.getNode(id)
       const path = node?.source?.path || ''
       const filename = path.split('/').pop()?.split('\\').pop() || node?.name || id
       let title = filename
@@ -26,7 +26,7 @@ const availableModels = computed(() => {
         try {
           const fm = parseFrontmatter(node.rawContent) as any
           if (fm?.title) title = fm.title
-          if (fm?.model_version) version = fm.model_version
+          if (fm?.knowledge_version) version = fm.knowledge_version
           if (fm?.parent_spec?.name) templateName = fm.parent_spec.name
         } catch {
           /* unparseable frontmatter — fall back to defaults */

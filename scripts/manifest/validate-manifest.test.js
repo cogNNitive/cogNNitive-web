@@ -179,11 +179,11 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
   workflows:
     - id: test-wf
       label: Test Workflow
-      template: missing_template_spec
+      blueprint: missing_template_spec
 ---
 # Manifest`;
 
@@ -191,8 +191,8 @@ agent-bootstrap:
   try {
     const res = spawnSync('node', [validatorScript, tmpDir], { encoding: 'utf-8' });
     assert.notStrictEqual(res.status, 0, 'Missing dependency closure should fail validation');
-    assert.match(res.stderr, /references template 'missing_template_spec' which is not declared/);
-    console.log('✔ Dependency closure (missing template) test passed');
+    assert.match(res.stderr, /references blueprint 'missing_template_spec' which is not declared/);
+    console.log('✔ Dependency closure (missing blueprint) test passed');
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -475,18 +475,18 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
   console-assets:
-    - file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
       version: "0.1.0"
       ref: "innfo-console-v0.1.0"
       commit: "3f1a9c2b8e4d6f0a1b2c3d4e5f60718293a4b5c6"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/3f1a9c2b8e4d6f0a1b2c3d4e5f60718293a4b5c6/iNNfo/specs/templates/console/innfo-console.bundle.js
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/3f1a9c2b8e4d6f0a1b2c3d4e5f60718293a4b5c6/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
 ---
 # Manifest`;
   const parsed = mod.parseManifest(manifestText);
   assert.strictEqual(parsed.consoleAssets.length, 1, 'console-assets must be parsed');
-  assert.strictEqual(parsed.consoleAssets[0].file, 'iNNfo/specs/templates/console/innfo-console.bundle.js');
+  assert.strictEqual(parsed.consoleAssets[0].file, 'iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js');
   assert.strictEqual(parsed.consoleAssets[0].version, '0.1.0');
 
   // validateConsoleAsset happy path: commit exists, ref resolves, provenance identical, path present
@@ -519,7 +519,7 @@ agent-bootstrap:
   }
 }
 
-// Template pin <-> main coherence gate (checkTemplateMainCoherence)
+// Template pin <-> main coherence gate (checkBlueprintMainCoherence)
 
 // 16. Identical pinned and main content: no coherence violation; fetch order is
 //     pinned commit first, then main.
@@ -539,7 +539,7 @@ agent-bootstrap:
     { status: 200, body }, // main
   ]);
   try {
-    const violations = await mod.checkTemplateMainCoherence(template);
+    const violations = await mod.checkBlueprintMainCoherence(template);
     assert.deepStrictEqual(violations, [], `Identical pin/main must be coherent. Got: ${JSON.stringify(violations)}`);
     assert.match(stub.urls()[0], new RegExp(`/${template.commit}/`), 'first fetch must be the pinned commit');
     assert.match(stub.urls()[1], /\/main\//, 'second fetch must be main');
@@ -568,7 +568,7 @@ agent-bootstrap:
     { status: 200, body: mainBody },
   ]);
   try {
-    const violations = await mod.checkTemplateMainCoherence(template);
+    const violations = await mod.checkBlueprintMainCoherence(template);
     assert.strictEqual(violations.length, 1, `main-ahead drift must yield exactly 1 violation. Got: ${JSON.stringify(violations)}`);
     const violation = violations[0];
     assert.ok(violation.includes(template.path), 'violation must name the template path');
@@ -600,7 +600,7 @@ agent-bootstrap:
     { status: 200, body: mainBody },
   ]);
   try {
-    const violations = await mod.checkTemplateMainCoherence(template);
+    const violations = await mod.checkBlueprintMainCoherence(template);
     assert.strictEqual(violations.length, 1, `tag-ahead drift must yield exactly 1 violation. Got: ${JSON.stringify(violations)}`);
     const violation = violations[0];
     assert.ok(violation.includes(template.path), 'violation must name the template path');
@@ -630,7 +630,7 @@ agent-bootstrap:
     { status: 403, body: 'rate limited' },
   ]);
   try {
-    const violations = await mod.checkTemplateMainCoherence(template);
+    const violations = await mod.checkBlueprintMainCoherence(template);
     assert.strictEqual(violations.length, 1, `rate limit must yield exactly 1 violation. Got: ${JSON.stringify(violations)}`);
     assert.match(violations[0], /set GITHUB_TOKEN to raise the rate limit/, 'rate-limited fetch must append RATE_LIMIT_HINT');
   } finally {
@@ -658,7 +658,7 @@ agent-bootstrap:
     { status: 200, body: lfBody },
   ]);
   try {
-    const violations = await mod.checkTemplateMainCoherence(template);
+    const violations = await mod.checkBlueprintMainCoherence(template);
     assert.deepStrictEqual(violations, [], `CRLF/BOM-only difference must normalize to coherence. Got: ${JSON.stringify(violations)}`);
   } finally {
     stub.restore();
@@ -666,7 +666,7 @@ agent-bootstrap:
   console.log('✔ template main coherence (CRLF/BOM normalization) test passed');
 }
 
-// 21. Preview channel: validateTemplate with the preview policy must NOT run the
+// 21. Preview channel: validateBlueprint with the preview policy must NOT run the
 //     coherence gate (no /main/ fetch, no coherence violation).
 {
   const mod = freshValidatorModule();
@@ -686,7 +686,7 @@ agent-bootstrap:
     { status: 200, body: '---\nversion: "V_0-2-1"\n---\n# Workspace Template\n' }, // version parity raw
   ]);
   try {
-    const violations = await mod.validateTemplate(template, mod.CHANNELS.preview);
+    const violations = await mod.validateBlueprint(template, mod.CHANNELS.preview);
     assert.deepStrictEqual(violations, [], `Preview template must validate cleanly. Got: ${JSON.stringify(violations)}`);
     assert.ok(!stub.urls().some((u) => /\/main\//.test(u)), 'preview must never fetch the /main/ URL');
   } finally {
@@ -696,7 +696,7 @@ agent-bootstrap:
 }
 
 // 22. Stable wiring end-to-end: full stable sequence with identical bodies ->
-//     validateTemplate returns [] AND both coherence raw URLs (pin + main) are
+//     validateBlueprint returns [] AND both coherence raw URLs (pin + main) are
 //     fetched, proving the gate runs on the stable channel.
 {
   const mod = freshValidatorModule();
@@ -719,7 +719,7 @@ agent-bootstrap:
     { status: 200, body }, // coherence main fetch
   ]);
   try {
-    const violations = await mod.validateTemplate(template, mod.CHANNELS.stable);
+    const violations = await mod.validateBlueprint(template, mod.CHANNELS.stable);
     assert.deepStrictEqual(violations, [], `Stable template with coherent pin/main must pass. Got: ${JSON.stringify(violations)}`);
     const urls = stub.urls();
     const pinUrl = `https://raw.githubusercontent.com/${template.repo}/${template.commit}/${template.path}`;

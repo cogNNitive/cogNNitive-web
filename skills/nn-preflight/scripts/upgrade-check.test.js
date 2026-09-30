@@ -34,13 +34,13 @@ function runScriptAsync(args) {
 }
 
 const CATALOG = {
-  templates: {
+  blueprints: {
     business: {
       name: 'business',
       adopted: 'V_0-2-0',
       versions: [
-        { template_version: 'V_0-1-0' },
-        { template_version: 'V_0-2-0' },
+        { blueprint_version: 'V_0-1-0' },
+        { blueprint_version: 'V_0-2-0' },
       ],
     },
   },
@@ -52,11 +52,11 @@ function buildWorkspace() {
   fs.mkdirSync(path.join(ws, 'sources', 'nn'), { recursive: true });
   fs.mkdirSync(path.join(ws, 'node_modules', 'pkg'), { recursive: true });
   const model = (file, url) => {
-    fs.writeFileSync(path.join(ws, file), `---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "${url}"\nmodel_version: "V_0-1-0"\n---\n# NN x\n`, 'utf-8');
+    fs.writeFileSync(path.join(ws, file), `---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "${url}"\nknowledge_version: "V_0-1-0"\n---\n# NN x\n`, 'utf-8');
   };
-  model('models/Old_V_0-1-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-1-0_NN.md');
-  model('models/Current_V_0-2-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md');
-  model('models/Ahead_V_0-3-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-3-0_NN.md');
+  model('models/Old_V_0-1-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md');
+  model('models/Current_V_0-2-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md');
+  model('models/Ahead_V_0-3-0_business_NN.md', 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-3-0_NN.md');
   model('models/Custom_V_0-1-0_my_spec_NN.md', 'https://raw.githubusercontent.com/user/repo/main/specs/Custom_V_0-1-0_my_spec_NN.md');
   // Non-model files that must be ignored:
   fs.writeFileSync(path.join(ws, 'models', 'index.md'), '# nope');
@@ -84,15 +84,15 @@ async function runTests() {
   // Test 2: parsePinnedUrl handles flat + package layouts
   {
     assert.deepStrictEqual(
-      parsePinnedUrl('https://x/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md'),
+      parsePinnedUrl('https://x/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md'),
       { name: 'business', version: 'V_0-2-0' },
     );
     assert.deepStrictEqual(
-      parsePinnedUrl('https://x/main/iNNfo/specs/templates/workspace_V_0-3-0_spec_NN.md'),
+      parsePinnedUrl('https://x/main/iNNfo/specs/bluepriNNts/workspace_V_0-3-0_spec_NN.md'),
       { name: 'workspace', version: 'V_0-3-0' },
     );
     assert.deepStrictEqual(
-      parsePinnedUrl('https://x/main/iNNfo/specs/templates/documentation/V_0-2-0/spec_NN.md'),
+      parsePinnedUrl('https://x/main/iNNfo/specs/bluepriNNts/documentation/V_0-2-0/spec_NN.md'),
       { name: 'documentation', version: 'V_0-2-0' },
     );
     assert.strictEqual(parsePinnedUrl('https://x/specs/Custom_V_0-1-0_my_spec_NN.md'), null);
@@ -150,7 +150,7 @@ async function runTests() {
     const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'upgrade-unpinned-'));
     try {
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
-      fs.writeFileSync(path.join(ws, 'models', 'NoRef_V_0-1-0_business_NN.md'), '---\nlevel: 3\nmodel_version: "V_0-1-0"\n---\n');
+      fs.writeFileSync(path.join(ws, 'models', 'NoRef_V_0-1-0_business_NN.md'), '---\nlevel: 3\nknowledge_version: "V_0-1-0"\n---\n');
       const result = scanWorkspaceUpgrades(ws, CATALOG);
       assert.strictEqual(result.summary.unpinned, 1);
       assert.strictEqual(result.items[0].status, 'unpinned');

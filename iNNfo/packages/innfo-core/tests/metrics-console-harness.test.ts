@@ -21,12 +21,12 @@ const harnessPath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'scripts',
   'verify.harness.js',
 )
-const samplesDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics', 'samples')
+const samplesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics', 'samples')
 const sampleConsole = 'Ghostbusters_V_0-1-0_console.html'
 
 const CHROME_CANDIDATES = [
@@ -95,8 +95,8 @@ describe('verify.harness.js --check-slots on the Ghostbusters console', () => {
         JSON.stringify({
           meta: {
             model: 'm',
-            model_version: 'V_0-1-0',
-            source_model: 's',
+            knowledge_version: 'V_0-1-0',
+            source_knowledge: 's',
             generated_at: '2026-09-11',
             months: 12,
             historyMonths: 0,
@@ -156,8 +156,8 @@ describe('verify.harness.js --check-slots on the Ghostbusters console', () => {
         JSON.stringify({
           meta: {
             model: 'm',
-            model_version: 'V_0-1-0',
-            source_model: 's',
+            knowledge_version: 'V_0-1-0',
+            source_knowledge: 's',
             generated_at: '2026-09-11',
             months: 12,
             historyMonths: 0,
@@ -195,8 +195,8 @@ describe('verify.harness.js --check-slots on the Ghostbusters console', () => {
         JSON.stringify({
           meta: {
             model: 'm',
-            model_version: 'V_0-1-0',
-            source_model: 's',
+            knowledge_version: 'V_0-1-0',
+            source_knowledge: 's',
             generated_at: '2026-09-11',
             months: 12,
             historyMonths: 0,

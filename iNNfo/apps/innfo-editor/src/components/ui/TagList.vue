@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import IconRenderer from '../editor/IconRenderer.vue'
 
 withDefaults(
@@ -13,7 +13,7 @@ withDefaults(
   },
 )
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 </script>
 
 <template>
@@ -35,25 +35,25 @@ const modelStore = useModelStore()
         :key="tag"
         class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors shadow-xs"
         :style="
-          modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color
+          knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color
             ? {
-                borderColor: modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color + '55',
+                borderColor: knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color + '55',
                 backgroundColor:
-                  modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color + '15',
-                color: modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color,
+                  knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color + '15',
+                color: knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color,
               }
             : {}
         "
         :class="
-          !modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color
+          !knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.color
             ? 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'
             : ''
         "
-        :title="modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.description"
+        :title="knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.description"
       >
         <IconRenderer
-          v-if="modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.icon"
-          :icon="modelStore.workspaceTagsMap[tag.toLowerCase().trim()]?.icon!"
+          v-if="knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.icon"
+          :icon="knowledgeStore.workspaceTagsMap[tag.toLowerCase().trim()]?.icon!"
           custom-class="w-3 h-3"
         />
         <span>#{{ tag }}</span>

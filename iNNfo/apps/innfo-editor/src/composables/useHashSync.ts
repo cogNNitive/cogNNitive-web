@@ -1,7 +1,7 @@
 import { watch, onMounted, onUnmounted } from 'vue'
 import { useUiStore } from '../stores/uiStore'
-import { useModelStore } from '../stores/modelStore'
-import type { ModelNode } from '../model/types'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
+import type { KnowledgeNode } from '../model/types'
 
 /**
  * Synchronises the URL hash (`#conceptName.elementName`, `#nodeName` or
@@ -18,7 +18,7 @@ import type { ModelNode } from '../model/types'
  */
 export function useHashSync(): void {
   const uiStore = useUiStore()
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   /** Re-entrancy guard — set to true while an update is in progress. */
   let updating = false
@@ -50,21 +50,21 @@ export function useHashSync(): void {
       if (firstElement?.parentId) {
         uiStore.selectNode(`virtual:${firstElement.parentId}:${groupName}`)
       } else {
-        const rootId = modelStore.rootIds[0]
+        const rootId = knowledgeStore.rootIds[0]
         if (rootId) uiStore.selectNode(`virtual:${rootId}:${groupName}`)
       }
       updating = false
       return
     }
 
-    for (const nodeId of Object.keys(modelStore.nodes)) {
-      const node = modelStore.getNode(nodeId)
+    for (const nodeId of Object.keys(knowledgeStore.nodes)) {
+      const node = knowledgeStore.getNode(nodeId)
       if (!node) continue
 
       if (elementName) {
         // Full match: conceptName.elementName
         if (node.name === elementName && node.parentId) {
-          const parent = modelStore.getNode(node.parentId)
+          const parent = knowledgeStore.getNode(node.parentId)
           if (parent?.conceptBinding?.name === conceptName || parent?.name === conceptName) {
             uiStore.selectNode(nodeId)
             break
@@ -87,14 +87,14 @@ export function useHashSync(): void {
    * (breadth-first from roots) order — used to reconstruct a virtual
    * concept group id from its `#@ConceptName` hash.
    */
-  function findFirstElementOfType(type: string): ModelNode | undefined {
+  function findFirstElementOfType(type: string): KnowledgeNode | undefined {
     const seen = new Set<string>()
-    const queue = [...modelStore.rootIds]
+    const queue = [...knowledgeStore.rootIds]
     while (queue.length > 0) {
       const id = queue.shift()!
       if (seen.has(id)) continue
       seen.add(id)
-      const node = modelStore.getNode(id)
+      const node = knowledgeStore.getNode(id)
       if (!node) continue
       if (node.kind === 'element' && node.type === type) return node
       queue.push(...node.childIds)
@@ -126,7 +126,7 @@ export function useHashSync(): void {
       const conceptName = parts[2] ?? ''
       hash = conceptName ? `${VIRTUAL_PREFIX}${conceptName}` : ''
     } else {
-      const node = modelStore.getNode(nodeId)
+      const node = knowledgeStore.getNode(nodeId)
       if (!node) {
         updating = false
         return
@@ -139,7 +139,7 @@ export function useHashSync(): void {
           hash += `.${node.name}`
         }
       } else if (node.parentId) {
-        const parent = modelStore.getNode(node.parentId)
+        const parent = knowledgeStore.getNode(node.parentId)
         if (parent?.conceptBinding?.name) {
           hash = `${parent.conceptBinding.name}.${node.name}`
         } else {

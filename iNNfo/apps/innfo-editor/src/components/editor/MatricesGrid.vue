@@ -404,7 +404,7 @@
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { ChevronDown } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import Pill from './Pill.vue'
 import MatrixPill from './MatrixPill.vue'
@@ -433,18 +433,18 @@ const emit = defineEmits<{
   'cell-change': [cellKey: string, value: unknown]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 // ── Matrix definitions stored on root node fields ──
-const rootIds = computed(() => modelStore.rootIds)
+const rootIds = computed(() => knowledgeStore.rootIds)
 const { matrixDefs, getMatrixValueCount } = useMatrixDefinitions(rootIds, { strategy: 'merge' })
 
 const rootNode = computed(() => {
-  if (modelStore.rootIds.length === 0) return null
+  if (knowledgeStore.rootIds.length === 0) return null
   if (activeMatrix.value) {
     const matrixName = activeMatrix.value.name
-    for (const id of modelStore.rootIds) {
-      const r = modelStore.getNode(id)
+    for (const id of knowledgeStore.rootIds) {
+      const r = knowledgeStore.getNode(id)
       if (!r) continue
       const defs = extractMatrixDefs(r)
       if (defs.some((d: any) => d.name === matrixName)) {
@@ -452,8 +452,8 @@ const rootNode = computed(() => {
       }
     }
   }
-  const nonSpecId = modelStore.rootIds.find((id) => !id.startsWith('spec:'))
-  return modelStore.getNode(nonSpecId || modelStore.rootIds[0])
+  const nonSpecId = knowledgeStore.rootIds.find((id) => !id.startsWith('spec:'))
+  return knowledgeStore.getNode(nonSpecId || knowledgeStore.rootIds[0])
 })
 
 const activeMatrixIndex = ref(props.matrixIndex)
@@ -493,14 +493,14 @@ const activeMatrix = computed(() => {
   return matrixDefs.value[activeMatrixIndex.value]
 })
 
-// ── Derive rows/cols from modelStore nodes by concept type ──
+// ── Derive rows/cols from knowledgeStore nodes by concept type ──
 // Rows/columns carry `{ id, name }`: the cell key uses the stable node id so
 // that two same-named elements in different parents resolve to independent
 // cells (E1). Display (Pill, labels) uses `.name`.
 const rows = computed(() => {
   if (!activeMatrix.value) return []
   const source = activeMatrix.value.source
-  return Object.values(modelStore.nodes)
+  return Object.values(knowledgeStore.nodes)
     .filter((n) => n.type === source)
     .map((n) => ({ id: n.id, name: n.name }))
 })
@@ -508,7 +508,7 @@ const rows = computed(() => {
 const columns = computed(() => {
   if (!activeMatrix.value) return []
   const target = activeMatrix.value.target
-  return Object.values(modelStore.nodes)
+  return Object.values(knowledgeStore.nodes)
     .filter((n) => n.type === target)
     .map((n) => ({ id: n.id, name: n.name }))
 })
@@ -628,7 +628,7 @@ function getHeatmapClasses(row: string, col: string): string {
 
 // ── Node + concept metadata for header pills ───────────────────
 
-const getNodeById = (id: string) => modelStore.nodes[id]
+const getNodeById = (id: string) => knowledgeStore.nodes[id]
 
 const getNodeDescription = (id: string): string => {
   return getNodeById(id)?.rawSections?.description ?? ''
@@ -649,8 +649,8 @@ const getNodeFields = (id: string): Record<string, any> => {
 
 const getConceptFields = (conceptType: string): any[] => {
   const lower = conceptType?.toLowerCase()
-  for (const id of modelStore.rootIds) {
-    const r = modelStore.getNode(id)
+  for (const id of knowledgeStore.rootIds) {
+    const r = knowledgeStore.getNode(id)
     const concepts = r?.localMetamodel?.concepts
     if (Array.isArray(concepts)) {
       const c = concepts.find((x) => x.name.toLowerCase() === lower)

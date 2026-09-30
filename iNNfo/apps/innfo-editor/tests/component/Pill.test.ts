@@ -5,7 +5,7 @@ import { nextTick } from 'vue'
 import Pill from '../../src/components/editor/Pill.vue'
 import { yiqLuminance, textColor } from '../../src/composables/useConceptVisuals'
 import { useUiStore } from '../../src/stores/uiStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 
 // ── Utility tests (A.6 — YIQ luminance & contrast) ──────────────
 
@@ -280,8 +280,8 @@ describe('Pill.vue — Workspace tags circular badges', () => {
   })
 
   it('renders circular badges with icon and color for workspace-defined tags', () => {
-    const modelStore = useModelStore()
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.nodes = {
       tag1: {
         id: 'tag1',
         name: 'estrategia-soldadura',

@@ -439,8 +439,8 @@ function run() {
                           fs.mkdirSync(feedbackDir, { recursive: true });
                           const validFeedbackDoc = {
                             meta: {
-                              source_model: 'Ghostbusters',
-                              source_model_version: 'V_0-2-1',
+                              source_knowledge: 'Ghostbusters',
+                              source_knowledge_version: 'V_0-2-1',
                               artifact: 'Ghostbusters_V_0-2-1_console.html',
                               artifact_version: '0.1.0',
                               exported_at: '2026-09-09T12:00:00Z',

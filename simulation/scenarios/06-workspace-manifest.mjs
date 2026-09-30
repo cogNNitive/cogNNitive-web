@@ -1,8 +1,8 @@
 /**
  * S06 — Adding a model file and keeping the workspace index honest.
  *
- * A user drops a new `*_NN.md` into `models/`. The workspace manifest
- * (`workspace_NN.md`, `# NN Models`) must learn about it without the tool
+ * A user drops a new `*_NN.md` into `kNNowledge/`. The workspace manifest
+ * (`domaiNN_NN.md`, `# NN Models`) must learn about it without the tool
  * rewriting entries the human owns.
  */
 import { readFile } from 'node:fs/promises'
@@ -20,17 +20,17 @@ export default async function run() {
     recursiveParse,
     buildWorkspaceIndex,
     validateWorkspaceReferences,
-    extractTemplateSchemaFromContent,
+    extractBlueprintSchemaFromContent,
   } = await loadCore()
   const s = createScenario('S06', 'Workspace manifest reconciliation',
     'A user adds a model file by hand and expects the workspace index to notice — without losing their own edits.')
 
   try {
-    const manifest = await readFile(join(WS, 'workspace_NN.md'), 'utf-8')
+    const manifest = await readFile(join(WS, 'domaiNN_NN.md'), 'utf-8')
 
     // No change discovered => the manifest must come back untouched.
     const noop = reconcileManifest(manifest, [
-      { path: 'models/Acme_analysis_NN.md', name: 'Acme Operational Analysis', template: 'analysis' },
+      { path: 'kNNowledge/Acme_analysis_NN.md', name: 'Acme Operational Analysis', template: 'analysis' },
     ])
     s.expect(
       'Reconciling an already-correct manifest changes nothing',
@@ -41,8 +41,8 @@ export default async function run() {
 
     // A newly added file is appended.
     const added = reconcileManifest(manifest, [
-      { path: 'models/Acme_analysis_NN.md', name: 'Acme Operational Analysis', template: 'analysis' },
-      { path: 'models/Acme_metrics_NN.md', name: 'Acme Operational Metrics', template: 'metrics' },
+      { path: 'kNNowledge/Acme_analysis_NN.md', name: 'Acme Operational Analysis', template: 'analysis' },
+      { path: 'kNNowledge/Acme_metrics_NN.md', name: 'Acme Operational Metrics', template: 'metrics' },
     ])
     s.expect(
       'A newly added model file is registered in the manifest',
@@ -60,7 +60,7 @@ export default async function run() {
 
     // A human-authored entry whose file disappeared must NOT be rewritten.
     const removed = reconcileManifest(added.content, [
-      { path: 'models/Acme_metrics_NN.md', name: 'Acme Operational Metrics', template: 'metrics' },
+      { path: 'kNNowledge/Acme_metrics_NN.md', name: 'Acme Operational Metrics', template: 'metrics' },
     ])
     s.expect(
       'A human-owned entry whose file is gone is reported, never silently deleted',
@@ -73,8 +73,8 @@ export default async function run() {
     const parsed = await recursiveParse(createNodeDirectoryHandle(WS))
 
     // The host supplies template schemas; here they come off disk.
-    const analysisSchema = extractTemplateSchemaFromContent(
-      await readFile(join(WS, '..', '..', '..', 'iNNfo', 'specs', 'templates', 'analysis', 'spec_NN.md'), 'utf-8'),
+    const analysisSchema = extractBlueprintSchemaFromContent(
+      await readFile(join(WS, '..', '..', '..', 'iNNfo', 'specs', 'bluepriNNts', 'analysis', 'spec_NN.md'), 'utf-8'),
     )
     const index = buildWorkspaceIndex(parsed, (node) =>
       String(node?.frontmatter?.parent_spec?.name ?? '').startsWith('analysis') ? analysisSchema : null,

@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import WidgetField from '../../src/shared/widgets/WidgetField.vue'
-import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, fieldKey: string, value: unknown): ModelNode {
+function makeNode(id: string, fieldKey: string, value: unknown): KnowledgeNode {
   return {
     id,
     name: id,
@@ -35,8 +35,8 @@ describe('WidgetField: dispatches to ported widget or FallbackWidget (R15)', () 
   })
 
   it('renders the correct ported widget for a known type ("text")', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'summary', 'Hello') }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'summary', 'Hello') }, ['Root'])
 
     const wrapper = mount(WidgetField, {
       props: { nodeId: 'Root', fieldKey: 'summary', widgetType: 'text' },
@@ -47,8 +47,8 @@ describe('WidgetField: dispatches to ported widget or FallbackWidget (R15)', () 
   })
 
   it('renders FallbackWidget for an unrecognized widget type, not a crash or blank field', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'steps', 'Step 1') }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'steps', 'Step 1') }, ['Root'])
 
     const wrapper = mount(WidgetField, {
       props: { nodeId: 'Root', fieldKey: 'steps', widgetType: 'steps' },
@@ -59,8 +59,8 @@ describe('WidgetField: dispatches to ported widget or FallbackWidget (R15)', () 
   })
 
   it('records editAttribution on the field when the user commits an edit (R16)', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'summary', 'Hello') }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'summary', 'Hello') }, ['Root'])
 
     const wrapper = mount(WidgetField, {
       props: { nodeId: 'Root', fieldKey: 'summary', widgetType: 'text', authorId: 'user-1' },
@@ -68,21 +68,21 @@ describe('WidgetField: dispatches to ported widget or FallbackWidget (R15)', () 
 
     await wrapper.get('input').setValue('Edited')
 
-    const node = modelStore.getNode('Root')!
+    const node = knowledgeStore.getNode('Root')!
     expect(node.fields.summary.value).toBe('Edited')
     expect(node.fields.summary.editAttribution.author).toEqual({ kind: 'user', id: 'user-1' })
   })
 
   it('records no new editAttribution beyond parse-time state when the node is only loaded, not edited (R16)', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'summary', 'Hello') }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'summary', 'Hello') }, ['Root'])
 
     mount(WidgetField, {
       props: { nodeId: 'Root', fieldKey: 'summary', widgetType: 'text', authorId: 'user-1' },
     })
 
-    const node = modelStore.getNode('Root')!
+    const node = knowledgeStore.getNode('Root')!
     expect(node.fields.summary.editAttribution.author).toEqual({ kind: 'system', id: 'parser' })
-    expect(modelStore.isDirty('Root')).toBe(false)
+    expect(knowledgeStore.isDirty('Root')).toBe(false)
   })
 })

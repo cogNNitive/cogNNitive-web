@@ -6,7 +6,7 @@ In the cogNNitive ecosystem, workspaces consist of plain-text Markdown models (`
 
 1. **User-Led Workspace Snapshots** (Primary baseline)
 2. **Automated Migration Out-of-Tree Backups** (`backup-workspace.js`)
-3. **Optional Git Collaboration Layer** (`/nn-workspace-git` for technicians)
+3. **Optional Git Collaboration Layer** (`/nn-domain-git` for technicians)
 
 ---
 
@@ -48,13 +48,13 @@ For automated, potentially breaking schema migrations (such as upgrading models 
 
 ---
 
-## 3. Optional Git Review Layer (`nn-workspace-git`)
+## 3. Optional Git Review Layer (`nn-domain-git`)
 
-For technicians and engineering teams, the `/nn-workspace-git` skill provides a gated review workflow:
+For technicians and engineering teams, the `/nn-domain-git` skill provides a gated review workflow:
 
 - **SSOT Boundary**: iNNfo models remain the single source of truth; Git serves solely as a review and branch/PR gating mechanism.
 - **Gated PRs**: Pull requests must pass `innfo-mcp_validate_model` and workspace integrity checks before merging.
-- **Offline Backup Fallback**: Step 3d in `nn-workspace-git` triggers an out-of-tree backup before deep modifications.
+- **Offline Backup Fallback**: Step 3d in `nn-domain-git` triggers an out-of-tree backup before deep modifications.
 
 ---
 
@@ -66,6 +66,6 @@ To avoid architectural confusion, cogNNitive maintains a strict separation betwe
 | :--- | :--- | :--- |
 | **Manual Folder Copy** | End Users & AI Sessions | Entire workspace snapshot prior to major edits |
 | **`backup-workspace.js`** | End Users / `nn-upgrade` | Automated recovery during template upgrades |
-| **`nn-workspace-git`** | Technicians (Alpha) | Branch & PR review workflows |
+| **`nn-domain-git`** | Technicians (Alpha) | Branch & PR review workflows |
 | **Engram Persistent Memory** | Maintainer AI Agents | Internal session memory within the `cogNNitive` repo |
 | **Git Restore Points & Checkpoints** | Maintainer AI Agents | Monorepo branch hygiene (`nn-dev-development`) |

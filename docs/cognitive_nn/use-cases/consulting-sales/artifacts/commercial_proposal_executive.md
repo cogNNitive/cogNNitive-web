@@ -1,7 +1,7 @@
 # Enterprise Consulting Proposal & RFP Bid Response
 
 > **Prepared for:** Global Bank Procurement Committee  
-> **Source Model:** [`Fintech_RFP_Response_V_1-0-0_commercial_NN.md`](../models/Fintech_RFP_Response_V_1-0-0_commercial_NN.md)  
+> **Source Model:** [`Fintech_RFP_Response_V_1-0-0_commercial_NN.md`](../kNNowledge/Fintech_RFP_Response_V_1-0-0_commercial_NN.md)  
 > **Compliance Verification:** 100% Rate Card & ISO-27001 Validated
 
 ---

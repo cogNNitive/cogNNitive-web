@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  parseModel,
+  parseKnowledge,
   parseFrontmatter,
-  validateModel,
+  validateKnowledge,
   validateFormatContent,
   slugify,
   deriveElementSlugs,
@@ -12,7 +12,7 @@ import {
   applyMutation,
   uniqueSlugify,
   validateReferences,
-  serializeModel,
+  serializeKnowledge,
   deriveMatrixWidgetType,
   normalizeMatrixDecl,
 } from '../src/index'
@@ -42,7 +42,7 @@ describe('iNNfo model with _NN markers (level 3)', () => {
     '---',
     'spec_version: "V_0-2-0"',
     'level: 3',
-    'model_version: "V_0-1-2"',
+    'knowledge_version: "V_0-1-2"',
     'title: "Test Model"',
     'mode: "FILE"',
     'parent_spec:',
@@ -106,13 +106,13 @@ describe('iNNfo model with _NN markers (level 3)', () => {
     '',
   ].join('\n')
 
-  const model = parseModel(modelContent)
+  const model = parseKnowledge(modelContent)
   const fm = model.frontmatter
 
   it('parses frontmatter', () => {
     expect(fm.level).toBe(3)
     expect(fm.parent_spec!.name).toBe('business_V_0-1-1')
-    expect(fm.model_version).toBe('V_0-1-2')
+    expect(fm.knowledge_version).toBe('V_0-1-2')
     expect(fm.mode).toBe('FILE')
   })
 
@@ -149,8 +149,8 @@ describe('iNNfo model with _NN markers (level 3)', () => {
   })
 
   it('serializes and re-parses correctly', async () => {
-    const { serializeModel } = await import('../src/index')
-    const serialized = serializeModel(model)
+    const { serializeKnowledge } = await import('../src/index')
+    const serialized = serializeKnowledge(model)
     expect(serialized).toContain('url: "https://example.com/business"')
     expect(serialized).toContain('# NN Stakeholders')
     expect(serialized).toContain('# NN matrices: problems-value propositions matrix')
@@ -158,15 +158,15 @@ describe('iNNfo model with _NN markers (level 3)', () => {
   })
 
   it('serializes and re-parses preserving full structure', async () => {
-    const { serializeModel, parseModel } = await import('../src/index')
-    const serialized = serializeModel(model)
-    const reparsed = parseModel(serialized)
+    const { serializeKnowledge, parseKnowledge } = await import('../src/index')
+    const serialized = serializeKnowledge(model)
+    const reparsed = parseKnowledge(serialized)
 
     // Frontmatter
     expect(reparsed.frontmatter.title).toBe(model.frontmatter.title)
     expect(reparsed.frontmatter.level).toBe(model.frontmatter.level)
     expect(reparsed.frontmatter.mode).toBe(model.frontmatter.mode)
-    expect(reparsed.frontmatter.model_version).toBe(model.frontmatter.model_version)
+    expect(reparsed.frontmatter.knowledge_version).toBe(model.frontmatter.knowledge_version)
 
     // Matrix declarations (round-trip critical)
     expect(reparsed.matrices.length).toBe(model.matrices.length)
@@ -198,7 +198,7 @@ describe('validator', () => {
     '---',
     'spec_version: "V_0-2-0"',
     'level: 3',
-    'model_version: "V_0-1-2"',
+    'knowledge_version: "V_0-1-2"',
     'title: "Inline Model"',
     'mode: "FILE"',
     'parent_spec:',
@@ -215,7 +215,7 @@ describe('validator', () => {
     '',
   ].join('\n')
 
-  const bizTemplateContent = readSpec('templates/business/spec_NN.md')
+  const bizTemplateContent = readSpec('bluepriNNts/business/spec_NN.md')
   const bizTemplateFm = parseFrontmatter(bizTemplateContent)!
 
   // Canonical `business` is a composition shell — its schema is resolved from
@@ -223,9 +223,9 @@ describe('validator', () => {
   const resolveBizInclude = decomposedResolver()
 
   it('validates a model against the migrated business template', () => {
-    const model = parseModel(validModelContent)
+    const model = parseKnowledge(validModelContent)
 
-    const result = validateModel(
+    const result = validateKnowledge(
       model,
       {
         name: 'business_V_0-3-0',
@@ -243,13 +243,13 @@ describe('validator', () => {
   })
 
   it('rejects model with unknown concept', () => {
-    const model = parseModel(validModelContent)
+    const model = parseKnowledge(validModelContent)
 
     model.elements.set('NonExistentConcept', [
       { type: 'NonExistentConcept', name: 'Test', description: '', fields: {}, markers: {} },
     ])
 
-    const result = validateModel(
+    const result = validateKnowledge(
       model,
       {
         name: 'business_V_0-3-0',
@@ -379,13 +379,13 @@ describe('identity collision throws error (R-IE-02)', () => {
     expect(() => reg.register(null, 'Root')).toThrow(/Root/i)
   })
 
-  it('normalizeSingleModel reports collision as issue', async () => {
-    const { normalizeSingleModel } = await import('../src/recursiveParser')
+  it('normalizeSingleKnowledge reports collision as issue', async () => {
+    const { normalizeSingleKnowledge } = await import('../src/recursiveParser')
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Collision Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -403,7 +403,7 @@ describe('identity collision throws error (R-IE-02)', () => {
       '',
     ].join('\n')
 
-    const result = normalizeSingleModel(content, 'test_NN.md', 'CollisionTest')
+    const result = normalizeSingleKnowledge(content, 'test_NN.md', 'CollisionTest')
     const collisionIssues = result.issues.filter((i) =>
       i.message.toLowerCase().includes('duplicate'),
     )
@@ -414,13 +414,13 @@ describe('identity collision throws error (R-IE-02)', () => {
     expect(hasHashSuffix).toBe(false)
   })
 
-  it('same-named elements across concepts are reported in normalizeSingleModel', async () => {
-    const { normalizeSingleModel } = await import('../src/recursiveParser')
+  it('same-named elements across concepts are reported in normalizeSingleKnowledge', async () => {
+    const { normalizeSingleKnowledge } = await import('../src/recursiveParser')
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Duplicate Element"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -440,7 +440,7 @@ describe('identity collision throws error (R-IE-02)', () => {
       '',
     ].join('\n')
 
-    const result = normalizeSingleModel(content, 'test_NN.md', 'DupTest')
+    const result = normalizeSingleKnowledge(content, 'test_NN.md', 'DupTest')
     const collisionIssues = result.issues.filter((i) =>
       i.message.toLowerCase().includes('duplicate'),
     )
@@ -448,12 +448,12 @@ describe('identity collision throws error (R-IE-02)', () => {
   })
 
   it('catches matching names under different taxonomy parents', async () => {
-    const { normalizeSingleModel } = await import('../src/recursiveParser')
+    const { normalizeSingleKnowledge } = await import('../src/recursiveParser')
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Nested Dup"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -476,7 +476,7 @@ describe('identity collision throws error (R-IE-02)', () => {
       '',
     ].join('\n')
 
-    const result = normalizeSingleModel(content, 'test_NN.md', 'NestedDup')
+    const result = normalizeSingleKnowledge(content, 'test_NN.md', 'NestedDup')
     const collisionIssues = result.issues.filter((i) =>
       i.message.toLowerCase().includes('duplicate'),
     )
@@ -490,7 +490,7 @@ describe('applyMutation (R-IE-01)', () => {
       '---',
       'spec_version: "V_0-2-0"',
       'level: 2',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -521,7 +521,7 @@ describe('applyMutation (R-IE-01)', () => {
       '  First element.',
       '',
     ].join('\n')
-    return parseModel(content)
+    return parseKnowledge(content)
   }
 
   it('adds a concept', () => {
@@ -641,11 +641,11 @@ describe('applyMutation (R-IE-01)', () => {
   })
 
   it('rename_concept updates matrix declaration source/target', () => {
-    const model = parseModel([
+    const model = parseKnowledge([
       '---',
       'spec_version: "V_0-2-0"',
       'level: 2',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Rename Concept Matrix"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -693,11 +693,11 @@ describe('applyMutation (R-IE-01)', () => {
   })
 
   it('rename_element updates taxonomy entries', () => {
-    const model = parseModel([
+    const model = parseKnowledge([
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Rename Element Taxonomy"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -745,7 +745,7 @@ describe('CRLF line-ending handling', () => {
       '---',
       'spec_version: "V_0-1-1"',
       'level: 3',
-      'model_version: "V_0-1-1"',
+      'knowledge_version: "V_0-1-1"',
       'title: "CRLF fixture"',
       'mode: "FILE"',
       '---',
@@ -764,8 +764,8 @@ describe('CRLF line-ending handling', () => {
     ].join('\n')
     const crlfContent = lfContent.replace(/\n/g, '\r\n')
 
-    const lfModel = parseModel(lfContent)
-    const crlfModel = parseModel(crlfContent)
+    const lfModel = parseKnowledge(lfContent)
+    const crlfModel = parseKnowledge(crlfContent)
 
     expect(crlfModel.taxonomy.length).toBe(lfModel.taxonomy.length)
     expect(crlfModel.taxonomy.length).toBeGreaterThan(0)
@@ -785,7 +785,7 @@ describe('CRLF line-ending handling', () => {
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-1-2"',
+      'knowledge_version: "V_0-1-2"',
       'title: "Inline Test"',
       'mode: "FILE"',
       'parent_spec:',
@@ -815,7 +815,7 @@ describe('CRLF line-ending handling', () => {
       '',
     ].join('\n')
     const crlfContent = lfContent.replace(/\n/g, '\r\n')
-    const model = parseModel(crlfContent)
+    const model = parseKnowledge(crlfContent)
 
     expect(model.taxonomy.length).toBeGreaterThan(0)
     const segEdge = model.taxonomy.find((e) => e.parent === 'Market')
@@ -897,13 +897,13 @@ describe('slugify R-IE-06 enhancements', () => {
 })
 
 describe('diagnostic policy (R-IE-05) — slug collisions surfaced', () => {
-  it('normalizeSingleModel surfaces slug collisions as issues', async () => {
-    const { normalizeSingleModel } = await import('../src/recursiveParser')
+  it('normalizeSingleKnowledge surfaces slug collisions as issues', async () => {
+    const { normalizeSingleKnowledge } = await import('../src/recursiveParser')
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Slug Collision"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -922,7 +922,7 @@ describe('diagnostic policy (R-IE-05) — slug collisions surfaced', () => {
       '',
     ].join('\n')
 
-    const result = normalizeSingleModel(content, 'test_NN.md', 'SlugTest')
+    const result = normalizeSingleKnowledge(content, 'test_NN.md', 'SlugTest')
     const slugIssues = result.issues.filter((i) =>
       i.message.toLowerCase().includes('slug'),
     )
@@ -932,11 +932,11 @@ describe('diagnostic policy (R-IE-05) — slug collisions surfaced', () => {
 
 describe('validateReferences (R-IE-04)', () => {
   it('reports dangling matrix reference', () => {
-    const parsed = parseModel([
+    const parsed = parseKnowledge([
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Ref Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -971,11 +971,11 @@ describe('validateReferences (R-IE-04)', () => {
   })
 
   it('passes when all matrix references resolve', () => {
-    const parsed = parseModel([
+    const parsed = parseKnowledge([
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Ref Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1007,11 +1007,11 @@ describe('validateReferences (R-IE-04)', () => {
   })
 
   it('resolves a matrix reference that differs only by dash character, as a WARNING not an ERROR (Fix 3)', () => {
-    const parsed = parseModel([
+    const parsed = parseKnowledge([
       '---',
       'spec_version: "V_0-2-0"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Ref Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1047,7 +1047,7 @@ describe('validateReferences (R-IE-04)', () => {
   })
 })
 
-describe('reference-typed element fields via validateModel (R-IE-04)', () => {
+describe('reference-typed element fields via validateKnowledge (R-IE-04)', () => {
   function buildTemplate(targetConcepts?: string[]): {
     name: string
     level: 2
@@ -1087,16 +1087,16 @@ target_concepts:: [${targetConcepts.join(', ')}]`
     }
   }
 
-  function buildModel(locationValue?: string, withGardenElement = false): ReturnType<typeof parseModel> {
+  function buildModel(locationValue?: string, withGardenElement = false): ReturnType<typeof parseKnowledge> {
     const gardenSection = withGardenElement
       ? '# NN Gardens\n\n## NN Gardens: Jardín Exterior\n  A garden.\n'
       : ''
-    return parseModel(
+    return parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Ref Model"',
         'parent_spec:',
         '  name: "ref_V_1-0-0"',
@@ -1117,13 +1117,13 @@ target_concepts:: [${targetConcepts.join(', ')}]`
   }
 
   it('passes when a reference field value resolves to an existing element', () => {
-    const result = validateModel(buildModel('Jardín Exterior', true), buildTemplate() as any, null)
+    const result = validateKnowledge(buildModel('Jardín Exterior', true), buildTemplate() as any, null)
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
 
   it('rejects a dangling reference field value (location:: Jardín Exterior)', () => {
-    const result = validateModel(buildModel('Jardín Exterior', false), buildTemplate() as any, null)
+    const result = validateKnowledge(buildModel('Jardín Exterior', false), buildTemplate() as any, null)
     expect(result.valid).toBe(false)
     const err = result.errors.find((e) => e.message.includes('does not match any element name'))
     expect(err).toBeDefined()
@@ -1134,18 +1134,18 @@ target_concepts:: [${targetConcepts.join(', ')}]`
 
   it('passes when the resolved element belongs to an allowed target_concept', () => {
     const model = buildModel('Jardín Exterior', true)
-    const result = validateModel(model, buildTemplate(['Gardens']) as any, null)
+    const result = validateKnowledge(model, buildTemplate(['Gardens']) as any, null)
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
 
   it('rejects a reference resolving to an element outside the field target_concepts', () => {
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Ref Model"',
         'parent_spec:',
         '  name: "ref_V_1-0-0"',
@@ -1165,7 +1165,7 @@ target_concepts:: [${targetConcepts.join(', ')}]`
         '',
       ].join('\n'),
     )
-    const result = validateModel(model, buildTemplate(['Gardens']) as any, null)
+    const result = validateKnowledge(model, buildTemplate(['Gardens']) as any, null)
     expect(result.valid).toBe(false)
     const err = result.errors.find((e) => e.message.includes('target_concepts'))
     expect(err).toBeDefined()
@@ -1174,7 +1174,7 @@ target_concepts:: [${targetConcepts.join(', ')}]`
     expect(err!.message).toContain('not in target_concepts')
   })
 
-  it('reports a matrix row/col that does not resolve to an element as a WARNING via validateModel', () => {
+  it('reports a matrix row/col that does not resolve to an element as a WARNING via validateKnowledge', () => {
     const template = {
       name: 'mx_V_1-0-0',
       level: 2 as const,
@@ -1201,12 +1201,12 @@ target_concepts:: [${targetConcepts.join(', ')}]`
         '',
       ].join('\n'),
     }
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Matrix Ref Model"',
         'parent_spec:',
         '  name: "mx_V_1-0-0"',
@@ -1231,7 +1231,7 @@ target_concepts:: [${targetConcepts.join(', ')}]`
         '',
       ].join('\n'),
     )
-    const result = validateModel(model, template as any, null)
+    const result = validateKnowledge(model, template as any, null)
     // Matrix label drift is advisory (WARNING): real V_0-3-0 fixtures use
     // numbered/abbreviated labels, so it must not invalidate the model.
     expect(result.valid).toBe(true)
@@ -1259,7 +1259,7 @@ describe('legacy params → values reader tolerance (4.5)', () => {
       '',
     ].join('\n')
 
-    const parsed = parseModel(content)
+    const parsed = parseKnowledge(content)
     const matrix = parsed.frontmatter.matrices?.find((m) => m.name === 'test matrix')
     expect(matrix).toBeDefined()
     expect((matrix as any).values).toEqual(['Red', 'Green', 'Blue'])
@@ -1284,7 +1284,7 @@ describe('legacy params → values reader tolerance (4.5)', () => {
       '',
     ].join('\n')
 
-    const parsed = parseModel(content)
+    const parsed = parseKnowledge(content)
     const matrix = parsed.frontmatter.matrices?.find((m) => m.name === 'test matrix')
     expect(matrix).toBeDefined()
     expect((matrix as any).values).toEqual(['Responsible', 'Accountable'])
@@ -1297,7 +1297,7 @@ describe('element slug derivation (FR-002)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1311,7 +1311,7 @@ describe('element slug derivation (FR-002)', () => {
       '',
     ].join('\n')
 
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     const elements = model.elements.get('Problems')
     expect(elements).toBeDefined()
     expect(elements![0].slug).toBe('my-great-element')
@@ -1322,7 +1322,7 @@ describe('element slug derivation (FR-002)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1340,7 +1340,7 @@ describe('element slug derivation (FR-002)', () => {
       '',
     ].join('\n')
 
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     const elements = model.elements.get('Problems')
     expect(elements).toBeDefined()
     expect(elements![0].slug).toBe('my-custom-slug')
@@ -1384,7 +1384,7 @@ describe('element slug derivation (FR-002)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1400,14 +1400,14 @@ describe('element slug derivation (FR-002)', () => {
       '',
     ].join('\n')
 
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     expect(model.slugCollisions).toBeDefined()
     expect(model.slugCollisions!.length).toBeGreaterThanOrEqual(1)
     expect(model.slugCollisions![0].slug).toBe('my-element')
     expect(model.slugCollisions![0].elements).toContain('My Element')
   })
 
-  it('passes slug from ElementNode to ModelNode via recursiveParser', async () => {
+  it('passes slug from ElementNode to KnowledgeNode via recursiveParser', async () => {
     // This is tested via recursiveParse which maps elements to model nodes.
     // We verify the slug field is populated on the model node.
     const { recursiveParse } = await import('../src/recursiveParser')
@@ -1435,7 +1435,7 @@ describe('element slug derivation (FR-002)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1466,7 +1466,7 @@ describe('element slug derivation (FR-002)', () => {
     ].join('\n')
 
     const root = fakeDir([
-      ['index.md', fakeFile('index.md', indexContent)],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', indexContent)],
       ['test_NN.md', fakeFile('test_NN.md', modelContent)],
     ])
 
@@ -1485,7 +1485,7 @@ describe('ConceptField.type with asset types (FR-003)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Asset Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1520,7 +1520,7 @@ describe('ConceptField.type with asset types (FR-003)', () => {
       '',
     ].join('\n')
 
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     expect(model.frontmatter.concepts).toBeDefined()
     const screenshotConcept = model.frontmatter.concepts!.find((c) => c.name === 'Screenshots')
     expect(screenshotConcept).toBeDefined()
@@ -1540,7 +1540,7 @@ describe('asset storage convention', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Asset Mode Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1560,7 +1560,7 @@ describe('asset storage convention', () => {
 
     // asset_mode is not part of SpecFrontmatter; it is preserved as an
     // unrecognized field but never consulted by the parser.
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     expect(model.frontmatter.asset_mode).toBe('per-element')
   })
 
@@ -1590,7 +1590,7 @@ describe('asset storage convention', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Asset Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1633,7 +1633,7 @@ describe('asset storage convention', () => {
     ].join('\n')
 
     const root = fakeDir([
-      ['index.md', fakeFile('index.md', indexContent)],
+      ['domaiNN_NN.md', fakeFile('domaiNN_NN.md', indexContent)],
       ['test_NN.md', fakeFile('test_NN.md', modelContent)],
     ])
 
@@ -1653,12 +1653,12 @@ describe('asset storage convention', () => {
 /* ── FR-007: FOLDER mode rejection ──────────────────────────── */
 
 describe('FOLDER mode rejection (FR-007)', () => {
-  it('parseModel emits a warning for FOLDER mode', () => {
+  it('parseKnowledge emits a warning for FOLDER mode', () => {
     const content = [
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1676,7 +1676,7 @@ describe('FOLDER mode rejection (FR-007)', () => {
       '',
     ].join('\n')
 
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     expect(model.parseWarnings).toBeDefined()
     expect(model.parseWarnings!.some((w) => w.includes('FOLDER'))).toBe(true)
   })
@@ -1687,7 +1687,7 @@ describe('FOLDER mode rejection (FR-007)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1713,12 +1713,12 @@ describe('FOLDER mode rejection (FR-007)', () => {
     expect(folderCheck!.message).toContain('FOLDER')
   })
 
-  it('validateModel reports error for FOLDER mode', () => {
+  it('validateKnowledge reports error for FOLDER mode', () => {
     const content = [
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1736,8 +1736,8 @@ describe('FOLDER mode rejection (FR-007)', () => {
       '',
     ].join('\n')
 
-    const model = parseModel(content)
-    const result = validateModel(model, null, null)
+    const model = parseKnowledge(content)
+    const result = validateKnowledge(model, null, null)
     const folderError = result.errors.find((e) => e.message.includes('FOLDER'))
     expect(folderError).toBeDefined()
     expect(folderError!.severity).toBe('error')
@@ -1748,7 +1748,7 @@ describe('FOLDER mode rejection (FR-007)', () => {
       '---',
       'spec_version: "V_0-1-3"',
       'level: 3',
-      'model_version: "V_0-0-1"',
+      'knowledge_version: "V_0-0-1"',
       'title: "Test"',
       'parent_spec:',
       '  name: "test_V_0-1-1"',
@@ -1760,7 +1760,7 @@ describe('FOLDER mode rejection (FR-007)', () => {
       '* [[Product]]',
     ].join('\n')
 
-    const model = parseModel(modelContent)
+    const model = parseKnowledge(modelContent)
     const mockTemplate = {
       name: 'test_V_0-1-1',
       level: 2 as const,
@@ -1793,7 +1793,7 @@ describe('FOLDER mode rejection (FR-007)', () => {
       ].join('\n'),
     }
 
-    const result = validateModel(model, mockTemplate, null)
+    const result = validateKnowledge(model, mockTemplate, null)
     expect(result.warnings.length).toBe(1)
 
     const docWarning = result.warnings.find((w) => w.path === 'parent.concepts')
@@ -1906,12 +1906,12 @@ describe('matrix widget inference (R-MM-08)', () => {
 
 describe('matrix value-set validation (R-MM-08)', () => {
   function buildModel(cellValue: string) {
-    return parseModel(
+    return parseKnowledge(
       [
         '---',
         'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_0-1-2"',
+        'knowledge_version: "V_0-1-2"',
         'title: "Val Test"',
         'parent_spec:',
         '  name: "business_V_0-2-1"',
@@ -1972,14 +1972,14 @@ describe('matrix value-set validation (R-MM-08)', () => {
 
   it('accepts declared values, the empty cell and the boolean marker X', () => {
     for (const value of ['High', '-', 'X']) {
-      const result = validateModel(buildModel(value), buildTemplate() as any, null)
+      const result = validateKnowledge(buildModel(value), buildTemplate() as any, null)
       const valueWarnings = result.warnings.filter((w) => w.message.includes('value set'))
       expect(valueWarnings).toHaveLength(0)
     }
   })
 
   it('flags cell values outside the declared set', () => {
-    const result = validateModel(buildModel('Garbage'), buildTemplate() as any, null)
+    const result = validateKnowledge(buildModel('Garbage'), buildTemplate() as any, null)
     const warning = result.warnings.find((w) => w.message.includes('value set'))
     expect(warning).toBeDefined()
     expect(warning!.message).toContain('Garbage')
@@ -2008,9 +2008,9 @@ describe('matrix metadata serializer round-trip', () => {
       '',
     ].join('\n')
 
-    const parsed = parseModel(content)
-    const serialized = serializeModel(parsed)
-    const reparsed = parseModel(serialized)
+    const parsed = parseKnowledge(content)
+    const serialized = serializeKnowledge(parsed)
+    const reparsed = parseKnowledge(serialized)
 
     const m = reparsed.frontmatter.matrices!.find((x) => x.name === 'test matrix')!
     expect(m.widgetType).toBe('set')
@@ -2039,8 +2039,8 @@ describe('matrix metadata serializer round-trip', () => {
       '',
     ].join('\n')
 
-    const parsed = parseModel(content)
-    const reparsed = parseModel(serializeModel(parsed))
+    const parsed = parseKnowledge(content)
+    const reparsed = parseKnowledge(serializeKnowledge(parsed))
     const m = reparsed.frontmatter.matrices!.find((x) => x.name === 'test matrix')!
     expect(m.values).toEqual(['Low', 'Medium', 'High'])
   })
@@ -2078,12 +2078,12 @@ describe('implicit and explicit reference validation (P1)', () => {
   }
 
   it('flags dangling implicit reference (location:: Jardín Exterior)', () => {
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Ref Model"',
         'parent_spec:',
         '  name: "ref_V_1-0-0"',
@@ -2100,7 +2100,7 @@ describe('implicit and explicit reference validation (P1)', () => {
       ].join('\n'),
     )
 
-    const result = validateModel(model, buildTemplate(), null)
+    const result = validateKnowledge(model, buildTemplate(), null)
     expect(result.valid).toBe(false)
     const err = result.errors.find((e) => e.path.includes('location'))
     expect(err).toBeDefined()
@@ -2109,12 +2109,12 @@ describe('implicit and explicit reference validation (P1)', () => {
   })
 
   it('passes valid implicit reference (location:: Jardín)', () => {
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Ref Model"',
         'parent_spec:',
         '  name: "ref_V_1-0-0"',
@@ -2135,18 +2135,18 @@ describe('implicit and explicit reference validation (P1)', () => {
       ].join('\n'),
     )
 
-    const result = validateModel(model, buildTemplate(), null)
+    const result = validateKnowledge(model, buildTemplate(), null)
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
 
   it('flags target_concepts mismatch on custom_ref', () => {
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Ref Model"',
         'parent_spec:',
         '  name: "ref_V_1-0-0"',
@@ -2164,7 +2164,7 @@ describe('implicit and explicit reference validation (P1)', () => {
       ].join('\n'),
     )
 
-    const result = validateModel(model, buildTemplate(), null)
+    const result = validateKnowledge(model, buildTemplate(), null)
     expect(result.valid).toBe(false)
     const err = result.errors.find((e) => e.path.includes('custom_ref'))
     expect(err).toBeDefined()
@@ -2201,12 +2201,12 @@ describe('taxonomy hierarchy cross-check (Fix 4)', () => {
   }
 
   it('does not warn when the reference resolves to the taxonomy parent concept (coherent)', () => {
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Hierarchy Model"',
         'parent_spec:',
         '  name: "hier_V_1-0-0"',
@@ -2231,18 +2231,18 @@ describe('taxonomy hierarchy cross-check (Fix 4)', () => {
       ].join('\n'),
     )
 
-    const result = validateModel(model, buildHierarchyTemplate(), null)
+    const result = validateKnowledge(model, buildHierarchyTemplate(), null)
     const hierarchyWarnings = result.warnings.filter((w) => w.message.includes('Hierarchy inconsistency'))
     expect(hierarchyWarnings).toHaveLength(0)
   })
 
   it('warns when an element references an unrelated concept that contradicts the index taxonomy (incoherent)', () => {
-    const model = parseModel(
+    const model = parseKnowledge(
       [
         '---',
         'spec_version: "V_0-3-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'title: "Hierarchy Model"',
         'parent_spec:',
         '  name: "hier_V_1-0-0"',
@@ -2267,7 +2267,7 @@ describe('taxonomy hierarchy cross-check (Fix 4)', () => {
       ].join('\n'),
     )
 
-    const result = validateModel(model, buildHierarchyTemplate(), null)
+    const result = validateKnowledge(model, buildHierarchyTemplate(), null)
     expect(result.valid).toBe(true) // WARNING only, never ERROR
     const hierarchyWarnings = result.warnings.filter((w) => w.message.includes('Hierarchy inconsistency'))
     expect(hierarchyWarnings).toHaveLength(1)

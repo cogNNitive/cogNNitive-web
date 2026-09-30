@@ -1,17 +1,17 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses Comprehensive_Test_Procedure_V_1-0-0_procedures_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses Comprehensive_Test_Procedure_V_1-0-0_procedures_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 0,
-  "nodeCount": 1,
+  "nodeCount": 2,
   "nodes": [
     {
       "childCount": 0,
       "fieldKeys": [
+        "knowledge_version",
         "last_saved",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "spec_url",
         "spec_version",
@@ -21,28 +21,54 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses Comprehensive
       "id": "Comprehensive_Test_Procedure_V_1-0-0_procedures",
       "markerKeys": [],
       "name": "Comprehensive_Test_Procedure_V_1-0-0_procedures",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "Comprehensive Test Procedure",
+    },
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
     },
   ],
   "rootIds": [
-    "Comprehensive_Test_Procedure_V_1-0-0_procedures",
+    "domaiNN",
   ],
 }
 `;
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses EngineeringTeam_V_1-0-0_organization_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses EngineeringTeam_V_1-0-0_organization_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 0,
-  "nodeCount": 1,
+  "nodeCount": 2,
   "nodes": [
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
+    },
     {
       "childCount": 0,
       "fieldKeys": [
+        "knowledge_version",
         "last_saved",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "spec_url",
         "spec_version",
@@ -52,21 +78,34 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses EngineeringTe
       "id": "EngineeringTeam_V_1-0-0_organization",
       "markerKeys": [],
       "name": "EngineeringTeam_V_1-0-0_organization",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "Engineering Team",
     },
   ],
   "rootIds": [
-    "EngineeringTeam_V_1-0-0_organization",
+    "domaiNN",
   ],
 }
 `;
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses FORMAT_V_0-1-0_business_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses FORMAT_V_0-1-0_business_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 11,
-  "nodeCount": 132,
+  "nodeCount": 133,
   "nodes": [
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
+    },
     {
       "childCount": 131,
       "fieldKeys": [
@@ -178,10 +217,10 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses FORMAT_V_0-1-
         "features-milestones matrix||FORMAT_V_0-1-0_business/Version Bump (engine)||FORMAT_V_0-1-0_business/V_1-1-0 — Procedures Cloud alpha",
         "features-milestones matrix||FORMAT_V_0-1-0_business/Version Bump (engine)||FORMAT_V_0-1-0_business/V_2-0-0 — Enterprise Suite",
         "features-milestones matrix||FORMAT_V_0-1-0_business/Version Bump (engine)||FORMAT_V_0-1-0_business/V_3-0-0 — Template Marketplace",
+        "knowledge_version",
         "last_saved",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "problems-value propositions matrix||FORMAT_V_0-1-0_business/Compliance y auditoría sin trazabilidad||FORMAT_V_0-1-0_business/Business Template: Un archivo = contexto IA completo",
         "problems-value propositions matrix||FORMAT_V_0-1-0_business/Compliance y auditoría sin trazabilidad||FORMAT_V_0-1-0_business/Coherencia automatizada (Business)",
@@ -259,7 +298,7 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses FORMAT_V_0-1-
       "id": "FORMAT_V_0-1-0_business",
       "markerKeys": [],
       "name": "FORMAT_V_0-1-0_business",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "FORMAT",
     },
     {
@@ -1934,23 +1973,36 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses FORMAT_V_0-1-
     },
   ],
   "rootIds": [
-    "FORMAT_V_0-1-0_business",
+    "domaiNN",
   ],
 }
 `;
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses FORMAT_V_0-1-1_business_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses FORMAT_V_0-1-1_business_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 0,
-  "nodeCount": 1,
+  "nodeCount": 2,
   "nodes": [
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
+    },
     {
       "childCount": 0,
       "fieldKeys": [
+        "knowledge_version",
         "last_saved",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "spec_url",
         "spec_version",
@@ -1959,29 +2011,42 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses FORMAT_V_0-1-
       "id": "FORMAT_V_0-1-1_business",
       "markerKeys": [],
       "name": "FORMAT_V_0-1-1_business",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "FORMAT",
     },
   ],
   "rootIds": [
-    "FORMAT_V_0-1-1_business",
+    "domaiNN",
   ],
 }
 `;
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses Ghostbusters_V_0-1-1_business_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses Ghostbusters_V_0-1-1_business_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 0,
-  "nodeCount": 39,
+  "nodeCount": 40,
   "nodes": [
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
+    },
     {
       "childCount": 38,
       "fieldKeys": [
         "__matrix_defs",
+        "knowledge_version",
         "last_saved",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "problems-value propositions matrix||Ghostbusters_V_0-1-1_business/Fear and Emotional Trauma||Ghostbusters_V_0-1-1_business/Guaranteed Entity Removal",
         "problems-value propositions matrix||Ghostbusters_V_0-1-1_business/Fear and Emotional Trauma||Ghostbusters_V_0-1-1_business/Insurance Documentation",
@@ -2006,7 +2071,7 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses Ghostbusters_
       "id": "Ghostbusters_V_0-1-1_business",
       "markerKeys": [],
       "name": "Ghostbusters_V_0-1-1_business",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "Ghostbusters",
     },
     {
@@ -2374,23 +2439,36 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses Ghostbusters_
     },
   ],
   "rootIds": [
-    "Ghostbusters_V_0-1-1_business",
+    "domaiNN",
   ],
 }
 `;
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses iNNv0_Innovation_Process_V_1-0-0_procedures_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses iNNv0_Innovation_Process_V_1-0-0_procedures_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 0,
-  "nodeCount": 25,
+  "nodeCount": 26,
   "nodes": [
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
+    },
     {
       "childCount": 24,
       "fieldKeys": [
         "__matrix_defs",
+        "knowledge_version",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "spec_url",
         "spec_version",
@@ -2399,7 +2477,7 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses iNNv0_Innovat
       "id": "iNNv0_Innovation_Process_V_1-0-0_procedures",
       "markerKeys": [],
       "name": "iNNv0_Innovation_Process_V_1-0-0_procedures",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "document",
     },
     {
@@ -2628,23 +2706,36 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses iNNv0_Innovat
     },
   ],
   "rootIds": [
-    "iNNv0_Innovation_Process_V_1-0-0_procedures",
+    "domaiNN",
   ],
 }
 `;
 
-exports[`recursiveParser golden: frozen models/* fixtures > parses mini-file_V_0-0-1_business_F.md into a normalized graph snapshot 1`] = `
+exports[`recursiveParser golden: frozen kNNowledge/* fixtures > parses mini-file_V_0-0-1_business_NN.md into a normalized graph snapshot 1`] = `
 {
   "issueCount": 0,
-  "nodeCount": 5,
+  "nodeCount": 6,
   "nodes": [
+    {
+      "childCount": 1,
+      "fieldKeys": [
+        "level",
+        "spec_version",
+        "title",
+      ],
+      "id": "domaiNN",
+      "markerKeys": [],
+      "name": "domaiNN",
+      "parentId": null,
+      "type": "Workspace Index",
+    },
     {
       "childCount": 4,
       "fieldKeys": [
         "__matrix_defs",
+        "knowledge_version",
         "level",
         "mode",
-        "model_version",
         "parent_spec",
         "problems-value propositions matrix||mini-file_V_0-0-1_business/Sample Problem||mini-file_V_0-0-1_business/Core Value",
         "problems-value propositions matrix||mini-file_V_0-0-1_business/Second Problem||mini-file_V_0-0-1_business/Core Value",
@@ -2655,7 +2746,7 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses mini-file_V_0
       "id": "mini-file_V_0-0-1_business",
       "markerKeys": [],
       "name": "mini-file_V_0-0-1_business",
-      "parentId": null,
+      "parentId": "domaiNN",
       "type": "Mini File — FILE mode smoke test",
     },
     {
@@ -2696,7 +2787,7 @@ exports[`recursiveParser golden: frozen models/* fixtures > parses mini-file_V_0
     },
   ],
   "rootIds": [
-    "mini-file_V_0-0-1_business",
+    "domaiNN",
   ],
 }
 `;

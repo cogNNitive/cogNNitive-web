@@ -10,21 +10,21 @@ All templates are validated against Level 1 (`iNNfo_V_0-2-1`) and are declared i
 
 | Template / App | Adopted Version | Description & Scope | Source Spec |
 |---|---|---|---|
-| **Video** | `V_0-3-2` | Video production, Anydeo VUS scripts, voiceover & talking avatars | [`specs/templates/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/video/spec_NN.md) |
-| **Business** | `V_0-2-5` | Composite template combining Business Model and Analysis | [`specs/templates/business/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/business/spec_NN.md) |
-| **Business Model** | `V_0-2-3` | Value propositions, segments, and channels | [`specs/templates/business-model/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/business-model/spec_NN.md) |
-| **Analysis** | `V_0-2-1` | Strategic analysis, SWOT, and evaluable matrices | [`specs/templates/analysis/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/analysis/spec_NN.md) |
-| **Documentation** | `V_0-2-1` | Technical specifications and manual authoring | [`specs/templates/documentation/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/documentation/spec_NN.md) |
-| **Design Presets** | `V_0-1-0` | Color palettes, typography presets, and visual styles | [`specs/templates/design-presets/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/design-presets/spec_NN.md) |
-| **Procedures** | `V_0-2-2` | Step-by-step operational playbooks and workflows | [`specs/templates/procedures/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/procedures/spec_NN.md) |
-| **Projects** | `V_0-2-2` | Deliverables, milestones, tasks, and roadmaps | [`specs/templates/projects/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/projects/spec_NN.md) |
-| **Organization** | `V_0-2-2` | Org charts, teams, roles, and responsibilities | [`specs/templates/organization/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/organization/spec_NN.md) |
-| **Innovation** | `V_0-2-1` | Ideas, research hypotheses, and experimentation | [`specs/templates/innovation/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/innovation/spec_NN.md) |
-| **Metrics** | `V_0-2-1` | Key Performance Indicators and quantitative tracking | [`specs/templates/metrics/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/metrics/spec_NN.md) |
-| **Repository** | `V_0-1-1` | Source code repositories and package tracking | [`specs/templates/repository/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/repository/spec_NN.md) |
-| **Sources** | `V_0-1-0` | External citations and reference catalogs | [`specs/templates/sources/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/sources/spec_NN.md) |
-| **Workspace** | `V_0-6-0` | Top-level workspace layout and metadata | [`specs/templates/workspace_spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/workspace_spec_NN.md) |
-| **Blank** | `V_0-2-0` | Minimal starter schema | [`specs/templates/blank/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/templates/blank/spec_NN.md) |
+| **Video** | `V_0-3-2` | Video production, Anydeo VUS scripts, voiceover & talking avatars | [`specs/templates/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
+| **Business** | `V_0-2-5` | Composite template combining Business Model and Analysis | [`specs/templates/business/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/business/spec_NN.md) |
+| **Business Model** | `V_0-2-3` | Value propositions, segments, and channels | [`specs/templates/business-model/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md) |
+| **Analysis** | `V_0-2-1` | Strategic analysis, SWOT, and evaluable matrices | [`specs/templates/analysis/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md) |
+| **Documentation** | `V_0-2-1` | Technical specifications and manual authoring | [`specs/templates/documentation/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md) |
+| **Design Presets** | `V_0-1-0` | Color palettes, typography presets, and visual styles | [`specs/templates/design-presets/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md) |
+| **Procedures** | `V_0-2-2` | Step-by-step operational playbooks and workflows | [`specs/templates/procedures/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md) |
+| **Projects** | `V_0-2-2` | Deliverables, milestones, tasks, and roadmaps | [`specs/templates/projects/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md) |
+| **Organization** | `V_0-2-2` | Org charts, teams, roles, and responsibilities | [`specs/templates/organization/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md) |
+| **Innovation** | `V_0-2-1` | Ideas, research hypotheses, and experimentation | [`specs/templates/innovation/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md) |
+| **Metrics** | `V_0-2-1` | Key Performance Indicators and quantitative tracking | [`specs/templates/metrics/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md) |
+| **Repository** | `V_0-1-1` | Source code repositories and package tracking | [`specs/templates/repository/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md) |
+| **Sources** | `V_0-1-0` | External citations and reference catalogs | [`specs/templates/sources/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md) |
+| **Workspace** | `V_0-6-0` | Top-level workspace layout and metadata | [`specs/templates/workspace_spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md) |
+| **Blank** | `V_0-2-0` | Minimal starter schema | [`specs/templates/blank/spec_NN.md`](https://github.com/cogNNitive/cogNNitive/blob/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md) |
 
 ---
 

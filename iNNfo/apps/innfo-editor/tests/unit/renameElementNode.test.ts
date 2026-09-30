@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
 
-describe('modelStore.renameElementNode propagation', () => {
+describe('knowledgeStore.renameElementNode propagation', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('renames node and propagates across referencing fields and wikilinks', () => {
-    const store = useModelStore()
+    const store = useKnowledgeStore()
     store.setGraph(
       {
         'doc/node1': {
@@ -55,7 +55,7 @@ describe('modelStore.renameElementNode propagation', () => {
   })
 
   it('marks root node as dirty and serializes renamed element in recursiveSerialize', async () => {
-    const store = useModelStore()
+    const store = useKnowledgeStore()
     const rootId = 'doc'
     store.setGraph(
       {
@@ -119,7 +119,7 @@ describe('modelStore.renameElementNode propagation', () => {
   })
 
   it('updates selectedNodeId in uiStore if the renamed node is currently selected', () => {
-    const store = useModelStore()
+    const store = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const rootId = 'doc'
@@ -166,7 +166,7 @@ describe('modelStore.renameElementNode propagation', () => {
   })
 
   it('does not re-validate an unrelated model when renaming inside another one (F-15)', () => {
-    const store = useModelStore()
+    const store = useKnowledgeStore()
     store.setGraph(
       {
         modelA: {

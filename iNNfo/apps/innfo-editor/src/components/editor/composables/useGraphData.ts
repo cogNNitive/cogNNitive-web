@@ -1,6 +1,6 @@
 import { computed, Ref } from 'vue'
 import { hsl } from 'd3-color'
-import { useModelStore } from '../../../stores/modelStore'
+import { useKnowledgeStore } from '../../../stores/knowledgeStore'
 import {
   getConceptMeta,
   getHexColor as resolveHexColor,
@@ -37,7 +37,7 @@ export interface GEdge {
 }
 
 export function useGraphData(localNodeId: Ref<string>) {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   // ── Build concept color map from node types ──
   const conceptColors: Record<string, string> = {}
@@ -73,7 +73,7 @@ export function useGraphData(localNodeId: Ref<string>) {
 
     // Collect unique types for concept-level grouping
     const conceptTypes = new Set<string>()
-    for (const node of Object.values(modelStore.nodes)) {
+    for (const node of Object.values(knowledgeStore.nodes)) {
       if (node.type) conceptTypes.add(node.type)
     }
 
@@ -84,8 +84,8 @@ export function useGraphData(localNodeId: Ref<string>) {
       typeColorMap.set(type, c)
     }
 
-    // Create instance nodes from modelStore.nodes
-    for (const node of Object.values(modelStore.nodes)) {
+    // Create instance nodes from knowledgeStore.nodes
+    for (const node of Object.values(knowledgeStore.nodes)) {
       const typeColor = typeColorMap.get(node.type)
       const conceptColor = node.conceptBinding?.name
         ? (getConceptMeta(node.conceptBinding.name).color ?? 'slate')
@@ -101,8 +101,8 @@ export function useGraphData(localNodeId: Ref<string>) {
     const result: GEdge[] = []
     const nodeSet = new Set(allNodes.value.map((n) => n.id))
 
-    // Build edges from ModelNode.relationships[]
-    for (const node of Object.values(modelStore.nodes)) {
+    // Build edges from KnowledgeNode.relationships[]
+    for (const node of Object.values(knowledgeStore.nodes)) {
       if (node.relationships && node.relationships.length > 0) {
         for (const rel of node.relationships) {
           // `source` edges target a `sources/nn/…` file, not a graph node.

@@ -65,6 +65,16 @@ class FakeDirectoryHandle implements DirectoryHandleLike {
   }
 
   async getFileHandle(name: string, options?: { create?: boolean }): Promise<FileHandleLike> {
+    const normalized = name.replace(/\\/g, '/')
+    if (normalized.includes('/')) {
+      const parts = normalized.split('/')
+      const fileName = parts.pop()!
+      let current: FakeDirectoryHandle = this
+      for (const part of parts) {
+        current = (await current.getDirectoryHandle(part, options)) as FakeDirectoryHandle
+      }
+      return current.getFileHandle(fileName, options)
+    }
     const value = this.tree[name]
     if (typeof value !== 'string') {
       if (options?.create) {
@@ -105,6 +115,15 @@ class FakeDirectoryHandle implements DirectoryHandleLike {
     name: string,
     options?: { create?: boolean },
   ): Promise<DirectoryHandleLike> {
+    const normalized = name.replace(/\\/g, '/')
+    if (normalized.includes('/')) {
+      const parts = normalized.split('/')
+      let current: FakeDirectoryHandle = this
+      for (const part of parts) {
+        current = (await current.getDirectoryHandle(part, options)) as FakeDirectoryHandle
+      }
+      return current
+    }
     const value = this.tree[name]
     if (!value || typeof value === 'string') {
       if (options?.create) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useUiStore } from '../../stores/uiStore'
 import { resolveFileHandleForRead } from '../../services/WorkspacePersistenceService'
@@ -13,7 +13,7 @@ import {
   Terminal,
 } from 'lucide-vue-next'
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const workspaceStore = useWorkspaceStore()
 const uiStore = useUiStore()
 
@@ -41,12 +41,12 @@ function normalizeSlug(str: string): string {
     .replace(/^-|-$/g, '')
 }
 
-// Discovered models from modelStore (domain models only; exclude specs and workspace manifest)
+// Discovered models from knowledgeStore (domain models only; exclude specs and workspace manifest)
 const discoveredModels = computed(() => {
-  return modelStore.rootIds
+  return knowledgeStore.rootIds
     .filter((rootId) => !rootId.startsWith('spec:') && !rootId.startsWith('template:'))
     .filter((rootId) => {
-      const node = modelStore.getNode(rootId)
+      const node = knowledgeStore.getNode(rootId)
       if (!node) return false
 
       const templateName =
@@ -54,20 +54,20 @@ const discoveredModels = computed(() => {
         (node.fields?.['parent_spec']?.value as any)?.name ||
         node.type ||
         ''
-      const normalizedTemplate = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
-      if (normalizedTemplate === 'workspace' || node.type === 'workspace') {
+      const normalizedBlueprint = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
+      if (normalizedBlueprint === 'workspace' || node.type === 'workspace') {
         return false
       }
 
       const sourcePath = (node.source?.path || '').toLowerCase()
-      if (sourcePath.endsWith('workspace_nn.md') || sourcePath.endsWith('index.md')) {
+      if (sourcePath.endsWith('domaiNN_NN.md') || sourcePath.endsWith('index.md')) {
         return false
       }
 
       return true
     })
     .map((rootId) => {
-      const node = modelStore.getNode(rootId)
+      const node = knowledgeStore.getNode(rootId)
       const rawTitle =
         (typeof node?.fields?.['title']?.value === 'string' ? node.fields['title'].value : null) ||
         (typeof node?.fields?.['name']?.value === 'string' ? node.fields['name'].value : null)
@@ -82,7 +82,7 @@ const discoveredModels = computed(() => {
         node?.type ||
         'business'
       const version =
-        (typeof node?.fields?.['model_version']?.value === 'string' ? node.fields['model_version'].value : null) ||
+        (typeof node?.fields?.['knowledge_version']?.value === 'string' ? node.fields['knowledge_version'].value : null) ||
         (node as any)?.version ||
         '1.0.0'
       const desc =
@@ -91,13 +91,13 @@ const discoveredModels = computed(() => {
         ''
 
       const explicitConsole = typeof node?.fields?.['console']?.value === 'string' ? node.fields['console'].value : undefined
-      const normalizedTemplate = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
-      const defaultConsolePath = explicitConsole || `artifacts/${normalizedTemplate}_console.html`
+      const normalizedBlueprint = String(templateName).toLowerCase().replace(/_v_.*$/, '').replace(/_spec.*$/, '')
+      const defaultConsolePath = explicitConsole || `artifacts/${normalizedBlueprint}_console.html`
 
       return {
         id: rootId,
         name,
-        template: normalizedTemplate,
+        template: normalizedBlueprint,
         version,
         description: desc,
         consolePath: defaultConsolePath,
@@ -143,8 +143,8 @@ function getCandidatePaths(target: string): string[] {
       'innfo/export/workspace_hub.html',
     ]
 
-    // Check registered artifacts in modelStore
-    for (const node of Object.values(modelStore.nodes)) {
+    // Check registered artifacts in knowledgeStore
+    for (const node of Object.values(knowledgeStore.nodes)) {
       const isArtifact = node.type === 'Artifacts' || node.conceptBinding?.name === 'Artifacts'
       const ref = typeof node.fields?.['artifact_ref']?.value === 'string' ? node.fields['artifact_ref'].value : ''
       if (isArtifact && ref.endsWith('.html') && (ref.includes('workspace') || ref.includes('hub'))) {
@@ -194,7 +194,7 @@ function getCandidatePaths(target: string): string[] {
   const sourceSlug = normalizeSlug(sourceBasename)
 
   // 2. Scan registered artifact references in graph
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     const isArtifact = node.type === 'Artifacts' || node.conceptBinding?.name === 'Artifacts'
     const ref = typeof node.fields?.['artifact_ref']?.value === 'string' ? node.fields['artifact_ref'].value : ''
     if (isArtifact && ref.endsWith('.html')) {
@@ -450,8 +450,8 @@ async function inlineConsoleResources(
         filename,
         `export/${filename}`,
         `artifacts/${filename}`,
-        `specs/templates/console/${filename}`,
-        `innfo/specs/templates/console/${filename}`,
+        `specs/bluepriNNts/console/${filename}`,
+        `innfo/specs/bluepriNNts/console/${filename}`,
       ].filter(Boolean)
 
       for (const candidate of candidatePaths) {
@@ -474,8 +474,8 @@ async function inlineConsoleResources(
     // B. Fallback: Try fetching via local specs endpoint or relative URL
     if (!scriptContent) {
       const fetchUrls = [
-        `/specs/templates/console/${filename}`,
-        `/innfo/specs/templates/console/${filename}`,
+        `/specs/bluepriNNts/console/${filename}`,
+        `/innfo/specs/bluepriNNts/console/${filename}`,
         src.startsWith('http') ? null : src,
       ].filter(Boolean) as string[]
 

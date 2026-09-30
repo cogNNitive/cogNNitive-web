@@ -48,7 +48,7 @@ export interface VersionClassification {
 
 /** One published version entry in the Level-2 template catalog. */
 export interface TemplateCatalogVersion {
-  template_version: string
+  blueprint_version: string
   spec_version?: string | null
   title?: string | null
   url?: string
@@ -62,13 +62,13 @@ export interface TemplateCatalogEntry {
 }
 
 /**
- * The machine-readable Level-2 template catalog produced by
- * `scripts/template-catalog.mjs`. Only `templates` participates in
+ * The machine-readable Level-2 blueprint catalog produced by
+ * `scripts/blueprint-catalog.mjs`. Only `blueprints` participates in
  * classification; `frozen` families are deliberately excluded (they are never
  * an upgrade target).
  */
 export interface TemplateCatalog {
-  templates: Record<string, TemplateCatalogEntry>
+  blueprints: Record<string, TemplateCatalogEntry>
   frozen?: Record<string, TemplateCatalogEntry>
   generator?: string
   warnings?: string[]
@@ -107,9 +107,9 @@ export function compareVersions(a: string, b: string): number {
 }
 
 /**
- * Extract `{ name, version }` from a canonical template URL. Handles both the
+ * Extract `{ name, version }` from a canonical blueprint URL. Handles both the
  * flat layout (`<name>_V_x-y-z(_spec)?_NN.md`) and the versioned-directory
- * package layout (`templates/<name>/V_x-y-z/spec_NN.md`). Returns `null` when
+ * package layout (`bluepriNNts/<name>/V_x-y-z/spec_NN.md`). Returns `null` when
  * the URL does not pin a versioned canonical template (e.g. a local
  * specialization).
  */
@@ -121,7 +121,7 @@ export function parsePinnedUrl(url: string): { name: string; version: string } |
       ?.replace(/\.md$/i, '') ?? ''
   const flat = basename.match(/^(.+?)_V_(\d+)-(\d+)-(\d+)(?:_spec)?_NN$/i)
   if (flat) return { name: flat[1], version: `V_${flat[2]}-${flat[3]}-${flat[4]}` }
-  const pkg = String(url).match(/templates\/([^/]+)\/V_(\d+)-(\d+)-(\d+)\/spec_NN\.md/i)
+  const pkg = String(url).match(/bluepriNNts\/([^/]+)\/V_(\d+)-(\d+)-(\d+)\/spec_NN\.md/i)
   if (pkg) return { name: pkg[1], version: `V_${pkg[2]}-${pkg[3]}-${pkg[4]}` }
   return null
 }
@@ -175,7 +175,7 @@ export function classifyAgainstCatalog(
     }
   }
 
-  const entry = catalog.templates?.[pinned.name]
+  const entry = catalog.blueprints?.[pinned.name]
   if (!entry) {
     return {
       status: 'unlisted',
@@ -187,7 +187,7 @@ export function classifyAgainstCatalog(
     }
   }
 
-  const known = entry.versions.some((v) => v.template_version === pinned.version)
+    const known = entry.versions.some((v) => v.blueprint_version === pinned.version)
   if (!known && compareVersions(pinned.version, entry.adopted) > 0) {
     return {
       status: 'ahead',

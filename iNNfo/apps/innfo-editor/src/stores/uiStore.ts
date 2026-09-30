@@ -20,9 +20,9 @@ export interface BreadcrumbSegment {
 }
 
 /**
- * UI-only state that does not belong in modelStore.
+ * UI-only state that does not belong in knowledgeStore.
  *
- * Following the design decision: modelStore stays a clean data graph with zero
+ * Following the design decision: knowledgeStore stays a clean data graph with zero
  * UI state. All view-only state (selected node, active view) lives in uiStore.
  */
 export const useUiStore = defineStore('ui', () => {

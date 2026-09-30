@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/console/feedback.schema.json",
+  "title": "innfo-console Reviewer Feedback",
+  "description": "Reviewer-to-knowledge feedback exported from an innfo-console artifact. Export filenames MUST match {PrimaryKnowledge}_V_{version}_{slug}_feedback_{YYYYMMDD-HHMMSS}.json where {version} is V_x-y-z with hyphen separators and the stamp is UTC.",
+  "type": "object",
+  "required": ["meta", "items"],
+  "additionalProperties": true,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "source_knowledge",
+        "source_knowledge_version",
+        "artifact",
+        "artifact_version",
+        "exported_at",
+        "author",
+        "feedback_slug",
+        "viewer"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "source_knowledge": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Primary knowledge name the feedback was collected against."
+        },
+        "source_knowledge_version": {
+          "type": "string",
+          "pattern": "^V_\\d+-\\d+-\\d+$",
+          "description": "Knowledge version pinned at export time (V_x-y-z). Used for staleness checks."
+        },
+        "knowledge": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Primary knowledge name the feedback was collected against."
+        },
+        "knowledge_version": {
+          "type": "string",
+          "pattern": "^V_\\d+-\\d+-\\d+$",
+          "description": "Knowledge version pinned at export time (V_x-y-z). Used for staleness checks."
+        },
+        "artifact": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Console artifact filename the reviewer used."
+        },
+        "artifact_version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Console runtime/shell version that produced the export."
+        },
+        "exported_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$",
+          "description": "ISO-8601 export timestamp with seconds precision."
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human reviewer identifier."
+        },
+        "feedback_slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Slugified reviewer identifier (see session_label alias)."
+        },
+        "session_label": {
+          "type": "string",
+          "description": "Alias for the human identifier the slug was derived from."
+        },
+        "viewer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Console viewer string, e.g. innfo-console/0.1.0."
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "target", "status"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^fb-\\d{3,}$",
+            "description": "Feedback item identifier (fb-NNN)."
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["correction", "comment", "new", "delete"]
+          },
+          "target": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": true,
+            "properties": {
+              "element_id": { "type": "string" },
+              "concept": { "type": "string" },
+              "element": { "type": "string" },
+              "field": { "type": "string" },
+              "matrix": { "type": "string" }
+            }
+          },
+          "original": {
+            "description": "Current value observed by the reviewer (corrections)."
+          },
+          "proposed": {
+            "description": "Value proposed by the reviewer (corrections, new items)."
+          },
+          "comment": {
+            "type": "string",
+            "description": "Free-text note (comments, deletes)."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "applied", "rejected"]
+          }
+        }
+      }
+    }
+  }
+}

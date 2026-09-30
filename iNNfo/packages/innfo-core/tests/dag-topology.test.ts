@@ -52,17 +52,17 @@ function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHand
 describe('DAG Topology Scanner & Root Discovery (innfo-core)', () => {
   it('computes model in-degrees and discovers top-level root model (in_degree === 0)', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 level: 3
 parent_spec:
   name: workspace
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
 ## NN Models: Primary Business
-path:: models/business_NN.md
+path:: kNNowledge/business_NN.md
 
 # NN Sources
 ## NN Sources: Sources Catalog
@@ -80,8 +80,8 @@ path:: artifacts_NN.md
 level: 3
 parent_spec:
   name: sources
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/sources/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md
+knowledge_version: V_0-1-0
 title: Sources Catalog
 ---
 # NN Source
@@ -102,8 +102,8 @@ Evidence content.
 level: 3
 parent_spec:
   name: procedures
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+knowledge_version: V_0-1-0
 title: Procedures Catalog
 ---
 # NN Procedure
@@ -115,8 +115,8 @@ procedure_model:: procedures/ingest_pipeline_NN.md
 level: 3
 parent_spec:
   name: procedures
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+knowledge_version: V_0-1-0
 title: Ingest Pipeline Stepper
 ---
 # NN Work
@@ -127,33 +127,33 @@ next:: Step 2
 level: 3
 parent_spec:
   name: artifacts
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
+knowledge_version: V_0-1-0
 title: Artifacts Catalog
 ---
 # NN Artifact
 ## NN Artifact: Executive Summary
 format:: model
 summary:: Executive deliverable summary.
-artifact_model:: artifacts/models/exec_summary_NN.md
+artifact_model:: artifacts/kNNowledge/exec_summary_NN.md
 `,
-      'artifacts/models/exec_summary_NN.md': `---
+      'artifacts/kNNowledge/exec_summary_NN.md': `---
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+knowledge_version: V_0-1-0
 title: Executive Summary Model
 ---
 # NN Section
 Content.
 `,
-      'models/business_NN.md': `---
+      'kNNowledge/business_NN.md': `---
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+knowledge_version: V_0-1-0
 title: Business Model
 ---
 # NN Value Proposition
@@ -170,7 +170,7 @@ description:: Elimination services.
 
     // workspace_NN.md is the root with in-degree 0
     const wsNode = Object.values(result.nodes).find(
-      (n) => n.kind === 'root' && n.source?.path === 'workspace_NN.md',
+      (n) => n.kind === 'root' && n.source?.path === 'domaiNN_NN.md',
     )
     expect(wsNode).toBeDefined()
     expect(topo.inDegree[wsNode!.id]).toBe(0)
@@ -179,7 +179,7 @@ description:: Elimination services.
 
     // Submodels have in-degree >= 1
     const bizNode = Object.values(result.nodes).find(
-      (n) => n.kind === 'root' && n.source?.path === 'models/business_NN.md',
+      (n) => n.kind === 'root' && n.source?.path === 'kNNowledge/business_NN.md',
     )
     expect(bizNode).toBeDefined()
     expect(topo.inDegree[bizNode!.id]).toBeGreaterThanOrEqual(1)
@@ -198,29 +198,29 @@ description:: Elimination services.
 
   it('detects cycles and halts recursive expansion gracefully with cycle issue', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 level: 3
 parent_spec:
   name: workspace
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+knowledge_version: V_0-1-0
 title: Root
 ---
 # NN Models
 ## NN Models: Model A
-path:: models/a_NN.md
+path:: kNNowledge/a_NN.md
 `,
-      'models/a_NN.md': `---
+      'kNNowledge/a_NN.md': `---
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Submodels
 ## NN Submodels: Back To Root
-path:: ../workspace_NN.md
+path:: ../domaiNN_NN.md
 `,
     }
 
@@ -234,12 +234,12 @@ path:: ../workspace_NN.md
 
   it('enforces MAX_DEPTH = 10 recursion guard', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 level: 3
 parent_spec:
   name: workspace
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+knowledge_version: V_0-1-0
 title: Depth 0
 ---
 # NN Models
@@ -253,8 +253,8 @@ path:: depth1.md
 level: 3
 parent_spec:
   name: business
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/spec_NN.md
+knowledge_version: V_0-1-0
 title: Depth ${i}
 ---
 # NN Models

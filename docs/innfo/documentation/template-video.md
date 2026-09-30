@@ -1,6 +1,6 @@
 # Video App Template
 
-The **Video App Template** (`iNNfo/specs/templates/video/spec_NN.md`) provides a unified schema for video scripting, asset management, automated voiceover synthesis (TTS), and digital talking avatar rendering powered by Anydeo VUS (`V_0-3-3`).
+The **Video App Template** (`iNNfo/specs/bluepriNNts/video/spec_NN.md`) provides a unified schema for video scripting, asset management, automated voiceover synthesis (TTS), and digital talking avatar rendering powered by Anydeo VUS (`V_0-3-3`).
 
 ---
 

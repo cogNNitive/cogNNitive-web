@@ -30,7 +30,7 @@ describe('Node ESM consumability (built dist/, real Node process)', () => {
     const script = `
       import('${distIndexUrl}')
         .then((m) => {
-          const required = ['parseModel', 'serializeModel', 'applyMutation', 'validateDocument']
+          const required = ['parseKnowledge', 'serializeKnowledge', 'applyMutation', 'validateDocument']
           const missing = required.filter((name) => typeof m[name] !== 'function')
           if (missing.length > 0) {
             console.error('MISSING:' + missing.join(','))

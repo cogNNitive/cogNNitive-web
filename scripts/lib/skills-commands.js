@@ -43,7 +43,7 @@ const { registerMcpAuto } = require('./mcp-config-adapter.js');
 
 const DEFAULT_MANIFEST_URL = 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md';
 const DEFAULT_SKILLS_DIR = path.join(os.homedir(), '.agents', 'skills');
-const DEFAULT_TEMPLATES_DIR = path.join(os.homedir(), '.agents', 'templates');
+const DEFAULT_BLUEPRINTS_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
 const DEFAULT_MCP_DIR = path.join(os.homedir(), '.agents', 'mcp');
 const DEFAULT_CONSOLE_DIR = path.join(os.homedir(), '.agents', 'console');
 const DEFAULT_STATE_FILE = path.join(os.homedir(), '.agents', 'bootstrap-state.json');
@@ -72,16 +72,16 @@ function requestFor(url) {
 
 /**
  * Initializes a new empty skill manager state structure.
- * @returns {{ manifest: string, skills: Record<string, any>, templates: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
+ * @returns {{ manifest: string, skills: Record<string, any>, blueprints: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
  */
 function emptyState() {
-  return { manifest: getManifestUrl(), skills: {}, templates: {}, mcp: {}, console: {}, projections: {} };
+  return { manifest: getManifestUrl(), skills: {}, blueprints: {}, mcp: {}, console: {}, projections: {} };
 }
 
 /**
   * Loads the current machine skill state from JSON file, supporting legacy migrations.
   * @param {string} file
-  * @returns {{ manifest: string, skills: Record<string, any>, templates: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
+  * @returns {{ manifest: string, skills: Record<string, any>, blueprints: Record<string, any>, mcp: Record<string, any>, console: Record<string, any>, projections: Record<string, any> }}
   */
 function loadState(file) {
   if (fs.existsSync(file)) {
@@ -91,7 +91,7 @@ function loadState(file) {
       return {
         manifest: data.manifest || getManifestUrl(),
         skills: data.skills || {},
-        templates: data.templates || {},
+        blueprints: data.blueprints || {},
         mcp: data.mcp || {},
         console: data.console || {},
         projections: data.projections || {},
@@ -112,7 +112,7 @@ function loadState(file) {
       const state = {
         manifest: legacyData.manifest || getManifestUrl(),
         skills: legacyData.skills || {},
-        templates: {},
+        blueprints: {},
         mcp: {},
         console: {},
         projections: {},
@@ -263,21 +263,21 @@ async function installSkillAtCommit(skill, skillsDir, state) {
 /**
  * Installs or updates a template from GitHub at specified commit.
  * @param {object} template
- * @param {string} templatesDir
+ * @param {string} blueprintsDir
  * @param {object} state
  * @returns {Promise<void>}
  */
-async function installTemplateAtCommit(template, templatesDir, state) {
+async function installBlueprintAtCommit(template, blueprintsDir, state) {
   const isMdFile = template.path.endsWith('.md') || template.path.endsWith('.markdown');
   const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-  const flatDestPath = path.join(templatesDir, fileName);
-  const pkgDestPath = path.join(templatesDir, template.name);
+  const flatDestPath = path.join(blueprintsDir, fileName);
+  const pkgDestPath = path.join(blueprintsDir, template.name);
 
-  fs.mkdirSync(templatesDir, { recursive: true });
+  fs.mkdirSync(blueprintsDir, { recursive: true });
 
   let recordedPath = isMdFile ? flatDestPath : pkgDestPath;
 
-  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'actioNN-templates-'));
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'actioNN-blueprints-'));
   try {
     const tarball = path.join(tmpRoot, 'tmpl.tar.gz');
     const url = `https://codeload.github.com/${template.repo}/tar.gz/${template.commit}`;
@@ -326,7 +326,7 @@ async function installTemplateAtCommit(template, templatesDir, state) {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
 
-  state.templates[template.name] = {
+  state.blueprints[template.name] = {
     commit: template.commit,
     version: template.version,
     path: recordedPath,
@@ -468,17 +468,17 @@ async function consentOrAbort(label, names, menu, yes) {
 
 /**
  * Executes status command comparing installed commits against pinned commits.
- * @param {{ skillsDir: string, templatesDir: string, consoleDir?: string, stateFile: string }} args
+ * @param {{ skillsDir: string, blueprintsDir: string, consoleDir?: string, stateFile: string }} args
  * @returns {Promise<void>}
  */
 async function cmdStatus(args) {
   const manifestRaw = await fetchString(getManifestUrl());
-  const { skills, templates, consoleAssets } = parseManifest(manifestRaw);
+  const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
   const state = loadState(args.stateFile);
 
   const rows = [];
   const outdatedSkills = [];
-  const outdatedTemplates = [];
+  const outdatedBlueprints = [];
   const outdatedConsoleAssets = [];
 
   for (const skill of skills) {
@@ -502,10 +502,10 @@ async function cmdStatus(args) {
     if (status === 'outdated') outdatedSkills.push(skill);
   }
 
-  for (const template of templates) {
+  for (const template of blueprints) {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-    const pathPresent = fs.existsSync(path.join(args.templatesDir, fileName)) || fs.existsSync(path.join(args.templatesDir, template.name));
-    const entry = state.templates[template.name];
+    const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
+    const entry = state.blueprints[template.name];
     let status;
     if (pathPresent) {
       if (!entry) status = 'untracked';
@@ -521,7 +521,7 @@ async function cmdStatus(args) {
       installed: entry ? entry.commit.slice(0, 7) : '-',
       status,
     });
-    if (status === 'outdated') outdatedTemplates.push(template);
+    if (status === 'outdated') outdatedBlueprints.push(template);
   }
 
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
@@ -549,14 +549,14 @@ async function cmdStatus(args) {
 
   printStatusTable(rows);
 
-  if (outdatedSkills.length > 0 || outdatedTemplates.length > 0 || outdatedConsoleAssets.length > 0) {
+  if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0) {
     console.log('\nDiff previews for outdated items:');
     for (const skill of outdatedSkills) {
       const installed = state.skills[skill.name].commit;
       console.log(`  skill ${skill.name}: ${await fetchCompareSummary(skill, installed)}`);
     }
-    for (const template of outdatedTemplates) {
-      const installed = state.templates[template.name].commit;
+    for (const template of outdatedBlueprints) {
+      const installed = state.blueprints[template.name].commit;
       console.log(`  template ${template.name}: ${await fetchCompareSummary(template, installed)}`);
     }
   }
@@ -564,39 +564,39 @@ async function cmdStatus(args) {
 
 /**
  * Executes install command installing missing skills and templates with consent.
- * @param {{ skillsDir: string, templatesDir: string, consoleDir?: string, stateFile: string, yes: boolean, agent?: string, scope?: string }} args
+ * @param {{ skillsDir: string, blueprintsDir: string, consoleDir?: string, stateFile: string, yes: boolean, agent?: string, scope?: string }} args
  * @returns {Promise<void>}
  */
 async function cmdInstall(args) {
   const manifestRaw = await fetchString(getManifestUrl());
-  const { skills, templates, consoleAssets } = parseManifest(manifestRaw);
+  const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
   const state = loadState(args.stateFile);
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
 
   const toInstallSkills = skills.filter(skill => !fs.existsSync(path.join(args.skillsDir, skill.name)));
-  const toInstallTemplates = templates.filter(template => {
+  const toInstallBlueprints = blueprints.filter(template => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-    return !fs.existsSync(path.join(args.templatesDir, fileName)) && !fs.existsSync(path.join(args.templatesDir, template.name));
+    return !fs.existsSync(path.join(args.blueprintsDir, fileName)) && !fs.existsSync(path.join(args.blueprintsDir, template.name));
   });
   const toInstallConsole = (consoleAssets || []).filter(asset => {
     const fileName = path.basename(asset.file || asset.url);
     return !fs.existsSync(path.join(consoleDir, fileName));
   });
 
-  if (toInstallSkills.length === 0 && toInstallTemplates.length === 0 && toInstallConsole.length === 0) {
+  if (toInstallSkills.length === 0 && toInstallBlueprints.length === 0 && toInstallConsole.length === 0) {
     console.log('All skills, templates, and console assets present.');
     return;
   }
 
   const names = [
     ...toInstallSkills.map(s => `skill:${s.name}`),
-    ...toInstallTemplates.map(t => `template:${t.name}`),
+    ...toInstallBlueprints.map(t => `template:${t.name}`),
     ...toInstallConsole.map(a => `console:${path.basename(a.file || a.url)}`),
   ];
 
   const menu = `The following items are missing:\n` +
     (toInstallSkills.length > 0 ? `Skills:\n  - ${toInstallSkills.map(s => `${s.name} (${s.version})`).join('\n  - ')}\n` : '') +
-    (toInstallTemplates.length > 0 ? `Templates:\n  - ${toInstallTemplates.map(t => `${t.name} (${t.version})`).join('\n  - ')}\n` : '') +
+    (toInstallBlueprints.length > 0 ? `Templates:\n  - ${toInstallBlueprints.map(t => `${t.name} (${t.version})`).join('\n  - ')}\n` : '') +
     (toInstallConsole.length > 0 ? `Console assets:\n  - ${toInstallConsole.map(a => `${path.basename(a.file || a.url)} (${a.version})`).join('\n  - ')}\n` : '') +
     `\n[a] Install all missing (Recommended)\n[b] Skip\n`;
 
@@ -615,9 +615,9 @@ async function cmdInstall(args) {
     }
   }
 
-  for (const template of toInstallTemplates) {
+  for (const template of toInstallBlueprints) {
     try {
-      await installTemplateAtCommit(template, args.templatesDir, state);
+      await installBlueprintAtCommit(template, args.blueprintsDir, state);
       console.log(`  installed template ${template.name} (${template.version}) @ ${template.commit.slice(0, 7)}`);
     } catch (err) {
       failures++;
@@ -649,17 +649,17 @@ async function cmdInstall(args) {
     console.error(`\n${failures} item(s) failed to install.`);
     process.exit(1);
   }
-  console.log(`\nInstalled ${toInstallSkills.length} skill(s), ${toInstallTemplates.length} template(s), and ${toInstallConsole.length} console asset(s).`);
+  console.log(`\nInstalled ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), and ${toInstallConsole.length} console asset(s).`);
 }
 
 /**
  * Executes update command updating outdated skills and templates with consent.
- * @param {{ skillsDir: string, templatesDir: string, consoleDir?: string, stateFile: string, positional: string[], yes: boolean, agent?: string, scope?: string }} args
+ * @param {{ skillsDir: string, blueprintsDir: string, consoleDir?: string, stateFile: string, positional: string[], yes: boolean, agent?: string, scope?: string }} args
  * @returns {Promise<void>}
  */
 async function cmdUpdate(args) {
   const manifestRaw = await fetchString(getManifestUrl());
-  const { skills, templates, consoleAssets } = parseManifest(manifestRaw);
+  const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
   const state = loadState(args.stateFile);
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
 
@@ -669,10 +669,10 @@ async function cmdUpdate(args) {
     return dirPresent && (!entry || entry.commit !== skill.commit);
   };
 
-  const isOutdatedTemplate = (template) => {
+  const isOutdatedBlueprint = (template) => {
     const fileName = template.name.endsWith('.md') ? template.name : `${template.name}.md`;
-    const pathPresent = fs.existsSync(path.join(args.templatesDir, fileName)) || fs.existsSync(path.join(args.templatesDir, template.name));
-    const entry = state.templates[template.name];
+    const pathPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, template.name));
+    const entry = state.blueprints[template.name];
     return pathPresent && (!entry || entry.commit !== template.commit);
   };
 
@@ -684,16 +684,16 @@ async function cmdUpdate(args) {
   };
 
   let selectedSkills = skills.filter(isOutdatedSkill);
-  let selectedTemplates = templates.filter(isOutdatedTemplate);
+  let selectedBlueprints = blueprints.filter(isOutdatedBlueprint);
   let selectedConsole = (consoleAssets || []).filter(isOutdatedConsole);
 
   if (args.positional.length > 0) {
     selectedSkills = skills.filter(s => args.positional.includes(s.name) && isOutdatedSkill(s));
-    selectedTemplates = templates.filter(t => args.positional.includes(t.name) && isOutdatedTemplate(t));
+    selectedBlueprints = blueprints.filter(t => args.positional.includes(t.name) && isOutdatedBlueprint(t));
     selectedConsole = (consoleAssets || []).filter(a => args.positional.includes(path.basename(a.file || a.url)) && isOutdatedConsole(a));
   }
 
-  if (selectedSkills.length === 0 && selectedTemplates.length === 0 && selectedConsole.length === 0) {
+  if (selectedSkills.length === 0 && selectedBlueprints.length === 0 && selectedConsole.length === 0) {
     console.log('All skills, templates, and console assets up to date.');
     projectSkillsToAgents({
       canonicalSkillsDir: args.skillsDir,
@@ -708,14 +708,14 @@ async function cmdUpdate(args) {
 
   const names = [
     ...selectedSkills.map(s => `skill:${s.name}`),
-    ...selectedTemplates.map(t => `template:${t.name}`),
+    ...selectedBlueprints.map(t => `template:${t.name}`),
     ...selectedConsole.map(a => `console:${path.basename(a.file || a.url)}`),
   ];
 
   const proceed = await consentOrAbort(
     'update skills, templates, and console assets',
     names,
-    `Updating ${selectedSkills.length} skill(s), ${selectedTemplates.length} template(s), and ${selectedConsole.length} console asset(s).\n\n[a] Update all listed (Recommended)\n[b] Skip\n`,
+    `Updating ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), and ${selectedConsole.length} console asset(s).\n\n[a] Update all listed (Recommended)\n[b] Skip\n`,
     args.yes
   );
   if (!proceed) return;
@@ -732,9 +732,9 @@ async function cmdUpdate(args) {
     }
   }
 
-  for (const template of selectedTemplates) {
+  for (const template of selectedBlueprints) {
     try {
-      await installTemplateAtCommit(template, args.templatesDir, state);
+      await installBlueprintAtCommit(template, args.blueprintsDir, state);
       console.log(`  updated template ${template.name} -> ${template.version} (${template.commit.slice(0, 7)})`);
     } catch (err) {
       failures++;
@@ -766,7 +766,7 @@ async function cmdUpdate(args) {
     console.error(`\n${failures} item(s) failed to update.`);
     process.exit(1);
   }
-  console.log(`\nUpdated ${selectedSkills.length} skill(s), ${selectedTemplates.length} template(s), and ${selectedConsole.length} console asset(s).`);
+  console.log(`\nUpdated ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), and ${selectedConsole.length} console asset(s).`);
 }
 
 /**
@@ -828,7 +828,7 @@ async function cmdSync(args) {
  *
  * @param {{
  *   skillsDir: string,
- *   templatesDir: string,
+ *   blueprintsDir: string,
  *   mcpDir?: string,
  *   consoleDir?: string,
  *   stateFile: string,
@@ -850,20 +850,20 @@ async function cmdBootstrap(args) {
   const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
   const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
   fs.mkdirSync(args.skillsDir, { recursive: true });
-  fs.mkdirSync(args.templatesDir, { recursive: true });
+  fs.mkdirSync(args.blueprintsDir, { recursive: true });
   fs.mkdirSync(mcpDir, { recursive: true });
   fs.mkdirSync(consoleDir, { recursive: true });
 
   const names = [
     ...manifest.skills.map(s => `skill:${s.name}`),
-    ...manifest.templates.map(t => `template:${t.name}`),
+    ...manifest.blueprints.map(t => `template:${t.name}`),
     ...(manifest.consoleAssets || []).map(a => `console:${path.basename(a.file || a.url)}`),
   ];
 
   const proceed = await consentOrAbort(
     'bootstrap cogNNitive ecosystem',
     names,
-    `Bootstrapping ${manifest.skills.length} skills, ${manifest.templates.length} templates, MCP servers, and console assets.\n\n[a] Bootstrap now (Recommended)\n[b] Cancel\n`,
+    `Bootstrapping ${manifest.skills.length} skills, ${manifest.blueprints.length} templates, MCP servers, and console assets.\n\n[a] Bootstrap now (Recommended)\n[b] Cancel\n`,
     args.yes
   );
   if (!proceed) return;
@@ -882,13 +882,13 @@ async function cmdBootstrap(args) {
   }
 
   // 2. Templates
-  console.log(`\nInstalling/verifying ${manifest.templates.length} template(s)...`);
-  for (const tmpl of manifest.templates) {
+  console.log(`\nInstalling/verifying ${manifest.blueprints.length} template(s)...`);
+  for (const tmpl of manifest.blueprints) {
     const fileName = tmpl.name.endsWith('.md') ? tmpl.name : `${tmpl.name}.md`;
-    const tmplPresent = fs.existsSync(path.join(args.templatesDir, fileName)) || fs.existsSync(path.join(args.templatesDir, tmpl.name));
-    const entry = state.templates[tmpl.name];
+    const tmplPresent = fs.existsSync(path.join(args.blueprintsDir, fileName)) || fs.existsSync(path.join(args.blueprintsDir, tmpl.name));
+    const entry = state.blueprints[tmpl.name];
     if (!tmplPresent || !entry || entry.commit !== tmpl.commit) {
-      await installTemplateAtCommit(tmpl, args.templatesDir, state);
+      await installBlueprintAtCommit(tmpl, args.blueprintsDir, state);
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) @ ${tmpl.commit.slice(0, 7)}`);
     } else {
       console.log(`  ✓ template ${tmpl.name} (${tmpl.version}) up-to-date`);
@@ -1202,7 +1202,7 @@ module.exports = {
   },
   DEFAULT_MANIFEST_URL,
   DEFAULT_SKILLS_DIR,
-  DEFAULT_TEMPLATES_DIR,
+  DEFAULT_BLUEPRINTS_DIR,
   DEFAULT_MCP_DIR,
   DEFAULT_CONSOLE_DIR,
   DEFAULT_STATE_FILE,
@@ -1224,7 +1224,7 @@ module.exports = {
   copyDirRecursive,
   fetchCompareSummary,
   installSkillAtCommit,
-  installTemplateAtCommit,
+  installBlueprintAtCommit,
   installMcpAtCommit,
   installConsoleAssetAtCommit,
   projectSkillsToAgents,

@@ -13,8 +13,8 @@ import {
   type SourceRef,
 } from '../sourceRef.js'
 import { listSectionFields, resolveUnit } from '../unitResolve.js'
-import type { ModelNode } from '../types/index.js'
-import type { TemplateSchema } from '../schema/index.js'
+import type { KnowledgeNode } from '../types/index.js'
+import type { BlueprintSchema } from '../schema/index.js'
 import { findDeclaredField } from '../schema/index.js'
 
 export interface SourceResolution {
@@ -47,7 +47,7 @@ export type SourceResolver = (
  * Validates every `sources::` / `source::` Citation across the parsed workspace.
  *
  * Runs after the host's `recursiveParse()`. Complements — never replaces —
- * per-file `validateModel`/`validateDocument`, which do not open other files.
+ * per-file `validateKnowledge`/`validateDocument`, which do not open other files.
  *
  * Two grammars, one pass: `@` pointers are validated structurally (codes `KU_*`);
  * legacy `#slug` references keep their historical diagnostics plus a timeline-neutral
@@ -81,7 +81,7 @@ export type SourceResolver = (
 function isCitationField(
   fieldName: string,
   conceptType: string | undefined,
-  schema: TemplateSchema | undefined,
+  schema: BlueprintSchema | undefined,
 ): boolean {
   const declared = findDeclaredField(schema, conceptType, fieldName)
   if (declared) return declared.type === 'citation'
@@ -113,7 +113,7 @@ const LEGACY_DERIVATION_FIELD_NAMES = new Set(['derived_from', 'derived_from_inp
 function legacyDerivationKeyFor(
   fieldName: string,
   conceptType: string | undefined,
-  schema: TemplateSchema | undefined,
+  schema: BlueprintSchema | undefined,
 ): string | undefined {
   const lower = fieldName.toLowerCase()
   if (!LEGACY_DERIVATION_FIELD_NAMES.has(lower)) return undefined
@@ -136,8 +136,8 @@ export function validateWorkspaceSources(
   /** The composed template schema of the document this node belongs to, if any.
    *  `recursiveParse` stashes it on the root node, so no host plumbing is
    *  needed here — walk up to the root and read it. */
-  const schemaFor = (node: ModelNode): TemplateSchema | undefined => {
-    let current: ModelNode | undefined = node
+  const schemaFor = (node: KnowledgeNode): BlueprintSchema | undefined => {
+    let current: KnowledgeNode | undefined = node
     while (current) {
       if (current.templateSchema) return current.templateSchema
       current = current.parentId ? result.nodes[current.parentId] : undefined

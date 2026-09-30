@@ -8,7 +8,7 @@ version: "V_0-2-0"
 last_updated: 2026-09-03
 metadata:
   source_type: original
-bundled_templates: []
+bundled_blueprints: []
 ---
 
 # nn Site Generator

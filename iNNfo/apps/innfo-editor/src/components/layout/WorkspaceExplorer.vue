@@ -79,7 +79,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import FilePreviewModal from '../editor/FilePreviewModal.vue'
 import { classifyExplorerItem } from '../../utils/explorerClassify'
 import { useUiStore } from '../../stores/uiStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import FileTreeNode, { type FileItem } from './FileTreeNode.vue'
 import type { DirectoryHandleLike } from '../../model/fs-types'
 
@@ -91,7 +91,7 @@ interface ActiveFileForModal {
 
 const workspaceStore = useWorkspaceStore()
 const uiStore = useUiStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 const treeItems = ref<FileItem[]>([])
 const isLoading = ref(false)
@@ -178,7 +178,7 @@ function buildVirtualTree(): FileItem[] {
   const pathsSet = new Set<string>()
 
   // Collect all model node paths & source references
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (node.source?.path) {
       pathsSet.add(node.source.path)
     }
@@ -194,8 +194,8 @@ function buildVirtualTree(): FileItem[] {
 
   // Fallback if no paths were found
   if (pathsSet.size === 0) {
-    for (const rootId of modelStore.rootIds) {
-      const node = modelStore.nodes[rootId]
+    for (const rootId of knowledgeStore.rootIds) {
+      const node = knowledgeStore.nodes[rootId]
       if (node) {
         pathsSet.add(`${node.name || 'model'}_NN.md`)
       }
@@ -259,7 +259,7 @@ async function handleDownloadFile(item: FileItem): Promise<void> {
 }
 
 function handleSelectFile(item: FileItem): void {
-  const matchingNode = Object.values(modelStore.nodes).find(
+  const matchingNode = Object.values(knowledgeStore.nodes).find(
     (n) => n.source?.path === item.path || n.source?.path?.endsWith(item.name),
   )
 

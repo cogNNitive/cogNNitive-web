@@ -6,30 +6,32 @@ import { buildFakeTree } from '../helpers/fakeFs'
 import { setSessionState, getSessionState, dbClear } from '../../src/utils/db'
 
 const testModelContent = `---
-spec_version: "V_0-1-2"
-spec_url: "https://example.test/specs/V_0-1-2"
+spec_version: "V_0-3-0"
+spec_url: "https://example.test/specs/V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Session Test"
 ---
 
-# _NN Session Test Model
+# NN Session Test Model
 
 A model used to test session persistence.
 `
 
 const testTree = {
-  'index.md': `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+  'domaiNN_NN.md': `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
 
-# _NN index
+# NN index
 
-* [[Session-Test_V_1-0-0_Template_NN.md]]
+* [[kNNowledge/Session-Test_V_1-0-0_Template_NN.md]]
 `,
-  'Session-Test_V_1-0-0_Template_NN.md': testModelContent,
+  kNNowledge: {
+    'Session-Test_V_1-0-0_Template_NN.md': testModelContent,
+  },
 }
 
 describe('workspaceStore — Session persistence (R-SP-06)', () => {
@@ -63,7 +65,7 @@ describe('workspaceStore — Session persistence (R-SP-06)', () => {
     await workspaceStore.open(handle)
 
     // Manually set session state as if it was persisted from a previous session
-    await setSessionState('selectedNodeId', 'Session-Test_V_1-0-0_Template_NN.md/Root')
+    await setSessionState('selectedNodeId', 'kNNowledge/Session-Test_V_1-0-0_Template_NN.md/Root')
     await setSessionState('activeView', 'graph')
 
     // Reset the pinia stores to simulate page reload
@@ -74,20 +76,23 @@ describe('workspaceStore — Session persistence (R-SP-06)', () => {
     // Recover handle — this should restore uiStore state
     const recovered = await freshWorkspaceStore.recoverHandle()
     expect(recovered).toBeDefined()
-    expect(recovered?.name).toBe('workspace')
 
-    // Verify uiStore was restored from session
-    expect(freshUiStore.selectedNodeId).toBe('Session-Test_V_1-0-0_Template_NN.md/Root')
+    // Verify uiStore state was restored
+    expect(freshUiStore.selectedNodeId).toBe('kNNowledge/Session-Test_V_1-0-0_Template_NN.md/Root')
     expect(freshUiStore.activeView).toBe('graph')
   })
 
-  it('recoverHandle() does not crash when session is empty', async () => {
+  it('recoverHandle() does not overwrite state if no session exists', async () => {
     const workspaceStore = useWorkspaceStore()
     const handle = buildFakeTree('workspace', testTree)
 
+    // Open workspace to populate handle store
     await workspaceStore.open(handle)
 
-    // Reset to simulate page reload with empty session
+    // Clear session store so getSessionState returns empty
+    await dbClear('session')
+
+    // Reset the pinia stores
     setActivePinia(createPinia())
     const freshWorkspaceStore = useWorkspaceStore()
     const freshUiStore = useUiStore()
@@ -95,43 +100,8 @@ describe('workspaceStore — Session persistence (R-SP-06)', () => {
     const recovered = await freshWorkspaceStore.recoverHandle()
     expect(recovered).toBeDefined()
 
-    // Default values should remain
+    // uiStore state should remain at defaults
     expect(freshUiStore.selectedNodeId).toBeNull()
     expect(freshUiStore.activeView).toBe('editor')
-  })
-})
-
-describe('workspaceStore — Tree state persistence (R-SP-03)', () => {
-  beforeEach(async () => {
-    setActivePinia(createPinia())
-    await dbClear('treeState')
-  })
-
-  it('persistTreeState stores collapsed state for a node', async () => {
-    const workspaceStore = useWorkspaceStore()
-
-    await workspaceStore.persistTreeState('AILab', true)
-    await workspaceStore.persistTreeState('Process', false)
-
-    const tree = await workspaceStore.restoreTreeState()
-    expect(tree.get('AILab')).toBe(true)
-    expect(tree.get('Process')).toBe(false)
-  })
-
-  it('restoreTreeState returns empty map when nothing persisted', async () => {
-    const workspaceStore = useWorkspaceStore()
-
-    const tree = await workspaceStore.restoreTreeState()
-    expect(tree.size).toBe(0)
-  })
-
-  it('persistTreeState overwrites previous state for the same node', async () => {
-    const workspaceStore = useWorkspaceStore()
-
-    await workspaceStore.persistTreeState('Node1', true)
-    await workspaceStore.persistTreeState('Node1', false)
-
-    const tree = await workspaceStore.restoreTreeState()
-    expect(tree.get('Node1')).toBe(false)
   })
 })

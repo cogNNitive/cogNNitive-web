@@ -16,13 +16,13 @@ const commands = require('./lib/skills-commands.js');
 /**
  * Parses CLI command line arguments into structured SkillManagerArgs.
  * @param {string[]} argv
- * @returns {{ positional: string[], skillsDir: string | null, templatesDir: string | null, mcpDir: string | null, consoleDir: string | null, state: string | null, stateFile: string | null, yes: boolean, direction: string, agent: string, scope: string }}
+ * @returns {{ positional: string[], skillsDir: string | null, blueprintsDir: string | null, mcpDir: string | null, consoleDir: string | null, state: string | null, stateFile: string | null, yes: boolean, direction: string, agent: string, scope: string }}
  */
 function parseArgs(argv) {
   const args = {
     positional: [],
     skillsDir: null,
-    templatesDir: null,
+    blueprintsDir: null,
     mcpDir: null,
     consoleDir: null,
     state: null,
@@ -63,7 +63,7 @@ function parseArgs(argv) {
         throw new Error(`Option ${arg} requires a value`);
       }
       if (arg === '--skills-dir') args.skillsDir = value;
-      else if (arg === '--templates-dir') args.templatesDir = value;
+      else if (arg === '--templates-dir') args.blueprintsDir = value;
       else if (arg === '--mcp-dir') args.mcpDir = value;
       else if (arg === '--console-dir') args.consoleDir = value;
       else args.state = value;
@@ -132,7 +132,7 @@ async function main() {
 
   const isWorkspaceScope = args.scope === 'workspace';
   const defaultSkills = isWorkspaceScope ? './.agents/skills' : commands.DEFAULT_SKILLS_DIR;
-  const defaultTemplates = isWorkspaceScope ? './specs/templates' : commands.DEFAULT_TEMPLATES_DIR;
+  const defaultBlueprints = isWorkspaceScope ? './specs/bluepriNNts' : commands.DEFAULT_BLUEPRINTS_DIR;
   const defaultMcp = isWorkspaceScope ? './.agents/mcp' : commands.DEFAULT_MCP_DIR;
   const defaultConsole = isWorkspaceScope ? './.agents/console' : commands.DEFAULT_CONSOLE_DIR;
   const defaultState = isWorkspaceScope ? './.agents/bootstrap-state.json' : commands.DEFAULT_STATE_FILE;
@@ -140,7 +140,7 @@ async function main() {
   const resolvedArgs = {
     positional: args.positional,
     skillsDir: path.resolve(args.skillsDir || defaultSkills),
-    templatesDir: path.resolve(args.templatesDir || defaultTemplates),
+    blueprintsDir: path.resolve(args.blueprintsDir || defaultBlueprints),
     mcpDir: path.resolve(args.mcpDir || defaultMcp),
     consoleDir: path.resolve(args.consoleDir || defaultConsole),
     stateFile: path.resolve(args.state || defaultState),

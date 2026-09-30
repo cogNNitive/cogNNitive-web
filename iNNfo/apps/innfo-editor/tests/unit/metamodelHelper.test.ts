@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getConceptFieldsForNode, getMergedBlockFields } from '../../src/utils/metamodelHelper'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
 describe('metamodelHelper', () => {
   const mockGetConceptFields = (type: string) => {
@@ -15,7 +15,7 @@ describe('metamodelHelper', () => {
   }
 
   it('merges metamodel fields with node fields correctly', () => {
-    const node: ModelNode = {
+    const node: KnowledgeNode = {
       id: 'node1',
       name: 'node1',
       parentId: null,
@@ -55,7 +55,7 @@ describe('metamodelHelper', () => {
   })
 
   it('handles empty node fields and returns defaults correctly', () => {
-    const node: ModelNode = {
+    const node: KnowledgeNode = {
       id: 'node2',
       name: 'node2',
       parentId: null,

@@ -2,10 +2,10 @@ import { readFile, readdir, stat } from 'node:fs/promises'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve, isAbsolute } from 'node:path'
 import {
-  parseModel,
+  parseKnowledge,
   validateDocument,
-  validateTemplateAgainstMetaschema,
-  resolveTemplateSchema,
+  validateBlueprintAgainstMetaschema,
+  resolveBlueprintSchema,
   SpecResolutionError,
   parseFrontmatter,
   recursiveParse,
@@ -18,18 +18,18 @@ import {
   fingerprint,
   diffNewOnly,
   normalizeBaselinePath,
-  findCanonicalTemplate,
-  CANONICAL_TEMPLATES,
+  findCanonicalBlueprint,
+  CANONICAL_BLUEPRINTS,
 } from '@cognnitive/innfo-core'
 import type {
   SpecDocument,
   ValidationError,
   ConceptDriftDiagnostic,
-  ParsedModel,
+  ParsedKnowledge,
   SubmodelResolver,
   SourceResolver,
   SpecCache,
-  TemplateSchemaResolver,
+  BlueprintSchemaResolver,
   DirectoryHandleLike,
   FileHandleLike,
   ReferenceDiagnostic,
@@ -37,10 +37,10 @@ import type {
   BaselineEntry,
   BaselineDiff,
 } from '@cognnitive/innfo-core'
-import { resolveTemplateWithCache, findModelFile, deriveNameFromUrl, getSpec } from './spec.js'
+import { resolveBlueprintWithCache, findKnowledgeFile, deriveNameFromUrl, getSpec } from './spec.js'
 import { buildIncludeContentMap } from './resolver-node.js'
 import type { FreshnessResult } from './resolver-node.js'
-import { loadModel } from './model-io.js'
+import { loadKnowledge } from './knowledge-io.js'
 
 export const DEFAULT_WORKSPACE_IGNORE: Set<string> = new Set([
   'node_modules',
@@ -128,19 +128,19 @@ function syncFindSubmodel(
 }
 
 /**
- * Builds a SYNCHRONOUS `TemplateSchemaResolver` (innfo-core's C1 callback
+ * Builds a SYNCHRONOUS `BlueprintSchemaResolver` (innfo-core's C1 callback
  * type, `recursiveParser/types.ts`) reading from an already-resolved
- * `SpecCache` (produced by `resolveTemplateWithCache`). Every template named
+ * `SpecCache` (produced by `resolveBlueprintWithCache`). Every template named
  * by a node's `parent_spec.name` — plus everything on its `includes` chain —
  * is already present in `cache.specs`, so no I/O happens at call time.
  *
- * Not wired into `validateModel` in this slice (C1/PR3): the workspace-mode
+ * Not wired into `validateKnowledge` in this slice (C1/PR3): the workspace-mode
  * entry point that calls `recursiveParse` with this resolver is a later
- * slice (PR5a). `validateModel`'s single-file behavior is unchanged here.
+ * slice (PR5a). `validateKnowledge`'s single-file behavior is unchanged here.
  */
-export function buildTemplateSchemaResolverFromCache(
+export function buildBlueprintSchemaResolverFromCache(
   cache: SpecCache | null,
-): TemplateSchemaResolver {
+): BlueprintSchemaResolver {
   return ({ frontmatter }) => {
     if (!cache) return null
     const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec?.name
@@ -158,7 +158,7 @@ export function buildTemplateSchemaResolverFromCache(
       return null
     }
     try {
-      return resolveTemplateSchema(doc.rawContent, resolveInclude).schema
+      return resolveBlueprintSchema(doc.rawContent, resolveInclude).schema
     } catch (err) {
       /* v8 ignore start */
       // swallow deliberately: an unresolvable schema degrades to null (no
@@ -189,7 +189,7 @@ function createNodeFileHandle(filePath: string, name: string): FileHandleLike {
 
 /**
  * Minimal `DirectoryHandleLike` backed by `node:fs/promises`, so
- * `recursiveParse` can walk `rootDir` directly (no `ModelDriver`
+ * `recursiveParse` can walk `rootDir` directly (no `KnowledgeDriver`
  * implementation needed — `recursiveParse` falls back to plain
  * `DirectoryHandleLike` traversal whenever no driver is supplied).
  */
@@ -257,21 +257,21 @@ export function createNodeDirectoryHandle(
  * Workspace-scope cross-model validation. Collects the UNFILTERED
  * diagnostics for the whole tree — one Node-backed `recursiveParse` over
  * `rootDir`, threading the SAME synchronous template-schema resolver the
- * per-file pass already warms via `resolveTemplateWithCache` (AD-04: an
+ * per-file pass already warms via `resolveBlueprintWithCache` (AD-04: an
  * absent/throwing resolver degrades a node to "no schema", never aborts the
  * parse), then `buildWorkspaceIndex` + `validateWorkspaceReferences` +
  * `validateWorkspaceSources`. `check_workspace` calls this once with a merged
- * `SpecCache` and filters per model; `validateModel`'s `workspace: true` path
+ * `SpecCache` and filters per model; `validateKnowledge`'s `workspace: true` path
  * composes it with `filterDiagnosticsForModel` for byte-identical output.
  */
 export async function collectWorkspaceDiagnostics(
   rootDir: string,
   cache: SpecCache | null,
 ): Promise<ReferenceDiagnostic[]> {
-  const resolveSchema: TemplateSchemaResolver = buildTemplateSchemaResolverFromCache(cache)
+  const resolveSchema: BlueprintSchemaResolver = buildBlueprintSchemaResolverFromCache(cache)
   const rootHandle = createNodeDirectoryHandle(rootDir, DEFAULT_WORKSPACE_IGNORE)
   const result = await recursiveParse(rootHandle, undefined, {
-    resolveTemplateSchema: resolveSchema,
+    resolveBlueprintSchema: resolveSchema,
   })
   const index = buildWorkspaceIndex(result)
 
@@ -461,7 +461,7 @@ function isReservedStructuralHeading(concept: string): boolean {
 
 
 export function analyzeConceptDrift(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateConcepts: Array<{ name: string }>,
   modelPath: string,
 ): ConceptDriftDiagnostic[] {
@@ -528,23 +528,23 @@ export function analyzeConceptDrift(
     }
 
     // 2. Cross-template match across canonical templates
-    let crossTemplateMatch: { templateName: string; conceptName: string } | null = null
-    for (const tmpl of Object.values(CANONICAL_TEMPLATES)) {
-      const schema = resolveTemplateSchema(tmpl.specContent, (ref) => {
-        const inc = findCanonicalTemplate(ref.name) || (ref.url ? findCanonicalTemplate(ref.url) : null)
+    let crossBlueprintMatch: { templateName: string; conceptName: string } | null = null
+    for (const tmpl of Object.values(CANONICAL_BLUEPRINTS)) {
+      const schema = resolveBlueprintSchema(tmpl.specContent, (ref) => {
+        const inc = findCanonicalBlueprint(ref.name) || (ref.url ? findCanonicalBlueprint(ref.url) : null)
         return inc?.specContent ?? null
       })
       const foundInOther = schema.schema.concepts.find(
         (c) => c.name.toLowerCase() === conceptLower,
       )
       if (foundInOther) {
-        crossTemplateMatch = { templateName: tmpl.name, conceptName: foundInOther.name }
+        crossBlueprintMatch = { templateName: tmpl.name, conceptName: foundInOther.name }
         break
       }
     }
 
-    if (crossTemplateMatch) {
-      const action = `Concept '${concept}' belongs to the ${crossTemplateMatch.templateName} template. Consider composing templates via 'includes' in a Level 2 specialization.`
+    if (crossBlueprintMatch) {
+      const action = `Concept '${concept}' belongs to the ${crossBlueprintMatch.templateName} template. Consider composing templates via 'includes' in a Level 2 specialization.`
       diagnostics.push({
         path: `elements.${concept}`,
         code: 'CONCEPT_DRIFT_WARNING',
@@ -559,7 +559,7 @@ export function analyzeConceptDrift(
           concept,
           suggestionType: 'cross_template',
           suggestedAction: action,
-          matchingTemplate: crossTemplateMatch.templateName,
+          matchingBlueprint: crossBlueprintMatch.templateName,
         },
       })
       continue
@@ -595,7 +595,7 @@ export function analyzeConceptDrift(
  * Phase 3: Structural & Concept Alignment + Concept Drift Detection
  * Phase 4: Element, Field, Matrix, WikiLinks & Workspace Reference Validation
  */
-export async function validateModel(
+export async function validateKnowledge(
   rootDir: string,
   id?: string,
   content?: string,
@@ -618,12 +618,12 @@ export async function validateModel(
 }> {
   // ── Phase 1: Ingestion & Frontmatter Parse ──
   const checkFreshness = options.checkFreshness ?? true
-  let model: ParsedModel
+  let model: ParsedKnowledge
 
   if (content) {
-    model = parseModel(content)
+    model = parseKnowledge(content)
   } else if (id) {
-    const filePath = await findModelFile(rootDir, id)
+    const filePath = await findKnowledgeFile(rootDir, id)
     if (!filePath) {
       return {
         valid: false,
@@ -635,7 +635,7 @@ export async function validateModel(
         summary: null,
       }
     }
-    model = await loadModel(filePath)
+    model = await loadKnowledge(filePath)
   } else {
     return {
       valid: false,
@@ -648,13 +648,13 @@ export async function validateModel(
     }
   }
 
-  // D1: Auto-detect Level 2 templates and delegate to validateTemplate
+  // D1: Auto-detect Level 2 templates and delegate to validateBlueprint
   if (model.frontmatter.level === 2) {
-    const delegated = await validateTemplate(rootDir, id, content, templateUrl)
+    const delegated = await validateBlueprint(rootDir, id, content, templateUrl)
     return { ...delegated, suppressedCount: 0, staleEntries: [], backlog: null, summary: null }
   }
 
-  const resolvedModelPath = id ? await findModelFile(rootDir, id) : null
+  const resolvedModelPath = id ? await findKnowledgeFile(rootDir, id) : null
   const modelPath = resolvedModelPath ?? (id ?? 'inline')
   const referringDir = resolvedModelPath ? dirname(resolvedModelPath) : rootDir
   const fileNameForCheck = id ? basename(resolvedModelPath ?? id) : 'inline_NN.md'
@@ -668,7 +668,7 @@ export async function validateModel(
   const parentRef = model.frontmatter.parent_spec
   try {
     if (parentRef?.url && parentRef?.name) {
-      const resolved = await resolveTemplateWithCache(rootDir, parentRef.url, parentRef.name, {
+      const resolved = await resolveBlueprintWithCache(rootDir, parentRef.url, parentRef.name, {
         checkFreshness,
         cacheDir: options.cacheDir,
         inPlace: options.inPlace,
@@ -679,7 +679,7 @@ export async function validateModel(
       freshness = resolved.freshness
     }
     if (!template && templateUrl) {
-      const resolved = await resolveTemplateWithCache(
+      const resolved = await resolveBlueprintWithCache(
         rootDir,
         templateUrl,
         deriveNameFromUrl(templateUrl),
@@ -812,7 +812,7 @@ export async function validateModel(
   let docErrors = [...doc.errors]
 
   if (template) {
-    const composed = resolveTemplateSchema(template.rawContent, resolveInclude)
+    const composed = resolveBlueprintSchema(template.rawContent, resolveInclude)
     const driftDiagnostics = analyzeConceptDrift(model, composed.schema.concepts, modelPath)
     if (driftDiagnostics.length > 0) {
       warnings.push(...driftDiagnostics)
@@ -925,9 +925,9 @@ export async function validateModel(
 /**
  * Validate a model fetched from a URL without writing to disk.
  * Accepts a model URL and optional template_url. Fetches the model content,
- * then delegates to validateModel (content mode).
+ * then delegates to validateKnowledge (content mode).
  */
-export async function validateModelUrl(
+export async function validateKnowledgeUrl(
   rootDir: string,
   modelUrl: string,
   templateUrl?: string,
@@ -961,7 +961,7 @@ export async function validateModelUrl(
     }
   }
 
-  return validateModel(rootDir, undefined, content, templateUrl)
+  return validateKnowledge(rootDir, undefined, content, templateUrl)
 }
 
 /* ── validate_template ──────────────────────────────────────── */
@@ -976,7 +976,7 @@ export async function validateModelUrl(
  * @param content Raw template content string
  * @param url Explicit parent spec URL override
  */
-export async function validateTemplate(
+export async function validateBlueprint(
   rootDir: string,
   id?: string,
   content?: string,
@@ -990,7 +990,7 @@ export async function validateTemplate(
   if (content) {
     templateContent = content
   } else if (id) {
-    const filePath = await findModelFile(rootDir, id, { includeSpecs: true })
+    const filePath = await findKnowledgeFile(rootDir, id, { includeSpecs: true })
     if (!filePath) {
       return {
         valid: false,
@@ -1014,7 +1014,7 @@ export async function validateTemplate(
     }
   }
 
-  const parsed = parseModel(templateContent)
+  const parsed = parseKnowledge(templateContent)
   const fm = parsed.frontmatter
 
   const parentUrl = url ?? fm?.parent_spec?.url
@@ -1082,7 +1082,7 @@ export async function validateTemplate(
   // Schema-driven: check the template's root-primitive elements
   // (Concept/Field/Marker/Matrix Definition) against the level-1 metaschema
   // resolved from the parent spec. Same code path as level-3-against-template.
-  for (const diag of validateTemplateAgainstMetaschema(templateContent, parentSpec.rawContent)) {
+  for (const diag of validateBlueprintAgainstMetaschema(templateContent, parentSpec.rawContent)) {
     ;(diag.severity === 'error' ? errors : warnings).push(diag)
   }
 
@@ -1091,7 +1091,7 @@ export async function validateTemplate(
   const includeRefs = fm?.includes ?? []
   if (includeRefs.length > 0) {
     const includeMap = await buildIncludeContentMap(rootDir, includeRefs)
-    const composed = resolveTemplateSchema(
+    const composed = resolveBlueprintSchema(
       templateContent,
       (ref) => includeMap.get(ref.name) ?? includeMap.get(ref.name.toLowerCase()) ?? null,
     )
@@ -1101,7 +1101,7 @@ export async function validateTemplate(
   }
 
   const templatePath = id
-    ? ((await findModelFile(rootDir, id, { includeSpecs: true })) ?? id)
+    ? ((await findKnowledgeFile(rootDir, id, { includeSpecs: true })) ?? id)
     : 'inline'
   const decoratedErrors = errors.map((e) => ({ ...e, filePath: templatePath }))
   const decoratedWarnings = warnings.map((w) => ({ ...w, filePath: templatePath }))
@@ -1112,3 +1112,4 @@ export async function validateTemplate(
     warnings: decoratedWarnings,
   }
 }
+

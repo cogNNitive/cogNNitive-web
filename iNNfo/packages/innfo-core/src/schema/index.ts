@@ -11,29 +11,29 @@ export {
   FIELD_DEFINITION,
   MARKER_DEFINITION,
   MATRIX_DEFINITION,
-  extractTemplateSchema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchema,
+  extractBlueprintSchemaFromContent,
 } from './extract.js'
-export type { TemplateSchema } from './extract.js'
+export type { BlueprintSchema } from './extract.js'
 
-export { resolveTemplateSchema, canonicalizeDefinition, applyAliasToSchema } from './compose.js'
-export type { IncludeResolver, ResolvedTemplateSchema } from './compose.js'
+export { resolveBlueprintSchema, canonicalizeDefinition, applyAliasToSchema } from './compose.js'
+export type { IncludeResolver, ResolvedBlueprintSchema } from './compose.js'
 
 export { findDeclaredField } from './declaredField.js'
 
 export {
   extractMetaschema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
 } from './metaschema.js'
 export type { SchemaCheckOptions } from './metaschema.js'
 
 export {
-  CANONICAL_TEMPLATES,
-  findCanonicalTemplate,
+  CANONICAL_BLUEPRINTS,
+  findCanonicalBlueprint,
   getCanonicalSpecContent,
-  listCanonicalTemplates,
+  listCanonicalBlueprints,
 } from './canonical-registry.js'
-export type { CanonicalTemplate } from './canonical-registry.js'
+export type { CanonicalBlueprint } from './canonical-registry.js'
 

@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeModelRootNode(id: string, path: string): ModelNode {
+function makeModelRootNode(id: string, path: string): KnowledgeNode {
   return {
     id,
     name: id,
@@ -33,12 +33,12 @@ describe('LeftSidebar — Dual Mode Navigation (R-DMS-01)', () => {
   })
 
   it('renders Workspace Mode by default and displays compact inline metrics pill with tooltip', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
-        'auth_01.md': makeModelRootNode('auth_01.md', 'models/auth_01.md'),
+        'auth_01.md': makeModelRootNode('auth_01.md', 'kNNowledge/auth_01.md'),
       },
       ['workspace_01.md', 'auth_01.md'],
     )
@@ -61,15 +61,15 @@ describe('LeftSidebar — Dual Mode Navigation (R-DMS-01)', () => {
   })
 
   it('renders active and draft counts correctly in metrics pill when draft models exist', () => {
-    const modelStore = useModelStore()
-    const draftNode = makeModelRootNode('draft_01.md', 'models/draft_01.md')
+    const knowledgeStore = useKnowledgeStore()
+    const draftNode = makeModelRootNode('draft_01.md', 'kNNowledge/draft_01.md')
     draftNode.rawContent = `---
 title: "draft_01.md"
 status: "draft"
 ---
 # Draft
 `
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
         'draft_01.md': draftNode,
@@ -89,12 +89,12 @@ status: "draft"
   })
 
   it('renders Focused Model Mode with top breadcrumb banner when a model is focused', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         'workspace_01.md': makeModelRootNode('workspace_01.md', 'workspace_01.md'),
-        'auth_01.md': makeModelRootNode('auth_01.md', 'models/auth_01.md'),
+        'auth_01.md': makeModelRootNode('auth_01.md', 'kNNowledge/auth_01.md'),
       },
       ['workspace_01.md', 'auth_01.md'],
     )

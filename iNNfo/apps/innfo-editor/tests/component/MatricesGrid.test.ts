@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { nextTick } from 'vue'
 import MatricesGrid from '../../src/components/editor/MatricesGrid.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 
 // Mock @tanstack/vue-virtual so tests don't need real layout.
 // Returns a ref-like object: __v_isRef for template auto-unwrap,
@@ -59,7 +59,7 @@ function makeNode(id: string, name: string, type: string): FakeNode {
 const ROOT_ID = 'Root'
 
 function setupStore(rowsCount = 10, colsCount = 10, widgetType = 'boolean', params = '') {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const nodes: Record<string, FakeNode> = {
     [ROOT_ID]: {
       id: ROOT_ID,
@@ -94,13 +94,13 @@ function setupStore(rowsCount = 10, colsCount = 10, widgetType = 'boolean', para
   for (let i = 0; i < colsCount; i++) {
     nodes[`tgt-${i}`] = makeNode(`tgt-${i}`, `Tgt${i}`, 'Tgt')
   }
-  modelStore.setGraph(nodes as any, [ROOT_ID])
+  knowledgeStore.setGraph(nodes as any, [ROOT_ID])
 }
 
 function setupStoreWithCellValues() {
   setupStore(10, 5, 'boolean')
-  const modelStore = useModelStore()
-  const root = modelStore.getNode(ROOT_ID)!
+  const knowledgeStore = useKnowledgeStore()
+  const root = knowledgeStore.getNode(ROOT_ID)!
   for (let r = 0; r < 10; r++) {
     for (let c = 0; c < 5; c++) {
       const val = (r + c) % 2 === 0 ? 'X' : '-'
@@ -110,7 +110,7 @@ function setupStoreWithCellValues() {
 }
 
 function setupBigStore(rowsCount = 100, colsCount = 100) {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const nodes: Record<string, FakeNode> = {
     [ROOT_ID]: {
       id: ROOT_ID,
@@ -144,12 +144,12 @@ function setupBigStore(rowsCount = 100, colsCount = 100) {
       root.fields[`BigMatrix||src-${r}||tgt-${c}`] = { value: 'X' }
     }
   }
-  modelStore.setGraph(nodes as any, [ROOT_ID])
+  knowledgeStore.setGraph(nodes as any, [ROOT_ID])
 }
 
 /** Sets up a store whose first matrix carries `values` + `description`. */
 function setupStoreWithValuesAndDescription() {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const nodes: Record<string, FakeNode> = {
     [ROOT_ID]: {
       id: ROOT_ID,
@@ -179,12 +179,12 @@ function setupStoreWithValuesAndDescription() {
   for (let i = 0; i < 5; i++) {
     nodes[`tgt-${i}`] = makeNode(`tgt-${i}`, `Tgt${i}`, 'Tgt')
   }
-  modelStore.setGraph(nodes as any, [ROOT_ID])
+  knowledgeStore.setGraph(nodes as any, [ROOT_ID])
 }
 
 /** Sets up a store with a metamodel root (template concepts) + element content. */
 function setupStoreWithMetamodelAndContent() {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
   const nodes: Record<string, any> = {
     [ROOT_ID]: {
       id: ROOT_ID,
@@ -248,7 +248,7 @@ function setupStoreWithMetamodelAndContent() {
       rawSections: {},
     }
   }
-  modelStore.setGraph(nodes as any, [ROOT_ID, 'spec:business'])
+  knowledgeStore.setGraph(nodes as any, [ROOT_ID, 'spec:business'])
 }
 
 /**
@@ -367,8 +367,8 @@ describe('R-MV-05: Cell editing in virtualised cells', () => {
     expect((checkbox.element as HTMLInputElement).checked).toBe(false)
     await checkbox.setChecked(true)
 
-    const modelStore = useModelStore()
-    const root = modelStore.getNode(ROOT_ID)!
+    const knowledgeStore = useKnowledgeStore()
+    const root = knowledgeStore.getNode(ROOT_ID)!
     const cellKey = Object.keys(root.fields).find((k) => k.startsWith('M1||src-0||tgt-0'))
     expect(cellKey).toBeTruthy()
     if (cellKey) {
@@ -397,8 +397,8 @@ describe('R-MV-05: Cell editing in virtualised cells', () => {
 
     await cycleBtn.trigger('click')
 
-    const modelStore = useModelStore()
-    const root = modelStore.getNode(ROOT_ID)!
+    const knowledgeStore = useKnowledgeStore()
+    const root = knowledgeStore.getNode(ROOT_ID)!
     const m1Key = Object.keys(root.fields).find((k) => k.startsWith('M1||'))
     expect(m1Key).toBeTruthy()
     if (m1Key) {
@@ -450,16 +450,16 @@ describe('R-MV-07: No changes to matrix field/export structure', () => {
 
   it('preserves cell storage format (MatrixName||<rowId>||<colId>, E1)', () => {
     setupStoreWithCellValues()
-    const modelStore = useModelStore()
-    const root = modelStore.getNode(ROOT_ID)!
+    const knowledgeStore = useKnowledgeStore()
+    const root = knowledgeStore.getNode(ROOT_ID)!
     const cellKey = Object.keys(root.fields).find((k) => k.startsWith('M1||'))
     expect(cellKey).toMatch(/^M1\|\|src-\d\|\|tgt-\d$/)
   })
 
   it('preserves __matrix_defs array structure', () => {
     setupStoreWithCellValues()
-    const modelStore = useModelStore()
-    const root = modelStore.getNode(ROOT_ID)!
+    const knowledgeStore = useKnowledgeStore()
+    const root = knowledgeStore.getNode(ROOT_ID)!
     const defs = root.fields['__matrix_defs']?.value as any[]
     expect(Array.isArray(defs)).toBe(true)
     expect(defs[0].name).toBe('M1')

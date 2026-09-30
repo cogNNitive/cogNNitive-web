@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { listModels } from '../src/index'
+import { listKnowledge } from '../src/index'
 
 const tempDirs: string[] = []
 
@@ -23,7 +23,7 @@ const MODEL_FRONTMATTER = [
   '',
 ].join('\n')
 
-describe('listModels (recursive scan)', () => {
+describe('listKnowledge (recursive scan)', () => {
   afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map((d) => rm(d, { recursive: true, force: true })))
   })
@@ -35,9 +35,9 @@ describe('listModels (recursive scan)', () => {
     await writeFile(join(root, 'Root_V_0-1-0_NN.md'), MODEL_FRONTMATTER + '# Root', 'utf-8')
 
     // Nested model inside a normal subdirectory tree.
-    await mkdir(join(root, 'models', 'subdir'), { recursive: true })
+    await mkdir(join(root, 'kNNowledge', 'subdir'), { recursive: true })
     await writeFile(
-      join(root, 'models', 'subdir', 'Nested_V_0-2-0_NN.md'),
+      join(root, 'kNNowledge', 'subdir', 'Nested_V_0-2-0_NN.md'),
       MODEL_FRONTMATTER + '# Nested',
       'utf-8',
     )
@@ -55,9 +55,9 @@ describe('listModels (recursive scan)', () => {
     await writeFile(join(root, '.git', 'Git_V_0-0-1_NN.md'), '# Git', 'utf-8')
 
     // index.md must keep being skipped.
-    await writeFile(join(root, 'index.md'), '# Index', 'utf-8')
+    await writeFile(join(root, 'domaiNN_NN.md'), '# Index', 'utf-8')
 
-    const models = await listModels(root)
+    const models = await listKnowledge(root)
     const ids = models.map((m) => m.id)
 
     expect(ids).toContain('Root_V_0-1-0_NN')
@@ -72,11 +72,11 @@ describe('listModels (recursive scan)', () => {
     const nested = models.find((m) => m.id === 'Nested_V_0-2-0_NN')
     expect(nested).toBeDefined()
     expect(nested!.version).toBe('0-2-0')
-    expect(nested!.path).toBe(join(root, 'models', 'subdir', 'Nested_V_0-2-0_NN.md'))
+    expect(nested!.path).toBe(join(root, 'kNNowledge', 'subdir', 'Nested_V_0-2-0_NN.md'))
   })
 
   it('returns an empty list for a non-existent root', async () => {
-    const models = await listModels(join(tmpdir(), 'does-not-exist-innfo'))
+    const models = await listKnowledge(join(tmpdir(), 'does-not-exist-innfo'))
     expect(models).toEqual([])
   })
 
@@ -123,7 +123,7 @@ describe('listModels (recursive scan)', () => {
       'utf-8',
     )
 
-    const models = await listModels(root)
+    const models = await listKnowledge(root)
     const ids = models.map((m) => m.id)
 
     expect(ids).toEqual(['Acme_V_1-0-0_business_NN'])

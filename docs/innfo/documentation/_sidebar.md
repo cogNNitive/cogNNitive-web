@@ -24,10 +24,6 @@
   - [Collaboration with Git](collaboration-git)
   - [Workspace Backup Strategies](workspace-backups)
 
-- **Templates**
-  - [Overview](templates)
-  - [Video App](template-video)
-
 - **Runtime & Internals**
   - [Offline Consoles](offline-consoles)
   - [Console Needs & Visuals](console-needs-and-visuals)

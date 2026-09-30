@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { printTaxonomyNode } from '../src/parser/taxonomy'
-import { serializeModel } from '../src/parser'
-import type { ParsedModel } from '../src/types'
+import { serializeKnowledge } from '../src/parser'
+import type { ParsedKnowledge } from '../src/types'
 
-/** Minimal ParsedModel with an overridable frontmatter / taxonomy. */
-function makeModel(overrides: Partial<ParsedModel>): ParsedModel {
+/** Minimal ParsedKnowledge with an overridable frontmatter / taxonomy. */
+function makeModel(overrides: Partial<ParsedKnowledge>): ParsedKnowledge {
   return {
-    frontmatter: { level: 3, model_version: 'V_0-1-0', title: 'Guard Repro' },
+    frontmatter: { level: 3, knowledge_version: 'V_0-1-0', title: 'Guard Repro' },
     elements: new Map(),
     taxonomy: [],
     matrices: [],
     nodeMarkers: {},
     ...overrides,
-  } as unknown as ParsedModel
+  } as unknown as ParsedKnowledge
 }
 
 describe('taxonomy / serializer guards', () => {
@@ -48,7 +48,7 @@ describe('taxonomy / serializer guards', () => {
     expect(lines.filter((l) => l.includes('[[D]]')).length).toBe(2)
   })
 
-  it('serializeModel does not throw on a cyclic taxonomy', () => {
+  it('serializeKnowledge does not throw on a cyclic taxonomy', () => {
     const model = makeModel({
       taxonomy: [
         { parent: '', child: 'A' },
@@ -56,18 +56,18 @@ describe('taxonomy / serializer guards', () => {
         { parent: 'B', child: 'A' },
       ],
     })
-    expect(() => serializeModel(model)).not.toThrow()
+    expect(() => serializeKnowledge(model)).not.toThrow()
   })
 
-  it('serializeModel emits at most one `parent:` frontmatter line', () => {
+  it('serializeKnowledge emits at most one `parent:` frontmatter line', () => {
     const model = makeModel({
       frontmatter: {
         level: 2,
         parent: 'https://example.com/base_V_0-1-0_NN.md',
         title: 'Dup Parent Repro',
-      } as unknown as ParsedModel['frontmatter'],
+      } as unknown as ParsedKnowledge['frontmatter'],
     })
-    const serialized = serializeModel(model)
+    const serialized = serializeKnowledge(model)
     const parentLines = serialized.split('\n').filter((l) => /^parent:/.test(l))
     expect(parentLines).toHaveLength(1)
   })

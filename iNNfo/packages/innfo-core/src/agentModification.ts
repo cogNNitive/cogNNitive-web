@@ -9,17 +9,21 @@
  *
  * The builder never performs I/O and never mutates a model or its `args`.
  * `scope`, `change` and the heading slug are derived deterministically from
- * `(op, args)`; `model`, `model_version`, `timestamp`, `rationale` and
+ * `(op, args)`; `model`, `knowledge_version`, `timestamp`, `rationale` and
  * `approved_by` are caller inputs.
  */
 
 import { slugifyHeading } from './sourceRef.js'
 
 export interface AgentModificationContext {
-  /** Model identifier — the `id` passed to `applyChange`. */
-  model: string
-  /** Model version in effect AFTER the mutation. */
-  modelVersion: string
+  /** Knowledge identifier — the `id` passed to `applyChange`. */
+  knowledge?: string
+  /** @deprecated use knowledge */
+  model?: string
+  /** Knowledge version in effect AFTER the mutation. */
+  knowledgeVersion?: string
+  /** @deprecated use knowledgeVersion */
+  modelVersion?: string
   /** ISO-8601 timestamp; defaults to `new Date().toISOString()`. */
   timestamp?: string
   /** Caller reasoning; when absent the block emits the explicit `rationale:: _` marker. */
@@ -63,8 +67,9 @@ function scopeFor(
     case 'set_marker':
       return `set_marker ${q(args.markerName)}`
     case 'bump_version': {
-      const from = ctx.versionTransition?.from ?? ctx.modelVersion
-      const to = ctx.versionTransition?.to ?? String(args.version ?? ctx.modelVersion)
+      const currentVer = ctx.knowledgeVersion ?? ctx.modelVersion ?? '0.1.0'
+      const from = ctx.versionTransition?.from ?? currentVer
+      const to = ctx.versionTransition?.to ?? String(args.version ?? currentVer)
       return `bump_version ${q(from)} → ${q(to)}`
     }
     // `add_marker` is not a real op (mutate.ts has only `set_marker`); anything
@@ -103,8 +108,9 @@ function changeFor(
     case 'set_marker':
       return `set marker ${q(args.markerName)}`
     case 'bump_version': {
-      const from = ctx.versionTransition?.from ?? ctx.modelVersion
-      const to = ctx.versionTransition?.to ?? String(args.version ?? ctx.modelVersion)
+      const currentVer = ctx.knowledgeVersion ?? ctx.modelVersion ?? '0.1.0'
+      const from = ctx.versionTransition?.from ?? currentVer
+      const to = ctx.versionTransition?.to ?? String(args.version ?? currentVer)
       return `bumped model version from ${q(from)} to ${q(to)}`
     }
     default:
@@ -131,6 +137,9 @@ export function buildAgentModificationBlock(
   const timestamp = ctx.timestamp ?? new Date().toISOString()
   const headingSlug = slugifyHeading(scope)
 
+  const targetId = ctx.knowledge ?? ctx.model ?? ''
+  const currentVer = ctx.knowledgeVersion ?? ctx.modelVersion ?? '0.1.0'
+
   const lines = [
     `## NN Agent Modification: ${headingSlug}`,
     '',
@@ -139,14 +148,14 @@ export function buildAgentModificationBlock(
     `rationale:: ${rationale}`,
     `approved_by:: ${approvedBy}`,
     `author:: ${author}`,
-    `model:: ${ctx.model}`,
+    `knowledge:: ${targetId}`,
   ]
   if (op === 'bump_version') {
-    const from = ctx.versionTransition?.from ?? ctx.modelVersion
-    const to = ctx.versionTransition?.to ?? String(args.version ?? ctx.modelVersion)
+    const from = ctx.versionTransition?.from ?? currentVer
+    const to = ctx.versionTransition?.to ?? String(args.version ?? currentVer)
     lines.push(`version_transition:: ${from} → ${to}`)
   }
-  lines.push(`model_version:: ${ctx.modelVersion}`)
+  lines.push(`knowledge_version:: ${currentVer}`)
   lines.push(`timestamp:: ${timestamp}`)
 
   return lines.join('\n') + '\n'

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { validateModel } from '../src/tools/validate.js'
+import { validateKnowledge } from '../src/tools/validate.js'
 
 const TEMPLATE_URL = 'https://example.com/business_V_0-2-0_NN.md'
 
@@ -23,7 +23,7 @@ const MODEL_CONTENT = [
   '---',
   'spec_version: "V_0-2-0"',
   'level: 3',
-  'model_version: "V_0-0-1"',
+  'knowledge_version: "V_0-0-1"',
   'title: "Startup Co"',
   'parent_spec:',
   '  name: business_V_0-2-0',
@@ -38,7 +38,7 @@ const MODEL_CONTENT = [
   '',
 ].join('\n')
 
-describe('validateModel TEMPLATE_CACHE_STALE warning (D3)', () => {
+describe('validateKnowledge TEMPLATE_CACHE_STALE warning (D3)', () => {
   let rootDir: string
 
   beforeEach(async () => {
@@ -58,8 +58,8 @@ describe('validateModel TEMPLATE_CACHE_STALE warning (D3)', () => {
       Promise.resolve({ ok: true, text: () => Promise.resolve(remoteContent) } as Response),
     )
 
-    // No options passed — checkFreshness must default to ON at validateModel level.
-    const result = await validateModel(rootDir, undefined, MODEL_CONTENT)
+    // No options passed — checkFreshness must default to ON at validateKnowledge level.
+    const result = await validateKnowledge(rootDir, undefined, MODEL_CONTENT)
 
     expect(result.valid).toBe(true)
     const warning = result.warnings.find((w) => w.message.includes('[TEMPLATE_CACHE_STALE]'))
@@ -85,7 +85,7 @@ describe('validateModel TEMPLATE_CACHE_STALE warning (D3)', () => {
       Promise.resolve({ ok: true, text: () => Promise.resolve(TEMPLATE_CONTENT) } as Response),
     )
 
-    const result = await validateModel(rootDir, undefined, MODEL_CONTENT)
+    const result = await validateKnowledge(rootDir, undefined, MODEL_CONTENT)
 
     expect(result.valid).toBe(true)
     expect(result.warnings.some((w) => w.message.includes('[TEMPLATE_CACHE_STALE]'))).toBe(false)
@@ -94,7 +94,7 @@ describe('validateModel TEMPLATE_CACHE_STALE warning (D3)', () => {
   it('emits no stale warning when the freshness fetch fails (offline → unknown)', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('network disabled'))
 
-    const result = await validateModel(rootDir, undefined, MODEL_CONTENT)
+    const result = await validateKnowledge(rootDir, undefined, MODEL_CONTENT)
 
     expect(result.valid).toBe(true)
     expect(result.warnings.some((w) => w.message.includes('[TEMPLATE_CACHE_STALE]'))).toBe(false)
@@ -103,7 +103,7 @@ describe('validateModel TEMPLATE_CACHE_STALE warning (D3)', () => {
   it('performs no freshness fetch when checkFreshness is explicitly disabled', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch')
 
-    const result = await validateModel(rootDir, undefined, MODEL_CONTENT, undefined, undefined, {
+    const result = await validateKnowledge(rootDir, undefined, MODEL_CONTENT, undefined, undefined, {
       checkFreshness: false,
     })
 

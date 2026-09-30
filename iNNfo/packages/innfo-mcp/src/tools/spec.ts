@@ -13,13 +13,13 @@
 import { join, basename, dirname } from 'node:path'
 import { readFile, stat } from 'node:fs/promises'
 import {
-  getTemplate as coreGetTemplate,
+  getBlueprint as coreGetBlueprint,
   getFormatSpec,
   parseFrontmatter,
   SpecResolutionError,
-  resolveTemplatePath,
-  getTemplateSearchPaths,
-  UnresolvedTemplateError,
+  resolveBlueprintPath,
+  getBlueprintSearchPaths,
+  UnresolvedBlueprintError,
 } from '@cognnitive/innfo-core'
 import { mkdir, copyFile, readdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
@@ -32,8 +32,8 @@ import type {
 } from '@cognnitive/innfo-core'
 import {
   resolveParentChainNode,
-  resolveTemplatePackage,
-  hydrateTemplatePackageAtomically,
+  resolveBlueprintPackage,
+  hydrateBlueprintPackageAtomically,
   fetchSpecContent,
   isLocalPath,
   toLocalFilePath,
@@ -58,18 +58,12 @@ import { isInsideRoot, isSafeRelativeId } from './path-guard.js'
 export { normalizeId }
 
 /**
- * Locate a model file on disk by id.
+ * Locate a kNNowledge document on disk by id.
  *
- * Searches the root directory and the conventional `models/` subdirectory
- * (iNNfo workspace layout). For each directory it tries, in order:
- *   `<cleanId>_NN.md`, `<cleanId>.md`, `<cleanId>`, `<id>`, `<id>.md`.
- *
- * The `<id>.md` candidate is what makes ids that already end in `_NN`
- * (e.g. `LC_programas_Tutorias_V_0-1-0_NN`) resolve to the exact file
- * `LC_programas_Tutorias_V_0-1-0_NN.md` instead of failing with
- * "Model not found".
+ * Searches the root directory, `kNNowledge/` and the conventional `kNNowledge/` subdirectory.
+ * Supports nested relative paths (e.g. `subsystems/auth/tokens_NN.md`).
  */
-export async function findModelFile(
+export async function findKnowledgeFile(
   rootDir: string,
   id: string,
   opts?: { includeSpecs?: boolean },
@@ -78,7 +72,7 @@ export async function findModelFile(
   // drive/UNC-qualified forms before it ever reaches a `join`.
   if (!isSafeRelativeId(id)) return null
   const cleanId = normalizeId(id)
-  const searchDirs = [rootDir, join(rootDir, 'models')]
+  const searchDirs = [rootDir, join(rootDir, 'kNNowledge'), join(rootDir, 'models')]
   for (const dir of searchDirs) {
     const candidates = [
       join(dir, `${cleanId}_NN.md`),
@@ -86,6 +80,7 @@ export async function findModelFile(
       join(dir, cleanId),
       join(dir, id),
       join(dir, `${id}.md`),
+      join(dir, `${id}_NN.md`),
     ].filter((fp) => isInsideRoot(rootDir, fp))
     for (const fp of candidates) {
       try {
@@ -100,13 +95,20 @@ export async function findModelFile(
     }
   }
 
-  if (cleanId.toLowerCase().startsWith('workspace') || id.toLowerCase().startsWith('workspace')) {
+  if (
+    cleanId.toLowerCase().startsWith('domain') ||
+    cleanId.toLowerCase().startsWith('workspace') ||
+    id.toLowerCase().startsWith('domain') ||
+    id.toLowerCase().startsWith('workspace')
+  ) {
     const { readdir } = await import('node:fs/promises')
     for (const dir of searchDirs) {
       try {
         const files = await readdir(dir)
         const wsFile = files.find(
-          (f) => f.toLowerCase().startsWith('workspace') && f.toLowerCase().endsWith('.md'),
+          (f) =>
+            (f.toLowerCase().startsWith('domain') || f.toLowerCase().startsWith('workspace')) &&
+            f.toLowerCase().endsWith('.md'),
         )
         if (wsFile) {
           return join(dir, wsFile)
@@ -188,7 +190,7 @@ export async function readParentSpecUrl(
   rootDir: string,
   modelId: string,
 ): Promise<{ url: string; name: string } | null> {
-  const filePath = await findModelFile(rootDir, modelId)
+  const filePath = await findKnowledgeFile(rootDir, modelId)
   if (!filePath) return null
   const content = await readFile(filePath, 'utf-8').catch(() => null)
   if (!content) return null
@@ -256,7 +258,7 @@ export async function getSpec(
  * Resolve a template document directly from a URL — the model's own
  * `parent_spec.url` is the source of truth. No hardcoded names or base URLs.
  */
-export async function getTemplateFromUrl(
+export async function getBlueprintFromUrl(
   rootDir: string,
   url: string,
   name: string,
@@ -268,7 +270,7 @@ export async function getTemplateFromUrl(
     // whatever was resolved for the requested name itself (e.g. a level-1
     // spec requested directly) — it's already in `cache.specs`, no need to
     // re-read anything from disk.
-    return coreGetTemplate(cache) ?? cache.specs.get(name) ?? null
+    return coreGetBlueprint(cache) ?? cache.specs.get(name) ?? null
   } catch (err) {
     // Surface the actionable resolution detail (searched locations) to the
     // caller so validate_model output can include it; other failures keep the
@@ -284,12 +286,12 @@ export async function getTemplateFromUrl(
 }
 
 /**
- * Like `getTemplateFromUrl`, but also returns the full resolved `SpecCache`
+ * Like `getBlueprintFromUrl`, but also returns the full resolved `SpecCache`
  * (parent chain + every `includes` target) and an `IncludeResolver` bound to
  * it — so a caller can pass template composition through to innfo-core's
- * `validateModel` / `resolveTemplateSchema` without re-reading anything.
+ * `validateKnowledge` / `resolveBlueprintSchema` without re-reading anything.
  */
-export async function resolveTemplateWithCache(
+export async function resolveBlueprintWithCache(
   rootDir: string,
   url: string,
   name: string,
@@ -312,7 +314,7 @@ export async function resolveTemplateWithCache(
     }
     cache = null
   }
-  const template = cache ? (coreGetTemplate(cache) ?? cache.specs.get(name) ?? null) : null
+  const template = cache ? (coreGetBlueprint(cache) ?? cache.specs.get(name) ?? null) : null
   const resolveInclude = (ref: { name: string; url: string }): string | null => {
     if (!cache) return null
     const direct = cache.specs.get(ref.name)
@@ -330,17 +332,17 @@ export async function resolveTemplateWithCache(
  * Resolve a template from a loaded model, deriving the URL from its
  * `parent_spec.url`. Returns null when the model declares no parent.
  */
-export async function getTemplateFromModel(
+export async function getBlueprintFromModel(
   rootDir: string,
   modelId: string,
   cacheOpts?: ResolveCacheOptions,
 ): Promise<SpecDocument | null> {
   const parent = await readParentSpecUrl(rootDir, modelId)
   if (!parent) return null
-  return getTemplateFromUrl(rootDir, parent.url, parent.name, cacheOpts)
+  return getBlueprintFromUrl(rootDir, parent.url, parent.name, cacheOpts)
 }
 
-export interface DiscoveredTemplate {
+export interface DiscoveredBlueprint {
   name: string
   version: string
   source: 'workspace' | 'global' | string
@@ -348,14 +350,14 @@ export interface DiscoveredTemplate {
   skillName?: string
 }
 
-export async function listTemplates(
+export async function listBlueprints(
   rootDir: string,
   opts?: { globalDir?: string; skillsDir?: string },
-): Promise<DiscoveredTemplate[]> {
-  const globalDir = opts?.globalDir ?? join(homedir(), '.agents', 'templates')
+): Promise<DiscoveredBlueprint[]> {
+  const globalDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir = opts?.skillsDir ?? join(homedir(), '.agents', 'skills')
 
-  const discovered: DiscoveredTemplate[] = []
+  const discovered: DiscoveredBlueprint[] = []
   const seenNames = new Set<string>()
 
   const scanDir = async (
@@ -376,7 +378,7 @@ export async function listTemplates(
           try {
             const content = await readFile(filePath, 'utf-8')
             const fm = parseFrontmatter(content)
-            if (fm?.template_version) version = String(fm.template_version)
+            if (fm?.blueprint_version) version = String(fm.blueprint_version)
             else if (fm?.version) version = String(fm.version)
             else if (fm?.spec_version) version = String(fm.spec_version)
           } catch (err) {
@@ -414,7 +416,7 @@ export async function listTemplates(
               try {
                 const content = await readFile(specFile, 'utf-8')
                 const fm = parseFrontmatter(content)
-                if (fm?.template_version) version = String(fm.template_version)
+                if (fm?.blueprint_version) version = String(fm.blueprint_version)
                 else if (fm?.version) version = String(fm.version)
                 else if (fm?.spec_version) version = String(fm.spec_version)
               } catch (_) {
@@ -439,16 +441,15 @@ export async function listTemplates(
     }
   }
 
-  await scanDir(join(rootDir, 'templates'), 'workspace')
+  await scanDir(join(rootDir, 'specs', 'bluepriNNts'), 'workspace')
   await scanDir(join(rootDir, 'specs'), 'workspace')
-  await scanDir(join(rootDir, 'specs', 'templates'), 'workspace')
   await scanDir(globalDir, 'global')
 
   try {
     const skillEntries = await readdir(skillsDir, { withFileTypes: true })
     for (const entry of skillEntries) {
       if (entry.isDirectory()) {
-        await scanDir(join(skillsDir, entry.name, 'templates'), 'skill', entry.name)
+        await scanDir(join(skillsDir, entry.name, 'bluepriNNts'), 'skill', entry.name)
         await scanDir(join(skillsDir, entry.name), 'skill', entry.name)
       }
     }
@@ -461,8 +462,7 @@ export async function listTemplates(
 
   return discovered
 }
-
-export interface HydrateTemplateResult {
+export interface HydrateBlueprintResult {
   success: boolean
   templateName: string
   targetPath: string
@@ -470,16 +470,23 @@ export interface HydrateTemplateResult {
   message?: string
 }
 
-export async function hydrateTemplate(
+export async function hydrateBlueprint(
   rootDir: string,
   templateName: string,
   opts?: { targetDir?: string; globalDir?: string; skillsDir?: string },
-): Promise<HydrateTemplateResult> {
-  const globalTemplatesDir = opts?.globalDir ?? join(homedir(), '.agents', 'templates')
+): Promise<HydrateBlueprintResult> {
+  const parsed = parseSpecName(templateName)
+  if (parsed.base === 'domainn' && !parsed.version) {
+    throw new UnresolvedBlueprintError(templateName, [
+      'Versionless hydration for domaiNN is not allowed; specify a versioned blueprint name or ref',
+    ])
+  }
+
+  const globalBlueprintsDir = opts?.globalDir ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir = opts?.skillsDir ?? join(homedir(), '.agents', 'skills')
 
-  const pkg = await resolveTemplatePackage(rootDir, templateName, undefined, {
-    globalDir: globalTemplatesDir,
+  const pkg = await resolveBlueprintPackage(rootDir, templateName, undefined, {
+    globalDir: globalBlueprintsDir,
     skillsDir,
   })
 
@@ -504,7 +511,7 @@ export async function hydrateTemplate(
 
     if (content) {
       if (opts?.targetDir || !pkg.isPackageDir) {
-        const targetDir = opts?.targetDir ?? join(rootDir, 'templates')
+        const targetDir = opts?.targetDir ?? join(rootDir, 'specs', 'bluepriNNts')
         await mkdir(targetDir, { recursive: true })
         const fileName = templateName.endsWith('.md') ? templateName : `${templateName}.md`
         const targetPath = join(targetDir, fileName)
@@ -515,7 +522,7 @@ export async function hydrateTemplate(
             templateName,
             targetPath,
             source: sourceName,
-            message: `Template ${templateName} already present at ${targetPath} (write-once cache immutability)`,
+            message: `Blueprint ${templateName} already present at ${targetPath} (write-once cache immutability)`,
           }
         } catch (err) {
           /* v8 ignore start */
@@ -529,13 +536,13 @@ export async function hydrateTemplate(
             templateName,
             targetPath,
             source: sourceName,
-            message: `Hydrated template ${templateName} from ${sourceName} to ${targetPath}`,
+            message: `Hydrated blueprint ${templateName} from ${sourceName} to ${targetPath}`,
           }
         }
       }
 
-      // Default: hydrate into workspace package directory specs/templates/<name>/<version>/
-      const targetPkgDir = await hydrateTemplatePackageAtomically(
+      // Default: hydrate into workspace package directory specs/bluepriNNts/<name>/<version>/
+      const targetPkgDir = await hydrateBlueprintPackageAtomically(
         rootDir,
         pkg.name,
         pkg.version,
@@ -546,27 +553,27 @@ export async function hydrateTemplate(
         templateName,
         targetPath: targetPkgDir,
         source: sourceName,
-        message: `Hydrated template package ${templateName} (${pkg.version}) from ${sourceName} to ${targetPkgDir}`,
+        message: `Hydrated blueprint package ${templateName} (${pkg.version}) from ${sourceName} to ${targetPkgDir}`,
       }
     }
   }
 
-  const location = await resolveTemplatePath(templateName, {
+  const location = await resolveBlueprintPath(templateName, {
     workspaceDir: rootDir,
-    globalTemplatesDir,
+    globalBlueprintsDir,
     skillsDir,
   })
 
   if (!location) {
-    const checkedPaths = await getTemplateSearchPaths(templateName, {
+    const checkedPaths = await getBlueprintSearchPaths(templateName, {
       workspaceDir: rootDir,
-      globalTemplatesDir,
+      globalBlueprintsDir,
       skillsDir,
     })
-    throw new UnresolvedTemplateError(templateName, checkedPaths)
+    throw new UnresolvedBlueprintError(templateName, checkedPaths)
   }
 
-  const targetDir = opts?.targetDir ?? join(rootDir, 'templates')
+  const targetDir = opts?.targetDir ?? join(rootDir, 'specs', 'bluepriNNts')
   await mkdir(targetDir, { recursive: true })
 
   const fileName = templateName.endsWith('.md') ? templateName : `${templateName}.md`
@@ -579,7 +586,7 @@ export async function hydrateTemplate(
       templateName,
       targetPath,
       source: location.source,
-      message: `Template ${templateName} already present at ${targetPath} (write-once cache immutability)`,
+      message: `Blueprint ${templateName} already present at ${targetPath} (write-once cache immutability)`,
     }
   } catch (err) {
     /* v8 ignore start */
@@ -595,22 +602,22 @@ export async function hydrateTemplate(
     templateName,
     targetPath,
     source: location.source,
-    message: `Hydrated template ${templateName} from ${location.source} to ${targetPath}`,
+    message: `Hydrated blueprint ${templateName} from ${location.source} to ${targetPath}`,
   }
 }
 
-export interface ListTemplateProceduresOptions {
+export interface ListBlueprintProceduresOptions {
   model_path?: string
   model_id?: string
-  template_name?: string
+  blueprint_name?: string
   version?: string
   url?: string
 }
 
-export interface ListTemplateSkillsOptions {
+export interface ListBlueprintSkillsOptions {
   model_path?: string
   model_id?: string
-  template_name?: string
+  blueprint_name?: string
   version?: string
   url?: string
 }
@@ -622,7 +629,7 @@ interface DiscoveredAssets {
 
 export async function discoverTransitiveAssets(
   rootDir: string,
-  opts?: ListTemplateProceduresOptions,
+  opts?: ListBlueprintProceduresOptions,
 ): Promise<DiscoveredAssets> {
   const specsDir = join(rootDir, 'specs')
   const queue: Array<{
@@ -639,7 +646,7 @@ export async function discoverTransitiveAssets(
 
   if (modelId) {
     const filePath =
-      (await findModelFile(rootDir, modelId)) ??
+      (await findKnowledgeFile(rootDir, modelId)) ??
       (isLocalPath(modelId) ? toLocalFilePath(modelId, rootDir) : null)
     if (filePath) {
       const content = await readFile(filePath, 'utf-8').catch(() => null)
@@ -652,15 +659,15 @@ export async function discoverTransitiveAssets(
     }
   }
 
-  if (opts?.template_name) {
-    const pkg = await resolveTemplatePackage(rootDir, opts.template_name, opts.version)
+  if (opts?.blueprint_name) {
+    const pkg = await resolveBlueprintPackage(rootDir, opts.blueprint_name, opts.version)
     if (pkg) {
       const content = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
       if (content) {
         const fm = parseFrontmatter(content)
         if (fm) {
           queue.push({
-            docName: basename(pkg.specFilePath, '.md') || opts.template_name || pkg.name,
+            docName: basename(pkg.specFilePath, '.md') || opts.blueprint_name || pkg.name,
             fm,
             depth: 0,
             filePath: pkg.specFilePath,
@@ -671,7 +678,7 @@ export async function discoverTransitiveAssets(
   }
 
   if (opts?.url) {
-    const name = opts.template_name || deriveNameFromUrl(opts.url)
+    const name = opts.blueprint_name || deriveNameFromUrl(opts.url)
     const content = await fetchSpecContent(name, opts.url, specsDir, 10000)
     if (content) {
       const fm = parseFrontmatter(content)
@@ -682,7 +689,7 @@ export async function discoverTransitiveAssets(
   }
 
   if (queue.length === 0) {
-    const templates = await listTemplates(rootDir)
+    const templates = await listBlueprints(rootDir)
     for (const tmpl of templates) {
       const content = await readFile(tmpl.filePath, 'utf-8').catch(() => null)
       if (content) {
@@ -698,13 +705,13 @@ export async function discoverTransitiveAssets(
   const skills: TemplateSkill[] = []
   const seenProcIds = new Set<string>()
   const seenSkillNames = new Set<string>()
-  const seenTemplates = new Set<string>()
+  const seenBlueprints = new Set<string>()
 
   while (queue.length > 0) {
     const item = queue.shift()!
     const key = item.docName.toLowerCase()
-    if (seenTemplates.has(key) || item.depth > 10) continue
-    seenTemplates.add(key)
+    if (seenBlueprints.has(key) || item.depth > 10) continue
+    seenBlueprints.add(key)
 
     const fm = item.fm
 
@@ -727,7 +734,7 @@ export async function discoverTransitiveAssets(
     if (item.filePath) {
       templateDir = dirname(item.filePath)
     } else {
-      const pkg = await resolveTemplatePackage(rootDir, item.docName)
+      const pkg = await resolveBlueprintPackage(rootDir, item.docName)
       if (pkg) {
         templateDir = pkg.isPackageDir ? pkg.packagePath : dirname(pkg.specFilePath)
       }
@@ -788,7 +795,7 @@ export async function discoverTransitiveAssets(
         for (const inc of fm.includes) {
           if (!inc || !inc.name) continue
           const incKey = inc.name.toLowerCase()
-          if (seenTemplates.has(incKey)) continue
+          if (seenBlueprints.has(incKey)) continue
 
           let incVersion: string | undefined
           if (inc.url) {
@@ -804,7 +811,7 @@ export async function discoverTransitiveAssets(
           }
 
           let incContent: string | null = null
-          const pkg = await resolveTemplatePackage(rootDir, inc.name, incVersion)
+          const pkg = await resolveBlueprintPackage(rootDir, inc.name, incVersion)
           if (pkg) {
             incContent = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
           }
@@ -829,7 +836,7 @@ export async function discoverTransitiveAssets(
       if (fm.parent_spec && typeof fm.parent_spec === 'object' && fm.parent_spec.name) {
         const pName = fm.parent_spec.name
         const pKey = pName.toLowerCase()
-        if (!seenTemplates.has(pKey)) {
+        if (!seenBlueprints.has(pKey)) {
           let pVersion: string | undefined
           if (fm.parent_spec.url) {
             const vMatch =
@@ -844,7 +851,7 @@ export async function discoverTransitiveAssets(
           }
 
           let parentContent: string | null = null
-          const pkg = await resolveTemplatePackage(rootDir, pName, pVersion)
+          const pkg = await resolveBlueprintPackage(rootDir, pName, pVersion)
           if (pkg) {
             parentContent = await readFile(pkg.specFilePath, 'utf-8').catch(() => null)
           }
@@ -870,17 +877,17 @@ export async function discoverTransitiveAssets(
   return { procedures, skills }
 }
 
-export async function listTemplateProcedures(
+export async function listBlueprintProcedures(
   rootDir: string,
-  opts?: ListTemplateProceduresOptions,
+  opts?: ListBlueprintProceduresOptions,
 ): Promise<{ procedures: TemplateProcedure[] }> {
   const assets = await discoverTransitiveAssets(rootDir, opts)
   return { procedures: assets.procedures }
 }
 
-export async function listTemplateSkills(
+export async function listBlueprintSkills(
   rootDir: string,
-  opts?: ListTemplateSkillsOptions,
+  opts?: ListBlueprintSkillsOptions,
 ): Promise<{ skills: TemplateSkill[] }> {
   const assets = await discoverTransitiveAssets(rootDir, opts)
   return { skills: assets.skills }

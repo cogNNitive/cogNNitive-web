@@ -197,7 +197,7 @@ import { ChevronRight, BookOpen, Copy } from 'lucide-vue-next'
 import IconRenderer from '../editor/IconRenderer.vue'
 import { useResizablePanel } from '../../composables/useResizablePanel'
 import { useMetamodelStore } from '../../stores/metamodelStore'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
@@ -212,7 +212,7 @@ const props = defineProps<{
 }>()
 
 const metamodelStore = useMetamodelStore()
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const workspaceStore = useWorkspaceStore()
 
@@ -249,7 +249,7 @@ const TAXONOMY_FIELD_NAMES = new Set([
 
 const selectedModelNode = computed(() => {
   const id = uiStore.selectedNodeId
-  return id ? modelStore.getNode(id) : null
+  return id ? knowledgeStore.getNode(id) : null
 })
 
 const treeBreadcrumb = computed(() => {
@@ -260,7 +260,7 @@ const treeBreadcrumb = computed(() => {
   while (current) {
     crumbs.unshift({ name: current.name, type: current.type || 'node' })
     if (!current.parentId) break
-    const nextNode = modelStore.getNode(current.parentId)
+    const nextNode = knowledgeStore.getNode(current.parentId)
     if (!nextNode) break
     current = nextNode
   }
@@ -300,9 +300,9 @@ const { width, startResize } = useResizablePanel({
  */
 const associatedMatrices = computed<MatrixDecl[]>(() => {
   if (!props.conceptType) return []
-  const rootId = modelStore.rootIds[0]
+  const rootId = knowledgeStore.rootIds[0]
   if (!rootId) return []
-  const root = modelStore.getNode(rootId)
+  const root = knowledgeStore.getNode(rootId)
   if (!root?.rawContent) return []
   const fm = parseFrontmatter(root.rawContent)
   if (!fm?.matrices) return []
@@ -314,7 +314,7 @@ const associatedMatrices = computed<MatrixDecl[]>(() => {
 
 /**
  * Extracts template version from raw frontmatter (mirrors the logic in
- * metamodelStore.extractTemplateVersionFromRaw).
+ * metamodelStore.extractBlueprintVersionFromRaw).
  */
 function extractVersion(raw: string): string {
   const templateSection = raw.match(/^template:\s*\n((?:\s+[^\n]+\n)*)/m)
@@ -322,7 +322,7 @@ function extractVersion(raw: string): string {
     const vMatch = templateSection[1].match(/version:\s*["']([^"'\n]+)["']/)
     if (vMatch) return vMatch[1]
   }
-  const mvMatch = raw.match(/^model_version:\s*["']([^"'\n]+)["']/m)
+  const mvMatch = raw.match(/^knowledge_version:\s*["']([^"'\n]+)["']/m)
   return mvMatch?.[1] ?? ''
 }
 
@@ -345,9 +345,9 @@ async function loadGuidance(): Promise<void> {
 
   // Trigger explicit documentation load if workspace is open
   if (Object.keys(metamodelStore.documentation).length === 0 && workspaceStore.handle) {
-    const rootId = modelStore.rootIds[0]
+    const rootId = knowledgeStore.rootIds[0]
     if (rootId) {
-      const rootNode = modelStore.getNode(rootId)
+      const rootNode = knowledgeStore.getNode(rootId)
       if (rootNode) {
         const parsed = parseFormatFilename(rootNode.source.path)
         const templateName = parsed?.templateName ?? ''

@@ -1,23 +1,23 @@
 import { readFile, writeFile, rm, stat, rename, readdir } from 'node:fs/promises'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import {
-  parseModel,
-  serializeModel,
-  validateModel as coreValidate,
+  parseKnowledge,
+  serializeKnowledge,
+  validateKnowledge as coreValidate,
   applyMutation as coreApplyMutation,
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   buildAgentModificationBlock,
 } from '@cognnitive/innfo-core'
-import type { SpecDocument, ParsedModel, TemplateSchema } from '@cognnitive/innfo-core'
-import { findModelFile } from './spec.js'
+import type { SpecDocument, ParsedKnowledge, BlueprintSchema } from '@cognnitive/innfo-core'
+import { findKnowledgeFile } from './spec.js'
 import { isLocalPath, toLocalFilePath, saveSpecOnce } from './resolver-node.js'
 import { createSpecsBackupZip } from './spec-backup.js'
-import { loadModel, saveModel, resolveTemplateForModel } from './model-io.js'
+import { loadKnowledge, saveKnowledge, resolveBlueprintForKnowledge } from './knowledge-io.js'
 import { DEFAULT_WORKSPACE_IGNORE } from './validate.js'
 
 export interface ApplyChangeResult {
   success: boolean
-  model?: ParsedModel
+  model?: ParsedKnowledge
   newPath?: string
   errors?: Array<{ path: string; message: string }>
   warnings?: Array<{ path: string; message: string }>
@@ -66,7 +66,7 @@ function formatVersion(p: VersionParts): string {
  * Compute the new model version from bump_version args.
  * Either an explicit `version` ("V_0-5-0") or a `bump` of
  * "major" | "minor" | "patch" (default patch) applied to the current
- * `model_version` frontmatter. Returns null when the args are invalid.
+ * `knowledge_version` frontmatter. Returns null when the args are invalid.
  */
 function computeNewVersion(
   current: string | undefined,
@@ -113,7 +113,7 @@ function escapeRegex(s: string): string {
 }
 
 function cascadeModelReferences(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   oldBase: string,
   newBase: string,
 ): boolean {
@@ -214,33 +214,37 @@ function cascadeModelReferences(
 }
 
 /**
- * Apply the `bump_version` operation: set `frontmatter.model_version`, rename
+ * Apply the `bump_version` operation: set `frontmatter.knowledge_version`, rename
  * the file to the canonical `_V_<version>_` filename, validate BEFORE writing,
  * and reject-without-writing on any failure.
  */
 async function bumpVersion(
   rootDir: string,
   filePath: string,
-  model: ParsedModel,
+  model: ParsedKnowledge,
   args: Record<string, unknown>,
   id: string,
 ): Promise<ApplyChangeResult> {
-  const prevVersion = String(model.frontmatter.model_version ?? '')
-  const next = computeNewVersion(model.frontmatter.model_version, args)
+  const prevVersion = String(model.frontmatter.knowledge_version ?? model.frontmatter.blueprint_version ?? '')
+  const next = computeNewVersion(prevVersion, args)
   if (!next) {
     return {
       success: false,
       errors: [
         {
-          path: 'frontmatter.model_version',
+          path: 'frontmatter.knowledge_version',
           message:
-            'Invalid version args for bump_version: provide { version: "V_x-y-z" } or { bump: "major" | "minor" | "patch" } against a valid model_version frontmatter',
+            'Invalid version args for bump_version: provide { version: "V_x-y-z" } or { bump: "major" | "minor" | "patch" } against a valid version frontmatter',
         },
       ],
     }
   }
 
-  model.frontmatter.model_version = next.version
+  if (model.frontmatter.knowledge_version === undefined && model.frontmatter.blueprint_version !== undefined) {
+    model.frontmatter.blueprint_version = next.version
+  } else {
+    model.frontmatter.knowledge_version = next.version
+  }
 
   // A pre-write backup is taken when the caller asked for one, or when the
   // `specs/` tree has uncommitted changes. If a backup was judged necessary
@@ -291,9 +295,9 @@ async function bumpVersion(
   let newParentName: string | null = null
   // SpecDocument view of the just-bumped local parent, built once the new
   // frontmatter is serialized below. Used as the validation `template` when
-  // resolveTemplateForModel can't yet see the bump (the new file hasn't been
+  // resolveBlueprintForKnowledge can't yet see the bump (the new file hasn't been
   // written to disk at this point in the flow).
-  let localParentTemplate: SpecDocument | null = null
+  let localParentBlueprint: SpecDocument | null = null
 
   if (model.frontmatter.parent_spec && typeof args.parent_version === 'string') {
     const parentVer = args.parent_version.trim()
@@ -322,12 +326,12 @@ async function bumpVersion(
 
         // Read and update the template file's frontmatter
         const rawParentContent = await readFile(localParentPath, 'utf-8')
-        const parentModel = parseModel(rawParentContent)
+        const parentModel = parseKnowledge(rawParentContent)
         if (parentModel.frontmatter.level === 2) {
           parentModel.frontmatter.spec_version = parentVerString
         }
-        parentContent = serializeModel(parentModel)
-        localParentTemplate = {
+        parentContent = serializeKnowledge(parentModel)
+        localParentBlueprint = {
           name: newParentName,
           level: parentModel.frontmatter.level ?? 0,
           parentName: parentModel.frontmatter.parent_spec?.name,
@@ -359,15 +363,15 @@ async function bumpVersion(
   let resolveInclude: (ref: { name: string; url: string }) => string | null = () => null
   try {
     if (parentContent && newParentName) {
-      template = localParentTemplate
-      const r = await resolveTemplateForModel(rootDir, model).catch(() => ({
-        template: localParentTemplate,
+      template = localParentBlueprint
+      const r = await resolveBlueprintForKnowledge(rootDir, model).catch(() => ({
+        template: localParentBlueprint,
         resolveInclude: () => null,
       }))
-      template = r.template ?? localParentTemplate
+      template = r.template ?? localParentBlueprint
       resolveInclude = r.resolveInclude
     } else {
-      const r = await resolveTemplateForModel(rootDir, model)
+      const r = await resolveBlueprintForKnowledge(rootDir, model)
       template = r.template
       resolveInclude = r.resolveInclude
     }
@@ -387,7 +391,7 @@ async function bumpVersion(
   }
 
   // 4. Pre-mutation validation of referencing workspace models
-  const affectedModels: Array<{ filePath: string; model: ParsedModel }> = []
+  const affectedModels: Array<{ filePath: string; model: ParsedKnowledge }> = []
   const oldBaseResolved = resolve(filePath)
   const oldStem = base.replace(/\.md$/i, '')
   const allModelFiles = await findAllWorkspaceModelFiles(rootDir, DEFAULT_WORKSPACE_IGNORE)
@@ -397,14 +401,14 @@ async function bumpVersion(
     try {
       const raw = await readFile(mFile, 'utf-8')
       if (!raw.includes(base) && !raw.includes(oldStem)) continue
-      const parsed = parseModel(raw)
+      const parsed = parseKnowledge(raw)
       const changed = cascadeModelReferences(parsed, base, newBase)
       if (changed) {
-        let depTemplate: SpecDocument | null = null
+        let depBlueprint: SpecDocument | null = null
         let depResolveInclude: (ref: { name: string; url: string }) => string | null = () => null
         try {
-          const r = await resolveTemplateForModel(rootDir, parsed)
-          depTemplate = r.template
+          const r = await resolveBlueprintForKnowledge(rootDir, parsed)
+          depBlueprint = r.template
           depResolveInclude = r.resolveInclude
         } catch (err) {
           return {
@@ -419,7 +423,7 @@ async function bumpVersion(
             ],
           }
         }
-        const check = coreValidate(parsed, depTemplate, null, depResolveInclude)
+        const check = coreValidate(parsed, depBlueprint, null, depResolveInclude)
         if (!check.valid) {
           return {
             success: false,
@@ -466,15 +470,15 @@ async function bumpVersion(
 
     // 2. Write target model file
     if (newPath === filePath) {
-      await saveModel(filePath, model)
+      await saveKnowledge(filePath, model)
     } else {
-      await saveModel(newPath, model)
+      await saveKnowledge(newPath, model)
       await rm(filePath, { force: true })
     }
 
     // 3. Write all affected referencing models
     for (const affected of affectedModels) {
-      await saveModel(affected.filePath, affected.model)
+      await saveKnowledge(affected.filePath, affected.model)
     }
 
     // 4. Update references in workspace index.md
@@ -518,6 +522,8 @@ async function bumpVersion(
     modification:
       buildAgentModificationBlock('bump_version', args, {
         model: id,
+        knowledge: id,
+        knowledgeVersion: next.version,
         modelVersion: next.version,
         versionTransition: { from: prevVersion, to: next.version },
         ...modificationContext(args),
@@ -536,14 +542,14 @@ export async function applyChange(
   op: string,
   args: Record<string, unknown>,
 ): Promise<ApplyChangeResult> {
-  const filePath = await findModelFile(rootDir, id)
+  const filePath = await findKnowledgeFile(rootDir, id)
   if (!filePath) {
     return { success: false, errors: [{ path: '', message: `Model not found: ${id}` }] }
   }
 
-  let model: ParsedModel
+  let model: ParsedKnowledge
   try {
-    model = await loadModel(filePath)
+    model = await loadKnowledge(filePath)
   } catch (err) {
     return { success: false, errors: [{ path: '', message: `Failed to load model: ${err}` }] }
   }
@@ -554,16 +560,16 @@ export async function applyChange(
 
   if (op === 'generate_index') {
     try {
-      const { template: idxTemplate, resolveInclude: idxInclude } = await resolveTemplateForModel(
+      const { template: idxBlueprint, resolveInclude: idxInclude } = await resolveBlueprintForKnowledge(
         rootDir,
         model,
       )
-      if (idxTemplate) {
+      if (idxBlueprint) {
         // Compose the taxonomy across `includes` too, not just the composite.
-        const { schema } = resolveTemplateSchema(idxTemplate.rawContent, idxInclude)
+        const { schema } = resolveBlueprintSchema(idxBlueprint.rawContent, idxInclude)
         args.taxonomy = schema.taxonomy.length
           ? schema.taxonomy
-          : parseModel(idxTemplate.rawContent).taxonomy
+          : parseKnowledge(idxBlueprint.rawContent).taxonomy
       }
     } catch (err) {
       // log + continue: template not resolvable — generate_index falls back to
@@ -576,13 +582,13 @@ export async function applyChange(
   // `rename_element`, pass the resolved parent-template schema so the
   // reference rewrite is gated on `type:: reference` fields (C3): plain
   // string fields are never rewritten as bare scalars.
-  let renameSchema: TemplateSchema | undefined
+  let renameSchema: BlueprintSchema | undefined
   if (op === 'rename_element') {
     try {
-      const { template: schemaTemplate, resolveInclude: schemaInclude } =
-        await resolveTemplateForModel(rootDir, model)
-      if (schemaTemplate) {
-        renameSchema = resolveTemplateSchema(schemaTemplate.rawContent, schemaInclude).schema
+      const { template: schemaBlueprint, resolveInclude: schemaInclude } =
+        await resolveBlueprintForKnowledge(rootDir, model)
+      if (schemaBlueprint) {
+        renameSchema = resolveBlueprintSchema(schemaBlueprint.rawContent, schemaInclude).schema
       }
     } catch (err) {
       // log + continue: without the resolved schema the rename runs untyped
@@ -608,7 +614,7 @@ export async function applyChange(
   let template: SpecDocument | null
   let resolveInclude: (ref: { name: string; url: string }) => string | null = () => null
   try {
-    const r = await resolveTemplateForModel(rootDir, model)
+    const r = await resolveBlueprintForKnowledge(rootDir, model)
     template = r.template
     resolveInclude = r.resolveInclude
   } catch (err) {
@@ -630,7 +636,7 @@ export async function applyChange(
 
   // Write updated model
   try {
-    await saveModel(filePath, model)
+    await saveKnowledge(filePath, model)
     if (
       op === 'rename_element' &&
       typeof args.elementName === 'string' &&
@@ -662,7 +668,8 @@ export async function applyChange(
     modification:
       buildAgentModificationBlock(op, args, {
         model: id,
-        modelVersion: String(model.frontmatter.model_version ?? ''),
+        knowledge: id,
+    knowledgeVersion: String(model.frontmatter.knowledge_version ?? model.frontmatter.blueprint_version ?? ''),
         ...modificationContext(args),
       }) ?? undefined,
   }

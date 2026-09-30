@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
  * Renders a reference field as an autocomplete input that filters
- * suggestions from modelStore.nodes by target_concepts.
+ * suggestions from knowledgeStore.nodes by target_concepts.
  * Part of the unified widget registry (rebuild-format-editor-ui Phase 4).
  * Uses v-model contract: modelValue / update:modelValue.
  * Supports Qualified Cross-Model References (Idea 1).
  */
 import { ref, computed, watch } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import Pill from '../../components/editor/Pill.vue'
 
@@ -24,7 +24,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 const showDropdown = ref(false)
 const query = ref(props.modelValue || '')
@@ -63,7 +63,7 @@ const refNode = computed(() => {
   const searchNorm = searchName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
   return (
-    Object.values(modelStore.nodes).find((n) => {
+    Object.values(knowledgeStore.nodes).find((n) => {
       if (!n) return false
       if (modelPrefix) {
         const path = n.source?.path || ''
@@ -97,9 +97,9 @@ const refNode = computed(() => {
 
 const getConceptFields = (typeName: string | undefined) => {
   if (!typeName) return []
-  const rootId = modelStore.rootIds[0]
+  const rootId = knowledgeStore.rootIds[0]
   if (!rootId) return []
-  const root = modelStore.getNode(rootId)
+  const root = knowledgeStore.getNode(rootId)
   return root?.localMetamodel?.concepts?.find(
     (c) => c.name.toLowerCase() === typeName.toLowerCase(),
   )?.fields ?? []
@@ -125,12 +125,12 @@ const filteredSuggestions = computed<ReferenceSuggestion[]>(() => {
   const matches: ReferenceSuggestion[] = []
 
   const activeModelId =
-    uiStore.activeModelId || modelStore.rootIds.find((id) => !id.startsWith('spec:')) || ''
+    uiStore.activeModelId || knowledgeStore.rootIds.find((id) => !id.startsWith('spec:')) || ''
 
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (node.kind !== 'element' && node.kind !== 'concept') continue
     if (targets.length === 0 || targets.includes(node.type)) {
-      const rootId = modelStore.getModelRootForNode(node.id) || ''
+      const rootId = knowledgeStore.getKnowledgeRootForNode(node.id) || ''
       const path = node.source?.path || ''
       const modelFileName = path.split('/').pop()?.split('\\').pop() || ''
       const modelBaseName = modelFileName.replace(/\.md$/i, '').replace(/_NN$/i, '')

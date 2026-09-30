@@ -7,7 +7,7 @@
  */
 import { ref, computed } from 'vue'
 import { useWorkspaceStore } from '../stores/workspaceStore'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { scanNodeMedia, type ScannedAsset } from './useMediaScanner'
 
 /** In-memory cache: nodeId → ScannedAsset[] */
@@ -15,7 +15,7 @@ const scanCache = new Map<string, ScannedAsset[]>()
 
 export function useNodeMediaScan() {
   const workspace = useWorkspaceStore()
-  const model = useModelStore()
+  const model = useKnowledgeStore()
 
   const scannedAssets = ref<ScannedAsset[]>([])
   const scanning = ref(false)

@@ -12,7 +12,7 @@ const http = require('http');
 const assert = require('assert');
 const { spawn } = require('child_process');
 const crypto = require('crypto');
-const { parseManifest, scanWorkspaceSources, validateTemplateCompositions } = require('./preflight-check');
+const { parseManifest, scanWorkspaceSources, validateBlueprintCompositions } = require('./preflight-check');
 
 const preflightScript = path.join(__dirname, 'preflight-check.js');
 
@@ -90,7 +90,7 @@ agent-bootstrap:
       mcp:
         - name: innfo-mcp
           version: "0.2.4"
-  templates:
+  blueprints:
     - name: workspace_spec_NN
       commit: "3bd4501e75915e8f2365fd7c547d9384a3e0c837"
       version: "V_0-2-0"
@@ -102,7 +102,7 @@ agent-bootstrap:
     assert.strictEqual(parsed.skills.length, 1);
     assert.strictEqual(parsed.skills[0].name, 'nn-innfo');
     assert.strictEqual(parsed.skills[0].mcp[0].name, 'innfo-mcp');
-    assert.strictEqual(parsed.templates.length, 1);
+    assert.strictEqual(parsed.blueprints.length, 1);
     console.log('✔ parseManifest extracts skills, mcp, and templates correctly');
   }
 
@@ -118,7 +118,7 @@ agent-bootstrap:
       mcp:
         - name: innfo-mcp
           version: "0.2.4"
-  templates:
+  blueprints:
     - name: workspace_spec_NN
       commit: "2222222222222222222222222222222222222222"
       version: "V_0-2-0"
@@ -128,13 +128,13 @@ agent-bootstrap:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-test-'));
     try {
       const skillsDir = path.join(tmpDir, 'skills');
-      const templatesDir = path.join(tmpDir, 'templates');
+      const blueprintsDir = path.join(tmpDir, 'templates');
       const mcpDir = path.join(tmpDir, 'mcp');
       const stateFile = path.join(tmpDir, 'bootstrap-state.json');
 
       fs.mkdirSync(path.join(skillsDir, 'nn-innfo'), { recursive: true });
-      fs.mkdirSync(templatesDir, { recursive: true });
-      fs.writeFileSync(path.join(templatesDir, 'workspace_spec_NN.md'), '# template');
+      fs.mkdirSync(blueprintsDir, { recursive: true });
+      fs.writeFileSync(path.join(blueprintsDir, 'workspace_spec_NN.md'), '# template');
       fs.mkdirSync(mcpDir, { recursive: true });
       fs.writeFileSync(path.join(mcpDir, 'innfo-mcp.bundle.js'), '// bundle');
 
@@ -143,7 +143,7 @@ agent-bootstrap:
         skills: {
           'nn-innfo': { commit: '1111111111111111111111111111111111111111', version: 'V_0-1-0' },
         },
-        templates: {
+        blueprints: {
           workspace_spec_NN: { commit: '2222222222222222222222222222222222222222', version: 'V_0-2-0' },
         },
         mcp: {
@@ -176,7 +176,7 @@ agent-bootstrap:
     - name: nn-innfo
       commit: "latest-commit-sha-99999999999999999999999"
       version: "V_0-2-0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -220,7 +220,7 @@ agent-bootstrap:
     - name: nn-innfo
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -263,7 +263,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -309,7 +309,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const localContent = `---\nspec_url: "${''}"\n---\n# IDENTICAL CONTENT\n`;
@@ -355,7 +355,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(emptyManifest);
@@ -398,7 +398,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -442,7 +442,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -486,7 +486,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -525,7 +525,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -567,7 +567,7 @@ agent-bootstrap:
     - name: nn-innfo
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -790,7 +790,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(emptyManifest);
@@ -827,7 +827,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(emptyManifest);
@@ -873,15 +873,15 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const catalog = JSON.stringify({
-      templates: {
+      blueprints: {
         business: {
           name: 'business',
           adopted: 'V_0-2-0',
-          versions: [{ template_version: 'V_0-1-0' }, { template_version: 'V_0-2-0' }],
+          versions: [{ blueprint_version: 'V_0-1-0' }, { blueprint_version: 'V_0-2-0' }],
         },
       },
     });
@@ -895,7 +895,7 @@ agent-bootstrap:
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(
         path.join(ws, 'models', 'Old_V_0-1-0_business_NN.md'),
-        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-1-0_NN.md"\nmodel_version: "V_0-1-0"\n---\n',
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
         'utf-8',
       );
 
@@ -909,7 +909,7 @@ agent-bootstrap:
       assert.strictEqual(res.status, 0, `Upgrade-available must not block. Got: ${res.stdout} ${res.stderr}`);
       const parsedRes = JSON.parse(res.stdout);
       assert.strictEqual(parsedRes.status, 'OK');
-      assert.strictEqual(parsedRes.summary.templateModelsScanned, 1);
+      assert.strictEqual(parsedRes.summary.blueprintModelsScanned, 1);
       assert.strictEqual(parsedRes.summary.templateUpgradesAvailable, 1);
       const item = parsedRes.items.find((i) => i.type === 'template-upgrade');
       assert.ok(item, 'a template-upgrade item must be reported');
@@ -928,7 +928,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({ '/manifest.md': emptyManifest });
@@ -938,7 +938,7 @@ agent-bootstrap:
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(
         path.join(ws, 'models', 'Old_V_0-1-0_business_NN.md'),
-        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-1-0_NN.md"\nmodel_version: "V_0-1-0"\n---\n',
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n',
         'utf-8',
       );
 
@@ -961,7 +961,7 @@ agent-bootstrap:
     }
   }
 
-  // Test 18: validateTemplateCompositions passes cleanly on valid composite template
+  // Test 18: validateBlueprintCompositions passes cleanly on valid composite template
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-valid-'));
     try {
@@ -984,16 +984,16 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 0, `Expected 0 blockers, got: ${JSON.stringify(res.items)}`);
       assert.ok(res.validCount >= 3, `Expected at least 3 valid templates, got ${res.validCount}`);
-      console.log('✔ validateTemplateCompositions passes cleanly on valid composite templates');
+      console.log('✔ validateBlueprintCompositions passes cleanly on valid composite templates');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 19: validateTemplateCompositions flags unresolvable matrix endpoints as blockers
+  // Test 19: validateBlueprintCompositions flags unresolvable matrix endpoints as blockers
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-broken-matrix-'));
     try {
@@ -1006,17 +1006,17 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 1);
       const blocker = res.items.find((i) => i.status === 'blocker');
       assert.ok(blocker && blocker.detail.includes('NonExistentConcept'), 'Blocker must mention missing target');
-      console.log('✔ validateTemplateCompositions flags unresolvable matrix endpoints as blockers');
+      console.log('✔ validateBlueprintCompositions flags unresolvable matrix endpoints as blockers');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 20: validateTemplateCompositions flags unresolved includes as blockers
+  // Test 20: validateBlueprintCompositions flags unresolved includes as blockers
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-missing-inc-'));
     try {
@@ -1029,17 +1029,17 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 1);
       const blocker = res.items.find((i) => i.status === 'blocker');
       assert.ok(blocker && blocker.detail.includes('non_existent_subtemplate'), 'Blocker must mention unresolved include');
-      console.log('✔ validateTemplateCompositions flags unresolved includes as blockers');
+      console.log('✔ validateBlueprintCompositions flags unresolved includes as blockers');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 21: validateTemplateCompositions flags concept collisions across sub-templates as warnings
+  // Test 21: validateBlueprintCompositions flags concept collisions across sub-templates as warnings
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-tmpl-collision-'));
     try {
@@ -1062,18 +1062,18 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.strictEqual(res.blockerCount, 0);
       assert.strictEqual(res.warningCount, 1);
       const warn = res.items.find((i) => i.status === 'warning');
       assert.ok(warn && warn.detail.includes('DuplicateNode'), 'Warning must mention colliding concept');
-      console.log('✔ validateTemplateCompositions flags concept collisions across sub-templates as warnings');
+      console.log('✔ validateBlueprintCompositions flags concept collisions across sub-templates as warnings');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 22: validateTemplateCompositions skips a level:1 file during the template walk
+  // Test 22: validateBlueprintCompositions skips a level:1 file during the template walk
   // (F4 / ADR-007 — this must be green BEFORE and AFTER the dead-numeric-comparison
   // deletion at preflight-check.js:546-547; that is the proof the deletion is dead code).
   {
@@ -1095,7 +1095,7 @@ agent-bootstrap:
         'utf8'
       );
 
-      const res = validateTemplateCompositions({ workspaceDir: tmpDir });
+      const res = validateBlueprintCompositions({ workspaceDir: tmpDir });
       assert.ok(
         !res.items.some((i) => i.name.includes('skip_me')),
         `level:1 file must be skipped, got: ${JSON.stringify(res.items)}`
@@ -1104,7 +1104,7 @@ agent-bootstrap:
         res.items.some((i) => i.name.includes('keep_me')),
         `level:2 file must still be walked, got: ${JSON.stringify(res.items)}`
       );
-      console.log('✔ validateTemplateCompositions skips a level:1 file during the template walk');
+      console.log('✔ validateBlueprintCompositions skips a level:1 file during the template walk');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
@@ -1116,7 +1116,7 @@ agent-bootstrap:
 agent-bootstrap:
   version: "2.0"
   skills: []
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({ '/manifest.md': emptyManifest });
@@ -1157,7 +1157,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const freshnessContent = {
@@ -1235,7 +1235,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     // freshness route returns 500 error
@@ -1286,7 +1286,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.1"
-  templates: []
+  blueprints: []
 ---
 `;
     const staleFreshnessContent = {
@@ -1347,7 +1347,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveRoutes({
@@ -1393,7 +1393,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
-  templates:
+  blueprints:
     - name: workspace_spec_NN
       commit: "2222222222222222222222222222222222222222"
       version: "V_0-2-0"
@@ -1412,11 +1412,11 @@ agent-bootstrap:
           commitsSincePin: 0,
           filesTouched: [],
         },
-        templates: {
+        blueprints: {
           subsystem: 'templates',
           pinnedTag: 'templates-v0.10.0',
           pinnedTagDate: '2026-09-16T08:41:12Z',
-          paths: ['iNNfo/specs/templates/'],
+          paths: ['iNNfo/specs/bluepriNNts/'],
           commitsSincePin: null,
           reason: 'unresolved',
           filesTouched: [],
@@ -1431,24 +1431,24 @@ agent-bootstrap:
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-freshness-zero-'));
     try {
       const skillsDir = path.join(tmpDir, 'skills');
-      const templatesDir = path.join(tmpDir, 'templates');
+      const blueprintsDir = path.join(tmpDir, 'templates');
       const stateFile = path.join(tmpDir, 'bootstrap-state.json');
       fs.mkdirSync(path.join(skillsDir, 'nn-innfo'), { recursive: true });
-      fs.mkdirSync(templatesDir, { recursive: true });
-      fs.writeFileSync(path.join(templatesDir, 'workspace_spec_NN.md'), '# template');
+      fs.mkdirSync(blueprintsDir, { recursive: true });
+      fs.writeFileSync(path.join(blueprintsDir, 'workspace_spec_NN.md'), '# template');
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: `${server.url}/manifest.md`,
         skills: {
           'nn-innfo': { commit: '1111111111111111111111111111111111111111', version: 'V_0-1-0' },
         },
-        templates: {
+        blueprints: {
           workspace_spec_NN: { commit: '2222222222222222222222222222222222222222', version: 'V_0-2-0' },
         },
       }));
 
       const res = await runScriptAsync([
         '--skills-dir', skillsDir,
-        '--templates-dir', templatesDir,
+        '--blueprints-dir', blueprintsDir,
         '--state-file', stateFile,
         '--manifest-url', `${server.url}/manifest.md`,
         '--freshness-url', `${server.url}/use/freshness.json`,
@@ -1519,9 +1519,9 @@ agent-bootstrap:
         - name: innfo-mcp
           version: "0.9.0"
           ref: "innfo-mcp-v0.9.0"
-  templates: []
+  blueprints: []
   console-assets:
-    - file: "iNNfo/specs/templates/console/innfo-console.bundle.js"
+    - file: "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"
       version: "0.2.0"
       ref: "innfo-console-v0.2.0"
 ---
@@ -1549,7 +1549,7 @@ agent-bootstrap:
           pinnedTag: 'innfo-console-v0.2.0',
           pinnedTagDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           commitsSincePin: 1,
-          filesTouched: ['iNNfo/specs/templates/console/innfo-console.bundle.js'],
+          filesTouched: ['iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js'],
         },
       },
     };
@@ -1623,7 +1623,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1644,7 +1644,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,
@@ -1689,7 +1689,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1710,7 +1710,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           opencode: {
             dir: opencodeSkillsDir,
@@ -1756,7 +1756,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1781,7 +1781,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,
@@ -1827,7 +1827,7 @@ agent-bootstrap:
     - name: nn-sample
       commit: "1111111111111111111111111111111111111111"
       version: "1.0.0"
-  templates: []
+  blueprints: []
 ---
 `;
     const server = await serveManifest(manifestContent);
@@ -1844,7 +1844,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,
@@ -1896,7 +1896,7 @@ agent-bootstrap:
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: 'http://127.0.0.1:9999/manifest.md',
         skills: { 'nn-sample': { commit: '1111111111111111111111111111111111111111', version: '1.0.0' } },
-        templates: {},
+        blueprints: {},
         projections: {
           claude: {
             dir: claudeSkillsDir,

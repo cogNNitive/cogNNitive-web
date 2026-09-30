@@ -12,7 +12,7 @@ export interface SuggestedSubmodelPathOptions {
   /** Field name/key declaring the submodel (e.g., "business_model") */
   fieldName?: string
   /** Target template constraint from field definition (e.g., "business") */
-  targetTemplate?: string
+  targetBlueprint?: string
 }
 
 /**
@@ -33,8 +33,8 @@ export function slugify(text: string): string {
 /**
  * Determines leaf stem for the generated submodel filename.
  */
-function templateLeafStem(targetTemplate?: string, fieldName?: string): string {
-  const raw = targetTemplate && targetTemplate !== 'base' ? targetTemplate : fieldName
+function templateLeafStem(targetBlueprint?: string, fieldName?: string): string {
+  const raw = targetBlueprint && targetBlueprint !== 'base' ? targetBlueprint : fieldName
   if (!raw) return 'submodel'
   // Strip any embedded version suffix (e.g. "business_V_0-2-0" -> "business")
   // so the generated filename follows the iNNfo <Name>_V_x-y-z_<Template>_NN.md
@@ -46,7 +46,7 @@ function templateLeafStem(targetTemplate?: string, fieldName?: string): string {
  * Derives a normalized, collision-resistant suggested path for an inline submodel.
  */
 export function deriveSuggestedSubmodelPath(options: SuggestedSubmodelPathOptions): string {
-  const { parentPath, conceptSlug, elementSlug, fieldName, targetTemplate } = options
+  const { parentPath, conceptSlug, elementSlug, fieldName, targetBlueprint } = options
 
   const normalizedParentPath = (parentPath || '').replace(/\\/g, '/')
   const dir = normalizedParentPath.includes('/')
@@ -56,15 +56,15 @@ export function deriveSuggestedSubmodelPath(options: SuggestedSubmodelPathOption
 
   // Versioned stem resolution
   let parentStem = filename.replace(/\.md$/i, '')
-  const versionedTemplateMatch = parentStem.match(/^(.*_V[_-][0-9.-]+)_[a-zA-Z0-9-]+(_NN)?$/i)
-  if (versionedTemplateMatch) {
-    parentStem = versionedTemplateMatch[1]
+  const versionedBlueprintMatch = parentStem.match(/^(.*_V[_-][0-9.-]+)_[a-zA-Z0-9-]+(_NN)?$/i)
+  if (versionedBlueprintMatch) {
+    parentStem = versionedBlueprintMatch[1]
   } else {
     parentStem = parentStem.replace(/_NN$/i, '')
   }
 
   // Determine leaf stem
-  const leafStem = templateLeafStem(targetTemplate, fieldName)
+  const leafStem = templateLeafStem(targetBlueprint, fieldName)
 
   // Clean concept & element slugs
   const cSlug = conceptSlug ? slugify(conceptSlug) : ''

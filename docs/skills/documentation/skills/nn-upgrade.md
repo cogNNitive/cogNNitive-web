@@ -1,17 +1,15 @@
 ---
-title: "nn-upgrade — Guided Workspace Template Upgrade"
-description: "Consent-gated migration of a workspace to the latest adopted iNNfo templates, with backup and re-validation."
+title: "nn-upgrade — Guided Domain Layout Migration and bluepriNNt Upgrade"
+description: "Consent-gated migration and upgrade of user domaiNN workspaces, with verified full-tree backup, schema migration, and automatic recovery."
 html_url: https://cognnitive.com/skills/documentation/#/skills/nn-upgrade
 generator: https://cognnitive.com/skills/nn-design-presets
 ---
 
 # nn-upgrade
 
-**Skill**: `nn-upgrade` · **Role**: Consent-gated migration
+**Skill**: `nn-upgrade` · **Role**: Consent-gated migration and bluepriNNt upgrade engine
 
-Guided workspace template upgrade. Owns the migration that `nn-preflight` Tier 3 only
-*detects*: preflight reports `upgrade-available` models; this skill migrates them with a
-backup, a schema-impact analysis, and a re-validation gate.
+Guided domaiNN upgrade and layout migration engine. Owns the **consent-gated migrations** detected by `nn-preflight`.
 
 ---
 
@@ -21,25 +19,34 @@ Delegates to `nn-preflight` (session greeting + deterministic preflight integrit
 
 ---
 
-## Workflow
+## Capabilities & Flows
 
-1. **Detect** — run the Tier-3 upgrade scan (`nn-preflight --workspace-dir`) and present
-   the per-model classification (`current` / `upgrade-available` / `ahead` / `unlisted`).
-2. **Inform & consent** — present `[a] (Recommended) Upgrade / [b] Continue`. No mutation
-   without consent.
-3. **Backup** — `scripts/backup-workspace.js` creates a timestamped backup **outside** the
-   workspace (`models/`, `specs/`, `sources/nn/`, `procedures/`, `index.md`). Manual
-   fallback instructions shown if it fails.
-4. **Impact analysis** — diff the pinned vs adopted template schema; ask mapping questions
-   **only** for removed / renamed / re-typed definitions the model uses.
-5. **Migrate** — hydrate the adopted template (write-once), repoint `parent_spec`, apply
-   agreed mappings, bump `model_version`, re-validate each model through `innfo-mcp`.
-   A failed validation is restored from the backup.
-6. **Confirm** — before/after report (versions, gap kind, mappings, validation outcome,
-   backup path).
+### Flow A — Domain Layout Migration (`legacy-layout`)
+
+Migrates legacy workspaces (`models/`, `specs/templates/`, `workspace_NN.md`, legacy keys) to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` structure:
+
+1. **Min-MCP Check**: Requires `innfo-mcp` `>= 0.12.0`.
+2. **Dry Run**: `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir>` produces a plan report and deterministic `planHash`.
+3. **Consent Gate**: User confirms execution with `[a] Apply domain migration / [b] Cancel`.
+4. **Verified Full-Tree Backup**: Full-tree out-of-tree backup with `manifest.sha256`.
+5. **In-Place Migration**: Applies language migration and schema maps with journal tracking (`journal.json`).
+6. **Recovery & Import-as-Source**: Restores state on failure via `--restore <backupDir>`, or offers `--import-as-source --new-domain-dir <newDir>` for unmapped custom bluepriNNts.
+
+### Flow B — bluepriNNt Version Upgrade (`upgrade-available`)
+
+Upgrades bluepriNNt versions for adopted models within a canonical domaiNN:
+
+1. **Detect** — run the upgrade scan (`nn-preflight --workspace-dir`) and present classification.
+2. **Inform & Consent** — present `[a] (Recommended) Upgrade / [b] Continue`. No mutation without consent.
+3. **Full-Tree Backup** — `scripts/backup-workspace.js` creates a timestamped full-tree backup outside the workspace.
+4. **Impact Analysis** — diff the schemas; ask mapping questions only for removed / renamed / re-typed definitions in active use.
+5. **Migrate & Validate** — hydrate adopted bluepriNNts, repoint `parent_spec`, apply mappings, bump version, and re-validate through `innfo-mcp`.
+6. **Confirm** — report versions, gap kinds, mappings, validation outcomes, and backup path.
+
+---
 
 ## Core Rules
 
-- Consent first; backup before migrate; ask only on real impact; never half-migrate.
-- Unlisted models (local specializations) are reported, never auto-rebased.
-- Detection lives in `nn-preflight`; this skill never re-implements it.
+- Consent first; verified full-tree backup before migrate; ask only on real impact; never half-migrate.
+- Unlisted models / custom bluepriNNts without schema maps are preserved with language layer only or offered import-as-source.
+- Interrupted runs are detected and recover cleanly with `--restore <backupDir>`.

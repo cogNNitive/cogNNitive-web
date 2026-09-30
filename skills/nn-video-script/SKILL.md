@@ -38,23 +38,28 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    ```bash
    node scripts/check-script.mjs <script.md> --series-root <series-dir>
    ```
-3. **Compile Composition & Synthesize Assets**:
+3. **Plan, Estimate & Consult Providers (Pre-Generation Gate)**:
+   ```bash
+   node scripts/asset-cost-estimator.mjs <script.md> --out assets/{video-slug}/asset_plan.md
+   ```
+   *Present provider options (WaveSpeed AI, Replicate, ElevenLabs, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user for explicit approval before proceeding.*
+4. **Compile Composition & Synthesize Assets**:
    ```bash
    node scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json
    ```
-4. **Render Master Video**:
+5. **Render Master Video**:
    ```bash
    node scripts/video-engine-cli.mjs render renders/{ref}/manifest.json --output renders/{ref}/master.mp4
    ```
-5. **Compose Video Thumbnail**:
+6. **Compose Video Thumbnail**:
    ```bash
    node scripts/render-thumbnail.mjs --base <path> --title <title> --out <out>
    ```
-6. **Finalize**:
+7. **Finalize**:
    ```bash
    node scripts/finalize-video.mjs --video-dir <video-dir> [--ref <r>] [--force-thumbnail]
    ```
-7. **Closing Retrospective & Improvement Analysis**:
+8. **Closing Retrospective & Improvement Analysis**:
    After completing the script elaboration or rendering session, proactively prompt the user asking if they want to analyze the session's conversation to suggest concrete refinements for future episodes.
 
 ## 3. Tooling Reference
@@ -64,6 +69,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/remotion-scene-compiler.mjs` | Compiles video scripts into Remotion composition manifests with calculated frame timings and overlay configs. |
 | `scripts/cache-manager.mjs` | Deterministic SHA-256 asset cache manager under `.cognnitive/cache/video/`. |
 | `scripts/asset-synthesizer.mjs` | Multi-provider TTS and media synthesis with audio duration probing and cache support. |
+| `scripts/asset-cost-estimator.mjs` | Pre-generation provider options catalog, per-scene character/layer calculator, and production cost estimator. |
 | `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`), headless rendering (`render`), and local web preview (`preview`). |
 | `scripts/check-script.mjs` | Zero-Unresolved-Placeholder Gate + No-Upward-Escape Rule. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast typography over clean 16:9 base images. |

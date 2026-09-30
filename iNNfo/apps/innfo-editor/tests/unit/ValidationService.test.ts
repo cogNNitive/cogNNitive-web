@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ValidationService } from '../../src/services/ValidationService'
 import { validateFormatContent } from '../../src/shared/validator'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 
 vi.mock('../../src/shared/validator', () => ({
   validateFormatContent: vi.fn(),
 }))
 
-vi.mock('../../src/stores/modelStore', () => ({
-  useModelStore: vi.fn(),
+vi.mock('../../src/stores/knowledgeStore', () => ({
+  useKnowledgeStore: vi.fn(),
 }))
 
 describe('ValidationService (TDD)', () => {
@@ -20,7 +20,7 @@ describe('ValidationService (TDD)', () => {
       getNode: vi.fn(),
     }
     mockShowToast = vi.fn()
-    vi.mocked(useModelStore).mockReturnValue(mockModelStore as any)
+    vi.mocked(useKnowledgeStore).mockReturnValue(mockModelStore as any)
   })
 
   it('shows error toast when node is not found', async () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { validateModel } from '../src/tools/mutate.js'
+import { validateKnowledge } from '../src/tools/mutate.js'
 import { isLocalPath, toLocalFilePath } from '../src/tools/resolver-node.js'
-import { parseModel, validateFormatContent, validateModel as coreValidate } from '../../innfo-core/src/index.ts'
+import { parseKnowledge, validateFormatContent, validateKnowledge as coreValidate } from '../../innfo-core/src/index.ts'
 
 describe('Defects D1–D9 Regression Test Suite', () => {
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('Defects D1–D9 Regression Test Suite', () => {
     vi.restoreAllMocks()
   })
 
-  it('D1: validateModel auto-detects level-2 template content and delegates to validateTemplate', async () => {
+  it('D1: validateKnowledge auto-detects level-2 template content and delegates to validateBlueprint', async () => {
     const templateContent = `---
 specification_version: "V_0-1-0"
 level: 2
@@ -27,7 +27,7 @@ title: "Test Template"
 ### Summary
 Sources concept
 `
-    const result = await validateModel(process.cwd(), undefined, templateContent)
+    const result = await validateKnowledge(process.cwd(), undefined, templateContent)
     const levelErrors = result.errors.filter((e) => e.message.includes('Expected level 3'))
     expect(levelErrors.length).toBe(0)
   })
@@ -43,13 +43,13 @@ Sources concept
   })
 
   it('D3: Concept documentation warning provides actionable message', async () => {
-    const parsedModel = parseModel(`---
+    const parsedModel = parseKnowledge(`---
 specification_version: "V_0-1-0"
 level: 3
 parent_spec:
   name: TestTemplate
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Test Model"
 ---
 
@@ -78,13 +78,13 @@ title: "Test Model"
   })
 
   it('D4: Slug/name collisions are reported as validation ERRORs', async () => {
-    const modelWithDuplicateNames = parseModel(`---
+    const modelWithDuplicateNames = parseKnowledge(`---
 specification_version: "V_0-1-0"
 level: 3
 parent_spec:
   name: TestTemplate
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Test Model"
 ---
 
@@ -141,7 +141,7 @@ level: 3
 parent_spec:
   name: Template
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Canonical Model"
 ---
 `
@@ -157,11 +157,11 @@ level: 3
 parent_spec:
   name: MissingTemplate
   url: "https://example.com/missing.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Model"
 ---
 `
-    const result = await validateModel(process.cwd(), undefined, level3Model)
+    const result = await validateKnowledge(process.cwd(), undefined, level3Model)
     expect(result.errors.length).toBeGreaterThan(0)
     for (const err of result.errors) {
       expect((err as any).filePath).toBeDefined()
@@ -175,7 +175,7 @@ level: 2
 parent_spec:
   name: Template
   url: "https://example.com/template.md"
-template_version: "V_0-1-0"
+blueprint_version: "V_0-1-0"
 title: "Index Model"
 ---
 

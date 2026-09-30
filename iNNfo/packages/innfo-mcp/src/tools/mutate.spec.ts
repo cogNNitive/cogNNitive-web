@@ -1,32 +1,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
-import { validateModel, validateModelUrl, applyChange, validateTemplate } from './mutate'
+import { validateKnowledge, validateKnowledgeUrl, applyChange, validateBlueprint } from './mutate'
 import { buildAgentModificationBlock } from '@cognnitive/innfo-core'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-mutate')
 const specsDir = join(rootDir, 'specs')
-const modelsDir = join(rootDir, 'models')
+const modelsDir = join(rootDir, 'kNNowledge')
 
 /** Write the level-1 + level-0 spec chain locally so resolution never hits the network. */
 async function stubSpecChain() {
   await writeFile(
-    join(specsDir, 'iNNfo_V_0-1-0_NN.md'),
+    join(specsDir, 'iNNfo_V_0-3-0_NN.md'),
     [
       '---',
-      'spec_version: "V_0-1-0"',
+      'spec_version: "V_0-3-0"',
       'level: 1',
       'title: "Local iNNfo Spec"',
       'parent_spec:',
-      '  name: "defiNNe_V_0-1-0"',
-      '  url: "https://example.com/defiNNe_V_0-1-0_NN.md"',
+      '  name: "defiNNition_V_0-1-0"',
+      '  url: "https://example.com/defiNNition_V_0-1-0_NN.md"',
       '---',
     ].join('\n'),
     'utf-8',
   )
   await writeFile(
-    join(specsDir, 'defiNNe_V_0-1-0_NN.md'),
-    ['---', 'spec_version: "V_0-1-0"', 'level: 0', 'title: "Local defiNNe Spec"', '---'].join('\n'),
+    join(specsDir, 'defiNNition_V_0-1-0_NN.md'),
+    ['---', 'spec_version: "V_0-1-0"', 'level: 0', 'title: "Local defiNNition Spec"', '---'].join('\n'),
     'utf-8',
   )
 }
@@ -38,12 +38,12 @@ async function stubBusinessTemplate() {
     join(specsDir, 'business_V_0-2-0_NN.md'),
     [
       '---',
-      'spec_version: "V_0-2-0"',
+      'blueprint_version: "V_0-2-0"',
       'level: 2',
       'title: "Local Business Template"',
       'parent_spec:',
-      '  name: "iNNfo_V_0-1-0"',
-      '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+      '  name: "iNNfo_V_0-3-0"',
+      '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
       '---',
       '',
       '# NN Concept Definition',
@@ -63,9 +63,8 @@ async function stubBusinessTemplate() {
  * otherwise (default fetch-reject mock, no local stub) it resolves to null. */
 const MUTABLE_MODEL_CONTENT = [
   '---',
-  'spec_version: "V_0-2-0"',
   'level: 3',
-  'model_version: "V_0-0-1"',
+  'knowledge_version: "V_0-0-1"',
   'title: "Test"',
   'parent_spec:',
   '  name: "business_V_0-2-0"',
@@ -103,21 +102,21 @@ describe('mutate tools', () => {
     await rm(rootDir, { recursive: true, force: true })
   })
 
-  describe('validateModel', () => {
+  describe('validateKnowledge', () => {
     it('rejects when neither id nor content is provided', async () => {
-      const result = await validateModel(rootDir)
+      const result = await validateKnowledge(rootDir)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Provide either id or content')
     })
 
     it('reports a model-not-found error in id mode', async () => {
-      const result = await validateModel(rootDir, 'DoesNotExist')
+      const result = await validateKnowledge(rootDir, 'DoesNotExist')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Model not found: DoesNotExist')
     })
 
     it('reports a clear PARENT_RESOLUTION_FAILED error when the declared parent_spec.url cannot be resolved', async () => {
-      const result = await validateModel(rootDir, undefined, MUTABLE_MODEL_CONTENT)
+      const result = await validateKnowledge(rootDir, undefined, MUTABLE_MODEL_CONTENT)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /PARENT_RESOLUTION_FAILED/.test(e.message))).toBe(true)
       expect(result.errors.some((e) => /business_V_0-2-0/.test(e.message))).toBe(true)
@@ -125,7 +124,7 @@ describe('mutate tools', () => {
     })
 
     it('lists the searched directories in the PARENT_RESOLUTION_FAILED message', async () => {
-      const result = await validateModel(rootDir, undefined, MUTABLE_MODEL_CONTENT)
+      const result = await validateKnowledge(rootDir, undefined, MUTABLE_MODEL_CONTENT)
       expect(result.valid).toBe(false)
       const err = result.errors.find((e) => /business_V_0-2-0/.test(e.message))
       expect(err).toBeDefined()
@@ -136,7 +135,7 @@ describe('mutate tools', () => {
 
     it('validates a model loaded from disk by id', async () => {
       await writeFile(join(rootDir, 'OnDisk_NN.md'), MUTABLE_MODEL_CONTENT, 'utf-8')
-      const result = await validateModel(rootDir, 'OnDisk')
+      const result = await validateKnowledge(rootDir, 'OnDisk')
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /PARENT_RESOLUTION_FAILED/.test(e.message))).toBe(true)
       expect(result.errors.every((e) => 'filePath' in e)).toBe(true)
@@ -145,7 +144,7 @@ describe('mutate tools', () => {
     it('validates a model successfully against its resolved template', async () => {
       await stubBusinessTemplate()
       await writeFile(join(rootDir, 'OnDisk_NN.md'), MUTABLE_MODEL_CONTENT, 'utf-8')
-      const result = await validateModel(rootDir, 'OnDisk')
+      const result = await validateKnowledge(rootDir, 'OnDisk')
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])
     })
@@ -161,12 +160,12 @@ describe('mutate tools', () => {
         join(rootDir, 'custom-templates', 'business_V_0-2-0_NN.md'),
         [
           '---',
-          'spec_version: "V_0-2-0"',
+          'blueprint_version: "V_0-2-0"',
           'level: 2',
           'title: "Local Business Template"',
           'parent_spec:',
-          '  name: "iNNfo_V_0-1-0"',
-          '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+          '  name: "iNNfo_V_0-3-0"',
+          '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
           '---',
           '',
           '# NN Concept Definition',
@@ -180,9 +179,8 @@ describe('mutate tools', () => {
 
       const contentWithRelativeParent = [
         '---',
-        'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_0-0-1"',
+        'knowledge_version: "V_0-0-1"',
         'title: "Test"',
         'parent_spec:',
         '  name: "business_V_0-2-0"',
@@ -198,14 +196,14 @@ describe('mutate tools', () => {
         '',
       ].join('\n')
 
-      const result = await validateModel(rootDir, undefined, contentWithRelativeParent)
+      const result = await validateKnowledge(rootDir, undefined, contentWithRelativeParent)
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])
     })
 
-    it('delegates level-2 content to validateTemplate (D1 auto-detection)', async () => {
+    it('delegates level-2 content to validateBlueprint (D1 auto-detection)', async () => {
       // Level 2 with no parent_spec.url triggers the PARENT_RESOLUTION_FAILED diagnostic
-      // that is specific to validateTemplate — this only fires if validateModel truly
+      // that is specific to validateBlueprint — this only fires if validateKnowledge truly
       // delegated, since plain model validation reports "Missing parent_spec" instead.
       const level2Content = [
         '---',
@@ -214,13 +212,13 @@ describe('mutate tools', () => {
         'title: "A Template"',
         '---',
       ].join('\n')
-      const result = await validateModel(rootDir, undefined, level2Content)
+      const result = await validateKnowledge(rootDir, undefined, level2Content)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/PARENT_RESOLUTION_FAILED/)
     })
   })
 
-  describe('validateModelUrl', () => {
+  describe('validateKnowledgeUrl', () => {
     it('fetches model content from the URL and validates it', async () => {
       // Only the model URL resolves; the subsequent parent_spec.url lookup for
       // the template (a second, distinct fetch) is left rejected by the
@@ -237,7 +235,7 @@ describe('mutate tools', () => {
         return Promise.reject(new Error('not stubbed'))
       })
 
-      const result = await validateModelUrl(rootDir, 'https://example.com/Mutable_NN.md')
+      const result = await validateKnowledgeUrl(rootDir, 'https://example.com/Mutable_NN.md')
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /PARENT_RESOLUTION_FAILED/.test(e.message))).toBe(true)
       expect(result.warnings.some((w) => /no template resolved/i.test(w.message))).toBe(false)
@@ -250,7 +248,7 @@ describe('mutate tools', () => {
         statusText: 'Not Found',
       } as Response)
 
-      const result = await validateModelUrl(rootDir, 'https://example.com/missing_NN.md')
+      const result = await validateKnowledgeUrl(rootDir, 'https://example.com/missing_NN.md')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/Failed to fetch model URL: 404 Not Found/)
     })
@@ -258,7 +256,7 @@ describe('mutate tools', () => {
     it('reports an error when the fetch itself throws', async () => {
       vi.spyOn(global, 'fetch').mockRejectedValue(new Error('DNS failure'))
 
-      const result = await validateModelUrl(rootDir, 'https://example.com/unreachable_NN.md')
+      const result = await validateKnowledgeUrl(rootDir, 'https://example.com/unreachable_NN.md')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/Model URL unreachable/)
     })
@@ -356,7 +354,7 @@ describe('mutate tools', () => {
         expect(result.success).toBe(true)
         expect(typeof result.modification).toBe('string')
         expect(result.modification).toContain('scope:: add_element concept "Work" element "Review"')
-        expect(result.modification).toContain('model:: Mutable')
+        expect(result.modification).toContain('knowledge:: Mutable')
         expect(result.modification).toContain('rationale:: _')
 
         const expected = buildAgentModificationBlock(
@@ -364,7 +362,9 @@ describe('mutate tools', () => {
           { conceptName: 'Work', elementName: 'Review', description: 'Code review step.' },
           {
             model: 'Mutable',
-            modelVersion: result.model!.frontmatter.model_version as string,
+            knowledge: 'Mutable',
+            knowledgeVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.knowledge_version) as string,
+            modelVersion: (result.model!.frontmatter.knowledge_version ?? result.model!.frontmatter.knowledge_version) as string,
             timestamp: result.modification!.match(/timestamp:: (.*)/)![1],
           },
         )
@@ -457,7 +457,7 @@ describe('mutate tools', () => {
         expect(result.success).toBe(true)
         expect(result.modification).toContain('scope:: bump_version "V_0-0-1" → "V_0-5-0"')
         expect(result.modification).toContain('version_transition:: V_0-0-1 → V_0-5-0')
-        expect(result.modification).toContain('model_version:: V_0-5-0')
+        expect(result.modification).toContain('knowledge_version:: V_0-5-0')
       })
 
       it('omits the modification block on every failure path', async () => {
@@ -494,13 +494,13 @@ describe('mutate tools', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-5-0')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-5-0')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-5-0_NN.md'))
 
       // Old file removed, new file carries the bumped frontmatter.
       await expect(readFile(oldPath, 'utf-8')).rejects.toThrow()
       const newContent = await readFile(result.newPath!, 'utf-8')
-      expect(newContent).toContain('model_version: "V_0-5-0"')
+      expect(newContent).toContain('knowledge_version: "V_0-5-0"')
     })
 
     it('bump_version increments patch by default when no bump level is given', async () => {
@@ -511,7 +511,7 @@ describe('mutate tools', () => {
       const result = await applyChange(rootDir, 'Versioned_V_0-0-1', 'bump_version', {})
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-0-2')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-0-2')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-0-2_NN.md'))
     })
 
@@ -525,7 +525,7 @@ describe('mutate tools', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-1-1')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-1-1')
       expect(result.newPath).toBe(join(rootDir, 'Versioned_V_0-1-1_NN.md'))
     })
 
@@ -537,10 +537,10 @@ describe('mutate tools', () => {
       const result = await applyChange(rootDir, 'Mutable', 'bump_version', { bump: 'minor' })
 
       expect(result.success).toBe(true)
-      expect(result.model?.frontmatter.model_version).toBe('V_0-1-1')
+      expect(result.model?.frontmatter.knowledge_version ?? result.model?.frontmatter.knowledge_version).toBe('V_0-1-1')
       expect(result.newPath).toBe(filePath)
       const onDisk = await readFile(filePath, 'utf-8')
-      expect(onDisk).toContain('model_version: "V_0-1-1"')
+      expect(onDisk).toContain('knowledge_version: "V_0-1-1"')
     })
 
     it('bump_version rejects an invalid version without touching the file', async () => {
@@ -558,7 +558,7 @@ describe('mutate tools', () => {
       expect(onDisk).toBe(MUTABLE_MODEL_CONTENT)
     })
 
-    it('bump_version updates index.md references (bare filename and models/<filename> forms) to the new filename (Fix 5b)', async () => {
+    it('bump_version updates index.md references (bare filename and kNNowledge/<filename> forms) to the new filename (Fix 5b)', async () => {
       await stubBusinessTemplate()
       const oldPath = join(rootDir, 'Versioned_V_0-0-1_NN.md')
       await writeFile(oldPath, MUTABLE_MODEL_CONTENT, 'utf-8')
@@ -576,7 +576,7 @@ describe('mutate tools', () => {
           '',
           '# NN index',
           `* [${oldFilename}](./${oldFilename})`,
-          `* [models version](models/${oldFilename})`,
+          `* [models version](kNNowledge/${oldFilename})`,
           '',
         ].join('\n'),
         'utf-8',
@@ -591,7 +591,7 @@ describe('mutate tools', () => {
 
       const indexContent = await readFile(join(rootDir, 'index.md'), 'utf-8')
       expect(indexContent).toContain(newFilename)
-      expect(indexContent).toContain(`models/${newFilename}`)
+      expect(indexContent).toContain(`kNNowledge/${newFilename}`)
       expect(indexContent).not.toContain(oldFilename)
     })
 
@@ -611,15 +611,15 @@ describe('mutate tools', () => {
     })
   })
 
-  describe('validateTemplate', () => {
+  describe('validateBlueprint', () => {
     it('rejects when neither id nor content is provided', async () => {
-      const result = await validateTemplate(rootDir)
+      const result = await validateBlueprint(rootDir)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Provide either id or content')
     })
 
     it('reports a template-file-not-found error in id mode', async () => {
-      const result = await validateTemplate(rootDir, 'DoesNotExist')
+      const result = await validateBlueprint(rootDir, 'DoesNotExist')
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toBe('Template file not found: DoesNotExist')
     })
@@ -632,7 +632,7 @@ describe('mutate tools', () => {
         'title: "No Parent"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/PARENT_RESOLUTION_FAILED/)
       expect(result.errors[0].message).toMatch(/Parent spec URL missing/)
@@ -650,7 +650,7 @@ describe('mutate tools', () => {
         '  url: "https://example.com/iNNfo_V_9-9-9_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors[0].message).toMatch(/PARENT_RESOLUTION_FAILED/)
       expect(result.errors[0].message).toMatch(/could not be resolved/)
@@ -660,15 +660,15 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 3',
         'title: "Wrong Level"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /Expected level 2/.test(e.message))).toBe(true)
     })
@@ -677,14 +677,14 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => /Missing title/.test(e.message))).toBe(true)
     })
@@ -693,15 +693,15 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Business Template"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
-      const result = await validateTemplate(rootDir, undefined, content)
+      const result = await validateBlueprint(rootDir, undefined, content)
       expect(result.valid).toBe(true)
       expect(result.errors).toEqual([])
     })
@@ -710,28 +710,27 @@ describe('mutate tools', () => {
       await stubSpecChain()
       const content = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Business Template"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
       ].join('\n')
       await writeFile(join(rootDir, 'Template_NN.md'), content, 'utf-8')
-      const result = await validateTemplate(rootDir, 'Template')
+      const result = await validateBlueprint(rootDir, 'Template')
       expect(result.valid).toBe(true)
     })
   })
 
-  describe('type:: model mutations', () => {
-    it('supports adding and mutating type:: model concepts and fields', async () => {
+  describe('type:: knowledge mutations', () => {
+    it('supports adding and mutating type:: knowledge concepts and fields', async () => {
       await stubBusinessTemplate()
       const workspaceContent = [
         '---',
-        'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_0-0-1"',
+        'knowledge_version: "V_0-0-1"',
         'title: "Workspace Model"',
         'parent_spec:',
         '  name: "business_V_0-2-0"',
@@ -740,23 +739,23 @@ describe('mutate tools', () => {
         '',
         '# NN Models',
         '## NN Models: AuthSubsystem',
-        'path:: models/auth_01.md',
+        'path:: kNNowledge/auth_01.md',
         '',
       ].join('\n')
-      await writeFile(join(rootDir, 'workspace_01.md'), workspaceContent, 'utf-8')
+      await writeFile(join(rootDir, 'workspace_01_NN.md'), workspaceContent, 'utf-8')
 
       const templateContent = [
         '---',
-        'spec_version: "V_0-2-0"',
+        'blueprint_version: "V_0-2-0"',
         'level: 2',
         'title: "Workspace Spec"',
         'parent_spec:',
-        '  name: "iNNfo_V_0-1-0"',
-        '  url: "https://example.com/iNNfo_V_0-1-0_NN.md"',
+        '  name: "iNNfo_V_0-3-0"',
+        '  url: "https://example.com/iNNfo_V_0-3-0_NN.md"',
         '---',
         '# NN Concept Definition',
         '## NN Concept Definition: Models',
-        'type:: model',
+        'type:: list',
       ].join('\n')
       await writeFile(join(specsDir, 'business_V_0-2-0_NN.md'), templateContent, 'utf-8')
 
@@ -764,10 +763,10 @@ describe('mutate tools', () => {
         conceptName: 'Models',
         elementName: 'AuthSubsystem',
         fieldName: 'path',
-        value: 'models/auth_v2.md',
+        value: 'kNNowledge/auth_v2.md',
       })
       expect(updateRes.success).toBe(true)
-      expect(updateRes.model?.elements.get('Models')?.[0].fields['path']).toBe('models/auth_v2.md')
+      expect(updateRes.model?.elements.get('Models')?.[0].fields['path']).toBe('kNNowledge/auth_v2.md')
     })
   })
 
@@ -776,7 +775,7 @@ describe('mutate tools', () => {
       const { calculateSpecReachability } = await import('./mutate')
 
       // Create active model referencing business_V_0-2-0
-      const modelsDir = join(rootDir, 'models')
+      const modelsDir = join(rootDir, 'kNNowledge')
       await mkdir(modelsDir, { recursive: true })
       await writeFile(
         join(modelsDir, 'Alpha_V_0-1-0_NN.md'),
@@ -790,8 +789,8 @@ describe('mutate tools', () => {
       )
 
       // Create spec package for active business_V_0-2-0 and orphaned legacy_V_0-1-0
-      const activePkgDir = join(specsDir, 'templates', 'business', 'V_0-2-0')
-      const orphanPkgDir = join(specsDir, 'templates', 'legacy', 'V_0-1-0')
+      const activePkgDir = join(specsDir, 'bluepriNNts', 'business', 'V_0-2-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'legacy', 'V_0-1-0')
       await mkdir(activePkgDir, { recursive: true })
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(activePkgDir, 'spec_NN.md'), '---\nspec_version: "V_0-2-0"\n---')
@@ -808,7 +807,7 @@ describe('mutate tools', () => {
 
     it('creates timestamped backup zip snapshot packaging candidate specs', async () => {
       const { createSpecsBackupZip } = await import('./mutate')
-      const orphanPkgDir = join(specsDir, 'templates', 'legacy', 'V_0-1-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'legacy', 'V_0-1-0')
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(orphanPkgDir, 'spec_NN.md'), 'Orphan spec content')
 
@@ -839,7 +838,7 @@ describe('mutate tools', () => {
 
     it('pruneOrphanedSpecs in dry_run mode reports deletion candidates without deleting', async () => {
       const { pruneOrphanedSpecs } = await import('./mutate')
-      const orphanPkgDir = join(specsDir, 'templates', 'orphan_package', 'V_0-1-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'orphan_package', 'V_0-1-0')
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(orphanPkgDir, 'spec_NN.md'), 'Orphan content')
 
@@ -858,7 +857,7 @@ describe('mutate tools', () => {
 
     it('pruneOrphanedSpecs with dry_run false creates backup zip and deletes orphaned specs', async () => {
       const { pruneOrphanedSpecs } = await import('./mutate')
-      const orphanPkgDir = join(specsDir, 'templates', 'to_delete', 'V_0-1-0')
+      const orphanPkgDir = join(specsDir, 'bluepriNNts', 'to_delete', 'V_0-1-0')
       await mkdir(orphanPkgDir, { recursive: true })
       await writeFile(join(orphanPkgDir, 'spec_NN.md'), 'To delete')
 
@@ -877,7 +876,7 @@ describe('mutate tools', () => {
       const { calculateSpecReachability } = await import('./mutate')
 
       // Create model pointing to parent package template via URL and name
-      const modelsDir = join(rootDir, 'models')
+      const modelsDir = join(rootDir, 'kNNowledge')
       await mkdir(modelsDir, { recursive: true })
       await writeFile(
         join(modelsDir, 'App_Model_V_1-0-0_NN.md'),
@@ -885,14 +884,14 @@ describe('mutate tools', () => {
           '---',
           'parent_spec:',
           '  name: "canonical_pkg"',
-          '  url: "https://example.com/specs/templates/canonical_pkg/V_1-0-0/spec_NN.md"',
+          '  url: "https://example.com/specs/bluepriNNts/canonical_pkg/V_1-0-0/spec_NN.md"',
           '---',
         ].join('\n'),
       )
 
       // Create canonical package directory for canonical_pkg V_1-0-0
-      const activePkgDir = join(specsDir, 'templates', 'canonical_pkg', 'V_1-0-0')
-      const subPkgDir = join(specsDir, 'templates', 'sub_pkg', 'V_0-5-0')
+      const activePkgDir = join(specsDir, 'bluepriNNts', 'canonical_pkg', 'V_1-0-0')
+      const subPkgDir = join(specsDir, 'bluepriNNts', 'sub_pkg', 'V_0-5-0')
       await mkdir(activePkgDir, { recursive: true })
       await mkdir(subPkgDir, { recursive: true })
 
@@ -904,7 +903,7 @@ describe('mutate tools', () => {
           'spec_version: "V_1-0-0"',
           'includes:',
           '  - name: "sub_pkg"',
-          '    url: "https://example.com/specs/templates/sub_pkg/V_0-5-0/spec_NN.md"',
+          '    url: "https://example.com/specs/bluepriNNts/sub_pkg/V_0-5-0/spec_NN.md"',
           '---',
         ].join('\n'),
       )
@@ -968,7 +967,7 @@ describe('mutate tools', () => {
         '---',
         'spec_version: "V_0-1-0"',
         'level: 3',
-        'model_version: "V_0-1-0"',
+        'knowledge_version: "V_0-1-0"',
         'title: "My Model"',
         'parent_spec:',
         '  name: "my_template_V_0-1-0"',
@@ -1040,7 +1039,7 @@ describe('mutate tools', () => {
         '---',
         'spec_version: "V_0-1-0"',
         'level: 3',
-        'model_version: "V_0-1-0"',
+        'knowledge_version: "V_0-1-0"',
         'title: "M"',
         'parent_spec:',
         '  name: "t_V_0-1-0"',

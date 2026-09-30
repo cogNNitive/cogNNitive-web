@@ -189,9 +189,9 @@ function extractVersionRefs(relPath, content) {
     const sv = fm.match(/^spec_version\s*:\s*['"]?(V_\d+-\d+-\d+)['"]?\s*$/m)
     if (sv) refs.push({ field: 'spec_version', value: sv[1], location: relPath })
 
-    // model_version
-    const mv = fm.match(/^model_version\s*:\s*['"]?(V_\d+-\d+-\d+)['"]?\s*$/m)
-    if (mv) refs.push({ field: 'model_version', value: mv[1], location: relPath })
+    // knowledge_version
+    const mv = fm.match(/^knowledge_version\s*:\s*['"]?(V_\d+-\d+-\d+)['"]?\s*$/m)
+    if (mv) refs.push({ field: 'knowledge_version', value: mv[1], location: relPath })
 
     // spec_url (extract version from URL)
     const su = fm.match(/^spec_url\s*:\s*['"](https?:\/\/[^'"]+)['"]\s*$/m)
@@ -279,10 +279,20 @@ function collectRepoFiles(dir, includeArchives) {
         if (!includeArchives && (entry === 'archive' || ARCHIVE_DIRS.has(entry))) continue
         if (rel === 'iNNfo/apps/innfo-editor/tests/fixtures/models') continue
         if (rel.startsWith('openspec/changes/')) continue
+        // Quarantine: the frozen legacy-domain fixture intentionally keeps the
+        // pre-rename template URLs (it is the migrator's input).
+        if (rel.startsWith('iNNfo/packages/innfo-core/tests/legacy/fixtures/')) continue
         files.push(...collectRepoFiles(full, includeArchives))
       } else {
         if (full.endsWith('.bundle.js')) continue
         if (rel === 'scripts/migrate-spec-urls.mjs') continue
+        // The write guard records the historical codemod string in its allowlist.
+        if (rel === 'scripts/lib/legacy-write-guard.js') continue
+        // Frozen write-once predecessors (permanent history, never migrated).
+        if (rel === 'iNNfo/specs/defiNNe_V_0-1-0_NN.md') continue
+        if (rel === 'iNNfo/specs/defiNNition_V_0-1-0_NN.md') continue
+        // Generated mirror of the frozen specs (by-design embedded history).
+        if (rel === 'iNNfo/packages/innfo-core/src/schema/canonical-registry.ts') continue
         if (rel === 'iNNfo/scripts/check-spec-version.mjs') continue
         if (gitVisible && !gitVisible.has(full.replace(/\\/g, '/'))) continue
         const ext = extname(entry)

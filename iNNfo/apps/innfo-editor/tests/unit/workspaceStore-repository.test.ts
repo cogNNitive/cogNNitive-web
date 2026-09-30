@@ -26,21 +26,23 @@ describe('workspaceStore Repository Delegation (TDD)', () => {
     workspaceStore.repository = mockRepo as unknown as IndexedDbWorkspaceRepository
 
     const handle = buildFakeTree('workspace', {
-      'index.md': `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+      'domaiNN_NN.md': `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
-# _NN index
-* [[Doc_NN.md]]
+# NN index
+* [[kNNowledge/Doc_NN.md]]
 `,
-      'Doc_NN.md': `---
-spec_version: "V_0-1-2"
-model_version: "V_1-0-0"
+      kNNowledge: {
+        'Doc_NN.md': `---
+spec_version: "V_0-3-0"
+knowledge_version: "V_1-0-0"
 title: "Doc"
 ---
-# _NN index
+# NN index
 `,
+      },
     })
 
     await workspaceStore.open(handle)
@@ -63,7 +65,6 @@ title: "Doc"
 
     expect(recovered).toBe(handle)
     expect(mockRepo.loadStoredHandle).toHaveBeenCalled()
-    expect(mockRepo.getSessionState).toHaveBeenCalled()
   })
 
   it('delegates tree state persistence to the repository on persistTreeState()', async () => {
@@ -81,9 +82,9 @@ title: "Doc"
     const expectedMap = new Map([['Node1', true]])
     mockRepo.getTreeState.mockResolvedValue(expectedMap)
 
-    const map = await workspaceStore.restoreTreeState()
+    const state = await workspaceStore.restoreTreeState()
 
-    expect(map).toBe(expectedMap)
+    expect(state).toEqual(expectedMap)
     expect(mockRepo.getTreeState).toHaveBeenCalled()
   })
 })

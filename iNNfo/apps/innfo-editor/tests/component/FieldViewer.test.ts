@@ -3,11 +3,11 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import FieldViewer from '../../src/components/editor/FieldViewer.vue'
 import FileRefPill from '../../src/components/editor/FileRefPill.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, fieldValues: Record<string, unknown>): ModelNode {
+function makeNode(id: string, fieldValues: Record<string, unknown>): KnowledgeNode {
   return {
     id,
     name: id,
@@ -46,8 +46,8 @@ describe('FieldViewer.vue — R-SC-06', () => {
   ]
 
   it('renders field labels and values in read mode', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           status: 'active',
@@ -81,8 +81,8 @@ describe('FieldViewer.vue — R-SC-06', () => {
   })
 
   it('shows emerald Yes for boolean true fields', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', { is_enabled: true }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', { is_enabled: true }) }, ['Root'])
 
     const wrapper = mount(FieldViewer, {
       props: {
@@ -96,8 +96,8 @@ describe('FieldViewer.vue — R-SC-06', () => {
   })
 
   it('shows em dash placeholder for empty field values', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', { status: '' }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', { status: '' }) }, ['Root'])
 
     const wrapper = mount(FieldViewer, {
       props: {
@@ -112,8 +112,8 @@ describe('FieldViewer.vue — R-SC-06', () => {
   })
 
   it('renders WidgetField in edit mode (non-readonly)', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', { summary: 'Hello' }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', { summary: 'Hello' }) }, ['Root'])
 
     const wrapper = mount(FieldViewer, {
       props: {
@@ -142,8 +142,8 @@ describe('FieldViewer.vue — R-SC-06', () => {
   })
 
   it('renders a select badge for select-type fields in read mode', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', { status: 'active' }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', { status: 'active' }) }, ['Root'])
 
     const wrapper = mount(FieldViewer, {
       props: {
@@ -158,11 +158,11 @@ describe('FieldViewer.vue — R-SC-06', () => {
   })
 
   it('resolves reference fields with WikiLink syntax to BlockPill', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const targetNode = makeNode('Salón-Comedor', {})
     targetNode.name = 'Salón-Comedor'
     targetNode.type = 'Component'
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', { location: '[[Salón-Comedor]]' }),
         'Salón-Comedor': targetNode,
@@ -184,8 +184,8 @@ describe('FieldViewer.vue — R-SC-06', () => {
   })
 
   it('renders one FileRefPill per item for a multi-value sources:: field', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           sources: [
@@ -211,13 +211,13 @@ describe('FieldViewer.vue — R-SC-06', () => {
     expect(wrapper.text()).toContain('interview.md')
   })
 
-  it('renders interactive model pill for type:: model field and triggers focusModel on click', async () => {
-    const modelStore = useModelStore()
+  it('renders interactive model pill for type:: knowledge field and triggers focusModel on click', async () => {
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
-          submodel: 'models/auth_01.md',
+          submodel: 'kNNowledge/auth_01.md',
         }),
       },
       ['Root'],
@@ -233,10 +233,10 @@ describe('FieldViewer.vue — R-SC-06', () => {
 
     const modelPill = wrapper.find('[data-testid="model-field-pill"]')
     expect(modelPill.exists()).toBe(true)
-    expect(modelPill.text()).toContain('models/auth_01.md')
+    expect(modelPill.text()).toContain('kNNowledge/auth_01.md')
 
     await modelPill.trigger('click')
     expect(uiStore.sidebarMode).toBe('focused_model')
-    expect(uiStore.focusedModelId).toBe('models/auth_01.md')
+    expect(uiStore.focusedModelId).toBe('kNNowledge/auth_01.md')
   })
 })

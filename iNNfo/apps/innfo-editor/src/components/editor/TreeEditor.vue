@@ -73,7 +73,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { FolderOpen } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useConfirmStore } from '../../stores/confirmStore'
 import { useMetamodelStore } from '../../stores/metamodelStore'
 import {
@@ -81,7 +81,7 @@ import {
   getMergedBlockFields,
 } from '../../utils/metamodelHelper'
 import BlockSheet from './BlockSheet.vue'
-import type { ModelNode } from '../../model/types'
+import type { KnowledgeNode } from '../../model/types'
 
 const props = defineProps<{
   nodeId: string | null
@@ -92,7 +92,7 @@ const _emit = defineEmits<{
   'navigate-to-node': [nodeId: string]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const confirmStore = useConfirmStore()
 const metamodelStore = useMetamodelStore()
 
@@ -113,7 +113,7 @@ watch(
 
 const selectedNode = computed(() => {
   if (!props.nodeId) return null
-  return modelStore.getNode(props.nodeId) ?? null
+  return knowledgeStore.getNode(props.nodeId) ?? null
 })
 
 const selectedNodeConceptType = computed(() => {
@@ -126,9 +126,9 @@ const selectedNodeIcon = computed(() => '')
 // Children of the current node (or roots if no node selected)
 const childNodes = computed(() => {
   if (props.nodeId) {
-    return modelStore.getChildren(props.nodeId)
+    return knowledgeStore.getChildren(props.nodeId)
   }
-  return modelStore.getRoots()
+  return knowledgeStore.getRoots()
 })
 
 // Active concept type for metadata
@@ -139,7 +139,7 @@ const activeConceptType = computed(() => {
   return 'text'
 })
 
-const getConceptFieldsForNode = (node: ModelNode) => {
+const getConceptFieldsForNode = (node: KnowledgeNode) => {
   return getConceptFieldsForNodeHelper(node, metamodelStore.getConceptFields)
 }
 
@@ -149,8 +149,8 @@ const activeConceptFields = computed(() => {
   return getConceptFieldsForNode(node)
 })
 
-// Build a BlockData-compatible object from a ModelNode
-const blockFromNode = (node: ModelNode) => {
+// Build a BlockData-compatible object from a KnowledgeNode
+const blockFromNode = (node: KnowledgeNode) => {
   return {
     id: node.id,
     name: node.name,
@@ -159,8 +159,8 @@ const blockFromNode = (node: ModelNode) => {
   }
 }
 
-const childIcon = (_child: ModelNode) => ''
-const childColor = (_child: ModelNode) => ''
+const childIcon = (_child: KnowledgeNode) => ''
+const childColor = (_child: KnowledgeNode) => ''
 
 const handleDelete = async (): Promise<void> => {
   if (!props.nodeId) return
@@ -174,7 +174,7 @@ const handleDelete = async (): Promise<void> => {
     danger: true,
   })
   if (!ok) return
-  modelStore.removeNodeTree(props.nodeId)
+  knowledgeStore.removeNodeTree(props.nodeId)
 }
 
 const handleChildDelete = async (childId: string): Promise<void> => {
@@ -185,7 +185,7 @@ const handleChildDelete = async (childId: string): Promise<void> => {
     danger: true,
   })
   if (!ok) return
-  modelStore.removeNodeTree(childId)
+  knowledgeStore.removeNodeTree(childId)
 }
 
 const handleChange = () => {

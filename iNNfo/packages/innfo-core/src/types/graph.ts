@@ -1,4 +1,4 @@
-import type { TemplateSchema } from '../schema/index.js'
+import type { BlueprintSchema } from '../schema/index.js'
 import type { SourceRef } from '../sourceRef.js'
 import type { TaxonomyEdge } from './parser.js'
 import type { ValidationError } from './validation.js'
@@ -49,7 +49,7 @@ export interface MetamodelConcept {
     type: string
     options?: string[]
     target_concepts?: string[]
-    target_template?: string
+    target_blueprint?: string
   }[]
   tags?: string[]
 }
@@ -78,7 +78,7 @@ export interface LocalMetamodel {
 /**
  * Normalized graph node.
  */
-export interface ModelNode {
+export interface KnowledgeNode {
   id: string // qualifiedId, e.g. "Process/Phase/Task"
   name: string // unique among siblings
   parentId: string | null
@@ -103,19 +103,19 @@ export interface ModelNode {
   schemaValidation?: { errors: ValidationError[]; warnings: ValidationError[] }
   /**
    * Composed (includes-merged) level-2 template schema for this model, stashed by
-   * `recursiveParse` when a `resolveTemplateSchema` option was supplied, so
+   * `recursiveParse` when a `resolveBlueprintSchema` option was supplied, so
    * `buildWorkspaceIndex` and the workspace validation pass never re-resolve.
    * Present only on document roots. Undefined when no resolver was supplied.
    */
-  templateSchema?: TemplateSchema
+  templateSchema?: BlueprintSchema
   relationships: ModelRelationship[]
   rawSections: Record<string, string> // round-trip fidelity
   /**
    * Full original source text for root nodes (the node whose own
-   * `_NN.md` file was parsed via `parseModel`). Undefined for
+   * `_NN.md` file was parsed via `parseKnowledge`). Undefined for
    * element nodes nested inside a document (they have no own file).
    * Used by the serializer for byte/structurally-equivalent no-edit
-   * round-trip (R7) instead of re-deriving through `serializeModel`'s
+   * round-trip (R7) instead of re-deriving through `serializeKnowledge`'s
    * canonical reformatting, which is not guaranteed to match source bytes.
    */
   rawContent?: string

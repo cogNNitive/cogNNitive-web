@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   checkWidgetConfig,
   checkElementsAgainstSchema,
   scaleRangeFor,
   validateDocument,
-  validateModel,
-  parseModel,
-  normalizeSingleModel,
+  validateKnowledge,
+  parseKnowledge,
+  normalizeSingleKnowledge,
 } from '../src/index'
 import type { SpecDocument } from '../src/index'
 
@@ -72,9 +72,9 @@ const lookup = (name: string): string | null => {
   return m[name.toLowerCase()] ?? null
 }
 
-describe('resolveTemplateSchema — additive `includes` composition', () => {
+describe('resolveBlueprintSchema — additive `includes` composition', () => {
   it('unions concepts / fields / markers from every included template plus the local ones', () => {
-    const { schema, errors } = resolveTemplateSchema(COMPOSITE, (ref) => lookup(ref.name))
+    const { schema, errors } = resolveBlueprintSchema(COMPOSITE, (ref) => lookup(ref.name))
     expect(errors).toEqual([])
     expect(schema.concepts.map((c) => c.name).sort()).toEqual(['Alpha', 'Beta', 'Gamma'])
     const alpha = schema.concepts.find((c) => c.name === 'Alpha')!
@@ -83,7 +83,7 @@ describe('resolveTemplateSchema — additive `includes` composition', () => {
   })
 
   it('no resolver → just the template’s own schema, no errors', () => {
-    const { schema, errors } = resolveTemplateSchema(COMPOSITE)
+    const { schema, errors } = resolveBlueprintSchema(COMPOSITE)
     expect(errors).toEqual([])
     expect(schema.concepts.map((c) => c.name)).toEqual(['Gamma'])
   })
@@ -93,7 +93,7 @@ describe('resolveTemplateSchema — additive `includes` composition', () => {
       '## NN Concept Definition: Gamma',
       '## NN Concept Definition: Alpha',
     )
-    const { errors } = resolveTemplateSchema(clash, (ref) => lookup(ref.name))
+    const { errors } = resolveBlueprintSchema(clash, (ref) => lookup(ref.name))
     const collision = errors.find((e) => e.message.includes('Alpha'))
     expect(collision?.severity).toBe('error')
     expect(collision?.message).toMatch(/Base A/)
@@ -102,7 +102,7 @@ describe('resolveTemplateSchema — additive `includes` composition', () => {
   })
 
   it('flags an unresolvable include', () => {
-    const { errors } = resolveTemplateSchema(COMPOSITE, (ref) =>
+    const { errors } = resolveBlueprintSchema(COMPOSITE, (ref) =>
       ref.name === 'base_a' ? null : lookup(ref.name),
     )
     expect(errors.some((e) => e.message.includes('base_a') && e.severity === 'error')).toBe(true)
@@ -119,7 +119,7 @@ describe('resolveTemplateSchema — additive `includes` composition', () => {
         : ref.name.toLowerCase() === 'composite'
           ? COMPOSITE
           : lookup(ref.name)
-    const { errors } = resolveTemplateSchema(COMPOSITE, cyc)
+    const { errors } = resolveBlueprintSchema(COMPOSITE, cyc)
     expect(errors.some((e) => /cyclic/i.test(e.message))).toBe(true)
   })
 
@@ -131,13 +131,13 @@ source:: NonExistentSource
 target:: NonExistentTarget
 values:: [X]
 `
-    const { errors } = resolveTemplateSchema(brokenMatrixTpl, (ref) => lookup(ref.name))
+    const { errors } = resolveBlueprintSchema(brokenMatrixTpl, (ref) => lookup(ref.name))
     expect(errors.some((e) => e.message.includes('NonExistentSource') && e.severity === 'error')).toBe(true)
     expect(errors.some((e) => e.message.includes('NonExistentTarget') && e.severity === 'error')).toBe(true)
   })
 })
 
-describe('validateModel — applies_to and marker value enforcement', () => {
+describe('validateKnowledge — applies_to and marker value enforcement', () => {
   const template: SpecDocument = {
     name: 'markers_tpl',
     level: 2,
@@ -159,9 +159,9 @@ values:: [low, high]
   }
 
   it('rejects a marker scored on a Concept when applies_to is [Element]', () => {
-    const model = parseModel(`---
+    const model = parseKnowledge(`---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "M"
 parent_spec:
   name: "markers_tpl"
@@ -180,16 +180,16 @@ parent_spec:
 | Task | high |
 | T1 | low |
 `)
-    const res = validateModel(model, template, null)
+    const res = validateKnowledge(model, template, null)
     const err = res.errors.find((e) => e.message.includes('scored on Concept'))
     expect(err).toBeDefined()
     expect(res.valid).toBe(false)
   })
 
   it('warns on a marker score outside its declared value set', () => {
-    const model = parseModel(`---
+    const model = parseKnowledge(`---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "M"
 parent_spec:
   name: "markers_tpl"
@@ -207,14 +207,14 @@ parent_spec:
 | :--- | :---: |
 | T1 | urgent |
 `)
-    const res = validateModel(model, template, null)
+    const res = validateKnowledge(model, template, null)
     expect(res.warnings.some((w) => w.message.includes('not in its declared value set'))).toBe(true)
   })
 })
 
 describe('checkWidgetConfig', () => {
   it('errors when widget:: scale is missing min/max, warns on stray keys', () => {
-    const parsed = parseModel(`---
+    const parsed = parseKnowledge(`---
 level: 2
 title: "T"
 ---
@@ -257,7 +257,7 @@ describe('validateDocument — one door (hygiene + schema)', () => {
     const content = `---
 spec_version: "V_0-1-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Empty"
 parent_spec:
   name: "x"
@@ -277,7 +277,7 @@ describe('recursiveParser — concept-scoped Marker scores', () => {
   it('preserves an item-markers row keyed by a Concept name on the document root', () => {
     const content = `---
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "M"
 parent_spec:
   name: "t"
@@ -296,7 +296,7 @@ parent_spec:
 | Task | high |
 | T1 | low |
 `
-    const { nodes } = normalizeSingleModel(content, 'm_NN.md', 'm')
+    const { nodes } = normalizeSingleKnowledge(content, 'm_NN.md', 'm')
     const root = Object.values(nodes).find((n) => n.parentId === null)!
     expect(root.conceptMarkers).toBeDefined()
     expect(root.conceptMarkers!['Task']).toEqual({ complexity: 'high' })
@@ -310,16 +310,16 @@ describe('base_V_0-1-0 — composite template composition (PR6)', () => {
   const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
   const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-  // SKIPPED under canonical templates: `base` is a frozen/retired composite
+  // SKIPPED under canonical blueprints: `base` is a frozen/retired composite
   // pinned to the workspace + cogNNitive vocabularies as they stood at V_0-2-0.
   // Canonical `workspace` is now V_0-3-0 (it absorbed Sources/Artifacts/
   // Procedures/lineage from the provenance consolidation), so composing the
   // frozen `base` shell over it legitimately reports COMPOSITION_COLLISIONs.
   // The live composition contract is covered by business-decomposition-v2.test.ts.
   it.skip('base-composes-workspace-and-cognnitive: resolving base_V_0-1-0 unions both peers with no collisions', () => {
-    const baseContent = readSpec('templates/base/spec_NN.md')
-    const workspaceContent = readSpec('templates/workspace_spec_NN.md')
-    const cognnitiveContent = readSpec('templates/cogNNitive/spec_NN.md')
+    const baseContent = readSpec('bluepriNNts/base/spec_NN.md')
+    const workspaceContent = readSpec('bluepriNNts/workspace_spec_NN.md')
+    const cognnitiveContent = readSpec('bluepriNNts/cogNNitive/spec_NN.md')
 
     const lookup = (name: string): string | null => {
       const m: Record<string, string> = {
@@ -329,7 +329,7 @@ describe('base_V_0-1-0 — composite template composition (PR6)', () => {
       return m[name.toLowerCase()] ?? null
     }
 
-    const { schema, errors } = resolveTemplateSchema(baseContent, (ref) => lookup(ref.name))
+    const { schema, errors } = resolveBlueprintSchema(baseContent, (ref) => lookup(ref.name))
 
     expect(errors.filter((e) => e.message.includes('COMPOSITION_COLLISION'))).toEqual([])
     expect(errors).toEqual([])

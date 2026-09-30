@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel } from './parser/index.js'
+import { parseKnowledge } from './parser/index.js'
 import { applyMutation } from './mutate.js'
-import type { TemplateSchema } from './schema/index.js'
+import type { BlueprintSchema } from './schema/index.js'
 
 const TEMPLATE = `---
 spec_version: "V_0-2-0"
@@ -26,7 +26,7 @@ const LEVEL3_MODEL = `---
 spec_version: "V_0-2-0"
 spec_url: "https://example.test/iNNfo_V_0-2-0_NN.md"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 parent_spec:
   name: "iNNfo_V_0-2-0"
   url: "https://example.test/iNNfo_V_0-2-0_NN.md"
@@ -40,7 +40,7 @@ note:: keep
 
 describe('applyMutation transactionality', () => {
   it('commits a successful op onto the caller model in place (same reference)', () => {
-    const model = parseModel(TEMPLATE)
+    const model = parseKnowledge(TEMPLATE)
     const ref = model
     const result = applyMutation(model, 'add_concept', { conceptName: 'Risk', type: 'list' })
     expect(result.success).toBe(true)
@@ -50,7 +50,7 @@ describe('applyMutation transactionality', () => {
   })
 
   it('leaves the model untouched when the op fails', () => {
-    const model = parseModel(TEMPLATE)
+    const model = parseKnowledge(TEMPLATE)
     const before = JSON.stringify(model)
     const result = applyMutation(model, 'add_concept', { conceptName: 'Elements', type: 'list' })
     expect(result.success).toBe(false)
@@ -58,7 +58,7 @@ describe('applyMutation transactionality', () => {
   })
 
   it('does not partially apply a rename that fails a model-wide uniqueness check', () => {
-    const model = parseModel(TEMPLATE)
+    const model = parseKnowledge(TEMPLATE)
     applyMutation(model, 'add_concept', { conceptName: 'Task', type: 'list' })
     applyMutation(model, 'add_element', { conceptName: 'Task', elementName: 'Second' })
     const before = JSON.stringify(model)
@@ -73,7 +73,7 @@ describe('applyMutation transactionality', () => {
   })
 
   it('accumulates across sequential successful ops', () => {
-    const model = parseModel(TEMPLATE)
+    const model = parseKnowledge(TEMPLATE)
     expect(applyMutation(model, 'add_concept', { conceptName: 'A', type: 'list' }).success).toBe(true)
     expect(applyMutation(model, 'add_concept', { conceptName: 'B', type: 'list' }).success).toBe(true)
     const names = (model.elements.get('Concept Definition') ?? []).map((c) => c.name)
@@ -90,7 +90,7 @@ describe('level gate for template-authoring mutations (H5)', () => {
 
   for (const { op, args } of gatedOps) {
     it(`rejects "${op}" on a level: 3 model with an explicit level-mismatch error, not a downstream schema error`, () => {
-      const model = parseModel(LEVEL3_MODEL)
+      const model = parseKnowledge(LEVEL3_MODEL)
       const before = JSON.stringify(model)
       const result = applyMutation(model, op, args)
 
@@ -105,14 +105,14 @@ describe('level gate for template-authoring mutations (H5)', () => {
     })
 
     it(`still allows "${op}" on the existing level: 2 TEMPLATE fixture`, () => {
-      const model = parseModel(TEMPLATE)
+      const model = parseKnowledge(TEMPLATE)
       const result = applyMutation(model, op, args)
       expect(result.success).toBe(true)
     })
   }
 
   it('does not gate other mutation handlers (add_element) on a level: 3 model', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(model, 'add_element', { conceptName: 'Phase', elementName: 'Second' })
     expect(result.success).toBe(true)
   })
@@ -120,7 +120,7 @@ describe('level gate for template-authoring mutations (H5)', () => {
 
 describe('addElement sources propagation (H3a)', () => {
   it('persists a sources field alongside fields when provided', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(model, 'add_element', {
       conceptName: 'Phase',
       elementName: 'Second',
@@ -133,7 +133,7 @@ describe('addElement sources propagation (H3a)', () => {
   })
 
   it('persists sources when it is the only argument beyond the required ones', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(model, 'add_element', {
       conceptName: 'Phase',
       elementName: 'Second',
@@ -145,7 +145,7 @@ describe('addElement sources propagation (H3a)', () => {
   })
 
   it('behaves exactly as before when sources is omitted', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(model, 'add_element', {
       conceptName: 'Phase',
       elementName: 'Second',
@@ -159,7 +159,7 @@ describe('addElement sources propagation (H3a)', () => {
 })
 
 describe('add_element schema conformance (mutation-schema-conformance R1-R5)', () => {
-  const SCHEMA: TemplateSchema = {
+  const SCHEMA: BlueprintSchema = {
     concepts: [
       { name: 'Assumptions', type: 'text' },
       { name: 'Risks', type: 'text' },
@@ -171,7 +171,7 @@ describe('add_element schema conformance (mutation-schema-conformance R1-R5)', (
   }
 
   it('rejects an undeclared conceptName when a schema is supplied, leaving the model untouched (R1)', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const before = JSON.stringify(model)
     const result = applyMutation(
       model,
@@ -185,7 +185,7 @@ describe('add_element schema conformance (mutation-schema-conformance R1-R5)', (
   })
 
   it('names the offending concept and suggests the nearest declared concept within edit distance 2 (R2)', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(
       model,
       'add_element',
@@ -199,7 +199,7 @@ describe('add_element schema conformance (mutation-schema-conformance R1-R5)', (
   })
 
   it('lists the declared concepts when no close match exists (R2)', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(
       model,
       'add_element',
@@ -214,7 +214,7 @@ describe('add_element schema conformance (mutation-schema-conformance R1-R5)', (
   })
 
   it('accepts a declared conceptName matched case-insensitively when a schema is supplied', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(
       model,
       'add_element',
@@ -226,7 +226,7 @@ describe('add_element schema conformance (mutation-schema-conformance R1-R5)', (
   })
 
   it('keeps the current permissive behaviour when no schema is supplied (R3)', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const result = applyMutation(model, 'add_element', {
       conceptName: 'Rsiks',
       elementName: 'X',
@@ -238,7 +238,7 @@ describe('add_element schema conformance (mutation-schema-conformance R1-R5)', (
 
 describe('update_field rejects an unknown concept (R4, consistency with add_element)', () => {
   it('fails with a "not found" error and does not mutate the model', () => {
-    const model = parseModel(LEVEL3_MODEL)
+    const model = parseKnowledge(LEVEL3_MODEL)
     const before = JSON.stringify(model)
     const result = applyMutation(model, 'update_field', {
       conceptName: 'Rsiks',

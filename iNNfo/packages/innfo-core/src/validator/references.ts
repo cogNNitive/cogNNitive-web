@@ -1,7 +1,7 @@
-import type { Concept, ParsedModel } from '../types/index.js'
+import type { Concept, ParsedKnowledge } from '../types/index.js'
 import { normalizeSeparators } from '../parser/slug.js'
 import { conceptsByElementName, IMPLICIT_REF_FIELDS } from './elementIndex.js'
-import { matchesTargetTemplate } from './templateMatching.js'
+import { matchesTargetBlueprint } from './blueprintMatching.js'
 
 export interface ReferenceDiagnostic {
   path: string
@@ -26,7 +26,7 @@ export type SubmodelResolver = (
 ) => { exists: boolean; templateName?: string; templateUrl?: string } | null
 
 /** Collect all element names model-wide (lowercased for case-insensitive matching). */
-function collectElementNames(model: ParsedModel): Set<string> {
+function collectElementNames(model: ParsedKnowledge): Set<string> {
   const names = new Set<string>()
   for (const [, elements] of model.elements.entries()) {
     for (const el of elements) {
@@ -41,7 +41,7 @@ function collectElementNames(model: ParsedModel): Set<string> {
  * name, used as a fallback lookup when an exact (case-insensitive) match
  * fails, to tolerate hyphen/dash typographic variants (Fix 3).
  */
-function collectNormalizedElementNames(model: ParsedModel): Map<string, string> {
+function collectNormalizedElementNames(model: ParsedKnowledge): Map<string, string> {
   const names = new Map<string, string>()
   for (const [, elements] of model.elements.entries()) {
     for (const el of elements) {
@@ -74,7 +74,7 @@ function resolveElementName(
  * Validate that all references in matrix cells point to existing element names.
  * Returns diagnostics for dangling references (R-IE-04).
  */
-export function validateReferences(model: ParsedModel): ReferenceDiagnostic[] {
+export function validateReferences(model: ParsedKnowledge): ReferenceDiagnostic[] {
   const diagnostics: ReferenceDiagnostic[] = []
   const elementNames = collectElementNames(model)
   const normalizedElementNames = collectNormalizedElementNames(model)
@@ -126,7 +126,7 @@ export function validateReferences(model: ParsedModel): ReferenceDiagnostic[] {
  * be among them (R-IE-04).
  */
 export function validateElementFieldReferences(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateConcepts: Concept[],
   options?: {
     resolveSubmodel?: SubmodelResolver
@@ -148,7 +148,7 @@ export function validateElementFieldReferences(
         const fieldDef = fieldDefs.find((f) => f.name.toLowerCase() === fieldName.toLowerCase())
 
         const isRef =
-          (fieldDef && (fieldDef.type === 'reference' || fieldDef.type === 'model')) ||
+            (fieldDef && (fieldDef.type === 'reference' || fieldDef.type === 'knowledge')) ||
           IMPLICIT_REF_FIELDS.has(fieldName.toLowerCase())
         if (!isRef) continue
 
@@ -166,7 +166,7 @@ export function validateElementFieldReferences(
             value = value.slice(2, -2).trim()
           }
 
-          if (fieldDef?.type === 'model') {
+          if (fieldDef?.type === 'knowledge') {
             const cleanPath = value.trim()
             if (options?.resolveSubmodel) {
               const res = options.resolveSubmodel(cleanPath, options.referringPath)
@@ -180,8 +180,8 @@ export function validateElementFieldReferences(
                     promptHint: `Create the file "${cleanPath}" or fix the path in field "${fieldDef?.name ?? fieldName}".`,
                     meta: { refPath: cleanPath, field: fieldDef?.name ?? fieldName },
                   })
-                } else if (fieldDef.target_template) {
-                  const matches = matchesTargetTemplate(fieldDef.target_template, {
+                } else if (fieldDef.target_blueprint) {
+                  const matches = matchesTargetBlueprint(fieldDef.target_blueprint, {
                     name: res.templateName,
                     url: res.templateUrl,
                   })
@@ -190,13 +190,13 @@ export function validateElementFieldReferences(
                     const actualLabel = res.templateName || res.templateUrl || 'unknown'
                     diagnostics.push({
                       path: `elements.${conceptName}.${el.name}.fields.${fieldDef?.name ?? fieldName}`,
-                      message: `Submodel template mismatch: field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_template}", but referenced file "${cleanPath}" uses template "${actualLabel}"`,
+                      message: `Submodel template mismatch: field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_blueprint}", but referenced file "${cleanPath}" uses template "${actualLabel}"`,
                       severity: 'warning',
                       code: 'SUBMODEL_TEMPLATE_MISMATCH',
-                      promptHint: `Field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_template}" but "${cleanPath}" uses "${actualLabel}": update target_template or fix parent_spec in the referenced file.`,
+                      promptHint: `Field "${fieldDef?.name ?? fieldName}" expects template "${fieldDef.target_blueprint}" but "${cleanPath}" uses "${actualLabel}": update target_blueprint or fix parent_spec in the referenced file.`,
                       meta: {
-                        expectedTemplate: fieldDef.target_template,
-                        actualTemplate: actualLabel,
+                        expectedBlueprint: fieldDef.target_blueprint,
+                        actualBlueprint: actualLabel,
                         refPath: cleanPath,
                       },
                     })

@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { recursiveParse, validateTemplateAgainstMetaschema } from '../src/index'
+import { recursiveParse, validateBlueprintAgainstMetaschema } from '../src/index'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-const WORKSPACE_SPEC = readSpec('templates/workspace_spec_NN.md')
+const WORKSPACE_SPEC = readSpec('bluepriNNts/workspace_spec_NN.md')
 const INNFO_V2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 /** Minimal in-memory FS handle, mirroring workspace-taxonomy-submodels.test.ts. */
@@ -55,7 +55,7 @@ function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHand
 
 describe('Change C — workspace_V_0-3-0_spec_NN.md normalization', () => {
   it('validates green against the iNNfo_V_0-2-0 metaschema (canonical L2 form)', () => {
-    const diags = validateTemplateAgainstMetaschema(WORKSPACE_SPEC, INNFO_V2)
+    const diags = validateBlueprintAgainstMetaschema(WORKSPACE_SPEC, INNFO_V2)
     const errors = diags.filter((d) => d.severity === 'error')
     expect(errors, JSON.stringify(errors)).toEqual([])
   })
@@ -64,13 +64,13 @@ describe('Change C — workspace_V_0-3-0_spec_NN.md normalization', () => {
 describe('Change C — workspace-scoped author:: propagation', () => {
   it('attaches the manifest Models author:: to each referenced model root node', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md
-model_version: V_0-1-0
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md
+knowledge_version: V_0-1-0
 title: Demo Workspace
 ---
 > [!NOTE]
@@ -94,7 +94,7 @@ level: 3
 parent_spec:
   name: some_spec
   url: https://example.com/some_spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Alpha Model
 ---
 # NN Components
@@ -106,7 +106,7 @@ level: 3
 parent_spec:
   name: some_spec
   url: https://example.com/some_spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Beta Model
 ---
 # NN Components
@@ -126,13 +126,13 @@ title: Beta Model
 
   it('leaves author undefined when the Models entry carries none', async () => {
     const files: Record<string, string> = {
-      'workspace_NN.md': `---
+      'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/workspace_spec_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: No-Author Workspace
 ---
 > [!NOTE]
@@ -150,7 +150,7 @@ level: 3
 parent_spec:
   name: some_spec
   url: https://example.com/some_spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Gamma Model
 ---
 # NN Components

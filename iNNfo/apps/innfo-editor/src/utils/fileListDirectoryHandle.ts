@@ -3,7 +3,7 @@
  * `FileList` (the non-File-System-Access fallback folder picker).
  *
  * This lets the fallback path run through the exact SAME parse pipeline
- * (`workspace.open()` -> `modelStore.parseFromHandle()`) as the primary
+ * (`workspace.open()` -> `knowledgeStore.parseFromHandle()`) as the primary
  * File System Access flow, instead of a second, independently-maintained
  * parser (F-13). No browser exposes a real `FileSystemDirectoryHandle` for
  * an `<input type="file" webkitdirectory>` selection — only a flat

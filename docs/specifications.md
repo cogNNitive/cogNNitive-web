@@ -64,9 +64,9 @@ En plantillas de Nivel 2, la composición de plantillas se realiza mediante la p
 ```yaml
 includes:
   - name: "business-model"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business-model/business-model_V_0-1-0_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md"
   - name: "analysis"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/analysis/analysis_V_0-1-0_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md"
 ```
 
 ### ¿Por qué vive en el Front Matter?

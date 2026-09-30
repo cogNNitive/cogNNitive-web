@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import BlockMatrixSummary from '../../src/components/editor/BlockMatrixSummary.vue'
-import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
+import type { KnowledgeNode } from '../../src/model/types'
 
 /**
  * Helper: creates a minimal root node with rawContent containing
@@ -12,7 +12,7 @@ import type { ModelNode } from '../../src/model/types'
 function makeRootNode(
   matrices: Array<{ name: string; source: string; target: string }>,
   cellFields: Record<string, { value: string }> = {},
-): ModelNode {
+): KnowledgeNode {
   const frontmatter = `---
 spec_version: V_0-1-5
 name: TestRoot
@@ -54,7 +54,7 @@ ${matrices.map((m) => `  - name: ${m.name}\n    source: ${m.source}\n    target:
   }
 }
 
-function makeElementNode(id: string, name: string, conceptType: string): ModelNode {
+function makeElementNode(id: string, name: string, conceptType: string): KnowledgeNode {
   return {
     id,
     name,
@@ -75,12 +75,12 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
   })
 
   it('renders a MatrixPill when the node participates as a row in a matrix', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeRootNode([{ name: 'M1', source: 'Task', target: 'Phase' }], {
       'M1||MyTask||Phase1': { value: 'active' },
     })
     const element = makeElementNode('Root/MyTask', 'MyTask', 'Task')
-    modelStore.setGraph({ Root: root, 'Root/MyTask': element }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/MyTask': element }, ['Root'])
 
     const wrapper = mount(BlockMatrixSummary, {
       props: {
@@ -97,12 +97,12 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
   })
 
   it('renders a MatrixPill when the node participates as a column in a matrix', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeRootNode([{ name: 'M1', source: 'Task', target: 'Phase' }], {
       'M1||SomeTask||MyPhase': { value: 'done' },
     })
     const element = makeElementNode('Root/MyPhase', 'MyPhase', 'Phase')
-    modelStore.setGraph({ Root: root, 'Root/MyPhase': element }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/MyPhase': element }, ['Root'])
 
     const wrapper = mount(BlockMatrixSummary, {
       props: {
@@ -119,14 +119,14 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
   })
 
   it('counts cells with non-dash/empty values only', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeRootNode([{ name: 'M1', source: 'Task', target: 'Phase' }], {
       'M1||MyTask||P1': { value: 'active' },
       'M1||MyTask||P2': { value: '-' },
       'M1||MyTask||P3': { value: '' },
     })
     const element = makeElementNode('Root/MyTask', 'MyTask', 'Task')
-    modelStore.setGraph({ Root: root, 'Root/MyTask': element }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/MyTask': element }, ['Root'])
 
     const wrapper = mount(BlockMatrixSummary, {
       props: {
@@ -141,10 +141,10 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
   })
 
   it('shows empty state when node does not participate in any matrix', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeRootNode([{ name: 'M1', source: 'Task', target: 'Phase' }])
     const element = makeElementNode('Root/Other', 'Other', 'OtherType')
-    modelStore.setGraph({ Root: root, 'Root/Other': element }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/Other': element }, ['Root'])
 
     const wrapper = mount(BlockMatrixSummary, {
       props: {
@@ -158,10 +158,10 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
   })
 
   it('shows empty state when root node has no matrix definitions', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeRootNode([])
     const element = makeElementNode('Root/Task1', 'Task1', 'Task')
-    modelStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/Task1': element }, ['Root'])
 
     const wrapper = mount(BlockMatrixSummary, {
       props: {
@@ -175,7 +175,7 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
   })
 
   it('handles multiple matrices with different concept participation', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const root = makeRootNode(
       [
         { name: 'M1', source: 'Task', target: 'Phase' },
@@ -187,7 +187,7 @@ describe('BlockMatrixSummary.vue — R-SC-04', () => {
       },
     )
     const element = makeElementNode('Root/MyTask', 'MyTask', 'Task')
-    modelStore.setGraph({ Root: root, 'Root/MyTask': element }, ['Root'])
+    knowledgeStore.setGraph({ Root: root, 'Root/MyTask': element }, ['Root'])
 
     const wrapper = mount(BlockMatrixSummary, {
       props: {

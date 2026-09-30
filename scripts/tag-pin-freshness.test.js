@@ -97,7 +97,7 @@ function main() {
   {
     const dir = makeRepo();
     try {
-      writeFile(dir, 'iNNfo/specs/templates/business/spec_NN.md', '---\ntemplate_version: "0.2.0"\n---\n');
+      writeFile(dir, 'iNNfo/specs/bluepriNNts/business/spec_NN.md', '---\ntemplate_version: "0.2.0"\n---\n');
       commitAll(dir, 'template spec bump without re-pin');
       const r = checkTagPinFreshness(dir, { base: 'base', head: 'HEAD' });
       assert.strictEqual(r.ok, false);
@@ -112,7 +112,7 @@ function main() {
   {
     const dir = makeRepo();
     try {
-      writeFile(dir, 'iNNfo/specs/templates/business/spec_NN.md', '---\ntemplate_version: "0.2.0"\n---\n');
+      writeFile(dir, 'iNNfo/specs/bluepriNNts/business/spec_NN.md', '---\ntemplate_version: "0.2.0"\n---\n');
       writeFile(dir, 'manifest/source.yaml', 'channels: {}\n');
       commitAll(dir, 'template spec bump with re-pin');
       const r = checkTagPinFreshness(dir, { base: 'base', head: 'HEAD' });

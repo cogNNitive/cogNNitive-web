@@ -1,6 +1,6 @@
 # YouTube Production Package: Episode 42
 
-> **Generated from model:** [`Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md`](../models/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md)  
+> **Generated from model:** [`Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md`](../kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md)  
 > **Verification:** 100% Peer-Reviewed Academic Citations
 
 ---

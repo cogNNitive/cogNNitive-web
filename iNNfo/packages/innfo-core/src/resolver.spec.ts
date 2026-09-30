@@ -3,12 +3,12 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
 import {
-  resolveTemplatePath,
-  getTemplateSearchPaths,
-  UnresolvedTemplateError,
-  validateModel,
-  parseModel,
-  resolveTemplateSchema,
+  resolveBlueprintPath,
+  getBlueprintSearchPaths,
+  UnresolvedBlueprintError,
+  validateKnowledge,
+  parseKnowledge,
+  resolveBlueprintSchema,
 } from './index.js'
 import type { SpecDocument } from './types/index.js'
 
@@ -24,9 +24,9 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
     globalDir = path.join(tmpDir, 'global_templates')
     skillsDir = path.join(tmpDir, 'skills')
 
-    fs.mkdirSync(path.join(workspaceDir, 'templates'), { recursive: true })
+    fs.mkdirSync(path.join(workspaceDir, 'specs', 'bluepriNNts'), { recursive: true })
     fs.mkdirSync(globalDir, { recursive: true })
-    fs.mkdirSync(path.join(skillsDir, 'nn-innfo', 'templates'), { recursive: true })
+    fs.mkdirSync(path.join(skillsDir, 'nn-innfo', 'bluepriNNts'), { recursive: true })
   })
 
   afterEach(() => {
@@ -35,34 +35,34 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
 
   it('resolves workspace-local template first (Precedence 1)', async () => {
     const tmplName = 'test_spec_NN'
-    fs.writeFileSync(path.join(workspaceDir, 'templates', `${tmplName}.md`), '# NN concept: Local')
+    fs.writeFileSync(path.join(workspaceDir, 'specs', 'bluepriNNts', `${tmplName}.md`), '# NN concept: Local')
     fs.writeFileSync(path.join(globalDir, `${tmplName}.md`), '# NN concept: Global')
     fs.writeFileSync(
-      path.join(skillsDir, 'nn-innfo', 'templates', `${tmplName}.md`),
+      path.join(skillsDir, 'nn-innfo', 'bluepriNNts', `${tmplName}.md`),
       '# NN concept: Skill',
     )
 
-    const loc = await resolveTemplatePath(tmplName, {
+    const loc = await resolveBlueprintPath(tmplName, {
       workspaceDir,
-      globalTemplatesDir: globalDir,
+      globalBlueprintsDir: globalDir,
       skillsDir,
     })
     expect(loc).not.toBeNull()
     expect(loc?.source).toBe('workspace')
-    expect(loc?.filePath).toBe(path.join(workspaceDir, 'templates', `${tmplName}.md`))
+    expect(loc?.filePath).toBe(path.join(workspaceDir, 'specs', 'bluepriNNts', `${tmplName}.md`))
   })
 
   it('falls back to global templates when missing in workspace (Precedence 2)', async () => {
     const tmplName = 'global_only_spec'
     fs.writeFileSync(path.join(globalDir, `${tmplName}.md`), '# NN concept: Global')
     fs.writeFileSync(
-      path.join(skillsDir, 'nn-innfo', 'templates', `${tmplName}.md`),
+      path.join(skillsDir, 'nn-innfo', 'bluepriNNts', `${tmplName}.md`),
       '# NN concept: Skill',
     )
 
-    const loc = await resolveTemplatePath(tmplName, {
+    const loc = await resolveBlueprintPath(tmplName, {
       workspaceDir,
-      globalTemplatesDir: globalDir,
+      globalBlueprintsDir: globalDir,
       skillsDir,
     })
     expect(loc).not.toBeNull()
@@ -73,42 +73,42 @@ describe('Multi-Store Template Resolver (innfo-core)', () => {
   it('falls back to skill-bundled templates when missing in workspace and global (Precedence 3)', async () => {
     const tmplName = 'skill_only_spec'
     fs.writeFileSync(
-      path.join(skillsDir, 'nn-innfo', 'templates', `${tmplName}.md`),
+      path.join(skillsDir, 'nn-innfo', 'bluepriNNts', `${tmplName}.md`),
       '# NN concept: Skill',
     )
 
-    const loc = await resolveTemplatePath(tmplName, {
+    const loc = await resolveBlueprintPath(tmplName, {
       workspaceDir,
-      globalTemplatesDir: globalDir,
+      globalBlueprintsDir: globalDir,
       skillsDir,
     })
     expect(loc).not.toBeNull()
     expect(loc?.source).toBe('skill')
     expect(loc?.skillName).toBe('nn-innfo')
-    expect(loc?.filePath).toBe(path.join(skillsDir, 'nn-innfo', 'templates', `${tmplName}.md`))
+    expect(loc?.filePath).toBe(path.join(skillsDir, 'nn-innfo', 'bluepriNNts', `${tmplName}.md`))
   })
 
   it('returns null and reports every searched tier when the template is missing everywhere', async () => {
     const missingName = 'non_existent_spec'
-    const opts = { workspaceDir, globalTemplatesDir: globalDir, skillsDir }
+    const opts = { workspaceDir, globalBlueprintsDir: globalDir, skillsDir }
 
-    const loc = await resolveTemplatePath(missingName, opts)
+    const loc = await resolveBlueprintPath(missingName, opts)
     expect(loc).toBeNull()
 
     // The diagnostics must list the real precedence list, not an approximation:
-    // every tier resolveTemplatePath walks has to appear in the searched paths.
-    const checkedPaths = await getTemplateSearchPaths(missingName, opts)
-    expect(checkedPaths).toContain(path.join(workspaceDir, 'templates', `${missingName}.md`))
+    // every tier resolveBlueprintPath walks has to appear in the searched paths.
+    const checkedPaths = await getBlueprintSearchPaths(missingName, opts)
+    expect(checkedPaths).toContain(path.join(workspaceDir, 'specs', 'bluepriNNts', `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(workspaceDir, `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(workspaceDir, 'specs', `${missingName}.md`))
     expect(checkedPaths).toContain(path.join(globalDir, `${missingName}.md`))
     expect(checkedPaths).toContain(
-      path.join(skillsDir, 'nn-innfo', 'templates', `${missingName}.md`),
+      path.join(skillsDir, 'nn-innfo', 'bluepriNNts', `${missingName}.md`),
     )
     expect(checkedPaths).toContain(path.join(skillsDir, 'nn-innfo', `${missingName}.md`))
 
-    const err = new UnresolvedTemplateError(missingName, checkedPaths)
-    expect(err.name).toBe('UnresolvedTemplateError')
+    const err = new UnresolvedBlueprintError(missingName, checkedPaths)
+    expect(err.name).toBe('UnresolvedBlueprintError')
     expect(err.message).toContain('Unresolved template "non_existent_spec"')
     expect(err.message).toContain('searched:')
     expect(err.checkedPaths).toEqual(checkedPaths)
@@ -128,10 +128,10 @@ name: Projects Template
 `
     const modelContent = `---
 level: 3
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 parent_spec:
   name: projects_V_0-1-0_NN
-  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/projects/projects_V_0-1-0_NN.md
+  url: https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/projects/projects_V_0-1-0_NN.md
 ---
 
 # NN index
@@ -140,7 +140,7 @@ parent_spec:
 ## NN Project: Alpha
 * status:: active
 `
-    const parsed = parseModel(modelContent)
+    const parsed = parseKnowledge(modelContent)
     const templateDoc: SpecDocument = {
       level: 2,
       name: 'projects_V_0-1-0_NN',
@@ -152,13 +152,13 @@ parent_spec:
       },
     }
 
-    const res = validateModel(parsed, templateDoc, null)
+    const res = validateKnowledge(parsed, templateDoc, null)
     expect(res.valid).toBe(true)
     expect(res.errors.length).toBe(0)
   })
 })
 
-describe('Composition & Alias Engine (resolver / resolveTemplateSchema)', () => {
+describe('Composition & Alias Engine (resolver / resolveBlueprintSchema)', () => {
   it('applies concept and field aliases during template composition', () => {
     const baseA = `---
 level: 2
@@ -194,7 +194,7 @@ includes:
 ---
 `
 
-    const { schema, errors } = resolveTemplateSchema(composite, (ref) =>
+    const { schema, errors } = resolveBlueprintSchema(composite, (ref) =>
       ref.name === 'base_a' ? baseA : null,
     )
 
@@ -238,7 +238,7 @@ includes:
 ---
 `
 
-    const { errors } = resolveTemplateSchema(composite, (ref) => {
+    const { errors } = resolveBlueprintSchema(composite, (ref) => {
       if (ref.name === 'base_a') return baseA
       if (ref.name === 'base_b') return baseB
       return null
@@ -297,7 +297,7 @@ includes:
 ---
 `
 
-    const { errors } = resolveTemplateSchema(composite, (ref) => {
+    const { errors } = resolveBlueprintSchema(composite, (ref) => {
       if (ref.name === 'base_a') return baseA
       if (ref.name === 'base_b') return baseBWithField
       return null
@@ -326,7 +326,7 @@ includes:
 ---
 `
 
-    const { errors } = resolveTemplateSchema(tplA, (ref) => {
+    const { errors } = resolveBlueprintSchema(tplA, (ref) => {
       if (ref.name === 'tpl_b') return tplB
       if (ref.name === 'tpl_a') return tplA
       return null
@@ -345,7 +345,7 @@ includes:
     url: "x"
 ---
 `
-    const { errors } = resolveTemplateSchema(getTpl(1), (ref) => {
+    const { errors } = resolveBlueprintSchema(getTpl(1), (ref) => {
       const match = ref.name.match(/^tpl_(\d+)$/)
       if (match) {
         return getTpl(parseInt(match[1], 10))

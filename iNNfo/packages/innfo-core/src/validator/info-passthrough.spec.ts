@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { formatCheckToDiagnostic } from './document.js'
-import { reportCheckFromWarning } from './model.js'
+import { reportCheckFromWarning } from './knowledge.js'
 
 describe('info severity passthrough (validator-robustness Unit 1)', () => {
   it('maps a failed info format check to an info diagnostic preserving code and hint', () => {

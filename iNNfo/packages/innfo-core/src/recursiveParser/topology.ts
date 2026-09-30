@@ -1,4 +1,4 @@
-import type { ModelNode } from '../types/index.js'
+import type { KnowledgeNode } from '../types/index.js'
 import { normalizePathKey } from './paths.js'
 
 export interface ModelDagEdge {
@@ -28,7 +28,7 @@ export interface ModelDagTopology {
  * and discovers top-level root models (in_degree === 0) deterministically.
  */
 export function computeModelDagTopology(
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
   entrypointPath?: string,
 ): ModelDagTopology {
   const rootNodes = Object.values(nodes).filter(

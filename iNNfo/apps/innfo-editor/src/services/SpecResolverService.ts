@@ -1,8 +1,8 @@
-import { parseFrontmatter, parseModel, validateModel, getCanonicalSpecContent } from '@cognnitive/innfo-core'
+import { parseFrontmatter, parseKnowledge, validateKnowledge, getCanonicalSpecContent } from '@cognnitive/innfo-core'
 import { normalizeMatrixDecl } from '@cognnitive/innfo-core'
-import { extractTemplateSchemaFromContent, resolveTemplateSchema } from '@cognnitive/innfo-core'
-import type { LocalMetamodel, ParentRef, TemplateSchema } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../model/types'
+import { extractBlueprintSchemaFromContent, resolveBlueprintSchema } from '@cognnitive/innfo-core'
+import type { LocalMetamodel, ParentRef, BlueprintSchema } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../model/types'
 import type { DirectoryHandleLike, FileHandleLike } from '../model/fs-types'
 import { MATRIX_DEFS_KEY } from '../composables/useMatrixDefinitions'
 
@@ -91,7 +91,7 @@ async function resolvePathInHandle(
  * (served by vite at `/specs`, see `vite.config.ts` `serveLocalSpecs`) or
  * from the offline canonical registry.
  */
-async function tryBundledTemplate(
+async function tryBundledBlueprint(
   parentName: string,
   parentUrl?: string,
 ): Promise<string | null> {
@@ -133,17 +133,24 @@ async function tryBundledTemplate(
     )
   } else {
     candidateUrls.push(
-      `/specs/templates/${slug}/${cleanName}_NN.md`,
-      `/specs/templates/${slug}/${cleanName}.md`,
-      `/specs/templates/${slug}/spec_NN.md`,
-      `/specs/templates/${slug}_spec_NN.md`,
-      `/specs/templates/${cleanName}_NN.md`,
-      `/specs/templates/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/spec_NN.md`,
+      `/specs/bluepriNNts/${slug}_spec_NN.md`,
+      `/specs/bluepriNNts/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${slug}/${cleanName}.md`,
+      `/specs/bluepriNNts/${slug}/spec_NN.md`,
+      `/specs/bluepriNNts/${slug}_spec_NN.md`,
+      `/specs/bluepriNNts/${cleanName}_NN.md`,
+      `/specs/bluepriNNts/${cleanName}.md`,
       `/specs/${cleanName}_NN.md`,
       `/specs/${cleanName}.md`,
     )
-    if (slug === 'workspace') {
-      candidateUrls.push(`/specs/templates/workspace_spec_NN.md`)
+    if (slug === 'workspace' || slug === 'domainn') {
+      candidateUrls.push(`/specs/bluepriNNts/domaiNN/spec_NN.md`)
+      candidateUrls.push(`/specs/bluepriNNts/workspace_spec_NN.md`)
     }
   }
 
@@ -192,7 +199,7 @@ async function fetchIncludeText(
       /* not a resolvable local path */
     }
   }
-  const dev = await tryBundledTemplate(ref.name, ref.url)
+  const dev = await tryBundledBlueprint(ref.name, ref.url)
   if (dev) return dev
   if (ref.url && isHttpUrl(ref.url)) {
     try {
@@ -233,13 +240,13 @@ async function buildIncludeMap(
  *      the parent name;
  *   2. the `parent_spec.url` itself when it is a local/relative path
  *      (resolved against the workspace handle instead of fetch());
- *   3. dev-only `specs/templates/{name}/` fallback (served by vite);
+ *   3. dev-only `specs/bluepriNNts/{name}/` fallback (served by vite);
  *   4. network fetch, ONLY for http(s) URLs.
  * Extracted so both `resolveParentSpecs` (the post-parse pass) and
- * `warmTemplateCache` (the pre-parse warm-up, C1/AD-04) share one fetch path
+ * `warmBlueprintCache` (the pre-parse warm-up, C1/AD-04) share one fetch path
  * instead of drifting apart.
  */
-async function fetchTemplateText(
+async function fetchBlueprintText(
   parentName: string,
   parentUrl: string | undefined,
   handle?: DirectoryHandleLike,
@@ -297,7 +304,7 @@ async function fetchTemplateText(
   }
 
   if (!text) {
-    const devLocal = await tryBundledTemplate(parentName, parentUrl)
+    const devLocal = await tryBundledBlueprint(parentName, parentUrl)
     if (devLocal) {
       text = devLocal
       specFilename = `spec:${parentName}`
@@ -323,19 +330,19 @@ async function fetchTemplateText(
 
 /**
  * Pre-parse warm-up (C1/AD-04): resolves and composes every template a
- * SYNCHRONOUS `resolveTemplateSchema` callback might be asked for during
- * `recursiveParse`, into a `lowercased parent_spec.name -> composed TemplateSchema`
+ * SYNCHRONOUS `resolveBlueprintSchema` callback might be asked for during
+ * `recursiveParse`, into a `lowercased parent_spec.name -> composed BlueprintSchema`
  * map. Seeded from `seed` (typically the entrypoint's own `parent_spec`) plus
  * any `parent_spec` discovered on a shallow (root-level only) pass over the
- * handle — a workspace with deeper `type:: model` targets simply warms fewer
+ * handle — a workspace with deeper `type:: knowledge` targets simply warms fewer
  * entries, which is the "cold cache" path AD-04 explicitly allows: it degrades
  * to today's traversal for that node rather than erroring.
  */
-export async function warmTemplateCache(
+export async function warmBlueprintCache(
   handle?: DirectoryHandleLike,
   seed?: Array<{ name: string; url?: string }>,
-): Promise<Map<string, TemplateSchema>> {
-  const cache = new Map<string, TemplateSchema>()
+): Promise<Map<string, BlueprintSchema>> {
+  const cache = new Map<string, BlueprintSchema>()
   if (!handle) return cache
 
   const refs = new Map<string, { name: string; url?: string }>()
@@ -365,13 +372,13 @@ export async function warmTemplateCache(
 
   for (const ref of refs.values()) {
     try {
-      const resolved = await fetchTemplateText(ref.name, ref.url, handle)
+      const resolved = await fetchBlueprintText(ref.name, ref.url, handle)
       if (!resolved) continue
       const includeMap = await buildIncludeMap(resolved.text, handle)
       const resolveInclude = (r: { name: string }) => includeMap.get(r.name) ?? null
       const schema = includeMap.size
-        ? resolveTemplateSchema(resolved.text, resolveInclude).schema
-        : extractTemplateSchemaFromContent(resolved.text)
+        ? resolveBlueprintSchema(resolved.text, resolveInclude).schema
+        : extractBlueprintSchemaFromContent(resolved.text)
       cache.set(ref.name.toLowerCase(), schema)
     } catch {
       // best-effort warm-up; a miss here just means a colder cache for this node
@@ -391,7 +398,7 @@ export async function warmTemplateCache(
  *      the parent name or the URL's basename;
  *   2. the `parent_spec.url` itself when it is a local/relative path
  *      (resolved against the workspace handle instead of fetch());
- *   3. dev-only `specs/templates/{name}/` fallback (served by vite);
+ *   3. dev-only `specs/bluepriNNts/{name}/` fallback (served by vite);
  *   4. network fetch, ONLY for http(s) URLs.
  *
  * Locally-resolved and fetched templates are persisted back to `specs/`
@@ -402,13 +409,14 @@ export async function warmTemplateCache(
  * matrices visible in the tree.
  */
 export async function resolveParentSpecs(
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
   rootIds: string[],
   handle?: DirectoryHandleLike,
   issues?: Array<{ path: string; message: string }>,
 ): Promise<void> {
-  for (const rootId of rootIds) {
-    const root = nodes[rootId]
+  const rootNodes = Object.values(nodes).filter((n) => n.kind === 'root')
+  for (const root of rootNodes) {
+    const rootId = root.id
     if (!root?.rawContent) continue
 
     const fm = parseFrontmatter(root.rawContent) as SpecFrontmatter
@@ -430,7 +438,7 @@ export async function resolveParentSpecs(
     })
     if (existingPeer) continue
 
-    const fetched = await fetchTemplateText(parentName, parentUrl, handle)
+    const fetched = await fetchBlueprintText(parentName, parentUrl, handle)
     const text = fetched?.text ?? ''
     const specFilename = fetched?.specFilename ?? ''
 
@@ -477,8 +485,8 @@ export async function resolveParentSpecs(
       const includeMap = await buildIncludeMap(text, handle)
       const resolveInclude = (r: { name: string }) => includeMap.get(r.name) ?? null
       const schema = includeMap.size
-        ? resolveTemplateSchema(text, resolveInclude).schema
-        : extractTemplateSchemaFromContent(text)
+        ? resolveBlueprintSchema(text, resolveInclude).schema
+        : extractBlueprintSchemaFromContent(text)
       if (!schema.concepts.length && !schema.matrices.length) continue
 
       // Schema conformance of the model against its (composed) template, so the
@@ -491,7 +499,7 @@ export async function resolveParentSpecs(
             frontmatter: parseFrontmatter(text) ?? ({} as any),
             rawContent: text,
           }
-          const r = validateModel(parseModel(root.rawContent), templateDoc, null, resolveInclude)
+          const r = validateKnowledge(parseKnowledge(root.rawContent), templateDoc, null, resolveInclude)
           root.schemaValidation = { errors: r.errors, warnings: r.warnings }
         } catch {
           /* schema validation is best-effort here */
@@ -505,11 +513,11 @@ export async function resolveParentSpecs(
       // the template's source/target instead of skipping.
       if (schema.matrices.length > 0) {
         const existingDefs = root.fields[MATRIX_DEFS_KEY]?.value
-        const needsTemplateDefs =
+        const needsBlueprintDefs =
           !Array.isArray(existingDefs) ||
           existingDefs.length === 0 ||
           existingDefs.some((d: any) => !d?.source || !d?.target)
-        if (needsTemplateDefs) {
+        if (needsBlueprintDefs) {
           root.fields[MATRIX_DEFS_KEY] = {
             value: schema.matrices.map((m) =>
               normalizeMatrixDecl(m as unknown as Record<string, unknown>),

@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import WorkspaceExplorer from '../../src/components/layout/WorkspaceExplorer.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useWorkspaceStore } from '../../src/stores/workspaceStore'
 import { useUiStore } from '../../src/stores/uiStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
 describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
   beforeEach(() => {
@@ -13,8 +13,8 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
   })
 
   it('renders filesystem explorer without category filter chips', async () => {
-    const modelStore = useModelStore()
-    const node: ModelNode = {
+    const knowledgeStore = useKnowledgeStore()
+    const node: KnowledgeNode = {
       id: 'system_01.md',
       name: 'System Architecture',
       parentId: null,
@@ -24,10 +24,10 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'models/system_01.md' },
+      source: { path: 'kNNowledge/system_01.md' },
       rawContent: '---\ntitle: "System Architecture"\n---\n# NN index\n',
     }
-    modelStore.setGraph({ 'system_01.md': node }, ['system_01.md'])
+    knowledgeStore.setGraph({ 'system_01.md': node }, ['system_01.md'])
 
     const wrapper = mount(WorkspaceExplorer)
     await flushPromises()
@@ -45,8 +45,8 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
   })
 
   it('filters visible items dynamically when search query is typed', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'doc_01.md': {
           id: 'doc_01.md',
@@ -70,7 +70,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
           markers: {},
           relationships: [],
           rawSections: {},
-          source: { path: 'models/arch.md' },
+          source: { path: 'kNNowledge/arch.md' },
         },
       },
       ['doc_01.md', 'arch_01.md'],
@@ -90,10 +90,10 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
   })
 
   it('selects model and sets activeView to editor when clicking a model file', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
-    const node: ModelNode = {
+    const node: KnowledgeNode = {
       id: 'system_01.md',
       name: 'System Architecture',
       parentId: null,
@@ -103,9 +103,9 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
       markers: {},
       relationships: [],
       rawSections: {},
-      source: { path: 'models/system_01.md' },
+      source: { path: 'kNNowledge/system_01.md' },
     }
-    modelStore.setGraph({ 'system_01.md': node }, ['system_01.md'])
+    knowledgeStore.setGraph({ 'system_01.md': node }, ['system_01.md'])
     uiStore.setActiveView('info')
 
     const wrapper = mount(WorkspaceExplorer)
@@ -122,7 +122,7 @@ describe('WorkspaceExplorer Component (specs/workspace-file-explorer)', () => {
     fileTreeNode.vm.$emit('select-file', {
       name: 'system_01.md',
       kind: 'file',
-      path: 'models/system_01.md',
+      path: 'kNNowledge/system_01.md',
     })
 
     expect(uiStore.selectedNodeId).toBe('system_01.md')

@@ -100,19 +100,19 @@ const manifest = {
 fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 console.log(`✅ Updated docs/innfo/cdn/manifest.json (latest: v${version})`);
 
-// 3b. Stage the Level-2 template catalog so it is reachable at a canonical
+// 3b. Stage the Level-2 blueprint catalog so it is reachable at a canonical
 // same-origin URL for the browser editor and non-monorepo workspaces (AD-3,
-// tier 1): https://cognnitive.com/innfo/templates/catalog.json
-console.log('\n▶ Staging template catalog into docs/innfo/templates/catalog.json...');
-const catalogSrc = path.join(repoRoot, 'iNNfo', 'specs', 'templates', 'catalog.json');
-const catalogTargetDir = path.join(repoRoot, 'docs', 'innfo', 'templates');
+// tier 1): https://cognnitive.com/innfo/blueprints/catalog.json
+console.log('\n▶ Staging blueprint catalog into docs/innfo/blueprints/catalog.json...');
+const catalogSrc = path.join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'catalog.json');
+const catalogTargetDir = path.join(repoRoot, 'docs', 'innfo', 'blueprints');
 if (!fs.existsSync(catalogSrc)) {
-  console.error(`❌ Template catalog not found at: ${catalogSrc}. Run scripts/template-catalog.mjs first.`);
+  console.error(`❌ Blueprint catalog not found at: ${catalogSrc}. Run scripts/blueprint-catalog.mjs first.`);
   process.exit(1);
 }
 fs.mkdirSync(catalogTargetDir, { recursive: true });
 fs.copyFileSync(catalogSrc, path.join(catalogTargetDir, 'catalog.json'));
-console.log('✅ Staged docs/innfo/templates/catalog.json');
+console.log('✅ Staged docs/innfo/blueprints/catalog.json');
 
 // 3c. Derive docs-facts generated regions (MCP tool facts today; skills
 // catalog from Unit 3 onward) from their canonical sources, so the Docsify

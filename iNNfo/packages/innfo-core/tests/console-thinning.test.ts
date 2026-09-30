@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const templatesDir = join(here, '..', '..', '..', 'specs', 'templates')
+const templatesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts')
 const repoRoot = join(here, '..', '..', '..', '..')
 
 const assets = {
@@ -66,7 +66,7 @@ describe('viewer slot payloads', () => {
   it('stays byte-unchanged by the console-citation-icons change (C2-C4 create a workspace-level copy instead)', () => {
     const tracked = execFileSync(
       'git',
-      ['show', 'HEAD:iNNfo/specs/templates/business/assets/model_viewer.html'],
+      ['show', 'HEAD:iNNfo/specs/bluepriNNts/business/assets/model_viewer.html'],
       { cwd: repoRoot, encoding: 'utf8' },
     )
     const onDisk = readAsset(assets.viewer)

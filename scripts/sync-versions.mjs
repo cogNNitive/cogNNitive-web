@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 
-const DEFAULT_TEMPLATES_DIR = path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
+const DEFAULT_BLUEPRINTS_DIR = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 const DEFAULT_SKILLS_DIR = path.join(REPO_ROOT, 'skills');
 const DEFAULT_SAMPLES_TS_PATH = path.join(
   REPO_ROOT, 'iNNfo', 'apps', 'innfo-editor', 'src', 'config', 'samples.ts'
@@ -30,13 +30,13 @@ const DEFAULT_MCP_PKG_PATH = path.join(REPO_ROOT, 'iNNfo', 'packages', 'innfo-mc
 const DEFAULT_CORE_PKG_PATH = path.join(REPO_ROOT, 'iNNfo', 'packages', 'innfo-core', 'package.json');
 
 const GENERATED_HEADER = [
-  '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/templates/*/spec_NN.md and',
-  '// iNNfo/specs/templates/workspace_spec_NN.md.',
+  '// GENERATED — DO NOT EDIT. Source: iNNfo/specs/bluepriNNts/*/spec_NN.md and',
+  '// iNNfo/specs/bluepriNNts/workspace_spec_NN.md.',
   '// Regenerate with `npm run sync:versions` (scripts/sync-versions.mjs).',
 ].join('\n');
 
 const FRONTMATTER_VERSION_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
-const TEMPLATE_VERSION_RE = /^template_version:\s*"?([^"\r\n]+?)"?\s*$/m;
+const BLUEPRINT_VERSION_RE = /^blueprint_version:\s*"?([^"\r\n]+?)"?\s*$/m;
 const SPEC_VERSION_RE = /^spec_version:\s*"?([^"\r\n]+?)"?\s*$/m;
 const SKILL_VERSION_RE = /^version:\s*"?([^"\r\n]+?)"?\s*$/m;
 
@@ -52,9 +52,9 @@ function readFrontmatterVersion(filePath, fieldRe) {
   return versionMatch ? versionMatch[1].trim() : undefined;
 }
 
-/** Reads `template_version` -- the template's OWN version. */
-function readTemplateVersion(filePath) {
-  return readFrontmatterVersion(filePath, TEMPLATE_VERSION_RE);
+/** Reads `blueprint_version` -- the blueprint's OWN version. */
+function readBlueprintVersion(filePath) {
+  return readFrontmatterVersion(filePath, BLUEPRINT_VERSION_RE);
 }
 
 /**
@@ -65,27 +65,27 @@ function readSpecVersion(filePath) {
 }
 
 /**
- * Walks `templatesDir` for `<slug>/spec_NN.md` files plus the root
- * `workspace_spec_NN.md`, returning a map of slug -> template_version.
- * @param {string} templatesDir
+ * Walks `blueprintsDir` for `<slug>/spec_NN.md` files plus the root
+ * `workspace_spec_NN.md`, returning a map of slug -> blueprint_version.
+ * @param {string} blueprintsDir
  * @param {(filePath: string) => string | undefined} read
  * @returns {Record<string, string>}
  */
-function collectVersions(templatesDir, read) {
+function collectVersions(blueprintsDir, read) {
   /** @type {Record<string, string>} */
   const versions = {};
-  if (!fs.existsSync(templatesDir)) return versions;
+  if (!fs.existsSync(blueprintsDir)) return versions;
 
-  const workspaceSpecPath = path.join(templatesDir, 'workspace_spec_NN.md');
+  const workspaceSpecPath = path.join(blueprintsDir, 'workspace_spec_NN.md');
   if (fs.existsSync(workspaceSpecPath)) {
     const v = read(workspaceSpecPath);
     if (v) versions.workspace = v;
   }
 
-  const entries = fs.readdirSync(templatesDir, { withFileTypes: true });
+  const entries = fs.readdirSync(blueprintsDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const specPath = path.join(templatesDir, entry.name, 'spec_NN.md');
+    const specPath = path.join(blueprintsDir, entry.name, 'spec_NN.md');
     if (!fs.existsSync(specPath)) continue;
     const v = read(specPath);
     if (v) versions[entry.name] = v;
@@ -94,12 +94,12 @@ function collectVersions(templatesDir, read) {
   return versions;
 }
 
-export function collectTemplateVersions(templatesDir = DEFAULT_TEMPLATES_DIR) {
-  return collectVersions(templatesDir, readTemplateVersion);
+export function collectBlueprintVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
+  return collectVersions(blueprintsDir, readBlueprintVersion);
 }
 
-export function collectSpecVersions(templatesDir = DEFAULT_TEMPLATES_DIR) {
-  return collectVersions(templatesDir, readSpecVersion);
+export function collectSpecVersions(blueprintsDir = DEFAULT_BLUEPRINTS_DIR) {
+  return collectVersions(blueprintsDir, readSpecVersion);
 }
 
 /**
@@ -146,7 +146,7 @@ function renderSamplesObjectBody(versions) {
   }).join('\n');
 }
 
-const SAMPLES_BLOCK_RE = /export const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = \{[\s\S]*?\n\}/;
+const SAMPLES_BLOCK_RE = /export const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = \{[\s\S]*?\n\}/;
 
 function syncSamplesTs({ versions, samplesTsPath, check }) {
   if (!fs.existsSync(samplesTsPath)) {
@@ -155,11 +155,11 @@ function syncSamplesTs({ versions, samplesTsPath, check }) {
 
   const current = fs.readFileSync(samplesTsPath, 'utf8');
   if (!SAMPLES_BLOCK_RE.test(current)) {
-    return { ok: false, error: `Could not find SHIPPED_TEMPLATE_VERSIONS block in ${samplesTsPath}` };
+    return { ok: false, error: `Could not find SHIPPED_BLUEPRINT_VERSIONS block in ${samplesTsPath}` };
   }
 
   const body = renderSamplesObjectBody(versions);
-  const replacement = `${GENERATED_HEADER}\nexport const SHIPPED_TEMPLATE_VERSIONS: Record<string, string> = {\n${body}\n}`;
+  const replacement = `${GENERATED_HEADER}\nexport const SHIPPED_BLUEPRINT_VERSIONS: Record<string, string> = {\n${body}\n}`;
   const updated = current.replace(new RegExp(`(?:${GENERATED_HEADER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n)?${SAMPLES_BLOCK_RE.source}`), replacement);
 
   if (check) {
@@ -194,7 +194,7 @@ function syncSourceYaml({ sectionMaps, sourceYamlPath, check }) {
     if (/^\S/.test(line)) {
       const match = line.match(/^(\S+):/);
       const secName = match ? match[1] : null;
-      if (secName && /^(templates|frozen_templates|skills)$/.test(secName)) {
+      if (secName && /^(blueprints|frozen_blueprints|skills)$/.test(secName)) {
         currentSection = secName;
       } else {
         currentSection = null;
@@ -302,15 +302,15 @@ function syncMcpDepRange({ mcpVersion, mcpPkgPath, check }) {
 
 export function syncVersions({
   check = false,
-  templatesDir = DEFAULT_TEMPLATES_DIR,
+  blueprintsDir = DEFAULT_BLUEPRINTS_DIR,
   skillsDir = DEFAULT_SKILLS_DIR,
   samplesTsPath = DEFAULT_SAMPLES_TS_PATH,
   sourceYamlPath = DEFAULT_SOURCE_YAML_PATH,
   mcpPkgPath = DEFAULT_MCP_PKG_PATH,
   corePkgPath = DEFAULT_CORE_PKG_PATH,
 } = {}) {
-  const versions = collectTemplateVersions(templatesDir);
-  const specVersions = collectSpecVersions(templatesDir);
+  const versions = collectBlueprintVersions(blueprintsDir);
+  const specVersions = collectSpecVersions(blueprintsDir);
   /** @type {Record<string, string>} */
   let skillVersions = {};
   const errors = [];
@@ -330,7 +330,7 @@ export function syncVersions({
   if (!samplesResult.ok) {
     if (samplesResult.drift) {
       errors.push(
-        `SHIPPED_TEMPLATE_VERSIONS in ${samplesTsPath} is stale. ` +
+        `SHIPPED_BLUEPRINT_VERSIONS in ${samplesTsPath} is stale. ` +
         `Run \`npm run sync:versions\` to regenerate it.`
       );
     } else {
@@ -339,8 +339,8 @@ export function syncVersions({
   }
 
   const sectionMaps = {
-    templates: specVersions,
-    frozen_templates: specVersions,
+    blueprints: specVersions,
+    frozen_blueprints: specVersions,
     skills: skillVersions,
   };
 
@@ -393,7 +393,7 @@ export function syncVersions({
 }
 
 // Backward-compatibility alias
-export const syncTemplateVersions = syncVersions;
+export const syncBlueprintVersions = syncVersions;
 
 // Direct CLI invocation
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {

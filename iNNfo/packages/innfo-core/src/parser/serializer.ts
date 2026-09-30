@@ -1,4 +1,4 @@
-import { ParsedModel, MatrixData, SpecFrontmatter } from '../types/index.js'
+import { ParsedKnowledge, MatrixData, SpecFrontmatter } from '../types/index.js'
 import { parseFrontmatter } from './yaml.js'
 import { stringify as yamlStringify } from 'yaml'
 import { printTaxonomyNode } from './taxonomy.js'
@@ -12,7 +12,7 @@ import {
 /**
  * Serializes a property value into the unified `key:: value` form.
  *
- * `rawText`, when provided, is the exact RHS text `parseModel` originally
+ * `rawText`, when provided, is the exact RHS text `parseKnowledge` originally
  * read for this field (`ElementNode.rawFields[key]`). When re-parsing it
  * still produces the current `value` — i.e. the field was not touched by a
  * mutation since it was read — it is re-emitted byte-for-byte, preserving
@@ -47,7 +47,7 @@ function serializePropertyValue(value: unknown, rawText?: string): string {
 }
 
 /** True when re-parsing `rawText` yields the same value currently held —
- *  i.e. nothing mutated this field since `parseModel` read it. */
+ *  i.e. nothing mutated this field since `parseKnowledge` read it. */
 function rawTextStillMatches(rawText: string, value: unknown): boolean {
   try {
     return JSON.stringify(parsePropertyValue(rawText)) === JSON.stringify(value)
@@ -145,7 +145,7 @@ function isSafeListItem(v: unknown): boolean {
 
 /**
  * True when re-parsing `rawFrontmatter` yields the frontmatter currently
- * held — i.e. nothing mutated it since `parseModel` read it, so the author's
+ * held — i.e. nothing mutated it since `parseKnowledge` read it, so the author's
  * own text (key order, quoting, and any key outside the constructed path's
  * allow-list) can be re-emitted verbatim.
  */
@@ -158,7 +158,7 @@ function rawFrontmatterStillMatches(rawFrontmatter: string, fm: SpecFrontmatter)
   }
 }
 
-export function serializeModel(model: ParsedModel): string {
+export function serializeKnowledge(model: ParsedKnowledge): string {
   const lines: string[] = []
   const fm = model.frontmatter
   const useRawFrontmatter =
@@ -169,9 +169,8 @@ export function serializeModel(model: ParsedModel): string {
     lines.push('---')
     if (fm.level !== 3 || fm.spec_version) {
       // Fallback only reached for a non-level-3 doc that somehow lacks an
-      // explicit spec_version; track the adopted L1 (iNNfo_V_0-2-1), not the
-      // superseded one.
-      lines.push(`spec_version: "${fm.spec_version || 'V_0-2-1'}"`)
+      // explicit spec_version; track the adopted L1 (iNNfo_V_0-3-0), not superseded.
+      lines.push(`spec_version: "${fm.spec_version || 'V_0-3-0'}"`)
     }
     if (fm.spec_url) {
       lines.push(`spec_url: "${fm.spec_url}"`)
@@ -189,7 +188,13 @@ export function serializeModel(model: ParsedModel): string {
         lines.push(yamlStringify({ parent: val }).trim())
       }
     }
-    if (fm.model_version) lines.push(`model_version: "${fm.model_version}"`)
+    if (fm.knowledge_version) {
+      lines.push(`knowledge_version: "${fm.knowledge_version}"`)
+    }
+    if (fm.blueprint_version) lines.push(`blueprint_version: "${fm.blueprint_version}"`)
+    if (fm.blueprint_name) lines.push(`blueprint_name: "${fm.blueprint_name}"`)
+    if (fm.knowledge_dir) lines.push(`knowledge_dir: "${fm.knowledge_dir}"`)
+    if (fm.blueprints_dir) lines.push(`blueprints_dir: "${fm.blueprints_dir}"`)
     if (fm.title) lines.push(`title: "${fm.title}"`)
     if (fm.mode) lines.push(`mode: "${fm.mode}"`)
     if (fm.template !== undefined) {

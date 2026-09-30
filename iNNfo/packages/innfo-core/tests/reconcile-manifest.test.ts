@@ -6,9 +6,9 @@ import {
   reconcileManifest,
   type DiscoveredModel,
 } from '../src/workspace/reconcileManifest'
-import { parseModel } from '../src/parser'
+import { parseKnowledge } from '../src/parser'
 
-const MANIFEST_PATH = 'workspace_NN.md'
+const MANIFEST_PATH = 'domaiNN_NN.md'
 
 function candidate(path: string, frontmatter: Record<string, unknown>): CandidateFile {
   return { path, frontmatter }
@@ -327,7 +327,7 @@ describe('reconcileManifest', () => {
       candidate('acme_cogNNitive_NN.md', { level: 3, parent_spec: { name: 'cogNNitive_V_0-2-0' } }),
       candidate(MANIFEST_PATH, { level: 3, parent_spec: { name: 'workspace_V_0-2-0' } }),
       candidate('archive/old_NN.md', { level: 3, parent_spec: { name: 'business_V_0-2-0' } }),
-      candidate('templates/business_V_0-2-0_spec_NN.md', {
+      candidate('bluepriNNts/business_V_0-2-0_spec_NN.md', {
         level: 2,
         parent_spec: { name: 'iNNfo_V_0-2-0' },
       }),
@@ -413,7 +413,7 @@ describe('reconcileManifest', () => {
     ]
 
     const result = reconcileManifest(manifestContent, discovered)
-    const reparsed = parseModel(result.content)
+    const reparsed = parseKnowledge(result.content)
     const entries = reparsed.elements.get('Models') ?? []
 
     expect(entries).toHaveLength(2)

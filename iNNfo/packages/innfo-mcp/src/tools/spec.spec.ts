@@ -3,15 +3,15 @@ import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
 import {
   getSpec,
-  getTemplateFromUrl,
-  getTemplateFromModel,
-  listTemplates,
-  hydrateTemplate,
-  listTemplateProcedures,
-  listTemplateSkills,
-  findModelFile,
+  getBlueprintFromUrl,
+  getBlueprintFromModel,
+  listBlueprints,
+  hydrateBlueprint,
+  listBlueprintProcedures,
+  listBlueprintSkills,
+  findKnowledgeFile,
 } from './spec'
-import { validateModel, validateTemplate } from './mutate'
+import { validateKnowledge, validateBlueprint } from './mutate'
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-spec')
 const specsDir = join(rootDir, 'specs')
@@ -91,7 +91,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
         '---',
         'spec_version: "V_0-2-0"',
         'level: 3',
-        'model_version: "V_1-0-0"',
+        'knowledge_version: "V_1-0-0"',
         'parent_spec:',
         '  name: "business_V_0-2-0"',
         '  url: "https://example.com/business_V_0-2-0_NN.md"',
@@ -119,11 +119,11 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(specCache).toBeNull()
   })
 
-  it('getTemplateFromUrl resolves a template from an explicit url', async () => {
+  it('getBlueprintFromUrl resolves a template from an explicit url', async () => {
     await stubTemplateChain()
     const fetchSpy = vi.spyOn(global, 'fetch')
 
-    const template = await getTemplateFromUrl(
+    const template = await getBlueprintFromUrl(
       rootDir,
       'https://example.com/business_V_0-2-0_NN.md',
       'business_V_0-2-0',
@@ -134,7 +134,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(template?.frontmatter.title).toBe('Local Business Template')
   })
 
-  it('getTemplateFromModel derives the template from a model parent_spec.url', async () => {
+  it('getBlueprintFromModel derives the template from a model parent_spec.url', async () => {
     await stubTemplateChain()
     await writeFile(
       join(rootDir, 'MyModel_V_1-0-0_business_NN.md'),
@@ -151,23 +151,23 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     )
     const fetchSpy = vi.spyOn(global, 'fetch')
 
-    const template = await getTemplateFromModel(rootDir, 'MyModel_V_1-0-0_business')
+    const template = await getBlueprintFromModel(rootDir, 'MyModel_V_1-0-0_business')
 
     expect(fetchSpy).not.toHaveBeenCalled()
     expect(template?.frontmatter.title).toBe('Local Business Template')
   })
 
-  it('getTemplateFromModel returns null when the model has no parent_spec.url', async () => {
+  it('getBlueprintFromModel returns null when the model has no parent_spec.url', async () => {
     await writeFile(
       join(rootDir, 'Orphan_NN.md'),
       ['---', 'spec_version: "V_0-2-0"', 'level: 3', 'title: "Orphan"', '---'].join('\n'),
       'utf-8',
     )
-    const template = await getTemplateFromModel(rootDir, 'Orphan')
+    const template = await getBlueprintFromModel(rootDir, 'Orphan')
     expect(template).toBeNull()
   })
 
-  it('validateModel without a resolvable parent_spec.url validates structurally with a warning', async () => {
+  it('validateKnowledge without a resolvable parent_spec.url validates structurally with a warning', async () => {
     const content = [
       '---',
       'spec_version: "V_0-2-0"',
@@ -181,26 +181,26 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       '# _NN index',
     ].join('\n')
 
-    const result = await validateModel(rootDir, undefined, content)
+    const result = await validateKnowledge(rootDir, undefined, content)
 
     expect(result.warnings.some((w) => /no template resolved/i.test(w.message))).toBe(true)
   })
 
-  it('listTemplates discovers templates across workspace, global, and skill stores', async () => {
+  it('listBlueprints discovers templates across workspace, global, and skill stores', async () => {
     const globalDir = join(rootDir, 'global_templates')
     const skillsDir = join(rootDir, 'skills')
-    await mkdir(join(rootDir, 'templates'), { recursive: true })
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts'), { recursive: true })
     await mkdir(globalDir, { recursive: true })
-    await mkdir(join(skillsDir, 'nn-innfo', 'templates'), { recursive: true })
+    await mkdir(join(skillsDir, 'nn-innfo', 'bluepriNNts'), { recursive: true })
 
-    await writeFile(join(rootDir, 'templates', 'ws_tmpl.md'), '---\nversion: V_1-0-0\n---')
+    await writeFile(join(rootDir, 'specs', 'bluepriNNts', 'ws_tmpl.md'), '---\nversion: V_1-0-0\n---')
     await writeFile(join(globalDir, 'global_tmpl.md'), '---\nversion: V_1-0-0\n---')
     await writeFile(
-      join(skillsDir, 'nn-innfo', 'templates', 'skill_tmpl.md'),
+      join(skillsDir, 'nn-innfo', 'bluepriNNts', 'skill_tmpl.md'),
       '---\nversion: V_1-0-0\n---',
     )
 
-    const discovered = await listTemplates(rootDir, { globalDir, skillsDir })
+    const discovered = await listBlueprints(rootDir, { globalDir, skillsDir })
 
     expect(discovered.some((t) => t.name === 'ws_tmpl' && t.source === 'workspace')).toBe(true)
     expect(discovered.some((t) => t.name === 'global_tmpl' && t.source === 'global')).toBe(true)
@@ -209,7 +209,42 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     )
   })
 
-  it('hydrateTemplate copies template from global or skill store into workspace ./templates/', async () => {
+  it('listBlueprints falls back to spec_version and scans package directories', async () => {
+    const globalDir = join(rootDir, 'global_templates')
+    const skillsDir = join(rootDir, 'skills')
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts'), { recursive: true })
+    await mkdir(globalDir, { recursive: true })
+    await mkdir(skillsDir, { recursive: true })
+
+    // flat file declaring only spec_version (blueprint_version/version absent)
+    await writeFile(
+      join(rootDir, 'specs', 'bluepriNNts', 'flat_spec.md'),
+      '---\nspec_version: "V_2-0-0"\n---',
+    )
+    // flat file with no frontmatter at all -> default version
+    await writeFile(join(rootDir, 'specs', 'bluepriNNts', 'bare.md'), 'no frontmatter here')
+    // package directory carrying only a spec_version spec
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts', 'pkg_a'), { recursive: true })
+    await writeFile(
+      join(rootDir, 'specs', 'bluepriNNts', 'pkg_a', 'spec_NN.md'),
+      '---\nspec_version: "V_3-0-0"\n---',
+    )
+    // a skip-listed directory must be ignored
+    await mkdir(join(rootDir, 'specs', 'bluepriNNts', 'samples'), { recursive: true })
+    await writeFile(
+      join(rootDir, 'specs', 'bluepriNNts', 'samples', 'ignored.md'),
+      '---\nversion: V_9-9-9\n---',
+    )
+
+    const discovered = await listBlueprints(rootDir, { globalDir, skillsDir })
+
+    expect(discovered.find((t) => t.name === 'flat_spec')?.version).toBe('V_2-0-0')
+    expect(discovered.find((t) => t.name === 'bare')?.version).toBe('V_0-1-0')
+    expect(discovered.find((t) => t.name === 'pkg_a')?.version).toBe('V_3-0-0')
+    expect(discovered.some((t) => t.name === 'ignored')).toBe(false)
+  })
+
+  it('hydrateBlueprint copies template from global or skill store into workspace ./specs/bluepriNNts/', async () => {
     const globalDir = join(rootDir, 'global_templates')
     const skillsDir = join(rootDir, 'skills')
     await mkdir(globalDir, { recursive: true })
@@ -219,20 +254,20 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       '# NN concept: Workspace\n* type:: text',
     )
 
-    const res = await hydrateTemplate(rootDir, 'workspace_V_0-3-0_spec_NN', { globalDir, skillsDir })
+    const res = await hydrateBlueprint(rootDir, 'workspace_V_0-3-0_spec_NN', { globalDir, skillsDir })
 
     expect(res.success).toBe(true)
     expect(res.templateName).toBe('workspace_V_0-3-0_spec_NN')
     expect(res.source).toBe('global')
 
-    const targetFile = join(rootDir, 'templates', 'workspace_V_0-3-0_spec_NN.md')
+    const targetFile = join(rootDir, 'specs', 'bluepriNNts', 'workspace_V_0-3-0_spec_NN.md')
     const { stat: statFs } = await import('node:fs/promises')
     const st = await statFs(targetFile)
     expect(st.isFile()).toBe(true)
   })
 
-  it('listTemplateProcedures and listTemplateSkills dynamically discover transitive procedures and skills across includes trees', async () => {
-    const templatesDir = join(rootDir, 'templates')
+  it('listBlueprintProcedures and listBlueprintSkills dynamically discover transitive procedures and skills across includes trees', async () => {
+    const templatesDir = join(rootDir, 'specs', 'bluepriNNts')
     await mkdir(templatesDir, { recursive: true })
 
     await writeFile(
@@ -281,19 +316,19 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'base_spec_NN' })
+    const procsRes = await listBlueprintProcedures(rootDir, { blueprint_name: 'base_spec_NN' })
     expect(procsRes.procedures).toHaveLength(2)
     expect(procsRes.procedures.map((p) => p.id)).toEqual(['proc-base', 'proc-included'])
     expect(procsRes.procedures[0].source_template).toBe('base_spec_NN')
 
-    const skillsRes = await listTemplateSkills(rootDir, { template_name: 'base_spec_NN' })
+    const skillsRes = await listBlueprintSkills(rootDir, { blueprint_name: 'base_spec_NN' })
     expect(skillsRes.skills).toHaveLength(2)
     expect(skillsRes.skills.map((s) => s.name)).toEqual(['nn-base', 'nn-included'])
     expect(skillsRes.skills[0].source_template).toBe('base_spec_NN')
   })
 
   it('S-01: discoverTransitiveAssets parses version strings from inc.url to resolve package templates', async () => {
-    const pkgDir = join(specsDir, 'templates', 'sec_pkg', 'V_2-0-0')
+    const pkgDir = join(specsDir, 'bluepriNNts', 'sec_pkg', 'V_2-0-0')
     await mkdir(pkgDir, { recursive: true })
 
     await writeFile(
@@ -312,7 +347,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const templatesDir = join(rootDir, 'templates')
+    const templatesDir = join(rootDir, 'specs', 'bluepriNNts')
     await mkdir(templatesDir, { recursive: true })
 
     await writeFile(
@@ -323,18 +358,18 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
         'title: "Main Template"',
         'includes:',
         '  - name: "sec_pkg"',
-        '    url: "https://example.com/specs/templates/sec_pkg/V_2-0-0/spec_NN.md"',
+        '    url: "https://example.com/specs/bluepriNNts/sec_pkg/V_2-0-0/spec_NN.md"',
         '---',
       ].join('\n'),
       'utf-8',
     )
 
-    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'main_tmpl_NN' })
+    const procsRes = await listBlueprintProcedures(rootDir, { blueprint_name: 'main_tmpl_NN' })
     expect(procsRes.procedures.some((p) => p.id === 'proc-sec-v2')).toBe(true)
   })
 
   it('discoverTransitiveAssets discovers procedures from on-disk procedures/ folder even without explicit frontmatter procedures array', async () => {
-    const pkgDir = join(rootDir, 'templates', 'video_pkg')
+    const pkgDir = join(rootDir, 'specs', 'bluepriNNts', 'video_pkg', 'V_1-0-0')
     const procsDir = join(pkgDir, 'procedures')
     await mkdir(procsDir, { recursive: true })
 
@@ -343,6 +378,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       [
         '---',
         'level: 2',
+        'spec_version: "V_1-0-0"',
         'title: "Video Package Without Frontmatter Procedures"',
         '---',
       ].join('\n'),
@@ -360,7 +396,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const procsRes = await listTemplateProcedures(rootDir, { template_name: 'video_pkg' })
+    const procsRes = await listBlueprintProcedures(rootDir, { blueprint_name: 'video_pkg' })
     expect(procsRes.procedures.length).toBeGreaterThanOrEqual(1)
     const scriptProc = procsRes.procedures.find((p) => p.id === 'generate-script')
     expect(scriptProc).toBeDefined()
@@ -368,7 +404,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     expect(scriptProc?.path).toBe('procedures/generate_script_NN.md')
   })
 
-  it('M1: findModelFile skips specs/ by default but descends with includeSpecs', async () => {
+  it('M1: findKnowledgeFile skips specs/ by default but descends with includeSpecs', async () => {
     await writeFile(
       join(specsDir, 'business_V_0-2-0_NN.md'),
       [
@@ -384,16 +420,16 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const defaultMatch = await findModelFile(rootDir, 'business_V_0-2-0')
+    const defaultMatch = await findKnowledgeFile(rootDir, 'business_V_0-2-0')
     expect(defaultMatch).toBeNull()
 
-    const withSpecs = await findModelFile(rootDir, 'business_V_0-2-0', {
+    const withSpecs = await findKnowledgeFile(rootDir, 'business_V_0-2-0', {
       includeSpecs: true,
     })
     expect(withSpecs).toBe(join(specsDir, 'business_V_0-2-0_NN.md'))
   })
 
-  it('M1: validateTemplate by id resolves a template stored under specs/', async () => {
+  it('M1: validateBlueprint by id resolves a template stored under specs/', async () => {
     await writeFile(
       join(specsDir, 'business_V_0-2-0_NN.md'),
       [
@@ -410,7 +446,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
     )
     await stubSpecChain()
 
-    const result = await validateTemplate(rootDir, 'business_V_0-2-0')
+    const result = await validateBlueprint(rootDir, 'business_V_0-2-0')
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
@@ -419,7 +455,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
   // after a coverage metric rather than a behaviour.
   it('spec.ts: discoverTransitiveAssets traverses parent_spec and includes', async () => {
     // Create template with procedures and parent_spec
-    const basePkgDir = join(specsDir, 'templates', 'base', '0.1.0')
+    const basePkgDir = join(specsDir, 'bluepriNNts', 'base', '0.1.0')
     await mkdir(join(basePkgDir, 'procedures'), { recursive: true })
     await writeFile(
       join(basePkgDir, 'spec_NN.md'),
@@ -442,7 +478,7 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
       'utf-8',
     )
 
-    const childPkgDir = join(specsDir, 'templates', 'child', '0.1.0')
+    const childPkgDir = join(specsDir, 'bluepriNNts', 'child', '0.1.0')
     await mkdir(childPkgDir, { recursive: true })
     await writeFile(
       join(childPkgDir, 'spec_NN.md'),
@@ -453,17 +489,17 @@ describe('Spec Tools Integration (URL- and model-derived, no hardcoding)', () =>
         'title: "Child"',
         'parent_spec:',
         '  name: "base"',
-        '  url: "specs/templates/base/0.1.0/spec_NN.md"',
+        '  url: "specs/bluepriNNts/base/0.1.0/spec_NN.md"',
         '---',
       ].join('\n'),
       'utf-8',
     )
 
-    const procs = await listTemplateProcedures(rootDir, { template_name: 'child' })
+    const procs = await listBlueprintProcedures(rootDir, { blueprint_name: 'child' })
     expect(procs.procedures.length).toBeGreaterThan(0)
     expect(procs.procedures.some((p) => p.name.includes('Proc 1'))).toBe(true)
 
-    const skills = await listTemplateSkills(rootDir, { template_name: 'child' })
+    const skills = await listBlueprintSkills(rootDir, { blueprint_name: 'child' })
     expect(Array.isArray(skills.skills)).toBe(true)
   })
 })

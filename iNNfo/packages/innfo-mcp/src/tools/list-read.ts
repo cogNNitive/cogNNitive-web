@@ -9,8 +9,8 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { listModels as coreListModels, parseModel, ElementsMap } from '@cognnitive/innfo-core'
-import type { ModelInfo, ParsedModel } from '@cognnitive/innfo-core'
+import { listKnowledge as coreListModels, parseKnowledge, ElementsMap } from '@cognnitive/innfo-core'
+import type { KnowledgeInfo, ParsedKnowledge } from '@cognnitive/innfo-core'
 
 /**
  * Default line cap for surgical slice reads (llm-context-efficiency).
@@ -21,8 +21,8 @@ import type { ModelInfo, ParsedModel } from '@cognnitive/innfo-core'
  */
 export const SLICE_LINE_CAP = 150
 
-/** Bounded slice-read options for `readModel` (all optional, no-op when omitted). */
-export interface ReadModelSliceOptions {
+/** Bounded slice-read options for `readKnowledge` (all optional, no-op when omitted). */
+export interface ReadKnowledgeSliceOptions {
   /** Concept to slice (e.g. `Models`); when omitted the whole model is returned. */
   concept?: string
   /** Element within the concept to slice (requires `concept` for scoped reads). */
@@ -34,7 +34,7 @@ export interface ReadModelSliceOptions {
 }
 
 /** A parsed model with slice metadata for budgeted surgical reads. */
-export type SlicedModel = ParsedModel & {
+export type SlicedModel = ParsedKnowledge & {
   /** True when `rawContent` was cut to the line cap. */
   truncated: boolean
   /** Echo of `override_reason` when the cap was bypassed. */
@@ -59,29 +59,30 @@ export function normalizeId(id: string): string {
 }
 
 /**
- * Scan a directory for iNNfo models.
+ * Scan a directory for iNNfo knowledge documents.
  */
-export async function listModels(rootDir: string): Promise<ModelInfo[]> {
+export async function listKnowledge(rootDir: string): Promise<KnowledgeInfo[]> {
   const rootModels = await coreListModels(rootDir)
-  const modelsDir = join(rootDir, 'models')
-  try {
-    const { stat } = await import('node:fs/promises')
-    const st = await stat(modelsDir)
-    if (st.isDirectory()) {
-      const subModels = await coreListModels(modelsDir)
-      for (const m of subModels) {
-        if (!rootModels.some((rm) => rm.path === m.path)) {
-          rootModels.push(m)
+  const candidateDirs = [join(rootDir, 'kNNowledge'), join(rootDir, 'models')]
+  for (const dir of candidateDirs) {
+    try {
+      const { stat } = await import('node:fs/promises')
+      const st = await stat(dir)
+      if (st.isDirectory()) {
+        const subModels = await coreListModels(dir)
+        for (const m of subModels) {
+          if (!rootModels.some((rm) => rm.path === m.path)) {
+            rootModels.push(m)
+          }
         }
       }
+    } catch (err) {
+      /* v8 ignore start */
+      if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+        console.warn(`[list-read] Failed to scan dir ${dir}: ${err}`)
+      }
+      /* v8 ignore stop */
     }
-  } catch (err) {
-    /* v8 ignore start */
-    // swallow deliberately: models/ may legitimately not exist.
-    if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-      console.warn(`[list-read] Failed to scan models dir ${modelsDir}: ${err}`)
-    }
-    /* v8 ignore stop */
   }
   rootModels.sort((a, b) => a.id.localeCompare(b.id))
   return rootModels
@@ -92,7 +93,7 @@ export async function listModels(rootDir: string): Promise<ModelInfo[]> {
  * The id is the filename stem (e.g. `Ghostbusters_V_0-1-0_business`
  * resolves to `Ghostbusters_V_0-1-0_business_NN.md`).
  *
- * Searches the root and the conventional `models/` subdirectory, trying
+ * Searches the root and the conventional `kNNowledge/` subdirectory, trying
  * `<cleanId>_NN.md`, `<cleanId>.md`, `<cleanId>`, `<id>` and `<id>.md`.
  *
  * Returns null if the file doesn't exist or can't be parsed.
@@ -106,17 +107,17 @@ export async function listModels(rootDir: string): Promise<ModelInfo[]> {
  * behavior (whole model, `truncated: false`). A unit over the cap returned
  * without a slice or override is a caller violation, never a server error.
  */
-export async function readModel(
+export async function readKnowledge(
   rootDir: string,
   id: string,
-  options?: ReadModelSliceOptions,
+  options?: ReadKnowledgeSliceOptions,
 ): Promise<SlicedModel | null> {
-  const { findModelFile } = await import('./spec.js')
-  const filePath = await findModelFile(rootDir, id)
+  const { findKnowledgeFile } = await import('./spec.js')
+  const filePath = await findKnowledgeFile(rootDir, id)
   if (!filePath) return null
   try {
     const content = await readFile(filePath, 'utf-8')
-    const model = parseModel(content)
+    const model = parseKnowledge(content)
     return applySlice(model, options)
   } catch (err) {
     /* v8 ignore start */
@@ -132,7 +133,7 @@ export async function readModel(
  * Extracts the requested concept/element section from `rawContent`,
  * filters `elements` to the slice, and enforces the line cap.
  */
-export function applySlice(model: ParsedModel, options?: ReadModelSliceOptions): SlicedModel {
+export function applySlice(model: ParsedKnowledge, options?: ReadKnowledgeSliceOptions): SlicedModel {
   const sliced = model as SlicedModel
   const concept = options?.concept?.trim() || undefined
   const element = options?.element?.trim() || undefined
@@ -193,7 +194,7 @@ export function applySlice(model: ParsedModel, options?: ReadModelSliceOptions):
 }
 
 /** Preserve the model's canonical concept key casing when filtering. */
-function conceptKey(model: ParsedModel, concept: string): string {
+function conceptKey(model: ParsedKnowledge, concept: string): string {
   for (const key of model.elements.keys()) {
     if (key.toLowerCase() === concept.toLowerCase()) return key
   }

@@ -3,13 +3,13 @@ import { recursiveParse } from '../../src/model/recursiveParser'
 import { buildFakeTree, type FakeTree } from '../helpers/fakeFs'
 
 const validModelMd = `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 spec_url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
 level: 3
-parent:
-  name: "business_V_0-1-1"
+parent_spec:
+  name: "business"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Valid Model"
 ---
 
@@ -18,22 +18,24 @@ title: "Valid Model"
 A valid single-file model.
 `
 
-const validIndexMd = `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+const validDomainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
 
 # NN index
 
-* [[modelA_NN.md]]
+* [[kNNowledge/modelA_NN.md]]
 `
 
-describe('recursiveParser: index.md-driven parser', () => {
-  it('parses a workspace with index.md and model file into the graph', async () => {
+describe('recursiveParser: domaiNN_NN.md-driven parser', () => {
+  it('parses a workspace with domaiNN_NN.md and model file into the graph', async () => {
     const tree: FakeTree = {
-      'index.md': validIndexMd,
-      'modelA_NN.md': validModelMd,
+      'domaiNN_NN.md': validDomainMd,
+      kNNowledge: {
+        'modelA_NN.md': validModelMd,
+      },
     }
 
     const root = buildFakeTree('workspace', tree)
@@ -44,7 +46,7 @@ describe('recursiveParser: index.md-driven parser', () => {
     expect(names).toContain('modelA')
   })
 
-  it('reports an issue when index.md is missing', async () => {
+  it('reports an issue when entrypoint is missing', async () => {
     const tree: FakeTree = {
       'modelA_NN.md': validModelMd,
     }
@@ -53,33 +55,35 @@ describe('recursiveParser: index.md-driven parser', () => {
     const result = await recursiveParse(root)
 
     expect(result.issues.length).toBeGreaterThan(0)
-    expect(result.issues[0].message).toContain('No index.md found')
+    expect(result.issues[0].message).toContain('domaiNN_NN.md')
     expect(result.rootIds).toHaveLength(1)
   })
 
   it('reports a warning when a wikilink target does not exist', async () => {
-    const indexMd = `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+    const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
 
 # NN index
 
-* [[exists_NN.md]]
-* [[missing_NN.md]]
+* [[kNNowledge/exists_NN.md]]
+* [[kNNowledge/missing_NN.md]]
 `
 
     const tree: FakeTree = {
-      'index.md': indexMd,
-      'exists_NN.md': validModelMd,
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'exists_NN.md': validModelMd,
+      },
     }
 
     const root = buildFakeTree('workspace', tree)
     const result = await recursiveParse(root)
 
     expect(result.rootIds).toHaveLength(1)
-    expect(result.nodes[result.rootIds[0]].name).toBe('exists')
+    expect(result.nodes['exists']?.name).toBe('exists')
 
     const missingIssues = result.issues.filter((i) => i.message.includes('not found'))
     expect(missingIssues.length).toBeGreaterThan(0)
@@ -87,13 +91,13 @@ title: "Workspace Index"
 
   it('does NOT advise renaming when two models share the same element name — cross-model identity is legal (AD-7)', async () => {
     const modelWithElement = (title: string, elementName: string) => `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 spec_url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
 level: 3
-parent:
-  name: "business_V_0-1-1"
+parent_spec:
+  name: "business"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "${title}"
 ---
 
@@ -107,22 +111,24 @@ title: "${title}"
 Description of ${elementName}.
 `
 
-    const indexMd = `---
-spec_version: "V_0-1-2"
-level: 0
-title: "Workspace Index"
+    const domainMd = `---
+spec_version: "V_0-3-0"
+level: 1
+title: "DomaiNN Index"
 ---
 
 # NN index
 
-* [[modelA_NN.md]]
-* [[modelB_NN.md]]
+* [[kNNowledge/modelA_NN.md]]
+* [[kNNowledge/modelB_NN.md]]
 `
 
     const tree: FakeTree = {
-      'index.md': indexMd,
-      'modelA_NN.md': modelWithElement('Model A', 'Database'),
-      'modelB_NN.md': modelWithElement('Model B', 'Database'),
+      'domaiNN_NN.md': domainMd,
+      kNNowledge: {
+        'modelA_NN.md': modelWithElement('Model A', 'Database'),
+        'modelB_NN.md': modelWithElement('Model B', 'Database'),
+      },
     }
 
     const root = buildFakeTree('workspace', tree)
@@ -136,13 +142,13 @@ title: "Workspace Index"
 
   it('parses model elements into the normalized graph', async () => {
     const modelWithElements = `---
-spec_version: "V_0-1-1"
+spec_version: "V_0-3-0"
 spec_url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
 level: 3
-parent:
-  name: "business_V_0-1-1"
+parent_spec:
+  name: "business"
   url: "https://example.test/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-0-1"
+knowledge_version: "V_0-0-1"
 title: "Full Model"
 ---
 
@@ -165,8 +171,10 @@ Description of Gamma.
 `
 
     const tree: FakeTree = {
-      'index.md': validIndexMd,
-      'modelA_NN.md': modelWithElements,
+      'domaiNN_NN.md': validDomainMd,
+      kNNowledge: {
+        'modelA_NN.md': modelWithElements,
+      },
     }
 
     const root = buildFakeTree('workspace', tree)

@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import LeftSidebar from '../../src/components/layout/LeftSidebar.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useMetamodelStore } from '../../src/stores/metamodelStore'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,
@@ -27,9 +27,9 @@ describe('Ghost groups — Add action integration', () => {
     setActivePinia(createPinia())
   })
 
-  it('modelStore.addConceptElement creates a child element and reduces ghost count', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+  it('knowledgeStore.addConceptElement creates a child element and reduces ghost count', () => {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           childIds: [],
@@ -49,11 +49,11 @@ describe('Ghost groups — Add action integration', () => {
     expect(metamodelStore.ghostConcepts).toHaveLength(2)
 
     // Add an element of type Task
-    const newId = modelStore.addConceptElement('Task', 'My first task')
+    const newId = knowledgeStore.addConceptElement('Task', 'My first task')
     expect(newId).toBe('Root/My first task')
 
     // Verify element was created
-    const newNode = modelStore.getNode(newId)
+    const newNode = knowledgeStore.getNode(newId)
     expect(newNode).toBeDefined()
     expect(newNode!.type).toBe('Task')
     expect(newNode!.kind).toBe('element')
@@ -65,13 +65,13 @@ describe('Ghost groups — Add action integration', () => {
   })
 
   it('addConceptElement throws when no root exists', () => {
-    const modelStore = useModelStore()
-    expect(() => modelStore.addConceptElement('Task', 'My Task')).toThrow('No root node')
+    const knowledgeStore = useKnowledgeStore()
+    expect(() => knowledgeStore.addConceptElement('Task', 'My Task')).toThrow('No root node')
   })
 
   it('clicking a ghost group header in LeftSidebar selects virtual concept ID without creating element', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         Root: makeNode('Root', {
           childIds: [],

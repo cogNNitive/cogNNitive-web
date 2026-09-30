@@ -24,7 +24,7 @@ level: 3
 parent_spec:
   name: "workspace"
   url: "https://example.com/workspace_spec_NN.md"
-model_version: "V_0-2-0"
+knowledge_version: "V_0-2-0"
 title: "Legacy Provenance"
 ---
 
@@ -81,20 +81,20 @@ function run() {
 
   const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'trannsform-mig-'));
   try {
-    // (a) A workspace that already has a hand-authored workspace_NN.md manifest
+    // (a) A workspace that already has a hand-authored domaiNN_NN.md manifest
     // must not gain a second manifest, and the scanner must not touch it.
     const proj = path.join(TMP, 'Acme');
     fs.mkdirSync(path.join(proj, 'sources', 'nn'), { recursive: true });
     fs.writeFileSync(path.join(proj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'aaa'));
     const manifest = '# NN index\n\n* [[Sources]]\n\n# NN Sources\n\n<!-- hand authored -->\n';
-    fs.writeFileSync(path.join(proj, 'workspace_NN.md'), manifest);
+    fs.writeFileSync(path.join(proj, 'domaiNN_NN.md'), manifest);
 
-    const r1 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     eq(path.basename(r1.modelPath), 'Acme_V_0-2-0_cogNNitive_NN.md', 'canonical cogNNitive record created');
     eq(
-      fs.readFileSync(path.join(proj, 'workspace_NN.md'), 'utf8'),
+      fs.readFileSync(path.join(proj, 'domaiNN_NN.md'), 'utf8'),
       manifest,
-      'hand-authored workspace_NN.md manifest left untouched',
+      'hand-authored domaiNN_NN.md manifest left untouched',
     );
     const created = fs.readdirSync(proj).filter((f) => f.endsWith('_workspace_NN.md'));
     eq(created.length, 0, 'no second *_workspace_NN.md manifest is created');
@@ -103,7 +103,7 @@ function run() {
     ok(/parent_spec:\s*\n\s*name: "cogNNitive"/.test(record1), 'record conforms to the cogNNitive template');
 
     // (b) Re-running the build is byte-stable (idempotent).
-    provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const record2 = fs.readFileSync(r1.modelPath, 'utf8');
     eq(record2, record1, 'second build is byte-identical (idempotent replace)');
 
@@ -113,7 +113,7 @@ function run() {
     fs.writeFileSync(path.join(legacyProj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'bbb'));
     fs.writeFileSync(path.join(legacyProj, 'Legacy_V_0-2-0_workspace_NN.md'), LEGACY_RECORD);
 
-    const rL = provenance.buildProvenanceModel(legacyProj, { projectName: 'Legacy' });
+    const rL = provenance.buildProvenanceKnowledge(legacyProj, { projectName: 'Legacy' });
     eq(path.basename(rL.modelPath), 'Legacy_V_0-2-0_cogNNitive_NN.md', 'legacy record migrated to the cogNNitive name');
     ok(
       !fs.existsSync(path.join(legacyProj, 'Legacy_V_0-2-0_workspace_NN.md')),

@@ -10,17 +10,17 @@ import { join } from 'node:path'
 import { createScenario, SIM, ROOT } from '../lib/harness.mjs'
 import { loadCore } from '../lib/core.mjs'
 
-const MODEL = join(SIM, 'fixtures', 'acme', 'models', 'Acme_analysis_NN.md')
-const TEMPLATE = join(ROOT, 'iNNfo', 'specs', 'templates', 'analysis', 'spec_NN.md')
+const MODEL = join(SIM, 'fixtures', 'acme', 'kNNowledge', 'Acme_analysis_NN.md')
+const TEMPLATE = join(ROOT, 'iNNfo', 'specs', 'bluepriNNts', 'analysis', 'spec_NN.md')
 
 export default async function run() {
-  const { parseModel, applyMutation, validateDocument, serializeModel } = await loadCore()
+  const { parseKnowledge, applyMutation, validateDocument, serializeKnowledge } = await loadCore()
   const s = createScenario('S04', 'Template-authoring gate (level 2 vs level 3)',
     'An agent tries to extend the schema from inside a user model; the gate must hold.')
 
   try {
-    const model = parseModel(await readFile(MODEL, 'utf-8'))
-    const template = parseModel(await readFile(TEMPLATE, 'utf-8'))
+    const model = parseKnowledge(await readFile(MODEL, 'utf-8'))
+    const template = parseKnowledge(await readFile(TEMPLATE, 'utf-8'))
 
     for (const [op, args] of [
       ['add_concept', { conceptName: 'Hypotheses' }],
@@ -36,10 +36,10 @@ export default async function run() {
       )
     }
 
-    const onTemplate = applyMutation(template, 'add_concept', { conceptName: 'Hypotheses' })
+    const onBlueprint = applyMutation(template, 'add_concept', { conceptName: 'Hypotheses' })
     s.expect(
       'The same op succeeds on a level-2 template',
-      { success: onTemplate.success, errors: onTemplate.errors },
+      { success: onBlueprint.success, errors: onBlueprint.errors },
       (v) => v.success === true,
       'the gate discriminates by level, it does not simply forbid the op',
     )
@@ -59,7 +59,7 @@ export default async function run() {
 
     s.observe(
       'What a level-3 model looks like after a refused mutation',
-      serializeModel(model).split(/\r?\n/).filter((l) => l.startsWith('# NN ')).join(' | '),
+      serializeKnowledge(model).split(/\r?\n/).filter((l) => l.startsWith('# NN ')).join(' | '),
       'no `# NN Concept Definition` section should have appeared',
     )
   } catch (err) {

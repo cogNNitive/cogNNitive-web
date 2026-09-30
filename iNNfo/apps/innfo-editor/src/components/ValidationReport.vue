@@ -12,14 +12,14 @@ import {
   HelpCircle,
 } from 'lucide-vue-next'
 import type { ValidationReport, ValidationCheck } from '../shared/validation-types'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { useUiStore } from '../stores/uiStore'
 
 const props = defineProps<{
   report: ValidationReport
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 
 const logFeedback = ref('')
@@ -32,10 +32,10 @@ let aiTimer: ReturnType<typeof setTimeout> | undefined
 const selectedModelId = ref<string>('all')
 
 const availableModels = computed(() => {
-  return modelStore.rootIds
-    .filter((id) => !id.startsWith('spec:') && modelStore.getNode(id))
+  return knowledgeStore.rootIds
+    .filter((id) => !id.startsWith('spec:') && knowledgeStore.getNode(id))
     .map((id) => {
-      const node = modelStore.getNode(id)
+      const node = knowledgeStore.getNode(id)
       const path = node?.source?.path ?? ''
       const fileName = path.split('/').pop()?.split('\\').pop() || path || '(unsaved)'
       return {
@@ -87,10 +87,10 @@ function isPathForModel(issuePath: string, modelPath: string): boolean {
 const selectedRootNode = computed(() => {
   const modelId = selectedModelId.value
   if (modelId && modelId !== 'all') {
-    return modelStore.getNode(modelId) ?? null
+    return knowledgeStore.getNode(modelId) ?? null
   }
-  const firstRootId = modelStore.rootIds.find((id) => !id.startsWith('spec:')) ?? modelStore.rootIds[0]
-  return firstRootId ? modelStore.getNode(firstRootId) : null
+  const firstRootId = knowledgeStore.rootIds.find((id) => !id.startsWith('spec:')) ?? knowledgeStore.rootIds[0]
+  return firstRootId ? knowledgeStore.getNode(firstRootId) : null
 })
 
 const fileName = computed(() => {
@@ -104,7 +104,7 @@ const modelName = computed(() => selectedRootNode.value?.name ?? '(unknown model
 
 const modelVersion = computed(() => {
   const node = selectedRootNode.value
-  return (node?.fields?.version?.value ?? node?.fields?.model_version?.value ?? '—') as string
+  return (node?.fields?.version?.value ?? node?.fields?.knowledge_version?.value ?? '—') as string
 })
 
 const getNestedName = (val: unknown): string | undefined =>
@@ -126,14 +126,14 @@ const formatVersion = computed(() => {
 
 const templateName = computed(() => {
   const node = selectedRootNode.value
-  return (node?.fields?.template_name?.value ??
+  return (node?.fields?.blueprint_name?.value ??
     getNestedName(node?.fields?.parent_spec?.value) ??
     '—') as string
 })
 
 const templateVersion = computed(() => {
   const node = selectedRootNode.value
-  return (node?.fields?.template_version?.value ??
+  return (node?.fields?.blueprint_version?.value ??
     getNestedVersion(node?.fields?.parent?.value) ??
     '—') as string
 })
@@ -163,7 +163,7 @@ function toggle(cat: string) {
 const currentReport = computed<ValidationReport>(() => {
   const modelId = selectedModelId.value
   if (modelId && modelId !== 'all') {
-    return modelStore.validationReports[modelId] || props.report
+    return knowledgeStore.validationReports[modelId] || props.report
   }
   return props.report
 })
@@ -173,7 +173,7 @@ const allChecks = computed(() => {
 
   // Add virtual parser checks
   if (selectedModelId.value === 'all') {
-    if (modelStore.parseIssues.length === 0) {
+    if (knowledgeStore.parseIssues.length === 0) {
       list.push({
         id: 'parser-load-ok',
         label: 'Model Structure & Load',
@@ -183,7 +183,7 @@ const allChecks = computed(() => {
         passed: true,
       })
     } else {
-      modelStore.parseIssues.forEach((issue, idx) => {
+      knowledgeStore.parseIssues.forEach((issue, idx) => {
         list.push({
           id: `parser-issue-${idx}`,
           label: `Structure warning in ${issue.path.split('/').pop() || issue.path}`,
@@ -198,7 +198,7 @@ const allChecks = computed(() => {
   } else {
     const modelNode = selectedRootNode.value
     const modelPath = modelNode?.source?.path ?? ''
-    const relevantIssues = modelStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
+    const relevantIssues = knowledgeStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
     
     if (relevantIssues.length === 0) {
       list.push({
@@ -265,14 +265,14 @@ const totalWarnings = computed(
 
 // Helper methods for rendering grouped model view
 function getChecksForModel(modelId: string): ValidationCheck[] {
-  const report = modelStore.validationReports[modelId]
+  const report = knowledgeStore.validationReports[modelId]
   if (!report) return []
   const list = [...report.checks]
   
-  const node = modelStore.getNode(modelId)
+  const node = knowledgeStore.getNode(modelId)
   if (node) {
     const modelPath = node.source?.path ?? ''
-    const relevantIssues = modelStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
+    const relevantIssues = knowledgeStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
     if (relevantIssues.length === 0) {
       list.push({
         id: `parser-load-ok-${modelId}`,
@@ -358,15 +358,15 @@ function formatLog(): string {
     lines.push('')
 
     for (const m of availableModels.value) {
-      const node = modelStore.getNode(m.id)
-      const report = modelStore.validationReports[m.id]
+      const node = knowledgeStore.getNode(m.id)
+      const report = knowledgeStore.validationReports[m.id]
       if (!node || !report) continue
 
       const path = node.source?.path ?? ''
-      const mVersion = (node.fields?.version?.value ?? node.fields?.model_version?.value ?? '—') as string
+      const mVersion = (node.fields?.version?.value ?? node.fields?.knowledge_version?.value ?? '—') as string
       const fVersion = (node.fields?.format_version?.value ?? node.fields?.spec_version?.value ?? '0.1.0') as string
-      const tName = (node.fields?.template_name?.value ?? getNestedName(node.fields?.parent_spec?.value) ?? '—') as string
-      const tVersion = (node.fields?.template_version?.value ?? getNestedVersion(node.fields?.parent?.value) ?? '—') as string
+      const tName = (node.fields?.blueprint_name?.value ?? getNestedName(node.fields?.parent_spec?.value) ?? '—') as string
+      const tVersion = (node.fields?.blueprint_version?.value ?? getNestedVersion(node.fields?.parent?.value) ?? '—') as string
 
       lines.push(`## Model: ${m.name} (v${mVersion})`)
       lines.push(`   File:     ${m.fileName}`)
@@ -384,7 +384,7 @@ function formatLog(): string {
       
       const modelChecks = [...report.checks]
       const modelPath = node.source?.path ?? ''
-      const parserIssues = modelStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
+      const parserIssues = knowledgeStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
       if (parserIssues.length > 0) {
         parserIssues.forEach((issue, idx) => {
           modelChecks.push({
@@ -499,16 +499,16 @@ function formatAiPrompt(): string {
 
     let count = 1
     for (const m of availableModels.value) {
-      const node = modelStore.getNode(m.id)
-      const report = modelStore.validationReports[m.id]
+      const node = knowledgeStore.getNode(m.id)
+      const report = knowledgeStore.validationReports[m.id]
       if (!node || !report) continue
 
       const path = node.source?.path ?? ''
-      const mVersion = (node.fields?.version?.value ?? node.fields?.model_version?.value ?? '—') as string
+      const mVersion = (node.fields?.version?.value ?? node.fields?.knowledge_version?.value ?? '—') as string
 
       const modelChecks = [...report.checks]
       const modelPath = node.source?.path ?? ''
-      const parserIssues = modelStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
+      const parserIssues = knowledgeStore.parseIssues.filter((i) => isPathForModel(i.path, modelPath))
       if (parserIssues.length > 0) {
         parserIssues.forEach((issue, idx) => {
           modelChecks.push({

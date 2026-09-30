@@ -13,7 +13,7 @@ import { createScenario, ROOT } from '../lib/harness.mjs'
 import { loadCore } from '../lib/core.mjs'
 
 const WS = join(ROOT, '_samples_nn')
-const TEMPLATES = join(ROOT, 'iNNfo', 'specs', 'templates')
+const TEMPLATES = join(ROOT, 'iNNfo', 'specs', 'bluepriNNts')
 
 export default async function run() {
   const {
@@ -22,7 +22,7 @@ export default async function run() {
     validateDocument,
     extractHeadings,
     SOURCE_FIELD_NAMES,
-    resolveTemplateSchema,
+    resolveBlueprintSchema,
   } = await loadCore()
   const s = createScenario('S07', 'Opening the shipped sample workspace',
     'A new user opens the workspace we ship. Everything they see on day one is what this scenario measures.')
@@ -33,9 +33,9 @@ export default async function run() {
     // schema resolver. Without it every model parses schema-less, and the
     // citation check silently degrades to name matching — which is the very
     // behaviour this scenario is supposed to measure.
-    const templateCache = warmTemplateCache(resolveTemplateSchema)
+    const templateCache = warmBlueprintCache(resolveBlueprintSchema)
     const parsed = await recursiveParse(createNodeDirectoryHandle(WS), undefined, {
-      resolveTemplateSchema: ({ frontmatter }) => {
+      resolveBlueprintSchema: ({ frontmatter }) => {
         const name = frontmatter?.parent_spec?.name
         if (!name) return null
         const key = name.toLowerCase()
@@ -63,10 +63,10 @@ export default async function run() {
     )
 
     // Per-file document hygiene, the same pass the editor and MCP both run.
-    const files = (await readdir(join(WS, 'models'))).filter((f) => f.endsWith('.md')).sort()
+    const files = (await readdir(join(WS, 'kNNowledge'))).filter((f) => f.endsWith('.md')).sort()
     const perFile = []
     for (const f of files) {
-      const report = validateDocument(await readFile(join(WS, 'models', f), 'utf-8'), { fileName: f })
+      const report = validateDocument(await readFile(join(WS, 'kNNowledge', f), 'utf-8'), { fileName: f })
       perFile.push({ file: f, errors: report.errors.map((e) => e.code ?? e.path), warnings: report.warnings.length })
     }
     s.expect(
@@ -104,7 +104,7 @@ export default async function run() {
     // The rule is "do not advertise what you do not ship", so read what the
     // workspace ACTUALLY declares rather than assuming a fixed artifact: a
     // workspace that declares none trivially satisfies it.
-    const workspaceDoc = await readFile(join(WS, 'workspace_NN.md'), 'utf-8')
+    const workspaceDoc = await readFile(join(WS, 'domaiNN_NN.md'), 'utf-8')
     const declaredArtifacts = [...workspaceDoc.matchAll(/^path:: (artifacts\/\S+)$/gm)].map((m) => m[1])
     const missingArtifacts = declaredArtifacts.filter((p) => !existsSync(join(WS, p)))
     s.expect(
@@ -137,10 +137,10 @@ export default async function run() {
 /**
  * Compose every shipped template's schema, keyed by the `parent_spec.name`
  * a model declares. This is the Node equivalent of the editor's
- * `warmTemplateCache`, and it must stay synchronous: `resolveTemplateSchema`
+ * `warmBlueprintCache`, and it must stay synchronous: `resolveBlueprintSchema`
  * is called from inside the parse.
  */
-function warmTemplateCache(resolveTemplateSchema) {
+function warmBlueprintCache(resolveBlueprintSchema) {
   const cache = new Map()
   for (const dir of readdirSync(TEMPLATES, { withFileTypes: true })) {
     const spec = dir.isDirectory()
@@ -151,7 +151,7 @@ function warmTemplateCache(resolveTemplateSchema) {
     const name = content.match(/^title:\s*"?([^"\n]+)"?$/m)?.[1]
     const slug = dir.isDirectory() ? dir.name : dir.name.replace(/_NN\.md$/, '')
     try {
-      const { schema } = resolveTemplateSchema(content, (ref) => {
+      const { schema } = resolveBlueprintSchema(content, (ref) => {
         const inc = join(TEMPLATES, ref, 'spec_NN.md')
         return existsSync(inc) ? readFileSync(inc, 'utf-8') : null
       })

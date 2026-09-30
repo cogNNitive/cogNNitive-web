@@ -4,9 +4,9 @@ spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/sp
 level: 3
 parent_spec:
   name: "procedures"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
-template_version: "V_0-2-1"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
+blueprint_version: "V_0-2-1"
+knowledge_version: "V_0-1-0"
 title: "Use iNNfo with AI"
 ---
 

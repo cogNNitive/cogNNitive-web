@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import ConnectionPill from '../../src/components/editor/ConnectionPill.vue'
-import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id,
@@ -27,9 +27,9 @@ describe('ConnectionPill.vue', () => {
   })
 
   it('renders target Pill and relationship role in compact outgoing mode', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const target = makeNode('Procedures/Pasaporte', { name: 'Pasaporte', type: 'Artifact' })
-    modelStore.setGraph({ 'Procedures/Pasaporte': target }, ['Procedures/Pasaporte'])
+    knowledgeStore.setGraph({ 'Procedures/Pasaporte': target }, ['Procedures/Pasaporte'])
 
     const wrapper = mount(ConnectionPill, {
       props: {
@@ -46,9 +46,9 @@ describe('ConnectionPill.vue', () => {
   })
 
   it('renders source Pill and relationship role in compact incoming mode', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const source = makeNode('Procedures/Task1', { name: 'Task1', type: 'Task' })
-    modelStore.setGraph({ 'Procedures/Task1': source }, ['Procedures/Task1'])
+    knowledgeStore.setGraph({ 'Procedures/Task1': source }, ['Procedures/Task1'])
 
     const wrapper = mount(ConnectionPill, {
       props: {
@@ -65,10 +65,10 @@ describe('ConnectionPill.vue', () => {
   })
 
   it('renders both source and target Pills when mode is full', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const source = makeNode('Procedures/Task1', { name: 'Task1', type: 'Task' })
     const target = makeNode('Procedures/Pasaporte', { name: 'Pasaporte', type: 'Artifact' })
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       { 'Procedures/Task1': source, 'Procedures/Pasaporte': target },
       ['Procedures/Task1'],
     )
@@ -88,13 +88,13 @@ describe('ConnectionPill.vue', () => {
   })
 
   it('resolves relative node name to full store node ID', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const source = makeNode('models_test.md/Preparación el día previo (T-1)', {
       name: 'Preparación el día previo (T-1)',
       type: 'Task',
       rawContent: 'Paso previo a realizar.',
     })
-    modelStore.setGraph(
+    knowledgeStore.setGraph(
       { 'models_test.md/Preparación el día previo (T-1)': source },
       ['models_test.md/Preparación el día previo (T-1)'],
     )

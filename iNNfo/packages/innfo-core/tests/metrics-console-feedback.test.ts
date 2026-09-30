@@ -15,18 +15,18 @@ const runtimePath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'console',
   'innfo-runtime.js',
 )
-const samplesDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics', 'samples')
+const samplesDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics', 'samples')
 const procedurePath = join(
   here,
   '..',
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'procedures',
   'create_timeline_NN.md',
@@ -37,7 +37,7 @@ const applyProcedurePath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'procedures',
   'apply_feedback_NN.md',
@@ -102,7 +102,7 @@ describe('apply feedback replaces the version-and-archive step', () => {
     const procedure = readFileSync(procedurePath, 'utf8').toLowerCase()
     expect(procedure).toContain('staleness')
     expect(procedure).toContain('apply_change')
-    expect(procedure).toContain('validate_model')
+    expect(procedure).toContain('validate_knowledge')
     expect(procedure).toContain('bump the patch version')
     expect(procedure).toContain('{model}_v_{version}_console.html')
   })

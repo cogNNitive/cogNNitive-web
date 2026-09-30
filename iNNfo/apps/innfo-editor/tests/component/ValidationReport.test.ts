@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import ValidationReport from '../../src/components/ValidationReport.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import type { ValidationReport as ValidationReportType } from '../../src/shared/validation-types'
 
 describe('ValidationReport.vue', () => {
@@ -73,9 +73,9 @@ describe('ValidationReport.vue', () => {
   })
 
   it('copies AI prompt with workspace metadata when Copy Prompt for AI button is clicked', async () => {
-    const modelStore = useModelStore()
-    modelStore.rootIds = ['root-1']
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.rootIds = ['root-1']
+    knowledgeStore.nodes = {
       'root-1': {
         id: 'root-1',
         name: 'MyTestModel',
@@ -91,8 +91,8 @@ describe('ValidationReport.vue', () => {
             value: 'V_0-1-0',
             editAttribution: { author: { kind: 'system', id: 'p' }, timestamp: '' },
           },
-          template_name: 'TestTemplate',
-          template_version: {
+          blueprint_name: 'TestTemplate',
+          blueprint_version: {
             value: 'V_1-0',
             editAttribution: { author: { kind: 'system', id: 'p' }, timestamp: '' },
           },
@@ -100,7 +100,7 @@ describe('ValidationReport.vue', () => {
         markers: {},
         relationships: [],
         rawSections: {},
-        source: { path: 'models/my_test_model_NN.md' },
+        source: { path: 'kNNowledge/my_test_model_NN.md' },
       },
     }
 
@@ -115,16 +115,16 @@ describe('ValidationReport.vue', () => {
     const copiedText = writeTextMock.mock.calls[0][0]
     expect(copiedText).toContain('# iNNfo Model Validation & Fix Request')
     expect(copiedText).toContain('MyTestModel')
-    expect(copiedText).toContain('models/my_test_model_NN.md')
+    expect(copiedText).toContain('kNNowledge/my_test_model_NN.md')
     expect(copiedText).toContain('Detected Defects & Warnings')
     expect(copiedText).toContain('Missing version field in frontmatter')
     expect(copiedText).toContain('## AI Task & Instructions')
   })
 
   it('passes parser issue severity through or defaults to warning', () => {
-    const modelStore = useModelStore()
-    modelStore.rootIds = ['root-1']
-    modelStore.nodes = {
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.rootIds = ['root-1']
+    knowledgeStore.nodes = {
       'root-1': {
         id: 'root-1',
         name: 'MyTestModel',
@@ -135,13 +135,13 @@ describe('ValidationReport.vue', () => {
         markers: {},
         relationships: [],
         rawSections: {},
-        source: { path: 'models/my_test_model_NN.md' },
+        source: { path: 'kNNowledge/my_test_model_NN.md' },
       },
     }
-    modelStore.parseIssues = [
-      { path: 'models/my_test_model_NN.md#Alpha', message: 'Warning message', severity: 'warning' },
-      { path: 'models/my_test_model_NN.md#Beta', message: 'Info message', severity: 'info' },
-      { path: 'models/my_test_model_NN.md#Gamma', message: 'Default message' },
+    knowledgeStore.parseIssues = [
+      { path: 'kNNowledge/my_test_model_NN.md#Alpha', message: 'Warning message', severity: 'warning' },
+      { path: 'kNNowledge/my_test_model_NN.md#Beta', message: 'Info message', severity: 'info' },
+      { path: 'kNNowledge/my_test_model_NN.md#Gamma', message: 'Default message' },
     ]
 
     const wrapper = mount(ValidationReport, {

@@ -3,12 +3,7 @@
 /**
  * skills/nn-upgrade/scripts/backup-workspace.js
  *
- * Timestamped, out-of-workspace backup of the files a template migration
- * touches: models/, specs/, sources/nn/, procedures/, index.md.
- *
- * The target is always created OUTSIDE the workspace (sibling of the workspace
- * parent, or an explicit --target) so a migration cannot pollute the tree it is
- * about to modify.
+ * Timestamped, full-tree out-of-workspace backup with SHA-256 manifest verification.
  *
  * Usage:
  *   node backup-workspace.js --workspace-dir <dir> [--target <dir>] [--dry-run] [--json]
@@ -17,10 +12,9 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 
-const BACKUP_DIRS = ['models', 'specs', 'sources/nn', 'procedures'];
-const BACKUP_FILE = 'index.md';
-const SKIP_DIRS = new Set(['.git', '.staging', 'backups', 'archive', 'node_modules', 'dist']);
+const SKIP_DIRS = new Set(['.git', '.staging', 'backups', 'archive', 'node_modules', 'dist', 'coverage']);
 
 function stamp() {
   const d = new Date();
@@ -39,15 +33,14 @@ function defaultTarget(workspaceDir) {
   return path.join(parent, `${name}-backup-${stamp()}`);
 }
 
-function copyFilter(src) {
-  const name = path.basename(src);
-  if (name.startsWith('.') || SKIP_DIRS.has(name)) return false;
-  return true;
+function sha256(filePath) {
+  const buf = fs.readFileSync(filePath);
+  return crypto.createHash('sha256').update(buf).digest('hex');
 }
 
 /**
- * Backup a workspace's migration-relevant files to a timestamped out-of-workspace dir.
- * Returns a manifest { target, dirs, files, missing }.
+ * Backup a workspace's full tree to a timestamped out-of-workspace dir.
+ * Returns a manifest { target, files, missing, sha256Manifest }.
  */
 function backupWorkspace(workspaceDir, options = {}) {
   const dryRun = options.dryRun || false;
@@ -60,26 +53,43 @@ function backupWorkspace(workspaceDir, options = {}) {
     throw new Error(`backup target must be outside the workspace: ${target}`);
   }
 
-  const manifest = { target, dirs: [], files: [], missing: [] };
+  const manifest = { target, files: [], dirs: [], missing: [], sha256Manifest: {} };
 
-  if (!dryRun) fs.mkdirSync(target, { recursive: true });
+  function collect(dir, relDir = '') {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      const relPath = relDir ? path.join(relDir, entry.name) : entry.name;
+      const fullPath = path.join(dir, entry.name);
 
-  for (const rel of BACKUP_DIRS) {
-    const src = path.join(ws, rel);
-    if (!fs.existsSync(src)) {
-      manifest.missing.push(rel);
-      continue;
+      if (entry.isDirectory()) {
+        manifest.dirs.push(relPath.split(path.sep).join('/'));
+        collect(fullPath, relPath);
+      } else if (entry.isFile()) {
+        const normRel = relPath.split(path.sep).join('/');
+        manifest.files.push(normRel);
+        if (!dryRun) {
+          const destPath = path.join(target, relPath);
+          fs.mkdirSync(path.dirname(destPath), { recursive: true });
+          fs.copyFileSync(fullPath, destPath);
+          manifest.sha256Manifest[normRel] = sha256(destPath);
+        }
+      }
     }
-    if (!dryRun) fs.cpSync(src, path.join(target, rel), { recursive: true, filter: copyFilter });
-    manifest.dirs.push(rel);
   }
 
-  const indexSrc = path.join(ws, BACKUP_FILE);
-  if (fs.existsSync(indexSrc)) {
-    if (!dryRun) fs.copyFileSync(indexSrc, path.join(target, BACKUP_FILE));
-    manifest.files.push(BACKUP_FILE);
-  } else {
-    manifest.missing.push(BACKUP_FILE);
+  if (!dryRun) {
+    fs.mkdirSync(target, { recursive: true });
+  }
+
+  collect(ws);
+
+  if (!dryRun) {
+    const manifestLines = Object.entries(manifest.sha256Manifest)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([f, hash]) => `${hash}  ${f}`)
+      .join('\n');
+    fs.writeFileSync(path.join(target, 'manifest.sha256'), manifestLines + '\n', 'utf-8');
   }
 
   return manifest;
@@ -93,7 +103,7 @@ function getArg(flag) {
 function main() {
   const isJson = process.argv.includes('--json');
   const dryRun = process.argv.includes('--dry-run');
-  const workspaceDir = getArg('--workspace-dir');
+  const workspaceDir = getArg('--workspace-dir') || getArg('--domain-dir');
   const target = getArg('--target');
 
   if (!workspaceDir) {
@@ -108,9 +118,7 @@ function main() {
     } else {
       const verb = dryRun ? 'Would back up' : 'Backed up';
       console.log(`${verb} to ${manifest.target}`);
-      console.log(`  dirs:  ${manifest.dirs.join(', ') || '(none)'}`);
-      console.log(`  files: ${manifest.files.join(', ') || '(none)'}`);
-      if (manifest.missing.length) console.log(`  missing (skipped): ${manifest.missing.join(', ')}`);
+      console.log(`  files: ${manifest.files.length} files backed up.`);
     }
   } catch (err) {
     if (isJson) {
@@ -126,4 +134,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { backupWorkspace, defaultTarget, isInside };
+module.exports = { backupWorkspace, defaultTarget, isInside, sha256 };

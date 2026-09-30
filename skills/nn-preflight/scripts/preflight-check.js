@@ -21,7 +21,7 @@
  *   --json          Emit machine-readable JSON output
  *   --manifest-url  Override default manifest URL
  *   --skills-dir    Override ~/.agents/skills directory
- *   --templates-dir Override ~/.agents/templates directory
+ *   --blueprints-dir Override ~/.agents/bluepriNNts directory
  *   --state-file    Override ~/.agents/bootstrap-state.json
  */
 
@@ -39,7 +39,7 @@ const DEFAULT_MANIFEST_URL = process.env.SM_MANIFEST_URL ||
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md';
 
 const DEFAULT_SKILLS_DIR = path.join(os.homedir(), '.agents', 'skills');
-const DEFAULT_TEMPLATES_DIR = path.join(os.homedir(), '.agents', 'templates');
+const DEFAULT_BLUEPRINTS_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
 const DEFAULT_MCP_DIR = path.join(os.homedir(), '.agents', 'mcp');
 const DEFAULT_STATE_FILE = path.join(os.homedir(), '.agents', 'bootstrap-state.json');
 const LEGACY_STATE_FILE = path.join(os.homedir(), '.agents', 'skills-state.json');
@@ -52,10 +52,10 @@ const LEGACY_STATE_FILE = path.join(os.homedir(), '.agents', 'skills-state.json'
  * (same-origin for the editor), the raw.githubusercontent copy is the
  * fallback. When both fail, upgrade detection degrades to offline.
  */
-const DEFAULT_TEMPLATE_CATALOG_URL =
-  'https://cognnitive.com/innfo/templates/catalog.json';
-const FALLBACK_TEMPLATE_CATALOG_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/catalog.json';
+const DEFAULT_BLUEPRINT_CATALOG_URL =
+  'https://cognnitive.com/innfo/blueprints/catalog.json';
+const FALLBACK_BLUEPRINT_CATALOG_URL =
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json';
 
 /**
  * Canonical channel freshness summary published by CI on every push to main.
@@ -109,7 +109,7 @@ function loadState(file) {
       return {
         manifest: data.manifest || DEFAULT_MANIFEST_URL,
         skills: data.skills || {},
-        templates: data.templates || {},
+        blueprints: data.blueprints || {},
         mcp: data.mcp || {},
         projections: data.projections || {},
       };
@@ -126,7 +126,7 @@ function loadState(file) {
       return {
         manifest: legacyData.manifest || DEFAULT_MANIFEST_URL,
         skills: legacyData.skills || {},
-        templates: {},
+        blueprints: {},
         mcp: {},
         projections: {},
       };
@@ -135,7 +135,7 @@ function loadState(file) {
     }
   }
 
-  return { manifest: DEFAULT_MANIFEST_URL, skills: {}, templates: {}, mcp: {}, projections: {} };
+  return { manifest: DEFAULT_MANIFEST_URL, skills: {}, blueprints: {}, mcp: {}, projections: {} };
 }
 
 function parseManifest(text) {
@@ -147,7 +147,7 @@ function parseManifest(text) {
   return {
     version: bootstrap.version || 'unknown',
     skills: Array.isArray(bootstrap.skills) ? bootstrap.skills : [],
-    templates: Array.isArray(bootstrap.templates) ? bootstrap.templates : [],
+    blueprints: Array.isArray(bootstrap.blueprints) ? bootstrap.blueprints : [],
     // Exposes the published `console-assets` block so its resolved `ref` can be
     // compared against the freshness JSON's `innfo-console` pin, the same way
     // `skills`/`templates` already are (Defect 1 fix).
@@ -554,7 +554,7 @@ function scanWorkspaceSources(workspaceDir) {
 /* ── Template Composition & Semantic AST Validator ─────────────────── */
 
 /**
- * Inspects Level 2 template compositions across specs/templates and specs/.
+ * Inspects Level 2 blueprint compositions across specs/bluepriNNts and specs/.
  * Evaluates:
  *   1. Resolvability of all `includes:` definitions on disk.
  *   2. Absence of cyclic includes.
@@ -563,39 +563,39 @@ function scanWorkspaceSources(workspaceDir) {
  *
  * @param {object} options
  * @param {string} [options.workspaceDir]
- * @param {string} [options.templatesDir]
+ * @param {string} [options.blueprintsDir]
  * @returns {{ validCount: number, blockerCount: number, warningCount: number, items: Array<any> }}
  */
-function validateTemplateCompositions(options = {}) {
-  const { workspaceDir, templatesDir } = options;
+function validateBlueprintCompositions(options = {}) {
+  const { workspaceDir, blueprintsDir } = options;
   const searchDirs = [];
 
   if (workspaceDir) {
-    const wsSpecsTemplates = path.join(workspaceDir, 'specs', 'templates');
+    const wsSpecsBlueprints = path.join(workspaceDir, 'specs', 'templates');
     const wsSpecs = path.join(workspaceDir, 'specs');
-    if (fs.existsSync(wsSpecsTemplates)) searchDirs.push(wsSpecsTemplates);
+    if (fs.existsSync(wsSpecsBlueprints)) searchDirs.push(wsSpecsBlueprints);
     if (fs.existsSync(wsSpecs)) searchDirs.push(wsSpecs);
-  } else if (templatesDir && fs.existsSync(templatesDir)) {
-    searchDirs.push(templatesDir);
+  } else if (blueprintsDir && fs.existsSync(blueprintsDir)) {
+    searchDirs.push(blueprintsDir);
   } else {
     const repoRoot = path.resolve(__dirname, '../../../..');
-    const repoSpecsTemplates = path.join(repoRoot, 'specs', 'templates');
+    const repoSpecsBlueprints = path.join(repoRoot, 'specs', 'templates');
     const repoSpecs = path.join(repoRoot, 'specs');
-    if (fs.existsSync(repoSpecsTemplates)) searchDirs.push(repoSpecsTemplates);
+    if (fs.existsSync(repoSpecsBlueprints)) searchDirs.push(repoSpecsBlueprints);
     if (fs.existsSync(repoSpecs)) searchDirs.push(repoSpecs);
   }
 
   // Also include resolver fallback search dirs
   const resolverDirs = [...searchDirs];
   const repoRoot = path.resolve(__dirname, '../../../..');
-  const repoInnfoSpecsTemplates = path.join(repoRoot, 'iNNfo', 'specs', 'templates');
-  const repoSpecsTemplates = path.join(repoRoot, 'specs', 'templates');
+  const repoInnfoSpecsBlueprints = path.join(repoRoot, 'iNNfo', 'specs', 'templates');
+  const repoSpecsBlueprints = path.join(repoRoot, 'specs', 'templates');
   const repoSpecs = path.join(repoRoot, 'specs');
-  if (fs.existsSync(repoInnfoSpecsTemplates) && !resolverDirs.includes(repoInnfoSpecsTemplates)) {
-    resolverDirs.push(repoInnfoSpecsTemplates);
+  if (fs.existsSync(repoInnfoSpecsBlueprints) && !resolverDirs.includes(repoInnfoSpecsBlueprints)) {
+    resolverDirs.push(repoInnfoSpecsBlueprints);
   }
-  if (fs.existsSync(repoSpecsTemplates) && !resolverDirs.includes(repoSpecsTemplates)) {
-    resolverDirs.push(repoSpecsTemplates);
+  if (fs.existsSync(repoSpecsBlueprints) && !resolverDirs.includes(repoSpecsBlueprints)) {
+    resolverDirs.push(repoSpecsBlueprints);
   }
   if (fs.existsSync(repoSpecs) && !resolverDirs.includes(repoSpecs)) {
     resolverDirs.push(repoSpecs);
@@ -603,14 +603,14 @@ function validateTemplateCompositions(options = {}) {
 
   const templateFiles = new Map();
 
-  function walkTemplates(dir) {
+  function walkBlueprints(dir) {
     let entries;
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const ent of entries) {
       if (ent.name.startsWith('.') || SPEC_SKIP_DIRS.has(ent.name)) continue;
       const fullPath = path.join(dir, ent.name);
       if (ent.isDirectory()) {
-        walkTemplates(fullPath);
+        walkBlueprints(fullPath);
       } else if (ent.isFile() && ent.name.endsWith('.md')) {
         try {
           const content = fs.readFileSync(fullPath, 'utf8');
@@ -632,7 +632,7 @@ function validateTemplateCompositions(options = {}) {
   }
 
   for (const d of searchDirs) {
-    walkTemplates(d);
+    walkBlueprints(d);
   }
 
   const results = {
@@ -942,7 +942,7 @@ async function runCheck(options = {}) {
   const isJson = options.json || process.argv.includes('--json');
   const manifestUrl = options.manifestUrl || process.env.SM_MANIFEST_URL || DEFAULT_MANIFEST_URL;
   const skillsDir = options.skillsDir || DEFAULT_SKILLS_DIR;
-  const templatesDir = options.templatesDir || DEFAULT_TEMPLATES_DIR;
+  const blueprintsDir = options.blueprintsDir || DEFAULT_BLUEPRINTS_DIR;
   const mcpDir = options.mcpDir || DEFAULT_MCP_DIR;
   const stateFile = options.stateFile || DEFAULT_STATE_FILE;
   const workspaceDir = options.workspaceDir || null;
@@ -979,12 +979,12 @@ async function runCheck(options = {}) {
       sourcesNormalized: 0,
       sourcesUnnormalized: 0,
       sourcesDangling: 0,
-      templateModelsScanned: 0,
+      blueprintModelsScanned: 0,
       templateUpgradesAvailable: 0,
-      templateModelsCurrent: 0,
-      templateModelsAhead: 0,
-      templateModelsUnlisted: 0,
-      templateModelsUnpinned: 0,
+      blueprintModelsCurrent: 0,
+      blueprintModelsAhead: 0,
+      blueprintModelsUnlisted: 0,
+      blueprintModelsUnpinned: 0,
       templateCatalogOffline: 0,
       templatesCompositionValid: 0,
       templatesCompositionBlockers: 0,
@@ -1044,7 +1044,7 @@ async function runCheck(options = {}) {
     if (discoverModels(workspaceDir).length > 0) {
       const catalogUrls = options.templateCatalogUrl
         ? [options.templateCatalogUrl]
-        : [DEFAULT_TEMPLATE_CATALOG_URL, FALLBACK_TEMPLATE_CATALOG_URL];
+        : [DEFAULT_BLUEPRINT_CATALOG_URL, FALLBACK_BLUEPRINT_CATALOG_URL];
       let catalog = null;
       for (const catalogUrl of catalogUrls) {
         try {
@@ -1065,12 +1065,12 @@ async function runCheck(options = {}) {
       }
       if (catalog) {
         const upgrade = scanWorkspaceUpgrades(workspaceDir, catalog);
-        results.summary.templateModelsScanned = upgrade.summary.modelsScanned;
+        results.summary.blueprintModelsScanned = upgrade.summary.modelsScanned;
         results.summary.templateUpgradesAvailable = upgrade.summary.upgradeAvailable;
-        results.summary.templateModelsCurrent = upgrade.summary.current;
-        results.summary.templateModelsAhead = upgrade.summary.ahead;
-        results.summary.templateModelsUnlisted = upgrade.summary.unlisted;
-        results.summary.templateModelsUnpinned = upgrade.summary.unpinned;
+        results.summary.blueprintModelsCurrent = upgrade.summary.current;
+        results.summary.blueprintModelsAhead = upgrade.summary.ahead;
+        results.summary.blueprintModelsUnlisted = upgrade.summary.unlisted;
+        results.summary.blueprintModelsUnpinned = upgrade.summary.unpinned;
         results.items.push(...upgrade.items);
       }
     }
@@ -1127,15 +1127,15 @@ async function runCheck(options = {}) {
     // (e.g. zero drift), per the published tracked-subsystem prefixes.
     const SUBSYSTEM_PATH_LABELS = {
       skills: 'skills/',
-      templates: 'iNNfo/specs/templates/',
+      templates: 'iNNfo/specs/bluepriNNts/',
       'innfo-mcp': 'iNNfo/packages/innfo-mcp/',
-      'innfo-console': 'iNNfo/specs/templates/console/',
+      'innfo-console': 'iNNfo/specs/bluepriNNts/console/',
     };
     const MAX_FILES_SHOWN = 3;
 
     const targets = [
       { key: 'skills', manifestRef: (manifest.skills.find(s => s && s.ref) || {}).ref },
-      { key: 'templates', manifestRef: (manifest.templates.find(t => t && t.ref) || {}).ref },
+      { key: 'templates', manifestRef: (manifest.blueprints.find(t => t && t.ref) || {}).ref },
       { key: 'innfo-mcp', manifestRef: innfoMcpEntry ? innfoMcpEntry.ref : undefined },
       { key: 'innfo-console', manifestRef: innfoConsoleEntry ? innfoConsoleEntry.ref : undefined },
     ];
@@ -1253,12 +1253,12 @@ async function runCheck(options = {}) {
   }
 
   // 4. Audit Templates
-  for (const tmpl of manifest.templates) {
+  for (const tmpl of manifest.blueprints) {
     results.summary.templatesTotal++;
     const fileName = tmpl.name.endsWith('.md') ? tmpl.name : `${tmpl.name}.md`;
-    const tmplPath = path.join(templatesDir, fileName);
-    const tmplExists = fs.existsSync(tmplPath) || fs.existsSync(path.join(templatesDir, tmpl.name));
-    const recorded = state.templates[tmpl.name];
+    const tmplPath = path.join(blueprintsDir, fileName);
+    const tmplExists = fs.existsSync(tmplPath) || fs.existsSync(path.join(blueprintsDir, tmpl.name));
+    const recorded = state.blueprints[tmpl.name];
     let tmplStatus = 'up-to-date';
 
     if (!tmplExists) {
@@ -1280,9 +1280,9 @@ async function runCheck(options = {}) {
   }
 
   // 5. Template Composition Integrity Validation
-  const compositionResults = validateTemplateCompositions({
+  const compositionResults = validateBlueprintCompositions({
     workspaceDir,
-    templatesDir,
+    blueprintsDir,
   });
   results.summary.templatesCompositionValid = compositionResults.validCount;
   results.summary.templatesCompositionBlockers = compositionResults.blockerCount;
@@ -1461,7 +1461,7 @@ async function main() {
   const isJson = process.argv.includes('--json');
   const manifestUrl = getArg('--manifest-url');
   const skillsDir = getArg('--skills-dir');
-  const templatesDir = getArg('--templates-dir');
+  const blueprintsDir = getArg('--blueprints-dir');
   const mcpDir = getArg('--mcp-dir');
   const stateFile = getArg('--state-file');
   const workspaceDir = getArg('--workspace-dir');
@@ -1473,7 +1473,7 @@ async function main() {
       json: isJson,
       manifestUrl,
       skillsDir,
-      templatesDir,
+      blueprintsDir,
       mcpDir,
       stateFile,
       workspaceDir,
@@ -1505,7 +1505,7 @@ module.exports = {
   parseManifest,
   loadState,
   scanWorkspaceSources,
-  validateTemplateCompositions,
+  validateBlueprintCompositions,
   FRESHNESS_URL,
   formatAge,
 };

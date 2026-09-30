@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const here = dirname(fileURLToPath(import.meta.url))
-const runtimePath = join(here, '..', 'iNNfo', 'specs', 'templates', 'console', 'innfo-runtime.js')
+const runtimePath = join(here, '..', 'iNNfo', 'specs', 'bluepriNNts', 'console', 'innfo-runtime.js')
 const InnfoConsole = require(runtimePath)
 
 describe('Console Review Workflow & 3-Tier Architecture', () => {

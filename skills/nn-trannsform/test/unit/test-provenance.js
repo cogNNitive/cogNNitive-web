@@ -76,7 +76,7 @@ function run() {
       SRC_FM('sources/original/webpage.html', 'ccc')
     );
 
-    const r1 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     eq(r1.created, true, 'model created on first run');
     eq(r1.sourceCount, 3, 'three sources registered');
     ok(fs.existsSync(r1.modelPath), 'model file written');
@@ -108,7 +108,7 @@ function run() {
     fs.writeFileSync(r1.modelPath, withModel);
     fs.rmSync(path.join(proj, 'sources', 'nn', 'team.md')); // drop one source
 
-    const r2 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+    const r2 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     eq(r2.created, false, 'model refreshed (not recreated) on second run');
     eq(r2.sourceCount, 2, 'sources refreshed down to two');
     const model2 = fs.readFileSync(r2.modelPath, 'utf8');
@@ -132,7 +132,7 @@ function run() {
     console.log = (...a) => logs.push(a.join(' '));
     let r3;
     try {
-      r3 = provenance.buildProvenanceModel(proj, { projectName: 'Acme' });
+      r3 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     } finally {
       console.log = origLog;
     }
@@ -157,7 +157,7 @@ function run() {
       SRC_FM('sources/import/links.csv', 'ddd')
     );
     fs.writeFileSync(path.join(csvProj, 'sources', 'nn', 'import', 'links.csv'), 'id,url\n1,a\n');
-    const rCsv = provenance.buildProvenanceModel(csvProj, { projectName: 'CsvProj' });
+    const rCsv = provenance.buildProvenanceKnowledge(csvProj, { projectName: 'CsvProj' });
     const csvModel = fs.readFileSync(rCsv.modelPath, 'utf8');
     ok(/## NN Sources: links\.csv/.test(csvModel), 'CSV source entry present');
     ok(

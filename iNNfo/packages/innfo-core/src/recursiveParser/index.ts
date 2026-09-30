@@ -15,10 +15,10 @@ export type {
   RecursiveParseResult,
   WorklistItem,
   ParseContext,
-  TemplateSchemaResolver,
+  BlueprintSchemaResolver,
   RecursiveParseOptions,
 } from './types.js'
-export { normalizeSingleModel } from './model.js'
+export { normalizeSingleKnowledge } from './knowledge.js'
 export { recursiveParse, extractSubmodelRefs, MAX_DEPTH } from './workspace.js'
 export type { ExtractedSubmodelRef } from './workspace.js'
 export { buildWorkspaceIndex } from './workspaceIndex.js'

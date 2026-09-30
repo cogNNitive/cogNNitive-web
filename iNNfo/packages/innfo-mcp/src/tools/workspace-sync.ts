@@ -57,7 +57,7 @@ async function walkMarkdownFiles(dir: string, out: string[] = []): Promise<strin
   return out
 }
 
-/** Finds the workspace manifest (`workspace*.md` at the workspace root). */
+/** Finds the domain/workspace manifest (`domaiNN*.md`, `domain*.md`, `workspace*.md` at the domain root). */
 async function findManifestPath(root: string): Promise<string | null> {
   let entries
   try {
@@ -74,13 +74,13 @@ async function findManifestPath(root: string): Promise<string | null> {
   const match = entries.find(
     (e) =>
       e.isFile() &&
-      e.name.toLowerCase().startsWith('workspace') &&
+      (e.name.toLowerCase().startsWith('domain') || e.name.toLowerCase().startsWith('workspace')) &&
       e.name.toLowerCase().endsWith('.md'),
   )
   return match ? join(root, match.name) : null
 }
 
-function parentSpecTemplateName(frontmatter: Record<string, unknown>): string | undefined {
+function parentSpecBlueprintName(frontmatter: Record<string, unknown>): string | undefined {
   const parentSpec = frontmatter['parent_spec']
   if (!parentSpec) return undefined
   if (typeof parentSpec === 'string') return parentSpec
@@ -120,7 +120,7 @@ async function discoverCandidates(
     discovered.push({
       path: relPath,
       name: title !== '' ? title : stripMdSuffix(pathBasename(relPath)),
-      template: parentSpecTemplateName(frontmatter),
+      template: parentSpecBlueprintName(frontmatter),
     })
   }
 
@@ -206,3 +206,6 @@ export async function syncWorkspaceManifest(
     written,
   }
 }
+
+export const syncDomainManifest = syncWorkspaceManifest
+

@@ -1,5 +1,5 @@
 import type { Concept, ValidationError } from '../types/index.js'
-import { parseModel } from '../parser/index.js'
+import { parseKnowledge } from '../parser/index.js'
 import {
   CONCEPT_DEFINITION,
   FIELD_DEFINITION,
@@ -7,16 +7,16 @@ import {
   MATRIX_DEFINITION,
   asObject,
   asString,
-  extractTemplateSchema,
+  extractBlueprintSchema,
 } from './extract.js'
 
 /* ── Metaschema (Self-Description) ──────────────────────────────
  *
  * The level-1 iNNfo spec carries, under its "## Metaschema (Self-Description)"
  * section, a fenced ```markdown block that expresses the four root primitives
- * in iNNfo's own syntax. `validateTemplateAgainstMetaschema` resolves that
+ * in iNNfo's own syntax. `validateBlueprintAgainstMetaschema` resolves that
  * block and checks a level-2 template's `… Definition` elements against it —
- * the same code path (`extractTemplateSchema` + per-Field checks) used to
+ * the same code path (`extractBlueprintSchema` + per-Field checks) used to
  * validate a level-3 Model against its level-2 Template.
  */
 
@@ -59,7 +59,7 @@ export interface SchemaCheckOptions {
  * Level-2-against-L1 (primitive elements vs the metaschema) and
  * level-3-against-L2 (model elements vs the template) call this with the same
  * signature — they differ only in which schema is passed. Reference and
- * matrix-cell checks are model-only and layered on top by `validateModel`.
+ * matrix-cell checks are model-only and layered on top by `validateKnowledge`.
  */
 export function checkElementsAgainstSchema(
   elementGroups: Iterable<[string, Array<{ name: string; fields: Record<string, unknown> }>]>,
@@ -193,7 +193,7 @@ export function checkWidgetConfig(
  * missing required properties are errors. When the spec carries no resolvable
  * metaschema block, a single warning is returned and the check is skipped.
  */
-export function validateTemplateAgainstMetaschema(
+export function validateBlueprintAgainstMetaschema(
   templateContent: string,
   metaschemaSpecContent: string,
 ): ValidationError[] {
@@ -209,8 +209,8 @@ export function validateTemplateAgainstMetaschema(
     ]
   }
 
-  const metaConcepts = extractTemplateSchema(parseModel(metaMarkdown)).concepts
-  const template = parseModel(templateContent)
+  const metaConcepts = extractBlueprintSchema(parseKnowledge(metaMarkdown)).concepts
+  const template = parseKnowledge(templateContent)
   const groups: Array<[string, Array<{ name: string; fields: Record<string, unknown> }>]> = [
     CONCEPT_DEFINITION,
     FIELD_DEFINITION,

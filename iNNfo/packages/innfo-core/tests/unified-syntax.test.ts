@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel, serializeModel } from '../src/parser'
+import { parseKnowledge, serializeKnowledge } from '../src/parser'
 import {
-  validateModel,
+  validateKnowledge,
   validateFormatContent,
-  extractTemplateSchema,
+  extractBlueprintSchema,
   applyMutation,
   CONCEPT_DEFINITION,
   FIELD_DEFINITION,
@@ -83,7 +83,7 @@ values:: [Max, High, Low]
 const miniModel = `---
 spec_version: "V_0-3-0"
 level: 3
-model_version: "V_1-0-0"
+knowledge_version: "V_1-0-0"
 title: "Mini Model"
 parent_spec:
   name: "mini_V_1-0-0"
@@ -118,7 +118,7 @@ Bob handles engineering.
 
 describe('unified syntax (Metaplantilla Nivel 1)', () => {
   it('parses # NN concept sections and ## NN element headings', () => {
-    const model = parseModel(miniModel)
+    const model = parseKnowledge(miniModel)
     expect(model.elements.has('Stakeholders')).toBe(true)
     expect(model.elements.has('Market')).toBe(false) // text concept → rawSections
     const stakeholders = model.elements.get('Stakeholders')!
@@ -129,7 +129,7 @@ describe('unified syntax (Metaplantilla Nivel 1)', () => {
   })
 
   it('parses key:: value properties into typed fields', () => {
-    const model = parseModel(miniModel)
+    const model = parseKnowledge(miniModel)
     const alice = model.elements.get('Stakeholders')![0]
     expect(alice.fields['importance']).toBe('high')
     expect(alice.fields['needs']).toEqual(['speed', 'accuracy'])
@@ -139,7 +139,7 @@ describe('unified syntax (Metaplantilla Nivel 1)', () => {
   })
 
   it('parses taxonomy from # NN index', () => {
-    const model = parseModel(miniModel)
+    const model = parseKnowledge(miniModel)
     expect(model.taxonomy.length).toBeGreaterThan(0)
     expect(model.taxonomy.some((e) => e.parent === 'Market' && e.child === 'Stakeholders')).toBe(
       true,
@@ -148,13 +148,13 @@ describe('unified syntax (Metaplantilla Nivel 1)', () => {
   })
 
   it('preserves text-concept bodies in rawSections', () => {
-    const model = parseModel(miniModel)
+    const model = parseKnowledge(miniModel)
     expect(model.rawSections!['Market']).toContain('Market narrative content.')
   })
 
   it('serializes back to unified syntax and round-trips', () => {
-    const model = parseModel(miniModel)
-    const serialized = serializeModel(model)
+    const model = parseKnowledge(miniModel)
+    const serialized = serializeKnowledge(model)
 
     expect(serialized).toContain('# NN index')
     expect(serialized).toContain('# NN Stakeholders')
@@ -165,7 +165,7 @@ describe('unified syntax (Metaplantilla Nivel 1)', () => {
     expect(serialized).not.toContain('# _NN')
     expect(serialized).not.toContain('* _NN')
 
-    const reparsed = parseModel(serialized)
+    const reparsed = parseKnowledge(serialized)
     expect(reparsed.elements.size).toBe(model.elements.size)
     const alice = reparsed.elements.get('Stakeholders')![0]
     expect(alice.fields['importance']).toBe('high')
@@ -177,7 +177,7 @@ describe('unified syntax (Metaplantilla Nivel 1)', () => {
 
 describe('metaplantilla schema extraction', () => {
   it('extracts concepts from Concept Definition elements', () => {
-    const schema = extractTemplateSchema(parseModel(miniTemplate))
+    const schema = extractBlueprintSchema(parseKnowledge(miniTemplate))
     expect(schema.concepts.map((c) => c.name)).toEqual(['Market', 'Stakeholders'])
     const market = schema.concepts.find((c) => c.name === 'Market')!
     expect(market.type).toBe('category')
@@ -186,7 +186,7 @@ describe('metaplantilla schema extraction', () => {
   })
 
   it('attaches Field Definition elements to their owning concept', () => {
-    const schema = extractTemplateSchema(parseModel(miniTemplate))
+    const schema = extractBlueprintSchema(parseKnowledge(miniTemplate))
     const stakeholders = schema.concepts.find((c) => c.name === 'Stakeholders')!
     expect(stakeholders.fields).toBeDefined()
     const names = stakeholders.fields!.map((f) => f.name)
@@ -197,7 +197,7 @@ describe('metaplantilla schema extraction', () => {
   })
 
   it('extracts markers and matrices from their definition elements', () => {
-    const schema = extractTemplateSchema(parseModel(miniTemplate))
+    const schema = extractBlueprintSchema(parseKnowledge(miniTemplate))
     expect(schema.markers.map((m) => m.name)).toEqual(['weight'])
     expect(schema.markers[0].symbol).toBe('*')
     expect(schema.matrices).toHaveLength(1)
@@ -214,7 +214,7 @@ describe('metaplantilla schema extraction', () => {
   })
 })
 
-describe('validateModel against a metaplantilla template', () => {
+describe('validateKnowledge against a metaplantilla template', () => {
   const templateDoc: SpecDocument = {
     name: 'mini_V_1-0-0',
     level: 2,
@@ -229,18 +229,18 @@ describe('validateModel against a metaplantilla template', () => {
   }
 
   it('validates a unified-syntax model against body-declared concepts', () => {
-    const model = parseModel(miniModel)
-    const result = validateModel(model, templateDoc, null)
+    const model = parseKnowledge(miniModel)
+    const result = validateKnowledge(model, templateDoc, null)
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
 
   it('rejects a concept not declared in the metaplantilla', () => {
-    const model = parseModel(miniModel)
+    const model = parseKnowledge(miniModel)
     model.elements.set('Ghost', [
       { type: 'Ghost', name: 'Boo', description: '', fields: {}, markers: {} },
     ])
-    const result = validateModel(model, templateDoc, null)
+    const result = validateKnowledge(model, templateDoc, null)
     expect(result.valid).toBe(false)
     expect(result.errors.some((e) => e.message.includes('Ghost'))).toBe(true)
   })
@@ -262,7 +262,7 @@ describe('validateFormatContent index block elements check', () => {
       '---',
       'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-1-0"',
+      'knowledge_version: "V_0-1-0"',
       'title: "Test Model"',
       'parent_spec:',
       '  name: "business_V_0-3-0"',
@@ -292,7 +292,7 @@ describe('validateFormatContent index block elements check', () => {
       '---',
       'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-1-0"',
+      'knowledge_version: "V_0-1-0"',
       'title: "Test Model"',
       'parent_spec:',
       '  name: "business_V_0-3-0"',
@@ -327,7 +327,7 @@ describe('validateFormatContent index block elements check', () => {
       '---',
       'spec_version: "V_0-3-0"',
       'level: 3',
-      'model_version: "V_0-1-0"',
+      'knowledge_version: "V_0-1-0"',
       'title: "Test Model"',
       'parent_spec:',
       '  name: "business_V_0-3-0"',
@@ -372,10 +372,10 @@ describe('validateFormatContent index block elements check', () => {
       'type:: markdown_inline',
     ].join('\n')
 
-    const parsed = parseModel(specContent)
+    const parsed = parseKnowledge(specContent)
     expect(parsed.slugCollisions).toBeUndefined()
 
-    const schema = extractTemplateSchema(parsed)
+    const schema = extractBlueprintSchema(parsed)
     expect(schema.concepts).toHaveLength(2)
 
     const fotos = schema.concepts.find((c) => c.name === 'Fotos')
@@ -392,7 +392,7 @@ describe('validateFormatContent index block elements check', () => {
 
 describe('applyMutation on a metaplantilla document', () => {
   it('adds a Concept Definition element when no frontmatter concepts block exists', () => {
-    const model = parseModel(miniTemplate)
+    const model = parseKnowledge(miniTemplate)
     const result = applyMutation(model, 'add_concept', { conceptName: 'Products', type: 'list' })
     expect(result.success).toBe(true)
     const defs = model.elements.get(CONCEPT_DEFINITION)!
@@ -401,7 +401,7 @@ describe('applyMutation on a metaplantilla document', () => {
   })
 
   it('adds a Field Definition element bound to a concept', () => {
-    const model = parseModel(miniTemplate)
+    const model = parseKnowledge(miniTemplate)
     const result = applyMutation(model, 'add_field', {
       conceptName: 'Stakeholders',
       fieldName: 'owner',
@@ -415,7 +415,7 @@ describe('applyMutation on a metaplantilla document', () => {
   })
 
   it('sets a Marker Definition element', () => {
-    const model = parseModel(miniTemplate)
+    const model = parseKnowledge(miniTemplate)
     const result = applyMutation(model, 'set_marker', { markerName: 'priority', symbol: '!' })
     expect(result.success).toBe(true)
     const defs = model.elements.get(MARKER_DEFINITION)!
@@ -423,7 +423,7 @@ describe('applyMutation on a metaplantilla document', () => {
   })
 
   it('renames a Concept Definition and re-points its fields', () => {
-    const model = parseModel(miniTemplate)
+    const model = parseKnowledge(miniTemplate)
     const result = applyMutation(model, 'rename_concept', {
       conceptName: 'Stakeholders',
       newName: 'Actors',

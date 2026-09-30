@@ -2,9 +2,9 @@
  * Browser adapters for the workspace integrity report (AD-6).
  *
  * The editor supplies 3 of the 5 ports — `discoverModels` reads the already
- * parsed modelStore graph (zero extra IO), `validateAll` reuses the in-memory
+ * parsed knowledgeStore graph (zero extra IO), `validateAll` reuses the in-memory
  * per-model validation reports, `fetchCatalog` does one same-origin
- * `catalog.json` fetch. `resolveTemplate` and `checkFreshness` are OMITTED
+ * `catalog.json` fetch. `resolveBlueprint` and `checkFreshness` are OMITTED
  * (Resolved Decision 4): the browser has no fs tiers and byte-hash freshness
  * is reserved for the `check_workspace` MCP tool, so the builder degrades both
  * fields to `not-checked` rather than failing.
@@ -18,7 +18,7 @@ import type {
   CatalogSource,
 } from '@cognnitive/innfo-core'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { validateFormatContent } from '@cognnitive/innfo-core'
 
 /** Same-origin canonical catalog URL (AD-3 tier 1, staged by build-docs.mjs). */
@@ -35,7 +35,7 @@ async function fetchCatalogJson(): Promise<{ catalog: TemplateCatalog | null; so
     const json = (await resp.json()) as unknown
     if (!json || typeof json !== 'object') return { catalog: null, source: 'offline' }
     const catalog = json as TemplateCatalog
-    if (!catalog.templates || typeof catalog.templates !== 'object') {
+    if (!catalog.blueprints || typeof catalog.blueprints !== 'object') {
       return { catalog: null, source: 'offline' }
     }
     return { catalog, source: 'remote' }
@@ -47,19 +47,19 @@ async function fetchCatalogJson(): Promise<{ catalog: TemplateCatalog | null; so
 }
 
 /**
- * Build the browser ports. `resolveTemplate` / `checkFreshness` are
+ * Build the browser ports. `resolveBlueprint` / `checkFreshness` are
  * deliberately absent so `buildWorkspaceIntegrityReport` reports them as
  * `not-checked` (Resolved Decision 4).
  */
 export function createWorkspaceIntegrityPorts(): WorkspaceIntegrityPorts {
-  const modelStore = useModelStore()
+  const knowledgeStore = useKnowledgeStore()
 
   return {
     discoverModels: async (): Promise<WorkspaceModelRef[]> => {
       const refs: WorkspaceModelRef[] = []
-      for (const id of modelStore.rootIds) {
+      for (const id of knowledgeStore.rootIds) {
         if (id.startsWith('spec:')) continue
-        const node = modelStore.nodes[id]
+        const node = knowledgeStore.nodes[id]
         if (!node?.rawContent) continue
         const fm = parseFrontmatter(node.rawContent)
         if (!fm || fm.level !== 3) continue
@@ -80,7 +80,7 @@ export function createWorkspaceIntegrityPorts(): WorkspaceIntegrityPorts {
     ): Promise<Map<string, { errors: IntegrityDiagnostic[]; warnings: IntegrityDiagnostic[] }>> => {
       const out = new Map<string, { errors: IntegrityDiagnostic[]; warnings: IntegrityDiagnostic[] }>()
       for (const model of models) {
-        const node = model.id ? modelStore.nodes[model.id] : undefined
+        const node = model.id ? knowledgeStore.nodes[model.id] : undefined
         const errors: IntegrityDiagnostic[] = []
         const warnings: IntegrityDiagnostic[] = []
         if (node?.rawContent) {

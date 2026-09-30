@@ -6,7 +6,7 @@ import { normalizeSource, YAML_BLOCK_RE } from './markdown.js'
  * Parse a YAML document. On a syntax error the result is still `{}` (callers
  * downstream tolerate an empty frontmatter), but the error is no longer
  * swallowed silently: it is reported through `onError` so the caller can
- * surface it (e.g. `parseModel` pushes it onto `parseWarnings`).
+ * surface it (e.g. `parseKnowledge` pushes it onto `parseWarnings`).
  */
 export function parseYaml(
   yamlStr: string,

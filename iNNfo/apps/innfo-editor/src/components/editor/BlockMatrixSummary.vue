@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useUiStore } from '../../stores/uiStore'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import { getHexColor } from '../../composables/useConceptVisuals'
@@ -42,7 +42,7 @@ const props = withDefaults(
   },
 )
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const uiStore = useUiStore()
 
 interface MatrixChip {
@@ -66,7 +66,7 @@ function matchesConcept(a: string, b: string): boolean {
 }
 
 const chips = computed<MatrixChip[]>(() => {
-  const root = modelStore.getNode(props.rootNodeId)
+  const root = knowledgeStore.getNode(props.rootNodeId)
   if (!root) return []
 
   // Matrix declarations come from the template via __matrix_defs (populated by
@@ -89,7 +89,7 @@ const chips = computed<MatrixChip[]>(() => {
     rootNodeId: string,
     conceptInstanceName: string,
   ): number {
-    const rn = modelStore.getNode(rootNodeId)
+    const rn = knowledgeStore.getNode(rootNodeId)
     if (!rn?.fields) return 0
 
     let count = 0
@@ -108,7 +108,7 @@ const chips = computed<MatrixChip[]>(() => {
   }
 
   function countTotalMatrixCells(matrixName: string, rootNodeId: string): number {
-    const rn = modelStore.getNode(rootNodeId)
+    const rn = knowledgeStore.getNode(rootNodeId)
     if (!rn?.fields) return 0
     let count = 0
     for (const [key, fv] of Object.entries(rn.fields)) {
@@ -132,7 +132,7 @@ const chips = computed<MatrixChip[]>(() => {
 
     // Resolve concept color for accent
     const conceptColor = (() => {
-      const rootNode = modelStore.getNode(props.rootNodeId)
+      const rootNode = knowledgeStore.getNode(props.rootNodeId)
       if (rootNode?.rawContent) {
         const fmData = parseFrontmatter(rootNode.rawContent)
         const concepts: Array<{ name: string; color?: string }> = (fmData as any)?.concepts ?? []
@@ -142,7 +142,7 @@ const chips = computed<MatrixChip[]>(() => {
       return getHexColor(undefined)
     })()
 
-    const node = modelStore.getNode(props.nodeId)
+    const node = knowledgeStore.getNode(props.nodeId)
     const count = props.isConcept || !node
       ? countTotalMatrixCells(m.name, props.rootNodeId)
       : countNonDashCells(m.name, props.rootNodeId, node.name)

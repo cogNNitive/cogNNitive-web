@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "artifacts"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/artifacts/spec_NN.md"
-model_version: "V_1-0-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
+knowledge_version: "V_1-0-0"
 title: "Consulting Sales Artifacts Catalog"
 ---
 
@@ -18,7 +18,7 @@ summary:: Executive RFP proposal summary with verified team staffing and methodo
 status:: verified
 tags:: [rfp, proposal, executive]
 produced_by:: RFP Commercial Response Pipeline
-sources:: [models/Fintech_RFP_Response_V_1-0-0_commercial_NN.md]
+sources:: [kNNowledge/Fintech_RFP_Response_V_1-0-0_commercial_NN.md]
 file_path:: artifacts/commercial_proposal_executive.md
 
 ## NN Artifact: Pricing Breakdown Sheet
@@ -27,5 +27,5 @@ summary:: Mathematical staffing cost matrix and blended hourly pricing breakdown
 status:: verified
 tags:: [pricing, spreadsheet, finance]
 produced_by:: RFP Commercial Response Pipeline
-sources:: [models/Consulting_Team_Matrix_V_1-0-0_organization_NN.md]
+sources:: [kNNowledge/Consulting_Team_Matrix_V_1-0-0_organization_NN.md]
 file_path:: artifacts/pricing_breakdown_sheet.md

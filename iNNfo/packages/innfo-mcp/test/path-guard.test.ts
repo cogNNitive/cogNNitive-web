@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { isInsideRoot, isSafeRelativeId } from '../src/tools/path-guard.js'
-import { findModelFile } from '../src/tools/spec.js'
+import { findKnowledgeFile } from '../src/tools/spec.js'
 import { toLocalFilePath } from '../src/tools/resolver-node.js'
 
 describe('isSafeRelativeId', () => {
@@ -15,7 +15,7 @@ describe('isSafeRelativeId', () => {
   it('rejects parent-directory traversal in either separator', () => {
     expect(isSafeRelativeId('../secrets')).toBe(false)
     expect(isSafeRelativeId('..\\secrets')).toBe(false)
-    expect(isSafeRelativeId('models/../../etc/passwd')).toBe(false)
+    expect(isSafeRelativeId('kNNowledge/../../etc/passwd')).toBe(false)
   })
 
   it('rejects absolute, drive-qualified and UNC paths', () => {
@@ -31,7 +31,7 @@ describe('isSafeRelativeId', () => {
 
 describe('isInsideRoot', () => {
   it('accepts a path within the root', () => {
-    expect(isInsideRoot('/ws', '/ws/models/a_NN.md')).toBe(true)
+    expect(isInsideRoot('/ws', '/ws/kNNowledge/a_NN.md')).toBe(true)
   })
 
   it('rejects the root itself', () => {
@@ -48,7 +48,7 @@ describe('isInsideRoot', () => {
   })
 })
 
-describe('findModelFile containment', () => {
+describe('findKnowledgeFile containment', () => {
   let root: string
   let outside: string
 
@@ -67,15 +67,15 @@ describe('findModelFile containment', () => {
   })
 
   it('still resolves a legitimate model inside the workspace', async () => {
-    const found = await findModelFile(root, 'legit')
+    const found = await findKnowledgeFile(root, 'legit')
     expect(found).not.toBeNull()
     await expect(stat(found as string)).resolves.toBeDefined()
   })
 
   it('refuses to resolve a model outside the workspace root', async () => {
-    expect(await findModelFile(root, '../outside/secret')).toBeNull()
-    expect(await findModelFile(root, '..\\outside\\secret')).toBeNull()
-    expect(await findModelFile(root, join(outside, 'secret'))).toBeNull()
+    expect(await findKnowledgeFile(root, '../outside/secret')).toBeNull()
+    expect(await findKnowledgeFile(root, '..\\outside\\secret')).toBeNull()
+    expect(await findKnowledgeFile(root, join(outside, 'secret'))).toBeNull()
   })
 })
 

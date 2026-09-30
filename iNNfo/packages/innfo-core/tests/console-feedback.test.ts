@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const consoleDir = join(here, '..', '..', '..', 'specs', 'templates', 'console')
+const consoleDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'console')
 const schemaPath = join(consoleDir, 'feedback.schema.json')
 const runtimePath = join(consoleDir, 'innfo-runtime.js')
 
@@ -23,8 +23,8 @@ function loadSchema(): Record<string, unknown> {
 function validFeedback(): Record<string, unknown> {
   return {
     meta: {
-      source_model: 'Ghostbusters',
-      source_model_version: 'V_0-2-1',
+      source_knowledge: 'Ghostbusters',
+      source_knowledge_version: 'V_0-2-1',
       artifact: 'Ghostbusters_V_0-2-1_console.html',
       artifact_version: '0.1.0',
       exported_at: '2026-09-09T12:00:00Z',
@@ -116,16 +116,16 @@ describe('validateFeedback (runtime validator)', () => {
     expect(result.errors.some((e) => e.includes('fb-001'))).toBe(true)
   })
 
-  it('rejects a malformed source_model_version', () => {
+  it('rejects a malformed source_knowledge_version', () => {
     const { validateFeedback } = loadRuntime() as unknown as {
       validateFeedback: (doc: unknown) => { ok: boolean; errors: string[] }
     }
     const doc = validFeedback()
     const meta = doc['meta'] as Record<string, unknown>
-    meta['source_model_version'] = '0.2.1'
+    meta['source_knowledge_version'] = '0.2.1'
     const result = validateFeedback(doc)
     expect(result.ok).toBe(false)
-    expect(result.errors.some((e) => e.includes('source_model_version'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('source_knowledge_version'))).toBe(true)
   })
 
   it('rejects exported_at without seconds precision', () => {

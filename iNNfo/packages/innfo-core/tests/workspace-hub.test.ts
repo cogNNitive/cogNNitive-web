@@ -4,8 +4,8 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const hubPath = join(here, '..', '..', '..', 'specs', 'templates', 'workspace', 'assets', 'workspace_hub.html')
-const procedurePath = join(here, '..', '..', '..', 'specs', 'templates', 'workspace', 'procedures', 'compile_workspace_hub_NN.md')
+const hubPath = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'workspace', 'assets', 'workspace_hub.html')
+const procedurePath = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'workspace', 'procedures', 'compile_workspace_hub_NN.md')
 
 function readHub(): string {
   return readFileSync(hubPath, 'utf8')

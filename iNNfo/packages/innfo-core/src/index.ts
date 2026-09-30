@@ -1,10 +1,11 @@
 export * from './types/index.js'
+export * from './layout.js'
 
 export {
   parseYaml,
   parseFrontmatter,
-  parseModel,
-  serializeModel,
+  parseKnowledge,
+  serializeKnowledge,
   parseIndexBlock,
   parseMarkdownTable,
   getSectionType,
@@ -19,43 +20,43 @@ export {
   FIELD_DEFINITION,
   MARKER_DEFINITION,
   MATRIX_DEFINITION,
-  extractTemplateSchema,
-  extractTemplateSchemaFromContent,
+  extractBlueprintSchema,
+  extractBlueprintSchemaFromContent,
   extractMetaschema,
-  validateTemplateAgainstMetaschema,
+  validateBlueprintAgainstMetaschema,
   checkElementsAgainstSchema,
   checkWidgetConfig,
-  resolveTemplateSchema,
+  resolveBlueprintSchema,
   canonicalizeDefinition,
   applyAliasToSchema,
   findDeclaredField,
-  CANONICAL_TEMPLATES,
-  findCanonicalTemplate,
+  CANONICAL_BLUEPRINTS,
+  findCanonicalBlueprint,
   getCanonicalSpecContent,
-  listCanonicalTemplates,
+  listCanonicalBlueprints,
 } from './schema/index.js'
 export type {
-  TemplateSchema,
+  BlueprintSchema,
   SchemaCheckOptions,
   IncludeResolver,
-  ResolvedTemplateSchema,
-  CanonicalTemplate,
+  ResolvedBlueprintSchema,
+  CanonicalBlueprint,
 } from './schema/index.js'
 
 export {
   getSpecForLevel,
-  getTemplate,
+  getBlueprint,
   getFormatSpec,
   getDefiNNe,
   SpecResolutionError,
-  resolveTemplatePath,
-  getTemplateSearchPaths,
-  UnresolvedTemplateError,
+  resolveBlueprintPath,
+  getBlueprintSearchPaths,
+  UnresolvedBlueprintError,
 } from './resolver.js'
-export type { SpecResolver, MultiStoreResolverOptions, SpecTemplateLocation } from './resolver.js'
+export type { SpecResolver, MultiStoreResolverOptions, SpecBlueprintLocation } from './resolver.js'
 
 export {
-  validateModel,
+  validateKnowledge,
   validateDocument,
   validateFormatContent,
   validateFormatSyntax,
@@ -71,7 +72,7 @@ export type {
   ReferenceDiagnostic,
   DocumentValidation,
   SubmodelResolver,
-  ValidateModelOptions,
+  ValidateKnowledgeOptions,
   QualifiedRef,
   SourceResolver,
   SourceResolution,
@@ -145,8 +146,8 @@ export type {
   FreshnessField,
   TemplateResolution,
 } from './workspace/integrity/report.js'
-export { listModels, resolveSpecVersionFromFilename } from './helpers.js'
-export type { ModelInfo } from './helpers.js'
+export { listKnowledge, resolveSpecVersionFromFilename } from './helpers.js'
+export type { KnowledgeInfo } from './helpers.js'
 export { applyMutation, updateReferenceString, updateWikiLinks } from './mutate.js'
 export type { MutationResult } from './mutate.js'
 export { buildAgentModificationBlock } from './agentModification.js'
@@ -158,4 +159,4 @@ export { loadBaseline, fingerprint, diffNewOnly, normalizeBaselinePath } from '.
 export type { ValidationBaseline, BaselineEntry, BaselineDiff } from './validator/baseline.js'
 export { deriveMatrixWidgetType, normalizeMatrixDecl, scaleRangeFor } from './matrix.js'
 export type { MatrixWidgetType } from './matrix.js'
-export { mergeModels } from './merge.js'
+export { mergeKnowledge } from './merge.js'

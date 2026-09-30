@@ -44,7 +44,7 @@ describe('export-console CLI test suite', () => {
 
     const modelA = `---
 title: "Business Model"
-model_version: "V_0-2-5"
+knowledge_version: "V_0-2-5"
 level: 3
 ---
 
@@ -57,7 +57,7 @@ level: 3
 `
     const modelB = `---
 title: "Procedures Model"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 level: 3
 ---
 
@@ -69,7 +69,7 @@ level: 3
 `
     const modelC = `---
 title: "Metrics Model"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 level: 3
 ---
 
@@ -200,7 +200,7 @@ level: 3
 
       // Bump version in model frontmatter without recompiling -> version_mismatch
       const modifiedContent = await readFile(join(tempDir, 'models', 'business_V_0-2-5_NN.md'), 'utf-8')
-      const bumpedContent = modifiedContent.replace('model_version: "V_0-2-5"', 'model_version: "V_0-3-0"')
+      const bumpedContent = modifiedContent.replace('knowledge_version: "V_0-2-5"', 'knowledge_version: "V_0-3-0"')
       await writeFile(join(tempDir, 'models', 'business_V_0-2-5_NN.md'), bumpedContent, 'utf-8')
 
       res = await runCli([tempDir, '--status'])
@@ -289,13 +289,13 @@ level: 3
       const config = JSON.parse(configMatch[1])
 
       const bundle = await readFile(
-        resolve(here, '..', 'iNNfo', 'specs', 'templates', 'console', 'innfo-console.bundle.js'),
+        resolve(here, '..', 'iNNfo', 'specs', 'bluepriNNts', 'console', 'innfo-console.bundle.js'),
         'utf-8',
       )
       const version = bundle.match(/\bVersion (\d+\.\d+\.\d+)\./)[1]
       assert.equal(
         config.runtime.cdn,
-        `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v${version}/iNNfo/specs/templates/console/innfo-console.bundle.js`,
+        `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v${version}/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js`,
       )
     })
 
@@ -312,7 +312,7 @@ level: 3
       const htmlContent = await readFile(htmlPath, 'utf-8')
 
       const bundle = await readFile(
-        resolve(here, '..', 'iNNfo', 'specs', 'templates', 'console', 'innfo-console.bundle.js'),
+        resolve(here, '..', 'iNNfo', 'specs', 'bluepriNNts', 'console', 'innfo-console.bundle.js'),
         'utf-8',
       )
       const version = bundle.match(/\bVersion (\d+\.\d+\.\d+)\./)[1]
@@ -329,13 +329,13 @@ level: 3
     it('runs standalone next to the console assets without scripts/lib or manifest', async () => {
       const repoRoot = resolve(here, '..')
       const toolsDir = join(tempDir, 'tools')
-      const consoleDir = join(tempDir, 'iNNfo', 'specs', 'templates', 'console')
+      const consoleDir = join(tempDir, 'iNNfo', 'specs', 'bluepriNNts', 'console')
       await mkdir(toolsDir, { recursive: true })
       await mkdir(consoleDir, { recursive: true })
       await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
       for (const name of ['artifact_shell.html', 'innfo-console.bundle.js']) {
         await copyFile(
-          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
+          join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console', name),
           join(consoleDir, name),
         )
       }
@@ -355,7 +355,7 @@ level: 3
 
     it('falls back to the legacy artifact_blueprint.html name in an installed console dir', async () => {
       const repoRoot = resolve(here, '..')
-      const consoleSrc = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+      const consoleSrc = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
       const assetsDir = join(tempDir, 'legacy-console')
       const toolsDir = join(tempDir, 'elsewhere', 'tools')
       await mkdir(assetsDir, { recursive: true })
@@ -379,7 +379,7 @@ level: 3
 
     it('prefers artifact_shell.html over the legacy name when both exist in a dir', async () => {
       const repoRoot = resolve(here, '..')
-      const consoleSrc = join(repoRoot, 'iNNfo', 'specs', 'templates', 'console')
+      const consoleSrc = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
       const assetsDir = join(tempDir, 'both-console')
       const toolsDir = join(tempDir, 'elsewhere', 'tools')
       await mkdir(assetsDir, { recursive: true })
@@ -411,7 +411,7 @@ level: 3
       await copyFile(resolve(here, 'export-console.mjs'), join(toolsDir, 'export-console.mjs'))
       for (const name of ['artifact_shell.html', 'innfo-console.bundle.js']) {
         await copyFile(
-          join(repoRoot, 'iNNfo', 'specs', 'templates', 'console', name),
+          join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console', name),
           join(assetsDir, name),
         )
       }

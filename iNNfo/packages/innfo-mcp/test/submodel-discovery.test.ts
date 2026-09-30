@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { findModelFile } from '../src/tools/spec.js'
-import { readModel } from '../src/tools/list-read.js'
-import { validateModel } from '../src/tools/mutate.js'
+import { findKnowledgeFile } from '../src/tools/spec.js'
+import { readKnowledge } from '../src/tools/list-read.js'
+import { validateKnowledge } from '../src/tools/mutate.js'
 
 describe('MCP Submodel Discovery & Resolver (Task 4.2)', () => {
   let tempDir: string
@@ -17,7 +17,7 @@ describe('MCP Submodel Discovery & Resolver (Task 4.2)', () => {
     await rm(tempDir, { recursive: true, force: true })
   })
 
-  describe('findModelFile & readModel with nested subdirectories', () => {
+  describe('findKnowledgeFile & readKnowledge with nested subdirectories', () => {
     it('discovers and reads submodels located in nested subdirectories', async () => {
       const nestedDir = join(tempDir, 'models', 'subsystems', 'auth')
       await mkdir(nestedDir, { recursive: true })
@@ -29,7 +29,7 @@ level: 3
 parent_spec:
   name: security_spec
   url: https://example.com/sec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Security Tokens
 ---
 # NN Index
@@ -37,22 +37,22 @@ title: Security Tokens
 `
       await writeFile(filePath, content, 'utf-8')
 
-      // Test findModelFile by clean stem
-      const foundPath = await findModelFile(tempDir, 'Tokens_V_0-1-0_security')
+      // Test findKnowledgeFile by clean stem
+      const foundPath = await findKnowledgeFile(tempDir, 'Tokens_V_0-1-0_security')
       expect(foundPath).toBe(filePath)
 
-      // Test findModelFile by raw filename
-      const foundByFilename = await findModelFile(tempDir, 'Tokens_V_0-1-0_security_NN.md')
+      // Test findKnowledgeFile by raw filename
+      const foundByFilename = await findKnowledgeFile(tempDir, 'Tokens_V_0-1-0_security_NN.md')
       expect(foundByFilename).toBe(filePath)
 
-      // Test readModel by clean stem
-      const model = await readModel(tempDir, 'Tokens_V_0-1-0_security')
+      // Test readKnowledge by clean stem
+      const model = await readKnowledge(tempDir, 'Tokens_V_0-1-0_security')
       expect(model).toBeDefined()
       expect(model?.frontmatter.title).toBe('Security Tokens')
     })
   })
 
-  describe('validateModel with SubmodelResolver warnings', () => {
+  describe('validateKnowledge with SubmodelResolver warnings', () => {
     beforeEach(async () => {
       // Create specs directory with parent template declaring a model-typed field
       const specsDir = join(tempDir, 'specs')
@@ -61,7 +61,7 @@ title: Security Tokens
       const templateContent = `---
 spec_version: V_1-0-0
 level: 2
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Architecture Template
 ---
 # NN Concept Definition
@@ -71,8 +71,8 @@ type:: list
 # NN Field Definition
 ## NN Field Definition: submodel_link
 concept:: Components
-type:: model
-target_template:: subcomponent_template
+type:: knowledge
+target_blueprint:: subcomponent_template
 `
       await writeFile(join(specsDir, 'app_template_NN.md'), templateContent, 'utf-8')
 
@@ -83,7 +83,7 @@ target_template:: subcomponent_template
       const subcomponentTemplateContent = `---
 spec_version: V_1-0-0
 level: 2
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Subcomponent Template
 ---
 # NN Concept Definition
@@ -98,7 +98,7 @@ level: 3
 parent_spec:
   name: subcomponent_template
   url: https://example.com/subcomponent_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Valid Subcomponent
 ---
 # NN Sub
@@ -112,7 +112,7 @@ level: 3
 parent_spec:
   name: other_template
   url: https://example.com/other_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Mismatched Subcomponent
 ---
 # NN Sub
@@ -128,15 +128,15 @@ level: 3
 parent_spec:
   name: app_template
   url: https://example.com/app_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Model
 ---
 # NN Components
 ## NN Components: Engine
-submodel_link:: [[models/missing_subcomponent_NN.md]]
+submodel_link:: [[kNNowledge/missing_subcomponent_NN.md]]
 `
 
-      const res = await validateModel(
+      const res = await validateKnowledge(
         tempDir,
         undefined,
         modelContent,
@@ -156,15 +156,15 @@ level: 3
 parent_spec:
   name: app_template
   url: https://example.com/app_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Model
 ---
 # NN Components
 ## NN Components: Engine
-submodel_link:: [[models/mismatched_subcomponent_NN.md]]
+submodel_link:: [[kNNowledge/mismatched_subcomponent_NN.md]]
 `
 
-      const res = await validateModel(
+      const res = await validateKnowledge(
         tempDir,
         undefined,
         modelContent,
@@ -184,15 +184,15 @@ level: 3
 parent_spec:
   name: app_template
   url: https://example.com/app_template_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: App Model
 ---
 # NN Components
 ## NN Components: Engine
-submodel_link:: [[models/valid_subcomponent_NN.md]]
+submodel_link:: [[kNNowledge/valid_subcomponent_NN.md]]
 `
 
-      const res = await validateModel(
+      const res = await validateKnowledge(
         tempDir,
         undefined,
         modelContent,

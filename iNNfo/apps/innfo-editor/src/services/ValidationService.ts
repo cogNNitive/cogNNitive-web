@@ -1,15 +1,15 @@
-import { useModelStore } from '../stores/modelStore'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { validateFormatContent } from '../shared/validator'
 import type { ValidationReport } from '../shared/validation-types'
 
 export class ValidationService {
   constructor(
-    private modelStore = useModelStore(),
+    private knowledgeStore = useKnowledgeStore(),
     private showToast: (msg: string, type: 'success' | 'warning' | 'error') => void,
   ) {}
 
   async runValidation(selectedNodeId: string): Promise<ValidationReport | null> {
-    const node = this.modelStore.getNode(selectedNodeId)
+    const node = this.knowledgeStore.getNode(selectedNodeId)
     if (!node) {
       this.showToast('Selected node not found in model store.', 'error')
       return null

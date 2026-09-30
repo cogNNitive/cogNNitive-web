@@ -185,7 +185,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Trash2 } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { commitFieldValue } from '../../shared/editAttribution'
 import {
   MATRIX_DEFS_KEY,
@@ -193,12 +193,12 @@ import {
   type MatrixDef,
 } from '../../composables/useMatrixDefinitions'
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 
 const rootNode = computed(() => {
-  const nonSpecId = modelStore.rootIds.find((id) => !id.startsWith('spec:'))
+  const nonSpecId = knowledgeStore.rootIds.find((id) => !id.startsWith('spec:'))
   if (!nonSpecId) return null
-  return modelStore.getNode(nonSpecId)
+  return knowledgeStore.getNode(nonSpecId)
 })
 
 const matrixDefs = computed<MatrixDef[]>({
@@ -213,7 +213,7 @@ const matrixDefs = computed<MatrixDef[]>({
 // Derive concept types from actual nodes
 const allTypes = computed(() => {
   const types = new Set<string>()
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (node.type) types.add(node.type)
   }
   return [...types].sort()
@@ -227,7 +227,7 @@ function saveDefs() {
   // Read current defs from the reactive computed
   const raw = matrixDefs.value
   if (raw) {
-    commitFieldValue(modelStore, root.id, MATRIX_DEFS_KEY, raw, { kind: 'user', id: 'anonymous' })
+    commitFieldValue(knowledgeStore, root.id, MATRIX_DEFS_KEY, raw, { kind: 'user', id: 'anonymous' })
   }
 }
 
@@ -301,7 +301,7 @@ function addMatrixRow() {
     label: '',
   }
   current.push(newDef)
-  commitFieldValue(modelStore, root.id, MATRIX_DEFS_KEY, current, { kind: 'user', id: 'anonymous' })
+  commitFieldValue(knowledgeStore, root.id, MATRIX_DEFS_KEY, current, { kind: 'user', id: 'anonymous' })
 }
 
 function removeMatrixRow(index: number) {
@@ -309,6 +309,6 @@ function removeMatrixRow(index: number) {
   if (!root) return
   const current = matrixDefs.value ? [...matrixDefs.value] : []
   current.splice(index, 1)
-  commitFieldValue(modelStore, root.id, MATRIX_DEFS_KEY, current, { kind: 'user', id: 'anonymous' })
+  commitFieldValue(knowledgeStore, root.id, MATRIX_DEFS_KEY, current, { kind: 'user', id: 'anonymous' })
 }
 </script>

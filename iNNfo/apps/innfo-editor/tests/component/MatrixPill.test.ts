@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import MatrixPill from '../../src/components/editor/MatrixPill.vue'
 import Pill from '../../src/components/editor/Pill.vue'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 
 describe('MatrixPill component', () => {
   beforeEach(() => {
@@ -24,8 +24,8 @@ describe('MatrixPill component', () => {
   })
 
   it('renders source and target as unified Pill components, colored by concept, with element counts', () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph(
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph(
       {
         'spec:business': {
           id: 'spec:business',

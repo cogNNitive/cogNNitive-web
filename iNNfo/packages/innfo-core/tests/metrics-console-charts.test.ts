@@ -12,8 +12,8 @@ import { createRequire } from 'node:module'
 // (vendored, no eval, pure data). They FAIL (RED) until the runtime ships the
 // helpers and the registry/bundle are regenerated.
 const here = dirname(fileURLToPath(import.meta.url))
-const consoleDir = join(here, '..', '..', '..', 'specs', 'templates', 'console')
-const metricsDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics')
+const consoleDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'console')
+const metricsDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics')
 const runtimePath = join(consoleDir, 'innfo-runtime.js')
 const registryPath = join(consoleDir, 'needs-registry.json')
 const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
@@ -23,7 +23,7 @@ const harnessPath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'scripts',
   'verify.harness.js',

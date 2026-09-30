@@ -15,12 +15,12 @@ const harnessPath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'metrics',
   'scripts',
   'verify.harness.js',
 )
-const metricsDir = join(here, '..', '..', '..', 'specs', 'templates', 'metrics')
+const metricsDir = join(here, '..', '..', '..', 'specs', 'bluepriNNts', 'metrics')
 const nodeRequire = createRequire(import.meta.url)
 
 interface SlotContractApi {
@@ -49,8 +49,8 @@ function loadContract(): SlotContractApi {
 
 const REQUIRED_KEYS_EXPECTED = [
   'model',
-  'model_version',
-  'source_model',
+  'knowledge_version',
+  'source_knowledge',
   'generated_at',
   'months',
   'historyMonths',
@@ -70,9 +70,9 @@ describe('metrics slot contract: meta -> innfo-model map', () => {
 
   it('maps a complete meta object as ok with zero missing keys', () => {
     const meta = {
-      model: 'models/Ghostbusters_V_0-1-0_metrics_NN.md',
-      model_version: 'V_0-1-0',
-      source_model: 'models/source-figures_NN.md',
+      model: 'kNNowledge/Ghostbusters_V_0-1-0_metrics_NN.md',
+      knowledge_version: 'V_0-1-0',
+      source_knowledge: 'kNNowledge/source-figures_NN.md',
       generated_at: '2026-09-11',
       months: 12,
       historyMonths: 0,
@@ -89,9 +89,9 @@ describe('metrics slot contract: meta -> innfo-model map', () => {
 
   it('fails NAMING the missing key when one required meta key is absent', () => {
     const meta = {
-      model: 'models/Ghostbusters_V_0-1-0_metrics_NN.md',
-      model_version: 'V_0-1-0',
-      source_model: 'models/source-figures_NN.md',
+      model: 'kNNowledge/Ghostbusters_V_0-1-0_metrics_NN.md',
+      knowledge_version: 'V_0-1-0',
+      source_knowledge: 'kNNowledge/source-figures_NN.md',
       generated_at: '2026-09-11',
       months: 12,
       historyMonths: 0,

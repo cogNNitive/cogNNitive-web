@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BlockSheet from './BlockSheet.vue'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useMetamodelStore } from '../../stores/metamodelStore'
 import { useUiStore } from '../../stores/uiStore'
-import type { ModelNode } from '../../model/types'
+import type { KnowledgeNode } from '../../model/types'
 import { Search } from 'lucide-vue-next'
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const metamodelStore = useMetamodelStore()
 const uiStore = useUiStore()
 
@@ -33,9 +33,9 @@ const matchingNodes = computed(() => {
     return []
   }
 
-  const results: ModelNode[] = []
+  const results: KnowledgeNode[] = []
 
-  for (const node of Object.values(modelStore.nodes)) {
+  for (const node of Object.values(knowledgeStore.nodes)) {
     if (node.kind === 'root' || node.id.startsWith('spec:')) continue
 
     const conceptName =
@@ -47,8 +47,8 @@ const matchingNodes = computed(() => {
     }
 
     // Calculate effective tags (node tags + concept-level tags from root)
-    const activeRootId = modelStore.activeNodeId
-    const rootNode = activeRootId ? modelStore.getNode(activeRootId) : null
+    const activeRootId = knowledgeStore.activeNodeId
+    const rootNode = activeRootId ? knowledgeStore.getNode(activeRootId) : null
     const conceptTags = rootNode?.conceptTags?.[conceptName] || []
     const effectiveTags = Array.from(new Set([...(node.tags || []), ...conceptTags]))
 
@@ -103,14 +103,14 @@ const matchingNodes = computed(() => {
   return results
 })
 
-function getConceptFieldsForNode(node: ModelNode) {
+function getConceptFieldsForNode(node: KnowledgeNode) {
   const conceptName = node.conceptBinding?.name ?? node.name ?? node.type
   const metamodelFields =
     metamodelStore.getConceptFields(conceptName) ?? metamodelStore.getConceptFields(node.type) ?? []
   return metamodelFields
 }
 
-function toBlock(node: ModelNode) {
+function toBlock(node: KnowledgeNode) {
   const fields: Record<string, any> = {}
   if (node.fields) {
     for (const [k, fv] of Object.entries(node.fields)) {

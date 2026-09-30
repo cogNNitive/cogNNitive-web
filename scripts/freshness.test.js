@@ -35,7 +35,7 @@ templates: []
 console_assets:
   - name: innfo-console
     repo: cogNNitive/cogNNitive
-    file: iNNfo/specs/templates/console/innfo-console.bundle.js
+    file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     version: "0.2.0"
     ref_key: innfo-console
 workflows: []
@@ -93,8 +93,8 @@ function main() {
 
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '3\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': 'iNNfo/specs/templates/business/spec_01.md\n',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '3\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': 'iNNfo/specs/bluepriNNts/business/spec_01.md\n',
 
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
@@ -103,8 +103,8 @@ function main() {
 
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const subsystems = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     assert.strictEqual(subsystems.skills.commitsSincePin, 9, 'skills drift must be 9');
@@ -129,16 +129,16 @@ function main() {
       'rev-parse skills-v2.0.0^{commit}': new Error('fatal: ambiguous argument'),
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '0\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '0\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '',
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
       'rev-list --count innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '0\n',
       'diff --name-only innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '',
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const subsystems = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     assert.strictEqual(subsystems.skills.commitsSincePin, null, 'unresolved tag must report null, never 0');
@@ -157,16 +157,16 @@ function main() {
       'diff --name-only skills-v2.0.0..HEAD -- skills/': '',
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '0\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '0\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '',
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
       'rev-list --count innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '0\n',
       'diff --name-only innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '',
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const subsystems = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     assert.strictEqual(subsystems.skills.commitsSincePin, 0, 'zero drift must be reported as 0, not omitted');
@@ -186,16 +186,16 @@ function main() {
       'log -1 --format=%cI skills-v2.0.0': new Error('git: unexpected failure'),
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '3\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': 'iNNfo/specs/templates/business/spec_01.md\n',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '3\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': 'iNNfo/specs/bluepriNNts/business/spec_01.md\n',
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
       'rev-list --count innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '0\n',
       'diff --name-only innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '',
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const subsystems = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     assert.strictEqual(subsystems.skills.commitsSincePin, null, 'a mid-computation git failure must unresolve only that subsystem');
@@ -214,16 +214,16 @@ function main() {
       'diff --name-only skills-v2.0.0..HEAD -- skills/': '',
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '3\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '3\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '',
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
       'rev-list --count innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '0\n',
       'diff --name-only innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '',
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const first = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     const second = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
@@ -250,16 +250,16 @@ function main() {
       'diff --name-only skills-v2.0.0..HEAD -- skills/': '',
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '0\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '0\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '',
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
       'rev-list --count innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '0\n',
       'diff --name-only innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '',
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const subsystems = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     assert.strictEqual(subsystems.skills.pinnedTag, 'skills-v2.0.0', 'baseline must be the source.yaml-pinned tag, not a newer sorted tag');
@@ -278,16 +278,16 @@ function main() {
       'diff --name-only skills-v2.0.0..HEAD -- skills/': 'skills/nn-preflight/scripts/preflight-check.js\n',
       'rev-parse templates-v0.10.3^{commit}': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n',
       'log -1 --format=%cI templates-v0.10.3': '2026-09-10T00:00:00+00:00\n',
-      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '0\n',
-      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/templates/': '',
+      'rev-list --count templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '0\n',
+      'diff --name-only templates-v0.10.3..HEAD -- iNNfo/specs/bluepriNNts/': '',
       'rev-parse innfo-mcp-v0.9.0^{commit}': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n',
       'log -1 --format=%cI innfo-mcp-v0.9.0': '2026-09-01T00:00:00+00:00\n',
       'rev-list --count innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '0\n',
       'diff --name-only innfo-mcp-v0.9.0..HEAD -- iNNfo/packages/innfo-mcp/': '',
       'rev-parse innfo-console-v0.2.0^{commit}': 'cccccccccccccccccccccccccccccccccccccccc\n',
       'log -1 --format=%cI innfo-console-v0.2.0': '2026-08-01T00:00:00+00:00\n',
-      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '0\n',
-      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/templates/console/': '',
+      'rev-list --count innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '0\n',
+      'diff --name-only innfo-console-v0.2.0..HEAD -- iNNfo/specs/bluepriNNts/console/': '',
     });
     const subsystems = mod.computeFreshness({ sourceYaml: SOURCE_YAML, runGit, head: HEAD });
     for (const key of ['subsystem', 'pinnedTag', 'pinnedTagDate', 'commitsSincePin', 'filesTouched']) {

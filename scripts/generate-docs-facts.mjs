@@ -61,7 +61,7 @@ const MCP_TARGET_RELATIVE_PATH = path.join('docs', 'innfo', 'documentation', 'in
 
 const SKILLS_CATALOG_REGION = 'skills-catalog';
 const SOURCE_YAML_RELATIVE_PATH = path.join('manifest', 'source.yaml');
-const MODEL_RELATIVE_PATH = path.join('docs', 'skills', 'documentation', 'documentation_NN.md');
+const KNOWLEDGE_RELATIVE_PATH = path.join('docs', 'skills', 'documentation', 'documentation_NN.md');
 const SKILLS_TARGET_RELATIVE_PATH = path.join('docs', 'skills', 'documentation', 'README.md');
 const CANONICAL_SKILLS_SECTION = 'Canonical Skills';
 
@@ -207,7 +207,7 @@ async function runSkillsCatalogJob(cwd, check, against, execFile, log, logError)
     return 2;
   }
 
-  const modelPath = path.join(cwd, MODEL_RELATIVE_PATH);
+  const modelPath = path.join(cwd, KNOWLEDGE_RELATIVE_PATH);
   let pages;
   try {
     pages = parseNNModel(fs.readFileSync(modelPath, 'utf-8')).pages;

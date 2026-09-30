@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveTemplateSchema, validateTemplateAgainstMetaschema } from '../src/index'
+import { resolveBlueprintSchema, validateBlueprintAgainstMetaschema } from '../src/index'
 
 const specsRoot = join(import.meta.dirname!, '..', '..', '..', 'specs')
 const readSpec = (p: string): string => readFileSync(join(specsRoot, p), 'utf-8')
 
-const projectsV2 = readSpec('templates/projects/spec_NN.md')
+const projectsV2 = readSpec('bluepriNNts/projects/spec_NN.md')
 const iNNfoV2 = readSpec('iNNfo_V_0-2-0_NN.md')
 
 describe('projects_V_0-2-0 — standalone L2 resolution', () => {
   it('resolves with no errors and the renamed / added concepts', () => {
-    const { schema, errors } = resolveTemplateSchema(projectsV2)
+    const { schema, errors } = resolveBlueprintSchema(projectsV2)
     expect(errors).toEqual([])
 
     const concepts = schema.concepts.map((c) => c.name)
@@ -21,7 +21,7 @@ describe('projects_V_0-2-0 — standalone L2 resolution', () => {
   })
 
   it('re-attaches the scope field to Project roles', () => {
-    const { schema } = resolveTemplateSchema(projectsV2)
+    const { schema } = resolveBlueprintSchema(projectsV2)
     const projectRoles = schema.concepts.find((c) => c.name === 'Project roles')!
     expect(projectRoles.fields?.map((f) => f.name)).toContain('scope')
   })
@@ -29,7 +29,7 @@ describe('projects_V_0-2-0 — standalone L2 resolution', () => {
 
 describe('projects_V_0-2-0 — metaschema conformance', () => {
   it('validates green against iNNfo_V_0-2-0 (zero errors)', () => {
-    const diags = validateTemplateAgainstMetaschema(projectsV2, iNNfoV2)
+    const diags = validateBlueprintAgainstMetaschema(projectsV2, iNNfoV2)
     const errors = diags.filter((d) => d.severity === 'error')
     expect(errors, JSON.stringify(errors)).toEqual([])
   })

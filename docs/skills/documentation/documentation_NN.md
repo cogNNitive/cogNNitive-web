@@ -2,7 +2,7 @@
 level: 3
 parent_spec:
   name: "documentation_V_0-2-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/documentation/spec_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
 model_version: "V_0-2-0"
 title: "Agent Skills Documentation Model"
 ---

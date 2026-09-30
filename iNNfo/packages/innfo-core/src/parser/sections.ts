@@ -127,7 +127,7 @@ export function parseConceptSection(conceptName: string, content: string): Parse
   // Closes out an element: `description` is trimmed, so the blank lines that
   // surrounded it in the source would be lost. Both separations are recorded
   // instead, because the shipped corpus is NOT uniform about either and
-  // `serializeModel` replays whatever this element actually had.
+  // `serializeKnowledge` replays whatever this element actually had.
   const finishElement = (node: ElementNode) => {
     // Blank line between this element and the next `## NN` heading.
     node.trailingBlankLine =

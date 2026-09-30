@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
-import { validateModel } from '../src/tools/validate.js'
+import { validateKnowledge } from '../src/tools/validate.js'
 
 const rootDir = join(import.meta.dirname!, '..', 'temp-test-drift-and-gate')
 
@@ -28,7 +28,7 @@ level: 3
 parent_spec:
   name: "unknown_custom_spec_xyz"
   url: "https://unknown.invalid/specs/nonexistent_spec_NN.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Unresolvable Parent Model"
 ---
 
@@ -41,7 +41,7 @@ dangling_ref:: [[DoesNotExist]]
       const modelPath = join(rootDir, 'models', 'Broken_V_0-1-0_NN.md')
       await writeFile(modelPath, unresolvableModel, 'utf-8')
 
-      const result = await validateModel(rootDir, 'Broken_V_0-1-0_NN', undefined, undefined, false)
+      const result = await validateKnowledge(rootDir, 'Broken_V_0-1-0_NN', undefined, undefined, false)
 
       expect(result.valid).toBe(false)
       expect(result.errors.length).toBeGreaterThanOrEqual(1)
@@ -67,8 +67,8 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Typo Model"
 ---
 
@@ -80,7 +80,7 @@ importance:: high
       const modelPath = join(rootDir, 'models', 'Typo_V_0-1-0_NN.md')
       await writeFile(modelPath, businessModelWithTypo, 'utf-8')
 
-      const result = await validateModel(rootDir, 'Typo_V_0-1-0_NN', undefined, undefined, false)
+      const result = await validateKnowledge(rootDir, 'Typo_V_0-1-0_NN', undefined, undefined, false)
 
       const driftWarning = result.warnings.find(
         (w) =>
@@ -98,8 +98,8 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Cross Template Model"
 ---
 
@@ -111,7 +111,7 @@ output_status:: pending
       const modelPath = join(rootDir, 'models', 'Cross_V_0-1-0_NN.md')
       await writeFile(modelPath, businessModelWithProcedures, 'utf-8')
 
-      const result = await validateModel(rootDir, 'Cross_V_0-1-0_NN', undefined, undefined, false)
+      const result = await validateKnowledge(rootDir, 'Cross_V_0-1-0_NN', undefined, undefined, false)
 
       const crossWarning = result.warnings.find(
         (w) =>
@@ -130,8 +130,8 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Novel Concept Model"
 ---
 
@@ -142,7 +142,7 @@ title: "Novel Concept Model"
       const modelPath = join(rootDir, 'models', 'Novel_V_0-1-0_NN.md')
       await writeFile(modelPath, businessModelWithNovelConcept, 'utf-8')
 
-      const result = await validateModel(rootDir, 'Novel_V_0-1-0_NN', undefined, undefined, false)
+      const result = await validateKnowledge(rootDir, 'Novel_V_0-1-0_NN', undefined, undefined, false)
 
       const novelWarning = result.warnings.find(
         (w) =>
@@ -160,8 +160,8 @@ spec_version: "V_0-2-0"
 level: 3
 parent_spec:
   name: "business"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/business/business_V_0-2-0_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Structural Sections Model"
 ---
 
@@ -191,7 +191,7 @@ author:: Antigravity
       const modelPath = join(rootDir, 'models', 'Structural_V_0-1-0_NN.md')
       await writeFile(modelPath, validBusinessModelWithStructuralSections, 'utf-8')
 
-      const result = await validateModel(rootDir, 'Structural_V_0-1-0_NN', undefined, undefined, false)
+      const result = await validateKnowledge(rootDir, 'Structural_V_0-1-0_NN', undefined, undefined, false)
 
       // None of index, matrices, External Watch Roots, or Agent Modification should trigger CONCEPT_DRIFT_WARNING
       const driftWarnings = result.warnings.filter((w) => w.code === 'CONCEPT_DRIFT_WARNING')
@@ -208,7 +208,7 @@ level: 3
 parent_spec:
   name: "business"
   url: "business"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "BOM Model"
 ---
 
@@ -220,7 +220,7 @@ relationship_model:: B2B
       const modelPath = join(rootDir, 'models', 'BOM_V_0-1-0_NN.md')
       await writeFile(modelPath, bomContent, 'utf-8')
 
-      const result = await validateModel(rootDir, 'BOM_V_0-1-0_NN', undefined, undefined, false)
+      const result = await validateKnowledge(rootDir, 'BOM_V_0-1-0_NN', undefined, undefined, false)
       expect(result.valid).toBe(true)
       expect(result.errors).toHaveLength(0)
     })

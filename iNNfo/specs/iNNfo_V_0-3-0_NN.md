@@ -338,7 +338,7 @@ Frontmatter:
 ```yaml
 ---
 spec_version: "V_0-3-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/<name>/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
@@ -364,7 +364,7 @@ the including bluepriNNt additively.
 ---
 includes:
   - name: "base"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/base/spec_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
 ---
 ```
 

@@ -100,7 +100,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
     }
   }
 
-  const prov = provenance.buildProvenanceModel(projectDir, { projectName });
+  const prov = provenance.buildProvenanceKnowledge(projectDir, { projectName });
 
   return { projectDir, importDir, originalDir: importDir, copiedCount, provModelPath: prov.modelPath, agentsMdPath };
 }

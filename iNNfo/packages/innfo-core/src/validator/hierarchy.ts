@@ -1,4 +1,4 @@
-import type { Concept, ParsedModel, TaxonomyEdge } from '../types/index.js'
+import type { Concept, ParsedKnowledge, TaxonomyEdge } from '../types/index.js'
 import type { ReferenceDiagnostic } from './references.js'
 import { conceptsByElementName, IMPLICIT_REF_FIELDS } from './elementIndex.js'
 
@@ -16,7 +16,7 @@ import { conceptsByElementName, IMPLICIT_REF_FIELDS } from './elementIndex.js'
  * are already reported elsewhere).
  */
 export function validateTaxonomyHierarchy(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   templateConcepts: Concept[],
   templateTaxonomy?: TaxonomyEdge[],
 ): ReferenceDiagnostic[] {

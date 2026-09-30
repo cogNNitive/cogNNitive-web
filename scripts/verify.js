@@ -36,30 +36,30 @@ if (!process.env.GITHUB_TOKEN) {
   }
 }
 
-function extractDeclaredTemplates(sourceText) {
+function extractDeclaredBlueprints(sourceText) {
   /** @type {Set<string>} */
-  const declaredTemplates = new Set();
+  const declaredBlueprints = new Set();
   const matchRegex = /-\s+name:\s+([^\s\n]+)/g;
-  for (const block of ['templates:', 'frozen_templates:', 'seam_dirs:']) {
+  for (const block of ['blueprints:', 'frozen_blueprints:', 'seam_dirs:']) {
     const templatesMatch = sourceText.match(new RegExp(`(?:^|\\n)${block}\\s*\\r?\\n([\\s\\S]*?)(?=\\r?\\n[a-z_]+:|$)`));
     const templatesBlock = templatesMatch ? templatesMatch[1] : '';
     let match;
     while ((match = matchRegex.exec(templatesBlock)) !== null) {
-      declaredTemplates.add(match[1]);
+      declaredBlueprints.add(match[1]);
     }
   }
-  return declaredTemplates;
+  return declaredBlueprints;
 }
 
-function checkTemplateInventory(templatesDir, sourceYamlPath) {
+function checkBlueprintInventory(blueprintsDir, sourceYamlPath) {
   const sourceText = fs.readFileSync(sourceYamlPath, 'utf8');
-  const declaredTemplates = extractDeclaredTemplates(sourceText);
+  const declaredBlueprints = extractDeclaredBlueprints(sourceText);
 
-  const diskFolders = fs.readdirSync(templatesDir, { withFileTypes: true })
+  const diskFolders = fs.readdirSync(blueprintsDir, { withFileTypes: true })
     .filter(d => d.isDirectory() && d.name !== 'assets')
     .map(d => d.name);
 
-  const missing = diskFolders.filter(name => !declaredTemplates.has(name));
+  const missing = diskFolders.filter(name => !declaredBlueprints.has(name));
   return { ok: missing.length === 0, missing, diskFolders };
 }
 
@@ -282,13 +282,13 @@ function runVerification(options = {}) {
   run('node scripts/generate-vocabulary-doc.mjs --check', 'Check Canonical Vocabulary Doc Fresh');
 
 // 1. Template Inventory Guard: ensure every template folder is declared in manifest/source.yaml
-  const templatesDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'templates');
+  const blueprintsDir = path.join(__dirname, '..', 'iNNfo', 'specs', 'bluepriNNts');
   const sourceYamlPath = path.join(__dirname, '..', 'manifest', 'source.yaml');
 
-  if (fs.existsSync(templatesDir) && fs.existsSync(sourceYamlPath)) {
-    const { ok, missing, diskFolders } = checkTemplateInventory(templatesDir, sourceYamlPath);
+  if (fs.existsSync(blueprintsDir) && fs.existsSync(sourceYamlPath)) {
+    const { ok, missing, diskFolders } = checkBlueprintInventory(blueprintsDir, sourceYamlPath);
     if (!ok) {
-      console.error(`❌ Template Inventory Mismatch! Folders exist in specs/templates/ but are missing from manifest/source.yaml: ${missing.join(', ')}`);
+      console.error(`❌ Template Inventory Mismatch! Folders exist in specs/bluepriNNts/ but are missing from manifest/source.yaml: ${missing.join(', ')}`);
       process.exit(1);
     }
     console.log(`▶ Template Inventory Guard: all ${diskFolders.length} template folders are registered in manifest.`);
@@ -337,10 +337,10 @@ function runVerification(options = {}) {
   //    otherwise make this unreachable in CI (W2/W3, slice-1 verify report).
   run('node scripts/build-preflight-primitives.mjs --check', 'Check Preflight Primitives Bundle Fresh');
 
-  // 7. Template Catalog Drift Guard: the committed iNNfo/specs/templates/catalog.json
-  //    must match the on-disk templates tree (workspace-template-upgrade, shared
-  //    classifier input for check_workspace and the preflight CLI).
-  run('node scripts/template-catalog.mjs --check', 'Check Template Catalog Fresh');
+  // 7. Blueprint Catalog Drift Guard: the committed iNNfo/specs/bluepriNNts/catalog.json
+  //    must match the on-disk bluepriNNts tree (workspace-blueprint-upgrade, shared
+  //    classifier input for check_domain and the preflight CLI).
+  run('node scripts/blueprint-catalog.mjs --check', 'Check Blueprint Catalog Fresh');
 
   // 7b. nn-trannsform slug mirror drift guard: the committed generated mirror must
   //     match a fresh esbuild render of innfo-core's slug primitives (single
@@ -350,7 +350,7 @@ function runVerification(options = {}) {
   // 7c. Samples SSOT Drift Guard: ensure template sample files match _samples_nn/models/ SSOT
   run('node scripts/sync-samples.mjs --check', 'Check Samples Parity with _samples_nn');
 
-  // 7d. Version SSOT Drift Guard: ensure SHIPPED_TEMPLATE_VERSIONS and
+  // 7d. Version SSOT Drift Guard: ensure SHIPPED_BLUEPRINT_VERSIONS and
   //     manifest/source.yaml versions match specs and SKILL.md.
   //     Runs before step 8 so a stale manifest/source.yaml fails here first,
   //     not as a confusing rendered-doc diff.
@@ -400,6 +400,9 @@ function runVerification(options = {}) {
   // 14. Legacy Ledger & Quarantine Marker Guard
   run('node scripts/lib/legacy-ledger-guard.js', 'Legacy Ledger & Quarantine Guard');
 
+  // 15. Legacy Write Guard: retired vocabulary tokens must not reappear in runtime source
+  run('node scripts/lib/legacy-write-guard.js', 'Legacy Write Guard');
+
   console.log('\n✅ [cogNNitive Verify] All deterministic pre-checks passed.');
 }
 
@@ -408,9 +411,9 @@ if (require.main === module) {
 }
 
 module.exports = {
-  checkTemplateInventory,
+  checkBlueprintInventory,
   runVerification,
-  extractDeclaredTemplates,
+  extractDeclaredBlueprints,
   checkHandTypedFactsAtRef,
   checkDocsFactsDriftAtRef,
 };

@@ -8,8 +8,8 @@ import {
 } from '../src/index'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 import type { SubmodelResolver } from '../src/validator'
-import type { TemplateSchemaResolver } from '../src/recursiveParser/types'
-import type { TemplateSchema } from '../src/schema'
+import type { BlueprintSchemaResolver } from '../src/recursiveParser/types'
+import type { BlueprintSchema } from '../src/schema'
 
 function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHandleLike {
   const fileHandles = new Map<string, FileHandleLike>()
@@ -56,70 +56,70 @@ function createFakeDirectoryHandle(files: Record<string, string>): DirectoryHand
 describe('Recursive Submodels & Specification Alignment (Phase 4 innfo-core)', () => {
   describe('Path Resolution & Normalization', () => {
     it('normalizes Windows backslashes, collapses slashes and strips leading ./', () => {
-      expect(normalizePathKey('.\\models\\subsystems\\auth_NN.md')).toBe(
-        'models/subsystems/auth_nn.md',
+      expect(normalizePathKey('.\\kNNowledge\\subsystems\\auth_NN.md')).toBe(
+        'knnowledge/subsystems/auth_nn.md',
       )
-      expect(normalizePathKey('models//subsystems///auth_NN.md')).toBe(
-        'models/subsystems/auth_nn.md',
+      expect(normalizePathKey('kNNowledge//subsystems///auth_NN.md')).toBe(
+        'knnowledge/subsystems/auth_nn.md',
       )
       expect(normalizePathKey('./auth_NN.md')).toBe('auth_nn.md')
     })
 
     it('resolves relative paths with ./ and ../ relative to referring path directory', () => {
-      expect(resolveSubmodelPath('./tokens_NN.md', 'models/subsystems/auth_NN.md')).toBe(
-        'models/subsystems/tokens_NN.md',
+      expect(resolveSubmodelPath('./tokens_NN.md', 'kNNowledge/subsystems/auth_NN.md')).toBe(
+        'kNNowledge/subsystems/tokens_NN.md',
       )
-      expect(resolveSubmodelPath('../common/logger_NN.md', 'models/subsystems/auth_NN.md')).toBe(
-        'models/common/logger_NN.md',
+      expect(resolveSubmodelPath('../common/logger_NN.md', 'kNNowledge/subsystems/auth_NN.md')).toBe(
+        'kNNowledge/common/logger_NN.md',
       )
-      expect(resolveSubmodelPath('[[../shared/config_NN.md]]', 'models/system_NN.md')).toBe(
+      expect(resolveSubmodelPath('[[../shared/config_NN.md]]', 'kNNowledge/system_NN.md')).toBe(
         'shared/config_NN.md',
       )
     })
 
     it('resolves canonical workspace-relative paths', () => {
-      expect(resolveSubmodelPath('models/auth_NN.md', 'workspace_NN.md')).toBe('models/auth_NN.md')
-      expect(resolveSubmodelPath('[[models/auth_NN.md]]')).toBe('models/auth_NN.md')
+      expect(resolveSubmodelPath('kNNowledge/auth_NN.md', 'domaiNN_NN.md')).toBe('kNNowledge/auth_NN.md')
+      expect(resolveSubmodelPath('[[kNNowledge/auth_NN.md]]')).toBe('kNNowledge/auth_NN.md')
     })
   })
 
   describe('Multi-Level Nested Traversal (Task 4.1)', () => {
     it('parses a 3-level model hierarchy and establishes parent links', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
 ## NN Models: System Service
-path:: models/system_01.md
+path:: kNNowledge/system_01.md
 author:: architect@example.com
 `,
-        'models/system_01.md': `---
+        'kNNowledge/system_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: system_spec_01
   url: https://example.com/system_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: System Service
 ---
 # NN Subsystems
 ## NN Subsystems: Auth Subsystem
 path:: ./subsystems/auth_01.md
 `,
-        'models/subsystems/auth_01.md': `---
+        'kNNowledge/subsystems/auth_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: auth_spec_01
   url: https://example.com/auth_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Auth Subsystem
 ---
 # NN Roles
@@ -133,7 +133,7 @@ description:: Administrator role.
 
       expect(result.issues).toHaveLength(0)
 
-      const wsNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')
+      const wsNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
       const sysNode = Object.values(result.nodes).find((n) => n.name === 'system_01')
       const authNode = Object.values(result.nodes).find((n) => n.name === 'auth_01')
 
@@ -158,39 +158,39 @@ description:: Administrator role.
   describe('Cycle Detection', () => {
     it('detects circular references (A -> B -> A) and terminates without infinite loop', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root
 ---
 # NN Models
 ## NN Models: Service A
-path:: models/service_a_01.md
+path:: kNNowledge/service_a_01.md
 `,
-        'models/service_a_01.md': `---
+        'kNNowledge/service_a_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: service_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service A
 ---
 # NN Models
 ## NN Models: Service B
 path:: ./service_b_01.md
 `,
-        'models/service_b_01.md': `---
+        'kNNowledge/service_b_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: service_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service B
 ---
 # NN Models
@@ -214,13 +214,13 @@ path:: ./service_a_01.md
 
     it('handles diamond dependencies (DAG) by parsing shared submodel once without duplicate errors', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root
 ---
 # NN Models
@@ -235,7 +235,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service 1
 ---
 # NN Models
@@ -248,7 +248,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Service 2
 ---
 # NN Models
@@ -261,7 +261,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Shared Database
 ---
 # NN Tables
@@ -300,13 +300,13 @@ title: Shared Database
       const files: Record<string, string> = {}
 
       // Create 12-level deep chain: workspace_01.md -> level_1_01.md -> ... -> level_12_01.md
-      files['workspace_01.md'] = `---
+      files['domaiNN_NN.md'] = `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Level 0
 ---
 # NN Models
@@ -320,7 +320,7 @@ level: 3
 parent_spec:
   name: spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Level ${i}
 ---
 # NN Models
@@ -353,7 +353,7 @@ level: 2
 parent_spec:
   name: iNNfo_V_0-1-0
   url: https://example.com/iNNfo_V_0-1-0_NN.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Template
 ---
 
@@ -364,14 +364,14 @@ type:: list
 # NN Field Definition
 ## NN Field Definition: submodel_file
 concept:: Services
-type:: model
-target_template:: service_template_01
+type:: knowledge
+target_blueprint:: service_template_01
 `
 
     const templateWithSubmodelField = {
       spec_version: 'V_1-0-0',
       level: 2 as const,
-      model_version: 'V_0-1-0',
+      knowledge_version: 'V_0-1-0',
       title: 'Architecture Template',
       rawContent: templateContent,
       concepts: [
@@ -380,8 +380,8 @@ target_template:: service_template_01
           fields: [
             {
               name: 'submodel_file',
-              type: 'model' as const,
-              target_template: 'service_template_01',
+              type: 'knowledge' as const,
+              target_blueprint: 'service_template_01',
             },
           ],
         },
@@ -395,12 +395,12 @@ level: 3
 parent_spec:
   name: architecture_template
   url: https://example.com/arch.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Model
 ---
 # NN Services
 ## NN Services: Payment Service
-submodel_file:: [[models/nonexistent_payment_01.md]]
+submodel_file:: [[kNNowledge/nonexistent_payment_01.md]]
 `
 
       const mockResolver: SubmodelResolver = (refPath: string) => {
@@ -432,12 +432,12 @@ level: 3
 parent_spec:
   name: architecture_template
   url: https://example.com/arch.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Model
 ---
 # NN Services
 ## NN Services: Payment Service
-submodel_file:: models/legacy_payment_01.md
+submodel_file:: kNNowledge/legacy_payment_01.md
 `
 
       const mockResolver: SubmodelResolver = () => {
@@ -463,19 +463,19 @@ submodel_file:: models/legacy_payment_01.md
       expect(warning!.message).toContain('uses template "legacy_template_99"')
     })
 
-    it('passes cleanly with no submodel warnings when submodel exists and matches target_template', () => {
+    it('passes cleanly with no submodel warnings when submodel exists and matches target_blueprint', () => {
       const content = `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: architecture_template
   url: https://example.com/arch.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Architecture Model
 ---
 # NN Services
 ## NN Services: Payment Service
-submodel_file:: [[models/payment_01.md]]
+submodel_file:: [[kNNowledge/payment_01.md]]
 `
 
       const mockResolver: SubmodelResolver = () => {
@@ -496,13 +496,13 @@ submodel_file:: [[models/payment_01.md]]
     })
   })
 
-  describe('C1 — type:: model field traversal (RecursiveParseOptions.resolveTemplateSchema)', () => {
-    const startupSchema: TemplateSchema = {
+  describe('C1 — type:: knowledge field traversal (RecursiveParseOptions.resolveBlueprintSchema)', () => {
+    const startupSchema: BlueprintSchema = {
       concepts: [
         {
           name: 'Startup',
           type: 'text',
-          fields: [{ name: 'business_model', type: 'model', target_template: 'business_V_0-1-0' }],
+          fields: [{ name: 'business_model', type: 'knowledge', target_blueprint: 'business_V_0-1-0' }],
         },
       ],
       markers: [],
@@ -513,12 +513,12 @@ submodel_file:: [[models/payment_01.md]]
     /** Simulates the POST-includes composed schema: `business_model` is only
      *  present because it was merged in from an included peer template — the
      *  template's OWN concept declares no fields of its own. */
-    const composedStartupSchema: TemplateSchema = {
+    const composedStartupSchema: BlueprintSchema = {
       concepts: [
         {
           name: 'Startup',
           type: 'text',
-          fields: [{ name: 'business_model', type: 'model', target_template: 'business_V_0-1-0' }],
+          fields: [{ name: 'business_model', type: 'knowledge', target_blueprint: 'business_V_0-1-0' }],
         },
       ],
       markers: [],
@@ -526,7 +526,7 @@ submodel_file:: [[models/payment_01.md]]
       taxonomy: [],
     }
 
-    function makeResolver(templatesByName: Record<string, TemplateSchema>): TemplateSchemaResolver {
+    function makeResolver(templatesByName: Record<string, BlueprintSchema>): BlueprintSchemaResolver {
       return ({ frontmatter }) => {
         const name = (frontmatter as { parent_spec?: { name?: string } } | undefined)?.parent_spec
           ?.name
@@ -541,7 +541,7 @@ level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -555,7 +555,7 @@ level: 3
 parent_spec:
   name: startup_V_0-1-0
   url: https://example.com/startup.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Startup
 ---
 # NN Startup
@@ -569,7 +569,7 @@ level: 3
 parent_spec:
   name: business_V_0-1-0
   url: https://example.com/business.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Business Model
 ---
 # NN Business
@@ -577,15 +577,15 @@ title: Acme Business Model
 `
 
     const files: Record<string, string> = {
-      'workspace_01.md': workspaceContent,
+      'domaiNN_NN.md': workspaceContent,
       'startups/acme_startup_01.md': startupContent,
       'startups/acme_business_01.md': businessContent,
     }
 
-    it('c1-model-field-followed: a type:: model field is extracted and enqueued when a resolver is supplied', async () => {
+    it('c1-model-field-followed: a type:: knowledge field is extracted and enqueued when a resolver is supplied', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
       })
 
       const startupNode = Object.values(result.nodes).find((n) => n.name === 'acme_startup_01')
@@ -600,7 +600,7 @@ title: Acme Business Model
     it('c1-included-model-field-followed: a model field inherited via the composed (includes-merged) schema is still followed', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': composedStartupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': composedStartupSchema }),
       })
 
       const startupNode = Object.values(result.nodes).find((n) => n.name === 'acme_startup_01')
@@ -609,7 +609,7 @@ title: Acme Business Model
       expect(startupNode!.childIds).toContain(businessNode!.id)
     })
 
-    it('c1-no-callback-is-today: without a resolver, the type:: model field is NOT followed (backward-compatible)', async () => {
+    it('c1-no-callback-is-today: without a resolver, the type:: knowledge field is NOT followed (backward-compatible)', async () => {
       const root = createFakeDirectoryHandle(files)
       const result = await recursiveParse(root)
 
@@ -623,9 +623,9 @@ title: Acme Business Model
       expect(result.issues).toHaveLength(0)
     })
 
-    it('c1-schema-stashed-on-node: the composed schema is stashed on ModelNode.templateSchema only when a resolver is supplied', async () => {
+    it('c1-schema-stashed-on-node: the composed schema is stashed on KnowledgeNode.templateSchema only when a resolver is supplied', async () => {
       const withResolver = await recursiveParse(createFakeDirectoryHandle(files), undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
       })
       const startupNodeWith = Object.values(withResolver.nodes).find(
         (n) => n.name === 'acme_startup_01',
@@ -655,27 +655,27 @@ level: 3
 parent_spec:
   name: notes_V_0-1-0
   url: https://example.com/notes.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Notes
 ---
 # NN Notes
 ## NN Notes: Entry
 `,
       }
-      const throwingResolver: TemplateSchemaResolver = () => {
+      const throwingResolver: BlueprintSchemaResolver = () => {
         throw new Error('host resolver boom')
       }
 
       const root = createFakeDirectoryHandle(throwingFiles)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: throwingResolver,
+        resolveBlueprintSchema: throwingResolver,
       })
 
       // bare path:: field extraction is unaffected by the throwing resolver
       const notesNode = Object.values(result.nodes).find((n) => n.name === 'notes_01')
       expect(notesNode).toBeDefined()
 
-      // the type:: model field was not followed — schema resolution failed for that node
+      // the type:: knowledge field was not followed — schema resolution failed for that node
       const businessNode = Object.values(result.nodes).find((n) => n.name === 'acme_business_01')
       expect(businessNode).toBeUndefined()
 
@@ -688,14 +688,14 @@ title: Notes
       ).toHaveLength(0)
     })
 
-    it('c1-diamond-from-model-field: a model reached both directly and via a type:: model field is one node with two parent edges, not a cycle', async () => {
+    it('c1-diamond-from-model-field: a model reached both directly and via a type:: knowledge field is one node with two parent edges, not a cycle', async () => {
       const diamondWorkspaceContent = `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -706,18 +706,18 @@ path:: startups/acme_business_01.md
 `
       const diamondFiles: Record<string, string> = {
         ...files,
-        'workspace_01.md': diamondWorkspaceContent,
+        'domaiNN_NN.md': diamondWorkspaceContent,
       }
       const root = createFakeDirectoryHandle(diamondFiles)
       const result = await recursiveParse(root, undefined, {
-        resolveTemplateSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
+        resolveBlueprintSchema: makeResolver({ 'startup_V_0-1-0': startupSchema }),
       })
 
       const businessNodes = Object.values(result.nodes).filter((n) => n.name === 'acme_business_01')
       expect(businessNodes).toHaveLength(1)
       const businessNode = businessNodes[0]!
 
-      const workspaceNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')
+      const workspaceNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
       const startupNode = Object.values(result.nodes).find((n) => n.name === 'acme_startup_01')
       expect(workspaceNode!.childIds).toContain(businessNode.id)
       expect(startupNode!.childIds).toContain(businessNode.id)

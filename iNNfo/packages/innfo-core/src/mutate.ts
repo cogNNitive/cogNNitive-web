@@ -1,6 +1,6 @@
-import type { ParsedModel, ElementNode, TaxonomyEdge } from './types/index.js'
+import type { ParsedKnowledge, ElementNode, TaxonomyEdge } from './types/index.js'
 import { ElementsMap } from './types/index.js'
-import type { TemplateSchema } from './schema/index.js'
+import type { BlueprintSchema } from './schema/index.js'
 import {
   CONCEPT_DEFINITION,
   FIELD_DEFINITION,
@@ -77,7 +77,7 @@ function unknownConceptMessage(conceptName: string, declaredNames: string[]): st
   return `Concept "${conceptName}" is not declared in the template. Declared concepts: ${declaredNames.join(', ')}`
 }
 
-function getModelWideElementNames(model: ParsedModel): Set<string> {
+function getKnowledgeWideElementNames(model: ParsedKnowledge): Set<string> {
   const names = new Set<string>()
   for (const [, elements] of model.elements.entries()) {
     for (const el of elements) {
@@ -88,11 +88,11 @@ function getModelWideElementNames(model: ParsedModel): Set<string> {
 }
 
 /**
- * Deep-copy a ParsedModel. `elements` is an `ElementsMap` (a class), so it is
+ * Deep-copy a ParsedKnowledge. `elements` is an `ElementsMap` (a class), so it is
  * rebuilt by hand; every other field is a plain object/array/string and clones
  * with `structuredClone`.
  */
-function cloneModel(model: ParsedModel): ParsedModel {
+function cloneKnowledge(model: ParsedKnowledge): ParsedKnowledge {
   const { elements, ...rest } = model
   const clonedElements = new ElementsMap()
   for (const [key, nodes] of elements.entries()) {
@@ -110,12 +110,12 @@ function cloneModel(model: ParsedModel): ParsedModel {
  * pre-call state — no half-applied renames.
  */
 export function applyMutation(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   op: string,
   args: Record<string, unknown>,
-  schema?: TemplateSchema,
+  schema?: BlueprintSchema,
 ): MutationResult {
-  const draft = cloneModel(model)
+  const draft = cloneKnowledge(model)
   const result = runMutation(draft, op, args, schema)
   if (result.success) {
     Object.assign(model, draft)
@@ -124,9 +124,9 @@ export function applyMutation(
 }
 
 type MutationHandler = (
-  model: ParsedModel,
+  model: ParsedKnowledge,
   args: Record<string, unknown>,
-  schema?: TemplateSchema,
+  schema?: BlueprintSchema,
 ) => MutationResult
 
 const MUTATION_HANDLERS: Record<string, MutationHandler> = {
@@ -153,10 +153,10 @@ const MUTATION_HANDLERS: Record<string, MutationHandler> = {
 const LEVEL2_ONLY_OPS = new Set(['add_concept', 'add_field', 'set_marker'])
 
 function runMutation(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   op: string,
   args: Record<string, unknown>,
-  schema?: TemplateSchema,
+  schema?: BlueprintSchema,
 ): MutationResult {
   try {
     const handler = MUTATION_HANDLERS[op]
@@ -184,7 +184,7 @@ function runMutation(
 }
 
 /** A template declares concepts as `# NN Concept Definition` body elements. */
-function addConcept(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function addConcept(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const req = requireArgs(args, ['conceptName'])
   if (!req.ok) return req.result
   const { conceptName } = req.values
@@ -215,7 +215,7 @@ function addConcept(model: ParsedModel, args: Record<string, unknown>): Mutation
 
 /** A template declares fields as `# NN Field Definition` elements whose
  *  `concept` property references the owning `Concept Definition`. */
-function addField(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function addField(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const req = requireArgs(args, ['conceptName', 'fieldName'])
   if (!req.ok) return req.result
   const { conceptName, fieldName } = req.values
@@ -245,7 +245,7 @@ function addField(model: ParsedModel, args: Record<string, unknown>): MutationRe
 }
 
 /** A template declares markers as `# NN Marker Definition` body elements. */
-function setMarker(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function setMarker(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const req = requireArgs(args, ['markerName'])
   if (!req.ok) return req.result
   const { markerName } = req.values
@@ -268,9 +268,9 @@ function setMarker(model: ParsedModel, args: Record<string, unknown>): MutationR
 }
 
 function addElement(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   args: Record<string, unknown>,
-  schema?: TemplateSchema,
+  schema?: BlueprintSchema,
 ): MutationResult {
   const req = requireArgs(args, ['conceptName', 'elementName'])
   if (!req.ok) return req.result
@@ -294,7 +294,7 @@ function addElement(
   }
 
   // Model-wide uniqueness check (R-IE-02)
-  const existingNames = getModelWideElementNames(model)
+  const existingNames = getKnowledgeWideElementNames(model)
   if (existingNames.has(elementName)) {
     return {
       success: false,
@@ -350,7 +350,7 @@ function addElement(
 }
 
 /** Edits a single field on an already-existing element (overwrite semantics). */
-function updateField(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function updateField(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const req = requireArgs(args, ['conceptName', 'elementName', 'fieldName'])
   if (!req.ok) return req.result
   const { conceptName, elementName, fieldName } = req.values
@@ -373,7 +373,7 @@ function updateField(model: ParsedModel, args: Record<string, unknown>): Mutatio
   return { success: true }
 }
 
-function removeElement(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function removeElement(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const req = requireArgs(args, ['conceptName', 'elementName'])
   if (!req.ok) return req.result
   const { conceptName, elementName } = req.values
@@ -389,7 +389,7 @@ function removeElement(model: ParsedModel, args: Record<string, unknown>): Mutat
 
 /** Renames a `Concept Definition` element, re-pointing its `Field Definition`
  *  and `Matrix Definition` elements, taxonomy edges, and rawSections. */
-function renameConcept(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function renameConcept(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const req = requireArgs(args, ['conceptName', 'newName'])
   if (!req.ok) return req.result
   const { conceptName, newName } = req.values
@@ -531,14 +531,14 @@ export function updateWikiLinks(text: string, oldName: string, newName: string):
 }
 
 /** Which field names does the schema declare as `type:: reference` (or
- *  `type:: model`) for each concept? Used to gate the rename rewrite. */
-function referenceFieldsByConcept(schema: TemplateSchema | undefined): Map<string, Set<string>> {
+ *  `type:: knowledge`) for each concept? Used to gate the rename rewrite. */
+function referenceFieldsByConcept(schema: BlueprintSchema | undefined): Map<string, Set<string>> {
   const map = new Map<string, Set<string>>()
   if (!schema) return map
   for (const concept of schema.concepts) {
     const refs = new Set<string>()
     for (const f of concept.fields ?? []) {
-      if (f.type === 'reference' || f.type === 'model') refs.add(f.name.toLowerCase())
+      if (f.type === 'reference' || f.type === 'knowledge') refs.add(f.name.toLowerCase())
     }
     map.set(concept.name.toLowerCase(), refs)
   }
@@ -546,9 +546,9 @@ function referenceFieldsByConcept(schema: TemplateSchema | undefined): Map<strin
 }
 
 function renameElement(
-  model: ParsedModel,
+  model: ParsedKnowledge,
   args: Record<string, unknown>,
-  schema?: TemplateSchema,
+  schema?: BlueprintSchema,
 ): MutationResult {
   const req = requireArgs(args, ['conceptName', 'elementName', 'newName'])
   if (!req.ok) return req.result
@@ -559,7 +559,7 @@ function renameElement(
   if (lowerOld === lowerNew) return { success: false, errors: [{ path: '', message: 'newName must differ from elementName' }] }
 
   // Model-wide uniqueness check (R-IE-02)
-  const existingNames = getModelWideElementNames(model)
+  const existingNames = getKnowledgeWideElementNames(model)
   existingNames.delete(elementName) // Remove current name for rename check
   if (existingNames.has(newName)) {
     return {
@@ -599,7 +599,7 @@ function renameElement(
 
   // Rewrite references in element fields, description, and relationships.
   // Schema-aware: a string field is only rewritten as a scalar reference when
-  // the parent template declares it `type:: reference` (or `type:: model`);
+  // the parent template declares it `type:: reference` (or `type:: knowledge`);
   // otherwise only embedded `[[...]]` wikilinks are rewritten, never a bare
   // slug-matching string (which would clobber plain data like `category:: cost`).
   const refsByConcept = referenceFieldsByConcept(schema)
@@ -652,7 +652,7 @@ function renameElement(
   return { success: true }
 }
 
-function generateIndex(model: ParsedModel, args: Record<string, unknown>): MutationResult {
+function generateIndex(model: ParsedKnowledge, args: Record<string, unknown>): MutationResult {
   const templateTaxonomy = args.taxonomy as Array<{ parent: string; child: string }> | undefined
 
   // Collect all concepts present in the model

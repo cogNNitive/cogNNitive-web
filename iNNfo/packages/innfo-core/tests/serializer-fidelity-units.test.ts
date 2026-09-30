@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseModel, serializeModel } from '../src/parser/index.js'
+import { parseKnowledge, serializeKnowledge } from '../src/parser/index.js'
 
 /**
  * Focused unit coverage for each class of round-trip defect, so a regression
@@ -24,7 +24,7 @@ function doc(body: string): string {
 
 /** parse -> serialize must return the input unchanged. */
 function expectRoundTrip(source: string) {
-  expect(serializeModel(parseModel(source))).toBe(source)
+  expect(serializeKnowledge(parseKnowledge(source))).toBe(source)
 }
 
 describe('matrix axis labels (AD-4)', () => {
@@ -38,7 +38,7 @@ describe('matrix axis labels (AD-4)', () => {
         '',
       ].join('\n'),
     )
-    const serialized = serializeModel(parseModel(source))
+    const serialized = serializeKnowledge(parseKnowledge(source))
     expect(serialized).toContain('| Metrics \\ Variables |')
     expect(serialized).not.toContain('| Row \\ Col |')
   })
@@ -54,7 +54,7 @@ describe('matrix axis labels (AD-4)', () => {
       ].join('\n'),
     )
     // `is_derived` is never set, so it exists only in the declared header.
-    expect(serializeModel(parseModel(source))).toContain('is_derived')
+    expect(serializeKnowledge(parseKnowledge(source))).toContain('is_derived')
   })
 })
 
@@ -73,7 +73,7 @@ describe('section order (AD-2)', () => {
         '',
       ].join('\n'),
     )
-    const serialized = serializeModel(parseModel(source))
+    const serialized = serializeKnowledge(parseKnowledge(source))
     expect(serialized.indexOf('# NN Analysis')).toBeLessThan(serialized.indexOf('# NN Stakeholders'))
     expectRoundTrip(source)
   })
@@ -86,7 +86,7 @@ describe('property value form (AD-1)', () => {
         '\n',
       ),
     )
-    const serialized = serializeModel(parseModel(source))
+    const serialized = serializeKnowledge(parseKnowledge(source))
     expect(serialized).toContain('needs:: [speed, accuracy]')
     expect(serialized).not.toContain('["speed","accuracy"]')
   })
@@ -95,16 +95,16 @@ describe('property value form (AD-1)', () => {
     const source = doc(
       ['# NN Stakeholders', '', '## NN Stakeholders: Alice', 'role:: lead', ''].join('\n'),
     )
-    expect(serializeModel(parseModel(source))).toContain('\nrole:: lead')
+    expect(serializeKnowledge(parseKnowledge(source))).toContain('\nrole:: lead')
   })
 
   it('preserves authored tag casing while parsing tags case-insensitively', () => {
     const source = doc(
       ['# NN Stakeholders', '', '## NN Stakeholders: Alice', 'tags:: [founder, PR]', ''].join('\n'),
     )
-    const parsed = parseModel(source)
+    const parsed = parseKnowledge(source)
     expect(parsed.elements.get('Stakeholders')![0].tags).toEqual(['founder', 'pr'])
-    expect(serializeModel(parsed)).toContain('tags:: [founder, PR]')
+    expect(serializeKnowledge(parsed)).toContain('tags:: [founder, PR]')
   })
 })
 
@@ -122,11 +122,11 @@ describe('indentation stripping (AD-3)', () => {
         '',
       ].join('\n'),
     )
-    const once = serializeModel(parseModel(damaged))
+    const once = serializeKnowledge(parseKnowledge(damaged))
     expect(once).toContain('\nrole:: lead')
     expect(once).not.toContain('\n  role:: lead')
     // And it stays converged: no residual drift on the next save.
-    expect(serializeModel(parseModel(once))).toBe(once)
+    expect(serializeKnowledge(parseKnowledge(once))).toBe(once)
   })
 })
 
@@ -142,7 +142,7 @@ describe('explicit slugs survive a save', () => {
         '',
       ].join('\n'),
     )
-    expect(serializeModel(parseModel(source))).toContain('slug:: shareholders-dr-peter-venkman')
+    expect(serializeKnowledge(parseKnowledge(source))).toContain('slug:: shareholders-dr-peter-venkman')
     expectRoundTrip(source)
   })
 
@@ -153,7 +153,7 @@ describe('explicit slugs survive a save', () => {
     const source = doc(
       ['# NN Shareholders', '', '## NN Shareholders: Alice', 'role:: founder', ''].join('\n'),
     )
-    expect(serializeModel(parseModel(source))).not.toContain('slug::')
+    expect(serializeKnowledge(parseKnowledge(source))).not.toContain('slug::')
   })
 })
 
@@ -176,7 +176,7 @@ describe('frontmatter and preamble fidelity', () => {
       'role:: lead',
       '',
     ].join('\n')
-    expect(serializeModel(parseModel(source))).toContain('workspace_id: "ghostbusters"')
+    expect(serializeKnowledge(parseKnowledge(source))).toContain('workspace_id: "ghostbusters"')
     expectRoundTrip(source)
   })
 
@@ -199,7 +199,7 @@ describe('frontmatter and preamble fidelity', () => {
       'role:: lead',
       '',
     ].join('\n')
-    expect(serializeModel(parseModel(source))).toContain('**Experimental**')
+    expect(serializeKnowledge(parseKnowledge(source))).toContain('**Experimental**')
     expectRoundTrip(source)
   })
 })

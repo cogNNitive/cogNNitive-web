@@ -4,7 +4,7 @@ import { rm, mkdir, writeFile } from 'node:fs/promises'
 import { parseFrontmatter } from '@cognnitive/innfo-core'
 import type { SpecCache } from '@cognnitive/innfo-core'
 import { collectWorkspaceDiagnostics, filterDiagnosticsForModel, fingerprint } from './validate'
-import { validateModel } from './mutate'
+import { validateKnowledge } from './mutate'
 
 vi.mock('@cognnitive/innfo-core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@cognnitive/innfo-core')>()
@@ -16,9 +16,9 @@ vi.mock('@cognnitive/innfo-core', async (importOriginal) => {
 
 const rootDir = join(import.meta.dirname!, '..', '..', 'temp-test-validate')
 const specsDir = join(rootDir, 'specs')
-const modelsDir = join(rootDir, 'models')
+const modelsDir = join(rootDir, 'kNNowledge')
 
-const TEMPLATE_NAME = 'linked_test_V_0-1-0'
+const blueprint_name = 'linked_test_V_0-1-0'
 
 const TEMPLATE_CONTENT = [
   '---',
@@ -50,9 +50,9 @@ function modelContent(title: string, body: string): string {
     '---',
     'level: 3',
     `title: "${title}"`,
-    'model_version: "V_0-1-0"',
+    'knowledge_version: "V_0-1-0"',
     'parent_spec:',
-    `  name: "${TEMPLATE_NAME}"`,
+    `  name: "${blueprint_name}"`,
     '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
     '---',
     '',
@@ -67,19 +67,19 @@ function workspaceContent(): string {
     '---',
     'spec_version: "V_0-1-0"',
     'level: 3',
-    'model_version: "V_0-0-1"',
+    'knowledge_version: "V_0-0-1"',
     'title: "Workspace Model"',
     'parent_spec:',
     '  name: "linked_test_V_0-1-0"',
     '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
     '---',
     '',
-    '# NN Models',
-    '## NN Models: Alpha',
-    'path:: models/alpha_V_0-1-0_linked_test_NN.md',
+    '# NN kNNowledge',
+    '## NN kNNowledge: Alpha',
+    'path:: kNNowledge/alpha_V_0-1-0_linked_test_NN.md',
     '',
-    '## NN Models: Beta',
-    'path:: models/beta_V_0-1-0_linked_test_NN.md',
+    '## NN kNNowledge: Beta',
+    'path:: kNNowledge/beta_V_0-1-0_linked_test_NN.md',
     '',
   ].join('\n')
 }
@@ -87,7 +87,7 @@ function workspaceContent(): string {
 async function writeWorkspace(): Promise<{ alphaPath: string; betaPath: string }> {
   await mkdir(specsDir, { recursive: true })
   await mkdir(modelsDir, { recursive: true })
-  await writeFile(join(specsDir, `${TEMPLATE_NAME}_NN.md`), TEMPLATE_CONTENT, 'utf-8')
+  await writeFile(join(specsDir, `${blueprint_name}_NN.md`), TEMPLATE_CONTENT, 'utf-8')
   await writeFile(
     join(specsDir, 'iNNfo_V_0-1-0_NN.md'),
     [
@@ -118,7 +118,7 @@ async function writeWorkspace(): Promise<{ alphaPath: string; betaPath: string }
     'utf-8',
   )
   await writeFile(betaPath, modelContent('Beta', '## NN Roles: RoleB\n'), 'utf-8')
-  await writeFile(join(rootDir, 'workspace_01.md'), workspaceContent(), 'utf-8')
+  await writeFile(join(rootDir, 'domaiNN_NN.md'), workspaceContent(), 'utf-8')
   return { alphaPath, betaPath }
 }
 
@@ -126,9 +126,9 @@ function buildCache(): SpecCache {
   return {
     specs: new Map([
       [
-        TEMPLATE_NAME,
+        blueprint_name,
         {
-          name: TEMPLATE_NAME,
+          name: blueprint_name,
           level: 2,
           parentName: 'iNNfo_V_0-1-0',
           parentUrl: 'https://example.com/iNNfo_V_0-1-0_NN.md',
@@ -137,7 +137,7 @@ function buildCache(): SpecCache {
         },
       ],
     ]),
-    chain: [TEMPLATE_NAME],
+    chain: [blueprint_name],
   }
 }
 
@@ -206,16 +206,16 @@ describe('collectWorkspaceDiagnostics / filterDiagnosticsForModel (AD-4 split)',
     expect(Array.isArray(diagnostics)).toBe(true)
   })
 
-  it('validateModel(workspace: true) composes the split and still filters to the requested model', async () => {
+  it('validateKnowledge(workspace: true) composes the split and still filters to the requested model', async () => {
     await writeWorkspace()
-    const alpha = await validateModel(
+    const alpha = await validateKnowledge(
       rootDir,
       'alpha_V_0-1-0_linked_test',
       undefined,
       undefined,
       true,
     )
-    const beta = await validateModel(
+    const beta = await validateKnowledge(
       rootDir,
       'beta_V_0-1-0_linked_test',
       undefined,
@@ -248,21 +248,21 @@ describe('collectWorkspaceDiagnostics / filterDiagnosticsForModel (AD-4 split)',
         'utf-8',
       )
       await writeFile(
-        join(rootDir, 'workspace_01.md'),
+        join(rootDir, 'domaiNN_NN.md'),
         [
           '---',
           'spec_version: "V_0-1-0"',
           'level: 3',
-          'model_version: "V_0-0-1"',
+          'knowledge_version: "V_0-0-1"',
           'title: "Unit Workspace"',
           'parent_spec:',
           '  name: "linked_test_V_0-1-0"',
           '  url: "https://example.com/linked_test_V_0-1-0_NN.md"',
           '---',
           '',
-          '# NN Models',
-          '## NN Models: Gamma',
-          'path:: models/gamma_V_0-1-0_linked_test_NN.md',
+          '# NN kNNowledge',
+          '## NN kNNowledge: Gamma',
+          'path:: kNNowledge/gamma_V_0-1-0_linked_test_NN.md',
           '',
         ].join('\n'),
         'utf-8',
@@ -285,7 +285,7 @@ const MISSING_PARENT_CONTENT = [
   '---',
   'level: 3',
   'title: "MissingParent"',
-  'model_version: "V_0-1-0"',
+  'knowledge_version: "V_0-1-0"',
   'parent_spec:',
   '  name: "missing_V_0-1-0"',
   '  url: "https://example.com/missing_V_0-1-0_NN.md"',
@@ -331,7 +331,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
       'utf-8',
     )
 
-    const result = await validateModel(
+    const result = await validateKnowledge(
       rootDir,
       undefined,
       MISSING_PARENT_CONTENT,
@@ -352,7 +352,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
   })
 
   it('Known error suppressed with backlog link (triangulation)', async () => {
-    const before = await validateModel(rootDir, undefined, MISSING_PARENT_CONTENT)
+    const before = await validateKnowledge(rootDir, undefined, MISSING_PARENT_CONTENT)
     // An unresolvable parent surfaces twice: core [PARENT_RESOLUTION_FAILED]
     // plus the MCP resolution-detail error. Both are known → both baselined.
     expect(before.errors.length).toBeGreaterThan(0)
@@ -370,7 +370,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
       'utf-8',
     )
 
-    const result = await validateModel(
+    const result = await validateKnowledge(
       rootDir,
       undefined,
       MISSING_PARENT_CONTENT,
@@ -390,7 +390,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
   })
 
   it('Missing baseline means full output (triangulation)', async () => {
-    const result = await validateModel(
+    const result = await validateKnowledge(
       rootDir,
       undefined,
       MISSING_PARENT_CONTENT,
@@ -409,7 +409,7 @@ describe('baseline differential MCP plumbing (validator-robustness 4.3)', () => 
   })
 
   it('Info diagnostics surface in warnings (triangulation): BOM warns without failing', async () => {
-    const result = await validateModel(rootDir, undefined, '\uFEFF' + MISSING_PARENT_CONTENT)
+    const result = await validateKnowledge(rootDir, undefined, '\uFEFF' + MISSING_PARENT_CONTENT)
 
     const bom = result.warnings.find((w) => w.code === 'BOM_WARNING')
     expect(bom).toBeDefined()
@@ -436,11 +436,11 @@ describe('baseline single shared implementation (robustness-coda 1.3)', () => {
       message: 'Concept  "Task"  is not defined in template',
       severity: 'error' as const,
       code: 'UNKNOWN_CONCEPT',
-      filePath: 'models\\team_NN.md',
+      filePath: 'kNNowledge\\team_NN.md',
     }
     expect(mcp.fingerprint(diag)).toBe(core.fingerprint(diag))
     expect(mcp.fingerprint(diag)).toBe(
-      'models/team_NN.md::elements.Task::UNKNOWN_CONCEPT::Concept "Task" is not defined in template',
+      'kNNowledge/team_NN.md::elements.Task::UNKNOWN_CONCEPT::Concept "Task" is not defined in template',
     )
   })
 })

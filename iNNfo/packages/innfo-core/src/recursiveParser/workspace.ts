@@ -1,6 +1,6 @@
 import type { DirectoryHandleLike, FileHandleLike } from '../fs-types.js'
-import type { ModelDriver, ModelNode } from '../types/index.js'
-import type { TemplateSchema } from '../schema/index.js'
+import type { KnowledgeDriver, KnowledgeNode } from '../types/index.js'
+import type { BlueprintSchema } from '../schema/index.js'
 import { IdentityRegistry } from '../identity.js'
 import type {
   ParseContext,
@@ -9,10 +9,12 @@ import type {
   WorklistItem,
 } from './types.js'
 import { stripMdSuffix, normalizePathKey, resolveSubmodelPath, basename } from './paths.js'
-import { parseAndRegisterModel } from './model.js'
+import { parseAndRegisterKnowledge } from './knowledge.js'
 import { attachSchemaTypedCitations } from './normalize.js'
-import { parseModel, parseFrontmatter, stripFrontmatter } from '../parser/index.js'
+import { parseKnowledge, parseFrontmatter, stripFrontmatter } from '../parser/index.js'
 import { computeModelDagTopology } from './topology.js'
+import { detectLegacy, type DomainReader } from '../legacy/detect.js'
+import { CANONICAL_DOMAIN_ENTRYPOINT } from '../layout.js'
 
 const INNFO_FILE_SUFFIX = '.md'
 const INDEX_MD = 'index.md'
@@ -115,77 +117,80 @@ function isWorkspaceManifest(name: string): boolean {
  * An overview root (A2) wins when one is present; otherwise falls back to
  * today's `workspace*.md` selection, unchanged.
  */
-function pickEntrypointName(names: string[]): string | null {
-  return names.find(isOverviewRoot) ?? names.find(isWorkspaceManifest) ?? null
+function makeDomainReader(root: DirectoryHandleLike, driver?: KnowledgeDriver): DomainReader {
+  return {
+    async list(dir: string): Promise<string[]> {
+      if (driver) {
+        try {
+          const children = await driver.listChildren(dir)
+          return children.map((c) => c.name)
+        } catch {
+          return []
+        }
+      }
+      try {
+        let current: DirectoryHandleLike = root
+        if (dir) {
+          const segments = dir.split('/').filter(Boolean)
+          for (const s of segments) {
+            current = await current.getDirectoryHandle(s)
+          }
+        }
+        const entries: string[] = []
+        for await (const [name] of current.entries()) {
+          entries.push(name)
+        }
+        return entries
+      } catch {
+        return []
+      }
+    },
+    async read(path: string): Promise<string | null> {
+      if (driver) {
+        try {
+          const m = await driver.readKnowledge(path)
+          return m.rawContent
+        } catch {
+          return null
+        }
+      }
+      try {
+        const fileHandle = await resolveFileHandle(root, path)
+        const file = await fileHandle.getFile()
+        return await file.text()
+      } catch {
+        return null
+      }
+    },
+  }
 }
 
-async function findPrimaryWorkspaceFile(
+async function findCanonicalDomainEntrypoint(
   root: DirectoryHandleLike,
-  driver?: ModelDriver,
+  driver?: KnowledgeDriver,
 ): Promise<{ path: string; name: string; content: string } | null> {
+  const target = CANONICAL_DOMAIN_ENTRYPOINT
   if (driver) {
     try {
-      const children = await driver.listChildren('')
-      const chosenName = pickEntrypointName(children.map((c) => c.name))
-      const workspaceEntry = chosenName ? children.find((c) => c.name === chosenName) : undefined
-      if (workspaceEntry) {
-        const parsed = await driver.readModel(workspaceEntry.uri || workspaceEntry.name)
-        return {
-          path: workspaceEntry.uri || workspaceEntry.name,
-          name: stripMdSuffix(basename(workspaceEntry.name)),
-          content: parsed.rawContent,
-        }
+      const parsed = await driver.readKnowledge(target)
+      return {
+        path: target,
+        name: stripMdSuffix(target),
+        content: parsed.rawContent,
       }
-    } catch (err) {
-      /* v8 ignore start */
-      if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-        console.warn(`[workspace] Primary entrypoint discovery via driver failed; attempting fallback: ${err}`)
-      }
-      /* v8 ignore stop */
-      for (const name of ['workspace_01.md', 'workspace_NN.md', 'workspace.md']) {
-        try {
-          const parsed = await driver.readModel(name)
-          return { path: name, name: stripMdSuffix(name), content: parsed.rawContent }
-        } catch (fallbackErr) {
-          /* v8 ignore start */
-          // swallow deliberately: a fallback entrypoint file may not exist.
-          if ((fallbackErr as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-            console.warn(`[workspace] Failed to read fallback entrypoint ${name}: ${fallbackErr}`)
-          }
-          /* v8 ignore stop */
-        }
-      }
+    } catch {
+      return null
     }
+  }
+
+  try {
+    const fileHandle = await root.getFileHandle(target)
+    const file = await fileHandle.getFile()
+    const content = await file.text()
+    return { path: target, name: stripMdSuffix(target), content }
+  } catch {
     return null
   }
-
-  const fileNames: string[] = []
-  for await (const [name, entry] of root.entries()) {
-    if (entry.kind === 'file') {
-      fileNames.push(name)
-    }
-  }
-
-  let candidates = fileNames
-  while (candidates.length > 0) {
-    const chosenName = pickEntrypointName(candidates)
-    if (!chosenName) break
-    try {
-      const fileHandle = await root.getFileHandle(chosenName)
-      const file = await fileHandle.getFile()
-      const content = await file.text()
-      return { path: chosenName, name: stripMdSuffix(chosenName), content }
-    } catch (err) {
-      /* v8 ignore start */
-      if (!isNotFound(err)) {
-        console.warn(`[workspace] Failed to read entrypoint candidate ${chosenName}: ${err}`)
-      }
-      /* v8 ignore stop */
-      // Drop this candidate and try the next (mirrors the pre-A2 per-name loop).
-      candidates = candidates.filter((n) => n !== chosenName)
-    }
-  }
-  return null
 }
 
 export interface ExtractedSubmodelRef {
@@ -198,7 +203,7 @@ export interface ExtractedSubmodelRef {
 export function extractSubmodelRefs(
   content: string,
   referringPath: string,
-  templateSchema?: TemplateSchema,
+  templateSchema?: BlueprintSchema,
 ): ExtractedSubmodelRef[] {
   const modelRefs: ExtractedSubmodelRef[] = []
 
@@ -246,7 +251,7 @@ export function extractSubmodelRefs(
 
   // 1. Extract path:: / file_ref:: or fields typed as model
   try {
-    const parsed = parseModel(content)
+    const parsed = parseKnowledge(content)
     const modelFieldNames = new Set<string>([
       'path',
       'file_ref',
@@ -261,7 +266,7 @@ export function extractSubmodelRefs(
     if (templateSchema?.concepts) {
       for (const c of templateSchema.concepts) {
         for (const f of c.fields ?? []) {
-          if (f.type === 'model') {
+          if (f.type === 'knowledge') {
             modelFieldNames.add(f.name.toLowerCase())
           }
         }
@@ -315,13 +320,13 @@ export function extractSubmodelRefs(
 /**
  * Links the referring model to the just-resolved child in the node graph.
  * DP1: the FIRST parent wins `parentId`; every parent gets the child in `childIds`,
- * so non-primary (diamond) edges are recoverable without a new ModelNode field (AD-02).
+ * so non-primary (diamond) edges are recoverable without a new KnowledgeNode field (AD-02).
  */
 function linkParentChild(
   ctx: ParseContext,
   referringPath: string,
   childNormKey: string,
-): { parentNode?: ModelNode; childNode?: ModelNode } {
+): { parentNode?: KnowledgeNode; childNode?: KnowledgeNode } {
   const referringNorm = normalizePathKey(resolveSubmodelPath(referringPath))
   const byPath = (key: string) =>
     Object.values(ctx.nodes).find(
@@ -338,8 +343,8 @@ function linkParentChild(
 
 /**
  * Resolves a node's composed template schema via the host-supplied
- * `options.resolveTemplateSchema`, when one was supplied. A throwing or
- * absent resolver degrades that node to today's behavior (no `type:: model`
+ * `options.resolveBlueprintSchema`, when one was supplied. A throwing or
+ * absent resolver degrades that node to today's behavior (no `type:: knowledge`
  * field following) instead of aborting the whole parse (AD-04).
  */
 function schemaFor(
@@ -347,11 +352,11 @@ function schemaFor(
   path: string,
   name: string,
   content: string,
-): TemplateSchema | undefined {
-  if (!options?.resolveTemplateSchema) return undefined
+): BlueprintSchema | undefined {
+  if (!options?.resolveBlueprintSchema) return undefined
   try {
     const fm = (parseFrontmatter(content) ?? {}) as Record<string, unknown>
-    return options.resolveTemplateSchema({ path, name, content, frontmatter: fm }) ?? undefined
+    return options.resolveBlueprintSchema({ path, name, content, frontmatter: fm }) ?? undefined
   } catch (err) {
     /* v8 ignore start */
     // swallow deliberately: an unresolvable template schema degrades to "no
@@ -363,12 +368,12 @@ function schemaFor(
 }
 
 /**
- * Parses a workspace by reading `workspace_NN.md` (or matching `workspace_*_NN.md`)
- * as the primary entry point, falling back to legacy `index.md`, or a root directory scan.
+ * Parses a domaiNN by reading `domaiNN_NN.md` as the primary entry point,
+ * detecting legacy layouts, or falling back to a root directory scan.
  */
 export async function recursiveParse(
   root: DirectoryHandleLike,
-  driver?: ModelDriver,
+  driver?: KnowledgeDriver,
   options?: RecursiveParseOptions,
 ): Promise<RecursiveParseResult> {
   const visitedPaths = new Set<string>()
@@ -380,8 +385,28 @@ export async function recursiveParse(
   }
   const elementNameToModel = new Map<string, string>()
 
-  // Step 1: Search primary entrypoint workspace_NN.md
-  const primary = await findPrimaryWorkspaceFile(root, driver)
+  // Step 0: Check for legacy signals using DomainReader and detectLegacy
+  const reader = makeDomainReader(root, driver)
+  const legacyCheck = await detectLegacy(reader)
+  if (legacyCheck.kind === 'legacy' || legacyCheck.kind === 'mixed') {
+    return {
+      nodes: {},
+      rootIds: [],
+      issues: [
+        {
+          path: '<root>',
+          message: legacyCheck.hint,
+          code: 'LEGACY_DOMAIN',
+          severity: 'error',
+        },
+      ],
+      isLegacy: true,
+      legacyResult: legacyCheck,
+    }
+  }
+
+  // Step 1: Search primary entrypoint domaiNN_NN.md
+  const primary = await findCanonicalDomainEntrypoint(root, driver)
 
   let entrypointContent: string | null = null
   let entrypointPath: string = ''
@@ -389,7 +414,7 @@ export async function recursiveParse(
   if (primary) {
     entrypointContent = primary.content
     entrypointPath = primary.path
-    await parseAndRegisterModel(
+    await parseAndRegisterKnowledge(
       primary.content,
       primary.path,
       primary.name,
@@ -397,31 +422,9 @@ export async function recursiveParse(
       elementNameToModel,
     )
     visitedPaths.add(normalizePathKey(primary.path))
-  } else {
-    // Step 2: Fallback to legacy index.md
-    try {
-      if (driver) {
-        const parsed = await driver.readModel(INDEX_MD)
-        entrypointContent = parsed.rawContent
-      } else {
-        const indexHandle = await root.getFileHandle(INDEX_MD)
-        const indexFile = await indexHandle.getFile()
-        entrypointContent = await indexFile.text()
-      }
-      entrypointPath = INDEX_MD
-      visitedPaths.add(normalizePathKey(INDEX_MD))
-    } catch (err) {
-      if (!isNotFound(err)) {
-        return {
-          nodes: {},
-          rootIds: [],
-          issues: [{ path: '<root>', message: err instanceof Error ? err.message : String(err) }],
-        }
-      }
-    }
   }
 
-  // Fallback 3: Neither workspace_NN.md nor index.md exists -> scan root for standalone .md files
+  // Fallback: domaiNN_NN.md does not exist -> scan root for standalone .md files (index.md is NOT entrypoint)
   if (!entrypointContent) {
     if (!driver) {
       const modelRefsFromScan: Array<{ name: string; path: string }> = []
@@ -429,7 +432,6 @@ export async function recursiveParse(
         if (
           entry.kind === 'file' &&
           name.endsWith(INNFO_FILE_SUFFIX) &&
-          name.toLowerCase() !== INDEX_MD &&
           !isIgnoredPath(name)
         ) {
           modelRefsFromScan.push({ name: stripMdSuffix(name), path: name })
@@ -442,13 +444,29 @@ export async function recursiveParse(
           const file = await fileHandle.getFile()
           const content = await file.text()
           visitedPaths.add(normalizePathKey(ref.path))
-          await parseAndRegisterModel(content, ref.path, ref.name, ctx, elementNameToModel)
+          await parseAndRegisterKnowledge(content, ref.path, ref.name, ctx, elementNameToModel)
         } catch (scanErr) {
           ctx.issues.push({
             path: ref.path,
             message: scanErr instanceof Error ? scanErr.message : String(scanErr),
           })
         }
+      }
+    } else {
+      try {
+        const children = await driver.listChildren('')
+        for (const child of children) {
+          if (child.name.endsWith(INNFO_FILE_SUFFIX) && !isIgnoredPath(child.name)) {
+            const parsed = await driver.readKnowledge(child.uri || child.name)
+            visitedPaths.add(normalizePathKey(child.name))
+            await parseAndRegisterKnowledge(parsed.rawContent, child.name, stripMdSuffix(child.name), ctx, elementNameToModel)
+          }
+        }
+      } catch (scanErr) {
+        ctx.issues.push({
+          path: '<root>',
+          message: scanErr instanceof Error ? scanErr.message : String(scanErr),
+        })
       }
     }
 
@@ -458,8 +476,10 @@ export async function recursiveParse(
       path: '<root>',
       message:
         rootCount > 0
-          ? `No index.md found — loaded ${rootCount} standalone model(s) from root directory`
-          : 'Missing index.md — workspace root must contain an index.md file',
+          ? `No domaiNN_NN.md found — loaded ${rootCount} standalone model(s) from root directory`
+          : 'Missing domaiNN_NN.md — domaiNN root must contain a domaiNN_NN.md file',
+      code: 'MISSING_ENTRYPOINT',
+      severity: 'warning',
     })
 
     return { nodes: ctx.nodes, rootIds: topology.rootIds, issues: ctx.issues, topology }
@@ -534,7 +554,7 @@ export async function recursiveParse(
     let content: string
     try {
       if (driver) {
-        const parsed = await driver.readModel(resolvedPath)
+        const parsed = await driver.readKnowledge(resolvedPath)
         content = parsed.rawContent
       } else {
         const fileHandle = await resolveFileHandle(root, resolvedPath)
@@ -557,7 +577,7 @@ export async function recursiveParse(
       continue
     }
 
-    await parseAndRegisterModel(content, resolvedPath, item.name, ctx, elementNameToModel)
+    await parseAndRegisterKnowledge(content, resolvedPath, item.name, ctx, elementNameToModel)
 
     // Establish parent-child relationship in graph between referring model and this model
     const { childNode } = linkParentChild(ctx, item.referringPath, normKey)

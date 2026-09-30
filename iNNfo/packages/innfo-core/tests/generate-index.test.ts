@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseModel, serializeModel, applyMutation } from '../src/index';
+import { parseKnowledge, serializeKnowledge, applyMutation } from '../src/index';
 
 describe('generate_index mutation', () => {
   it('generates index using template taxonomy', () => {
@@ -13,7 +13,7 @@ title: "Test Model"
 # NN ConceptC
 ## NN ConceptC: Element2
 `;
-    const model = parseModel(md);
+    const model = parseKnowledge(md);
     
     // Template taxonomy has edges ConceptA -> ConceptB -> ConceptC
     const templateTaxonomy = [
@@ -39,7 +39,7 @@ title: "Test Model"
 # NN ConceptB
 ## NN ConceptB: Element2
 `;
-    const model = parseModel(md);
+    const model = parseKnowledge(md);
     const templateTaxonomy = [
       { parent: 'ConceptA', child: 'ConceptB' }
     ];

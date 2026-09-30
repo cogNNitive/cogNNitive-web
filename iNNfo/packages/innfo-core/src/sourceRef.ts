@@ -95,7 +95,7 @@ export function parseSourceRef(input: string): SourceRef | null {
     }
   }
 
-  const model = clean.match(new RegExp(`^(models/[^#]+?\\.md)(?:#(${SLUG}))?$`))
+  const model = clean.match(new RegExp(`^(kNNowledge/[^#]+?\\.md)(?:#(${SLUG}))?$`))
   if (model) {
     const filePath = model[1].trim()
     return {

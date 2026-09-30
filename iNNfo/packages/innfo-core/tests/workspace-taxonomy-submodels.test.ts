@@ -3,11 +3,11 @@ import {
   recursiveParse,
   validateTaxonomyHierarchy,
   validateDocument,
-  extractTemplateSchema,
-  parseModel,
+  extractBlueprintSchema,
+  parseKnowledge,
   buildWorkspaceIndex,
 } from '../src/index'
-import type { TemplateSchema, ModelNode, RecursiveParseResult } from '../src/index'
+import type { BlueprintSchema, KnowledgeNode, RecursiveParseResult } from '../src/index'
 import { normalizeElementsIntoGraph } from '../src/recursiveParser/normalize'
 import type { DirectoryHandleLike, FileHandleLike } from '../src/fs-types'
 import type { ParseContext } from '../src/recursiveParser/types'
@@ -59,13 +59,13 @@ describe('Workspace Taxonomy and Submodels (Phase 1 innfo-core)', () => {
   describe('4.1 Core Parser: Entrypoint resolution & Models path extraction', () => {
     it('loads primary workspace_01.md entrypoint and extracts Models path submodels', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 > [!NOTE]
@@ -74,16 +74,16 @@ title: Root Workspace
 # NN Models
 
 ## NN Models: Subsystem A
-path:: models/subsystem_a_01.md
+path:: kNNowledge/subsystem_a_01.md
 status:: active
 `,
-        'models/subsystem_a_01.md': `---
+        'kNNowledge/subsystem_a_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: subsystem_spec_01
   url: https://example.com/subsystem_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Subsystem A
 ---
 # NN Components
@@ -96,7 +96,7 @@ description:: Core engine component.
       const result = await recursiveParse(rootHandle)
 
       expect(Object.keys(result.nodes).length).toBeGreaterThan(0)
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')
       expect(rootNode).toBeDefined()
       const subNode = Object.values(result.nodes).find((n) => n.name === 'subsystem_a_01')
       expect(subNode).toBeDefined()
@@ -105,25 +105,25 @@ description:: Core engine component.
 
     it('falls back to index.md when workspace_NN.md is absent', async () => {
       const files: Record<string, string> = {
-        'index.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Legacy Index Workspace
 ---
 # NN index
-* [[models/subsystem_b_01.md]]
+* [[kNNowledge/subsystem_b_01.md]]
 `,
-        'models/subsystem_b_01.md': `---
+        'kNNowledge/subsystem_b_01.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Subsystem B
 ---
 # NN Components
@@ -146,7 +146,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Standalone Model
 ---
 # NN Components
@@ -160,12 +160,12 @@ title: Standalone Model
       const soloNode = Object.values(result.nodes).find((n) => n.name === 'standalone_01')
       expect(soloNode).toBeDefined()
       expect(result.issues.length).toBeGreaterThan(0)
-      expect(result.issues[0].message).toContain('No index.md found')
+      expect(result.issues[0].message).toContain('No domaiNN_NN.md found')
     })
   })
 
-  describe('4.2 Core Validation: type:: model concepts and fields', () => {
-    it('parses type:: model concept and field definitions cleanly in extractTemplateSchema', () => {
+  describe('4.2 Core Validation: type:: knowledge concepts and fields', () => {
+    it('parses type:: knowledge concept and field definitions cleanly in extractBlueprintSchema', () => {
       const templateContent = `---
 spec_version: V_1-0-0
 level: 2
@@ -177,28 +177,28 @@ title: Workspace Template
 # NN Concept Definition
 
 ## NN Concept Definition: Models
-type:: model
+type:: knowledge
 description:: Submodel reference primitive.
 
 # NN Field Definition
 
 ## NN Field Definition: submodel_path
 concept:: Models
-type:: model
+type:: knowledge
 description:: Path to submodel file.
 `
 
-      const schema = extractTemplateSchema(parseModel(templateContent))
+      const schema = extractBlueprintSchema(parseKnowledge(templateContent))
       const modelRefConcept = schema.concepts.find((c) => c.name === 'Models')
       expect(modelRefConcept).toBeDefined()
-      expect(modelRefConcept?.type).toBe('model')
+      expect(modelRefConcept?.type).toBe('knowledge')
 
       const pathField = modelRefConcept?.fields?.find((f) => f.name === 'submodel_path')
       expect(pathField).toBeDefined()
-      expect(pathField?.type).toBe('model')
+      expect(pathField?.type).toBe('knowledge')
     })
 
-    it('validates document containing type:: model fields without unknown-type errors', () => {
+    it('validates document containing type:: knowledge fields without unknown-type errors', () => {
       const templateDoc = {
         name: 'workspace_spec_01',
         level: 2 as const,
@@ -218,12 +218,12 @@ title: Workspace Spec
 ---
 # NN Concept Definition
 ## NN Concept Definition: Models
-type:: model
+type:: knowledge
 
 # NN Field Definition
 ## NN Field Definition: path
 concept:: Models
-type:: model
+type:: knowledge
 `,
       }
 
@@ -233,7 +233,7 @@ level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Workspace Model
 ---
 > [!NOTE]
@@ -241,11 +241,11 @@ title: Workspace Model
 
 # NN Models
 ## NN Models: Engine
-path:: models/engine_01.md
+path:: kNNowledge/engine_01.md
 `
 
       const res = validateDocument(modelContent, {
-        fileName: 'workspace_01.md',
+        fileName: 'domaiNN_NN.md',
         template: templateDoc,
       })
 
@@ -266,7 +266,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Index-Free Model
 ---
 # NN Component
@@ -276,7 +276,7 @@ title: Index-Free Model
 ## NN Subcomponent: Subsystem Alpha
 `
 
-      const parsed = parseModel(modelContent)
+      const parsed = parseKnowledge(modelContent)
       expect(parsed.taxonomy).toHaveLength(0) // No # NN index section
 
       const parentTemplateTaxonomy = [{ parent: 'Component', child: 'Subcomponent' }]
@@ -289,13 +289,13 @@ title: Index-Free Model
     })
 
     it('validates taxonomy hierarchy cleanly against parent template taxonomy when model has no index section', () => {
-      const parsedModel = parseModel(`---
+      const parsedModel = parseKnowledge(`---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: spec_01
   url: https://example.com
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model
 ---
 # NN Component
@@ -321,13 +321,13 @@ parent_component:: C1
   describe('4.4 Diamond vs cycle: sidebar graph shape stability', () => {
     it('sidebar-graph-shape-stable: a diamond workspace still yields exactly one root and every node reachable from it', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -344,7 +344,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -356,7 +356,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model B
 ---
 # NN Models
@@ -390,15 +390,15 @@ path:: model_a_01.md
   })
 
   describe('buildWorkspaceIndex', () => {
-    it('index-basic-maps: a 3-model workspace populates pathToNodeId, titleToNodeIds, fileNameToNodeIds, nodeTemplate', async () => {
+    it('index-basic-maps: a 3-model workspace populates pathToNodeId, titleToNodeIds, fileNameToNodeIds, nodeBlueprint', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -415,7 +415,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -427,7 +427,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model B
 ---
 # NN Components
@@ -439,11 +439,11 @@ title: Model B
       const result = await recursiveParse(rootHandle)
       const index = buildWorkspaceIndex(result)
 
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')!
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')!
       const aNode = Object.values(result.nodes).find((n) => n.name === 'model_a_01')!
       const bNode = Object.values(result.nodes).find((n) => n.name === 'model_b_01')!
 
-      expect(index.pathToNodeId['workspace_01.md']).toBe(rootNode.id)
+      expect(index.pathToNodeId['domainn_nn.md']).toBe(rootNode.id)
       expect(index.pathToNodeId['model_a_01.md']).toBe(aNode.id)
       expect(index.pathToNodeId['model_b_01.md']).toBe(bNode.id)
 
@@ -451,15 +451,15 @@ title: Model B
       expect(index.titleToNodeIds['model a']).toEqual([aNode.id])
       expect(index.titleToNodeIds['model b']).toEqual([bNode.id])
 
-      expect(index.fileNameToNodeIds['workspace_01']).toEqual([rootNode.id])
+      expect(index.fileNameToNodeIds['domainn']).toEqual([rootNode.id])
       expect(index.fileNameToNodeIds['model_a_01']).toEqual([aNode.id])
       expect(index.fileNameToNodeIds['model_b_01']).toEqual([bNode.id])
 
-      expect(index.nodeTemplate[rootNode.id]).toEqual({
+      expect(index.nodeBlueprint[rootNode.id]).toEqual({
         name: 'workspace_spec_01',
         url: 'https://example.com/workspace_spec_01.md',
       })
-      expect(index.nodeTemplate[aNode.id]).toEqual({
+      expect(index.nodeBlueprint[aNode.id]).toEqual({
         name: 'spec_01',
         url: 'https://example.com/spec.md',
       })
@@ -467,13 +467,13 @@ title: Model B
 
     it('index-duplicate-title-error: two models sharing a title are both indexed and flagged as an error issue', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -490,7 +490,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Org
 ---
 # NN Components
@@ -502,7 +502,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Acme Org
 ---
 # NN Components
@@ -541,7 +541,7 @@ title: Acme Org
       // model name regardless of directory (identity.ts:30-32) — a parser
       // limitation orthogonal to buildWorkspaceIndex's own derivation rules,
       // which this test exercises directly.
-      const nodeA: ModelNode = {
+      const nodeA: KnowledgeNode = {
         id: 'biz-a',
         name: 'biz_01',
         parentId: null,
@@ -559,7 +559,7 @@ title: Acme Org
         rawSections: {},
         source: { path: 'a/biz_01.md' },
       }
-      const nodeB: ModelNode = {
+      const nodeB: KnowledgeNode = {
         id: 'biz-b',
         name: 'biz_01',
         parentId: null,
@@ -594,13 +594,13 @@ title: Acme Org
 
     it('index-extra-parents-from-diamond: the second-encountered parent of a diamond child is surfaced in extraParents', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -617,7 +617,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -629,7 +629,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model B
 ---
 # NN Models
@@ -642,7 +642,7 @@ path:: model_a_01.md
       const result = await recursiveParse(rootHandle)
       const index = buildWorkspaceIndex(result)
 
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')!
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')!
       const modelANode = Object.values(result.nodes).find((n) => n.name === 'model_a_01')!
       const modelBNode = Object.values(result.nodes).find((n) => n.name === 'model_b_01')!
 
@@ -652,13 +652,13 @@ path:: model_a_01.md
 
     it('index-missing-from-parse-issues: a referenced but unresolved path is surfaced in missing, de-duplicated', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -678,13 +678,13 @@ path:: ghost_business_01.md
 
     it('index-node-schema-from-stash: a resolver supplied to recursiveParse stashes the schema, and buildWorkspaceIndex surfaces it without its own fallback resolver', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -698,7 +698,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -706,7 +706,7 @@ title: Model A
 `,
       }
 
-      const composedSchema: TemplateSchema = {
+      const composedSchema: BlueprintSchema = {
         concepts: [],
         markers: [],
         matrices: [],
@@ -715,7 +715,7 @@ title: Model A
 
       const rootHandle = createFakeDirectoryHandle(files)
       const result = await recursiveParse(rootHandle, undefined, {
-        resolveTemplateSchema: () => composedSchema,
+        resolveBlueprintSchema: () => composedSchema,
       })
       const index = buildWorkspaceIndex(result)
 
@@ -723,15 +723,15 @@ title: Model A
       expect(index.nodeSchema[modelANode.id]).toBe(composedSchema)
     })
 
-    it('index-node-schema-from-fallback-resolver: without a stashed schema, buildWorkspaceIndex falls back to its own resolveTemplateSchema argument', () => {
-      const fallbackSchema: TemplateSchema = {
+    it('index-node-schema-from-fallback-resolver: without a stashed schema, buildWorkspaceIndex falls back to its own resolveBlueprintSchema argument', () => {
+      const fallbackSchema: BlueprintSchema = {
         concepts: [],
         markers: [],
         matrices: [],
         taxonomy: [],
       }
 
-      const rootNode: ModelNode = {
+      const rootNode: KnowledgeNode = {
         id: 'root-1',
         name: 'workspace_01',
         parentId: null,
@@ -743,7 +743,7 @@ title: Model A
         relationships: [],
         rawSections: {},
         rawContent: '---\ntitle: Root Workspace\n---\n',
-        source: { path: 'workspace_01.md' },
+        source: { path: 'domaiNN_NN.md' },
       }
       const syntheticResult: RecursiveParseResult = {
         nodes: { [rootNode.id]: rootNode },
@@ -758,13 +758,13 @@ title: Model A
 
     it('index-element-concepts-normalized: an element name with a typographic dash resolves via both its exact and separator-normalized keys', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Rooms
@@ -778,7 +778,7 @@ description:: Living-dining room.
       const result = await recursiveParse(rootHandle)
       const index = buildWorkspaceIndex(result)
 
-      const rootNode = Object.values(result.nodes).find((n) => n.name === 'workspace_01')!
+      const rootNode = Object.values(result.nodes).find((n) => n.name === 'domaiNN')!
       const exactKey = 'salón–comedor'
       const normalizedKey = 'salón-comedor'
 
@@ -788,13 +788,13 @@ description:: Living-dining room.
 
     it('index-workspace-id: the entrypoint frontmatter workspace_id is surfaced on the index', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 workspace_id: acme-portfolio
 ---
@@ -809,7 +809,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -826,13 +826,13 @@ title: Model A
 
     it('index-workspace-id absent: an entrypoint without workspace_id leaves the field undefined', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -846,7 +846,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components
@@ -863,13 +863,13 @@ title: Model A
 
     it('never mutates the result it derives from', async () => {
       const files: Record<string, string> = {
-        'workspace_01.md': `---
+        'domaiNN_NN.md': `---
 spec_version: V_1-0-0
 level: 3
 parent_spec:
   name: workspace_spec_01
   url: https://example.com/workspace_spec_01.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Root Workspace
 ---
 # NN Models
@@ -883,7 +883,7 @@ level: 3
 parent_spec:
   name: spec_01
   url: https://example.com/spec.md
-model_version: V_0-1-0
+knowledge_version: V_0-1-0
 title: Model A
 ---
 # NN Components

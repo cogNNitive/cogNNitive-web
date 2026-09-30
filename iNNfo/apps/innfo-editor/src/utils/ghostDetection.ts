@@ -1,4 +1,4 @@
-import type { ModelNode } from '../model/types'
+import type { KnowledgeNode } from '../model/types'
 
 /**
  * Checks whether a template-declared concept has been instantiated in the
@@ -16,7 +16,7 @@ import type { ModelNode } from '../model/types'
 export function isConceptPresent(
   conceptName: string,
   conceptType: string,
-  nodes: Record<string, ModelNode>,
+  nodes: Record<string, KnowledgeNode>,
   rootIds: string[],
 ): boolean {
   const lowerName = conceptName.toLowerCase()

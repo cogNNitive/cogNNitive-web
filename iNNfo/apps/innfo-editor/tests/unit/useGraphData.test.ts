@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useGraphData, ORIGIN_COLORS } from '../../src/components/editor/composables/useGraphData'
 import GraphViewer from '../../src/components/editor/GraphViewer.vue'
-import type { ModelNode } from '../../src/model/types'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, overrides: Partial<ModelNode> = {}): ModelNode {
+function makeNode(id: string, overrides: Partial<KnowledgeNode> = {}): KnowledgeNode {
   return {
     id,
     name: id.split('/').pop() || id,
@@ -29,7 +29,7 @@ describe('useGraphData and GraphViewer relationship origins (R10)', () => {
   })
 
   it('builds GEdges with origin and origin-specific color for all four origins', () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const nodeA = makeNode('Root/A', {
       name: 'A',
       relationships: [
@@ -41,7 +41,7 @@ describe('useGraphData and GraphViewer relationship origins (R10)', () => {
     })
     const nodeB = makeNode('Root/B', { name: 'B' })
 
-    modelStore.setGraph({ 'Root/A': nodeA, 'Root/B': nodeB }, ['Root/A'])
+    knowledgeStore.setGraph({ 'Root/A': nodeA, 'Root/B': nodeB }, ['Root/A'])
 
     const localNodeId = ref('')
     const { allEdges } = useGraphData(localNodeId)

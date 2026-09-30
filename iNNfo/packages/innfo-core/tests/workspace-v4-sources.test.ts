@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { parseModel, validateModel } from '../src/index.js';
+import { parseKnowledge, validateKnowledge } from '../src/index.js';
 
 describe('Workspace Template V_0-4-0 & Polymorphic Sources', () => {
-  const specPath = path.resolve(__dirname, '../../../specs/templates/workspace_spec_NN.md');
+  const specPath = path.resolve(__dirname, '../../../specs/bluepriNNts/workspace_spec_NN.md');
 
   it('parses the workspace_spec_NN.md template correctly', () => {
     const specContent = fs.readFileSync(specPath, 'utf8');
-    const parsed = parseModel(specContent);
+    const parsed = parseKnowledge(specContent);
     expect(parsed.frontmatter?.template_version).toMatch(/^V_0-[4-6]-\d+$/);
     expect(parsed.elements.has('Concept Definition')).toBe(true);
     expect(parsed.elements.has('Field Definition')).toBe(true);
@@ -19,8 +19,8 @@ describe('Workspace Template V_0-4-0 & Polymorphic Sources', () => {
 level: 3
 parent_spec:
   name: "workspace_spec"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+knowledge_version: "V_0-1-0"
 title: "Test Polymorphic Workspace"
 ---
 
@@ -34,7 +34,7 @@ title: "Test Polymorphic Workspace"
 * [[Tag]]
 
 # NN Workspace
-models_dir:: models/
+models_dir:: kNNowledge/
 sources_dir:: sources/nn/
 
 Test workspace demonstrating polymorphic sources.
@@ -42,7 +42,7 @@ Test workspace demonstrating polymorphic sources.
 # NN Models
 
 ## NN Models: Operations Model
-path:: models/Operations_V_0-1-0_business_NN.md
+path:: kNNowledge/Operations_V_0-1-0_business_NN.md
 template:: business_V_0-1-0
 status:: active
 author:: Lead Architect
@@ -69,7 +69,7 @@ status:: ready
 tags:: [compliance, externo]
 `;
 
-    const parsed = parseModel(sampleWorkspace);
+    const parsed = parseKnowledge(sampleWorkspace);
     expect(parsed.frontmatter?.title).toBe('Test Polymorphic Workspace');
     expect(parsed.elements.get('Sources')?.length).toBe(2);
 
@@ -89,14 +89,14 @@ tags:: [compliance, externo]
       parentName: 'iNNfo_V_0-2-1',
       frontmatter: {
         spec_version: 'V_0-2-1',
-        spec_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/workspace_spec_NN.md',
+        spec_url: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md',
         level: 2 as const,
         relationship_types: {},
       },
       rawContent: specContent,
     };
 
-    const result = validateModel(parsed, templateDoc, null);
+    const result = validateKnowledge(parsed, templateDoc, null);
     if (!result.valid) console.log('Validation errors:', JSON.stringify(result.errors, null, 2));
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);

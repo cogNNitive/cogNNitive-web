@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { join } from 'node:path'
 import { rm, mkdir, writeFile } from 'node:fs/promises'
-import { createNodeDirectoryHandle, DEFAULT_WORKSPACE_IGNORE, validateModel } from '../src/tools/validate.js'
+import { createNodeDirectoryHandle, DEFAULT_WORKSPACE_IGNORE, validateKnowledge } from '../src/tools/validate.js'
 
 const rootDir = join(import.meta.dirname!, '..', 'temp-test-workspace-ignore')
 
@@ -39,7 +39,7 @@ title: "Workspace Index"
 
 # NN index
 
-* [Main](./models/Main_V_1-0-0_NN.md)
+* [Main](./kNNowledge/Main_V_1-0-0_NN.md)
 `
     const MODEL = `---
 specification_version: "V_0-1-0"
@@ -47,7 +47,7 @@ level: 3
 parent_spec:
   name: Template
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "Main"
 ---
 
@@ -66,7 +66,7 @@ level: 3
 parent_spec:
   name: Template
   url: "https://example.com/template.md"
-model_version: "V_0-1-0"
+knowledge_version: "V_0-1-0"
 title: "BadModule"
 ---
 
@@ -77,7 +77,7 @@ title: "BadModule"
     await writeFile(join(rootDir, 'node_modules', 'some-pkg', 'Bad_NN.md'), NODE_MODULE_MODEL, 'utf-8')
 
     // Validate in workspace mode
-    const res = await validateModel(rootDir, 'Main_V_1-0-0_NN', undefined, undefined, true)
+    const res = await validateKnowledge(rootDir, 'Main_V_1-0-0_NN', undefined, undefined, true)
     expect(res).toBeDefined()
   })
 })

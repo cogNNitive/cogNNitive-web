@@ -1,4 +1,4 @@
-import type { ModelNode } from '../model/types'
+import type { KnowledgeNode } from '../model/types'
 
 export interface FieldDefinition {
   name: string
@@ -9,7 +9,7 @@ export interface FieldDefinition {
 }
 
 export function getConceptFieldsForNode(
-  node: ModelNode,
+  node: KnowledgeNode,
   getConceptFields: (
     type: string,
   ) => Array<{ name: string; type: string; [key: string]: any }> | undefined,
@@ -34,7 +34,7 @@ export function getConceptFieldsForNode(
 }
 
 export function getMergedBlockFields(
-  node: ModelNode,
+  node: KnowledgeNode,
   getConceptFields: (
     type: string,
   ) => Array<{ name: string; type: string; [key: string]: any }> | undefined,

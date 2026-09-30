@@ -7,13 +7,13 @@ import { homedir, tmpdir } from 'node:os'
 import {
   parseFrontmatter,
   SpecResolutionError,
-  findCanonicalTemplate,
+  findCanonicalBlueprint,
 } from '@cognnitive/innfo-core'
 import type {
   SpecCache,
   SpecDocument,
   ResolverOptions,
-  ResolvedTemplatePackage,
+  ResolvedBlueprintPackage,
 } from '@cognnitive/innfo-core'
 
 export type FreshnessVerdict = 'fresh' | 'stale' | 'unknown'
@@ -29,7 +29,7 @@ export type ResolverOptionsWithFreshness = ResolverOptions & {
   skillsDir?: string
   checkFreshness?: boolean
   /**
-   * Explicit cache directory for fetched specs/templates. Defaults to
+   * Explicit cache directory for fetched specs/bluepriNNts. Defaults to
    * {@link defaultCacheDir} (OS temp dir). Reads check it after the
    * workspace tree; fetch-and-save paths write to it unless `inPlace`.
    */
@@ -42,7 +42,7 @@ export type ResolverOptionsWithFreshness = ResolverOptions & {
 }
 
 /**
- * Default on-disk location for fetched specs/templates:
+ * Default on-disk location for fetched specs/bluepriNNts:
  * `join(os.tmpdir(), 'innfo-specs')`. Resolver *writes* (never reads alone)
  * go here by default so a default run creates no cache artifacts inside the
  * workspace or repository tree. Restored in-tree only via `inPlace: true`.
@@ -333,19 +333,19 @@ export async function findSpecInPackageDir(dir: string, base: string): Promise<s
 
 /**
  * 4-Tier Template Package Resolver:
- *   Tier 1: Workspace package directory: ./specs/templates/<name>/<version>/
+ *   Tier 1: Workspace package directory: ./specs/bluepriNNts/<name>/<version>/
  *   Tier 2: Workspace flat fallback: ./templates/<name>_V_<version>_NN.md or ./specs/
  *   Tier 3: Global user cache: ~/.agents/templates/<name>/<version>/
  *   Tier 4: Installed skills directory: ~/.agents/skills/<skill-name>/templates/<name>/<version>/
  */
-export async function resolveTemplatePackage(
+export async function resolveBlueprintPackage(
   rootDir: string,
   reqName: string,
   reqVersion?: string,
   options?: { globalDir?: string; skillsDir?: string },
-): Promise<ResolvedTemplatePackage | null> {
+): Promise<ResolvedBlueprintPackage | null> {
   const globalDir =
-    options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join(homedir(), '.agents', 'templates')
+    options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join(homedir(), '.agents', 'bluepriNNts')
   const skillsDir =
     options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join(homedir(), '.agents', 'skills')
 
@@ -353,8 +353,8 @@ export async function resolveTemplatePackage(
   const base = parsed.base
   const targetVersion = reqVersion ? normalizeVersion(reqVersion) : parsed.version
 
-  // Tier 1: Workspace Package Directory (./specs/templates/<name>/<version>/)
-  const wsPackageBaseDir = join(rootDir, 'specs', 'templates', base)
+  // Tier 1: Workspace Package Directory (./specs/bluepriNNts/<name>/<version>/)
+  const wsPackageBaseDir = join(rootDir, 'specs', 'bluepriNNts', base)
   try {
     const entries = await readdir(wsPackageBaseDir, { withFileTypes: true })
     const verDirs = entries.filter((e) => e.isDirectory())
@@ -403,8 +403,8 @@ export async function resolveTemplatePackage(
     /* v8 ignore stop */
   }
 
-  // Tier 2: Workspace Flat Fallback (./templates/<name>_V_<version>_NN.md or ./specs/)
-  const flatSearchDirs = [join(rootDir, 'specs'), join(rootDir, 'templates')]
+  // Tier 2: Workspace Flat Fallback (./specs/)
+  const flatSearchDirs = [join(rootDir, 'specs')]
   for (const dir of flatSearchDirs) {
     const matchFile = await findLocalSpec(dir, reqName)
     if (matchFile) {
@@ -421,7 +421,7 @@ export async function resolveTemplatePackage(
     }
   }
 
-  // Tier 3: Global User Cache (~/.agents/templates/<name>/<version>/)
+  // Tier 3: Global User Cache (~/.agents/bluepriNNts/<name>/<version>/)
   const globalBaseDir = join(globalDir, base)
   try {
     const entries = await readdir(globalBaseDir, { withFileTypes: true })
@@ -479,13 +479,13 @@ export async function resolveTemplatePackage(
     }
   }
 
-  // Tier 4: Installed Skills Directory (~/.agents/skills/*/templates/<name>/<version>/)
+  // Tier 4: Installed Skills Directory (~/.agents/skills/*/bluepriNNts/<name>/<version>/)
   try {
     const skillEntries = await readdir(skillsDir, { withFileTypes: true })
     const skillDirs = skillEntries.filter((e) => e.isDirectory()).map((e) => e.name)
 
     for (const skillName of skillDirs) {
-      const skillPkgBase = join(skillsDir, skillName, 'templates', base)
+      const skillPkgBase = join(skillsDir, skillName, 'bluepriNNts', base)
       try {
         const entries = await readdir(skillPkgBase, { withFileTypes: true })
         const verDirs = entries.filter((e) => e.isDirectory())
@@ -527,7 +527,7 @@ export async function resolveTemplatePackage(
         }
       } catch {
         const matchFile =
-          (await findLocalSpec(join(skillsDir, skillName, 'templates'), reqName)) ||
+          (await findLocalSpec(join(skillsDir, skillName, 'bluepriNNts'), reqName)) ||
           (await findLocalSpec(join(skillsDir, skillName), reqName))
         if (matchFile) {
           const content = await readFile(matchFile, 'utf-8').catch(() => '')
@@ -594,18 +594,18 @@ function uniqueSuffix(): string {
 /**
  * Write-once atomic package hydration.
  *
- * Creates a staging directory `specs/templates/<base>/.staging-<pid>-<time>/`,
+ * Creates a staging directory `specs/bluepriNNts/<base>/.staging-<pid>-<time>/`,
  * writes the canonical `spec_NN.md`, a backward-compatible alias
  * `<base>_V_<version>_NN.md`, and any `procedures/`, `samples/` and `assets/`
  * carried by a full package payload, then atomically renames the staging
- * directory to `specs/templates/<base>/V_<version>/`. If the target package
+ * directory to `specs/bluepriNNts/<base>/V_<version>/`. If the target package
  * directory already exists and is non-empty it is treated as immutable and left
  * untouched.
  *
  * `payload` accepts either a bare spec string (spec-only hydration) or a full
  * {@link TemplatePackagePayload}.
  */
-export async function hydrateTemplatePackageAtomically(
+export async function hydrateBlueprintPackageAtomically(
   rootDir: string,
   base: string,
   version: string,
@@ -614,7 +614,7 @@ export async function hydrateTemplatePackageAtomically(
 ): Promise<string> {
   const pkg: TemplatePackagePayload = typeof payload === 'string' ? { spec: payload } : payload
   const verSegment = `V_${normalizeVersion(version).replace(/\./g, '-')}`
-  const templatesBase = opts?.baseDir ?? join(rootDir, 'specs', 'templates')
+  const templatesBase = opts?.baseDir ?? join(rootDir, 'specs', 'bluepriNNts')
   const targetPkgDir = join(templatesBase, base, verSegment)
 
   // Write-once immutability check
@@ -632,10 +632,10 @@ export async function hydrateTemplatePackageAtomically(
     /* v8 ignore stop */
   }
 
-  const baseTemplatesDir = join(templatesBase, base)
-  await mkdir(baseTemplatesDir, { recursive: true })
+  const baseBlueprintsDir = join(templatesBase, base)
+  await mkdir(baseBlueprintsDir, { recursive: true })
 
-  const stagingDir = join(baseTemplatesDir, `.staging-${uniqueSuffix()}`)
+  const stagingDir = join(baseBlueprintsDir, `.staging-${uniqueSuffix()}`)
   await mkdir(stagingDir, { recursive: true })
 
   const specFileName = 'spec_NN.md'
@@ -675,18 +675,24 @@ export async function hydrateTemplatePackageAtomically(
  * same `ref` and each entry raw-fetched. Any missing subdirectory is simply
  * absent from the returned payload; a failure to fetch the primary spec throws.
  *
- * `repo` defaults to `cogNNitive/cogNNitive` and `ref` to `templates-v<version>`.
+ * `ref` is required and must match `^blueprints-v\d+\.\d+\.\d+$`.
  */
-export async function fetchTemplatePackageFromRemote(
+export async function fetchBlueprintPackageFromRemote(
   base: string,
   version: string,
   options: { repo?: string; ref?: string; timeout?: number } = {},
 ): Promise<TemplatePackagePayload> {
+  if (!options.ref) {
+    throw new Error('ref is required for fetchBlueprintPackageFromRemote')
+  }
+  if (!/^blueprints-v\d+\.\d+\.\d+$/.test(options.ref)) {
+    throw new Error(`Invalid blueprint ref "${options.ref}": must match ^blueprints-v\\d+\\.\\d+\\.\\d+$`)
+  }
+  const ref = options.ref
   const repo = options.repo ?? 'cogNNitive/cogNNitive'
-  const ref = options.ref ?? `templates-v${normalizeVersion(version)}`
   const timeout = options.timeout ?? 10000
-  const dirInRepo = base === 'workspace' ? 'iNNfo/specs/templates' : `iNNfo/specs/templates/${base}`
-  const specName = base === 'workspace' ? 'workspace_spec_NN.md' : 'spec_NN.md'
+  const dirInRepo = `iNNfo/specs/bluepriNNts/${base}`
+  const specName = 'spec_NN.md'
   const rawBase = `https://raw.githubusercontent.com/${repo}/${ref}/${dirInRepo}`
 
   const spec = await download(`${rawBase}/${specName}`, timeout)
@@ -784,7 +790,7 @@ export async function resolveParentChainNode(
   // workspace tree (vendored specs win over cached fetches).
   const cacheDir = options.inPlace === true ? specsDir : (options.cacheDir ?? defaultCacheDir())
   const writeDir = cacheDir
-  const templatesBaseDir = join(cacheDir, 'templates')
+  const blueprintsBaseDir = join(cacheDir, 'bluepriNNts')
   const specs = new Map<string, SpecDocument>()
   const chain: string[] = []
   const freshness = new Map<string, FreshnessResult>()
@@ -817,10 +823,10 @@ export async function resolveParentChainNode(
       }
     }
 
-    // 1. 4-tier template package resolution (workspace package -> workspace flat -> global -> skill)
+    // 1. 4-tier blueprint package resolution (workspace package -> workspace flat -> global -> skill)
     if (content === null && !isLocalPath(currentUrl)) {
       attempted.push(`4-tier package resolver for "${currentName}" in "${specsDir}"`)
-      const pkg = await resolveTemplatePackage(rootDir, currentName, undefined, options)
+      const pkg = await resolveBlueprintPackage(rootDir, currentName, undefined, options)
       if (pkg) {
         content = await readFile(pkg.specFilePath, 'utf-8')
         resolvedFromLocalTier = true
@@ -836,7 +842,7 @@ export async function resolveParentChainNode(
       }
     }
 
-    // 2. Download from network and hydrate into specs/templates/<name>/<version>/
+    // 2. Download from network and hydrate into specs/bluepriNNts/<name>/<version>/
     if (content === null && /^https?:\/\//i.test(currentUrl)) {
       attempted.push(`network url "${currentUrl}"`)
       try {
@@ -848,15 +854,15 @@ export async function resolveParentChainNode(
         // back to spec-only hydration if the tag/API is unreachable.
         let payload: string | TemplatePackagePayload = content
         const tagMatch = currentUrl.match(/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/([^/]+)\//)
-        if (tagMatch && /^(templates-v|v)\d/.test(tagMatch[2])) {
-          payload = await fetchTemplatePackageFromRemote(baseName, fmVer, {
+        if (tagMatch && /^blueprints-v\d+\.\d+\.\d+$/.test(tagMatch[2])) {
+          payload = await fetchBlueprintPackageFromRemote(baseName, fmVer, {
             repo: tagMatch[1],
             ref: tagMatch[2],
             timeout,
           }).catch(() => content as string)
         }
-        await hydrateTemplatePackageAtomically(rootDir, baseName, fmVer, payload, {
-          baseDir: templatesBaseDir,
+        await hydrateBlueprintPackageAtomically(rootDir, baseName, fmVer, payload, {
+          baseDir: blueprintsBaseDir,
         })
         const specName = canonicalSpecFilename(currentName, content)
         await saveSpecOnce(writeDir, `${specName}_NN.md`, content)
@@ -871,13 +877,18 @@ export async function resolveParentChainNode(
 
     // 3. Built-in Canonical Fallback Registry (Tier 4 / Offline fallback)
     if (content === null && !isLocalPath(currentUrl)) {
-      attempted.push(`canonical fallback registry for "${currentName}"`)
-      const canonical =
-        findCanonicalTemplate(currentName) ||
-        (currentUrl ? findCanonicalTemplate(currentUrl) : null)
-      if (canonical) {
-        content = canonical.specContent
-        resolvedFromLocalTier = true
+      const isRemote = /^https?:\/\//i.test(currentUrl)
+      const isCanonicalRemote =
+        isRemote && /raw\.githubusercontent\.com\/cogNNitive\/cogNNitive\//i.test(currentUrl)
+      if (!isRemote || isCanonicalRemote) {
+        attempted.push(`canonical fallback registry for "${currentName}"`)
+        const canonical =
+          findCanonicalBlueprint(currentName) ||
+          (currentUrl ? findCanonicalBlueprint(currentUrl) : null)
+        if (canonical) {
+          content = canonical.specContent
+          resolvedFromLocalTier = true
+        }
       }
     }
 
@@ -935,7 +946,7 @@ export async function resolveParentChainNode(
   }
 
   // Additive composition: pull in every template named by a resolved level-2
-  // template's `includes` list (recursively), so `resolveTemplateSchema` in
+  // template's `includes` list (recursively), so `resolveBlueprintSchema` in
   // innfo-core can compose their schemas offline. Best-effort — an
   // unresolvable include is left out and surfaces later as a validation error.
   await resolveIncludesInto(specs, specsDir, timeout, undefined, cacheDir)
@@ -968,7 +979,7 @@ export async function fetchSpecContent(
     if (hit) return readFile(hit, 'utf-8').catch(() => null)
   }
   const rootDir = specsDir.replace(/[/\\]specs[/\\]?$/, '')
-  const pkg = await resolveTemplatePackage(rootDir, name).catch(() => null)
+  const pkg = await resolveBlueprintPackage(rootDir, name).catch(() => null)
   if (pkg) return readFile(pkg.specFilePath, 'utf-8').catch(() => null)
   if (url && /^https?:\/\//i.test(url)) {
     try {
@@ -986,8 +997,13 @@ export async function fetchSpecContent(
       /* v8 ignore stop */
     }
   }
-  const canonical = findCanonicalTemplate(name) || (url ? findCanonicalTemplate(url) : null)
-  if (canonical) return canonical.specContent
+  const isRemote = url && /^https?:\/\//i.test(url)
+  const isCanonicalRemote =
+    isRemote && /raw\.githubusercontent\.com\/cogNNitive\/cogNNitive\//i.test(url)
+  if (!isRemote || isCanonicalRemote) {
+    const canonical = findCanonicalBlueprint(name) || (url ? findCanonicalBlueprint(url) : null)
+    if (canonical) return canonical.specContent
+  }
   return null
 }
 

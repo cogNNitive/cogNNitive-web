@@ -6,7 +6,7 @@
  * field and saving gives back the same document plus that one change.
  *
  * This scenario feeds every shipped `_samples_nn` model through
- * `parseModel -> serializeModel` — the exact path `innfo-mcp`'s `apply_change`
+ * `parseKnowledge -> serializeKnowledge` — the exact path `innfo-mcp`'s `apply_change`
  * takes on every agent write, and the path the editor takes for any file the
  * user has edited — and reports what the document loses.
  */
@@ -15,10 +15,10 @@ import { join } from 'node:path'
 import { createScenario, ROOT } from '../lib/harness.mjs'
 import { loadCore } from '../lib/core.mjs'
 
-const SAMPLES = join(ROOT, '_samples_nn', 'models')
+const SAMPLES = join(ROOT, '_samples_nn', 'kNNowledge')
 
 export default async function run() {
-  const { parseModel, serializeModel } = await loadCore()
+  const { parseKnowledge, serializeKnowledge } = await loadCore()
   const s = createScenario('S03', 'Save/load fidelity of shipped models',
     'A user opens a shipped sample, changes nothing meaningful, saves — and expects a clean git diff.')
 
@@ -27,7 +27,7 @@ export default async function run() {
     const results = []
     for (const f of files) {
       const before = await readFile(join(SAMPLES, f), 'utf-8')
-      const after = serializeModel(parseModel(before))
+      const after = serializeKnowledge(parseKnowledge(before))
       results.push({
         file: f,
         identical: before === after,
@@ -74,8 +74,8 @@ export default async function run() {
     const twice = []
     for (const f of files) {
       const before = await readFile(join(SAMPLES, f), 'utf-8')
-      const once = serializeModel(parseModel(before))
-      const again = serializeModel(parseModel(once))
+      const once = serializeKnowledge(parseKnowledge(before))
+      const again = serializeKnowledge(parseKnowledge(once))
       twice.push({ file: f, stableAfterFirstSave: once === again })
     }
     s.expect(

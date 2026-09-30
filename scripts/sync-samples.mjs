@@ -5,7 +5,7 @@
  *
  * Synchronizes and validates canonical sample models from the Single Source of Truth
  * (_samples_nn/models/) into their respective Level-2 template distribution folders
- * (iNNfo/specs/templates/<template>/samples/).
+ * (iNNfo/specs/bluepriNNts/<template>/samples/).
  *
  * Usage:
  *   node scripts/sync-samples.mjs          # Syncs files from _samples_nn to templates
@@ -18,8 +18,10 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
-const SAMPLES_SSOT_DIR = path.join(REPO_ROOT, '_samples_nn', 'models');
-const TEMPLATES_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'templates');
+const SAMPLES_SSOT_DIR = fs.existsSync(path.join(REPO_ROOT, '_samples_nn', 'kNNowledge'))
+  ? path.join(REPO_ROOT, '_samples_nn', 'kNNowledge')
+  : path.join(REPO_ROOT, '_samples_nn', 'models');
+const BLUEPRINTS_ROOT = path.join(REPO_ROOT, 'iNNfo', 'specs', 'bluepriNNts');
 
 export const SAMPLE_MAPPINGS = [
   {
@@ -78,7 +80,7 @@ export function syncSamples({ check = false, silent = false } = {}) {
 
   for (const mapping of SAMPLE_MAPPINGS) {
     const srcPath = path.join(SAMPLES_SSOT_DIR, mapping.source);
-    const dstPath = path.join(TEMPLATES_ROOT, mapping.target);
+    const dstPath = path.join(BLUEPRINTS_ROOT, mapping.target);
 
     if (!fs.existsSync(srcPath)) {
       const msg = `Missing SSOT sample file: ${srcPath}`;
@@ -120,7 +122,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToP
   const isCheck = process.argv.includes('--check');
 
   if (isCheck) {
-    console.log('🔍 Checking samples parity (_samples_nn/models/ <-> iNNfo/specs/templates/*/samples/)...');
+    console.log('🔍 Checking samples parity (_samples_nn/models/ <-> iNNfo/specs/bluepriNNts/*/samples/)...');
     const res = syncSamples({ check: true });
     if (!res.ok) {
       console.error('❌ Samples drift detected:');

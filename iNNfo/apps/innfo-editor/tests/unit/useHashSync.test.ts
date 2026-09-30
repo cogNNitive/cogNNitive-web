@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useUiStore } from '../../src/stores/uiStore'
-import { useModelStore } from '../../src/stores/modelStore'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
 import { useHashSync } from '../../src/composables/useHashSync'
 
 /**
@@ -134,7 +134,7 @@ describe('useHashSync (E7: no duplicate pushState)', () => {
   })
 
   it('A → B → C pushes one history entry per navigation, Back to #B does not re-push', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const doc = makeNode('doc', { kind: 'root', type: 'document' })
@@ -142,7 +142,7 @@ describe('useHashSync (E7: no duplicate pushState)', () => {
     const nodeB = makeNode('doc/Beta', { kind: 'element', type: 'Task', parentId: 'doc' })
     const nodeC = makeNode('doc/Gamma', { kind: 'element', type: 'Task', parentId: 'doc' })
 
-    modelStore.setGraph({ doc, 'doc/Alpha': nodeA, 'doc/Beta': nodeB, 'doc/Gamma': nodeC } as any, [
+    knowledgeStore.setGraph({ doc, 'doc/Alpha': nodeA, 'doc/Beta': nodeB, 'doc/Gamma': nodeC } as any, [
       'doc',
     ])
 
@@ -181,12 +181,12 @@ describe('useHashSync (E7: no duplicate pushState)', () => {
   })
 
   it('leaves a genuinely different hash untouched and pushes it', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const doc = makeNode('doc', { kind: 'root', type: 'document' })
     const nodeA = makeNode('doc/Alpha', { kind: 'element', type: 'Task', parentId: 'doc' })
-    modelStore.setGraph({ doc, 'doc/Alpha': nodeA } as any, ['doc'])
+    knowledgeStore.setGraph({ doc, 'doc/Alpha': nodeA } as any, ['doc'])
 
     wrapper = mountHost()
     await tick()
@@ -199,12 +199,12 @@ describe('useHashSync (E7: no duplicate pushState)', () => {
   })
 
   it('preserves an existing ?ku= query param across store-driven hash pushes', async () => {
-    const modelStore = useModelStore()
+    const knowledgeStore = useKnowledgeStore()
     const uiStore = useUiStore()
 
     const doc = makeNode('doc', { kind: 'root', type: 'document' })
     const nodeA = makeNode('doc/Alpha', { kind: 'element', type: 'Task', parentId: 'doc' })
-    modelStore.setGraph({ doc, 'doc/Alpha': nodeA } as any, ['doc'])
+    knowledgeStore.setGraph({ doc, 'doc/Alpha': nodeA } as any, ['doc'])
 
     api.setSearch('?ku=models%2Fx.md')
     wrapper = mountHost()

@@ -2,8 +2,8 @@
 level: 3
 parent_spec:
   name: "procedures"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/procedures/spec_NN.md"
-model_version: "V_0-1-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
+knowledge_version: "V_0-1-0"
 title: "cogNNitive Monorepo Procedures Catalog"
 ---
 

@@ -1,6 +1,6 @@
 # Simulacro — user-flow simulation report
 
-Generated: 2026-09-17T05:48:59.041Z
+Generated: 2026-09-30T11:16:28.044Z
 
 **51 passed · 0 failed · 7 observed**
 
@@ -20,12 +20,12 @@ Generated: 2026-09-17T05:48:59.041Z
 _An analyst imports a primary source, cites its sections from model elements, and relies on the workspace to prove every citation resolves._
 
 ### ✅ Workspace parses from the canonical entrypoint
-- **Expected:** workspace_NN.md resolves as entrypoint, models load, no parse issues
+- **Expected:** domaiNN_NN.md resolves as entrypoint, models load, no parse issues
 - **Actual:**
 
 ```
 {
-  "entrypointPath": "workspace_NN.md",
+  "entrypointPath": "domaiNN_NN.md",
   "nodes": 8,
   "issues": 0
 }
@@ -117,7 +117,7 @@ _An analyst imports a primary source, cites its sections from model elements, an
           "kind": "system",
           "id": "parser"
         },
-        "timestamp": "2026-09-17T05:48:58.757Z"
+        "timestamp": "2026-09-30T11:16:27.774Z"
       }
     }
   }
@@ -406,6 +406,11 @@ _A user opens a shipped sample, changes nothing meaningful, saves — and expect
     "lines": "946->946"
   },
   {
+    "file": "Ghostbusters_design-presets_NN.md",
+    "identical": true,
+    "lines": "54->54"
+  },
+  {
     "file": "Ghostbusters_documentation_NN.md",
     "identical": true,
     "lines": "150->150"
@@ -441,11 +446,10 @@ _A user opens a shipped sample, changes nothing meaningful, saves — and expect
     "lines": "59->59"
   },
   {
-    "file": "Ghostbusters_video-generator_NN.md",
+    "file": "Ghostbusters_video_NN.md",
     "identical": true,
-    "lines": "66->66"
-  }
-]
+    "lines": "26->26"
+…
 ```
 
 ### ✅ Matrix axis labels survive a save
@@ -480,8 +484,8 @@ _A user opens a shipped sample, changes nothing meaningful, saves — and expect
   "Ghostbusters_analysis_NN.md",
   "Ghostbusters_business-model_NN.md",
   "Ghostbusters_business_NN.md",
-  "Ghostbusters_documentation_NN.md",
-  "Ghostbusters_innovation_NN.md"
+  "Ghostbusters_design-presets_NN.md",
+  "Ghostbusters_documentation_NN.md"
 ]
 ```
 
@@ -677,7 +681,7 @@ _A user adds a model file by hand and expects the workspace index to notice — 
   "changes": [
     {
       "kind": "added",
-      "path": "models/Acme_metrics_NN.md",
+      "path": "kNNowledge/Acme_metrics_NN.md",
       "name": "Acme Operational Metrics"
     }
   ],
@@ -703,7 +707,7 @@ _A user adds a model file by hand and expects the workspace index to notice — 
 [
   {
     "kind": "skipped-not-owned",
-    "path": "models/Acme_analysis_NN.md",
+    "path": "kNNowledge/Acme_analysis_NN.md",
     "name": "Acme Operational Analysis",
     "reason": "file missing, entry not tool-owned"
   }
@@ -742,10 +746,10 @@ _A new user opens the workspace we ship. Everything they see on day one is what 
 
 ```
 {
-  "entrypoint": "workspace_NN.md",
+  "entrypoint": "domaiNN_NN.md",
   "models": 18,
   "actionableIssueCount": 0,
-  "infoNotes": 26,
+  "infoNotes": 28,
   "issueKinds": {}
 }
 ```
@@ -763,7 +767,18 @@ _A new user opens the workspace we ship. Everything they see on day one is what 
 - **Actual:**
 
 ```
-[]
+[
+  {
+    "code": "KU_DEPRECATED_HASH",
+    "severity": "warning",
+    "path": "artifacts_NN.md#Workspace Hub Interactive Dashboard.sources"
+  },
+  {
+    "code": "KU_DEPRECATED_HASH",
+    "severity": "warning",
+    "path": "artifacts_NN.md#Executive Remediation Report 1984.sources"
+  }
+]
 ```
 
 ### ✅ The shipped workspace contains the sources its models cite
@@ -809,7 +824,7 @@ _A new user opens the workspace we ship. Everything they see on day one is what 
 
 ## S08 — Consuming innfo-core from plain Node
 
-_An integrator runs `npm i @cognnitive/innfo-core` and writes `import { parseModel } from ...` in a Node script._
+_An integrator runs `npm i @cognnitive/innfo-core` and writes `import { parseKnowledge } from ...` in a Node script._
 
 ### ✅ The published package imports under plain Node ESM
 - **Expected:** package.json declares "type":"module" and "main":"./dist/index.js" — Node must be able to load it
@@ -828,10 +843,10 @@ _An integrator runs `npm i @cognnitive/innfo-core` and writes `import { parseMod
 
 ```
 {
-  "exportCount": 113,
+  "exportCount": 126,
   "sample": [
-    "parseModel",
-    "serializeModel",
+    "parseKnowledge",
+    "serializeKnowledge",
     "applyMutation",
     "validateDocument"
   ]

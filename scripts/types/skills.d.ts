@@ -28,7 +28,7 @@ type BootstrapState = SkillManagerState;
 interface SkillManagerArgs {
   positional: string[];
   skillsDir: string | null;
-  templatesDir: string | null;
+  blueprintsDir: string | null;
   state: string | null;
   stateFile?: string;
   yes: boolean;

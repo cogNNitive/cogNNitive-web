@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import MarkerButton from '../../src/components/editor/MarkerButton.vue'
-import { useModelStore } from '../../src/stores/modelStore'
-import type { ModelNode } from '../../src/model/types'
+import { useKnowledgeStore } from '../../src/stores/knowledgeStore'
+import type { KnowledgeNode } from '../../src/model/types'
 
-function makeNode(id: string, name: string, markers: Record<string, number | string>): ModelNode {
+function makeNode(id: string, name: string, markers: Record<string, number | string>): KnowledgeNode {
   return {
     id,
     name,
@@ -33,8 +33,8 @@ describe('MarkerButton.vue — single unified marker interaction', () => {
   })
 
   it('shows marker description and its value scale on hover', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'Root', { completion: 2 }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'Root', { completion: 2 }) }, ['Root'])
 
     const wrapper = mount(MarkerButton, {
       props: { markerName: 'completion', nodeId: 'Root' },
@@ -51,8 +51,8 @@ describe('MarkerButton.vue — single unified marker interaction', () => {
   })
 
   it('cycles the marker value on click when interactive', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'Root', { priority: 1 }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'Root', { priority: 1 }) }, ['Root'])
 
     const wrapper = mount(MarkerButton, {
       props: { markerName: 'priority', nodeId: 'Root' },
@@ -60,12 +60,12 @@ describe('MarkerButton.vue — single unified marker interaction', () => {
     })
 
     await wrapper.find('[data-testid="marker-priority"]').trigger('click')
-    expect(modelStore.getNode('Root')?.markers['priority']).toBe(2)
+    expect(knowledgeStore.getNode('Root')?.markers['priority']).toBe(2)
   })
 
   it('does not cycle the value when interactive is false', async () => {
-    const modelStore = useModelStore()
-    modelStore.setGraph({ Root: makeNode('Root', 'Root', { rating: 3 }) }, ['Root'])
+    const knowledgeStore = useKnowledgeStore()
+    knowledgeStore.setGraph({ Root: makeNode('Root', 'Root', { rating: 3 }) }, ['Root'])
 
     const wrapper = mount(MarkerButton, {
       props: { markerName: 'rating', nodeId: 'Root', interactive: false },
@@ -73,6 +73,6 @@ describe('MarkerButton.vue — single unified marker interaction', () => {
     })
 
     await wrapper.find('[data-testid="marker-rating"]').trigger('click')
-    expect(modelStore.getNode('Root')?.markers['rating']).toBe(3)
+    expect(knowledgeStore.getNode('Root')?.markers['rating']).toBe(3)
   })
 })

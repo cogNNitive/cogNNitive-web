@@ -1,18 +1,18 @@
 /**
  * useUrlDocLoader — Load a FORMAT model document from a URL.
  *
- * Fetches the raw markdown, parses it with @cognnitive/innfo-core's `parseModel`,
- * builds a minimal in-memory graph, and optionally populates modelStore.
+ * Fetches the raw markdown, parses it with @cognnitive/innfo-core's `parseKnowledge`,
+ * builds a minimal in-memory graph, and optionally populates knowledgeStore.
  *
  * URL-loaded workspaces have NO File System handle — save is disabled.
  */
-import { normalizeSingleModel } from '@cognnitive/innfo-core'
-import type { ModelNode } from '../model/types'
-import { useModelStore } from '../stores/modelStore'
+import { normalizeSingleKnowledge } from '@cognnitive/innfo-core'
+import type { KnowledgeNode } from '../model/types'
+import { useKnowledgeStore } from '../stores/knowledgeStore'
 import { resolveParentSpecs } from '../services/SpecResolverService'
 
 export interface UrlDocLoaderResult {
-  nodes: Record<string, ModelNode>
+  nodes: Record<string, KnowledgeNode>
   rootIds: string[]
   sourceUrl: string
   error: string | null
@@ -47,7 +47,7 @@ export function useUrlDocLoader() {
       const rawName = segments[segments.length - 1] ?? 'root'
       const rootId = rawName.replace(/\.md$/i, '')
 
-      const { nodes } = normalizeSingleModel(text, url, rootId)
+      const { nodes } = normalizeSingleKnowledge(text, url, rootId)
 
       result.nodes = nodes
       result.rootIds = [rootId]
@@ -59,7 +59,7 @@ export function useUrlDocLoader() {
   }
 
   /**
-   * Fetches a FORMAT model from `url` and populates modelStore with the
+   * Fetches a FORMAT model from `url` and populates knowledgeStore with the
    * parsed graph. Returns the same result as `fetch()` so callers can
    * inspect errors or node metadata.
    */
@@ -67,9 +67,9 @@ export function useUrlDocLoader() {
     const result = await fetch(url)
 
     if (!result.error && Object.keys(result.nodes).length > 0) {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       await resolveParentSpecs(result.nodes, result.rootIds)
-      modelStore.setGraph(result.nodes, result.rootIds)
+      knowledgeStore.setGraph(result.nodes, result.rootIds)
     }
 
     return result
@@ -77,7 +77,7 @@ export function useUrlDocLoader() {
 
   /**
    * Builds a model graph from a frontmatter object and raw markdown body,
-   * then populates modelStore. Used for creating new models from templates.
+   * then populates knowledgeStore. Used for creating new models from templates.
    */
   async function loadFromFrontmatter(
     frontmatter: Record<string, unknown>,
@@ -98,13 +98,13 @@ export function useUrlDocLoader() {
       const text = `---\n${yaml}\n---\n\n${body}`
 
       const rootId = filename.replace(/\.md$/i, '')
-      const { nodes } = normalizeSingleModel(text, filename, rootId)
+      const { nodes } = normalizeSingleKnowledge(text, filename, rootId)
 
       result.nodes = nodes
       result.rootIds = [rootId]
 
-      const modelStore = useModelStore()
-      modelStore.setGraph(result.nodes, result.rootIds)
+      const knowledgeStore = useKnowledgeStore()
+      knowledgeStore.setGraph(result.nodes, result.rootIds)
     } catch (err) {
       result.error = err instanceof Error ? err.message : String(err)
     }
@@ -114,10 +114,10 @@ export function useUrlDocLoader() {
 
   /**
    * Fetches multiple FORMAT models from an array of URLs, merges their node graphs,
-   * resolves parent specs, and populates modelStore.
+   * resolves parent specs, and populates knowledgeStore.
    */
   async function loadWorkspaceIntoStore(urls: string[]): Promise<UrlDocLoaderResult> {
-    const combinedNodes: Record<string, ModelNode> = {}
+    const combinedNodes: Record<string, KnowledgeNode> = {}
     const allRootIds: string[] = []
     let firstError: string | null = null
 
@@ -130,9 +130,9 @@ export function useUrlDocLoader() {
     }
 
     if (Object.keys(combinedNodes).length > 0) {
-      const modelStore = useModelStore()
+      const knowledgeStore = useKnowledgeStore()
       await resolveParentSpecs(combinedNodes, allRootIds)
-      modelStore.setGraph(combinedNodes, allRootIds)
+      knowledgeStore.setGraph(combinedNodes, allRootIds)
     }
 
     return {

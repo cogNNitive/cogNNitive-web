@@ -29,16 +29,16 @@ import {
   type CatalogSource,
 } from '@cognnitive/innfo-core'
 import type { SpecCache } from '@cognnitive/innfo-core'
-import { listModels } from './list-read.js'
+import { listKnowledge } from './list-read.js'
 import { deriveNameFromUrl } from './spec.js'
 import {
   collectWorkspaceDiagnostics,
   filterDiagnosticsForModel,
-  validateModel,
+  validateKnowledge,
 } from './validate.js'
 import {
   resolveParentChainNode,
-  resolveTemplatePackage,
+  resolveBlueprintPackage,
   freshnessVerdict,
 } from './resolver-node.js'
 
@@ -46,7 +46,7 @@ import {
 export const CATALOG_PAGES_URL = 'https://cognnitive.com/innfo/templates/catalog.json'
 /** Raw fallback URL for the catalog (AD-3, tier 2). */
 export const CATALOG_RAW_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/templates/catalog.json'
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/catalog.json'
 
 const CATALOG_TIMEOUT_MS = 2500
 const FRESHNESS_TIMEOUT_MS = 10000
@@ -106,13 +106,13 @@ async function fetchJson(url: string, timeoutMs: number): Promise<unknown | null
 function parseCatalog(json: unknown): TemplateCatalog | null {
   if (!json || typeof json !== 'object') return null
   const cat = json as TemplateCatalog
-  if (!cat.templates || typeof cat.templates !== 'object') return null
+  if (!cat.blueprints || typeof cat.blueprints !== 'object') return null
   return cat
 }
 
 /**
  * AD-3 catalog resolution: remote-first (Pages, then raw), then in-repo
- * (`<rootDir>/specs/templates/catalog.json`, else the monorepo copy), then
+ * (`<rootDir>/specs/bluepriNNts/catalog.json`, else the monorepo copy), then
  * offline. `offline: true` skips tiers 1–2 entirely.
  */
 export async function resolveCatalog(
@@ -129,7 +129,9 @@ export async function resolveCatalog(
   }
 
   const localCandidates = [
+    join(rootDir, 'specs', 'bluepriNNts', 'catalog.json'),
     join(rootDir, 'specs', 'templates', 'catalog.json'),
+    join(rootDir, 'iNNfo', 'specs', 'bluepriNNts', 'catalog.json'),
     join(rootDir, 'iNNfo', 'specs', 'templates', 'catalog.json'),
   ]
   for (const path of localCandidates) {
@@ -156,7 +158,7 @@ export async function resolveCatalog(
  * `hydrated`, and a `SpecResolutionError` is `unresolved` — never throws out
  * of the port. Merges the returned `SpecCache` into the shared context.
  */
-async function resolveTemplateForModel(
+async function resolveBlueprintForKnowledge(
   ctx: CheckContext,
   model: WorkspaceModelRef,
 ): Promise<TemplateResolutionResult> {
@@ -164,7 +166,7 @@ async function resolveTemplateForModel(
   if (!model.parentUrl || !model.parentName) {
     return { outcome: 'not-checked', detail: 'No parent_spec.url to resolve' }
   }
-  const existingPkg = await resolveTemplatePackage(rootDir, model.parentName).catch(() => null)
+  const existingPkg = await resolveBlueprintPackage(rootDir, model.parentName).catch(() => null)
   try {
     const cache = await resolveParentChainNode(rootDir, model.parentUrl, model.parentName, {
       checkFreshness: false,
@@ -209,7 +211,7 @@ export function toIntegrityDiagnostics(
 }
 
 async function discoverModels(ctx: CheckContext): Promise<WorkspaceModelRef[]> {
-  const infos = await listModels(ctx.rootDir)
+  const infos = await listKnowledge(ctx.rootDir)
   const refs: WorkspaceModelRef[] = []
   for (const info of infos) {
     try {
@@ -246,7 +248,7 @@ async function validateAll(
   // (and the one recursiveParse below) sees each model's template.
   for (const model of models) {
     if (!ctx.resolutions.has(model.path)) {
-      ctx.resolutions.set(model.path, await resolveTemplateForModel(ctx, model))
+      ctx.resolutions.set(model.path, await resolveBlueprintForKnowledge(ctx, model))
     }
   }
 
@@ -266,16 +268,16 @@ async function validateAll(
     let fileWarnings: IntegrityDiagnostic[] = []
     if (model.id) {
       try {
-        const result = await validateModel(ctx.rootDir, model.id, undefined, undefined, false, {
+        const result = await validateKnowledge(ctx.rootDir, model.id, undefined, undefined, false, {
           checkFreshness: false,
         })
         fileErrors = toIntegrityDiagnostics(result.errors)
         fileWarnings = toIntegrityDiagnostics(result.warnings)
       } catch (err) {
         /* v8 ignore start */
-        // swallow deliberately: validateModel never rejects by contract, but
+        // swallow deliberately: validateKnowledge never rejects by contract, but
         // never let it fail the pass.
-        console.warn(`[check-workspace] validateModel threw for ${model.id}: ${err}`)
+        console.warn(`[check-workspace] validateKnowledge threw for ${model.id}: ${err}`)
         /* v8 ignore stop */
       }
     }
@@ -301,9 +303,9 @@ export function buildCheckWorkspacePorts(ctx: CheckContext): WorkspaceIntegrityP
     discoverModels: () => discoverModels(ctx),
     validateAll: (models) => validateAll(ctx, models),
     fetchCatalog: () => resolveCatalog(ctx.rootDir, ctx.offline),
-    resolveTemplate: (model) => {
+    resolveBlueprint: (model) => {
       const cached = ctx.resolutions.get(model.path)
-      return cached ? Promise.resolve(cached) : resolveTemplateForModel(ctx, model)
+      return cached ? Promise.resolve(cached) : resolveBlueprintForKnowledge(ctx, model)
     },
     checkFreshness: makeCheckFreshness(),
   }
@@ -343,3 +345,6 @@ export async function checkWorkspace(
     ...(truncated ? { truncated: true } : {}),
   }
 }
+
+export const checkDomain = checkWorkspace
+

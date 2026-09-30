@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { validateElementFieldReferences } from './references.js'
-import { ElementsMap, type Concept, type ParsedModel } from '../types/index.js'
+import { ElementsMap, type Concept, type ParsedKnowledge } from '../types/index.js'
 
 function modelWithSubmodelField(submodelValue: string): {
-  model: ParsedModel
+  model: ParsedKnowledge
   templateConcepts: Concept[]
 } {
   const elements = new ElementsMap()
@@ -16,8 +16,8 @@ function modelWithSubmodelField(submodelValue: string): {
       markers: {},
     },
   ])
-  const model: ParsedModel = {
-    frontmatter: { spec_version: 'V_0-2-0', spec_url: '', level: 3 } as ParsedModel['frontmatter'],
+  const model: ParsedKnowledge = {
+    frontmatter: { spec_version: 'V_0-2-0', spec_url: '', level: 3 } as ParsedKnowledge['frontmatter'],
     taxonomy: [],
     elements,
     matrices: [],
@@ -27,8 +27,8 @@ function modelWithSubmodelField(submodelValue: string): {
   const templateConcepts: Concept[] = [
     {
       name: 'Docs',
-      type: 'model',
-      fields: [{ name: 'submodel', type: 'model', target_template: 'procedures' }],
+      type: 'knowledge',
+      fields: [{ name: 'submodel', type: 'knowledge', target_blueprint: 'procedures' }],
     },
   ]
   return { model, templateConcepts }
@@ -57,13 +57,13 @@ describe('submodel conformance coded warnings (validator-robustness Unit 2)', ()
     })
 
     // Sanity: the fixture really declares a different expected template.
-    expect(templateConcepts[0].fields?.[0].target_template).toBe('procedures')
+    expect(templateConcepts[0].fields?.[0].target_blueprint).toBe('procedures')
 
     const mismatchConcepts: Concept[] = [
       {
         name: 'Docs',
-        type: 'model',
-        fields: [{ name: 'submodel', type: 'model', target_template: 'business' }],
+        type: 'knowledge',
+        fields: [{ name: 'submodel', type: 'knowledge', target_blueprint: 'business' }],
       },
     ]
     const mismatch = validateElementFieldReferences(model, mismatchConcepts, {
@@ -94,12 +94,12 @@ describe('submodel conformance coded warnings (validator-robustness Unit 2)', ()
     const urlConcepts: Concept[] = [
       {
         name: 'Docs',
-        type: 'model',
+        type: 'knowledge',
         fields: [
           {
             name: 'submodel',
-            type: 'model',
-            target_template: 'https://example.com/specs/procedures_NN.md',
+            type: 'knowledge',
+            target_blueprint: 'https://example.com/specs/procedures_NN.md',
           },
         ],
       },

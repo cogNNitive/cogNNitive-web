@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { warmTemplateCache } from '../../src/services/SpecResolverService'
+import { warmBlueprintCache } from '../../src/services/SpecResolverService'
 
-describe('warmTemplateCache', () => {
-  it('resolves a template named by a seed ref from the workspace specs/ directory into a composed TemplateSchema map, keyed lowercased', async () => {
+describe('warmBlueprintCache', () => {
+  it('resolves a template named by a seed ref from the workspace specs/ directory into a composed BlueprintSchema map, keyed lowercased', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
 
     const specMd = [
@@ -23,8 +23,8 @@ describe('warmTemplateCache', () => {
       '',
       '## NN Field Definition: submodel_ref',
       'concept:: Market',
-      'type:: model',
-      'target_template:: sub_template',
+      'type:: knowledge',
+      'target_blueprint:: sub_template',
     ].join('\n')
 
     const fakeTree = buildFakeTree('workspace', {
@@ -33,20 +33,20 @@ describe('warmTemplateCache', () => {
       },
     })
 
-    const cache = await warmTemplateCache(fakeTree, [{ name: 'test-template_V_1-0-0' }])
+    const cache = await warmBlueprintCache(fakeTree, [{ name: 'test-template_V_1-0-0' }])
 
     const schema = cache.get('test-template_v_1-0-0')
     expect(schema).toBeDefined()
     expect(schema!.concepts[0]!.name).toBe('Market')
     expect(schema!.concepts[0]!.fields?.[0]!.name).toBe('submodel_ref')
-    expect(schema!.concepts[0]!.fields?.[0]!.type).toBe('model')
+    expect(schema!.concepts[0]!.fields?.[0]!.type).toBe('knowledge')
   })
 
   it('returns an empty map when no seed refs are supplied and no root-level file declares a parent_spec', async () => {
     const { buildFakeTree } = await import('../helpers/fakeFs')
     const fakeTree = buildFakeTree('workspace', { 'index.md': '# NN index' })
 
-    const cache = await warmTemplateCache(fakeTree)
+    const cache = await warmBlueprintCache(fakeTree)
 
     expect(cache.size).toBe(0)
   })

@@ -10,7 +10,7 @@ const runtimePath = join(
   '..',
   '..',
   'specs',
-  'templates',
+  'bluepriNNts',
   'console',
   'innfo-runtime.js',
 )

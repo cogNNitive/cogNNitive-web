@@ -8,7 +8,7 @@ level: 3
 parent_spec:
   name: "business_V_0-1-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-1-2"
+knowledge_version: "V_0-1-2"
 title: "Ghostbusters"
 type: "BusinessModel"
 ---
@@ -26,7 +26,7 @@ level: 2
 parent_spec:
   name: "business_V_0-1-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/business_V_0-1-1_FORMAT.md"
-model_version: "V_0-1-2"
+knowledge_version: "V_0-1-2"
 title: "Ghostbusters"
 ---
 
@@ -84,7 +84,7 @@ describe('validateFormatContent', () => {
   })
 
   it('detects invalid version format', () => {
-    const badVersion = validModel.replace(/^model_version:.*$/m, 'model_version: "bad"')
+    const badVersion = validModel.replace(/^knowledge_version:.*$/m, 'knowledge_version: "bad"')
     const report = validateFormatContent(badVersion, 'test_NN.md')
     const versionCheck = report.checks.find((c) => c.id === 'fm-version-format')
     expect(versionCheck?.passed).toBe(false)

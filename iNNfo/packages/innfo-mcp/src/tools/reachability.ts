@@ -1,6 +1,6 @@
 import { readFile, readdir, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { parseModel } from '@cognnitive/innfo-core'
+import { parseKnowledge } from '@cognnitive/innfo-core'
 import type { ReachabilityGraph } from '@cognnitive/innfo-core'
 import { parseSpecName, normalizeVersion } from './resolver-node.js'
 import { getMarkdownFiles } from './fs-utils.js'
@@ -9,7 +9,7 @@ import { createSpecsBackupZip } from './spec-backup.js'
 /* ── Reachability Graph & Spec Pruning Engine ───────────────── */
 
 /**
- * Traverses L3 models (`models/`), root entrypoints (`workspace_NN.md`, `index.md`),
+ * Traverses L3 models (`kNNowledge/`), root entrypoints (`domaiNN_NN.md`, `index.md`),
  * and L2 templates (`templates/`) to build the workspace reference reachability graph.
  */
 export async function calculateSpecReachability(rootDir: string): Promise<ReachabilityGraph> {
@@ -39,7 +39,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
     }
   }
 
-  const searchDirs = [join(rootDir, 'models'), rootDir, join(rootDir, 'templates')]
+  const searchDirs = [join(rootDir, 'kNNowledge'), rootDir, join(rootDir, 'bluepriNNts')]
   const scannedFiles = new Set<string>()
 
   for (const dir of searchDirs) {
@@ -53,7 +53,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
 
           try {
             const content = await readFile(filePath, 'utf-8')
-            const parsed = parseModel(content)
+            const parsed = parseKnowledge(content)
             const fm = parsed.frontmatter
             const parentName =
               fm?.parent_spec?.name ||
@@ -66,7 +66,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
             if (parentUrl) {
               const urlStem = basename(parentUrl).replace(/\.(md|markdown)$/i, '')
               addReference(urlStem, filePath)
-              const tmplMatch = parentUrl.match(/\/templates\/([^/]+)\/([^/]+)/i)
+              const tmplMatch = parentUrl.match(/\/bluepriNNts\/([^/]+)\/([^/]+)/i)
               if (tmplMatch) {
                 const pkgBase = tmplMatch[1].toLowerCase()
                 const pkgVer = normalizeVersion(tmplMatch[2])
@@ -81,7 +81,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
                 if (inc.url) {
                   const urlStem = basename(inc.url).replace(/\.(md|markdown)$/i, '')
                   addReference(urlStem, filePath)
-                  const tmplMatch = inc.url.match(/\/templates\/([^/]+)\/([^/]+)/i)
+                  const tmplMatch = inc.url.match(/\/bluepriNNts\/([^/]+)\/([^/]+)/i)
                   if (tmplMatch) {
                     const pkgBase = tmplMatch[1].toLowerCase()
                     const pkgVer = normalizeVersion(tmplMatch[2])
@@ -119,7 +119,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
     const keyBase = keyParts[0].split(/_v_/i)[0]
     const keyVer = keyParts[1] ? normalizeVersion(keyParts[1]) : undefined
 
-    if (normPath.includes(`/templates/${keyBase}/`)) {
+    if (normPath.includes(`/bluepriNNts/${keyBase}/`)) {
       if (!keyVer) return true
       if (
         normPath.includes(`/${keyVer}/`) ||
@@ -150,7 +150,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
       if (matchesCandidateFile(file, specKey)) {
         try {
           const content = await readFile(file, 'utf-8')
-          const parsed = parseModel(content)
+          const parsed = parseKnowledge(content)
           const fm = parsed.frontmatter
           for (const inc of fm?.includes ?? []) {
             if (inc.name) {
@@ -160,7 +160,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
               if (inc.url) {
                 const urlStem = basename(inc.url).replace(/\.(md|markdown)$/i, '')
                 addReference(urlStem, file)
-                const tmplMatch = inc.url.match(/\/templates\/([^/]+)\/([^/]+)/i)
+                const tmplMatch = inc.url.match(/\/bluepriNNts\/([^/]+)\/([^/]+)/i)
                 if (tmplMatch) {
                   const pkgBase = tmplMatch[1].toLowerCase()
                   const pkgVer = normalizeVersion(tmplMatch[2])
@@ -189,7 +189,7 @@ export async function calculateSpecReachability(rootDir: string): Promise<Reacha
     for (const entry of entries) {
       const fullPath = join(specsDir, entry.name)
 
-      if (entry.name === 'templates') {
+      if (entry.name === 'bluepriNNts') {
         try {
           const tmplEntries = await readdir(fullPath, { withFileTypes: true })
           for (const nameDir of tmplEntries) {

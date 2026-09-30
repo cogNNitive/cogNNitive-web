@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveTemplateSchema, canonicalizeDefinition } from '../src/index'
+import { resolveBlueprintSchema, canonicalizeDefinition } from '../src/index'
 
 /* ────────────────────────────────────────────────────────────────────────────
  * D1 — deduplication of AST-identical Definitions across `includes`.
@@ -102,9 +102,9 @@ const mk = (two: string) => (ref: { name: string }) => {
   return m[ref.name.toLowerCase()] ?? null
 }
 
-describe('resolveTemplateSchema — D1 AST-identical dedup across `includes`', () => {
+describe('resolveBlueprintSchema — D1 AST-identical dedup across `includes`', () => {
   it('merges an identical Marker declared by two included templates (no error, one entry)', () => {
-    const { schema, errors } = resolveTemplateSchema(UMBRELLA, mk(SLICE_TWO))
+    const { schema, errors } = resolveBlueprintSchema(UMBRELLA, mk(SLICE_TWO))
     expect(errors).toEqual([])
     expect(schema.markers.map((m) => m.name)).toEqual(['importance'])
     expect(schema.concepts.map((c) => c.name).sort()).toEqual([
@@ -115,13 +115,13 @@ describe('resolveTemplateSchema — D1 AST-identical dedup across `includes`', (
   })
 
   it('merges when the two declarations differ only in property order / whitespace', () => {
-    const { schema, errors } = resolveTemplateSchema(UMBRELLA, mk(SLICE_TWO_REORDERED))
+    const { schema, errors } = resolveBlueprintSchema(UMBRELLA, mk(SLICE_TWO_REORDERED))
     expect(errors).toEqual([])
     expect(schema.markers.map((m) => m.name)).toEqual(['importance'])
   })
 
   it('still ERRORs when the same Marker name is declared with a different body, naming both sources', () => {
-    const { errors } = resolveTemplateSchema(UMBRELLA, mk(SLICE_TWO_DIVERGENT))
+    const { errors } = resolveBlueprintSchema(UMBRELLA, mk(SLICE_TWO_DIVERGENT))
     const collision = errors.find((e) => e.message.includes('importance'))
     expect(collision?.severity).toBe('error')
     expect(collision?.message).toMatch(/Slice One/)

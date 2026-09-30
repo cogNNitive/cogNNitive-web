@@ -235,7 +235,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { GripVertical, Plus, Pencil, Check, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-vue-next'
-import { useModelStore } from '../../stores/modelStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { useConfirmStore } from '../../stores/confirmStore'
 import { useUiStore } from '../../stores/uiStore'
 import { useToast } from '../../shared/useToast'
@@ -252,7 +252,7 @@ const props = defineProps<{
   conceptFields?: any[]
 }>()
 
-const modelStore = useModelStore()
+const knowledgeStore = useKnowledgeStore()
 const confirmStore = useConfirmStore()
 const uiStore = useUiStore()
 const { show: showToast } = useToast()
@@ -408,10 +408,10 @@ function getTags(child: { tags?: string[] }): string[] {
 }
 
 function updateTags(child: { id: string; tags?: string[] }, newTags: string[]): void {
-  const node = modelStore.getNode(child.id)
+  const node = knowledgeStore.getNode(child.id)
   if (node) {
-    modelStore.upsertNode({ ...node, tags: newTags })
-    modelStore.markDirty(child.id)
+    knowledgeStore.upsertNode({ ...node, tags: newTags })
+    knowledgeStore.markDirty(child.id)
   }
 }
 
@@ -421,18 +421,18 @@ const children = computed(() => {
     const parts = id.split(':')
     const parentId = parts[1]
     const conceptName = parts[2]
-    const parentNode = modelStore.getNode(parentId)
+    const parentNode = knowledgeStore.getNode(parentId)
     if (!parentNode) {
       return []
     }
     const result = parentNode.childIds
-      .map((cid) => modelStore.getNode(cid))
+      .map((cid) => knowledgeStore.getNode(cid))
       .filter(
         (child): child is any => !!child && child.type === conceptName && child.kind === 'element',
       )
     return result
   }
-  return modelStore.getChildren(id)
+  return knowledgeStore.getChildren(id)
 })
 
 const sortedChildren = computed(() => {
@@ -492,7 +492,7 @@ function onDrop(e: DragEvent, targetIdx: number): void {
   const id = props.nodeId
   const parentId = id.startsWith('virtual:') ? id.split(':')[1] : id
 
-  modelStore.moveChildToIndex(parentId, childId, targetIdx)
+  knowledgeStore.moveChildToIndex(parentId, childId, targetIdx)
 
   draggedIndex.value = null
   dragOverIndex.value = null
@@ -507,7 +507,7 @@ async function deleteElement(childId: string): Promise<void> {
     danger: true,
   })
   if (!ok) return
-  modelStore.removeNodeTree(childId)
+  knowledgeStore.removeNodeTree(childId)
 }
 
 function addElement(): void {
@@ -527,13 +527,13 @@ function addElement(): void {
   let index = 1
   let elementName = `New ${conceptName}`
   let targetId = `${parentId}/${elementName}`
-  while (modelStore.getNode(targetId)) {
+  while (knowledgeStore.getNode(targetId)) {
     index++
     elementName = `New ${conceptName} ${index}`
     targetId = `${parentId}/${elementName}`
   }
 
-  const newId = modelStore.createChild(parentId, elementName, conceptName, 'element')
+  const newId = knowledgeStore.createChild(parentId, elementName, conceptName, 'element')
   if (newId) {
     isEditMode.value = true
     if (isSorted.value) clearSort()
