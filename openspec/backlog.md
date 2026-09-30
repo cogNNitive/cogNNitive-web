@@ -704,3 +704,26 @@ drifts). Mind the CI Node pin and `engine-strict=true` when adding any dev depen
 
 **Suggested trigger:** `/sdd-explore third-party-license-compliance` (after the project
 license is chosen).
+
+---
+
+## `docs/opencode-ecosystem-listing` — list cogNNitive in the OpenCode ecosystem Projects directory
+
+**Type:** docs / community · **Size:** small · **Status:** someday-maybe
+
+**Why:** cogNNitive runs *on* OpenCode (agents, skills, MCP servers), yet it is absent from
+OpenCode's community ecosystem page ([opencode.ai/docs/ecosystem](https://opencode.ai/docs/ecosystem/)),
+whose **Projects** section lists tools built on the OpenCode SDK/API. A listing there is free
+discovery for exactly the audience already running OpenCode.
+
+**Behaviour (as requested):** add cogNNitive to the **Projects** table of the Ecosystem page
+(name + one-line description) by submitting a PR to the OpenCode repo.
+
+**Approach:** the page is generated from `packages/web/src/content/docs/ecosystem.mdx` in
+`anomalyco/opencode` (the page's own "Edit page" link points there). Fork, add one row to the
+Projects table, open a PR. The same page points to `awesome-opencode` and `opencode.cafe` as
+alternative community listings that accept entries with less ceremony — consider those too, or
+instead. Open questions: the entry name (`cogNNitive`), target URL (`https://cognnitive.com`),
+and whether it best fits **Projects** (built on the SDK) vs **Agents**/**Plugins**.
+
+**Suggested trigger:** maintainer decision in chat (one PR; no SDD cycle needed).
