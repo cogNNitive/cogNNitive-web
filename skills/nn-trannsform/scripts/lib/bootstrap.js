@@ -14,7 +14,7 @@ const WORKSPACE_DIRS = [
   path.join('sources', 'nn'),
   'conversations',
   'export',
-  'models',
+  'kNNowledge',
   'procedures',
   'traNNsformations',
 ];
@@ -84,6 +84,33 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
   const agentsMdPath = path.join(projectDir, 'AGENTS.md');
   if (!fs.existsSync(agentsMdPath) || overwriteAgents) {
     fs.writeFileSync(agentsMdPath, generateAgentsMd(projectName), 'utf8');
+  }
+
+  const domainnPath = path.join(projectDir, 'domaiNN_NN.md');
+  if (!fs.existsSync(domainnPath)) {
+    const domainnContent =
+      `---\n` +
+      `level: 3\n` +
+      `parent_spec:\n` +
+      `  name: "workspace"\n` +
+      `  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"\n` +
+      `knowledge_version: "V_0-1-0"\n` +
+      `title: "${projectName} Workspace"\n` +
+      `---\n\n` +
+      `> [!NOTE]\n` +
+      `> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n` +
+      `# NN index\n\n` +
+      `* [[Workspace]]\n` +
+      `* [[Models]]\n` +
+      `* [[Sources]]\n` +
+      `* [[Procedures]]\n` +
+      `* [[Artifacts]]\n\n` +
+      `# NN Workspace\n\n` +
+      `## NN Workspace: ${projectName} Workspace\n` +
+      `knowledge_dir:: kNNowledge/\n` +
+      `sources_dir:: sources/nn/\n` +
+      `Operational workspace for ${projectName}.\n`;
+    fs.writeFileSync(domainnPath, domainnContent, 'utf8');
   }
 
   let copiedCount = 0;

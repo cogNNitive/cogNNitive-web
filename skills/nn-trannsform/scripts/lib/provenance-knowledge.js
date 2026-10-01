@@ -4,7 +4,7 @@ const path = require('path');
 const TEMPLATE_URL =
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md';
 const INNFO_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md';
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md';
 const TEMPLATE_NAME = 'cogNNitive';
 
 const DOC_NOTICE =
@@ -378,14 +378,15 @@ function scrapeSourceRefs(content) {
  * @returns {Array<{ name: string, model_ref: string, knowledge_version: string | null, model_template: string | null, derived_from: string[] }>}
  */
 function collectModels(projectDir) {
-  const modelsDir = path.join(projectDir, 'models');
+  const modelsDir = path.join(projectDir, 'kNNowledge');
+  if (!fs.existsSync(modelsDir)) return [];
   return walkFiles(modelsDir, (n) => n.endsWith('_NN.md')).map((rel) => {
     const content = fs.readFileSync(path.join(modelsDir, rel), 'utf8');
     const header = parseModelHeader(content);
     const base = path.basename(rel).replace(/_NN\.md$/, '');
     return {
       name: header.title || base,
-      model_ref: `models/${rel}`,
+      model_ref: `kNNowledge/${rel.replace(/\\/g, '/')}`,
       knowledge_version: header.knowledge_version,
       model_template: header.template,
       derived_from: scrapeSourceRefs(content),
@@ -555,7 +556,7 @@ function emptySection(concept, guidance) {
 }
 
 const MODELS_GUIDANCE =
-  'Auto-synced from models/ on every --scan/--import-url/--lineage. One ModelRecords element per Level 3 model.';
+  'Auto-synced from kNNowledge/ on every --scan/--import-url/--lineage. One ModelRecords element per Level 3 model.';
 const ARTIFACTS_GUIDANCE =
   'Auto-synced from export/ on every --scan/--import-url/--lineage. One element per generated deliverable.';
 const PROCEDURES_GUIDANCE =
@@ -656,7 +657,7 @@ function managedSections(data) {
 function renderFrontmatter(title, modelVersion = 'V_0-2-0') {
   return (
     '---\n' +
-    'specification_version: "V_0-2-1"\n' +
+    'specification_version: "V_0-3-0"\n' +
     `specification_url: "${INNFO_URL}"\n` +
     'level: 3\n' +
     'parent_spec:\n' +

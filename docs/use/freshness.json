@@ -1,13 +1,31 @@
 {
-  "generatedAt": "2026-09-30T22:08:22.350Z",
-  "head": "17b8907299177df0a8f3787af1a99a970bf09884",
+  "generatedAt": "2026-10-01T15:01:02.107Z",
+  "head": "590e8fe54beebabf3f442ce562ddbb10c87c9376",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.8.1",
       "pinnedTagDate": "2026-09-30T22:40:50+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "skills/nn-preflight/scripts/preflight-check.js",
+        "skills/nn-trannsform/SKILL.md",
+        "skills/nn-trannsform/package-lock.json",
+        "skills/nn-trannsform/package.json",
+        "skills/nn-trannsform/scripts/index.js",
+        "skills/nn-trannsform/scripts/lib/bootstrap.js",
+        "skills/nn-trannsform/scripts/lib/convergence-delta.js",
+        "skills/nn-trannsform/scripts/lib/duplicate-guards.js",
+        "skills/nn-trannsform/scripts/lib/external-scanner.js",
+        "skills/nn-trannsform/scripts/lib/impact-checker.js",
+        "skills/nn-trannsform/scripts/lib/lineage-check.js",
+        "skills/nn-trannsform/scripts/lib/provenance-knowledge.js",
+        "skills/nn-trannsform/test/unit/test-bootstrap-recursive.js",
+        "skills/nn-trannsform/test/unit/test-duplicate-guards.js",
+        "skills/nn-trannsform/test/unit/test-impact-checker.js",
+        "skills/nn-trannsform/test/unit/test-lineage-sync.js",
+        "skills/nn-trannsform/test/unit/test-provenance.js"
+      ]
     },
     "templates": {
       "subsystem": "templates",
@@ -19,7 +37,7 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.12.0",
       "pinnedTagDate": "2026-09-30T13:30:01+02:00",
-      "commitsSincePin": 8,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/README.md",
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
@@ -45,7 +63,7 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.6.0",
       "pinnedTagDate": "2026-09-30T14:02:43+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 3,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/feedback.schema.json",

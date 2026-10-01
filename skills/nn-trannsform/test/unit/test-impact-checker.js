@@ -33,7 +33,7 @@ async function run() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cog-impact-test-'));
 
   try {
-    const modelsDir = path.join(tmpDir, 'models');
+    const modelsDir = path.join(tmpDir, 'kNNowledge');
     const nnDir = path.join(tmpDir, 'sources', 'nn');
     fs.mkdirSync(modelsDir, { recursive: true });
     fs.mkdirSync(nnDir, { recursive: true });
@@ -125,13 +125,13 @@ sources:: strategy_source.md@## Nonexistent Section
       { baseName: 'strategy_source', displayOutPath: 'strategy_source.md' }
     ], tmpDir);
     ok(scanImpact.length > 0, 'scan impact returns affected models for changed source');
-    eq(scanImpact[0].affectedModels[0].modelFile, 'models/Drifted_V_1-0-0_NN.md', 'identifies correct affected model');
+    eq(scanImpact[0].affectedModels[0].modelFile, 'kNNowledge/Drifted_V_1-0-0_NN.md', 'identifies correct affected model');
 
     // Test 5: buildImpactReport emits structured markdown with required frontmatter
     const reportMd = buildImpactReport(auditDrift, '2026-09-12');
     ok(reportMd.includes('type: report'), 'report carries type: report frontmatter');
     ok(reportMd.includes('generated_by:'), 'report carries generated_by frontmatter');
-    ok(reportMd.includes('models/Drifted_V_1-0-0_NN.md'), 'report names each affected model');
+    ok(reportMd.includes('kNNowledge/Drifted_V_1-0-0_NN.md'), 'report names each affected model');
     ok(reportMd.includes('Unknown Heading Target'), 'report names the affected element');
     ok(reportMd.includes('non-existent-heading'), 'report cites the drifting source heading');
     ok(/Recommended remediation/i.test(reportMd), 'report includes recommended remediation');

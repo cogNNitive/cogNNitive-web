@@ -22,7 +22,7 @@ function run() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'nnt-lineage-'));
   try {
     const proj = path.join(tmp, 'Acme');
-    for (const d of ['sources/nn', 'models', 'artifacts']) {
+    for (const d of ['sources/nn', 'kNNowledge', 'artifacts']) {
       fs.mkdirSync(path.join(proj, d), { recursive: true });
     }
     fs.writeFileSync(
@@ -30,7 +30,7 @@ function run() {
       '---\nsource_file: "sources/original/report.pdf"\nsha256: "a"\nsize_bytes: 1\nnormalized_at: "x"\nnormalized_by: "t"\n---\n\n# Overview\n',
     );
     fs.writeFileSync(
-      path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
+      path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'),
       '---\nlevel: 3\nknowledge_version: "V_1-0-0"\nparent_spec:\n  name: "business_V_0-1-0"\ntitle: "Business Plan"\n---\n\n# NN Stakeholders\n\n## NN Stakeholders: Clients\nsources:: [report.md#overview]\n',
     );
     fs.writeFileSync(
@@ -42,9 +42,9 @@ function run() {
     const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const m1 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(r1.modelCount === 1 && r1.artifactCount === 1, 'build reports 1 model + 1 artifact');
-    ok(/## NN ModelRecords: Business Plan/.test(m1), '# NN ModelRecords entry rendered from models/');
+    ok(/## NN ModelRecords: Business Plan/.test(m1), '# NN ModelRecords entry rendered from kNNowledge/');
     ok(
-      /model_ref:: models\/Plan_V_1-0-0_NN\.md/.test(m1) &&
+      /model_ref:: kNNowledge\/Plan_V_1-0-0_NN\.md/.test(m1) &&
         /derived_from:: \[report\.md#overview\]/.test(m1),
       'model entry carries model_ref + derived_from from sources::',
     );
@@ -63,7 +63,7 @@ function run() {
 
     // Append a procedure run — survives a later section refresh.
     provenance.appendProcedureRun(proj, { command: 'scan', inputs: ['sources/original/'], outputs: ['sources/nn/'] });
-    provenance.appendProcedureRun(proj, { command: 'apply Foo', inputs: ['models/'], outputs: ['artifacts/'] });
+    provenance.appendProcedureRun(proj, { command: 'apply Foo', inputs: ['kNNowledge/'], outputs: ['artifacts/'] });
     let mp = fs.readFileSync(r1.modelPath, 'utf8');
     ok((mp.match(/## NN Procedures:/g) || []).length === 2, 'two procedure entries appended');
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
@@ -71,7 +71,7 @@ function run() {
     ok((mp.match(/## NN Procedures:/g) || []).length === 2, 'section refresh preserves procedure history');
 
     // Remove the model → drops out of # NN ModelRecords.
-    fs.rmSync(path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'));
+    fs.rmSync(path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'));
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const m3 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(!/## NN ModelRecords: Business Plan/.test(m3), 'removed model drops out of # NN ModelRecords');
@@ -85,7 +85,7 @@ function run() {
 
     // Restore the model, add a dangling sources:: — --check catches it.
     fs.writeFileSync(
-      path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
+      path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'),
       '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [ghost.md#nowhere]\n',
     );
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
@@ -94,7 +94,7 @@ function run() {
 
     // Clean workspace → no errors.
     fs.writeFileSync(
-      path.join(proj, 'models', 'Plan_V_1-0-0_NN.md'),
+      path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'),
       '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [report.md#overview]\n',
     );
     fs.rmSync(path.join(proj, 'artifacts', 'Exec_Summary_V_1-0-0.md'));
@@ -137,7 +137,7 @@ function run() {
     );
     // Models catalog lineage stays byte-unchanged for inputs that don't use the new field.
     ok(
-      /model_ref:: models\/Plan_V_1-0-0_NN\.md\n(?:knowledge_version:: V_1-0-0\n)?(?:model_template:: [^\n]+\n)?derived_from:: \[report\.md#overview\]/.test(
+      /model_ref:: kNNowledge\/Plan_V_1-0-0_NN\.md\n(?:knowledge_version:: V_1-0-0\n)?(?:model_template:: [^\n]+\n)?derived_from:: \[report\.md#overview\]/.test(
         mArtifactSources,
       ),
       'Models catalog lineage output stays byte-unchanged for models not using artifact sources:',
@@ -272,7 +272,7 @@ function run() {
       )
       .replace(
         '## NN Artifacts: Proposal_V_1-0-0',
-        '## NN Artifacts: Proposal_V_1-0-0\nmodel_ref:: models/Ghost_V_1-0-0_NN.md\nderived_from:: [Ghost_Model V_1-0-0]\n## NN Artifacts: Ghost_Artifact_V_1-0-0',
+        '## NN Artifacts: Proposal_V_1-0-0\nmodel_ref:: kNNowledge/Ghost_V_1-0-0_NN.md\nderived_from:: [Ghost_Model V_1-0-0]\n## NN Artifacts: Ghost_Artifact_V_1-0-0',
       );
     fs.writeFileSync(r1.modelPath, modelWithBoth);
     const checkBoth = checkLineage(proj);

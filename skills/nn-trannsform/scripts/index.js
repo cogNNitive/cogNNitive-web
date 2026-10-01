@@ -496,7 +496,7 @@ async function handleCliMode(argv) {
       provenance.buildProvenanceKnowledge(projectDir);
       provenance.appendProcedureRun(projectDir, {
         command: `apply ${templateName}`,
-        inputs: ['sources/nn/', 'models/'],
+        inputs: ['sources/nn/', 'kNNowledge/'],
         outputs: [result.outputPath.replace(projectDir, '').replace(/^[\\/]/, '')],
       });
     } catch (err) {

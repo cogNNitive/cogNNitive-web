@@ -316,7 +316,7 @@ function indexWorkspaceSources(workspaceRoot, opts = {}) {
  */
 function auditUncitedSources(workspaceRoot, opts = {}) {
   const index = indexWorkspaceSources(workspaceRoot, opts);
-  const modelsDir = path.join(workspaceRoot, 'models');
+  const modelsDir = path.join(workspaceRoot, 'kNNowledge');
 
   const citedHashes = new Set();
   const citedPaths = new Set();
@@ -349,7 +349,7 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
         const parts = bracket ? bracket[1].split(',') : [raw];
         for (const p of parts) {
           const v = p.trim().replace(/^"|"$/g, '');
-          if (!v || v.startsWith('models/') || v.includes('@')) continue;
+          if (!v || v.startsWith('kNNowledge/') || v.startsWith('models/') || v.includes('@')) continue;
 
           const hashIdx = v.indexOf('#');
           const fileRef = (hashIdx >= 0 ? v.substring(0, hashIdx) : v)

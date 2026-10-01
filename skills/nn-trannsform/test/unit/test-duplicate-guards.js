@@ -125,7 +125,7 @@ function run() {
       const nnDir = path.join(dir, "sources", "nn");
       const sessionsDir = path.join(nnDir, "sessions");
       const importSessionsDir = path.join(nnDir, "import", "sessions");
-      const modelsDir = path.join(dir, "models");
+      const modelsDir = path.join(dir, "kNNowledge");
 
       fs.mkdirSync(sessionsDir, { recursive: true });
       fs.mkdirSync(importSessionsDir, { recursive: true });

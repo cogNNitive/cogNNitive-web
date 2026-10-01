@@ -115,16 +115,16 @@ function run() {
     ok(!/## NN ModelRecords: Acme Plan/.test(model2), 'hand-added ModelRecords entry replaced by filesystem sync');
     ok(!/## NN Sources: team\.csv/.test(model2), 'dropped source removed from Sources');
 
-    // --- P5: workspace index.md preserves existing entries, drops dangling, walks nested models/ ---
+    // --- P5: workspace index.md preserves existing entries, drops dangling, walks nested kNNowledge/ ---
     const idxPath = path.join(proj, 'index.md');
-    fs.mkdirSync(path.join(proj, 'models', 'sub'), { recursive: true });
-    fs.writeFileSync(path.join(proj, 'models', 'sub', 'Deep_Model_V_1-0-0_NN.md'), '# Deep Model\n');
-    fs.writeFileSync(path.join(proj, 'models', 'Custom_Model_V_2-0-0_NN.md'), '# Custom Model\n');
+    fs.mkdirSync(path.join(proj, 'kNNowledge', 'sub'), { recursive: true });
+    fs.writeFileSync(path.join(proj, 'kNNowledge', 'sub', 'Deep_Model_V_1-0-0_NN.md'), '# Deep Model\n');
+    fs.writeFileSync(path.join(proj, 'kNNowledge', 'Custom_Model_V_2-0-0_NN.md'), '# Custom Model\n');
     fs.writeFileSync(
       idxPath,
       fs.readFileSync(idxPath, 'utf8') +
-        '* [My Custom](models/Custom_Model_V_2-0-0_NN.md)\n' +
-        '* [Gone](models/Gone_V_9-9-9_NN.md)\n'
+        '* [My Custom](kNNowledge/Custom_Model_V_2-0-0_NN.md)\n' +
+        '* [Gone](kNNowledge/Gone_V_9-9-9_NN.md)\n'
     );
 
     const logs = [];
@@ -138,16 +138,16 @@ function run() {
     }
     eq(r3.created, false, 'model refreshed again on third run');
     const idx3 = fs.readFileSync(idxPath, 'utf8');
-    ok(idx3.includes('* [My Custom](models/Custom_Model_V_2-0-0_NN.md)'), 'existing index entry preserved with its original label');
+    ok(idx3.includes('* [My Custom](kNNowledge/Custom_Model_V_2-0-0_NN.md)'), 'existing index entry preserved with its original label');
     ok(idx3.includes('Acme_V_0-2-0_cogNNitive_NN.md'), 'discovered provenance model link kept after regeneration');
-    ok(idx3.includes('models/sub/Deep_Model_V_1-0-0_NN.md'), 'nested model under models/sub/ included in index');
+    ok(idx3.includes('kNNowledge/sub/Deep_Model_V_1-0-0_NN.md'), 'nested model under kNNowledge/sub/ included in index');
     ok(!/Gone/.test(idx3), 'dangling index entry (target removed) dropped');
     ok(logs.some((l) => /regenerated.*dropped 1 dangling/.test(l)), 'regeneration logged the dropped dangling entry');
 
     // nested model discovery alone (recursive, skips excluded dirs)
     const nested = provenance.listWorkspaceModels(proj);
-    ok(nested.includes('./models/sub/Deep_Model_V_1-0-0_NN.md'), 'listWorkspaceModels is recursive into models/sub/');
-    ok(nested.includes('./models/Custom_Model_V_2-0-0_NN.md'), 'listWorkspaceModels includes top-level models/');
+    ok(nested.includes('./kNNowledge/sub/Deep_Model_V_1-0-0_NN.md'), 'listWorkspaceModels is recursive into kNNowledge/sub/');
+    ok(nested.includes('./kNNowledge/Custom_Model_V_2-0-0_NN.md'), 'listWorkspaceModels includes top-level kNNowledge/');
     ok(nested.includes('./Acme_V_0-2-0_cogNNitive_NN.md'), 'listWorkspaceModels keeps root files prefixed ./');
 
     const csvProj = path.join(TMP, 'CsvProj');

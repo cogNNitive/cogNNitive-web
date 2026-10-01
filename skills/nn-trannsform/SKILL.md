@@ -19,7 +19,7 @@ bundled_blueprints: []
 # Skill: nn-trannsform
 
 ## 0. Activation Gate
-Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check).
+Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check). If already executed by `nn` / `nn-start` in the current session, skip duplicate preflight execution.
 
 ## System & UX Governance (MANDATORY)
 
@@ -379,7 +379,7 @@ The filesystem sync (§2d) covers files that went through the standard `nn-trann
 
 Interaction dialogues are first-class source streams. The transcript lifecycle follows:
 1. **Silent Reservation**: When an interactive session begins, immediately allocate `conversations/YYYY-MM-DD_HHmmss.md` with initial frontmatter (`status: in_progress`, `turns: 0`, `mutations: false`).
-2. **Trivial Discard Filter**: Upon session exit, if `turns < 2` AND `mutations === false`, delete the reserved transcript automatically to prevent workspace clutter.
+2. **Zero Discard Policy**: Transcripts are retained unconditionally (Zero Discard). Trivial sessions (`turns < 2` AND `mutations === false`) are preserved in `conversations/` with `status: completed`.
 3. **Title Suggestions & Renaming**: For non-trivial sessions, present 3 suggested title options with `[1] (Recommended) <slug>` plus a manual entry option. Update frontmatter (`status: completed`, `ended_at: <ISO>`) and rename the file to `conversations/YYYY-MM-DD_<slug>.md`.
 4. **Promotion to Knowledge Sources (`sources/conversations/`)**: The raw transcript is **always** registered in `conversations/`. Promotion to a normalized source is optional — prompt the user with two choices only:
    - `[full] (Recommended) Full Transcript`: Promotes verbatim dialogue turns to `sources/conversations/<session-slug>_source.md`.

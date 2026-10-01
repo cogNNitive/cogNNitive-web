@@ -62,11 +62,11 @@ function checkLineage(projectDir) {
           .join(', ');
         const knownName = known[0].name;
         warnings.push(
-          `Artifact "${nameLine}" derives from "${ref}", but models/ has "${knownName}" at ${versions} — artifact may be stale.`,
+          `Artifact "${nameLine}" derives from "${ref}", but kNNowledge/ has "${knownName}" at ${versions} — artifact may be stale.`,
         );
       } else {
         errors.push(
-          `Artifact "${nameLine}" derives from "${ref}", but no such model/version exists under models/.`,
+          `Artifact "${nameLine}" derives from "${ref}", but no such model/version exists under kNNowledge/.`,
         );
       }
     }
@@ -74,14 +74,14 @@ function checkLineage(projectDir) {
 
   // 3. Every sources:: Citation in every model resolves under sources/nn/.
   const nnDir = path.join(projectDir, 'sources', 'nn');
-  const modelsDir = path.join(projectDir, 'models');
+  const modelsDir = path.join(projectDir, 'kNNowledge');
   for (const rel of modelLib.walkFiles(modelsDir, (n) => n.endsWith('_NN.md'))) {
     const content = fs.readFileSync(path.join(modelsDir, rel), 'utf8');
     for (const ref of modelLib.scrapeSourceRefs(content)) {
       const filePart = ref.replace(/#.*$/, '').replace(/^sources\/nn\//, '').trim();
-      if (!filePart || filePart.startsWith('models/')) continue;
+      if (!filePart || filePart.startsWith('kNNowledge/') || filePart.startsWith('models/')) continue;
       if (!fs.existsSync(path.join(nnDir, filePart))) {
-        errors.push(`models/${rel}: sources:: "${ref}" does not resolve under sources/nn/.`);
+        errors.push(`kNNowledge/${rel}: sources:: "${ref}" does not resolve under sources/nn/.`);
       }
     }
   }

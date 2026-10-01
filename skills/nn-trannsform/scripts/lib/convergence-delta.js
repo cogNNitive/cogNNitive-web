@@ -68,7 +68,7 @@ function parseSourceFamilies(manifestText) {
 /** Finds the manifest holding `## NN Source Family:` declarations, or null. */
 function findFamilyManifest(projectDir) {
   const candidates = [];
-  for (const dir of [projectDir, path.join(projectDir, 'kNNowledge'), path.join(projectDir, 'models')]) {
+  for (const dir of [projectDir, path.join(projectDir, 'kNNowledge')]) {
     if (!fs.existsSync(dir)) continue;
     for (const name of fs.readdirSync(dir)) {
       if (name.endsWith('_NN.md')) candidates.push(path.join(dir, name));

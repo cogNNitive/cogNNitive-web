@@ -32,7 +32,7 @@ function auditModelCitations(projectDir) {
   let validCitations = 0;
 
   const nnDir = path.join(projectDir, 'sources', 'nn');
-  const modelsDir = path.join(projectDir, 'models');
+  const modelsDir = path.join(projectDir, 'kNNowledge');
 
   if (!fs.existsSync(modelsDir)) {
     return { errors, warnings, totalCitations, validCitations, driftedCitations };
@@ -66,7 +66,7 @@ function auditModelCitations(projectDir) {
   }
 
   for (const rel of modelFiles) {
-    const modelRelPath = `models/${rel.replace(/\\/g, '/')}`;
+    const modelRelPath = `kNNowledge/${rel.replace(/\\/g, '/')}`;
     const modelFullPath = path.join(modelsDir, rel);
     const content = fs.readFileSync(modelFullPath, 'utf8');
 
@@ -88,7 +88,7 @@ function auditModelCitations(projectDir) {
 
           // Model-to-model references cite another model, not a source heading —
           // nothing here to validate against sources/nn/.
-          if (ref.startsWith('models/')) {
+          if (ref.startsWith('kNNowledge/') || ref.startsWith('models/')) {
             validCitations++;
             continue;
           }
@@ -477,7 +477,7 @@ function groupSourceFamilies(projectDir) {
  */
 function detectSourceFamilyEvolution(projectDir) {
   const families = groupSourceFamilies(projectDir);
-  const modelsDir = path.join(projectDir, 'models');
+  const modelsDir = path.join(projectDir, 'kNNowledge');
   const evolutions = [];
 
   if (!fs.existsSync(modelsDir) || Object.keys(families).length === 0) {
@@ -487,7 +487,7 @@ function detectSourceFamilyEvolution(projectDir) {
   const modelFiles = modelLib.walkFiles(modelsDir, (n) => n.endsWith('_NN.md'));
 
   for (const rel of modelFiles) {
-    const modelRelPath = `models/${rel.replace(/\\/g, '/')}`;
+    const modelRelPath = `kNNowledge/${rel.replace(/\\/g, '/')}`;
     const modelFullPath = path.join(modelsDir, rel);
     const content = fs.readFileSync(modelFullPath, 'utf8');
 

@@ -651,28 +651,36 @@ function validateBlueprintCompositions(options = {}) {
     const cleanName = rawName.replace(/\\/g, '/');
     const slug = path.basename(cleanName, '.md').toLowerCase().replace(/[\s_]+/g, '-');
     const baseName = path.basename(cleanName, '.md');
+    const baseNoVersion = cleanName.replace(/_V_[\d.-]+/i, '');
+    const slugNoVersion = slug.replace(/-v-[\d-]+/i, '');
+    const urlStem = typeof incName === 'object' && incName?.url ? path.basename(incName.url, '.md') : '';
+    const urlSlug = urlStem ? urlStem.toLowerCase().replace(/[\s_]+/g, '-') : '';
 
     const parentDir = path.dirname(parentFilePath);
-    const candidates = [
-      path.resolve(parentDir, cleanName),
-      path.resolve(parentDir, `${cleanName}.md`),
-      path.resolve(parentDir, `${cleanName}_NN.md`),
-      path.resolve(parentDir, cleanName, 'spec_NN.md'),
-      path.resolve(parentDir, cleanName, `${baseName}_NN.md`),
-      path.resolve(parentDir, slug, 'spec_NN.md'),
-      path.resolve(parentDir, slug, `${slug}_NN.md`),
-    ];
+    const namesToTry = [cleanName, baseNoVersion, slug, slugNoVersion, urlStem, urlSlug].filter(Boolean);
 
-    for (const searchDir of resolverDirs) {
+    const candidates = [];
+    for (const n of namesToTry) {
       candidates.push(
-        path.join(searchDir, cleanName),
-        path.join(searchDir, `${cleanName}.md`),
-        path.join(searchDir, `${cleanName}_NN.md`),
-        path.join(searchDir, cleanName, 'spec_NN.md'),
-        path.join(searchDir, cleanName, `${baseName}_NN.md`),
-        path.join(searchDir, slug, 'spec_NN.md'),
-        path.join(searchDir, slug, `${slug}_NN.md`)
+        path.resolve(parentDir, n),
+        path.resolve(parentDir, `${n}.md`),
+        path.resolve(parentDir, `${n}_NN.md`),
+        path.resolve(parentDir, n, 'spec_NN.md'),
+        path.resolve(parentDir, n, `${n}_NN.md`),
+        path.resolve(parentDir, '..', n),
+        path.resolve(parentDir, '..', `${n}.md`),
+        path.resolve(parentDir, '..', `${n}_NN.md`),
+        path.resolve(parentDir, '..', n, 'spec_NN.md')
       );
+      for (const searchDir of resolverDirs) {
+        candidates.push(
+          path.join(searchDir, n),
+          path.join(searchDir, `${n}.md`),
+          path.join(searchDir, `${n}_NN.md`),
+          path.join(searchDir, n, 'spec_NN.md'),
+          path.join(searchDir, n, `${n}_NN.md`)
+        );
+      }
     }
 
     for (const cand of candidates) {
@@ -684,7 +692,17 @@ function validateBlueprintCompositions(options = {}) {
     for (const [absPath, info] of templateFiles.entries()) {
       const stem = path.basename(absPath, '.md').toLowerCase().replace(/_nn$/, '').replace(/[\s_]+/g, '-');
       const folder = path.basename(path.dirname(absPath)).toLowerCase().replace(/[\s_]+/g, '-');
-      if (stem === slug || folder === slug || info.name === cleanName || info.name === `${cleanName}.md`) {
+      if (
+        stem === slug ||
+        folder === slug ||
+        stem === slugNoVersion ||
+        folder === slugNoVersion ||
+        (urlSlug && (stem === urlSlug || folder === urlSlug)) ||
+        info.name === cleanName ||
+        info.name === `${cleanName}.md` ||
+        info.name === baseNoVersion ||
+        info.name === `${baseNoVersion}.md`
+      ) {
         return absPath;
       }
     }
