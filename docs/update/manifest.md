@@ -3,18 +3,208 @@ title: "cogNNitive — Bootstrap manifest"
 description: "Canonical agent-bootstrap manifest served raw (Jekyll-safe) for https://cognnitive.com/use."
 channel: "stable"
 agent-bootstrap:
-  version: "1.0.0"
-  entrypoint: "nn-router"
+  version: "2.0"
+  entrypoint: "domaiNN_NN.md"
   skills:
-    - name: nn-router
+    - name: nn
       repo: cogNNitive/cogNNitive-web
-      path: skills/nn-router
-      version: "2.10.0"
-      ref: "skills-v2.10.0"
-      commit: "4b880168deaeb4cdab8fce5849ffc02f059c398e"
-      description: Router
+      path: skills/nn
+      version: "V_3-4-0"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
+    - name: nn-trannsform
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-trannsform
+      version: "V_3-4-2"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      requires: [nn-innfo, nn-preflight]
+      description: Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
+    - name: nn-innfo
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-innfo
+      version: "V_0-5-5"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
+      blueprints: [domaiNN]
+      mcp:
+        - name: innfo-mcp
+          repo: cogNNitive/cogNNitive-web
+          path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
+          version: "0.12.0"
+          ref: "innfo-mcp-v0.12.0"
+          commit: "535ab18b738280bb479015968f8ec38dee6397a9"
+          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/535ab18b738280bb479015968f8ec38dee6397a9/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
+    - name: nn-preflight
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-preflight
+      version: "V_0-2-1"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
+    - name: nn-upgrade
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-upgrade
+      version: "V_0-2-0"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      requires: [nn-preflight]
+      description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
+    - name: nn-site-generator
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-site-generator
+      version: "V_0-2-0"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      description: Create or edit websites, add analytics, add contact forms.
+    - name: nn-design-presets
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-design-presets
+      version: "V_1-4-0"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      description: cogNNitive visual design presets — palettes, typography, spacing.
+    - name: nn-skills-lifecycle
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-skills-lifecycle
+      version: "V_1-2-0"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      requires: [nn-preflight]
+      description: Audit, update, and maintain cogNNitive skills.
+    - name: nn-video-script
+      repo: cogNNitive/cogNNitive-web
+      path: skills/nn-video-script
+      version: "V_0-3-0"
+      ref: "skills-v2.9.0"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      requires: [nn-innfo]
+      description: Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
   blueprints:
+    - name: domaiNN
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: projects
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: procedures
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: organization
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: business
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/business/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: business-model
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: analysis
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: innovation
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: blank
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: documentation
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: metrics
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: repository
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: video
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/video/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: sources
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: artifacts
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+    - name: design-presets
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
+      version: "V_0-3-0"
+      ref: "blueprints-v0.19.2"
+      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+  console-assets:
+    - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
+      version: "0.6.0"
+      ref: "innfo-console-v0.6.0"
+      commit: "535ab18b738280bb479015968f8ec38dee6397a9"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/535ab18b738280bb479015968f8ec38dee6397a9/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
+    - file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
+      version: "0.6.0"
+      ref: "innfo-console-v0.6.0"
+      commit: "535ab18b738280bb479015968f8ec38dee6397a9"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/535ab18b738280bb479015968f8ec38dee6397a9/iNNfo/specs/bluepriNNts/console/artifact_shell.html
+    - file: scripts/export-console.mjs
+      version: "0.6.0"
+      ref: "innfo-console-v0.6.0"
+      commit: "535ab18b738280bb479015968f8ec38dee6397a9"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/535ab18b738280bb479015968f8ec38dee6397a9/scripts/export-console.mjs
   workflows:
+    - id: model
+      label: Create an iNNfo model
+      description: Turn an idea, document, or dataset into a validated structured model.
+      skill: nn-innfo
+      blueprint: domaiNN
+    - id: transform
+      label: Transform a document
+      description: Normalize a PDF/DOCX/XLSX into clean Markdown, or export to HTML.
+      skill: nn-trannsform
 ---
 
 # cogNNitive — bootstrap manifest
