@@ -9,7 +9,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 **Skill**: `nn-innfo` · **Role**: Semantic Modeling & Architecture Assistant
 
-Guides LLMs and agents in authoring, scaffolding, editing, auditing, and validating **iNNfo-compliant files** (V_0-1-0 Meta-template specification with unified `NN` syntax: `# NN`, `## NN`, and `key:: value`).
+Guides LLMs and agents in authoring, scaffolding, editing, auditing, and validating **iNNfo-compliant files** (Level 1 Meta-template specification with unified `NN` syntax: `# NN`, `## NN`, and `key:: value`).
 
 Resolution, validation, and mutations are deterministically delegated to the **`innfo-mcp`** server wrapping `@cognnitive/innfo-core`.
 

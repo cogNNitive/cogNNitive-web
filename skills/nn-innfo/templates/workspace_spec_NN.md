@@ -1,10 +1,10 @@
 ---
-spec_version: "V_0-2-2"
+spec_version: "V_0-3-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-2"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
+  name: "iNNfo_V_0-3-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "Workspace Specification App"
 template_version: "V_0-6-0"
 relationship_types:
@@ -115,7 +115,7 @@ description:: Execution context of the workspace.
 ## NN Field Definition: models_dir
 concept:: Workspace
 type:: string
-description:: Base relative path for domain models in the workspace (default: models/).
+description:: Base relative path for domain models in the workspace (default: kNNowledge/).
 
 ## NN Field Definition: sources_dir
 concept:: Workspace
@@ -473,7 +473,7 @@ Description of the workspace: its purpose, scope, and conventions.
 # NN Models
 
 ## NN Models: Core Business Model
-path:: models/business_NN.md
+path:: kNNowledge/business_NN.md
 template:: business
 status:: active
 author:: Lead Architect

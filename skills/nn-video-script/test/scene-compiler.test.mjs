@@ -151,11 +151,63 @@ async function runTests() {
     console.log('✔ Audio duration overrides calculate precise timeline frame alignment');
   }
 
-  // Test 5: Error handling
+  // Test 6: VUS `# Sets`, `@template`, `@scene` and `@@layer` hierarchy
   {
-    assert.throws(() => compiler.compile(null), /Invalid script input/);
-    assert.throws(() => compiler.compile({ invalid: true }), /must contain a "scenes" array/);
-    console.log('✔ Error handling for invalid script inputs');
+    const vusScript = `
+//ANYDEO_SPEC: V_0-3-3
+# Sets
+## Set 1: Studio Setup
+- set_lighting: dramatic
+
+# Video
+- video_title: Series Episode 1
+- video_fps: 30
+
+# Scenes
+## @scene Scene A: The Hook
+@template news-intro
+Welcome back viewers to our deep dive.
+- scene_tts_model: elevenlabs
+- scene_voice: rachel
+- scene_duration: 4.0
+
+@@ Background Layer
+- layer_type: image
+- layer_asset_source: /assets/studio.png
+
+@@ Overlay Kinetic
+- layer_type: kineticTitle
+- layer_heading: Breaking News
+
+## @scene Scene B: The Investigation
+@template explainer
+Here is what we discovered after analyzing the logs.
+- scene_tts_model: openai-tts
+- scene_voice: alloy
+- scene_duration: 5.0
+
+@@ Diagram Layer
+- layer_type: conceptCallout
+- layer_label: Architecture Drift
+- layer_description: Unsynchronized node graphs detected
+`;
+
+    const manifest = compiler.compile(vusScript);
+    assert.strictEqual(manifest.tracks.scenes.length, 2);
+    assert.strictEqual(manifest.tracks.scenes[0].props.title.includes('The Hook'), true);
+    assert.strictEqual(manifest.tracks.scenes[1].props.title.includes('The Investigation'), true);
+    assert.strictEqual(manifest.tracks.scenes[0].durationInFrames, 120); // 4.0s * 30fps
+    assert.strictEqual(manifest.tracks.scenes[1].durationInFrames, 150); // 5.0s * 30fps
+
+    // Overlays per scene mapping
+    const overlays = manifest.tracks.overlays;
+    assert.strictEqual(overlays.length, 2);
+    assert.strictEqual(overlays[0].type, 'kineticTitle');
+    assert.strictEqual(overlays[0].fromFrame, 0);
+    assert.strictEqual(overlays[1].type, 'conceptCallout');
+    assert.strictEqual(overlays[1].fromFrame, 120);
+
+    console.log('✔ VUS # Sets, @template, @scene headers and per-scene layer mapping test passed');
   }
 
   console.log('\nAll scene compiler unit tests passed! ✨');

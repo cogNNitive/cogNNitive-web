@@ -44,6 +44,7 @@ function sha256(filePath) {
  */
 function backupWorkspace(workspaceDir, options = {}) {
   const dryRun = options.dryRun || false;
+  const skipDirs = options.skipDirs || SKIP_DIRS;
   const ws = path.resolve(workspaceDir);
   if (!fs.existsSync(ws) || !fs.statSync(ws).isDirectory()) {
     throw new Error(`workspace not found: ${ws}`);
@@ -58,7 +59,7 @@ function backupWorkspace(workspaceDir, options = {}) {
   function collect(dir, relDir = '') {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (SKIP_DIRS.has(entry.name)) continue;
+      if (skipDirs.has(entry.name)) continue;
       const relPath = relDir ? path.join(relDir, entry.name) : entry.name;
       const fullPath = path.join(dir, entry.name);
 

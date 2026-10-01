@@ -16,6 +16,7 @@ const { spawnSync } = require('node:child_process')
 const SCRIPT_DIR = __dirname
 const MIGRATE_CLI = path.join(SCRIPT_DIR, 'migrate-domain.js')
 const BACKUP_CLI = path.join(SCRIPT_DIR, 'backup-workspace.js')
+const { isOpaqueFile, removeEmptyDirsBottomUp } = require('./migrate-domain.js')
 const TARGETS_FIXTURE_DIR = path.resolve(
   SCRIPT_DIR,
   '../../../iNNfo/packages/innfo-core/tests/legacy/fixtures/targets',
@@ -41,13 +42,13 @@ function populateLegacyDomain(dir) {
 
   fs.writeFileSync(
     path.join(dir, 'workspace_NN.md'),
-    '---\ntemplate_version: "0.1.0"\ntemplate_name: "workspace"\nmodels_dir: "models"\ntemplates_dir: "specs/templates"\nparent_spec:\n  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/templates/workspace/spec_NN.md"\n---\n# Workspace\n\n- Ref: path:: models/core_NN.md\n- Link: [Core](./models/core_NN.md)\n- Wikilink: [[#Workspace]]\n\n## Models\n\n## Templates\n',
+    '---\ntemplate_version: "0.1.0"\ntemplate_name: "workspace"\nmodels_dir: "models"\ntemplates_dir: "specs/templates"\nparent_spec:\n  name: "workspace"\n  url: "https://raw.githubusercontent.com/cognnitive/innfo/main/iNNfo/specs/templates/workspace/spec_NN.md"\n---\n# NN index\n\n* [[Workspace]]\n* [[Models]]\n\n# NN Workspace\n\n- Ref: path:: models/core_NN.md\n- Sources: fuentes:: ["models/core_NN.md"]\n- Link: [Core](./models/core_NN.md)\n- Wikilink: [[#Workspace]]\n\n## NN Models\n\n## NN Templates\n',
     'utf-8',
   )
 
   fs.writeFileSync(
     path.join(dir, 'models', 'core_NN.md'),
-    '---\nmodel_version: "0.1.0"\nblueprint_name: "custom_app"\n---\n# Custom App Heading\n\n- Field:: value\n',
+    '---\nmodel_version: "0.1.0"\nblueprint_name: "custom_app"\n---\n# Custom App Heading\n\n- Field:: value\n- Related: fuentes:: ["models/core_NN.md"]\n',
     'utf-8',
   )
 
@@ -153,10 +154,15 @@ async function runTests() {
       assert.ok(!fs.existsSync(path.join(domainDir, 'models')), 'models/ moved')
 
       const domainnContent = fs.readFileSync(path.join(domainDir, 'domaiNN_NN.md'), 'utf-8')
-      assert.ok(domainnContent.includes('# domaiNN'), 'Workspace renamed to domaiNN')
-      assert.ok(domainnContent.includes('## kNNowledge'), 'Models renamed to kNNowledge')
+      assert.ok(domainnContent.includes('# NN domaiNN'), 'NN Workspace renamed to NN domaiNN')
+      assert.ok(domainnContent.includes('## NN kNNowledge'), 'NN Models renamed to NN kNNowledge')
       assert.ok(domainnContent.includes('path:: kNNowledge/core_NN.md'), 'path:: reference rewritten')
+      assert.ok(domainnContent.includes('fuentes:: ["kNNowledge/core_NN.md"]'), 'fuentes array reference rewritten')
       assert.ok(domainnContent.includes('[Core](./kNNowledge/core_NN.md)'), 'markdown link rewritten')
+      assert.ok(domainnContent.includes('name: "domaiNN"'), 'parent_spec name renamed to domaiNN')
+
+      const coreContent = fs.readFileSync(path.join(domainDir, 'kNNowledge', 'core_NN.md'), 'utf-8')
+      assert.ok(coreContent.includes('fuentes:: ["kNNowledge/core_NN.md"]'), 'model fuentes array reference rewritten')
 
       // Check feedback JSON
       const feedbackPath = path.join(domainDir, 'feedback', 'core_feedback_20260929-120000.json')
@@ -265,6 +271,95 @@ async function runTests() {
       const importedLegacySha = sha256File(path.join(newDomainDir, 'sources', 'legacy', 'workspace_NN.md'))
       assert.strictEqual(initialLegacySha, importedLegacySha, 'imported legacy domain is byte-identical')
       console.log('✔ --import-as-source scaffolds domaiNN and imports legacy tree byte-identically')
+    }
+
+    // 9. isOpaqueFile seam tests
+    {
+      const invalidUtf8 = Buffer.from([0xff, 0xfe, 0x12, 0x34])
+      assert.strictEqual(isOpaqueFile(invalidUtf8, 'data.bin'), true, 'invalid UTF-8 is opaque')
+
+      const validPngUtf8 = Buffer.from('just some text')
+      assert.strictEqual(isOpaqueFile(validPngUtf8, 'image.png'), true, '.png is always opaque')
+
+      const mdText = Buffer.from('# Hello markdown', 'utf8')
+      assert.strictEqual(isOpaqueFile(mdText, 'doc.md'), false, '.md is not opaque')
+      console.log('✔ isOpaqueFile correctly classifies binary vs text files')
+    }
+
+    // 10. removeEmptyDirsBottomUp seam tests
+    {
+      const testDir = path.join(tmpRoot, 'clean-test')
+      fs.mkdirSync(path.join(testDir, 'empty-sub', 'nested'), { recursive: true })
+      fs.mkdirSync(path.join(testDir, 'non-empty'), { recursive: true })
+      fs.writeFileSync(path.join(testDir, 'non-empty', 'keep.txt'), 'keep me', 'utf8')
+
+      const leftovers = removeEmptyDirsBottomUp(testDir)
+      assert.deepStrictEqual(leftovers, ['non-empty/keep.txt'])
+      assert.ok(!fs.existsSync(path.join(testDir, 'empty-sub')), 'empty directory removed')
+      assert.ok(fs.existsSync(path.join(testDir, 'non-empty', 'keep.txt')), 'non-empty file preserved')
+      console.log('✔ removeEmptyDirsBottomUp prunes empty dirs without losing non-empty files')
+    }
+
+    // 11. Opaque binary file migration preserving sha256 byte-for-byte
+    {
+      const domainDir = path.join(tmpRoot, 'opaque-test-domain')
+      fs.mkdirSync(domainDir, { recursive: true })
+      populateLegacyDomain(domainDir)
+
+      // Add a binary PNG file in models/
+      const pngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x01, 0x02])
+      fs.writeFileSync(path.join(domainDir, 'models', 'diagram.png'), pngBuffer)
+      const origPngSha = sha256File(path.join(domainDir, 'models', 'diagram.png'))
+
+      const dryRes = runCli(['--domain-dir', domainDir, '--json'])
+      const plan = JSON.parse(dryRes.stdout)
+      const planHash = plan.planHash
+
+      const applyRes = runCli(['--domain-dir', domainDir, '--apply', '--plan-hash', planHash, '--yes'])
+      assert.strictEqual(applyRes.status, 0, applyRes.stderr)
+      assert.ok(fs.existsSync(path.join(domainDir, 'kNNowledge', 'diagram.png')), 'opaque file moved to kNNowledge')
+      assert.ok(!fs.existsSync(path.join(domainDir, 'models', 'diagram.png')), 'old opaque file removed')
+
+      const migratedPngSha = sha256File(path.join(domainDir, 'kNNowledge', 'diagram.png'))
+      assert.strictEqual(origPngSha, migratedPngSha, 'opaque binary file matches sha256 byte-for-byte with no corruption')
+      console.log('✔ opaque binary files are moved byte-for-byte without text corruption')
+    }
+
+    // 12. Leftover preservation via removeEmptyDirsBottomUp
+    {
+      const testModelsDir = path.join(tmpRoot, 'test-models-leftover')
+      fs.mkdirSync(path.join(testModelsDir, 'empty-dir'), { recursive: true })
+      fs.writeFileSync(path.join(testModelsDir, 'unmigrated.txt'), 'content', 'utf8')
+
+      const leftovers = removeEmptyDirsBottomUp(testModelsDir)
+      assert.deepStrictEqual(leftovers, ['unmigrated.txt'])
+      assert.ok(fs.existsSync(path.join(testModelsDir, 'unmigrated.txt')), 'unmigrated file preserved')
+      assert.ok(!fs.existsSync(path.join(testModelsDir, 'empty-dir')), 'empty subdir pruned')
+      console.log('✔ removeEmptyDirsBottomUp preserves unmigrated files in legacy directories')
+    }
+
+    // 13. Restore refuses mismatching domain
+    {
+      const domainDir1 = path.join(tmpRoot, 'domain-1')
+      const domainDir2 = path.join(tmpRoot, 'domain-2')
+      fs.mkdirSync(domainDir1, { recursive: true })
+      fs.mkdirSync(domainDir2, { recursive: true })
+      populateLegacyDomain(domainDir1)
+      populateLegacyDomain(domainDir2)
+
+      const dryRes = runCli(['--domain-dir', domainDir1, '--json'])
+      const planHash = JSON.parse(dryRes.stdout).planHash
+      const applyRes = runCli(['--domain-dir', domainDir1, '--apply', '--plan-hash', planHash, '--yes'])
+      const match = applyRes.stdout.match(/Backup created at: (.*)/)
+      assert.ok(match, 'backup dir found')
+      const backupDir = match[1].trim()
+
+      const badRestoreRes = runCli(['--domain-dir', domainDir2, '--restore', backupDir])
+      assert.strictEqual(badRestoreRes.status, 1, 'restore must fail when domain does not match journal')
+      assert.ok(
+        badRestoreRes.stderr.includes('Backup domain mismatch') || badRestoreRes.stdout.includes('Backup domain mismatch'),
+      )
+      console.log('✔ restore refuses backups created for different domain directories')
     }
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true })

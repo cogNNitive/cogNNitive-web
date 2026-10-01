@@ -805,29 +805,43 @@ function appendProcedureRun(existing, run) {
  * Resolves the latest versioned provenance model file in projectDir, or null.
  * The default suffix matches the canonical `cogNNitive` lineage record; pass
  * `_workspace_NN.md` to detect a legacy record for one-time migration.
+ * Searches `kNNowledge/` first (canonical domaiNN workspace location), then
+ * the workspace root (`.`).
  * @param {string} projectDir
  * @param {string} projectName
  * @param {(v1: number[], v2: number[]) => number} compareVersions
  * @param {string} [suffix]
- * @returns {string | null}
+ * @param {string[]} [searchDirs]
+ * @returns {string | null} Relative path from projectDir (e.g. 'kNNowledge/Acme_V_0-1-0_cogNNitive_NN.md' or 'Acme_V_0-2-0_cogNNitive_NN.md')
  */
-function resolveLatestModelFile(projectDir, projectName, compareVersions, suffix = '_cogNNitive_NN.md') {
-  const files = fs.existsSync(projectDir) ? fs.readdirSync(projectDir) : [];
+function resolveLatestModelFile(
+  projectDir,
+  projectName,
+  compareVersions,
+  suffix = '_cogNNitive_NN.md',
+  searchDirs = ['kNNowledge', '.'],
+) {
   const prefix = `${projectName}_V_`;
 
   let bestFile = null;
   let bestVersion = [-1, -1, -1];
 
-  for (const f of files) {
-    if (f.startsWith(prefix) && f.endsWith(suffix)) {
-      const verStr = f.substring(prefix.length, f.length - suffix.length);
-      const parts = verStr.split('-');
-      if (parts.length === 3) {
-        const ver = parts.map(Number);
-        if (ver.every((n) => !isNaN(n))) {
-          if (compareVersions(ver, bestVersion) > 0) {
-            bestVersion = ver;
-            bestFile = f;
+  for (const dirName of searchDirs) {
+    const dir = dirName === '.' ? projectDir : path.join(projectDir, dirName);
+    if (!fs.existsSync(dir)) continue;
+    const files = fs.readdirSync(dir);
+
+    for (const f of files) {
+      if (f.startsWith(prefix) && f.endsWith(suffix)) {
+        const verStr = f.substring(prefix.length, f.length - suffix.length);
+        const parts = verStr.split('-');
+        if (parts.length === 3) {
+          const ver = parts.map(Number);
+          if (ver.every((n) => !isNaN(n))) {
+            if (compareVersions(ver, bestVersion) > 0) {
+              bestVersion = ver;
+              bestFile = dirName === '.' ? f : path.join(dirName, f).replace(/\\/g, '/');
+            }
           }
         }
       }

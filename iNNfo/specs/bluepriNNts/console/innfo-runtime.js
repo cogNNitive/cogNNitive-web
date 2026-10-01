@@ -444,6 +444,24 @@
     return labels
   }
 
+  var FORBIDDEN_META_PROPERTIES = [
+    'knowledge',
+    'knowledge_version',
+    'session_label',
+    'source_model',
+    'source_model_version',
+  ]
+  var FORBIDDEN_ITEM_PROPERTIES = [
+    'status',
+    'layer',
+    'severity',
+    'target_hash',
+    'stale',
+    'field',
+  ]
+  var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
+  var SOURCE_SHA256_PATTERN = /^[0-9a-f]{64}$/
+
   function getDraftKey(model, version) {
     return 'innfo-console:drafts:' + slugify(model) + ':' + slugify(version)
   }
@@ -455,15 +473,18 @@
     var items = drafts.map(function (d, index) {
       var item = isObject(d) ? d : {}
       var id = typeof item.id === 'string' && ITEM_ID_PATTERN.test(item.id) ? item.id : null
-      return {
+      var out = {
         id: id || 'fb-' + String(index + 1).padStart(3, '0'),
         kind: ITEM_KINDS.indexOf(item.kind) !== -1 ? item.kind : 'comment',
         target: isObject(item.target) ? item.target : {},
         original: item.original,
         proposed: item.proposed,
         comment: item.comment,
-        status: ITEM_STATUSES.indexOf(item.status) !== -1 ? item.status : 'pending',
       }
+      if (typeof item.base_hash === 'string') {
+        out.base_hash = item.base_hash
+      }
+      return out
     })
     return { meta: meta, items: items }
   }
@@ -476,6 +497,16 @@
     if (!isObject(meta)) {
       errors.push('meta: required object is missing')
     } else {
+      FORBIDDEN_META_PROPERTIES.forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(meta, key)) {
+          errors.push('meta.' + key + ': forbidden property is present')
+        }
+      })
+      Object.keys(meta).forEach(function (key) {
+        if (key.indexOf('source_model') === 0 && FORBIDDEN_META_PROPERTIES.indexOf(key) === -1) {
+          errors.push('meta.' + key + ': forbidden property is present')
+        }
+      })
       if (!meta.source_knowledge || typeof meta.source_knowledge !== 'string') {
         errors.push('meta.source_knowledge: required non-empty string is missing')
       }
@@ -498,12 +529,17 @@
       if (!meta.author || typeof meta.author !== 'string') {
         errors.push('meta.author: required non-empty string is missing')
       }
-      var slug = meta.feedback_slug || meta.session_label
+      var slug = meta.feedback_slug
       if (typeof slug !== 'string' || !SLUG_PATTERN.test(slugify(slug))) {
         errors.push('meta.feedback_slug: required URL-safe slug is missing')
       }
       if (!meta.viewer || typeof meta.viewer !== 'string') {
         errors.push('meta.viewer: required non-empty string is missing')
+      }
+      if (meta.source_sha256 !== undefined) {
+        if (typeof meta.source_sha256 !== 'string' || !SOURCE_SHA256_PATTERN.test(meta.source_sha256)) {
+          errors.push('meta.source_sha256: must be a 64-character hex string')
+        }
       }
     }
 
@@ -516,6 +552,11 @@
           errors.push(where + ': must be an object')
           return
         }
+        FORBIDDEN_ITEM_PROPERTIES.forEach(function (key) {
+          if (Object.prototype.hasOwnProperty.call(item, key)) {
+            errors.push(where + '.' + key + ': forbidden property is present')
+          }
+        })
         if (!ITEM_ID_PATTERN.test(String(item.id || ''))) {
           errors.push(where + ': id must match fb-NNN (got ' + item.id + ')')
         }
@@ -527,15 +568,10 @@
         if (!isObject(item.target) || Object.keys(item.target).length === 0) {
           errors.push(where + ': target must be a non-empty object')
         }
-        if (ITEM_STATUSES.indexOf(item.status) === -1) {
-          errors.push(
-            where +
-              ': status must be one of ' +
-              ITEM_STATUSES.join('|') +
-              ' (got ' +
-              item.status +
-              ')',
-          )
+        if (item.base_hash !== undefined) {
+          if (typeof item.base_hash !== 'string' || !BASE_HASH_PATTERN.test(item.base_hash)) {
+            errors.push(where + '.base_hash: must match ^[0-9a-f]{16}$')
+          }
         }
       })
     }

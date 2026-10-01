@@ -15,7 +15,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { compileVideo, renderVideo, previewVideo } from '../scripts/video-engine-cli.mjs';
+import {
+  compileVideo,
+  renderVideo,
+  previewVideo,
+  resolveRemotionEntryPoint,
+  tryRemotionRender,
+} from '../scripts/video-engine-cli.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliPath = path.join(__dirname, '..', 'scripts', 'video-engine-cli.mjs');
@@ -119,8 +125,12 @@ async function runTests() {
     assert.strictEqual(renderRes.status, 0, `render CLI failed: ${renderRes.stderr}`);
     assert.ok(fs.existsSync(videoPath));
     assert.ok(/Rendered/.test(renderRes.stdout));
+    assert.ok(
+      /Remotion render skipped \(modules-unavailable\)/.test(renderRes.stderr),
+      `Expected Remotion warning in stderr, got: ${renderRes.stderr}`
+    );
 
-    console.log('✔ CLI commands "compile" and "render" execute headlessly with exit code 0');
+    console.log('✔ CLI commands "compile" and "render" execute headlessly with exit code 0 and observable warning');
   }
 
   // Test 4: Preview command
@@ -129,6 +139,102 @@ async function runTests() {
     assert.strictEqual(res.port, 3050);
     assert.strictEqual(res.previewUrl, 'http://localhost:3050');
     console.log('✔ CLI preview returns active preview configuration');
+  }
+
+  // Test 5: Entry-point resolution and missing modules seam
+  {
+    const defaultEntry = resolveRemotionEntryPoint();
+    assert.ok(typeof defaultEntry === 'string');
+    assert.ok(defaultEntry.endsWith('remotion-entry.tsx'));
+
+    const unavailableRes = await tryRemotionRender(
+      { manifest: {}, outputPath: 'out.mp4' },
+      { loadModule: async () => null }
+    );
+    assert.strictEqual(unavailableRes.rendered, false);
+    assert.strictEqual(unavailableRes.reason, 'modules-unavailable');
+    console.log('✔ Entry-point resolution does not throw and unavailable modules report correctly');
+  }
+
+  // Test 6: Successful Remotion render seam
+  {
+    const tmpDir = makeTempDir();
+    const fakeEntry = path.join(tmpDir, 'remotion-entry.tsx');
+    fs.writeFileSync(fakeEntry, '// fake remotion entry', 'utf8');
+
+    let bundledWith = null;
+    let renderedMediaArgs = null;
+
+    const fakeBundler = {
+      bundle: async (options) => {
+        bundledWith = options.entryPoint;
+        return 'serve://bundle';
+      },
+    };
+
+    const fakeRenderer = {
+      renderMedia: async (options) => {
+        renderedMediaArgs = options;
+      },
+    };
+
+    const loadModule = async (id) => {
+      if (id === '@remotion/bundler') return fakeBundler;
+      if (id === '@remotion/renderer') return fakeRenderer;
+      return null;
+    };
+
+    const mockManifest = {
+      compositionId: 'comp-1',
+      fps: 30,
+      totalDurationInFrames: 90,
+      width: 1920,
+      height: 1080,
+    };
+
+    const res = await tryRemotionRender(
+      { manifest: mockManifest, outputPath: path.join(tmpDir, 'out.mp4'), concurrency: 2 },
+      { loadModule, scriptsDir: tmpDir }
+    );
+
+    assert.strictEqual(res.rendered, true);
+    assert.strictEqual(bundledWith, fakeEntry);
+    assert.ok(renderedMediaArgs);
+    assert.strictEqual(renderedMediaArgs.serveUrl, 'serve://bundle');
+    assert.strictEqual(renderedMediaArgs.concurrency, 2);
+    console.log('✔ Remotion render seam delegates to bundler and renderer when present');
+  }
+
+  // Test 7: Remotion bundler/renderer error seam
+  {
+    const tmpDir = makeTempDir();
+    const fakeEntry = path.join(tmpDir, 'remotion-entry.tsx');
+    fs.writeFileSync(fakeEntry, '// fake remotion entry', 'utf8');
+
+    const fakeBundler = {
+      bundle: async () => {
+        throw new Error('Simulated bundler failure');
+      },
+    };
+    const fakeRenderer = { renderMedia: async () => {} };
+
+    const loadModule = async (id) => {
+      if (id === '@remotion/bundler') return fakeBundler;
+      if (id === '@remotion/renderer') return fakeRenderer;
+      return null;
+    };
+
+    const res = await tryRemotionRender(
+      { manifest: { compositionId: 'comp-2' }, outputPath: path.join(tmpDir, 'out.mp4') },
+      { loadModule, scriptsDir: tmpDir }
+    );
+
+    assert.strictEqual(res.rendered, false);
+    assert.ok(
+      /^error: Simulated bundler failure/.test(res.reason),
+      `Expected error reason, got: ${res.reason}`
+    );
+    console.log('✔ Remotion render seam captures unexpected errors into reason string without throwing');
   }
 
   console.log('\nAll video engine CLI integration tests passed! ✨');

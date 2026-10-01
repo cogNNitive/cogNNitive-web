@@ -105,5 +105,5 @@ When resolving a template package by name and optional version, `innfo-mcp` sear
 
 ## 5. Transitive Discovery & Collision Safety
 
-- **Transitive Discovery**: Invoking `list_template_procedures` or `list_template_skills` recursively traverses composite `includes` and `parent_spec` trees up to a maximum depth of 10, deduplicating procedures by `id` and skills by `name`.
+- **Transitive Discovery**: Invoking `list_blueprint_procedures` or `list_blueprint_skills` recursively traverses composite `includes` and `parent_spec` trees up to a maximum depth of 10, deduplicating procedures by `id` and skills by `name`.
 - **Composition Collision Safety**: When composing peer templates via `includes`, duplicate concept or field names must be explicitly renamed via frontmatter `alias` maps. Un-aliased collisions trigger a blocking `[COMPOSITION_COLLISION]` validation error.

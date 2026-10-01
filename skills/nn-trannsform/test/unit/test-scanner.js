@@ -449,7 +449,7 @@ function run() {
                               viewer: 'innfo-console/0.1.0'
                             },
                             items: [
-                              { id: 'fb-001', kind: 'correction', target: { concept: 'Problems', element: 'Paranormal Infestation', field: 'severity' }, original: 'low', proposed: 'high', status: 'pending' }
+                              { id: 'fb-001', kind: 'correction', target: { concept: 'Problems', element: 'Paranormal Infestation', field: 'severity' }, original: 'low', proposed: 'high' }
                             ]
                           };
                           const feedbackFile = path.join(feedbackDir, 'Ghostbusters_V_0-2-1_round-2_feedback_20260909-120000.json');
@@ -484,7 +484,11 @@ function run() {
                             const fbContent = fs.readFileSync(normalizedFeedback, 'utf8');
                             assertTrue(fbContent.includes('source_type: "feedback"'), 'feedback frontmatter carries source_type: feedback');
                             assertTrue(fbContent.includes('is_synthetic: true'), 'feedback frontmatter carries is_synthetic: true');
-                            assertTrue(fbContent.includes('fb-001'), 'normalized feedback cites its items');
+                            assertTrue(fbContent.includes('### fb-001\n'), 'normalized feedback uses ### fb-001 heading');
+                            assertTrue(fbContent.includes('- **Kind**: correction'), 'normalized feedback carries Kind bullet');
+                            assertTrue(!fbContent.includes('### fb-001 ('), 'normalized feedback omits kind and status from heading');
+                            const { slugifyHeading } = require('../../scripts/markdown-utils');
+                            assertEqual(slugifyHeading('fb-001'), 'fb-001', 'slug mirror heading slug equals fb-001');
                             const invalidEntry = fbResult.registry.find((e) => e.name.includes('Broken_V_0-2-1'));
                             assertTrue(Boolean(invalidEntry), 'invalid feedback appears in the registry report');
                             assertTrue(!/Processed/.test(invalidEntry ? invalidEntry.status : ''), 'invalid feedback is skipped, not processed');

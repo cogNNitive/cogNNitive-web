@@ -24,11 +24,11 @@ description: |
 # iNNfo Skill
 
 ## 0. Activation Gate & Conversation Lifecycle Gate
-1. **Activation Gate**: Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check).
-2. **Conversation Lifecycle Gate**: Follow `nn-start` Rule 5:
+1. **Activation Gate**: Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check). If already executed by `nn` in the current session, skip duplicate preflight execution.
+2. **Conversation Lifecycle Gate**: Follow the conversation lifecycle protocol:
    - Silently reserve `conversations/YYYY-MM-DD_HHmmss.md` upon session start (`status: in_progress`).
    - Upon session exit or wizard completion:
-     - Discard trivial sessions (<2 turns, 0 workspace mutations).
+     - Zero Discard Policy: all sessions are retained unconditionally in `conversations/`.
      - For non-trivial sessions, present 3 suggested titles (`[1] (Recommended)`), finalize frontmatter (`status: completed`), and rename to `conversations/YYYY-MM-DD_<slug>.md`.
      - Prompt for promotion to `sources/conversations/` (`[full]`, `[none]` — the raw transcript is always registered in `conversations/`; `_source.md` promotion is optional) for ingestion into the workspace knowledge graph and model citations (`sources:: [conversations/<file>.md@<unit>]`).
 
@@ -89,9 +89,9 @@ To minimize token usage and unnecessary file I/O operations across large workspa
 
 ---
 
-## 0. Entry Menu & Conversational Model Creation Wizard
+## 3. Entry Menu & Conversational Model Creation Wizard
 
-### 0a. Intent-First Execution & Entry Menu
+### 3a. Intent-First Execution & Entry Menu
 
 #### 1. Intent-First Execution (MANDATORY)
 If the user's message already expresses an explicit, actionable intent (e.g. "run preflight", "check for new sources", "validate the model", "scaffold business model", "show uncited sources", "fix matrix error"):
@@ -168,7 +168,7 @@ Creating **any** model — with a canonical app, custom app, or without an app �
 *(Notice: You can select one option or a combination (e.g. A and B))*.
 
 **A2a. If a canonical app was selected ([a]/[b]/[c]/[d]) (Optimistic Execution with Informative Grace):**
-Resolve the app with `innfo-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, Matrices, and Markers it already defines. Then discover its procedures with `innfo-mcp_list_template_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
+Resolve the app with `innfo-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, Matrices, and Markers it already defines. Then discover its procedures with `innfo-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
 
 **Do NOT block on an intermediate customization menu.** By default, canonical apps are used as-is. Announce with Informative Grace:
 *"Usando la plantilla estándar {App}. Voy a avanzar con el diseño de elementos del modelo; si preferís personalizar la plantilla o crear una especialización, avisame antes de empezar."*
@@ -285,18 +285,18 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 
 ### iNNfo Level Summary (V_0-2-0)
 
-| Level | Role | Syntax & Structure |
-|---|---|---|
-| **0** | Meta-specification (`defiNNe`) | Defines the meta-rules for specifications. |
-| **1** | Concrete Specification (`iNNfo`) | Level 1 meta-template. Defines the 4 root primitives (`Concept Definition`, `Field Definition`, `Matrix Definition`, `Marker Definition`). |
-| **2** | App (App / Specialization) | An iNNfo document with lightweight frontmatter (`level: 2`). The body instantiates the 4 root primitives as Markdown elements. **FORBIDDEN to put `concepts: []` or `fields: []` in the YAML frontmatter.** |
-| **3** | Data Model | Instantiates the concepts and fields defined by its parent app (`parent_spec`). |
+| Level | Role | Canonical Term | Syntax & Structure |
+|---|---|---|---|
+| **0** | Meta-specification | `defiNNition` | Defines the meta-rules for specifications. |
+| **1** | Concrete Specification | `iNNfo` / `meta-bluepriNNt` | Level 1 meta-template. Defines the 4 root primitives (`Concept Definition`, `Field Definition`, `Matrix Definition`, `Marker Definition`). |
+| **2** | Domain Schema | `bluepriNNt` | An iNNfo document with lightweight frontmatter (`level: 2`). The body instantiates the 4 root primitives as Markdown elements. **FORBIDDEN to put `concepts: []` or `fields: []` in the YAML frontmatter.** |
+| **3** | Domain Data Model | `kNNowledge` | Instantiates the concepts and fields defined by its parent bluepriNNt (`parent_spec`). |
 
 ---
 
 ## 1. MCP Operating Model
 
-The `innfo-mcp` server exposes 15 deterministic tools built on `@cognnitive/innfo-core`.
+The `innfo-mcp` server exposes 17 deterministic tools built on `@cognnitive/innfo-core`.
 
 | Tool | Purpose |
 |---|---|
@@ -309,12 +309,14 @@ The `innfo-mcp` server exposes 15 deterministic tools built on `@cognnitive/innf
 | `validate_knowledge_url` | Validates a model from a URL without writing it to disk. |
 | `validate_blueprint` | Validates a Level 2 app against its parent Level 1 specification. |
 | `apply_change` | Runs deterministic mutations (add field, rename, `bump_version`, etc.). |
+| `init_knowledge` | Initializes a new Level 3 model document from a blueprint. |
 | `list_blueprints` | Lists Level 2 apps in the workspace, the global cache, and installed skills. |
 | `hydrate_blueprint` | Atomically and immutably copies a Level 2 app into the workspace. |
-| `prune_orphaned_specs` | Analyzes reachability and purges orphaned specs with a zip backup. |
-| `sync_workspace_manifest` | Additively reconciles the `## NN kNNowledge` entries of the manifest against the Level 3 models discovered on disk (`dry_run` defaults to `true`). See §14. |
-| `list_template_procedures` | Discovers SOP procedures transitively across the `includes` tree (depth 10). |
-| `list_template_skills` | Discovers agent skills transitively across the `includes` tree (depth 10). |
+| `sync_domain_manifest` | Additively reconciles the `## NN kNNowledge` entries of the manifest against the Level 3 models discovered on disk (`dry_run` defaults to `true`). See §14. |
+| `query_units` | Queries specific units/elements within a knowledge document or source. |
+| `resolve_sources` | Resolves source citations and evidence linkages. |
+| `list_blueprint_procedures` | Discovers SOP procedures transitively across the `includes` tree (depth 10). |
+| `list_blueprint_skills` | Discovers agent skills transitively across the `includes` tree (depth 10). |
 
 **Golden Rule:** The specification/app URL always comes from `parent_spec.url` or from the user. Never hardcode or invent URLs.
 
@@ -690,7 +692,7 @@ Upon concluding the generation or editing of a model, the agent MUST include log
 
 ## 14. Workspace Manifest Synchronization (Self-Registration)
 
-The workspace manifest (`domaiNN_NN.md`, section `# NN kNNowledge`) can drift out of sync with the filesystem: a new Level 3 model is created and nobody adds its entry, or a file is deleted and the manifest entry keeps pointing at a model that no longer exists. The MCP's `sync_workspace_manifest` tool reconciles this additively, never destructively:
+The workspace manifest (`domaiNN_NN.md`, section `# NN kNNowledge`) can drift out of sync with the filesystem: a new Level 3 model is created and nobody adds its entry, or a file is deleted and the manifest entry keeps pointing at a model that no longer exists. The MCP's `sync_domain_manifest` tool reconciles this additively, never destructively:
 
 - Adds a `## NN kNNowledge: <name>` entry (marked with `<!-- nn:auto -->`) for every discovered Level 3 model not yet listed, always at the end of the `# NN kNNowledge` section — never reordering or regrouping existing entries.
 - Sets `status:: archived` on an entry the tool itself created (identifiable by `<!-- nn:auto -->`) when its file no longer exists on disk — never deleting it.
@@ -703,6 +705,14 @@ The workspace manifest (`domaiNN_NN.md`, section `# NN kNNowledge`) can drift ou
 2. Present the user a natural-language summary of the proposed changes (how many entries would be added, which would be archived/reactivated) before writing anything.
 3. Only after the user's explicit confirmation, call again with `dry_run: false` to persist the changes to disk.
 
+```typescript
+innfo-mcp_sync_domain_manifest({ dry_run: true })
+// review result.changes / result.diff with the user before continuing
+innfo-mcp_sync_domain_manifest({ dry_run: false }) // only after explicit confirmation
+```
+
+This is the headless / CLI-equivalent path for actioNN — there is no separate `nn` binary; synchronization always goes through the existing MCP bridge (`innfo-mcp`), like every other tool in this skill.
+
 ---
 
 ## 15. External Watch Roots & Pre-Authoring Scanner Integration
@@ -714,30 +724,23 @@ When authoring or auditing models that rely on external data drops (e.g. client 
 3. **Execution**: Invoke `node skills/nn-trannsform/scripts/index.js --scan-external --check-impact` to inspect external changes, import timestamped snapshots (`YYYYMMDD-HHmmss`), and check source family evolutions.
 4. **Shared Digest State**: Consult `.cognnitive/watch-digest.json` and skip any item the session-start digest already offered or decided (`ignore`/`import`), so the user is not asked twice for the same content.
 
-innfo-mcp_sync_workspace_manifest({ dry_run: true })
-// review result.changes / result.diff with the user before continuing
-innfo-mcp_sync_workspace_manifest({ dry_run: false }) // only after explicit confirmation
-```
-
-This is the headless / CLI-equivalent path for actioNN — there is no separate `nn` binary; synchronization always goes through the existing MCP bridge (`innfo-mcp`), like every other tool in this skill.
-
 ---
 
-## 15. Model Procedure & Skill Discovery
+## 16. Model Procedure & Skill Discovery
 
-Executable procedures and agent skills are content declared dynamically in models and apps (not a fixed catalog in the skill). They are discovered by calling the MCP tools `list_template_procedures` and `list_template_skills`, which transitively walk the `parent_spec` hierarchy and the `includes` composition tree to a depth of 10 levels, deduplicating procedures by `id` and skills by `name`.
+Executable procedures and agent skills are content declared dynamically in models and apps (not a fixed catalog in the skill). They are discovered by calling the MCP tools `list_blueprint_procedures` and `list_blueprint_skills`, which transitively walk the `parent_spec` hierarchy and the `includes` composition tree to a depth of 10 levels, deduplicating procedures by `id` and skills by `name`.
 
-Additionally, procedures are discovered by reading the `## NN Procedure: ...` sections of the active model and the workspace's `procedures/` folder (`*_procedures_V_0-1-0_NN.md`).
+Additionally, procedures are discovered by reading the `## NN Procedure: ...` sections of the active model and the workspace's `procedures/` folder (predicate: Level 3 documents whose `parent_spec` resolves to the procedures bluepriNNt).
 
 The template console procedure (historically referred to as "master.html", "showroom", or "gallery") generates the canonical interactive console for a model (e.g. `business_console.html`, `procedures_console.html`). For multi-model workspaces, the `workspace_hub` procedure generates the aggregated workspace portal (`artifacts/workspace_hub.html`). If the user asks for a "console", "master", "hub", "showroom", "gallery", or "visual framework", offer to generate the corresponding canonical console or workspace hub.
 
 ---
 
-## 16. Context Efficiency: Intent, Slices, Budgets
+## 17. Context Efficiency: Intent, Slices, Budgets
 
 Every automated call declares its context budget and intent class. Nothing travels "just in case". Diagnostic codes are defined by `validator-robustness` (referenced, not re-specified).
 
-### 16a. Intent declaration (`intent:`) — RESERVED, NOT ENFORCED
+### 17a. Intent declaration (`intent:`) — RESERVED, NOT ENFORCED
 
 > **Status (2026-09-22): not implemented.** `intent` is accepted by `read_knowledge`,
 > `validate_knowledge` and `query_units` and is then ignored — no handler reads it,
@@ -758,10 +761,10 @@ intent: surgical   # coach | surgical | match | verify; advisory only today
 2. Work spanning two intents SHOULD declare the broader (more expensive) intent,
    so the recorded purpose stays honest once enforcement lands.
 3. Context discipline is therefore the CALLER's responsibility right now: the
-   budgets and slice rules in 16b-16c are real obligations on how you build
+   budgets and slice rules in 17b-17c are real obligations on how you build
    requests, not something the server enforces on your behalf.
 
-### 16b. Slice-first reads for surgical work
+### 17b. Slice-first reads for surgical work
 
 Surgical work (few elements of one concept) MUST read bounded slices through existing query units and MUST NOT include whole files. No included unit SHALL exceed 150 lines without an explicit slice or recorded override:
 
@@ -769,14 +772,14 @@ Surgical work (few elements of one concept) MUST read bounded slices through exi
 2. When the needed context spans the cap, record a manual `override_reason` alongside the call; the wider unit MAY then be included.
 3. Honor the `truncated` flag: when set, the slice is partial — narrow the query instead of widening the read.
 
-### 16c. Differential verify prompts
+### 17c. Differential verify prompts
 
 `verify` prompts MUST carry only outcome data and MUST NOT embed full logs or rendered artifacts; full logs remain on disk by path reference:
 
 1. Build the prompt from `validate_knowledge(baseline_path)` as `{ exit, new_errors, verdict, log_path }` — exit status plus errors new against the baseline only.
 2. A clean run carries the verdict only; historical errors are never re-explained.
 
-### 16d. Per-intent budgets and measurement
+### 17d. Per-intent budgets and measurement
 
 | Intent | Budget rule |
 |---|---|

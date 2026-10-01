@@ -33,8 +33,8 @@ user-level skills directory by `scripts/skills-manager.js` — a zero-dependency
 lockfile-lite manager (the counterpart of lazy.nvim's `lazy-lock.json`).
 
 **Desired state (source of truth)**: the bootstrap manifest at
-`eNNvironment/docs/use/manifest.md`, fetched from
-`https://raw.githubusercontent.com/cogNNitive/eNNvironment/main/docs/use/manifest.md`
+`docs/use/manifest.md`, fetched from
+`https://cognnitive.com/use/manifest.md`
 (override via `SM_MANIFEST_URL`, used for local testing). Its YAML frontmatter
 declares an `agent-bootstrap.skills` list; each entry pins:
 
@@ -105,12 +105,12 @@ Pass exact SKILL.md paths.
 
 ### Maintenance — full review
 
-1. Read `.cogNNitive/skill-registry.md`
+1. Read `manifest/source.yaml` and installed skills
 2. Identify orphaned or unused skills
 3. Check frontmatter compliance across all skills
-4. Verify registry is up to date
+4. Verify manifest and documentation parity
 5. Delegate fixes to the appropriate sub-skills
-6. Run `node scripts/build-registry.js` to regenerate `.cogNNitive/skill-registry.md`
+6. Run `npm run check:versions` or `node scripts/sync-versions.mjs` to maintain parity
 7. Report summary: what was done, new count, remaining items
 
 ---
@@ -118,5 +118,5 @@ Pass exact SKILL.md paths.
 ## Hard Rules
 
 - Never load alongside `skill-creator`, `skill-improver`, or `nnskills-organizer` in the same context
-- Always update the registry after any create, move, rename, or delete
+- Always update `manifest/source.yaml` and sync version documentation after any create, move, rename, or delete
 - Never modify a `SKILL.md` directly — delegate to the specialist

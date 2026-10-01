@@ -30,32 +30,15 @@ import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
 import { homedir } from 'node:os'
+import { createRequire } from 'node:module'
 
+const req = createRequire(import.meta.url)
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
+const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
 
-// CDN pin comes from the vendored bundle's generated version banner, not from
-// manifest/source.yaml, so this file stays runnable standalone in a workspace
-// (issue #91). build-console-bundle.mjs stamps the banner from the manifest.
-function parseConsoleCdnRef(bundleText) {
-  const m = bundleText && bundleText.match(/\bVersion (\d+\.\d+\.\d+)\./)
-  return m ? `innfo-console-v${m[1]}` : null
-}
-
-// The console assets (artifact_shell.html + innfo-console.bundle.js) live in
-// this repo at iNNfo/specs/bluepriNNts/console/ and are also distributed to
-// ~/.agents/console by skills-manager. Resolve them from the first location that
-// actually holds the shell, so the exporter runs both from a checkout and
-// from a workspace where only the installed console assets exist (issue #94).
-// $INNFO_CONSOLE_DIR overrides every candidate.
-//
-// The shell was called artifact_blueprint.html before the "blueprint" name was
-// reserved for level-2 templates. Installs made before the rename still carry the
-// old filename, so each candidate dir is probed for the new name first and the
-// legacy name second.
 const SHELL_FILENAME = 'artifact_shell.html'
 const LEGACY_SHELL_FILENAME = 'artifact_blueprint.html'
-const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
 
 function findShell(dir) {
   return [SHELL_FILENAME, LEGACY_SHELL_FILENAME]
@@ -71,8 +54,42 @@ const consoleDir =
 const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
 const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
 
+function loadPayloadHelper() {
+  const candidates = process.env.INNFO_CONSOLE_DIR
+    ? [join(consoleDir, 'console-payload.generated.cjs')]
+    : [
+        join(consoleDir, 'console-payload.generated.cjs'),
+        join(repoConsoleDir, 'console-payload.generated.cjs'),
+      ]
+  for (const c of candidates) {
+    if (existsSync(c)) {
+      try {
+        return req(c)
+      } catch (err) {
+        console.error(`Error loading console payload mirror from ${c}: ${err.message}`)
+        process.exit(1)
+      }
+    }
+  }
+  const preferred = candidates[0]
+  console.error(
+    `Error: Console payload mirror not found at ${preferred}.\n` +
+      'Build it with "node scripts/build-console-payload.mjs" or install console assets.',
+  )
+  process.exit(1)
+}
+
+const payloadHelper = loadPayloadHelper()
+
 function computeSha256(content) {
-  return createHash('sha256').update(content, 'utf8').digest('hex')
+  return payloadHelper?.computeSha256
+    ? payloadHelper.computeSha256(content)
+    : createHash('sha256').update(content, 'utf8').digest('hex')
+}
+
+function parseConsoleCdnRef(bundleText) {
+  const m = bundleText && bundleText.match(/\bVersion (\d+\.\d+\.\d+)\./)
+  return m ? `innfo-console-v${m[1]}` : null
 }
 
 function parseArgs(argv) {
@@ -137,6 +154,13 @@ async function findModelFiles(dir) {
 }
 
 function frontmatterOf(content) {
+  if (payloadHelper?.parseFrontmatter) {
+    try {
+      return payloadHelper.parseFrontmatter(content)
+    } catch {
+      // fallback
+    }
+  }
   const normalized = content.replace(/\r\n/g, '\n')
   const fm = normalized.match(/^---\n([\s\S]*?)\n---/)
   if (!fm) return {}
@@ -152,40 +176,6 @@ function isLevel3(content) {
   const fm = frontmatterOf(content)
   const lvl = fm.level
   return lvl === undefined || Number(lvl) === 3
-}
-
-function parseElements(text) {
-  const elements = []
-  let concept = null
-  for (const rawLine of text.split('\n')) {
-    const line = rawLine.replace(/\r$/, '')
-    const block = line.match(/^## NN ([^:]+): (.+)$/)
-    if (block) {
-      concept = block[1].trim()
-      elements.push({
-        id: block[2].trim(),
-        concept,
-        name: block[2].trim(),
-        description: '',
-        fields: {},
-        markers: {},
-      })
-      continue
-    }
-    if (!concept || elements.length === 0) continue
-    const last = elements[elements.length - 1]
-    const fld = line.match(/^\s{2}([a-zA-Z_][a-zA-Z0-9_]*)::\s*(.+)$/)
-    if (fld) {
-      last.fields[fld[1]] = fld[2].replace(/^"|"$/g, '').trim()
-    } else if (!line.trim().startsWith('#') && line.trim().length >= 12 && !last.description) {
-      last.description = line.trim()
-    }
-  }
-  return elements
-}
-
-function elSlug(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 function extractModelMetaFromHtml(htmlContent) {
@@ -281,10 +271,13 @@ async function renderTree(models, root) {
 }
 
 function injectSlots(shell, config, schema, model) {
+  const serialize = payloadHelper?.serializeConsoleSlot
+    ? (json) => payloadHelper.serializeConsoleSlot(json)
+    : (json) => JSON.stringify(json, null, 2).replace(/</g, '\\u003c')
   const slot = (html, id, json) =>
     html.replace(
       new RegExp(`(<script type="application/json" id="${id}">)[\\s\\S]*?(</script>)`),
-      (_m, open, close) => `${open}\n${JSON.stringify(json, null, 2)}\n${close}`,
+      (_m, open, close) => `${open}\n${serialize(json)}\n${close}`,
     )
   return slot(slot(slot(shell, 'innfo-config', config), 'innfo-schema', schema), 'innfo-model', model)
 }
@@ -421,32 +414,49 @@ async function main() {
     },
   }
 
+  let ledgerEntries = []
+  const rootLedgerPath = join(root, payloadHelper.FEEDBACK_LEDGER_FILENAME || 'feedback-ledger.jsonl')
+  if (existsSync(rootLedgerPath)) {
+    try {
+      const rawLedger = await readFile(rootLedgerPath, 'utf-8')
+      const parsed = payloadHelper.parseFeedbackLedger(rawLedger)
+      ledgerEntries = parsed.entries
+    } catch {
+      // ignore parse error
+    }
+  }
+
+  const resolver = payloadHelper.createFsSourceResolver ? payloadHelper.createFsSourceResolver(root) : undefined
+
   for (const m of selected) {
     const stem = m.name
-    const modelVersion = String(m.fm.knowledge_version ?? 'V_0-1-0')
-    const elements = parseElements(m.content)
-    const sourceSha256 = computeSha256(m.content)
-    const meta = {
-      model: relative(root, m.filePath).replace(/\\/g, '/'),
-      title: m.fm.title ?? stem,
-      modelVersion,
-      template: m.fm['parent_spec'] ? m.fm['parent_spec'] : undefined,
-      sha256: sourceSha256,
-      generated: new Date().toISOString(),
-      slug: elSlug(stem),
+    const relPath = relative(root, m.filePath).replace(/\\/g, '/')
+
+    let schema = undefined
+    const fm = frontmatterOf(m.content)
+    if (fm.parent_spec?.name) {
+      const tier1Path = join(root, 'specs', 'bluepriNNts', fm.parent_spec.name)
+      if (existsSync(tier1Path)) {
+        // tier 1 exists
+      } else {
+        process.stderr.write(
+          `WARNING: [export-console] Schema resolution for parent_spec '${fm.parent_spec.name}' not found at Tier 1; derived schema used.\n`,
+        )
+      }
     }
-    const model = { meta, elements, matrices: [] }
-    const conceptNames = Array.from(new Set(elements.map((e) => e.concept).filter(Boolean)))
-    const schema = {
-      concepts: conceptNames.map((name) => ({ name })),
-      markers: [],
-      matrices: [],
-    }
+
+    const payload = payloadHelper.buildConsolePayload({
+      content: m.content,
+      path: relPath,
+      schema,
+      resolver,
+      ledgerEntries,
+    })
 
     const outDir = join(root, 'export', `${stem}_console`)
     await mkdir(outDir, { recursive: true })
     const outFile = join(outDir, `${stem}_console.html`)
-    const html = injectSlots(resolvedShell, config, schema, model)
+    const html = injectSlots(resolvedShell, config, payload.schema, payload.model)
     await writeFile(outFile, html, 'utf-8')
     if (bundle) await cp(bundlePath, join(outDir, 'innfo-console.bundle.js'))
     console.log(`✔ ${stem}_console.html → ${outFile.replace(root, '.')}`)

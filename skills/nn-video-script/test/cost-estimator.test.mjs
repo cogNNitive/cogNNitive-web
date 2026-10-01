@@ -85,4 +85,40 @@ describe('Asset Cost Estimator & Video Model Catalog', () => {
     assert.ok(md.includes('Replicate & Wan Cinema Tier'));
     assert.ok(md.includes('User Consultation & Approval Checklist'));
   });
+
+  it('estimates scene duration when explicit scene_duration is omitted', () => {
+    const scriptWithoutDuration = `//COGNNITIVE_VIDEO_SPEC: V_0-3-3
+# Section: Duration Derivation
+## Scene 01: Ten Word Scene
+* Layer: Background
+  [layer_type=image]
+one two three four five six seven eight nine ten
+`;
+    const estimate = estimateScriptCost(scriptWithoutDuration);
+    assert.equal(estimate.scenes[0].durationSeconds, 4); // 10 words / 2.5 = 4s
+  });
+
+  it('falls back to minimum duration of 3s when narration is empty', () => {
+    const scriptEmptyNarration = `//COGNNITIVE_VIDEO_SPEC: V_0-3-3
+# Section: Empty Narration
+## Scene 01: Silent Scene
+* Layer: Background
+  [layer_type=image]
+`;
+    const estimate = estimateScriptCost(scriptEmptyNarration);
+    assert.equal(estimate.scenes[0].durationSeconds, 3);
+  });
+
+  it('preserves explicit scene duration regardless of narration length', () => {
+    const scriptExplicitDuration = `//COGNNITIVE_VIDEO_SPEC: V_0-3-3
+# Section: Explicit Duration
+## Scene 01: Fixed Scene
+[scene_duration=8]
+* Layer: Background
+  [layer_type=image]
+This is a very long narration with many words that would otherwise calculate to more than eight seconds if not fixed.
+`;
+    const estimate = estimateScriptCost(scriptExplicitDuration);
+    assert.equal(estimate.scenes[0].durationSeconds, 8);
+  });
 });

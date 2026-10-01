@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 
 const provenance = require('../../scripts/provenance');
+const { checkLineage } = require('../../scripts/lib/lineage-check');
 
 const SRC_FM = (sourceFile, hash) => `---
 source_file: "${sourceFile}"
@@ -127,7 +128,50 @@ function run() {
       /## NN Procedures: scan @ 2026-08-01T10:00:00Z/.test(migrated),
       'append-only procedure history preserved through migration',
     );
-    eq(rL.created, false, 'migrated record is refreshed, not treated as newly created');
+    // (d) Canonical domaiNN workspace with lineage record in kNNowledge/ (Issue #104)
+    const domProj = path.join(TMP, 'DomProj');
+    fs.mkdirSync(path.join(domProj, 'sources', 'nn'), { recursive: true });
+    fs.mkdirSync(path.join(domProj, 'kNNowledge'), { recursive: true });
+    fs.writeFileSync(path.join(domProj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'ccc'));
+    const knRecordPath = path.join(domProj, 'kNNowledge', 'DomProj_V_0-1-0_cogNNitive_NN.md');
+    fs.writeFileSync(
+      knRecordPath,
+      LEGACY_RECORD.replace('name: "workspace"', 'name: "cogNNitive"').replace('Legacy Provenance', 'DomProj Provenance'),
+    );
+
+    const checkDom = checkLineage(domProj);
+    ok(
+      !checkDom.errors.some((e) => /No lineage record found/i.test(e)),
+      '--check finds lineage record located in kNNowledge/',
+    );
+
+    const rD = provenance.buildProvenanceKnowledge(domProj, { projectName: 'DomProj' });
+    eq(rD.modelPath.replace(/\\/g, '/'), knRecordPath.replace(/\\/g, '/'), 'build refreshes existing kNNowledge/ record');
+    eq(rD.created, false, 'existing kNNowledge/ record not flagged as created');
+    ok(
+      !fs.existsSync(path.join(domProj, 'DomProj_V_0-2-0_cogNNitive_NN.md')),
+      'no duplicate lineage record created at workspace root',
+    );
+
+    // (e) Legacy workspace_NN record inside kNNowledge/ is migrated in place
+    const knLegacyProj = path.join(TMP, 'KnLegacy');
+    fs.mkdirSync(path.join(knLegacyProj, 'sources', 'nn'), { recursive: true });
+    fs.mkdirSync(path.join(knLegacyProj, 'kNNowledge'), { recursive: true });
+    fs.writeFileSync(path.join(knLegacyProj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'ddd'));
+    const knLegacyRecordPath = path.join(knLegacyProj, 'kNNowledge', 'KnLegacy_V_0-1-0_workspace_NN.md');
+    fs.writeFileSync(knLegacyRecordPath, LEGACY_RECORD);
+
+    const rKnL = provenance.buildProvenanceKnowledge(knLegacyProj, { projectName: 'KnLegacy' });
+    const expectedMigrated = path.join(knLegacyProj, 'kNNowledge', 'KnLegacy_V_0-1-0_cogNNitive_NN.md');
+    eq(rKnL.modelPath.replace(/\\/g, '/'), expectedMigrated.replace(/\\/g, '/'), 'migrated in-place inside kNNowledge/');
+    ok(
+      !fs.existsSync(knLegacyRecordPath),
+      'legacy workspace_NN in kNNowledge/ removed',
+    );
+    ok(
+      !fs.existsSync(path.join(knLegacyProj, 'KnLegacy_V_0-2-0_cogNNitive_NN.md')),
+      'no duplicate created at root for kNNowledge/ legacy migration',
+    );
 
     fs.rmSync(TMP, { recursive: true, force: true });
     console.log(`\n  Lineage migration tests: ${passed} passed, ${failed} failed`);

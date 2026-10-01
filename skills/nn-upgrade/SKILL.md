@@ -28,9 +28,10 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 Guided domaiNN upgrade and layout migration engine. Owns **consent-gated migrations** detected
 by `nn-preflight`.
 
-Supports two distinct flows:
+Supports three distinct flows:
 1. **Flow A — Domain Layout Migration** (`legacy-layout` detected): migrates legacy workspaces (`models/`, `specs/templates/`, `workspace_NN.md`, legacy keys) to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` structure.
 2. **Flow B — bluepriNNt Version Upgrade** (`upgrade-available` detected): upgrades bluepriNNt versions for adopted models within a canonical domaiNN.
+3. **Flow C — Batch Domain Update** (`--dir <parent>`): orchestrates Flow A migration across many sibling domaiNNs in one parent directory via `batch-update.js`, reusing `migrate-domain.js` per domain.
 
 ---
 
@@ -97,6 +98,52 @@ Diff the pinned and adopted schemas. Ask mapping questions only when the diff re
 
 ### Phase B4 — Migrate & Validate
 Hydrate adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump version, and re-validate through MCP. On validation failure, restore from backup.
+
+---
+
+## Flow C: Batch Domain Update
+
+Orchestrates **Flow A** migration across many sibling domaiNNs in one parent directory.
+A single CLI, `batch-update.js`, wraps `migrate-domain.js`: the batch is an aggregator,
+never a fused transaction, and it reuses the migration unit instead of reimplementing it.
+v1 covers **Flow A** (offline/deterministic layout migration) only — Flow B
+(bluepriNNt version upgrade) batching is deferred. The batch tool never deletes
+legacy/quarantine code.
+
+### Phase C0 — Discovery / Scan
+```bash
+node skills/nn-upgrade/scripts/batch-update.js --dir <parent> --scan
+```
+Discovers sibling domaiNNs under `<parent>` (excluding `-backup-*`, `_archive`,
+`_templates`, and dot-dirs), classifying each `ready` / `noop` / `blocked` / `skipped`,
+and writes a re-runnable `<parent>/batch-plan.json` recording each domain's `path`,
+op count, and `planHash`. Read-only with respect to domains (zero domain writes).
+Add `--json` for machine-readable output.
+
+### Phase C1 — Selection & Consent
+Selection is non-interactive and expressed ONLY through `--only a,b` / `--exclude x,y`
+and/or a frozen plan (`--plan <file>`) — there are no numbered menus. Present the plan
+and request consent; the consent token is `--yes`. An empty selection applies nothing.
+
+### Phase C2 — Apply
+```bash
+node skills/nn-upgrade/scripts/batch-update.js --dir <parent> --apply [--only a,b] --yes
+```
+Re-validates each selected domain's `planHash` in process (a mismatch aborts that domain
+with no partial writes), then delegates to `migrate-domain.js --apply --plan-hash <hash>
+--yes`. A soft per-parent lock (`<parent>/.nn-batch.lock`; `--force` bypasses it) guards
+concurrent batches. Each domain keeps its own backup + `journal.json`; an aggregate
+`<parent>/batch-journal-<stamp>.json` references them. Failure policy is
+continue-on-failure: one bad domain never rolls back the good ones. Re-running skips
+already-applied / `noop` domains with no new backup.
+
+### Phase C3 — Rollback
+```bash
+node skills/nn-upgrade/scripts/batch-update.js --rollback <parent>/batch-journal-<stamp>.json --yes
+```
+Restores `applied` domains in **reverse order** via `migrate-domain.js --restore`.
+Requires `--yes`. See the Core Rules below for the consent, verified full-tree backup,
+and never-half-migrate guarantees this flow inherits.
 
 ---
 

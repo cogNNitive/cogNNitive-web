@@ -19,7 +19,7 @@ bundled_blueprints: []
 # Skill: nn-trannsform
 
 ## 0. Activation Gate
-Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check). If already executed by `nn` / `nn-start` in the current session, skip duplicate preflight execution.
+Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check). If already executed by `nn` in the current session, skip duplicate preflight execution.
 
 ## System & UX Governance (MANDATORY)
 
@@ -65,7 +65,7 @@ Every project workspace MUST adhere to the following structure:
 
 ```
 [project-name]/
-├── AGENTS.md             # Workspace agent entrypoint (Session Start -> nn-start)
+├── AGENTS.md             # Workspace agent entrypoint (Session Start -> nn)
 ├── sources/
 │   ├── import/           # External raw files (PDF, DOCX, CSV, TXT, JSON, HTML). Legacy sources/original/ supported via fallback.
 │   ├── conversations/    # Promoted transcripts (*_source.md — full transcript only).
@@ -78,13 +78,13 @@ Every project workspace MUST adhere to the following structure:
 ├── assets/               # Binary / media attachments referenced by model elements
 │                         # (image/file/video/audio fields). Not a copy of sources/nn/.
 ├── kNNowledge/               # Structured semantic iNNfo Level 3 models (*_NN.md)
-├── procedures/           # Reusable transformation procedure specs (*_procedures_V_0-1-0_NN.md)
+├── procedures/           # Reusable transformation procedure specs (*_procedures_NN.md)
 ├── traNNsformations/     # Transformation templates applied to sources
 └── index.md              # Semantic workspace index (# NN index)
 ```
 
 > [!NOTE]
-> **Workspace AGENTS.md Scaffolding**: During workspace initialization (`bootstrapProject`), an `AGENTS.md` file is automatically scaffolded at the workspace root if not already present. It directs AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) to immediately invoke `nn-start` at session start. Pre-existing `AGENTS.md` files are preserved intact without destructive overwrite.
+> **Workspace AGENTS.md Scaffolding**: During workspace initialization (`bootstrapProject`), an `AGENTS.md` file is automatically scaffolded at the workspace root if not already present. It directs AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) to immediately invoke `nn` at session start. Pre-existing `AGENTS.md` files are preserved intact without destructive overwrite.
 
 > [!NOTE]
 > **Workspace index.md Format**: The workspace `index.md` file (in the project root) uses standard Markdown links (`* [label](target.md)`), unlike the internal `# NN index` block of Level 3 models which uses WikiLinks (`* [[Concept]]`). When regenerated, the tool preserves existing custom/unknown lines, filters out duplicate or dangling links, and keeps the highest version if multiple versions of the same model base exist.
@@ -202,9 +202,9 @@ cited_works:
 Reviewer consoles export structured feedback JSON (see `iNNfo/specs/bluepriNNts/console/feedback.schema.json`). The drop zone is `sources/import/feedback/` (legacy `sources/original/feedback/` supported). Files MUST be named `{PrimaryModel}_V_{version}_{slug}_feedback_{YYYYMMDD-HHMMSS}.json`.
 
 1. **Routing**: during `--scan`, `.json` files under `import/feedback/` (or `original/feedback/`) route to `convertFeedbackJson`, NOT the generic structured-data `convertJson` branch. Every other `sources/import/` JSON file keeps the generic path. The legacy Slack/Teams heuristic parser (`convertChatJson`) is removed — chat transcripts ingest via the `conversations/` lifecycle, never via `.json` heuristics.
-2. **Validation**: each payload validates against the feedback contract (`meta` with `source_model`, `source_knowledge_version` as `V_x-y-z`, `artifact`, `artifact_version`, `exported_at` ISO-8601 with seconds, `author`, `feedback_slug`, `viewer`; items with `id` as `fb-NNN`, `kind` as `correction|comment|new|delete`, non-empty `target`, `status` as `pending|applied|rejected`). Unknown draft fields are ignored. A file failing validation is **skipped and reported in the registry — the run never aborts**.
+2. **Validation**: each payload validates against the feedback contract (`meta` with `source_knowledge`, `source_knowledge_version` as `V_x-y-z`, `artifact`, `artifact_version`, `exported_at` ISO-8601 with seconds, `author`, `feedback_slug`, `viewer`; items with `id` as `fb-NNN`, `kind` as `correction|comment|new|delete`, non-empty `target`). Unknown draft fields are ignored. A file failing validation is **skipped and reported in the registry — the run never aborts**.
 3. **Frontmatter contract**: normalized feedback lands mirrored at `sources/nn/import/feedback/<name>.md` with the standard origin frontmatter (`source_file` pointing at the `sources/import/feedback/` origin, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`) **plus** `source_type: "feedback"` and `is_synthetic: true`.
-4. **Citation**: the normalized body renders one `### <fb-NNN> (<kind>, <status>)` heading per item, so agents cite items directly: `sources:: import/feedback/<file>.md#fb-001`. Downstream, the app's `apply_feedback_NN.md` procedure carries accepted items back into the model (staleness check, diff preview, `apply_change` per item, `validate_knowledge`, single patch bump, stable-name console regeneration).
+4. **Citation**: the normalized body renders one `### <fb-NNN>` heading per item followed by `- **Kind**:`, so agents cite items directly: `sources:: import/feedback/<file>.md#fb-001`. Downstream, the `reconcile_feedback_NN.md` procedure carries accepted items back into the model (staleness check, diff preview, `apply_change` per item, `validate_knowledge`, single patch bump, stable-name console regeneration).
 
 #### 2a-2. Dynamic Sources & Impact Checking (`--check-impact` / `--normalize-file`)
 
@@ -252,7 +252,7 @@ Workspaces can watch external file drops without daemons or external mutations:
 
 #### 2a-3b. Session-Start Digest (`--watch-digest` / `--digest-decide`)
 
-A domaiNN that declares `## NN External Watch Roots:` can be checked **at session start**, not only before authoring. `nn-start` offers one digest of what changed and lets the user decide per item.
+A domaiNN that declares `## NN External Watch Roots:` can be checked **at session start**, not only before authoring. `nn` offers one digest of what changed and lets the user decide per item.
 
 1. **Machine-readable scan** — `node scripts/index.js --scan-external --json` prints the classified roots as stable JSON (changed items only).
 2. **Digest** — `node scripts/index.js --watch-digest [--json]` renders the scan filtered to items still awaiting a decision. It is **read-only**: it never writes to `sources/`. It prints nothing when no roots are declared, so it never blocks or delays session start.
@@ -315,7 +315,7 @@ Add `--plan` to emit the exact `innfo-mcp_apply_change` operation plan (requires
 and a single final `bump_version`. Removed keys are never an operation.
 
 Apply the proposal through the reviewed mutation path (run the plan's `ops` via
-`innfo-mcp_apply_change` + `validate_model`), then mark it applied so re-running
+`innfo-mcp_apply_change` + `validate_knowledge`), then mark it applied so re-running
 is a no-op:
 
 ```bash
@@ -594,7 +594,7 @@ At the end of transformation:
 4. **Mandatory Scanner Origin Metadata**: Normalized Markdown in `sources/nn/` MUST include scanner frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, plus optional `staging_file`, `is_synthetic`, `canonical`, and `cited_works`). No `source_id`/`src-NNN`.
 5. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: <path.md#heading-slug>` (or a list `sources:: [a.md#slug, b.md#slug]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
 6. **V_0-1-0 Compliance**: Target iNNfo V_0-1-0 meta-template specification and unified NN syntax (`# NN`, `## NN`, `key:: value`).
-7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn-start`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
+7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
 7a. **Lineage Record Sync**: `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `kNNowledge/`, `export/`, fallback `artifacts/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.
 8. **Prose Description in Level 3 Models**: The description of an element in a Level 3 model must NEVER be formatted as a `description::` property field. It must always be written as free-form Markdown prose below the `key:: value` fields list, separated from them by a blank line.
 9. **Scored Matching, Never Silent Exclusion**: normalized sources map to model elements through `scorePairs` (`scripts/lib/score-matcher.js`, threshold 0.7); below-threshold pairs enter the review queue with a recorded decision, and undecided pairs stay queued across sessions.

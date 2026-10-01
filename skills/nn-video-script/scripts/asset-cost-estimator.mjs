@@ -176,6 +176,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   for (let i = 0; i < parsed.scenes.length; i++) {
     const scene = parsed.scenes[i];
     const narration = (scene.narration || '').trim();
+    const wordCount = narration ? narration.split(/\s+/).filter(Boolean).length : 0;
     const charCount = narration.length;
     const explicitDuration = scene.properties?.scene_duration || scene.properties?.duration || scene.duration;
     const estimatedDurationSec = explicitDuration ? Number(explicitDuration) : Math.max(3, Math.round((wordCount / 2.5) * 10) / 10);

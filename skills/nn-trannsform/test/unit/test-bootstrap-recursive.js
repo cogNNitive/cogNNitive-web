@@ -99,12 +99,12 @@ async function runAsync() {
     check(fs.existsSync(result.agentsMdPath), 'AGENTS.md exists at project root');
     const agentsContent = fs.readFileSync(result.agentsMdPath, 'utf8');
     check(
-      agentsContent.includes('## Session Start: Load nn-start (MANDATORY)'),
-      'AGENTS.md has Session Start nn-start directive',
+      agentsContent.includes('## Session Start: Load nn (MANDATORY)'),
+      'AGENTS.md has Session Start nn directive',
     );
     check(
-      agentsContent.includes('nn-preflight'),
-      'AGENTS.md references nn-preflight check',
+      agentsContent.includes('domain-probe.js'),
+      'AGENTS.md references domain probe check',
     );
 
     // Preservation of pre-existing AGENTS.md
@@ -125,7 +125,7 @@ async function runAsync() {
     const overwrittenResult = bootstrapProject(undefined, destParent, 'ProjExisting', { overwriteAgents: true });
     const overwrittenContent = fs.readFileSync(overwrittenResult.agentsMdPath, 'utf8');
     check(
-      overwrittenContent.includes('## Session Start: Load nn-start (MANDATORY)'),
+      overwrittenContent.includes('## Session Start: Load nn (MANDATORY)'),
       'AGENTS.md is overwritten when options.overwriteAgents is true',
     );
 

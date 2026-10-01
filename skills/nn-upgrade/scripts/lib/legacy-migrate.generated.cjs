@@ -194,12 +194,17 @@ async function detectLegacy(r) {
 var IGNORED_DIRS = /* @__PURE__ */ new Set([".git", "node_modules", "dist", "coverage", "backups", "archive", "specs"]);
 async function readLegacyDomain(r) {
   const files = {};
+  const opaque = [];
   async function walk(dir, depth = 0) {
     if (depth > 10) return;
     const entries = await r.list(dir);
     for (const entry of entries) {
       if (IGNORED_DIRS.has(entry) && !dir) continue;
       const relPath = dir ? `${dir}/${entry}` : entry;
+      if (r.isOpaque && await r.isOpaque(relPath)) {
+        opaque.push(relPath);
+        continue;
+      }
       const content = await r.read(relPath);
       if (content !== null) {
         files[relPath] = content;
@@ -209,7 +214,7 @@ async function readLegacyDomain(r) {
     }
   }
   await walk("");
-  return { files };
+  return { files, opaque };
 }
 
 // iNNfo/packages/innfo-core/src/legacy/schema-maps/workspace.ts
@@ -354,20 +359,23 @@ function migrateContent(content, filePath) {
   );
   result = result.replace(/^(\s*)templates_dir(\s*:)/gm, "$1blueprints_dir$2");
   result = result.replace(/(\btype::\s*)model\b/gi, "$1knowledge");
-  result = result.replace(/^(#{1,6}\s+)Workspace(\s*)$/gm, "$1domaiNN$2");
-  result = result.replace(/^(#{1,6}\s+)Models(\s*)$/gm, "$1kNNowledge$2");
-  result = result.replace(/^(#{1,6}\s+)Templates(\s*)$/gm, "$1bluepriNNts$2");
+  result = result.replace(/^(#{1,6}\s+(?:NN\s+)?)Workspace(\b[^\r\n]*)$/gm, "$1domaiNN$2");
+  result = result.replace(/^(#{1,6}\s+(?:NN\s+)?)Models(\b[^\r\n]*)$/gm, "$1kNNowledge$2");
+  result = result.replace(/^(#{1,6}\s+(?:NN\s+)?)Templates(\b[^\r\n]*)$/gm, "$1bluepriNNts$2");
   result = result.replace(/^(\s*-\s+)Workspace(\s+Definition|\s+DefiNNition)/gm, "$1domaiNN$2");
   result = result.replace(/^(\s*-\s+)Models(\s+Definition|\s+DefiNNition)/gm, "$1kNNowledge$2");
   result = result.replace(/^(\s*-\s+)Templates(\s+Definition|\s+DefiNNition)/gm, "$1bluepriNNts$2");
-  result = result.replace(/\[\[#Workspace\]\]/g, "[[#domaiNN]]");
-  result = result.replace(/\[\[#Models\]\]/g, "[[#kNNowledge]]");
-  result = result.replace(/\[\[#Templates\]\]/g, "[[#bluepriNNts]]");
-  result = result.replace(/(\bpath::\s*)models\//g, "$1kNNowledge/");
-  result = result.replace(/(\bpath::\s*)specs\/templates\//g, "$1specs/bluepriNNts/");
-  result = result.replace(/(\bpath::\s*)templates\//g, "$1specs/bluepriNNts/");
+  result = result.replace(/\[\[#?Workspace\]\]/g, (m) => m.includes("#") ? "[[#domaiNN]]" : "[[domaiNN]]");
+  result = result.replace(/\[\[#?Models\]\]/g, (m) => m.includes("#") ? "[[#kNNowledge]]" : "[[kNNowledge]]");
+  result = result.replace(/\[\[#?Templates\]\]/g, (m) => m.includes("#") ? "[[#bluepriNNts]]" : "[[bluepriNNts]]");
+  result = result.replace(/(\b(?:path|sources|fuentes|model_ref|model|derived_from)::\s*(?:\[\s*)?)(?:\.\/)?models\//g, "$1kNNowledge/");
+  result = result.replace(/(\b(?:path|sources|fuentes|model_ref|model|derived_from)::\s*(?:\[\s*)?)(?:\.\/)?specs\/templates\//g, "$1specs/bluepriNNts/");
+  result = result.replace(/(\b(?:path|sources|fuentes|model_ref|model|derived_from)::\s*(?:\[\s*)?)(?:\.\/)?templates\//g, "$1specs/bluepriNNts/");
   result = result.replace(/(\bpath::\s*)workspace_NN\.md/g, "$1domaiNN_NN.md");
   result = result.replace(/(\bpath::\s*)workspace\.md/g, "$1domaiNN_NN.md");
+  result = result.replace(/(["'])(?:\.\/)?models\//g, "$1kNNowledge/");
+  result = result.replace(/(["'])(?:\.\/)?specs\/templates\//g, "$1specs/bluepriNNts/");
+  result = result.replace(/(["'])(?:\.\/)?templates\//g, "$1specs/bluepriNNts/");
   result = result.replace(/(\]\(\.\/|\()models\//g, "$1kNNowledge/");
   result = result.replace(/(\]\(\.\/|\()specs\/templates\//g, "$1specs/bluepriNNts/");
   result = result.replace(/(\]\(\.\/|\()templates\//g, "$1specs/bluepriNNts/");
@@ -375,12 +383,29 @@ function migrateContent(content, filePath) {
   result = result.replace(/(\[\[(?:\.\/)?)specs\/templates\//g, "$1specs/bluepriNNts/");
   result = result.replace(/(\[\[(?:\.\/)?)templates\//g, "$1specs/bluepriNNts/");
   result = result.replace(
-    /\/specs\/templates\/workspace\/spec_NN\.md/g,
+    /\/specs\/(?:templates|bluepriNNts)\/workspace(?:_spec_NN\.md|\/spec_NN\.md)/g,
+    "/specs/bluepriNNts/domaiNN/spec_NN.md"
+  );
+  result = result.replace(
+    /\/bluepriNNts\/workspace(?:_spec_NN\.md|\/spec_NN\.md)/g,
+    "/bluepriNNts/domaiNN/spec_NN.md"
+  );
+  result = result.replace(
+    /\/specs\/templates\/workspace_spec_NN\.md/g,
+    "/specs/bluepriNNts/domaiNN/spec_NN.md"
+  );
+  result = result.replace(
+    /\/templates\/workspace_spec_NN\.md/g,
     "/specs/bluepriNNts/domaiNN/spec_NN.md"
   );
   result = result.replace(/\/specs\/templates\//g, "/specs/bluepriNNts/");
   result = result.replace(/\/specs\/iNNfo_V_0-[12]-[0-9]+_NN\.md/g, "/specs/iNNfo_V_0-3-0_NN.md");
   result = result.replace(/\/specs\/defiNNe_V_0-1-0_NN\.md/g, "/specs/defiNNition_V_0-1-0_NN.md");
+  result = result.replace(
+    /(parent_spec:\s*\r?\n(?:[ \t]+[^\r\n]+\r?\n)*?[ \t]+name:\s*["']?)workspace(["']?)/g,
+    "$1domaiNN$2"
+  );
+  result = result.replace(/^(\s*blueprint_name\s*:\s*["']?)workspace(["']?)/gm, "$1domaiNN$2");
   return result;
 }
 function migrateJsonObject(value) {
@@ -422,10 +447,11 @@ function computePlanHash(ops) {
 function extractBlueprintName(content, filePath) {
   const normPath = filePath.replace(/\\/g, "/");
   if (normPath === "workspace_NN.md" || normPath === "domaiNN_NN.md" || OVERVIEW_ROOT_RE2.test(normPath)) {
-    return "workspace";
+    return "domaiNN";
   }
   const match = content.match(/^\s*(?:blueprint_name|template_name)\s*:\s*["']?([a-zA-Z0-9_-]+)["']?/m);
   if (match) {
+    if (match[1] === "workspace") return "domaiNN";
     return match[1];
   }
   return null;
@@ -524,10 +550,33 @@ async function planMigration(r, deps) {
       ops.push({ op: "write", path: targetPath, content });
     }
   }
+  for (const opaquePath of legacyDomain.opaque || []) {
+    const targetPath = migratePath(opaquePath);
+    if (targetPath !== opaquePath) {
+      renamedFiles.push({ from: opaquePath, to: targetPath });
+      ops.push({ op: "move", from: opaquePath, to: targetPath });
+    }
+  }
   const migratedTree = { files: migratedFiles };
   const validationProblems = deps.validate(migratedTree, deps.targets);
   problems.push(...validationProblems);
   const isBlocked = problems.some((p) => p.severity === "error");
+  if (ops.length === 0 && !isBlocked) {
+    return {
+      status: "noop",
+      ops: [],
+      problems,
+      report: {
+        renamedFiles: [],
+        rewrittenFiles: [],
+        customBlueprints: Array.from(customBlueprints),
+        unmappedBlueprints: Array.from(unmappedBlueprints),
+        problems,
+        summary: "Domain is already up to date with the canonical layout."
+      },
+      planHash: computePlanHash([])
+    };
+  }
   const report = {
     renamedFiles,
     rewrittenFiles,

@@ -3,10 +3,10 @@
   "blueprints": {
     "analysis": {
       "name": "analysis",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Analysis App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
@@ -39,10 +39,10 @@
     },
     "business": {
       "name": "business",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Business App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
@@ -75,10 +75,10 @@
     },
     "documentation": {
       "name": "documentation",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Documentation Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
@@ -99,10 +99,10 @@
     },
     "innovation": {
       "name": "innovation",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Innovation App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
@@ -123,10 +123,10 @@
     },
     "organization": {
       "name": "organization",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Organization App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
@@ -147,10 +147,10 @@
     },
     "projects": {
       "name": "projects",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Projects App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"

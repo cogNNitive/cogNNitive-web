@@ -22,6 +22,72 @@ import { RemotionSceneCompiler } from './remotion-scene-compiler.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
 
+const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Resolves the Remotion entry point path relative to the scripts directory.
+ * Does not check if the file exists.
+ * @param {string} [scriptsDir]
+ * @returns {string}
+ */
+export function resolveRemotionEntryPoint(scriptsDir = SCRIPTS_DIR) {
+  return path.resolve(scriptsDir, 'remotion-entry.tsx');
+}
+
+/**
+ * Attempts to render video using Remotion programmatic renderer.
+ * Never throws; returns { rendered: true } or { rendered: false, reason: string }.
+ * @param {{ manifest: object, outputPath: string, concurrency?: number }} input
+ * @param {{ loadModule?: (id: string) => Promise<object|null>, scriptsDir?: string }} [deps]
+ * @returns {Promise<{ rendered: true } | { rendered: false, reason: string }>}
+ */
+export async function tryRemotionRender(input, deps = {}) {
+  const { manifest, outputPath, concurrency = 4 } = input;
+  const loadModule = deps.loadModule || ((id) => import(id).catch(() => null));
+  const scriptsDir = deps.scriptsDir || SCRIPTS_DIR;
+
+  try {
+    const remotionBundler = await loadModule('@remotion/bundler');
+    const remotionRenderer = await loadModule('@remotion/renderer');
+
+    if (!remotionBundler || !remotionRenderer) {
+      return { rendered: false, reason: 'modules-unavailable' };
+    }
+
+    const entryPoint = resolveRemotionEntryPoint(scriptsDir);
+    if (!fs.existsSync(entryPoint)) {
+      return { rendered: false, reason: `entry-point-missing: ${entryPoint}` };
+    }
+
+    const bundleLocation = await remotionBundler.bundle({
+      entryPoint,
+      webpackOverride: (config) => config,
+    });
+
+    const composition = {
+      id: manifest.compositionId,
+      fps: manifest.fps,
+      durationInFrames: manifest.totalDurationInFrames,
+      width: manifest.width,
+      height: manifest.height,
+      props: manifest,
+    };
+
+    await remotionRenderer.renderMedia({
+      composition,
+      serveUrl: bundleLocation,
+      codec: 'h264',
+      outputLocation: outputPath,
+      inputProps: manifest,
+      concurrency,
+    });
+
+    return { rendered: true };
+  } catch (err) {
+    return { rendered: false, reason: `error: ${err?.message || String(err)}` };
+  }
+}
+
 /**
  * @typedef {Object} VideoCompileOptions
  * @property {string} scriptPath
@@ -204,43 +270,14 @@ export async function renderVideo(options) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
   // 1. Try Remotion programmatic renderer if installed in project
-  let renderedWithRemotion = false;
-  try {
-    const remotionBundler = await import('@remotion/bundler').catch(() => null);
-    const remotionRenderer = await import('@remotion/renderer').catch(() => null);
-
-    if (remotionBundler && remotionRenderer) {
-      // If Remotion entry point exists
-      const entryPoint = path.resolve(__dirname, 'remotion-entry.tsx');
-      if (fs.existsSync(entryPoint)) {
-        const bundleLocation = await remotionBundler.bundle({
-          entryPoint,
-          webpackOverride: (config) => config,
-        });
-
-        const composition = {
-          id: manifest.compositionId,
-          fps: manifest.fps,
-          durationInFrames: manifest.totalDurationInFrames,
-          width: manifest.width,
-          height: manifest.height,
-          props: manifest,
-        };
-
-        await remotionRenderer.renderMedia({
-          composition,
-          serveUrl: bundleLocation,
-          codec: 'h264',
-          outputLocation: outputPath,
-          inputProps: manifest,
-          concurrency: options.concurrency || 4,
-        });
-
-        renderedWithRemotion = true;
-      }
-    }
-  } catch (err) {
-    // If remotion render fails or is not configured, fall through to headless renderer
+  const remotionResult = await tryRemotionRender({
+    manifest,
+    outputPath,
+    concurrency: options.concurrency || 4,
+  });
+  const renderedWithRemotion = remotionResult.rendered;
+  if (!renderedWithRemotion) {
+    console.warn(`[video-engine-cli] Remotion render skipped (${remotionResult.reason}); falling back to FFmpeg`);
   }
 
   // 2. Headless compositing renderer using FFmpeg

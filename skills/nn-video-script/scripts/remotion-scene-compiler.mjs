@@ -212,16 +212,21 @@ export class RemotionSceneCompiler {
         continue;
       }
 
-      if (line.startsWith('# Scenes') || line.startsWith('# scenes')) {
+      if (line.startsWith('# Scenes') || line.startsWith('# scenes') || line.startsWith('# Section') || line.startsWith('# section')) {
         inScenesBlock = true;
         continue;
       }
 
-      // Scene header: ## Scene Name or ## Scene 1: Name
-      if (line.startsWith('## ')) {
+      if (line.startsWith('# Video') || line.startsWith('# video') || line.startsWith('# Sets') || line.startsWith('# sets') || line.startsWith('# Sources') || line.startsWith('# sources') || line.startsWith('## Set') || line.startsWith('## set')) {
+        inScenesBlock = false;
+        continue;
+      }
+
+      // Scene header: ## Scene Name, ## Scene 1: Name, or ## @scene Name
+      if (line.startsWith('## @scene') || line.startsWith('## Scene') || line.startsWith('## scene') || (line.startsWith('## ') && inScenesBlock)) {
         inScenesBlock = true;
         currentLayer = null;
-        const rawName = line.replace(/^##\s*/, '').trim();
+        const rawName = line.replace(/^##\s*(@scene\s*)?/, '').trim();
         const sceneId = `scene_${result.scenes.length + 1}_${rawName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}`;
         currentScene = {
           id: sceneId,

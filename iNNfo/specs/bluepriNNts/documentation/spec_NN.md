@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "Documentation Specification App"
-blueprint_version: "V_0-3-0"
+blueprint_version: "V_0-3-1"
 relationship_types:
   hierarchy:
     enabled: true
@@ -21,10 +21,6 @@ procedures:
   - id: "generate-docsify-suite"
     name: "Generate Docsify Suite"
     path: "procedures/generate_docsify_suite_NN.md"
-assets:
-  - id: "docs-portal-layout"
-    name: "Documentation Portal HTML Layout"
-    path: "assets/docs_portal_console.html"
 ---
 
 > [!NOTE]

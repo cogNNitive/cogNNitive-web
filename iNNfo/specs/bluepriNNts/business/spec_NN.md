@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-0"
+blueprint_version: "V_0-3-1"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -28,10 +28,6 @@ relationship_types:
     enabled: false
   sequence:
     enabled: true
-assets:
-  - id: "model-viewer-shell"
-    name: "Model Viewer HTML Layout"
-    path: "assets/model_viewer.html"
 ---
 
 > [!NOTE]

@@ -1,0 +1,12 @@
+- [Update Center](/)
+  - [How to Upgrade](/#how-to-upgrade)
+  - [Release Channels](/#release-channels)
+  - [Distribution Manifest](/#distribution-manifest)
+  - [Blueprint Catalog](/#blueprint-catalog)
+  - [Offline Fallback](/#offline-resilience)
+
+- [Ecosystem Links](https://cognnitive.com)
+  - [Home](https://cognnitive.com)
+  - [Bootstrap (`/use`)](https://cognnitive.com/use)
+  - [iNNfo Modeler](https://cognnitive.com/innfo)
+  - [Skills Documentation](https://cognnitive.com/skills/documentation)

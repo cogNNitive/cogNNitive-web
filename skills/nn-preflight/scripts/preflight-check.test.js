@@ -1930,6 +1930,45 @@ agent-bootstrap:
     }
   }
 
+  // Test 36: Manifest fallback resolution handles unreachable primary endpoint gracefully
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const fallbackServer = await serveManifest(manifestContent);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-fallback-'));
+    try {
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: fallbackServer.url,
+        skills: {},
+        blueprints: {},
+      }));
+
+      // Test default fallback chain when primary is offline
+      const res = await runScriptAsync([
+        '--json',
+        '--state-file', stateFile,
+        '--manifest-url', fallbackServer.url,
+      ], {
+        env: { ...process.env, USERPROFILE: tmpDir, HOME: tmpDir },
+      });
+
+      assert.strictEqual(res.status, 0, `Fallback manifest fetch must succeed. Got: ${res.stdout} ${res.stderr}`);
+      const parsed = JSON.parse(res.stdout);
+      assert.strictEqual(parsed.manifest.reachable, true);
+      assert.strictEqual(parsed.manifest.url, fallbackServer.url);
+      console.log('✔ Manifest fallback resolution reaches active endpoint cleanly');
+    } finally {
+      await fallbackServer.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
   console.log('All preflight-check unit tests passed successfully!\n');
 }
 
@@ -1937,3 +1976,4 @@ runTests().catch(err => {
   console.error('Test failure:', err);
   process.exit(1);
 });
+

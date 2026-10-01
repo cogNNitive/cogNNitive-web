@@ -334,7 +334,21 @@ function isFeedbackJsonPath(filePath) {
 }
 
 const FEEDBACK_ITEM_KINDS = ['correction', 'comment', 'new', 'delete'];
-const FEEDBACK_ITEM_STATUSES = ['pending', 'applied', 'rejected'];
+const FORBIDDEN_FEEDBACK_META_KEYS = [
+  'knowledge',
+  'knowledge_version',
+  'session_label',
+  'source_model',
+  'source_model_version',
+];
+const FORBIDDEN_FEEDBACK_ITEM_KEYS = [
+  'status',
+  'layer',
+  'severity',
+  'target_hash',
+  'stale',
+  'field',
+];
 
 /**
  * Validates a parsed reviewer-feedback payload against the innfo-console
@@ -352,6 +366,16 @@ function validateFeedbackJson(parsed) {
   }
   const meta = parsed.meta;
   if (!meta || typeof meta !== 'object') fail('meta: required object is missing');
+  for (const key of FORBIDDEN_FEEDBACK_META_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(meta, key)) {
+      fail(`meta.${key}: forbidden property is present`);
+    }
+  }
+  for (const key of Object.keys(meta)) {
+    if (key.startsWith('source_model') && !FORBIDDEN_FEEDBACK_META_KEYS.includes(key)) {
+      fail(`meta.${key}: forbidden property is present`);
+    }
+  }
   for (const field of ['source_knowledge', 'artifact', 'artifact_version', 'author', 'viewer']) {
     if (!meta[field] || typeof meta[field] !== 'string') fail(`meta.${field}: required non-empty string is missing`);
   }
@@ -361,14 +385,24 @@ function validateFeedbackJson(parsed) {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/.test(String(meta.exported_at || ''))) {
     fail(`meta.exported_at: must be ISO-8601 with seconds (got ${meta.exported_at})`);
   }
-  const slug = meta.feedback_slug || meta.session_label;
+  const slug = meta.feedback_slug;
   if (typeof slug !== 'string' || slug.trim() === '') fail('meta.feedback_slug: required slug is missing');
+  if (meta.source_sha256 !== undefined) {
+    if (typeof meta.source_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(meta.source_sha256)) {
+      fail('meta.source_sha256: must be a 64-character hex string');
+    }
+  }
   if (!Array.isArray(parsed.items)) fail('items: required array is missing');
 
   for (let i = 0; i < parsed.items.length; i++) {
     const item = parsed.items[i];
     const where = item && typeof item.id === 'string' ? item.id : `#${i}`;
     if (!item || typeof item !== 'object') fail(`${where}: must be an object`);
+    for (const key of FORBIDDEN_FEEDBACK_ITEM_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(item, key)) {
+        fail(`${where}.${key}: forbidden property is present`);
+      }
+    }
     if (!/^fb-\d{3,}$/.test(String(item.id || ''))) fail(`${where}: id must match fb-NNN (got ${item.id})`);
     if (!FEEDBACK_ITEM_KINDS.includes(item.kind)) {
       fail(`${where}: kind must be one of ${FEEDBACK_ITEM_KINDS.join('|')} (got ${item.kind})`);
@@ -376,8 +410,10 @@ function validateFeedbackJson(parsed) {
     if (!item.target || typeof item.target !== 'object' || Object.keys(item.target).length === 0) {
       fail(`${where}: target must be a non-empty object`);
     }
-    if (!FEEDBACK_ITEM_STATUSES.includes(item.status)) {
-      fail(`${where}: status must be one of ${FEEDBACK_ITEM_STATUSES.join('|')} (got ${item.status})`);
+    if (item.base_hash !== undefined) {
+      if (typeof item.base_hash !== 'string' || !/^[0-9a-f]{16}$/.test(item.base_hash)) {
+        fail(`${where}.base_hash: must match ^[0-9a-f]{16}$`);
+      }
     }
   }
   return { meta, items: parsed.items };
@@ -406,12 +442,13 @@ function convertFeedbackJson(content, baseName) {
   out += `- **Artifact**: ${meta.artifact} (v${meta.artifact_version})\n`;
   out += `- **Exported At**: ${meta.exported_at}\n`;
   out += `- **Author**: ${meta.author}\n`;
-  out += `- **Slug**: ${meta.feedback_slug || meta.session_label}\n`;
+  out += `- **Slug**: ${meta.feedback_slug}\n`;
   out += `- **Viewer**: ${meta.viewer}\n\n`;
 
   out += `## NN Items (${items.length})\n\n`;
   for (const item of items) {
-    out += `### ${item.id} (${item.kind}, ${item.status})\n\n`;
+    out += `### ${item.id}\n\n`;
+    out += `- **Kind**: ${item.kind}\n`;
     const target = item.target || {};
     const targetBits = Object.keys(target).map((k) => `${k}: ${target[k]}`);
     if (targetBits.length > 0) out += `- **Target**: ${targetBits.join('; ')}\n`;

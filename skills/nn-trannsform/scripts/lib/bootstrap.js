@@ -36,18 +36,18 @@ Transform (traNNsform) is a tool to structure and process unstructured documents
 function generateAgentsMd(projectName) {
   return `# AGENTS.md — ${projectName}
 
-## Session Start: Load nn-start (MANDATORY)
+## Session Start: Load nn (MANDATORY)
 
-At the beginning of every interactive session in this workspace, AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) **MUST** immediately load and execute **\`nn-start\`** (\`skills/nn-start/SKILL.md\` or \`/nn-start\`).
+At the beginning of every interactive session in this workspace, AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) **MUST** immediately load and execute **\`nn\`** (\`skills/nn/SKILL.md\` or \`/nn\`).
 
 ### Session Start Protocol
-1. **Activation Gate & Environment Readiness**: Trigger \`nn-start\` to run \`nn-preflight\` readiness checks (Node.js runtime, MCP health, and workspace layout verification).
+1. **Activation Gate & Environment Readiness**: Trigger \`nn\` to run the domain state probe (\`domain-probe.js\`) and inspect workspace layout and readiness.
 2. **Session Transcript Allocation**: Silently allocate or attach turn logging under \`conversations/YYYY-MM-DD_HHmmss.md\` to preserve context.
-3. **Skill Routing**: Match user intent against the 7 core skills in the cogNNitive catalog (\`nn-start\`, \`nn-preflight\`, \`nn-trannsform\`, \`nn-innfo\`, \`nn-site-generator\`, \`nn-design-presets\`, \`nn-skills-lifecycle\`).
+3. **Job Navigation**: Present the Job Loop Navigation Menu (\`[s] Sources\`, \`[m] Model\`, \`[r] Review/Deliverables\`, \`[p] Procedures\`).
 
 ### System & UX Governance (Mandatory)
 - **Zero Unilateral Mutation (Consent First)**: NEVER move, rename, or delete user files (including raw files in \`sources/import/\`) without explicit confirmation.
-- **Recommended Option First**: In all menus or option lists, present option \`[1]\` or \`[a]\` with the \`(Recommended)\` label.
+- **Recommended Option First**: In all menus or option lists, present the \`(Recommended)\` option first based on domain state.
 - **Optimistic Execution & Informative Grace**: Proceed immediately on safe, standard, non-destructive actions while clearly announcing intent and providing an easy interruption path.
 - **Conversations as Reference & Source**: Continuously log session turns and offer promotion to \`sources/conversations/\` at session completion.
 `;

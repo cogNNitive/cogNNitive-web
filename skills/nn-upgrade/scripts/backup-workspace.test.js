@@ -107,6 +107,26 @@ async function runTests() {
     console.log('✔ isInside enforces containment');
   }
 
+  // Test 6: custom skipDirs option
+  {
+    const ws = buildWorkspace();
+    fs.mkdirSync(path.join(ws, 'models', 'archive'), { recursive: true });
+    fs.writeFileSync(path.join(ws, 'models', 'archive', 'x.md'), '# archived model');
+    const target = path.join(path.dirname(ws), `backup-skipdirs-${Date.now()}`);
+    try {
+      const manifest = backupWorkspace(ws, {
+        target,
+        skipDirs: new Set(['.git', 'node_modules']),
+      });
+      assert.ok(manifest.files.includes('models/archive/x.md'), 'models/archive/x.md included with custom skipDirs');
+      assert.ok(fs.existsSync(path.join(target, 'models', 'archive', 'x.md')));
+      console.log('✔ custom skipDirs preserves archive/backups directories when configured');
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true });
+      fs.rmSync(target, { recursive: true, force: true });
+    }
+  }
+
   console.log('All backup-workspace tests passed successfully!\n');
 }
 

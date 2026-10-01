@@ -31,16 +31,6 @@
           "pattern": "^V_\\d+-\\d+-\\d+$",
           "description": "Knowledge version pinned at export time (V_x-y-z). Used for staleness checks."
         },
-        "knowledge": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Primary knowledge name the feedback was collected against."
-        },
-        "knowledge_version": {
-          "type": "string",
-          "pattern": "^V_\\d+-\\d+-\\d+$",
-          "description": "Knowledge version pinned at export time (V_x-y-z). Used for staleness checks."
-        },
         "artifact": {
           "type": "string",
           "minLength": 1,
@@ -64,24 +54,33 @@
         "feedback_slug": {
           "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-          "description": "Slugified reviewer identifier (see session_label alias)."
-        },
-        "session_label": {
-          "type": "string",
-          "description": "Alias for the human identifier the slug was derived from."
+          "description": "Slugified reviewer identifier."
         },
         "viewer": {
           "type": "string",
           "minLength": 1,
           "description": "Console viewer string, e.g. innfo-console/0.1.0."
-        }
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Optional SHA-256 of the source model at export time."
+        },
+        "knowledge": false,
+        "knowledge_version": false,
+        "session_label": false,
+        "source_model": false,
+        "source_model_version": false
+      },
+      "patternProperties": {
+        "^source_model": false
       }
     },
     "items": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "kind", "target", "status"],
+        "required": ["id", "kind", "target"],
         "additionalProperties": true,
         "properties": {
           "id": {
@@ -115,10 +114,17 @@
             "type": "string",
             "description": "Free-text note (comments, deletes)."
           },
-          "status": {
+          "base_hash": {
             "type": "string",
-            "enum": ["pending", "applied", "rejected"]
-          }
+            "pattern": "^[0-9a-f]{16}$",
+            "description": "Optional 16-character hex hash of the target element observed at export time."
+          },
+          "status": false,
+          "layer": false,
+          "severity": false,
+          "target_hash": false,
+          "stale": false,
+          "field": false
         }
       }
     }
