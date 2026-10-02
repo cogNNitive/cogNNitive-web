@@ -1,13 +1,15 @@
 {
-  "generatedAt": "2026-10-02T05:44:56.046Z",
-  "head": "567c1313337b0160c5e997bb668e7168c1bc0a0e",
+  "generatedAt": "2026-10-02T05:57:58.281Z",
+  "head": "204a00976f979880c404774fa5d62c4c7adc9f15",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.9.0",
       "pinnedTagDate": "2026-10-01T19:08:06+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "skills/nn-preflight/scripts/preflight-check.js"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",

@@ -39,7 +39,7 @@ const { detectLegacy } = require('./lib/legacy-detect.generated.cjs');
 const DEFAULT_MANIFEST_URL = process.env.SM_MANIFEST_URL ||
   'https://cognnitive.com/use/manifest.md';
 const FALLBACK_MANIFEST_URL =
-  'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md';
+  'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/docs/use/manifest.md';
 
 const DEFAULT_SKILLS_DIR = path.join(os.homedir(), '.agents', 'skills');
 const DEFAULT_BLUEPRINTS_DIR = path.join(os.homedir(), '.agents', 'bluepriNNts');
@@ -1572,5 +1572,6 @@ module.exports = {
   scanWorkspaceSources,
   validateBlueprintCompositions,
   FRESHNESS_URL,
+  FALLBACK_MANIFEST_URL,
   formatAge,
 };
