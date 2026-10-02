@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-02T09:44:47.769Z",
-  "head": "7f930e83322ce0caf779499d0dbb59c623fb4b1e",
+  "generatedAt": "2026-10-02T10:20:26.397Z",
+  "head": "082e0c710f8845dd9fc27234e6e6064cf5658230",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -45,35 +45,54 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.19.3",
-      "pinnedTagDate": "2026-10-02T11:21:02+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "pinnedTag": "blueprints-v0.19.4",
+      "pinnedTagDate": "2026-10-02T11:39:06+02:00",
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
+        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
+      ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.19.3",
-      "pinnedTagDate": "2026-10-02T11:21:02+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "pinnedTag": "blueprints-v0.19.4",
+      "pinnedTagDate": "2026-10-02T11:39:06+02:00",
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
+        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.13.0",
       "pinnedTagDate": "2026-10-02T11:21:02+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json"
+      ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.7.2",
       "pinnedTagDate": "2026-10-02T09:14:11+02:00",
-      "commitsSincePin": 6,
+      "commitsSincePin": 7,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-slug.generated.js"
+        "iNNfo/specs/bluepriNNts/console/innfo-slug.generated.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
       ]
     }
   }
