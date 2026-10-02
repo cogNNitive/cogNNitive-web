@@ -1,11 +1,16 @@
 const fs = require('fs');
 const path = require('path');
-const modelLib = require('./provenance-knowledge');
-const { extractHeadingSlugs, slugifyUnitHeading } = require('../markdown-utils');
+const {
+  readLineageSnapshot,
+  projectLineage,
+  createFsSourceResolver,
+  validateCitations,
+  parseCitation,
+} = require('./innfo-core.generated.cjs');
 
 /**
  * Audit all models in the workspace to verify that every `sources::` citation
- * resolves to an existing normalized source file AND an existing heading slug.
+ * resolves to an existing normalized source file AND an existing unit anchor.
  *
  * @param {string} projectDir
  * @returns {{
@@ -28,194 +33,70 @@ function auditModelCitations(projectDir) {
   const errors = [];
   const warnings = [];
   const driftedCitations = [];
-  let totalCitations = 0;
-  let validCitations = 0;
 
-  const nnDir = path.join(projectDir, 'sources', 'nn');
-  const modelsDir = path.join(projectDir, 'kNNowledge');
+  const snapshot = readLineageSnapshot(projectDir);
+  const projection = projectLineage(snapshot);
 
-  if (!fs.existsSync(modelsDir)) {
-    return { errors, warnings, totalCitations, validCitations, driftedCitations };
-  }
-
-  const modelFiles = modelLib.walkFiles(modelsDir, (n) => n.endsWith('_NN.md'));
-
-  // Cache normalized headings per source file
-  const headingCache = new Map();
-
-  function getHeadingsForSource(relSourcePath) {
-    if (headingCache.has(relSourcePath)) {
-      return headingCache.get(relSourcePath);
-    }
-    const fullPath = path.join(nnDir, relSourcePath);
-    if (!fs.existsSync(fullPath)) {
-      headingCache.set(relSourcePath, null);
-      return null;
-    }
-    try {
-      const content = fs.readFileSync(fullPath, 'utf8');
-      const headings = extractHeadingSlugs(content);
-      const slugSet = new Set(headings.map((h) => h.slug));
-      const entry = { headings, slugSet, content };
-      headingCache.set(relSourcePath, entry);
-      return entry;
-    } catch {
-      headingCache.set(relSourcePath, null);
-      return null;
+  const sites = [];
+  for (const k of projection.knowledge) {
+    for (const cit of k.citations) {
+      sites.push(cit);
     }
   }
 
-  for (const rel of modelFiles) {
-    const modelRelPath = `kNNowledge/${rel.replace(/\\/g, '/')}`;
-    const modelFullPath = path.join(modelsDir, rel);
-    const content = fs.readFileSync(modelFullPath, 'utf8');
+  const totalCitations = sites.length;
+  const resolver = createFsSourceResolver(projectDir);
+  const diagnostics = validateCitations(sites, resolver);
 
-    // Parse units / elements to associate citation with element name
-    const lines = content.split(/\r?\n/);
-    let currentElement = null;
+  const CODE_TO_REASON = {
+    KU_DANGLING_FILE: 'missing_file',
+    KU_UNKNOWN_SLUG: 'missing_heading',
+    KU_UNKNOWN_ROW: 'missing_row',
+    KU_UNKNOWN_COLUMN: 'missing_column',
+  };
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const elemMatch = line.match(/^## NN [^:]+:\s*(.+?)\s*$/);
-      if (elemMatch) {
-        currentElement = elemMatch[1].trim();
+  for (const diag of diagnostics) {
+    const rawVal = diag.site.value;
+    const parsed = parseCitation(rawVal);
+    const reason = CODE_TO_REASON[diag.code] || 'missing_heading';
+    const sourceFile = parsed ? parsed.filePath.replace(/^sources\/nn\//, '') : rawVal;
+
+    let headingSlug = '';
+    if (parsed && parsed.unit) {
+      if (parsed.unit.kind === 'header') {
+        headingSlug = parsed.unit.slug;
+      } else if (parsed.unit.kind === 'row') {
+        headingSlug = parsed.unit.id;
       }
+    } else if (parsed && parsed.slug) {
+      headingSlug = parsed.slug;
+    } else if (rawVal.includes('#')) {
+      headingSlug = rawVal.split('#')[1].trim();
+    }
 
-      if (line.trim().startsWith('sources::')) {
-        const refs = modelLib.scrapeSourceRefs(line);
-        for (const ref of refs) {
-          totalCitations++;
-
-          // Model-to-model references cite another model, not a source heading —
-          // nothing here to validate against sources/nn/.
-          if (ref.startsWith('kNNowledge/') || ref.startsWith('models/')) {
-            validCitations++;
-            continue;
-          }
-
-          const atIdx = ref.indexOf('@');
-          if (atIdx !== -1) {
-            const filePartAt = ref.slice(0, atIdx).replace(/^sources\/nn\//, '').trim();
-            const unitPartRaw = ref.slice(atIdx + 1).split('&')[0].trim();
-            const headerMatch = unitPartRaw.match(/^(#{1,6})\s*(.+?)\s*$/);
-
-            if (!filePartAt || !headerMatch) {
-              // Not a header-unit pointer (e.g. a CSV row unit like `data.csv@RowID`) —
-              // row-level validation isn't implemented yet, so keep it as unvalidated
-              // rather than falsely flagging it as drift.
-              validCitations++;
-              continue;
-            }
-
-            let targetRelPathAt = filePartAt;
-            let sourceDataAt = getHeadingsForSource(targetRelPathAt);
-            if (!sourceDataAt) {
-              const found = findSourceUnderNn(nnDir, filePartAt);
-              if (found) {
-                targetRelPathAt = found;
-                sourceDataAt = getHeadingsForSource(targetRelPathAt);
-              }
-            }
-
-            if (!sourceDataAt) {
-              const msg = `${modelRelPath}${currentElement ? ` (${currentElement})` : ''}: sources:: "${ref}" does not resolve to any file in sources/nn/.`;
-              errors.push(msg);
-              driftedCitations.push({
-                modelFile: modelRelPath,
-                elementName: currentElement || undefined,
-                citation: ref,
-                sourceFile: filePartAt,
-                headingSlug: unitPartRaw,
-                reason: 'missing_file',
-              });
-              continue;
-            }
-
-            const level = headerMatch[1].length;
-            const { slug } = slugifyUnitHeading(level, headerMatch[2]);
-            const matches = sourceDataAt.headings.some((h) => h.level === level && h.slug === slug);
-
-            if (!matches) {
-              const suggestions = findClosestSlugs(slug, Array.from(sourceDataAt.slugSet));
-              const suggStr = suggestions.length > 0 ? ` (Did you mean: ${suggestions.map(s => `@${'#'.repeat(level)} ${s}`).join(', ')}?)` : '';
-              const msg = `${modelRelPath}${currentElement ? ` (${currentElement})` : ''}: sources:: "${ref}" references missing heading "${unitPartRaw}" in "sources/nn/${targetRelPathAt}"${suggStr}.`;
-              errors.push(msg);
-              driftedCitations.push({
-                modelFile: modelRelPath,
-                elementName: currentElement || undefined,
-                citation: ref,
-                sourceFile: targetRelPathAt,
-                headingSlug: slug,
-                reason: 'missing_heading',
-                suggestions,
-              });
-            } else {
-              validCitations++;
-            }
-            continue;
-          }
-
-          const hashIdx = ref.indexOf('#');
-          const filePart = (hashIdx >= 0 ? ref.substring(0, hashIdx) : ref)
-            .replace(/^sources\/nn\//, '')
-            .trim();
-          const slugPart = hashIdx >= 0 ? ref.substring(hashIdx + 1).trim() : null;
-
-          if (!filePart) continue;
-
-          // Resolve target file path (could be bare name or relative path)
-          let targetRelPath = filePart;
-          let sourceData = getHeadingsForSource(targetRelPath);
-
-          if (!sourceData) {
-            // Search if file exists under any subtree of sources/nn/
-            const found = findSourceUnderNn(nnDir, filePart);
-            if (found) {
-              targetRelPath = found;
-              sourceData = getHeadingsForSource(targetRelPath);
-            }
-          }
-
-          if (!sourceData) {
-            const msg = `${modelRelPath}${currentElement ? ` (${currentElement})` : ''}: sources:: "${ref}" does not resolve to any file in sources/nn/.`;
-            errors.push(msg);
-            driftedCitations.push({
-              modelFile: modelRelPath,
-              elementName: currentElement || undefined,
-              citation: ref,
-              sourceFile: filePart,
-              headingSlug: slugPart || '',
-              reason: 'missing_file',
-            });
-            continue;
-          }
-
-          if (slugPart) {
-            if (!sourceData.slugSet.has(slugPart)) {
-              // Heading slug is missing in normalized source!
-              const suggestions = findClosestSlugs(slugPart, Array.from(sourceData.slugSet));
-              const suggStr = suggestions.length > 0 ? ` (Did you mean: ${suggestions.map(s => `#${s}`).join(', ')}?)` : '';
-              const msg = `${modelRelPath}${currentElement ? ` (${currentElement})` : ''}: sources:: "${ref}" references missing heading "#${slugPart}" in "sources/nn/${targetRelPath}"${suggStr}.`;
-              errors.push(msg);
-              driftedCitations.push({
-                modelFile: modelRelPath,
-                elementName: currentElement || undefined,
-                citation: ref,
-                sourceFile: targetRelPath,
-                headingSlug: slugPart,
-                reason: 'missing_heading',
-                suggestions,
-              });
-            } else {
-              validCitations++;
-            }
-          } else {
-            validCitations++;
-          }
-        }
+    let suggestions = diag.suggestions || [];
+    if (suggestions.length === 0 && headingSlug && reason === 'missing_heading') {
+      const res = resolver(parsed ? parsed.filePath : rawVal);
+      if (res && res.exists && res.headings) {
+        suggestions = findClosestSlugs(headingSlug, res.headings);
       }
     }
+
+    const msg = `${diag.site.referringPath}${diag.site.element ? ` (${diag.site.element})` : ''}: sources:: "${rawVal}" failed validation: ${diag.message}`;
+    errors.push(msg);
+
+    driftedCitations.push({
+      modelFile: diag.site.referringPath,
+      elementName: diag.site.element,
+      citation: rawVal,
+      sourceFile,
+      headingSlug,
+      reason,
+      suggestions,
+    });
   }
+
+  const validCitations = totalCitations - driftedCitations.length;
 
   return {
     errors,
@@ -224,28 +105,6 @@ function auditModelCitations(projectDir) {
     validCitations,
     driftedCitations,
   };
-}
-
-/**
- * Helper to locate a source file across subtrees in sources/nn/
- */
-function findSourceUnderNn(nnDir, fileName) {
-  if (!fs.existsSync(nnDir)) return null;
-  const base = path.basename(fileName);
-  const queue = [nnDir];
-  while (queue.length > 0) {
-    const current = queue.shift();
-    const entries = fs.readdirSync(current, { withFileTypes: true });
-    for (const ent of entries) {
-      const full = path.join(current, ent.name);
-      if (ent.isDirectory() && !ent.name.startsWith('.')) {
-        queue.push(full);
-      } else if (ent.isFile() && (ent.name === base || ent.name === fileName)) {
-        return path.relative(nnDir, full).replace(/\\/g, '/');
-      }
-    }
-  }
-  return null;
 }
 
 /**
@@ -288,7 +147,7 @@ function checkScanImpact(changedSources, projectDir) {
 
     const affected = audit.driftedCitations.filter((dc) => {
       const dcSource = dc.sourceFile.toLowerCase();
-      return dcSource === matchPath || dcSource === `${matchName}.md` || dcSource.endsWith(`/${matchName}.md`);
+      return dcSource === matchPath || dcSource === `${matchName}.md` || dcSource.endsWith(`/${matchName}.md`) || dcSource === matchName;
     });
 
     if (affected.length > 0) {
@@ -331,8 +190,6 @@ function remediationFor(reason, suggestions) {
 
 /**
  * Render a structured Markdown audit report from an impact audit result.
- * The report carries `type: report` and `generated_by` frontmatter, names every
- * affected model and element, and details recommended remediation per drift.
  *
  * @param {ReturnType<typeof auditModelCitations>} audit
  * @param {string} date ISO date string used for the filename/header (e.g. "2026-09-12").
@@ -430,27 +287,33 @@ function groupSourceFamilies(projectDir) {
   const families = {};
   if (!fs.existsSync(nnDir)) return families;
 
-  const files = modelLib.walkFiles(nnDir, (n) => n.endsWith('.md'));
-
-  for (const rel of files) {
-    const base = path.basename(rel);
-    const m = base.match(TIMESTAMP_REGEX);
-    if (m) {
-      const stem = m[1];
-      const timestamp = m[2];
-      if (!families[stem]) {
-        families[stem] = [];
+  const walk = (d, rel) => {
+    for (const ent of fs.readdirSync(d, { withFileTypes: true })) {
+      if (ent.name.startsWith('.')) continue;
+      const abs = path.join(d, ent.name);
+      const relPath = rel ? `${rel}/${ent.name}` : ent.name;
+      if (ent.isDirectory()) walk(abs, relPath);
+      else if (ent.isFile() && ent.name.endsWith('.md')) {
+        const base = ent.name;
+        const m = base.match(TIMESTAMP_REGEX);
+        if (m) {
+          const stem = m[1];
+          const timestamp = m[2];
+          if (!families[stem]) {
+            families[stem] = [];
+          }
+          families[stem].push({
+            relPath: relPath.replace(/\\/g, '/'),
+            fullPath: abs.replace(/\\/g, '/'),
+            fileName: base,
+            timestamp,
+          });
+        }
       }
-      families[stem].push({
-        relPath: rel.replace(/\\/g, '/'),
-        fullPath: path.join(nnDir, rel).replace(/\\/g, '/'),
-        fileName: base,
-        timestamp,
-      });
     }
-  }
+  };
+  walk(nnDir, '');
 
-  // Sort each family by timestamp ascending
   for (const stem of Object.keys(families)) {
     families[stem].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   }
@@ -477,78 +340,58 @@ function groupSourceFamilies(projectDir) {
  */
 function detectSourceFamilyEvolution(projectDir) {
   const families = groupSourceFamilies(projectDir);
-  const modelsDir = path.join(projectDir, 'kNNowledge');
   const evolutions = [];
 
-  if (!fs.existsSync(modelsDir) || Object.keys(families).length === 0) {
+  if (Object.keys(families).length === 0) {
     return evolutions;
   }
 
-  const modelFiles = modelLib.walkFiles(modelsDir, (n) => n.endsWith('_NN.md'));
+  const snapshot = readLineageSnapshot(projectDir);
+  const projection = projectLineage(snapshot);
+  const resolver = createFsSourceResolver(projectDir);
 
-  for (const rel of modelFiles) {
-    const modelRelPath = `kNNowledge/${rel.replace(/\\/g, '/')}`;
-    const modelFullPath = path.join(modelsDir, rel);
-    const content = fs.readFileSync(modelFullPath, 'utf8');
+  for (const k of projection.knowledge) {
+    for (const cit of k.citations) {
+      const parsed = parseCitation(cit.value);
+      if (!parsed) continue;
 
-    const lines = content.split(/\r?\n/);
-    let currentElement = null;
+      const baseFile = path.basename(parsed.filePath);
+      const match = baseFile.match(TIMESTAMP_REGEX);
+      if (!match) continue;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const elemMatch = line.match(/^## NN [^:]+:\s*(.+?)\s*$/);
-      if (elemMatch) {
-        currentElement = elemMatch[1].trim();
-      }
+      const stem = match[1];
+      const citedTs = match[2];
+      const snapshots = families[stem];
+      if (!snapshots || snapshots.length <= 1) continue;
 
-      if (line.trim().startsWith('sources::')) {
-        const refs = modelLib.scrapeSourceRefs(line);
-        for (const ref of refs) {
-          const hashIdx = ref.indexOf('#');
-          const filePart = (hashIdx >= 0 ? ref.substring(0, hashIdx) : ref)
-            .replace(/^sources\/nn\//, '')
-            .trim();
-          const slugPart = hashIdx >= 0 ? ref.substring(hashIdx + 1).trim() : null;
-
-          const baseFile = path.basename(filePart);
-          const match = baseFile.match(TIMESTAMP_REGEX);
-          if (!match) continue;
-
-          const stem = match[1];
-          const citedTs = match[2];
-
-          const snapshots = families[stem];
-          if (!snapshots || snapshots.length <= 1) continue;
-
-          const latest = snapshots[snapshots.length - 1];
-          if (latest.timestamp > citedTs) {
-            // Check heading preservation in latest
-            let headingPreserved = true;
-            if (slugPart && fs.existsSync(latest.fullPath)) {
-              try {
-                const latestContent = fs.readFileSync(latest.fullPath, 'utf8');
-                const headings = extractHeadingSlugs(latestContent);
-                headingPreserved = headings.some((h) => h.slug === slugPart);
-              } catch {
-                headingPreserved = false;
-              }
-            }
-
-            evolutions.push({
-              modelFile: modelRelPath,
-              elementName: currentElement || undefined,
-              citation: ref,
-              family: stem,
-              currentSnapshot: baseFile,
-              latestSnapshot: latest.fileName,
-              headingSlug: slugPart || undefined,
-              headingPreserved,
-              advisory: `Model cites previous snapshot "${baseFile}". Newer snapshot "${latest.fileName}" is available${
-                slugPart ? (headingPreserved ? ' (heading preserved)' : ' (heading missing in newer snapshot)') : ''
-              }.`,
-            });
+      const latest = snapshots[snapshots.length - 1];
+      if (latest.timestamp > citedTs) {
+        let headingPreserved = true;
+        let slugPart = '';
+        if (parsed.unit && parsed.unit.kind === 'header') {
+          slugPart = parsed.unit.slug;
+          const targetPath = latest.relPath.startsWith('sources/nn/') ? latest.relPath : `sources/nn/${latest.relPath}`;
+          const res = resolver(targetPath);
+          if (res && res.exists && res.headings) {
+            headingPreserved = res.headings.includes(slugPart);
+          } else {
+            headingPreserved = false;
           }
         }
+
+        evolutions.push({
+          modelFile: cit.referringPath,
+          elementName: cit.element,
+          citation: cit.value,
+          family: stem,
+          currentSnapshot: baseFile,
+          latestSnapshot: latest.fileName,
+          headingSlug: slugPart || undefined,
+          headingPreserved,
+          advisory: `Model cites previous snapshot "${baseFile}". Newer snapshot "${latest.fileName}" is available${
+            slugPart ? (headingPreserved ? ' (heading preserved)' : ' (heading missing in newer snapshot)') : ''
+          }.`,
+        });
       }
     }
   }

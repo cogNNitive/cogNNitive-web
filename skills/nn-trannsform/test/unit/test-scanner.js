@@ -171,10 +171,9 @@ function run() {
       const walkAfterStaging = scanner.walkOriginal(originalDir);
       assertTrue(!walkAfterStaging.some(f => f.relPath.includes('staging')), 'walkOriginal ignores staging directory');
 
-      // Test 13: generateSourceFrontmatter with extended metadata (canonical, cited_works, is_synthetic, staging_file)
+      // Test 13: generateSourceFrontmatter with extended metadata (canonical, cited_works, staging_file)
       const fmExtended = scanner.generateSourceFrontmatter(testFile, 'sources/original/interview.mp3', {
         staging_file: 'sources/staging/interview.srt',
-        is_synthetic: false,
         canonical: {
           title: 'Strategic Vision 2026',
           author: 'Jane Doe',
@@ -187,7 +186,7 @@ function run() {
         ]
       });
       assertTrue(fmExtended.includes('staging_file: "sources/staging/interview.srt"'), 'frontmatter includes staging_file');
-      assertTrue(fmExtended.includes('is_synthetic: false'), 'frontmatter includes is_synthetic: false');
+      assertTrue(!fmExtended.includes('is_synthetic:'), 'frontmatter does not include is_synthetic');
       assertTrue(fmExtended.includes('canonical:\n  title: "Strategic Vision 2026"'), 'frontmatter includes canonical block');
       assertTrue(fmExtended.includes('cited_works:\n  - id: "porter1985"'), 'frontmatter includes cited_works block');
       assertTrue(fmExtended.includes('is_primary: true'), 'frontmatter cited_works includes is_primary: true');
@@ -297,7 +296,7 @@ function run() {
         // Verify import frontmatter
         const guideFm = fs.readFileSync(path.join(nnDir, 'import', 'docs', 'guide.md'), 'utf8');
         assertTrue(guideFm.includes('source_file: "sources/import/docs/guide.txt"'), 'import file records source_file');
-        assertTrue(guideFm.includes('is_synthetic: false'), 'import file is_synthetic is false');
+        assertTrue(!guideFm.includes('is_synthetic:'), 'import file does not contain is_synthetic');
 
         // Verify conversation transcript frontmatter & body
         const sourceFm = fs.readFileSync(path.join(nnDir, 'conversations', '2026-09-06_arch_source.md'), 'utf8');
@@ -317,8 +316,8 @@ function run() {
         // Verify promoted export frontmatter
         const expFm = fs.readFileSync(path.join(nnDir, 'export', 'roadmap.md'), 'utf8');
         assertTrue(expFm.includes('source_file: "sources/export/roadmap.md"'), 'export records source_file');
-        assertTrue(expFm.includes('is_synthetic: true'), 'promoted deliverable has is_synthetic: true');
-        assertTrue(expFm.includes('derived_from: [Strategy_V_1-0-0_NN.md]') || expFm.includes('derived_from: ["Strategy_V_1-0-0_NN.md"]'), 'promoted deliverable retains derived_from');
+        assertTrue(!expFm.includes('is_synthetic:'), 'promoted deliverable has no is_synthetic');
+        assertTrue(!expFm.includes('derived_from:'), 'promoted deliverable has no derived_from');
 
         // Test 17: Legacy fallback resolution (sources/original/ when sources/import/ does not exist)
         const legacyProj = path.join(TEST_TEMP, 'legacy-project');
@@ -483,7 +482,7 @@ function run() {
                             assertTrue(fs.existsSync(normalizedFeedback), 'valid feedback normalizes into sources/nn/import/feedback/');
                             const fbContent = fs.readFileSync(normalizedFeedback, 'utf8');
                             assertTrue(fbContent.includes('source_type: "feedback"'), 'feedback frontmatter carries source_type: feedback');
-                            assertTrue(fbContent.includes('is_synthetic: true'), 'feedback frontmatter carries is_synthetic: true');
+                            assertTrue(!fbContent.includes('is_synthetic:'), 'feedback frontmatter does not carry is_synthetic');
                             assertTrue(fbContent.includes('### fb-001\n'), 'normalized feedback uses ### fb-001 heading');
                             assertTrue(fbContent.includes('- **Kind**: correction'), 'normalized feedback carries Kind bullet');
                             assertTrue(!fbContent.includes('### fb-001 ('), 'normalized feedback omits kind and status from heading');

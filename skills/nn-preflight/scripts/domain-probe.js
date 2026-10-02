@@ -81,12 +81,16 @@ async function runProbe(options = {}) {
   let blueprintProceduresCount = 0;
   const specDir = path.join(workspaceDir, 'specs', 'bluepriNNts');
   if (fs.existsSync(specDir)) {
+    const countMd = (dir) =>
+      fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.md') && !f.startsWith('.')).length : 0;
     try {
       for (const bp of fs.readdirSync(specDir, { withFileTypes: true })) {
-        if (bp.isDirectory()) {
-          const bpProc = path.join(specDir, bp.name, 'procedures');
-          if (fs.existsSync(bpProc)) {
-            blueprintProceduresCount += fs.readdirSync(bpProc).filter((f) => f.endsWith('.md') && !f.startsWith('.')).length;
+        if (!bp.isDirectory()) continue;
+        const bpDir = path.join(specDir, bp.name);
+        blueprintProceduresCount += countMd(path.join(bpDir, 'procedures'));
+        for (const sub of fs.readdirSync(bpDir, { withFileTypes: true })) {
+          if (sub.isDirectory() && /^V_\d+-\d+-\d+$/.test(sub.name)) {
+            blueprintProceduresCount += countMd(path.join(bpDir, sub.name, 'procedures'));
           }
         }
       }

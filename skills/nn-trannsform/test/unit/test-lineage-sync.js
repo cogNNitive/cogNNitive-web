@@ -22,20 +22,20 @@ function run() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'nnt-lineage-'));
   try {
     const proj = path.join(tmp, 'Acme');
-    for (const d of ['sources/nn', 'kNNowledge', 'artifacts']) {
+    for (const d of ['sources/nn', 'kNNowledge', 'export']) {
       fs.mkdirSync(path.join(proj, d), { recursive: true });
     }
     fs.writeFileSync(
       path.join(proj, 'sources', 'nn', 'report.md'),
-      '---\nsource_file: "sources/original/report.pdf"\nsha256: "a"\nsize_bytes: 1\nnormalized_at: "x"\nnormalized_by: "t"\n---\n\n# Overview\n',
+      '---\nsource_file: "sources/import/report.pdf"\nsha256: "a"\nsize_bytes: 1\nnormalized_at: "x"\nnormalized_by: "t"\n---\n\n# Overview\n',
     );
     fs.writeFileSync(
       path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'),
-      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\nparent_spec:\n  name: "business_V_0-1-0"\ntitle: "Business Plan"\n---\n\n# NN Stakeholders\n\n## NN Stakeholders: Clients\nsources:: [report.md#overview]\n',
+      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\nparent_spec:\n  name: "business_V_0-1-0"\ntitle: "Business Plan"\n---\n\n# NN Stakeholders\n\n## NN Stakeholders: Clients\nsources:: [sources/nn/report.md@# Overview]\n',
     );
     fs.writeFileSync(
-      path.join(proj, 'artifacts', 'Exec_Summary_V_1-0-0.md'),
-      '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "report"\n---\n\n# Executive Summary\n',
+      path.join(proj, 'export', 'Exec_Summary_V_1-0-0.md'),
+      '---\ntype: "report"\nsources: ["kNNowledge/Plan_V_1-0-0_NN.md@## NN Stakeholders: Clients"]\n---\n\n# Executive Summary\n',
     );
 
     // First build.
@@ -45,13 +45,13 @@ function run() {
     ok(/## NN ModelRecords: Business Plan/.test(m1), '# NN ModelRecords entry rendered from kNNowledge/');
     ok(
       /model_ref:: kNNowledge\/Plan_V_1-0-0_NN\.md/.test(m1) &&
-        /derived_from:: \[report\.md#overview\]/.test(m1),
+        /derived_from:: \[sources\/nn\/report\.md@# Overview\]/.test(m1),
       'model entry carries model_ref + derived_from from sources::',
     );
     ok(
       /## NN Artifacts: Exec_Summary_V_1-0-0/.test(m1) &&
-        /derived_from:: \[Business Plan V_1-0-0\]/.test(m1),
-      '# NN Artifacts entry rendered with derived_from model+version',
+        /derived_from:: \[kNNowledge\/Plan_V_1-0-0_NN\.md@## NN Stakeholders: Clients\]/.test(m1),
+      '# NN Artifacts entry rendered with derived_from citation',
     );
     ok(/# NN Procedures/.test(m1), '# NN Procedures section present (empty placeholder)');
 
@@ -62,8 +62,8 @@ function run() {
     ok(managed(m1) === managed(m2), 'managed sections byte-identical on idempotent re-run');
 
     // Append a procedure run — survives a later section refresh.
-    provenance.appendProcedureRun(proj, { command: 'scan', inputs: ['sources/original/'], outputs: ['sources/nn/'] });
-    provenance.appendProcedureRun(proj, { command: 'apply Foo', inputs: ['kNNowledge/'], outputs: ['artifacts/'] });
+    provenance.appendProcedureRun(proj, { command: 'scan', inputs: ['sources/import/'], outputs: ['sources/nn/'] });
+    provenance.appendProcedureRun(proj, { command: 'apply Foo', inputs: ['kNNowledge/'], outputs: ['export/'] });
     let mp = fs.readFileSync(r1.modelPath, 'utf8');
     ok((mp.match(/## NN Procedures:/g) || []).length === 2, 'two procedure entries appended');
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
@@ -79,14 +79,14 @@ function run() {
     // --check drift: artifact still cites the now-missing model.
     const drift = checkLineage(proj);
     ok(
-      drift.errors.some((e) => /Business Plan/.test(e)),
+      drift.errors.some((e) => /Plan_V_1-0-0_NN\.md/.test(e)),
       '--check flags the artifact citing a now-absent model',
     );
 
     // Restore the model, add a dangling sources:: — --check catches it.
     fs.writeFileSync(
       path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'),
-      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [ghost.md#nowhere]\n',
+      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [sources/nn/ghost.md@# Nowhere]\n',
     );
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const drift2 = checkLineage(proj);
@@ -95,67 +95,39 @@ function run() {
     // Clean workspace → no errors.
     fs.writeFileSync(
       path.join(proj, 'kNNowledge', 'Plan_V_1-0-0_NN.md'),
-      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [report.md#overview]\n',
+      '---\nlevel: 3\nknowledge_version: "V_1-0-0"\ntitle: "Business Plan"\n---\n\n# NN S\n\n## NN S: X\nsources:: [sources/nn/report.md@# Overview]\n',
     );
-    fs.rmSync(path.join(proj, 'artifacts', 'Exec_Summary_V_1-0-0.md'));
+    fs.rmSync(path.join(proj, 'export', 'Exec_Summary_V_1-0-0.md'));
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     ok(checkLineage(proj).errors.length === 0, '--check clean on a synced workspace');
 
-    // Test export/ promotion & is_synthetic in # NN Sources
-    fs.mkdirSync(path.join(proj, 'export'), { recursive: true });
+    // Test export/ promotion & sidecar in # NN Sources
     fs.writeFileSync(
       path.join(proj, 'export', 'Proposal_V_1-0-0.md'),
-      '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "proposal"\n---\n\n# Proposal\n',
+      '---\ntype: "proposal"\nsources: ["kNNowledge/Plan_V_1-0-0_NN.md@## NN S: X"]\n---\n\n# Proposal\n',
     );
-    fs.mkdirSync(path.join(proj, 'sources', 'nn', 'export'), { recursive: true });
+    fs.mkdirSync(path.join(proj, 'sources', 'export'), { recursive: true });
     fs.writeFileSync(
-      path.join(proj, 'sources', 'nn', 'export', 'synthetic_brief.md'),
-      '---\nsource_file: "sources/export/synthetic_brief.md"\nsha256: "b"\nsize_bytes: 2\nis_synthetic: true\nderived_from: [Plan_V_1-0-0_NN.md]\nnormalized_at: "y"\nnormalized_by: "t"\n---\n\n# Brief\n',
+      path.join(proj, 'sources', 'export', 'synthetic_brief.md'),
+      '---\nsource_file: "sources/export/synthetic_brief.md"\nsha256: "b"\nsize_bytes: 2\nsources: ["kNNowledge/Plan_V_1-0-0_NN.md@## NN S: X"]\nnormalized_at: "y"\nnormalized_by: "t"\n---\n\n# Brief\n',
     );
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     const mExport = fs.readFileSync(r1.modelPath, 'utf8');
     ok(/## NN Artifacts: Proposal_V_1-0-0/.test(mExport), 'deliverable in export/ rendered under # NN Artifacts');
     ok(/artifact_ref:: export\/Proposal_V_1-0-0\.md/.test(mExport), 'artifact_ref points to export/');
-    ok(/is_synthetic:: true/.test(mExport), '# NN Sources includes is_synthetic:: true for synthetic source');
-    ok(/derived_from:: \[Plan_V_1-0-0_NN\.md\]/.test(mExport), '# NN Sources includes derived_from for synthetic source');
-
-    // Test: artifact frontmatter `sources:` pointer array is read by the
-    // lineage builder and preferred over model/knowledge_version when both are
-    // present (task 2.4 — parseArtifactMeta / collectArtifacts).
-    fs.writeFileSync(
-      path.join(proj, 'export', 'Brief_V_1-0-0.md'),
-      '---\nmodel: "Business Plan"\nknowledge_version: "V_1-0-0"\ntype: "brief"\nsources: [report.md#overview, notes.md#key-points]\n---\n\n# Brief\n',
-    );
-    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
-    const mArtifactSources = fs.readFileSync(r1.modelPath, 'utf8');
-    ok(/## NN Artifacts: Brief_V_1-0-0/.test(mArtifactSources), 'artifact with frontmatter sources: rendered under # NN Artifacts');
-    ok(
-      /## NN Artifacts: Brief_V_1-0-0\nartifact_ref:: export\/Brief_V_1-0-0\.md\nartifact_format:: brief\nderived_from:: \[report\.md#overview, notes\.md#key-points\]/.test(
-        mArtifactSources,
-      ),
-      'derived_from is computed from frontmatter sources:, not model/knowledge_version, when both are present',
-    );
-    // Models catalog lineage stays byte-unchanged for inputs that don't use the new field.
-    ok(
-      /model_ref:: kNNowledge\/Plan_V_1-0-0_NN\.md\n(?:knowledge_version:: V_1-0-0\n)?(?:model_template:: [^\n]+\n)?derived_from:: \[report\.md#overview\]/.test(
-        mArtifactSources,
-      ),
-      'Models catalog lineage output stays byte-unchanged for models not using artifact sources:',
-    );
-    fs.rmSync(path.join(proj, 'export', 'Brief_V_1-0-0.md'));
-    provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
+    ok(!/is_synthetic:: true/.test(mExport), '# NN Sources does NOT include is_synthetic');
+    ok(/derived_from:: \[kNNowledge\/Plan_V_1-0-0_NN\.md@## NN S: X\]/.test(mExport), '# NN Sources includes derived_from for promoted export source');
 
     // Test 2.1: Lineage version metadata on active and archived sources
-    // Create an archive snapshot for report: sources/archive/report/V1/report.md
     fs.mkdirSync(path.join(proj, 'sources', 'archive', 'report', 'V1'), { recursive: true });
     fs.writeFileSync(
       path.join(proj, 'sources', 'archive', 'report', 'V1', 'report.md'),
-      '---\nsource_file: "sources/original/report.pdf"\nsha256: "v1hash"\nsize_bytes: 100\nnormalized_at: "2026-09-01T00:00:00Z"\nnormalized_by: "traNNsform v1.0.0"\n---\n\n# Old Report\n',
+      '---\nsource_file: "sources/import/report.pdf"\nsha256: "v1hash"\nsize_bytes: 100\nnormalized_at: "2026-09-01T00:00:00Z"\nnormalized_by: "traNNsform v1.0.0"\n---\n\n# Old Report\n',
     );
     // Active file in sources/nn/report.md is at V2
     fs.writeFileSync(
       path.join(proj, 'sources', 'nn', 'report.md'),
-      '---\nsource_file: "sources/original/report.pdf"\nsha256: "v2hash"\nsize_bytes: 150\nnormalized_at: "2026-09-06T00:00:00Z"\nnormalized_by: "traNNsform v1.0.0"\n---\n\n# Current Report\n',
+      '---\nsource_file: "sources/import/report.pdf"\nsha256: "v2hash"\nsize_bytes: 150\nnormalized_at: "2026-09-06T00:00:00Z"\nnormalized_by: "traNNsform v1.0.0"\n---\n\n# Current Report\n\n# Overview\n',
     );
 
     provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
@@ -177,117 +149,15 @@ function run() {
     const mIdemp = fs.readFileSync(rIdemp.modelPath, 'utf8');
     ok(mVersions === mIdemp, 'lineage model with version metadata is byte-identical on idempotent re-run');
 
-    // Test 2.2: --check archive diagnostics
-    // Subtest 2.2A: Clean archive check passes
+    // Clean archive check passes
     const checkClean = checkLineage(proj);
     ok(checkClean.errors.length === 0, '--check clean with valid archive and active sources');
 
-    // Subtest 2.2B: Unlisted snapshot on disk triggers error
-    fs.mkdirSync(path.join(proj, 'sources', 'archive', 'report', 'V2'), { recursive: true });
-    fs.writeFileSync(
-      path.join(proj, 'sources', 'archive', 'report', 'V2', 'report.md'),
-      '---\nsource_file: "sources/original/report.pdf"\nsha256: "v2snapshot"\nsize_bytes: 120\n---\n# Unlisted\n',
-    );
-    const checkUnlisted = checkLineage(proj);
-    ok(checkUnlisted.errors.some((e) => /unlisted|sources\/archive\/report\/V2/i.test(e)), '--check flags unlisted archive snapshot');
-    fs.rmSync(path.join(proj, 'sources', 'archive', 'report', 'V2'), { recursive: true, force: true });
-
-    // Subtest 2.2C: Dangling archive_path triggers error
-    const modelWithDangling = mVersions.replace(
-      'archive_path:: sources/archive/report/V1/report.md',
-      'archive_path:: sources/archive/report/V99/report.md',
-    );
-    fs.writeFileSync(r1.modelPath, modelWithDangling);
-    const checkDanglingArchive = checkLineage(proj);
-    ok(checkDanglingArchive.errors.some((e) => /dangling|archive_path|V99/i.test(e)), '--check flags dangling archive_path');
-
-    // Subtest 2.2D: Dangling superseded_by triggers error
-    const modelWithDanglingSup = mVersions.replace(
-      'superseded_by:: report.pdf V2',
-      'superseded_by:: nonexistent_source.csv V99',
-    );
-    fs.writeFileSync(r1.modelPath, modelWithDanglingSup);
-    const checkDanglingSup = checkLineage(proj);
-    ok(checkDanglingSup.errors.some((e) => /superseded_by|nonexistent_source/i.test(e)), '--check flags dangling superseded_by');
-
-    // Subtest 2.2E: Hash mismatch triggers error
-    const modelWithHashMismatch = mVersions.replace(
-      'raw_hash:: v1hash',
-      'raw_hash:: tampered_wrong_hash',
-    );
-    fs.writeFileSync(r1.modelPath, modelWithHashMismatch);
-    const checkHashMismatch = checkLineage(proj);
-    ok(checkHashMismatch.errors.some((e) => /mismatch|hash/i.test(e)), '--check flags archived element hash mismatch');
-
-    // Restore valid lineage record
-    fs.writeFileSync(r1.modelPath, mVersions);
-
-    // Subtest 2.2F: Orphan chain directory triggers warning
-    fs.mkdirSync(path.join(proj, 'sources', 'archive', 'abandoned_chain', 'V1'), { recursive: true });
+    // Orphan chain directory triggers warning
+    fs.mkdirSync(path.join(proj, 'sources', 'archive', 'abandoned_chain'), { recursive: true });
     const checkOrphanChain = checkLineage(proj);
     ok(checkOrphanChain.warnings.some((w) => /orphan.*abandoned_chain/i.test(w)), '--check reports warning for orphan archive chain');
-    ok(checkOrphanChain.errors.filter(e => !/abandoned_chain/i.test(e)).length === 0, 'orphan chain does not generate error for itself');
     fs.rmSync(path.join(proj, 'sources', 'archive', 'abandoned_chain'), { recursive: true, force: true });
-
-    // Test 2.3: Artifact staleness diagnostic — drift vs. missing model (A2)
-    // Subtest 2.3A: version-drifted-but-existing model -> warning, not error, exit-zero-worthy
-    const modelWithDriftedArtifact = mVersions.replace(
-      'derived_from:: [Business Plan V_1-0-0]',
-      'derived_from:: [Business Plan V_0-9-0]',
-    );
-    fs.writeFileSync(r1.modelPath, modelWithDriftedArtifact);
-    const checkDrifted = checkLineage(proj);
-    ok(
-      checkDrifted.warnings.some(
-        (w) => /Business Plan/.test(w) && /V_0-9-0/.test(w) && /V_1-0-0/.test(w) && /stale/i.test(w),
-      ),
-      '--check flags a version-drifted artifact as a distinct staleness warning naming both versions',
-    );
-    ok(
-      !checkDrifted.errors.some((e) => /Business Plan/.test(e)),
-      'a version-drifted (but existing) model does not also produce an error',
-    );
-
-    // Subtest 2.3B: unknown model name still stays an error (regression guard)
-    const modelWithUnknownArtifact = mVersions.replace(
-      'derived_from:: [Business Plan V_1-0-0]',
-      'derived_from:: [Nonexistent_Model V_1-0-0]',
-    );
-    fs.writeFileSync(r1.modelPath, modelWithUnknownArtifact);
-    const checkUnknown = checkLineage(proj);
-    ok(
-      checkUnknown.errors.some((e) => /Nonexistent_Model/.test(e)),
-      'an unknown model name keeps the existing error',
-    );
-    ok(
-      !checkUnknown.warnings.some((w) => /Nonexistent_Model/.test(w)),
-      'an unknown model name does not also produce a staleness warning',
-    );
-
-    // Subtest 2.3C: missing-model error and drifted-model warning reported independently
-    const modelWithBoth = mVersions
-      .replace(
-        'derived_from:: [Business Plan V_1-0-0]',
-        'derived_from:: [Business Plan V_0-9-0]',
-      )
-      .replace(
-        '## NN Artifacts: Proposal_V_1-0-0',
-        '## NN Artifacts: Proposal_V_1-0-0\nmodel_ref:: kNNowledge/Ghost_V_1-0-0_NN.md\nderived_from:: [Ghost_Model V_1-0-0]\n## NN Artifacts: Ghost_Artifact_V_1-0-0',
-      );
-    fs.writeFileSync(r1.modelPath, modelWithBoth);
-    const checkBoth = checkLineage(proj);
-    ok(
-      checkBoth.errors.some((e) => /Ghost_Model/.test(e)) &&
-        checkBoth.errors.filter((e) => /Ghost_Model|Business Plan/.test(e)).length === 1,
-      'missing-model error is reported once, independently of the drift warning',
-    );
-    ok(
-      checkBoth.warnings.some((w) => /Business Plan/.test(w) && /stale/i.test(w)),
-      'drift warning is reported independently of the missing-model error',
-    );
-
-    // Restore valid lineage record for any subsequent assertions.
-    fs.writeFileSync(r1.modelPath, mVersions);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

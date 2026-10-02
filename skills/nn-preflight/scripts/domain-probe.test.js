@@ -90,6 +90,19 @@ async function runTests() {
       assert.strictEqual(res.procedures.blueprint_count, 1);
     });
 
+    await test('counts procedures in versioned blueprint packages (issue #106)', async () => {
+      const ws = path.join(tmpDir, 'versioned-bp-ws');
+      fs.mkdirSync(path.join(ws, 'specs', 'bluepriNNts', 'video', 'V_0-6-0', 'procedures'), { recursive: true });
+      fs.mkdirSync(path.join(ws, 'specs', 'bluepriNNts', 'metrics', 'procedures'), { recursive: true });
+      fs.writeFileSync(path.join(ws, 'specs', 'bluepriNNts', 'video', 'V_0-6-0', 'procedures', 'a.md'), '# A');
+      fs.writeFileSync(path.join(ws, 'specs', 'bluepriNNts', 'video', 'V_0-6-0', 'procedures', 'b.md'), '# B');
+      fs.writeFileSync(path.join(ws, 'specs', 'bluepriNNts', 'video', 'V_0-6-0', 'procedures', '.hidden.md'), '# X');
+      fs.writeFileSync(path.join(ws, 'specs', 'bluepriNNts', 'metrics', 'procedures', 'c.md'), '# C');
+
+      const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
+      assert.strictEqual(res.procedures.blueprint_count, 3, 'Expected flat + versioned procedures to be counted');
+    });
+
     await test('detects legacy layout when models/ exists', async () => {
       const ws = path.join(tmpDir, 'legacy-ws');
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });

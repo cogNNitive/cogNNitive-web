@@ -2,19 +2,25 @@
  * provenance.js — workspace lineage-record generator.
  *
  * Builds and refreshes an iNNfo Level 3 lineage record that registers every
- * Source ingested, every Model authored under `models/`, and every Artifact
- * under `artifacts/` as first-class iNNfo elements with explicit derivation.
+ * Source ingested, every Model authored under `kNNowledge/`, and every Artifact
+ * under `export/` as first-class iNNfo elements with explicit derivation.
  * The `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` sections are
  * re-synced from the filesystem on every run; `# NN Procedures` is an
  * append-only run log.
  *
- * Zero runtime dependencies (Node builtins only), mirroring scanner.js.
+ * Lineage projection and rendering are delegated to `@cognnitive/innfo-core`
+ * via the committed mirror.
  */
 
 const fs = require('fs');
 const path = require('path');
 const modelLib = require('./lib/provenance-knowledge');
 const indexLib = require('./lib/workspace-index');
+const {
+  readLineageSnapshot,
+  projectLineage,
+  renderLineageSections,
+} = require('./lib/innfo-core.generated.cjs');
 
 /**
  * Resolve the canonical `cogNNitive` lineage-record path for a project: the
@@ -48,26 +54,23 @@ function resolveModelPath(projectDir, projectName) {
  */
 function buildProvenanceKnowledge(projectDir, options = {}) {
   const projectName = options.projectName || path.basename(projectDir);
-  const activeSources = modelLib.collectSources(path.join(projectDir, 'sources', 'nn'));
-  const archivedSources = modelLib.collectArchivedSources(projectDir, activeSources);
-  const sources = [...activeSources, ...archivedSources].sort((a, b) => a.name.localeCompare(b.name));
-  const models = modelLib.collectModels(projectDir);
-  const artifacts = modelLib.collectArtifacts(projectDir);
+  const snapshot = readLineageSnapshot(projectDir);
+  const projection = projectLineage(snapshot);
+  const sections = renderLineageSections(projection);
 
   const { modelPath, created } = resolveModelPath(projectDir, projectName);
-  const data = { sources, models, artifacts };
   const content = created
-    ? modelLib.buildFreshModel(projectName, data)
-    : modelLib.refreshExistingModel(fs.readFileSync(modelPath, 'utf8'), data);
+    ? modelLib.buildFreshModel(projectName, sections)
+    : modelLib.refreshExistingModel(fs.readFileSync(modelPath, 'utf8'), sections);
 
   fs.writeFileSync(modelPath, content, 'utf8');
   indexLib.writeWorkspaceIndex(projectDir);
 
   return {
     modelPath,
-    sourceCount: sources.length,
-    modelCount: models.length,
-    artifactCount: artifacts.length,
+    sourceCount: projection.sources.length,
+    modelCount: projection.knowledge.length,
+    artifactCount: projection.artifacts.length,
     created,
   };
 }
@@ -91,13 +94,6 @@ function appendProcedureRun(projectDir, run) {
 module.exports = {
   buildProvenanceKnowledge,
   appendProcedureRun,
-  collectSources: modelLib.collectSources,
-  collectArchivedSources: modelLib.collectArchivedSources,
-  collectModels: modelLib.collectModels,
-  collectArtifacts: modelLib.collectArtifacts,
-  slugify: modelLib.slugify,
-  SOURCE_FORMAT_OPTIONS: modelLib.SOURCE_FORMAT_OPTIONS,
-  mapSourceFormat: modelLib.mapSourceFormat,
   writeWorkspaceIndex: indexLib.writeWorkspaceIndex,
   listWorkspaceModels: indexLib.listWorkspaceModels,
 };

@@ -9,8 +9,8 @@
  * The slug primitives (`slugifyHeading`, `slugifyUnitHeading`, `normalizeName`,
  * `headingSlugParts`) are NOT defined here: they are generated from
  * `@cognnitive/innfo-core`'s `src/sourceRef.ts` by
- * `scripts/build-trannsform-slug-mirror.mjs` and vendored as
- * `./lib/slug-mirror.generated.cjs` (innfo-core is ESM-only and absent where
+ * `scripts/build-trannsform-core-mirror.mjs` and vendored as
+ * `./lib/innfo-core.generated.cjs` (innfo-core is ESM-only and absent where
  * this skill is installed, so a runtime import is impossible). That bundle IS
  * the single shared implementation — do NOT hand-edit the mirror, regenerate it.
  */
@@ -32,7 +32,7 @@ const {
   slugifyUnitHeading,
   normalizeName,
   headingSlugParts,
-} = /** @type {SlugMirror} */ (require('./lib/slug-mirror.generated.cjs'));
+} = /** @type {SlugMirror} */ (require('./lib/innfo-core.generated.cjs'));
 
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 

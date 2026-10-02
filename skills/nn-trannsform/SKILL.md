@@ -69,7 +69,7 @@ Every project workspace MUST adhere to the following structure:
 ├── sources/
 │   ├── import/           # External raw files (PDF, DOCX, CSV, TXT, JSON, HTML). Legacy sources/original/ supported via fallback.
 │   ├── conversations/    # Promoted transcripts (*_source.md — full transcript only).
-│   ├── export/           # Promoted deliverables re-entering pipeline (is_synthetic: true).
+│   ├── export/           # Promoted deliverables re-entering the pipeline; a promoted file carries its own `sources:` as upstream lineage.
 │   ├── archive/          # Version store for past normalized snapshots (sources/archive/<basename>/V<N>/<basename>.md).
 │   └── nn/               # Normalized Markdown, mirroring the source subtrees
 │                         # (e.g. sources/import/clientA/report.docx -> sources/nn/import/clientA/report.md).
@@ -112,9 +112,9 @@ The cogNNitive ecosystem operates on four clearly differentiated categories of s
 2. **Normalized / Secondary Source (Fuente Normalizada / Secundaria)**:
    - The structured Markdown representation generated under `sources/nn/` mirroring the active source subtrees.
    - Contains mandatory scanner traceability frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, and optional `media_file`).
-   - Serves as the canonical citation target (`sources:: [path.md#heading-slug]`) for Level 3 models.
+   - Serves as the canonical citation target (`sources:: [sources/nn/path.md@## Heading]`) for Level 3 models.
 3. **Synthetic / Derived Source (Fuente Sintética)**:
-   - Internal deliverables or consolidated summaries re-ingested into the workspace graph (`sources/export/`, marked with `is_synthetic: true`).
+   - Internal deliverables or consolidated summaries re-ingested into the workspace graph (`sources/export/`).
 4. **User Input / Interactive Source (Fuente de Entrada de Usuario)**:
    - In-line sources provided interactively during conversations (e.g. pasted data, calendars).
    - Marked with `source_file: "inline:..."` and exempt from physical file existence checks.
@@ -152,7 +152,6 @@ size_bytes: 1048576
 normalized_at: "2026-08-02T13:30:00Z"
 normalized_by: "traNNsform V_2-0-0"
 staging_file: "sources/staging/interview_transcript.srt" # Optional link to intermediate buffer
-is_synthetic: false                                     # Set to true ONLY if produced by an internal deliverable
 
 # 2. Canonical Identity of THIS Document (Self BibTeX & PID)
 canonical:
@@ -193,9 +192,9 @@ cited_works:
 
 > **⚠️ Staging Buffer Rule (`sources/staging/`)**: Intermediate dumps from extraction tools (Whisper SRTs, raw OCR text) live temporarily in `sources/staging/`. This directory is strictly ignored by scanners, git, and models. `sources/staging/` is **NEVER a valid citation target**.
 
-> **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system. Downstream Level 3 models reference sources directly by filename via `sources:: <path>.md#<heading-slug>` (resolving relative to `sources/nn/`; multiple values use list syntax: `sources:: [a.md#intro, b.md#summary]`). Line numbers are prohibited; heading slugs are mandatory.
+> **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system. Downstream Level 3 models reference sources directly by canonical path and `@` anchor via `sources:: sources/nn/<path>.md@## <Heading>` (or CSV row/col: `sources/nn/<path>.csv@RowID&col`, or file-level citation `kNNowledge/<model>_NN.md`; multiple values use list syntax: `sources:: [sources/nn/a.md@## Intro, sources/nn/b.md@## Summary]`). Line numbers are prohibited; heading text anchors or CSV row keys are mandatory.
 
-> **Heading slugs transliterate accents** (`## Visión` → `#vision`, not `#visin`) — the same rule the iNNfo editor and `@cognnitive/innfo-core` use. A workspace created before this change must re-run `--scan` so its `sources/nn/` anchors (and any `sources::` pointing at accented headings) line up.
+> **Heading anchors use the human-readable heading text** (`@## Visión`) — the same rule the iNNfo editor and `@cognnitive/innfo-core` use.
 
 #### 2a-1. Reviewer Feedback Ingestion (`sources/import/feedback/`)
 
@@ -203,13 +202,13 @@ Reviewer consoles export structured feedback JSON (see `iNNfo/specs/bluepriNNts/
 
 1. **Routing**: during `--scan`, `.json` files under `import/feedback/` (or `original/feedback/`) route to `convertFeedbackJson`, NOT the generic structured-data `convertJson` branch. Every other `sources/import/` JSON file keeps the generic path. The legacy Slack/Teams heuristic parser (`convertChatJson`) is removed — chat transcripts ingest via the `conversations/` lifecycle, never via `.json` heuristics.
 2. **Validation**: each payload validates against the feedback contract (`meta` with `source_knowledge`, `source_knowledge_version` as `V_x-y-z`, `artifact`, `artifact_version`, `exported_at` ISO-8601 with seconds, `author`, `feedback_slug`, `viewer`; items with `id` as `fb-NNN`, `kind` as `correction|comment|new|delete`, non-empty `target`). Unknown draft fields are ignored. A file failing validation is **skipped and reported in the registry — the run never aborts**.
-3. **Frontmatter contract**: normalized feedback lands mirrored at `sources/nn/import/feedback/<name>.md` with the standard origin frontmatter (`source_file` pointing at the `sources/import/feedback/` origin, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`) **plus** `source_type: "feedback"` and `is_synthetic: true`.
-4. **Citation**: the normalized body renders one `### <fb-NNN>` heading per item followed by `- **Kind**:`, so agents cite items directly: `sources:: import/feedback/<file>.md#fb-001`. Downstream, the `reconcile_feedback_NN.md` procedure carries accepted items back into the model (staleness check, diff preview, `apply_change` per item, `validate_knowledge`, single patch bump, stable-name console regeneration).
+3. **Frontmatter contract**: normalized feedback lands mirrored at `sources/nn/import/feedback/<name>.md` with the standard origin frontmatter (`source_file` pointing at the `sources/import/feedback/` origin, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`) **plus** `source_type: "feedback"`.
+4. **Citation**: the normalized body renders one `### <fb-NNN>` heading per item followed by `- **Kind**:`, so agents cite items directly: `sources:: sources/nn/import/feedback/<file>.md@### fb-001`. Downstream, the `reconcile_feedback_NN.md` procedure carries accepted items back into the model (staleness check, diff preview, `apply_change` per item, `validate_knowledge`, single patch bump, stable-name console regeneration).
 
 #### 2a-2. Dynamic Sources & Impact Checking (`--check-impact` / `--normalize-file`)
 
 When an existing source file is modified in `sources/import/` (or `sources/original/`), its SHA-256 hash changes:
-1. **Automatic Snapshot & Scan Warning**: `--scan` creates a version snapshot under `sources/archive/<basename>/V<N>/<basename>.md`, normalizes the new version into `sources/nn/`, and immediately audits downstream models in `kNNowledge/`. If any model citation (`sources:: [file.md#heading-slug]`) points to an altered or removed section, an `[IMPACT WARNING]` is printed to the console.
+1. **Automatic Snapshot & Scan Warning**: `--scan` creates a version snapshot under `sources/archive/<basename>/V<N>/<basename>.md`, normalizes the new version into `sources/nn/`, and immediately audits downstream models in `kNNowledge/`. If any model citation (`sources:: [sources/nn/file.md@## Heading]`) points to an altered or removed section, an `[IMPACT WARNING]` is printed to the console.
 2. **Atomic Single-Source Refresh Command**:
    To update or normalize a single file without a whole-workspace scan:
    ```bash
@@ -222,7 +221,7 @@ When an existing source file is modified in `sources/import/` (or `sources/origi
    ```bash
    node scripts/index.js --check-impact --src "<project-dir>"
    ```
-   Inspects every Level 3 model in `kNNowledge/`, parses all `sources::` citations, and verifies that the cited file exists under `sources/nn/` AND that the exact `#heading-slug` anchor is present. Reports errors for drifted or missing anchors along with fuzzy suggestions for closest matching headings. Exits non-zero if drift errors are detected.
+   Inspects every Level 3 model in `kNNowledge/`, parses all `sources::` citations, and verifies that the cited file exists under `sources/nn/` AND that the cited anchor (`@## Heading` or `@RowID&col`) is present. Reports errors for drifted or missing anchors along with fuzzy suggestions for closest matching headings. Exits non-zero if drift errors are detected.
 
 #### 2a-3. External Watch Roots & Immutable Timestamped Sources (`--scan-external`)
 
@@ -333,7 +332,7 @@ To prevent LLM context degradation (*Lost in the Middle*) and maintain workspace
    - `_transcript.md`: Audio/video transcription normalized into coherent paragraphs.
    - `_summary.md`: High-density semantic distillation of a massive source.
    - `_schema.md`: Dataset profile and statistical summary for tabular data (CSV/Excel).
-   - `_synthetic.md`: An internal deliverable re-ingested as a source (`is_synthetic: true`).
+   - `_synthetic.md`: An internal deliverable re-ingested as a source; its upstream lineage is its own `sources:` frontmatter (no `is_synthetic` flag is stored).
 
 #### 2c. Importing from the Web (URL / online PDF)
 
@@ -350,11 +349,11 @@ When the user pastes a URL in chat and wants it ingested:
 
 #### 2d. Lineage Record Filesystem Sync
 
-The cogNNitive **lineage record** (`<Project>_V_0-2-0_cogNNitive_NN.md`, or `<Project>_V_0-1-0_cogNNitive_NN.md` on older workspaces) keeps three of its four sections in sync with the workspace filesystem on every build/refresh (bootstrap, `--scan`, `--import-url`, or the standalone `--lineage` flag):
+The cogNNitive **lineage record** (`<Project>_V_0-3-0_cogNNitive_NN.md`, or `<Project>_V_0-2-0_cogNNitive_NN.md` on older workspaces) keeps three of its four sections in sync with the workspace filesystem on every build/refresh (bootstrap, `--scan`, `--import-url`, or the standalone `--lineage` flag):
 
-- **`# NN Sources`** — one entry per active normalized file under `sources/nn/` (carrying `version::` and `archive_path::` when snapshots exist), plus one entry per archived snapshot under `sources/archive/` (carrying `status:: archived`, `version::`, and `superseded_by::` when superseded). Synthetic sources retain `is_synthetic: true`.
-- **`# NN ModelRecords`** — one entry per `kNNowledge/*_NN.md`, with `model_ref`, `knowledge_version`, `model_template`, and `derived_from::` scraped from that model's `sources::` Citations.
-- **`# NN Artifacts`** — one entry per deliverable file under `export/` (with fallback to `artifacts/`), with `derived_from::` read from the artifact's frontmatter (`model` + `knowledge_version`) or an HTML `export-meta` block. Note: the concept name `# NN Artifacts` remains identical in Level 2 and Level 3 lineage records.
+- **`# NN Sources`** — one entry per active normalized file under `sources/nn/` (carrying `version::` and `archive_path::` when snapshots exist), plus one entry per archived snapshot under `sources/archive/` (carrying `status:: archived`, `version::`, and `superseded_by::` when superseded).
+- **`# NN ModelRecords`** — one entry per `kNNowledge/*_NN.md`, with `model_ref`, `knowledge_version`, `model_template`, and `derived_from::` projected from that model's `sources::` Citations.
+- **`# NN Artifacts`** — one entry per deliverable file under `export/`, with `derived_from::` projected from the artifact's upstream citations.
 
 All three use **idempotent replace**: re-running regenerates them from the current filesystem state, no duplicate entries, and removed files drop out.
 
@@ -370,7 +369,7 @@ It exits non-zero when any error is found.
 
 #### 2e. Binary / Batch Sources Not Covered by Auto-Sync
 
-The filesystem sync (§2d) covers files that went through the standard `nn-trannsform` scan pipeline (`# NN Sources`) or that exist as real files under `kNNowledge/` / `artifacts/`. Two cases still need EXPLICIT manual registration by the agent:
+The filesystem sync (§2d) covers files that went through the standard `nn-trannsform` scan pipeline (`# NN Sources`) or that exist as real files under `kNNowledge/` / `export/`. Two cases still need EXPLICIT manual registration by the agent:
 
 1. **Formats routed to "skip" in the capability matrix** (§2g, e.g. legacy `.doc`): before skipping, ask the user whether to register a minimal `## NN Sources:` entry anyway (file name, format, and a note that content wasn't extracted) so the file isn't silently untraceable. Do not skip in silence.
 2. **Large binary batches processed by a custom procedure outside the standard scan** (e.g. a photo-import workflow using Jimp/LLM Vision instead of `--scan`): once the procedure completes, the agent MUST register the batch in the Lineage record — either as one aggregate `## NN Sources:` entry (folder path, file count, date range, e.g. "79 photos in `sources/import/photos/`, imported 2026-08-12") when per-file entries would be unwieldy, or as individual entries when the batch is small (roughly under 10 files). This registration is the agent's responsibility, NOT automatic — a custom procedure is by definition not covered by the standard scan pipeline in §2d.
@@ -401,13 +400,13 @@ Interaction dialogues are first-class source streams. The transcript lifecycle f
    ```
 
    A participant the user declines to name (or skips) renders the deterministic placeholder `unnamed`; promotion still completes — a missing name never blocks or aborts the `_source.md` write.
-6. **Scanner Normalization**: Promoted transcripts link to their origin (`origin_transcript: conversations/...`), render each turn under a `## NN Turn NN: <author-id>` heading (1-based, 2-digit zero-padded: `## NN Turn 01: Architect`, …, `## NN Turn 100: X`), and are normalized into `sources/nn/conversations/` with `conversation_format: "full"` and `is_synthetic: false`. The sequential number makes every turn heading unique and addressable under the workspace heading-slug rules. Downstream models cite these sources using `sources:: [conversations/<file>.md#<anchor>]` for plain headings and the `@` pointer grammar for turn headings: `sources:: [conversations/<session-slug>_source.md@## NN Turn 01: Architect]`. The `#` fragment form MUST NOT be used for `## NN …: …` headings — the Concept/Element boundary in their slug contains `--`, which `parseSourceRef` rejects (`KU_MALFORMED`). Turn headings carry no `author::` key: embedded modification blocks self-describe as they travel across turns.
+6. **Scanner Normalization**: Promoted transcripts link to their origin (`origin_transcript: conversations/...`), render each turn under a `## NN Turn NN: <author-id>` heading (1-based, 2-digit zero-padded: `## NN Turn 01: Architect`, …, `## NN Turn 100: X`), and are normalized into `sources/nn/conversations/` with `conversation_format: "full"`. The sequential number makes every turn heading unique and addressable under the workspace heading rules. Downstream models cite these sources using canonical `@` pointer grammar: `sources:: [sources/nn/conversations/<session-slug>_source.md@## NN Turn 01: Architect]`. Turn headings carry no `author::` key: embedded modification blocks self-describe as they travel across turns.
 7. **CLI Promotion**:
    ```bash
    node scripts/index.js --promote-conv "conversations/YYYY-MM-DD_<slug>.md" --format full
    ```
    The CLI path is a mechanical verbatim copy (no turn headings added); the agent-driven path — naming step + turn-structured body passed as `fullContent` — produces the author-attributed `_source.md`.
-8. **Agent Modification lineage**: When an agent turn in the transcript pasted a `## NN Agent Modification: <slug>` block (per `nn-innfo` §5), that heading survives promotion into the `_source.md` and is citeable via the `@` pointer grammar: `sources:: [conversations/<session-slug>_source.md@## NN Agent Modification: <scope>]`. This is how synthetic agent reasoning enters the workspace Lineage graph.
+8. **Agent Modification lineage**: When an agent turn in the transcript pasted a `## NN Agent Modification: <slug>` block (per `nn-innfo` §5), that heading survives promotion into the `_source.md` and is citeable via the `@` pointer grammar: `sources:: [sources/nn/conversations/<session-slug>_source.md@## NN Agent Modification: <scope>]`. This is how synthetic agent reasoning enters the workspace Lineage graph.
 
 #### 2g. Capability Assessment — Decision Matrix
 
@@ -492,11 +491,11 @@ When transforming normalized Markdown into an iNNfo Level 3 Model:
 # NN Stakeholders
 
 ## NN Stakeholders: Enterprise Clients
-sources:: [interview_transcript.md#key-clients, notes_source.md#stakeholder-priorities]
+sources:: [sources/nn/interview_transcript.md@## Key Clients, sources/nn/notes_source.md@## Stakeholder Priorities]
 relationship_model:: B2B Long-term
 ```
 
-A single value may be written without brackets: `sources:: interview_transcript.md#key-clients`. There is no `src-NNN`/`source_id` system anywhere in this pipeline, and line ranges (`#L1-L10`) are strictly prohibited in favor of stable GitHub-compatible heading slugs (`#heading-slug`).
+A single value may be written without brackets: `sources:: sources/nn/interview_transcript.md@## Key Clients`. There is no `src-NNN`/`source_id` system anywhere in this pipeline, and line ranges (`#L1-L10`) are strictly prohibited in favor of stable human-readable heading anchors (`@## Heading Text`) or CSV row keys (`@RowID&col`).
 
 #### 3c. Citation Format Selection
 
@@ -538,9 +537,9 @@ When normalized sources must be mapped to Level 3 model elements (`sources::`), 
 
 ### 4. Citation & Lineage Protocol
 
-Derived deliverables are generated in a single pass directly to `export/[Deliverable_Name]_V_x-y-z.md` (or legacy `artifacts/` if existing) without intermediate `_draft.md` files or non-standard `<!-- cite: ... -->` HTML comments:
+Derived deliverables are generated in a single pass directly to `export/[Deliverable_Name]_V_x-y-z.md` without intermediate `_draft.md` files or non-standard `<!-- cite: ... -->` HTML comments:
 1. **Direct Formatting**: Apply the citation format selected in §3c directly during generation per rules in `citations.md`.
-2. **Source Traceability**: When citations are included (formats `[a]`–`[h]`), resolve claims directly from the Level 3 model's `sources::` pointers (`<path>.md#<heading-slug>`, resolving canonically against `sources/nn/`).
+2. **Source Traceability**: When citations are included (formats `[a]`–`[h]`), resolve claims directly from the Level 3 model's `sources::` pointers (`sources/nn/<path>.md@## Heading`, resolving canonically against `sources/nn/`).
 3. **Clean Presentation**: Format `[i]` (No sources) produces presentation-ready deliverables omitting all citation markers and reference lists.
 
 ---
@@ -551,7 +550,7 @@ Derived deliverables are generated in a single pass directly to `export/[Deliver
 |------|------|---------|-------|
 | **Normalized Markdown** | `sources/nn/` | `sources/nn/import/clientA/doc1.md` | Ingested source with scanner frontmatter, mirrors active source subtrees |
 | **Model** (`*_NN.md`) | `kNNowledge/` | `kNNowledge/Business_Plan_V_1-0-0_NN.md` | iNNfo Level 3 V_0-1-0 semantic models with `sources::` |
-| **Export Deliverable** | `export/` | `export/Executive_Summary_V_1-0-0.md` | Clean deliverable in user-selected citation format (legacy `artifacts/` alias supported) |
+| **Export Deliverable** | `export/` | `export/Executive_Summary_V_1-0-0.md` | Clean deliverable in user-selected citation format |
 | **Validation Report** | `export/` | `export/Ingest_Audit_V_1-0-0_report.md` | Carries `type: report` in frontmatter; same folder as deliverables |
 | **Procedure Spec** | `procedures/` | `procedures/Document_Ingest_V_1-0-0_procedures_NN.md` | Procedure spec compliant with `procedures_V_0-1-0_NN.md` |
 
@@ -591,10 +590,11 @@ At the end of transformation:
 1. **Zero Unilateral Mutation**: NEVER move, rename, or delete files in `sources/import/` (or any user file) without prior explicit confirmation.
 2. **Recommended Option First**: Always prefix option `[a]` with `(Recommended)`.
 3. **Multi-Selection Notice**: Add `"You can select one option or a combination (e.g. A and B)"` when applicable.
-4. **Mandatory Scanner Origin Metadata**: Normalized Markdown in `sources/nn/` MUST include scanner frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, plus optional `staging_file`, `is_synthetic`, `canonical`, and `cited_works`). No `source_id`/`src-NNN`.
-5. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: <path.md#heading-slug>` (or a list `sources:: [a.md#slug, b.md#slug]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
+4. **Mandatory Scanner Origin Metadata**: Normalized Markdown in `sources/nn/` MUST include scanner frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, plus optional `staging_file`, `canonical`, and `cited_works`). No `source_id`/`src-NNN`.
+5. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: sources/nn/<path.md>@## Heading` (or a list `sources:: [sources/nn/a.md@## H1, sources/nn/b.md@## H2]`) resolving canonically against `sources/nn/` — no `src-NNN` IDs, no line-number ranges.
 6. **V_0-1-0 Compliance**: Target iNNfo V_0-1-0 meta-template specification and unified NN syntax (`# NN`, `## NN`, `key:: value`).
 7. **Saved Procedure Proactive Check**: When starting `nn-trannsform` or `nn`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
-7a. **Lineage Record Sync**: `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `kNNowledge/`, `export/`, fallback `artifacts/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.
+7a. **Lineage Record Sync**: `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` re-sync from the filesystem (`sources/nn/`, `kNNowledge/`, `export/`) on every `--scan`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--import-url`, `--apply`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --check` reports drift.
 8. **Prose Description in Level 3 Models**: The description of an element in a Level 3 model must NEVER be formatted as a `description::` property field. It must always be written as free-form Markdown prose below the `key:: value` fields list, separated from them by a blank line.
 9. **Scored Matching, Never Silent Exclusion**: normalized sources map to model elements through `scorePairs` (`scripts/lib/score-matcher.js`, threshold 0.7); below-threshold pairs enter the review queue with a recorded decision, and undecided pairs stay queued across sessions.
+

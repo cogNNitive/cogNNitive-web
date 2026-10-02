@@ -39,6 +39,10 @@ var LEGACY_KEYS = [
   "target_template"
 ];
 var OVERVIEW_ROOT_RE = /_base_[a-z0-9]+\.md$/i;
+function extractFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  return match ? match[1] : "";
+}
 async function detectLegacy(r) {
   const signals = [];
   let hasCurrentSignal = false;
@@ -143,12 +147,13 @@ async function detectLegacy(r) {
     scannedPaths.add(filePath);
     const content = await r.read(filePath);
     if (!content) continue;
-    if (content.includes("knowledge_version:")) hasCurrentSignal = true;
+    const frontmatter = extractFrontmatter(content);
+    if (frontmatter.includes("knowledge_version:")) hasCurrentSignal = true;
     if (/type::\s*knowledge\b/.test(content)) hasCurrentSignal = true;
-    if (content.includes("iNNfo_V_0-3-0")) hasCurrentSignal = true;
+    if (frontmatter.includes("iNNfo_V_0-3-0")) hasCurrentSignal = true;
     for (const legacyKey of LEGACY_KEYS) {
       const keyPattern = new RegExp(`^\\s*${legacyKey}\\s*:`, "m");
-      if (keyPattern.test(content)) {
+      if (keyPattern.test(frontmatter)) {
         signals.push({
           type: "legacy-key",
           path: filePath,
@@ -163,14 +168,14 @@ async function detectLegacy(r) {
         detail: `Legacy keyword 'type:: model' found in '${filePath}' (expected 'type:: knowledge')`
       });
     }
-    if (content.includes("/specs/templates/")) {
+    if (frontmatter.includes("/specs/templates/")) {
       signals.push({
         type: "legacy-parent-spec",
         path: filePath,
         detail: `Legacy parent_spec URL containing '/specs/templates/' found in '${filePath}'`
       });
     }
-    const l1Match = content.match(/iNNfo_V_0-[12]-[0-9]+|defiNNe_V_0-1-0/i);
+    const l1Match = frontmatter.match(/iNNfo_V_0-[12]-[0-9]+|defiNNe_V_0-1-0/i);
     if (l1Match) {
       signals.push({
         type: "legacy-l1-parent",

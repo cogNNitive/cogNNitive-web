@@ -30,15 +30,25 @@
     return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
+  function getInnfoSlug() {
+    if (typeof InnfoSlug !== 'undefined' && InnfoSlug && InnfoSlug.slugify) return InnfoSlug
+    if (typeof globalThis !== 'undefined' && globalThis.InnfoSlug && globalThis.InnfoSlug.slugify)
+      return globalThis.InnfoSlug
+    if (typeof require === 'function') {
+      try {
+        var mod = require('./innfo-slug.generated.js')
+        if (mod && mod.slugify) return mod
+      } catch {
+        /* ignore */
+      }
+    }
+    return null
+  }
+
   function slugify(value) {
-    var text = String(value == null ? '' : value)
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .replace(/-{2,}/g, '-')
-    return text || 'feedback'
+    var slugMod = getInnfoSlug()
+    var raw = slugMod ? slugMod.slugify(String(value == null ? '' : value)) : ''
+    return raw || 'feedback'
   }
 
   function slugifyReviewer(value) {

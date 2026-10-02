@@ -15,6 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { parseCitation } = require('./innfo-core.generated.cjs');
 
 /** Canonicalize whitespace + ordering for structural comparison. */
 function canonicalize(text) {
@@ -348,14 +349,10 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
         const bracket = raw.match(/^\[(.*)\]$/s);
         const parts = bracket ? bracket[1].split(',') : [raw];
         for (const p of parts) {
-          const v = p.trim().replace(/^"|"$/g, '');
-          if (!v || v.startsWith('kNNowledge/') || v.startsWith('models/') || v.includes('@')) continue;
+          const cit = parseCitation(p);
+          if (!cit || cit.kind !== 'source') continue;
 
-          const hashIdx = v.indexOf('#');
-          const fileRef = (hashIdx >= 0 ? v.substring(0, hashIdx) : v)
-            .replace(/^sources\/nn\//, '')
-            .trim();
-
+          const fileRef = cit.filePath.replace(/^sources\/nn\//, '').trim();
           if (!fileRef) continue;
 
           const match = index.byPath.get(fileRef) ||

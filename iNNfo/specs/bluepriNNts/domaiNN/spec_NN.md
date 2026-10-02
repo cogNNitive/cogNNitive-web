@@ -7,7 +7,7 @@ parent_spec:
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "DomaiNN Blueprint"
 blueprint_name: "domaiNN"
-blueprint_version: "V_0-1-0"
+blueprint_version: "V_0-2-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -91,11 +91,6 @@ concept:: kNNowledge
 type:: string
 description:: Author or owner of the kNNowledge document within this domaiNN.
 
-## NN Field Definition: derived_from
-concept:: kNNowledge
-type:: citation
-description:: The Source documents this kNNowledge document derives from.
-
 <!-- Tags fields -->
 
 ## NN Field Definition: color
@@ -129,7 +124,7 @@ color:: green
 
 A domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge document, so a domaiNN can nest inside another domaiNN without a special case:
 * **domaiNN** sets directory conventions and the entry point (`domaiNN_NN.md`).
-* **kNNowledge** links to the Level-3 documents with metadata, blueprint binding, and derivation lineage.
+* **kNNowledge** links to the Level-3 documents with metadata and blueprint binding.
 * **Tags** provides a centralized taxonomy catalog (`color`, `icon`, `description`) used across the domaiNN.
 
 ## Objectives
@@ -145,7 +140,7 @@ A domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge d
 | Concept | Type | Purpose |
 |---|---|---|
 | **domaiNN** | text | Prose description, entry point, and directory conventions of the container |
-| **kNNowledge** | knowledge | kNNowledge documents in the domaiNN with metadata and derivation lineage |
+| **kNNowledge** | knowledge | kNNowledge documents in the domaiNN with metadata and blueprint binding |
 | **Tags** | category | Centralized taxonomy tags with color, icon, and description |
 
 ### Directory Conventions

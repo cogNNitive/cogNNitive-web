@@ -7828,6 +7828,7 @@ function parseSourceRef(input) {
   const clean = input.trim();
   if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
   if (/^src-\d+/i.test(clean)) return null;
+  if (/^models\//i.test(clean)) return null;
   const explicit = clean.match(new RegExp(`^(sources/nn/[^#]+?)(?:#(${SLUG}))?$`));
   if (explicit) {
     const filePath = explicit[1].trim();
@@ -7835,6 +7836,17 @@ function parseSourceRef(input) {
       filePath,
       fileName: basename(filePath),
       slug: explicit[2] || void 0,
+      kind: "source",
+      raw: clean
+    };
+  }
+  const exportSource = clean.match(new RegExp(`^(sources/export/[^#]+?)(?:#(${SLUG}))?$`));
+  if (exportSource) {
+    const filePath = exportSource[1].trim();
+    return {
+      filePath,
+      fileName: basename(filePath),
+      slug: exportSource[2] || void 0,
       kind: "source",
       raw: clean
     };
@@ -7856,6 +7868,7 @@ function parseSourceRef(input) {
   if (unqualified) {
     const rawPath = unqualified[1].trim();
     if (rawPath.startsWith("sources/original/")) return null;
+    if (rawPath.startsWith("models/")) return null;
     const filePath = `sources/nn/${rawPath}`;
     return {
       filePath,
@@ -7866,6 +7879,31 @@ function parseSourceRef(input) {
     };
   }
   return null;
+}
+function parseCitation(input) {
+  if (!input || typeof input !== "string") return null;
+  const clean = input.trim();
+  if (!clean) return null;
+  if (/[#@]L\d+(-L\d+)?$/i.test(clean)) return null;
+  if (/^src-\d+/i.test(clean)) return null;
+  if (clean.includes("@")) {
+    return parseKnowledgeUnitRef(clean);
+  }
+  if (clean.includes("#")) {
+    const ref = parseSourceRef(clean);
+    if (ref && ref.slug) {
+      return { ...ref, legacyHash: true };
+    }
+    return null;
+  }
+  const resolved = resolveUnitPath(clean);
+  if (!resolved) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename(resolved.filePath),
+    kind: resolved.kind,
+    raw: clean
+  };
 }
 function basename(p) {
   return p.split(/[/\\]/).pop() || p;
@@ -7947,6 +7985,26 @@ function splitSourceFieldValue(value) {
   const cleaned = cleanSourceItem(s);
   return cleaned ? [cleaned] : [];
 }
+function levenshteinDistance(a, b) {
+  const an = a.length;
+  const bn = b.length;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix = Array.from({ length: bn + 1 }, () => new Array(an + 1).fill(0));
+  for (let i = 0; i <= an; i++) matrix[0][i] = i;
+  for (let j = 0; j <= bn; j++) matrix[j][0] = j;
+  for (let j = 1; j <= bn; j++) {
+    for (let i = 1; i <= an; i++) {
+      const cost = a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j - 1][i] + 1,
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i - 1] + cost
+      );
+    }
+  }
+  return matrix[bn][an];
+}
 function slugifyHeading(text) {
   const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
   return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
@@ -8025,9 +8083,13 @@ function resolveUnitPath(rawPath) {
   const isCsv = /\.csv$/i.test(forward);
   if (!isMd && !isCsv) return null;
   if (forward.startsWith("sources/nn/")) return { filePath: forward, kind: "source" };
-  if (/^models\//i.test(forward)) {
+  if (forward.startsWith("sources/export/")) return { filePath: forward, kind: "source" };
+  if (forward.startsWith("kNNowledge/")) {
     if (!isMd) return null;
     return { filePath: forward, kind: "model" };
+  }
+  if (/^models\//i.test(forward)) {
+    return null;
   }
   if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
   return { filePath: `sources/nn/${forward}`, kind: "source" };
@@ -8658,7 +8720,7 @@ function extractExcerpt(content, unit) {
   return capExcerpt(row ? row.join(",") : "");
 }
 function resolveCitation(raw, field, resolver, modelPath = "") {
-  const ref = parseKnowledgeUnitRef(raw) ?? parseSourceRef(raw);
+  const ref = parseCitation(raw);
   if (!ref) {
     return { path: raw, exists: false, field, origin: "document", error: "MALFORMED" };
   }
@@ -8980,7 +9042,34 @@ function createFsSourceResolver(rootDir) {
         }
       }
     }
-    return { exists: false };
+    const primaryDir = candidateDirs[0] ?? rootResolved;
+    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
+    const targetParent = (0, import_node_path.dirname)(targetAbs);
+    const parentExists = (0, import_node_fs.existsSync)(targetParent);
+    if (!parentExists) {
+      return { exists: false, parentExists: false };
+    }
+    let suggestions;
+    try {
+      const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
+      const targetBase = (0, import_node_path.basename)(refPath);
+      const targetStem = targetBase.replace(/\.[^.]+$/, "");
+      const files = entries.filter((e) => e.isFile()).map((e) => e.name);
+      const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
+      const scored = files.map((name) => {
+        const candStem = name.replace(/\.[^.]+$/, "");
+        return { name, dist: levenshteinDistance(targetStem, candStem) };
+      }).filter((item) => item.dist > 0 && item.dist <= maxAllowed).sort((a, b) => a.dist - b.dist);
+      if (scored.length > 0) {
+        suggestions = scored.map((s) => s.name);
+      }
+    } catch {
+    }
+    return {
+      exists: false,
+      parentExists: true,
+      suggestions
+    };
   };
 }
 
@@ -9185,11 +9274,14 @@ function buildConsolePayload(options) {
   }
   const schemaSlot = buildConsoleSchemaSlot(inputSchema, elements);
   const genTime = generated || (/* @__PURE__ */ new Date()).toISOString();
+  const normalizedSource = modelPath ? modelPath.split("\\").join("/").replace(/^models\//i, "kNNowledge/").replace(/^.*?\/(kNNowledge\/)/i, "$1") : fm.title ? `kNNowledge/${slugify(fm.title)}_NN.md` : "kNNowledge/Model_NN.md";
+  const sourceFile = normalizedSource.startsWith("kNNowledge/") ? normalizedSource : `kNNowledge/${normalizedSource}`;
   const meta = {
     modelId,
     title,
     modelVersion,
     sha256: rawSha256,
+    sources: [sourceFile],
     generated: genTime,
     feedbackState: feedbackStateFor(ledgerEntries || [], modelId)
   };

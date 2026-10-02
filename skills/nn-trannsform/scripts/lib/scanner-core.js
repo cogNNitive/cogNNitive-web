@@ -77,15 +77,10 @@ function generateSourceFrontmatter(originalFilePath, relativeSourcePath, extra =
   lines.push(`normalized_by: "traNNsform v${TRANNNSFORM_VERSION}"`);
 
   if (extra.staging_file) lines.push(`staging_file: "${escapeYamlString(extra.staging_file)}"`);
-  if (extra.is_synthetic !== undefined) lines.push(`is_synthetic: ${Boolean(extra.is_synthetic)}`);
   if (extra.source_type) lines.push(`source_type: "${escapeYamlString(extra.source_type)}"`);
   if (extra.conversation_format) lines.push(`conversation_format: "${escapeYamlString(extra.conversation_format)}"`);
   if (extra.session_id) lines.push(`session_id: "${escapeYamlString(extra.session_id)}"`);
   if (extra.origin_transcript) lines.push(`origin_transcript: "${escapeYamlString(extra.origin_transcript)}"`);
-  if (extra.derived_from) {
-    const df = Array.isArray(extra.derived_from) ? extra.derived_from : [extra.derived_from];
-    lines.push(`derived_from: [${df.join(', ')}]`);
-  }
 
   if (extra.source_url) lines.push(`source_url: "${escapeYamlString(extra.source_url)}"`);
   if (extra.origin_uri) lines.push(`origin_uri: "${escapeYamlString(extra.origin_uri)}"`);
@@ -643,27 +638,16 @@ function processOkFile(ext, absPath, sourceFileField, destPath, displayOutPath, 
       } catch {}
     }
 
-    let derivedFrom = extra.derived_from;
-    if (!derivedFrom && incomingFields.derived_from) {
-      if (incomingFields.derived_from.startsWith('[') && incomingFields.derived_from.endsWith(']')) {
-        derivedFrom = incomingFields.derived_from.slice(1, -1).split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
-      } else {
-        derivedFrom = [incomingFields.derived_from];
-      }
-    }
-
     const companionMedia = findCompanionMedia(absPath, sourceFileField);
     const existingFields = getExistingFrontmatterFields(destPath, sourceFileField);
     const finalExtra = {
       staging_file: extra.staging_file || incomingFields.staging_file || existingFields.staging_file,
       media_file: extra.media_file || incomingFields.media_file || existingFields.media_file || (companionMedia ? companionMedia.media_file : undefined),
       media_sha256: extra.media_sha256 || incomingFields.media_sha256 || existingFields.media_sha256 || (companionMedia ? companionMedia.media_sha256 : undefined),
-      is_synthetic: isFeedbackDoc ? true : (extra.is_synthetic !== undefined ? extra.is_synthetic : (incomingFields.is_synthetic !== undefined ? (incomingFields.is_synthetic === 'true' || incomingFields.is_synthetic === true) : (existingFields.is_synthetic !== undefined ? existingFields.is_synthetic === 'true' : undefined))),
       source_type: isFeedbackDoc ? 'feedback' : (extra.source_type || incomingFields.source_type || existingFields.source_type),
       conversation_format: extra.conversation_format || incomingFields.conversation_format || existingFields.conversation_format,
       session_id: extra.session_id || incomingFields.session_id || existingFields.session_id,
       origin_transcript: extra.origin_transcript || incomingFields.origin_transcript || existingFields.origin_transcript,
-      derived_from: derivedFrom,
       source_url: extra.source_url || incomingFields.source_url || existingFields.source_url,
       downloaded_at: extra.downloaded_at || incomingFields.downloaded_at || existingFields.downloaded_at,
       title: extra.title || incomingFields.title || existingFields.title,
@@ -769,12 +753,10 @@ async function processPromptFile(ext, absPath, sourceFileField, destPath, displa
       staging_file: extra.staging_file || existingFields.staging_file,
       media_file: extra.media_file || existingFields.media_file || (companionMedia ? companionMedia.media_file : undefined),
       media_sha256: extra.media_sha256 || existingFields.media_sha256 || (companionMedia ? companionMedia.media_sha256 : undefined),
-      is_synthetic: extra.is_synthetic !== undefined ? extra.is_synthetic : (existingFields.is_synthetic !== undefined ? existingFields.is_synthetic === 'true' : undefined),
       source_type: extra.source_type || existingFields.source_type,
       conversation_format: extra.conversation_format || existingFields.conversation_format,
       session_id: extra.session_id || existingFields.session_id,
       origin_transcript: extra.origin_transcript || existingFields.origin_transcript,
-      derived_from: extra.derived_from,
       source_url: mergedExtra.source_url || existingFields.source_url,
       downloaded_at: mergedExtra.downloaded_at || existingFields.downloaded_at,
       title: mergedExtra.title || existingFields.title,

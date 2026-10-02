@@ -1,27 +1,26 @@
 # Sources, Citations & Lineage
 
 The cogNNitive pipeline tracks where knowledge comes from with **three** words,
-one meaning each. Everything else ("provenance", "traceability", "grounding",
-"3-tier lineage") is retired in favour of these:
+one meaning each:
 
 | Term | What it is |
 | :--- | :--- |
-| **Source** | A normalised Markdown file under `sources/nn/`, plus its **origin metadata** in the frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, and, for web imports, `source_url` / `downloaded_at`). One Source per original file. |
-| **Citation** | A pointer from something to a Source section. Two altitudes: a **model citation** is `sources:: <path>.md#<heading-slug>` on a Level 3 element; an **artifact citation** is `[^1]` / APA / IEEE / … inside a generated deliverable. Same idea, different granularity. |
-| **Lineage** | The single generated record `<Project>_V_x-y-z_cogNNitive_NN.md` that says, for every Source, Model, Artifact and pipeline run in the workspace, what it derives from. |
+| **Source** | A normalised Markdown or structured file under `sources/nn/`, plus its **origin metadata** in the frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, and, for web imports, `source_url` / `downloaded_at`). One Source per original ingested file. |
+| **Citation** | A pointer from a consumer to a Source or model unit. Two altitudes: a **model citation** uses the unified `@` grammar (e.g. `sources:: sources/nn/<path>.md@## Heading` or `sources/nn/<path>.csv@RowID&col`) or a file-level citation (e.g. `kNNowledge/<Doc>_NN.md`); an **artifact citation** is `[^1]` / APA / IEEE / … inside a generated deliverable. |
+| **Lineage** | The single generated record `<Project>_V_x-y-z_cogNNitive_NN.md` consisting of **projected view sections** (`# NN Sources`, `# NN ModelRecords`, `# NN Artifacts`) and an **append-only journal** (`# NN Procedures`). |
 
 ```
-sources/import/        ──►   sources/nn/        ──►   models/*_NN.md      ──►   export/
+sources/import/        ──►   sources/nn/        ──►   kNNowledge/*_NN.md  ──►   export/
 sources/conversations/       (Sources: normalised     (model Citations:          (deliverables +
-sources/export/               + origin metadata)       sources:: [a.md#x])        artifact Citations)
+sources/export/               + origin metadata)       sources:: [a.md@## H])     artifact Citations)
         └──────────────────────── recorded in the Lineage record ───────────────────────┘
 ```
 
 ---
 
-## 1. Sources — ingestion & origin metadata
+## 1. Sources — Ingestion & Origin Metadata
 
-`nn-trannsform` scans active source subtrees (`sources/import/` with fallback to `sources/original/`, `sources/conversations/`, and `sources/export/`),
+`nn-trannsform` scans active source subtrees (`sources/import/`, `sources/conversations/`, and `sources/export/`),
 normalises each supported format to Markdown under the matching path in
 `sources/nn/`, and writes a flat, deterministic YAML frontmatter:
 
@@ -29,7 +28,6 @@ normalises each supported format to Markdown under the matching path in
   the *repo-wide* history mechanism; per-source snapshots live in
   `sources/archive/` (see §5).
 - `source_file`, `size_bytes`, `normalized_at`, `normalized_by`.
-- `is_synthetic:` — set to `true` on promoted deliverables under `sources/export/`.
 - `conversation_format:` / `source_type:` — set on promoted transcripts under `sources/conversations/`.
 - `canonical:` — this document's own bibliographic identity (title, author,
   year, DOI, a BibTeX block), when known.
@@ -62,220 +60,92 @@ Citation).
 
 ---
 
-## 2. Model Citations (`sources::`)
+## 2. Model Citations & The Unified `@` Grammar
 
-Level 3 model elements point at Sources with `sources::`:
+Level 3 knowledge elements point at Sources with `sources::` using canonical `@` grammar:
 
 ```markdown
 ## NN Stakeholders: Enterprise Clients
-sources:: [interview.md#key-clients, notes/kickoff.md#priorities]
+sources:: [sources/nn/interview.md@## Key Clients, sources/nn/notes/kickoff.md@## Priorities]
 ```
 
-Rules — enforced by `@cognnitive/innfo-core` (`parseSourceRef` /
-`validateWorkspaceSources`) and surfaced by the `innfo-mcp` `validate_model`
-tool in workspace mode, and in the editor:
+### The Three Lineage Rules
 
-- **Unqualified paths resolve under `sources/nn/`** — `report.md#financials` →
-  `sources/nn/report.md`. An explicit `sources/nn/` prefix still works. A
-  `models/…` path is a cross-model reference.
-- **Heading-slug anchors only.** Line-range anchors (`#L12-L45`) and the legacy
-  `src-NNN` wrapper are rejected as an `error`; an anchor that matches no
-  heading in the target file is a `warning`.
-- **Element-level, not claim-level.** One `sources::` covers every field of the
-  element together. Per-claim Citation is an *artifact* concern (§4), never
-  inside a `*_NN.md`.
-- **Optional.** A greenfield / creative model needs no Citations; the agent only
-  suggests `sources::` when `sources/nn/` actually has files.
+1. **Direct citations only (Single Edge)**: Downstream models and artifacts cite their immediate upstream inputs directly. There are no intermediate ID schemes (`src-NNN`), synthetic proxy edges, or duplicated provenance layers.
+2. **Single provenance path**: Downstream derived artifacts (such as HTML consoles) cite their source knowledge document via a file-level citation (`meta.sources: ["kNNowledge/Client_NN.md"]`) rather than duplicating all transitive upstream source citations.
+3. **Optional sources on deliverables**: If an artifact or CSV has no external source inputs, the `sources` field/column is simply omitted, denoting a terminal or self-contained artifact.
+
+### Citation Grammar
+
+- **Markdown heading citation**: `sources/nn/report.md@## Executive Summary`
+- **CSV row and column citation**: `sources/nn/pricing.csv@R12&rate`
+- **File-level citation (bare path)**: `kNNowledge/Client_NN.md` or `sources/export/memo.md`
+- **Unqualified source path resolution**: `report.md@## Overview` resolves canonically against `sources/nn/report.md`.
+- **Legacy `#slug` read path**: Legacy `#slug` citations (`sources/nn/report.md#overview`) remain readable for frozen historical specs with a deprecation warning (`KU_DEPRECATED_HASH`). All active producers write `@` citations.
+
+Line numbers (`#L10-L20`) and `src-NNN` wrappers are strictly forbidden.
 
 ---
 
-## 3. The Lineage record
+## 3. The Lineage Record: View + Journal
 
-`buildProvenanceModel` (run on bootstrap and every `--scan` / `--import-url` /
-`--lineage`) keeps the Lineage record synced with the filesystem:
+The workspace Lineage record (`<Project>_V_x-y-z_cogNNitive_NN.md`) is maintained by pure projection in `@cognnitive/innfo-core`:
 
-| Section | Synced from | Semantics |
+```
+Record = Projected View Sections + Append-Only Journal
+```
+
+### Projected View Sections (Dynamic)
+
+The view sections are pure functions of the workspace file snapshot:
+
+| Section | Synced from | Rendered fields |
 | :--- | :--- | :--- |
-| `# NN Sources` | `sources/nn/` and `sources/archive/` frontmatter (active sources carry `version::` and `archive_path::`; archived sources carry `status:: archived`, `version::`, and `superseded_by::`) | idempotent replace |
-| `# NN Models` | `models/*_NN.md` (`derived_from::` scraped from each model's `sources::`) | idempotent replace |
-| `# NN Artifacts` | `export/` (with fallback to `artifacts/`) (`derived_from::` from frontmatter `model` + `model_version`, or an HTML `export-meta` block) | idempotent replace |
-| `# NN Procedures` | one entry appended per run (`--scan`, `--import-url`, `--apply`): `command`, `flags`, `run_at`, `inputs`, `outputs` | **append-only log** |
+| `# NN Sources` | `sources/nn/`, `sources/archive/`, `sources/export/` | `raw_filename, media_filename, raw_hash, size, source_format, normalized_at, normalized_by, normalized_content, curated_csv, status, version, archive_path, superseded_by, derived_from` |
+| `# NN ModelRecords` | `kNNowledge/*_NN.md` | `model_ref, knowledge_version, model_template, derived_from` |
+| `# NN Artifacts` | `export/**/*.{md,html,csv,json}` | `artifact_ref, artifact_format, derived_from` |
 
-Removed files drop out of the three replaced sections; the Procedures log is
-never rewritten. Run `node scripts/index.js --check` to report drift — a model
-with no entry, an artifact citing a model/version that no longer exists, a
-`sources::` that resolves nowhere, an unlisted snapshot under `sources/archive/`,
-a dangling `archive_path::` or `superseded_by::` pointer, a hash mismatch
-between an archived element and its snapshot, or an orphan archive chain (warning);
-it exits non-zero on any error.
+`derived_from` fields are typed `citation` and carry exact upstream `@` or file-level references.
+
+### Append-Only Journal
+
+- **`# NN Procedures`** is an **append-only run log**. Each pipeline execution (`--scan`, `--import-url`, `--apply`) appends one `## NN Procedures:` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). Existing procedure entries are never rewritten or lost on resync.
 
 ---
 
-## 4. Artifact Citations
+## 4. Artifact Citations & Deliverables
 
-`nn-trannsform` derives deliverables in a single pass straight to
-`export/[Deliverable_Name]_V_x-y-z.md` (legacy `artifacts/` accepted as fallback;
-validation reports go to the same folder, tagged `type: report` in frontmatter — there is no `exports/` or
-`reports/` subfolder). The citation style is chosen per deliverable:
+`nn-trannsform` derives deliverables into `export/[Deliverable_Name]_V_x-y-z.md` (reports, dashboards, summaries).
+Validation reports go to the same folder, tagged `type: report` in frontmatter.
 
+Supported deliverable citation styles:
 - `[a]` **Standard Markdown Footnotes** (`[^1]`) — the recommended default.
 - `[b]` Simple inline attribution — `— Source: <filename>, section <name>`.
 - `[c]`–`[g]` APA 7th / MLA 9th / Chicago / IEEE / Vancouver.
 - `[h]` BibTeX — a clean body plus a companion `.bib` file.
 - `[i]` No sources — a clean, unannotated deliverable.
 
-Claims are resolved from the model's `sources::` pointers. When a Source's
-`cited_works:` marks an external work `is_primary: true`, an APA rendering
-attributes it as *(Porter, 1985, as cited in Doe, 2026)* rather than falsely
-crediting the intermediate document.
+---
 
-Full per-format rules: `skills/nn-trannsform/citations.md`.
+## 5. Versioning & The Staleness Principle
+
+cogNNitive uses **two complementary versioning systems**:
+
+1. **Git / GitHub**: Whole-repository history, branches, diffs, and release tags (`blueprints-v*`, `skills-v*`, `innfo-mcp-v*`).
+2. **Native SemVer & Content Hashing**: Per-artifact identities (`V_MAJOR-MINOR-PATCH`) and cryptographic SHA-256 fingerprints (`sha256` frontmatter and `meta.sha256`).
+
+### The Staleness Principle
+
+- Upstream source updates are detected by comparing `sha256` hashes against active sources.
+- Downstream models audit anchor freshness: if a source heading changes or moves, `validateWorkspaceSources` and impact checkers report missing or altered targets with diagnostic suggestions.
+- Consoles verify currency via `meta.sha256` of their parent knowledge document.
 
 ---
 
-## Planned, not implemented
+## 6. Native Source Archive
 
-The following appear in older design notes and are **not** part of the shipped
-pipeline. They are listed here only so nobody assumes the guarantee exists:
-
-- **Open Knowledge Format (OKF) / W3C PROV-O / RO-Crate emission.** The
-  `sources/nn/index.md` manifest is a plain ingestion log with YAML frontmatter;
-  nothing emits PROV-O or RO-Crate.
-- **A separate `artifacts/canonical/` view** with inline `^[...]` markers. Only
-  the single-pass `artifacts/` output described in §4 exists.
-
----
-
-## 5. Versioning: Git vs. the native semantic-versioning system
-
-cogNNitive carries **two** versioning mechanisms that answer different
-questions. They are **complementary, not substitutive** — understand the role
-of each before relying on one for the other's job.
-
-### Git / GitHub — repo-wide history and release anchors
-
-Git records the state of the **whole repository** at any commit: branches,
-merges, diffs, collaboration, and a remote backup on GitHub. It operates at the
-granularity of the *tree* and of *commits*. It is the copy-of-record, the
-global rollback mechanism, and the only mechanism that gives you **shared,
-collaborative** history across machines and people.
-
-Git also anchors **releases**: every published distribution gets a tag
-(`innfo-mcp-v0.2.5`, `skills-v1.1.5`, `templates-v0.2.1`, `v0.2.5`), so a
-version number always resolves to a specific point in history.
-
-### The native semantic-versioning system — reference contracts
-
-Every iNNfo artifact carries its version **in the filename and in the
-frontmatter**, following the SemVer `V_MAJOR-MINOR-PATCH` convention defined at
-Level 0 (`defiNNe`). The version *is* the identity of the artifact, and
-versioned artifacts are **write-once**: you never edit a published
-`V_0-2-0` in place — you create a new `V_0-2-1` file. This is what makes
-references resolvable and auditable without consulting git history:
-
-| Level | Artifact | Version identity |
-| :--- | :--- | :--- |
-| 0 | `defiNNe` | meta-spec; defines the versioning conventions themselves |
-| 1 | Specifications | `iNNfo_V_0-1-0_NN.md`, `iNNfo_V_0-2-0_NN.md`, `iNNfo_V_0-2-1_NN.md` — `spec_version` in frontmatter |
-| 2 | Apps | `business_V_0-2-0_NN.md` — `template_version` + `spec_version` in frontmatter; the app catalog (`catalog.json`) tracks every `versions[]` and the `adopted` one |
-| 3 | Models | `<Name>_V_<x-y-z>_<template>_NN.md` — `model_version` in frontmatter; `parent_spec.url` pins the exact app version it conforms to |
-| — | Sources | `sources/archive/<basename>/V<N>/<basename>.md` — per-source snapshots (see below) |
-
-The same pattern extends to the **distribution layer**: the MCP server ships as
-versioned bundles (`docs/innfo/cdn/innfo-mcp-v0.2.5.bundle.js`) and the CDN
-`manifest.json` records `latest`. The resolver caches every resolved parent
-under `specs/` **write-once** — if the versioned filename already exists it is
-never overwritten, so a locally cached template is byte-identical to the
-published one for that version.
-
-The whole chain is *content-pinned by name*: a model's `parent_spec.url`
-points at `…/business_V_0-2-0_NN.md`, which stays valid no matter how many
-commits happen afterwards — the file at that version is never mutated.
-
-### Native source archive — per-source lineage inside the workspace
-
-The source-versioning archive (change `2026-09-06-source-versioning-archive`)
-gives every **source** its own sequential version history **inside the
-workspace**, independent of whether you ever commit. When a scan detects that a
-source changed (its `sha256` differs from the active file), the scanner copies
-the previous normalised version to `sources/archive/<basename>/V<N>/<basename>.md`
-(semver `V1`, `V2`, …), hash-idempotent so no duplicate snapshots are ever
-written. The Lineage record's `# NN Sources` carries the chain:
-`version::`, `archive_path::`, `superseded_by::`.
-
-```
-sources/original/   ──►   sources/nn/            ──►   models/*_NN.md
-  (immutable               (active Source,              (Citations)
-   dropbox)                 changed in place)
-        │  change detected
-        └──────────────────────────────────────►  sources/archive/
-        snapshot of previous normalized version      <basename>/V<N>/
-```
-
-The archive answers: *"what exact version of a source did model X see at time
-T?"* — auditability **per source**, even if no commit was ever made. `sources/archive/`
-is excluded from every scanner walk and is **not** a default Citation target
-(unqualified `sources::` resolves under `sources/nn/` only).
-
-### Dynamic Sources & The Impact Check
-
-When a living source document changes over time (e.g. quarterly metrics, edited interview notes):
-1. **Automatic Scan Warning**: When `node scripts/index.js --scan` creates an archive snapshot, it compares the heading structure of the archived vs new version. If any downstream model citations point to altered or missing heading slugs, the scanner immediately emits an `[IMPACT WARNING]`.
-2. **On-Demand Citation Audit**: Running `node scripts/index.js --check-impact` (or `--impact`) traverses all models in `models/`, parses all `sources::` pointers, and verifies that both the file and the exact heading anchor exist in `sources/nn/`. Drifted citations are reported with fuzzy matching suggestions.
-
-### Where they overlap — and the rule that keeps them apart
-
-The overlap is **real**: the same files (apps, specs, models) are versioned
-by both systems, and both speak SemVer — native `V_0-2-0` (underscores) vs. git
-tags `v0.2.5` (dots). The bootstrap manifest itself records both on the same
-entry (`version: "V_3-2-0"` next to `ref: "skills-v1.1.5"` and the `commit`
-hash). That duality is the system working as designed.
-
-| Concern | Git | Native semver |
-| :--- | :--- | :--- |
-| Granularity | whole repo / commit | per artifact (spec, app, model, source) |
-| History mechanism | SHA object graph + tags | version-in-filename + write-once files |
-| What a version means | a point in repo history | the immutable identity of the artifact |
-| Requires a commit? | yes, per change | no — version exists in the file itself |
-| Enforces immutability? | no | yes (write-once, by convention + validation) |
-| Shared / collaborative? | yes (remote + branches) | no, per-artifact |
-| Answers | how is / was the whole tree? | what exact version does this artifact / model / reference point to? |
-
-They are **not** substitutes, for two reasons:
-
-1. **Git does not enforce the write-once contract.** You *can* commit an edit
-   to `business_V_0-2-0_NN.md` in place — Git has no opinion about that. The
-   native versioning discipline (new version file, never mutate a published
-   one) is exactly the guarantee Git cannot give; it is enforced by convention
-   and by validation, not by the VCS.
-2. **Native semver does not give you history or collaboration.** The version in
-   the filename tells you *what* an artifact is, not *how it changed* or *who
-   worked on it*. Only Git answers that.
-
-The natural handshake between them:
-
-- **Git transports and anchors.** The stable `raw.githubusercontent.com`
-  URLs, the release tags, and the commit history are Git's job.
-- **Native semver is the reference contract.** Models pin apps, apps
-  pin specs, exports pin sources — each by an immutable version that must stay
-  stable regardless of commit activity.
-- **Releases couple them.** The release flow bumps the native version,
-  regenerates the bundle/manifest, and creates the git tag — one release, two
-  representations of the same version.
-
-**Convention (the single source of truth):**
-
-- **Git = history, collaboration and release anchors.** For branches, diff
-  review, rollback, and shipping a versioned tag.
-- **Native semver = the identity and the write-once contract.** For references
-  that must resolve and stay valid (`parent_spec.url`, `sources::`, catalog
-  entries) independent of commits.
-- **Never edit a published versioned artifact in place.** When a spec,
-  template, model or source changes, create its next version (or let the
-  archive snapshot it) instead of rewriting the published file — otherwise the
-  "immutable version" promise breaks even though git is healthy.
-
-When both are present, version the whole repo with Git and let the native
-semver carry the per-artifact identity and the per-source archive carry the
-lineage; the archive tree is deliberately invisible to the scanner and to
-citations, so the two coexist without polluting the pipeline.
+When `nn-trannsform --scan` detects that an existing source file has changed:
+1. It archives the previous normalized text to `sources/archive/<basename>/V<N>/<basename>.md`.
+2. It normalizes the new version in place in `sources/nn/`.
+3. The Lineage record reflects the archive chain (`version::`, `archive_path::`, `superseded_by::`).
+4. `sources/archive/` is excluded from standard scanner walks and is not a default citation target.

@@ -66,7 +66,6 @@ async function scanAndProcess(projectDir, options = {}) {
     const relPathPosix = relPath.replace(/\\/g, '/');
     const isSelected = !options.formats || options.formats.includes(ext);
     const extra = { ...(webImportMeta[sourceFileField] || webImportMeta[relPathPosix] || {}) };
-    extra.is_synthetic = isSynthetic;
 
     if (tree === 'conversations') {
       const baseName = path.basename(relPath, ext);

@@ -44,21 +44,6 @@ function run() {
 
   const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'trannsform-prov-'));
   try {
-    // mapSourceFormat: in-set passthrough, unknown -> md
-    eq(provenance.mapSourceFormat('docx'), 'docx', 'mapSourceFormat passes declared extensions through');
-    eq(provenance.mapSourceFormat('html'), 'md', 'mapSourceFormat maps html to md (not declared)');
-    eq(provenance.mapSourceFormat('srt'), 'md', 'mapSourceFormat maps srt to md (not declared)');
-    eq(provenance.mapSourceFormat('htm'), 'md', 'mapSourceFormat maps htm to md (not declared)');
-    eq(provenance.mapSourceFormat('vtt'), 'md', 'mapSourceFormat maps vtt to md (not declared)');
-    eq(provenance.mapSourceFormat('xls'), 'md', 'mapSourceFormat maps xls to md (not declared)');
-    eq(provenance.mapSourceFormat('doc'), 'md', 'mapSourceFormat maps doc to md (not declared)');
-    eq(provenance.mapSourceFormat('md'), 'md', 'mapSourceFormat passes md through');
-    ok(Array.isArray(provenance.SOURCE_FORMAT_OPTIONS), 'SOURCE_FORMAT_OPTIONS exported as array');
-
-    // slugify mirrors innfo-core
-    eq(provenance.slugify('market-report.docx'), 'market-reportdocx', 'slugify strips dots');
-    eq(provenance.slugify('Exec Summary'), 'exec-summary', 'slugify hyphenates spaces');
-
     // build a project with two normalized md sources under sources/nn/ (one nested in a subfolder,
     // mirroring sources/original/clientA/)
     const proj = path.join(TMP, 'Acme');

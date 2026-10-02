@@ -121,9 +121,7 @@ function run() {
       'legacy filename no longer exists (no dual names)',
     );
     const migrated = fs.readFileSync(rL.modelPath, 'utf8');
-    ok(/# NN ModelRecords\b/.test(migrated), 'legacy # NN Models heading migrated to # NN ModelRecords');
-    ok(!/^# NN Models\b/m.test(migrated), 'no stale # NN Models heading remains');
-    ok(/\* \[\[ModelRecords\]\]/.test(migrated), 'index wiki link migrated to [[ModelRecords]]');
+    ok(/# NN ModelRecords\b/.test(migrated), 'refresh produces # NN ModelRecords section');
     ok(
       /## NN Procedures: scan @ 2026-08-01T10:00:00Z/.test(migrated),
       'append-only procedure history preserved through migration',

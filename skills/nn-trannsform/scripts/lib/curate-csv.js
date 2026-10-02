@@ -15,6 +15,7 @@
  * Zero runtime dependencies (Node builtins + the skill's own CSV parser).
  */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { parseCsv } = require('./scanner-converters');
@@ -141,6 +142,27 @@ function curateCsvFile(input, options = {}) {
   const outputPath = path.join(nnDir, 'import', relInImport);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, serializeCsv(curated.rows), 'utf8');
+
+  const sidecarPath = outputPath.replace(/\.csv$/i, '.md');
+  if (!fs.existsSync(sidecarPath)) {
+    const rawBytes = fs.readFileSync(absInput);
+    const rawHash = crypto.createHash('sha256').update(rawBytes).digest('hex');
+    const rawStat = fs.statSync(absInput);
+    const title = path.basename(absInput, path.extname(absInput));
+    const sidecarContent = [
+      '---',
+      `source_file: "sources/import/${relInImport}"`,
+      `sha256: "${rawHash}"`,
+      `size_bytes: ${rawStat.size}`,
+      `normalized_at: "${new Date().toISOString()}"`,
+      'normalized_by: "traNNsform v1.0.0"',
+      '---',
+      '',
+      `# ${title}`,
+      '',
+    ].join('\n');
+    fs.writeFileSync(sidecarPath, sidecarContent, 'utf8');
+  }
 
   const relOutput = path.relative(projectDir, outputPath).replace(/\\/g, '/');
   const relFromNn = path.relative(nnDir, outputPath).replace(/\\/g, '/');

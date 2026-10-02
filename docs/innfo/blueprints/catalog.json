@@ -15,10 +15,10 @@
     },
     "artifacts": {
       "name": "artifacts",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-4-0",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-4-0",
           "spec_version": "V_0-3-0",
           "title": "Artifacts Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
@@ -87,10 +87,10 @@
     },
     "domaiNN": {
       "name": "domaiNN",
-      "adopted": "V_0-1-0",
+      "adopted": "V_0-2-0",
       "versions": [
         {
-          "blueprint_version": "V_0-1-0",
+          "blueprint_version": "V_0-2-0",
           "spec_version": "V_0-3-0",
           "title": "DomaiNN Blueprint",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"

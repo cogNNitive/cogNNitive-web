@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-0"
+blueprint_version: "V_0-4-0"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -58,16 +58,6 @@ concept:: Artifact
 type:: string
 description:: Categorization and domain tags for grouping and discovery.
 
-## NN Field Definition: produced_by
-concept:: Artifact
-type:: string
-description:: Reference to the procedure or workflow run that produced this artifact (PROV wasGeneratedBy).
-
-## NN Field Definition: sources
-concept:: Artifact
-type:: citation
-description:: Citations to the Source documents and domain models this artifact derives from (PROV wasDerivedFrom).
-
 ## NN Field Definition: artifact_model
 concept:: Artifact
 type:: knowledge
@@ -84,7 +74,7 @@ description:: Relative path to generated deliverable file when format is non-mod
 
 ## Philosophy
 
-The Artifacts Catalog registers all tangible and digital outputs generated within an iNNfo workspace. Artifacts encompass interactive web consoles, compiled HTML hubs, documents, tabular datasets, and structured downstream models. By capturing concise summaries and W3C PROV lineage (produced_by, sources) in the catalog, agents and users can trace output lineage without scanning raw deliverable files.
+The Artifacts Catalog registers all tangible and digital outputs generated within an iNNfo workspace. Artifacts encompass interactive web consoles, compiled HTML hubs, documents, tabular datasets, and structured downstream models. By capturing concise summaries in the catalog, agents and users can discover outputs without scanning raw deliverable files.
 
 ## Template
 
@@ -114,7 +104,5 @@ format:: model
 summary:: Concise summary of the deliverable contents.
 status:: verified
 tags:: [report, summary]
-produced_by:: [[Procedure Name]]
-sources:: [sources/nn/source_document.md#section]
 artifact_model:: artifacts/models/report_NN.md
 ```
