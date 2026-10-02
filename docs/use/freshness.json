@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-01T21:10:34.604Z",
-  "head": "ba33b2eeec120bbeb02298cc586637179ef4b6dd",
+  "generatedAt": "2026-10-02T05:25:15.898Z",
+  "head": "4b41828ec49a6d27109cc250affc770e49e45b6a",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -9,11 +9,23 @@
       "commitsSincePin": 0,
       "filesTouched": []
     },
+    "blueprints": {
+      "subsystem": "blueprints",
+      "pinnedTag": "blueprints-v0.19.2",
+      "pinnedTagDate": "2026-10-01T19:08:06+02:00",
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
+    },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": null,
-      "commitsSincePin": null,
-      "unresolved": "no stable pin declared for this subsystem in manifest/source.yaml"
+      "pinnedTag": "blueprints-v0.19.2",
+      "pinnedTagDate": "2026-10-01T19:08:06+02:00",
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
@@ -58,14 +70,15 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.6.0",
       "pinnedTagDate": "2026-09-30T14:02:43+02:00",
-      "commitsSincePin": 6,
+      "commitsSincePin": 7,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/feedback.schema.json",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/needs-registry.json"
+        "iNNfo/specs/bluepriNNts/console/needs-registry.json",
+        "iNNfo/specs/bluepriNNts/console/package.json"
       ]
     }
   }
