@@ -27,40 +27,28 @@
       safe: exactly one copy boots.
   -->
     <style>
+      /* Semantic tokens come from InnfoUI (data-theme driven). Local aliases keep
+         this shell's layout variables working without hard-coded colors. */
       :root {
-        --bg: #ffffff;
-        --surface: #ffffff;
-        --surface-2: #f4f4f5;
-        --text: #0a0a0a;
-        --muted: #737373;
-        --faint: #a1a1a1;
-        --border: #e5e5e5;
-        --primary: #171717;
-        --primary-hover: #0a0a0a;
-        --success: #16a34a;
-        --danger: #e7000b;
-        --warning: #d97706;
-        --link: #2563eb;
-        --radius-sm: 6px;
-        --radius: 8px;
-        --radius-lg: 10px;
-        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
-        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        --mono: 'SF Mono', ui-monospace, 'Courier New', monospace;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0a0a0a;
-          --surface: #0a0a0a;
-          --surface-2: #27272a;
-          --text: #fafafa;
-          --muted: #a1a1a1;
-          --faint: #737373;
-          --border: #27272a;
-          --primary: #e5e5e5;
-          --primary-hover: #fafafa;
-          --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-        }
+        --bg: var(--innfo-bg);
+        --surface: var(--innfo-surface);
+        --surface-2: var(--innfo-surface-2);
+        --text: var(--innfo-text);
+        --muted: var(--innfo-muted);
+        --faint: var(--innfo-muted);
+        --border: var(--innfo-border);
+        --primary: var(--innfo-accent);
+        --primary-hover: var(--innfo-text);
+        --success: var(--innfo-status-applied);
+        --danger: var(--innfo-status-rejected);
+        --warning: var(--innfo-status-pending);
+        --link: var(--innfo-link);
+        --radius-sm: var(--innfo-radius-sm);
+        --radius: var(--innfo-radius);
+        --radius-lg: var(--innfo-radius-lg);
+        --shadow-card: var(--innfo-shadow);
+        --font: var(--innfo-font);
+        --mono: var(--innfo-mono);
       }
       * {
         box-sizing: border-box;
@@ -76,25 +64,6 @@
       code {
         font-family: var(--mono);
         font-size: 0.85em;
-      }
-      #innfo-banner {
-        padding: 20px 28px 16px;
-        background: var(--surface);
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        gap: 12px;
-        align-items: baseline;
-        flex-wrap: wrap;
-      }
-      #innfo-banner strong {
-        font-size: 1.2rem;
-        font-weight: 700;
-      }
-      #innfo-banner .innfo-banner-version,
-      #innfo-banner .innfo-banner-needs,
-      #innfo-banner .innfo-banner-drafts {
-        color: var(--muted);
-        font-size: 0.78rem;
       }
       #innfo-layout {
         display: grid;
@@ -177,22 +146,6 @@
         outline: none;
         box-shadow: 0 0 0 2px var(--text);
       }
-      #innfo-export-open {
-        appearance: none;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--text);
-        font: inherit;
-        font-size: 0.82rem;
-        font-weight: 600;
-        padding: 7px 14px;
-        border-radius: var(--radius-sm);
-        cursor: pointer;
-        height: 36px;
-      }
-      #innfo-export-open:hover {
-        background: var(--surface-2);
-      }
       .innfo-card {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -252,33 +205,6 @@
       .innfo-matrix tbody th:first-child {
         background: var(--surface-2);
         font-weight: 600;
-      }
-      #innfo-export-modal {
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        padding: 20px;
-        max-width: 560px;
-        width: 100%;
-        background: var(--surface);
-        color: var(--text);
-      }
-      #innfo-export-modal::backdrop {
-        background: rgba(0, 0, 0, 0.35);
-      }
-      #innfo-export-modal input {
-        width: 100%;
-        padding: 8px 12px;
-        margin: 8px 0;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-      }
-      #innfo-export-modal pre {
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 12px;
-        white-space: pre-wrap;
-        font-size: 0.8rem;
       }
       #innfo-ref-dialog {
         border: 1px solid var(--border);
@@ -567,170 +493,6 @@
       .innfo-tab-panel.active {
         display: block;
       }
-      .innfo-review-head {
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 18px 20px;
-        background: var(--surface);
-        margin-bottom: 20px;
-        box-shadow: var(--shadow-card);
-      }
-      .innfo-review-head h2 {
-        margin: 0 0 14px 0;
-        font-size: 1.15rem;
-        font-weight: 700;
-      }
-      .innfo-review-stats {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-      }
-      .innfo-review-stat {
-        display: flex;
-        flex-direction: column;
-        padding: 10px 16px;
-        background: var(--surface-2);
-        border-radius: var(--radius-sm);
-        min-width: 90px;
-      }
-      .innfo-stat-num {
-        font-size: 1.4rem;
-        font-weight: 800;
-        line-height: 1.1;
-        color: var(--text);
-      }
-      .innfo-stat-lbl {
-        font-size: 0.72rem;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 600;
-      }
-      .innfo-review-actions {
-        display: flex;
-        gap: 10px;
-      }
-      .innfo-btn {
-        appearance: none;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 8px 16px;
-        font: inherit;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        background: var(--surface);
-        color: var(--text);
-      }
-      .innfo-btn:hover {
-        background: var(--surface-2);
-      }
-      .innfo-btn-primary {
-        background: var(--primary);
-        color: #ffffff;
-        border-color: var(--primary);
-      }
-      .innfo-btn-primary:hover {
-        background: var(--primary-hover);
-      }
-      .innfo-review-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .innfo-review-item {
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 14px 16px;
-        background: var(--surface);
-        box-shadow: var(--shadow-card);
-      }
-      .innfo-review-item-head {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 8px;
-      }
-      .innfo-review-item-id {
-        font-family: var(--mono);
-        font-size: 0.78rem;
-        color: var(--muted);
-        font-weight: 700;
-      }
-      .innfo-review-kind-badge {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-      }
-      .innfo-review-kind-badge.kind-correction {
-        background: rgba(231, 0, 11, 0.1);
-        color: var(--danger);
-        border-color: rgba(231, 0, 11, 0.3);
-      }
-      .innfo-review-kind-badge.kind-comment {
-        background: rgba(37, 99, 235, 0.1);
-        color: var(--link);
-        border-color: rgba(37, 99, 235, 0.3);
-      }
-      .innfo-review-card-link {
-        appearance: none;
-        border: none;
-        background: transparent;
-        color: var(--link);
-        font: inherit;
-        font-size: 0.88rem;
-        font-weight: 700;
-        cursor: pointer;
-        padding: 0;
-        text-decoration: underline;
-      }
-      .innfo-review-card-link:hover {
-        color: var(--primary);
-      }
-      .innfo-review-status-select {
-        padding: 3px 8px;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--text);
-        font: inherit;
-        font-size: 0.78rem;
-        font-weight: 600;
-        margin-left: auto;
-      }
-      .innfo-review-delete-btn {
-        appearance: none;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: transparent;
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1;
-        width: 24px;
-        height: 24px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-      }
-      .innfo-review-delete-btn:hover {
-        color: var(--danger);
-        border-color: var(--danger);
-      }
-      .innfo-review-item-field {
-        font-size: 0.8rem;
-        color: var(--muted);
-        margin-bottom: 6px;
-      }
-      .innfo-review-item-note {
-        font-size: 0.88rem;
-        line-height: 1.5;
-      }
       .innfo-highlight {
         animation: innfo-pulse-glow 2.5s ease-out;
       }
@@ -747,8 +509,6 @@
     </style>
   </head>
   <body>
-    <header id="innfo-banner" aria-label="Console review banner"></header>
-
     <div id="innfo-layout">
       <nav id="innfo-rail" aria-label="Concept rail"></nav>
       <main>
@@ -759,7 +519,6 @@
             placeholder="Search elements…"
             aria-label="Search elements"
           />
-          <button id="innfo-export-open" type="button">Export feedback</button>
         </div>
         <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
         <div id="innfo-tab-explorer" class="innfo-tab-panel active">
@@ -773,19 +532,6 @@
         <div id="innfo-tab-review" class="innfo-tab-panel"></div>
       </main>
     </div>
-
-    <dialog id="innfo-export-modal" aria-label="Export reviewer feedback">
-      <h2>Export reviewer feedback</h2>
-      <label
-        >Reviewer identifier (required)
-        <input data-innfo="identifier" type="text" placeholder="e.g. round-2" />
-      </label>
-      <h3>Instructions</h3>
-      <pre data-innfo="instructions"></pre>
-      <h3>Agent prompt</h3>
-      <pre data-innfo="agent-prompt"></pre>
-      <button data-innfo="download" type="button">Download feedback JSON</button>
-    </dialog>
 
     <dialog id="innfo-ref-dialog" aria-label="Referenced element details"></dialog>
 
@@ -810,8 +556,8 @@
     </script>
 
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.7.3/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
-    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.8.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
     <script src="./innfo-console.bundle.js"></script>
   </body>

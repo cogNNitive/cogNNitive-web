@@ -506,14 +506,14 @@ if (require.main === module) {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
     await page.waitForTimeout(2500);
     const info = await page.evaluate(() => ({
-      banner: document.getElementById('innfo-banner')
-        ? document.getElementById('innfo-banner').textContent.trim()
+      banner: (document.getElementById('innfo-banner') || document.getElementById('innfo-feedback-banner'))
+        ? (document.getElementById('innfo-banner') || document.getElementById('innfo-feedback-banner')).textContent.trim()
         : 'NO-BANNER',
       rail: document.querySelectorAll('#innfo-rail button').length,
       cards: document.querySelectorAll('#innfo-content .innfo-card').length,
       matrices: document.querySelectorAll('#innfo-matrices table').length,
       charts: document.querySelectorAll('#innfo-charts .innfo-chart, #innfo-timeline-grid table').length,
-      exportOpen: Boolean(document.getElementById('innfo-export-open')),
+      exportOpen: Boolean(document.getElementById('innfo-export-open') || document.getElementById('innfo-feedback-open')),
     }));
     console.log(JSON.stringify(info, null, 1));
     await page.screenshot({ path: SHOT });

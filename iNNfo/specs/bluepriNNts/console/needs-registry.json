@@ -6,7 +6,7 @@
   },
   "feedback-export": {
     "description": "Reviewer suggest/edit drafts in localStorage and the Export modal with identifier gate, instructions and agent-prompt tabs, timestamped JSON download.",
-    "anchors": [["innfo-banner", "innfo-export-open", "innfo-export-modal"]]
+    "anchors": []
   },
   "concept-rail": {
     "description": "Left rail of template concepts with per-concept element counts.",

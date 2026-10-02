@@ -8,7 +8,7 @@ iNNfo standalone consoles provide an offline, interactive environment for review
 
 1. **Level 1: Universal Core Primitives**
    - Implemented in `innfo-runtime.js` / `innfo-console.bundle.js`.
-   - Provides concept pills, element pills with citation navigation, concept rail, element cards, matrix grids, search, and the Universal Review Tab.
+   - Provides concept pills, element pills with citation navigation, concept rail, element cards, matrix grids, search, review mode, and the Universal Review Tab.
 2. **Level 2: Domain Template Consoles**
    - Specialized views declared in Level 2 templates (e.g. Financial Timelines for `business`, Procedure Step-by-Step for `procedures`, Video Screenplay for `video`).
 3. **Level 3: Model Custom Consoles**
@@ -19,22 +19,42 @@ iNNfo standalone consoles provide an offline, interactive environment for review
 ## Review Workflow
 
 ### 1. Setting Your Reviewer Identity
-In the top navigation banner, locate the **Reviewer** chip (e.g., `Reviewer: reviewer ✏️`). Click the chip to enter your name or email. This identity is stored in browser `localStorage` and automatically populates export filenames and review metadata.
+In the top navigation banner, locate the **Reviewer** chip (e.g., `Reviewer: reviewer`). Click it to open the feedback modal focused on the **Reviewer identifier** field (required for export). This identity is stored in browser `localStorage` and automatically populates export filenames and review metadata.
 
-### 2. Annotating Concepts and Elements
-- Browse concepts using the left-hand Concept Rail or search filter.
-- Click **Suggest** on any element card to add comments, corrections, or proposals.
-- Element cards and rail items display visual badge counters indicating unexported draft notes.
+### 2. Turning On Review Mode
+The **Review mode** toggle appears in the banner only when the console declares `feedback-export`, carries a `meta.modelId`, and every element has a `hash`. Review mode is **off on every load** and is never persisted. When it is off, the console is read-only: no annotation, reviewed, or draft controls exist in the DOM. Verdict badges (below) remain visible regardless of the toggle.
 
-### 3. Review Summary & Deep-Linking
-- Switch to the **Review** tab in the main navigation.
-- Inspect the breakdown of pending notes, corrections, and comments.
-- Click any element reference link in the review table to jump directly to the highlighted element card in the Explorer or Domain view.
+### 3. Annotating Elements and Fields
+With review mode on, each element card and each field row exposes an annotate control that opens an inline popover:
+- **Card anchor** offers `comment` and `delete`.
+- **Field-row anchor** offers `comment` and `correction`; the original value is pre-filled from the payload, and the draft records `target.field`.
 
-### 4. Exporting the Review Document
-- Click **Export Review** in the header banner or inside the Review tab.
-- A standardized review JSON document named `<Model>_V_<Version>_<user>_review.json` is generated and downloaded to your computer.
-- Review JSON documents adhere to schema `https://cognntive.dev/schemas/console-review-v1.json`.
+Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cancel) to discard and return focus to the anchor. Each saved draft records the element's current `hash` as `base_hash`.
 
-### 5. Ingesting Feedback
-Send the exported `*_review.json` file back to the knowledge architect or AI agent (Pathway 1 or Pathway 2) to apply corrections and update the model version.
+### 4. Reviewed Marks, Progress and Verdict Badges
+- Each card has a **reviewed** toggle. A mark counts as reviewed only while its recorded hash matches the element's current hash; if the element changed, the toggle shows **changed** and does not count.
+- The concept rail shows `reviewed/total` plus the pending-draft count per concept, in both console renderers.
+- Elements with entries in `meta.feedbackState` show a status badge (`pending`, `applied`, `rejected`, `stale`). These badges come from the feedback ledger, never from local drafts, and reviewers cannot set a verdict from the console.
+
+### 5. Changed-Since-Last-Review Filter
+`changed` shows only elements whose current hash differs from the hash recorded when last marked reviewed. Never-reviewed elements are not changed.
+
+### 6. Keyboard Access
+In review mode:
+- `j` / `k` move focus to the next / previous visible element card.
+- `c` opens the popover for the focused element (the field popover when focus is inside a field row, otherwise the card popover).
+
+Shortcuts are ignored while typing in an input, textarea or select, while a popover is open, or with Ctrl/Meta/Alt held. The popover traps Tab focus, and the draft counter is announced through an `aria-live="polite"` region.
+
+### 7. Exporting the Feedback Document
+Click **Export feedback** in the header banner. The modal shows a live **preview** of every item, validates the document as you type the identifier, and disables **Download** and **Copy to clipboard** while invalid, naming the offending item. Download and copy always emit the **same bytes**. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the JSON for manual copy or `document.execCommand('copy')`, and reports the outcome.
+
+Files are named `<Model>_V_<Version>_<user>_feedback_<YYYYMMDD-HHMMSS>.json`. Each item carries `id`, `kind`, `target` (`element_id`, `concept`, `element`, optional `field`), `comment`/`proposed`, and `base_hash`; items never carry `status`.
+
+### 8. Where Drafts Live
+Drafts are stored in `localStorage` under a single key, `innfo-console:v2:<meta.modelId>`, anchored by `element_id` plus `base_hash`. Drafts therefore **survive a model version rebump** as long as the `modelId` is unchanged. A draft whose element is missing or whose hash drifted is flagged **target changed** and remains exportable.
+
+Drafts saved by older consoles under the legacy title-and-version key (`innfo-console:drafts:*`) are **not** read, migrated or deleted: they simply stop being shown.
+
+### 9. Ingesting Feedback
+Normalized feedback documents ingest via `nn-trannsform` or the `reconcile_feedback` procedure, with items indexed under `### fb-001` headings followed by `- **Kind**:` bullets.

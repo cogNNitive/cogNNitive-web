@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { parse as parseVus } from '@cognnitive/innfo-video-parser';
 
 /**
  * @typedef {Object} LowerThirdProps
@@ -179,6 +180,88 @@ export class RemotionSceneCompiler {
    * @returns {Object}
    */
   parseScript(scriptText) {
+    try {
+      const origLog = console.log;
+      let parseResult;
+      try {
+        console.log = () => {};
+        parseResult = parseVus(scriptText);
+      } finally {
+        console.log = origLog;
+      }
+
+      const proj = parseResult?.project;
+      const sections = proj?.sections || [];
+      const allScenes = [];
+      for (const sec of sections) {
+        for (const sc of (sec.scenes || [])) {
+          allScenes.push({ sec, sc });
+        }
+      }
+
+      if (allScenes.length > 0) {
+        const cfg = proj.config || {};
+        const result = {
+          title: cfg.video_title || cfg.video_name || 'video',
+          fps: Number(cfg.video_fps) || this.fps,
+          width: Number(cfg.video_width) || this.width,
+          height: Number(cfg.video_height) || this.height,
+          scenes: [],
+        };
+
+        for (let i = 0; i < allScenes.length; i++) {
+          const { sec, sc } = allScenes[i];
+          const secHeading = (sec.title || sec.name || '').trim();
+          const hasSceneSection = secHeading && /^(scene\b|@scene\b)/i.test(secHeading);
+          const rawName = hasSceneSection ? secHeading : (sc.scene_name || `Scene ${i + 1}`);
+          const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+          const sceneId = `scene_${i + 1}_${slug}`;
+
+          const props = {
+            ...(sc.inheritedProperties || {}),
+            ...(sc.properties || {}),
+            ...(sc.finalProperties || {}),
+          };
+
+          const sceneLayers = [];
+          const rawLayers = sc.layers || [];
+
+          for (let lIdx = 0; lIdx < rawLayers.length; lIdx++) {
+            const layer = rawLayers[lIdx];
+            const layerName = layer.layer_name || `Layer ${lIdx + 1}`;
+            const layerId = `${sceneId}_layer_${lIdx + 1}`;
+            const layerProps = {
+              layer_type: layer.layer_type,
+              layer_asset_source: layer.layer_asset_source,
+              layer_level: layer.layer_level,
+              ...(layer.properties || {}),
+              ...(layer.finalProperties || {}),
+            };
+
+            sceneLayers.push({
+              id: layerId,
+              name: layerName,
+              properties: layerProps,
+              effects: layer.effects || [],
+            });
+          }
+
+          result.scenes.push({
+            id: sceneId,
+            name: rawName,
+            template: (sc.scene_templates && sc.scene_templates[0]) || null,
+            properties: props,
+            narration: (sc.scene_content || '').trim(),
+            layers: sceneLayers,
+          });
+        }
+
+        return result;
+      }
+    } catch {
+      // Fall back to line scanner below
+    }
+
     const lines = scriptText.split(/\r?\n/);
     const result = {
       title: 'video',

@@ -210,6 +210,64 @@ Here is what we discovered after analyzing the logs.
     console.log('✔ VUS # Sets, @template, @scene headers and per-scene layer mapping test passed');
   }
 
+  // Test 7: Canonical VUS `@Template Scene Title` without `##` headers (Issue #107) and parser parity
+  {
+    const canonicalVus = `
+//ANYDEO_SPEC: V_0-3-3
+# Video
+- video_title: Cosicah Episode 1
+- video_fps: 30
+
+# Templates
+@template news-intro
+- scene_tts_model: elevenlabs
+- scene_voice: rachel
+
+@template explainer
+- scene_tts_model: openai-tts
+- scene_voice: alloy
+
+# Scenes
+
+@news-intro Hook: The Discovery
+We found something shocking in the deep network logs.
+- scene_duration: 4.0
+
+@@ Overlay Lower Third
+- layer_type: lowerThird
+- layer_title: Lead Analyst
+
+@explainer Deep Dive: Architecture
+Here is how the packets were traversing the gateway.
+- scene_duration: 6.0
+
+@explainer Conclusion: Next Steps
+Stay tuned for part two of our investigation.
+- scene_duration: 3.5
+`;
+
+    const manifest = compiler.compile(canonicalVus);
+    assert.strictEqual(manifest.tracks.scenes.length, 3);
+    assert.strictEqual(manifest.tracks.scenes[0].id, 'scene_1_hook_the_discovery');
+    assert.strictEqual(manifest.tracks.scenes[1].id, 'scene_2_deep_dive_architecture');
+    assert.strictEqual(manifest.tracks.scenes[2].id, 'scene_3_conclusion_next_steps');
+
+    // Layer mapping test
+    assert.strictEqual(manifest.tracks.scenes[0].props.layers.length, 1);
+    assert.strictEqual(manifest.tracks.scenes[1].props.layers.length, 0);
+
+    // Parity test against parse() from @cognnitive/innfo-video-parser
+    const { parse: parseVus } = await import('@cognnitive/innfo-video-parser');
+    const parserRes = parseVus(canonicalVus);
+    const parserScenes = (parserRes.project.sections || []).flatMap((s) => s.scenes || []);
+    assert.strictEqual(manifest.tracks.scenes.length, parserScenes.length);
+    for (let i = 0; i < parserScenes.length; i++) {
+      assert.strictEqual(manifest.tracks.scenes[i].props.title, parserScenes[i].scene_name);
+    }
+
+    console.log('✔ Canonical VUS @template scene declaration and parser parity test passed (Issue #107)');
+  }
+
   console.log('\nAll scene compiler unit tests passed! ✨');
 }
 

@@ -14,60 +14,36 @@
     and lives in console/render-procedure-stepper.js (UMD window.InnfoProcedureStepper).
   -->
   <style>
+    /* Semantic tokens come from InnfoUI (data-theme driven). Local aliases keep
+       this shell's layout variables working without hard-coded colors. */
     :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --surface-2: #f1f5f9;
-      --surface-3: #e2e8f0;
-      --text: #0f172a;
-      --muted: #64748b;
-      --faint: #94a3b8;
-      --border: #e2e8f0;
-      --border-strong: #cbd5e1;
-      --primary: #0284c7;
-      --primary-hover: #0369a1;
-      --primary-light: #e0f2fe;
-      --accent: #6366f1;
-      --success: #16a34a;
-      --success-light: #dcfce7;
-      --danger: #dc2626;
-      --danger-light: #fee2e2;
-      --warning: #d97706;
-      --warning-light: #fef3c7;
-      --info: #0284c7;
-      --radius-sm: 6px;
-      --radius: 8px;
-      --radius-lg: 12px;
-      --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, 'Courier New', monospace;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #090d16;
-        --surface: #0f172a;
-        --surface-2: #1e293b;
-        --surface-3: #334155;
-        --text: #f8fafc;
-        --muted: #94a3b8;
-        --faint: #64748b;
-        --border: #1e293b;
-        --border-strong: #334155;
-        --primary: #38bdf8;
-        --primary-hover: #7dd3fc;
-        --primary-light: rgba(56, 189, 248, 0.15);
-        --accent: #818cf8;
-        --success: #22c55e;
-        --success-light: rgba(34, 197, 94, 0.15);
-        --warning: #fbbf24;
-        --warning-light: rgba(251, 191, 36, 0.15);
-        --danger: #f87171;
-        --danger-light: rgba(248, 113, 113, 0.15);
-        --info: #38bdf8;
-        --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3);
-        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
-      }
+      --bg: var(--innfo-bg);
+      --surface: var(--innfo-surface);
+      --surface-2: var(--innfo-surface-2);
+      --surface-3: var(--innfo-border);
+      --text: var(--innfo-text);
+      --muted: var(--innfo-muted);
+      --faint: var(--innfo-muted);
+      --border: var(--innfo-border);
+      --border-strong: var(--innfo-muted);
+      --primary: var(--innfo-link);
+      --primary-hover: var(--innfo-link);
+      --primary-light: color-mix(in srgb, var(--innfo-link) 15%, var(--innfo-surface));
+      --accent: var(--innfo-concept-8);
+      --success: var(--innfo-status-applied);
+      --success-light: color-mix(in srgb, var(--innfo-status-applied) 15%, var(--innfo-surface));
+      --danger: var(--innfo-status-rejected);
+      --danger-light: color-mix(in srgb, var(--innfo-status-rejected) 15%, var(--innfo-surface));
+      --warning: var(--innfo-status-pending);
+      --warning-light: color-mix(in srgb, var(--innfo-status-pending) 15%, var(--innfo-surface));
+      --info: var(--innfo-link);
+      --radius-sm: var(--innfo-radius-sm);
+      --radius: var(--innfo-radius);
+      --radius-lg: var(--innfo-radius-lg);
+      --shadow-card: var(--innfo-shadow);
+      --shadow-lg: var(--innfo-shadow);
+      --font: var(--innfo-font);
+      --mono: var(--innfo-mono);
     }
     * { box-sizing: border-box; }
     body {
@@ -898,7 +874,7 @@
   </script>
   <!-- Single-file console bundle (runtime + visuals + renderers). Static tags: CDN primary, mirror fallback, vendored — no fetch, no modules. -->
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.7.3/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.8.0/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
   <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   <script src="./innfo-console.bundle.js"></script>

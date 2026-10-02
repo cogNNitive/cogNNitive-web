@@ -39,10 +39,10 @@
     },
     "business": {
       "name": "business",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-4-0",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-4-0",
           "spec_version": "V_0-3-0",
           "title": "Business App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
@@ -111,10 +111,10 @@
     },
     "metrics": {
       "name": "metrics",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-4-0",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-4-0",
           "spec_version": "V_0-3-0",
           "title": "Metrics App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"

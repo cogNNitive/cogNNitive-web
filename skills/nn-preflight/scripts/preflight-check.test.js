@@ -65,8 +65,14 @@ function serveRoutes(routes) {
 }
 
 function runScriptAsync(args, env = {}) {
+  const finalArgs = [...args];
+  if (!finalArgs.includes('--blueprints-dir') && !finalArgs.includes('--workspace')) {
+    const tmpEmpty = path.join(os.tmpdir(), 'preflight-test-empty-blueprints');
+    if (!fs.existsSync(tmpEmpty)) fs.mkdirSync(tmpEmpty, { recursive: true });
+    finalArgs.push('--blueprints-dir', tmpEmpty);
+  }
   return new Promise((resolve) => {
-    const child = spawn('node', [preflightScript, ...args], { env: { ...process.env, ...env } });
+    const child = spawn('node', [preflightScript, ...finalArgs], { env: { ...process.env, ...env } });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => { stdout += chunk; });

@@ -47,7 +47,7 @@ function findShell(dir) {
 }
 
 const consoleDir =
-  [process.env.INNFO_CONSOLE_DIR, join(homedir(), '.agents', 'console'), repoConsoleDir]
+  [process.env.INNFO_CONSOLE_DIR, repoConsoleDir, join(homedir(), '.agents', 'console')]
     .filter(Boolean)
     .find((dir) => findShell(dir)) || repoConsoleDir
 

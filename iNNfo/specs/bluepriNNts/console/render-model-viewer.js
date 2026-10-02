@@ -1,30 +1,17 @@
 /* global module: writable */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory()
+    module.exports = factory(require('./ui-kit.js'), require('./innfo-runtime.js'))
   } else {
-    root.InnfoModelViewer = factory()
+    root.InnfoModelViewer = factory(root.InnfoUI, root.InnfoConsole)
   }
-})(typeof self !== 'undefined' ? self : this, function () {
+})(typeof self !== 'undefined' ? self : this, function (UI, InnfoConsole) {
   'use strict'
 
-  var RENDERER_VERSION = '0.1.0'
+  // D5: the kit is a hard dependency; fail loudly rather than degrade silently.
+  if (!UI) throw new Error('InnfoUI missing: load ui-kit.js first')
 
-  var COLORS = {
-    red: '#ef4444',
-    orange: '#f97316',
-    amber: '#f59e0b',
-    yellow: '#eab308',
-    green: '#22c55e',
-    teal: '#14b8a6',
-    blue: '#3b82f6',
-    indigo: '#6366f1',
-    violet: '#8b5cf6',
-    purple: '#a855f7',
-    pink: '#ec4899',
-    gray: '#6b7280',
-    grey: '#6b7280',
-  }
+  var RENDERER_VERSION = '0.1.0'
 
   function parseJSON(id) {
     var node = document.getElementById(id)
@@ -45,67 +32,38 @@
       .replace(/"/g, '&quot;')
   }
 
-  function slug(s) {
-    return String(s || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-  }
-
   // ---- Citation icons (Console Citation Icons / Tanda C) ----
   var SOURCES_FAMILY = { sources: true, source: true }
-  var ORIGIN_VARIANT_ORDER = ['error', 'agent', 'human', 'reviewer', 'document']
-  var CITATION_ICON_LABELS = {
-    error: 'Unresolved citation',
-    agent: 'AI agent',
-    human: 'Human author',
-    reviewer: 'Reviewer feedback',
-    document: 'Document',
-  }
 
-  function citationVariant(entry) {
-    if (entry && entry.error) return 'error'
-    var origin = entry && entry.origin
-    return Object.prototype.hasOwnProperty.call(CITATION_ICON_LABELS, origin) ? origin : 'document'
-  }
-
-  // Returns a `span.cite-icons` of one button per distinct origin/error
-  // variant present in `entries`, or null when there is nothing to show or
-  // the shared runtime (icons + dialog) is not loaded. Degrading to null is
-  // identical to pre-citations rendering — see design D7/D9.
-  function citationButtons(fieldName, entries) {
-    var rt = typeof window !== 'undefined' ? window.InnfoConsole : null
-    if (!rt || typeof rt.renderCitationDialog !== 'function' || typeof rt.svgIcon !== 'function') {
-      return null
-    }
+  // One CitationIcon per distinct origin/error variant, in canonical order.
+  // Returns an array of nodes (empty when there is nothing to show).
+  function citationIcons(fieldName, entries) {
     var list = Array.isArray(entries) ? entries : []
-    if (!list.length) return null
-
+    if (!list.length) return []
     var present = {}
     list.forEach(function (entry) {
-      present[citationVariant(entry)] = true
+      present[UI.CITATION_ORIGIN_LABELS[entry && entry.error ? 'error' : entry && entry.origin] ? (entry && entry.error ? 'error' : entry.origin) : 'document'] = true
     })
-
-    var span = document.createElement('span')
-    span.className = 'cite-icons'
-    var any = false
-    ORIGIN_VARIANT_ORDER.forEach(function (variant) {
+    var wrap = document.createElement('span')
+    wrap.className = 'cite-icons'
+    UI.ORIGIN_VARIANTS.forEach(function (variant) {
       if (!present[variant]) return
-      any = true
-      var btn = document.createElement('button')
-      btn.setAttribute('type', 'button')
-      btn.className = 'cite-icon cite-' + variant
-      var label = (CITATION_ICON_LABELS[variant] || variant) + ': ' + fieldName
-      btn.setAttribute('aria-label', label)
-      btn.setAttribute('title', label)
-      btn.innerHTML = rt.svgIcon('cite-' + variant, 14)
-      btn.addEventListener('click', function (ev) {
-        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-        rt.renderCitationDialog(document, fieldName, list)
-      })
-      span.appendChild(btn)
+      wrap.appendChild(
+        UI.CitationIcon(
+          { variant: variant, field: fieldName },
+          {
+            onOpen: function () {
+              var rt =
+                (typeof window !== 'undefined' && window.InnfoConsole) || InnfoConsole
+              if (rt && typeof rt.renderCitationDialog === 'function') {
+                rt.renderCitationDialog(document, fieldName, list)
+              }
+            },
+          },
+        ),
+      )
     })
-    return any ? span : null
+    return wrap.children.length ? [wrap] : []
   }
 
   function boot() {
@@ -182,12 +140,32 @@
     function addRailButton(key, label, count) {
       var b = document.createElement('button')
       b.dataset.key = key
-      b.innerHTML = '<span>' + esc(label) + '</span><span class="count">' + count + '</span>'
+      if (key !== '__all') {
+        b.appendChild(
+          UI.ConceptPill({
+            id: key,
+            label: label,
+            index: conceptIndex(key),
+            color: conceptColorName(key),
+            count: count,
+          }),
+        )
+      } else {
+        b.appendChild(document.createTextNode(String(label)))
+        b.appendChild(makeCountSpan(count))
+      }
       b.addEventListener('click', function () {
         selectConcept(key)
       })
       rail.appendChild(b)
       railButtons.push(b)
+    }
+
+    function makeCountSpan(count) {
+      var span = document.createElement('span')
+      span.className = 'count'
+      span.textContent = String(count)
+      return span
     }
 
     var activeConcept = '__all'
@@ -245,6 +223,10 @@
       }
 
       applyHash()
+
+      // C2: one dispatch per card commit; the review controller (owned by
+      // InnfoConsole) decorates the freshly rendered cards.
+      document.dispatchEvent(new CustomEvent('innfo:rendered', { detail: { root: content } }))
     }
 
     function matchesQuery(el, q) {
@@ -257,51 +239,50 @@
       })
     }
 
-    function conceptColor(name) {
+    function conceptIndex(name) {
+      // Slot index follows schema.concepts as declared (before the weight sort).
+      var declared = Array.isArray(schema.concepts) ? schema.concepts : []
+      for (var i = 0; i < declared.length; i++) {
+        if (declared[i].name === name) return i
+      }
+      // Concepts absent from the schema continue in order of first appearance.
+      var seen = Object.keys(elementsByConcept)
+      var at = seen.indexOf(name)
+      return at < 0 ? 0 : declared.length + at
+    }
+
+    function conceptColorName(name) {
       var c = concepts.filter(function (x) {
         return x.name === name
       })[0]
-      return (
-        (c && COLORS[c.color]) ||
-        getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() ||
-        '#1f2937'
-      )
+      return c && c.color
     }
 
     function renderConceptSection(name, list) {
       var sec = document.createElement('section')
       sec.className = 'concept'
-      sec.id = 'concept-' + slug(name)
-      var col = conceptColor(name)
+      sec.id = 'concept-' + UI.slug(name)
       var h = document.createElement('h2')
-      h.innerHTML = '<span class="dot" style="background:' + col + '"></span>' + esc(name)
+      h.appendChild(
+        UI.ConceptPill({
+          id: name,
+          label: name,
+          index: conceptIndex(name),
+          color: conceptColorName(name),
+        }),
+      )
       sec.appendChild(h)
       var sub = document.createElement('p')
       sub.className = 'concept-sub'
       sub.textContent = list.length + (list.length === 1 ? ' element' : ' elements')
       sec.appendChild(sub)
       list.forEach(function (el) {
-        sec.appendChild(renderElement(el, col))
+        sec.appendChild(renderElement(el))
       })
       return sec
     }
 
-    function renderElement(el, col) {
-      void col
-      var wrap = document.createElement('div')
-      wrap.className = 'element'
-      wrap.id = 'el-' + (el.id || slug(el.name || 'x'))
-
-      var head = document.createElement('div')
-      head.className = 'el-head'
-      head.innerHTML = '<span class="el-name">' + esc(el.name || '(unnamed)') + '</span>'
-      var markers = el.markers || {}
-      Object.keys(markers).forEach(function (m) {
-        var chip = document.createElement('span')
-        chip.className = 'chip'
-        chip.innerHTML = esc(m) + ' <b>' + esc(String(markers[m])) + '</b>'
-        head.appendChild(chip)
-      })
+    function renderElement(el) {
       var citations = el.citations || {}
       var sourcesEntries = []
       Object.keys(citations).forEach(function (k) {
@@ -309,65 +290,60 @@
           sourcesEntries = sourcesEntries.concat(citations[k])
         }
       })
-      var headerCite = citationButtons('sources', sourcesEntries)
-      if (headerCite) head.appendChild(headerCite)
+      var headerCite = citationIcons('sources', sourcesEntries)
 
-      var chev = document.createElement('span')
-      chev.className = 'chevron'
-      chev.textContent = '▸'
-      head.appendChild(chev)
-      head.addEventListener('click', function () {
-        wrap.classList.toggle('open')
+      var markers = el.markers || {}
+      var markerData = Object.keys(markers).map(function (m) {
+        return { id: m, label: m, kind: 'marker', value: markers[m] }
       })
-      wrap.appendChild(head)
 
-      var body = document.createElement('div')
-      body.className = 'el-body'
-      if (el.description) {
-        var p = document.createElement('p')
-        p.className = 'desc'
-        p.textContent = el.description
-        body.appendChild(p)
-      }
       var fields = el.fields || {}
-      var fkeys = Object.keys(fields)
-      if (fkeys.length) {
-        var t = document.createElement('table')
-        t.className = 'fields'
-        fkeys.forEach(function (k) {
-          var tr = document.createElement('tr')
-          tr.innerHTML = '<td>' + esc(k) + '</td><td>' + esc(String(fields[k])) + '</td>'
-          if (!SOURCES_FAMILY[k] && Array.isArray(citations[k])) {
-            var fieldCite = citationButtons(k, citations[k])
-            if (fieldCite) tr.lastChild.appendChild(fieldCite)
-          }
-          t.appendChild(tr)
-        })
-        body.appendChild(t)
-      }
+      var fieldData = Object.keys(fields).map(function (k) {
+        var cites = !SOURCES_FAMILY[k] && Array.isArray(citations[k]) ? citations[k] : undefined
+        return { name: k, value: String(fields[k]), citations: cites }
+      })
+
       var rels = Array.isArray(el.relations) ? el.relations : []
+      var body = []
       if (rels.length) {
         var ul = document.createElement('ul')
         ul.className = 'rel-list'
         rels.forEach(function (r) {
           var li = document.createElement('li')
-          var label = esc(r.targetLabel || r.target || '?')
-          var linked =
-            r.target && byId[r.target]
-              ? '<a href="#el-' + esc(r.target) + '">' + label + '</a>'
-              : label
-          li.innerHTML =
-            '<span class="rel-field">' + esc(r.field || 'related') + '</span> → ' + linked
+          li.appendChild(
+            document.createTextNode(String(r.field || 'related') + ' \u2192 '),
+          )
+          if (r.target && byId[r.target]) {
+            li.appendChild(
+              UI.ElementPill(
+                { id: r.target, label: r.targetLabel || r.target },
+                { href: '#el-' + r.target },
+              ),
+            )
+          } else {
+            li.appendChild(document.createTextNode(String(r.targetLabel || r.target || '?')))
+          }
           ul.appendChild(li)
         })
-        body.appendChild(ul)
+        body.push(ul)
       }
-      if (!el.description && !fkeys.length && !rels.length) {
-        body.innerHTML =
-          '<p class="desc" style="color:var(--muted)">No fields, markers, or relationships.</p>'
-      }
-      wrap.appendChild(body)
-      return wrap
+
+      return UI.ElementCard(
+        {
+          id: el.id,
+          name: el.name || '(unnamed)',
+          conceptId: el.concept,
+          description: el.description,
+          fields: fieldData,
+          markers: markerData,
+        },
+        {
+          domId: 'el-' + (el.id || UI.slug(el.name || 'x')),
+          collapsible: true,
+          head: headerCite,
+          body: body,
+        },
+      )
     }
 
     function renderMatrix(mx) {
@@ -404,8 +380,8 @@
       var h = location.hash
       if (!h || h.length < 2) return
       var target = document.getElementById(h.slice(1))
-      if (target && target.classList.contains('element')) {
-        target.classList.add('open')
+      if (target && target.getAttribute('data-innfo-component') === 'element-card') {
+        target.setAttribute('data-open', 'true')
         target.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
     }

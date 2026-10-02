@@ -108,7 +108,7 @@ The same files are consumable three ways without conversion: a plain text editor
 the zero-install iNNfo Modeler web app, or an AI agent. Reviewer feedback is a
 first-class input rather than an email thread: reviewer consoles export
 structured JSON to `sources/import/feedback/`, which normalises into a source you
-can cite (`#fb-001`), and an `apply_feedback` procedure carries accepted items
+can cite (`#fb-001`), and a `reconcile_feedback` procedure carries accepted items
 back into the model with a diff preview.
 
 ### 3.4 No vendor lock-in
@@ -199,7 +199,7 @@ code actually does:
 | 1 | **One-off import** — copy verbatim, normalise, done forever. | Exactly the default `--scan` behaviour: verbatim copy to `sources/import/`, hash, normalise to `sources/nn/`. | ✅ Matches. Correct the wording "originals folder" → `sources/import/`. |
 | 2 | **Dynamic append** — monthly sales report adds rows to a Sales concept, never a new source. | **Does not exist.** Dynamic drops ingest as **new timestamped immutable snapshots** (`<stem>_<YYYYMMDD-HHmmss>`) forming a *source family*. Nothing appends rows *into a concept*. | ⚠️ **Mismatch — and the transcript's version is the riskier design.** |
 | 3 | **Dynamic overwrite** — same file, corrected year-to-date data replaces earlier months. | **Does not exist by design.** Overwriting a normalised source would break every citation pointing at it. The shipped answer is snapshot-on-change + `superseded_by::` in the lineage record. | ⚠️ **Mismatch — recommend keeping the snapshot model.** |
-| 4 | **Import from console artifacts / Word / Markdown for feedback** | **Exists**, but only for *structured reviewer feedback* (`sources/import/feedback/*.json` → cite as `#fb-001` → `apply_feedback`). Arbitrary Word/Markdown "feedback documents" are not a dedicated path. | 🟡 Partially matches; scope is narrower than described. |
+| 4 | **Import from console artifacts / Word / Markdown for feedback** | **Exists**, but only for *structured reviewer feedback* (`sources/import/feedback/*.json` → cite as `#fb-001` → `reconcile_feedback`). Arbitrary Word/Markdown "feedback documents" are not a dedicated path. | 🟡 Partially matches; scope is narrower than described. |
 
 **Why modes 2 and 3 as described are a design smell.** They mutate a source in
 place. In cogNNitive a source is a *citation target*, and citations are pinned to
@@ -275,7 +275,7 @@ Starting map (to be validated by the actual research):
 | :--- | :--- | :--- |
 | Versioning | Per-source archive + native write-once semver + Git | Native, already strong |
 | Check-in / check-out | — | Delegate to Git / branch model |
-| Approval workflow | Reviewer feedback JSON + `apply_feedback` diff preview | Partially native |
+| Approval workflow | Reviewer feedback JSON + `reconcile_feedback` diff preview | Partially native |
 | Audit trail | Lineage record + `git log` | Native |
 | Full-text search | Sources catalog summaries + scanner index | Partial; no dedicated FTS |
 | Permissions / ACL | — | Delegate to GitHub/GitLab |
@@ -417,6 +417,6 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
 | Lineage record sections + `--check` drift | `sources-citations-lineage.md:92-110` |
 | Git vs. native semver (complementary) | `sources-citations-lineage.md:149-281` |
 | Zero vendor lock-in (Markdown + Git) | `README.md:50`, `docs/index.md:97` |
-| Reviewer feedback ingestion + `apply_feedback` | `skills/nn-trannsform/SKILL.md:200-207` |
+| Reviewer feedback ingestion + `reconcile_feedback` | `skills/nn-trannsform/SKILL.md:200-207` |
 | Row-level CSV citation + `--curate-csv` | `skills/nn-trannsform/SKILL.md:253-264` |
 | Canonical vocabulary (kNNowledge / bluepriNNt / domaiNN) | `docs/innfo/documentation/vocabulary.md:11-19`; `AGENTS.md` |

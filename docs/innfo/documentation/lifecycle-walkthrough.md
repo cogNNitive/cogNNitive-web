@@ -133,7 +133,7 @@ The model produces client- and regulatory-facing deliverables:
    ---
    ```
 2. **Human Review Loop**: Walter Peck (EPA) reviews the document and submits structured feedback ([`sources/import/feedback/...json`](../samples/lifecycle-ghostbusters/workspace/sources/import/feedback/Ghostbusters_Operations_V_1-0-0_epa-review_feedback_20260912-120000.json)).
-3. **Re-ingestion**: The scanner normalizes the feedback into `sources/nn/`, allowing the agent to guide interactive model updates via `apply_feedback`.
+3. **Re-ingestion**: The scanner normalizes the feedback into `sources/nn/`, allowing the agent to guide interactive model updates via `reconcile_feedback`.
 
 ---
 

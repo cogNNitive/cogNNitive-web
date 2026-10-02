@@ -2,12 +2,16 @@
 /* global uPlot */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory()
+    module.exports = factory(require('./ui-kit.js'), require('./review.js'))
   } else {
-    root.InnfoConsole = factory()
+    root.InnfoConsole = factory(root.InnfoUI, root.InnfoReview)
   }
-})(typeof self !== 'undefined' ? self : this, function () {
+})(typeof self !== 'undefined' ? self : this, function (UI, Review) {
   'use strict'
+
+  // D5: the kit is a hard dependency; fail loudly rather than degrade silently.
+  if (!UI) throw new Error('InnfoUI missing: load ui-kit.js first')
+  if (!Review) throw new Error('InnfoReview missing: load review.js first')
 
   var CONSOLE_VERSION = '0.1.0'
 
@@ -21,8 +25,6 @@
   var SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
   var FILENAME_PATTERN =
     /^([A-Za-z0-9-]+)_V_(\d+-\d+-\d+)_([a-z0-9-]+)_feedback_(\d{8}-\d{6})\.json$/
-  var REVIEW_FILENAME_PATTERN =
-    /^([A-Za-z0-9_-]+)_V_([0-9]+(?:[-.][0-9]+)*)_([a-z0-9_]+)_review\.json$/
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
   var ITEM_STATUSES = ['pending', 'applied', 'rejected']
 
@@ -127,33 +129,6 @@
     var m = FILENAME_PATTERN.exec(String(filename || ''))
     if (!m) return null
     return { model: m[1], version: m[2], slug: m[3], stamp: m[4] }
-  }
-
-  function buildReviewFilename(model, version, user) {
-    if (!model || typeof model !== 'string') {
-      throw new Error('innfo-console: model must be a non-empty string')
-    }
-    var cleanModel = String(model).trim().replace(/[^A-Za-z0-9_-]/g, '')
-    if (!cleanModel) {
-      throw new Error('innfo-console: model must contain alphanumeric characters')
-    }
-    var cleanVersion = String(version || '1-0-0')
-      .replace(/^V_/, '')
-      .replace(/\./g, '-')
-      .replace(/[^0-9-]/g, '')
-    if (!cleanVersion) cleanVersion = '1-0-0'
-    var cleanUser = slugifyReviewer(user)
-    return cleanModel + '_V_' + cleanVersion + '_' + cleanUser + '_review.json'
-  }
-
-  function parseReviewFilename(filename) {
-    var m = REVIEW_FILENAME_PATTERN.exec(String(filename || ''))
-    if (!m) return null
-    return {
-      model: m[1],
-      version: m[2].replace(/\./g, '-'),
-      reviewer: m[3],
-    }
   }
 
   function isValidExportedAt(value) {
@@ -472,31 +447,34 @@
   var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
   var SOURCE_SHA256_PATTERN = /^[0-9a-f]{64}$/
 
-  function getDraftKey(model, version) {
-    return 'innfo-console:drafts:' + slugify(model) + ':' + slugify(version)
+  function draftToItem(draft) {
+    return Review.draftToItem(draft)
   }
 
   function buildExportDoc(args) {
     var input = isObject(args) ? args : {}
-    var meta = isObject(input.meta) ? input.meta : {}
-    var drafts = Array.isArray(input.drafts) ? input.drafts : []
+    var meta = isObject(input.meta) ? Object.assign({}, input.meta) : {}
+    var drafts = Array.isArray(input.drafts)
+      ? input.drafts
+      : Array.isArray(input.items)
+        ? input.items
+        : []
     var items = drafts.map(function (d, index) {
-      var item = isObject(d) ? d : {}
-      var id = typeof item.id === 'string' && ITEM_ID_PATTERN.test(item.id) ? item.id : null
-      var out = {
-        id: id || 'fb-' + String(index + 1).padStart(3, '0'),
-        kind: ITEM_KINDS.indexOf(item.kind) !== -1 ? item.kind : 'comment',
-        target: isObject(item.target) ? item.target : {},
-        original: item.original,
-        proposed: item.proposed,
-        comment: item.comment,
+      var item = draftToItem(d)
+      var draftId = d && d.id ? d.id : 'fb-' + String(index + 1).padStart(3, '0')
+      if (!d.id) {
+        item.id = draftId
       }
-      if (typeof item.base_hash === 'string') {
-        out.base_hash = item.base_hash
+      if (!item.base_hash) {
+        throw new Error('innfo-console: draft "' + draftId + '" is missing required base_hash')
       }
-      return out
+      return item
     })
     return { meta: meta, items: items }
+  }
+
+  function serializeFeedback(doc) {
+    return JSON.stringify(doc, null, 2) + '\n'
   }
 
   function validateFeedback(doc) {
@@ -592,28 +570,6 @@
   /* Browser console: banner, rail, search, cards, matrices, drafts, export modal.
      Runs only where document/localStorage exist; pure helpers above stay DOM-free. */
 
-  function readStore(key) {
-    try {
-      if (typeof localStorage === 'undefined') return []
-      var raw = localStorage.getItem(key)
-      if (!raw) return []
-      var parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed : []
-    } catch {
-      return []
-    }
-  }
-
-  function writeStore(key, drafts) {
-    try {
-      if (typeof localStorage === 'undefined') return false
-      localStorage.setItem(key, JSON.stringify(drafts))
-      return true
-    } catch {
-      return false
-    }
-  }
-
   function el(tag, cls, text) {
     var node = typeof document !== 'undefined' ? document.createElement(tag) : null
     if (!node) return null
@@ -622,257 +578,10 @@
     return node
   }
 
-  function nextDraftId(drafts) {
-    var max = 0
-    drafts.forEach(function (d) {
-      var m = /^fb-(\d+)$/.exec(String((d && d.id) || ''))
-      if (m && Number(m[1]) > max) max = Number(m[1])
-    })
-    return 'fb-' + String(max + 1).padStart(3, '0')
-  }
-
-  function getDraftSummary(drafts) {
-    var list = Array.isArray(drafts) ? drafts : []
-    var summary = {
-      total: list.length,
-      corrections: 0,
-      comments: 0,
-      pending: 0,
-      applied: 0,
-      rejected: 0,
-    }
-    list.forEach(function (item) {
-      if (!isObject(item)) return
-      if (item.kind === 'correction') summary.corrections++
-      else if (item.kind === 'comment') summary.comments++
-      else if (item.kind === 'new' || item.kind === 'delete') summary.corrections++
-
-      if (item.status === 'applied') summary.applied++
-      else if (item.status === 'rejected') summary.rejected++
-      else summary.pending++
-    })
-    return summary
-  }
-
-  function buildReviewDoc(args) {
-    var input = isObject(args) ? args : {}
-    var model = String(input.model || input.source_knowledge || 'Model')
-    var rawVersion = String(input.version || input.source_knowledge_version || '1-0-0')
-    var version = rawVersion.replace(/^V_/, '').replace(/\./g, '-')
-    var reviewer = slugifyReviewer(input.reviewer || input.author || getReviewerName())
-    var exportedAt =
-      input.exportedAt ||
-      input.exported_at ||
-      new Date().toISOString().replace(/\.\d+Z$/, 'Z')
-    var drafts = Array.isArray(input.drafts)
-      ? input.drafts
-      : Array.isArray(input.items)
-        ? input.items
-        : []
-
-    var items = drafts.map(function (d, index) {
-      var item = isObject(d) ? d : {}
-      var id =
-        typeof item.id === 'string' && ITEM_ID_PATTERN.test(item.id)
-          ? item.id
-          : 'fb-' + String(index + 1).padStart(3, '0')
-      var elementId = item.elementId || (item.target && item.target.element_id) || ''
-      var concept = item.concept || (item.target && item.target.concept) || ''
-      var kind = ITEM_KINDS.indexOf(item.kind) !== -1 ? item.kind : 'comment'
-      var note =
-        item.note != null
-          ? String(item.note)
-          : item.comment != null
-            ? String(item.comment)
-            : ''
-      var status = ITEM_STATUSES.indexOf(item.status) !== -1 ? item.status : 'pending'
-
-      var res = {
-        id: id,
-        elementId: String(elementId),
-        concept: String(concept),
-        kind: kind,
-        note: note,
-        status: status,
-      }
-      if (item.field) res.field = String(item.field)
-      return res
-    })
-
-    var summary = getDraftSummary(items)
-
-    return {
-      $schema: 'https://cognntive.dev/schemas/console-review-v1.json',
-      model: model,
-      version: version,
-      reviewer: reviewer,
-      exportedAt: exportedAt,
-      summary: {
-        total: summary.total,
-        corrections: summary.corrections,
-        comments: summary.comments,
-      },
-      items: items,
-    }
-  }
-
-  function validateReviewDoc(doc) {
-    var errors = []
-    if (!isObject(doc)) return { ok: false, errors: ['document: must be an object'] }
-
-    if (!doc.model || typeof doc.model !== 'string') {
-      errors.push('model: required non-empty string is missing')
-    }
-    if (!doc.version || typeof doc.version !== 'string') {
-      errors.push('version: required non-empty string is missing')
-    }
-    if (!doc.reviewer || typeof doc.reviewer !== 'string') {
-      errors.push('reviewer: required non-empty string is missing')
-    }
-    if (!isValidExportedAt(doc.exportedAt || doc.exported_at)) {
-      errors.push('exportedAt: must be ISO-8601 string (got ' + (doc.exportedAt || doc.exported_at) + ')')
-    }
-    if (!isObject(doc.summary)) {
-      errors.push('summary: required object is missing')
-    } else {
-      if (typeof doc.summary.total !== 'number') errors.push('summary.total: must be a number')
-      if (typeof doc.summary.corrections !== 'number') errors.push('summary.corrections: must be a number')
-      if (typeof doc.summary.comments !== 'number') errors.push('summary.comments: must be a number')
-    }
-
-    if (!Array.isArray(doc.items)) {
-      errors.push('items: required array is missing')
-    } else {
-      doc.items.forEach(function (item, index) {
-        var where = isObject(item) && item.id ? item.id : '#' + index
-        if (!isObject(item)) {
-          errors.push(where + ': must be an object')
-          return
-        }
-        if (!ITEM_ID_PATTERN.test(String(item.id || ''))) {
-          errors.push(where + ': id must match fb-NNN (got ' + item.id + ')')
-        }
-        if (ITEM_KINDS.indexOf(item.kind) === -1) {
-          errors.push(
-            where + ': kind must be one of ' + ITEM_KINDS.join('|') + ' (got ' + item.kind + ')',
-          )
-        }
-        if (ITEM_STATUSES.indexOf(item.status) === -1) {
-          errors.push(
-            where +
-              ': status must be one of ' +
-              ITEM_STATUSES.join('|') +
-              ' (got ' +
-              item.status +
-              ')',
-          )
-        }
-      })
-    }
-
-    return { ok: errors.length === 0, errors: errors }
-  }
-
-  function addDraft(keyOrDrafts, item) {
-    var isKey = typeof keyOrDrafts === 'string'
-    var drafts = isKey ? readStore(keyOrDrafts) : Array.isArray(keyOrDrafts) ? keyOrDrafts : []
-    var raw = isObject(item) ? item : {}
-    var id = raw.id || nextDraftId(drafts)
-    var elId = raw.elementId || (raw.target && raw.target.element_id) || ''
-    var concept = raw.concept || (raw.target && raw.target.concept) || ''
-    var kind = ITEM_KINDS.indexOf(raw.kind) !== -1 ? raw.kind : 'comment'
-    var note = raw.note != null ? String(raw.note) : raw.comment != null ? String(raw.comment) : ''
-    var status = ITEM_STATUSES.indexOf(raw.status) !== -1 ? raw.status : 'pending'
-
-    var newItem = {
-      id: id,
-      elementId: String(elId),
-      concept: String(concept),
-      kind: kind,
-      note: note,
-      status: status,
-      target: {
-        element_id: String(elId),
-        concept: String(concept),
-        element: raw.elementName || raw.element || String(elId),
-      },
-      comment: note,
-    }
-    if (raw.field) newItem.field = String(raw.field)
-    drafts.push(newItem)
-    if (isKey) writeStore(keyOrDrafts, drafts)
-    return newItem
-  }
-
-  function updateDraftStatus(keyOrDrafts, id, status) {
-    var isKey = typeof keyOrDrafts === 'string'
-    var drafts = isKey ? readStore(keyOrDrafts) : Array.isArray(keyOrDrafts) ? keyOrDrafts : []
-    var nextStatus = ITEM_STATUSES.indexOf(status) !== -1 ? status : 'pending'
-    drafts.forEach(function (d) {
-      if (d && d.id === id) {
-        d.status = nextStatus
-      }
-    })
-    if (isKey) writeStore(keyOrDrafts, drafts)
-    return drafts
-  }
-
-  function removeDraftItem(keyOrDrafts, id) {
-    var isKey = typeof keyOrDrafts === 'string'
-    var drafts = isKey ? readStore(keyOrDrafts) : Array.isArray(keyOrDrafts) ? keyOrDrafts : []
-    var filtered = drafts.filter(function (d) {
-      return d && d.id !== id
-    })
-    if (isKey) writeStore(keyOrDrafts, filtered)
-    return filtered
-  }
-
-  function renderConceptPill(concept, count, color) {
-    var pill = el('span', 'innfo-concept-pill')
-    if (!pill) return null
-    if (color) {
-      var dot = el('span', 'innfo-concept-dot')
-      if (dot) {
-        dot.style.backgroundColor = color
-        pill.appendChild(dot)
-      }
-    }
-    var textNode =
-      typeof document !== 'undefined' ? document.createTextNode(String(concept || '')) : null
-    if (textNode) pill.appendChild(textNode)
-    if (count != null) {
-      var countSpan = el('span', 'innfo-concept-count', ' ' + count)
-      if (countSpan) pill.appendChild(countSpan)
-    }
-    return pill
-  }
-
-  function renderElementPill(element, refs, citations) {
-    var name = element
-      ? typeof element === 'string'
-        ? element
-        : element.name || element.id || ''
-      : ''
-    var pill = el('button', 'innfo-ref-pill innfo-element-pill', name)
-    if (!pill) return null
-    pill.setAttribute('type', 'button')
-    if (citations && citations.length) {
-      var originKey = citations[0].error ? 'error' : citations[0].origin || 'document'
-      var icon = svgIcon('cite-' + originKey, 12, 'innfo-cite-origin-icon')
-      if (icon) {
-        var iconWrap = el('span', 'innfo-cite-icon-wrap')
-        if (iconWrap) {
-          iconWrap.innerHTML = icon
-          pill.appendChild(iconWrap)
-        }
-      }
-    }
-    return pill
-  }
-
-  function renderBanner(doc, meta, needs, draftCount, onReviewerChange) {
-    var banner = doc.getElementById('innfo-banner')
+  function renderBanner(doc, meta, needs, draftCount, onReviewerChange, state) {
+    var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
     if (!banner) return
+    var existingOpen = banner.querySelector('#innfo-feedback-open') || banner.querySelector('#innfo-export-open')
     banner.innerHTML = ''
     var title = el('strong', null, String(meta.title || meta.model || 'iNNfo Console'))
     var version = el(
@@ -886,6 +595,7 @@
       ' needs: ' + (needs && needs.length ? needs.join(', ') : 'none'),
     )
     var draftsBadge = el('span', 'innfo-banner-drafts', ' drafts: ' + (draftCount || 0))
+    draftsBadge.setAttribute('data-innfo', 'draft-count')
 
     banner.appendChild(title)
     banner.appendChild(version)
@@ -905,14 +615,17 @@
         editBtn.setAttribute('aria-label', 'Edit reviewer identity')
       }
       function handleEdit() {
-        if (typeof prompt === 'undefined') return
-        var newName = prompt('Enter your reviewer name / identifier:', getReviewerName())
-        if (newName != null && String(newName).trim()) {
-          setReviewerName(String(newName).trim())
-          if (typeof onReviewerChange === 'function') {
-            onReviewerChange(getReviewerName())
-          }
+        // C5: the reviewer identifier is edited in the feedback modal's
+        // identifier field, not a window.prompt.
+        var modal = doc.getElementById('innfo-feedback-modal')
+        if (!modal) return
+        if (typeof modal.showModal === 'function' && !modal.open) {
+          modal.showModal()
+        } else {
+          modal.setAttribute('open', 'open')
         }
+        var input = modal.querySelector('[data-innfo="identifier"]')
+        if (input && typeof input.focus === 'function') input.focus()
       }
       chip.addEventListener('click', function (e) {
         if (e.target === editBtn || editBtn.contains(e.target) || e.target === chipName) {
@@ -924,21 +637,38 @@
       if (editBtn) chip.appendChild(editBtn)
       banner.appendChild(chip)
     }
+
+    if (existingOpen) {
+      banner.appendChild(existingOpen)
+    } else if (banner.id === 'innfo-feedback-banner') {
+      var openBtn = el('button', 'innfo-feedback-open', 'Export feedback')
+      if (openBtn) {
+        openBtn.id = 'innfo-feedback-open'
+        openBtn.setAttribute('type', 'button')
+        if (state) {
+          openBtn.setAttribute('data-innfo-bound', '1')
+          openBtn.addEventListener('click', function () {
+            openExportModal(doc, state)
+          })
+        }
+        banner.appendChild(openBtn)
+      }
+    }
   }
 
   function renderRail(doc, concepts, counts, draftCountsByConcept, onSelect) {
     var rail = doc.getElementById('innfo-rail')
     if (!rail) return
     rail.innerHTML = ''
-    concepts.forEach(function (concept) {
+    concepts.forEach(function (concept, index) {
       var name = typeof concept === 'string' ? concept : concept.name
       var count = counts[name] || 0
       var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
       var btn = el('button', 'innfo-rail-item')
       if (!btn) return
       btn.setAttribute('data-concept', String(name))
-      var textSpan = el('span', 'innfo-rail-label', name + ' (' + count + ')')
-      if (textSpan) btn.appendChild(textSpan)
+      var pill = UI.ConceptPill({ id: name, label: name, index: index, count: count })
+      if (pill) btn.appendChild(pill)
       if (draftCount > 0) {
         var badge = el('span', 'innfo-rail-badge', String(draftCount))
         if (badge) {
@@ -953,75 +683,44 @@
     })
   }
 
-  function renderCards(doc, elements, drafts, onSuggest, refs) {
+  // Cards are review-agnostic: C's controller decorates them after render
+  // (the B D19 Suggest button and per-card draft badge are gone).
+  function mountElementCards(doc, elements, drafts, refs) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
-    var draftList = Array.isArray(drafts) ? drafts : []
 
     elements.forEach(function (element) {
-      var card = el('article', 'innfo-card')
-      if (!card) return
-      card.setAttribute('id', String(element.id || ''))
-
-      var headerWrap = el('div', 'innfo-card-head')
-      var heading = el('h3', null, String(element.name || element.id || ''))
-      if (headerWrap && heading) headerWrap.appendChild(heading)
-
-      var pendingNotes = draftList.filter(function (d) {
-        var dElId = d.elementId || (d.target && d.target.element_id)
-        return dElId === element.id && (d.status === 'pending' || !d.status)
-      })
-
-      if (pendingNotes.length > 0 && headerWrap) {
-        var cardBadge = el('span', 'innfo-card-badge', String(pendingNotes.length))
-        if (cardBadge) {
-          cardBadge.setAttribute('title', pendingNotes.length + ' unexported draft note(s)')
-          headerWrap.appendChild(cardBadge)
-        }
-      }
-
-      if (headerWrap) card.appendChild(headerWrap)
-      else if (heading) card.appendChild(heading)
-
-      var concept = el('p', 'innfo-card-concept', String(element.concept || ''))
-      if (concept) card.appendChild(concept)
-      if (element.description) card.appendChild(el('p', null, element.description))
-
+      var fields = []
       if (isObject(element.fields)) {
-        var dl = el('dl', 'innfo-card-fields')
         Object.keys(element.fields).forEach(function (k) {
-          if (!dl) return
-          var dt = el('dt', null, k)
           var val = element.fields[k]
-          var dd
           var target = refs && isObject(refs[String(val)]) ? refs[String(val)] : null
-          if (target) {
-            dd = el('button', 'innfo-ref-pill innfo-element-pill', String(val))
-            if (dd) {
-              dd.setAttribute('type', 'button')
-              dd.addEventListener('click', function () {
-                renderRefDialog(doc, target)
-              })
-            }
-          } else {
-            dd = el('dd', null, String(val))
-          }
-          if (dt) dl.appendChild(dt)
-          if (dd) dl.appendChild(dd)
+          fields.push({
+            name: k,
+            value: val,
+            ref: target ? { id: target.id || String(val), label: String(val) } : undefined,
+          })
         })
-        if (dl) card.appendChild(dl)
       }
 
-      var pending = pendingNotes.length
-      var suggest = el('button', 'innfo-suggest', pending ? 'Suggest (' + pending + ')' : 'Suggest')
-      if (suggest) {
-        suggest.setAttribute('type', 'button')
-        suggest.addEventListener('click', function () {
-          if (typeof onSuggest === 'function') onSuggest(element)
-        })
-        card.appendChild(suggest)
-      }
+      var card = UI.ElementCard(
+        {
+          id: element.id,
+          name: element.name || element.id || '',
+          conceptId: element.concept,
+          description: element.description,
+          fields: fields,
+        },
+        {
+          domId: String(element.id || ''),
+          collapsible: false,
+          onRef: function (refId) {
+            var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
+            if (target) renderRefDialog(doc, target)
+          },
+        },
+      )
       content.appendChild(card)
     })
   }
@@ -1174,18 +873,8 @@
     return String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '')
   }
 
-  // Theme message synchronization for embedded iframes
-  if (typeof window !== 'undefined' && window.addEventListener) {
-    window.addEventListener('message', function (e) {
-      if (e && e.data && e.data.type === 'innfo:theme-change') {
-        var isDark = e.data.theme === 'dark'
-        if (typeof document !== 'undefined' && document.documentElement) {
-          document.documentElement.classList.toggle('dark', isDark)
-          document.documentElement.classList.toggle('light', !isDark)
-        }
-      }
-    })
-  }
+  // Theme synchronization for embedded iframes now lives in ui-kit.js
+  // (InnfoUI.setTheme -> html[data-theme]); the class-based mechanism is gone.
 
   function baseValueOf(row) {
     return row.base != null
@@ -1338,37 +1027,8 @@
     }
   }
 
-  function svgIcon(name, size, cls) {
-    var s = size || 14
-    var c = cls ? ' ' + cls : ''
-    var svgs = {
-      pin: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>',
-      chart: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
-      target: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>',
-      explorer: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
-      matrices: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>',
-      timeline: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>',
-      star: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
-      calc: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="9" x2="19" y2="9"></line><line x1="5" y1="15" x2="19" y2="15"></line></svg>',
-      derived: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a4 4 0 0 1 8 0 4 4 0 0 0 8 0"></path></svg>',
-      close: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
-      review: '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m9 15 2 2 4-4"></path></svg>',
-      'cite-agent': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="11" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><line x1="12" y1="7" x2="12" y2="9"></line><line x1="8" y1="14" x2="8" y2="15"></line><line x1="16" y1="14" x2="16" y2="15"></line></svg>',
-      'cite-human': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-7 8-7s8 3 8 7"></path></svg>',
-      'cite-reviewer': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="m9 10 2 2 4-4"></path></svg>',
-      'cite-document': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>',
-      'cite-error': '<svg class="innfo-icon' + c + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
-    }
-    return svgs[name] || ''
-  }
-
-  var CITATION_ORIGIN_LABELS = {
-    agent: 'AI agent',
-    human: 'Human author',
-    reviewer: 'Reviewer feedback',
-    document: 'Document',
-    error: 'Unresolved citation',
-  }
+  // Labels live in the kit now (single source of truth).
+  var CITATION_ORIGIN_LABELS = UI.CITATION_ORIGIN_LABELS
 
   function getSemanticBarColor(val, minVal, maxVal, row) {
     if (row && row.colors && row.colors.gradient) {
@@ -1762,10 +1422,10 @@
         if (focusedRow) {
           var filterBanner = el('div', 'innfo-timeline-filter-banner')
           var bannerText = el('span', 'innfo-filter-banner-text')
-          bannerText.innerHTML = svgIcon('target', 14) + ' <span>Showing dependency tree for: <strong>' + (focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
+          bannerText.innerHTML = UI.icon('target', 14) + ' <span>Showing dependency tree for: <strong>' + (focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
           var clearBtn = el('button', 'innfo-filter-banner-clear')
           clearBtn.setAttribute('type', 'button')
-          clearBtn.innerHTML = svgIcon('close', 12) + ' <span>Clear Filter</span>'
+          clearBtn.innerHTML = UI.icon('close', 12) + ' <span>Clear Filter</span>'
           clearBtn.addEventListener('click', function () {
             focusedDependencyRowId = null
             renderView()
@@ -1806,7 +1466,7 @@
         var pinBtn = el('button', 'innfo-row-btn innfo-pin-btn' + (isPinnedThis ? ' pinned' : ''))
         pinBtn.setAttribute('type', 'button')
         pinBtn.setAttribute('title', isPinnedThis ? 'Unpin row' : 'Pin row to top')
-        pinBtn.innerHTML = svgIcon('pin', 12)
+        pinBtn.innerHTML = UI.icon('pin', 12)
         pinBtn.addEventListener('click', function (e) {
           e.stopPropagation()
           pinnedRowIds[r.id] = !pinnedRowIds[r.id]
@@ -1818,7 +1478,7 @@
         var chartBtn = el('button', 'innfo-row-btn innfo-chart-btn' + (isChartThis ? ' active' : ''))
         chartBtn.setAttribute('type', 'button')
         chartBtn.setAttribute('title', isChartThis ? 'Hide inline monthly chart' : 'Show inline monthly chart')
-        chartBtn.innerHTML = svgIcon('chart', 12)
+        chartBtn.innerHTML = UI.icon('chart', 12)
         chartBtn.addEventListener('click', function (e) {
           e.stopPropagation()
           expandedChartRowIds[r.id] = !expandedChartRowIds[r.id]
@@ -1832,7 +1492,7 @@
           var filterBtn = el('button', 'innfo-row-btn innfo-filter-btn' + (isFocusThis ? ' active' : ''))
           filterBtn.setAttribute('type', 'button')
           filterBtn.setAttribute('title', isFocusThis ? 'Clear dependency tree filter' : 'Filter grid to show only dependencies of ' + (r.label || r.id))
-          filterBtn.innerHTML = svgIcon('target', 12)
+          filterBtn.innerHTML = UI.icon('target', 12)
           filterBtn.addEventListener('click', function (e) {
             e.stopPropagation()
             focusedDependencyRowId = (focusedDependencyRowId === r.id ? null : r.id)
@@ -1842,7 +1502,7 @@
         }
         tdMetric.appendChild(actionsSpan)
 
-        var markerSvg = r.variable ? svgIcon('star', 11) : r.source === 'derived' ? svgIcon('derived', 11) : svgIcon('calc', 11)
+        var markerSvg = r.variable ? UI.icon('star', 11) : r.source === 'derived' ? UI.icon('derived', 11) : UI.icon('calc', 11)
         var markerSpan = el('span', 'innfo-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'))
         markerSpan.innerHTML = markerSvg
         var nameSpan = el('span', 'innfo-row-name', r.label || r.id)
@@ -1930,7 +1590,7 @@
           var trChart = el('tr', 'innfo-timeline-chart-row')
           var tdChartSticky = el('td', 'td-sticky')
           var chartLabel = el('span', 'innfo-chart-row-label')
-          chartLabel.innerHTML = svgIcon('chart', 12) + ' <span>Monthly: ' + (r.label || r.id) + '</span>'
+          chartLabel.innerHTML = UI.icon('chart', 12) + ' <span>Monthly: ' + (r.label || r.id) + '</span>'
           tdChartSticky.appendChild(chartLabel)
           trChart.appendChild(tdChartSticky)
 
@@ -1985,7 +1645,7 @@
         var tdPinnedHdr = el('td')
         tdPinnedHdr.setAttribute('colspan', String(totalMonths + 4))
         var pinnedBadge = el('span', 'innfo-grp-badge')
-        pinnedBadge.innerHTML = svgIcon('pin', 12) + ' <span>PINNED METRICS (' + pinnedRows.length + ')</span>'
+        pinnedBadge.innerHTML = UI.icon('pin', 12) + ' <span>PINNED METRICS (' + pinnedRows.length + ')</span>'
         tdPinnedHdr.appendChild(pinnedBadge)
         trPinnedHdr.appendChild(tdPinnedHdr)
         tbody.appendChild(trPinnedHdr)
@@ -2100,7 +1760,7 @@
     var hasExplorer =
       (Array.isArray(model && model.elements) && model.elements.length > 0) || !!explorerPanel
 
-    var drafts = state ? readStore(state.draftKey) : []
+    var drafts = state && state.store ? state.store.drafts() : []
     var draftCount = drafts.length
 
     var tabs = []
@@ -2162,7 +1822,7 @@
       if (!btn) return
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
-      var iconHtml = svgIcon(t.icon, 15)
+      var iconHtml = UI.icon(t.icon, 15)
       var countBadge =
         t.count > 0 ? '<span class="innfo-rail-badge">' + t.count + '</span>' : ''
       btn.innerHTML = iconHtml + '<span>' + t.label + '</span>' + countBadge
@@ -2175,174 +1835,48 @@
     selectTab(activeTabId)
   }
 
+  // C11: the review tab renders through the kit DraftList from the v2 store.
   function renderReviewTab(doc, state, config, onRefresh) {
     var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-tab-review') : null
     if (!host) return
     host.innerHTML = ''
 
-    var drafts = state ? readStore(state.draftKey) : []
-    var summary = getDraftSummary(drafts)
-
+    var drafts = state && state.store ? state.store.drafts() : []
     var root = el('div', 'innfo-review-tab-content')
     if (!root) return
 
-    // Header & Summary Stats
-    var headSection = el('section', 'innfo-review-head')
-    if (headSection) {
-      var h2 = el('h2', null, 'Review Summary & Pending Feedback')
-      if (h2) headSection.appendChild(h2)
-
-      var statsRow = el('div', 'innfo-review-stats')
-      if (statsRow) {
-        var totalStat = el('div', 'innfo-review-stat')
-        if (totalStat) {
-          totalStat.innerHTML =
-            '<span class="innfo-stat-num">' +
-            summary.total +
-            '</span><span class="innfo-stat-lbl">Total Notes</span>'
-          statsRow.appendChild(totalStat)
-        }
-        var pendingStat = el('div', 'innfo-review-stat')
-        if (pendingStat) {
-          pendingStat.innerHTML =
-            '<span class="innfo-stat-num">' +
-            summary.pending +
-            '</span><span class="innfo-stat-lbl">Pending</span>'
-          statsRow.appendChild(pendingStat)
-        }
-        var corrStat = el('div', 'innfo-review-stat')
-        if (corrStat) {
-          corrStat.innerHTML =
-            '<span class="innfo-stat-num">' +
-            summary.corrections +
-            '</span><span class="innfo-stat-lbl">Corrections</span>'
-          statsRow.appendChild(corrStat)
-        }
-        var commStat = el('div', 'innfo-review-stat')
-        if (commStat) {
-          commStat.innerHTML =
-            '<span class="innfo-stat-num">' +
-            summary.comments +
-            '</span><span class="innfo-stat-lbl">Comments</span>'
-          statsRow.appendChild(commStat)
-        }
-        headSection.appendChild(statsRow)
-      }
-
-      var actionRow = el('div', 'innfo-review-actions')
-      if (actionRow) {
-        var exportBtn = el(
-          'button',
-          'innfo-btn innfo-btn-primary innfo-review-export-btn',
-          'Export Review JSON',
-        )
-        if (exportBtn) {
-          exportBtn.setAttribute('type', 'button')
-          exportBtn.addEventListener('click', function () {
-            downloadReviewExport(doc, state)
-          })
-          actionRow.appendChild(exportBtn)
-        }
-        headSection.appendChild(actionRow)
-      }
-      root.appendChild(headSection)
+    var head = el('section', 'innfo-review-head')
+    if (head) {
+      head.appendChild(el('h2', null, 'Review Summary & Pending Feedback'))
+      var count = el(
+        'p',
+        'innfo-review-count',
+        drafts.length + (drafts.length === 1 ? ' pending draft' : ' pending drafts'),
+      )
+      if (count) head.appendChild(count)
+      root.appendChild(head)
     }
 
-    // List of drafted feedback items
     var listSection = el('section', 'innfo-review-list-section')
     if (listSection) {
       if (drafts.length === 0) {
-        var empty = el(
-          'div',
-          'empty-state',
-          'No review comments drafted yet. Click "Suggest" on any element card to add feedback.',
+        listSection.appendChild(
+          el('div', 'empty-state', 'No review drafts yet. Annotate an element in review mode.'),
         )
-        if (empty) listSection.appendChild(empty)
       } else {
-        var list = el('div', 'innfo-review-list')
-        drafts.forEach(function (item, idx) {
-          var elId = item.elementId || (item.target && item.target.element_id) || ''
-          var conceptName = item.concept || (item.target && item.target.concept) || ''
-          var elName = (item.target && item.target.element) || elId || 'Item #' + (idx + 1)
-          var noteText = item.note || item.comment || ''
-          var kind = item.kind || 'comment'
-          var status = item.status || 'pending'
-
-          var card = el('article', 'innfo-review-item')
-          if (!card) return
-          card.setAttribute('data-draft-id', String(item.id))
-
-          var itemHead = el('div', 'innfo-review-item-head')
-          if (itemHead) {
-            var idSpan = el('span', 'innfo-review-item-id', item.id)
-            var kindBadge = el('span', 'innfo-review-kind-badge kind-' + kind, kind)
-
-            // Deep Link Button to focus card (Task 2.2)
-            var linkBtn = el(
-              'button',
-              'innfo-review-card-link',
-              (conceptName ? conceptName + ': ' : '') + elName,
-            )
-            if (linkBtn) {
-              linkBtn.setAttribute('type', 'button')
-              linkBtn.setAttribute('title', 'Focus element card')
-              linkBtn.addEventListener('click', function () {
-                focusElementCard(doc, elId)
-              })
-            }
-
-            var statusSelect = el('select', 'innfo-review-status-select')
-            if (statusSelect) {
-              ;['pending', 'applied', 'rejected'].forEach(function (st) {
-                var opt = typeof document !== 'undefined' ? document.createElement('option') : null
-                if (opt) {
-                  opt.value = st
-                  opt.textContent = st
-                  if (st === status) opt.selected = true
-                  statusSelect.appendChild(opt)
-                }
-              })
-              statusSelect.addEventListener('change', function (e) {
-                var newSt = e.target.value
-                updateDraftStatus(state.draftKey, item.id, newSt)
-                if (typeof onRefresh === 'function') onRefresh()
-              })
-            }
-
-            var delBtn = el('button', 'innfo-review-delete-btn', '×')
-            if (delBtn) {
-              delBtn.setAttribute('type', 'button')
-              delBtn.setAttribute('title', 'Delete draft comment')
-              delBtn.setAttribute('aria-label', 'Delete draft comment')
-              delBtn.addEventListener('click', function () {
-                removeDraftItem(state.draftKey, item.id)
-                if (typeof onRefresh === 'function') onRefresh()
-              })
-            }
-
-            if (idSpan) itemHead.appendChild(idSpan)
-            if (kindBadge) itemHead.appendChild(kindBadge)
-            if (linkBtn) itemHead.appendChild(linkBtn)
-            if (statusSelect) itemHead.appendChild(statusSelect)
-            if (delBtn) itemHead.appendChild(delBtn)
-            card.appendChild(itemHead)
-          }
-
-          if (item.field) {
-            var fldDiv = el('div', 'innfo-review-item-field')
-            if (fldDiv) {
-              fldDiv.innerHTML =
-                '<span class="innfo-fld-lbl">Field:</span> <code>' + item.field + '</code>'
-              card.appendChild(fldDiv)
-            }
-          }
-
-          var noteDiv = el('div', 'innfo-review-item-note', noteText)
-          if (noteDiv) card.appendChild(noteDiv)
-
-          if (list) list.appendChild(card)
+        var byId = {}
+        ;(state && state.elements ? state.elements : []).forEach(function (e) {
+          if (e && e.id) byId[e.id] = e
         })
-        if (list) listSection.appendChild(list)
+        listSection.appendChild(
+          UI.DraftList({ drafts: drafts, byId: byId }, {
+            doc: doc,
+            onDelete: function (id) {
+              if (state && state.store) state.store.removeDraft(id)
+              if (typeof onRefresh === 'function') onRefresh()
+            },
+          }),
+        )
       }
       root.appendChild(listSection)
     }
@@ -2374,36 +1908,6 @@
         card.classList.remove('innfo-highlight')
       }, 2500)
     }
-  }
-
-  function downloadReviewExport(doc, state) {
-    var reviewer = getReviewerName()
-    var drafts = readStore(state.draftKey)
-    var model = state.modelTitle || 'Model'
-    var version = state.modelVersion || '1-0-0'
-    var payload = buildReviewDoc({
-      model: model,
-      version: version,
-      reviewer: reviewer,
-      drafts: drafts,
-    })
-    var check = validateReviewDoc(payload)
-    if (!check.ok) {
-      throw new Error('innfo-console: review export blocked — ' + check.errors.join('; '))
-    }
-    var filename = buildFeedbackFilename(model, String(version).replace(/^V_/, ''), reviewer)
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    var url = URL.createObjectURL(blob)
-    var anchor = doc.createElement('a')
-    anchor.href = url
-    anchor.download = filename
-    doc.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-    setTimeout(function () {
-      URL.revokeObjectURL(url)
-    }, 1000)
-    return { filename: filename, items: payload.items.length }
   }
 
   // Build a name->element lookup used by the reference-popup need so field
@@ -2612,20 +2116,336 @@
     })
   }
 
+  function ensureFeedbackUi(doc, state) {
+    var active = doc || (typeof document !== 'undefined' ? document : null)
+    if (!active) return null
+    var config = parseConfig(slotText(active, 'innfo-config'))
+    if (!hasNeed(config, 'feedback-export')) return null
+
+    var existing = active.querySelector('[data-innfo-feedback-root]')
+    if (existing) return existing
+
+    var root = active.createElement('div')
+    root.setAttribute('data-innfo-feedback-root', '')
+
+    // Feedback CSS
+    if (!active.querySelector('style[data-innfo-feedback]')) {
+      var style = active.createElement('style')
+      style.setAttribute('data-innfo-feedback', '')
+      style.textContent =
+        '[data-innfo-feedback-root]{display:block;}' +
+        '#innfo-feedback-banner{padding:16px 24px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e5e7eb);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}' +
+        '#innfo-feedback-banner strong{font-size:1.1rem;font-weight:700;}' +
+        '#innfo-feedback-banner .innfo-banner-version,#innfo-feedback-banner .innfo-banner-needs,#innfo-feedback-banner .innfo-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
+        '#innfo-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;margin-left:auto;}' +
+        '#innfo-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
+        '#innfo-feedback-modal{border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-lg,8px);padding:20px;max-width:560px;width:100%;background:var(--surface,#ffffff);color:var(--text,#111827);}' +
+        '#innfo-feedback-modal::backdrop{background:rgba(0,0,0,0.35);}' +
+        '#innfo-feedback-modal input{width:100%;padding:8px 12px;margin:8px 0;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);box-sizing:border-box;}' +
+        '#innfo-feedback-modal pre{background:var(--surface-2,#f3f4f6);border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:12px;white-space:pre-wrap;font-size:0.8rem;}' +
+        '[data-innfo="errors"]{color:#dc2626;font-size:0.85rem;margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;}' +
+        '#innfo-feedback-modal button[data-innfo="download"]{appearance:none;border:1px solid var(--primary,#2563eb);background:var(--primary,#2563eb);color:#ffffff;font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#innfo-feedback-modal button[data-innfo="download"]:hover{background:var(--primary-hover,#1d4ed8);}' +
+        '#innfo-feedback-modal [data-innfo="export-json"]{width:100%;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.78rem;border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:10px;box-sizing:border-box;}' +
+        '#innfo-feedback-modal .innfo-feedback-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}' +
+        '#innfo-feedback-modal button[data-innfo="copy"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#innfo-feedback-modal button:disabled{opacity:0.5;cursor:not-allowed;}' +
+        '#innfo-feedback-modal [data-innfo="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}'
+      root.appendChild(style)
+    }
+
+    // Banner
+    var banner = active.createElement('header')
+    banner.id = 'innfo-feedback-banner'
+    banner.setAttribute('aria-label', 'Console review banner')
+
+    var title = active.createElement('strong')
+    title.textContent = state ? state.modelTitle : 'iNNfo Console'
+    banner.appendChild(title)
+
+    var version = active.createElement('span')
+    version.className = 'innfo-banner-version'
+    version.textContent = ' ' + (state ? state.modelVersion : '')
+    banner.appendChild(version)
+
+    var needsBadge = active.createElement('span')
+    needsBadge.className = 'innfo-banner-needs'
+    needsBadge.textContent = ' needs: ' + (config.needs && config.needs.length ? config.needs.join(', ') : 'none')
+    banner.appendChild(needsBadge)
+
+    var draftsBadge = active.createElement('span')
+    draftsBadge.className = 'innfo-banner-drafts'
+    draftsBadge.setAttribute('data-innfo', 'draft-count')
+    draftsBadge.textContent = ' drafts: 0'
+    banner.appendChild(draftsBadge)
+
+    // Reviewer chip
+    var reviewerName = getReviewerName()
+    var chip = active.createElement('div')
+    chip.className = 'innfo-reviewer-chip'
+    var chipLabel = active.createElement('span')
+    chipLabel.className = 'innfo-reviewer-label'
+    chipLabel.textContent = 'Reviewer: '
+    var chipName = active.createElement('span')
+    chipName.className = 'innfo-reviewer-name'
+    chipName.textContent = reviewerName
+    var editBtn = active.createElement('button')
+    editBtn.className = 'innfo-reviewer-edit'
+    editBtn.setAttribute('type', 'button')
+    editBtn.setAttribute('title', 'Edit reviewer identity')
+    editBtn.setAttribute('aria-label', 'Edit reviewer identity')
+    editBtn.textContent = '✏️'
+    chip.appendChild(chipLabel)
+    chip.appendChild(chipName)
+    chip.appendChild(editBtn)
+    banner.appendChild(chip)
+
+    // Open button
+    var openBtn = active.createElement('button')
+    openBtn.id = 'innfo-feedback-open'
+    openBtn.setAttribute('type', 'button')
+    openBtn.className = 'innfo-feedback-open'
+    openBtn.textContent = 'Export feedback'
+    banner.appendChild(openBtn)
+
+    root.appendChild(banner)
+
+    // Modal
+    var modal = active.createElement('dialog')
+    modal.id = 'innfo-feedback-modal'
+    modal.setAttribute('aria-label', 'Export reviewer feedback')
+    modal.innerHTML =
+      '<h2>Export reviewer feedback</h2>' +
+      '<div data-innfo="preview"></div>' +
+      '<label>Reviewer identifier (required)' +
+      '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
+      '</label>' +
+      '<div data-innfo="errors" style="display: none;"></div>' +
+      '<h3>Export JSON</h3>' +
+      '<textarea data-innfo="export-json" readonly></textarea>' +
+      '<div class="innfo-feedback-actions">' +
+      '<button data-innfo="download" type="button">Download feedback JSON</button>' +
+      '<button data-innfo="copy" type="button">Copy to clipboard</button>' +
+      '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
+      '</div>' +
+      '<h3>Instructions</h3>' +
+      '<pre data-innfo="instructions"></pre>' +
+      '<h3>Agent prompt</h3>' +
+      '<pre data-innfo="agent-prompt"></pre>'
+
+    root.appendChild(modal)
+
+    if (active.body) {
+      active.body.insertBefore(root, active.body.firstChild)
+    }
+
+    if (state && !openBtn.getAttribute('data-innfo-bound')) {
+      openBtn.setAttribute('data-innfo-bound', '1')
+      openBtn.addEventListener('click', function () {
+        openExportModal(active, state)
+      })
+    }
+
+    return root
+  }
+
+  function composeExport(state, identifier) {
+    var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
+    var drafts = state && state.store ? state.store.drafts() : []
+    var model = state && state.modelTitle ? state.modelTitle : 'Model'
+    var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
+
+    var rawVersion = String(version || '1-0-0')
+    var normVersion = MODEL_VERSION_PATTERN.test(rawVersion)
+      ? rawVersion
+      : 'V_' + rawVersion.replace(/^V_/, '').replace(/\./g, '-')
+    var reviewerSlug = slugify(reviewer) || 'reviewer'
+
+    var exportMeta = Object.assign({}, (state && state.meta) || {}, {
+      source_knowledge: model,
+      source_knowledge_version: normVersion,
+      artifact: (state && state.artifactName) || (model + '_console.html'),
+      artifact_version: CONSOLE_VERSION,
+      exported_at:
+        (state && state.exportedAt) || new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+      author: reviewer,
+      feedback_slug: reviewerSlug,
+      viewer: 'innfo-console@' + CONSOLE_VERSION,
+    })
+    if (state && (state.sourceSha256 || (state.meta && state.meta.sha256))) {
+      exportMeta.source_sha256 = state.sourceSha256 || state.meta.sha256
+    }
+
+    if (!reviewer || reviewer === DEFAULT_REVIEWER_NAME) {
+      return { ok: false, errors: ['Reviewer identifier is required.'] }
+    }
+
+    var payload
+    try {
+      payload = buildExportDoc({ meta: exportMeta, drafts: drafts })
+    } catch (err) {
+      return { ok: false, errors: [err.message] }
+    }
+
+    var check = validateFeedback(payload)
+    if (!check.ok) return { ok: false, errors: check.errors }
+
+    return {
+      ok: true,
+      payload: payload,
+      text: serializeFeedback(payload),
+      filename: buildFeedbackFilename(model, String(version).replace(/^V_/, ''), reviewer),
+      items: payload.items.length,
+    }
+  }
+
+  function renderErrors(doc, errors) {
+    var errorContainer = doc.querySelector('#innfo-feedback-modal [data-innfo="errors"]')
+    if (!errorContainer) return
+    if (!errors || !errors.length) {
+      errorContainer.innerHTML = ''
+      errorContainer.style.display = 'none'
+      return
+    }
+    errorContainer.innerHTML =
+      '<strong>Validation errors:</strong><ul>' +
+      errors.map(function (e) {
+        return '<li>' + e + '</li>'
+      }).join('') +
+      '</ul>'
+    errorContainer.style.display = 'block'
+  }
+
+  function downloadFeedbackExport(doc, state) {
+    var identifierInput = doc.querySelector('#innfo-feedback-modal [data-innfo="identifier"]')
+    var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+    var composed = composeExport(state, identifier)
+    if (!composed.ok) {
+      renderErrors(doc, composed.errors)
+      return composed
+    }
+    renderErrors(doc, [])
+    var blob = new Blob([composed.text], { type: 'application/json' })
+    var url = URL.createObjectURL(blob)
+    var anchor = doc.createElement('a')
+    anchor.href = url
+    anchor.download = composed.filename
+    doc.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    setTimeout(function () {
+      URL.revokeObjectURL(url)
+    }, 1000)
+    return { ok: true, filename: composed.filename, items: composed.items }
+  }
+
+  function updateExportPreview(doc, state) {
+    var modal = doc.getElementById('innfo-feedback-modal')
+    if (!modal) return { ok: false }
+    var identifierInput = modal.querySelector('[data-innfo="identifier"]')
+    var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+    var drafts = state && state.store ? state.store.drafts() : []
+
+    var preview = modal.querySelector('[data-innfo="preview"]')
+    if (preview) {
+      preview.innerHTML = ''
+      var byId = {}
+      ;(state && state.elements ? state.elements : []).forEach(function (e) {
+        if (e && e.id) byId[e.id] = e
+      })
+      preview.appendChild(UI.DraftList({ drafts: drafts, byId: byId }, { doc: doc }))
+    }
+
+    var composed = composeExport(state, identifier)
+    var downloadBtn = modal.querySelector('[data-innfo="download"]')
+    var copyBtn = modal.querySelector('[data-innfo="copy"]')
+    var textarea = modal.querySelector('[data-innfo="export-json"]')
+
+    if (composed.ok) {
+      renderErrors(doc, [])
+      if (textarea) textarea.value = composed.text
+      if (downloadBtn) downloadBtn.disabled = false
+      if (copyBtn) copyBtn.disabled = false
+    } else {
+      renderErrors(doc, composed.errors)
+      if (textarea) textarea.value = ''
+      if (downloadBtn) downloadBtn.disabled = true
+      if (copyBtn) copyBtn.disabled = true
+    }
+    return composed
+  }
+
+  function copyExport(doc, state) {
+    var modal = doc.getElementById('innfo-feedback-modal')
+    var status = modal && modal.querySelector('[data-innfo="copy-status"]')
+    var textarea = modal && modal.querySelector('[data-innfo="export-json"]')
+    function announce(msg) {
+      if (status) status.textContent = msg
+    }
+    var composed = composeExport(state, _readIdentifier(modal))
+    if (!composed.ok) {
+      announce('Cannot copy: fix the validation errors first.')
+      return composed
+    }
+    var text = composed.text
+    try {
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === 'function'
+      ) {
+        navigator.clipboard.writeText(text).then(
+          function () {
+            announce('Copied feedback JSON to clipboard.')
+          },
+          function () {
+            announce(fallbackCopy(doc, textarea, text))
+          },
+        )
+        return composed
+      }
+      announce(fallbackCopy(doc, textarea, text))
+    } catch {
+      announce('Copy failed. Press Ctrl+C with the JSON selected.')
+    }
+    return composed
+  }
+
+  function _readIdentifier(modal) {
+    var input = modal && modal.querySelector('[data-innfo="identifier"]')
+    return input && input.value ? String(input.value) : ''
+  }
+
+  function fallbackCopy(doc, textarea, text) {
+    try {
+      if (textarea) {
+        textarea.value = text
+        if (typeof textarea.select === 'function') textarea.select()
+      }
+      var ok = typeof doc.execCommand === 'function' ? doc.execCommand('copy') : false
+      if (ok) return 'Copied feedback JSON to clipboard.'
+      return 'Select the JSON and press Ctrl+C to copy.'
+    } catch {
+      return 'Copy failed. Select the JSON and press Ctrl+C.'
+    }
+  }
+
   function openExportModal(doc, state) {
-    var modal = doc.getElementById('innfo-export-modal')
+    var modal = doc.getElementById('innfo-feedback-modal') || doc.getElementById('innfo-export-modal')
     if (!modal) {
-      downloadReviewExport(doc, state)
+      downloadFeedbackExport(doc, state)
       return
     }
     var identifierInput = modal.querySelector('[data-innfo="identifier"]')
     var instructions = modal.querySelector('[data-innfo="instructions"]')
     var agentPrompt = modal.querySelector('[data-innfo="agent-prompt"]')
-    var downloadBtn = modal.querySelector('[data-innfo="download"]')
-    var drafts = readStore(state.draftKey)
+    var drafts = state && state.store ? state.store.drafts() : []
+
+    // One held exported_at per modal opening, so download and copy emit
+    // byte-identical JSON.
+    if (state) state.exportedAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z')
+
     if (identifierInput) {
-      // Prefill the stored reviewer name, but never prefill the bare fallback:
-      // an export must carry an identifier the user actually chose.
       var storedName = getReviewerName()
       identifierInput.value = storedName === DEFAULT_REVIEWER_NAME ? '' : storedName
     }
@@ -2633,29 +2453,54 @@
       instructions.textContent =
         'Review ' +
         drafts.length +
-        ' pending draft(s), then download the review JSON.'
+        ' pending draft(s), then download or copy the feedback JSON.'
     }
     if (agentPrompt) {
       agentPrompt.textContent =
-        'Apply the attached review JSON to ' +
-        state.modelTitle +
+        'Apply the attached feedback JSON to ' +
+        (state ? state.modelTitle : 'Model') +
         ' (' +
-        state.modelVersion +
+        (state ? state.modelVersion : '') +
         ').'
     }
-    modal.setAttribute('open', 'open')
+
+    updateExportPreview(doc, state)
+
+    if (typeof modal.showModal === 'function') {
+      if (!modal.open) modal.showModal()
+    } else {
+      modal.setAttribute('open', 'open')
+    }
+
+    if (identifierInput && !identifierInput.getAttribute('data-innfo-bound')) {
+      identifierInput.setAttribute('data-innfo-bound', '1')
+      identifierInput.addEventListener('input', function () {
+        updateExportPreview(doc, state)
+      })
+    }
+
+    var downloadBtn = modal.querySelector('[data-innfo="download"]')
     if (downloadBtn && !downloadBtn.getAttribute('data-innfo-bound')) {
       downloadBtn.setAttribute('data-innfo-bound', '1')
       downloadBtn.addEventListener('click', function () {
         var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
-        // The feedback export contract requires a reviewer identifier the user
-        // actually chose: an empty field, or the bare fallback, is refused so no
-        // file is emitted and the modal stays open for correction.
         if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
         setReviewerName(identifier)
-        downloadReviewExport(doc, state)
-        if (typeof modal.close === 'function') modal.close()
-        else modal.removeAttribute('open')
+        var res = downloadFeedbackExport(doc, state)
+        if (res && res.ok) {
+          if (typeof modal.close === 'function') modal.close()
+          else modal.removeAttribute('open')
+        }
+      })
+    }
+
+    var copyBtn = modal.querySelector('[data-innfo="copy"]')
+    if (copyBtn && !copyBtn.getAttribute('data-innfo-bound')) {
+      copyBtn.setAttribute('data-innfo-bound', '1')
+      copyBtn.addEventListener('click', function () {
+        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
+        copyExport(doc, state)
       })
     }
   }
@@ -2664,7 +2509,7 @@
     if (identifier && String(identifier).trim()) {
       setReviewerName(String(identifier).trim())
     }
-    return downloadReviewExport(doc, state)
+    return downloadFeedbackExport(doc, state)
   }
 
   function boot(doc) {
@@ -2694,9 +2539,13 @@
       modelTitle: String(meta.title || meta.model || 'Model'),
       modelVersion: String(meta.modelVersion || meta.knowledge_version || 'V_0-0-0'),
       artifactName: String(meta.title || 'console') + '_console.html',
-      draftKey: getDraftKey(
-        String(meta.title || meta.model || 'model'),
-        String(meta.modelVersion || meta.knowledge_version || 'V_0-0-0'),
+      modelId: meta.modelId || meta.model || meta.title || 'model',
+      sourceSha256: meta.sha256 || meta.source_sha256,
+      meta: meta,
+      elements: elements,
+      store: Review.createDraftStore(
+        typeof localStorage !== 'undefined' ? localStorage : null,
+        String(meta.modelId || meta.model || meta.title || 'model'),
       ),
     }
 
@@ -2710,27 +2559,19 @@
 
     function refresh(query) {
       if (query !== undefined) activeSearchQuery = query
-      var currentDrafts = readStore(state.draftKey)
+      var currentDrafts = state.store.drafts()
       var draftCountsByConcept = {}
       currentDrafts.forEach(function (d) {
-        if (d && (d.status === 'pending' || !d.status)) {
+        if (d) {
           var c = d.concept || (d.target && d.target.concept)
           if (c) draftCountsByConcept[c] = (draftCountsByConcept[c] || 0) + 1
         }
       })
 
-      renderCards(
-        active,
-        filterElements(elements, activeSearchQuery || ''),
-        currentDrafts,
-        function (element) {
-          suggestFor(element, state, active, refresh)
-        },
-        refs,
-      )
+      mountElementCards(active, filterElements(elements, activeSearchQuery || ''), currentDrafts, refs)
       renderBanner(active, meta, config.needs, currentDrafts.length, function () {
         refresh(activeSearchQuery)
-      })
+      }, state)
       renderRail(active, concepts, counts, draftCountsByConcept, function (concept) {
         var search = active.getElementById('innfo-search')
         if (search) {
@@ -2744,9 +2585,30 @@
       renderViewTabs(active, config, model, meta, state, function () {
         refresh(activeSearchQuery)
       })
+
+      var content = active.getElementById('innfo-content') || active.getElementById('content')
+      if (content) {
+        active.dispatchEvent(new CustomEvent('innfo:rendered', { detail: { root: content } }))
+      }
+    }
+
+    if (hasNeed(config, 'feedback-export')) {
+      ensureFeedbackUi(active, state)
     }
 
     refresh('')
+
+    // C3: the controller builds the toggle into the (now rendered) banner and
+    // listens for innfo:rendered; created after the first paint so the banner
+    // rebuild does not drop the toggle.
+    if (hasNeed(config, 'feedback-export')) {
+      state.controller = Review.createReviewController(active, {
+        meta: meta,
+        elements: elements,
+        needs: config.needs,
+        store: state.store,
+      })
+    }
 
     if (hasNeed(config, 'document-view')) {
       renderDocumentView(active, elements, concepts)
@@ -2767,8 +2629,9 @@
     }
 
     if (hasNeed(config, 'feedback-export')) {
-      var exportBtn = active.getElementById('innfo-export-open')
-      if (exportBtn) {
+      var exportBtn = active.getElementById('innfo-feedback-open') || active.getElementById('innfo-export-open')
+      if (exportBtn && !exportBtn.getAttribute('data-innfo-bound')) {
+        exportBtn.setAttribute('data-innfo-bound', '1')
         exportBtn.addEventListener('click', function () {
           openExportModal(active, state)
         })
@@ -2788,30 +2651,18 @@
     }
     onHash()
 
-    return { ok: true, needs: config.needs, elements: elements.length }
-  }
-
-  function suggestFor(element, state, doc, refresh) {
-    if (typeof prompt === 'undefined') return
-    var comment = prompt('Suggest for ' + element.name + ' (empty cancels):', '')
-    if (!comment || !String(comment).trim()) return
-    var drafts = readStore(state.draftKey)
-    addDraft(drafts, {
-      elementId: element.id,
-      concept: element.concept,
-      elementName: element.name,
-      kind: 'comment',
-      note: String(comment).trim(),
-      status: 'pending',
-    })
-    writeStore(state.draftKey, drafts)
-    if (typeof refresh === 'function') refresh('')
+    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller }
   }
 
   function autoBoot() {
     try {
+      if (typeof globalThis !== 'undefined' && globalThis.__innfoNoAutoBoot) return
       if (typeof document === 'undefined' || !document.getElementById) return
+      if (document.documentElement && document.documentElement.getAttribute('data-innfo-console-booted') === 'true') return
       if (!document.getElementById('innfo-config')) return
+      if (document.documentElement) {
+        document.documentElement.setAttribute('data-innfo-console-booted', 'true')
+      }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
           boot(document)
@@ -2831,7 +2682,6 @@
     version: CONSOLE_VERSION,
     CONSOLE_VERSION: CONSOLE_VERSION,
     FILENAME_PATTERN: FILENAME_PATTERN,
-    REVIEW_FILENAME_PATTERN: REVIEW_FILENAME_PATTERN,
     REVIEWER_STORAGE_KEY: REVIEWER_STORAGE_KEY,
     ITEM_KINDS: ITEM_KINDS,
     ITEM_STATUSES: ITEM_STATUSES,
@@ -2840,19 +2690,6 @@
     stampFromDate: stampFromDate,
     getReviewerName: getReviewerName,
     setReviewerName: setReviewerName,
-    buildReviewFilename: buildReviewFilename,
-    parseReviewFilename: parseReviewFilename,
-    buildReviewDoc: buildReviewDoc,
-    serializeReviewDoc: buildReviewDoc,
-    validateReviewDoc: validateReviewDoc,
-    getDraftSummary: getDraftSummary,
-    getSummary: getDraftSummary,
-    addDraft: addDraft,
-    addComment: addDraft,
-    updateDraftStatus: updateDraftStatus,
-    updateStatus: updateDraftStatus,
-    removeDraftItem: removeDraftItem,
-    removeComment: removeDraftItem,
     buildFeedbackFilename: buildFeedbackFilename,
     parseFeedbackFilename: parseFeedbackFilename,
     isValidExportedAt: isValidExportedAt,
@@ -2865,12 +2702,8 @@
     buildRefsByName: buildRefsByName,
     renderRefDialog: renderRefDialog,
     renderCitationDialog: renderCitationDialog,
-    svgIcon: svgIcon,
-    renderConceptPill: renderConceptPill,
-    renderElementPill: renderElementPill,
     renderBanner: renderBanner,
     renderRail: renderRail,
-    renderCards: renderCards,
     renderDocument: renderDocument,
     renderDocumentView: renderDocumentView,
     buildTree: buildTree,
@@ -2887,9 +2720,12 @@
     renderViewTabs: renderViewTabs,
     renderReviewTab: renderReviewTab,
     focusElementCard: focusElementCard,
-    downloadReviewExport: downloadReviewExport,
+    ensureFeedbackUi: ensureFeedbackUi,
+    draftToItem: draftToItem,
+    downloadFeedbackExport: downloadFeedbackExport,
+    composeExport: composeExport,
+    serializeFeedback: serializeFeedback,
     downloadExport: downloadExport,
-    getDraftKey: getDraftKey,
     buildExportDoc: buildExportDoc,
     boot: boot,
   }

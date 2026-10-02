@@ -1,56 +1,103 @@
 {
-  "generatedAt": "2026-10-02T12:26:18.629Z",
-  "head": "345b8afcadaef3587ed1bad10445f152154a3253",
+  "generatedAt": "2026-10-02T21:18:49.045Z",
+  "head": "777afb766c01fb0b43fa872100f79711ee6c52cc",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.11.0",
       "pinnedTagDate": "2026-10-02T12:50:57+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 2,
+      "filesTouched": [
+        "skills/nn-preflight/scripts/preflight-check.test.js",
+        "skills/nn-video-script/scripts/remotion-scene-compiler.mjs",
+        "skills/nn-video-script/scripts/video-engine-cli.mjs",
+        "skills/nn-video-script/test/scene-compiler.test.mjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.19.4",
       "pinnedTagDate": "2026-10-02T11:39:06+02:00",
-      "commitsSincePin": 2,
+      "commitsSincePin": 19,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/business/procedures/apply_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/business/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/needs-registry.json",
         "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/render-model-viewer.js",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
+        "iNNfo/specs/bluepriNNts/metrics/procedures/apply_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/procedures/create_timeline_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/scripts/verify.harness.js",
+        "iNNfo/specs/bluepriNNts/metrics/spec_NN.md",
         "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
-        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/compile_model_console_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/reconcile_feedback_NN.md"
       ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.19.4",
       "pinnedTagDate": "2026-10-02T11:39:06+02:00",
-      "commitsSincePin": 2,
+      "commitsSincePin": 19,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/business/procedures/apply_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/business/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/needs-registry.json",
         "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/render-model-viewer.js",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
+        "iNNfo/specs/bluepriNNts/metrics/procedures/apply_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/procedures/create_timeline_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/scripts/verify.harness.js",
+        "iNNfo/specs/bluepriNNts/metrics/spec_NN.md",
         "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
-        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/compile_model_console_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/reconcile_feedback_NN.md"
       ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.13.1",
       "pinnedTagDate": "2026-10-02T12:14:34+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/server.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/build-console-payload.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/feedback-verdict.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/feedback-verdict.ts"
+      ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.7.3",
       "pinnedTagDate": "2026-10-02T12:14:34+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 14,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html"
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/needs-registry.json",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/render-model-viewer.js",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     }
   }

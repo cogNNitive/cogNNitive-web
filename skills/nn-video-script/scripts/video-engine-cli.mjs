@@ -152,9 +152,19 @@ export async function compileVideo(options) {
     for (const sc of parsed.scenes) {
       // 1. TTS synthesis
       if (sc.narration && sc.narration.trim().length > 0) {
-        const ttsRes = await synthesizer.synthesizeTTS(sc.narration, {
-          voice: sc.properties?.scene_voice || 'default',
-        });
+        const model = sc.properties?.scene_tts_model || 'elevenlabs';
+        const voiceOptions = {
+          model,
+          voice: sc.properties?.[`${model}/voice_id`] || sc.properties?.scene_voice || 'default',
+          speed: sc.properties?.[`${model}/speed`],
+          emotion: sc.properties?.[`${model}/emotion`],
+          pitch: sc.properties?.[`${model}/pitch`],
+          intensity: sc.properties?.[`${model}/intensity`],
+        };
+        for (const k of Object.keys(voiceOptions)) {
+          if (voiceOptions[k] === undefined) delete voiceOptions[k];
+        }
+        const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions);
         if (ttsRes.fromCache) {
           cachedAssetsUsed++;
         } else {

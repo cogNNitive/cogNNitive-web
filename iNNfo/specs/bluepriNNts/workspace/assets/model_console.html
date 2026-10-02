@@ -14,32 +14,22 @@
     Nothing else in this file is edited. The renderer is template-agnostic.
   -->
   <style>
+    /* Semantic tokens come from InnfoUI (data-theme driven). Local aliases keep
+       this shell's layout variables working without hard-coded colors. */
     :root {
-      --bg: #f9fafb;
-      --surface: #ffffff;
-      --surface-2: #f3f4f6;
-      --text: #111827;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --accent: #1f2937;
-      --link: #2563eb;
-      --radius-sm: 6px;
-      --radius: 8px;
-      --radius-lg: 10px;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --mono: 'SF Mono', ui-monospace, 'Courier New', monospace;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0f172a;
-        --surface: #1e293b;
-        --surface-2: #263549;
-        --text: #e2e8f0;
-        --muted: #94a3b8;
-        --border: #334155;
-        --accent: #cbd5e1;
-        --link: #60a5fa;
-      }
+      --bg: var(--innfo-bg);
+      --surface: var(--innfo-surface);
+      --surface-2: var(--innfo-surface-2);
+      --text: var(--innfo-text);
+      --muted: var(--innfo-muted);
+      --border: var(--innfo-border);
+      --accent: var(--innfo-accent);
+      --link: var(--innfo-link);
+      --radius-sm: var(--innfo-radius-sm);
+      --radius: var(--innfo-radius);
+      --radius-lg: var(--innfo-radius-lg);
+      --font: var(--innfo-font);
+      --mono: var(--innfo-mono);
     }
     * { box-sizing: border-box; }
     body {
@@ -142,39 +132,6 @@
       overflow: hidden;
       scroll-margin-top: 16px;
     }
-    .element > .el-head {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 11px 14px;
-      cursor: pointer;
-    }
-    .element > .el-head:hover { background: var(--surface-2); }
-    .element > .el-head .el-name { font-weight: 700; font-size: 0.92rem; }
-    .element > .el-head .chevron { margin-left: auto; color: var(--muted); transition: transform 0.15s; flex: none; }
-    .element.open > .el-head .chevron { transform: rotate(90deg); }
-
-    .chip {
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: var(--surface-2);
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .chip b { color: var(--text); font-weight: 700; }
-
-    .el-body { display: none; padding: 4px 14px 16px; border-top: 1px solid var(--border); }
-    .element.open > .el-body { display: block; }
-    .el-body p.desc { margin: 12px 0; font-size: 0.88rem; }
-    .el-body table.fields { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 8px 0; }
-    .el-body table.fields td { padding: 4px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    .el-body table.fields td:first-child { color: var(--muted); width: 160px; font-weight: 600; }
-    .el-body .rel-list { list-style: none; padding: 0; margin: 8px 0 0; font-size: 0.82rem; }
-    .el-body .rel-list li { padding: 3px 0; }
-    .el-body .rel-list .rel-field { color: var(--muted); font-weight: 600; }
-
     .matrix-block { margin-bottom: 32px; }
     .matrix-block h3 { font-size: 0.95rem; font-weight: 800; margin: 0 0 8px; }
     .matrix-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
@@ -187,24 +144,8 @@
     .empty-state { color: var(--muted); font-size: 0.9rem; padding: 40px 0; }
     h2.group-title { font-size: 1rem; font-weight: 800; margin: 48px 0 16px; padding-top: 20px; border-top: 1px dashed var(--border); }
 
-    /* Citation icons (Console Citation Icons / Tanda C) */
-    .cite-icons { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; }
-    .cite-icon {
-      appearance: none;
-      border: none;
-      background: transparent;
-      padding: 2px;
-      line-height: 0;
-      cursor: pointer;
-      border-radius: 4px;
-      color: var(--muted);
-    }
-    .cite-icon:hover { background: var(--surface-2); }
-    .cite-icon.cite-agent { color: #8b5cf6; }
-    .cite-icon.cite-human { color: #3b82f6; }
-    .cite-icon.cite-reviewer { color: #f59e0b; }
-    .cite-icon.cite-document { color: #6b7280; }
-    .cite-icon.cite-error { color: #ef4444; }
+    /* Element cards, markers, pills and citation icons are composited by
+       InnfoUI (ui-kit.js); only layout stays here. */
     .innfo-cite-excerpt {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -327,8 +268,8 @@
   </script>
     <!-- Shared console bundle (static tags: CDN primary, mirror fallback, vendored copy — no fetch, no modules). Composes uPlot, visuals, innfo-runtime (window.InnfoConsole, citation icons + dialog) and render-model-viewer (window.InnfoModelViewer). -->
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.7.3/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
-    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/templates/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.8.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
     <script src="./innfo-console.bundle.js"></script>
 </body>

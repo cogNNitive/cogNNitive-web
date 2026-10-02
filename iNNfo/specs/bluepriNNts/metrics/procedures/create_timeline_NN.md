@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-2-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Create Timeline Procedure"
 ---
 
@@ -125,7 +125,7 @@ Keep the `feedback-export` capability enabled so the reviewer can download a fee
 ## NN Work: Verify In Browser
 parent:: [[Create Timeline]]
 step_type:: task
-next:: [[Apply Feedback]]
+next:: [[Reconcile Feedback]]
 condition:: Console built
 input:: [[Console HTML]]
 output:: [[Verification Report]]
@@ -133,7 +133,7 @@ output_status:: verified
 tool:: [[Verify Harness]]
 Run the verify harness in static and render modes: `verify.harness.js --check-slots --file <console.html>` must pass (needs[] resolve through the registry, required meta keys present, series payloads pure data, zero inline-runtime blocks), then the `file://` render check must report zero pageerrors with a real render (banner text, concept rail, element cards, matrices when the model declares them, feedback-export button when declared). See the template verify harness.
 
-## NN Work: Apply Feedback
+## NN Work: Reconcile Feedback
 parent:: [[Create Timeline]]
 step_type:: task
 next:: -
@@ -142,7 +142,7 @@ input:: [[Verification Report]]
 output:: [[Regenerated Console]]
 output_status:: verified
 tool:: [[innfo-mcp apply_change]]
-Apply Feedback replaces the old Version-And-Archive step: the console is a frozen snapshot and only changes through the feedback loop. Run the Apply Feedback procedure (`../procedures/apply_feedback_NN.md`): staleness check (`meta.source_model_version` vs the live model — block with a report naming both versions until the reviewer confirms), diff preview per pending item, apply accepted items via `innfo-mcp apply_change` (one call per item), run `validate_knowledge` (failure aborts the run: no version bump and no console rewrite), bump the patch version once, and regenerate the stable-name console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only.
+Reconcile Feedback replaces the old Version-And-Archive step: the console is a frozen snapshot and only changes through the feedback loop. Run the Reconcile Feedback procedure (`../../workspace/procedures/reconcile_feedback_NN.md`): evaluate staleness via evaluate_feedback_items, diff preview per pending item, apply accepted items via innfo-mcp apply_change, run validate_knowledge (failure aborts the run: no version bump and no console rewrite), log verdicts via record_feedback_verdict, bump the patch version once, and regenerate the stable-name console `{Model}_V_{version}_console.html`. Timestamped console copies are archive-only.
 
 # NN Artifact
 
