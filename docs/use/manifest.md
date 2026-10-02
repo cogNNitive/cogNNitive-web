@@ -187,20 +187,20 @@ agent-bootstrap:
       commit: "e22588dda3b0be6dbee4a8331dc7e82d7cb8dc44"
   console-assets:
     - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
-      version: "0.7.3"
-      ref: "innfo-console-v0.7.3"
-      commit: "3d60a7d6e09d0ea81470d6d68badef14989db8d2"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3d60a7d6e09d0ea81470d6d68badef14989db8d2/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
+      version: "0.8.0"
+      ref: "innfo-console-v0.8.0"
+      commit: "cb6c3255b2e4adf9b246b1560ad93a203330652d"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/cb6c3255b2e4adf9b246b1560ad93a203330652d/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
     - file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
-      version: "0.7.3"
-      ref: "innfo-console-v0.7.3"
-      commit: "3d60a7d6e09d0ea81470d6d68badef14989db8d2"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3d60a7d6e09d0ea81470d6d68badef14989db8d2/iNNfo/specs/bluepriNNts/console/artifact_shell.html
+      version: "0.8.0"
+      ref: "innfo-console-v0.8.0"
+      commit: "cb6c3255b2e4adf9b246b1560ad93a203330652d"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/cb6c3255b2e4adf9b246b1560ad93a203330652d/iNNfo/specs/bluepriNNts/console/artifact_shell.html
     - file: scripts/export-console.mjs
-      version: "0.7.3"
-      ref: "innfo-console-v0.7.3"
-      commit: "3d60a7d6e09d0ea81470d6d68badef14989db8d2"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3d60a7d6e09d0ea81470d6d68badef14989db8d2/scripts/export-console.mjs
+      version: "0.8.0"
+      ref: "innfo-console-v0.8.0"
+      commit: "cb6c3255b2e4adf9b246b1560ad93a203330652d"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/cb6c3255b2e4adf9b246b1560ad93a203330652d/scripts/export-console.mjs
   workflows:
     - id: model
       label: Create an iNNfo model
