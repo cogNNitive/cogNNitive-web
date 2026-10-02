@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-02T10:20:26.397Z",
-  "head": "082e0c710f8845dd9fc27234e6e6064cf5658230",
+  "generatedAt": "2026-10-02T10:56:34.850Z",
+  "head": "cfc7a43cd4467f9dfa1b127a236119e9a149c9fe",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -47,7 +47,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.19.4",
       "pinnedTagDate": "2026-10-02T11:39:06+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 2,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
@@ -61,7 +61,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.19.4",
       "pinnedTagDate": "2026-10-02T11:39:06+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 2,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
@@ -73,26 +73,18 @@
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.13.0",
-      "pinnedTagDate": "2026-10-02T11:21:02+02:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/package.json"
-      ]
+      "pinnedTag": "innfo-mcp-v0.13.1",
+      "pinnedTagDate": "2026-10-02T12:14:34+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.7.2",
-      "pinnedTagDate": "2026-10-02T09:14:11+02:00",
-      "commitsSincePin": 7,
+      "pinnedTag": "innfo-console-v0.7.3",
+      "pinnedTagDate": "2026-10-02T12:14:34+02:00",
+      "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-slug.generated.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html"
       ]
     }
   }
