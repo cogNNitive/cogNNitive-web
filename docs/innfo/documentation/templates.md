@@ -25,6 +25,7 @@ All templates are validated against Level 1 (`iNNfo_V_0-2-1`) and are declared i
 | **Sources** | `V_0-1-0` | External citations and reference catalogs | [`specs/templates/sources/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md) |
 | **Workspace** | `V_0-6-0` | Top-level workspace layout and metadata | [`specs/templates/workspace_spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md) |
 | **Blank** | `V_0-2-0` | Minimal starter schema | [`specs/templates/blank/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md) |
+| **Visual Catalog** | `V_0-1-0` | Image-derived entries with witness evidence and traceability to normalized sources | [`specs/templates/visual-catalog/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md) |
 
 ---
 

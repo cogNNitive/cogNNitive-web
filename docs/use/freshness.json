@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-02T08:01:09.448Z",
-  "head": "647cac062759d978741f0a85d6b5aac2b4e67133",
+  "generatedAt": "2026-10-02T09:26:36.362Z",
+  "head": "24347a967abf035b413c29e02499213f2e63a8d4",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.9.0",
       "pinnedTagDate": "2026-10-01T19:08:06+02:00",
-      "commitsSincePin": 13,
+      "commitsSincePin": 15,
       "filesTouched": [
         "skills/nn-innfo/SKILL.md",
         "skills/nn-preflight/scripts/domain-probe.js",
@@ -47,7 +47,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.19.2",
       "pinnedTagDate": "2026-10-01T19:08:06+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/artifacts/spec_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
@@ -61,6 +61,8 @@
         "iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md",
         "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
         "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
+        "iNNfo/specs/bluepriNNts/visual-catalog/procedures/ingest_visual_catalog_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md",
         "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
       ]
     },
@@ -68,7 +70,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.19.2",
       "pinnedTagDate": "2026-10-01T19:08:06+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/artifacts/spec_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
@@ -82,6 +84,8 @@
         "iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md",
         "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
         "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
+        "iNNfo/specs/bluepriNNts/visual-catalog/procedures/ingest_visual_catalog_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md",
         "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
       ]
     },
@@ -89,7 +93,7 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.12.0",
       "pinnedTagDate": "2026-09-30T13:30:01+02:00",
-      "commitsSincePin": 21,
+      "commitsSincePin": 24,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/README.md",
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
@@ -129,7 +133,7 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.7.2",
       "pinnedTagDate": "2026-10-02T09:14:11+02:00",
-      "commitsSincePin": 5,
+      "commitsSincePin": 6,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",

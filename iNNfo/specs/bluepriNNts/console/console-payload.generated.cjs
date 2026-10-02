@@ -8735,6 +8735,7 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
   }
   const fm = parseFrontmatter(content);
   const sha256 = fm?.sha256;
+  const mediaSha256 = fm?.media_sha256;
   const version = fm?.version ?? fm?.knowledge_version;
   let excerpt;
   if (ref.unit) {
@@ -8779,6 +8780,7 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
     ...classified.author ? { author: classified.author } : {},
     ...excerpt ? { excerpt: excerpt.text, ...excerpt.truncated ? { truncated: true } : {} } : {},
     ...sha256 ? { sha256 } : {},
+    ...mediaSha256 ? { media_sha256: mediaSha256 } : {},
     ...version ? { version } : {}
   };
 }
