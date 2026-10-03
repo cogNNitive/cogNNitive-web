@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-2-2"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-2_NN.md"
 title: "Workspace Specification App"
-template_version: "V_0-6-0"
+template_version: "V_0-8-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -120,7 +120,7 @@ description:: Base relative path for domain models in the workspace (default: mo
 ## NN Field Definition: sources_dir
 concept:: Workspace
 type:: string
-description:: Base relative path for normalized sources in the workspace (default: sources/nn/).
+description:: Base relative path of the sources folder in the workspace (default: sources/). Raw files live in sources/import/ and sources/conversations/; each is described by a co-located sidecar.
 
 ## NN Field Definition: templates_dir
 concept:: Workspace
@@ -368,7 +368,7 @@ Points to the workspace Sources Catalog model (`sources_NN.md`), establishing im
 
 ### Methodologies
 - Immutable primary sources with SHA-256 provenance hashes.
-- Two-tier storage (`sources/original/` and `sources/nn/`).
+- Raw files stay untouched; a co-located sidecar (`<file>_sidecar_NN.md`) carries the hash and, for binary files, the normalized body.
 
 ### Prompts
 - "Bind sources catalog to workspace and verify document lineage."

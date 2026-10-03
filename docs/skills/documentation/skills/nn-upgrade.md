@@ -23,7 +23,7 @@ Delegates to `nn-preflight` (session greeting + deterministic preflight integrit
 
 ### Flow A — Domain Layout Migration (`legacy-layout`)
 
-Migrates legacy workspaces (`models/`, `specs/templates/`, `workspace_NN.md`, legacy keys) to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` structure:
+Migrates legacy workspaces (`models/`, `specs/templates/`, `workspace_NN.md`, `export/`, `sources/nn|original|export|archive`, `_V_` kNNowledge names, legacy keys) to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` / `artifacts` structure:
 
 1. **Min-MCP Check**: Requires `innfo-mcp` `>= 0.12.0`.
 2. **Dry Run**: `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir>` produces a plan report and deterministic `planHash`.

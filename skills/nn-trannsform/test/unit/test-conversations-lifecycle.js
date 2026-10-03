@@ -234,43 +234,72 @@ async function run() {
       "both format promotes nothing (retired)",
     );
 
+    const convSourcesDir = path.join(TEST_TEMP, "sources", "conversations");
+    const promotedNames = (slug) =>
+      fs.existsSync(convSourcesDir)
+        ? fs
+            .readdirSync(convSourcesDir)
+            .filter((f) => f.startsWith(`${slug}_`) && !f.endsWith("_sidecar_NN.md"))
+            .sort()
+        : [];
+    const T1 = () => new Date("2026-10-03T10:00:00.000Z");
     const fullPromo = await conv.promoteConversation({
       workspaceRoot: TEST_TEMP,
       sessionFile: finalSession.filePath,
       titleSlug: "2026-09-06_api-gateway-refactor",
       format: "full",
+      now: T1,
     });
     assertEqual(fullPromo.format, "full", "promoted format is full");
     assertEqual(
       fullPromo.promotedFiles.length,
       1,
-      "full promotes exactly the _source.md transcript",
+      "full promotes exactly the transcript",
     );
     const sourceFullFile = path.join(
-      TEST_TEMP,
-      "sources",
-      "conversations",
-      "2026-09-06_api-gateway-refactor_source.md",
+      convSourcesDir,
+      "2026-09-06_api-gateway-refactor_20261003T100000Z.md",
+    );
+    assertEqual(
+      fullPromo.promotedFiles[0],
+      sourceFullFile,
+      "promoted transcript is <slug>_<UTC stamp>.md",
     );
     assertTrue(
       fs.existsSync(sourceFullFile),
       "source full transcript created in sources/conversations/",
     );
-    const nnFullFile = path.join(
-      TEST_TEMP,
-      "sources",
-      "nn",
-      "conversations",
-      "2026-09-06_api-gateway-refactor_source.md",
+    assertFalse(
+      fs.existsSync(path.join(convSourcesDir, "2026-09-06_api-gateway-refactor_source.md")),
+      "no _source.md is written",
+    );
+    const sidecarFile = `${sourceFullFile}_sidecar_NN.md`;
+    assertTrue(
+      fs.existsSync(sidecarFile),
+      "transcript is cognitivized in place: its sidecar sits next to it",
     );
     assertTrue(
-      fs.existsSync(nnFullFile),
-      "normalized full file created in sources/nn/conversations/",
+      !fs.existsSync(path.join(TEST_TEMP, "sources", "nn")),
+      "no sources/nn mirror is created",
     );
-    const nnFullContent = fs.readFileSync(nnFullFile, "utf8");
+    const sidecarContent = fs.readFileSync(sidecarFile, "utf8");
     assertTrue(
-      nnFullContent.includes('conversation_format: "full"'),
-      "normalized frontmatter has conversation_format full",
+      /source_type: conversation_transcript/.test(sidecarContent),
+      "sidecar records source_type conversation_transcript",
+    );
+
+    const again = await conv.promoteConversation({
+      workspaceRoot: TEST_TEMP,
+      sessionFile: finalSession.filePath,
+      titleSlug: "2026-09-06_api-gateway-refactor",
+      format: "full",
+      now: () => new Date("2026-10-03T11:00:00.000Z"),
+    });
+    assertEqual(again.promotedFiles.length, 0, "promoting identical bytes writes nothing");
+    assertEqual(
+      promotedNames("2026-09-06_api-gateway-refactor").length,
+      1,
+      "identical re-promotion adds no family member",
     );
 
     const nonePromo = await conv.promoteConversation({
@@ -381,17 +410,21 @@ async function run() {
       titleSlug: "2026-09-06_api-gateway-refactor",
       format: "full",
       fullContent: turnStructuredBody,
+      now: () => new Date("2026-10-03T12:00:00.000Z"),
     });
     assertEqual(
       turnFullPromo.promotedFiles.length,
       1,
-      "turn-structured fullContent promotes exactly one _source.md",
+      "turn-structured fullContent promotes exactly one new family member",
     );
     const turnSourcePath = path.join(
-      TEST_TEMP,
-      "sources",
-      "conversations",
-      "2026-09-06_api-gateway-refactor_source.md",
+      convSourcesDir,
+      "2026-09-06_api-gateway-refactor_20261003T120000Z.md",
+    );
+    assertEqual(
+      fs.readFileSync(sourceFullFile, "utf8").includes("## NN Turn 01: Architect"),
+      false,
+      "the earlier member's bytes are unchanged",
     );
     const turnSourceContent = fs.readFileSync(turnSourcePath, "utf8");
     assertTrue(
@@ -413,6 +446,29 @@ async function run() {
         "origin_transcript: conversations/2026-09-06_api-gateway-refactor.md",
       ),
       "promoted file links the raw transcript via origin_transcript frontmatter",
+    );
+
+    console.log("--- Test 6d: legacy unsuffixed transcripts stay unsuffixed ---");
+    const legacyMember = path.join(convSourcesDir, "2026-09-01_legacy-talk.md");
+    fs.writeFileSync(legacyMember, "legacy transcript\n", "utf8");
+    const legacyBytes = fs.readFileSync(legacyMember);
+    const legacySession = path.join(TEST_TEMP, "conversations", "2026-09-01_legacy-talk.md");
+    fs.writeFileSync(legacySession, "# Legacy\nNew turns.\n", "utf8");
+    await conv.promoteConversation({
+      workspaceRoot: TEST_TEMP,
+      sessionFile: legacySession,
+      titleSlug: "2026-09-01_legacy-talk",
+      format: "full",
+      now: T1,
+    });
+    assertTrue(
+      fs.readFileSync(legacyMember).equals(legacyBytes),
+      "the unsuffixed legacy member is neither renamed nor rewritten",
+    );
+    assertEqual(
+      promotedNames("2026-09-01_legacy-talk").join(","),
+      "2026-09-01_legacy-talk_20261003T100000Z.md",
+      "a new promotion adds a suffixed member next to the unsuffixed one",
     );
 
     const noneWithContent = await conv.promoteConversation({
@@ -469,16 +525,13 @@ async function run() {
         cliRun.status === 0 ? "" : ` (stderr: ${String(cliRun.stderr).trim()})`
       }`,
     );
+    const cliPromoted = fs
+      .readdirSync(path.join(cliTestDir, "sources", "conversations"))
+      .filter((f) => !f.endsWith("_sidecar_NN.md"));
     assertTrue(
-      fs.existsSync(
-        path.join(
-          cliTestDir,
-          "sources",
-          "conversations",
-          "cli-full-slug_source.md",
-        ),
-      ),
-      "CLI promoted _source.md file created",
+      cliPromoted.length === 1 &&
+        /^cli-full-slug_\d{8}T\d{6}Z\.md$/.test(cliPromoted[0]),
+      `CLI promoted <slug>_<UTC stamp>.md (got ${cliPromoted.join(",")})`,
     );
     fs.rmSync(cliTestDir, { recursive: true, force: true });
 

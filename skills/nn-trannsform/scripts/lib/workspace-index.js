@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const { displayStem, isNNName, isSidecarName } = require('./innfo-core.generated.cjs');
 
 const INDEX_SKIP_DIRS = new Set(['backups', 'archive', 'specs', '.spec-cache', 'node_modules', '.git']);
 
 /**
- * List workspace models matching *_NN.md.
+ * List workspace models: `_NN.md` documents that are not sidecars.
  * @param {string} projectDir
  * @returns {string[]}
  */
@@ -18,7 +19,7 @@ function listWorkspaceModels(projectDir) {
       if (name.startsWith('.') || INDEX_SKIP_DIRS.has(name)) continue;
       if (entry.isDirectory()) {
         walk(path.join(dir, name), prefix + name + '/');
-      } else if (entry.isFile() && name.endsWith('_NN.md')) {
+      } else if (entry.isFile() && isNNName(name) && !isSidecarName(name)) {
         found.push(prefix + name);
       }
     }
@@ -70,10 +71,8 @@ function normalizeIndexTarget(projectDir, target) {
  * @returns {string}
  */
 function deriveIndexLabel(relPath) {
-  return path
-    .basename(relPath)
-    .replace(/_V_\d+-\d+-\d+_[A-Za-z0-9-]+_NN\.md$/, '')
-    .replace(/_NN\.md$/, '')
+  return displayStem(path.basename(relPath))
+    .replace(/_V_\d+-\d+-\d+_[A-Za-z0-9-]+$/, '')
     .replace(/_/g, ' ');
 }
 
@@ -301,6 +300,14 @@ function writeWorkspaceIndex(projectDir) {
   let finalContent = finalLines.join('\n');
   if (!finalContent.endsWith('\n')) {
     finalContent += '\n';
+  }
+  // index.md is the living, hand-merged navigation file (the MCP server and the
+  // editor read it by this exact name), not a produced artifact: it stays a fixed
+  // name, but an unchanged workspace must not touch it.
+  const current = existed ? fs.readFileSync(indexPath, 'utf8') : null;
+  if (current === finalContent) {
+    console.log('Workspace index.md is up to date');
+    return;
   }
   fs.writeFileSync(indexPath, finalContent, 'utf8');
 

@@ -25,6 +25,8 @@
 - [Overview](templates): Overview of the iNNfo Level 2 bluepriNNts (apps) that model knowledge for a domain.
 - [Video App](template-video): The video production bluepriNNt and its generated scenes and artifacts.
 - [Offline Consoles](offline-consoles): How generated consoles boot offline from file:// via static script tags and a vendored UMD bundle.
+- [Workspace Console Hub](workspace-console-hub): The aggregated console entry point: how to generate consoles with an AI prompt and how the embedded hub stays consistent with the editor.
 - [Console Needs & Visuals](console-needs-and-visuals): Capability needs and app-driven concept color/icon in generated consoles.
+- [Console UI Kit](console-ui-kit): Design tokens and presentational components (InnfoUI) shared by generated consoles.
 - [Validator Behavior](validator-behavior): Deterministic validation, differential baseline_path output, version inference, and workspace-first resolution.
 - [Live Model Preview](live-preview): The opt-in MCP loopback server and SSE change stream that turns the editor tab into a read-only live mirror of the agent's mutations.

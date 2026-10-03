@@ -10,20 +10,35 @@ const provenance = require('../provenance');
 const WORKSPACE_DIRS = [
   path.join('sources', 'import'),
   path.join('sources', 'conversations'),
-  path.join('sources', 'export'),
-  path.join('sources', 'nn'),
   'conversations',
-  'export',
+  'artifacts',
   'kNNowledge',
   'procedures',
   'traNNsformations',
 ];
 
+/** Text policy: no EOL conversion, so raw-byte hashes survive a checkout on any platform. */
+const TEXT_POLICY_LINE = '* -text';
+
+/**
+ * Ensure the domaiNN root `.gitattributes` carries the `* -text` policy,
+ * preserving every existing line. Idempotent.
+ *
+ * @param {string} projectDir
+ */
+function ensureTextPolicy(projectDir) {
+  const file = path.join(projectDir, '.gitattributes');
+  const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  if (existing.split(/\r?\n/).includes(TEXT_POLICY_LINE)) return;
+  const separator = existing === '' || existing.endsWith('\n') ? '' : '\n';
+  fs.writeFileSync(file, `${existing}${separator}${TEXT_POLICY_LINE}\n`, 'utf8');
+}
+
 const TRANNSFORM_README = `# Transform
 
 Transform (traNNsform) is a tool to structure and process unstructured documents:
 1. Place files in \`sources/import/\`.
-2. Scan and normalize to \`sources/nn/\`.
+2. Scan to cognitivize them in place (a co-located \`_sidecar_NN.md\` next to each file).
 3. Track lineage with \`<Project>_V_0-2-0_cogNNitive_NN.md\`.
 `;
 
@@ -67,7 +82,7 @@ At the beginning of every interactive session in this workspace, AI coding agent
  * @param {string} projectName Project folder name.
  * @param {object} [options={}] Optional configuration options.
  * @param {boolean} [options.overwriteAgents=false] Whether to overwrite existing AGENTS.md.
- * @returns {{ projectDir: string, importDir: string, originalDir: string, copiedCount: number, provModelPath: string, agentsMdPath: string }}
+ * @returns {{ projectDir: string, importDir: string, copiedCount: number, provModelPath: string, agentsMdPath: string }}
  */
 function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
   const projectDir = path.join(destParentDir, projectName);
@@ -80,6 +95,8 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
   if (projectName.toLowerCase() === 'trannsform') {
     fs.writeFileSync(path.join(projectDir, 'README.md'), TRANNSFORM_README, 'utf8');
   }
+
+  ensureTextPolicy(projectDir);
 
   const agentsMdPath = path.join(projectDir, 'AGENTS.md');
   if (!fs.existsSync(agentsMdPath) || overwriteAgents) {
@@ -108,7 +125,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `# NN Workspace\n\n` +
       `## NN Workspace: ${projectName} Workspace\n` +
       `knowledge_dir:: kNNowledge/\n` +
-      `sources_dir:: sources/nn/\n` +
+      `sources_dir:: sources/\n` +
       `Operational workspace for ${projectName}.\n`;
     fs.writeFileSync(domainnPath, domainnContent, 'utf8');
   }
@@ -129,7 +146,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
 
   const prov = provenance.buildProvenanceKnowledge(projectDir, { projectName });
 
-  return { projectDir, importDir, originalDir: importDir, copiedCount, provModelPath: prov.modelPath, agentsMdPath };
+  return { projectDir, importDir, copiedCount, provModelPath: prov.modelPath, agentsMdPath };
 }
 
 module.exports = { bootstrapProject, generateAgentsMd, WORKSPACE_DIRS };

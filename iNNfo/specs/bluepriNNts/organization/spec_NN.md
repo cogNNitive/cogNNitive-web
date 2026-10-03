@@ -5,15 +5,15 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-3-2"
 title: "Organization App"
 procedures:
   - id: "audit-skill-gaps"
     name: "Audit Skill Gaps"
-    path: "procedures/audit_skill_gaps_NN.md"
+    path: "procedures/audit_skill_gaps_procedures_NN.md"
   - id: "export-team-directory"
     name: "Export Team Directory"
-    path: "procedures/export_team_directory_NN.md"
+    path: "procedures/export_team_directory_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true

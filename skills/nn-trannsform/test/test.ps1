@@ -111,12 +111,12 @@ try {
   node scripts/index.js --src "$TEST_DIR\source" --dest "$TEST_DIR" --name "test-project" 2>&1 | Out-Null
   Assert-True (Test-Path "$TEST_DIR\test-project") "Project directory created"
   Assert-True (Test-Path "$TEST_DIR\test-project\sources\import") "sources/import/ directory created"
-  Assert-True (Test-Path "$TEST_DIR\test-project\sources\nn") "sources/nn/ directory created"
+  Assert-True (-not (Test-Path "$TEST_DIR\test-project\sources\nn")) "retired mirror folder NOT created"
   Assert-True (-not (Test-Path "$TEST_DIR\test-project\sources\raw")) "sources/raw/ directory NOT created"
   Assert-True (Test-Path "$TEST_DIR\test-project\traNNsformations") "traNNsformations/ directory created"
-  Assert-True (Test-Path "$TEST_DIR\test-project\models") "models/ directory created"
+  Assert-True (Test-Path "$TEST_DIR\test-project\kNNowledge") "kNNowledge/ directory created"
   Assert-True (Test-Path "$TEST_DIR\test-project\procedures") "procedures/ directory created"
-  Assert-True (Test-Path "$TEST_DIR\test-project\export") "export/ directory created"
+  Assert-True (Test-Path "$TEST_DIR\test-project\artifacts") "artifacts/ directory created"
   Assert-True (Test-Path "$TEST_DIR\test-project\sources\import\hello.txt") "Source file copied to sources/import/"
 } finally {
   Pop-Location
@@ -128,17 +128,17 @@ Write-Host "â”€â”€ Step 6: Run scan â”€â”€" -ForegroundColor
 Push-Location $SKILL_DIR
 try {
   node scripts/index.js --scan --src "$TEST_DIR\test-project" 2>&1 | Out-Null
-  Assert-True (Test-Path "$TEST_DIR\test-project\sources\nn\index.md") "ingestion manifest created at sources/nn/index.md"
+  Assert-True (Test-Path "$TEST_DIR\test-project\sources\import\hello.txt_sidecar_NN.md") "co-located sidecar created next to hello.txt"
   Assert-True (Test-Path "$TEST_DIR\test-project\index.md") "semantic workspace index.md created"
-  Assert-True (Test-Path "$TEST_DIR\test-project\sources\nn\import\hello.md") "hello.md created in sources/nn/import/"
+  Assert-True (-not (Test-Path "$TEST_DIR\test-project\sources\nn")) "no mirror folder written by the scan"
 
   $provModel = Get-ChildItem "$TEST_DIR\test-project" -Filter "*_NN.md" -Recurse -ErrorAction SilentlyContinue
   Assert-True ($null -ne $provModel) "provenance model (*_workspace_NN.md / *_cogNNitive_NN.md) created"
 
-  $helloContent = Get-Content "$TEST_DIR\test-project\sources\nn\import\hello.md" -Raw
-  Assert-True ($helloContent -match 'Hello world') "hello.md contains 'Hello world'"
-  Assert-True ($helloContent -match 'source_file: "sources/import/hello.txt"') "hello.md frontmatter has flat source_file field"
-  Assert-True ($helloContent -match 'sha256: "[a-f0-9]{64}"') "hello.md frontmatter has sha256 field"
+  $helloContent = Get-Content "$TEST_DIR\test-project\sources\import\hello.txt_sidecar_NN.md" -Raw
+  Assert-True ($helloContent -match 'Hello world') "sidecar contains 'Hello world'"
+  Assert-True ($helloContent -match 'source_file: "?sources/import/hello.txt"?') "sidecar frontmatter has the source_file field"
+  Assert-True ($helloContent -match 'sha256: "?[a-f0-9]{64}"?') "sidecar frontmatter has the sha256 field"
 } finally {
   Pop-Location
 }

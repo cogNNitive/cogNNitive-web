@@ -1,8 +1,28 @@
 #!/usr/bin/env node
 
+/**
+ * process-images.js: cognitivize the photos of a domaiNN in place and write
+ * optimized copies as write-once artifacts.
+ *
+ *   node process-images.js [projectDir] [inputDir]
+ *
+ *  - `inputDir` (default `sources/import/photos`, relative to `projectDir`) holds
+ *    the raw images. They are never moved or rewritten: each one gets a
+ *    co-located sidecar through innfo-core `cognitivize`, with a normalizer
+ *    that records the image format and size and keeps the image citable;
+ *  - the optimized copy of each image is a new suffixed member of its family
+ *    under `artifacts/photos/` (write-once; identical bytes dedupe).
+ */
+
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { cognitivize, writeOnce, parseName } = require('./lib/innfo-core.generated.cjs');
+const { TRANNNSFORM_VERSION } = require('./lib/normalizer');
+
+const IMAGE_FILE = /\.(jpg|jpeg|png|webp|gif)$/i;
+const DEFAULT_INPUT = 'sources/import/photos';
+const OPTIMIZED_DIR = 'artifacts/photos';
 
 function isDepInstalled(pkgName) {
   try {
@@ -13,13 +33,71 @@ function isDepInstalled(pkgName) {
   }
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  const inputDir = args[0] || './sources/original/photos';
-  const outputDir = args[1] || './sources/processed/photos';
+/**
+ * Normalizer injected into core `cognitivize` for image files.
+ * @param {(input: Buffer) => any} sharp
+ * @returns {(input: { path: string, ext: string, bytes: Uint8Array }) => Promise<{ body: string, normalizedBy: string, metadata: Record<string, string | number> }>}
+ */
+function createImageNormalizer(sharp) {
+  return async function normalizeImage({ path: rel, ext, bytes }) {
+    const info = await sharp(Buffer.from(bytes)).metadata();
+    const name = path.basename(rel);
+    const width = Number(info.width) || 0;
+    const height = Number(info.height) || 0;
+    return {
+      body: `# ${name}\n\nImage (${info.format || ext}), ${width} x ${height} px.\n`,
+      normalizedBy: `traNNsform v${TRANNNSFORM_VERSION}`,
+      metadata: { width, height },
+    };
+  };
+}
 
-  if (!fs.existsSync(inputDir)) {
-    console.error(`Input directory does not exist: ${inputDir}`);
+function optimize(sharp, bytes, ext) {
+  const pipeline = sharp(Buffer.from(bytes)).resize(768, 768, { fit: 'inside', withoutEnlargement: true });
+  if (ext === 'png') return pipeline.png({ quality: 80 }).toBuffer();
+  if (ext === 'webp') return pipeline.webp({ quality: 80 }).toBuffer();
+  if (ext === 'gif') return pipeline.gif().toBuffer();
+  return pipeline.jpeg({ quality: 80 }).toBuffer();
+}
+
+/**
+ * @param {string} projectDir domaiNN root
+ * @param {{ inputDir?: string, sharp: (input: Buffer) => any, log?: (line: string) => void }} options
+ * @returns {Promise<{ processed: number, failed: number }>}
+ */
+async function processImages(projectDir, { inputDir = DEFAULT_INPUT, sharp, log = () => {} }) {
+  const absInput = path.join(projectDir, inputDir);
+  const names = fs.readdirSync(absInput).filter((f) => IMAGE_FILE.test(f)).sort();
+  const normalizer = createImageNormalizer(sharp);
+  let processed = 0;
+  let failed = 0;
+
+  for (const name of names) {
+    const rel = `${inputDir.replace(/\\/g, '/').replace(/\/+$/, '')}/${name}`;
+    try {
+      const cog = await cognitivize(projectDir, rel, { normalizer });
+      if (cog.status === 'rejected') throw new Error(`not cognitivized (${cog.reason})`);
+      const bytes = fs.readFileSync(path.join(projectDir, rel));
+      const parsed = parseName(name);
+      const ext = String(parsed.ext || path.extname(name).slice(1)).toLowerCase();
+      const optimized = await optimize(sharp, bytes, ext);
+      await writeOnce(projectDir, { dir: OPTIMIZED_DIR, key: parsed.key, ext: parsed.ext }, optimized, { inputs: [rel] });
+      log(`Optimized: ${name}`);
+      processed++;
+    } catch (err) {
+      log(`Failed to process ${name}: ${err.message}`);
+      failed++;
+    }
+  }
+  return { processed, failed };
+}
+
+async function main() {
+  const projectDir = path.resolve(process.argv[2] || '.');
+  const inputDir = process.argv[3] || DEFAULT_INPUT;
+
+  if (!fs.existsSync(path.join(projectDir, inputDir))) {
+    console.error(`Input directory does not exist: ${path.join(projectDir, inputDir)}`);
     process.exit(1);
   }
 
@@ -35,40 +113,16 @@ async function main() {
   }
 
   const sharp = require('sharp');
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-
-  const files = fs.readdirSync(inputDir).filter(f => /\.(jpg|jpeg|png|webp|gif)$/i.test(f));
-  console.log(`Found ${files.length} images to process from ${inputDir}`);
-
-  for (const file of files) {
-    const inputPath = path.join(inputDir, file);
-    const outputPath = path.join(outputDir, file);
-    const ext = path.extname(file).toLowerCase();
-
-    try {
-      let pipeline = sharp(inputPath)
-        .resize(768, 768, { fit: 'inside', withoutEnlargement: true });
-
-      if (ext === '.png') {
-        pipeline = pipeline.png({ quality: 80 });
-      } else if (ext === '.webp') {
-        pipeline = pipeline.webp({ quality: 80 });
-      } else if (ext === '.gif') {
-        pipeline = pipeline.gif();
-      } else {
-        pipeline = pipeline.jpeg({ quality: 80 });
-      }
-
-      await pipeline.toFile(outputPath);
-      console.log(`Optimized: ${file}`);
-    } catch (err) {
-      console.error(`Failed to optimize ${file}: ${err.message}`);
-    }
-  }
-
-  console.log('Batch image processing completed.');
+  const { processed, failed } = await processImages(projectDir, { inputDir, sharp, log: console.log });
+  console.log(`Batch image processing completed: ${processed} processed, ${failed} failed.`);
+  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch(console.error);
+module.exports = { processImages, createImageNormalizer, isDepInstalled };
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

@@ -27,7 +27,7 @@ Before launching any specialized workflow, `nn-start` verifies:
 1. **Preflight Runner**: Ensures the integrity check passes via `nn-preflight`.
 2. **Node.js**: Requires `node --version >= 18`.
 3. **MCP Server**: Verifies `innfo-mcp` responsiveness via `innfo-mcp_list_models` (or resolves bundle at `~/.agents/mcp/innfo-mcp.bundle.js`).
-4. **Workspace Layout**: Confirms standard directory layout (`sources/`, `models/`, `procedures/`, `artifacts/`, `index.md`).
+4. **Workspace Layout**: Confirms standard directory layout (`sources/`, `kNNowledge/`, `procedures/`, `artifacts/`, `domaiNN_NN.md`).
 
 ---
 

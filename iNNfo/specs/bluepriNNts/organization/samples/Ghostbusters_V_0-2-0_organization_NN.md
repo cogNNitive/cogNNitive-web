@@ -78,7 +78,7 @@ tags:: [technical, research, fabrication]
 Secondary research seat focused on field testing, equipment fabrication, and PKE analysis.
 
 ## NN Position: Field Specialist
-sources:: [sources/nn/nyc-paranormal-activity-report-1984.md@## Response Times&lead_agency]
+sources:: [sources/import/nyc-paranormal-activity-report-1984.md@## Response Times&lead_agency]
 tags:: [operational, frontline, field-unit]
 Operational seat dedicated to frontline containment, heavy transport, and equipment handling.
 

@@ -55,6 +55,11 @@ async function main() {
     totalPassed += coreMirrorResult.passed;
     totalFailed += coreMirrorResult.failed;
 
+    const sidecarDiscoveryTest = require('./unit/test-sidecar-discovery');
+    const sidecarDiscoveryResult = await sidecarDiscoveryTest.run();
+    totalPassed += sidecarDiscoveryResult.passed;
+    totalFailed += sidecarDiscoveryResult.failed;
+
     const scannerTest = require('./unit/test-scanner');
     const scannerResult = await scannerTest.run();
     totalPassed += scannerResult.passed;
@@ -115,11 +120,6 @@ async function main() {
     totalPassed += duplicateGuardsResult.passed;
     totalFailed += duplicateGuardsResult.failed;
 
-    const scannerCollisionTest = require('./unit/test-scanner-collision');
-    const scannerCollisionResult = await scannerCollisionTest.run();
-    totalPassed += scannerCollisionResult.passed;
-    totalFailed += scannerCollisionResult.failed;
-
     const duplicateBodyHashTest = require('./unit/test-duplicate-body-hash');
     const duplicateBodyHashResult = await duplicateBodyHashTest.run();
     totalPassed += duplicateBodyHashResult.passed;
@@ -134,6 +134,21 @@ async function main() {
     const impactCheckerResult = await impactCheckerTest.run();
     totalPassed += impactCheckerResult.passed;
     totalFailed += impactCheckerResult.failed;
+
+    const transformerTest = require('./unit/test-transformer');
+    const transformerResult = await transformerTest.run();
+    totalPassed += transformerResult.passed;
+    totalFailed += transformerResult.failed;
+
+    const importInPlaceTest = require('./unit/test-import-in-place');
+    const importInPlaceResult = await importInPlaceTest.run();
+    totalPassed += importInPlaceResult.passed;
+    totalFailed += importInPlaceResult.failed;
+
+    const cliCognitivizeTest = require('./unit/test-cli-cognitivize');
+    const cliCognitivizeResult = await cliCognitivizeTest.run();
+    totalPassed += cliCognitivizeResult.passed;
+    totalFailed += cliCognitivizeResult.failed;
 
     const externalScannerTest = require('./unit/test-external-scanner');
     const externalScannerResult = await externalScannerTest.run();

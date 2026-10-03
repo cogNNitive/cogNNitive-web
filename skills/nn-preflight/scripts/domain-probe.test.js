@@ -45,7 +45,6 @@ async function runTests() {
     await test('computes pending sources via hash comparison (P2)', async () => {
       const ws = path.join(tmpDir, 'sources-ws');
       fs.mkdirSync(path.join(ws, 'sources', 'import'), { recursive: true });
-      fs.mkdirSync(path.join(ws, 'sources', 'nn'), { recursive: true });
       fs.mkdirSync(path.join(ws, 'kNNowledge'), { recursive: true });
 
       const rawContent = 'Hello raw content';
@@ -53,12 +52,12 @@ async function runTests() {
       const rawFile = path.join(ws, 'sources', 'import', 'doc.txt');
       fs.writeFileSync(rawFile, rawContent);
 
-      // Unnormalized: no sources/nn counterpart
+      // Unnormalized: no co-located sidecar
       let res = await runProbe({ workspaceDir: ws, skipPreflight: true });
       assert.strictEqual(res.sources.pending_count, 1, 'Expected 1 pending unnormalized source');
 
-      // Normalized with matching sha256
-      const normFile = path.join(ws, 'sources', 'nn', 'doc.md');
+      // Cognitivized: a co-located sidecar with the matching sha256
+      const normFile = path.join(ws, 'sources', 'import', 'doc.txt_sidecar_NN.md');
       fs.writeFileSync(
         normFile,
         `---\nsource_file: sources/import/doc.txt\nsha256: ${rawHash}\n---\n# Normalized\n`,

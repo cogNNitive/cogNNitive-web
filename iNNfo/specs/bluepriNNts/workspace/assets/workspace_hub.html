@@ -11,13 +11,11 @@
       theme: {
         extend: {
           colors: {
+            // Accent resolves from the host-injected token when embedded in the
+            // editor, and falls back to the brand purple for standalone file:// use.
             primary: {
-              DEFAULT: '#3b82f6',
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
+              DEFAULT: 'var(--nn-accent, #4D0E4E)',
+              foreground: 'var(--nn-accent-foreground, #ffffff)',
             }
           },
           fontFamily: {
@@ -34,7 +32,7 @@
     .glass { backdrop-filter: blur(12px); }
   </style>
 </head>
-<body class="h-full flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+<body class="h-full flex flex-col antialiased selection:bg-primary selection:text-primary-foreground bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
   <!-- Header -->
   <header class="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 sticky top-0 z-20 px-6 py-4 glass shadow-2xs">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
@@ -67,7 +65,7 @@
         <div id="stats-badge" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap shadow-2xs">
           <span id="active-count">0</span> Active Consoles
         </div>
-        <button id="open-prompt-btn" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap" title="Generate prompt for AI Agent to regenerate all workspace consoles">
+        <button id="open-prompt-btn" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-primary hover:opacity-90 text-primary-foreground shadow-xs transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap" title="Generate prompt for AI Agent to regenerate all workspace consoles">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           <span>Regenerate Consoles</span>
         </button>
@@ -145,7 +143,7 @@
           <button id="cancel-prompt-modal-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer">
             Close
           </button>
-          <button id="copy-prompt-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+          <button id="copy-prompt-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-primary hover:opacity-90 text-primary-foreground shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
             <span>Copy Prompt</span>
           </button>
@@ -263,14 +261,14 @@
       const copyStatus = document.getElementById('copy-status');
 
       const templateProcedureMap = {
-        business: 'iNNfo/specs/templates/business/procedures/compile_business_console_NN.md',
-        procedures: 'iNNfo/specs/templates/procedures/procedures_V_0-2-0_NN.md',
-        organization: 'iNNfo/specs/templates/organization/procedures/compile_org_chart_console_NN.md',
-        documentation: 'iNNfo/specs/templates/documentation/procedures/compile_docs_portal_console_NN.md',
-        analysis: 'iNNfo/specs/templates/analysis/procedures/compile_strategic_audit_console_NN.md',
-        innovation: 'iNNfo/specs/templates/innovation/procedures/compile_innovation_funnel_console_NN.md',
-        metrics: 'iNNfo/specs/templates/metrics/procedures/create_timeline_NN.md',
-        projects: 'iNNfo/specs/templates/projects/procedures/create_roadmap_NN.md',
+        business: 'iNNfo/specs/bluepriNNts/business/procedures/compile_business_console_NN.md',
+        procedures: 'iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md',
+        organization: 'iNNfo/specs/bluepriNNts/organization/procedures/compile_org_chart_console_NN.md',
+        documentation: 'iNNfo/specs/bluepriNNts/documentation/procedures/compile_docs_portal_console_NN.md',
+        analysis: 'iNNfo/specs/bluepriNNts/analysis/procedures/compile_strategic_audit_console_NN.md',
+        innovation: 'iNNfo/specs/bluepriNNts/innovation/procedures/compile_innovation_funnel_console_NN.md',
+        metrics: 'iNNfo/specs/bluepriNNts/metrics/procedures/create_timeline_NN.md',
+        projects: 'iNNfo/specs/bluepriNNts/projects/procedures/create_roadmap_NN.md',
       };
 
       const templateColors = {
@@ -294,16 +292,16 @@
         let prompt = `Please validate and regenerate all interactive consoles for workspace "${title}" (v${version}).\n\n`;
         prompt += `### Target Workspace Models:\n`;
         modelsList.forEach((m, idx) => {
-          const proc = templateProcedureMap[m.template] || `iNNfo/specs/templates/${m.template}/procedures/compile_${m.template}_console_NN.md`;
+          const proc = templateProcedureMap[m.template] || `iNNfo/specs/bluepriNNts/${m.template}/procedures/compile_${m.template}_console_NN.md`;
           prompt += `${idx + 1}. **${m.title}** (Template: \`${m.template}\`, Model: \`${m.modelPath}\`)\n`;
           prompt += `   - Compilation Procedure: \`${proc}\`\n`;
-          prompt += `   - Target Console Artifact: \`${m.consolePath || `artifacts/${m.id}_console.html`}\`\n\n`;
+          prompt += `   - Target Console Artifact: \`${m.consolePath || `artifacts/${m.template}_console.html`}\`\n\n`;
         });
 
         prompt += `### Step-by-Step Instructions for the AI Agent:\n`;
         prompt += `1. **Model Validation**: Inspect the workspace models listed above to ensure concepts, fields, and matrices are valid and properly formatted.\n`;
         prompt += `2. **Console Regeneration**: For each model, run its declared compilation procedure to regenerate its standalone HTML console artifact in \`artifacts/\`.\n`;
-        prompt += `3. **Workspace Hub Compilation**: Execute \`iNNfo/specs/templates/workspace/procedures/compile_workspace_hub_NN.md\` to recompile \`artifacts/workspace_hub.html\` reflecting all updated models and console statuses.\n`;
+        prompt += `3. **Workspace Hub Compilation**: Execute \`iNNfo/specs/bluepriNNts/workspace/procedures/compile_workspace_hub_NN.md\` to recompile \`artifacts/workspace_hub.html\` reflecting all updated models and console statuses.\n`;
         prompt += `4. **Verification**: Confirm that all generated HTML consoles and the Workspace Hub render correctly offline via \`file://\`.\n`;
 
         return prompt;
@@ -375,7 +373,7 @@
               </div>
               <div class="flex items-center gap-2">
                 ${model.hasConsole ? `
-                  <button data-launch="${model.consolePath}" data-title="${model.title}" data-model-id="${model.id}" class="launch-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5">
+                  <button data-launch="${model.consolePath}" data-title="${model.title}" data-model-id="${model.id}" class="launch-btn px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary hover:opacity-90 text-primary-foreground shadow-xs transition-all cursor-pointer flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>Launch</span>
                   </button>

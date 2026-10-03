@@ -17,7 +17,7 @@ En iNNfo, las relaciones entre elementos y conceptos se clasifican en **5 nivele
          ▼                               ▼                     ▼                             ▼                               ▼
 ┌───────────────────┐         ┌───────────────────┐ ┌───────────────────┐         ┌───────────────────┐         ┌───────────────────┐
 │ 1. JERÁRQUICA     │         │ 2. ESTRUCTURAL    │ │ 3. ATRIBUTO       │         │ 4. CONTEXTUAL     │         │ 5. SUBMODELO      │
-│    (Taxonomía)    │         │    (Matriz)       │ │    (Campo)        │         │    (Mención)      │         │    (type:: model) │
+│    (Taxonomía)    │         │    (Matriz)       │ │    (Campo)        │         │    (Mención)      │         │  (type:: knowledge) │
 └────────┬──────────┘         └────────┬──────────┘ └────────┬──────────┘         └────────┬──────────┘         └────────┬──────────┘
          │                             │                     │                             │                             │
   Anidamiento de árbol        Matriz de Dominio       Campo referencial             Wikilink libre                Composición modular
@@ -53,18 +53,18 @@ En iNNfo, las relaciones entre elementos y conceptos se clasifican en **5 nivele
 - **Icono Visual**: 📝 `FileText`
 - **Ejemplo**: _"...para completar este paso es necesario revisar el [[Formulario DS-2019]] emitido por el patrocinador."_
 
-### 5. Composición de Submodelos (`type:: model`)
+### 5. Composición de Submodelos (`type:: knowledge`)
 
 La composición de submodelos permite desacoplar arquitecturas complejas subdividiendo el dominio en múltiples documentos físicos Nivel 3 (`*_NN.md`), manteniendo una relación formal de pertenencia y navegación entre un elemento padre y un modelo hijo especializado.
 
-- **Origen**: Definición formal en el metamodelo con `type:: model` y restricción opcional `target_template:: <template>`.
+- **Origen**: Definición formal en el metamodelo con `type:: knowledge` y restricción opcional `target_blueprint:: <bluepriNNt>`.
 - **Sintaxis de Campo**: `campo:: [[ruta/al/submodelo_NN.md]]` o `campo:: ruta/al/submodelo_NN.md`.
 - **Icono Visual**: 📦 `Boxes` / Píldora interactiva de submodelo con badge de plantilla.
 - **Comportamiento en Árbol**: El submodelo no flota como raíz independiente en el espacio de trabajo; se anida bajo el elemento que lo declara y se excluye de las raíces globales.
 
 #### Ejemplo Canónico: Ghostbusters Innovation → Business Model
 
-Un modelo de cartera de innovación (`Ghostbusters_V_0-2-0_innovation_NN.md`) contiene la iniciativa de expansión municipal, la cual instancia su propio modelo de negocio dedicado (`Ghostbusters_V_0-2-0_business_NN.md`):
+Un modelo de cartera de innovación (`Ghostbusters_innovation_NN.md`) contiene la iniciativa de expansión municipal, la cual instancia su propio modelo de negocio dedicado (`Ghostbusters_business_NN.md`):
 
 ##### 1. Definición en Metamodelo (`innovation_V_0-2-0_NN.md`)
 
@@ -72,11 +72,11 @@ Un modelo de cartera de innovación (`Ghostbusters_V_0-2-0_innovation_NN.md`) co
 ## NN Field Definition: business_model
 
 concept:: Initiative
-type:: model
-target_template:: business
+type:: knowledge
+target_blueprint:: business
 ```
 
-##### 2. Instanciación en el Modelo Padre (`Ghostbusters_V_0-2-0_innovation_NN.md`)
+##### 2. Instanciación en el Modelo Padre (`Ghostbusters_innovation_NN.md`)
 
 ```markdown
 # NN Initiative
@@ -85,18 +85,18 @@ target_template:: business
 
 initiativeName:: "Ghostbusters Municipal Franchise Expansion"
 initiativeType:: "Commercial Service Expansion"
-business_model:: [[models/Ghostbusters_V_0-2-0_business_NN.md]]
+business_model:: [[kNNowledge/Ghostbusters_business_NN.md]]
 tags:: [initiative, franchise, commercial, expansion]
 ```
 
-##### 3. Submodelo Hijo Scaffolded (`Ghostbusters_V_0-2-0_business_NN.md`)
+##### 3. Submodelo Hijo Scaffolded (`Ghostbusters_business_NN.md`)
 
 ```markdown
 ---
 level: 3
 parent_spec:
   name: "business"
-model_version: "0.1.0"
+knowledge_version: "V_0-1-0"
 title: "Ghostbusters Inc. Municipal Franchise Business Model"
 ---
 

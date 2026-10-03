@@ -42,7 +42,7 @@
       "canonical": true,
       "level": 3,
       "aliases": ["model"],
-      "sense": "Level-3 domain data model (formerly Model). Uncountable noun.",
+      "sense": "Level-3 domain data model (formerly Model). Uncountable noun. The version lives in the `knowledge_version` frontmatter, never in the filename (`_V_` names are retired).",
       "uncountable": true,
       "plural_rule": "N kNNowledge documents",
       "distinct_senses": ["knowledge unit"],
@@ -76,6 +76,37 @@
         "actioNN URL references"
       ]
     },
+    "sidecar": {
+      "canonical": true,
+      "level": 3,
+      "sense": "Co-located <file>.<ext>_sidecar_NN.md document that carries a file's hash, size, metadata and, for binary files, a normalized body. A concept, not a new level: a kNNowledge-level document that is never a model and is never mirrored into a separate `sources/nn/` tree (that tree is retired).",
+      "excludes": ["motorcycle-sidecar", "sidecar-container"],
+      "stable_identifiers": ["_sidecar_NN.md", "bluepriNNts/sidecar/"]
+    },
+    "cognitivize": {
+      "canonical": true,
+      "sense": "Operation that creates or refreshes a sidecar in place, leaving the original file untouched. One innfo-core operation (cognitivize), surfaced through the nn-trannsform CLI (--cognitivize <file|dir>) and the innfo-mcp tool; raw imports land verbatim in sources/import/ and are cognitivized there.",
+      "excludes": [],
+      "stable_identifiers": ["cognitivize", "--cognitivize"]
+    },
+    "artifacts": {
+      "canonical": true,
+      "sense": "The single write destination for every producer output (consoles, reports, curated CSVs, briefs). Replaces the retired `export/` folder: one rename, no fallback. A non-_NN.md file is an artifact lineage node only if it is a timestamped write-once family member or declares upstream sources.",
+      "excludes": ["git-artifacts", "build-artifacts"],
+      "stable_identifiers": ["artifacts/"]
+    },
+    "write-once": {
+      "canonical": true,
+      "sense": "Producer rule: each output is a new family member named with a UTC suffix _YYYYMMDDTHHmmssZ (with -2, -3... same-second tie-breaks) placed before the extension; existing bytes are never overwritten, and latest-of-family is resolved by name. GC only proposes deletions and deletes only with explicit user consent.",
+      "excludes": ["write-once-memory"],
+      "stable_identifiers": ["writeOnce", "latestOfFamily", "planGc", "applyGc"]
+    },
+    "drift-gate": {
+      "canonical": true,
+      "sense": "Consistency check that the managed view sections of the persisted lineage record (*_cogNNitive_NN.md) equal a fresh core projection. Runs in nn-trannsform --lineage --check, scripts/verify.js, and the innfo-mcp check_workspace tool.",
+      "excludes": [],
+      "stable_identifiers": ["checkLineageDrift", "LINEAGE_DRIFT"]
+    },
     "assistant": {
       "canonical": true,
       "aliases": ["coach", "architecture coach"],
@@ -99,6 +130,48 @@
       "new": "kNNowledge/",
       "kind": "path",
       "notes": "Domain models directory renamed to kNNowledge/"
+    },
+    {
+      "id": "export/",
+      "old": "export/",
+      "new": "artifacts/",
+      "kind": "path",
+      "notes": "Producer output folder renamed once to artifacts/, with no fallback; runtime never resolves export/"
+    },
+    {
+      "id": "sources/nn/",
+      "old": "sources/nn/",
+      "new": "sources/import/ + co-located sidecars",
+      "kind": "path",
+      "notes": "Retired mirror tree; raw files live in sources/import/ and are cognitivized in place"
+    },
+    {
+      "id": "sources/original/",
+      "old": "sources/original/",
+      "new": "sources/import/",
+      "kind": "path",
+      "notes": "Retired legacy fallback; sources/import/ is the only canonical raw-import location"
+    },
+    {
+      "id": "sources/export/",
+      "old": "sources/export/",
+      "new": "artifacts/",
+      "kind": "path",
+      "notes": "Retired promotion folder; an artifact reused as input is cognitivized where it lives"
+    },
+    {
+      "id": "sources/archive/",
+      "old": "sources/archive/",
+      "new": "write-once families",
+      "kind": "path",
+      "notes": "Retired; a changed source becomes a new suffixed family member, so no snapshot is needed. Any pre-existing content is inert"
+    },
+    {
+      "id": "kNNowledge_version_in_filename",
+      "old": "<name>_V_<x-y-z>_<bp>_NN.md",
+      "new": "knowledge_version frontmatter",
+      "kind": "naming",
+      "notes": "kNNowledge names drop _V_; the version lives in the knowledge_version frontmatter key"
     },
     {
       "id": "~/.agents/templates",

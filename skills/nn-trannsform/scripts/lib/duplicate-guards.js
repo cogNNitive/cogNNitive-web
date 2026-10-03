@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { parseCitation } = require('./innfo-core.generated.cjs');
+const { parseCitation, isNNName, isSidecarName, isExcludedPath, rawPathOfSidecar } = require('./innfo-core.generated.cjs');
 
 /** Canonicalize whitespace + ordering for structural comparison. */
 function canonicalize(text) {
@@ -78,7 +78,7 @@ function extractNormalizedBody(content) {
  *
  * @param {string} incomingPath Absolute path of the incoming file.
  * @param {Array<{ path: string, sha256?: string|null, content?: string }>} corpus
- *   Existing sources (sources/nn/**). Provide `content` lazily to avoid reading
+ *   Existing normalized bodies (sidecar files). Provide `content` lazily to avoid reading
  *   every file up front — `contentLoader(path)` is called on demand.
  * @param {{ contentLoader?: (p: string) => string|null, nearThreshold?: number }} opts
  *   `nearThreshold` default 0.5.
@@ -155,12 +155,15 @@ function searchConversationHistory(workspaceRoot, query = {}) {
 }
 
 /**
- * Traverse sources/nn/ (and any active source trees) and compute a content-hash
- * index of all normalized sources, establishing canonical primary paths vs alias paths.
+ * Index every cognitivized source of the domaiNN from its co-located sidecar,
+ * establishing canonical primary paths vs alias paths.
  *
- * Priority rules for primary canonical path:
- * 1. Non-import paths take precedence over `import/` paths (e.g. `sources/nn/sessions/foo.md` > `sources/nn/import/sessions/foo.md`).
- * 2. If both are non-import or both are import, shorter path or first-seen wins.
+ * Two sources are the same content when their sidecars record the same raw
+ * `sha256`, or, for binary sources whose sidecar carries a normalized body, when
+ * the bodies hash identically (frontmatter excluded). Sidecars themselves are
+ * never indexed, and a sidecar whose raw file is missing is an orphan, not a source.
+ *
+ * Primary canonical path: the shortest path, then code-point order.
  *
  * @param {string} workspaceRoot
  * @param {object} [opts]
@@ -173,18 +176,7 @@ function searchConversationHistory(workspaceRoot, query = {}) {
  * }}
  */
 function indexWorkspaceSources(workspaceRoot, opts = {}) {
-  const nnDir = path.join(workspaceRoot, 'sources', 'nn');
   const allEntries = [];
-
-  if (!fs.existsSync(nnDir)) {
-    return {
-      sources: [],
-      canonicalSources: [],
-      aliases: [],
-      byHash: new Map(),
-      byPath: new Map(),
-    };
-  }
 
   function walk(dir) {
     let entries;
@@ -194,83 +186,94 @@ function indexWorkspaceSources(workspaceRoot, opts = {}) {
       return;
     }
     for (const ent of entries) {
-      if (ent.name.startsWith('.') || ent.name === 'index.md' || ent.name === 'staging' || ent.name === 'archive') {
-        continue;
-      }
+      if (ent.name.startsWith('.')) continue;
       const full = path.join(dir, ent.name);
+      const relPath = path.relative(workspaceRoot, full).replace(/\\/g, '/');
+      if (isExcludedPath(relPath)) continue;
       if (ent.isDirectory()) {
         walk(full);
-      } else if (ent.isFile() && ent.name.endsWith('.md')) {
-        const relPath = path.relative(workspaceRoot, full).replace(/\\/g, '/');
-        const normPath = path.relative(nnDir, full).replace(/\\/g, '/');
-        let content = '';
-        try {
-          content = fs.readFileSync(full, 'utf8');
-        } catch {
-          continue;
-        }
-
-        const body = extractNormalizedBody(content);
-        const bodyHash = crypto.createHash('sha256').update(body, 'utf8').digest('hex');
-        const shaMatch = content.match(/^sha256:\s*"([a-f0-9]{64})"\s*$/m);
-        const rawHash = shaMatch ? shaMatch[1] : null;
-
-        allEntries.push({
-          fullPath: full,
-          relativePath: relPath,
-          normalizedPath: normPath,
-          sha256: bodyHash,
-          bodySha256: bodyHash,
-          rawSha256: rawHash,
-          isCanonical: false,
-          primaryPath: '',
-          aliases: [],
-        });
+        continue;
       }
+      if (!ent.isFile() || !isSidecarName(ent.name)) continue;
+
+      const rawRel = rawPathOfSidecar(relPath);
+      const rawFull = rawRel ? path.join(workspaceRoot, rawRel) : null;
+      if (!rawRel || !rawFull || !fs.existsSync(rawFull)) continue;
+      let content = '';
+      try {
+        content = fs.readFileSync(full, 'utf8');
+      } catch {
+        continue;
+      }
+
+      const body = extractNormalizedBody(content);
+      const bodyHash = body ? crypto.createHash('sha256').update(body, 'utf8').digest('hex') : null;
+      const shaMatch = content.match(/^sha256:\s*"?([a-f0-9]{64})"?\s*$/m);
+
+      allEntries.push({
+        fullPath: rawFull,
+        relativePath: rawRel,
+        sidecarPath: relPath,
+        sha256: '',
+        bodySha256: bodyHash,
+        rawSha256: shaMatch ? shaMatch[1] : null,
+        isCanonical: false,
+        primaryPath: '',
+        aliases: [],
+      });
     }
   }
 
-  walk(nnDir);
+  walk(workspaceRoot);
+  allEntries.sort((a, b) => (a.relativePath < b.relativePath ? -1 : a.relativePath > b.relativePath ? 1 : 0));
+
+  // Union entries that share a raw hash or a non-empty normalized-body hash.
+  const parent = allEntries.map((_, i) => i);
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const firstSeen = new Map();
+  allEntries.forEach((entry, i) => {
+    for (const key of [entry.rawSha256 && `raw:${entry.rawSha256}`, entry.bodySha256 && `body:${entry.bodySha256}`]) {
+      if (!key) continue;
+      if (firstSeen.has(key)) parent[find(i)] = find(firstSeen.get(key));
+      else firstSeen.set(key, i);
+    }
+  });
+  const groups = new Map();
+  allEntries.forEach((entry, i) => {
+    const root = find(i);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(entry);
+  });
 
   const byHash = new Map();
   const byPath = new Map();
-
-  for (const entry of allEntries) {
-    if (!byHash.has(entry.sha256)) {
-      byHash.set(entry.sha256, []);
-    }
-    byHash.get(entry.sha256).push(entry);
-  }
-
   const canonicalSources = [];
   const aliases = [];
 
-  for (const [hash, group] of byHash.entries()) {
-    group.sort((a, b) => {
-      const aImport = a.normalizedPath.startsWith('import/') || a.relativePath.includes('/import/');
-      const bImport = b.normalizedPath.startsWith('import/') || b.relativePath.includes('/import/');
-      if (!aImport && bImport) return -1;
-      if (aImport && !bImport) return 1;
-      return a.relativePath.length - b.relativePath.length || a.relativePath.localeCompare(b.relativePath);
-    });
-
+  for (const group of groups.values()) {
+    group.sort(
+      (a, b) =>
+        a.relativePath.length - b.relativePath.length ||
+        (a.relativePath < b.relativePath ? -1 : a.relativePath > b.relativePath ? 1 : 0),
+    );
     const primary = group[0];
+    const groupId = primary.rawSha256 || primary.bodySha256 || primary.relativePath;
+    for (const entry of group) entry.sha256 = groupId;
+    byHash.set(groupId, group);
+
     primary.isCanonical = true;
     primary.primaryPath = primary.relativePath;
-    primary.aliases = [];
-
     canonicalSources.push(primary);
     byPath.set(primary.relativePath, primary);
-    byPath.set(primary.normalizedPath, primary);
+    byPath.set(primary.sidecarPath, primary);
 
     for (let i = 1; i < group.length; i++) {
       const alias = group[i];
-      alias.isCanonical = false;
       alias.primaryPath = primary.relativePath;
       primary.aliases.push(alias.relativePath);
       aliases.push(alias);
       byPath.set(alias.relativePath, alias);
-      byPath.set(alias.normalizedPath, alias);
+      byPath.set(alias.sidecarPath, alias);
     }
   }
 
@@ -297,13 +300,13 @@ function indexWorkspaceSources(workspaceRoot, opts = {}) {
  *   uncitedCount: number,
  *   uncitedSources: Array<{
  *     path: string,
- *     normalizedPath: string,
+ *     sidecarPath: string,
  *     sha256: string,
  *     aliases: string[],
  *   }>,
  *   citedSources: Array<{
  *     path: string,
- *     normalizedPath: string,
+ *     sidecarPath: string,
  *     sha256: string,
  *     citedByModels: string[],
  *     aliases: string[],
@@ -332,7 +335,7 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
         if (ent.name.startsWith('.')) continue;
         const full = path.join(dir, ent.name);
         if (ent.isDirectory()) walkModels(full);
-        else if (ent.isFile() && ent.name.endsWith('_NN.md')) modelFiles.push(full);
+        else if (ent.isFile() && isNNName(ent.name) && !isSidecarName(ent.name)) modelFiles.push(full);
       }
     }
     walkModels(modelsDir);
@@ -352,12 +355,7 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
           const cit = parseCitation(p);
           if (!cit || cit.kind !== 'source') continue;
 
-          const fileRef = cit.filePath.replace(/^sources\/nn\//, '').trim();
-          if (!fileRef) continue;
-
-          const match = index.byPath.get(fileRef) ||
-                        index.byPath.get(`sources/nn/${fileRef}`) ||
-                        index.sources.find(s => s.normalizedPath === fileRef || s.normalizedPath.endsWith(`/${fileRef}`) || path.basename(s.normalizedPath) === fileRef);
+          const match = index.byPath.get(cit.filePath);
 
           if (match) {
             citedHashes.add(match.sha256);
@@ -379,7 +377,7 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
     if (citedHashes.has(canon.sha256)) {
       citedSources.push({
         path: canon.relativePath,
-        normalizedPath: canon.normalizedPath,
+        sidecarPath: canon.sidecarPath,
         sha256: canon.sha256,
         citedByModels: Array.from(modelCitations.get(canon.sha256) || []),
         aliases: canon.aliases,
@@ -387,7 +385,7 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
     } else {
       uncitedSources.push({
         path: canon.relativePath,
-        normalizedPath: canon.normalizedPath,
+        sidecarPath: canon.sidecarPath,
         sha256: canon.sha256,
         aliases: canon.aliases,
       });

@@ -37,14 +37,14 @@ smarter model, by **structure around the model**.
 | Pillar | What it means | Mechanism |
 | :--- | :--- | :--- |
 | **Efficiency** | Import once, reuse forever; feed the model only the slice it needs. | Source normalisation, a sources catalog of short summaries, and bounded model reads. |
-| **Traceability** | Every model statement points to an exact heading in an exact source version. | `sources::` citations, per-source version archive, the lineage record. |
+| **Traceability** | Every model statement points to an exact heading in an exact source version. | `sources::` citations, write-once source families, the lineage record. |
 | **Versatility & review comfort** | Review in a text editor, a visual web app, or a conversation — same files. | Text editors, iNNfo Modeler, AI agents; reviewer feedback re-ingests. |
 | **No vendor lock-in** | Plain Markdown plus Git; the knowledge is yours forever. | Files on disk; Git is the copy-of-record and the collaboration layer. |
 
 ### Efficiency
 
 The expensive work happens **once**. A raw file is copied verbatim, fingerprinted
-with a hash, and normalised into Markdown a single time — it is never
+with a hash, and cognitivized in place a single time — it is never
 re-processed in later sessions. A catalog entry keeps a one-to-two-sentence
 summary of every source, so an agent decides *what* to open from the summaries
 instead of loading everything. Large sources can split into a cheap summary file
@@ -54,11 +54,12 @@ whole corpus, it reads less and answers with less noise.
 ### Traceability
 
 Citations are anchored to a heading, never to a line range:
-`sources:: [pricing_memo.md#manhattan-rates]`. Each source keeps its own version
-history inside the workspace, answering *"what exact version did this model see
-at time T?"* even if no commit was made. A lineage record ties Sources, Models,
-and Artifacts together, and an impact check warns you when a living source
-changes in a way that breaks a downstream citation.
+`sources:: [sources/import/pricing_memo.md@## Manhattan Rates]`. Each source keeps
+its own version history inside the workspace as write-once family members,
+answering *"what exact version did this model see at time T?"* even if no commit
+was made. A lineage record ties Sources, ModelRecords, and Artifacts together, and
+an impact check warns you when a living source changes in a way that breaks a
+downstream citation.
 
 ### Versatility & review comfort
 

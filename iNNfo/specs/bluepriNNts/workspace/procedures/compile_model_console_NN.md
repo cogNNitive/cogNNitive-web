@@ -58,19 +58,19 @@ output:: [[Model Console HTML]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Paste the returned `schemaSlot` string verbatim into `<script type="application/json" id="innfo-schema">` and `modelSlot` verbatim into `<script type="application/json" id="innfo-model">`. Write the resulting document to the path specified in `outputPath` (typically `export/<stem>_console/<stem>_console.html`).
+Paste the returned `schemaSlot` string verbatim into `<script type="application/json" id="innfo-schema">` and `modelSlot` verbatim into `<script type="application/json" id="innfo-model">`. Treat `outputPath` (`artifacts/<stem>_console/<stem>_console.html`) as the name of the console family and write the resulting document as a NEW suffixed member, `<stem>_console_<UTC YYYYMMDDTHHmmssZ>.html`, through the write-once primitive (`writeOnce`, or `scripts/export-console.mjs`, which uses it). Never overwrite an existing console: when the latest member already has identical bytes, write nothing; when the model changed, add a member and leave earlier consoles untouched.
 
 ## NN Work: Verify Output
 parent:: [[Compile Model Console]]
 step_type:: task
 next:: -
-condition:: File written to outputPath
+condition:: A new console member written, or the latest member is identical
 input:: [[Model Console HTML]]
 output:: [[Verified Model Console]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Confirm the generated console at `outputPath` opens cleanly, correctly displaying all concepts, elements, relationships, matrices, and citations without unescaped script tags or broken references.
+Confirm the latest member of the console family opens cleanly, correctly displaying all concepts, elements, relationships, matrices, and citations without unescaped script tags or broken references.
 
 # NN Tools
 
@@ -107,7 +107,7 @@ Result payload containing `schemaSlot`, `modelSlot`, `outputPath`, `schemaSource
 ## NN Artifact: Model Console HTML
 type:: deliverable
 format:: html
-Self-contained HTML consultation file written to `outputPath`.
+Self-contained HTML consultation file, written once as a suffixed member of the `outputPath` family.
 
 ## NN Artifact: Verified Model Console
 type:: report

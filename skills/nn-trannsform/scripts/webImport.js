@@ -1,8 +1,10 @@
-const fs = require('fs');
 const path = require('path');
+const { parseName, writeOnce } = require('./lib/innfo-core.generated.cjs');
+
+const IMPORT_DIR = 'sources/import';
 
 /**
- * webImport.js — download a resource from a URL directly into sources/original/,
+ * webImport.js — download a resource from a URL directly into sources/import/,
  * so it flows through the normal scan/normalize pipeline like any manually
  * dropped file (no new branches, no separate ingestion path).
  *
@@ -141,7 +143,7 @@ function extractHtmlMetadata(html) {
 }
 
 /**
- * Download `url` straight into `targetDir` (sources/import/, with fallback to sources/original/),
+ * Download `url` straight into `<projectDir>/sources/import/`,
  * the same dropbox the user drags manually-collected files into. The extension is
  * decided from the response's Content-Type header, falling back to the URL's
  * own extension.
@@ -151,7 +153,7 @@ function extractHtmlMetadata(html) {
  * scanner.scanAndProcess's `webImportMeta` option so it ends up in the
  * normalized frontmatter.
  */
-async function downloadToImport(url, targetDir, options = {}) {
+async function downloadToImport(url, projectDir, options = {}) {
   if (typeof fetch !== 'function') {
     throw new Error('Native fetch is not available in this Node.js runtime (requires Node 18+).');
   }
@@ -165,20 +167,28 @@ async function downloadToImport(url, targetDir, options = {}) {
   const ext = extFromContentType(contentType) || extFromUrl(url) || '.html';
   const buffer = Buffer.from(await response.arrayBuffer());
 
-  const subdir = options.subdir || '';
-  const destDir = subdir ? path.join(targetDir, subdir) : targetDir;
-  fs.mkdirSync(destDir, { recursive: true });
-
+  // The download is a new write-once family member under sources/import/, always
+  // suffixed; identical bytes dedupe against the latest member. It is cognitivized
+  // by the scan that follows, which also receives the URL metadata.
+  const subdir = options.subdir ? options.subdir.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '') : '';
+  const dir = subdir ? `${IMPORT_DIR}/${subdir}` : IMPORT_DIR;
   const filename = options.filename || sanitizeFilenameFromUrl(url, ext);
-  const destPath = path.join(destDir, filename);
-  fs.writeFileSync(destPath, buffer);
+  const parsed = parseName(filename);
+  const written = await writeOnce(
+    projectDir,
+    { dir, key: parsed.kind === 'file' ? parsed.key : filename, ext: parsed.kind === 'file' ? parsed.ext : '' },
+    buffer,
+    { now: options.now },
+  );
+  const destPath = path.join(projectDir, written.path);
 
   const downloadedAt = new Date().toISOString();
-  const relPath = path.relative(targetDir, destPath).replace(/\\/g, '/');
+  const relPath = path.relative(path.join(projectDir, IMPORT_DIR), destPath).replace(/\\/g, '/');
 
   const result = {
     relPath,
     absPath: destPath,
+    deduplicated: written.status === 'deduplicated',
     contentType: contentType || null,
     sourceUrl: url,
     downloadedAt,

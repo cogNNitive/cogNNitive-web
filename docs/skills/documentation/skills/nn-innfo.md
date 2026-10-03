@@ -45,4 +45,4 @@ When activated, `nn-innfo` presents the entry menu:
 2. **WikiLink Referential Discipline**: When a field has `type:: reference`, its value MUST be wrapped in WikiLinks (e.g. `owner:: [[Director]]`). Plain text without brackets is strictly prohibited.
 3. **Element Descriptions in Prose**: The description of an element in an L3 model MUST NEVER be written as a `description::` field. It must always be written as Markdown prose separated from field lines by an empty line.
 4. **Index Block Contains Only Concepts**: The `# NN index` block defines navigation hierarchy between Concepts only. Elements never appear in the index block.
-5. **Provenance Protocol (`sources::`)**: Citations point canonically to files under `sources/nn/` with stable heading anchors (e.g. `sources:: [interview.md#stakeholders, report.md#summary]`).
+5. **Provenance Protocol (`sources::`)**: Citations use the canonical `@` grammar with workspace-relative paths and stable heading anchors (e.g. `sources:: [sources/import/interview.md@## Stakeholders, sources/import/report.md@## Summary]`). A binary source is cited through its co-located sidecar (`<file>.<ext>_sidecar_NN.md@## Heading`).

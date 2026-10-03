@@ -3,7 +3,7 @@
  *
  * Builds and refreshes an iNNfo Level 3 lineage record that registers every
  * Source ingested, every Model authored under `kNNowledge/`, and every Artifact
- * under `export/` as first-class iNNfo elements with explicit derivation.
+ * under `artifacts/` as first-class iNNfo elements with explicit derivation.
  * The `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` sections are
  * re-synced from the filesystem on every run; `# NN Procedures` is an
  * append-only run log.
@@ -17,28 +17,41 @@ const path = require('path');
 const modelLib = require('./lib/provenance-knowledge');
 const indexLib = require('./lib/workspace-index');
 const {
+  readLineageRecord,
   readLineageSnapshot,
   projectLineage,
   renderLineageSections,
 } = require('./lib/innfo-core.generated.cjs');
 
+/** Suffix of the pre-rename lineage record, migrated in place to `_cogNNitive_NN.md`. */
+const LEGACY_RECORD_SUFFIX = '_workspace_NN.md';
+
+/** The pre-rename `<project>_*_workspace_NN.md` record in `kNNowledge/` or the root, or null. */
+function findLegacyRecord(projectDir, projectName) {
+  for (const dir of ['kNNowledge', '.']) {
+    const abs = dir === '.' ? projectDir : path.join(projectDir, dir);
+    if (!fs.existsSync(abs)) continue;
+    const name = fs
+      .readdirSync(abs)
+      .sort()
+      .find((f) => f.startsWith(`${projectName}_`) && f.endsWith(LEGACY_RECORD_SUFFIX));
+    if (name) return dir === '.' ? name : path.posix.join(dir, name);
+  }
+  return null;
+}
+
 /**
  * Resolve the canonical `cogNNitive` lineage-record path for a project: the
- * existing latest record, a legacy `_workspace_NN.md` record migrated in place,
- * or the V_0-2-0 default.
+ * existing record (found by role, wherever it lives), a legacy
+ * `_workspace_NN.md` record migrated in place, or the V_0-2-0 default.
  */
 function resolveModelPath(projectDir, projectName) {
-  const latest = modelLib.resolveLatestModelFile(projectDir, projectName, indexLib.compareVersions);
-  if (latest) return { modelPath: path.join(projectDir, latest), created: false };
+  const existing = readLineageRecord(projectDir);
+  if (existing) return { modelPath: path.join(projectDir, existing.path), created: false };
 
-  const legacy = modelLib.resolveLatestModelFile(
-    projectDir,
-    projectName,
-    indexLib.compareVersions,
-    '_workspace_NN.md',
-  );
+  const legacy = findLegacyRecord(projectDir, projectName);
   if (legacy) {
-    const migrated = legacy.replace(/_workspace_NN\.md$/, '_cogNNitive_NN.md');
+    const migrated = legacy.slice(0, legacy.length - LEGACY_RECORD_SUFFIX.length) + '_cogNNitive_NN.md';
     fs.renameSync(path.join(projectDir, legacy), path.join(projectDir, migrated));
     return { modelPath: path.join(projectDir, migrated), created: false };
   }

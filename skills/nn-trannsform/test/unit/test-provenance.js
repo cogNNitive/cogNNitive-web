@@ -4,20 +4,9 @@ const path = require('path');
 const os = require('os');
 
 const provenance = require('../../scripts/provenance');
+const { put, cognitivizeAll } = require('./_fixtures');
 
-const SRC_FM = (sourceFile, hash) => `---
-source_file: "${sourceFile}"
-sha256: "${hash}"
-size_bytes: 123
-normalized_at: "2026-08-01T10:00:00Z"
-normalized_by: "traNNsform v1.5"
----
-
-# Body
-content
-`;
-
-function run() {
+async function run() {
   let passed = 0;
   let failed = 0;
 
@@ -44,22 +33,16 @@ function run() {
 
   const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'trannsform-prov-'));
   try {
-    // build a project with two normalized md sources under sources/nn/ (one nested in a subfolder,
-    // mirroring sources/original/clientA/)
+    // A project with three raw sources cognitivized in place (one nested in a subfolder).
     const proj = path.join(TMP, 'Acme');
-    fs.mkdirSync(path.join(proj, 'sources', 'nn', 'clientA'), { recursive: true });
-    fs.writeFileSync(
-      path.join(proj, 'sources', 'nn', 'clientA', 'market-report.md'),
-      SRC_FM('sources/original/clientA/market-report.docx', 'aaa')
-    );
-    fs.writeFileSync(
-      path.join(proj, 'sources', 'nn', 'team.md'),
-      SRC_FM('sources/original/team.csv', 'bbb')
-    );
-    fs.writeFileSync(
-      path.join(proj, 'sources', 'nn', 'webpage.md'),
-      SRC_FM('sources/original/webpage.html', 'ccc')
-    );
+    put(proj, 'sources/import/clientA/market-report.docx', 'docx bytes');
+    put(proj, 'sources/import/team.csv', 'id,name\n1,Ann\n');
+    put(proj, 'sources/import/webpage.html', '<html><body>page</body></html>');
+    await cognitivizeAll(proj, [
+      'sources/import/clientA/market-report.docx',
+      'sources/import/team.csv',
+      'sources/import/webpage.html',
+    ]);
 
     const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     eq(r1.created, true, 'model created on first run');
@@ -69,29 +52,36 @@ function run() {
 
     const model1 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(/parent_spec:\s*\n\s*name: "cogNNitive"/.test(model1), 'parent_spec points to the cogNNitive template');
-    ok(/## NN Sources: market-report\.docx/.test(model1), 'source element present');
+    ok(/## NN Sources: market-report\.docx/.test(model1), 'source element present, named by the raw file');
     ok(/source_format:: docx/.test(model1), 'source_format derived from extension');
     ok(/source_format:: md/.test(model1), 'source_format html mapped to md (declared set only)');
-    ok(/normalized_content:: sources\/nn\/clientA\/market-report\.md/.test(model1), 'normalized_content records the full sources/nn/ path, subfolders preserved');
+    ok(
+      /normalized_content:: sources\/import\/clientA\/market-report\.docx_sidecar_NN\.md/.test(model1),
+      'normalized_content is the co-located sidecar, subfolders preserved',
+    );
+    ok(/raw_filename:: sources\/import\/clientA\/market-report\.docx/.test(model1), 'raw_filename is the subject path');
     ok(!/source_id/.test(model1), 'provenance model never emits source_id');
     ok(!/src-\d{3}/.test(model1), 'provenance model never emits a src-NNN id');
+    ok(!/archive_path::|status:: archived|curated_csv::|media_filename::/.test(model1), 'no archive-era fields are emitted');
 
-    // The lineage build no longer duplicates the normalized .md corpus into assets/.
-    ok(!fs.existsSync(path.join(proj, 'assets', 'market-reportdocx', 'market-report.md')), 'normalized .md is NOT copied into assets/');
+    // The lineage build does not copy anything into assets/.
+    ok(!fs.existsSync(path.join(proj, 'assets')), 'nothing is copied into assets/');
 
     // semantic index.md written at root
     const idx = fs.readFileSync(path.join(proj, 'index.md'), 'utf8');
     ok(/# NN index/.test(idx), 'semantic index has # NN index');
     ok(/Acme_V_0-2-0_cogNNitive_NN\.md/.test(idx), 'index links the provenance model');
 
-    // The # NN ModelRecords section is filesystem-managed now: a hand-added
-    // entry is replaced on the next sync (there are no models/*_NN.md files).
+    // The # NN ModelRecords section is filesystem-managed: a hand-added entry is
+    // replaced on the next sync (there are no kNNowledge models yet).
     const withModel = model1.replace(
       /# NN ModelRecords\n\n<!--[\s\S]*?-->\n/,
-      '# NN ModelRecords\n\n## NN ModelRecords: Acme Plan\nmodel_template:: business\nsources:: [sources/nn/clientA/market-report.md]\n'
+      '# NN ModelRecords\n\n## NN ModelRecords: Acme Plan\nmodel_template:: business\nsources:: [sources/import/clientA/market-report.docx_sidecar_NN.md]\n',
     );
     fs.writeFileSync(r1.modelPath, withModel);
-    fs.rmSync(path.join(proj, 'sources', 'nn', 'team.md')); // drop one source
+    // Dropping a source removes the raw file together with its sidecar.
+    fs.rmSync(path.join(proj, 'sources', 'import', 'team.csv'));
+    fs.rmSync(path.join(proj, 'sources', 'import', 'team.csv_sidecar_NN.md'));
 
     const r2 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
     eq(r2.created, false, 'model refreshed (not recreated) on second run');
@@ -109,7 +99,7 @@ function run() {
       idxPath,
       fs.readFileSync(idxPath, 'utf8') +
         '* [My Custom](kNNowledge/Custom_Model_V_2-0-0_NN.md)\n' +
-        '* [Gone](kNNowledge/Gone_V_9-9-9_NN.md)\n'
+        '* [Gone](kNNowledge/Gone_V_9-9-9_NN.md)\n',
     );
 
     const logs = [];
@@ -135,33 +125,27 @@ function run() {
     ok(nested.includes('./kNNowledge/Custom_Model_V_2-0-0_NN.md'), 'listWorkspaceModels includes top-level kNNowledge/');
     ok(nested.includes('./Acme_V_0-2-0_cogNNitive_NN.md'), 'listWorkspaceModels keeps root files prefixed ./');
 
+    // A cognitivized CSV is one Source entry: no curated_csv twin, no duplicate.
     const csvProj = path.join(TMP, 'CsvProj');
-    fs.mkdirSync(path.join(csvProj, 'sources', 'nn', 'import'), { recursive: true });
-    fs.writeFileSync(
-      path.join(csvProj, 'sources', 'nn', 'import', 'links.md'),
-      SRC_FM('sources/import/links.csv', 'ddd')
-    );
-    fs.writeFileSync(path.join(csvProj, 'sources', 'nn', 'import', 'links.csv'), 'id,url\n1,a\n');
+    put(csvProj, 'sources/import/links.csv', 'id,url\n1,a\n');
+    await cognitivizeAll(csvProj, ['sources/import/links.csv']);
     const rCsv = provenance.buildProvenanceKnowledge(csvProj, { projectName: 'CsvProj' });
     const csvModel = fs.readFileSync(rCsv.modelPath, 'utf8');
     ok(/## NN Sources: links\.csv/.test(csvModel), 'CSV source entry present');
+    ok(!/curated_csv::/.test(csvModel), 'curated_csv is no longer a Source field');
+    eq((csvModel.match(/## NN Sources:/g) || []).length, 1, 'a CSV and its sidecar are one source entry');
     ok(
-      /curated_csv:: sources\/nn\/import\/links\.csv/.test(csvModel),
-      'curated CSV is surfaced on its source entry as curated_csv',
-    );
-    eq(
-      (csvModel.match(/## NN Sources:/g) || []).length,
-      1,
-      'curated CSV does not create a duplicate source entry',
+      /normalized_content:: sources\/import\/links\.csv_sidecar_NN\.md/.test(csvModel),
+      'the CSV Source points at its co-located sidecar',
     );
 
-    fs.rmSync(TMP, { recursive: true, force: true });
     console.log(`\n  Provenance tests: ${passed} passed, ${failed} failed`);
   } catch (e) {
-    fs.rmSync(TMP, { recursive: true, force: true });
     console.error(`  ERROR: ${e.message}`);
     console.error(e.stack);
     failed++;
+  } finally {
+    fs.rmSync(TMP, { recursive: true, force: true });
   }
 
   return { passed, failed };
@@ -170,6 +154,5 @@ function run() {
 module.exports = { run };
 
 if (require.main === module) {
-  const result = run();
-  process.exit(result.failed > 0 ? 1 : 0);
+  run().then((result) => process.exit(result.failed > 0 ? 1 : 0));
 }

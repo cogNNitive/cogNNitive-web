@@ -49,7 +49,7 @@ const CATALOG = {
 function buildWorkspace() {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'upgrade-ws-'));
   fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
-  fs.mkdirSync(path.join(ws, 'sources', 'nn'), { recursive: true });
+  fs.mkdirSync(path.join(ws, 'sources', 'import'), { recursive: true });
   fs.mkdirSync(path.join(ws, 'node_modules', 'pkg'), { recursive: true });
   const model = (file, url) => {
     fs.writeFileSync(path.join(ws, file), `---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "${url}"\nknowledge_version: "V_0-1-0"\n---\n# NN x\n`, 'utf-8');
@@ -61,7 +61,7 @@ function buildWorkspace() {
   // Non-model files that must be ignored:
   fs.writeFileSync(path.join(ws, 'models', 'index.md'), '# nope');
   fs.writeFileSync(path.join(ws, 'node_modules', 'pkg', 'X_V_0-1-0_business_NN.md'), '---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "https://x/business_V_0-1-0_NN.md"\n---\n');
-  fs.writeFileSync(path.join(ws, 'sources', 'nn', 'Y_V_0-1-0_business_NN.md'), '---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "https://x/business_V_0-1-0_NN.md"\n---\n');
+  fs.writeFileSync(path.join(ws, 'sources', 'import', 'Y_V_0-1-0_business_NN.md'), '---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "https://x/business_V_0-1-0_NN.md"\n---\n');
   return ws;
 }
 
@@ -155,6 +155,23 @@ async function runTests() {
       assert.strictEqual(result.summary.unpinned, 1);
       assert.strictEqual(result.items[0].status, 'unpinned');
       console.log('✔ unpinned models are reported, not classified');
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true });
+    }
+  }
+
+  // Test 5b: a seeded sidecar is never discovered as a model
+  {
+    const ws = buildWorkspace();
+    try {
+      fs.writeFileSync(
+        path.join(ws, 'models', 'report.pdf_sidecar_NN.md'),
+        '---\nlevel: 3\nparent_spec:\n  name: "sidecar"\n  url: "https://x/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"\n---\n',
+      );
+      const rels = discoverModels(ws).map((m) => m.rel);
+      assert.strictEqual(rels.length, 4, 'sidecar must not be a model');
+      assert.ok(!rels.some((r) => r.includes('_sidecar_')));
+      console.log('✔ discoverModels never returns a sidecar');
     } finally {
       fs.rmSync(ws, { recursive: true, force: true });
     }

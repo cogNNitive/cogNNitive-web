@@ -24,17 +24,17 @@ Knowledge in an organization begins in minds and existing documents. cogNNitive 
 
 ```mermaid
 flowchart LR
-    subgraph P1["1. IMPORT & NORMALIZE"]
-        RAW["📁 Raw Inputs\n(Audio, Docs, Sheets, Notes)"] --> NORM["📝 sources/normalized/\n(Markdown + Citations)"]
+    subgraph P1["1. IMPORT & COGNITIVIZE"]
+        RAW["📁 Raw Inputs\n(Audio, Docs, Sheets, Notes)"] --> NORM["📝 sources/import/\n(verbatim + co-located sidecars)"]
     end
 
     subgraph P2["2. MANAGE (Living SSOT)"]
-        NORM --> MOD["🧠 models/*_NN.md\n(Concepts, Elements, Fields)"]
+        NORM --> MOD["🧠 kNNowledge/*_NN.md\n(Concepts, Elements, Fields)"]
         MOD <--> EDIT["👥 Text Editors · Web App · AI Agents"]
     end
 
     subgraph P3["3. EXPORT & FEEDBACK"]
-        MOD --> ART["📊 export/\n(Dashboards, Briefs, Specs)"]
+        MOD --> ART["📊 artifacts/\n(Dashboards, Briefs, Specs)"]
         ART -.->|"Closed-Loop Feedback"| RAW
     end
 
@@ -56,25 +56,25 @@ Knowledge initially resides in human brains—internal team members, external re
 
 **cogNNitive never forces you to change how you capture thoughts.** You continue using whatever note-taking tools, voice recorders, or document editors you prefer.
 
-### 1. IMPORT: Ingestion, Staging, and Normalization
+### 1. IMPORT: Ingestion and In-Place Cognition
 When external files enter the cogNNitive workspace:
-* **`sources/import/` (Immutable Originals)**: Original raw files are stored and protected.
-* **`sources/staging/` (Extraction Buffer)**: Intermediate raw outputs (Whisper transcripts, OCR dumps) live in a temporary scratchpad.
-* **`sources/normalized/` (Normalized Markdown)**: Content is normalized into clean Markdown with permanent heading sections (`#heading-slug`) and Source frontmatter.
+* **`sources/import/` (Immutable Originals)**: Raw files are copied verbatim and left untouched; there is no mirror tree.
+* **`staging/` (Extraction Buffer)**: Intermediate raw outputs (Whisper transcripts, OCR dumps) live in a temporary scratchpad, never cited.
+* **`<file>.<ext>_sidecar_NN.md` (Cognitivized in Place)**: Each raw file gets a co-located sidecar carrying its SHA-256, size, and metadata — and, for binaries, a normalized body with stable heading sections.
 
 ### 2. MANAGE: Semantic Modeling (Single Source of Truth)
-Normalized sources are structured into predictable **Models** (`models/*_NN.md`):
+Cognitivized sources are structured into predictable **kNNowledge documents** (`kNNowledge/*_NN.md`):
 * **Predictable Semantic Structure**: Concepts define the schema, Elements represent specific entity instances, and Fields store typed attributes.
-* **Radical Fine-Grained Traceability**: Every element cites its exact lineage using section anchors (`sources:: [meeting.md#budget]`).
+* **Radical Fine-Grained Traceability**: Every element cites its exact lineage using the `@` grammar (`sources:: [sources/import/meeting.md@## Budget]`).
 * **Universal Access Freedom**:
   1. **Text Editors**: Open and edit directly with Obsidian, VS Code, Notepad, or Logseq.
   2. **iNNfo Modeler**: Use the zero-install web UI to visually navigate graphs and edit matrices.
   3. **AI Pair-Programming Agents**: Direct OpenCode, Antigravity, or Claude Code in natural language to expand and refine models.
 
 ### 3. EXPORT: Artifacts and Closed Feedback Loop
-From the verified model, project role-tailored **Artifacts** into `export/`:
+From the verified model, project role-tailored **Artifacts** into `artifacts/`, each written once with a UTC suffix:
 * **Tailored Views**: Interactive HTML dashboards, executive Word documents, PDF reports, or task specs filtered by role or department.
-* **Closed-Loop Feedback**: Exported artifacts carry lineage metadata (`derived_from: [Model_NN]`). When a stakeholder reviews, annotates, or amends an artifact, it can be re-imported into sources to continuously evolve the model.
+* **Closed-Loop Feedback**: Exported artifacts carry lineage metadata (`sources:` frontmatter). When a stakeholder reviews, annotates, or amends an artifact, it can be re-imported into sources to continuously evolve the model.
 
 ---
 

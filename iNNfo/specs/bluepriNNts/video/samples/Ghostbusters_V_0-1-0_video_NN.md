@@ -22,4 +22,4 @@ description:: Short promotional video recruiting new field technicians for the G
 script:: script.md
 preset:: [[Ghostbusters Tech Noir]]
 status:: published
-sources:: [sources/nn/nyc-paranormal-activity-report-1984.md@## Market Demand]
+sources:: [sources/import/nyc-paranormal-activity-report-1984.md@## Market Demand]

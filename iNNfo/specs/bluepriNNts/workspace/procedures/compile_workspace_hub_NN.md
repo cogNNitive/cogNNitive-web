@@ -22,7 +22,7 @@ output:: [[Workspace Hub HTML]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Generate a standalone HTML dashboard (`artifacts/workspace_hub.html`) compiling all available models, domains, and generated canonical consoles in the workspace with embedded AI agent regeneration prompt generator.
+Generate a standalone HTML dashboard (`artifacts/workspace_hub_<UTC suffix>.html`) compiling all available models, domains, and generated canonical consoles in the workspace with embedded AI agent regeneration prompt generator.
 
 ## NN Work: Scan Workspace Manifest and Models
 parent:: [[Compile Workspace Hub]]
@@ -46,7 +46,7 @@ output:: [[Aggregated Console Registry]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Inspect `artifacts/` or `export/` to map existing generated canonical consoles (`*_console.html`) to their respective models, detecting active vs pending artifact status.
+Inspect `artifacts/` to map existing generated canonical consoles to their respective models, using the latest member (by name order) of each `<stem>_console` family, and detect active vs pending artifact status.
 
 ## NN Work: Generate Hub Document
 parent:: [[Compile Workspace Hub]]
@@ -58,7 +58,7 @@ output:: [[Workspace Hub HTML]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Assemble a responsive, standalone HTML portal adhering to cogNNitive Design Presets (Inter font, slate/indigo styling, responsive card grid, embedded live iframe viewer supporting Monoconsole dual-tab consoles, theme synchronization dispatcher passing `innfo:theme-change` postMessage events to iframes on dark/light toggle, and AI agent prompt generator for batch console regeneration). Save as `artifacts/workspace_hub.html`.
+Assemble a responsive, standalone HTML portal adhering to cogNNitive Design Presets (Inter font, slate/indigo styling, responsive card grid, embedded live iframe viewer supporting Monoconsole dual-tab consoles, theme synchronization dispatcher passing `innfo:theme-change` postMessage events to iframes on dark/light toggle, and AI agent prompt generator for batch console regeneration). Write it write-once as a new member `artifacts/workspace_hub_<UTC YYYYMMDDTHHmmssZ>.html` (family `workspace_hub`): never overwrite an earlier hub, and write nothing when the latest member has identical bytes.
 
 ## NN Work: Verify Workspace Hub
 parent:: [[Compile Workspace Hub]]
@@ -76,7 +76,7 @@ Verify that the generated workspace hub links cleanly to all active models and c
 
 ## NN Tools: AI Agent
 scope:: external
-LLM agent or build tool that executes the aggregation procedure and writes `artifacts/workspace_hub.html`.
+LLM agent or build tool that executes the aggregation procedure and writes `artifacts/workspace_hub_<UTC suffix>.html`.
 
 # NN Artifact
 
@@ -103,7 +103,7 @@ Mapping of models to their generated canonical consoles.
 ## NN Artifact: Workspace Hub HTML
 type:: deliverable
 format:: html
-Standalone responsive HTML portal (`artifacts/workspace_hub.html`) providing the unified entry point and batch prompt generator for all workspace consoles.
+Standalone responsive HTML portal (`artifacts/workspace_hub_<UTC suffix>.html`) providing the unified entry point and batch prompt generator for all workspace consoles.
 
 ## NN Artifact: Verified Workspace Hub
 type:: report

@@ -117,62 +117,66 @@ function run() {
     }
   }
 
-  // ── indexWorkspaceSources & auditUncitedSources ──────────────────
+  // ── indexWorkspaceSources & auditUncitedSources (co-located sidecars) ──
   console.log("indexWorkspaceSources & auditUncitedSources");
   {
+    const crypto = require("crypto");
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "src-dedup-"));
     try {
-      const nnDir = path.join(dir, "sources", "nn");
-      const sessionsDir = path.join(nnDir, "sessions");
-      const importSessionsDir = path.join(nnDir, "import", "sessions");
-      const modelsDir = path.join(dir, "kNNowledge");
+      const sha = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
+      // A raw file plus its co-located sidecar; `body` is only present for binary subjects.
+      const seed = (rel, bytes, body = "") => {
+        const raw = path.join(dir, rel);
+        fs.mkdirSync(path.dirname(raw), { recursive: true });
+        fs.writeFileSync(raw, bytes);
+        fs.writeFileSync(
+          `${raw}_sidecar_NN.md`,
+          `---\nlevel: 3\nparent_spec:\n  name: sidecar\nsource_file: ${rel}\nsha256: ${sha(bytes)}\nsize_bytes: ${bytes.length}\nnormalized_at: 2026-10-02T10:15:00Z\n---\n${body ? `\n${body}\n` : ""}`,
+        );
+      };
+      seed("sources/import/sessions/recording_1.md", "# Recording 1\nContent of recording 1");
+      seed("sources/import/sessions/copy_of_recording_1.md", "# Recording 1\nContent of recording 1");
+      seed("sources/import/sessions/recording_2.md", "# Recording 2\nContent of recording 2");
+      seed("sources/import/recording_1_diff.md", "# Old Recording 1\nDifferent content");
+      fs.mkdirSync(path.join(dir, "kNNowledge"), { recursive: true });
 
-      fs.mkdirSync(sessionsDir, { recursive: true });
-      fs.mkdirSync(importSessionsDir, { recursive: true });
-      fs.mkdirSync(modelsDir, { recursive: true });
-
-      const contentA = "---\nsource_file: \"sources/import/sessions/recording_1.txt\"\nsha256: \"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\"\n---\n# Recording 1\nContent of recording 1";
-      const contentADup = "---\nsource_file: \"sources/import/sessions/recording_1.txt\"\nsha256: \"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\"\n---\n# Recording 1\nContent of recording 1";
-      const contentB = "---\nsource_file: \"sources/import/sessions/recording_2.txt\"\nsha256: \"1111111111111111111111111111111111111111111111111111111111111111\"\n---\n# Recording 2\nContent of recording 2";
-      const contentC_SameNameDiffHash = "---\nsource_file: \"sources/import/archive/recording_1.txt\"\nsha256: \"2222222222222222222222222222222222222222222222222222222222222222\"\n---\n# Old Recording 1\nDifferent content";
-
-      fs.writeFileSync(path.join(sessionsDir, "recording_1.md"), contentA);
-      fs.writeFileSync(path.join(importSessionsDir, "recording_1.md"), contentADup);
-      fs.writeFileSync(path.join(sessionsDir, "recording_2.md"), contentB);
-      fs.writeFileSync(path.join(nnDir, "recording_1_diff.md"), contentC_SameNameDiffHash);
-
-      // 1. Indexing
+      // 1. Indexing groups sources by the sidecar sha256 of the raw bytes
       const index = guards.indexWorkspaceSources(dir);
-      eq(index.sources.length, 4, "all 4 files discovered in sources/nn/");
-      eq(index.canonicalSources.length, 3, "3 canonical sources (1 duplicate deduplicated)");
+      eq(index.sources.length, 4, "the 4 raw files with sidecars are indexed");
+      ok(!index.sources.some((s) => /_sidecar_NN\.md$/.test(s.relativePath)), "sidecars are not indexed as sources");
+      eq(index.canonicalSources.length, 3, "3 canonical sources (identical raw bytes grouped)");
       eq(index.aliases.length, 1, "1 alias discovered");
+      const primary = index.canonicalSources.find((s) => s.relativePath === "sources/import/sessions/recording_1.md");
+      ok(primary, "the shortest path is the canonical one");
+      eq(primary.aliases[0], "sources/import/sessions/copy_of_recording_1.md", "the longer path is recorded as alias");
+      eq(primary.sidecarPath, "sources/import/sessions/recording_1.md_sidecar_NN.md", "the entry names its co-located sidecar");
 
-      const primaryA = index.canonicalSources.find(s => s.rawSha256 === "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" || s.relativePath === "sources/nn/sessions/recording_1.md");
-      ok(primaryA, "primary canonical source found for hash A");
-      eq(primaryA.relativePath, "sources/nn/sessions/recording_1.md", "non-import path wins as primary canonical");
-      eq(primaryA.aliases.length, 1, "primary records 1 alias");
-      eq(primaryA.aliases[0], "sources/nn/import/sessions/recording_1.md", "import path recorded as alias");
-
-      // 2. Audit Uncited Sources - no citations yet
+      // 2. Audit with no citations yet
       const auditNoCite = guards.auditUncitedSources(dir);
       eq(auditNoCite.totalSources, 4, "total sources count is 4");
-      eq(auditNoCite.canonicalCount, 3, "canonical count is 3");
-      eq(auditNoCite.aliasCount, 1, "alias count is 1");
-      eq(auditNoCite.uncitedCount, 3, "uncited count reports 3 canonicals (duplicate suppressed from backlog)");
-      ok(auditNoCite.uncitedSources.some(s => s.path === "sources/nn/sessions/recording_1.md"), "canonical recording_1 in uncited backlog");
-      ok(!auditNoCite.uncitedSources.some(s => s.path === "sources/nn/import/sessions/recording_1.md"), "alias import recording_1 suppressed from uncited backlog");
+      eq(auditNoCite.uncitedCount, 3, "uncited count reports 3 canonicals (duplicate suppressed)");
+      ok(!auditNoCite.uncitedSources.some((s) => s.path === "sources/import/sessions/copy_of_recording_1.md"), "the alias is suppressed from the backlog");
 
-      // 3. Model cites canonical source
-      const modelContent = "---\nlevel: 3\n---\n# NN index\n* [[Concept1]]\n\n# NN Concept1\nsources:: [sources/nn/sessions/recording_1.md]\n";
-      fs.writeFileSync(path.join(modelsDir, "Model_V_0-1-0_NN.md"), modelContent);
-
+      // 3. A model cites the canonical source by its plain domaiNN-relative path
+      fs.writeFileSync(
+        path.join(dir, "kNNowledge", "Model_business_NN.md"),
+        "---\nlevel: 3\n---\n# NN index\n* [[Concept1]]\n\n# NN Concept1\nsources:: [sources/import/sessions/recording_1.md@## Recording 1]\n",
+      );
       const auditWithCite = guards.auditUncitedSources(dir);
       eq(auditWithCite.citedCount, 1, "1 canonical source cited");
       eq(auditWithCite.uncitedCount, 2, "2 remaining uncited canonical sources");
-      ok(!auditWithCite.uncitedSources.some(s => (s.rawSha256 || s.sha256) === "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" || s.path === "sources/nn/sessions/recording_1.md"), "cited source and its alias suppressed from uncited");
-      const citedItem = auditWithCite.citedSources.find(s => (s.rawSha256 || s.sha256) === "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789" || s.path === "sources/nn/sessions/recording_1.md");
-      ok(citedItem, "cited source reported in citedSources");
-      eq(citedItem.aliases[0], "sources/nn/import/sessions/recording_1.md", "cited source includes its alias list");
+      const citedItem = auditWithCite.citedSources[0];
+      eq(citedItem.path, "sources/import/sessions/recording_1.md", "the cited source is reported");
+      eq(citedItem.aliases[0], "sources/import/sessions/copy_of_recording_1.md", "the cited source includes its alias list");
+
+      // 4. Citing a binary subject goes through its sidecar path
+      seed("sources/import/report.pdf", Buffer.from("%PDF-1.7 binary"), "# Summary\nBody of the report");
+      fs.writeFileSync(
+        path.join(dir, "kNNowledge", "Other_business_NN.md"),
+        "---\nlevel: 3\n---\n# NN Concept2\nsources:: [sources/import/report.pdf_sidecar_NN.md@## Summary]\n",
+      );
+      const auditPdf = guards.auditUncitedSources(dir);
+      ok(auditPdf.citedSources.some((s) => s.path === "sources/import/report.pdf"), "a sidecar citation counts for its subject");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

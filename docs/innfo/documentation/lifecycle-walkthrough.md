@@ -17,17 +17,16 @@ flowchart LR
 
     subgraph P1["1. IMPORT"]
         F1 & F2 -->|"Verbatim + SHA-256"| IMP["sources/import/"]
-        IMP -->|"Intermediate Buffer"| STG["sources/staging/"]
-        IMP -->|"Normalize"| NN["sources/nn/"]
-        IMP -.->|"Snapshot on Change"| ARC["sources/archive/"]
+        IMP -->|"Intermediate Buffer"| STG["staging/"]
+        IMP -->|"Cognitivize in place"| SC["<file>.<ext>_sidecar_NN.md"]
     end
 
     subgraph P2["2. MANAGE (iNNfo Model)"]
-        NN -->|"sources:: [file.md#slug]"| M["models/Ghostbusters_Operations_NN.md"]
+        SC -->|"sources:: [file.md@## Heading]"| M["kNNowledge/Ghostbusters_Operations_NN.md"]
     end
 
     subgraph P3["3. EXPORT & Feedback"]
-        M -->|"Generate"| EXP["export/Paranormal_Containment_Brief.md"]
+        M -->|"Generate"| EXP["artifacts/Paranormal_Containment_Brief_<UTC suffix>.md"]
         EXP -.->|"EPA Inspector Review"| FB["sources/import/feedback/"]
         FB -.->|"Re-ingestion"| IMP
     end
@@ -38,7 +37,7 @@ flowchart LR
     classDef p3 fill:#E8F8F0,stroke:#34C759,color:#105C29;
 
     class E,V,F1,F2 p0;
-    class IMP,STG,NN,ARC p1;
+    class IMP,STG,SC p1;
     class M p2;
     class EXP,FB p3;
 ```
@@ -62,27 +61,29 @@ The raw files are imported into the workspace:
 workspace/
 ├── sources/
 │   ├── import/
-│   │   ├── containment_debrief.srt      # Immutable verbatim copy (SHA-256 tracked)
-│   │   └── commercial_pricing_memo.md    # Immutable verbatim copy
-│   ├── staging/
-│   │   └── pke_audio_buffer.tmp         # Ephemeral transcription buffer (never cited)
-│   └── nn/
-│       ├── import/
-│       │   ├── containment_debrief.md   # Normalized markdown with #nn-section--000001
-│       │   └── commercial_pricing_memo.md # Normalized markdown with #manhattan-commercial-rates
+│   │   ├── containment_debrief.srt          # Immutable verbatim copy (SHA-256 tracked)
+│   │   ├── containment_debrief.srt_sidecar_NN.md  # Co-located sidecar (normalized body)
+│   │   ├── commercial_pricing_memo.md       # Immutable verbatim copy
+│   │   └── commercial_pricing_memo.md_sidecar_NN.md  # Co-located sidecar (no body)
+│   └── staging/
+│       └── pke_audio_buffer.tmp             # Ephemeral transcription buffer (never cited)
 ```
 
 Run the scanner:
 ```bash
-node scripts/index.js --scan --src "docs/innfo/samples/lifecycle-ghostbusters/workspace"
+node skills/nn-trannsform/scripts/index.js --scan --src "docs/innfo/samples/lifecycle-ghostbusters/workspace"
 ```
 
-Each file under `sources/nn/` carries flat, deterministic traceability frontmatter:
+Each co-located sidecar carries flat, deterministic traceability frontmatter:
 ```yaml
 ---
+level: 3
+parent_spec:
+  name: sidecar
 source_file: "sources/import/commercial_pricing_memo.md"
 sha256: "b4c2...f8a1"
 size_bytes: 382
+source_format: md
 normalized_at: "2026-09-12T12:00:00Z"
 normalized_by: "traNNsform v1.0.0"
 ---
@@ -98,7 +99,7 @@ With normalized sources available, the team structures the knowledge into an **i
 # NN ServiceTier
 
 ## NN ServiceTier: Standard Class IV Elimination
-sources:: [commercial_pricing_memo.md#manhattan-commercial-rates]
+sources:: [sources/import/commercial_pricing_memo.md@## Manhattan Commercial Rates]
 base_fee:: $5,000
 monthly_storage:: $1,000
 target_market:: Manhattan Commercial
@@ -108,15 +109,15 @@ Full spectral neutralization and physical containment for non-anchored entities.
 # NN FacilityCapacity
 
 ## NN FacilityCapacity: Basement Containment Grid
-sources:: [containment_debrief.md#nn-section--000001]
+sources:: [sources/import/containment_debrief.srt_sidecar_NN.md@## NN Section 000001]
 status:: Critical Load (94%)
 expansion_required:: true
 laser_lock_frequency:: 14.8 MHz
 ```
 
 ### Citation Invariants
-1. **Heading-level anchors**: Citations point directly to `#heading-slug`, guaranteeing precision down to individual paragraphs.
-2. **Auditability**: Running `node scripts/index.js --check-impact` validates that all model pointers resolve accurately.
+1. **Heading-level anchors**: Citations point directly to `@## <Heading>`, guaranteeing precision down to individual paragraphs.
+2. **Auditability**: Running `node skills/nn-trannsform/scripts/index.js --check-impact` validates that all model pointers resolve accurately.
 
 ---
 
@@ -133,7 +134,7 @@ The model produces client- and regulatory-facing deliverables:
    ---
    ```
 2. **Human Review Loop**: Walter Peck (EPA) reviews the document and submits structured feedback ([`sources/import/feedback/...json`](../samples/lifecycle-ghostbusters/workspace/sources/import/feedback/Ghostbusters_Operations_V_1-0-0_epa-review_feedback_20260912-120000.json)).
-3. **Re-ingestion**: The scanner normalizes the feedback into `sources/nn/`, allowing the agent to guide interactive model updates via `reconcile_feedback`.
+3. **Re-ingestion**: The scanner cognitivizes the feedback JSON in `sources/import/feedback/` in place, allowing the agent to guide interactive model updates via `reconcile_feedback`.
 
 ---
 
@@ -141,15 +142,15 @@ The model produces client- and regulatory-facing deliverables:
 
 When an existing source changes over time:
 1. **Source Update**: If Dr. Peter Venkman updates `commercial_pricing_memo.md` (e.g. renaming `## Manhattan Commercial Rates` to `## Downtown Commercial Rates`).
-2. **Automatic Snapshot**: `--scan` archives the previous normalized file in `sources/archive/commercial_pricing_memo/V1/commercial_pricing_memo.md`.
+2. **New Family Member**: `--scan` imports the changed file as a new write-once member; the previous member keeps its immutable bytes and co-located sidecar.
 3. **Scan Warning**: The terminal immediately alerts:
    ```text
-   ⚠️  [IMPACT WARNING] Updated source "import/commercial_pricing_memo.md" affects downstream models:
-       - models/Ghostbusters_Operations_V_1-0-0_NN.md (Standard Class IV Elimination): references "commercial_pricing_memo.md#manhattan-commercial-rates" [missing_heading]
+   ⚠️  [IMPACT WARNING] A newer member of "sources/import/commercial_pricing_memo" affects downstream models:
+       - kNNowledge/Ghostbusters_Operations_NN.md (Standard Class IV Elimination): cites "commercial_pricing_memo.md@## Manhattan Commercial Rates" [unit_missing_in_latest]
    ```
-4. **On-Demand Audit**: Running `node scripts/index.js --check-impact` highlights the exact missing citation and suggests the closest matching heading:
+4. **On-Demand Audit**: Running `node skills/nn-trannsform/scripts/index.js --check-impact` highlights the exact missing citation and suggests the closest matching heading:
    ```text
-   ❌ models/Ghostbusters_Operations_V_1-0-0_NN.md (Standard Class IV Elimination): references missing heading "#manhattan-commercial-rates" in "sources/nn/import/commercial_pricing_memo.md" (Did you mean: #downtown-commercial-rates?).
+   ❌ kNNowledge/Ghostbusters_Operations_NN.md (Standard Class IV Elimination): references missing heading "## Manhattan Commercial Rates" in "sources/import/commercial_pricing_memo_<UTC suffix>.md" (Did you mean: ## Downtown Commercial Rates?).
    ```
 
 ---

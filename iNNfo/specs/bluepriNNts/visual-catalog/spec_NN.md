@@ -6,11 +6,11 @@ parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "Visual Catalog App"
-blueprint_version: "V_0-1-0"
+blueprint_version: "V_0-1-1"
 procedures:
   - id: "ingest-visual-catalog"
     name: "Ingest Visual Catalog Procedure"
-    path: "procedures/ingest_visual_catalog_NN.md"
+    path: "procedures/ingest_visual_catalog_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true

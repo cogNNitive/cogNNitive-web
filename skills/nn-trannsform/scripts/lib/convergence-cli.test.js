@@ -50,8 +50,8 @@ function testConvergeProposal() {
         '',
       ].join('\n'),
     );
-    const fromPath = write('sources/nn/import/youtube_monthly_20260101-000000.csv', FROM_CSV);
-    const toPath = write('sources/nn/import/youtube_monthly_20260201-000000.csv', TO_CSV);
+    const fromPath = write('sources/import/youtube_monthly_20260101T000000Z.csv', FROM_CSV);
+    const toPath = write('sources/import/youtube_monthly_20260201T000000Z.csv', TO_CSV);
 
     const beforeFrom = fs.readFileSync(fromPath);
     const beforeTo = fs.readFileSync(toPath);
@@ -97,8 +97,8 @@ function testInvalidKeyAborts() {
   CURRENT = dir;
   try {
     write('domaiNN_NN.md', '## NN Source Family: fam\nstrategy:: upsert\nkey:: missing_col\n');
-    write('sources/nn/import/fam_20260101-000000.csv', FROM_CSV);
-    write('sources/nn/import/fam_20260201-000000.csv', TO_CSV);
+    write('sources/import/fam_20260101T000000Z.csv', FROM_CSV);
+    write('sources/import/fam_20260201T000000Z.csv', TO_CSV);
     const run = cli(['--converge', 'fam', '--src', dir, '--json']);
     assert.strictEqual(run.status, 1, 'invalid key exits non-zero');
     assert.match(run.stderr, /Invalid convergence key/);
@@ -113,8 +113,8 @@ function testCiteOnlyEmitsNothing() {
   CURRENT = dir;
   try {
     write('domaiNN_NN.md', '## NN Source Family: prose\nstrategy:: cite-only\n');
-    write('sources/nn/import/prose_20260101-000000.csv', FROM_CSV);
-    write('sources/nn/import/prose_20260201-000000.csv', TO_CSV);
+    write('sources/import/prose_20260101T000000Z.csv', FROM_CSV);
+    write('sources/import/prose_20260201T000000Z.csv', TO_CSV);
     const run = cli(['--converge', 'prose', '--src', dir, '--json']);
     assert.strictEqual(run.status, 0, run.stderr);
     const proposal = JSON.parse(run.stdout);

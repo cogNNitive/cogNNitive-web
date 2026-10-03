@@ -18,20 +18,23 @@ immutable**, while knowledge is **convergent**.
 ## 1. Where a file lands
 
 ```
-external file ─► sources/import/   (immutable verbatim copy + hash)
+external file ─► sources/import/   (immutable verbatim copy + UTC-suffixed name)
                        │
-                       ├─ sources/staging/   (ephemeral extraction buffer — never citable)
+                       └─ <file>.<ext>_sidecar_NN.md   (co-located origin metadata; the raw
+                                                          file is the citation target)
                        │
-                       └─ sources/nn/        (normalised Markdown — the ONLY citation target)
-                       │
-                       └─ sources/archive/   (snapshot of the previous version on change)
+staging/               (ephemeral extraction buffer — never citable)
 ```
 
 - The **verbatim original is never mutated, moved, or deleted** by the scanner.
-- `sources/staging/` is *optional* — it only holds intermediate output when a
-  separate tool (speech-to-text for audio, OCR for scans) produced one. It is
-  ignored by scanners, Git, and models, and is **never a valid citation target**.
-- Only `sources/nn/` (the normalised Markdown) can be cited.
+- The sidecar is **co-located** with its raw file. There is no `sources/nn/`
+  mirror tree and no `sources/archive/`.
+- `staging/` is *optional* — it only holds intermediate output when a separate
+  tool (speech-to-text for audio, OCR for scans) produced one. It is ignored by
+  scanners, Git, and models, and is **never a valid citation target**.
+- The **raw file** is citable for markdown, CSV, and JSON; a **binary** file is
+  cited through the body of its co-located sidecar
+  (`sources/import/report.pdf_sidecar_NN.md@## Findings`).
 
 ## 2. Watched folders (External Watch Roots)
 
@@ -60,9 +63,12 @@ that changed, and classifies each change:
 | `STATIC_ALERT` | A file in a `static` root changed — unexpected, human review advised. |
 | `DISCONNECTED` | A watched root is no longer reachable. |
 
-Dynamic drops are ingested as **immutable timestamped snapshots**
-(`<stem>_<YYYYMMDD-HHmmss>`), which form a *source family*. Existing citations
-stay permanently valid because a new snapshot never overwrites an old one.
+Dynamic drops are ingested as **immutable write-once members**
+(`<stem>_<YYYYMMDDTHHmmssZ>`), which form a *source family*. Existing citations
+stay permanently valid because a new member never overwrites an old one. The
+`static`/`dynamic` cadence only controls how often a watch root is re-checked; it
+does not change whether imports are suffixed. Watch roots are only ever read —
+an import never writes to a watch root.
 
 ### Session-start digest
 
@@ -92,12 +98,13 @@ declares no watch roots — so it can never delay or block a session.
 When a source that models cite changes over time (quarterly metrics, edited
 interview notes, updated price lists):
 
-1. The scan detects the change by hash.
-2. It **snapshots the previous normalised version** under
-   `sources/archive/<basename>/V<N>/` before overwriting the active file.
-3. It compares the heading structure of the old and new versions. If a
-   downstream citation points at an altered or missing heading, it prints an
-   `[IMPACT WARNING]` naming the affected models.
+1. The scan detects the change by hash and imports it as a **new write-once
+   family member**; the previous member keeps its immutable bytes.
+2. Existing citations keep resolving against the bytes they were written
+   against — the old member is never rewritten or archived.
+3. It compares the cited unit (heading, CSV row, or JSON Pointer) against the
+   latest member. If a downstream citation's unit no longer resolves in the
+   latest member, it prints an `[IMPACT WARNING]` naming the affected models.
 4. Running the impact audit on demand re-checks the whole workspace and suggests
    the closest matching heading for any broken anchor.
 
@@ -109,14 +116,14 @@ It can be tempting to "just append the new rows" or "just overwrite the file wit
 corrected data". In cogNNitive that is deliberately not how it works, because a
 source is a **citation target**:
 
-- A citation like `sources:: [sales.md#q1]` means *"the numbers under this
+- A citation like `sources:: [sales.md@## Q1]` means *"the numbers under this
   heading, in this file"*. Overwriting the file silently changes what that
   citation yields — no diff, no warning, no error.
-- The per-source archive exists to answer *"what did the model see at time T?"*.
-  Overwriting destroys the "previous" side of the comparison, so the impact
-  warning can never fire.
+- The write-once family answers *"what did the model see at time T?"*: every
+  version has its own immutable path. Overwriting would destroy the "previous"
+  side of the comparison, so the impact warning can never fire.
 - Re-importing an *unchanged* file is a no-op (the hash is identical), so the
-  snapshot model costs nothing when nothing changed.
+  family model costs nothing when nothing changed.
 
 The safe pattern is therefore: **the source is superseded, never rewritten**, and
 any change to the *meaning* is proposed as a reviewable update to the knowledge
@@ -127,11 +134,11 @@ model — with a diff, a confirmation, and a version bump.
 A spreadsheet or CSV normalises into a **profile** (schema plus summary
 statistics). The profile is an ingestion aid and is **not** a citation target. To
 cite individual rows you curate the CSV with the row-key command, which writes an
-RFC-4180 CSV under `sources/nn/` with a unique key in the first column. You then
-cite a row directly:
+RFC-4180 CSV as a write-once artifact under `artifacts/` with a unique key in the
+first column. You then cite a row directly:
 
 ```markdown
-sources:: [import/sales.csv@2026-03]
+sources:: [sources/import/sales.csv@2026-03]
 ```
 
 The editor highlights the cited row when the source is opened.
@@ -166,8 +173,8 @@ The proposal is produced by:
 node skills/nn-trannsform/scripts/index.js --converge youtube_analytics_monthly --src <workspace>
 ```
 
-It is **read-only**: it compares the two newest snapshots of the family and never
-writes `sources/import/`, `sources/nn/`, or the model. It reuses the session-start
+It is **read-only**: it compares the two newest members of the family and never
+writes `sources/import/` or the model. It reuses the session-start
 watch-digest state (`.cognnitive/watch-digest.json`), so an item the user already
 `ignore`d is not re-proposed, and it is **idempotent**: an already-applied
 proposal yields an empty one.

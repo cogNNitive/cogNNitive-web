@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-2-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-3-0"
+template_version: "V_0-4-0"
 title: "cogNNitive Template"
 relationship_types:
   hierarchy:
@@ -62,12 +62,7 @@ weight:: 60
 ## NN Field Definition: raw_filename
 concept:: Sources
 type:: string
-description:: Original file name of the raw source, relative to the workspace (e.g. sources/nn/report.docx).
-
-## NN Field Definition: media_filename
-concept:: Sources
-type:: string
-description:: Optional media file name associated with the source (e.g. sources/media/recording.mp4).
+description:: Workspace-relative path of the source file its sidecar describes (e.g. sources/import/report.docx).
 
 ## NN Field Definition: raw_hash
 concept:: Sources
@@ -98,33 +93,17 @@ description:: Tool and version that produced the normalized content (e.g. traNNs
 ## NN Field Definition: normalized_content
 concept:: Sources
 type:: markdown_file
-description:: The normalized Markdown extracted from the raw file (stored under sources/nn/). File-backed asset.
-
-## NN Field Definition: curated_csv
-concept:: Sources
-type:: string
-description:: Path to optional curated CSV data associated with the source.
-
-## NN Field Definition: status
-concept:: Sources
-type:: select
-options:: [archived]
-description:: Lifecycle status of the source (e.g. archived).
+description:: Workspace-relative path of the source's normalized content: the source itself when it is Markdown, CSV, or JSON, or its co-located sidecar (<file>_sidecar_NN.md) when it is binary. File-backed asset.
 
 ## NN Field Definition: version
 concept:: Sources
 type:: string
-description:: Ingestion version of the source.
-
-## NN Field Definition: archive_path
-concept:: Sources
-type:: string
-description:: Path where the previous version of the source is archived.
+description:: Position of the source in its write-once family, derived from the family order and never stored on the file: V1 for the oldest member, V2 for the next, and so on.
 
 ## NN Field Definition: superseded_by
 concept:: Sources
 type:: string
-description:: Identifier or version of the newer source that supersedes this one.
+description:: Workspace-relative path of the next member of the source's family. Absent for the latest member.
 
 ## NN Field Definition: derived_from
 concept:: Sources
@@ -158,7 +137,7 @@ description:: Citations to the Sources this model was derived from (PROV wasDeri
 ## NN Field Definition: artifact_ref
 concept:: Artifacts
 type:: string
-description:: Path to the artifact deliverable within the workspace (e.g. export/Executive_Summary_V_0-1-0.md).
+description:: Path to the artifact deliverable within the workspace (e.g. artifacts/Executive_Summary_20261002T101500Z.md).
 
 ## NN Field Definition: artifact_format
 concept:: Artifacts
@@ -206,7 +185,7 @@ The cogNNitive template treats ingestion and generation as a lineage graph rathe
 
 ## Objectives
 
-1. Give a stable identity (content hash + name) to every raw Source ingested by cogNNitive, and carry its normalized Markdown as a file-backed asset.
+1. Give a stable identity (content hash + name) to every raw Source ingested by cogNNitive, and point to its normalized content: the file itself for Markdown, CSV, and JSON, or its co-located sidecar for binary files.
 2. Register every produced Model and Artifact as a first-class entity with explicit derivation citations to its inputs.
 3. Record the Procedure (activity) that generated each Model or Artifact, so runs are reproducible.
 4. Keep all lineage edges as single-edge `citation` fields rather than duplicate matrices or cross-model relations.
@@ -237,7 +216,7 @@ The derivation graph is a **DAG, not a fixed chain**: an Artifact may derive fro
 
 ### Element / claim-level provenance
 
-Provenance **within** a domain model (which Source backs a specific Element) is carried directly by element citations (`sources:: [sources/nn/file.md@## Heading]`) or citation annotations (`<!-- cite: sources/nn/file.md@## Heading -->`).
+Provenance **within** a domain model (which Source backs a specific Element) is carried directly by element citations (`sources:: [sources/import/file.md@## Heading]`) or citation annotations (`<!-- cite: sources/import/file.md@## Heading -->`).
 
 ### Markers
 
@@ -281,14 +260,14 @@ title: "<Workspace> Provenance"
 
 # NN Sources
 ## NN Sources: report.docx
-raw_filename:: sources/nn/report.docx
+raw_filename:: sources/import/report.docx
 raw_hash:: sha256:1f3a...c9
 size:: 48213
 source_format:: docx
 normalized_at:: 2026-08-01T10:12:00Z
 normalized_by:: traNNsform v1.5
-normalized_content:: report.md
-version:: V_1-0-0
+normalized_content:: sources/import/report.docx_sidecar_NN.md
+version:: V1
 derived_from:: []
 
 # NN Procedures
@@ -302,11 +281,11 @@ run_at:: 2026-08-01T10:15:00Z
 model_ref:: kNNowledge/Acme_Business_Plan_V_0-1-0_business_NN.md
 model_template:: business
 knowledge_version:: V_0-1-0
-derived_from:: [sources/nn/report.md@## Executive Summary]
+derived_from:: [sources/import/report.docx_sidecar_NN.md@## Executive Summary]
 
 # NN Artifacts
 ## NN Artifacts: Executive Summary
-artifact_ref:: export/Executive_Summary_V_0-1-0.md
+artifact_ref:: artifacts/Executive_Summary_20261002T101500Z.md
 artifact_format:: document
 derived_from:: [kNNowledge/Acme_Business_Plan_V_0-1-0_business_NN.md@## Strategy]
 ```

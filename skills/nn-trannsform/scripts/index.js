@@ -17,7 +17,9 @@ const { promoteConversation, PROMOTION_OPTIONS } = require('./lib/conversations'
 const externalScanner = require('./lib/external-scanner');
 const watchDigestStore = require('./lib/watch-digest-store');
 const curateCsv = require('./lib/curate-csv');
+const gc = require('./lib/gc');
 const convergence = require('./lib/convergence-delta');
+const { sidecarPathOf } = require('./lib/innfo-core.generated.cjs');
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -25,6 +27,7 @@ async function main() {
   const hasArgs =
     argv.scan ||
     argv['normalize-file'] ||
+    argv.cognitivize ||
     argv.file ||
     argv['scan-external'] ||
     argv.external ||
@@ -49,7 +52,8 @@ async function main() {
     argv['remove-source'] ||
     argv['curate-csv'] ||
     argv.converge ||
-    argv['converge-mark'];
+    argv['converge-mark'] ||
+    argv.gc;
 
   if (hasArgs) {
     await handleCliMode(argv);
@@ -79,6 +83,68 @@ function printConvergenceProposal(proposal) {
   console.log(`\nThis is a read-only proposal. Apply it through the reviewed model mutation path, then mark it with --converge-mark.`);
 }
 
+/**
+ * Reports the citations that still target an older member of a write-once family
+ * (the family impact check): superseded ones as information, ones whose cited unit
+ * no longer resolves in the latest member as warnings.
+ */
+function reportScanImpact(projectDir) {
+  for (const impact of checkScanImpact(projectDir)) {
+    const unresolved = impact.affectedModels.filter((a) => a.status === 'unresolved_in_latest');
+    if (unresolved.length > 0) {
+      console.warn(`\n⚠️  [IMPACT WARNING] A newer member of "${impact.source}" exists (${impact.latest}); cited units that do not resolve in it:`);
+      for (const aff of unresolved) {
+        console.warn(`    - ${aff.modelFile}${aff.element ? ` (${aff.element})` : ''}: "${aff.citation}"`);
+      }
+    }
+    const superseded = impact.affectedModels.filter((a) => a.status === 'superseded');
+    if (superseded.length > 0) {
+      console.log(`\nℹ️  Superseded citations of "${impact.source}" (still resolve in ${impact.latest}):`);
+      for (const aff of superseded) {
+        console.log(`    - ${aff.modelFile}${aff.element ? ` (${aff.element})` : ''}: "${aff.citation}"`);
+      }
+    }
+  }
+}
+
+/**
+ * Garbage collection of write-once families. Dry run by default: lists the
+ * non-latest, uncited members. `--apply` deletes only the user-confirmed
+ * `--paths` that are still in a freshly computed plan, and needs `--yes`.
+ * CI never applies.
+ */
+async function handleGc(projectDir, argv) {
+  if (!argv.apply) {
+    const { candidates } = await gc.planProjectGc(projectDir);
+    if (argv.json) {
+      console.log(JSON.stringify({ candidates }, null, 2));
+      process.exit(0);
+    }
+    if (candidates.length === 0) {
+      console.log('✅ Nothing to collect: every superseded member is cited or there is none.');
+      process.exit(0);
+    }
+    console.log(`Superseded and uncited members (${candidates.length}). Nothing was deleted:`);
+    for (const c of candidates) console.log(`  ${c}`);
+    console.log('\nTo delete a confirmed subset: --gc --apply --yes --paths <path>[,<path>...]');
+    process.exit(0);
+  }
+
+  if (process.env.CI) {
+    console.error('Error: --gc --apply never runs in CI. Run it interactively and confirm the paths.');
+    process.exit(1);
+  }
+  const confirmed = gc.parsePathsArg(argv.paths);
+  if (!argv.yes || confirmed.length === 0) {
+    console.error('Error: --gc --apply needs --yes and --paths <path>[,<path>...] naming the members to delete.');
+    process.exit(2);
+  }
+  const { deleted, kept } = await gc.applyProjectGc(projectDir, confirmed);
+  for (const d of deleted) console.log(`🗑️  Deleted ${d} (and its sidecar)`);
+  for (const k of kept) console.warn(`⚠️  Kept ${k}: not in the current plan (latest member, cited, or unknown).`);
+  process.exit(0);
+}
+
 async function handleCliMode(argv) {
   let projectDir = '';
 
@@ -98,13 +164,17 @@ async function handleCliMode(argv) {
     if (bootstrap.agentsMdPath) {
       console.log(`Scaffolded workspace AGENTS.md entrypoint at: ${bootstrap.agentsMdPath}`);
     }
-    console.log(`\n📌 Place your files to import into: ${bootstrap.importDir || bootstrap.originalDir}\n`);
+    console.log(`\n📌 Place your files to import into: ${bootstrap.importDir}\n`);
   }
 
   if (!fs.existsSync(projectDir)) {
     console.error(`Error: Project directory "${projectDir}" does not exist.`);
     console.error('Please specify valid --src, --dest and --name to bootstrap it first.');
     process.exit(1);
+  }
+
+  if (argv.gc) {
+    await handleGc(projectDir, argv);
   }
 
   if (argv.check) {
@@ -128,8 +198,12 @@ async function handleCliMode(argv) {
       console.error(`\nFound ${audit.errors.length} citation drift issue(s) across models.`);
     }
     if (argv.report) {
-      const { reportPath } = writeImpactReport(projectDir, audit);
-      console.log(`📊 Impact audit report written to: ${reportPath}`);
+      const { reportPath, status } = await writeImpactReport(projectDir, audit);
+      console.log(
+        status === 'deduplicated'
+          ? `📊 Impact audit report unchanged (latest: ${reportPath})`
+          : `📊 Impact audit report written to: ${reportPath}`,
+      );
     }
     process.exit(audit.errors.length > 0 ? 1 : 0);
   }
@@ -160,9 +234,9 @@ async function handleCliMode(argv) {
     if (candidates.length > 0) {
       if (argv.yes || argv.y || argv.apply) {
         console.log(`\nImporting ${candidates.length} candidate file(s) into sources/import/...`);
-        const imported = externalScanner.importExternalFiles(candidates, projectDir);
+        const imported = await externalScanner.importExternalFiles(candidates, projectDir);
         for (const imp of imported) {
-          console.log(`  ✔ Copied: ${imp.importedAs}`);
+          console.log(`  ✔ ${imp.status === 'deduplicated' ? 'Already imported' : 'Copied'}: ${imp.importedAs}`);
         }
         console.log(`\nNormalizing imported sources...`);
         const scanRes = await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true });
@@ -228,7 +302,7 @@ async function handleCliMode(argv) {
           console.error(`Error: no external item matches digest key "${key}".`);
           process.exit(1);
         }
-        externalScanner.importExternalFiles([item], projectDir);
+        await externalScanner.importExternalFiles([item], projectDir);
         await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true });
       }
       watchDigestStore.decide(projectDir, key, status, argv.note);
@@ -244,7 +318,7 @@ async function handleCliMode(argv) {
     const family = String(argv['converge-mark']);
     const snaps = convergence.resolveFamilySnapshots(projectDir, family);
     if (snaps.length < 2) {
-      console.error(`Error: family "${family}" needs at least two snapshots under sources/nn to mark as applied.`);
+      console.error(`Error: family "${family}" needs at least two snapshots under sources/ to mark as applied.`);
       process.exit(1);
     }
     const to = snaps[snaps.length - 1];
@@ -288,7 +362,7 @@ async function handleCliMode(argv) {
 
     const snaps = convergence.resolveFamilySnapshots(projectDir, family);
     if (snaps.length < 2) {
-      console.error(`Error: family "${family}" needs at least two snapshots under sources/nn (found ${snaps.length}).`);
+      console.error(`Error: family "${family}" needs at least two snapshots under sources/ (found ${snaps.length}).`);
       process.exit(1);
     }
     const from = snaps[snaps.length - 2];
@@ -344,15 +418,15 @@ async function handleCliMode(argv) {
 
   let importResult = null;
   if (argv['import-url']) {
-    const importDir = path.join(projectDir, 'sources', 'import');
-    const legacyDir = path.join(projectDir, 'sources', 'original');
-    const targetDir = fs.existsSync(legacyDir) && !fs.existsSync(importDir) ? legacyDir : importDir;
-    fs.mkdirSync(targetDir, { recursive: true });
-    const targetLabel = path.relative(projectDir, targetDir).replace(/\\/g, '/');
+    const targetLabel = 'sources/import';
     console.log(`Downloading "${argv['import-url']}" into ${targetLabel}/...`);
     try {
-      importResult = await webImport.downloadToImport(argv['import-url'], targetDir);
-      console.log(`Downloaded to: ${targetLabel}/${importResult.relPath}`);
+      importResult = await webImport.downloadToImport(argv['import-url'], projectDir);
+      console.log(
+        importResult.deduplicated
+          ? `Already imported (identical bytes): ${targetLabel}/${importResult.relPath}`
+          : `Downloaded to: ${targetLabel}/${importResult.relPath}`,
+      );
     } catch (err) {
       console.error(`Error downloading URL: ${err.message}`);
       process.exit(1);
@@ -366,7 +440,6 @@ async function handleCliMode(argv) {
     const scanOptions = {
       autoAcceptPrompt: true,
       singleFile: targetFile,
-      flat: Boolean(argv.flat || argv['preserve-layout']),
     };
 
     if (argv.formats) {
@@ -377,15 +450,7 @@ async function handleCliMode(argv) {
     const result = await scanner.scanAndProcess(projectDir, scanOptions);
     console.log(`Normalization completed! Discovered: ${result.totalDiscovered}, Processed: ${result.processedCount}, Skipped: ${result.skippedCount}`);
 
-    if (result.changedSnapshots && result.changedSnapshots.length > 0) {
-      const impacts = checkScanImpact(result.changedSnapshots, projectDir);
-      for (const impact of impacts) {
-        console.warn(`\n⚠️  [IMPACT WARNING] Updated source "${impact.source}" affects downstream models:`);
-        for (const aff of impact.affectedModels) {
-          console.warn(`    - ${aff.modelFile}${aff.element ? ` (${aff.element})` : ''}: references "${aff.citation}" [${aff.status}]`);
-        }
-      }
-    }
+    reportScanImpact(projectDir);
 
     const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
@@ -394,12 +459,48 @@ async function handleCliMode(argv) {
     );
     provenance.appendProcedureRun(projectDir, {
       command: 'normalize-file',
-      flags: `--file "${targetFile}"${scanOptions.flat ? ' --flat' : ''}`,
+      flags: `--file "${targetFile}"`,
       inputs: [targetFile],
-      outputs: ['sources/nn/'],
+      outputs: ['sources/import/*_sidecar_NN.md', 'sources/conversations/*_sidecar_NN.md'],
     });
 
     process.exit(result.processedCount > 0 ? 0 : 1);
+  }
+
+  if (argv.cognitivize) {
+    const target = String(argv.cognitivize);
+    console.log(`Cognitivizing "${target}" in place in "${projectDir}"...`);
+
+    const options = { autoAcceptPrompt: true };
+    if (argv.formats) {
+      options.formats = argv.formats.split(',').map(f => '.' + f.trim().replace(/^\./, ''));
+    }
+
+    let result;
+    try {
+      result = await scanner.cognitivizeTarget(projectDir, target, options);
+    } catch (err) {
+      console.error(`Error cognitivizing "${target}": ${err.message}`);
+      process.exit(1);
+    }
+    for (const entry of result.registry) {
+      console.log(`  ${entry.status} ${entry.name}: ${entry.action}`);
+    }
+    console.log(`Cognitivize completed! Discovered: ${result.totalDiscovered}, Processed: ${result.processedCount}, Skipped: ${result.skippedCount}`);
+
+    const prov = provenance.buildProvenanceKnowledge(projectDir);
+    console.log(
+      `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
+        `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
+    );
+    provenance.appendProcedureRun(projectDir, {
+      command: 'cognitivize',
+      flags: `--cognitivize "${target}"`,
+      inputs: [target],
+      outputs: ['*_sidecar_NN.md'],
+    });
+
+    process.exit(result.totalDiscovered > 0 ? 0 : 1);
   }
 
   if (argv.scan) {
@@ -407,7 +508,6 @@ async function handleCliMode(argv) {
 
     const scanOptions = {
       autoAcceptPrompt: true,
-      flat: Boolean(argv.flat || argv['preserve-layout']),
     };
 
     if (argv.formats) {
@@ -428,15 +528,7 @@ async function handleCliMode(argv) {
     const result = await scanner.scanAndProcess(projectDir, scanOptions);
     console.log(`Scan completed! Discovered: ${result.totalDiscovered}, Processed: ${result.processedCount}, Skipped: ${result.skippedCount}`);
 
-    if (result.changedSnapshots && result.changedSnapshots.length > 0) {
-      const impacts = checkScanImpact(result.changedSnapshots, projectDir);
-      for (const impact of impacts) {
-        console.warn(`\n⚠️  [IMPACT WARNING] Updated source "${impact.source}" affects downstream models:`);
-        for (const aff of impact.affectedModels) {
-          console.warn(`    - ${aff.modelFile}${aff.element ? ` (${aff.element})` : ''}: references "${aff.citation}" [${aff.status}]`);
-        }
-      }
-    }
+    reportScanImpact(projectDir);
 
     const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
@@ -447,14 +539,14 @@ async function handleCliMode(argv) {
       command: importResult ? 'import-url + scan' : 'scan',
       flags: argv.formats ? `--formats ${argv.formats}` : undefined,
       inputs: importResult ? [`sources/import/${importResult.relPath}`] : ['sources/import/'],
-      outputs: ['sources/nn/'],
+      outputs: ['sources/import/*_sidecar_NN.md', 'sources/conversations/*_sidecar_NN.md'],
     });
   }
 
   if (argv['curate-csv']) {
     const target = argv['curate-csv'];
     try {
-      const result = curateCsv.curateCsvFile(target, {
+      const result = await curateCsv.curateCsvFile(target, {
         key: argv.key,
         dedup: Boolean(argv.dedup),
         projectDir,
@@ -496,7 +588,7 @@ async function handleCliMode(argv) {
       provenance.buildProvenanceKnowledge(projectDir);
       provenance.appendProcedureRun(projectDir, {
         command: `apply ${templateName}`,
-        inputs: ['sources/nn/', 'kNNowledge/'],
+        inputs: ['sources/', 'kNNowledge/'],
         outputs: [result.outputPath.replace(projectDir, '').replace(/^[\\/]/, '')],
       });
     } catch (err) {
@@ -519,7 +611,7 @@ async function handleCliMode(argv) {
         titleSlug: slug,
         format,
       });
-      console.log(`Promotion complete! Promoted ${result.promotedFiles.length} file(s) to sources/conversations/ and normalized to sources/nn/conversations/.`);
+      console.log(`Promotion complete! Promoted ${result.promotedFiles.length} file(s) to sources/conversations/ and cognitivized in place.`);
     } catch (err) {
       console.error(`Error promoting conversation: ${err.message}`);
       process.exit(1);
@@ -552,7 +644,7 @@ function unlinkSource(projectDir, targetPattern) {
     return { deleted: [] };
   }
 
-  const cleanPattern = targetPattern.replace(/\\/g, '/').replace(/^sources\/(import|original|nn|archive)\//, '');
+  const cleanPattern = targetPattern.replace(/\\/g, '/').replace(/^sources\/(import|conversations)\//, '');
   const baseTarget = path.basename(cleanPattern).replace(/\.[^.]+$/, '');
 
   const slugifyHelper = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -568,6 +660,12 @@ function unlinkSource(projectDir, targetPattern) {
         if (stat.isFile()) {
           fs.unlinkSync(filePath);
           deleted.push(filePath);
+          // A raw file and its co-located sidecar go together: no orphaned sidecar is left behind.
+          const sidecar = sidecarPathOf(filePath);
+          if (fs.existsSync(sidecar)) {
+            fs.unlinkSync(sidecar);
+            deleted.push(sidecar);
+          }
         } else if (stat.isDirectory()) {
           fs.rmSync(filePath, { recursive: true, force: true });
           deleted.push(filePath);
@@ -626,7 +724,7 @@ async function handleInteractiveMode() {
 
   let projectDir = getActiveProjectDir();
   let projectExists = fs.existsSync(projectDir) &&
-    (fs.existsSync(path.join(projectDir, 'sources', 'import')) || fs.existsSync(path.join(projectDir, 'sources', 'original')));
+    fs.existsSync(path.join(projectDir, 'sources', 'import'));
 
   const choices = [];
   if (projectExists) {
@@ -685,7 +783,7 @@ async function runBootstrapperFlow() {
     {
       type: 'text',
       name: 'src',
-      message: 'Enter the source directory containing raw files to import (will be copied to sources/original):',
+      message: 'Enter the source directory containing raw files to import (will be copied to sources/import):',
       validate: value => {
         const clean = value.replace(/^["']|["']$/g, '').trim();
         return fs.existsSync(clean) ? true : 'Source directory does not exist';
@@ -734,7 +832,7 @@ async function runBootstrapperFlow() {
   config.saveConfig({ lastProjectPath: projectDir });
 
   console.log(`Project successfully bootstrapped at: ${projectDir}\n`);
-  console.log(`\n📌 Place your files to import into: ${bootstrap.importDir || bootstrap.originalDir}\n`);
+  console.log(`\n📌 Place your files to import into: ${bootstrap.importDir}\n`);
   return projectDir;
 }
 
@@ -770,25 +868,12 @@ async function runProjectMenu(projectDir) {
   }
 
   if (response.action === 'scan') {
-    console.log('\nScanning active source directories (sources/import, sources/conversations, sources/export)...');
-    const orphanConsent = async (orphan) => {
-      const resp = await prompts({
-        type: 'select',
-        name: 'choice',
-        message: `Orphaned source detected: "${orphan.sourceFile}" no longer exists on disk. How would you like to handle it?`,
-        choices: [
-          { title: '[a] (Recommended) Archive & remove from active set', value: 'a' },
-          { title: '[b] Keep as active', value: 'b' },
-          { title: '[c] Skip for this run', value: 'c' },
-        ],
-      });
-      return resp.choice || 'c';
-    };
-    const result = await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true, orphanConsent });
-    console.log('\n=== Ingestion Manifest Created ===');
+    console.log('\nScanning active source directories (sources/import, sources/conversations)...');
+    const result = await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true });
+    console.log('\n=== Scan Completed ===');
     console.log(`Processed: ${result.processedCount} files successfully.`);
     console.log(`Skipped/Needs Review: ${result.skippedCount} files.`);
-    console.log(`Review the manifest log at: ${path.join(projectDir, 'sources', 'nn', 'index.md')}`);
+    if (result.orphans.length > 0) console.log(`Orphaned sidecars (raw file missing, preserved): ${result.orphans.length}.`);
 
     const prov = provenance.buildProvenanceKnowledge(projectDir);
     console.log(
@@ -797,8 +882,8 @@ async function runProjectMenu(projectDir) {
     );
     provenance.appendProcedureRun(projectDir, {
       command: 'scan',
-      inputs: ['sources/import/', 'sources/conversations/', 'sources/export/'],
-      outputs: ['sources/nn/'],
+      inputs: ['sources/import/', 'sources/conversations/'],
+      outputs: ['sources/import/*_sidecar_NN.md', 'sources/conversations/*_sidecar_NN.md'],
     });
 
     return runProjectMenu(projectDir);
@@ -872,7 +957,7 @@ async function runPromoteConversationFlow(projectDir) {
     sessionFile: sessionAbsPath,
     format: promoResp.format,
   });
-  console.log(`\nPromoted ${result.promotedFiles.length} file(s) into sources/conversations/ and normalized into sources/nn/conversations/.`);
+  console.log(`\nPromoted ${result.promotedFiles.length} file(s) into sources/conversations/ and cognitivized in place.`);
 }
 
 async function runCreateBlueprintFlow(projectDir) {
@@ -939,7 +1024,7 @@ ${answers.structure || ''}
 
 function getActiveProjectDir() {
   const cwd = process.cwd();
-  if (fs.existsSync(path.join(cwd, 'sources', 'original'))) {
+  if (fs.existsSync(path.join(cwd, 'sources', 'import'))) {
     return cwd;
   }
 

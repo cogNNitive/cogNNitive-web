@@ -609,118 +609,90 @@ agent-bootstrap:
     }
   }
 
-  // Test 9: scanWorkspaceSources — Clean Workspace Baseline
+  // Helpers for the sidecar-based source audit (hand-written fixtures: the audit only reads).
+  const sha256Of = (text) => crypto.createHash('sha256').update(text).digest('hex');
+  const writeRaw = (ws, rel, text) => {
+    const abs = path.join(ws, rel);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, text);
+  };
+  const writeSidecar = (ws, rel, sourceText, hashOverride) => {
+    writeRaw(
+      ws,
+      `${rel}_sidecar_NN.md`,
+      `---\nlevel: 3\nparent_spec:\n  name: sidecar\nsource_file: "${rel}"\nsha256: "${hashOverride || sha256Of(sourceText)}"\nsize_bytes: ${Buffer.byteLength(sourceText)}\nsource_format: ${path.extname(rel).slice(1)}\nnormalized_at: "2026-10-02T10:00:00Z"\n---\n`,
+    );
+  };
+
+  // Test 9: scanWorkspaceSources — Clean Workspace Baseline (every raw has an up-to-date co-located sidecar)
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-clean-'));
     try {
       const ws = path.join(tmpDir, 'ws');
-      const importDir = path.join(ws, 'sources', 'import');
-      const convDir = path.join(ws, 'sources', 'conversations');
-      const exportDir = path.join(ws, 'sources', 'export');
-      const nnImportDir = path.join(ws, 'sources', 'nn', 'import');
-      const nnConvDir = path.join(ws, 'sources', 'nn', 'conversations');
-      const nnExportDir = path.join(ws, 'sources', 'nn', 'export');
-
-      fs.mkdirSync(importDir, { recursive: true });
-      fs.mkdirSync(convDir, { recursive: true });
-      fs.mkdirSync(exportDir, { recursive: true });
-      fs.mkdirSync(nnImportDir, { recursive: true });
-      fs.mkdirSync(nnConvDir, { recursive: true });
-      fs.mkdirSync(nnExportDir, { recursive: true });
-
-      const doc1Content = 'Sample import content';
-      const doc1Hash = crypto.createHash('sha256').update(doc1Content).digest('hex');
-      fs.writeFileSync(path.join(importDir, 'doc1.txt'), doc1Content);
-      fs.writeFileSync(
-        path.join(nnImportDir, 'doc1.md'),
-        `---\nsource_file: "sources/import/doc1.txt"\nsha256: "${doc1Hash}"\n---\n# doc1\n`,
-      );
-
-      const conv1Content = '# Conversation summary';
-      const conv1Hash = crypto.createHash('sha256').update(conv1Content).digest('hex');
-      fs.writeFileSync(path.join(convDir, 'session_summary.md'), conv1Content);
-      fs.writeFileSync(
-        path.join(nnConvDir, 'session_summary.md'),
-        `---\nsource_file: "sources/conversations/session_summary.md"\nsha256: "${conv1Hash}"\nconversation_format: "summary"\n---\n# session summary\n`,
-      );
-
-      const export1Content = 'Deliverable CSV data';
-      const export1Hash = crypto.createHash('sha256').update(export1Content).digest('hex');
-      fs.writeFileSync(path.join(exportDir, 'data.csv'), export1Content);
-      fs.writeFileSync(
-        path.join(nnExportDir, 'data.md'),
-        `---\nsource_file: "sources/export/data.csv"\nsha256: "${export1Hash}"\nis_synthetic: true\n---\n# data\n`,
-      );
-
-      // Ingestion manifest index.md in sources/nn/ must be ignored as a source
-      fs.writeFileSync(path.join(ws, 'sources', 'nn', 'index.md'), '# Ingestion Manifest\n');
+      writeRaw(ws, 'sources/import/doc1.txt', 'Sample import content');
+      writeSidecar(ws, 'sources/import/doc1.txt', 'Sample import content');
+      writeRaw(ws, 'sources/import/specs/api.csv', 'a,b\n1,2\n');
+      writeSidecar(ws, 'sources/import/specs/api.csv', 'a,b\n1,2\n');
+      writeRaw(ws, 'sources/conversations/2026-09-06_planning_20260906T120000Z.md', '# Conversation');
+      writeSidecar(ws, 'sources/conversations/2026-09-06_planning_20260906T120000Z.md', '# Conversation');
+      // A file in staging is scratch and never audited.
+      writeRaw(ws, 'sources/import/staging/draft.md', '# draft');
 
       const res = scanWorkspaceSources(ws);
-      assert.strictEqual(res.total, 3, 'Total sources should be 3');
+      assert.strictEqual(res.total, 3, 'Total sources should be 3 (sidecars and staging are not raw files)');
       assert.strictEqual(res.normalized, 3, 'Normalized sources should be 3');
       assert.strictEqual(res.unnormalized, 0, 'Unnormalized sources should be 0');
       assert.strictEqual(res.dangling, 0, 'Dangling sources should be 0');
       assert.strictEqual(res.sources_integrity.ok, true, 'sources_integrity.ok should be true');
       assert.strictEqual(res.sources_integrity.unnormalized.length, 0);
       assert.strictEqual(res.sources_integrity.orphaned.length, 0);
-      assert.strictEqual(res.sources_integrity.subtrees.import.total, 1);
+      assert.strictEqual(res.sources_integrity.subtrees.import.total, 2);
       assert.strictEqual(res.sources_integrity.subtrees.conversations.total, 1);
-      assert.strictEqual(res.sources_integrity.subtrees.export.total, 1);
-      console.log('✔ scanWorkspaceSources passes clean workspace baseline across import, conversations, export');
+      assert.strictEqual(res.sources_integrity.subtrees.export, undefined, 'export is no longer a source subtree');
+      console.log('✔ scanWorkspaceSources passes the clean baseline across import and conversations');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 10: scanWorkspaceSources — Unnormalized detection across subtrees
+  // Test 10: scanWorkspaceSources — a raw file with no sidecar is unnormalized (missing)
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-unnorm-'));
     try {
       const ws = path.join(tmpDir, 'ws');
-      fs.mkdirSync(path.join(ws, 'sources', 'import'), { recursive: true });
-      fs.mkdirSync(path.join(ws, 'sources', 'conversations'), { recursive: true });
-      fs.mkdirSync(path.join(ws, 'sources', 'export'), { recursive: true });
-      fs.mkdirSync(path.join(ws, 'sources', 'nn'), { recursive: true });
-
-      fs.writeFileSync(path.join(ws, 'sources', 'import', 'doc.pdf'), 'PDF bytes');
-      fs.writeFileSync(path.join(ws, 'sources', 'conversations', 'chat_summary.md'), 'chat summary');
-      fs.writeFileSync(path.join(ws, 'sources', 'export', 'report.md'), 'report deliverable');
+      writeRaw(ws, 'sources/import/doc.pdf', 'PDF bytes');
+      writeRaw(ws, 'sources/conversations/chat_20260906T120000Z.md', 'chat');
+      // A retired folder is not an audited subtree even when it holds files.
+      writeRaw(ws, 'sources/export/report.md', 'report deliverable');
 
       const res = scanWorkspaceSources(ws);
-      assert.strictEqual(res.total, 3);
+      assert.strictEqual(res.total, 2);
       assert.strictEqual(res.normalized, 0);
-      assert.strictEqual(res.unnormalized, 3);
+      assert.strictEqual(res.unnormalized, 2);
       assert.strictEqual(res.sources_integrity.ok, false);
-      assert.strictEqual(res.sources_integrity.unnormalized.length, 3);
+      assert.strictEqual(res.sources_integrity.unnormalized.length, 2);
 
-      const unnormPaths = res.sources_integrity.unnormalized.map(u => u.path);
-      assert.ok(unnormPaths.some(p => p.includes('doc.pdf')));
-      assert.ok(unnormPaths.some(p => p.includes('chat_summary.md')));
-      assert.ok(unnormPaths.some(p => p.includes('report.md')));
-      assert.ok(res.sources_integrity.unnormalized.every(u => u.reason === 'missing'));
-      console.log('✔ scanWorkspaceSources detects unnormalized files across all subtrees');
+      const unnormPaths = res.sources_integrity.unnormalized.map((u) => u.path);
+      assert.ok(unnormPaths.some((p) => p.includes('doc.pdf')));
+      assert.ok(unnormPaths.some((p) => p.includes('chat_20260906T120000Z.md')));
+      assert.ok(!unnormPaths.some((p) => p.includes('report.md')));
+      assert.ok(res.sources_integrity.unnormalized.every((u) => u.reason === 'missing'));
+      const item = res.items.find((i) => i.status === 'unnormalized' && i.name.includes('doc.pdf'));
+      assert.ok(item && /--scan/.test(item.detail) && /--cognitivize/.test(item.detail), 'the finding suggests --scan or --cognitivize');
+      assert.ok(!/sources\/nn/.test(item.detail), 'the finding never mentions sources/nn');
+      console.log('✔ scanWorkspaceSources detects raw files without a sidecar');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 11: scanWorkspaceSources — Stale hash detection
+  // Test 11: scanWorkspaceSources — hash guard: sidecar sha256 differs from the raw bytes
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-stale-'));
     try {
       const ws = path.join(tmpDir, 'ws');
-      fs.mkdirSync(path.join(ws, 'sources', 'import'), { recursive: true });
-      fs.mkdirSync(path.join(ws, 'sources', 'nn', 'import'), { recursive: true });
-
-      // Raw source has updated content
-      fs.writeFileSync(path.join(ws, 'sources', 'import', 'doc.txt'), 'Modified Content Version 2');
-
-      // Normalized frontmatter holds stale hash
-      const oldHash = crypto.createHash('sha256').update('Original Content Version 1').digest('hex');
-      fs.writeFileSync(
-        path.join(ws, 'sources', 'nn', 'import', 'doc.md'),
-        `---\nsource_file: "sources/import/doc.txt"\nsha256: "${oldHash}"\n---\n# doc\n`,
-      );
+      writeRaw(ws, 'sources/import/doc.txt', 'Modified Content Version 2');
+      writeSidecar(ws, 'sources/import/doc.txt', 'Original Content Version 1');
 
       const res = scanWorkspaceSources(ws);
       assert.strictEqual(res.total, 1);
@@ -728,63 +700,71 @@ agent-bootstrap:
       assert.strictEqual(res.sources_integrity.ok, false);
       assert.strictEqual(res.sources_integrity.unnormalized.length, 1);
       assert.strictEqual(res.sources_integrity.unnormalized[0].reason, 'hash_mismatch');
-      assert.ok(res.items.some(i => i.status === 'stale' && i.name.includes('doc.txt')));
-      console.log('✔ scanWorkspaceSources detects stale source hash drift');
+      assert.ok(res.items.some((i) => i.status === 'stale' && i.name.includes('doc.txt')));
+      console.log('✔ scanWorkspaceSources detects a sidecar hash that no longer matches the raw bytes');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 12: scanWorkspaceSources — Dangling normalized reference detection
+  // Test 12: scanWorkspaceSources — orphaned sidecar (raw file missing), never deleted
   {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-dangling-'));
     try {
       const ws = path.join(tmpDir, 'ws');
-      fs.mkdirSync(path.join(ws, 'sources', 'nn', 'import'), { recursive: true });
-
-      // Normalized file points to missing raw source file
-      fs.writeFileSync(
-        path.join(ws, 'sources', 'nn', 'import', 'orphan.md'),
-        `---\nsource_file: "sources/import/deleted.pdf"\nsha256: "abcdef123456"\n---\n# orphan\n`,
-      );
+      writeSidecar(ws, 'sources/import/old_notes.txt', 'gone');
 
       const res = scanWorkspaceSources(ws);
       assert.strictEqual(res.dangling, 1);
       assert.strictEqual(res.sources_integrity.ok, false);
       assert.strictEqual(res.sources_integrity.orphaned.length, 1);
-      assert.strictEqual(res.sources_integrity.orphaned[0].missing_source, 'sources/import/deleted.pdf');
-      assert.ok(res.items.some(i => i.status === 'dangling'));
-      console.log('✔ scanWorkspaceSources detects dangling references in sources/nn/');
+      assert.strictEqual(res.sources_integrity.orphaned[0].path, 'sources/import/old_notes.txt_sidecar_NN.md');
+      assert.strictEqual(res.sources_integrity.orphaned[0].missing_source, 'sources/import/old_notes.txt');
+      assert.ok(res.items.some((i) => i.status === 'dangling'));
+      assert.ok(fs.existsSync(path.join(ws, 'sources/import/old_notes.txt_sidecar_NN.md')), 'the orphan is reported, never deleted');
+      console.log('✔ scanWorkspaceSources reports an orphaned sidecar and keeps it');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }
 
-  // Test 13: scanWorkspaceSources — Legacy alias sources/original/ fallback
+  // Test 13: scanWorkspaceSources — retired folders are not scanned (no fallback)
   {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-legacy-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-retired-'));
     try {
       const ws = path.join(tmpDir, 'ws');
-      const originalDir = path.join(ws, 'sources', 'original');
-      const nnDir = path.join(ws, 'sources', 'nn');
-      fs.mkdirSync(originalDir, { recursive: true });
-      fs.mkdirSync(nnDir, { recursive: true });
-
-      const content = 'Legacy original document';
-      const hash = crypto.createHash('sha256').update(content).digest('hex');
-      fs.writeFileSync(path.join(originalDir, 'legacy.txt'), content);
-      fs.writeFileSync(
-        path.join(nnDir, 'legacy.md'),
-        `---\nsource_file: "sources/original/legacy.txt"\nsha256: "${hash}"\n---\n# legacy\n`,
-      );
+      writeRaw(ws, 'sources/original/retired.txt', 'Retired original document');
+      writeRaw(ws, 'sources/nn/retired.md', '# mirror');
+      writeRaw(ws, 'sources/archive/old/V1/old.md', '# archived');
 
       const res = scanWorkspaceSources(ws);
-      assert.strictEqual(res.total, 1);
-      assert.strictEqual(res.normalized, 1);
-      assert.strictEqual(res.unnormalized, 0);
-      assert.strictEqual(res.dangling, 0);
-      assert.strictEqual(res.sources_integrity.ok, true);
-      console.log('✔ scanWorkspaceSources supports legacy alias sources/original/ cleanly');
+      assert.strictEqual(res.total, 0);
+      assert.strictEqual(res.sources_integrity.subtrees.original, undefined);
+      assert.strictEqual(res.sources_integrity.subtrees.nn, undefined);
+      console.log('✔ scanWorkspaceSources ignores the retired sources/original, nn and archive folders');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 13b: scanWorkspaceSources — missing `* -text` policy is a warning, never a blocker
+  {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-sources-policy-'));
+    try {
+      const ws = path.join(tmpDir, 'ws');
+      writeRaw(ws, 'sources/import/doc.txt', 'content');
+      writeSidecar(ws, 'sources/import/doc.txt', 'content');
+
+      const without = scanWorkspaceSources(ws);
+      assert.strictEqual(without.sources_integrity.ok, true, 'the missing policy does not make the audit fail');
+      assert.strictEqual(without.sources_integrity.text_policy_ok, false);
+      assert.ok(without.items.some((i) => i.status === 'text-policy-missing' && /-text/.test(i.detail)), 'a warning item names the policy');
+
+      fs.writeFileSync(path.join(ws, '.gitattributes'), '*.png binary\n* -text\n');
+      const withPolicy = scanWorkspaceSources(ws);
+      assert.strictEqual(withPolicy.sources_integrity.text_policy_ok, true);
+      assert.ok(!withPolicy.items.some((i) => i.status === 'text-policy-missing'));
+      console.log('✔ scanWorkspaceSources warns when .gitattributes lacks `* -text`');
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
@@ -841,15 +821,10 @@ agent-bootstrap:
     try {
       const ws = path.join(tmpDir, 'ws');
       fs.mkdirSync(path.join(ws, 'sources', 'import'), { recursive: true });
-      fs.mkdirSync(path.join(ws, 'sources', 'nn', 'import'), { recursive: true });
 
       const content = 'clean file';
-      const hash = crypto.createHash('sha256').update(content).digest('hex');
-      fs.writeFileSync(path.join(ws, 'sources', 'import', 'doc.txt'), content);
-      fs.writeFileSync(
-        path.join(ws, 'sources', 'nn', 'import', 'doc.md'),
-        `---\nsource_file: "sources/import/doc.txt"\nsha256: "${hash}"\n---\n# doc\n`,
-      );
+      writeRaw(ws, 'sources/import/doc.txt', content);
+      writeSidecar(ws, 'sources/import/doc.txt', content);
 
       const res = await runScriptAsync([
         '--json',
@@ -867,6 +842,36 @@ agent-bootstrap:
       assert.strictEqual(parsedRes.sources_integrity.ok, true);
       assert.strictEqual(parsedRes.sources_integrity.unnormalized.length, 0);
       console.log('✔ CLI preflight with normalized workspace exits 0 and reports sources_integrity.ok === true');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 15b: CLI integration — a missing `* -text` policy is printed as a warning and does not block
+  {
+    const emptyManifest = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const server = await serveManifest(emptyManifest);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-cli-policy-'));
+    try {
+      const ws = path.join(tmpDir, 'ws');
+      writeRaw(ws, 'sources/import/doc.txt', 'clean file');
+      writeSidecar(ws, 'sources/import/doc.txt', 'clean file');
+
+      const res = await runScriptAsync(['--workspace-dir', ws, '--manifest-url', server.url]);
+      assert.strictEqual(res.status, 0, `A missing text policy must not block. Got: ${res.stdout} ${res.stderr}`);
+      assert.ok(/\* -text/.test(res.stdout), `the warning names the policy: ${res.stdout}`);
+
+      fs.writeFileSync(path.join(ws, '.gitattributes'), '* -text\n');
+      const clean = await runScriptAsync(['--workspace-dir', ws, '--manifest-url', server.url]);
+      assert.ok(!/no `\* -text` line/.test(clean.stdout), 'the warning disappears once the policy exists');
+      console.log('✔ CLI preflight warns about a missing `* -text` policy without blocking');
     } finally {
       await server.close();
       fs.rmSync(tmpDir, { recursive: true, force: true });

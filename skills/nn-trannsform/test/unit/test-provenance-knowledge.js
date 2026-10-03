@@ -5,13 +5,14 @@ const os = require('os');
 
 const provenance = require('../../scripts/provenance');
 const modelLib = require('../../scripts/lib/provenance-knowledge');
+const { put, cognitivizeAll } = require('./_fixtures');
 const {
   readLineageSnapshot,
   projectLineage,
   renderLineageSections,
 } = require('../../scripts/lib/innfo-core.generated.cjs');
 
-function run() {
+async function run() {
   let passed = 0;
   let failed = 0;
 
@@ -38,39 +39,28 @@ function run() {
   const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'nnt-prov-test-'));
   try {
     const proj = path.join(TMP, 'TestProj');
-    for (const d of ['sources/nn', 'sources/archive/sample/V1', 'kNNowledge', 'export', 'artifacts']) {
+    for (const d of ['kNNowledge', 'export', 'artifacts']) {
       fs.mkdirSync(path.join(proj, d), { recursive: true });
     }
 
-    // Active source
-    fs.writeFileSync(
-      path.join(proj, 'sources', 'nn', 'sample.md'),
-      `---\nsource_file: "sources/import/sample.txt"\nsha256: "hash123"\nsize_bytes: 100\nnormalized_at: "2026-09-01T10:00:00Z"\nnormalized_by: "test"\n---\n# Sample\n## Item\nContent\n`,
-    );
-
-    // Archived source
-    fs.writeFileSync(
-      path.join(proj, 'sources', 'archive', 'sample', 'V1', 'sample.md'),
-      `---\nsource_file: "sources/import/sample.txt"\nsha256: "oldhash"\nsize_bytes: 80\nnormalized_at: "2026-08-01T10:00:00Z"\nnormalized_by: "test"\n---\n# Sample\n## Item\nOld content\n`,
-    );
+    // Source: a raw file cognitivized in place.
+    put(proj, 'sources/import/sample.md', '# Sample\n## Item\nContent\n');
+    await cognitivizeAll(proj, ['sources/import/sample.md']);
 
     // kNNowledge model
     fs.writeFileSync(
-      path.join(proj, 'kNNowledge', 'Doc_V_1-0-0_NN.md'),
-      `---\nlevel: 3\nknowledge_version: "V_1-0-0"\nparent_spec:\n  name: "business_V_0-1-0"\ntitle: "Business Doc"\n---\n# NN Items\n## NN Items: Spec\nsources:: [sources/nn/sample.md#item]\n`,
+      path.join(proj, 'kNNowledge', 'Doc_business_NN.md'),
+      `---\nlevel: 3\nknowledge_version: "V_1-0-0"\nparent_spec:\n  name: "business"\ntitle: "Business Doc"\n---\n# NN Items\n## NN Items: Spec\nsources:: [sources/import/sample.md@## Item]\n`,
     );
 
-    // Export artifact (proper)
+    // Artifact declaring its upstream
     fs.writeFileSync(
-      path.join(proj, 'export', 'summary.md'),
-      `---\ntype: "report"\nsources: ["kNNowledge/Doc_V_1-0-0_NN.md#spec"]\n---\n# Summary\n`,
+      path.join(proj, 'artifacts', 'summary.md'),
+      `---\ntype: "report"\nsources: ["kNNowledge/Doc_business_NN.md@## NN Items: Spec"]\n---\n# Summary\n`,
     );
 
-    // Legacy artifact folder (should be ignored)
-    fs.writeFileSync(
-      path.join(proj, 'artifacts', 'ignored_artifact.md'),
-      `---\ntype: "report"\nsources: ["kNNowledge/Doc_V_1-0-0_NN.md"]\n---\n# Ignored\n`,
-    );
+    // A loose hand-written file under the retired export/ folder: no sidecar, not a family member, no upstream
+    fs.writeFileSync(path.join(proj, 'export', 'ignored_artifact.md'), '# Ignored\n');
 
     // 1. Projection match check
     const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'TestProj' });
@@ -84,8 +74,21 @@ function run() {
     // 2. No is_synthetic in sources
     ok(!content1.includes('is_synthetic::'), 'no is_synthetic emitted in lineage record');
 
-    // 3. No artifacts/ fallback: ignored_artifact.md not present
-    ok(!content1.includes('ignored_artifact'), 'files under artifacts/ are ignored');
+    // 3. Roles come from names, not folders: a loose file under export/ is no node,
+    // while a file that declares upstream sources is an artifact wherever it sits.
+    ok(!content1.includes('ignored_artifact'), 'a loose file under the retired export/ is not projected');
+    ok(content1.includes('## NN Sources: sample.md'), 'the cognitivized raw file is a Source');
+    ok(!content1.includes('## NN Artifacts: sample'), 'the Source does not appear under # NN Artifacts');
+    fs.writeFileSync(
+      path.join(proj, 'export', 'declares_upstream.md'),
+      '---\nsources: ["kNNowledge/Doc_business_NN.md@## NN Items: Spec"]\n---\n# Declares\n',
+    );
+    const rExport = provenance.buildProvenanceKnowledge(proj, { projectName: 'TestProj' });
+    ok(
+      fs.readFileSync(rExport.modelPath, 'utf8').includes('## NN Artifacts: declares_upstream'),
+      'folder-blind: a file declaring upstream sources is an artifact even under export/',
+    );
+    fs.rmSync(path.join(proj, 'export', 'declares_upstream.md'));
 
     // 4. Hand-authored blocks and journal preserved byte-for-byte in refreshExistingModel
     const handAuthoredSection = '\n# NN External Watch Roots\n\n- root: /data/external\n  pattern: **/*.pdf\n';
@@ -104,7 +107,7 @@ function run() {
 
     // 5. Deprecated model / knowledge_version fallback removed
     fs.writeFileSync(
-      path.join(proj, 'export', 'legacy_header_artifact.md'),
+      path.join(proj, 'artifacts', 'legacy_header_artifact.md'),
       `---\nmodel: "Business Doc"\nknowledge_version: "V_1-0-0"\ntype: "report"\n---\n# Legacy\n`,
     );
     const r3 = provenance.buildProvenanceKnowledge(proj, { projectName: 'TestProj' });
@@ -118,6 +121,12 @@ function run() {
     ok(refreshed.includes('# NN Models\n\n## NN Models: Legacy'), 'legacy # NN Models section passes through as unmanaged custom block');
     ok(refreshed.includes('# NN ModelRecords'), 'refresh produces # NN ModelRecords');
     ok(refreshed.includes('* [[Models]]'), 'legacy [[Models]] index link is not rewritten');
+
+    // 7. The record is a single living file: no version key in its frontmatter, none in the generator source
+    ok(!/^knowledge_version:\s/m.test(content3), 'a generated record carries no knowledge_version frontmatter key');
+    ok(!/^knowledge_version:\s/m.test(refreshed), 'refreshing a record drops a legacy knowledge_version key');
+    const generatorSource = fs.readFileSync(path.join(__dirname, '..', '..', 'scripts', 'lib', 'provenance-knowledge.js'), 'utf8');
+    ok(!/knowledge_version|export-meta|sources\/(nn|original|export|archive)\//.test(generatorSource), 'no knowledge_version, export-meta, or retired-folder inference in the generator');
 
     fs.rmSync(TMP, { recursive: true, force: true });
   } catch (err) {
@@ -133,7 +142,8 @@ function run() {
 module.exports = { run };
 
 if (require.main === module) {
-  const { passed, failed } = run();
-  console.log(`\nProvenance-knowledge tests: ${passed} passed, ${failed} failed`);
-  process.exit(failed > 0 ? 1 : 0);
+  run().then(({ passed, failed }) => {
+    console.log(`\nProvenance-knowledge tests: ${passed} passed, ${failed} failed`);
+    process.exit(failed > 0 ? 1 : 0);
+  });
 }

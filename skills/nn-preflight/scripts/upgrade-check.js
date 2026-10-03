@@ -36,13 +36,15 @@ const {
   parsePinnedUrl,
   classifyAgainstCatalog,
 } = require('./lib/version-status.generated.cjs');
+// Model identity is the naming contract's (bundled from innfo-core, same drift guard).
+const { isNNName, isSidecarName } = require('./lib/naming-contract.generated.cjs');
 
 const SCAN_SKIP_DIRS = new Set([
   '.git', '.backup', '.spec-cache', 'node_modules', 'dist', 'backups', 'archive',
-  'sources', 'conversations', 'export', 'artifacts', 'procedures', 'specs', 'templates',
+  'sources', 'conversations', 'artifacts', 'procedures', 'specs', 'templates',
 ]);
 
-/** Recursive `*_NN.md` walk of the workspace, skipping noise/staging dirs. */
+/** Recursive walk for `_NN.md` documents (sidecars excluded), skipping noise/staging dirs. */
 function walkModels(dir, files) {
   let entries;
   try {
@@ -54,7 +56,7 @@ function walkModels(dir, files) {
     if (entry.isDirectory()) {
       if (entry.name.startsWith('.') || SCAN_SKIP_DIRS.has(entry.name)) continue;
       walkModels(path.join(dir, entry.name), files);
-    } else if (entry.isFile() && entry.name.endsWith('_NN.md')) {
+    } else if (entry.isFile() && isNNName(entry.name) && !isSidecarName(entry.name)) {
       files.push(path.join(dir, entry.name));
     }
   }

@@ -87,20 +87,22 @@ The transcript's strongest point is that the expensive work happens **once**:
 ### 3.2 Traceability — the argument that sells it to reviewers
 
 - Citations are **element-level** and anchored to a **heading slug**, never to a
-  line range: `sources:: [commercial_pricing_memo.md#manhattan-commercial-rates]`.
+  line range: `sources:: [sources/import/commercial_pricing_memo.md@## Manhattan Commercial Rates]`.
   Line ranges are rejected as an error; a slug that no longer matches is a
   warning with a fuzzy "did you mean" suggestion.
-- Each source keeps its **own version history inside the workspace**
-  (`sources/archive/<basename>/V<N>/`). When a source changes, the previous
-  normalised version is snapshotted before overwrite. That answers *"what exact
-  version of this source did model X see at time T?"* even if no Git commit
-  happened.
-- A **lineage record** (`<Project>_V_x-y-z_cogNNitive_NN.md`) lists every Source,
-  Model, Artifact, and pipeline run. The Procedures section is append-only.
-- **Drift detection**: when a living source changes, `--scan` compares heading
-  structure and prints `[IMPACT WARNING]` naming the downstream models whose
-  citations broke. `--check-impact` audits the whole workspace on demand and
-  exits non-zero on drift.
+- Each source keeps its **own version history inside the workspace** as
+  **write-once family members**: a changed source becomes a new immutable member
+  named with a UTC suffix (`_YYYYMMDDTHHmmssZ`), and the previous member keeps its
+  bytes. That answers *"what exact version of this source did model X see at time
+  T?"* even if no Git commit happened.
+- A **lineage record** (`<Project>_cogNNitive_NN.md`) lists every Source,
+  ModelRecord, Artifact, and pipeline run. The Procedures section is append-only,
+  and the record's managed sections are guarded by a drift gate.
+- **Drift detection**: when a living source changes, `--scan` compares the cited
+  unit (heading, CSV row, or JSON Pointer) against the latest family member and
+  prints `[IMPACT WARNING]` naming the downstream models whose citations no longer
+  resolve. `--check-impact` audits the whole workspace on demand and exits
+  non-zero on drift.
 
 ### 3.3 Versatility & review comfort
 
@@ -151,22 +153,21 @@ as `NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, or `DISCONNECTED`.
 ### 4.2 The ingestion pipeline (one-time, irreversible only by you)
 
 ```
-external file ─► sources/import/   (immutable verbatim copy + SHA-256)
+external file ─► sources/import/   (immutable verbatim copy + UTC-suffixed name)
                        │
-                       ├─ sources/staging/   (ephemeral extraction buffer — Whisper/OCR — never citable)
+                       ├─ staging/                        (ephemeral extraction buffer — Whisper/OCR — never citable)
                        │
-                       └─ sources/nn/        (normalised Markdown — the ONLY citation target)
-                       │
-                       └─ sources/archive/   (snapshot of the previous version on change)
+                       └─ <file>.<ext>_sidecar_NN.md      (co-located origin metadata; the raw file is the citation target)
 ```
 
 - **Markdown is the point.** Markdown is the format LLMs handle natively, so
   normalisation is an *optimisation for AI consumption* — the argument the
   transcript makes well.
 - **The verbatim original is never mutated, moved, or deleted** by the scanner.
-- `sources/original/` is a **legacy fallback**, not the canonical folder. The
-  canonical immutable drop is `sources/import/`.
-- `sources/staging/` is *optional* and only used when a separate extraction tool
+- The sidecar is **co-located** with its raw file: there is no `sources/nn/` mirror
+  tree. `sources/original/` and `sources/archive/` are retired and never resolved
+  at runtime.
+- `staging/` is *optional* and only used when a separate extraction tool
   (Whisper for audio, OCR for scans) produces an intermediate dump. It is ignored
   by scanners, Git, and models.
 
@@ -183,7 +184,7 @@ format:: xlsx
 summary:: Published hourly rates and surcharges by region for Q1 2026.
 tags:: [pricing, sales]
 status:: ready
-source_model:: sources/nn/import/master_rate_card_2026.md
+source_model:: sources/import/master_rate_card_2026.xlsx_sidecar_NN.md
 ```
 
 An agent scans `sources_NN.md` (zero extra disk I/O) to choose what to open. This
@@ -196,19 +197,19 @@ code actually does:
 
 | # | Transcript's mode | Reality today | Verdict |
 | :-- | :--- | :--- | :--- |
-| 1 | **One-off import** — copy verbatim, normalise, done forever. | Exactly the default `--scan` behaviour: verbatim copy to `sources/import/`, hash, normalise to `sources/nn/`. | ✅ Matches. Correct the wording "originals folder" → `sources/import/`. |
-| 2 | **Dynamic append** — monthly sales report adds rows to a Sales concept, never a new source. | **Does not exist.** Dynamic drops ingest as **new timestamped immutable snapshots** (`<stem>_<YYYYMMDD-HHmmss>`) forming a *source family*. Nothing appends rows *into a concept*. | ⚠️ **Mismatch — and the transcript's version is the riskier design.** |
-| 3 | **Dynamic overwrite** — same file, corrected year-to-date data replaces earlier months. | **Does not exist by design.** Overwriting a normalised source would break every citation pointing at it. The shipped answer is snapshot-on-change + `superseded_by::` in the lineage record. | ⚠️ **Mismatch — recommend keeping the snapshot model.** |
-| 4 | **Import from console artifacts / Word / Markdown for feedback** | **Exists**, but only for *structured reviewer feedback* (`sources/import/feedback/*.json` → cite as `#fb-001` → `reconcile_feedback`). Arbitrary Word/Markdown "feedback documents" are not a dedicated path. | 🟡 Partially matches; scope is narrower than described. |
+| 1 | **One-off import** — copy verbatim, normalise, done forever. | Exactly the default `--scan` behaviour: verbatim copy to `sources/import/`, hash, cognitivize in place as a co-located sidecar. | ✅ Matches. Correct the wording "originals folder" → `sources/import/`. |
+| 2 | **Dynamic append** — monthly sales report adds rows to a Sales concept, never a new source. | **Does not exist.** Dynamic drops ingest as **new write-once family members** (`<stem>_<YYYYMMDDTHHmmssZ>`) forming a *source family*. Nothing appends rows *into a concept*. | ⚠️ **Mismatch — and the transcript's version is the riskier design.** |
+| 3 | **Dynamic overwrite** — same file, corrected year-to-date data replaces earlier months. | **Does not exist by design.** Overwriting a source would break every citation pointing at it. The shipped answer is a new immutable family member + `superseded_by::` in the lineage record. | ⚠️ **Mismatch — recommend keeping the write-once model.** |
+| 4 | **Import from console artifacts / Word / Markdown for feedback** | **Exists**, but only for *structured reviewer feedback* (`sources/import/feedback/*.json` → cite by JSON Pointer → `reconcile_feedback`). Arbitrary Word/Markdown "feedback documents" are not a dedicated path. | 🟡 Partially matches; scope is narrower than described. |
 
 **Why modes 2 and 3 as described are a design smell.** They mutate a source in
 place. In cogNNitive a source is a *citation target*, and citations are pinned to
-a file + heading. Appending to or overwriting `sources/nn/<file>.md` silently
+a file + heading. Appending to or overwriting `sources/import/<file>.md` silently
 changes what an existing citation means — the exact "documentation rot" the
 impact checker exists to prevent. The safe formulation of the transcript's real
 intent is:
 
-- **Transport layer (sources):** always append a new immutable snapshot.
+- **Transport layer (sources):** always add a new immutable family member.
 - **Semantic layer (kNNowledge):** an *apply procedure* upserts the new rows into
   the Sales concept as elements, with a diff preview and human confirmation.
 
@@ -217,13 +218,14 @@ preserves both the audit trail and citation stability. See Improvement #1.
 
 ### 4.5 Dynamic sources and impact checking (drift detection)
 
-When a source that models cite changes over time, the scanner snapshots the old
-version, normalises the new one, and warns:
+When a source that models cite changes over time, the scanner imports the new
+bytes as a fresh write-once family member and warns when a cited unit no longer
+resolves in the latest member:
 
 ```text
-⚠️  [IMPACT WARNING] Updated source "import/commercial_pricing_memo.md" affects downstream models:
-    - models/Ghostbusters_Operations_V_1-0-0_NN.md (Standard Class IV Elimination):
-      references "commercial_pricing_memo.md#manhattan-commercial-rates" [missing_heading]
+⚠️  [IMPACT WARNING] A newer member of "sources/import/commercial_pricing_memo" affects downstream models:
+    - kNNowledge/Ghostbusters_Operations_NN.md (Standard Class IV Elimination):
+      cites "commercial_pricing_memo.md@## Manhattan Commercial Rates" [unit_missing_in_latest]
 ```
 
 `--check-impact` re-audits on demand and suggests the closest matching heading.
@@ -233,12 +235,12 @@ staleness.
 
 ### 4.6 Tabular data, an edge the transcript half-grasps
 
-When a source is a spreadsheet or CSV, the normalised Markdown is a **profile**
-(schema + summary statistics), which is an ingestion aid and **not** a citation
-target. Row-level citations (`sources:: [sales.csv@<row-id>]`) require curating
-the CSV with a unique key in the first column (`--curate-csv`). The transcript
-mixes "CSV as another format Markdown can work with" with "the normalised
-document" — they are two different artifacts. Correct this in any public copy.
+When a source is a spreadsheet or CSV, the ingested sidecar records a **profile**
+(schema + summary statistics), which is an ingestion aid. A citation targets the
+raw CSV (`sources:: [sources/import/sales.csv@R12&price]`) or a curated CSV that
+is its own write-once artifact. The transcript mixes "CSV as another format
+Markdown can work with" with "the normalised document" — they are two different
+things. Correct this in any public copy.
 
 ---
 
@@ -388,8 +390,8 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
 
 9. **Sweep the transcript into canonical vocabulary** (§5) before any public use.
 10. **Do not implement in-place source append/overwrite** (§4.4) — the shipped
-    snapshot model is correct; converge in the knowledge model instead.
-11. **Clarify CSV profile vs. curated CSV vs. normalised Markdown** wherever the
+    write-once family model is correct; converge in the knowledge model instead.
+11. **Clarify CSV profile vs. curated CSV vs. the raw source** wherever the
     lifecycle is explained (§4.6).
 
 ---
@@ -403,9 +405,9 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
 | Claim in this document | Verified in |
 | :--- | :--- |
 | IMPORT → MANAGE → EXPORT lifecycle | `README.md:9-21`, `docs/index.md:21-77` |
-| Immutable originals + SHA-256 + staging + normalise + archive | `README.md:19`, `skills/nn-trannsform/SKILL.md:122-144` |
-| `sources/staging/` never a citation target | `skills/nn-trannsform/SKILL.md:194` |
-| Markdown normalisation; source/citation/lineage terms | `docs/innfo/documentation/sources-citations-lineage.md:9-18,24-44` |
+| Immutable originals + SHA-256 + staging + cognitivize-in-place | `README.md:19`, `skills/nn-trannsform/SKILL.md:122-144` |
+| `staging/` never a citation target | `skills/nn-trannsform/SKILL.md:194` |
+| Citation grammar; source/citation/lineage terms | `docs/innfo/documentation/sources-citations-lineage.md:9-18,24-44` |
 | Sources catalog + progressive-disclosure summaries | `iNNfo/specs/bluepriNNts/sources/spec_NN.md:61-64,86-88`; `skills/nn-trannsform/SKILL.md:179-192` |
 | Two-tier `_summary` / `_source` split | `sources-citations-lineage.md:56-61` |
 | External Watch Roots, `dynamic`/`static`, `--scan-external` | `skills/nn-trannsform/SKILL.md:227-251` |

@@ -113,17 +113,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path2) {
-      const ctrl = callVisitor(key, node, visitor, path2);
+    function visit_(key, node, visitor, path4) {
+      const ctrl = callVisitor(key, node, visitor, path4);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path2, ctrl);
-        return visit_(key, ctrl, visitor, path2);
+        replaceNode(key, path4, ctrl);
+        return visit_(key, ctrl, visitor, path4);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path2 = Object.freeze(path2.concat(node));
+          path4 = Object.freeze(path4.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path2);
+            const ci = visit_(i, node.items[i], visitor, path4);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -134,13 +134,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path2 = Object.freeze(path2.concat(node));
-          const ck = visit_("key", node.key, visitor, path2);
+          path4 = Object.freeze(path4.concat(node));
+          const ck = visit_("key", node.key, visitor, path4);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path2);
+          const cv = visit_("value", node.value, visitor, path4);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -161,17 +161,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path2) {
-      const ctrl = await callVisitor(key, node, visitor, path2);
+    async function visitAsync_(key, node, visitor, path4) {
+      const ctrl = await callVisitor(key, node, visitor, path4);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path2, ctrl);
-        return visitAsync_(key, ctrl, visitor, path2);
+        replaceNode(key, path4, ctrl);
+        return visitAsync_(key, ctrl, visitor, path4);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path2 = Object.freeze(path2.concat(node));
+          path4 = Object.freeze(path4.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path2);
+            const ci = await visitAsync_(i, node.items[i], visitor, path4);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -182,13 +182,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path2 = Object.freeze(path2.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path2);
+          path4 = Object.freeze(path4.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path4);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path2);
+          const cv = await visitAsync_("value", node.value, visitor, path4);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -215,23 +215,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path2) {
+    function callVisitor(key, node, visitor, path4) {
       if (typeof visitor === "function")
-        return visitor(key, node, path2);
+        return visitor(key, node, path4);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path2);
+        return visitor.Map?.(key, node, path4);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path2);
+        return visitor.Seq?.(key, node, path4);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path2);
+        return visitor.Pair?.(key, node, path4);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path2);
+        return visitor.Scalar?.(key, node, path4);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path2);
+        return visitor.Alias?.(key, node, path4);
       return void 0;
     }
-    function replaceNode(key, path2, node) {
-      const parent = path2[path2.length - 1];
+    function replaceNode(key, path4, node) {
+      const parent = path4[path4.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -843,10 +843,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path2, value) {
+    function collectionFromPath(schema, path4, value) {
       let v = value;
-      for (let i = path2.length - 1; i >= 0; --i) {
-        const k = path2[i];
+      for (let i = path4.length - 1; i >= 0; --i) {
+        const k = path4[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -865,7 +865,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path2) => path2 == null || typeof path2 === "object" && !!path2[Symbol.iterator]().next().done;
+    var isEmptyPath = (path4) => path4 == null || typeof path4 === "object" && !!path4[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -895,11 +895,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path2, value) {
-        if (isEmptyPath(path2))
+      addIn(path4, value) {
+        if (isEmptyPath(path4))
           this.add(value);
         else {
-          const [key, ...rest] = path2;
+          const [key, ...rest] = path4;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -913,8 +913,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path2) {
-        const [key, ...rest] = path2;
+      deleteIn(path4) {
+        const [key, ...rest] = path4;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -928,8 +928,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path2, keepScalar) {
-        const [key, ...rest] = path2;
+      getIn(path4, keepScalar) {
+        const [key, ...rest] = path4;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -947,8 +947,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path2) {
-        const [key, ...rest] = path2;
+      hasIn(path4) {
+        const [key, ...rest] = path4;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -958,8 +958,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path2, value) {
-        const [key, ...rest] = path2;
+      setIn(path4, value) {
+        const [key, ...rest] = path4;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -3474,9 +3474,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path2, value) {
+      addIn(path4, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path2, value);
+          this.contents.addIn(path4, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3551,14 +3551,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path2) {
-        if (Collection.isEmptyPath(path2)) {
+      deleteIn(path4) {
+        if (Collection.isEmptyPath(path4)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path2) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path4) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3573,10 +3573,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path2, keepScalar) {
-        if (Collection.isEmptyPath(path2))
+      getIn(path4, keepScalar) {
+        if (Collection.isEmptyPath(path4))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path2, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path4, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3587,10 +3587,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path2) {
-        if (Collection.isEmptyPath(path2))
+      hasIn(path4) {
+        if (Collection.isEmptyPath(path4))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path2) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path4) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3607,13 +3607,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path2, value) {
-        if (Collection.isEmptyPath(path2)) {
+      setIn(path4, value) {
+        if (Collection.isEmptyPath(path4)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path2), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path4), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path2, value);
+          this.contents.setIn(path4, value);
         }
       }
       /**
@@ -5574,9 +5574,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path2) => {
+    visit.itemAtPath = (cst, path4) => {
       let item = cst;
-      for (const [field, index] of path2) {
+      for (const [field, index] of path4) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5585,23 +5585,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path2) => {
-      const parent = visit.itemAtPath(cst, path2.slice(0, -1));
-      const field = path2[path2.length - 1][0];
+    visit.parentCollection = (cst, path4) => {
+      const parent = visit.itemAtPath(cst, path4.slice(0, -1));
+      const field = path4[path4.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path2, item, visitor) {
-      let ctrl = visitor(item, path2);
+    function _visit(path4, item, visitor) {
+      let ctrl = visitor(item, path4);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path2.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path4.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5612,10 +5612,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path2);
+            ctrl = ctrl(item, path4);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path2) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path4) : ctrl;
     }
     exports2.visit = visit;
   }
@@ -7369,19 +7369,70 @@ var require_dist = __commonJS({
 // iNNfo/packages/innfo-core/src/trannsformPrimitives.ts
 var trannsformPrimitives_exports = {};
 __export(trannsformPrimitives_exports, {
+  ENTRYPOINT_FILENAME: () => ENTRYPOINT_FILENAME,
+  IGNORED_DIRECTORIES: () => IGNORED_DIRECTORIES,
+  RECORD_BLUEPRINT: () => RECORD_BLUEPRINT,
+  RECORD_INNFO_URL: () => RECORD_INNFO_URL,
+  RECORD_TEMPLATE_URL: () => RECORD_TEMPLATE_URL,
+  SIDECAR_BLUEPRINT: () => SIDECAR_BLUEPRINT,
+  SIDECAR_SPEC_URL: () => SIDECAR_SPEC_URL,
+  SPEC_FILENAME: () => SPEC_FILENAME,
+  TEXT_NATIVE_FORMATS: () => TEXT_NATIVE_FORMATS,
+  WriteOnceError: () => WriteOnceError,
+  applyGc: () => applyGc,
+  blueprintNameOf: () => blueprintNameOf,
+  buildSidecar: () => buildSidecar,
+  checkLineageDrift: () => checkLineageDrift,
+  checkNameInvariant: () => checkNameInvariant,
+  checkPathBudget: () => checkPathBudget,
+  cognitivize: () => cognitivize,
+  collectFamilies: () => collectFamilies,
+  compareMembers: () => compareMembers,
   createFsSourceResolver: () => createFsSourceResolver,
+  displayStem: () => displayStem,
+  ensureNNFilename: () => ensureNNFilename,
+  extractDeclaredCitations: () => extractDeclaredCitations,
   extractFileCitations: () => extractFileCitations,
   extractHeadings: () => extractHeadings,
+  familyOf: () => familyOf,
+  findLineageRecord: () => findLineageRecord,
+  formatMemberName: () => formatMemberName,
+  formatNNName: () => formatNNName,
+  formatUtcStamp: () => formatUtcStamp,
   headingSlugParts: () => headingSlugParts,
+  importRaw: () => importRaw,
+  isExcludedPath: () => isExcludedPath,
+  isJsonPointer: () => isJsonPointer,
+  isModelCandidate: () => isModelCandidate,
+  isNNName: () => isNNName,
+  isSidecarName: () => isSidecarName,
+  latestOfFamily: () => latestOfFamily,
+  nextStamp: () => nextStamp,
   normalizeName: () => normalizeName,
+  parentSpecNameOf: () => parentSpecNameOf,
   parseCitation: () => parseCitation,
+  parseName: () => parseName,
+  parseSidecarFrontmatter: () => parseSidecarFrontmatter,
+  planGc: () => planGc,
+  procedureIdOf: () => procedureIdOf,
   projectLineage: () => projectLineage,
+  rawPathOfSidecar: () => rawPathOfSidecar,
+  readLineageRecord: () => readLineageRecord,
   readLineageSnapshot: () => readLineageSnapshot,
+  readSidecarSha256: () => readSidecarSha256,
+  refreshExistingModel: () => refreshExistingModel,
   renderLineageSections: () => renderLineageSections,
+  renderRecordFrontmatter: () => renderRecordFrontmatter,
+  resolveJsonPointer: () => resolveJsonPointer,
+  roleOf: () => roleOf,
   serializeKnowledgeUnitRef: () => serializeKnowledgeUnitRef,
+  sha256Hex: () => sha256Hex,
+  sidecarPathOf: () => sidecarPathOf,
   slugifyHeading: () => slugifyHeading,
   slugifyUnitHeading: () => slugifyUnitHeading,
-  validateCitations: () => validateCitations
+  splitTopLevelSections: () => splitTopLevelSections2,
+  validateCitations: () => validateCitations,
+  writeOnce: () => writeOnce
 });
 module.exports = __toCommonJS(trannsformPrimitives_exports);
 
@@ -7396,6 +7447,215 @@ function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+// iNNfo/packages/innfo-core/src/assertNever.ts
+function assertNever(value, context = "value") {
+  throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
+}
+
+// iNNfo/packages/innfo-core/src/jsonPointer.ts
+var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
+var ARRAY_INDEX_RE = /^(?:0|[1-9]\d*)$/;
+function isJsonPointer(pointer) {
+  return POINTER_RE.test(pointer);
+}
+var unescapeToken = (token) => token.replace(/~1/g, "/").replace(/~0/g, "~");
+function resolveJsonPointer(content, pointer) {
+  let current;
+  try {
+    current = JSON.parse(content);
+  } catch {
+    return { ok: false, reason: "invalid-json" };
+  }
+  if (!isJsonPointer(pointer)) return { ok: false, reason: "unknown-pointer" };
+  if (pointer === "") return { ok: true, value: current };
+  for (const raw of pointer.slice(1).split("/")) {
+    const token = unescapeToken(raw);
+    if (Array.isArray(current)) {
+      if (!ARRAY_INDEX_RE.test(token) || Number(token) >= current.length) {
+        return { ok: false, reason: "unknown-pointer" };
+      }
+      current = current[Number(token)];
+    } else if (current !== null && typeof current === "object" && Object.hasOwn(current, token)) {
+      current = current[token];
+    } else {
+      return { ok: false, reason: "unknown-pointer" };
+    }
+  }
+  return { ok: true, value: current };
+}
+
+// iNNfo/packages/innfo-core/src/naming/contract.ts
+var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
+var SPEC_FILENAME = "spec_NN.md";
+var SIDECAR_BLUEPRINT = "sidecar";
+var NN_SUFFIX_RE = /_NN\.md$/i;
+var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
+var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
+function baseOf(path4) {
+  const i = Math.max(path4.lastIndexOf("/"), path4.lastIndexOf("\\"));
+  return i < 0 ? path4 : path4.slice(i + 1);
+}
+function parseName(basename4) {
+  if (NN_SUFFIX_RE.test(basename4)) {
+    const stem2 = basename4.replace(NN_SUFFIX_RE, "");
+    const sidecar = SIDECAR_PATH_RE.exec(basename4);
+    return sidecar ? { kind: "nn", basename: basename4, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename4, stem: stem2 };
+  }
+  const dot = basename4.lastIndexOf(".");
+  const hasExt = dot > 0;
+  const stem = hasExt ? basename4.slice(0, dot) : basename4;
+  const ext = hasExt ? basename4.slice(dot + 1) : "";
+  const m = STAMP_SUFFIX_RE.exec(stem);
+  if (!m) return { kind: "file", basename: basename4, key: stem, ext };
+  return {
+    kind: "file",
+    basename: basename4,
+    key: m[1],
+    ext,
+    stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
+  };
+}
+function formatNNName(stem, blueprint) {
+  const s = stem.toLowerCase();
+  const bp = blueprint.toLowerCase();
+  const conforms = s === bp || s.endsWith(`_${bp}`);
+  return conforms ? `${stem}_NN.md` : `${stem}_${blueprint}_NN.md`;
+}
+function formatMemberName(key, ext, stamp) {
+  const suffix = stamp ? `_${stamp.stamp}${stamp.seq > 1 ? `-${stamp.seq}` : ""}` : "";
+  return `${key}${suffix}${ext ? `.${ext}` : ""}`;
+}
+function sidecarPathOf(rawPath) {
+  return `${rawPath}_sidecar_NN.md`;
+}
+function rawPathOfSidecar(sidecarPath) {
+  const m = SIDECAR_PATH_RE.exec(sidecarPath);
+  return m ? m[1] : null;
+}
+function displayStem(basename4) {
+  if (NN_SUFFIX_RE.test(basename4)) return basename4.replace(NN_SUFFIX_RE, "");
+  return basename4.replace(/\.md$/i, "");
+}
+function procedureIdOf(basename4) {
+  return displayStem(baseOf(basename4)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
+}
+var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
+var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar)(?:_|$)/i;
+function segmentsOf(path4) {
+  return path4.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
+}
+function roleOf(i) {
+  const base = baseOf(i.path);
+  const parsed = parseName(base);
+  if (parsed.kind === "file") return i.hasSidecar ? "source" : "artifact";
+  if (parsed.sidecarOf !== void 0) return "sidecar";
+  const lower = base.toLowerCase();
+  if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
+  if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
+  const bp = NON_KNOWLEDGE_BLUEPRINT_RE.exec((i.parentSpecName ?? "").trim())?.[1].toLowerCase();
+  switch (bp) {
+    case "cognnitive":
+      return "lineage-record";
+    case "sidecar":
+      return "sidecar";
+    case "procedures":
+      return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
+    case "workspace":
+    case "sources":
+    case "artifacts":
+      return "catalog";
+    default:
+      return "knowledge";
+  }
+}
+function isExcludedPath(path4) {
+  const segs = segmentsOf(path4);
+  if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
+  return segs.some((s) => s === "staging" || s.startsWith(".") && s !== "..");
+}
+function familyOf(path4) {
+  const normalized = path4.replace(/\\/g, "/");
+  const parsed = parseName(baseOf(normalized));
+  if (parsed.kind !== "file") return null;
+  const slash = normalized.lastIndexOf("/");
+  return { dir: slash < 0 ? "" : normalized.slice(0, slash), key: parsed.key, ext: parsed.ext };
+}
+function compareMembers(a, b) {
+  const pa = parseName(baseOf(a));
+  const pb = parseName(baseOf(b));
+  const sa = pa.kind === "file" ? pa.stamp : void 0;
+  const sb = pb.kind === "file" ? pb.stamp : void 0;
+  if (!sa && !sb) return 0;
+  if (!sa) return -1;
+  if (!sb) return 1;
+  if (sa.stamp !== sb.stamp) return sa.stamp < sb.stamp ? -1 : 1;
+  return sa.seq - sb.seq;
+}
+var pad = (n, width = 2) => String(n).padStart(width, "0");
+function formatUtcStamp(at) {
+  return `${pad(at.getUTCFullYear(), 4)}${pad(at.getUTCMonth() + 1)}${pad(at.getUTCDate())}T${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}${pad(at.getUTCSeconds())}Z`;
+}
+function nextStamp(at, latest) {
+  const now = formatUtcStamp(at);
+  if (!latest || latest.stamp < now) return { stamp: now, seq: 1 };
+  return { stamp: latest.stamp, seq: latest.seq + 1 };
+}
+var WIN32_PATH_LIMIT = 259;
+function checkPathBudget(absPath, platform) {
+  if (platform === "win32" && absPath.length > WIN32_PATH_LIMIT) {
+    return { ok: false, limit: WIN32_PATH_LIMIT, length: absPath.length };
+  }
+  return { ok: true };
+}
+function parentSpecNameOf(frontmatter) {
+  const parentSpec = frontmatter["parent_spec"];
+  if (!parentSpec) return void 0;
+  if (typeof parentSpec === "string") return parentSpec;
+  if (typeof parentSpec === "object") {
+    const name = parentSpec.name;
+    return typeof name === "string" ? name : void 0;
+  }
+  return void 0;
+}
+function isModelCandidate(f) {
+  if (f.frontmatter["level"] !== 3) return false;
+  if (!f.frontmatter["parent_spec"]) return false;
+  if (isExcludedPath(f.path)) return false;
+  if (parseName(baseOf(f.path)).kind !== "nn") return false;
+  return roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) }) === "knowledge";
+}
+var VERSION_TOKEN_RE = /_V_\d+-\d+-\d+/i;
+var STRUCTURAL_STEM_RE = /^(?:iNNfo|defiNNition|defiNNe|meta-bluepriNNt)(?:_V_\d+-\d+-\d+)?$/i;
+function blueprintNameOf(parentSpecName) {
+  return parentSpecName.trim().replace(/_V_\d+-\d+-\d+$/i, "");
+}
+function checkNameInvariant(path4, bp) {
+  const base = baseOf(path4);
+  const parsed = parseName(base);
+  if (parsed.kind !== "nn") return null;
+  const lower = base.toLowerCase();
+  if (lower === ENTRYPOINT_FILENAME.toLowerCase() || lower === SPEC_FILENAME.toLowerCase()) return null;
+  if (STRUCTURAL_STEM_RE.test(parsed.stem)) return null;
+  const hasVersion = VERSION_TOKEN_RE.test(parsed.stem);
+  const stem = parsed.stem.replace(VERSION_TOKEN_RE, "");
+  const blueprint = bp?.trim();
+  if (!blueprint) return hasVersion ? { expected: `${stem}_NN.md` } : null;
+  const s = stem.toLowerCase();
+  const b = blueprint.toLowerCase();
+  const conforms = !hasVersion && (s === b || s.endsWith(`_${b}`));
+  return conforms ? null : { expected: formatNNName(stem, blueprint) };
+}
+function isNNName(nameOrPath) {
+  return NN_SUFFIX_RE.test(baseOf(nameOrPath));
+}
+function isSidecarName(nameOrPath) {
+  return SIDECAR_PATH_RE.test(nameOrPath);
+}
+function ensureNNFilename(name) {
+  if (NN_SUFFIX_RE.test(name)) return name;
+  return /_NN$/i.test(name) ? `${name}.md` : `${name}_NN.md`;
+}
+
 // iNNfo/packages/innfo-core/src/sourceRef.ts
 var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
@@ -7404,57 +7664,17 @@ function parseSourceRef(input) {
   const clean = input.trim();
   if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
   if (/^src-\d+/i.test(clean)) return null;
-  if (/^models\//i.test(clean)) return null;
-  const explicit = clean.match(new RegExp(`^(sources/nn/[^#]+?)(?:#(${SLUG}))?$`));
-  if (explicit) {
-    const filePath = explicit[1].trim();
-    return {
-      filePath,
-      fileName: basename(filePath),
-      slug: explicit[2] || void 0,
-      kind: "source",
-      raw: clean
-    };
-  }
-  const exportSource = clean.match(new RegExp(`^(sources/export/[^#]+?)(?:#(${SLUG}))?$`));
-  if (exportSource) {
-    const filePath = exportSource[1].trim();
-    return {
-      filePath,
-      fileName: basename(filePath),
-      slug: exportSource[2] || void 0,
-      kind: "source",
-      raw: clean
-    };
-  }
-  const model = clean.match(new RegExp(`^(kNNowledge/[^#]+?\\.md)(?:#(${SLUG}))?$`));
-  if (model) {
-    const filePath = model[1].trim();
-    return {
-      filePath,
-      fileName: basename(filePath),
-      slug: model[2] || void 0,
-      kind: "model",
-      raw: clean
-    };
-  }
-  const unqualified = clean.match(
-    new RegExp(`^((?!https?://)(?!\\.\\.?/)[^#:]+?\\.md)(?:#(${SLUG}))?$`)
-  );
-  if (unqualified) {
-    const rawPath = unqualified[1].trim();
-    if (rawPath.startsWith("sources/original/")) return null;
-    if (rawPath.startsWith("models/")) return null;
-    const filePath = `sources/nn/${rawPath}`;
-    return {
-      filePath,
-      fileName: basename(rawPath),
-      slug: unqualified[2] || void 0,
-      kind: "source",
-      raw: clean
-    };
-  }
-  return null;
+  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
+  if (!legacy) return null;
+  const resolved = resolveUnitPath(legacy[1]);
+  if (!resolved) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename(resolved.filePath),
+    slug: legacy[2] || void 0,
+    kind: resolved.kind,
+    raw: clean
+  };
 }
 function parseCitation(input) {
   if (!input || typeof input !== "string") return null;
@@ -7654,21 +7874,12 @@ function resolveUnitPath(rawPath) {
   const segments = trimmed.split(/[/\\]/);
   if (segments.some((s) => s === "..")) return null;
   const forward = segments.join("/");
-  if (forward.startsWith("sources/original/")) return null;
   const isMd = /\.md$/i.test(forward);
   const isCsv = /\.csv$/i.test(forward);
-  if (!isMd && !isCsv) return null;
-  if (forward.startsWith("sources/nn/")) return { filePath: forward, kind: "source" };
-  if (forward.startsWith("sources/export/")) return { filePath: forward, kind: "source" };
-  if (forward.startsWith("kNNowledge/")) {
-    if (!isMd) return null;
-    return { filePath: forward, kind: "model" };
-  }
-  if (/^models\//i.test(forward)) {
-    return null;
-  }
+  const isJson = /\.json$/i.test(forward);
+  if (!isMd && !isCsv && !isJson) return null;
   if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-  return { filePath: `sources/nn/${forward}`, kind: "source" };
+  return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
 }
 function decodeSegment(segment) {
   try {
@@ -7678,6 +7889,19 @@ function decodeSegment(segment) {
   }
 }
 var HEADER_UNIT = /^(#{1,6})\s*(.+?)\s*$/;
+function parsePointerRef(resolved, rawPointer, raw) {
+  if (rawPointer.includes("&")) return null;
+  const pointer = decodeSegment(rawPointer);
+  if (pointer === null || !isJsonPointer(pointer)) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename(resolved.filePath),
+    kind: resolved.kind,
+    unit: { kind: "pointer", pointer },
+    subunits: [],
+    raw
+  };
+}
 function parseKnowledgeUnitRef(input) {
   if (!input || typeof input !== "string") return null;
   const clean = input.trim();
@@ -7685,6 +7909,7 @@ function parseKnowledgeUnitRef(input) {
   if (at === -1) return null;
   const resolved = resolveUnitPath(clean.slice(0, at));
   if (!resolved) return null;
+  if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
   const rawSegments = clean.slice(at + 1).split("&");
   if (rawSegments.some((s) => s.trim() === "")) return null;
   const decoded = [];
@@ -7727,7 +7952,19 @@ function parseKnowledgeUnitRef(input) {
   };
 }
 function serializeKnowledgeUnitRef(filePath, unit, subunits = []) {
-  const head = unit.kind === "header" ? `${"#".repeat(unit.level)} ${unit.text}` : unit.id;
+  let head;
+  switch (unit.kind) {
+    case "header":
+      head = `${"#".repeat(unit.level)} ${unit.text}`;
+      break;
+    case "row":
+      head = unit.id;
+      break;
+    case "pointer":
+      return `${filePath}@${unit.pointer.replace(/%/g, "%25").replace(/&/g, "%26")}`;
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
   const tail = subunits.map((s) => normalizeName(s)).filter((s) => s !== "");
   return tail.length > 0 ? `${filePath}@${head}&${tail.join("&")}` : `${filePath}@${head}`;
 }
@@ -7938,8 +8175,18 @@ function resolveUnit(content, ref) {
   const unit = ref.unit;
   if (!unit) return null;
   const subunits = ref.subunits ?? [];
-  if (unit.kind === "row") return resolveCsvUnit(content, unit.id, subunits);
-  return resolveHeaderUnit(content, unit, subunits);
+  switch (unit.kind) {
+    case "header":
+      return resolveHeaderUnit(content, unit, subunits);
+    case "row":
+      return resolveCsvUnit(content, unit.id, subunits);
+    case "pointer": {
+      const found = resolveJsonPointer(content, unit.pointer);
+      return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
+    }
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
 }
 function listSectionFields(content, slug) {
   const owned = sectionOwnLines(content, slug);
@@ -8632,6 +8879,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // iNNfo/packages/innfo-core/src/lineage/project.ts
 var SOURCE_FORMAT_OPTIONS = /* @__PURE__ */ new Set(["txt", "md", "csv", "json", "docx", "pdf", "xlsx"]);
+var ARTIFACT_EXTENSIONS = /* @__PURE__ */ new Set(["md", "html", "htm", "csv", "json"]);
 function mapSourceFormat(ext) {
   const clean = ext.toLowerCase().replace(/^\./, "");
   return SOURCE_FORMAT_OPTIONS.has(clean) ? clean : "md";
@@ -8639,13 +8887,9 @@ function mapSourceFormat(ext) {
 function posixPath(p) {
   return p.split("\\").join("/");
 }
-function getBasename(p, ext) {
+function getBasename(p) {
   const norm = posixPath(p);
-  const last = norm.split("/").pop() || norm;
-  if (ext && last.endsWith(ext)) {
-    return last.slice(0, -ext.length);
-  }
-  return last;
+  return norm.split("/").pop() || norm;
 }
 function getDirname(p) {
   const norm = posixPath(p);
@@ -8657,273 +8901,156 @@ function getExtension(p) {
   const idx = base.lastIndexOf(".");
   return idx === -1 ? "" : base.slice(idx + 1).toLowerCase();
 }
-function extractFileCitations(files) {
+function compareStrings(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function frontmatterOf(content) {
+  return parseFrontmatter(content) || {};
+}
+function extractDeclaredCitations(file) {
+  const p = posixPath(file.path);
+  const ext = getExtension(p);
   const sites = [];
-  for (const file of files) {
-    const p = posixPath(file.path);
-    if (p.startsWith("export/")) {
-      const ext = getExtension(p);
-      if (ext === "md") {
-        const fm = parseFrontmatter(file.content) || {};
-        if (fm.sources) {
-          for (const raw of splitSourceFieldValue(fm.sources)) {
-            sites.push({
-              value: raw,
-              referringPath: p,
-              field: "sources"
-            });
+  const push = (value, field) => {
+    sites.push({ value, referringPath: p, field });
+  };
+  if (ext === "md") {
+    const fm = frontmatterOf(file.content);
+    if (fm.sources) {
+      for (const raw of splitSourceFieldValue(fm.sources)) push(raw, "sources");
+    }
+  } else if (ext === "html" || ext === "htm") {
+    const modelMatch = file.content.match(/<script[^>]+id=["']innfo-model["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (modelMatch) {
+      try {
+        const parsed = JSON.parse(modelMatch[1].trim());
+        if (Array.isArray(parsed?.meta?.sources)) {
+          for (const raw of parsed.meta.sources) {
+            if (typeof raw === "string" && raw.trim()) push(raw.trim(), "meta.sources");
           }
         }
-      } else if (ext === "html" || ext === "htm") {
-        const modelMatch = file.content.match(
-          /<script[^>]+id=["']innfo-model["'][^>]*>([\s\S]*?)<\/script>/i
-        );
-        if (modelMatch) {
-          try {
-            const parsed = JSON.parse(modelMatch[1].trim());
-            if (Array.isArray(parsed?.meta?.sources)) {
-              for (const raw of parsed.meta.sources) {
-                if (typeof raw === "string" && raw.trim()) {
-                  sites.push({
-                    value: raw.trim(),
-                    referringPath: p,
-                    field: "meta.sources"
-                  });
-                }
-              }
-            }
-          } catch {
-          }
-        }
-      } else if (ext === "csv") {
-        const lines = file.content.split(/\r?\n/);
-        if (lines.length > 0) {
-          const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
-          const sourcesIdx = header.indexOf("sources");
-          if (sourcesIdx !== -1) {
-            for (let i = 1; i < lines.length; i++) {
-              const line = lines[i].trim();
-              if (!line) continue;
-              const cols = line.split(",");
-              const cell = cols[sourcesIdx]?.trim().replace(/^["']|["']$/g, "");
-              if (cell) {
-                sites.push({
-                  value: cell,
-                  referringPath: p,
-                  field: "sources"
-                });
-              }
-            }
-          }
-        }
-      } else if (ext === "json") {
-        try {
-          const parsed = JSON.parse(file.content);
-          const items = Array.isArray(parsed) ? parsed : [parsed];
-          for (const item of items) {
-            if (item && typeof item === "object" && "sources" in item) {
-              for (const raw of splitSourceFieldValue(item.sources)) {
-                sites.push({
-                  value: raw,
-                  referringPath: p,
-                  field: "sources"
-                });
-              }
-            }
-          }
-        } catch {
-        }
+      } catch {
       }
-    } else if (p.startsWith("sources/export/") || p.startsWith("sources/nn/export/")) {
-      if (p.endsWith(".md")) {
-        const fm = parseFrontmatter(file.content) || {};
-        if (fm.sources) {
-          for (const raw of splitSourceFieldValue(fm.sources)) {
-            sites.push({
-              value: raw,
-              referringPath: p,
-              field: "sources"
-            });
+    }
+  } else if (ext === "csv") {
+    const lines = file.content.split(/\r?\n/);
+    const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
+    const sourcesIdx = header.indexOf("sources");
+    if (sourcesIdx !== -1) {
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const cell = line.split(",")[sourcesIdx]?.trim().replace(/^["']|["']$/g, "");
+        if (cell) push(cell, "sources");
+      }
+    }
+  } else if (ext === "json") {
+    try {
+      const parsed = JSON.parse(file.content);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        if (item && typeof item === "object" && "sources" in item) {
+          for (const raw of splitSourceFieldValue(item.sources)) {
+            push(raw, "sources");
           }
         }
       }
+    } catch {
     }
   }
   return sites;
 }
+function extractFileCitations(files) {
+  const sites = [];
+  for (const file of files) {
+    const p = posixPath(file.path);
+    if (isExcludedPath(p)) continue;
+    const parsed = parseName(getBasename(p));
+    if (parsed.kind === "nn" && parsed.sidecarOf === void 0) continue;
+    sites.push(...extractDeclaredCitations(file));
+  }
+  return sites;
+}
+function familyKey(path4) {
+  const family = familyOf(path4);
+  return family ? `${family.dir}\0${family.key}\0${family.ext}` : null;
+}
 function projectLineage(files) {
-  const normalizedFiles = files.map((f) => ({
-    path: posixPath(f.path),
-    content: f.content
-  }));
-  const activeSourceFiles = normalizedFiles.filter(
-    (f) => f.path.startsWith("sources/nn/") && f.path.endsWith(".md") && !f.path.startsWith("sources/nn/staging/") && !f.path.startsWith("sources/nn/archive/") && f.path !== "sources/nn/index.md"
-  ).sort((a, b) => a.path.localeCompare(b.path));
-  const activeSources = [];
-  for (const f of activeSourceFiles) {
-    const fm = parseFrontmatter(f.content) || {};
-    const sourceFile = (typeof fm.source_file === "string" ? fm.source_file : typeof fm.file === "string" ? fm.file : f.path).trim();
-    const rawBase = getBasename(sourceFile);
-    const ext = getExtension(rawBase);
-    const mediaFile = typeof fm.media_file === "string" ? fm.media_file : typeof fm.media_filename === "string" ? fm.media_filename : void 0;
-    const sha = typeof fm.sha256 === "string" ? fm.sha256 : typeof fm.hash === "string" ? fm.hash : void 0;
-    const size = fm.size_bytes != null ? String(fm.size_bytes) : fm.size != null ? String(fm.size) : void 0;
-    const normalizedAt = typeof fm.normalized_at === "string" ? fm.normalized_at : void 0;
-    const normalizedBy = typeof fm.normalized_by === "string" ? fm.normalized_by : void 0;
-    let derivedFrom = [];
-    if (sourceFile.startsWith("sources/export/")) {
-      const promotedFile = normalizedFiles.find((p) => p.path === sourceFile);
-      if (promotedFile) {
-        const promotedFm = parseFrontmatter(promotedFile.content) || {};
-        if (promotedFm.sources) {
-          derivedFrom = splitSourceFieldValue(promotedFm.sources);
-        }
-      }
-    }
-    const baseStem = getBasename(f.path, ".md");
-    const archivePattern = `sources/archive/${baseStem}/`;
-    const vNums = [];
-    for (const af of normalizedFiles) {
-      if (af.path.startsWith(archivePattern) && af.path.endsWith(".md")) {
-        const m = af.path.match(/\/V(\d+)\//);
-        if (m) {
-          vNums.push(parseInt(m[1], 10));
-        }
-      }
-    }
-    let version = "V1";
-    let archivePath;
-    if (vNums.length > 0) {
-      const maxN = Math.max(...vNums);
-      version = `V${maxN + 1}`;
-      archivePath = `sources/archive/${baseStem}/V${maxN}/${baseStem}.md`;
-    }
-    activeSources.push({
-      name: rawBase,
-      raw_filename: sourceFile,
-      media_filename: mediaFile,
-      raw_hash: sha,
-      size,
-      source_format: mapSourceFormat(ext),
-      normalized_at: normalizedAt,
-      normalized_by: normalizedBy,
-      normalized_content: f.path,
-      version,
-      archive_path: archivePath,
-      derived_from: derivedFrom,
-      mdRelPath: f.path.slice("sources/nn/".length)
-    });
-  }
-  const csvFiles = normalizedFiles.filter(
-    (f) => f.path.startsWith("sources/nn/") && f.path.endsWith(".csv") && !f.path.startsWith("sources/nn/staging/") && !f.path.startsWith("sources/nn/archive/")
-  ).sort((a, b) => a.path.localeCompare(b.path));
-  for (const csv of csvFiles) {
-    const stemMd = csv.path.replace(/\.csv$/i, ".md");
-    const owner = activeSources.find((s) => s.normalized_content === stemMd);
-    if (owner) {
-      owner.curated_csv = csv.path;
-      continue;
-    }
-    const relCsv = csv.path.slice("sources/nn/".length);
-    const rawCandidate = `sources/import/${relCsv}`;
-    const rawFilename = normalizedFiles.some((f) => f.path === rawCandidate) ? rawCandidate : csv.path;
-    activeSources.push({
-      name: getBasename(csv.path),
-      raw_filename: rawFilename,
-      source_format: "csv",
-      normalized_content: csv.path,
-      curated_csv: csv.path,
-      version: "V1",
-      derived_from: [],
-      mdRelPath: relCsv
-    });
-  }
-  const nameCounts = {};
-  for (const s of activeSources) {
-    nameCounts[s.name] = (nameCounts[s.name] || 0) + 1;
-  }
-  for (const s of activeSources) {
-    if (nameCounts[s.name] > 1) {
-      const parentDir = getDirname(s.mdRelPath);
-      if (parentDir && parentDir !== ".") {
-        s.name = `${parentDir} ${s.name}`;
-      }
-    }
-  }
-  const archiveFiles = normalizedFiles.filter((f) => f.path.startsWith("sources/archive/") && f.path.endsWith(".md")).sort((a, b) => a.path.localeCompare(b.path));
-  const archivedGroups = /* @__PURE__ */ new Map();
-  for (const af of archiveFiles) {
-    const match = af.path.match(/^sources\/archive\/([^/]+)\/(V\d+)\/([^/]+)\.md$/);
-    if (match) {
-      const base = match[1];
-      const vName = match[2];
-      const vNum = parseInt(vName.replace(/^V/, ""), 10);
-      const fm = parseFrontmatter(af.content) || {};
-      const list = archivedGroups.get(base) || [];
-      list.push({ vNum, vName, file: af, fm });
-      archivedGroups.set(base, list);
-    }
-  }
-  const archivedSources = [];
-  const sortedBases = Array.from(archivedGroups.keys()).sort();
-  for (const base of sortedBases) {
-    const vInfos = archivedGroups.get(base);
-    vInfos.sort((a, b) => a.vNum - b.vNum);
-    const maxArchived = vInfos.length > 0 ? Math.max(...vInfos.map((v) => v.vNum)) : 0;
-    const hasActive = activeSources.some((s) => getBasename(s.normalized_content, ".md") === base);
-    for (const vi of vInfos) {
-      const sourceFile = (typeof vi.fm.source_file === "string" ? vi.fm.source_file : typeof vi.fm.file === "string" ? vi.fm.file : vi.file.path).trim();
-      const rawBase = getBasename(sourceFile);
-      const ext = getExtension(rawBase);
-      let supersededBy;
-      if (hasActive) {
-        supersededBy = `${rawBase} V${vi.vNum + 1}`;
-      } else if (vi.vNum < maxArchived) {
-        supersededBy = `${rawBase} V${vi.vNum + 1}`;
-      }
-      archivedSources.push({
-        name: `${rawBase} ${vi.vName}`,
-        raw_filename: sourceFile,
-        raw_hash: typeof vi.fm.sha256 === "string" ? vi.fm.sha256 : typeof vi.fm.hash === "string" ? vi.fm.hash : void 0,
-        size: vi.fm.size_bytes != null ? String(vi.fm.size_bytes) : vi.fm.size != null ? String(vi.fm.size) : void 0,
-        source_format: mapSourceFormat(ext),
-        normalized_at: typeof vi.fm.normalized_at === "string" ? vi.fm.normalized_at : void 0,
-        normalized_by: typeof vi.fm.normalized_by === "string" ? vi.fm.normalized_by : void 0,
-        normalized_content: vi.file.path,
-        status: "archived",
-        version: vi.vName,
-        superseded_by: supersededBy,
-        derived_from: []
+  const live = files.map((f) => ({ path: posixPath(f.path), content: f.content })).filter((f) => !isExcludedPath(f.path)).sort((a, b) => compareStrings(a.path, b.path));
+  const byFilePath = new Map(live.map((f) => [f.path, f]));
+  const diagnostics = [];
+  const subjects = [];
+  for (const sidecar of live) {
+    const subject = rawPathOfSidecar(sidecar.path);
+    if (subject === null) continue;
+    const fm = frontmatterOf(sidecar.content);
+    const declared = typeof fm.source_file === "string" ? posixPath(fm.source_file.trim()) : void 0;
+    if (declared !== subject) {
+      diagnostics.push({
+        code: "SIDECAR_SUBJECT_MISMATCH",
+        path: sidecar.path,
+        message: `Sidecar source_file "${declared ?? ""}" does not match the subject "${subject}" derived from its name`
       });
     }
+    subjects.push({ subject, sidecar, fm });
   }
-  const allSources = [
-    ...activeSources.map(({ mdRelPath, ...rest }) => rest),
-    ...archivedSources
-  ];
-  const knowledgeFiles = normalizedFiles.filter((f) => f.path.startsWith("kNNowledge/") && f.path.endsWith("_NN.md")).sort((a, b) => a.path.localeCompare(b.path));
+  subjects.sort((a, b) => compareStrings(a.subject, b.subject));
+  const families = /* @__PURE__ */ new Map();
+  for (const { subject } of subjects) {
+    const key = familyKey(subject);
+    if (key === null) continue;
+    families.set(key, [...families.get(key) ?? [], subject]);
+  }
+  for (const members of families.values()) {
+    members.sort((a, b) => compareMembers(a, b) || compareStrings(a, b));
+  }
+  const sources = subjects.map(({ subject, sidecar, fm }) => {
+    const key = familyKey(subject);
+    const members = key === null ? [subject] : families.get(key);
+    const rank = members.indexOf(subject);
+    const subjectFile = byFilePath.get(subject);
+    const declared = subjectFile ? extractDeclaredCitations(subjectFile).map((c) => c.value) : [];
+    const derivedFrom = declared.length > 0 ? declared : fm.sources ? splitSourceFieldValue(fm.sources) : [];
+    return {
+      name: getBasename(subject),
+      raw_filename: subject,
+      raw_hash: typeof fm.sha256 === "string" ? fm.sha256 : void 0,
+      size: fm.size_bytes != null ? String(fm.size_bytes) : void 0,
+      source_format: mapSourceFormat(getExtension(subject)),
+      normalized_at: typeof fm.normalized_at === "string" ? fm.normalized_at : void 0,
+      normalized_by: typeof fm.normalized_by === "string" ? fm.normalized_by : void 0,
+      normalized_content: sidecar.path,
+      version: `V${rank + 1}`,
+      superseded_by: members[rank + 1],
+      derived_from: Array.from(new Set(derivedFrom))
+    };
+  });
+  const nameCounts = {};
+  for (const s of sources) nameCounts[s.name] = (nameCounts[s.name] || 0) + 1;
+  for (const s of sources) {
+    if (nameCounts[s.name] > 1) {
+      const parentDir = getDirname(s.raw_filename);
+      if (parentDir) s.name = `${parentDir} ${s.name}`;
+    }
+  }
   const knowledge = [];
-  for (const kf of knowledgeFiles) {
+  for (const kf of live) {
+    const parsedName = parseName(getBasename(kf.path));
+    if (parsedName.kind !== "nn" || parsedName.sidecarOf !== void 0) continue;
     const parsed = parseKnowledge(kf.content);
-    if (parsed.frontmatter?.parent_spec?.name === "cogNNitive") {
+    if (!isModelCandidate({ path: kf.path, frontmatter: parsed.frontmatter ?? {} })) {
       continue;
     }
-    const baseName = getBasename(kf.path, "_NN.md");
-    const name = parsed.frontmatter?.title || baseName;
+    const name = parsed.frontmatter?.title || displayStem(getBasename(kf.path));
     const modelTemplate = parsed.frontmatter?.parent_spec?.name;
     const knowledgeVersion = parsed.frontmatter?.knowledge_version || (typeof parsed.frontmatter?.model === "string" ? parsed.frontmatter.model : void 0);
     const citations = [];
-    for (const [conceptName, elements] of parsed.elements.entries()) {
+    for (const [, elements] of parsed.elements.entries()) {
       for (const el of elements) {
         for (const [fieldName, val] of Object.entries(el.fields)) {
           if (SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())) {
             for (const raw of splitSourceFieldValue(val)) {
-              citations.push({
-                value: raw,
-                referringPath: kf.path,
-                element: el.name,
-                field: fieldName
-              });
+              citations.push({ value: raw, referringPath: kf.path, element: el.name, field: fieldName });
             }
           }
         }
@@ -8932,11 +9059,7 @@ function projectLineage(files) {
     const fm = parsed.frontmatter;
     if (fm?.sources) {
       for (const raw of splitSourceFieldValue(fm.sources)) {
-        citations.push({
-          value: raw,
-          referringPath: kf.path,
-          field: "sources"
-        });
+        citations.push({ value: raw, referringPath: kf.path, field: "sources" });
       }
     }
     knowledge.push({
@@ -8947,106 +9070,41 @@ function projectLineage(files) {
       citations
     });
   }
-  const artifactFiles = normalizedFiles.filter((f) => f.path.startsWith("export/")).sort((a, b) => a.path.localeCompare(b.path));
+  const sourcePaths = new Set(subjects.map((s) => s.subject));
+  const familySizes = /* @__PURE__ */ new Map();
+  for (const f of live) {
+    const key = familyKey(f.path);
+    if (key !== null) familySizes.set(key, (familySizes.get(key) ?? 0) + 1);
+  }
   const artifacts = [];
-  for (const af of artifactFiles) {
+  for (const af of live) {
+    const parsedName = parseName(getBasename(af.path));
+    if (parsedName.kind !== "file" || sourcePaths.has(af.path)) continue;
     const ext = getExtension(af.path);
-    if (!["md", "html", "htm", "csv", "json"].includes(ext)) continue;
-    const baseName = getBasename(af.path).replace(/\.[^.]+$/, "");
+    if (!ARTIFACT_EXTENSIONS.has(ext)) continue;
+    const citations = extractDeclaredCitations(af);
+    const isFamilyMember = parsedName.stamp !== void 0 || (familySizes.get(familyKey(af.path)) ?? 0) > 1;
+    if (!isFamilyMember && citations.length === 0) continue;
     let format = "document";
-    const citations = [];
     if (ext === "md") {
-      const fm = parseFrontmatter(af.content) || {};
-      const declaredFormat = typeof fm.format === "string" ? fm.format : typeof fm.type === "string" ? fm.type : void 0;
-      if (declaredFormat === "report" || declaredFormat === "board" || declaredFormat === "dataset" || declaredFormat === "document") {
-        format = declaredFormat;
-      } else {
-        format = "document";
-      }
-      if (fm.sources) {
-        for (const raw of splitSourceFieldValue(fm.sources)) {
-          citations.push({
-            value: raw,
-            referringPath: af.path,
-            field: "sources"
-          });
-        }
+      const fm = frontmatterOf(af.content);
+      const declared = typeof fm.format === "string" ? fm.format : typeof fm.type === "string" ? fm.type : void 0;
+      if (declared === "report" || declared === "board" || declared === "dataset" || declared === "document") {
+        format = declared;
       }
     } else if (ext === "html" || ext === "htm") {
       format = "board";
-      const modelMatch = af.content.match(
-        /<script[^>]+id=["']innfo-model["'][^>]*>([\s\S]*?)<\/script>/i
-      );
-      if (modelMatch) {
-        try {
-          const parsed = JSON.parse(modelMatch[1].trim());
-          if (Array.isArray(parsed?.meta?.sources)) {
-            for (const raw of parsed.meta.sources) {
-              if (typeof raw === "string" && raw.trim()) {
-                citations.push({
-                  value: raw.trim(),
-                  referringPath: af.path,
-                  field: "meta.sources"
-                });
-              }
-            }
-          }
-        } catch {
-        }
-      }
-    } else if (ext === "csv") {
+    } else if (ext === "csv" || ext === "json") {
       format = "dataset";
-      const lines = af.content.split(/\r?\n/);
-      if (lines.length > 0) {
-        const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
-        const sourcesIdx = header.indexOf("sources");
-        if (sourcesIdx !== -1) {
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            const cols = line.split(",");
-            const cell = cols[sourcesIdx]?.trim().replace(/^["']|["']$/g, "");
-            if (cell) {
-              citations.push({
-                value: cell,
-                referringPath: af.path,
-                field: "sources"
-              });
-            }
-          }
-        }
-      }
-    } else if (ext === "json") {
-      format = "dataset";
-      try {
-        const parsed = JSON.parse(af.content);
-        const items = Array.isArray(parsed) ? parsed : [parsed];
-        for (const item of items) {
-          if (item && typeof item === "object" && "sources" in item) {
-            for (const raw of splitSourceFieldValue(item.sources)) {
-              citations.push({
-                value: raw,
-                referringPath: af.path,
-                field: "sources"
-              });
-            }
-          }
-        }
-      } catch {
-      }
     }
     artifacts.push({
-      name: baseName,
+      name: getBasename(af.path).replace(/\.[^.]+$/, ""),
       artifact_ref: af.path,
       artifact_format: format,
       citations
     });
   }
-  return {
-    sources: allSources,
-    knowledge,
-    artifacts
-  };
+  return { sources, knowledge, artifacts, diagnostics };
 }
 
 // iNNfo/packages/innfo-core/src/validator/workspaceSources.ts
@@ -9055,10 +9113,10 @@ function validateCitations(sites, resolver) {
   const checkedCsvKeys = /* @__PURE__ */ new Set();
   for (const site of sites) {
     const value = site.value;
-    const path2 = site.element ? `${site.referringPath}#${site.element}.${site.field}` : `${site.referringPath}#${site.field}`;
+    const path4 = site.element ? `${site.referringPath}#${site.element}.${site.field}` : `${site.referringPath}#${site.field}`;
     if (value.includes("?") && parseKnowledgeQuery(value)) {
       diagnostics.push({
-        path: path2,
+        path: path4,
         message: `Queries are not valid citations: "${value}" selects a set, not a unit \u2014 resolve it to pointers first (e.g. run it as a query, then cite the resulting "@" references)`,
         severity: "error",
         code: "QU_NOT_PROVENANCE",
@@ -9067,22 +9125,34 @@ function validateCitations(sites, resolver) {
       });
       continue;
     }
-    if (/^models\//i.test(value.trim())) {
+    const targetPath = citationTargetPath(value);
+    if (targetPath && targetPath.split("/").includes("staging")) {
       diagnostics.push({
-        path: path2,
-        message: `Malformed source reference "${value}" \u2014 \`models/\` was removed; use \`kNNowledge/\``,
+        path: path4,
+        message: `Excluded source reference "${value}" \u2014 "staging/" is scratch space and is not citable`,
         severity: "error",
-        code: "KU_MALFORMED",
+        code: "KU_EXCLUDED_PATH",
         site,
-        target: value
+        target: targetPath
+      });
+      continue;
+    }
+    if (targetPath && value.includes("@") && isBinaryTarget(targetPath)) {
+      diagnostics.push({
+        path: path4,
+        message: `Binary source reference "${value}" \u2014 a unit cannot address a binary file; cite its sidecar "${sidecarPathOf(targetPath)}" instead`,
+        severity: "error",
+        code: "KU_BINARY_TARGET",
+        site,
+        target: targetPath
       });
       continue;
     }
     const cit = parseCitation(value);
     if (!cit) {
       diagnostics.push({
-        path: path2,
-        message: `Malformed source reference "${value}" \u2014 use "<path>@<unit>" (e.g. "file.md@## Section", "data.csv@104"); line ranges like #L10-L20 and src-NNN ids are not allowed, and sources/original/ is not citable`,
+        path: path4,
+        message: `Malformed source reference "${value}" \u2014 use "<path>@<unit>" (e.g. "file.md@## Section", "data.csv@104"); line ranges like #L10-L20 and src-NNN ids are not allowed`,
         severity: "error",
         code: "KU_MALFORMED",
         site,
@@ -9094,7 +9164,7 @@ function validateCitations(sites, resolver) {
       validateUnitPointer(
         cit,
         site.referringPath,
-        path2,
+        path4,
         resolver,
         diagnostics,
         checkedCsvKeys,
@@ -9105,7 +9175,7 @@ function validateCitations(sites, resolver) {
     const resolved = resolver(cit.filePath, site.referringPath);
     if (!resolved || !resolved.exists) {
       diagnostics.push({
-        path: path2,
+        path: path4,
         message: formatDanglingMessage(cit, resolved),
         severity: "error",
         code: "KU_DANGLING_FILE",
@@ -9116,7 +9186,7 @@ function validateCitations(sites, resolver) {
     }
     if (cit.slug && resolved.headings && !resolved.headings.includes(cit.slug)) {
       diagnostics.push({
-        path: path2,
+        path: path4,
         message: `Source reference "${cit.raw}" points at heading "#${cit.slug}" which does not exist in "${cit.fileName}"`,
         severity: "warning",
         code: "KU_UNKNOWN_SLUG",
@@ -9126,7 +9196,7 @@ function validateCitations(sites, resolver) {
     }
     if (cit.legacyHash) {
       diagnostics.push({
-        path: path2,
+        path: path4,
         message: `Legacy "#slug" form is deprecated \u2014 prefer "@" pointers${suggestCanonical(resolved, cit)}`,
         severity: "warning",
         code: "KU_DEPRECATED_HASH",
@@ -9136,6 +9206,16 @@ function validateCitations(sites, resolver) {
     }
   }
   return diagnostics;
+}
+function citationTargetPath(value) {
+  const trimmed = value.trim();
+  const cut = trimmed.search(/[@#]/);
+  const path4 = (cut === -1 ? trimmed : trimmed.slice(0, cut)).replace(/\\/g, "/");
+  return path4 || null;
+}
+function isBinaryTarget(path4) {
+  const ext = /\.([A-Za-z0-9]+)$/.exec(path4)?.[1]?.toLowerCase();
+  return ext !== void 0 && ext !== "md" && ext !== "csv" && ext !== "json";
 }
 function formatDanglingMessage(ref, resolved) {
   let msg = `Dangling source reference: "${ref.filePath}" is not present in this workspace`;
@@ -9153,13 +9233,13 @@ function suggestCanonical(resolved, ref) {
   }
   return ` (e.g. "${ref.filePath}@## Section")`;
 }
-function validateUnitPointer(ref, referringPath, path2, resolver, diagnostics, checkedCsvKeys, site) {
+function validateUnitPointer(ref, referringPath, path4, resolver, diagnostics, checkedCsvKeys, site) {
   const unit = ref.unit;
   const subunits = ref.subunits ?? [];
   const resolved = resolver(ref.filePath, referringPath);
   if (!resolved || !resolved.exists) {
     diagnostics.push({
-      path: path2,
+      path: path4,
       message: formatDanglingMessage(ref, resolved),
       severity: "error",
       code: "KU_DANGLING_FILE",
@@ -9168,18 +9248,50 @@ function validateUnitPointer(ref, referringPath, path2, resolver, diagnostics, c
     });
     return;
   }
-  if (unit.kind === "header") {
-    validateHeaderUnit(ref, unit.slug, unit.level, subunits, resolved, path2, diagnostics, site);
-  } else {
-    validateRowUnit(ref, unit.id, subunits, resolved, path2, diagnostics, checkedCsvKeys, site);
+  switch (unit.kind) {
+    case "header":
+      validateHeaderUnit(ref, unit.slug, unit.level, subunits, resolved, path4, diagnostics, site);
+      return;
+    case "row":
+      validateRowUnit(ref, unit.id, subunits, resolved, path4, diagnostics, checkedCsvKeys, site);
+      return;
+    case "pointer":
+      validatePointerUnit(ref, unit.pointer, resolved, path4, diagnostics, site);
+      return;
+    default:
+      return assertNever(unit, "knowledge unit kind");
   }
 }
-function validateHeaderUnit(ref, slug, _level, subunits, resolved, path2, diagnostics, site) {
+function validatePointerUnit(ref, pointer, resolved, path4, diagnostics, site) {
+  if (!resolved.content) return;
+  const found = resolveJsonPointer(resolved.content, pointer);
+  if (found.ok) return;
+  if (found.reason === "invalid-json") {
+    diagnostics.push({
+      path: path4,
+      message: `Source file "${ref.filePath}" cannot be parsed as JSON`,
+      severity: "error",
+      code: "KU_INVALID_JSON",
+      site,
+      target: ref.filePath
+    });
+    return;
+  }
+  diagnostics.push({
+    path: path4,
+    message: `Source reference "${ref.raw}" points at pointer "${pointer}" which does not exist in "${ref.fileName}"`,
+    severity: "error",
+    code: "KU_UNKNOWN_POINTER",
+    site,
+    target: ref.filePath
+  });
+}
+function validateHeaderUnit(ref, slug, _level, subunits, resolved, path4, diagnostics, site) {
   const headings = resolved.headings ?? (resolved.content ? extractHeadings(resolved.content).map((h) => h.slug) : void 0);
   const heading = resolved.content ? extractHeadings(resolved.content).find((h) => h.slug === slug) : void 0;
   if (headings && !headings.includes(slug)) {
     diagnostics.push({
-      path: path2,
+      path: path4,
       message: `Source reference "${ref.raw}" points at heading "@${slug}" which does not exist in "${ref.fileName}"`,
       severity: "warning",
       code: "KU_UNKNOWN_SLUG",
@@ -9194,7 +9306,7 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path2, diagno
     if (fields === void 0) return;
     if (!fields.includes(normalizeName(subunits[0]))) {
       diagnostics.push({
-        path: path2,
+        path: path4,
         message: `Source reference "${ref.raw}" points at field "&${subunits[0]}" which does not exist in section "@${slug}" of "${ref.fileName}"`,
         severity: "error",
         code: "KU_FIELD_OUTSIDE_SECTION",
@@ -9208,7 +9320,7 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path2, diagno
     if (!resolved.content) return;
     if (!resolveUnit(resolved.content, ref)) {
       diagnostics.push({
-        path: path2,
+        path: path4,
         message: `Source reference "${ref.raw}" points at matrix cell "&${subunits[0]}&${subunits[1]}" which does not resolve in "${ref.fileName}"`,
         severity: "error",
         code: "KU_UNKNOWN_MATRIX_CELL",
@@ -9219,7 +9331,7 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path2, diagno
     return;
   }
   diagnostics.push({
-    path: path2,
+    path: path4,
     message: `Malformed source reference "${ref.raw}" \u2014 a header pointer takes at most one field (&field) or one matrix cell (&row&column)`,
     severity: "error",
     code: "KU_MALFORMED",
@@ -9227,12 +9339,12 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path2, diagno
     target: ref.filePath
   });
 }
-function validateRowUnit(ref, id, subunits, resolved, path2, diagnostics, checkedCsvKeys, site) {
+function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checkedCsvKeys, site) {
   if (!resolved.content) return;
   const table = parseCsvTable(resolved.content);
   if (table.malformed) {
     diagnostics.push({
-      path: path2,
+      path: path4,
       message: `Source file "${ref.filePath}" cannot be parsed as CSV`,
       severity: "error",
       code: "KU_MALFORMED",
@@ -9248,7 +9360,7 @@ function validateRowUnit(ref, id, subunits, resolved, path2, diagnostics, checke
     for (const key of keys) {
       if (key === "") {
         diagnostics.push({
-          path: path2,
+          path: path4,
           message: `Source file "${ref.filePath}" has a row with an empty key in the first column`,
           severity: "error",
           code: "KU_EMPTY_KEY",
@@ -9257,7 +9369,7 @@ function validateRowUnit(ref, id, subunits, resolved, path2, diagnostics, checke
         });
       } else if (seen.has(key)) {
         diagnostics.push({
-          path: path2,
+          path: path4,
           message: `Source file "${ref.filePath}" has duplicate key "${key}" in the first column`,
           severity: "error",
           code: "KU_DUPLICATE_KEY",
@@ -9271,7 +9383,7 @@ function validateRowUnit(ref, id, subunits, resolved, path2, diagnostics, checke
   const rowIdx = table.rows.findIndex((r) => (r[0] ?? "").trim() === id.trim());
   if (rowIdx === -1) {
     diagnostics.push({
-      path: path2,
+      path: path4,
       message: `Source reference "${ref.raw}" points at row "@${id}" which does not exist in "${ref.fileName}"`,
       severity: "error",
       code: "KU_UNKNOWN_ROW",
@@ -9283,7 +9395,7 @@ function validateRowUnit(ref, id, subunits, resolved, path2, diagnostics, checke
   if (subunits.length === 0) return;
   if (subunits.length > 1) {
     diagnostics.push({
-      path: path2,
+      path: path4,
       message: `Malformed source reference "${ref.raw}" \u2014 a CSV row takes at most one column (&column)`,
       severity: "error",
       code: "KU_MALFORMED",
@@ -9294,7 +9406,7 @@ function validateRowUnit(ref, id, subunits, resolved, path2, diagnostics, checke
   }
   if (!table.headers.includes(normalizeName(subunits[0]))) {
     diagnostics.push({
-      path: path2,
+      path: path4,
       message: `Source reference "${ref.raw}" points at column "&${subunits[0]}" which does not exist in "${ref.fileName}"`,
       severity: "error",
       code: "KU_UNKNOWN_COLUMN",
@@ -9311,7 +9423,7 @@ function listSectionFieldsFor(content, heading) {
 // iNNfo/packages/innfo-core/src/lineage/render.ts
 var SOURCES_GUIDANCE = "No sources ingested yet. Place files in sources/import and run a scan.";
 var MODELS_GUIDANCE = "Auto-synced from kNNowledge/ on every --scan/--import-url/--lineage. One ModelRecords element per Level 3 model.";
-var ARTIFACTS_GUIDANCE = "Auto-synced from export/ on every --scan/--import-url/--lineage. One element per generated deliverable.";
+var ARTIFACTS_GUIDANCE = "Auto-synced from artifacts/ on every --scan/--import-url/--lineage. One element per generated deliverable.";
 function renderSourcesSection(sources) {
   let out = "# NN Sources\n";
   if (sources.length === 0) {
@@ -9326,8 +9438,6 @@ function renderSourcesSection(sources) {
 `;
     out += `raw_filename:: ${s.raw_filename}
 `;
-    if (s.media_filename) out += `media_filename:: ${s.media_filename}
-`;
     if (s.raw_hash) out += `raw_hash:: ${s.raw_hash}
 `;
     if (s.size) out += `size:: ${s.size}
@@ -9340,13 +9450,7 @@ function renderSourcesSection(sources) {
 `;
     out += `normalized_content:: ${s.normalized_content}
 `;
-    if (s.curated_csv) out += `curated_csv:: ${s.curated_csv}
-`;
-    if (s.status) out += `status:: ${s.status}
-`;
     if (s.version) out += `version:: ${s.version}
-`;
-    if (s.archive_path) out += `archive_path:: ${s.archive_path}
 `;
     if (s.superseded_by) out += `superseded_by:: ${s.superseded_by}
 `;
@@ -9418,128 +9522,558 @@ function renderLineageSections(p) {
 // iNNfo/packages/innfo-core/src/lineage/fs-snapshot.ts
 var fs = __toESM(require("node:fs"), 1);
 var path = __toESM(require("node:path"), 1);
-function walkDir(dir, filter, baseDir = dir) {
-  if (!fs.existsSync(dir)) return [];
-  const results = [];
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
+
+// iNNfo/packages/innfo-core/src/lineage/record.ts
+var RECORD_BLUEPRINT = "cogNNitive";
+var RECORD_TEMPLATE_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md";
+var RECORD_INNFO_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md";
+var FRONTMATTER_RE = /^(---\r?\n[\s\S]*?\r?\n---(?:\r?\n)?)/;
+function splitFrontmatter(text) {
+  const match = FRONTMATTER_RE.exec(text);
+  const frontmatter = match ? match[1] : "";
+  return { frontmatter, body: text.slice(frontmatter.length) };
+}
+function splitTopLevelSections2(body) {
+  const blocks = [];
+  const preamble = [];
+  let current = null;
+  for (const line of body.split("\n")) {
+    if (/^# (?!#)/.test(line)) {
+      if (current) blocks.push(current);
+      current = { heading: line, lines: [] };
+    } else if (current) {
+      current.lines.push(line);
+    } else {
+      preamble.push(line);
+    }
+  }
+  if (current) blocks.push(current);
+  return { preamble: preamble.join("\n"), blocks };
+}
+function managedSections(sections) {
+  return [
+    { name: "# NN Sources", re: /^# NN Sources\b/, render: () => sections.sources },
+    { name: "# NN ModelRecords", re: /^# NN ModelRecords\b/, render: () => sections.modelRecords },
+    { name: "# NN Artifacts", re: /^# NN Artifacts\b/, render: () => sections.artifacts }
+  ];
+}
+function blockText(heading, lines) {
+  return (heading + "\n" + lines.join("\n")).replace(/\n+$/, "") + "\n";
+}
+function renderRecordFrontmatter(title) {
+  return `---
+specification_version: "V_0-3-0"
+specification_url: "${RECORD_INNFO_URL}"
+level: 3
+parent_spec:
+  name: "${RECORD_BLUEPRINT}"
+  url: "${RECORD_TEMPLATE_URL}"
+title: "${title}"
+---
+`;
+}
+function refreshExistingModel(existing, sections) {
+  const { body } = splitFrontmatter(existing);
+  const titleMatch = /^title:\s*"?(.*?)"?\s*$/m.exec(existing);
+  const { preamble, blocks } = splitTopLevelSections2(body);
+  const managed = managedSections(sections);
+  const rendered = managed.map((m) => m.render().replace(/\n+$/, "") + "\n");
+  const present = new Array(managed.length).fill(false);
+  const rebuilt = blocks.map((b) => {
+    const idx = managed.findIndex((m) => m.re.test(b.heading));
+    if (idx !== -1) {
+      present[idx] = true;
+      return rendered[idx];
+    }
+    return blockText(b.heading, b.lines);
+  });
+  const anchor = rebuilt.findIndex((s) => /^# NN index\b/.test(s));
+  let insertAt = anchor >= 0 ? anchor + 1 : 0;
+  for (let i = 0; i < managed.length; i++) {
+    if (present[i]) {
+      insertAt = rebuilt.findIndex((s) => managed[i].re.test(s)) + 1;
+      continue;
+    }
+    rebuilt.splice(insertAt, 0, rendered[i]);
+    insertAt++;
+  }
+  const notice = preamble.replace(/^\n+|\n+$/g, "");
+  return renderRecordFrontmatter(titleMatch ? titleMatch[1] : "Provenance") + "\n" + notice + "\n\n" + rebuilt.join("\n") + "\n";
+}
+function findLineageRecord(files) {
+  const candidates = files.filter((f) => isNNName(f.path) && !isExcludedPath(f.path)).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  for (const file of candidates) {
+    const parentSpecName = parseKnowledge(file.content).frontmatter?.parent_spec?.name;
+    if (roleOf({ path: file.path, parentSpecName }) === "lineage-record") return file;
+  }
+  return null;
+}
+
+// iNNfo/packages/innfo-core/src/lineage/fs-snapshot.ts
+var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([".md", ".csv", ".json", ".html", ".htm"]);
+function walkDir(dir, baseDir, out) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name.startsWith(".")) continue;
     const fullPath = path.join(dir, entry.name);
     const relPath = path.relative(baseDir, fullPath).split("\\").join("/");
+    if (isExcludedPath(relPath)) continue;
     if (entry.isDirectory()) {
-      if (filter(relPath, entry.name, true)) {
-        results.push(...walkDir(fullPath, filter, baseDir));
-      }
-    } else if (entry.isFile()) {
-      if (filter(relPath, entry.name, false)) {
-        results.push(relPath);
-      }
+      walkDir(fullPath, baseDir, out);
+    } else if (entry.isFile() && TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      out.push(relPath);
     }
   }
-  return results;
 }
 function readLineageSnapshot(root) {
-  const snapshots = [];
   const rootDir = path.resolve(root);
-  const sourcesNnDir = path.join(rootDir, "sources", "nn");
-  if (fs.existsSync(sourcesNnDir)) {
-    const rels = walkDir(sourcesNnDir, (rel, name, isDir) => {
-      const lower = name.toLowerCase();
-      if (isDir) {
-        return lower !== "staging" && lower !== "archive";
-      }
-      return name.endsWith(".md") || name.endsWith(".csv");
-    });
-    for (const rel of rels) {
-      const p = `sources/nn/${rel}`;
-      const full = path.join(sourcesNnDir, rel);
-      snapshots.push({
-        path: p,
-        content: fs.readFileSync(full, "utf8")
-      });
-    }
-  }
-  const sourcesArchiveDir = path.join(rootDir, "sources", "archive");
-  if (fs.existsSync(sourcesArchiveDir)) {
-    const rels = walkDir(sourcesArchiveDir, (_, name, isDir) => {
-      if (isDir) return true;
-      return name.endsWith(".md");
-    });
-    for (const rel of rels) {
-      const p = `sources/archive/${rel}`;
-      const full = path.join(sourcesArchiveDir, rel);
-      snapshots.push({
-        path: p,
-        content: fs.readFileSync(full, "utf8")
-      });
-    }
-  }
-  const sourcesExportDir = path.join(rootDir, "sources", "export");
-  if (fs.existsSync(sourcesExportDir)) {
-    const rels = walkDir(sourcesExportDir, (_, name, isDir) => {
-      if (isDir) return true;
-      return name.endsWith(".md");
-    });
-    for (const rel of rels) {
-      const p = `sources/export/${rel}`;
-      const full = path.join(sourcesExportDir, rel);
-      snapshots.push({
-        path: p,
-        content: fs.readFileSync(full, "utf8")
-      });
-    }
-  }
-  const knowledgeDir = path.join(rootDir, "kNNowledge");
-  if (fs.existsSync(knowledgeDir)) {
-    const rels = walkDir(knowledgeDir, (_, name, isDir) => {
-      if (isDir) return true;
-      return name.endsWith("_NN.md");
-    });
-    for (const rel of rels) {
-      const full = path.join(knowledgeDir, rel);
-      const content = fs.readFileSync(full, "utf8");
+  if (!fs.existsSync(rootDir)) return [];
+  const rels = [];
+  walkDir(rootDir, rootDir, rels);
+  const snapshots = [];
+  for (const rel of rels) {
+    const content = fs.readFileSync(path.join(rootDir, rel), "utf8");
+    if (isNNName(rel) && !isSidecarName(rel)) {
       const parsed = parseKnowledge(content);
-      if (parsed.frontmatter?.parent_spec?.name === "cogNNitive") {
+      if (roleOf({ path: rel, parentSpecName: parsed.frontmatter?.parent_spec?.name }) !== "knowledge") {
         continue;
       }
-      snapshots.push({
-        path: `kNNowledge/${rel}`,
-        content
-      });
     }
+    snapshots.push({ path: rel, content });
   }
-  const exportDir = path.join(rootDir, "export");
-  if (fs.existsSync(exportDir)) {
-    const rels = walkDir(exportDir, (_, name, isDir) => {
-      if (isDir) return true;
-      const ext = path.extname(name).toLowerCase();
-      return [".md", ".html", ".htm", ".csv", ".json"].includes(ext);
-    });
-    for (const rel of rels) {
-      const p = `export/${rel}`;
-      const full = path.join(exportDir, rel);
-      snapshots.push({
-        path: p,
-        content: fs.readFileSync(full, "utf8")
-      });
-    }
-  }
-  snapshots.sort((a, b) => a.path.localeCompare(b.path));
+  snapshots.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   return snapshots;
+}
+function readLineageRecord(root) {
+  const rootDir = path.resolve(root);
+  if (!fs.existsSync(rootDir)) return null;
+  const rels = [];
+  walkDir(rootDir, rootDir, rels);
+  const candidates = rels.filter((rel) => isNNName(rel)).map((rel) => ({ path: rel, content: fs.readFileSync(path.join(rootDir, rel), "utf8") }));
+  return findLineageRecord(candidates);
+}
+
+// iNNfo/packages/innfo-core/src/lineage/drift.ts
+function describeFirstDiff(expected, actual) {
+  const exp = expected.split("\n");
+  const act = actual.split("\n");
+  const max = Math.max(exp.length, act.length);
+  let element;
+  for (let i = 0; i < max; i++) {
+    const e = exp[i];
+    const a = act[i];
+    if (e !== void 0 && e.startsWith("## ")) element = e;
+    if (e === a) continue;
+    if (element === void 0 && a !== void 0 && a.startsWith("## ")) element = a;
+    const where = element ? `${element}: ` : "";
+    const want = e === void 0 ? "<end of section>" : JSON.stringify(e);
+    const found = a === void 0 ? "<end of section>" : JSON.stringify(a);
+    return `${where}line ${i + 1}: expected ${want}, found ${found}`;
+  }
+  return "sections differ";
+}
+function checkLineageDrift(record, rendered) {
+  const { blocks } = splitTopLevelSections2(splitFrontmatter(record).body);
+  const diffs = [];
+  for (const managed of managedSections(rendered)) {
+    const expected = managed.render().replace(/\n+$/, "") + "\n";
+    const block = blocks.find((b) => managed.re.test(b.heading));
+    if (!block) {
+      diffs.push({ section: managed.name, firstDiff: `missing section ${managed.name} in the record` });
+      continue;
+    }
+    const actual = blockText(block.heading, block.lines);
+    if (actual !== expected) diffs.push({ section: managed.name, firstDiff: describeFirstDiff(expected, actual) });
+  }
+  return diffs.length === 0 ? { ok: true } : { ok: false, diffs };
+}
+
+// iNNfo/packages/innfo-core/src/writeOnce/plan.ts
+function latestOfFamily(members) {
+  let latest;
+  for (const member of members) {
+    if (!latest || compareMembers(latest.path, member.path) <= 0) latest = member;
+  }
+  return latest;
+}
+function planGc(i) {
+  const cited = /* @__PURE__ */ new Set();
+  for (const p of i.citedPaths) {
+    cited.add(p);
+    const subject = rawPathOfSidecar(p);
+    if (subject) cited.add(subject);
+  }
+  const candidates = [];
+  for (const family of i.families) {
+    const members = family.filter((member) => familyOf(member.path) !== null);
+    const latest = latestOfFamily(members);
+    for (const member of members) {
+      if (member === latest || cited.has(member.path)) continue;
+      candidates.push(member.path);
+    }
+  }
+  return { candidates: candidates.sort() };
+}
+
+// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+var import_node_fs2 = require("node:fs");
+var path2 = __toESM(require("node:path"), 1);
+var import_node_crypto = require("node:crypto");
+
+// iNNfo/packages/innfo-core/src/cognitivize/sidecar.ts
+var import_yaml7 = __toESM(require_dist(), 1);
+var TEXT_NATIVE_FORMATS = /* @__PURE__ */ new Set(["md", "csv", "json"]);
+var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
+var OWNED_KEYS = /* @__PURE__ */ new Set([
+  "level",
+  "parent_spec",
+  "source_file",
+  "sha256",
+  "size_bytes",
+  "source_format",
+  "normalized_at",
+  "normalized_by",
+  "sources",
+  // A sidecar's upstream edge is `sources`; the projection derives `derived_from` itself.
+  "derived_from"
+]);
+var FRONTMATTER_RE2 = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+function parseSidecarFrontmatter(text) {
+  const match = FRONTMATTER_RE2.exec(text);
+  if (!match) return null;
+  try {
+    const value = (0, import_yaml7.parse)(match[1]);
+    return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+function buildSidecar(i) {
+  const fm = {
+    level: 3,
+    parent_spec: { name: SIDECAR_BLUEPRINT, url: SIDECAR_SPEC_URL },
+    source_file: i.sourceFile,
+    sha256: i.sha256,
+    size_bytes: i.sizeBytes,
+    source_format: i.sourceFormat,
+    normalized_at: i.normalizedAt
+  };
+  if (i.normalizedBy) fm["normalized_by"] = i.normalizedBy;
+  const sources = i.sources ?? i.previous?.["sources"];
+  if (sources !== void 0) fm["sources"] = sources;
+  for (const extras of [i.previous ?? {}, i.metadata ?? {}]) {
+    for (const [key, value] of Object.entries(extras)) {
+      if (!OWNED_KEYS.has(key)) fm[key] = value;
+    }
+  }
+  const head = `---
+${(0, import_yaml7.stringify)(fm, { lineWidth: 0 })}---
+`;
+  const body = i.body?.trim();
+  return body ? `${head}
+${body}
+` : head;
+}
+
+// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+var WriteOnceError = class extends Error {
+  code;
+  /** The offending workspace-relative path (the stale input, or the over-long target). */
+  path;
+  constructor(code, offending, detail) {
+    super(`${code}: ${offending}: ${detail}`);
+    this.name = "WriteOnceError";
+    this.code = code;
+    this.path = offending;
+  }
+};
+function sha256Hex(bytes) {
+  return (0, import_node_crypto.createHash)("sha256").update(bytes).digest("hex");
+}
+var toPosix = (p) => p.replace(/\\/g, "/");
+function resolveInside(root, rel) {
+  const rootAbs = path2.resolve(root);
+  const target = path2.resolve(rootAbs, rel);
+  const within = path2.relative(rootAbs, target);
+  if (within.startsWith("..") || path2.isAbsolute(within)) {
+    throw new WriteOnceError("OUTSIDE_ROOT", rel, "path escapes the workspace root");
+  }
+  return target;
+}
+async function readOrNull(file) {
+  try {
+    return await import_node_fs2.promises.readFile(file);
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+async function readSidecarSha256(root, rawRel) {
+  const text = await readOrNull(resolveInside(root, sidecarPathOf(rawRel)));
+  if (text === null) return null;
+  const value = parseSidecarFrontmatter(text.toString("utf8"))?.["sha256"];
+  return typeof value === "string" ? value.toLowerCase() : "";
+}
+async function guardInputs(root, inputs) {
+  for (const input of inputs) {
+    const recorded = await readSidecarSha256(root, input);
+    if (recorded === null) continue;
+    const raw = await readOrNull(resolveInside(root, input));
+    const actual = raw === null ? "(missing)" : sha256Hex(raw);
+    if (recorded !== actual) {
+      throw new WriteOnceError("HASH_MISMATCH", toPosix(input), "raw bytes differ from the sidecar sha256; cognitivize it again");
+    }
+  }
+}
+async function listFamily(root, t) {
+  let names;
+  try {
+    names = await import_node_fs2.promises.readdir(resolveInside(root, t.dir));
+  } catch (e) {
+    if (e.code === "ENOENT") return [];
+    throw e;
+  }
+  const dir = toPosix(t.dir).replace(/^\/+|\/+$/g, "");
+  return names.filter((name) => {
+    const parsed = parseName(name);
+    return parsed.kind === "file" && parsed.key === t.key && parsed.ext === t.ext;
+  }).map((name) => ({ path: dir ? `${dir}/${name}` : name }));
+}
+function stampOf(member) {
+  if (!member) return void 0;
+  const parsed = parseName(member.path.slice(member.path.lastIndexOf("/") + 1));
+  return parsed.kind === "file" ? parsed.stamp : void 0;
+}
+function budgetOrThrow(root, rel, platform) {
+  const abs = resolveInside(root, rel);
+  const budget = checkPathBudget(abs, platform);
+  if (!budget.ok) {
+    throw new WriteOnceError("PATH_TOO_LONG", toPosix(rel), `${budget.length} characters exceeds the ${budget.limit} limit`);
+  }
+}
+async function writeOnce(root, t, bytes, o = {}) {
+  const now = o.now ?? (() => /* @__PURE__ */ new Date());
+  const platform = o.platform ?? process.platform;
+  const dirRel = toPosix(t.dir).replace(/^\/+|\/+$/g, "");
+  const memberRel = (stamp2) => {
+    const name = formatMemberName(t.key, t.ext, stamp2);
+    return dirRel ? `${dirRel}/${name}` : name;
+  };
+  const buffer = typeof bytes === "string" ? Buffer.from(bytes, "utf8") : Buffer.from(bytes);
+  budgetOrThrow(root, memberRel(nextStamp(now())), platform);
+  await guardInputs(root, o.inputs ?? []);
+  const latest = latestOfFamily(await listFamily(root, t));
+  if (latest) {
+    const recorded = await readSidecarSha256(root, latest.path);
+    const stored = recorded ? recorded : sha256Hex(await readOrNull(resolveInside(root, latest.path)) ?? Buffer.alloc(0));
+    if (stored === sha256Hex(buffer)) return { status: "deduplicated", path: latest.path };
+  }
+  await import_node_fs2.promises.mkdir(resolveInside(root, dirRel), { recursive: true });
+  let stamp = nextStamp(now(), stampOf(latest));
+  for (; ; ) {
+    const rel = memberRel(stamp);
+    budgetOrThrow(root, rel, platform);
+    try {
+      const handle = await import_node_fs2.promises.open(resolveInside(root, rel), "wx");
+      try {
+        await handle.writeFile(buffer);
+      } finally {
+        await handle.close();
+      }
+      return { status: "written", path: rel };
+    } catch (e) {
+      if (e.code !== "EEXIST") throw e;
+      stamp = { stamp: stamp.stamp, seq: stamp.seq + 1 };
+    }
+  }
+}
+async function collectFamilies(root) {
+  const rootAbs = path2.resolve(root);
+  const families = /* @__PURE__ */ new Map();
+  const walk = async (rel) => {
+    const entries = await import_node_fs2.promises.readdir(path2.join(rootAbs, rel), { withFileTypes: true });
+    for (const entry of entries) {
+      const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (isExcludedPath(entryRel)) continue;
+      if (entry.isDirectory()) {
+        await walk(entryRel);
+      } else if (entry.isFile()) {
+        const family = familyOf(entryRel);
+        if (!family) continue;
+        const id = JSON.stringify([family.dir, family.key, family.ext]);
+        const members = families.get(id) ?? [];
+        members.push({ path: entryRel });
+        families.set(id, members);
+      }
+    }
+  };
+  await walk("");
+  return [...families.values()];
+}
+async function applyGc(root, confirmed, o) {
+  if (confirmed.length === 0) return { deleted: [] };
+  const plan = planGc({ families: await collectFamilies(root), citedPaths: await o.citedPaths() });
+  const allowed = new Set(plan.candidates);
+  const deleted = [];
+  for (const rel of confirmed.map(toPosix)) {
+    if (!allowed.has(rel)) continue;
+    await import_node_fs2.promises.rm(resolveInside(root, rel), { force: true });
+    await import_node_fs2.promises.rm(resolveInside(root, sidecarPathOf(rel)), { force: true });
+    deleted.push(rel);
+  }
+  return { deleted: deleted.sort() };
+}
+
+// iNNfo/packages/innfo-core/src/cognitivize/cognitivize.ts
+var import_node_fs3 = require("node:fs");
+var path3 = __toESM(require("node:path"), 1);
+var toPosix2 = (p) => p.replace(/\\/g, "/");
+async function readOrNull2(file) {
+  try {
+    return await import_node_fs3.promises.readFile(file);
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+var isoSeconds = (at) => at.toISOString().replace(/\.\d{3}Z$/, "Z");
+async function cognitivize(root, rel, o = {}) {
+  const rootAbs = path3.resolve(root);
+  const abs = path3.resolve(rootAbs, rel);
+  const within = path3.relative(rootAbs, abs);
+  if (within === "" || within.startsWith("..") || path3.isAbsolute(within)) {
+    throw new RangeError(`${rel}: path escapes the workspace root`);
+  }
+  const relPath = toPosix2(within);
+  const reject = (reason) => ({ status: "rejected", path: relPath, reason });
+  if (isSidecarName(relPath)) return reject("sidecar");
+  if (isNNName(relPath)) return reject("nn-document");
+  if (isExcludedPath(relPath)) return reject("excluded");
+  const sidecarRel = sidecarPathOf(relPath);
+  if (!checkPathBudget(path3.join(rootAbs, sidecarRel), o.platform ?? process.platform).ok) {
+    return reject("path-too-long");
+  }
+  const parsed = parseName(relPath.slice(relPath.lastIndexOf("/") + 1));
+  if (parsed.kind !== "file" || parsed.ext === "") return reject("no-extension");
+  const stat = await import_node_fs3.promises.stat(abs).catch(() => null);
+  if (!stat?.isFile()) return reject("not-found");
+  const bytes = await import_node_fs3.promises.readFile(abs);
+  const sha256 = sha256Hex(bytes);
+  const sidecarAbs = path3.join(rootAbs, sidecarRel);
+  const existing = await readOrNull2(sidecarAbs);
+  const previous = existing ? parseSidecarFrontmatter(existing.toString("utf8")) : null;
+  const sourcesCurrent = o.sources === void 0 || JSON.stringify(previous?.["sources"]) === JSON.stringify(o.sources);
+  if (previous && String(previous["sha256"] ?? "").toLowerCase() === sha256 && sourcesCurrent) {
+    return { status: "unchanged", sidecar: sidecarRel, sha256 };
+  }
+  const format = parsed.ext.toLowerCase();
+  const textNative = TEXT_NATIVE_FORMATS.has(format);
+  if (!textNative && !o.normalizer) return { status: "requires-normalizer", path: relPath };
+  const normalized = o.normalizer ? await o.normalizer({ path: relPath, ext: format, bytes }) : void 0;
+  const text = buildSidecar({
+    sourceFile: relPath,
+    sha256,
+    sizeBytes: bytes.byteLength,
+    sourceFormat: format,
+    normalizedAt: isoSeconds((o.now ?? (() => /* @__PURE__ */ new Date()))()),
+    normalizedBy: normalized?.normalizedBy,
+    previous,
+    metadata: normalized?.metadata,
+    body: textNative ? void 0 : normalized?.body,
+    sources: o.sources
+  });
+  await import_node_fs3.promises.writeFile(sidecarAbs, text, "utf8");
+  return { status: existing ? "refreshed" : "written", sidecar: sidecarRel, sha256 };
+}
+var IMPORT_DIR = "sources/import";
+async function importRaw(root, externalAbs, o = {}) {
+  const base = path3.basename(externalAbs);
+  const rejected = (reason) => ({
+    status: "rejected",
+    path: externalAbs,
+    reason
+  });
+  if (isSidecarName(base)) return rejected("sidecar");
+  if (isNNName(base)) return rejected("nn-document");
+  const bytes = await readOrNull2(externalAbs).catch(() => null);
+  const parsed = parseName(base);
+  if (bytes === null || parsed.kind !== "file") return rejected("not-found");
+  const written = await writeOnce(
+    root,
+    { dir: IMPORT_DIR, key: parsed.key, ext: parsed.ext },
+    bytes,
+    { now: o.now, platform: o.platform }
+  );
+  const result = await cognitivize(root, written.path, o);
+  return {
+    status: written.status === "written" ? "imported" : "deduplicated",
+    path: written.path,
+    cognitivize: result
+  };
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  ENTRYPOINT_FILENAME,
+  IGNORED_DIRECTORIES,
+  RECORD_BLUEPRINT,
+  RECORD_INNFO_URL,
+  RECORD_TEMPLATE_URL,
+  SIDECAR_BLUEPRINT,
+  SIDECAR_SPEC_URL,
+  SPEC_FILENAME,
+  TEXT_NATIVE_FORMATS,
+  WriteOnceError,
+  applyGc,
+  blueprintNameOf,
+  buildSidecar,
+  checkLineageDrift,
+  checkNameInvariant,
+  checkPathBudget,
+  cognitivize,
+  collectFamilies,
+  compareMembers,
   createFsSourceResolver,
+  displayStem,
+  ensureNNFilename,
+  extractDeclaredCitations,
   extractFileCitations,
   extractHeadings,
+  familyOf,
+  findLineageRecord,
+  formatMemberName,
+  formatNNName,
+  formatUtcStamp,
   headingSlugParts,
+  importRaw,
+  isExcludedPath,
+  isJsonPointer,
+  isModelCandidate,
+  isNNName,
+  isSidecarName,
+  latestOfFamily,
+  nextStamp,
   normalizeName,
+  parentSpecNameOf,
   parseCitation,
+  parseName,
+  parseSidecarFrontmatter,
+  planGc,
+  procedureIdOf,
   projectLineage,
+  rawPathOfSidecar,
+  readLineageRecord,
   readLineageSnapshot,
+  readSidecarSha256,
+  refreshExistingModel,
   renderLineageSections,
+  renderRecordFrontmatter,
+  resolveJsonPointer,
+  roleOf,
   serializeKnowledgeUnitRef,
+  sha256Hex,
+  sidecarPathOf,
   slugifyHeading,
   slugifyUnitHeading,
-  validateCitations
+  splitTopLevelSections,
+  validateCitations,
+  writeOnce
 });

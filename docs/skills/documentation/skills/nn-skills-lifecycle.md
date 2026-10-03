@@ -51,7 +51,7 @@ When a fresh AI agent receives the bootstrap trigger (`"I want to use https://co
 3. **Multi-Agent MCP Auto-Registration**: Registers the `innfo-mcp` server bundle into detected AI agent configuration files (`~/.config/opencode/opencode.json`, `~/.claude.json`, `~/.gemini/antigravity.json`).
 4. **Hybrid Resolution Runtime**:
    - **Global Layer**: Executables, skills, and MCP servers run centrally across all agent sessions.
-   - **Workspace Layer**: Project-specific models (`*_NN.md`) and customized templates reside in `./specs/` and `./models/`, prioritized first by the 4-tier lookup engine.
+   - **Workspace Layer**: Project-specific kNNowledge (`*_NN.md`) and customized bluepriNNts reside in `./specs/` and `./kNNowledge/`, prioritized first by the 4-tier lookup engine.
 
 ---
 

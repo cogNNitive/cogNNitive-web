@@ -6,17 +6,7 @@ const os = require('os');
 const provenance = require('../../scripts/provenance');
 const { checkLineage } = require('../../scripts/lib/lineage-check');
 
-const SRC_FM = (sourceFile, hash) => `---
-source_file: "${sourceFile}"
-sha256: "${hash}"
-size_bytes: 123
-normalized_at: "2026-08-01T10:00:00Z"
-normalized_by: "traNNsform v1.5"
----
-
-# Body
-content
-`;
+const { put, cognitivizeAll } = require('./_fixtures');
 
 const LEGACY_RECORD = `---
 specification_version: "V_0-2-1"
@@ -55,7 +45,7 @@ command:: scan
 run_at:: 2026-08-01T10:00:00Z
 `;
 
-function run() {
+async function run() {
   let passed = 0;
   let failed = 0;
 
@@ -85,8 +75,8 @@ function run() {
     // (a) A workspace that already has a hand-authored domaiNN_NN.md manifest
     // must not gain a second manifest, and the scanner must not touch it.
     const proj = path.join(TMP, 'Acme');
-    fs.mkdirSync(path.join(proj, 'sources', 'nn'), { recursive: true });
-    fs.writeFileSync(path.join(proj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'aaa'));
+    put(proj, 'sources/import/raw.md', '# Raw\ncontent\n');
+    await cognitivizeAll(proj, ['sources/import/raw.md']);
     const manifest = '# NN index\n\n* [[Sources]]\n\n# NN Sources\n\n<!-- hand authored -->\n';
     fs.writeFileSync(path.join(proj, 'domaiNN_NN.md'), manifest);
 
@@ -110,8 +100,8 @@ function run() {
 
     // (c) A legacy <Project>_V_*_workspace_NN.md record is migrated in place.
     const legacyProj = path.join(TMP, 'Legacy');
-    fs.mkdirSync(path.join(legacyProj, 'sources', 'nn'), { recursive: true });
-    fs.writeFileSync(path.join(legacyProj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'bbb'));
+    put(legacyProj, 'sources/import/raw.md', '# Raw\ncontent\n');
+    await cognitivizeAll(legacyProj, ['sources/import/raw.md']);
     fs.writeFileSync(path.join(legacyProj, 'Legacy_V_0-2-0_workspace_NN.md'), LEGACY_RECORD);
 
     const rL = provenance.buildProvenanceKnowledge(legacyProj, { projectName: 'Legacy' });
@@ -128,9 +118,9 @@ function run() {
     );
     // (d) Canonical domaiNN workspace with lineage record in kNNowledge/ (Issue #104)
     const domProj = path.join(TMP, 'DomProj');
-    fs.mkdirSync(path.join(domProj, 'sources', 'nn'), { recursive: true });
     fs.mkdirSync(path.join(domProj, 'kNNowledge'), { recursive: true });
-    fs.writeFileSync(path.join(domProj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'ccc'));
+    put(domProj, 'sources/import/raw.md', '# Raw\ncontent\n');
+    await cognitivizeAll(domProj, ['sources/import/raw.md']);
     const knRecordPath = path.join(domProj, 'kNNowledge', 'DomProj_V_0-1-0_cogNNitive_NN.md');
     fs.writeFileSync(
       knRecordPath,
@@ -153,9 +143,9 @@ function run() {
 
     // (e) Legacy workspace_NN record inside kNNowledge/ is migrated in place
     const knLegacyProj = path.join(TMP, 'KnLegacy');
-    fs.mkdirSync(path.join(knLegacyProj, 'sources', 'nn'), { recursive: true });
     fs.mkdirSync(path.join(knLegacyProj, 'kNNowledge'), { recursive: true });
-    fs.writeFileSync(path.join(knLegacyProj, 'sources', 'nn', 'raw.md'), SRC_FM('sources/import/raw.txt', 'ddd'));
+    put(knLegacyProj, 'sources/import/raw.md', '# Raw\ncontent\n');
+    await cognitivizeAll(knLegacyProj, ['sources/import/raw.md']);
     const knLegacyRecordPath = path.join(knLegacyProj, 'kNNowledge', 'KnLegacy_V_0-1-0_workspace_NN.md');
     fs.writeFileSync(knLegacyRecordPath, LEGACY_RECORD);
 
@@ -186,6 +176,5 @@ function run() {
 module.exports = { run };
 
 if (require.main === module) {
-  const result = run();
-  process.exit(result.failed > 0 ? 1 : 0);
+  run().then((result) => process.exit(result.failed > 0 ? 1 : 0));
 }

@@ -23,7 +23,7 @@ evolution:: [[Fixed Evolution]]
 Monthly bottom line. Year 1 baseline resolves near break-even against the $1.2M revenue base.
 
 ## NN Metrics: Monthly Containment Revenue
-sources:: [sources/nn/containment-incidents-1984.csv@INC-1041, sources/nn/containment-incidents-1984.csv@INC-1048]
+sources:: [sources/import/containment-incidents-1984.csv@INC-1041, sources/import/containment-incidents-1984.csv@INC-1048]
 metricValue:: <calculated>
 metricFormula:: monthly incidents x average fee per incident
 dependsOn:: [[Monthly Incidents]]

@@ -125,7 +125,7 @@ The table below defines the deterministic transition rules executed by the agent
 Every interaction path strictly enforces cogNNitive's foundational UX governance rules:
 
 1. **Zero Unilateral Mutation (Consent First)**:  
-   The agent NEVER creates, renames, moves, or deletes user files (such as files in `sources/original/`) without explicit confirmation.
+   The agent NEVER creates, renames, moves, or deletes user files (such as raw files in `sources/import/`) without explicit confirmation.
 2. **Recommended Option First**:  
    Option `[a]` or `[1]` in every choice menu MUST be prefixed with `(Recommended)`.
 3. **Multi-Selection Clarification**:  

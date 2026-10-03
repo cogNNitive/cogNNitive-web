@@ -1,7 +1,7 @@
 # Workflow Template Documentation
 
 **Template:** workflow V_0-1-0
-**Location:** `docs/templates/workflow/V_0-1-0/workflow_V_0-1-0_NN.md`
+**Location:** `docs/templates/workflow/V_0-1-0/workflow_iNNfo_NN.md`
 
 ---
 
@@ -74,7 +74,7 @@ Workflow instance files follow:
 ```
 
 Examples:
-- `example_V_1-0-0_workflow_NN.md`
+- `example_workflow_NN.md`
 - `video-processing_V_2-0-0_workflow_NN.md`
 
 ## Frontmatter Reference
@@ -90,7 +90,7 @@ spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNf
 level: 3
 parent_spec:
   name: "workflow_V_0-1-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/skills/templates/workflow/V_0-1-0/workflow_V_0-1-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/skills/templates/workflow/V_0-1-0/workflow_iNNfo_NN.md"
 model_version: "V_<major>-<minor>-<patch>"
 title: "<Workflow Name>"
 documentation_location: "docs/templates/workflow/V_0-1-0/"
@@ -123,15 +123,15 @@ The orchestrator reads these values literally and passes them to the loaded skil
 
 ## Sample
 
-See [`samples/example_V_1-0-0_workflow_NN.md`](./samples/example_V_1-0-0_workflow_NN.md) for a complete three-stage workflow example (Raw Ingestion → FORMAT Model → Video Script).
+See [`samples/example_workflow_NN.md`](./samples/example_workflow_NN.md) for a complete three-stage workflow example (Raw Ingestion → FORMAT Model → Video Script).
 
 ## Template Location
 
 ```
 docs/templates/workflow/
 └── V_0-1-0/
-    ├── workflow_V_0-1-0_NN.md          # This template
+    ├── workflow_iNNfo_NN.md             # This template
     ├── documentation.md                 # This documentation
     └── samples/
-        └── example_V_1-0-0_workflow_NN.md
+        └── example_workflow_NN.md
 ```

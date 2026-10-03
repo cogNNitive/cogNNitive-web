@@ -7,8 +7,8 @@ metadata:
   mcp: "innfo-mcp"
 license: MIT
 bundled_blueprints:
-  - name: workspace_spec_NN
-    path: templates/workspace_spec_NN.md
+  - name: workspace_spec_iNNfo_NN
+    path: templates/workspace_spec_iNNfo_NN.md
 description: |
   Domain skill for creating, editing, validating, scaffolding, or discussing iNNfo models, apps, specializations, samples, or specification files. Includes the conversational Model Creation Wizard and Architecture Assistant. Triggers: innfo, iNNfo, info, /nn-innfo, model, modelo, template, plantilla, spec, wizard, *_NN.md, procedures_V_0-1-0_NN.md.
   This includes but is not limited to:

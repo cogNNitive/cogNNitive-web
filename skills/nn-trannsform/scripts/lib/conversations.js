@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { parseName, writeOnce, cognitivize } = require("./innfo-core.generated.cjs");
 
 /**
  * Format a Date or timestamp string into YYYY-MM-DD_HHmmss.
@@ -219,7 +220,7 @@ function padTurn(seq) {
  * `## NN Turn <NN>: <author-id>`. 1-based, 2-digit zero-padded numbering keeps
  * heading slugs (`nn-turn-01--author`) aligned with turn order. An unnamed
  * participant (missing/blank) renders the deterministic `unnamed` placeholder
- * so the `_source.md` write never blocks on naming.
+ * so the transcript promotion never blocks on naming.
  */
 function resolveTurnHeading(seq, authorId) {
   const n = padTurn(seq);
@@ -235,10 +236,10 @@ function resolveTurnHeading(seq, authorId) {
  */
 const PROMOTION_OPTIONS = [
   {
-    title: "[full] (Recommended) Full Transcript (_source.md)",
+    title: "[full] (Recommended) Full Transcript (write-once, cognitivized in place)",
     value: "full",
     description:
-      "Promotes the complete transcript to sources/conversations/ and normalizes it",
+      "Promotes the complete transcript to sources/conversations/ as a suffixed write-once file and cognitivizes it",
   },
   {
     title: "[none] None (keep in conversations/ only)",
@@ -329,50 +330,46 @@ function finalizeConversationSession({
 }
 
 /**
- * Promote conversation transcript into sources/conversations/ and normalize into sources/nn/conversations/.
+ * Promote a conversation transcript into sources/conversations/ as a write-once
+ * family member (`<slug>_<UTC stamp>.md`) and cognitivize it in place. Promoting
+ * identical bytes again writes nothing; existing unsuffixed members are never
+ * renamed or rewritten.
  * @param {Object} options
  * @param {string} options.workspaceRoot
  * @param {string} options.sessionFile
  * @param {string} [options.titleSlug]
  * @param {string} [options.format]
- * @param {string} [options.summaryContent]
  * @param {string} [options.fullContent]
+ * @param {() => Date} [options.now] Clock seam for the UTC suffix.
+ * @returns {Promise<{ format: string, promotedFiles: string[], deduplicated: string[] }>}
  */
 async function promoteConversation({
   workspaceRoot,
   sessionFile,
   titleSlug = undefined,
   format = "full",
-  summaryContent = undefined,
   fullContent = undefined,
+  now = undefined,
 }) {
   if (!format || format === "none") {
-    return {
-      format: "none",
-      promotedFiles: [],
-    };
+    return { format: "none", promotedFiles: [], deduplicated: [] };
   }
 
-  const convDir = path.join(workspaceRoot, "sources", "conversations");
-  fs.mkdirSync(convDir, { recursive: true });
-
-  const rawSessionContent = fs.existsSync(sessionFile)
-    ? fs.readFileSync(sessionFile, "utf8")
-    : "";
-  const sessionBasename = path.basename(sessionFile);
-  const relSessionTranscript = `conversations/${sessionBasename}`;
-
-  let slug = titleSlug || path.basename(sessionFile, ".md");
-  slug = slug.replace(/(_summary|_source)$/, "");
-
   const promotedFiles = [];
+  const deduplicated = [];
 
-  // `_summary.md` promotion is retired: the raw transcript is always registered
-  // in conversations/, and the only promotion target is the full `_source.md`.
-  // `summary` / `both` are accepted but no longer produce a file.
+  // `summary` / `both` are accepted but promote nothing: the raw transcript is
+  // always registered in conversations/ and the only target is the full transcript.
   if (format === "full") {
-    const fullFileName = `${slug}_source.md`;
-    const fullFilePath = path.join(convDir, fullFileName);
+    const rawSessionContent = fs.existsSync(sessionFile)
+      ? fs.readFileSync(sessionFile, "utf8")
+      : "";
+    const relSessionTranscript = `conversations/${path.basename(sessionFile)}`;
+
+    // The family key is the slug without any terminal UTC stamp of its own.
+    const slug = titleSlug || path.basename(sessionFile, ".md");
+    const parsed = parseName(`${slug}.md`);
+    const key = parsed.kind === "file" ? parsed.key : slug;
 
     let body = fullContent || rawSessionContent;
     if (body.startsWith("---")) {
@@ -391,17 +388,23 @@ async function promoteConversation({
       body,
     ].join("\n");
 
-    fs.writeFileSync(fullFilePath, fileContent, "utf8");
-    promotedFiles.push(fullFilePath);
+    const written = await writeOnce(
+      workspaceRoot,
+      { dir: "sources/conversations", key, ext: "md" },
+      fileContent,
+      { now },
+    );
+    const abs = path.join(workspaceRoot, written.path);
+    (written.status === "written" ? promotedFiles : deduplicated).push(abs);
+
+    const { createNormalizer } = require("./normalizer");
+    await cognitivize(workspaceRoot, written.path, {
+      normalizer: createNormalizer({ projectDir: workspaceRoot }),
+      now,
+    });
   }
 
-  const scanner = require("../scanner");
-  await scanner.scanAndProcess(workspaceRoot, { autoAcceptPrompt: true });
-
-  return {
-    format,
-    promotedFiles,
-  };
+  return { format, promotedFiles, deduplicated };
 }
 
 module.exports = {

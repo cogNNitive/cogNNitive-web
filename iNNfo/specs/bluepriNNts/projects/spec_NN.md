@@ -5,15 +5,15 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-3-2"
 title: "Projects App"
 procedures:
   - id: "calculate-critical-path"
     name: "Calculate Critical Path"
-    path: "procedures/calculate_critical_path_NN.md"
+    path: "procedures/calculate_critical_path_procedures_NN.md"
   - id: "generate-status-report"
     name: "Generate Project Status Report"
-    path: "procedures/generate_status_report_NN.md"
+    path: "procedures/generate_status_report_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true

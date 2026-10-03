@@ -1047,7 +1047,7 @@
                 </div>
                 <div class="flow-card-body">
                   <h3><span>3. Artifacts &amp; Feedback</span></h3>
-                  <p>Project role-tailored **Artifacts** — dashboards, executive briefs, and specifications into <code>export/</code>. Annotated stakeholder reviews re-ingest into sources to continuously evolve kNNowledge.</p>
+                  <p>Project role-tailored **Artifacts** — dashboards, executive briefs, and specifications into <code>artifacts/</code>. Annotated stakeholder reviews re-ingest into sources to continuously evolve kNNowledge.</p>
                 </div>
               </div>
 
@@ -1157,7 +1157,7 @@ flowchart LR
     end
 
     subgraph P3["3. EXPORT &amp; FEEDBACK"]
-        MOD --> ART["📊 export/\n(Dashboards, Briefs, Specs)"]
+        MOD --> ART["📊 artifacts/\n(Dashboards, Briefs, Specs)"]
         ART -.->|"Closed-Loop Feedback"| RAW
     end
 
@@ -1362,7 +1362,7 @@ flowchart LR
         M["🧠 Living Concepts &amp; Elements<br/><span style='font-size:11px;'>sources:: [source.md#slug]</span>"]
     end
 
-    subgraph Output["3. ARTIFACTS (export/)"]
+    subgraph Output["3. ARTIFACTS (artifacts/)"]
         O1["📊 Interactive HTML Dashboards"]
         O2["📑 Executive Briefs &amp; Specs"]
     end

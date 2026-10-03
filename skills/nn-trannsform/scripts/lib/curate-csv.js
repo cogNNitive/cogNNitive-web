@@ -1,24 +1,24 @@
 /**
  * curate-csv.js — turn a raw CSV into a citation-ready CSV.
  *
- * The scanner normalizes a CSV to a Markdown *profile* under `sources/nn/`; it
- * never produces the CSV that `sources:: <file>.csv@<row-id>` actually cites.
- * This module fills that gap: it parses the raw CSV, moves the key column to the
- * front, guarantees the key is unique and non-empty, and writes an RFC-4180 CSV
- * under `sources/nn/import/`, mirroring the `sources/import/` subtree like the
- * scanner does for Markdown.
+ * A raw CSV is cognitivized in place as it is; this module produces the CSV that
+ * `sources:: <file>.csv@<row-id>` actually cites. It parses the raw CSV, moves
+ * the key column to the front, guarantees the key is unique and non-empty, and
+ * writes the result as a derived artifact: a write-once, UTC-suffixed member of
+ * the family `artifacts/curated/<name>.csv`, cognitivized in place.
  *
  * The key column is the citation row-id (`csv@<key-value>`), so it must be the
  * first column, non-empty and unique — the same contract the workspace-source
  * validator enforces (`KU_EMPTY_KEY` / `KU_DUPLICATE_KEY`).
  *
- * Zero runtime dependencies (Node builtins + the skill's own CSV parser).
+ * Zero runtime dependencies (Node builtins, the skill's own CSV parser, and the
+ * innfo-core mirror).
  */
 
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { parseCsv } = require('./scanner-converters');
+const { cognitivize, parseName, writeOnce } = require('./innfo-core.generated.cjs');
 
 /**
  * Quote a CSV cell only when RFC-4180 requires it.
@@ -119,59 +119,43 @@ function curateCsvContent(content, options = {}) {
 }
 
 /**
- * Resolve a raw CSV, curate it, and write the citation-ready CSV under
- * `sources/nn/import/` (mirroring its path under `sources/import/`).
+ * Resolve a raw CSV, curate it, and write the citation-ready CSV as a write-once
+ * artifact under `artifacts/curated/`. Identical output deduplicates against the
+ * latest member, so curating unchanged input twice writes nothing new.
  *
  * @param {string} input Path to the raw CSV (absolute or relative to cwd).
  * @param {{ key?: string, dedup?: boolean, projectDir?: string }} [options]
- * @returns {{ outputPath: string, relOutput: string, citationExample: string } & ReturnType<typeof curateCsvContent>}
+ * @returns {Promise<{ outputPath: string, relOutput: string, citationExample: string } & ReturnType<typeof curateCsvContent>>}
  */
-function curateCsvFile(input, options = {}) {
-  const projectDir = options.projectDir || process.cwd();
+async function curateCsvFile(input, options = {}) {
+  const projectDir = path.resolve(options.projectDir || process.cwd());
   const absInput = path.resolve(input);
   if (!fs.existsSync(absInput)) throw new Error(`CSV not found: ${absInput}`);
 
-  const importDir = path.join(projectDir, 'sources', 'import');
-  const rel = path.relative(importDir, absInput);
-  const insideImport = rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
-  const relInImport = (insideImport ? rel : path.basename(absInput)).replace(/\\/g, '/');
-
   const curated = curateCsvContent(fs.readFileSync(absInput, 'utf8'), options);
 
-  const nnDir = path.join(projectDir, 'sources', 'nn');
-  const outputPath = path.join(nnDir, 'import', relInImport);
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, serializeCsv(curated.rows), 'utf8');
+  // A raw file inside the workspace is cognitivized first, so the artifact's hash guard has a current sidecar to check.
+  const relInput = path.relative(projectDir, absInput).replace(/\\/g, '/');
+  const insideProject = relInput !== '' && !relInput.startsWith('..') && !path.isAbsolute(relInput);
+  if (insideProject) await cognitivize(projectDir, relInput);
 
-  const sidecarPath = outputPath.replace(/\.csv$/i, '.md');
-  if (!fs.existsSync(sidecarPath)) {
-    const rawBytes = fs.readFileSync(absInput);
-    const rawHash = crypto.createHash('sha256').update(rawBytes).digest('hex');
-    const rawStat = fs.statSync(absInput);
-    const title = path.basename(absInput, path.extname(absInput));
-    const sidecarContent = [
-      '---',
-      `source_file: "sources/import/${relInImport}"`,
-      `sha256: "${rawHash}"`,
-      `size_bytes: ${rawStat.size}`,
-      `normalized_at: "${new Date().toISOString()}"`,
-      'normalized_by: "traNNsform v1.0.0"',
-      '---',
-      '',
-      `# ${title}`,
-      '',
-    ].join('\n');
-    fs.writeFileSync(sidecarPath, sidecarContent, 'utf8');
-  }
+  const parsed = parseName(path.basename(absInput));
+  const key = parsed.kind === 'file' ? parsed.key : path.basename(absInput, path.extname(absInput));
+  const written = await writeOnce(
+    projectDir,
+    { dir: 'artifacts/curated', key, ext: 'csv' },
+    serializeCsv(curated.rows),
+    { inputs: insideProject ? [relInput] : [] },
+  );
+  // The curated CSV cannot carry frontmatter, so its upstream edge (the raw file) lives in its sidecar.
+  await cognitivize(projectDir, written.path, insideProject ? { sources: [relInput] } : {});
 
-  const relOutput = path.relative(projectDir, outputPath).replace(/\\/g, '/');
-  const relFromNn = path.relative(nnDir, outputPath).replace(/\\/g, '/');
   const firstKey = curated.rows[1] ? curated.rows[1][0] : '<key>';
 
   return {
-    outputPath,
-    relOutput,
-    citationExample: `${relFromNn}@${firstKey}`,
+    outputPath: path.join(projectDir, written.path),
+    relOutput: written.path,
+    citationExample: `${written.path}@${firstKey}`,
     ...curated,
   };
 }

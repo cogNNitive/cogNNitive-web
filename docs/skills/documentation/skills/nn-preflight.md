@@ -55,11 +55,11 @@ node scripts/preflight-check.js
 1. **Preflight & Integrity Runner**: Executes `node scripts/preflight-check.js`.
 2. **Node.js**: Requires `>= 18`.
 3. **`innfo-mcp` Availability**: Calls `innfo-mcp_list_models` or verifies bundle at `~/.agents/mcp/innfo-mcp.bundle.js`.
-4. **Workspace Layout**: Verifies `sources/`, `models/`, `procedures/`, `artifacts/`, and `index.md`.
+4. **Workspace Layout**: Verifies `sources/`, `kNNowledge/`, `procedures/`, `artifacts/`, and `domaiNN_NN.md`.
 
 ### Tier 2 Checks (iNNfo Output Workflows)
-1. **Model Workspace Structure**: Verifies `models/` holds valid `*_NN.md` models and `index.md` contains `# NN index`.
-2. **Semantic Link Validation**: Verifies that every source path cited in `sources:: [...]` physically exists in `sources/nn/`.
+1. **Model Workspace Structure**: Verifies `kNNowledge/` holds valid `*_NN.md` models and `domaiNN_NN.md` contains `# NN index`.
+2. **Semantic Link Validation**: Verifies that every source path cited in `sources:: [...]` physically resolves against the workspace-relative path, and that each raw file under `sources/import/` (and `sources/conversations/`) has a co-located, up-to-date sidecar.
 
 ### Tier 3 Checks (Workspace Template Upgrades — Informational)
 1. **Template upgrade detection**: when `--workspace-dir` is provided and the workspace

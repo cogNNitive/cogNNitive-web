@@ -46,7 +46,7 @@ OKF explicitly states consumers MUST NOT reject a bundle because of:
 - Unknown `type` values ✓ — iNNfo's app names are valid OKF type values
 - Unknown additional frontmatter keys ✓ — iNNfo adds `spec_version`, `level`, `parent`, `concepts`, `markers`, `matrices`, `relationship_declarations`, all tolerated
 - Broken cross-links ✓ — iNNfo also tolerates broken wikilinks with warnings
-- Missing `index.md` files ✓ — iNNfo requires them, which exceeds OKF's baseline
+- Missing index documents ✓ — iNNfo requires a `domaiNN_NN.md` entrypoint, which exceeds OKF's baseline
 
 ### Structural alignment
 
@@ -55,10 +55,10 @@ OKF explicitly states consumers MUST NOT reject a bundle because of:
 | Knowledge Bundle | A directory of `_NN.md` documents — an iNNfo workspace |
 | Concept | A concept section within a `_NN.md` document |
 | Concept ID | File path relative to workspace root (minus `_NN.md` suffix) |
-| Frontmatter (`type`, `title`, `description`, `tags`, `timestamp`) | iNNfo frontmatter (`spec_version`, `level`, `parent`, `model_version`, `title`) |
+| Frontmatter (`type`, `title`, `description`, `tags`, `timestamp`) | iNNfo frontmatter (`spec_version`, `level`, `parent`, `knowledge_version`, `title`) |
 | Body (Markdown) | Body (Markdown + `_NN` structural markers + matrices) |
 | Cross-linking (`/relative/path.md`) | Wikilinks (`[[target]]`) and standard Markdown links |
-| `index.md` (progressive disclosure) | `index.md` with wikilinks listing workspace models |
+| `index.md` (progressive disclosure) | `domaiNN_NN.md` with wikilinks listing workspace kNNowledge |
 | # Citations (optional) | Not prescribed but fully compatible |
 
 ### Bottom line

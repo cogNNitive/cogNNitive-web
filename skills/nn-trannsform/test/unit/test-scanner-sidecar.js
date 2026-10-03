@@ -1,11 +1,9 @@
-const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const scanner = require('../../scripts/scanner');
-const { generateSourceFrontmatter } = require('../../scripts/lib/scanner-core');
 const { curateCsvFile } = require('../../scripts/lib/curate-csv');
+const { createNormalizer } = require('../../scripts/lib/normalizer');
 
 async function run() {
   let passed = 0;
@@ -25,87 +23,41 @@ async function run() {
   try {
     const projDir = path.join(tmp, 'TestProj');
     const importDir = path.join(projDir, 'sources', 'import');
-    const exportDir = path.join(projDir, 'sources', 'export');
-    const feedbackDir = path.join(importDir, 'feedback');
-    const nnDir = path.join(projDir, 'sources', 'nn');
-    fs.mkdirSync(feedbackDir, { recursive: true });
-    fs.mkdirSync(exportDir, { recursive: true });
-    fs.mkdirSync(nnDir, { recursive: true });
+    fs.mkdirSync(importDir, { recursive: true });
 
-    // 1. generateSourceFrontmatter should NOT contain is_synthetic or derived_from
-    const dummyFile = path.join(importDir, 'dummy.txt');
-    fs.writeFileSync(dummyFile, 'hello world', 'utf8');
-    const fm = generateSourceFrontmatter(dummyFile, 'sources/import/dummy.txt', {
-      is_synthetic: true,
-      derived_from: ['kNNowledge/Plan_NN.md'],
-    });
-    ok(!fm.includes('is_synthetic:'), 'generateSourceFrontmatter drops is_synthetic');
-    ok(!fm.includes('derived_from:'), 'generateSourceFrontmatter drops derived_from');
-
-    // 2. Feedback JSON ingestion produces source_type: feedback but NO is_synthetic
-    const feedbackJson = path.join(feedbackDir, 'review1.json');
-    fs.writeFileSync(
-      feedbackJson,
-      JSON.stringify({
-        meta: {
-          source_knowledge: 'Ghostbusters',
-          source_knowledge_version: 'V_0-2-1',
-          artifact: 'Ghostbusters_V_0-2-1_console.html',
-          artifact_version: '0.1.0',
-          exported_at: '2026-09-09T12:00:00Z',
-          author: 'Reviewer',
-          feedback_slug: 'round-1',
-          viewer: 'innfo-console/0.1.0',
-        },
-        items: [
-          {
-            id: 'fb-001',
-            kind: 'comment',
-            target: { unit: 'overview' },
-            text: 'Looks great',
-          },
-        ],
-      }),
-      'utf8',
-    );
-
-    // 3. Promoted deliverable in sources/export/ gets normalized sidecar without is_synthetic or derived_from
-    const promotedFile = path.join(exportDir, 'summary.md');
-    fs.writeFileSync(
-      promotedFile,
-      '---\ntype: "report"\nsources: ["kNNowledge/Plan_NN.md@## Section"]\n---\n# Summary\n',
-      'utf8',
-    );
-
-    await scanner.scanAndProcess(projDir, { autoAcceptPrompt: true });
-
-    const normFeedback = path.join(nnDir, 'import', 'feedback', 'review1.md');
-    ok(fs.existsSync(normFeedback), 'feedback document is normalized');
-    const fbContent = fs.readFileSync(normFeedback, 'utf8');
-    ok(fbContent.includes('source_type: "feedback"'), 'feedback document retains source_type: feedback');
-    ok(!fbContent.includes('is_synthetic:'), 'feedback document frontmatter does NOT contain is_synthetic');
-
-    const normExport = path.join(nnDir, 'export', 'summary.md');
-    ok(fs.existsSync(normExport), 'promoted export document is normalized');
-    const expContent = fs.readFileSync(normExport, 'utf8');
-    ok(!expContent.includes('is_synthetic:'), 'promoted export does NOT contain is_synthetic');
-    ok(!expContent.includes('derived_from:'), 'promoted export frontmatter does NOT contain derived_from');
-
-    // 4. Curated CSV without a profile .md gets a normalized sidecar
+    // Curated CSV is a derived artifact: write-once under artifacts/curated/, with a sidecar.
     const rawCsv = path.join(importDir, 'metrics.csv');
-    fs.writeFileSync(rawCsv, 'id,count\na,10\nb,20\n', 'utf8');
-    const curateResult = curateCsvFile(rawCsv, { key: 'id', projectDir: projDir });
-    ok(fs.existsSync(curateResult.outputPath), 'curated CSV written');
-    const sidecarMd = curateResult.outputPath.replace(/\.csv$/i, '.md');
-    ok(fs.existsSync(sidecarMd), 'curateCsvFile generates sidecar .md when none exists');
-    const sidecarContent = fs.readFileSync(sidecarMd, 'utf8');
-    ok(sidecarContent.includes('source_file: "sources/import/metrics.csv"'), 'sidecar contains source_file');
-    ok(sidecarContent.includes('sha256:'), 'sidecar contains sha256');
-    ok(sidecarContent.includes('size_bytes:'), 'sidecar contains size_bytes');
-    ok(sidecarContent.includes('normalized_at:'), 'sidecar contains normalized_at');
-    ok(!sidecarContent.includes('is_synthetic:'), 'sidecar does not contain is_synthetic');
+    fs.writeFileSync(rawCsv, 'count,id\n10,a\n20,b\n', 'utf8');
+    const curated = await curateCsvFile(rawCsv, { key: 'id', projectDir: projDir });
+    ok(/^artifacts\/curated\/metrics_\d{8}T\d{6}Z\.csv$/.test(curated.relOutput), 'curated CSV is a suffixed artifact under artifacts/curated/');
+    ok(fs.existsSync(curated.outputPath), 'curated CSV written');
+    ok(fs.readFileSync(curated.outputPath, 'utf8').split('\n')[0] === 'id,count', 'curated CSV has the key column first');
+    ok(curated.citationExample === `${curated.relOutput}@a`, 'citation example points at the artifact path');
+    ok(!fs.existsSync(path.join(projDir, 'sources', 'nn')), 'curating creates no sources/nn mirror');
+    ok(fs.readFileSync(rawCsv, 'utf8') === 'count,id\n10,a\n20,b\n', 'the raw CSV is untouched');
+
+    const sidecar = fs.readFileSync(`${curated.outputPath}_sidecar_NN.md`, 'utf8');
+    ok(sidecar.includes(`source_file: ${curated.relOutput}`), 'curated sidecar names the artifact as its subject');
+    ok(/\nsha256: [a-f0-9]{64}\n/.test(sidecar), 'curated sidecar has sha256');
+    ok(/\nsize_bytes: \d+\n/.test(sidecar), 'curated sidecar has size_bytes');
+    ok(/\nnormalized_at: /.test(sidecar), 'curated sidecar has normalized_at');
+    ok(!/is_synthetic/.test(sidecar), 'curated sidecar does not contain is_synthetic');
+
+    const again = await curateCsvFile(rawCsv, { key: 'id', projectDir: projDir });
+    ok(again.outputPath === curated.outputPath, 'curating identical input again reuses the latest member');
+    ok(fs.readdirSync(path.join(projDir, 'artifacts', 'curated')).length === 2, 'no new file is written for identical input');
+
+    // The normalizer adapter: text-native subjects get metadata only; other formats get a body.
+    const normalizer = createNormalizer({ projectDir: projDir });
+    fs.writeFileSync(path.join(importDir, 'plain.txt'), 'Plain text body.', 'utf8');
+    const txt = await normalizer({ path: 'sources/import/plain.txt', ext: 'txt', bytes: Buffer.from('Plain text body.') });
+    ok(txt.body.includes('Plain text body.'), 'the adapter converts txt to a body');
+    ok(/^traNNsform v/.test(txt.normalizedBy), 'the adapter names itself in normalized_by');
+    const md = await normalizer({ path: 'sources/import/notes.md', ext: 'md', bytes: Buffer.from('# N') });
+    ok(md.body === '', 'the adapter returns no body for text-native formats');
   } catch (err) {
     console.error(`  ERROR: ${err.message}`);
+    console.error(err.stack);
     failed++;
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

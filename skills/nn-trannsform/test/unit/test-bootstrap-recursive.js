@@ -1,13 +1,14 @@
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const path = require('path');
 
 const { bootstrapProject } = require('../../scripts/lib/bootstrap');
 
 /**
  * Regression test for the bootstrap copy: files in subfolders of the source
- * directory must land under sources/original/ with their structure preserved.
+ * directory must land under sources/import/ with their structure preserved.
  * The old implementation did a flat readdirSync + isFile() and silently
  * dropped everything below the top level.
  */
@@ -36,6 +37,7 @@ async function runAsync() {
     fs.mkdirSync(path.join(srcDir, 'clientA', 'deep'), { recursive: true });
     fs.mkdirSync(path.join(srcDir, 'clientB'), { recursive: true });
     fs.writeFileSync(path.join(srcDir, 'top.txt'), 'top');
+    fs.writeFileSync(path.join(srcDir, 'crlf.csv'), Buffer.from('a,b\r\n1,2\r\n', 'utf8'));
     fs.writeFileSync(path.join(srcDir, 'clientA', 'report.md'), 'a');
     fs.writeFileSync(path.join(srcDir, 'clientA', 'deep', 'notes.txt'), 'deep');
     fs.writeFileSync(path.join(srcDir, 'clientB', 'memo.md'), 'b');
@@ -47,7 +49,7 @@ async function runAsync() {
     const result = bootstrapProject(srcDir, destParent, 'Proj');
     const importDir = path.join(destParent, 'Proj', 'sources', 'import');
 
-    check(result.copiedCount === 4, `copiedCount is 4 (got ${result.copiedCount})`);
+    check(result.copiedCount === 5, `copiedCount is 5 (got ${result.copiedCount})`);
     check(fs.existsSync(path.join(importDir, 'top.txt')), 'top-level file copied');
     check(
       fs.existsSync(path.join(importDir, 'clientA', 'report.md')),
@@ -65,19 +67,35 @@ async function runAsync() {
     for (const d of [
       'kNNowledge',
       'procedures',
-      'export',
+      'artifacts',
       'conversations',
       path.join('sources', 'import'),
       path.join('sources', 'conversations'),
-      path.join('sources', 'export'),
-      path.join('sources', 'nn'),
     ]) {
       check(
         fs.existsSync(path.join(destParent, 'Proj', d)),
         `workspace dir ${d} created`,
       );
     }
-    check(!fs.existsSync(path.join(destParent, 'Proj', 'artifacts')), 'deprecated artifacts/ not created');
+    check(!fs.existsSync(path.join(destParent, 'Proj', 'export')), 'retired export/ not created');
+    for (const retired of ['nn', 'export', 'original', 'archive']) {
+      check(!fs.existsSync(path.join(destParent, 'Proj', 'sources', retired)), 'retired sources/' + retired + '/ not created');
+    }
+    const entrypoint = fs.readFileSync(path.join(destParent, 'Proj', 'domaiNN_NN.md'), 'utf8');
+    check(/sources_dir:: sources\/\n/.test(entrypoint), 'entrypoint sources_dir:: names sources/');
+    check(
+      !/sources\/nn/.test(entrypoint) && !/sources\/nn/.test(require('../../scripts/lib/bootstrap').generateAgentsMd('Proj')),
+      'no sources/nn reference is written',
+    );
+    // The README of a project named "trannsform" is the only other text bootstrap writes.
+    const readmeDest = fs.mkdtempSync(path.join(os.tmpdir(), 'nnt-bootstrap-readme-'));
+    try {
+      require('../../scripts/lib/bootstrap').bootstrapProject(null, readmeDest, 'trannsform');
+      const readme = fs.readFileSync(path.join(readmeDest, 'trannsform', 'README.md'), 'utf8');
+      check(!/sources\/nn/.test(readme) && /cognitivize/.test(readme), 'README describes in-place cognitivizing, not a sources/nn mirror');
+    } finally {
+      fs.rmSync(readmeDest, { recursive: true, force: true });
+    }
     check(!fs.existsSync(path.join(destParent, 'Proj', 'sources', 'original')), 'deprecated sources/original/ not created');
     check(fs.existsSync(result.provModelPath), 'provenance model initialized');
     check(fs.existsSync(path.join(destParent, 'Proj', 'domaiNN_NN.md')), 'domaiNN_NN.md entrypoint created');
@@ -93,6 +111,32 @@ async function runAsync() {
     };
     const layoutDetection = await detectLegacy(fsReader);
     check(layoutDetection.kind === 'current', `bootstrapped project detected as current (got ${layoutDetection.kind})`);
+
+    // Text policy: bootstrap writes `* -text` so raw-byte hashes survive checkout.
+    const gitattributesPath = path.join(projDir, '.gitattributes');
+    check(fs.existsSync(gitattributesPath), '.gitattributes is written');
+    check(
+      fs.readFileSync(gitattributesPath, 'utf8').split(/\r?\n/).includes('* -text'),
+      '.gitattributes contains `* -text`',
+    );
+
+    // Existing .gitattributes lines are preserved and the policy is appended once.
+    const gaProjDir = path.join(destParent, 'ProjAttrs');
+    fs.mkdirSync(gaProjDir, { recursive: true });
+    fs.writeFileSync(path.join(gaProjDir, '.gitattributes'), '*.png binary\n', 'utf8');
+    bootstrapProject(undefined, destParent, 'ProjAttrs');
+    bootstrapProject(undefined, destParent, 'ProjAttrs');
+    const gaLines = fs.readFileSync(path.join(gaProjDir, '.gitattributes'), 'utf8').split(/\r?\n/).filter(Boolean);
+    check(gaLines[0] === '*.png binary', 'existing .gitattributes lines are preserved');
+    check(gaLines.filter((l) => l === '* -text').length === 1, '`* -text` is added exactly once across reruns');
+
+    // CRLF bytes copied into sources/import/ keep their SHA-256.
+    const crlfBytes = Buffer.from('a,b\r\n1,2\r\n', 'utf8');
+    check(
+      crypto.createHash('sha256').update(fs.readFileSync(path.join(importDir, 'crlf.csv'))).digest('hex') ===
+        crypto.createHash('sha256').update(crlfBytes).digest('hex'),
+      'CRLF fixture keeps its SHA-256 through bootstrap',
+    );
 
     // AGENTS.md default scaffolding
     check(Boolean(result.agentsMdPath), 'result.agentsMdPath is returned');

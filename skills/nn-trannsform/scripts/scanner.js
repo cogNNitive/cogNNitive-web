@@ -2,32 +2,114 @@ const fs = require('fs');
 const path = require('path');
 const core = require('./lib/scanner-core');
 const converters = require('./lib/scanner-converters');
+const { cognitivize, isSidecarName, isNNName } = require('./lib/innfo-core.generated.cjs');
+const { createNormalizer } = require('./lib/normalizer');
 
 /**
- * Scan active source trees (sources/import/, sources/conversations/, sources/export/,
- * with legacy fallback to sources/original/) and normalize straight into sources/nn/,
- * mirroring the source subtree structure.
+ * Cognitivize one raw file in place through innfo-core. Dependency and consent
+ * checks for the prompt formats run first, and only when the sidecar is stale.
+ *
+ * @returns {Promise<{ format: string, status: string, action: string, outcome: 'processed' | 'skipped', refreshed?: boolean }>}
+ */
+async function processFile(projectDir, item, normalizer, notes, options) {
+  const { absPath, relPath, sourceFileField } = item;
+  const ext = path.extname(relPath).toLowerCase();
+  const format = ext === '.txt' ? 'Plain Text' : ext.substring(1).toUpperCase();
+
+  if (core.EXT_NO.includes(ext)) {
+    return { format, status: '🚫 Blocked', action: 'Unsupported format (needs manual action)', outcome: 'skipped' };
+  }
+  const isPrompt = core.EXT_PROMPT.includes(ext);
+  if (!isPrompt && !core.EXT_OK.includes(ext)) {
+    return { format: 'Unknown', status: '⚠️ Skipped', action: 'Unknown extension', outcome: 'skipped' };
+  }
+  if (options.formats && !options.formats.includes(ext)) {
+    return { format, status: '⚠️ Skipped', action: `Format ${core.EXT_LABELS[ext]} excluded by user selection.`, outcome: 'skipped' };
+  }
+
+  if (isPrompt) {
+    if (ext === '.doc') {
+      return { format, status: '⚠️ Skipped', action: 'Legacy .doc is not supported — convert it to .docx, or provide the .txt', outcome: 'skipped' };
+    }
+    const current = core.readSidecarSha256(absPath) === core.computeFileHash(absPath);
+    if (!current) {
+      const dep = await converters.ensureDependency(ext, options, core.EXT_DEPS);
+      if (!dep.ok) return { format, status: dep.status, action: dep.reason, outcome: 'skipped' };
+      let approve = options.autoAcceptPrompt;
+      if (!approve && options.promptCallback) approve = await options.promptCallback(sourceFileField);
+      if (!approve) return { format, status: '⚠️ Skipped', action: 'Extraction declined or skipped.', outcome: 'skipped' };
+    }
+  }
+
+  try {
+    const result = await cognitivize(projectDir, sourceFileField, { normalizer });
+    if (result.status === 'unchanged') {
+      return { format, status: '✅ Processed', action: `Already up to date at \`${result.sidecar}\` (unchanged, sha256 match).`, outcome: 'processed' };
+    }
+    if (result.status === 'written' || result.status === 'refreshed') {
+      const note = notes.get(sourceFileField);
+      const verb = result.status === 'refreshed' ? 'Refreshed' : 'Cognitivized in place:';
+      const status = note && note.partial ? '✅ Processed (Partial)' : '✅ Processed';
+      const action = note && note.partial
+        ? `${verb} \`${result.sidecar}\` with a placeholder body. Parsing failed: ${note.note}`
+        : `${verb} \`${result.sidecar}\``;
+      return { format, status, action, outcome: 'processed', refreshed: result.status === 'refreshed' };
+    }
+    const reason = result.status === 'rejected' ? result.reason : result.status;
+    return { format, status: '⚠️ Skipped', action: `Not cognitivized (${reason}).`, outcome: 'skipped' };
+  } catch (err) {
+    return { format, status: '❌ Error', action: `Failed to process: ${err.message}`, outcome: 'skipped' };
+  }
+}
+
+/**
+ * Cognitivize a list of items, in order, through the one per-file operation.
+ * Orphaned sidecars under the scanned raw trees are reported, never deleted.
+ * @param {string} projectDir
+ * @param {Array<{ absPath: string, relPath: string, sourceFileField: string }>} files
+ * @param {Record<string, any>} options
+ * @returns {Promise<{ totalDiscovered: number, processedCount: number, skippedCount: number, registry: Array<any>, orphans: Array<{ sidecar: string, sourceFile: string }>, refreshed: string[] }>}
+ */
+async function cognitivizeItems(projectDir, files, options) {
+  const notes = new Map();
+  const normalizer = createNormalizer({ projectDir, webImportMeta: options.webImportMeta || {}, notes });
+
+  const registry = [];
+  const refreshed = [];
+  let processedCount = 0;
+  let skippedCount = 0;
+
+  for (const item of files) {
+    const entry = await processFile(projectDir, item, normalizer, notes, options);
+    if (entry.outcome === 'processed') {
+      processedCount++;
+      if (entry.refreshed) refreshed.push(item.sourceFileField);
+    } else {
+      skippedCount++;
+    }
+    registry.push({ name: item.sourceFileField, format: entry.format, size: fs.statSync(item.absPath).size, status: entry.status, action: entry.action });
+  }
+
+  // Orphaned sidecars are reported, never deleted (Zero Unilateral Mutation).
+  const orphans = core.findOrphanSidecars(projectDir);
+  for (const orphan of orphans) {
+    console.warn(`⚠️  Warning: Orphaned sidecar \`${orphan.sidecar}\` — raw file \`${orphan.sourceFile}\` no longer exists on disk. Preserved.`);
+  }
+
+  return { totalDiscovered: files.length, processedCount, skippedCount, registry, orphans, refreshed };
+}
+
+/**
+ * Scan the raw source trees (`sources/import/`, `sources/conversations/`) and
+ * cognitivize every file that has no up-to-date sidecar, in place. Sidecars sit
+ * next to their raw file; nothing is mirrored, archived, or moved.
  * @param {string} projectDir
  * @param {Record<string, any>} [options]
- * @returns {Promise<{ totalDiscovered: number, processedCount: number, skippedCount: number, registry: Array<any>, orphans?: Array<any>, changedSnapshots?: Array<any> }>}
  */
 async function scanAndProcess(projectDir, options = {}) {
-  const sourcesDir = path.join(projectDir, 'sources');
-  const importDir = path.join(sourcesDir, 'import');
-  const originalDir = path.join(sourcesDir, 'original');
-  const nnDir = path.join(sourcesDir, 'nn');
-  const indexFile = path.join(nnDir, 'index.md');
+  fs.mkdirSync(path.join(projectDir, 'sources', 'import'), { recursive: true });
 
-  if (!fs.existsSync(importDir) && !fs.existsSync(originalDir)) {
-    fs.mkdirSync(importDir, { recursive: true });
-  }
-  fs.mkdirSync(nnDir, { recursive: true });
-
-  const logs = [];
-  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-  logs.push(`*   **${timestamp}:** Scan initiated across active source trees in \`${sourcesDir}\`.`);
-
-  let files = core.walkSourceTrees(projectDir, options);
+  let files = core.walkSourceTrees(projectDir);
   if (options.singleFile) {
     const singleNorm = options.singleFile.replace(/\\/g, '/').toLowerCase();
     files = files.filter(item => {
@@ -43,141 +125,51 @@ async function scanAndProcess(projectDir, options = {}) {
       );
     });
     if (files.length === 0) {
-      console.warn(`⚠️  Warning: Specified single file "${options.singleFile}" was not discovered in active source trees.`);
-    }
-  }
-  logs.push(`*   **${timestamp}:** Discovered ${files.length} file(s) across active source trees.`);
-
-  const webImportMeta = options.webImportMeta || {};
-
-  const registry = [];
-  const changedSnapshots = [];
-  let totalDiscovered = 0;
-  let processedCount = 0;
-  let skippedCount = 0;
-
-  for (const item of files) {
-    const { absPath, relPath, sourceFileField, destRelPath, isSynthetic, tree } = item;
-    const stat = fs.statSync(absPath);
-    const ext = path.extname(relPath).toLowerCase();
-    const destPath = path.join(nnDir, destRelPath);
-    const displayOutPath = destRelPath.replace(/\\/g, '/');
-
-    const relPathPosix = relPath.replace(/\\/g, '/');
-    const isSelected = !options.formats || options.formats.includes(ext);
-    const extra = { ...(webImportMeta[sourceFileField] || webImportMeta[relPathPosix] || {}) };
-
-    if (tree === 'conversations') {
-      const baseName = path.basename(relPath, ext);
-      if (baseName.endsWith('_source')) {
-        extra.conversation_format = 'full';
-        extra.source_type = 'conversation_transcript';
-      } else if (baseName.endsWith('_summary')) {
-        extra.conversation_format = 'summary';
-        extra.source_type = 'conversation_summary';
-      }
-    }
-
-    let entry;
-    if (core.EXT_OK.includes(ext)) {
-      entry = core.processOkFile(ext, absPath, sourceFileField, destPath, displayOutPath, isSelected, extra);
-    } else if (core.EXT_PROMPT.includes(ext)) {
-      entry = await core.processPromptFile(ext, absPath, sourceFileField, destPath, displayOutPath, isSelected, options, extra);
-    } else if (core.EXT_NO.includes(ext)) {
-      entry = { format: ext.substring(1).toUpperCase(), status: '🚫 Blocked', action: 'Unsupported format (needs manual action)', outcome: 'skipped' };
-    } else {
-      entry = { format: 'Unknown', status: '⚠️ Skipped', action: 'Unknown extension', outcome: 'skipped' };
-    }
-
-    totalDiscovered++;
-    if (entry.outcome === 'processed') {
-      processedCount++;
-      if (entry.snapshot && entry.snapshot.archived) {
-        changedSnapshots.push({
-          baseName: entry.baseName,
-          displayOutPath: entry.displayOutPath,
-          snapshot: entry.snapshot,
-        });
-      }
-    } else {
-      skippedCount++;
-    }
-
-    registry.push({
-      name: sourceFileField,
-      format: entry.format,
-      size: stat.size,
-      status: entry.status,
-      action: entry.action,
-    });
-  }
-
-  logs.push(`*   **${timestamp}:** Converted ${processedCount} file(s) to Markdown in \`sources/nn/\`, mirroring active source subtrees.`);
-
-  // Orphan detection after normalization
-  const orphans = core.findOrphanSources(projectDir);
-  for (const orphan of orphans) {
-    let consent = null;
-    if (typeof options.orphanConsent === 'function') {
-      consent = await options.orphanConsent(orphan);
-    } else if (typeof options.orphanConsent === 'string') {
-      consent = options.orphanConsent;
-    }
-
-    if (consent === 'a' || consent === 'archive') {
-      core.archiveSourceSnapshot(null, orphan.nnPath, orphan.nnPath, orphan.baseName);
-      if (fs.existsSync(orphan.nnPath)) fs.unlinkSync(orphan.nnPath);
-      logs.push(`*   **${timestamp}:** Orphaned source \`${orphan.sourceFile}\` archived and removed from \`sources/nn/\` after consent.`);
-    } else if (consent === 'b' || consent === 'keep') {
-      logs.push(`*   **${timestamp}:** Orphaned source \`${orphan.sourceFile}\` kept active in \`sources/nn/\` after consent.`);
-    } else if (!options.orphanConsent) {
-      console.warn(`⚠️  Warning: Orphaned source in \`sources/nn/${orphan.relPath}\` — origin \`${orphan.sourceFile}\` no longer exists on disk. Preserved active (Zero Unilateral Mutation).`);
-      logs.push(`*   **${timestamp}:** Warning: Orphaned source \`${orphan.sourceFile}\` origin missing on disk; preserved active.`);
-    } else {
-      logs.push(`*   **${timestamp}:** Orphaned source \`${orphan.sourceFile}\` skipped.`);
+      console.warn(`⚠️  Warning: Specified single file "${options.singleFile}" was not discovered in the raw source trees.`);
     }
   }
 
-  // Build sources/nn/index.md manifest with OKF v0.1 compliant frontmatter
-  let indexContent = `---\ntype: "index"\ntitle: "traNNsform Ingestion Manifest & Processing Log"\ndescription: "Source documents registry and processing log for normalized knowledge assets"\ntags: [sources, ingestion, manifest, okf, lineage]\ntimestamp: "${new Date().toISOString()}"\n---\n\n`;
-  indexContent += `# traNNsform Ingestion Manifest & Processing Log\n\n`;
-  indexContent += `## Ingestion Status\n`;
-  indexContent += `*   **Total Files Discovered:** ${totalDiscovered}\n`;
-  indexContent += `*   **Processed successfully:** ${processedCount}\n`;
-  indexContent += `*   **Skipped/Pending review:** ${skippedCount}\n\n`;
+  return cognitivizeItems(projectDir, files, options);
+}
 
-  indexContent += `## Documents Registry\n`;
-  indexContent += `| File Name | Format | Size (bytes) | Status | Actions Taken |\n`;
-  indexContent += `| :--- | :--- | :--- | :--- | :--- |\n`;
-  for (const reg of registry) {
-    indexContent += `| \`${reg.name}\` | ${reg.format} | ${reg.size} B | ${reg.status} | ${reg.action} |\n`;
+/**
+ * Cognitivize one file or, recursively, every raw file under a directory of the
+ * domaiNN. Sidecars, other `_NN.md` documents, `staging/` and dot entries are
+ * skipped. The same per-file operation backs `scanAndProcess`.
+ * @param {string} projectDir
+ * @param {string} target File or directory, workspace-relative or absolute (must be inside the project).
+ * @param {Record<string, any>} [options]
+ */
+async function cognitivizeTarget(projectDir, target, options = {}) {
+  const root = path.resolve(projectDir);
+  const abs = path.resolve(root, target);
+  const within = path.relative(root, abs);
+  if (within.startsWith('..') || path.isAbsolute(within)) {
+    throw new RangeError(`${target}: path is outside the project`);
   }
-  indexContent += `\n---\n\n## Action History Log\n`;
-  for (const log of logs) {
-    indexContent += `${log}\n`;
-  }
+  if (!fs.existsSync(abs)) throw new Error(`${target}: no such file or directory`);
 
-  fs.writeFileSync(indexFile, indexContent, 'utf8');
-
-  return {
-    totalDiscovered,
-    processedCount,
-    skippedCount,
-    registry,
-    orphans,
-    changedSnapshots,
+  const toItem = (absPath) => {
+    const relPath = path.relative(root, absPath);
+    return { absPath, relPath, sourceFileField: relPath.replace(/\\/g, '/') };
   };
+  const files = fs.statSync(abs).isDirectory()
+    ? core
+        .walkOriginal(abs)
+        .filter((f) => !isSidecarName(f.relPath) && !isNNName(f.relPath))
+        .map((f) => toItem(f.absPath))
+    : [toItem(abs)];
+
+  return cognitivizeItems(projectDir, files, options);
 }
 
 module.exports = {
   scanAndProcess,
+  cognitivizeTarget,
   detectFormats: core.detectFormats,
   isDepInstalled: converters.isDepInstalled,
   getSupportedFormats: core.getSupportedFormats,
   computeFileHash: core.computeFileHash,
-  generateSourceFrontmatter: core.generateSourceFrontmatter,
-  archiveSourceSnapshot: core.archiveSourceSnapshot,
-  findOrphanSources: core.findOrphanSources,
   walkOriginal: core.walkOriginal,
   walkSourceTrees: core.walkSourceTrees,
   convertPdf: converters.convertPdf,

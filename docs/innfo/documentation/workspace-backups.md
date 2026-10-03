@@ -2,7 +2,7 @@
 
 ## Overview
 
-In the cogNNitive ecosystem, workspaces consist of plain-text Markdown models (`models/*_NN.md`), normalized sources, procedures, and specifications. Protecting user data against accidental corruption or breaking migrations is handled through a layered approach:
+In the cogNNitive ecosystem, workspaces consist of plain-text Markdown kNNowledge documents (`kNNowledge/*_NN.md`), cognitivized sources, procedures, and specifications. Protecting user data against accidental corruption or breaking migrations is handled through a layered approach:
 
 1. **User-Led Workspace Snapshots** (Primary baseline)
 2. **Automated Migration Out-of-Tree Backups** (`backup-workspace.js`)
@@ -35,11 +35,11 @@ For automated, potentially breaking schema migrations (such as upgrading models 
 
 ### Scope & Behavior
 - Selectively copies migration-relevant assets:
-  - `models/`
+  - `kNNowledge/`
   - `specs/`
-  - `sources/nn/`
+  - `sources/import/` (and `sources/conversations/`)
   - `procedures/`
-  - `index.md`
+  - `domaiNN_NN.md`
 - Target directory is created as a timestamped sibling **outside** the workspace (e.g. `<workspace-dir>-backup-YYYY-MM-DD_HHMMSS`).
 - **"Never Half-Migrate" Guarantee**: If model validation fails during an automated template upgrade, `nn-upgrade` programmatically rolls back the workspace from this backup without requiring human intervention.
 

@@ -20,16 +20,20 @@ Every project workspace adheres to this standard structure:
 ```text
 [project-name]/
 ├── sources/
-│   ├── original/         # User's pristine dropbox — untouched by tools (NEVER move/rename/delete)
-│   └── nn/                # LA COLECCIÓN DE FUENTES — normalized Markdown mirroring original subfolders
+│   ├── import/           # Raw imports, verbatim and write-once (UTC-suffixed names)
+│   │   └── <file>.<ext>_sidecar_NN.md   # Co-located sidecar (hash, size, metadata)
+│   └── conversations/    # Promoted transcripts, cognitivized in place
+├── conversations/        # Live session transcripts (scratch)
 ├── assets/               # Materialized source copies for attachments & media
-├── models/               # Structured semantic iNNfo Level 3 models (*_NN.md)
-├── procedures/           # Reusable transformation procedure specs (*_procedures_V_0-1-0_NN.md)
-├── artifacts/            # Derivative deliverables and generated output products
-│   ├── exports/          # Final deliverables (clean Markdown, HTML, PDF, BibTeX)
-│   └── reports/          # Validation reports and audit trails
-└── index.md              # Semantic workspace index (# NN index)
+├── kNNowledge/           # Structured semantic iNNfo Level 3 documents (*_NN.md)
+├── procedures/           # Reusable transformation procedure specs (<verb>_<noun>_procedures_NN.md)
+├── artifacts/            # Every producer output, write-once (UTC-suffixed names)
+├── staging/              # Scratch extraction buffer — never cited, never projected
+└── domaiNN_NN.md         # Workspace entrypoint (# NN index)
 ```
+
+`sources/nn/`, `sources/original/`, `sources/export/`, `sources/archive/`, and
+`export/` are retired and are never resolved at runtime.
 
 ---
 
@@ -48,13 +52,17 @@ Every project workspace adheres to this standard structure:
 
 ## 3. Mandatory Scanner Provenance Frontmatter
 
-Every normalized file in `sources/nn/` contains flat scanner metadata:
+Every co-located sidecar carries flat scanner metadata:
 
 ```yaml
 ---
-source_file: "sources/original/interview_transcript.pdf"
+level: 3
+parent_spec:
+  name: sidecar
+source_file: "sources/import/interview_transcript.pdf"
 sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 size_bytes: 1048576
+source_format: pdf
 normalized_at: "2026-09-05T12:00:00Z"
 normalized_by: "traNNsform V_2-0-0"
 ---
@@ -64,9 +72,9 @@ normalized_by: "traNNsform V_2-0-0"
 
 ## 4. Citation & Export Formats
 
-Before generating final deliverables in `artifacts/exports/`, the user selects their preferred citation format:
+Before generating write-once final deliverables under `artifacts/`, the user selects their preferred citation format:
 - **`[a]` (Recommended)** Standard Markdown Footnotes (`[^1]`)
-- **`[b]`** Simple inline attribution (`— Source: file.md#heading`)
+- **`[b]`** Simple inline attribution (`— Source: file.md@## Heading`)
 - **`[c]`** APA 7th Edition
 - **`[d]`** MLA 9th Edition
 - **`[e]`** Chicago Author-Date

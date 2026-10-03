@@ -324,13 +324,13 @@ function convertSubtitles(content, baseName) {
 
 /**
  * Detects reviewer-feedback JSON by its canonical drop zone
- * (sources/import/feedback/ with legacy sources/original/feedback/ support).
+ * (sources/import/feedback/).
  * @param {string} filePath
  * @returns {boolean}
  */
 function isFeedbackJsonPath(filePath) {
   const normalized = String(filePath || '').replace(/\\/g, '/');
-  return /(^|\/)(import|original)\/feedback\//.test(normalized);
+  return /(^|\/)import\/feedback\//.test(normalized);
 }
 
 const FEEDBACK_ITEM_KINDS = ['correction', 'comment', 'new', 'delete'];

@@ -1,4 +1,5 @@
 const assert = require('assert');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -35,41 +36,42 @@ function run() {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'body-dup-test-'));
   try {
-    const nnDir = path.join(tmpDir, 'sources', 'nn', 'import');
-    fs.mkdirSync(nnDir, { recursive: true });
+    const sha = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
+    const seed = (rel, bytes, body) => {
+      const raw = path.join(tmpDir, rel);
+      fs.mkdirSync(path.dirname(raw), { recursive: true });
+      fs.writeFileSync(raw, bytes);
+      fs.writeFileSync(
+        `${raw}_sidecar_NN.md`,
+        `---\nlevel: 3\nparent_spec:\n  name: sidecar\nsource_file: ${rel}\nsha256: ${sha(bytes)}\nsize_bytes: ${bytes.length}\nnormalized_at: 2026-10-02T10:15:00Z\n---\n\n${body}\n`,
+      );
+    };
 
-    // Two files with completely different raw_filename and different frontmatter raw sha256,
-    // but identical markdown body
+    // Two different binaries (different raw bytes) whose sidecars carry an identical normalized body.
     const bodyText = '# Tutoring Sessions Summary\n\nAll session records for CRL-10.\n* Session 1: 20/04/2026\n* Session 2: 25/04/2026';
+    seed('sources/import/CRL-10_2026-07.xls', Buffer.from('xls-bytes-one'), bodyText);
+    seed('sources/import/Backups/CRL-10 copy.xlsx', Buffer.from('xlsx-bytes-two'), bodyText);
 
-    const file1 = path.join(nnDir, 'CRL-10_2026-07.md');
-    const file2 = path.join(nnDir, 'CRL-10_Backup.md');
-
-    const content1 = `---\nsource_file: "sources/import/CRL-10 2026-07 YTD tutorías.xls"\nsha256: "1111111111111111111111111111111111111111111111111111111111111111"\n---\n${bodyText}`;
-    const content2 = `---\nsource_file: "sources/import/Backups/CRL-10 copy.xls"\nsha256: "2222222222222222222222222222222222222222222222222222222222222222"\n---\n${bodyText}`;
-
-    fs.writeFileSync(file1, content1, 'utf8');
-    fs.writeFileSync(file2, content2, 'utf8');
-
-    // 1. Test indexWorkspaceSources deduplication by body
     const index = guards.indexWorkspaceSources(tmpDir);
-    eq(index.sources.length, 2, 'Discovered both normalized files');
-    eq(index.canonicalSources.length, 1, 'Grouped identical bodies into 1 canonical source');
+    eq(index.sources.length, 2, 'Discovered both raw files through their sidecars');
+    eq(index.canonicalSources.length, 1, 'Grouped identical sidecar bodies into 1 canonical source');
     eq(index.aliases.length, 1, 'Flagged duplicate body as 1 alias');
 
     const canon = index.canonicalSources[0];
-    ok(canon.aliases.includes('sources/nn/import/CRL-10_Backup.md') || canon.aliases.includes('sources/nn/import/CRL-10_2026-07.md'), 'Alias list contains the duplicate file');
+    eq(canon.aliases.length, 1, 'The canonical source lists the duplicate as its alias');
+    ok(
+      canon.aliases.includes('sources/import/CRL-10_2026-07.xls') || canon.aliases.includes('sources/import/Backups/CRL-10 copy.xlsx'),
+      'Alias list contains the other raw file',
+    );
 
-    // 2. Test detectDuplicates with incoming file
+    // detectDuplicates compares normalized bodies, ignoring frontmatter.
     const incomingFile = path.join(tmpDir, 'incoming.md');
-    fs.writeFileSync(incomingFile, content1, 'utf8');
-
-    const corpus = [
-      { path: file2 }
-    ];
-    const dupResult = guards.detectDuplicates(incomingFile, corpus);
+    const sidecarA = path.join(tmpDir, 'sources/import/CRL-10_2026-07.xls_sidecar_NN.md');
+    const sidecarB = path.join(tmpDir, 'sources/import/Backups/CRL-10 copy.xlsx_sidecar_NN.md');
+    fs.writeFileSync(incomingFile, fs.readFileSync(sidecarA, 'utf8'), 'utf8');
+    const dupResult = guards.detectDuplicates(incomingFile, [{ path: sidecarB }]);
     eq(dupResult.exact.length, 1, 'detectDuplicates detected exact duplicate despite different raw hashes');
-    eq(dupResult.exact[0], file2, 'Identified file2 as exact duplicate match by body');
+    eq(dupResult.exact[0], sidecarB, 'Identified the other sidecar as exact duplicate match by body');
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

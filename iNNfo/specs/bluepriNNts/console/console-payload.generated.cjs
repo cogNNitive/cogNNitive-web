@@ -108,17 +108,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path) {
-      const ctrl = callVisitor(key, node, visitor, path);
+    function visit_(key, node, visitor, path2) {
+      const ctrl = callVisitor(key, node, visitor, path2);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path, ctrl);
-        return visit_(key, ctrl, visitor, path);
+        replaceNode(key, path2, ctrl);
+        return visit_(key, ctrl, visitor, path2);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path = Object.freeze(path.concat(node));
+          path2 = Object.freeze(path2.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path);
+            const ci = visit_(i, node.items[i], visitor, path2);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -129,13 +129,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path = Object.freeze(path.concat(node));
-          const ck = visit_("key", node.key, visitor, path);
+          path2 = Object.freeze(path2.concat(node));
+          const ck = visit_("key", node.key, visitor, path2);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path);
+          const cv = visit_("value", node.value, visitor, path2);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -156,17 +156,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path) {
-      const ctrl = await callVisitor(key, node, visitor, path);
+    async function visitAsync_(key, node, visitor, path2) {
+      const ctrl = await callVisitor(key, node, visitor, path2);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path, ctrl);
-        return visitAsync_(key, ctrl, visitor, path);
+        replaceNode(key, path2, ctrl);
+        return visitAsync_(key, ctrl, visitor, path2);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path = Object.freeze(path.concat(node));
+          path2 = Object.freeze(path2.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path);
+            const ci = await visitAsync_(i, node.items[i], visitor, path2);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -177,13 +177,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path = Object.freeze(path.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path);
+          path2 = Object.freeze(path2.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path2);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path);
+          const cv = await visitAsync_("value", node.value, visitor, path2);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -210,23 +210,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path) {
+    function callVisitor(key, node, visitor, path2) {
       if (typeof visitor === "function")
-        return visitor(key, node, path);
+        return visitor(key, node, path2);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path);
+        return visitor.Map?.(key, node, path2);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path);
+        return visitor.Seq?.(key, node, path2);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path);
+        return visitor.Pair?.(key, node, path2);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path);
+        return visitor.Scalar?.(key, node, path2);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path);
+        return visitor.Alias?.(key, node, path2);
       return void 0;
     }
-    function replaceNode(key, path, node) {
-      const parent = path[path.length - 1];
+    function replaceNode(key, path2, node) {
+      const parent = path2[path2.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -838,10 +838,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path, value) {
+    function collectionFromPath(schema, path2, value) {
       let v = value;
-      for (let i = path.length - 1; i >= 0; --i) {
-        const k = path[i];
+      for (let i = path2.length - 1; i >= 0; --i) {
+        const k = path2[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -860,7 +860,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path) => path == null || typeof path === "object" && !!path[Symbol.iterator]().next().done;
+    var isEmptyPath = (path2) => path2 == null || typeof path2 === "object" && !!path2[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -890,11 +890,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path, value) {
-        if (isEmptyPath(path))
+      addIn(path2, value) {
+        if (isEmptyPath(path2))
           this.add(value);
         else {
-          const [key, ...rest] = path;
+          const [key, ...rest] = path2;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -908,8 +908,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path) {
-        const [key, ...rest] = path;
+      deleteIn(path2) {
+        const [key, ...rest] = path2;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -923,8 +923,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path, keepScalar) {
-        const [key, ...rest] = path;
+      getIn(path2, keepScalar) {
+        const [key, ...rest] = path2;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -942,8 +942,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path) {
-        const [key, ...rest] = path;
+      hasIn(path2) {
+        const [key, ...rest] = path2;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -953,8 +953,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path, value) {
-        const [key, ...rest] = path;
+      setIn(path2, value) {
+        const [key, ...rest] = path2;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -3469,9 +3469,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path, value) {
+      addIn(path2, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path, value);
+          this.contents.addIn(path2, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3546,14 +3546,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path) {
-        if (Collection.isEmptyPath(path)) {
+      deleteIn(path2) {
+        if (Collection.isEmptyPath(path2)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path2) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3568,10 +3568,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path, keepScalar) {
-        if (Collection.isEmptyPath(path))
+      getIn(path2, keepScalar) {
+        if (Collection.isEmptyPath(path2))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path2, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3582,10 +3582,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path) {
-        if (Collection.isEmptyPath(path))
+      hasIn(path2) {
+        if (Collection.isEmptyPath(path2))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path2) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3602,13 +3602,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path, value) {
-        if (Collection.isEmptyPath(path)) {
+      setIn(path2, value) {
+        if (Collection.isEmptyPath(path2)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path2), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path, value);
+          this.contents.setIn(path2, value);
         }
       }
       /**
@@ -5569,9 +5569,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path) => {
+    visit.itemAtPath = (cst, path2) => {
       let item = cst;
-      for (const [field, index] of path) {
+      for (const [field, index] of path2) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5580,23 +5580,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path) => {
-      const parent = visit.itemAtPath(cst, path.slice(0, -1));
-      const field = path[path.length - 1][0];
+    visit.parentCollection = (cst, path2) => {
+      const parent = visit.itemAtPath(cst, path2.slice(0, -1));
+      const field = path2[path2.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path, item, visitor) {
-      let ctrl = visitor(item, path);
+    function _visit(path2, item, visitor) {
+      let ctrl = visitor(item, path2);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path2.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5607,10 +5607,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path);
+            ctrl = ctrl(item, path2);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path2) : ctrl;
     }
     exports2.visit = visit;
   }
@@ -7379,22 +7379,31 @@ __export(index_exports, {
   computeElementHash: () => computeElementHash,
   computeSha256: () => computeSha256,
   createFsSourceResolver: () => createFsSourceResolver,
+  displayStem: () => displayStem,
   effectiveStatusFor: () => effectiveStatusFor,
   evaluateFeedbackItems: () => evaluateFeedbackItems,
   extractExcerpt: () => extractExcerpt,
   feedbackStateFor: () => feedbackStateFor,
   findEnclosingAgentModification: () => findEnclosingAgentModification,
   groupCitationsByField: () => groupCitationsByField,
+  isExcludedPath: () => isExcludedPath,
+  isNNName: () => isNNName,
+  isSidecarName: () => isSidecarName,
+  latestOfFamily: () => latestOfFamily,
   normalizeModelId: () => normalizeModelId,
   normalizeToolId: () => normalizeToolId,
+  parentSpecNameOf: () => parentSpecNameOf,
   parseFeedbackLedger: () => parseFeedbackLedger,
   parseFrontmatter: () => parseFrontmatter,
+  parseName: () => parseName,
   parseYaml: () => parseYaml,
   readAgentModificationAuthor: () => readAgentModificationAuthor,
   resolveCitation: () => resolveCitation,
+  roleOf: () => roleOf,
   serializeConsoleSlot: () => serializeConsoleSlot,
   serializeFeedbackLedgerEntry: () => serializeFeedbackLedgerEntry,
-  validateFeedbackVerdictEntry: () => validateFeedbackVerdictEntry
+  validateFeedbackVerdictEntry: () => validateFeedbackVerdictEntry,
+  writeOnce: () => writeOnce
 });
 module.exports = __toCommonJS(index_exports);
 
@@ -7820,6 +7829,163 @@ function getSectionType(rawTitle) {
 // iNNfo/packages/innfo-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
 
+// iNNfo/packages/innfo-core/src/assertNever.ts
+function assertNever(value, context = "value") {
+  throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
+}
+
+// iNNfo/packages/innfo-core/src/jsonPointer.ts
+var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
+var ARRAY_INDEX_RE = /^(?:0|[1-9]\d*)$/;
+function isJsonPointer(pointer) {
+  return POINTER_RE.test(pointer);
+}
+var unescapeToken = (token) => token.replace(/~1/g, "/").replace(/~0/g, "~");
+function resolveJsonPointer(content, pointer) {
+  let current;
+  try {
+    current = JSON.parse(content);
+  } catch {
+    return { ok: false, reason: "invalid-json" };
+  }
+  if (!isJsonPointer(pointer)) return { ok: false, reason: "unknown-pointer" };
+  if (pointer === "") return { ok: true, value: current };
+  for (const raw of pointer.slice(1).split("/")) {
+    const token = unescapeToken(raw);
+    if (Array.isArray(current)) {
+      if (!ARRAY_INDEX_RE.test(token) || Number(token) >= current.length) {
+        return { ok: false, reason: "unknown-pointer" };
+      }
+      current = current[Number(token)];
+    } else if (current !== null && typeof current === "object" && Object.hasOwn(current, token)) {
+      current = current[token];
+    } else {
+      return { ok: false, reason: "unknown-pointer" };
+    }
+  }
+  return { ok: true, value: current };
+}
+
+// iNNfo/packages/innfo-core/src/naming/contract.ts
+var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
+var SPEC_FILENAME = "spec_NN.md";
+var SIDECAR_BLUEPRINT = "sidecar";
+var NN_SUFFIX_RE = /_NN\.md$/i;
+var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
+var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
+function baseOf(path2) {
+  const i = Math.max(path2.lastIndexOf("/"), path2.lastIndexOf("\\"));
+  return i < 0 ? path2 : path2.slice(i + 1);
+}
+function parseName(basename4) {
+  if (NN_SUFFIX_RE.test(basename4)) {
+    const stem2 = basename4.replace(NN_SUFFIX_RE, "");
+    const sidecar = SIDECAR_PATH_RE.exec(basename4);
+    return sidecar ? { kind: "nn", basename: basename4, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename4, stem: stem2 };
+  }
+  const dot = basename4.lastIndexOf(".");
+  const hasExt = dot > 0;
+  const stem = hasExt ? basename4.slice(0, dot) : basename4;
+  const ext = hasExt ? basename4.slice(dot + 1) : "";
+  const m = STAMP_SUFFIX_RE.exec(stem);
+  if (!m) return { kind: "file", basename: basename4, key: stem, ext };
+  return {
+    kind: "file",
+    basename: basename4,
+    key: m[1],
+    ext,
+    stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
+  };
+}
+function formatMemberName(key, ext, stamp) {
+  const suffix = stamp ? `_${stamp.stamp}${stamp.seq > 1 ? `-${stamp.seq}` : ""}` : "";
+  return `${key}${suffix}${ext ? `.${ext}` : ""}`;
+}
+function sidecarPathOf(rawPath) {
+  return `${rawPath}_sidecar_NN.md`;
+}
+function displayStem(basename4) {
+  if (NN_SUFFIX_RE.test(basename4)) return basename4.replace(NN_SUFFIX_RE, "");
+  return basename4.replace(/\.md$/i, "");
+}
+var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
+var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar)(?:_|$)/i;
+function segmentsOf(path2) {
+  return path2.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
+}
+function roleOf(i) {
+  const base = baseOf(i.path);
+  const parsed = parseName(base);
+  if (parsed.kind === "file") return i.hasSidecar ? "source" : "artifact";
+  if (parsed.sidecarOf !== void 0) return "sidecar";
+  const lower = base.toLowerCase();
+  if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
+  if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
+  const bp = NON_KNOWLEDGE_BLUEPRINT_RE.exec((i.parentSpecName ?? "").trim())?.[1].toLowerCase();
+  switch (bp) {
+    case "cognnitive":
+      return "lineage-record";
+    case "sidecar":
+      return "sidecar";
+    case "procedures":
+      return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
+    case "workspace":
+    case "sources":
+    case "artifacts":
+      return "catalog";
+    default:
+      return "knowledge";
+  }
+}
+function isExcludedPath(path2) {
+  const segs = segmentsOf(path2);
+  if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
+  return segs.some((s) => s === "staging" || s.startsWith(".") && s !== "..");
+}
+function compareMembers(a, b) {
+  const pa = parseName(baseOf(a));
+  const pb = parseName(baseOf(b));
+  const sa = pa.kind === "file" ? pa.stamp : void 0;
+  const sb = pb.kind === "file" ? pb.stamp : void 0;
+  if (!sa && !sb) return 0;
+  if (!sa) return -1;
+  if (!sb) return 1;
+  if (sa.stamp !== sb.stamp) return sa.stamp < sb.stamp ? -1 : 1;
+  return sa.seq - sb.seq;
+}
+var pad = (n, width = 2) => String(n).padStart(width, "0");
+function formatUtcStamp(at) {
+  return `${pad(at.getUTCFullYear(), 4)}${pad(at.getUTCMonth() + 1)}${pad(at.getUTCDate())}T${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}${pad(at.getUTCSeconds())}Z`;
+}
+function nextStamp(at, latest) {
+  const now = formatUtcStamp(at);
+  if (!latest || latest.stamp < now) return { stamp: now, seq: 1 };
+  return { stamp: latest.stamp, seq: latest.seq + 1 };
+}
+var WIN32_PATH_LIMIT = 259;
+function checkPathBudget(absPath, platform) {
+  if (platform === "win32" && absPath.length > WIN32_PATH_LIMIT) {
+    return { ok: false, limit: WIN32_PATH_LIMIT, length: absPath.length };
+  }
+  return { ok: true };
+}
+function parentSpecNameOf(frontmatter) {
+  const parentSpec = frontmatter["parent_spec"];
+  if (!parentSpec) return void 0;
+  if (typeof parentSpec === "string") return parentSpec;
+  if (typeof parentSpec === "object") {
+    const name = parentSpec.name;
+    return typeof name === "string" ? name : void 0;
+  }
+  return void 0;
+}
+function isNNName(nameOrPath) {
+  return NN_SUFFIX_RE.test(baseOf(nameOrPath));
+}
+function isSidecarName(nameOrPath) {
+  return SIDECAR_PATH_RE.test(nameOrPath);
+}
+
 // iNNfo/packages/innfo-core/src/sourceRef.ts
 var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
@@ -7828,57 +7994,17 @@ function parseSourceRef(input) {
   const clean = input.trim();
   if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
   if (/^src-\d+/i.test(clean)) return null;
-  if (/^models\//i.test(clean)) return null;
-  const explicit = clean.match(new RegExp(`^(sources/nn/[^#]+?)(?:#(${SLUG}))?$`));
-  if (explicit) {
-    const filePath = explicit[1].trim();
-    return {
-      filePath,
-      fileName: basename(filePath),
-      slug: explicit[2] || void 0,
-      kind: "source",
-      raw: clean
-    };
-  }
-  const exportSource = clean.match(new RegExp(`^(sources/export/[^#]+?)(?:#(${SLUG}))?$`));
-  if (exportSource) {
-    const filePath = exportSource[1].trim();
-    return {
-      filePath,
-      fileName: basename(filePath),
-      slug: exportSource[2] || void 0,
-      kind: "source",
-      raw: clean
-    };
-  }
-  const model = clean.match(new RegExp(`^(kNNowledge/[^#]+?\\.md)(?:#(${SLUG}))?$`));
-  if (model) {
-    const filePath = model[1].trim();
-    return {
-      filePath,
-      fileName: basename(filePath),
-      slug: model[2] || void 0,
-      kind: "model",
-      raw: clean
-    };
-  }
-  const unqualified = clean.match(
-    new RegExp(`^((?!https?://)(?!\\.\\.?/)[^#:]+?\\.md)(?:#(${SLUG}))?$`)
-  );
-  if (unqualified) {
-    const rawPath = unqualified[1].trim();
-    if (rawPath.startsWith("sources/original/")) return null;
-    if (rawPath.startsWith("models/")) return null;
-    const filePath = `sources/nn/${rawPath}`;
-    return {
-      filePath,
-      fileName: basename(rawPath),
-      slug: unqualified[2] || void 0,
-      kind: "source",
-      raw: clean
-    };
-  }
-  return null;
+  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
+  if (!legacy) return null;
+  const resolved = resolveUnitPath(legacy[1]);
+  if (!resolved) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename(resolved.filePath),
+    slug: legacy[2] || void 0,
+    kind: resolved.kind,
+    raw: clean
+  };
 }
 function parseCitation(input) {
   if (!input || typeof input !== "string") return null;
@@ -8078,21 +8204,12 @@ function resolveUnitPath(rawPath) {
   const segments = trimmed.split(/[/\\]/);
   if (segments.some((s) => s === "..")) return null;
   const forward = segments.join("/");
-  if (forward.startsWith("sources/original/")) return null;
   const isMd = /\.md$/i.test(forward);
   const isCsv = /\.csv$/i.test(forward);
-  if (!isMd && !isCsv) return null;
-  if (forward.startsWith("sources/nn/")) return { filePath: forward, kind: "source" };
-  if (forward.startsWith("sources/export/")) return { filePath: forward, kind: "source" };
-  if (forward.startsWith("kNNowledge/")) {
-    if (!isMd) return null;
-    return { filePath: forward, kind: "model" };
-  }
-  if (/^models\//i.test(forward)) {
-    return null;
-  }
+  const isJson = /\.json$/i.test(forward);
+  if (!isMd && !isCsv && !isJson) return null;
   if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-  return { filePath: `sources/nn/${forward}`, kind: "source" };
+  return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
 }
 function decodeSegment(segment) {
   try {
@@ -8102,6 +8219,19 @@ function decodeSegment(segment) {
   }
 }
 var HEADER_UNIT = /^(#{1,6})\s*(.+?)\s*$/;
+function parsePointerRef(resolved, rawPointer, raw) {
+  if (rawPointer.includes("&")) return null;
+  const pointer = decodeSegment(rawPointer);
+  if (pointer === null || !isJsonPointer(pointer)) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename(resolved.filePath),
+    kind: resolved.kind,
+    unit: { kind: "pointer", pointer },
+    subunits: [],
+    raw
+  };
+}
 function parseKnowledgeUnitRef(input) {
   if (!input || typeof input !== "string") return null;
   const clean = input.trim();
@@ -8109,6 +8239,7 @@ function parseKnowledgeUnitRef(input) {
   if (at === -1) return null;
   const resolved = resolveUnitPath(clean.slice(0, at));
   if (!resolved) return null;
+  if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
   const rawSegments = clean.slice(at + 1).split("&");
   if (rawSegments.some((s) => s.trim() === "")) return null;
   const decoded = [];
@@ -8602,8 +8733,18 @@ function resolveUnit(content, ref) {
   const unit = ref.unit;
   if (!unit) return null;
   const subunits = ref.subunits ?? [];
-  if (unit.kind === "row") return resolveCsvUnit(content, unit.id, subunits);
-  return resolveHeaderUnit(content, unit, subunits);
+  switch (unit.kind) {
+    case "header":
+      return resolveHeaderUnit(content, unit, subunits);
+    case "row":
+      return resolveCsvUnit(content, unit.id, subunits);
+    case "pointer": {
+      const found = resolveJsonPointer(content, unit.pointer);
+      return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
+    }
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
 }
 function sectionOwnLines(content, slug) {
   const headings = extractHeadings(content);
@@ -8635,6 +8776,148 @@ function sectionOwnLines(content, slug) {
     if (!skip.some(([a, b]) => i >= a && i < b)) owned.push(i);
   }
   return owned;
+}
+
+// iNNfo/packages/innfo-core/src/writeOnce/plan.ts
+function latestOfFamily(members) {
+  let latest;
+  for (const member of members) {
+    if (!latest || compareMembers(latest.path, member.path) <= 0) latest = member;
+  }
+  return latest;
+}
+
+// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+var import_node_fs = require("node:fs");
+var path = __toESM(require("node:path"), 1);
+var import_node_crypto = require("node:crypto");
+
+// iNNfo/packages/innfo-core/src/cognitivize/sidecar.ts
+var import_yaml7 = __toESM(require_dist(), 1);
+var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
+var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+function parseSidecarFrontmatter(text) {
+  const match = FRONTMATTER_RE.exec(text);
+  if (!match) return null;
+  try {
+    const value = (0, import_yaml7.parse)(match[1]);
+    return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+var WriteOnceError = class extends Error {
+  code;
+  /** The offending workspace-relative path (the stale input, or the over-long target). */
+  path;
+  constructor(code, offending, detail) {
+    super(`${code}: ${offending}: ${detail}`);
+    this.name = "WriteOnceError";
+    this.code = code;
+    this.path = offending;
+  }
+};
+function sha256Hex(bytes) {
+  return (0, import_node_crypto.createHash)("sha256").update(bytes).digest("hex");
+}
+var toPosix = (p) => p.replace(/\\/g, "/");
+function resolveInside(root, rel) {
+  const rootAbs = path.resolve(root);
+  const target = path.resolve(rootAbs, rel);
+  const within = path.relative(rootAbs, target);
+  if (within.startsWith("..") || path.isAbsolute(within)) {
+    throw new WriteOnceError("OUTSIDE_ROOT", rel, "path escapes the workspace root");
+  }
+  return target;
+}
+async function readOrNull(file) {
+  try {
+    return await import_node_fs.promises.readFile(file);
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+async function readSidecarSha256(root, rawRel) {
+  const text = await readOrNull(resolveInside(root, sidecarPathOf(rawRel)));
+  if (text === null) return null;
+  const value = parseSidecarFrontmatter(text.toString("utf8"))?.["sha256"];
+  return typeof value === "string" ? value.toLowerCase() : "";
+}
+async function guardInputs(root, inputs) {
+  for (const input of inputs) {
+    const recorded = await readSidecarSha256(root, input);
+    if (recorded === null) continue;
+    const raw = await readOrNull(resolveInside(root, input));
+    const actual = raw === null ? "(missing)" : sha256Hex(raw);
+    if (recorded !== actual) {
+      throw new WriteOnceError("HASH_MISMATCH", toPosix(input), "raw bytes differ from the sidecar sha256; cognitivize it again");
+    }
+  }
+}
+async function listFamily(root, t) {
+  let names;
+  try {
+    names = await import_node_fs.promises.readdir(resolveInside(root, t.dir));
+  } catch (e) {
+    if (e.code === "ENOENT") return [];
+    throw e;
+  }
+  const dir = toPosix(t.dir).replace(/^\/+|\/+$/g, "");
+  return names.filter((name) => {
+    const parsed = parseName(name);
+    return parsed.kind === "file" && parsed.key === t.key && parsed.ext === t.ext;
+  }).map((name) => ({ path: dir ? `${dir}/${name}` : name }));
+}
+function stampOf(member) {
+  if (!member) return void 0;
+  const parsed = parseName(member.path.slice(member.path.lastIndexOf("/") + 1));
+  return parsed.kind === "file" ? parsed.stamp : void 0;
+}
+function budgetOrThrow(root, rel, platform) {
+  const abs = resolveInside(root, rel);
+  const budget = checkPathBudget(abs, platform);
+  if (!budget.ok) {
+    throw new WriteOnceError("PATH_TOO_LONG", toPosix(rel), `${budget.length} characters exceeds the ${budget.limit} limit`);
+  }
+}
+async function writeOnce(root, t, bytes, o = {}) {
+  const now = o.now ?? (() => /* @__PURE__ */ new Date());
+  const platform = o.platform ?? process.platform;
+  const dirRel = toPosix(t.dir).replace(/^\/+|\/+$/g, "");
+  const memberRel = (stamp2) => {
+    const name = formatMemberName(t.key, t.ext, stamp2);
+    return dirRel ? `${dirRel}/${name}` : name;
+  };
+  const buffer = typeof bytes === "string" ? Buffer.from(bytes, "utf8") : Buffer.from(bytes);
+  budgetOrThrow(root, memberRel(nextStamp(now())), platform);
+  await guardInputs(root, o.inputs ?? []);
+  const latest = latestOfFamily(await listFamily(root, t));
+  if (latest) {
+    const recorded = await readSidecarSha256(root, latest.path);
+    const stored = recorded ? recorded : sha256Hex(await readOrNull(resolveInside(root, latest.path)) ?? Buffer.alloc(0));
+    if (stored === sha256Hex(buffer)) return { status: "deduplicated", path: latest.path };
+  }
+  await import_node_fs.promises.mkdir(resolveInside(root, dirRel), { recursive: true });
+  let stamp = nextStamp(now(), stampOf(latest));
+  for (; ; ) {
+    const rel = memberRel(stamp);
+    budgetOrThrow(root, rel, platform);
+    try {
+      const handle = await import_node_fs.promises.open(resolveInside(root, rel), "wx");
+      try {
+        await handle.writeFile(buffer);
+      } finally {
+        await handle.close();
+      }
+      return { status: "written", path: rel };
+    } catch (e) {
+      if (e.code !== "EEXIST") throw e;
+      stamp = { stamp: stamp.stamp, seq: stamp.seq + 1 };
+    }
+  }
 }
 
 // iNNfo/packages/innfo-core/src/console/citations.ts
@@ -8689,10 +8972,37 @@ function classifyFromFrontmatter(fm) {
   }
   return { origin: "document" };
 }
+function headingMatcher(ref) {
+  const unit = ref.unit;
+  if (!unit) return (h) => h.slug === ref.slug;
+  switch (unit.kind) {
+    case "header":
+      return (h) => h.slug === ref.slug && h.level === unit.level;
+    case "row":
+    case "pointer":
+      return (h) => h.slug === ref.slug;
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
+}
+function anchorOf(ref) {
+  const unit = ref.unit;
+  if (!unit) return ref.slug;
+  switch (unit.kind) {
+    case "header":
+      return ref.slug;
+    case "row":
+      return ref.slug ?? unit.id;
+    case "pointer":
+      return unit.pointer;
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
+}
 function classifyOrigin(content, fm, ref) {
   if (ref.slug) {
     const headings = extractHeadings(content);
-    const idx = ref.unit?.kind === "header" ? headings.findIndex((h) => h.slug === ref.slug && h.level === ref.unit.level) : headings.findIndex((h) => h.slug === ref.slug);
+    const idx = headings.findIndex(headingMatcher(ref));
     if (idx !== -1) {
       const amHeading = findEnclosingAgentModification(headings, idx);
       if (amHeading) return readAgentModificationAuthor(content, amHeading);
@@ -8706,25 +9016,29 @@ function capExcerpt(text) {
 }
 function extractExcerpt(content, unit) {
   const lines = content.split("\n");
-  if (unit.kind === "section") {
-    return capExcerpt(lines.slice(unit.startLine, unit.endLine).join("\n"));
+  switch (unit.kind) {
+    case "section":
+      return capExcerpt(lines.slice(unit.startLine, unit.endLine).join("\n"));
+    case "field":
+      return capExcerpt(unit.lines.map((i) => lines[i]).join("\n"));
+    case "cell":
+      return capExcerpt(String(unit.value));
+    case "row": {
+      const row = parseCsvTable(content).rows[unit.index];
+      return capExcerpt(row ? row.join(",") : "");
+    }
+    case "pointer":
+      return capExcerpt(typeof unit.value === "string" ? unit.value : JSON.stringify(unit.value));
+    default:
+      return assertNever(unit, "resolved unit kind");
   }
-  if (unit.kind === "field") {
-    return capExcerpt(unit.lines.map((i) => lines[i]).join("\n"));
-  }
-  if (unit.kind === "cell") {
-    return capExcerpt(String(unit.value));
-  }
-  const table = parseCsvTable(content);
-  const row = table.rows[unit.index];
-  return capExcerpt(row ? row.join(",") : "");
 }
 function resolveCitation(raw, field, resolver, modelPath = "") {
   const ref = parseCitation(raw);
   if (!ref) {
     return { path: raw, exists: false, field, origin: "document", error: "MALFORMED" };
   }
-  const anchor = ref.slug ?? (ref.unit?.kind === "row" ? ref.unit.id : void 0);
+  const anchor = anchorOf(ref);
   const resolved = resolver(ref.filePath, modelPath);
   if (!resolved || !resolved.exists) {
     return { path: ref.filePath, anchor, exists: false, field, origin: "document", error: "DANGLING_FILE" };
@@ -8915,11 +9229,11 @@ function effectiveStatusFor(entries) {
   return latestByKey;
 }
 function feedbackStateFor(entries, modelId) {
-  const normalizedModelId = modelId.replace(/^(kNNowledge\/|models\/)/i, "").replace(/(\.md|_NN\.md)$/i, "");
+  const normalizedModelId = displayStem(modelId.replace(/^(kNNowledge\/|models\/)/i, ""));
   const latest = effectiveStatusFor(entries);
   const result = [];
   for (const entry of latest.values()) {
-    const entryModelId = entry.model_id.replace(/^(kNNowledge\/|models\/)/i, "").replace(/(\.md|_NN\.md)$/i, "");
+    const entryModelId = displayStem(entry.model_id.replace(/^(kNNowledge\/|models\/)/i, ""));
     if (entryModelId === normalizedModelId) {
       result.push({
         id: entry.item,
@@ -8998,7 +9312,7 @@ function evaluateFeedbackItems(options) {
 }
 
 // iNNfo/packages/innfo-core/src/console/fs-source-resolver.ts
-var import_node_fs = require("node:fs");
+var import_node_fs2 = require("node:fs");
 var import_node_path = require("node:path");
 function createFsSourceResolver(rootDir) {
   const rootResolved = (0, import_node_path.resolve)(rootDir);
@@ -9009,7 +9323,7 @@ function createFsSourceResolver(rootDir) {
       let cur = (0, import_node_path.dirname)(absReferring);
       while (true) {
         const sourcesDir = (0, import_node_path.join)(cur, "sources");
-        if ((0, import_node_fs.existsSync)(sourcesDir)) {
+        if ((0, import_node_fs2.existsSync)(sourcesDir)) {
           candidateDirs.push(cur);
         }
         if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
@@ -9031,9 +9345,9 @@ function createFsSourceResolver(rootDir) {
       if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
         continue;
       }
-      if ((0, import_node_fs.existsSync)(abs)) {
+      if ((0, import_node_fs2.existsSync)(abs)) {
         try {
-          const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
+          const content = (0, import_node_fs2.readFileSync)(abs, "utf-8");
           return {
             exists: true,
             headings: extractHeadings(content).map((h) => h.slug),
@@ -9047,13 +9361,13 @@ function createFsSourceResolver(rootDir) {
     const primaryDir = candidateDirs[0] ?? rootResolved;
     const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
     const targetParent = (0, import_node_path.dirname)(targetAbs);
-    const parentExists = (0, import_node_fs.existsSync)(targetParent);
+    const parentExists = (0, import_node_fs2.existsSync)(targetParent);
     if (!parentExists) {
       return { exists: false, parentExists: false };
     }
     let suggestions;
     try {
-      const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
+      const entries = (0, import_node_fs2.readdirSync)(targetParent, { withFileTypes: true });
       const targetBase = (0, import_node_path.basename)(refPath);
       const targetStem = targetBase.replace(/\.[^.]+$/, "");
       const files = entries.filter((e) => e.isFile()).map((e) => e.name);
@@ -9158,14 +9472,14 @@ function extractWikilinksFromValue(val) {
 function normalizeModelId(filePath, fallbackTitle) {
   if (!filePath) return fallbackTitle ? slugify(fallbackTitle) : "model";
   const normalized = filePath.split("\\").join("/");
-  return normalized.replace(/^.*?\/(kNNowledge|models)\//i, "$1/").replace(/(\.md|_NN\.md)$/i, "");
+  return displayStem(normalized.replace(/^.*?\/(kNNowledge|models)\//i, "$1/"));
 }
 function buildConsolePayload(options) {
   const { content, path: modelPath, schema: inputSchema, resolver, ledgerEntries, generated } = options;
   const rawSha256 = computeSha256(content);
   const parsed = parseKnowledge(content);
   const fm = parsed.frontmatter || parseFrontmatter(content) || {};
-  const title = fm.title || fm.name || (modelPath ? modelPath.split(/[/\\]/).pop()?.replace(/(\.md|_NN\.md)$/i, "") : "Model") || "Model";
+  const title = fm.title || fm.name || (modelPath ? displayStem(modelPath.split(/[/\\]/).pop() ?? "") : "Model") || "Model";
   const template = fm.target_blueprint || fm.target_template || fm.blueprint || fm.template || void 0;
   const modelVersion = fm.knowledge_version || fm.version || "V_0-1-0";
   const modelId = normalizeModelId(modelPath, title);
@@ -9319,20 +9633,29 @@ function buildConsolePayload(options) {
   computeElementHash,
   computeSha256,
   createFsSourceResolver,
+  displayStem,
   effectiveStatusFor,
   evaluateFeedbackItems,
   extractExcerpt,
   feedbackStateFor,
   findEnclosingAgentModification,
   groupCitationsByField,
+  isExcludedPath,
+  isNNName,
+  isSidecarName,
+  latestOfFamily,
   normalizeModelId,
   normalizeToolId,
+  parentSpecNameOf,
   parseFeedbackLedger,
   parseFrontmatter,
+  parseName,
   parseYaml,
   readAgentModificationAuthor,
   resolveCitation,
+  roleOf,
   serializeConsoleSlot,
   serializeFeedbackLedgerEntry,
-  validateFeedbackVerdictEntry
+  validateFeedbackVerdictEntry,
+  writeOnce
 });

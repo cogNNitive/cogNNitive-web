@@ -35,7 +35,7 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
    - Explicit confirmation is reserved exclusively for destructive mutations (deleting orphaned sources, moving external user files without copy).
 5. **Mandatory Canonical Toolchain for Normalization (No Manual Parsing Bypass)**:
    - NEVER manually calculate SHA-256 hashes, handcraft converted markdown tables, or manually edit source frontmatter to bypass layout mismatches.
-   - When updating or refreshing a single source file, always use the atomic command: `node scripts/index.js --normalize-file "<source-path>" --src "<project-dir>"` (with `--flat` if preserving flat root layouts).
+   - When updating or refreshing a single source file, always use the atomic command: `node scripts/index.js --normalize-file "<source-path>" --src "<project-dir>"`. To cognitivize a file or a whole folder in place, use `node scripts/index.js --cognitivize "<file-or-dir>" --src "<project-dir>"` (recursive; skips sidecars and `staging/`).
    - The canonical toolchain guarantees atomic snapshot archiving in `sources/archive/<basename>/V<N>/`, downstream `[IMPACT WARNING]` audits, and lineage-record synchronization.
 
 ## Preflight Gate (MANDATORY — run before any transformation)
@@ -215,7 +215,7 @@ When an existing source file is modified in `sources/import/` (or `sources/origi
    node scripts/index.js --normalize-file "<source-path>" --src "<project-dir>"
    ```
    - Automatically detects if the file already exists in a legacy flat layout (`sources/nn/<basename>.md`) and preserves that destination to prevent breaking existing model citations.
-   - Use `--flat` (or `--preserve-layout`) to explicitly force flat destination normalization.
+   - `--flat` / `--preserve-layout` no longer exist: sidecars are always co-located with their raw file.
    - Atomically creates the `sources/archive/<basename>/V<N>/` snapshot, updates the normalized Markdown, audits downstream citations for `[IMPACT WARNING]`, and updates the workspace lineage record.
 3. **On-Demand Audit Command**:
    ```bash
@@ -320,6 +320,20 @@ is a no-op:
 ```bash
 node scripts/index.js --converge-mark <family> --version <V_x-y-z> [--src <project-dir>]
 ```
+
+#### 2a-bis. Garbage collection of superseded members (`--gc`)
+
+Write-once families (`artifacts/`, `sources/import/`, console exports) only grow.
+`--gc` is a dry run that lists the members that are neither the latest of their
+family nor cited anywhere (a cited sidecar keeps its subject). It deletes nothing:
+
+```bash
+node scripts/index.js --gc [--json] [--src <project-dir>]
+node scripts/index.js --gc --apply --yes --paths <path>[,<path>...] [--src <project-dir>]
+```
+
+`--apply` deletes only the confirmed `--paths` that are still in a freshly computed
+plan (each with its sidecar) and refuses without `--yes` and `--paths`. CI never applies.
 
 #### 2b. Progressive Disclosure & Source Naming Convention
 

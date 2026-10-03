@@ -44,7 +44,7 @@ A 25-person consulting department submits dozens of bids per quarter. Rate cards
 * Case studies lack verified client metrics, failing procurement credibility checks.
 
 ### The cogNNitive Pipeline
-1. **Import**: Master service agreements, rate sheets, and consultant CVs are stored in `sources/nn/`.
+1. **Import**: Master service agreements, rate sheets, and consultant CVs land verbatim in `sources/import/` and are cognitivized in place.
 2. **Manage**: Centralize consulting offerings, hourly matrices, and delivery methodologies in `kNNowledge/commercial_NN.md`.
 3. **Impact Check**: When senior leadership adjusts hourly billing rates, all downstream proposal kNNowledge highlight the required updates automatically.
 
@@ -88,8 +88,8 @@ Producing a deep-dive 20-minute educational or tech video requires reading 15+ p
 * Research done for Episode 1 is forgotten and must be re-researched from scratch for Episode 10.
 
 ### The cogNNitive Pipeline
-1. **Import**: Research papers, CSV benchmarks, and video transcripts are saved in `sources/nn/` with heading anchors.
-2. **Manage**: Write video narrative sections in `kNNowledge/episode_NN.md`, linking every factual claim to exact source headings (`sources:: [benchmarks.md#efficiency-gain]`).
+1. **Import**: Research papers, CSV benchmarks, and video transcripts are saved in `sources/import/` with heading anchors.
+2. **Manage**: Write video narrative sections in `kNNowledge/episode_NN.md`, linking every factual claim to exact source headings (`sources:: [sources/import/benchmarks.csv@R12&efficiency]`).
 3. **Export**: Produce the teleprompter script, visual B-roll cue sheet, and formatted bibliography for the YouTube description box automatically.
 
 ### Concrete Deliverable & ROI

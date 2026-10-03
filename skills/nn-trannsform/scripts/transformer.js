@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { writeOnce, isSidecarName, isExcludedPath, rawPathOfSidecar } = require('./lib/innfo-core.generated.cjs');
 
 /**
  * Lists templates in the traNNsformations directory
@@ -14,87 +15,90 @@ function listBlueprints(projectDir) {
 }
 
 /**
- * Recursively collect *.md files under sources/nn/, preserving the path
- * relative to that directory (it mirrors sources/original/'s subfolders).
- * The top-level ingestion manifest (index.md) is excluded.
+ * Collect the cognitivized sources of the domaiNN: one entry per sidecar under
+ * `sources/`, in path order. A binary subject contributes the normalized body
+ * of its sidecar; a text-native subject (no sidecar body) contributes its own
+ * text. Staging and sidecar metadata are never included.
+ *
+ * @returns {Array<{ path: string, text: string }>} workspace-relative subject path and its text
  */
-function collectMarkdownFiles(mdDir) {
+function collectCognitivizedSources(projectDir) {
+  const sourcesDir = path.join(projectDir, 'sources');
   const results = [];
-  const walk = (dir, rel) => {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
+  if (!fs.existsSync(sourcesDir)) return results;
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const abs = path.join(dir, entry.name);
-      const relPath = rel ? path.join(rel, entry.name) : entry.name;
+      const rel = path.relative(projectDir, abs).replace(/\\/g, '/');
+      if (isExcludedPath(rel)) continue;
       if (entry.isDirectory()) {
-        walk(abs, relPath);
-      } else if (entry.isFile() && entry.name.endsWith('.md')) {
-        if (relPath === 'index.md') continue;
-        results.push(relPath);
+        walk(abs);
+      } else if (entry.isFile() && isSidecarName(entry.name)) {
+        const subject = rawPathOfSidecar(rel);
+        if (!subject) continue;
+        const sidecar = fs.readFileSync(abs, 'utf8');
+        let text = sidecar.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
+        if (!text) {
+          const rawAbs = path.join(projectDir, subject);
+          if (!fs.existsSync(rawAbs)) continue;
+          text = fs.readFileSync(rawAbs, 'utf8').trim();
+        }
+        results.push({ path: subject, text });
       }
     }
   };
-  walk(mdDir, '');
-  return results.sort();
+  walk(sourcesDir);
+  return results.sort((x, y) => (x.path < y.path ? -1 : x.path > y.path ? 1 : 0));
 }
 
 /**
  * Mechanical fallback transformer — used only when the agent cannot perform
  * the transformation itself (e.g. context too large). It does NOT interpret
- * the template: it concatenates every normalized Source under the template's
+ * the template: it concatenates every cognitivized Source under the template's
  * name so the agent (or user) has a single file to work from. The agent is
  * expected to redo this properly.
  */
 async function applyTransformation(projectDir, templateName, options = {}) {
   const transDir = path.join(projectDir, 'traNNsformations');
-  const mdDir = path.join(projectDir, 'sources', 'nn');
 
   const cleanBlueprintName = path.basename(templateName, '.md').replace(/\s+/g, '_');
-  const exportDir = path.join(projectDir, 'export');
-  const legacyArtDir = path.join(projectDir, 'artifacts');
-  const outputDir = fs.existsSync(legacyArtDir) && !fs.existsSync(exportDir) ? legacyArtDir : exportDir;
-
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
 
   const templatePath = path.join(transDir, templateName);
   if (!fs.existsSync(templatePath)) {
     throw new Error(`Template not found: ${templateName}`);
   }
 
-  if (!fs.existsSync(mdDir)) {
-    throw new Error('Markdown directory sources/nn/ not found. Please run scan first.');
-  }
-
-  const mdFiles = collectMarkdownFiles(mdDir);
-
-  if (mdFiles.length === 0) {
-    throw new Error('No normalized markdown files found in sources/nn/. Please run scan first.');
+  const sources = collectCognitivizedSources(projectDir);
+  if (sources.length === 0) {
+    throw new Error('No cognitivized sources found under sources/. Please run --scan (or --cognitivize) first.');
   }
 
   let sourceContent = '';
-  for (const f of mdFiles) {
-    const content = fs.readFileSync(path.join(mdDir, f), 'utf8');
-    sourceContent += `---\n\n# Source File: ${f.replace(/\\/g, '/')}\n\n` + content.trim() + '\n\n';
+  for (const src of sources) {
+    sourceContent += `---\n\n# Source File: ${src.path}\n\n` + src.text + '\n\n';
   }
 
   const transformedOutput = runHeuristicTransformation(templateName, sourceContent);
 
-  const timestamp = getFormattedTimestamp();
-  const outputFileName = `${cleanBlueprintName}_${timestamp}.md`;
-  const outputPath = path.join(outputDir, outputFileName);
-
-  fs.writeFileSync(outputPath, transformedOutput, 'utf8');
+  // Write-once: identical output deduplicates against the latest member, and a
+  // cognitivized source edited since its sidecar was written blocks the write.
+  const written = await writeOnce(
+    projectDir,
+    { dir: 'artifacts', key: cleanBlueprintName, ext: 'md' },
+    transformedOutput,
+    { inputs: sources.map((s) => s.path) },
+  );
 
   return {
-    outputFileName,
-    outputPath,
-    content: transformedOutput
+    outputFileName: path.posix.basename(written.path),
+    outputPath: path.join(projectDir, written.path),
+    content: transformedOutput,
+    status: written.status
   };
 }
 
 /**
- * Concatenate every normalized Source under the template name, unchanged.
+ * Concatenate every cognitivized Source under the template name, unchanged.
  * No structural interpretation — this is a placeholder for the agent to
  * transform properly.
  */
@@ -107,17 +111,6 @@ function runHeuristicTransformation(templateName, sourceContent) {
     sourceContent.trim() +
     '\n'
   );
-}
-
-function getFormattedTimestamp() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hour = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
-  const sec = String(now.getSeconds()).padStart(2, '0');
-  return `${year}${month}${day}-${hour}${min}${sec}`;
 }
 
 module.exports = {

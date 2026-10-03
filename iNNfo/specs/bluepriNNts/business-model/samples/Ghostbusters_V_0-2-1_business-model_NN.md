@@ -17,7 +17,7 @@ Ghostbusters Inc. is the premier professional paranormal investigation and entit
 # NN Stakeholders
 
 ## NN Stakeholders: Commercial Property Managers
-sources:: [sources/nn/nyc-paranormal-activity-report-1984.md@## Market Demand]
+sources:: [sources/import/nyc-paranormal-activity-report-1984.md@## Market Demand]
 tags:: [b2b, primary-revenue, high-rise]
 Corporate real estate and property management companies operating commercial towers, hotels, and historic structures in Manhattan.
 

@@ -5,18 +5,18 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-6-0"
+blueprint_version: "V_0-7-1"
 title: "Video App"
 procedures:
   - id: "generate-video-script"
     name: "Generate Video Script"
-    path: "procedures/generate_video_script_NN.md"
+    path: "procedures/generate_video_script_procedures_NN.md"
   - id: "publish-web-portal"
     name: "Publish Video Web Portal"
-    path: "procedures/publish_web_portal_NN.md"
+    path: "procedures/publish_web_portal_procedures_NN.md"
   - id: "setup-github-pages-repo"
     name: "Setup GitHub Pages Repo"
-    path: "procedures/setup_github_pages_repo_NN.md"
+    path: "procedures/setup_github_pages_repo_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true
@@ -106,7 +106,7 @@ A video is produced by combining exactly one **Subject** with exactly one **Seri
 
 - **Workspace** — the iNNfo workspace root. Its own `assets/` folder holds files shared across every Series, never referenced directly from a script (stage them into a Series' `shared/` folder first, as a copy).
 - **Subject** — the content: facts and sources. Subject stays **workspace-custom** — this template does not ship a cogNNitive-owned Subject template (a workspace models it however fits its domain, e.g. bespoke historical-innovation or product templates). A Video references its Subject generically through the reserved `sources::` property (see Reserved Properties below), never through a new Field, so no particular Subject shape is required.
-- **Series** — the production format: one procedure that extends `generate_video_script_NN.md`, one script template (`script_template.md`), a series-wide rules document (`series_rules.md`), and shared series assets. A Series is **not a new template** — it **reuses this very `video` template** as a Level-3 model (`<SeriesName>_V_x-y-z_video_NN.md`) whose frontmatter carries a `series:` block (at minimum: slug, the procedure it extends, the script-template path, and the shared-assets folder) and which contains that Series' own Video Elements as children. Because a Video Element lives inside exactly one Series model file, a Video belongs to exactly one Series by construction — no separate registry mechanism is needed.
+- **Series** — the production format: one procedure that extends `generate_video_script_procedures_NN.md`, one script template (`script_template.md`), a series-wide rules document (`series_rules.md`), and shared series assets. A Series is **not a new template** — it **reuses this very `video` template** as a Level-3 model (`<SeriesName>_V_x-y-z_video_NN.md`) whose frontmatter carries a `series:` block (at minimum: slug, the procedure it extends, the script-template path, and the shared-assets folder) and which contains that Series' own Video Elements as children. Because a Video Element lives inside exactly one Series model file, a Video belongs to exactly one Series by construction — no separate registry mechanism is needed.
 - **Video** — combines exactly one Subject with exactly one Series. Subject and Series vary independently: the same Subject may be produced again under a different Series without any coupling to the first.
 
 A standalone Video with no Series (as in the Ghostbusters sample) remains valid: it simply has no `series:` block on its model, and its folder resolution follows the unchanged rule below.

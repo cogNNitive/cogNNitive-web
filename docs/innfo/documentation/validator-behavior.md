@@ -53,8 +53,8 @@ Behavior:
 `innfo-mcp/src/tools/init-model.ts` infers a new model's version from the resolved
 **parent app's own `spec_version`**:
 
-- Omitting `model_version` inherits the app's `spec_version`.
-- An explicit `model_version` wins only when it does not contradict the inferred
+- Omitting `knowledge_version` inherits the bluepriNNt's `spec_version`.
+- An explicit `knowledge_version` wins only when it does not contradict the inferred
   one.
 - When both exist and differ, init refuses to write and returns
   `VERSION_MISMATCH` instead of emitting a differing version.
@@ -97,4 +97,4 @@ unless `in_place` is requested.
 
 Do not copy version strings from `specifications.md` — it can lag the code. Read
 the authoritative version from `catalog.json` or the artifact's own frontmatter
-(`spec_version`, `template_version`, `model_version`).
+(`spec_version`, `blueprint_version`, `knowledge_version`).

@@ -18,7 +18,12 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const { backupWorkspace, sha256 } = require('./backup-workspace.js')
-const { detectLegacy, planMigration } = require('./lib/legacy-migrate.generated.cjs')
+const {
+  detectLegacy,
+  planMigration,
+  planLayoutMigration,
+  cognitivizePreservedBodies,
+} = require('./lib/legacy-migrate.generated.cjs')
 
 const OPAQUE_EXTENSIONS = new Set([
   '.png',
@@ -315,10 +320,224 @@ parent_spec:
   console.log('Your legacy files remain unchanged as an archival source.')
 }
 
+/**
+ * Full-tree out-of-tree backup plus a write-ahead journal (committed:false until done).
+ *
+ * @param {string} ws
+ */
+function startBackedUpJournal(ws) {
+  const backup = backupWorkspace(ws, { skipDirs: new Set(['.git', 'node_modules']) })
+  const backupTarget = backup.target
+  console.log(`Backup created at: ${backupTarget}`)
+
+  const journalFile = path.join(backupTarget, 'journal.json')
+  const journal = {
+    domainDir: path.resolve(ws),
+    backupTarget,
+    committed: false,
+    created: [],
+    leftovers: [],
+    appliedOps: [],
+  }
+  fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
+  return { backupTarget, journalFile, journal }
+}
+
+/**
+ * Apply planned ops in order, journaling each one. `delete` removes a file only because the
+ * planner proposed it (byte-identical duplicate) and the caller already holds plan-hash consent.
+ *
+ * @param {string} ws
+ * @param {Array<{op: string, from?: string, to?: string, path?: string, content?: string}>} ops
+ * @param {{ journal: any, journalFile: string, backupTarget: string, failAfter: number | null }} ctx
+ */
+function applyOps(ws, ops, { journal, journalFile, backupTarget, failAfter }) {
+  const save = () => fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
+  let count = 0
+  for (const op of ops) {
+    if (failAfter !== null && count >= failAfter) {
+      throw new Error(`Fault injected after ${count} op(s). Process interrupted! Backup: ${backupTarget}`)
+    }
+
+    if (op.op === 'move') {
+      const src = path.join(ws, op.from)
+      const dest = path.join(ws, op.to)
+      const destRel = op.to.replace(/\\/g, '/')
+      if (!fs.existsSync(dest)) {
+        journal.created.push(destRel)
+        save()
+      }
+      fs.mkdirSync(path.dirname(dest), { recursive: true })
+      fs.renameSync(src, dest)
+      journal.appliedOps.push({ op: 'move', from: op.from, to: op.to })
+    } else if (op.op === 'write') {
+      const dest = path.join(ws, op.path)
+      const destRel = op.path.replace(/\\/g, '/')
+      if (!fs.existsSync(dest)) {
+        journal.created.push(destRel)
+        save()
+      }
+      fs.mkdirSync(path.dirname(dest), { recursive: true })
+      fs.writeFileSync(dest, op.content, 'utf-8')
+      journal.appliedOps.push({ op: 'write', path: op.path })
+    } else if (op.op === 'delete') {
+      fs.unlinkSync(path.join(ws, op.path))
+      journal.appliedOps.push({ op: 'delete', path: op.path })
+    }
+    count++
+    save()
+  }
+}
+
+// legacy:cognitivize-in-place/upgrade-flow
+// Second Flow A step, after the nn-rename step: the retired folders move to the current layout
+// (see core `planLayoutMigration`), the `* -text` policy is written, and sidecars carry the
+// preserved mirror bodies.
+
+/** Repo paths holding frozen history: such domains are skipped and reported, never migrated. */
+const FROZEN_DOMAIN_MARKERS = ['/docs/innfo/samples/', '/docs/cognitive_nn/use-cases/']
+
+function isFrozenDomain(ws) {
+  const normalized = `${path.resolve(ws).replace(/\\/g, '/')}/`
+  return FROZEN_DOMAIN_MARKERS.some((marker) => normalized.includes(marker))
+}
+
+/**
+ * Old local-time stamp `YYYYMMDD-HHmmss` to the contract UTC stamp `YYYYMMDDTHHmmssZ`.
+ * Returns null when the stamp is not a real local time.
+ *
+ * @param {string} stamp
+ * @returns {string | null}
+ */
+function localToUtc(stamp) {
+  const m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(stamp)
+  if (!m) return null
+  const [y, mo, d, h, mi, s] = m.slice(1).map(Number)
+  const at = new Date(y, mo - 1, d, h, mi, s)
+  const real = at.getFullYear() === y && at.getMonth() === mo - 1 && at.getDate() === d
+  if (!real) return null
+  return at.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+}
+
+function printLayoutWarnings(plan) {
+  if (plan.report.unmigrated.length > 0) {
+    console.log('\nUnmigrated content (listed, left in place, never deleted):')
+    plan.report.unmigrated.forEach((p) => console.log(`  ${p}`))
+  }
+  const warnings = plan.problems.filter((p) => p.severity === 'warning')
+  if (warnings.length > 0) {
+    console.log('\nWarnings:')
+    warnings.forEach((w) => console.log(`  [warning] ${w.path ? `${w.path}: ` : ''}${w.message}`))
+  }
+}
+
+/**
+ * @param {string} ws
+ * @param {ReturnType<typeof createFsDomainReader>} reader
+ * @param {{ isJson: boolean, isApply: boolean, hasConsent: boolean, planHashArg: string | null, failAfter: number | null }} opts
+ * @param {object} renamePlan the (noop) nn-rename plan, echoed when there is nothing to do
+ */
+async function runLayoutStep(ws, reader, opts, renamePlan) {
+  if (isFrozenDomain(ws)) {
+    console.log(`Skipped: ${ws} is frozen content (published sample or use case) and is left unchanged.`)
+    return
+  }
+
+  const plan = await planLayoutMigration(reader, { localToUtc })
+
+  if (opts.isJson && !opts.isApply) {
+    console.log(
+      JSON.stringify(plan.status === 'noop' ? { ...renamePlan, layout: plan } : { ...plan, step: 'layout' }, null, 2),
+    )
+    return
+  }
+
+  if (plan.status === 'blocked') {
+    console.error('❌ LAYOUT MIGRATION BLOCKED:')
+    plan.problems.forEach((p) => console.error(`  - [${p.severity}] ${p.path ? `${p.path}: ` : ''}${p.message}`))
+    process.exit(1)
+  }
+
+  if (plan.status === 'noop') {
+    console.log('Domain is already up to date with the canonical domaiNN/kNNowledge layout. No migration needed.')
+    printLayoutWarnings(plan)
+    return
+  }
+
+  if (!opts.isApply) {
+    console.log('════════════════════════════════════════════════════════════')
+    console.log('           iNNfo Layout Migration Plan (DRY RUN)           ')
+    console.log('════════════════════════════════════════════════════════════')
+    console.log(`Domain: ${ws}`)
+    console.log(`Plan Hash: ${plan.planHash}\n`)
+    console.log('Moves:')
+    plan.report.moved.forEach((m) => console.log(`  ${m.from} -> ${m.to}`))
+    if (plan.report.deleted.length > 0) {
+      console.log('\nDeletes (byte-identical duplicates and retired mirrors only):')
+      plan.report.deleted.forEach((p) => console.log(`  ${p}`))
+    }
+    if (plan.report.preservedBodies.length > 0) {
+      console.log('\nSidecars written after apply (old mirror body preserved when the subject is binary):')
+      plan.report.preservedBodies.forEach((p) => console.log(`  ${p}`))
+    }
+    console.log('\nRewrites:')
+    plan.report.rewrittenFiles.forEach((f) => console.log(`  ${f}`))
+    printLayoutWarnings(plan)
+    console.log('\nTo execute this migration:')
+    console.log(
+      `  node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "${ws}" --apply --plan-hash "${plan.planHash}" --yes`,
+    )
+    return
+  }
+
+  if (!opts.planHashArg) {
+    console.error('❌ Flag --plan-hash <hash> is required when running with --apply.')
+    process.exit(1)
+  }
+  if (plan.planHash !== opts.planHashArg) {
+    console.error(
+      `❌ Plan hash mismatch: tree changed since dry-run.\nExpected: ${opts.planHashArg}\nCurrent:  ${plan.planHash}`,
+    )
+    process.exit(1)
+  }
+  if (!opts.hasConsent) {
+    console.error('❌ Consent required: pass --yes to confirm domain migration write.')
+    process.exit(1)
+  }
+
+  const { backupTarget, journalFile, journal } = startBackedUpJournal(ws)
+  try {
+    applyOps(ws, plan.ops, { journal, journalFile, backupTarget, failAfter: opts.failAfter })
+
+    for (const d of ['export', path.join('sources', 'original'), path.join('sources', 'nn'), path.join('sources', 'export')]) {
+      const leftovers = removeEmptyDirsBottomUp(path.join(ws, d))
+      if (leftovers.length > 0) journal.leftovers.push(...leftovers.map((l) => `${d}/${l}`))
+    }
+    if (journal.leftovers.length > 0) {
+      console.warn(`⚠ Leftover non-empty files preserved in retired directories: ${journal.leftovers.join(', ')}`)
+    }
+
+    const finalized = await cognitivizePreservedBodies(ws)
+    finalized.cognitivized.forEach((subject) => console.log(`✔ Sidecar written for ${subject} (preserved body)`))
+    finalized.skipped.forEach((s) => console.warn(`⚠ Preserved body skipped for ${s.subject}: ${s.reason}`))
+
+    journal.committed = true
+    fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
+    console.log(`✔ Layout migration applied successfully! (${plan.ops.length} ops)`)
+    printLayoutWarnings(plan)
+  } catch (err) {
+    console.error(`❌ Migration failed: ${err.message}`)
+    console.error(`\nTo restore your domain to pre-migration state:`)
+    console.error(`  node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "${ws}" --restore "${backupTarget}"`)
+    process.exit(1)
+  }
+}
+
 async function main() {
   const isJson = process.argv.includes('--json')
   const isApply = process.argv.includes('--apply')
   const hasConsent = process.argv.includes('--yes')
+  const isLayoutOnly = process.argv.includes('--layout-only')
   const planHashArg = getArg('--plan-hash')
   const domainDirArg = getArg('--domain-dir') || getArg('--workspace-dir')
   const restoreArg = getArg('--restore')
@@ -329,7 +548,7 @@ async function main() {
 
   if (!domainDirArg) {
     console.error(
-      'Usage: node migrate-domain.js --domain-dir <dir> [--apply --plan-hash <hash> --yes] [--restore <backupDir>] [--import-as-source --new-domain-dir <dir>]',
+      'Usage: node migrate-domain.js --domain-dir <dir> [--layout-only] [--apply --plan-hash <hash> --yes] [--restore <backupDir>] [--import-as-source --new-domain-dir <dir>]',
     )
     process.exit(1)
   }
@@ -392,15 +611,22 @@ async function main() {
     },
   }
 
-  const plan = await planMigration(reader, deps)
-
-  if (isJson && !isApply) {
-    console.log(JSON.stringify(plan, null, 2))
+  // `--layout-only` runs just the layout step (fixtures, domaiNNs whose nn-rename step is pending).
+  if (isLayoutOnly) {
+    await runLayoutStep(ws, reader, { isJson, isApply, hasConsent, planHashArg, failAfter }, null)
     return
   }
 
+  const plan = await planMigration(reader, deps)
+
+  // Step 1 (nn-rename) is done or not needed: step 2 migrates the folder layout.
   if (plan.status === 'noop') {
-    console.log('Domain is already up to date with the canonical domaiNN/kNNowledge layout. No migration needed.')
+    await runLayoutStep(ws, reader, { isJson, isApply, hasConsent, planHashArg, failAfter }, plan)
+    return
+  }
+
+  if (isJson && !isApply) {
+    console.log(JSON.stringify(plan, null, 2))
     return
   }
 
@@ -459,53 +685,10 @@ async function main() {
   }
 
   // 1. Create full-tree out-of-tree backup
-  const backup = backupWorkspace(ws, { skipDirs: new Set(['.git', 'node_modules']) })
-  const backupTarget = backup.target
-  console.log(`Backup created at: ${backupTarget}`)
-
-  const journalFile = path.join(backupTarget, 'journal.json')
-  const journal = {
-    domainDir: path.resolve(ws),
-    backupTarget,
-    committed: false,
-    created: [],
-    leftovers: [],
-    appliedOps: [],
-  }
-  fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
+  const { backupTarget, journalFile, journal } = startBackedUpJournal(ws)
 
   try {
-    let count = 0
-    for (const op of plan.ops) {
-      if (failAfter !== null && count >= failAfter) {
-        throw new Error(`Fault injected after ${count} op(s). Process interrupted! Backup: ${backupTarget}`)
-      }
-
-      if (op.op === 'move') {
-        const src = path.join(ws, op.from)
-        const dest = path.join(ws, op.to)
-        const destRel = op.to.replace(/\\/g, '/')
-        if (!fs.existsSync(dest)) {
-          journal.created.push(destRel)
-          fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
-        }
-        fs.mkdirSync(path.dirname(dest), { recursive: true })
-        fs.renameSync(src, dest)
-        journal.appliedOps.push({ op: 'move', from: op.from, to: op.to })
-      } else if (op.op === 'write') {
-        const dest = path.join(ws, op.path)
-        const destRel = op.path.replace(/\\/g, '/')
-        if (!fs.existsSync(dest)) {
-          journal.created.push(destRel)
-          fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
-        }
-        fs.mkdirSync(path.dirname(dest), { recursive: true })
-        fs.writeFileSync(dest, op.content, 'utf-8')
-        journal.appliedOps.push({ op: 'write', path: op.path })
-      }
-      count++
-      fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
-    }
+    applyOps(ws, plan.ops, { journal, journalFile, backupTarget, failAfter })
 
     // Clean empty legacy dirs (models and templates only)
     for (const d of ['models', 'templates']) {
@@ -543,6 +726,7 @@ async function main() {
     journal.committed = true
     fs.writeFileSync(journalFile, JSON.stringify(journal, null, 2), 'utf-8')
     console.log(`✔ Migration applied successfully! (${plan.ops.length} ops)`)
+    console.log('Run migrate-domain.js again (dry run) to plan the layout migration step.')
   } catch (err) {
     console.error(`❌ Migration failed: ${err.message}`)
     console.error(`\nTo restore your domain to pre-migration state:`)

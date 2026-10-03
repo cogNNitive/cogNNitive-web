@@ -5,15 +5,15 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-3-2"
 title: "Analysis App"
 procedures:
   - id: "run-coherence-audit"
     name: "Run Coherence Audit"
-    path: "procedures/run_coherence_audit_NN.md"
+    path: "procedures/run_coherence_audit_procedures_NN.md"
   - id: "prioritize-experiments"
     name: "Prioritize Experiments"
-    path: "procedures/prioritize_experiments_NN.md"
+    path: "procedures/prioritize_experiments_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true

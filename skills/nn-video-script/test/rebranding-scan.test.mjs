@@ -4,7 +4,7 @@
  * skills/nn-video-script/test/rebranding-scan.test.mjs
  *
  * Automated test / lint checking:
- * 1. The canonical procedure `generate_video_script_NN.md` renders through the cogNNitive Video Engine.
+ * 1. The canonical procedure `generate_video_script_procedures_NN.md` renders through the cogNNitive Video Engine.
  * 2. The retired deprecation-redirect procedure is gone and the video template no longer routes to it.
  *    (The repo-wide ban on the retired product names lives in scripts/lib/brand-purge-guard.js.)
  * 3. Video template `spec_NN.md` declares `generate-video-script` and `cogNNitive Video`.
@@ -26,15 +26,15 @@ async function runTests() {
   {
     const canonicalProcPath = path.join(
       repoRoot,
-      'iNNfo/specs/bluepriNNts/video/procedures/generate_video_script_NN.md'
+      'iNNfo/specs/bluepriNNts/video/procedures/generate_video_script_procedures_NN.md'
     );
-    assert.ok(fs.existsSync(canonicalProcPath), 'generate_video_script_NN.md must exist');
+    assert.ok(fs.existsSync(canonicalProcPath), 'generate_video_script_procedures_NN.md must exist');
     const content = fs.readFileSync(canonicalProcPath, 'utf8');
 
     // Must use the cogNNitive Video Engine
     assert.ok(content.includes('cogNNitive Video Tool'), 'Must reference cogNNitive Video Tool');
     assert.ok(content.includes('video-engine-cli.mjs'), 'Must reference video-engine-cli.mjs');
-    console.log('✔ Canonical procedure generate_video_script_NN.md uses cogNNitive Video Engine');
+    console.log('✔ Canonical procedure generate_video_script_procedures_NN.md uses cogNNitive Video Engine');
   }
 
   // 2. Retired redirect procedure check

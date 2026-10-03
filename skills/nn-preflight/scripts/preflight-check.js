@@ -35,6 +35,7 @@ const { parseFocusedYaml, parseFrontmatter } = require('./lib/yaml-lite');
 const { discoverModels, scanWorkspaceUpgrades } = require('./upgrade-check');
 const { isProjectableName, classifyProjection, hashTree } = require('./lib/projection');
 const { detectLegacy } = require('./lib/legacy-detect.generated.cjs');
+const { SPEC_FILENAME, ensureNNFilename, isSidecarName, rawPathOfSidecar, sidecarPathOf } = require('./lib/naming-contract.generated.cjs');
 
 const DEFAULT_MANIFEST_URL = process.env.SM_MANIFEST_URL ||
   'https://cognnitive.com/use/manifest.md';
@@ -326,16 +327,17 @@ function walkSourceDir(dir, onFile) {
 }
 
 /**
- * Universal source integrity audit across sources/import/, sources/conversations/,
- * sources/export/, and legacy sources/original/ against sources/nn/.
+ * Universal source integrity audit across sources/import/ and sources/conversations/.
+ * Every raw file is checked against its co-located sidecar
+ * (`<file>_sidecar_NN.md`): no sidecar is `missing`, a sidecar `sha256` that no
+ * longer matches the raw bytes is `hash_mismatch`, and a sidecar whose raw file
+ * is gone is an orphan. Nothing is ever deleted. `staging/` is scratch.
  */
 function scanWorkspaceSources(workspaceDir) {
   const sourcesDir = path.join(workspaceDir, 'sources');
-  const nnDir = path.join(sourcesDir, 'nn');
 
   const subtrees = {
     import: { total: 0, normalized: 0, unnormalized: 0 },
-    export: { total: 0, normalized: 0, unnormalized: 0 },
     conversations: { total: 0, normalized: 0, unnormalized: 0 },
   };
 
@@ -348,195 +350,103 @@ function scanWorkspaceSources(workspaceDir) {
   let danglingCount = 0;
 
   const MEDIA_EXTENSIONS = new Set(['.mp3', '.wav', '.m4a', '.mp4', '.ogg', '.flac', '.aac']);
+  const toRel = (abs) => path.relative(workspaceDir, abs).replace(/\\/g, '/');
 
-  // 1. Discover all normalized Markdown files in sources/nn/ (excluding index.md)
-  const nnFiles = [];
-  if (fs.existsSync(nnDir)) {
-    walkSourceDir(nnDir, (filePath, name) => {
-      if (name.endsWith('.md')) {
-        const relToNn = path.relative(nnDir, filePath).replace(/\\/g, '/');
-        if (relToNn !== 'index.md') {
-          nnFiles.push(filePath);
-        }
-      }
-    });
-  }
+  for (const treeName of ['import', 'conversations']) {
+    const treeDir = path.join(sourcesDir, treeName);
+    if (!fs.existsSync(treeDir)) continue;
 
-  // 2. Parse frontmatter and map source_file -> normalized file & hash
-  const sourceIndex = new Map();
-  const companionMediaIndex = new Map();
-  const normalizedStems = new Set();
-
-  for (const nnFile of nnFiles) {
-    const relNnPath = path.relative(workspaceDir, nnFile).replace(/\\/g, '/');
-    const nnStem = path.basename(nnFile, '.md').toLowerCase();
-    normalizedStems.add(nnStem);
-
-    let content;
-    try {
-      content = fs.readFileSync(nnFile, 'utf-8');
-    } catch {
-      continue;
-    }
-    let fm;
-    try {
-      fm = parseFocusedYaml(parseFrontmatter(content)) || {};
-    } catch {
-      fm = {};
-    }
-
-    const rawRef = fm.source_file || fm.file;
-    const storedHash = (fm.sha256 || fm.hash || '').trim();
-
-    if (fm.media_file) {
-      const normMedia = String(fm.media_file).replace(/\\/g, '/');
-      const mediaEntry = { nnPath: relNnPath, storedHash: (fm.media_sha256 || '').trim(), isCompanionMedia: true };
-      sourceIndex.set(normMedia, mediaEntry);
-      companionMediaIndex.set(normMedia, mediaEntry);
-      const mediaAbs = path.resolve(workspaceDir, normMedia);
-      if (fs.existsSync(mediaAbs)) {
-        const relMedia = path.relative(workspaceDir, mediaAbs).replace(/\\/g, '/');
-        sourceIndex.set(relMedia, mediaEntry);
-        companionMediaIndex.set(relMedia, mediaEntry);
-      }
-    }
-
-    // `user_input` is no longer an authorable source_type in the taxonomy (folded into
-    // conversations); this check stays as a defensive legacy read for pre-existing data,
-    // and still covers the `inline:`/`chat:` prefixes, which remain valid.
-    if (
-      fm.source_type === 'user_input' ||
-      (rawRef && (String(rawRef).startsWith('inline:') || String(rawRef).startsWith('chat:') || String(rawRef).includes('(proporcionado directamente')))
-    ) {
-      sourceIndex.set(String(rawRef || relNnPath).replace(/\\/g, '/'), { nnPath: relNnPath, storedHash, isUserInput: true });
-      continue;
-    }
-
-    if (!rawRef) {
-      danglingCount++;
-      orphanedList.push({ path: relNnPath, missing_source: 'missing_source_file_field' });
-      items.push({
-        type: 'source-integrity',
-        name: relNnPath,
-        status: 'dangling',
-        detail: 'Normalized file missing source_file field in frontmatter',
-      });
-      continue;
-    }
-
-    const normRawRef = String(rawRef).replace(/\\/g, '/');
-    const candidatePaths = [
-      path.resolve(workspaceDir, normRawRef),
-      path.resolve(workspaceDir, 'sources', normRawRef),
-      path.resolve(path.dirname(nnFile), normRawRef),
-    ];
-
-    let resolvedRawPath = null;
-    for (const cand of candidatePaths) {
-      if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
-        resolvedRawPath = cand;
-        break;
-      }
-    }
-
-    if (!resolvedRawPath) {
-      danglingCount++;
-      orphanedList.push({ path: relNnPath, missing_source: normRawRef });
-      items.push({
-        type: 'source-integrity',
-        name: relNnPath,
-        status: 'dangling',
-        detail: `Referenced source file does not exist: ${normRawRef}`,
-      });
-    } else {
-      const relSource = path.relative(workspaceDir, resolvedRawPath).replace(/\\/g, '/');
-      const entry = { nnPath: relNnPath, storedHash };
-      sourceIndex.set(relSource, entry);
-      sourceIndex.set(normRawRef, entry);
-    }
-  }
-
-  // 3. Scan active source trees (import, conversations, export, original)
-  const sourceTreesToCheck = [
-    { name: 'import', dir: path.join(sourcesDir, 'import') },
-    { name: 'conversations', dir: path.join(sourcesDir, 'conversations') },
-    { name: 'export', dir: path.join(sourcesDir, 'export') },
-    { name: 'original', dir: path.join(sourcesDir, 'original') },
-  ];
-
-  for (const tree of sourceTreesToCheck) {
-    if (!fs.existsSync(tree.dir)) continue;
-
-    if (!subtrees[tree.name]) {
-      subtrees[tree.name] = { total: 0, normalized: 0, unnormalized: 0 };
-    }
-
-    const treeFiles = [];
-    walkSourceDir(tree.dir, (filePath) => {
-      treeFiles.push(filePath);
+    const rawFiles = [];
+    const sidecars = [];
+    walkSourceDir(treeDir, (filePath, name) => {
+      (isSidecarName(name) ? sidecars : rawFiles).push(filePath);
     });
 
-    for (const file of treeFiles) {
-      const relPath = path.relative(workspaceDir, file).replace(/\\/g, '/');
-      const fileExt = path.extname(file).toLowerCase();
-      const fileStem = path.basename(file, fileExt).toLowerCase();
-      const isMedia = MEDIA_EXTENSIONS.has(fileExt);
-
-      subtrees[tree.name].total++;
+    for (const file of rawFiles) {
+      const relPath = toRel(file);
+      const isMedia = MEDIA_EXTENSIONS.has(path.extname(file).toLowerCase());
+      subtrees[treeName].total++;
       totalCount++;
 
-      let currentHash = null;
-      try {
-        const buf = fs.readFileSync(file);
-        currentHash = crypto.createHash('sha256').update(buf).digest('hex');
-      } catch {
-        // cannot read file
-      }
-
-      const match = sourceIndex.get(relPath);
-      if (match) {
-        if (!isMedia && match.storedHash && match.storedHash !== currentHash) {
+      const sidecarFile = path.join(workspaceDir, sidecarPathOf(relPath));
+      if (fs.existsSync(sidecarFile)) {
+        let storedHash = '';
+        try {
+          const fm = parseFocusedYaml(parseFrontmatter(fs.readFileSync(sidecarFile, 'utf-8'))) || {};
+          storedHash = String(fm.sha256 || '').trim().toLowerCase();
+        } catch {
+          // unreadable sidecar: treated as unverifiable below
+        }
+        let currentHash = null;
+        try {
+          currentHash = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+        } catch {
+          // cannot read file
+        }
+        if (!storedHash || storedHash !== currentHash) {
           unnormalizedCount++;
-          subtrees[tree.name].unnormalized++;
-          unnormalizedList.push({ path: relPath, subtree: tree.name, reason: 'hash_mismatch' });
+          subtrees[treeName].unnormalized++;
+          unnormalizedList.push({ path: relPath, subtree: treeName, reason: 'hash_mismatch' });
           items.push({
             type: 'source-integrity',
             name: relPath,
             status: 'stale',
-            detail: 'Source content has changed since normalization. Run `node scripts/index.js --scan`.',
+            detail: 'Source content has changed since it was cognitivized (sidecar sha256 mismatch). Run `node scripts/index.js --scan` or `--cognitivize <path>`.',
           });
         } else {
           normalizedCount++;
-          subtrees[tree.name].normalized++;
+          subtrees[treeName].normalized++;
         }
       } else if (isMedia) {
-        // Check if paired with a normalized companion sharing the same stem
-        if (companionMediaIndex.has(relPath) || normalizedStems.has(fileStem)) {
-          normalizedCount++;
-          subtrees[tree.name].normalized++;
-        } else {
-          // Un-transcribed raw media is informational, non-blocking
-          subtrees[tree.name].normalized++;
-          normalizedCount++;
-          items.push({
-            type: 'source-integrity',
-            name: relPath,
-            status: 'raw-media',
-            detail: 'Raw media primary source (pending transcription). Non-blocking.',
-          });
-        }
+        // Un-transcribed raw media is informational, non-blocking
+        subtrees[treeName].normalized++;
+        normalizedCount++;
+        items.push({
+          type: 'source-integrity',
+          name: relPath,
+          status: 'raw-media',
+          detail: 'Raw media primary source (pending transcription). Non-blocking.',
+        });
       } else {
         unnormalizedCount++;
-        subtrees[tree.name].unnormalized++;
-        unnormalizedList.push({ path: relPath, subtree: tree.name, reason: 'missing' });
+        subtrees[treeName].unnormalized++;
+        unnormalizedList.push({ path: relPath, subtree: treeName, reason: 'missing' });
         items.push({
           type: 'source-integrity',
           name: relPath,
           status: 'unnormalized',
-          detail: 'Source has not been normalized into sources/nn/. Run `node scripts/index.js --scan`.',
+          detail: 'Source has no co-located sidecar. Run `node scripts/index.js --scan` or `--cognitivize <path>`.',
         });
       }
     }
+
+    for (const sidecar of sidecars) {
+      const relSidecar = toRel(sidecar);
+      const missingSource = rawPathOfSidecar(relSidecar);
+      if (!missingSource || fs.existsSync(path.join(workspaceDir, missingSource))) continue;
+      danglingCount++;
+      orphanedList.push({ path: relSidecar, missing_source: missingSource });
+      items.push({
+        type: 'source-integrity',
+        name: relSidecar,
+        status: 'dangling',
+        detail: `Orphaned sidecar: its raw file does not exist: ${missingSource}. It is kept; only a consent-gated GC deletes it.`,
+      });
+    }
+  }
+
+  // Text policy: raw-byte hashes survive a checkout only when the domaiNN carries `* -text`.
+  const attributesFile = path.join(workspaceDir, '.gitattributes');
+  const textPolicyOk =
+    fs.existsSync(attributesFile) &&
+    fs.readFileSync(attributesFile, 'utf-8').split(/\r?\n/).some((line) => line.trim() === '* -text');
+  if (!textPolicyOk) {
+    items.push({
+      type: 'source-integrity',
+      name: '.gitattributes',
+      status: 'text-policy-missing',
+      detail: 'The domaiNN has no `* -text` line in .gitattributes; line-ending conversion can break raw-byte sha256 checks.',
+    });
   }
 
   return {
@@ -546,6 +456,7 @@ function scanWorkspaceSources(workspaceDir) {
     dangling: danglingCount,
     sources_integrity: {
       ok: unnormalizedCount === 0 && danglingCount === 0,
+      text_policy_ok: textPolicyOk,
       subtrees,
       unnormalized: unnormalizedList,
       orphaned: orphanedList,
@@ -667,21 +578,21 @@ function validateBlueprintCompositions(options = {}) {
       candidates.push(
         path.resolve(parentDir, n),
         path.resolve(parentDir, `${n}.md`),
-        path.resolve(parentDir, `${n}_NN.md`),
-        path.resolve(parentDir, n, 'spec_NN.md'),
-        path.resolve(parentDir, n, `${n}_NN.md`),
+        path.resolve(parentDir, ensureNNFilename(n)),
+        path.resolve(parentDir, n, SPEC_FILENAME),
+        path.resolve(parentDir, n, ensureNNFilename(n)),
         path.resolve(parentDir, '..', n),
         path.resolve(parentDir, '..', `${n}.md`),
-        path.resolve(parentDir, '..', `${n}_NN.md`),
-        path.resolve(parentDir, '..', n, 'spec_NN.md')
+        path.resolve(parentDir, '..', ensureNNFilename(n)),
+        path.resolve(parentDir, '..', n, SPEC_FILENAME)
       );
       for (const searchDir of resolverDirs) {
         candidates.push(
           path.join(searchDir, n),
           path.join(searchDir, `${n}.md`),
-          path.join(searchDir, `${n}_NN.md`),
-          path.join(searchDir, n, 'spec_NN.md'),
-          path.join(searchDir, n, `${n}_NN.md`)
+          path.join(searchDir, ensureNNFilename(n)),
+          path.join(searchDir, n, SPEC_FILENAME),
+          path.join(searchDir, n, ensureNNFilename(n))
         );
       }
     }
@@ -1016,9 +927,9 @@ async function runCheck(options = {}) {
     },
     sources_integrity: {
       ok: true,
+      text_policy_ok: true,
       subtrees: {
         import: { total: 0, normalized: 0, unnormalized: 0 },
-        export: { total: 0, normalized: 0, unnormalized: 0 },
         conversations: { total: 0, normalized: 0, unnormalized: 0 },
       },
       unnormalized: [],
@@ -1422,7 +1333,7 @@ function printHumanReport(results) {
       if (item.type === 'source-integrity') {
         if (item.status === 'unnormalized') {
           console.log(`  - [UNNORMALIZED] ${item.name}`);
-          console.log(`    ${item.detail || 'Source has not been normalized into sources/nn/.'}`);
+          console.log(`    ${item.detail || 'Source has no co-located sidecar.'}`);
         } else if (item.status === 'stale') {
           console.log(`  - [STALE] ${item.name}`);
           console.log(`    ${item.detail || 'Source content has changed since normalization.'}`);
@@ -1432,7 +1343,13 @@ function printHumanReport(results) {
         }
       }
     }
-    console.log('  Remediation: Run `node scripts/index.js --scan` (nn-trannsform --scan) to synchronize sources.\n');
+    console.log('  Remediation: Run `node scripts/index.js --scan` (nn-trannsform --scan) or `--cognitivize <path>` to synchronize sources.\n');
+  }
+
+  const textPolicyItem = results.items.find((item) => item.type === 'source-integrity' && item.status === 'text-policy-missing');
+  if (textPolicyItem) {
+    console.log(`\n⚠️  ${textPolicyItem.detail}`);
+    console.log('  Remediation: add the line `* -text` to the domaiNN .gitattributes (nn-trannsform bootstrap writes it).\n');
   }
 
   if (results.summary.templatesCompositionBlockers > 0 || results.summary.templatesCompositionWarnings > 0) {

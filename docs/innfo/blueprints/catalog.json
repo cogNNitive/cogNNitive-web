@@ -3,10 +3,10 @@
   "blueprints": {
     "analysis": {
       "name": "analysis",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-3-2",
           "spec_version": "V_0-3-0",
           "title": "Analysis App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
@@ -75,10 +75,10 @@
     },
     "documentation": {
       "name": "documentation",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-3-2",
           "spec_version": "V_0-3-0",
           "title": "Documentation Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
@@ -99,10 +99,10 @@
     },
     "innovation": {
       "name": "innovation",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-3-2",
           "spec_version": "V_0-3-0",
           "title": "Innovation App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
@@ -111,10 +111,10 @@
     },
     "metrics": {
       "name": "metrics",
-      "adopted": "V_0-4-0",
+      "adopted": "V_0-4-1",
       "versions": [
         {
-          "blueprint_version": "V_0-4-0",
+          "blueprint_version": "V_0-4-1",
           "spec_version": "V_0-3-0",
           "title": "Metrics App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
@@ -123,10 +123,10 @@
     },
     "organization": {
       "name": "organization",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-3-2",
           "spec_version": "V_0-3-0",
           "title": "Organization App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
@@ -135,10 +135,10 @@
     },
     "procedures": {
       "name": "procedures",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Procedures App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
@@ -147,10 +147,10 @@
     },
     "projects": {
       "name": "projects",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-3-2",
           "spec_version": "V_0-3-0",
           "title": "Projects App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
@@ -169,6 +169,18 @@
         }
       ]
     },
+    "sidecar": {
+      "name": "sidecar",
+      "adopted": "V_0-1-0",
+      "versions": [
+        {
+          "blueprint_version": "V_0-1-0",
+          "spec_version": "V_0-3-0",
+          "title": "Sidecar App",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"
+        }
+      ]
+    },
     "sources": {
       "name": "sources",
       "adopted": "V_0-2-0",
@@ -183,10 +195,10 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-6-0",
+      "adopted": "V_0-7-1",
       "versions": [
         {
-          "blueprint_version": "V_0-6-0",
+          "blueprint_version": "V_0-7-1",
           "spec_version": "V_0-3-0",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
@@ -195,10 +207,10 @@
     },
     "visual-catalog": {
       "name": "visual-catalog",
-      "adopted": "V_0-1-0",
+      "adopted": "V_0-1-1",
       "versions": [
         {
-          "blueprint_version": "V_0-1-0",
+          "blueprint_version": "V_0-1-1",
           "spec_version": "V_0-3-0",
           "title": "Visual Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md"

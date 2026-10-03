@@ -30,6 +30,8 @@
 
 - **Runtime & Internals**
   - [Offline Consoles](offline-consoles)
+  - [Workspace Console Hub](workspace-console-hub)
   - [Console Needs & Visuals](console-needs-and-visuals)
+  - [Console UI Kit](console-ui-kit)
   - [Validator Behavior](validator-behavior)
   - [Live Model Preview](live-preview)
