@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-03T16:32:52.845Z",
-  "head": "438a49d5332f64da4943a2b99fbc00d07edb783a",
+  "generatedAt": "2026-10-03T16:54:09.617Z",
+  "head": "7c16175ce9973465c52b082ee81ac1ab8a0cad4c",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -80,7 +80,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.20.0",
       "pinnedTagDate": "2026-10-02T23:21:28+02:00",
-      "commitsSincePin": 14,
+      "commitsSincePin": 15,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/procedures/prioritize_experiments_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/procedures/run_coherence_audit_procedures_NN.md",
@@ -88,7 +88,10 @@
         "iNNfo/specs/bluepriNNts/business-model/samples/Ghostbusters_V_0-2-1_business-model_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/documentation/procedures/generate_docsify_suite_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/documentation/spec_NN.md",
         "iNNfo/specs/bluepriNNts/innovation/procedures/score_innovation_pipeline_procedures_NN.md",
@@ -102,6 +105,7 @@
         "iNNfo/specs/bluepriNNts/organization/procedures/export_team_directory_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md",
         "iNNfo/specs/bluepriNNts/organization/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
         "iNNfo/specs/bluepriNNts/procedures/procedures/document_sop_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/procedures/procedures/export/document_sop_console/document_sop_console.html",
         "iNNfo/specs/bluepriNNts/procedures/spec_NN.md",
@@ -116,6 +120,7 @@
         "iNNfo/specs/bluepriNNts/video/spec_NN.md",
         "iNNfo/specs/bluepriNNts/visual-catalog/procedures/ingest_visual_catalog_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
         "iNNfo/specs/bluepriNNts/workspace/assets/workspace_hub.html",
         "iNNfo/specs/bluepriNNts/workspace/procedures/compile_model_console_NN.md",
         "iNNfo/specs/bluepriNNts/workspace/procedures/compile_workspace_hub_NN.md",
@@ -126,7 +131,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.20.0",
       "pinnedTagDate": "2026-10-02T23:21:28+02:00",
-      "commitsSincePin": 14,
+      "commitsSincePin": 15,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/procedures/prioritize_experiments_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/procedures/run_coherence_audit_procedures_NN.md",
@@ -134,7 +139,10 @@
         "iNNfo/specs/bluepriNNts/business-model/samples/Ghostbusters_V_0-2-1_business-model_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/documentation/procedures/generate_docsify_suite_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/documentation/spec_NN.md",
         "iNNfo/specs/bluepriNNts/innovation/procedures/score_innovation_pipeline_procedures_NN.md",
@@ -148,6 +156,7 @@
         "iNNfo/specs/bluepriNNts/organization/procedures/export_team_directory_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md",
         "iNNfo/specs/bluepriNNts/organization/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
         "iNNfo/specs/bluepriNNts/procedures/procedures/document_sop_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/procedures/procedures/export/document_sop_console/document_sop_console.html",
         "iNNfo/specs/bluepriNNts/procedures/spec_NN.md",
@@ -162,6 +171,7 @@
         "iNNfo/specs/bluepriNNts/video/spec_NN.md",
         "iNNfo/specs/bluepriNNts/visual-catalog/procedures/ingest_visual_catalog_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
         "iNNfo/specs/bluepriNNts/workspace/assets/workspace_hub.html",
         "iNNfo/specs/bluepriNNts/workspace/procedures/compile_model_console_NN.md",
         "iNNfo/specs/bluepriNNts/workspace/procedures/compile_workspace_hub_NN.md",
@@ -172,10 +182,11 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.13.1",
       "pinnedTagDate": "2026-10-02T12:14:34+02:00",
-      "commitsSincePin": 12,
+      "commitsSincePin": 13,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/README.md",
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/src/server.spec.ts",
         "iNNfo/packages/innfo-mcp/src/server.ts",
         "iNNfo/packages/innfo-mcp/src/tools/build-console-payload.spec.ts",
@@ -205,9 +216,12 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.8.0",
       "pinnedTagDate": "2026-10-02T23:21:28+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs"
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
       ]
     }
   }
