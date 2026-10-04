@@ -5,16 +5,14 @@
  *
  * Deterministic TTS and media asset synthesis with content-addressed caching.
  * Adapts ElevenLabs, Edge-TTS, and Replicate media providers with graceful local fallbacks.
- * Measures audio duration precisely to prevent Remotion timeline clipping.
+ * Measures audio duration without FFmpeg (via @remotion/media-parser).
  *
  * Zero external mandatory runtime dependencies. ESM module.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
 import { CacheManager } from './cache-manager.mjs';
 
 const require = createRequire(import.meta.url);
@@ -23,6 +21,21 @@ try {
   sharp = require('sharp');
 } catch {
   sharp = null;
+}
+
+/** @type {((args: { src: string, fields: { durationInSeconds: boolean } }) => Promise<{ durationInSeconds: number | null }>) | null} */
+let cachedParseMedia = null;
+
+/** Lazily resolves @remotion/media-parser (installed with the Remotion engine). */
+async function loadParseMedia() {
+  if (cachedParseMedia) return cachedParseMedia;
+  try {
+    const mod = await import('@remotion/media-parser');
+    cachedParseMedia = mod.parseMedia;
+    return cachedParseMedia;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -35,57 +48,33 @@ try {
  */
 
 /**
- * Probes audio duration in seconds using ffprobe or ffmpeg if present,
- * or estimates duration from MP3/WAV file header/size.
+ * Measures audio duration in seconds without FFmpeg-from-PATH, using the
+ * `@remotion/media-parser` bundled with the Remotion engine. Returns 0 when the
+ * file is missing or the parser is unavailable (the caller decides how to degrade).
  * @param {string} filePath
- * @returns {number}
+ * @param {{ parseMedia?: Function }} [deps] Injectable seam for tests.
+ * @returns {Promise<number>}
  */
-export function probeAudioDuration(filePath) {
+export async function probeAudioDuration(filePath, deps = {}) {
   if (!fs.existsSync(filePath)) {
     return 0;
   }
 
-  // 1. Try ffprobe
-  try {
-    const ffprobe = spawnSync('ffprobe', [
-      '-v', 'error',
-      '-show_entries', 'format=duration',
-      '-of', 'default=noprint_wrappers=1:nokey=1',
-      filePath,
-    ], { encoding: 'utf8' });
-
-    if (ffprobe.status === 0 && ffprobe.stdout) {
-      const dur = parseFloat(ffprobe.stdout.trim());
-      if (!isNaN(dur) && dur > 0) {
-        return Math.round(dur * 1000) / 1000;
-      }
-    }
-  } catch {
-    // ffprobe not in PATH, proceed to next probe
+  const parseMedia = deps.parseMedia || (await loadParseMedia());
+  if (!parseMedia) {
+    return 0;
   }
 
-  // 2. Try ffmpeg
   try {
-    const ffmpeg = spawnSync('ffmpeg', ['-i', filePath], { encoding: 'utf8' });
-    const output = (ffmpeg.stderr || '') + (ffmpeg.stdout || '');
-    const durationMatch = output.match(/Duration:\s*(\d+):(\d+):(\d+\.?\d*)/);
-    if (durationMatch) {
-      const hours = parseFloat(durationMatch[1]);
-      const mins = parseFloat(durationMatch[2]);
-      const secs = parseFloat(durationMatch[3]);
-      const totalSecs = hours * 3600 + mins * 60 + secs;
-      if (!isNaN(totalSecs) && totalSecs > 0) {
-        return Math.round(totalSecs * 1000) / 1000;
-      }
+    const result = await parseMedia({ src: filePath, fields: { durationInSeconds: true } });
+    const duration = result?.durationInSeconds;
+    if (typeof duration === 'number' && duration > 0) {
+      return Math.round(duration * 1000) / 1000;
     }
   } catch {
-    // ffmpeg not available
+    // unreadable container → treat as unknown duration
   }
-
-  // 3. Fallback: Estimate based on file size and standard MP3 bitrate (128kbps = 16KB/s)
-  const stats = fs.statSync(filePath);
-  const estimatedSeconds = stats.size / (128 * 1024 / 8);
-  return Math.max(1, Math.round(estimatedSeconds * 10) / 10);
+  return 0;
 }
 
 export class AssetSynthesizer {
@@ -120,7 +109,7 @@ export class AssetSynthesizer {
 
     if (cachedPath) {
       const stats = fs.statSync(cachedPath);
-      const durationSeconds = probeAudioDuration(cachedPath);
+      const durationSeconds = await probeAudioDuration(cachedPath);
       return {
         assetPath: cachedPath,
         sha256,
@@ -134,15 +123,13 @@ export class AssetSynthesizer {
     let audioBuffer;
     if (this.ttsProvider.includes('minimax') || (!this.elevenLabsApiKey && (process.env.WAVESPEED_API_KEY || process.env.REPLICATE_API_TOKEN))) {
       audioBuffer = await this._synthesizeMiniMax(cleanText, voiceOptions);
-    } else if (process.platform === 'win32') {
-      audioBuffer = await this._synthesizeWindowsSapi(cleanText, voiceOptions);
     } else {
       audioBuffer = this._generateSyntheticAudio(cleanText, voiceOptions);
     }
 
     const assetPath = await this.cacheManager.put(sha256, 'mp3', audioBuffer, 'tts');
     const stats = fs.statSync(assetPath);
-    const durationSeconds = probeAudioDuration(assetPath);
+    const durationSeconds = await probeAudioDuration(assetPath);
 
     return {
       assetPath,
@@ -318,60 +305,10 @@ export class AssetSynthesizer {
           }
         }
       } catch (err) {
-        // Fall through to SAPI on error
+        // Fall through to the synthetic audio buffer on API error
       }
     }
 
-    if (process.platform === 'win32') {
-      return this._synthesizeWindowsSapi(text, voiceOptions);
-    }
-    return this._generateSyntheticAudio(text, voiceOptions);
-  }
-
-  /**
-   * Synthesizes natural spoken audio on Windows using PowerShell SAPI and transcodes to MP3 via ffmpeg.
-   * @private
-   */
-  async _synthesizeWindowsSapi(text, voiceOptions = {}) {
-    try {
-      const tempId = crypto.randomUUID();
-      const tempDir = this.cacheManager.getCacheDir('temp');
-      const tempWav = path.join(tempDir, `sapi_${tempId}.wav`);
-      const tempMp3 = path.join(tempDir, `sapi_${tempId}.mp3`);
-
-      const escapedText = text.replace(/'/g, "''").replace(/[\r\n]+/g, ' ');
-      const escapedWav = tempWav.replace(/\\/g, '\\\\');
-
-      const psScript = [
-        'Add-Type -AssemblyName System.Speech',
-        '$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer',
-        `$synth.SetOutputToWaveFile('${escapedWav}')`,
-        `$synth.Speak('${escapedText}')`,
-        '$synth.Dispose()',
-      ].join('\r\n');
-
-      const b64 = Buffer.from(psScript, 'utf16le').toString('base64');
-      const ps = spawnSync('powershell', ['-NoProfile', '-EncodedCommand', b64], { encoding: 'utf8' });
-
-      if (ps.status === 0 && fs.existsSync(tempWav)) {
-        const ff = spawnSync('ffmpeg', [
-          '-y',
-          '-i', tempWav,
-          '-codec:a', 'libmp3lame',
-          '-b:a', '128k',
-          tempMp3,
-        ], { encoding: 'utf8' });
-
-        if (ff.status === 0 && fs.existsSync(tempMp3)) {
-          const mp3Buf = fs.readFileSync(tempMp3);
-          try { fs.unlinkSync(tempWav); } catch {}
-          try { fs.unlinkSync(tempMp3); } catch {}
-          return mp3Buf;
-        }
-      }
-    } catch {
-      // Fall through to synthetic audio
-    }
     return this._generateSyntheticAudio(text, voiceOptions);
   }
 

@@ -3,10 +3,9 @@
 /**
  * skills/nn-video-script/scripts/vus-parse-runner.mjs
  *
- * Internal helper. Imports the in-repo VUS parser
- * (`@cognnitive/innfo-video-parser`, TypeScript source) and parses one script.
- * It must run under the `tsx` loader (vus-parse.mjs spawns it with
- * `node --import tsx/esm`). Never invoked by hand.
+ * Internal helper. Imports the vendored VUS parser mirror
+ * (`./lib/innfo-video-parser.generated.mjs`, committed inside the skill) and parses
+ * one script. Plain `node` — no external loader, no monorepo path. Never invoked by hand.
  *
  * argv: [scriptPath]
  * stdout: JSON.stringify({ issues })
@@ -17,17 +16,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PARSER_ENTRY = path.resolve(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'iNNfo',
-  'packages',
-  'innfo-video-parser',
-  'src',
-  'index.ts',
-);
+const PARSER_ENTRY = path.join(__dirname, 'lib', 'innfo-video-parser.generated.mjs');
 
 const [scriptPath] = process.argv.slice(2);
 

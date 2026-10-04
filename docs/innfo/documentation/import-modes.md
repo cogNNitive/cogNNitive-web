@@ -116,7 +116,7 @@ It can be tempting to "just append the new rows" or "just overwrite the file wit
 corrected data". In cogNNitive that is deliberately not how it works, because a
 source is a **citation target**:
 
-- A citation like `sources:: [sales.md@## Q1]` means *"the numbers under this
+- A citation like `sources:: [sources/import/sales.md@## Q1]` means *"the numbers under this
   heading, in this file"*. Overwriting the file silently changes what that
   citation yields — no diff, no warning, no error.
 - The write-once family answers *"what did the model see at time T?"*: every

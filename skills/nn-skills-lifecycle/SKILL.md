@@ -29,8 +29,8 @@ Single entry point for the skill ecosystem. Classify the request into one branch
 ### Install / Update / Sync — manifest-pinned skills
 
 Manages the skills tracked in the bootstrap manifest, installed into the
-user-level skills directory by `scripts/skills-manager.js` — a zero-dependency,
-lockfile-lite manager (the counterpart of lazy.nvim's `lazy-lock.json`).
+user-level skills directory by `scripts/skills-manager.js` — a bundled,
+zero-dependency, lockfile-lite manager that ships inside this skill folder (the counterpart of lazy.nvim's `lazy-lock.json`).
 
 **Desired state (source of truth)**: the bootstrap manifest at
 `docs/use/manifest.md`, fetched from
@@ -51,14 +51,18 @@ what *should* be installed — only for what *is* installed on this machine.
 Skills install into `~/.agents/skills/{name}/` by default (override with
 `--skills-dir`).
 
-**Commands** (`node scripts/skills-manager.js <command>`):
+**Commands** — run the bundled script from this skill's folder
+(`node scripts/skills-manager.js <command>`, or from anywhere:
+`node ~/.agents/skills/nn-skills-lifecycle/scripts/skills-manager.js <command>`;
+see [`nn-preflight/reference/skill-locations.md`](../nn-preflight/reference/skill-locations.md)
+for installed locations):
 
 | Command | Behavior |
 |---|---|
 | `status` | Compares installed vs. pinned commits; prints a table, plus a file-count diff preview (via the GitHub compare API) for anything outdated. |
 | `install` | Installs skills missing from the skills directory, at their pinned commit. |
 | `update [skill ...]` | Updates outdated skills — or a given subset, auto-pulling in any outdated `requires` — at their pinned commit. |
-| `sync [--direction local-to-global\|global-to-local]` | Recursively copies skill directories between this repo's `skills/` and `--skills-dir` (default `~/.agents/skills`). |
+| `sync [--direction local-to-global\|global-to-local]` | **Maintainer / repo-only.** Recursively copies skill directories between a repo checkout's `skills/` and `--skills-dir` (default `~/.agents/skills`). It resolves the repo `skills/` folder relative to the script, so it is not meant for installed copies. |
 
 Install and update both fetch a tarball from
 `https://codeload.github.com/{repo}/tar.gz/{commit}`, extract it, and swap the
@@ -103,14 +107,16 @@ Pass exact SKILL.md paths.
 
 ---
 
-### Maintenance — full review
+### Maintenance — full review (maintainer / repo-only)
+
+Requires a cogNNitive repository checkout; not runnable from an installed skill.
 
 1. Read `manifest/source.yaml` and installed skills
 2. Identify orphaned or unused skills
 3. Check frontmatter compliance across all skills
 4. Verify manifest and documentation parity
 5. Delegate fixes to the appropriate sub-skills
-6. Run `npm run check:versions` or `node scripts/sync-versions.mjs` to maintain parity
+6. Run `npm run check:versions` or `npm run sync:versions` (repo root) to maintain parity
 7. Report summary: what was done, new count, remaining items
 
 ---

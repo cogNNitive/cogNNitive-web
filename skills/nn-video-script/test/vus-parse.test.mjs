@@ -3,10 +3,10 @@
 /**
  * skills/nn-video-script/test/vus-parse.test.mjs
  *
- * Tests for vus-parse.mjs. The parser is the in-repo
- * `@cognnitive/innfo-video-parser` workspace package, so every test here runs
- * with no external checkout: nothing may skip, and no environment variable
- * pointing outside the monorepo is read.
+ * Tests for vus-parse.mjs. The parser is the self-contained mirror committed
+ * inside the skill (`scripts/lib/innfo-video-parser.generated.mjs`), so every test
+ * here runs with no external checkout: nothing may skip, and no environment variable
+ * pointing outside the skill is read.
  */
 
 import assert from 'node:assert';
@@ -127,6 +127,40 @@ async function runTests() {
     console.log('✔ Workspace sample is parsed for real and is valid');
   }
 
+
+  // Test 6: parser resolution references no npm package, no monorepo path, no tsx.
+  {
+    const SCRIPTS_DIR = path.join(__dirname, '..', 'scripts');
+    const RESOLUTION_FILES = [
+      'vus-parse.mjs',
+      'vus-parse-runner.mjs',
+      'remotion-scene-compiler.mjs',
+      path.join('lib', 'innfo-video-parser.generated.mjs'),
+    ];
+    for (const rel of RESOLUTION_FILES) {
+      const file = path.join(SCRIPTS_DIR, rel);
+      const src = fs.readFileSync(file, 'utf8');
+      assert.ok(!/@cognnitive\/innfo-video-parser/.test(src), `${rel} must not reference the npm package`);
+      assert.ok(!/\.\.\/\.\.\/\.\.\/iNNfo\//.test(src), `${rel} must not reference the monorepo parser path`);
+      assert.ok(!/\btsx\b/.test(src) || rel.includes('generated'), `${rel} must not reference the tsx loader`);
+    }
+    console.log('✔ parser resolution references no npm package, monorepo path, or tsx');
+  }
+
+  // Test 7: the child spawn passes no loader flag (plain node + the relative mirror).
+  {
+    const src = fs.readFileSync(vusParsePath, 'utf8');
+    assert.ok(!/--import/.test(src), 'vus-parse.mjs must not spawn with an --import loader flag');
+    const runnerSrc = fs.readFileSync(
+      path.join(__dirname, '..', 'scripts', 'vus-parse-runner.mjs'),
+      'utf8',
+    );
+    assert.ok(
+      runnerSrc.includes("'lib', 'innfo-video-parser.generated.mjs'"),
+      'runner must resolve the committed mirror by relative path',
+    );
+    console.log('✔ child spawn carries no loader flag and uses the committed mirror');
+  }
 
   console.log('\nAll vus-parse unit tests passed! 🎉');
 }

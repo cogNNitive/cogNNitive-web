@@ -91,13 +91,13 @@ export const PROVIDER_PRICING_CATALOG = {
       languages: 'Spanish, English, Multilingual',
       description: 'State-of-the-art TTS with human-like prosody and expressive emotional ranges',
     },
-    'local/windows-sapi': {
-      provider: 'Windows SAPI / Local',
-      modelName: 'System Speech Synthesizer',
+    'local/synthetic': {
+      provider: 'Local / Offline',
+      modelName: 'Synthetic Offline Buffer',
       unitPricePer1kChars: 0.000,
       quality: 'Standard Offline',
-      languages: 'OS Installed Voices',
-      description: 'Built-in offline speech synthesizer with zero API cost',
+      languages: 'n/a',
+      description: 'Offline synthetic audio buffer with zero API cost (no OS-native TTS)',
     },
   },
   avatar: {
@@ -159,7 +159,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const compiler = new RemotionSceneCompiler(options);
   const parsed = compiler.parseScript(scriptContent);
   const defaultImageModel = options.defaultImageModel || 'wavespeed-ai/z-image/turbo';
-  const defaultTtsModel = options.defaultTtsModel || (process.env.WAVESPEED_API_KEY ? 'wavespeed/minimax/speech-2.5-hd-preview' : 'local/windows-sapi');
+  const defaultTtsModel = options.defaultTtsModel || (process.env.WAVESPEED_API_KEY ? 'wavespeed/minimax/speech-2.5-hd-preview' : 'local/synthetic');
   const defaultAvatarModel = options.defaultAvatarModel || 'wavespeed/infinitetalk';
 
   const sceneEstimates = [];
@@ -282,7 +282,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     offlineFree: {
       name: 'Offline / Free Local Tier',
       imageProvider: 'Local SVG Compositor / Existing Assets',
-      ttsProvider: 'Windows SAPI / Local Speech',
+      ttsProvider: 'Local Synthetic Offline Buffer',
       avatarProvider: 'Static Layer Avatar',
       estimatedTotalCost: 0.000,
       tradeoff: 'Zero API credit cost, 100% offline, standard OS voice & local graphic compositing.',

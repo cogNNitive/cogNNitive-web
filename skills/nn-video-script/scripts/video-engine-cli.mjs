@@ -16,13 +16,28 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync, spawn } from 'node:child_process';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { RemotionSceneCompiler } from './remotion-scene-compiler.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/** Id registered by scripts/ScriptRoot.tsx; must match what selectComposition resolves. */
+export const COMPOSITION_ID = 'script-composition';
+
+/**
+ * Named error raised when Remotion cannot render and no mock was requested. Callers
+ * branch on `.name` so a missing engine is never mistaken for a successful render.
+ */
+export class VideoRenderError extends Error {
+  constructor(message, { cause } = {}) {
+    super(message);
+    this.name = 'VideoRenderError';
+    if (cause) this.cause = cause;
+  }
+}
 
 /**
  * Resolves the Remotion entry point path relative to the scripts directory.
@@ -32,6 +47,81 @@ const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
  */
 export function resolveRemotionEntryPoint(scriptsDir = SCRIPTS_DIR) {
   return path.resolve(scriptsDir, 'remotion-entry.tsx');
+}
+
+/**
+ * Resolves a media source against the script directory and stages it into a
+ * Remotion-served public directory, returning the bundle-relative name. The name
+ * is `<basename>_<sha256-prefix><ext>` so two sources that share a basename (an
+ * in-dir `assets/x.mp4` and an out-of-dir `../shared/x.mp4`) never collide, and
+ * the same source referenced twice stages once.
+ * @param {string} src
+ * @param {string} scriptDir
+ * @param {string} publicDir
+ * @returns {{ name: string, staged: boolean } | null} null when the source is empty or missing.
+ */
+export function stageAsset(src, scriptDir, publicDir) {
+  if (!src || typeof src !== 'string') return null;
+  const abs = path.isAbsolute(src) ? src : path.resolve(scriptDir, src);
+  if (!fs.existsSync(abs)) return null;
+
+  const buf = fs.readFileSync(abs);
+  const ext = path.extname(abs) || '';
+  const base = path.basename(abs, ext).replace(/[^a-zA-Z0-9._-]+/g, '_') || 'asset';
+  const hash = crypto.createHash('sha256').update(buf).digest('hex').slice(0, 12);
+  const name = `${base}_${hash}${ext}`;
+  const dest = path.join(publicDir, name);
+
+  let staged = false;
+  if (!fs.existsSync(dest) || !fs.readFileSync(dest).equals(buf)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+    fs.writeFileSync(dest, buf);
+    staged = true;
+  }
+  return { name, staged };
+}
+
+/**
+ * Rewrites every media reference in a compiled manifest to a staged,
+ * bundle-relative name, copying the resolved source into `publicDir`.
+ *
+ * Sources are resolved against `scriptDir` — NOT the current working directory —
+ * so both in-dir (`assets/…`) and out-of-dir (`../shared/…`) paths resolve.
+ * A referenced source that cannot be resolved is collected into `missing`; the
+ * caller decides how to fail. Pure filesystem work: imports no Remotion module,
+ * so it is the test seam.
+ *
+ * @param {object} manifest
+ * @param {{ scriptDir: string, publicDir: string }} opts
+ * @returns {{ staged: number, missing: string[] }}
+ */
+export function resolveMediaLayers(manifest, opts) {
+  const { scriptDir, publicDir } = opts;
+  const missing = [];
+  let staged = 0;
+
+  const stageField = (obj, field) => {
+    const src = obj?.[field];
+    if (!src || typeof src !== 'string') return;
+    const res = stageAsset(src, scriptDir, publicDir);
+    if (res) {
+      obj[field] = res.name;
+      if (res.staged) staged++;
+    } else {
+      missing.push(src);
+    }
+  };
+
+  const scenes = manifest?.tracks?.scenes || [];
+  for (const scene of scenes) {
+    const layers = scene?.props?.layers;
+    if (!Array.isArray(layers)) continue;
+    for (const layer of layers) stageField(layer, 'layer_asset_source');
+  }
+
+  for (const track of manifest?.tracks?.audio || []) stageField(track, 'assetPath');
+
+  return { staged, missing };
 }
 
 /**
@@ -59,23 +149,30 @@ export async function tryRemotionRender(input, deps = {}) {
       return { rendered: false, reason: `entry-point-missing: ${entryPoint}` };
     }
 
-    const bundleLocation = await remotionBundler.bundle({
+    // Serve the staged media so `staticFile()` in the composition resolves both
+    // in-dir and out-of-dir assets. Read from the manifest so a render from a
+    // persisted manifest (no in-process compile) still finds the media.
+    const publicDir = manifest?.metadata?.publicDir;
+    if (typeof publicDir === 'string' && !fs.existsSync(publicDir)) {
+      return { rendered: false, reason: `public-dir-missing: ${publicDir}` };
+    }
+
+    const serveUrl = await remotionBundler.bundle({
       entryPoint,
       webpackOverride: (config) => config,
+      ...(typeof publicDir === 'string' ? { publicDir } : {}),
     });
 
-    const composition = {
-      id: manifest.compositionId,
-      fps: manifest.fps,
-      durationInFrames: manifest.totalDurationInFrames,
-      width: manifest.width,
-      height: manifest.height,
-      props: manifest,
-    };
+    // The official contract: resolve the composition from the bundle, then render it.
+    const composition = await remotionRenderer.selectComposition({
+      serveUrl,
+      id: COMPOSITION_ID,
+      inputProps: manifest,
+    });
 
     await remotionRenderer.renderMedia({
       composition,
-      serveUrl: bundleLocation,
+      serveUrl,
       codec: 'h264',
       outputLocation: outputPath,
       inputProps: manifest,
@@ -110,6 +207,8 @@ export async function tryRemotionRender(input, deps = {}) {
  * @property {number} [concurrency=4]
  * @property {number} [quality=80]
  * @property {string} [cacheDir]
+ * @property {boolean} [allowMock=false] Write a mock MP4 when Remotion is unavailable.
+ * @property {(id: string) => Promise<object|null>} [loadModule] Remotion module loader seam.
  */
 
 /**
@@ -120,6 +219,7 @@ export async function tryRemotionRender(input, deps = {}) {
  * @property {number} renderTimeMs
  * @property {number} cachedAssetsUsed
  * @property {number} newAssetsSynthesized
+ * @property {boolean} [mocked]
  */
 
 /**
@@ -211,11 +311,18 @@ export async function compileVideo(options) {
     scriptSource: scriptPath,
   });
 
-  // Stage synthesized media and audio locally next to script for developer visibility
+  // Stage every media reference (layers + audio) into a Remotion-served public
+  // dir next to the script, and rewrite the manifest to bundle-relative names.
+  // Sources resolve against the script dir, not the cwd, so in-dir (`assets/…`)
+  // and out-of-dir (`../shared/…`) paths both work. A missing asset is a loud
+  // failure — never a silently dropped layer.
   const scriptDir = path.dirname(scriptPath);
-  const localLayersDir = path.join(scriptDir, 'layers');
+  const publicDir = path.join(scriptDir, 'public');
+  const staging = resolveMediaLayers(manifest, { scriptDir, publicDir });
+  manifest.metadata.publicDir = publicDir;
+
+  // Keep the human-visible local audio staging dir next to the script (developer aid).
   const localAudioDir = path.join(scriptDir, 'audio');
-  fs.mkdirSync(localLayersDir, { recursive: true });
   fs.mkdirSync(localAudioDir, { recursive: true });
 
   for (const [scId, audioInfo] of Object.entries(audioAssets)) {
@@ -225,18 +332,11 @@ export async function compileVideo(options) {
     }
   }
 
-  for (const sc of parsed.scenes) {
-    if (Array.isArray(sc.layers)) {
-      for (const layer of sc.layers) {
-        const src = layer.properties?.layer_asset_source;
-        if (src && fs.existsSync(src)) {
-          const ext = path.extname(src) || '.png';
-          const layerSlug = (layer.name || 'layer').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-          const destLayer = path.join(localLayersDir, `${sc.id}_${layerSlug}${ext}`);
-          fs.copyFileSync(src, destLayer);
-        }
-      }
-    }
+  if (staging.missing.length > 0) {
+    throw new VideoRenderError(
+      `Cannot render: ${staging.missing.length} referenced asset(s) not found ` +
+        `(resolved against ${scriptDir}): ${staging.missing.join(', ')}`,
+    );
   }
 
   if (options.outputPath) {
@@ -279,164 +379,29 @@ export async function renderVideo(options) {
   const outputPath = path.resolve(options.outputVideoPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  // 1. Try Remotion programmatic renderer if installed in project
-  const remotionResult = await tryRemotionRender({
-    manifest,
-    outputPath,
-    concurrency: options.concurrency || 4,
-  });
-  const renderedWithRemotion = remotionResult.rendered;
-  if (!renderedWithRemotion) {
-    console.warn(`[video-engine-cli] Remotion render skipped (${remotionResult.reason}); falling back to FFmpeg`);
-  }
+  // Remotion is the ONLY renderer. A failure is a loud, named, non-zero error —
+  // never a silent FFmpeg fallback or a mock MP4 masquerading as a render.
+  const renderDeps = options.loadModule ? { loadModule: options.loadModule } : {};
+  const remotionResult = await tryRemotionRender(
+    {
+      manifest,
+      outputPath,
+      concurrency: options.concurrency || 4,
+    },
+    renderDeps,
+  );
 
-  // 2. Headless compositing renderer using FFmpeg
-  if (!renderedWithRemotion) {
-    let renderedWithFfmpeg = false;
-    try {
-      const ffmpegCheck = spawnSync('ffmpeg', ['-version'], { encoding: 'utf8' });
-      if (ffmpegCheck.status === 0) {
-        const scenes = manifest.tracks?.scenes || manifest.scenes || [];
-        const fps = manifest.fps || 30;
-        const width = manifest.width || 1920;
-        const height = manifest.height || 1080;
-        const tempSegments = [];
-        const tempDir = path.join(path.dirname(outputPath), '.tmp_render');
-        fs.mkdirSync(tempDir, { recursive: true });
-
-        // Find audio tracks lookup
-        const audioByScene = {};
-        const allAudio = manifest.tracks?.audio || manifest.audioTracks || [];
-        if (Array.isArray(allAudio)) {
-          for (const at of allAudio) {
-            if (at.sceneId) audioByScene[at.sceneId] = at;
-          }
-        }
-
-        // Composite each scene
-        for (let i = 0; i < scenes.length; i++) {
-          const sc = scenes[i];
-          const audioTrack = audioByScene[sc.id] || allAudio[i];
-          let audioPath = audioTrack?.assetPath && fs.existsSync(audioTrack.assetPath) ? audioTrack.assetPath : null;
-
-          // Search in local audio directory if not found
-          if (!audioPath) {
-            const localAudio = path.join(path.dirname(outputPath), 'audio');
-            if (fs.existsSync(localAudio)) {
-              const files = fs.readdirSync(localAudio);
-              const matching = files.find(f => f.startsWith(`${sc.id}_`) || f.includes(sc.id) || f.startsWith(`scene_${i + 1}_`));
-              if (matching) audioPath = path.join(localAudio, matching);
-            }
-          }
-          
-          let imagePath = null;
-          const layers = sc.props?.layers || sc.layers || [];
-          if (Array.isArray(layers)) {
-            for (const layer of layers) {
-              const src = layer.properties?.layer_asset_source || layer.layer_asset_source || layer.src;
-              if (src && fs.existsSync(src)) {
-                imagePath = src;
-                break;
-              }
-            }
-          }
-
-          // Fallback image search in local layers directory or assets directory
-          if (!imagePath) {
-            const localLayers = path.join(path.dirname(outputPath), 'layers');
-            if (fs.existsSync(localLayers)) {
-              const files = fs.readdirSync(localLayers);
-              const matching = files.find(f => f.startsWith(`${sc.id}_`) || f.includes(sc.id) || f.startsWith(`scene_${i + 1}_`));
-              if (matching) imagePath = path.join(localLayers, matching);
-            }
-          }
-          if (!imagePath) {
-            const assetDir = path.dirname(outputPath);
-            const sceneFiles = fs.readdirSync(assetDir).filter(f => f.startsWith(`scene_0${i + 1}`) || f.startsWith(`scene_${i + 1}`));
-            if (sceneFiles.length > 0) {
-              imagePath = path.join(assetDir, sceneFiles[0]);
-            }
-          }
-
-          const sceneDurationSec = audioTrack?.durationSeconds || (sc.durationInFrames ? sc.durationInFrames / fps : 5);
-          const segmentOut = path.join(tempDir, `segment_${i}.mp4`);
-
-          const ffmpegArgs = ['-y'];
-          if (imagePath && fs.existsSync(imagePath)) {
-            ffmpegArgs.push('-loop', '1', '-framerate', `${fps}`, '-i', imagePath);
-          } else {
-            ffmpegArgs.push('-f', 'lavfi', '-i', `color=c=black:s=${width}x${height}:d=${sceneDurationSec}:r=${fps}`);
-          }
-
-          if (audioPath && fs.existsSync(audioPath)) {
-            ffmpegArgs.push('-i', audioPath);
-          } else {
-            ffmpegArgs.push('-f', 'lavfi', '-i', `anullsrc=r=44100:cl=stereo:d=${sceneDurationSec}`);
-          }
-
-          ffmpegArgs.push(
-            '-c:v', 'libx264',
-            '-tune', 'stillimage',
-            '-pix_fmt', 'yuv420p',
-            '-c:a', 'aac',
-            '-b:a', '192k',
-            '-t', `${sceneDurationSec}`,
-            '-shortest',
-            segmentOut
-          );
-
-          const segRes = spawnSync('ffmpeg', ffmpegArgs, { encoding: 'utf8' });
-          if (segRes.status === 0 && fs.existsSync(segmentOut)) {
-            tempSegments.push(segmentOut);
-          }
-        }
-
-        if (tempSegments.length === 1) {
-          fs.copyFileSync(tempSegments[0], outputPath);
-          renderedWithFfmpeg = true;
-        } else if (tempSegments.length > 1) {
-          const concatListFile = path.join(tempDir, 'concat_list.txt');
-          const fileContent = tempSegments.map(s => `file '${s.replace(/\\/g, '/')}'`).join('\n');
-          fs.writeFileSync(concatListFile, fileContent, 'utf8');
-
-          const concatRes = spawnSync('ffmpeg', [
-            '-y',
-            '-f', 'concat',
-            '-safe', '0',
-            '-i', concatListFile,
-            '-c', 'copy',
-            outputPath,
-          ], { encoding: 'utf8' });
-
-          if (concatRes.status === 0 && fs.existsSync(outputPath)) {
-            renderedWithFfmpeg = true;
-          }
-        }
-
-        // Cleanup temporary segment files
-        try {
-          for (const s of tempSegments) if (fs.existsSync(s)) fs.unlinkSync(s);
-          const concatListFile = path.join(tempDir, 'concat_list.txt');
-          if (fs.existsSync(concatListFile)) fs.unlinkSync(concatListFile);
-          fs.rmdirSync(tempDir);
-        } catch {}
-      }
-    } catch {
-      // ffmpeg failed or not available
+  let mocked = false;
+  if (!remotionResult.rendered) {
+    if (!options.allowMock) {
+      throw new VideoRenderError(
+        `Remotion render failed (${remotionResult.reason}). Install the engine via ensure-engine.mjs, ` +
+          `or pass --allow-mock for a CI placeholder MP4.`,
+      );
     }
-
-    if (!renderedWithFfmpeg) {
-      // Write mock mp4 file container with valid header for headless / CI environments
-      const mockMp4Header = Buffer.from([
-        0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, // ftyp
-        0x69, 0x73, 0x6f, 0x6d, 0x00, 0x00, 0x02, 0x00,
-        0x69, 0x73, 0x6f, 0x6d, 0x69, 0x73, 0x6f, 0x32,
-        0x00, 0x00, 0x00, 0x08, 0x66, 0x72, 0x65, 0x65, // free
-        0x00, 0x00, 0x00, 0x10, 0x6d, 0x64, 0x61, 0x74, // mdat
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      ]);
-      fs.writeFileSync(outputPath, mockMp4Header);
-    }
+    console.warn(`[video-engine-cli] Remotion unavailable (${remotionResult.reason}); writing mock MP4 (--allow-mock).`);
+    writeMockMp4(outputPath);
+    mocked = true;
   }
 
   const renderTimeMs = Date.now() - startTime;
@@ -448,7 +413,25 @@ export async function renderVideo(options) {
     renderTimeMs,
     cachedAssetsUsed,
     newAssetsSynthesized,
+    mocked,
   };
+}
+
+/**
+ * Writes a minimal, valid-enough MP4 container for headless/CI environments.
+ * Only ever called behind the explicit `--allow-mock` flag.
+ * @param {string} outputPath
+ */
+function writeMockMp4(outputPath) {
+  const mockMp4Header = Buffer.from([
+    0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, // ftyp
+    0x69, 0x73, 0x6f, 0x6d, 0x00, 0x00, 0x02, 0x00,
+    0x69, 0x73, 0x6f, 0x6d, 0x69, 0x73, 0x6f, 0x32,
+    0x00, 0x00, 0x00, 0x08, 0x66, 0x72, 0x65, 0x65, // free
+    0x00, 0x00, 0x00, 0x10, 0x6d, 0x64, 0x61, 0x74, // mdat
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ]);
+  fs.writeFileSync(outputPath, mockMp4Header);
 }
 
 /**
@@ -528,6 +511,7 @@ async function main() {
         fps: args.fps ? Number(args.fps) : undefined,
         concurrency: args.concurrency ? Number(args.concurrency) : undefined,
         cacheDir: args['cache-dir'],
+        allowMock: Boolean(args['allow-mock']),
       });
       console.log(`✅ [video-engine-cli] Rendered ${result.outputVideoPath}`);
       console.log(`   Duration: ${result.totalDurationSeconds}s (${result.totalFrames} frames) in ${result.renderTimeMs}ms`);

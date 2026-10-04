@@ -1,6 +1,6 @@
 ---
 name: nn-preflight
-description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, innfo-mcp availability, workspace layout, source integrity audit across sources/import/, sources/conversations/, sources/export/) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. Triggers: preflight, readiness, environment check, "run Tier 1".
+description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, innfo-mcp availability, workspace layout, source integrity audit across sources/import/ and sources/conversations/ against their co-located sidecars) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. Triggers: preflight, readiness, environment check, "run Tier 1".
 version: "V_0-2-1"
 last_updated: 2026-09-06
 metadata:
@@ -72,21 +72,20 @@ Environment readiness gate for cogNNitive workflows. Runs deterministic checks a
 
 ## Tier 1 Checks (always run)
 
-1. **Preflight & Integrity Runner**: run `node scripts/preflight-check.js` (or `node ~/.agents/skills/nn-preflight/scripts/preflight-check.js`). When `--workspace-dir <dir>` is passed, audits workspace spec freshness and executes the Universal Source Integrity Audit across `sources/import/`, `sources/conversations/`, and `sources/export/` (with legacy `sources/original/` fallback) against `sources/nn/`. Verifies Node.js >= 18, manifest reachability, installed skills vs pinned commits, MCP bundle availability, skill dependencies (`node_modules`), and templates. If exit code is `1`, report outdated/missing components or unnormalized/dangling sources and prompt for confirmation per the Canonical Activation Gate protocol.
+1. **Preflight & Integrity Runner**: run `node scripts/preflight-check.js` (or `node ~/.agents/skills/nn-preflight/scripts/preflight-check.js`). When `--workspace-dir <dir>` is passed, audits workspace spec freshness and executes the Universal Source Integrity Audit across `sources/import/` and `sources/conversations/`, checking every raw file against its co-located `<file>_sidecar_NN.md`. Verifies Node.js >= 18, manifest reachability, installed skills vs pinned commits, MCP bundle availability, skill dependencies (`node_modules`), and templates. If exit code is `1`, report outdated/missing components or unnormalized/dangling sources and prompt for confirmation per the Canonical Activation Gate protocol.
 2. **Node.js**: require >= 18.
 3. **innfo-mcp availability**: call `innfo-mcp_list_knowledge`; if the MCP tool is unavailable, fall back to checking that the bundle exists at `~/.agents/mcp/innfo-mcp.bundle.js` or `.cogNNitive/mcp-bundle.js`.
 4. **Skill Dependencies Integrity**: verify installed skills containing `package.json` have `node_modules` present and resolvable.
-5. **Workspace layout**: verify the expected directories exist — `sources/` (`sources/import/`, `sources/conversations/`, `sources/export/`, `sources/nn/`), `conversations/`, `export/`, `models/`, `procedures/`, `index.md` (legacy workspaces using `sources/original/` and `artifacts/` are supported via backward-compatible fallbacks).
+5. **Workspace layout**: verify the expected directories exist — `sources/` (`sources/import/`, `sources/conversations/`), `conversations/`, `artifacts/`, `kNNowledge/`, `procedures/`, `index.md`. There are no fallbacks to retired folders (the old normalized mirror, snapshot archive and export folders): with `--workspace-dir` the runner runs the layout detector, and a domain still on the retired layout is reported as `legacy-layout` with a pointer to `nn-upgrade`, which migrates it with consent.
 
 ## Tier 2 Checks (optional — only for iNNfo output workflows)
 
 6. **iNNfo output workspace structure**: for Level 3 model workflows, verify `models/` holds `*_NN.md` files (note that `list_knowledge` recursively scans both the workspace root and the `models/` subdirectory to find all models) and that `index.md` exists with `# NN index` as the entry point.
 7. **Semantic link validation (sources)**: parse all Level 3 model files and verify that every file path listed in the `sources:: [...]` metadata array exists physically in the workspace. Report any missing or dangling sources as warnings.
 8. **Workspace Source Integrity Audit (`scanWorkspaceSources`)**: when `--workspace-dir` is provided:
-   - Discovers files across `sources/import/`, `sources/conversations/`, and `sources/export/` (or legacy `sources/original/`).
-   - Pairs raw media binaries (`.mp3`, `.wav`, etc.) sharing the same stem with text companions via `media_file` without flagging them as unnormalized. Standalone media is classified as informational `raw-media` (pending transcription) and does not flip the exit code to warning.
-   - Recognizes in-line user sources (`inline:` or `chat:`) and does not flag them as dangling.
-   - Verifies that every text source has an up-to-date normalized counterpart in `sources/nn/` matching its content SHA-256 hash. Any unnormalized or stale source is reported as an actionable warning recommending `node skills/nn-trannsform/scripts/index.js --scan`. Emits structured `sources_integrity` payload in `--json` mode.
+   - Discovers raw files across `sources/import/` and `sources/conversations/` (sidecars themselves are not sources; `staging`, `archive` and dot folders are skipped).
+   - Raw media binaries (`.mp3`, `.wav`, `.m4a`, `.mp4`, etc.) without a sidecar are classified as informational `raw-media` (pending transcription) and do not flip the exit code to warning.
+   - Verifies that every raw file has a co-located sidecar whose `sha256` matches the SHA-256 of the raw bytes. A file with no sidecar (`unnormalized`) or a changed file (`stale`, sidecar hash mismatch) is reported as an actionable warning recommending `node skills/nn-trannsform/scripts/index.js --scan` (or `--cognitivize <path>`); a sidecar whose raw file is gone is reported as `dangling` and kept (only a consent-gated `--gc` deletes). A domaiNN without `* -text` in its `.gitattributes` gets a `text-policy-missing` warning (it does not change `sources_integrity.ok`), since line-ending conversion can break raw-byte hashes. Emits structured `sources_integrity` payload in `--json` mode.
 
 ## Tier 3 Checks (workspace template upgrades — informational)
 

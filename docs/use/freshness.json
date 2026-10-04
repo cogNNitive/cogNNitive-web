@@ -1,34 +1,107 @@
 {
-  "generatedAt": "2026-10-04T08:30:28.092Z",
-  "head": "a83a489411be51d81e241ad7e0680df952e3d954",
+  "generatedAt": "2026-10-04T12:32:25.223Z",
+  "head": "f93f56e6eb4821661e1df1a37c0576ccbbbd7625",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.12.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 16,
+      "filesTouched": [
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-innfo/test/skill-no-hardcoded-specs.test.js",
+        "skills/nn-preflight/SKILL.md",
+        "skills/nn-preflight/scripts/preflight-check.js",
+        "skills/nn-preflight/scripts/preflight-check.test.js",
+        "skills/nn-skills-lifecycle/SKILL.md",
+        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
+        "skills/nn-trannsform/README.md",
+        "skills/nn-trannsform/SKILL.md",
+        "skills/nn-trannsform/TESTING.md",
+        "skills/nn-trannsform/citations.md",
+        "skills/nn-trannsform/scripts/lib/bootstrap.js",
+        "skills/nn-trannsform/scripts/provenance.js",
+        "skills/nn-trannsform/test/unit/test-external-scanner.js",
+        "skills/nn-trannsform/test/unit/test-lineage-check.js",
+        "skills/nn-trannsform/test/unit/test-lineage-migration.js",
+        "skills/nn-trannsform/test/unit/test-provenance.js",
+        "skills/nn-video-script/SKILL.md",
+        "skills/nn-video-script/scripts/ScriptRoot.tsx",
+        "skills/nn-video-script/scripts/asset-cost-estimator.mjs",
+        "skills/nn-video-script/scripts/asset-synthesizer.mjs",
+        "skills/nn-video-script/scripts/ensure-engine.mjs",
+        "skills/nn-video-script/scripts/lib/innfo-video-parser.generated.mjs",
+        "skills/nn-video-script/scripts/remotion-entry.tsx",
+        "skills/nn-video-script/scripts/remotion-scene-compiler.mjs",
+        "skills/nn-video-script/scripts/scene/AvatarFrame.tsx",
+        "skills/nn-video-script/scripts/scene/Scene.tsx",
+        "skills/nn-video-script/scripts/scene/layer-primitive.mjs",
+        "skills/nn-video-script/scripts/scene/overlays/ConceptCallout.tsx",
+        "skills/nn-video-script/scripts/scene/overlays/KineticTitle.tsx",
+        "skills/nn-video-script/scripts/scene/overlays/LowerThird.tsx",
+        "skills/nn-video-script/scripts/tts-generator.mjs",
+        "skills/nn-video-script/scripts/video-engine-cli.mjs",
+        "skills/nn-video-script/scripts/vus-parse-runner.mjs",
+        "skills/nn-video-script/scripts/vus-parse.mjs",
+        "skills/nn-video-script/test/asset-synthesizer.test.mjs",
+        "skills/nn-video-script/test/cache-manager.test.mjs",
+        "skills/nn-video-script/test/ensure-engine.test.mjs",
+        "skills/nn-video-script/test/parser-mirror.test.mjs",
+        "skills/nn-video-script/test/scene-compiler.test.mjs",
+        "skills/nn-video-script/test/scene-media-types.test.mjs",
+        "skills/nn-video-script/test/video-engine-cli.test.mjs",
+        "skills/nn-video-script/test/vus-parse.test.mjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.21.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-2_analysis_NN.md",
+        "iNNfo/specs/bluepriNNts/business-model/samples/Ghostbusters_V_0-3-0_business-model_NN.md",
+        "iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-4-0_business_NN.md",
+        "iNNfo/specs/bluepriNNts/design-presets/samples/Ghostbusters_V_0-3-0_design-presets_NN.md",
+        "iNNfo/specs/bluepriNNts/documentation/samples/Ghostbusters_V_0-3-2_documentation_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-3-2_innovation_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-1_metrics_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-3-2_organization_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-3-1_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-2_projects_NN.md",
+        "iNNfo/specs/bluepriNNts/repository/samples/Ghostbusters_V_0-2-0_repository_NN.md",
+        "iNNfo/specs/bluepriNNts/video/samples/Ghostbusters_V_0-7-1_video_NN.md"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.21.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-2_analysis_NN.md",
+        "iNNfo/specs/bluepriNNts/business-model/samples/Ghostbusters_V_0-3-0_business-model_NN.md",
+        "iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-4-0_business_NN.md",
+        "iNNfo/specs/bluepriNNts/design-presets/samples/Ghostbusters_V_0-3-0_design-presets_NN.md",
+        "iNNfo/specs/bluepriNNts/documentation/samples/Ghostbusters_V_0-3-2_documentation_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-3-2_innovation_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-1_metrics_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-3-2_organization_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-3-1_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-2_projects_NN.md",
+        "iNNfo/specs/bluepriNNts/repository/samples/Ghostbusters_V_0-2-0_repository_NN.md",
+        "iNNfo/specs/bluepriNNts/video/samples/Ghostbusters_V_0-7-1_video_NN.md"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.14.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/test/defects-d1-d9-regression.test.ts"
+      ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",

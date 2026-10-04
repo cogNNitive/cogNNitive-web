@@ -35,7 +35,7 @@ export class TTSGenerator {
    * Probes duration of an audio file in seconds.
    * @param {string} filePath
    */
-  probeDuration(filePath) {
+  async probeDuration(filePath) {
     return probeAudioDuration(filePath);
   }
 }

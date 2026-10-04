@@ -7,11 +7,15 @@ Citations are rendered in a single pass directly from Level 3 model pointers (`s
 ## Citation targets: Sources and Models
 
 A `<ref>` is `<path>@<unit>`. It resolves canonically as:
-- **Sources** live under `sources/nn/`. An **unqualified** path resolves there by default (`interview.md@## Feedback` → `sources/nn/interview.md@## Feedback`); the explicit `sources/nn/` prefix is still tolerated. Header levels are preserved (`@#`, `@##`, `@###`).
-- **Tabular sources** are cited directly from curated CSVs: `sources/nn/metricas_q3.csv@104` (row by first-column key), `sources/nn/metricas_q3.csv@104&mrr_usd` (one cell). Normalized-MD derivatives are an ingestion aid, not a citation target.
-- **Models** are a first-class citation target under the explicit `models/` namespace: `models/Finance_V_1-0-0_business_NN.md@## Revenue Forecast`. Same `path@unit` syntax; the parser and workspace-source validator already resolve it.
+There is **no implicit path prefix**: `<path>` is always domaiNN-relative and written in full.
+- **Text sources** (`md`, `csv`, `json`) are cited directly at their own path: `sources/import/interview.md@## Feedback`. Header levels are preserved (`@#`, `@##`, `@###`).
+- **Binary sources** (PDF, DOCX, XLSX) cannot be cited directly (citing `x.pdf@...` reports `KU_BINARY_TARGET`): cite the co-located sidecar, whose body holds the normalized Markdown: `sources/import/report_20261001T101500Z.pdf_sidecar_NN.md@## Findings`.
+- **Tabular sources** are cited by row key (first column) or cell: `sources/import/metricas_q3.csv@104` (row), `sources/import/metricas_q3.csv@104&mrr_usd` (one cell). When the raw CSV has no unique first-column key, cite the curated CSV (`artifacts/curated/metricas_q3_20261001T101500Z.csv@104`, see `--curate-csv`).
+- **JSON sources** are cited with a JSON Pointer (RFC 6901, starting with `/`; a literal `&` is written `%26`): `sources/import/data.json@/items/0/name`.
+- **Models** are a first-class citation target at their explicit path under `kNNowledge/`: `kNNowledge/Finance_business_NN.md@## Revenue Forecast`. Same `path@unit` syntax; the parser and workspace-source validator already resolve it.
+- A target under `staging/` is scratch and never citable (`KU_EXCLUDED_PATH`).
 
-**Artifact → model → source chain.** A deliverable MAY cite a Model element directly (`models/x.md@## Concept: Element`). That element carries its own `sources::` pointing at `sources/nn/…`, so provenance stays fully traceable end to end: *artifact → `models/x.md@## Concept: Element` → `sources/nn/1.md@## Section`* (or `→ sources/nn/m.csv@104&column` for data claims). Cite the Model when the claim is the model's own synthesized position; cite the Source when the claim is a raw fact.
+**Artifact → model → source chain.** A deliverable MAY cite a Model element directly (`kNNowledge/x_business_NN.md@## Concept: Element`). That element carries its own `sources::` pointing at the sources, so provenance stays fully traceable end to end: *artifact → `kNNowledge/x_business_NN.md@## Concept: Element` → `sources/import/1.md@## Section`* (or `→ sources/import/m.csv@104&column` for data claims). Cite the Model when the claim is the model's own synthesized position; cite the Source when the claim is a raw fact.
 
 **Heading-level convention (authoring rule).** For Model-element anchors to be stable and meaningful: `# NN <Concept>` (H1 = Concept), `## NN <Concept>: <Element>` (H2 = Element), `###`+ only inside an element's prose. The slug algorithm is level-agnostic — this is authorial discipline, not a validation gate.
 
@@ -26,7 +30,7 @@ Rules:
   ```markdown
   [^N]: <Source Title or Filename> (<path>@<unit>), <unit-label>.
   ```
-- Units MUST be valid knowledge-unit pointers (`@` grammar: header with level, or CSV row/cell) resolving in the cited file under `sources/nn/` (legacy `#slug` anchors validate with a deprecation warning).
+- Units MUST be valid knowledge-unit pointers (`@` grammar: header with level, CSV row/cell, or JSON Pointer) resolving in the cited file at its domaiNN-relative path (legacy `#slug` anchors validate with a deprecation warning).
 
 Example:
 ```markdown
@@ -34,7 +38,7 @@ The operational target for Q3 is 12,000 active units[^1].
 
 ...
 
-  [^1]: Strategic Growth Plan (strategic_plan_source.md@## Q3 Milestones), section Q3 Milestones.
+  [^1]: Strategic Growth Plan (sources/import/strategic_plan.md@## Q3 Milestones), section Q3 Milestones.
 ```
 
 ## Format: Simple — Verbatim Source Attribution
@@ -69,7 +73,7 @@ The organization had 45 active members in 2023 (IF Narrative, 2024, section IOE.
 Generate a reference list at the end titled "References" with full entries per unique source.
 
 ### Primary vs. Secondary Citation Resolution
-When a source file in `sources/nn/` contains a `cited_works:` block in its frontmatter (e.g. citing an external work like `porter1985` with `is_primary: true`):
+When a source (its own frontmatter for a Markdown file, its sidecar frontmatter otherwise) contains a `cited_works:` block (e.g. citing an external work like `porter1985` with `is_primary: true`):
 - Cross-reference the claim against the source document's `cited_works:` metadata.
 - If the claim is an attribution of a third-party theory or finding (e.g. Porter's framework cited within a Market Report by Doe):
   Format in APA as: *(Porter, 1985, as cited in Doe, 2026)* or prompt to cite the primary work directly.
@@ -136,12 +140,12 @@ Rules:
 
 ## Format: BibTeX — Export `.bib` File
 
-Generate the deliverable markdown body without inline citations or HTML comments, and create a companion `.bib` file alongside the deliverable (`export/[Deliverable_Name]_V_x-y-z.bib`) with one entry per unique source file in `sources/nn/`.
+Generate the deliverable markdown body without inline citations or HTML comments, and create a companion `.bib` file alongside the deliverable (`artifacts/[Deliverable_Name]_<YYYYMMDDTHHmmssZ>.bib`) with one entry per unique source file cited.
 
-Use this template for each entry. Fill placeholder fields from the source filename and frontmatter. The citation key is a slugified version of the `sources/nn/` path (slashes and dots become hyphens):
+Use this template for each entry. Fill placeholder fields from the source filename and frontmatter. The citation key is a slugified version of the source's domaiNN-relative path (slashes and dots become hyphens):
 
 ```bibtex
-@techreport{sources-nn-relative-path-to-source-md,
+@techreport{sources-import-relative-path-to-source-md,
   author       = {Organization or Author Name},
   title        = {Full Source Title},
   year         = {YYYY},
@@ -152,24 +156,24 @@ Use this template for each entry. Fill placeholder fields from the source filena
 
 Rules:
 - If the source frontmatter provides a `canonical.bibtex` block, emit that canonical BibTeX entry verbatim rather than re-synthesizing it.
-- One entry per unique source path under `sources/nn/` — reuse keys, do not duplicate.
+- One entry per unique cited source path — reuse keys, do not duplicate.
 - Adapt entry type for non-report sources:
   - Interviews: `@misc{<key>, author={...}, title={...}, year={...}, howpublished={\url{...}}}`
   - Web pages: `@misc{<key>, author={...}, title={...}, year={...}, howpublished={\url{...}}}`
   - Articles: `@article{<key>, author={...}, title={...}, journal={...}, year={...}}`
-- The citation key MUST be derived deterministically from the `sources/nn/` path (e.g., `sources/nn/if-narrative-gv22bo-1.md` → `sources-nn-if-narrative-gv22bo-1-md`), never an arbitrary counter.
-- Save the output file as `export/[Deliverable_Name]_V_x-y-z.bib` alongside the exported markdown deliverable.
+- The citation key MUST be derived deterministically from the source path (e.g., `sources/import/if-narrative-gv22bo-1.md` → `sources-import-if-narrative-gv22bo-1-md`), never an arbitrary counter.
+- Save the output file as `artifacts/[Deliverable_Name]_<YYYYMMDDTHHmmssZ>.bib` alongside the exported markdown deliverable (same UTC stamp; artifacts are write-once, never overwritten).
 - Do NOT include HTML comments or visible citations in the main document body — produce a clean document.
 
 Example entry for a report source:
 
 ```bibtex
-@techreport{sources-nn-if-narrative-gv22bo-1-md,
+@techreport{sources-import-if-narrative-gv22bo-1-md,
   author       = {IF Narrative GV22BO-1},
   title        = {IF Narrative GV22BO-1},
   year         = {2024},
   type         = {Report},
-  howpublished = {\url{sources/nn/if-narrative-gv22bo-1.md}}
+  howpublished = {\url{sources/import/if-narrative-gv22bo-1.md}}
 }
 ```
 
@@ -181,4 +185,4 @@ Rules:
 - Do not emit `[^N]` markers, `— Source:` strings, or bibliographic keys in the text body.
 - Do not append footnotes, References, Works Cited, or Bibliography sections.
 - Do not generate `.bib` companion files.
-- Deliverable is output as clean, presentation-ready markdown directly to `export/[Deliverable_Name]_V_x-y-z.md`.
+- Deliverable is output as clean, presentation-ready markdown directly to `artifacts/[Deliverable_Name]_<YYYYMMDDTHHmmssZ>.md` (a new write-once member; never overwrite an earlier one).

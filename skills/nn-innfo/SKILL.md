@@ -10,13 +10,13 @@ bundled_blueprints:
   - name: workspace_spec_iNNfo_NN
     path: templates/workspace_spec_iNNfo_NN.md
 description: |
-  Domain skill for creating, editing, validating, scaffolding, or discussing iNNfo models, apps, specializations, samples, or specification files. Includes the conversational Model Creation Wizard and Architecture Assistant. Triggers: innfo, iNNfo, info, /nn-innfo, model, modelo, template, plantilla, spec, wizard, *_NN.md, procedures_V_0-1-0_NN.md.
+  Domain skill for creating, editing, validating, scaffolding, or discussing iNNfo models, apps, specializations, samples, or specification files. Includes the conversational Model Creation Wizard and Architecture Assistant. Triggers: innfo, iNNfo, info, /nn-innfo, model, modelo, template, plantilla, spec, wizard, *_NN.md.
   This includes but is not limited to:
   - Creating a new model step-by-step using apps (Business, Procedures, Organization, Metrics, Blank)
   - Creating or editing any file matching *_NN.md
   - Authoring or modifying business models, procedure models, or any model following an iNNfo app
   - Creating, editing, or modifying apps or specializations under docs/bluepriNNts/
-  - Discussing the iNNfo V_0-2-0 specification, meta-templates, primitives, matrices, or naming conventions
+  - Discussing the iNNfo specification, meta-templates, primitives, matrices, or naming conventions
   - Any conversation about how iNNfo works, how to use it, or how to structure iNNfo files
   - Executing procedures declared in a model
 ---
@@ -30,21 +30,21 @@ description: |
    - Upon session exit or wizard completion:
      - Zero Discard Policy: all sessions are retained unconditionally in `conversations/`.
      - For non-trivial sessions, present 3 suggested titles (`[1] (Recommended)`), finalize frontmatter (`status: completed`), and rename to `conversations/YYYY-MM-DD_<slug>.md`.
-     - Prompt for promotion to `sources/conversations/` (`[full]`, `[none]` — the raw transcript is always registered in `conversations/`; `_source.md` promotion is optional) for ingestion into the workspace knowledge graph and model citations (`sources:: [conversations/<file>.md@<unit>]`).
+     - Prompt for promotion to `sources/conversations/` (`[full]`, `[none]` — the raw transcript is always registered in `conversations/`; promotion is optional; a promoted transcript is a write-once `<slug>_<UTC stamp>.md` cognitivized in place) for ingestion into the workspace knowledge graph and model citations (`sources:: [sources/conversations/<file>.md@<unit>]`).
 
 ---
 
 ## Activation Contract
 
-Activates when the user invokes `/nn-innfo`, mentions domain keywords `innfo`, `iNNfo`, `model`, `template`, references files matching `*_NN.md` or `procedures_V_0-1-0_NN.md`, or explicitly asks to:
+Activates when the user invokes `/nn-innfo`, mentions domain keywords `innfo`, `iNNfo`, `model`, `template`, references files matching `*_NN.md`, or explicitly asks to:
 - Create a new model step-by-step using apps (Business, Procedures, Organization, Metrics, Blank).
 - Create or edit any file matching `*_NN.md`.
 - Author or modify business models, procedure models, or any model following an iNNfo app.
 - Create, edit, or modify apps or specializations under `docs/bluepriNNts/`.
-- Discuss the iNNfo V_0-2-0 specification, meta-templates, primitives, matrices, or naming conventions.
+- Discuss the iNNfo specification, meta-templates, primitives, matrices, or naming conventions.
 - Execute procedures declared in a model.
 
-This skill guides LLMs and agents in authoring, creating from scratch (wizard), editing, auditing, and validating **iNNfo-compliant files** (V_0-2-0 Meta-template specification with unified `NN` syntax: `# NN`, `## NN`, and `key:: value`).
+This skill guides LLMs and agents in authoring, creating from scratch (wizard), editing, auditing, and validating **iNNfo-compliant files** (Meta-template specification with unified `NN` syntax: `# NN`, `## NN`, and `key:: value`).
 
 **Resolution, validation, and mutation are delegated to the `innfo-mcp` server** — a deterministic engine wrapping `@cognnitive/innfo-core`. The agent does NOT hand-resolve spec chains, hand-validate models, or guess syntax when the MCP is available. See §1 (MCP Operating Model) and §7 (Delegation Contract).
 
@@ -61,17 +61,14 @@ This skill guides LLMs and agents in authoring, creating from scratch (wizard), 
 The iNNfo ecosystem establishes an explicit taxonomy for sources and evidence:
 
 1. **Primary Source (Fuente Primaria)**:
-   - The immutable, original evidence files located in `sources/import/` (or legacy `sources/original/`) or watched via `## NN External Watch Roots:` (read-only).
+   - The immutable, original evidence files located in `sources/import/` or watched via `## NN External Watch Roots:` (read-only).
    - Includes raw text documents, spreadsheets, PDFs, and raw media (`.mp3`, `.wav`, `.mp4`).
 2. **Normalized Source / Secondary Source (Fuente Normalizada / Secundaria)**:
-   - Structured Markdown files generated under `sources/nn/` carrying canonical origin metadata in frontmatter (`source_file`, `sha256`, optional `media_file`).
-   - Cited in Level 3 model elements via `sources:: [sources/nn/path.md@## Heading]`.
-3. **Companion Media & Lineage Playback**:
-   - When a source is paired with a companion audio/video file sharing the same stem (e.g. `Grabación (21).txt` + `Grabación (21).mp3`), the normalized Markdown links it via `media_file`.
-   - In the iNNfo Modeler lineage modal, companion media is surfaced with an embedded audio/video player for seamless evidence playback.
-4. **Synthetic Source (Fuente Sintética)**:
-   - Derived deliverables re-ingested into `sources/export/`.
-5. **User Input Source (Fuente de Entrada de Usuario)**:
+   - Cognitivized in place: a co-located sidecar `<file>.<ext>_sidecar_NN.md` sits next to each raw file and carries the canonical origin metadata in frontmatter (`source_file`, `sha256`, `size_bytes`, `source_format`, `normalized_at`). Binary sources (PDF, DOCX, XLSX) also carry the normalized Markdown body in the sidecar; `md`, `csv` and `json` files are their own text, so their sidecar has no body.
+   - Cited in Level 3 model elements via a full domaiNN-relative path: `sources:: [sources/import/path.md@## Heading]` for text files, or the sidecar for a binary (`sources/import/report_20261001T101500Z.pdf_sidecar_NN.md@## Heading`).
+3. **Synthetic Source (Fuente Sintética)**:
+   - Derived deliverables (files under `artifacts/`) cognitivized in place; their upstream is the `sources` they declare.
+4. **User Input Source (Fuente de Entrada de Usuario)**:
    - In-line interactive input (`source_file: "inline:..."`) exempt from physical disk file existence.
 
 ---
@@ -145,7 +142,7 @@ If the user wants to create a model but is unsure which app fits best:
 
 1. Ask 2-3 brief diagnostic questions:
    - Is the goal to structure a business model / value proposition, a step-by-step operational process, an organizational / team structure, or a quantified metrics / projections model?
-   - Do you have source documents in `sources/nn/` to extract information from, or are we starting from scratch?
+   - Do you have source documents in `sources/import/` (cognitivized, so they carry sidecars) to extract information from, or are we starting from scratch?
 2. Recommend the optimal app with a 1-sentence technical justification and mark option `[a]` with `(Recommended)`.
 
 ---
@@ -247,7 +244,7 @@ With structure approved, offer the drafting mode:
 - **[b] Full Generation:** The agent drafts the complete draft in a single file for subsequent audit, following the plan approved in B1.
 
 **B3. Model Naming & Scaffolding**:
-Prompt for `{ModelName}` and create `{ModelName}_V_0-1-0_{Template}_NN.md` with workspace structure (`kNNowledge/`, `sources/nn/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
+Prompt for `{ModelName}` and create `{ModelName}_{Template}_NN.md` (the stem ends with the bluepriNNt name; the version lives in the `knowledge_version` frontmatter key, not in the file name) with workspace structure (`kNNowledge/`, `sources/import/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
 
 **B4. Validation & Visual Checklist**:
 Validate via `innfo-mcp_validate_knowledge` and output the Visual Expectation Checklist (§12).
@@ -258,7 +255,7 @@ Validate via `innfo-mcp_validate_knowledge` and output the Visual Expectation Ch
 
 When the user selects option `[w]` (View & consult documentation):
 1. Present available iNNfo documentation categories and guides:
-   - **Level 1 Core Specification**: `iNNfo_V_0-2-0_NN.md` (Primitives: Concepts, Fields, Matrices, Markers).
+   - **Level 1 Core Specification**: the iNNfo specification, fetched with `innfo-mcp_get_spec` (Primitives: Concepts, Fields, Matrices, Markers).
    - **Level 2 Canonical Templates**: Business, Procedures, Organization, Metrics, Projects, Innovation, Analysis, Documentation.
    - **Syntactic & Structural Rules**: Heading conventions (`# NN`, `## NN`), typing heuristics, WikiLink reference formatting (`[[...]]`), and source citation grammar (`sources:: [...]`).
    - **Artifact & Console Architecture**: Console shell, slot payloads, and interactive console runtimes.
@@ -283,7 +280,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 > [!NOTE]
 > **The MCP server (`innfo-mcp`) and the canonical specifications are the ONLY source of truth (SSOT) for syntax and data types.** The agent does NOT reproduce grammar rules from memory; it queries them dynamically via MCP (`innfo-mcp_get_spec` / `innfo-mcp_get_blueprint`).
 
-### iNNfo Level Summary (V_0-2-0)
+### iNNfo Level Summary
 
 | Level | Role | Canonical Term | Syntax & Structure |
 |---|---|---|---|
@@ -324,11 +321,10 @@ The `innfo-mcp` server exposes 17 deterministic tools built on `@cognnitive/innf
 
 ## 2. Canonical Specification Reference
 
-Stable reference URLs (the version lives in the file name — `main` is already content-pinned):
-- **iNNfo (Level 1):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-0_NN.md`
-- **Business (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-0_NN.md`
-- **Procedures (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md`
-- **Organization (Level 2):** `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md`
+Do NOT hardcode specification URLs or versions in this skill: spec file names and versions change between releases. Resolve specs at runtime:
+
+- **iNNfo (Level 1) and any Level 2 blueprint:** `innfo-mcp_get_spec` / `innfo-mcp_get_blueprint` (list available ones with `innfo-mcp_list_blueprints`).
+- **A model's own parent:** the `parent_spec.url` declared in its frontmatter.
 
 ### The `parent_spec.url` Rule for Level 3 Models
 
@@ -343,15 +339,16 @@ Stable reference URLs (the version lives in the file name — `main` is already 
 ## 4. Source Citation Protocol (`sources::`)
 
 1. **Optional:** `sources::` is an **OPTIONAL** traceability property. It does not syntactically invalidate a Level 3 model if absent.
-2. **Sources and Path Resolution:** Normalized sources live in the Source Collection (`sources/nn/`). **Every unqualified path resolves against `sources/nn/` by default**, removing redundant prefixes:
-   - Simple relative paths: `client_interview_transcript.md#feedback` resolves canonically to `sources/nn/client_interview_transcript.md`.
-   - Subfolders: `interviews/interview_transcript.md#overview` resolves to `sources/nn/interviews/interview_transcript.md`.
-   - The explicit `sources/nn/` prefix is still tolerated for backward compatibility.
-    - **A Model is a first-class Source.** `kNNowledge/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains Lineage: `artifact → kNNowledge/x.md@## Concept: Element → sources/nn/1.md@## Section`. Model paths are always explicit (`kNNowledge/…`); only unqualified paths default to `sources/nn/`.
-    - **Curated CSVs are citable.** `sources/nn/<file>.csv@<row-id>` addresses the row whose first-column value equals `<row-id>` (e.g. `metricas_q3.csv@104`); append `&<column>` for one cell (`metricas_q3.csv@104&mrr_usd`). Raw uploads under `sources/original/` are never citable.
+2. **Sources and Path Resolution:** Sources are cognitivized in place: a raw file keeps its path and gets a co-located sidecar (`<file>.<ext>_sidecar_NN.md`). **There is no implicit path prefix**: every citation path is domaiNN-relative and written in full.
+   - Text files (`md`, `csv`, `json`) are cited directly: `sources/import/client_interview_transcript.md@## Feedback`.
+   - Subfolders are part of the path: `sources/import/interviews/interview_transcript.md@## Overview`.
+   - Binary files (PDF, DOCX, XLSX) cannot be cited directly (`KU_BINARY_TARGET`): cite the sidecar, whose body holds the normalized Markdown: `sources/import/report_20261001T101500Z.pdf_sidecar_NN.md@## Findings`.
+    - **A Model is a first-class Source.** `kNNowledge/<path>.md@<unit>` is a valid citation target with the identical `path@unit` syntax as a Source — the parser (`parseKnowledgeUnitRef`) and validator already resolve it. Citing a Model element chains Lineage: `artifact → kNNowledge/x_business_NN.md@## Concept: Element → sources/import/1.md@## Section`.
+    - **CSVs are citable by row.** `sources/import/<file>.csv@<row-id>` addresses the row whose first-column value equals `<row-id>` (e.g. `sources/import/metricas_q3.csv@104`); append `&<column>` for one cell (`...csv@104&mrr_usd`). The first column must be a unique, non-empty key; when the raw CSV has none, cite the curated CSV that `nn-trannsform --curate-csv` writes under `artifacts/curated/`.
+    - **JSON files are citable by JSON Pointer** (RFC 6901, starting with `/`; a literal `&` is written `%26`): `sources/import/data.json@/items/0/name`.
    - **Heading-level convention (authoring rule).** So model-heading slugs are stable and meaningful: `# NN <Concept>` (H1 = Concept), `## NN <Concept>: <Element>` (H2 = Element), and `###`+ only inside an element's description/prose — never as standalone structural blocks. The slug algorithm is level-agnostic; this is discipline, not validation.
    - Global PIDs use schema identifiers: `doi:10.1145/3290605.3300233`.
-3. **Staging Isolation (`sources/staging/`):** The `sources/staging/` folder is a transient extraction buffer (OCR, Whisper, etc.) and is **NEVER a valid citation target**. Models only cite normalized sources under `sources/nn/`.
+3. **Staging Isolation (`staging/`):** Any `staging/` folder is a transient extraction buffer (OCR, Whisper, etc.) and is **NEVER a valid citation target** (a citation into it reports `KU_EXCLUDED_PATH`). Models only cite cognitivized sources (raw text files or sidecars).
 4. **Exact grammar and stable anchors:**
    ```
    sources:: <ref>
@@ -360,24 +357,25 @@ Stable reference URLs (the version lives in the file name — `main` is already 
     <ref>  ::= <relative-path>@<unit>( &<subunit> )*
     <unit> ::= <level><slug>          (Markdown: `@## Section`, header level preserved)
              | <row-id>               (CSV: `@104`, explicit first-column value)
+             | <json-pointer>         (JSON: `@/items/0/name`, RFC 6901, starts with `/`)
     <subunit> ::= <field-name> | <column-name>   (names only, never values)
     ```
     - Markdown units keep their header level (`@#`, `@##`, `@###`) and slugify GitHub-style, except the `Concept: Element` boundary which stays visible as `--` (e.g. `@## NN Person: Dr. Egon Spengler` → slug `nn-person--dr-egon-spengler`).
     - Numeric line ranges (`#L1-L10`) and legacy `#slug` fragments are **deprecated** (the latter still validates with a warning during transition) — ranges are fragile under reformatting, bare slugs are level-blind.
     - Every unit must resolve in the cited document; queries (`?filter=…`) are NEVER valid inside `sources::` — they belong to retrieval tools, not citations.
-5. **`sources::` is ALWAYS a bracketed list `[...]`, even for a single source.** The L1 spec requires `sources:: [sources/nn/<filename>@<unit>, ...]` — it MUST always be formatted as a list enclosed in brackets `[...]`, even when referencing a single source document. There is no scalar syntax and no bracket omission for a single value (see `iNNfo/specs/iNNfo_V_0-2-0_NN.md`). In `type:: reference` fields, the WikiLink syntax `[[...]]` is separately mandatory (see §8d and Core Rule 12):
+5. **`sources::` is ALWAYS a bracketed list `[...]`, even for a single source.** The L1 spec requires `sources:: [sources/import/<filename>@<unit>, ...]` — it MUST always be formatted as a list enclosed in brackets `[...]`, even when referencing a single source document. There is no scalar syntax and no bracket omission for a single value (see the iNNfo specification via `innfo-mcp_get_spec`). In `type:: reference` fields, the WikiLink syntax `[[...]]` is separately mandatory (see §8d and Core Rule 12):
    ```markdown
    ## NN Stakeholders: Enterprise Customer
-    sources:: [sources/nn/client_interview_transcript.md@## Key Feedback, sources/nn/notes_source.md@## Key Points]
+    sources:: [sources/import/client_interview_transcript.md@## Key Feedback, sources/import/notes.md@## Key Points]
    relationship_model:: B2B Long-term
 
    ## NN Stakeholders: Pilot Customer
-    sources:: [sources/nn/notes_source.md@## Key Points]
+    sources:: [sources/import/notes.md@## Key Points]
    relationship_model:: Trial
    ```
 6. **Granularity: element-level, not individual-claim level.** `sources::` covers the set of sources backing the WHOLE element (all its fields together) — there is no per-field or per-sentence citation mechanism inside a domain model. If different fields of the same element come from different sources, list the union of them all in the element's single `sources::`. Claim-level citation (via standard `[^1]` footnotes or bibliographic formats) is a separate mechanism, used only inside artifacts generated from the model (see `nn-trannsform/SKILL.md` §4) — never inside a `*_NN.md`.
 7. **No duplicates or empty references.** Do not repeat the same `<ref>` twice in one list. If there is no real source to cite, omit the whole field — do not write `sources:: []` or a placeholder value.
-8. **Conversational instruction:** If the project has files under `sources/nn/`, the agent should suggest adding `sources::`. If it is a greenfield / creative model from scratch, the agent does NOT request or require citations. In both cases the skill's general rule applies: never invent a `<ref>` or content that is not verifiably present in the cited file.
+8. **Conversational instruction:** If the project has cognitivized sources (files under `sources/` with sidecars), the agent should suggest adding `sources::`. If it is a greenfield / creative model from scratch, the agent does NOT request or require citations. In both cases the skill's general rule applies: never invent a `<ref>` or content that is not verifiably present in the cited file.
 9. **Retrieval queries (`?`) are never a citation.** A `path?filter=value` expression (e.g. `metricas_q3.csv?segmento=Enterprise`) selects a SET of units for retrieval tools — it MUST NEVER appear inside `sources::` (the validator rejects it: run the query, then cite the resulting `@` pointers). `@` addresses one unit; `?` selects many; the two never mix in one string.
 10. **`conflicts::` flags disagreeing Sources.** `conflicts::` is a reserved, OPTIONAL element property with the identical pointer-array grammar as `sources::` (same `<ref>` syntax, same bracketed-list requirement, same `@unit`/`&subunit` addressing). It is used when 2+ cited Sources genuinely disagree on a fact backing the element. The validator checks each `conflicts::` pointer exactly like a `sources::` pointer (same malformed-reference errors), but a `conflicts::` reference is **never** treated as a citation edge — it never contributes to `node.sources` or to any Lineage relationship. A valid `conflicts::` pointer instead raises a `SRC_CONFLICT_FLAGGED` warning, surfacing the disagreement for human review. Resolution is manual and out of band: state which Source is authoritative (or how the conflict was reconciled) in the element's `rationale::` field — there is no automated precedence or conflict-resolution ranking.
 
@@ -407,7 +405,7 @@ Every skill-driven `.md` write (new model, app, specialization, or full-file rew
 
 #### Agent Modification lineage (MANDATORY on every successful `apply_change`)
 
-Whenever an `innfo-mcp_apply_change` call returns `success: true` **and** a `modification` field, you MUST paste that block **verbatim** into your reply, under its own `## NN Agent Modification: <slug>` heading exactly as returned (the block already opens with that heading — reproduce it, do not re-slug it). This makes the synthetic reasoning addressable by heading-slug, so a promoted `_source.md` transcript is citeable via `@` pointers — pasted modifications via `sources:: [conversations/<session-slug>_source.md@## NN Agent Modification: <scope>]` and transcript turns via `sources:: [conversations/<session-slug>_source.md@## NN Turn NN: <author-id>]`. The `#` fragment form (`#<slug>`) MUST NOT be used for `## NN …: …` headings: the Concept/Element boundary in their slug contains `--`, which `parseSourceRef` rejects (`KU_MALFORMED`).
+Whenever an `innfo-mcp_apply_change` call returns `success: true` **and** a `modification` field, you MUST paste that block **verbatim** into your reply, under its own `## NN Agent Modification: <slug>` heading exactly as returned (the block already opens with that heading — reproduce it, do not re-slug it). This makes the synthetic reasoning addressable by heading-slug, so a promoted transcript is citeable via `@` pointers — pasted modifications via `sources:: [sources/conversations/<session-slug>_<UTC stamp>.md@## NN Agent Modification: <scope>]` and transcript turns via `sources:: [sources/conversations/<session-slug>_<UTC stamp>.md@## NN Turn NN: <author-id>]`. The `#` fragment form (`#<slug>`) MUST NOT be used for `## NN …: …` headings: the Concept/Element boundary in their slug contains `--`, which `parseSourceRef` rejects (`KU_MALFORMED`).
 
 - The returned block carries `rationale:: _`. Replace `_` with your concrete reasoning for the change **at paste time** — the pasted block MUST NOT keep an unfilled `rationale:: _`.
 - The returned block carries `author:: _`. Replace `_` with your own tool id — the identifier of the agent you are (e.g. `OpenCode`, `Antigravity`, `ClaudeCode`) — **at paste time**; the pasted block MUST NOT keep an unfilled `author:: _`.
@@ -555,7 +553,7 @@ When the user selects option `[d]` (Export / update console artifacts):
    - Run `node <path-to>/export-console.mjs . <model_name>` (or `--stale` / `--all` depending on user intent). The CLI ships in the cogNNitive repo at `scripts/export-console.mjs`; run it from a checkout, or from the copy installed under `~/.agents/console/` once console assets are distributed.
    - The CLI resolves its console assets (`artifact_shell.html` + `innfo-console.bundle.js`) from `$INNFO_CONSOLE_DIR`, then `~/.agents/console/`, then the repo's `iNNfo/specs/bluepriNNts/console/`. Set `INNFO_CONSOLE_DIR` when running outside a checkout.
    - If the user requests inspection or status, invoke with `--status` or `--tree` (read-only mode).
-3. Present the compiled artifact path (e.g. `export/<stem>_console/<stem>_console.html`) with instructions for opening offline or in browser.
+3. Present the compiled artifact path (the latest member of the write-once family, e.g. `artifacts/<stem>_console/<stem>_console_<UTC stamp>.html`; earlier exports are never overwritten) with instructions for opening offline or in browser.
 
 ---
 
@@ -718,7 +716,7 @@ This is the headless / CLI-equivalent path for actioNN — there is no separate 
 ## 15. External Watch Roots & Pre-Authoring Scanner Integration
 
 When authoring or auditing models that rely on external data drops (e.g. client spreadsheets, RFPs, audio transcripts):
-1. **Detect Declarative Watch Roots**: Check if the workspace Lineage record (`domaiNN_NN.md` or `<Project>_V_0-2-0_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
+1. **Detect Declarative Watch Roots**: Check if the workspace Lineage record (`domaiNN_NN.md` or `<Project>_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
 2. **Pre-Authoring Scan Check**: Before updating or creating a model citing dynamic sources, offer to scan external roots:
    > *"This workspace defines external watch roots. Would you like to scan for new or evolved primary sources before authoring?"*
 3. **Execution**: Invoke `node skills/nn-trannsform/scripts/index.js --scan-external --check-impact` to inspect external changes, import timestamped snapshots (`YYYYMMDD-HHmmss`), and check source family evolutions.
@@ -793,9 +791,9 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 
 ## Core Rules
 
-1. **Strict V_0-2-0 Meta-template:** Level 2 apps define primitives in the body (`# NN Concept Definition`). NEVER put `concepts: [...]` or `fields: [...]` in the Level 2 YAML frontmatter.
+1. **Strict Meta-template:** Level 2 apps define primitives in the body (`# NN Concept Definition`). NEVER put `concepts: [...]` or `fields: [...]` in the Level 2 YAML frontmatter.
 2. **Unified NN syntax:** Use `# NN <Concept>`, `## NN <Concept>: <Element>`, `key:: value`. Do not use obsolete `_NN` bullets or ````yaml` code blocks.
-3. **Optional, up-to-date Source Citations:** `sources::` is optional; it resolves canonically against the Source Collection (`sources/nn/`) without a redundant prefix, anchors to knowledge units (`@<unit>`), and takes bracketed lists `[a, b]` for multiple sources (no `src-xxx` IDs, no `#L...` line ranges, no `sources/staging/` buffer).
+3. **Optional, up-to-date Source Citations:** `sources::` is optional; its paths are domaiNN-relative and written in full (no implicit prefix; binaries are cited through their sidecar), it anchors to knowledge units (`@<unit>`), and takes bracketed lists `[a, b]` for multiple sources (no `src-xxx` IDs, no `#L...` line ranges, no `staging/` buffer).
 4. **Zero Unilateral Mutation:** Never rename or move files without explicit confirmation.
 5. **Recommended Option First:** Always prefix option `[a]` with `(Recommended)`.
 6. **Multi-Selection Notice:** Include `"You can select one option or a combination (e.g. A and B)"` when applicable.
@@ -810,7 +808,7 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 15. **Dynamic Quick Actions:** Only list procedure shortcuts in next steps if the model contains declared procedures.
 16. **Free-form Tags (`tags::`)**: Any Element or Concept in a Level 3 model may declare `tags:: [tag1, tag2]` for free-form categorization without modifying the Level 2 app. Multi-tag syntax requires brackets `[...]`. Agents should use this field to filter and scope actions to tagged elements.
 17. **Step 0 Schema Integrity Gate (MANDATORY)**: Always verify that `parent_spec` resolves cleanly before diagnosing or repairing child element fields, matrices, or references. If unresolved, halt and resolve schema reachability first.
-18. **Mechanical Linting & BOM Encoding Sanitization**: Always enforce UTF-8 without BOM (`\uFEFF`), detect and disambiguate heading/slug collisions, and enforce clean V_0-2-0 frontmatter.
+18. **Mechanical Linting & BOM Encoding Sanitization**: Always enforce UTF-8 without BOM (`\uFEFF`), detect and disambiguate heading/slug collisions, and enforce clean frontmatter.
 
 ---
 
@@ -827,7 +825,7 @@ Deterministic instructions for identifying and mechanically repairing legacy syn
 3. **Heading and Slug Collision Detection**:
    - Detect duplicate `## NN <Concept>: <Element>` headings within a model file that yield identical slugs (e.g. `## NN Person: Alice` and another `## NN Person: Alice`).
    - Prompt the user for disambiguation or rename duplicate elements deterministically using `innfo-mcp_apply_change` (`rename_element`).
-4. **Frontmatter Standardization (V_0-2-0)**:
+4. **Frontmatter Standardization**:
    - Ensure Level 3 frontmatter contains only valid metadata: `knowledge_version`, `parent_spec: { name, url }`, `title`, and optional workspace/lineage tags.
    - Remove forbidden legacy frontmatter structures such as `concepts: []` or `fields: []` embedded in YAML frontmatter.
 

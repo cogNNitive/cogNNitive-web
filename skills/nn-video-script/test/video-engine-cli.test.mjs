@@ -92,6 +92,8 @@ async function runTests() {
       scriptPath,
       outputVideoPath: videoPath,
       cacheDir: path.join(tmpDir, 'cache'),
+      loadModule: async () => null,
+      allowMock: true,
     });
 
     assert.ok(fs.existsSync(videoPath));
@@ -118,19 +120,19 @@ async function runTests() {
     assert.ok(fs.existsSync(manifestPath));
     assert.ok(/Compiled manifest/.test(compRes.stdout));
 
-    // CLI render
-    const renderRes = spawnSync('node', [cliPath, 'render', manifestPath, '--output', videoPath], {
+    // CLI render (Remotion unavailable in CI → explicit --allow-mock)
+    const renderRes = spawnSync('node', [cliPath, 'render', manifestPath, '--output', videoPath, '--allow-mock'], {
       encoding: 'utf8',
     });
     assert.strictEqual(renderRes.status, 0, `render CLI failed: ${renderRes.stderr}`);
     assert.ok(fs.existsSync(videoPath));
     assert.ok(/Rendered/.test(renderRes.stdout));
     assert.ok(
-      /Remotion render skipped \(modules-unavailable\)/.test(renderRes.stderr),
-      `Expected Remotion warning in stderr, got: ${renderRes.stderr}`
+      /mock/i.test(renderRes.stderr),
+      `Expected a mock notice in stderr under --allow-mock, got: ${renderRes.stderr}`
     );
 
-    console.log('✔ CLI commands "compile" and "render" execute headlessly with exit code 0 and observable warning');
+    console.log('✔ CLI commands "compile" and "render" execute headlessly with --allow-mock');
   }
 
   // Test 4: Preview command
@@ -156,14 +158,16 @@ async function runTests() {
     console.log('✔ Entry-point resolution does not throw and unavailable modules report correctly');
   }
 
-  // Test 6: Successful Remotion render seam
+  // Test 6: Successful Remotion render seam — selectComposition then renderMedia.
   {
     const tmpDir = makeTempDir();
     const fakeEntry = path.join(tmpDir, 'remotion-entry.tsx');
     fs.writeFileSync(fakeEntry, '// fake remotion entry', 'utf8');
 
     let bundledWith = null;
+    let selectedArgs = null;
     let renderedMediaArgs = null;
+    const callOrder = [];
 
     const fakeBundler = {
       bundle: async (options) => {
@@ -173,7 +177,13 @@ async function runTests() {
     };
 
     const fakeRenderer = {
+      selectComposition: async (options) => {
+        callOrder.push('selectComposition');
+        selectedArgs = options;
+        return { id: options.id, fps: 30, width: 1920, height: 1080, durationInFrames: 90 };
+      },
       renderMedia: async (options) => {
+        callOrder.push('renderMedia');
         renderedMediaArgs = options;
       },
     };
@@ -199,10 +209,16 @@ async function runTests() {
 
     assert.strictEqual(res.rendered, true);
     assert.strictEqual(bundledWith, fakeEntry);
-    assert.ok(renderedMediaArgs);
+    assert.deepStrictEqual(callOrder, ['selectComposition', 'renderMedia'], 'renderer must selectComposition before renderMedia');
+    assert.ok(selectedArgs, 'selectComposition must be called');
+    assert.strictEqual(selectedArgs.serveUrl, 'serve://bundle');
+    assert.strictEqual(selectedArgs.inputProps, mockManifest);
+    assert.ok(renderedMediaArgs, 'renderMedia must be called');
     assert.strictEqual(renderedMediaArgs.serveUrl, 'serve://bundle');
+    assert.strictEqual(renderedMediaArgs.codec, 'h264');
     assert.strictEqual(renderedMediaArgs.concurrency, 2);
-    console.log('✔ Remotion render seam delegates to bundler and renderer when present');
+    assert.strictEqual(renderedMediaArgs.composition.id, selectedArgs.id, 'renderMedia must use the composition returned by selectComposition');
+    console.log('✔ Remotion render seam selects the composition then renders it');
   }
 
   // Test 7: Remotion bundler/renderer error seam
@@ -216,7 +232,10 @@ async function runTests() {
         throw new Error('Simulated bundler failure');
       },
     };
-    const fakeRenderer = { renderMedia: async () => {} };
+    const fakeRenderer = {
+      selectComposition: async () => ({}),
+      renderMedia: async () => {},
+    };
 
     const loadModule = async (id) => {
       if (id === '@remotion/bundler') return fakeBundler;
@@ -235,6 +254,48 @@ async function runTests() {
       `Expected error reason, got: ${res.reason}`
     );
     console.log('✔ Remotion render seam captures unexpected errors into reason string without throwing');
+  }
+
+  // Test 8: renderVideo throws a named VideoRenderError when Remotion is unavailable,
+  // and emits no mock unless --allow-mock is passed.
+  {
+    const tmpDir = makeTempDir();
+    const scriptPath = path.join(tmpDir, 'script.md');
+    const videoPath = path.join(tmpDir, 'strict.mp4');
+    fs.writeFileSync(scriptPath, sampleScript, 'utf8');
+
+    await assert.rejects(
+      () =>
+        renderVideo({
+          scriptPath,
+          outputVideoPath: videoPath,
+          cacheDir: path.join(tmpDir, 'cache'),
+          loadModule: async () => null,
+        }),
+      (err) => err.name === 'VideoRenderError',
+      'renderVideo must throw a named VideoRenderError when Remotion is unavailable'
+    );
+    assert.ok(!fs.existsSync(videoPath), 'no mock may be written without --allow-mock');
+    console.log('✔ renderVideo hard-fails with a named error and writes no mock');
+  }
+
+  // Test 9: renderVideo writes a mock only behind allowMock, and exits non-zero otherwise.
+  {
+    const tmpDir = makeTempDir();
+    const scriptPath = path.join(tmpDir, 'script.md');
+    const videoPath = path.join(tmpDir, 'mock.mp4');
+    fs.writeFileSync(scriptPath, sampleScript, 'utf8');
+
+    const result = await renderVideo({
+      scriptPath,
+      outputVideoPath: videoPath,
+      cacheDir: path.join(tmpDir, 'cache'),
+      loadModule: async () => null,
+      allowMock: true,
+    });
+    assert.ok(fs.existsSync(videoPath), 'allowMock must write a mock file');
+    assert.strictEqual(result.mocked, true, 'the summary must flag the mock');
+    console.log('✔ renderVideo writes a mock only behind allowMock');
   }
 
   console.log('\nAll video engine CLI integration tests passed! ✨');

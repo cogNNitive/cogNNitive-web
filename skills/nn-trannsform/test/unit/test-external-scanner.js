@@ -205,6 +205,7 @@ async function run() {
     try {
       fs.writeFileSync(path.join(tempDrops, 'rates.csv'), 'a,b\n1,2\n', 'utf8');
       const rootPosix = tempDrops.replace(/\\/g, '/');
+      // Seeded with an old versioned name on purpose: existing records are found by role.
       fs.writeFileSync(
         path.join(tempProj, 'Project_V_0-2-0_cogNNitive_NN.md'),
         `# NN index\n\n## NN External Watch Roots:\n- Root: "${rootPosix}"\n  Cadence: "dynamic"\n  Filter: ["*.csv"]\n`,

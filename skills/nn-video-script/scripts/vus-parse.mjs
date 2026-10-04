@@ -3,13 +3,12 @@
 /**
  * skills/nn-video-script/scripts/vus-parse.mjs
  *
- * Runs the in-repo VUS parser (`@cognnitive/innfo-video-parser`) over a script
- * and requires zero issues. The package ships TypeScript source, so the actual
- * import happens in a child process spawned under the `tsx` loader
- * (vus-parse-runner.mjs) — this file itself runs under plain `node`.
+ * Runs the vendored VUS parser over a script and requires zero issues. The parser is
+ * the committed self-contained mirror (`./lib/innfo-video-parser.generated.mjs`), so the
+ * child runs under plain `node` — no external loader, no monorepo checkout.
  *
- * The parser lives in this monorepo: there is no external checkout and no
- * environment variable to set, and the run never skips.
+ * The parser now lives inside the skill: nothing here references an external checkout,
+ * no environment variable is read, and the run never skips.
  *
  * Usage:
  *   node vus-parse.mjs <script.md>
@@ -30,7 +29,7 @@ const RUNNER_PATH = path.join(__dirname, 'vus-parse-runner.mjs');
 export function runVusParse({ scriptPath }) {
   const result = spawnSync(
     process.execPath,
-    ['--import', import.meta.resolve('tsx/esm'), RUNNER_PATH, path.resolve(scriptPath)],
+    [RUNNER_PATH, path.resolve(scriptPath)],
     { encoding: 'utf8' },
   );
 

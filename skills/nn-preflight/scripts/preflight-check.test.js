@@ -12,7 +12,13 @@ const http = require('http');
 const assert = require('assert');
 const { spawn } = require('child_process');
 const crypto = require('crypto');
-const { parseManifest, scanWorkspaceSources, validateBlueprintCompositions } = require('./preflight-check');
+const {
+  runCheck,
+  printHumanReport,
+  parseManifest,
+  scanWorkspaceSources,
+  validateBlueprintCompositions,
+} = require('./preflight-check');
 
 const preflightScript = path.join(__dirname, 'preflight-check.js');
 
@@ -1976,6 +1982,70 @@ agent-bootstrap:
       console.log('✔ Manifest fallback resolution reaches active endpoint cleanly');
     } finally {
       await fallbackServer.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 37: Manifest source is reported (primary | fallback | override), keeping the primary error
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const server = await serveManifest(manifestContent);
+    const deadUrl = 'http://127.0.0.1:9/manifest.md';
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-source-'));
+    const savedEnv = process.env.SM_MANIFEST_URL;
+    const savedLog = console.log;
+    try {
+      const baseOptions = {
+        json: true,
+        skillsDir: path.join(tmpDir, 'skills'),
+        blueprintsDir: path.join(tmpDir, 'blueprints'),
+        mcpDir: path.join(tmpDir, 'mcp'),
+        stateFile: path.join(tmpDir, 'bootstrap-state.json'),
+        freshnessUrl: server.url,
+      };
+
+      // primary succeeds
+      process.env.SM_MANIFEST_URL = server.url;
+      let results = await runCheck({ ...baseOptions, fallbackManifestUrl: deadUrl });
+      assert.strictEqual(results.manifest.source, 'primary');
+      assert.strictEqual(results.manifest.url, server.url);
+      assert.strictEqual(results.manifest.primaryError, null);
+
+      // primary fails, fallback succeeds: the primary error is kept
+      process.env.SM_MANIFEST_URL = deadUrl;
+      results = await runCheck({ ...baseOptions, fallbackManifestUrl: server.url });
+      assert.strictEqual(results.manifest.source, 'fallback');
+      assert.strictEqual(results.manifest.url, server.url);
+      assert.strictEqual(results.manifest.reachable, true);
+      assert.ok(results.manifest.primaryError, 'primaryError must be recorded when the fallback was used');
+
+      const lines = [];
+      console.log = (...args) => lines.push(args.join(' '));
+      printHumanReport(results);
+      console.log = savedLog;
+      const sourceLine = lines.find((l) => l.startsWith('Manifest:'));
+      assert.ok(sourceLine, 'text report must print a Manifest line');
+      assert.ok(sourceLine.includes('fallback') && sourceLine.includes(server.url), sourceLine);
+      assert.ok(sourceLine.includes(deadUrl), 'fallback line must name the failed primary URL');
+
+      // explicit override
+      delete process.env.SM_MANIFEST_URL;
+      results = await runCheck({ ...baseOptions, manifestUrl: server.url });
+      assert.strictEqual(results.manifest.source, 'override');
+      assert.strictEqual(results.manifest.url, server.url);
+      assert.strictEqual(results.manifest.primaryError, null);
+      console.log('✔ Manifest source (primary/fallback/override) and primary error are reported');
+    } finally {
+      console.log = savedLog;
+      if (savedEnv === undefined) delete process.env.SM_MANIFEST_URL;
+      else process.env.SM_MANIFEST_URL = savedEnv;
+      await server.close();
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }

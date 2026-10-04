@@ -89,7 +89,7 @@ async function run() {
     eq(checkLineage(proj).errors.length, 0, '(c) syncing the record lists the member');
 
     // (d) superseded_by pointing at nothing
-    const recordPath = path.join(proj, 'CheckProj_V_0-2-0_cogNNitive_NN.md');
+    const recordPath = path.join(proj, 'CheckProj_cogNNitive_NN.md');
     const record = fs.readFileSync(recordPath, 'utf8');
     ok(/superseded_by:: sources\/import\/data_20261003T080000Z\.csv/.test(record), '(d) setup: the earlier member points at the next one');
     fs.writeFileSync(

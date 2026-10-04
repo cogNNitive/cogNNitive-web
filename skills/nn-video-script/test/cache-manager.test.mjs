@@ -71,7 +71,9 @@ async function runTests() {
     assert.strictEqual(res1.fromCache, false, 'First request should be a cache miss');
     assert.ok(fs.existsSync(res1.assetPath));
     assert.ok(res1.fileSizeBytes > 0);
-    assert.ok(res1.durationSeconds > 0);
+    // Duration is measured via @remotion/media-parser; when the engine is not
+    // installed the measurement is 0 rather than an FFmpeg/size estimate.
+    assert.ok(typeof res1.durationSeconds === 'number' && res1.durationSeconds >= 0);
 
     // Second synthesis -> Cache hit
     const res2 = await synthesizer.synthesizeTTS(text, voiceOpts);

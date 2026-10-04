@@ -43,7 +43,7 @@ function findLegacyRecord(projectDir, projectName) {
 /**
  * Resolve the canonical `cogNNitive` lineage-record path for a project: the
  * existing record (found by role, wherever it lives), a legacy
- * `_workspace_NN.md` record migrated in place, or the V_0-2-0 default.
+ * `_workspace_NN.md` record migrated in place, or the unversioned `<project>_cogNNitive_NN.md` default (model version lives in frontmatter).
  */
 function resolveModelPath(projectDir, projectName) {
   const existing = readLineageRecord(projectDir);
@@ -56,7 +56,7 @@ function resolveModelPath(projectDir, projectName) {
     return { modelPath: path.join(projectDir, migrated), created: false };
   }
 
-  return { modelPath: path.join(projectDir, `${projectName}_V_0-2-0_cogNNitive_NN.md`), created: true };
+  return { modelPath: path.join(projectDir, `${projectName}_cogNNitive_NN.md`), created: true };
 }
 
 /**

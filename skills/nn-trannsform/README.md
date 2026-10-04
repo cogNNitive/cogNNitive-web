@@ -4,15 +4,15 @@ Agent skill for document ingestion, normalization, and template-based transforma
 
 ## How it works
 
-The skill ships with a Node.js CLI tool (`scripts/index.js`) that handles file operations — scanning directories, converting binary formats (docx, pdf, xlsx, html) to Markdown, downloading web resources, and maintaining an ingestion manifest. The actual content transformation and multi-step procedure orchestration is executed using the agent's LLM and `procedures_V_0-1-0_NN.md` specifications.
+The skill ships with a Node.js CLI tool (`scripts/index.js`) that handles file operations — scanning directories, cognitivizing files in place (converting binary formats such as docx, pdf and xlsx into the Markdown body of a co-located sidecar), downloading web resources, and keeping the lineage record in sync. The actual content transformation and multi-step procedure orchestration is executed using the agent's LLM and `procedures_V_0-1-0_NN.md` specifications.
 
 The workflow is:
 
-1. **Bootstrap** — The agent creates a project directory with standard workspace folders: `sources/import/` (the user's raw external files dropbox), `sources/conversations/` (promoted transcripts), `sources/export/` (synthetic deliverables re-entering the pipeline), `sources/archive/` (version store for past normalized snapshots), `sources/nn/` (normalized Markdown mirroring active source subtrees), `conversations/` (raw session interaction logs), `kNNowledge/` (iNNfo Level 3 models), `procedures/` (transformation specs), and `export/` (all generated output — deliverables and validation reports). Legacy `sources/original/` and `artifacts/` are supported via non-breaking fallback.
-2. **Scan & normalize** — The CLI tool reads files directly from active source trees (`sources/import/`, `sources/conversations/`, `sources/export/`, recursively preserving subfolders), converts supported formats straight into the matching path under `sources/nn/`, writes the ingestion manifest (`sources/nn/index.md`), and generates/refreshes the **provenance model** (`<Project>_V_0-2-0_cogNNitive_NN.md`, or `<Project>_V_0-1-0_cogNNitive_NN.md`) whose Sources are auto-populated from active and archived files. Change detection is based on the sha256 recorded in normalized frontmatter; mutated sources trigger hash-idempotent snapshot-on-change into `sources/archive/<basename>/V<N>/<basename>.md`.
-3. **Import from the web** — The user can paste a URL in chat; the agent runs `node scripts/index.js --import-url "<url>" --scan --src "<project-dir>"`, which downloads the resource straight into `sources/import/` (or fallback `sources/original/`) and immediately normalizes it, recording `source_url`/`downloaded_at` and metadata.
-4. **Transform & Orchestrate** — The agent applies template-based transformations or multi-step procedure specs (`procedures_V_0-1-0_NN.md`) to generate models or deliverables in `export/`, and records each in the provenance model (Models/Artifacts/Procedures) with explicit lineage.
-5. **Conversations Lifecycle & Promotion** — Interactive sessions silently reserve transcripts in `conversations/YYYY-MM-DD_HHmmss.md`, retain all sessions unconditionally under the Zero Discard policy, offer 3 title suggestions, and allow promoting transcripts to `sources/conversations/` as full verbatim transcripts (`_source.md`).
+1. **Bootstrap** — The agent creates a project directory with standard workspace folders: `sources/import/` (the user's raw external files dropbox, the only raw-import location), `sources/conversations/` (promoted transcripts), `conversations/` (raw session interaction logs), `artifacts/` (every generated output: deliverables, validation reports, curated CSVs), `kNNowledge/` (iNNfo Level 3 models), `procedures/` (transformation specs) and `traNNsformations/`, plus a `.gitattributes` with `* -text` so raw-byte hashes survive a checkout. There is no mirror tree, snapshot archive or export folder under `sources/`.
+2. **Scan & cognitivize in place** — The CLI tool reads files directly from the raw source trees (`sources/import/`, `sources/conversations/`, recursively), and writes a co-located sidecar (`<file>.<ext>_sidecar_NN.md`) next to each raw file: origin frontmatter (`source_file`, `sha256`, `size_bytes`, `source_format`, `normalized_at`) for every file, plus the normalized Markdown body for binaries (PDF, DOCX, XLSX). `--cognitivize <file|dir>` does the same for any file or folder in the domaiNN. Raw files are never moved or modified. Change detection is based on the sha256 of the raw bytes recorded in the sidecar: a changed file gets its sidecar refreshed in place. The CLI also generates/refreshes the **provenance model** (`<Project>_cogNNitive_NN.md`), whose Sources, Models and Artifacts sections are projected from the sidecars and file names; `--lineage --check` fails when the record drifts from a fresh projection.
+3. **Import from the web** — The user can paste a URL in chat; the agent runs `node scripts/index.js --import-url "<url>" --scan --src "<project-dir>"`, which downloads the resource straight into `sources/import/` as a write-once, UTC-suffixed file (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`; identical bytes are deduplicated) and immediately cognitivizes it, recording `source_url`/`downloaded_at` and metadata in its sidecar.
+4. **Transform & Orchestrate** — The agent applies template-based transformations or multi-step procedure specs (`procedures_V_0-1-0_NN.md`) to generate models or deliverables in `artifacts/` (write-once: each output is a new UTC-suffixed file, nothing is overwritten), and records each in the provenance model (Models/Artifacts/Procedures) with explicit lineage. Citations use full domaiNN-relative paths (binaries through their sidecar); `--gc` proposes, and only with explicit consent deletes, superseded members.
+5. **Conversations Lifecycle & Promotion** — Interactive sessions silently reserve transcripts in `conversations/YYYY-MM-DD_HHmmss.md`, retain all sessions unconditionally under the Zero Discard policy, offer 3 title suggestions, and allow promoting transcripts to `sources/conversations/` as full verbatim transcripts (`<slug>_<YYYYMMDDTHHmmssZ>.md`, write-once, cognitivized in place).
 6. **Post-Transformation Feedback Protocol** — If modifications to the transformation logic occurred during the conversation, the agent prompts the user to save a new `procedures` spec, update the existing one, or leave specs unchanged.
 
 ## Installation
@@ -40,7 +40,7 @@ nn-trannsform/
   README.md                 You are here
   scripts/
     index.js                CLI entry point — bootstrap, scan, apply transformations, web import
-    scanner.js              Format detection, file conversion (txt, md, csv, json, html, docx, pdf, xlsx)
+    scanner.js              Format detection and the scan / cognitivize loop (txt, md, csv, json, html, docx, pdf, xlsx)
     extract.js              Quick text extraction (no ingestion) — prints a single file's plain text to stdout
     webImport.js            Downloads a URL straight into sources/import/ + HTML metadata extraction
     transformer.js          Template listing + a mechanical (verbatim-concat) fallback
@@ -76,8 +76,10 @@ The agent presents a decision matrix to the user for non-plain-text formats, let
 
 The transformation step produces two kinds of output:
 
-- **Draft** (`_draft.md`) — Includes source citations, revision notes, uncertainty markers, and GitHub-style alert blocks (`[!NOTE]`, `[!WARNING]`, `[!TIP]`). Intended for review.
-- **Final** (`_v_0-1-0.md`) — Clean output with semantic versioning. Optionally includes source references.
+- **Draft** (`_draft`) — Includes source citations, revision notes, uncertainty markers, and GitHub-style alert blocks (`[!NOTE]`, `[!WARNING]`, `[!TIP]`). Intended for review.
+- **Final** — Clean output. Optionally includes source references.
+
+Both are written under `artifacts/` as new UTC-suffixed files (for example `Summary_draft_20261001T101500Z.md`); an earlier output is never overwritten.
 
 ## For maintainers
 

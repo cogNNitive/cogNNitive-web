@@ -48,7 +48,7 @@ async function run() {
     eq(r1.created, true, 'model created on first run');
     eq(r1.sourceCount, 3, 'three sources registered');
     ok(fs.existsSync(r1.modelPath), 'model file written');
-    eq(path.basename(r1.modelPath), 'Acme_V_0-2-0_cogNNitive_NN.md', 'model file named after the cogNNitive lineage template');
+    eq(path.basename(r1.modelPath), 'Acme_cogNNitive_NN.md', 'model file named after the cogNNitive lineage template');
 
     const model1 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(/parent_spec:\s*\n\s*name: "cogNNitive"/.test(model1), 'parent_spec points to the cogNNitive template');
@@ -70,7 +70,7 @@ async function run() {
     // semantic index.md written at root
     const idx = fs.readFileSync(path.join(proj, 'index.md'), 'utf8');
     ok(/# NN index/.test(idx), 'semantic index has # NN index');
-    ok(/Acme_V_0-2-0_cogNNitive_NN\.md/.test(idx), 'index links the provenance model');
+    ok(/Acme_cogNNitive_NN\.md/.test(idx), 'index links the provenance model');
 
     // The # NN ModelRecords section is filesystem-managed: a hand-added entry is
     // replaced on the next sync (there are no kNNowledge models yet).
@@ -114,7 +114,7 @@ async function run() {
     eq(r3.created, false, 'model refreshed again on third run');
     const idx3 = fs.readFileSync(idxPath, 'utf8');
     ok(idx3.includes('* [My Custom](kNNowledge/Custom_Model_V_2-0-0_NN.md)'), 'existing index entry preserved with its original label');
-    ok(idx3.includes('Acme_V_0-2-0_cogNNitive_NN.md'), 'discovered provenance model link kept after regeneration');
+    ok(idx3.includes('Acme_cogNNitive_NN.md'), 'discovered provenance model link kept after regeneration');
     ok(idx3.includes('kNNowledge/sub/Deep_Model_V_1-0-0_NN.md'), 'nested model under kNNowledge/sub/ included in index');
     ok(!/Gone/.test(idx3), 'dangling index entry (target removed) dropped');
     ok(logs.some((l) => /regenerated.*dropped 1 dangling/.test(l)), 'regeneration logged the dropped dangling entry');
@@ -123,7 +123,7 @@ async function run() {
     const nested = provenance.listWorkspaceModels(proj);
     ok(nested.includes('./kNNowledge/sub/Deep_Model_V_1-0-0_NN.md'), 'listWorkspaceModels is recursive into kNNowledge/sub/');
     ok(nested.includes('./kNNowledge/Custom_Model_V_2-0-0_NN.md'), 'listWorkspaceModels includes top-level kNNowledge/');
-    ok(nested.includes('./Acme_V_0-2-0_cogNNitive_NN.md'), 'listWorkspaceModels keeps root files prefixed ./');
+    ok(nested.includes('./Acme_cogNNitive_NN.md'), 'listWorkspaceModels keeps root files prefixed ./');
 
     // A cognitivized CSV is one Source entry: no curated_csv twin, no duplicate.
     const csvProj = path.join(TMP, 'CsvProj');

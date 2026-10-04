@@ -81,7 +81,7 @@ async function run() {
     fs.writeFileSync(path.join(proj, 'domaiNN_NN.md'), manifest);
 
     const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'Acme' });
-    eq(path.basename(r1.modelPath), 'Acme_V_0-2-0_cogNNitive_NN.md', 'canonical cogNNitive record created');
+    eq(path.basename(r1.modelPath), 'Acme_cogNNitive_NN.md', 'canonical cogNNitive record created');
     eq(
       fs.readFileSync(path.join(proj, 'domaiNN_NN.md'), 'utf8'),
       manifest,
@@ -137,7 +137,7 @@ async function run() {
     eq(rD.modelPath.replace(/\\/g, '/'), knRecordPath.replace(/\\/g, '/'), 'build refreshes existing kNNowledge/ record');
     eq(rD.created, false, 'existing kNNowledge/ record not flagged as created');
     ok(
-      !fs.existsSync(path.join(domProj, 'DomProj_V_0-2-0_cogNNitive_NN.md')),
+      !fs.existsSync(path.join(domProj, 'DomProj_cogNNitive_NN.md')),
       'no duplicate lineage record created at workspace root',
     );
 
@@ -157,7 +157,7 @@ async function run() {
       'legacy workspace_NN in kNNowledge/ removed',
     );
     ok(
-      !fs.existsSync(path.join(knLegacyProj, 'KnLegacy_V_0-2-0_cogNNitive_NN.md')),
+      !fs.existsSync(path.join(knLegacyProj, 'KnLegacy_cogNNitive_NN.md')),
       'no duplicate created at root for kNNowledge/ legacy migration',
     );
 

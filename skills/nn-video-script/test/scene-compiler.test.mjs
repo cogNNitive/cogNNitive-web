@@ -256,8 +256,8 @@ Stay tuned for part two of our investigation.
     assert.strictEqual(manifest.tracks.scenes[0].props.layers.length, 1);
     assert.strictEqual(manifest.tracks.scenes[1].props.layers.length, 0);
 
-    // Parity test against parse() from @cognnitive/innfo-video-parser
-    const { parse: parseVus } = await import('@cognnitive/innfo-video-parser');
+    // Parity test against parse() from the vendored parser mirror
+    const { parse: parseVus } = await import('../scripts/lib/innfo-video-parser.generated.mjs');
     const parserRes = parseVus(canonicalVus);
     const parserScenes = (parserRes.project.sections || []).flatMap((s) => s.scenes || []);
     assert.strictEqual(manifest.tracks.scenes.length, parserScenes.length);
