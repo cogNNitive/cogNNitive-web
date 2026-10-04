@@ -20,12 +20,12 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 |-------|---------|-------------|
 | [`nn`](skills/nn.md) | `V_3-4-0` | Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router. |
 | [`nn-trannsform`](skills/nn-trannsform.md) | `V_3-4-2` | Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md). |
-| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-5` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
-| [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-1` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
+| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-6` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
+| [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-2` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
 | [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-2-0` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
 | [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
 | [`nn-design-presets`](skills/nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
-| [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-2-0` | Audit, update, and maintain cogNNitive skills. |
+| [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-2-1` | Audit, update, and maintain cogNNitive skills. |
 | [`nn-video-script`](skills/nn-video-script.md) | `V_0-3-0` | Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series. |
 <!-- /generated:skills-catalog -->
 

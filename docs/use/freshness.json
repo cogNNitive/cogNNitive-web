@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-04T12:32:25.223Z",
-  "head": "f93f56e6eb4821661e1df1a37c0576ccbbbd7625",
+  "generatedAt": "2026-10-04T12:45:18.590Z",
+  "head": "671fa551c82473b7eda5c5bd58566c34a5252770",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.12.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 16,
+      "commitsSincePin": 18,
       "filesTouched": [
         "skills/nn-innfo/SKILL.md",
         "skills/nn-innfo/test/skill-no-hardcoded-specs.test.js",
@@ -97,9 +97,10 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.14.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 4,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/test/defects-d1-d9-regression.test.ts"
       ]
     },

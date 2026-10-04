@@ -1,7 +1,7 @@
 ---
 name: nn-innfo
-version: "V_0-5-5"
-last_updated: 2026-09-30
+version: "V_0-5-6"
+last_updated: 2026-10-04
 metadata:
   source_type: "original"
   mcp: "innfo-mcp"
