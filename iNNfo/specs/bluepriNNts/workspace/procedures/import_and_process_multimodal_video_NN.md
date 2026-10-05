@@ -23,8 +23,6 @@ title: "Multimodal Video Source Import & Processing Procedure"
 
 ## NN Work: Import and Process Multimodal Video
 step_type:: task
-parent:: -
-next:: -
 condition:: Video recordings or screencasts present in import folder
 input:: [[Raw Video Recordings Directory]]
 output:: [[Verified Target Domain Model]]
@@ -120,7 +118,6 @@ Update the sources:: field of the target Element (e.g. Procedures, Training, Doc
 ## NN Work: Validate Target Model
 parent:: [[Import and Process Multimodal Video]]
 step_type:: task
-next:: -
 condition:: Domain model updated
 input:: [[Updated Domain Model]]
 output:: [[Verified Target Domain Model]]

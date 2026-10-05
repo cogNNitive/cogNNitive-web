@@ -14,8 +14,6 @@ title: "Prioritize Experiments Procedure"
 
 ## NN Work: Prioritize Experiments
 step_type:: task
-parent:: -
-next:: -
 condition:: An analysis model is loaded
 input:: [[Active Analysis Model]]
 output:: [[Prioritized Experiment Backlog]]
@@ -39,7 +37,6 @@ Evaluate assumption markers (`importance`, `certainty`, `priority`) to determine
 ## NN Work: Rank Experiments by Impact
 parent:: [[Prioritize Experiments]]
 step_type:: task
-next:: -
 condition:: Assumptions scored
 input:: [[Assumption Uncertainty Scores]]
 output:: [[Prioritized Experiment Backlog]]

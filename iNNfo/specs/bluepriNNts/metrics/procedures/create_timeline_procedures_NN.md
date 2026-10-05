@@ -14,8 +14,6 @@ title: "Create Timeline Procedure"
 
 ## NN Work: Create Timeline
 step_type:: task
-parent:: -
-next:: -
 condition:: Workspace models available and the console activation gate is open
 input:: [[Source Workspace Models]]
 output:: [[Console HTML]]
@@ -136,7 +134,6 @@ Run the verify harness in static and render modes: `verify.harness.js --check-sl
 ## NN Work: Reconcile Feedback
 parent:: [[Create Timeline]]
 step_type:: task
-next:: -
 condition:: Verification report clean
 input:: [[Verification Report]]
 output:: [[Regenerated Console]]

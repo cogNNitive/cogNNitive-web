@@ -14,8 +14,6 @@ title: "Upgrade and Migrate Legacy Workspace Procedure"
 
 ## NN Work: Upgrade and Migrate Legacy Workspace
 step_type:: task
-parent:: -
-next:: -
 condition:: Legacy workspace detected with obsolete frontmatters, missing manifest, or deprecated syntax
 input:: [[Legacy Workspace Directory]]
 output:: [[Validated Unified Workspace]]
@@ -66,7 +64,6 @@ Update `parent_spec.url` in each model to the canonical remote/monorepo URLs. Re
 ## NN Work: Synthesize Workspace Manifest and Validate
 parent:: [[Upgrade and Migrate Legacy Workspace]]
 step_type:: task
-next:: -
 condition:: Models rebound and validated
 input:: [[Rebound Validated Models]]
 output:: [[Validated Unified Workspace]]

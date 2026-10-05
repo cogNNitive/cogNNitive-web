@@ -14,8 +14,6 @@ title: "Export Team Directory Procedure"
 
 ## NN Work: Export Team Directory
 step_type:: task
-parent:: -
-next:: -
 condition:: An organization model is loaded
 input:: [[Active Organization Model]]
 output:: [[Team Directory Markdown]]
@@ -39,7 +37,6 @@ Iterate through all Person elements, resolving their `position_ref`, assumed Rol
 ## NN Work: Assemble Roster Markdown
 parent:: [[Export Team Directory]]
 step_type:: task
-next:: -
 condition:: Personnel records extracted
 input:: [[Personnel Records]]
 output:: [[Team Directory Markdown]]

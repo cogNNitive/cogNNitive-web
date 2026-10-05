@@ -14,8 +14,6 @@ title: "Score Innovation Pipeline Procedure"
 
 ## NN Work: Score Innovation Pipeline
 step_type:: task
-parent:: -
-next:: -
 condition:: An innovation model is loaded
 input:: [[Active Innovation Model]]
 output:: [[Innovation Portfolio Scoring Report]]
@@ -51,7 +49,6 @@ Assess active initiative budgets, milestones, learnings, and decisions (Persever
 ## NN Work: Generate Portfolio Report
 parent:: [[Score Innovation Pipeline]]
 step_type:: task
-next:: -
 condition:: Initiatives scored
 input:: [[Initiative Health Scores]]
 output:: [[Innovation Portfolio Scoring Report]]

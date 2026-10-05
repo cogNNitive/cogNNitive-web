@@ -74,7 +74,7 @@ still written and the failure is reported as a warning.
 1. **Direct local read** — when the parent URL is a local path or `file://`
    URI, it is read directly.
 2. **4-tier package resolution** (`resolveTemplatePackage`) — Tier 1 workspace
-   package (`specs/templates/<base>/<version>/`), Tier 2 workspace flat
+   package (`specs/bluepriNNts/<base>/<version>/`), Tier 2 workspace flat
    (`specs/` + `templates/`), Tier 3 global cache, Tier 4 installed skills.
    There is no standalone local-`specs/` step ahead of this: the workspace
    `specs/` tree **is** Tier 2.

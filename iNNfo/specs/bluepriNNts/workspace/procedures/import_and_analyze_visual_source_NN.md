@@ -23,8 +23,6 @@ title: "Visual Source Import & Semantic Analysis Procedure"
 
 ## NN Work: Import and Analyze Visual Sources
 step_type:: task
-parent:: -
-next:: -
 condition:: Visual files, diagrams, or mockups present in import folder
 input:: [[Raw Visual Sources Directory]]
 output:: [[Verified Target Domain Model]]
@@ -108,7 +106,6 @@ Add normalized visual source citations to the sources:: field of the correspondi
 ## NN Work: Validate Target Model
 parent:: [[Import and Analyze Visual Sources]]
 step_type:: task
-next:: -
 condition:: Domain model updated
 input:: [[Updated Domain Model]]
 output:: [[Verified Target Domain Model]]

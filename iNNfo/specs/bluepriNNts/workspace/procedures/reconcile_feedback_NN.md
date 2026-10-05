@@ -31,8 +31,6 @@ procedure_model:: procedures/reconcile_feedback_NN.md
 
 ## NN Work: Console Feedback Reconciliation Workflow
 step_type:: task
-parent:: -
-next:: -
 condition:: Reviewer feedback JSON dropped in `sources/import/feedback/`
 input:: [[Feedback JSON]]
 output:: [[Regenerated Console]]
@@ -123,7 +121,6 @@ Invoke `record_feedback_verdict` to append one validated JSONL line per processe
 ## NN Work: Step 7 - Bump Patch Version and Regenerate Console
 parent:: [[Console Feedback Reconciliation Workflow]]
 step_type:: task
-next:: -
 condition:: Verdicts recorded in ledger
 input:: [[Validated Model]]
 output:: [[Regenerated Console]]

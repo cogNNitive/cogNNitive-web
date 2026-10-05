@@ -14,8 +14,6 @@ title: "Run Coherence Audit Procedure"
 
 ## NN Work: Run Coherence Audit
 step_type:: task
-parent:: -
-next:: -
 condition:: An analysis model is loaded
 input:: [[Active Analysis Model]]
 output:: [[Strategic Coherence Audit]]
@@ -51,7 +49,6 @@ Check the experiments-assumptions matrix to verify whether experiments are sched
 ## NN Work: Compile Audit Findings
 parent:: [[Run Coherence Audit]]
 step_type:: task
-next:: -
 condition:: Coverage verification complete
 input:: [[Experiment Validation Coverage]]
 output:: [[Strategic Coherence Audit]]

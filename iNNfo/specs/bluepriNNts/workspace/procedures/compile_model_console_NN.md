@@ -14,8 +14,6 @@ title: "Compile Model Console Procedure"
 
 ## NN Work: Compile Model Console
 step_type:: task
-parent:: -
-next:: -
 condition:: A level 3 model conforming to this template is loaded
 input:: [[Active Model]]
 output:: [[Model Console HTML]]
@@ -63,7 +61,6 @@ Paste the returned `schemaSlot` string verbatim into `<script type="application/
 ## NN Work: Verify Output
 parent:: [[Compile Model Console]]
 step_type:: task
-next:: -
 condition:: A new console member written, or the latest member is identical
 input:: [[Model Console HTML]]
 output:: [[Verified Model Console]]

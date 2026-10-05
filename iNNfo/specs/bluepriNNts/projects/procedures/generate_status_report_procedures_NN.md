@@ -14,8 +14,6 @@ title: "Generate Project Status Report Procedure"
 
 ## NN Work: Generate Project Status Report
 step_type:: task
-parent:: -
-next:: -
 condition:: A projects model is loaded
 input:: [[Active Projects Model]]
 output:: [[Project Status Report]]
@@ -39,7 +37,6 @@ Evaluate milestone completion markers (`completion`, `health`) and measure deliv
 ## NN Work: Compile Health Dashboard
 parent:: [[Generate Project Status Report]]
 step_type:: task
-next:: -
 condition:: Milestone metrics compiled
 input:: [[Milestone Status Metrics]]
 output:: [[Project Status Report]]

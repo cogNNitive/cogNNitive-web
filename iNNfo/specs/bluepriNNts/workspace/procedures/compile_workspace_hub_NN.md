@@ -14,8 +14,6 @@ title: "Compile Workspace Console Hub Procedure"
 
 ## NN Work: Compile Workspace Hub
 step_type:: task
-parent:: -
-next:: -
 condition:: Multi-model or single-model workspace initialized with index.md
 input:: [[Workspace Root Directory]]
 output:: [[Workspace Hub HTML]]
@@ -63,7 +61,6 @@ Assemble a responsive, standalone HTML portal adhering to cogNNitive Design Pres
 ## NN Work: Verify Workspace Hub
 parent:: [[Compile Workspace Hub]]
 step_type:: task
-next:: -
 condition:: Hub document generated
 input:: [[Workspace Hub HTML]]
 output:: [[Verified Workspace Hub]]

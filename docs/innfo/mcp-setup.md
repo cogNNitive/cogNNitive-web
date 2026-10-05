@@ -67,7 +67,7 @@ if [ -n "${LATEST}" ]; then
     fi
     if [ "${LATEST}" != "${CACHED}" ]; then
         echo "Downloading innfo-mcp ${LATEST}..."
-        BUNDLE_URL="https://cognnitive.com/innfo/cdn/innfo-mcp-${LATEST}.bundle.js"
+        BUNDLE_URL="https://cognnitive.com/innfo/cdn/innfo-mcp-v${LATEST}.bundle.js"
         if command -v curl >/dev/null 2>&1; then
             curl -sL "${BUNDLE_URL}" -o "${BUNDLE_FILE}"
         elif command -v wget >/dev/null 2>&1; then

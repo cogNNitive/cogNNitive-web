@@ -110,9 +110,28 @@ async function runTests() {
       encoding: 'utf8',
       env: cleanEnv(),
     });
-    assert.strictEqual(res.status, 1, `CLI must exit 1 on issues, got status ${res.status}: ${res.stdout}`);
-    assert.ok(/issue\(s\)/.test(res.stderr), `CLI must list the issues, got stderr: ${res.stderr}`);
-    console.log('✔ CLI exits 1 and lists issues for an invalid script');
+    assert.strictEqual(res.status, 1, `CLI must exit 1 on errors, got status ${res.status}: ${res.stdout}`);
+    assert.ok(/error\(s\)/.test(res.stderr), `CLI must list the errors, got stderr: ${res.stderr}`);
+    console.log('? CLI exits 1 and lists errors for an invalid script');
+  }
+
+  // Test 4b: warnings alone never block authoring (issue #117). A scene without a
+  // template and without visual layers yields only warnings; the CLI must exit 0.
+  {
+    const warningOnly = `//ANYDEO_SPEC: V_0-3-3
+# Intro
+@ Scene
+This is the narration for the scene.
+`;
+    const scriptPath = writeTmpScript(warningOnly);
+    const res = spawnSync('node', [vusParsePath, scriptPath], {
+      encoding: 'utf8',
+      env: cleanEnv(),
+    });
+    assert.strictEqual(res.status, 0, `warnings must not block, got status ${res.status}: ${res.stderr}`);
+    assert.ok(/warning\(s\)/.test(res.stderr), `CLI must still report the warnings, got stderr: ${res.stderr}`);
+    assert.ok(/no errors/.test(res.stdout), `CLI must report no errors, got stdout: ${res.stdout}`);
+    console.log('? warnings alone exit 0 and are still reported');
   }
 
   // Test 5: the shipped workspace sample runs through the real parser (no skip)

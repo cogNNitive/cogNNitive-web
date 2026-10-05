@@ -42,6 +42,28 @@ Validation runs automatically on every parse via `@cognnitive/innfo-core`. A pas
 
 Interactive domain visualizations and guided procedures are delivered as standalone template console artifacts (e.g. `assets/*_console.html`) rendered via `ConsoleHubView`.
 
+## File preview and lineage
+
+`FilePreviewModal` opens a file from the explorer eye button or from a `sources::`
+pill in the editor. The header keeps the **Original File** action always visible
+(with a single "Open" control, disabled when the file declares no `source_file`),
+collapses the low-signal metadata (SHA-256, size, normalized-at) behind a `⋯` menu,
+and offers the view modes as compact icon toggles: Preview, Code, and Lineage.
+
+- **Preview** is the default. A deep link that points at a section, CSV row, or
+  cell opens in Preview and scrolls to that target; a heading targeted at a
+  sub-field, and plain `.txt`-style opens, stay in Code.
+- **Lineage** opens on the **Timeline** style by default: a vertical chain from
+  the upstream `source_file` to the focal file and its citing model elements.
+  Every step shows its identity (file path, element `id`, and `slug` when
+  present). The **Graph** style renders the same data as a top-down Mermaid graph.
+  Outgoing relationships below a citing element are collapsed by default behind a
+  `+N hidden` toggle in both styles.
+
+Recursive upstream chaining (following each `source_file` backwards through
+multiple hops) is planned as a follow-up; the Timeline currently renders the
+single known upstream hop.
+
 ## AI Guide View
 
 The **"Use AI"** button in the header opens the AI Guide view (`AiWorkflowPanel`) — a step checklist for connecting an external coding agent (Claude Code, Google Antigravity, or OpenCode Desktop) to the current workspace, with copiable prompts prefixed with `innfo:` for each step.

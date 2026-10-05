@@ -14,8 +14,6 @@ title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
 
 ## NN Work: Procedure Documentation Lifecycle
 step_type:: task
-parent:: -
-next:: -
 condition:: New business process or operational workflow identified
 input:: [[Process Intake Brief]]
 output:: [[Validated iNNfo Level 3 Model]]
@@ -85,7 +83,6 @@ Populate functional roles and assign formal RACI governance values (Responsible,
 ## NN Work: Integrity & Syntax Verification
 parent:: [[Procedure Documentation Lifecycle]]
 step_type:: task
-next:: -
 condition:: RACI matrix complete and reviewed
 input:: [[RACI Accountability Matrix]]
 output:: [[Validated iNNfo Level 3 Model]]

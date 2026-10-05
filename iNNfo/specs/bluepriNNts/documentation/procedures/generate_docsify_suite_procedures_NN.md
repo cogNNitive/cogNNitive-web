@@ -14,8 +14,6 @@ title: "Generate Docsify Suite Procedure"
 
 ## NN Work: Generate Complete Docsify Suite
 step_type:: task
-parent:: -
-next:: -
 condition:: Documentation model updated or site build triggered
 input:: [[Documentation Model]]
 output:: [[Verified Documentation Suite]]
@@ -87,7 +85,6 @@ Compile all DocSite descriptions, Sections, and Page summaries into machine-read
 ## NN Work: Verify Output Suite
 parent:: [[Generate Complete Docsify Suite]]
 step_type:: task
-next:: -
 condition:: All artifacts written
 input:: [[Docsify Sidebar]]
 output:: [[Verified Documentation Suite]]

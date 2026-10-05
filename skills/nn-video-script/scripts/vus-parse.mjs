@@ -3,7 +3,10 @@
 /**
  * skills/nn-video-script/scripts/vus-parse.mjs
  *
- * Runs the vendored VUS parser over a script and requires zero issues. The parser is
+ * Runs the vendored VUS parser over a script and fails only on parser ERRORS.
+ * Warnings are reported but never block authoring - a scene may legitimately
+ * carry no narration yet (e.g. @ 00 Intro without a template), which the
+ * parser flags as a warning. The parser is
  * the committed self-contained mirror (`./lib/innfo-video-parser.generated.mjs`), so the
  * child runs under plain `node` — no external loader, no monorepo checkout.
  *
@@ -56,16 +59,32 @@ function main() {
 
   const result = runVusParse({ scriptPath });
 
-  if (result.issues.length > 0) {
-    console.error(`❌ [vus-parse] ${result.issues.length} issue(s) reported by ScriptParser:`);
-    for (const issue of result.issues) {
+  const errors = result.issues.filter((i) => i.severity === 'error');
+  const warnings = result.issues.filter((i) => i.severity !== 'error');
+
+  if (warnings.length > 0) {
+    // Warnings are advisory: report them but never block authoring.
+    console.warn(`! [vus-parse] ${warnings.length} warning(s) reported by ScriptParser:`);
+    for (const issue of warnings) {
+      console.warn(`  - [${issue.severity}] line ${issue.line}: ${issue.message}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    console.error(`✗ [vus-parse] ${errors.length} error(s) reported by ScriptParser:`);
+    for (const issue of errors) {
       console.error(`  - [${issue.severity}] line ${issue.line}: ${issue.message}`);
     }
     process.exit(1);
   }
 
-  console.log('✅ [vus-parse] ScriptParser reports zero issues.');
+  console.log(
+    errors.length === 0 && warnings.length === 0
+      ? `✓ [vus-parse] ScriptParser reports zero issues.`
+      : `✓ [vus-parse] ScriptParser reports no errors.`,
+  );
 }
+
 
 // Symlink/junction-safe guard: compare realpaths, not the typed path vs import.meta.url.
 const isMain =

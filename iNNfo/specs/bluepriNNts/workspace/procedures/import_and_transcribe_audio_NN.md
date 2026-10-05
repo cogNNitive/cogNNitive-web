@@ -23,8 +23,6 @@ title: "Audio Source Import & Transcription Procedure"
 
 ## NN Work: Import and Transcribe Audio Sources
 step_type:: task
-parent:: -
-next:: -
 condition:: Raw audio recordings present in import or external drop folder
 input:: [[Raw Audio Recordings Directory]]
 output:: [[Verified Target Domain Model]]
@@ -108,7 +106,6 @@ Update the sources:: field of the target Element in the active domain model with
 ## NN Work: Validate Target Model
 parent:: [[Import and Transcribe Audio Sources]]
 step_type:: task
-next:: -
 condition:: Domain model updated
 input:: [[Updated Domain Model]]
 output:: [[Verified Target Domain Model]]

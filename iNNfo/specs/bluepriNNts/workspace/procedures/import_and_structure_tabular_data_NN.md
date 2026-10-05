@@ -23,8 +23,6 @@ title: "Tabular Data Import & Structure Procedure"
 
 ## NN Work: Import and Structure Tabular Data
 step_type:: task
-parent:: -
-next:: -
 condition:: Tabular data files (.csv, .xlsx, .json) present in import folder
 input:: [[Raw Tabular Data Directory]]
 output:: [[Verified Target Domain Model]]
@@ -108,7 +106,6 @@ Instantiate or update Level 3 model elements with properties extracted from tabl
 ## NN Work: Validate Target Model
 parent:: [[Import and Structure Tabular Data]]
 step_type:: task
-next:: -
 condition:: Domain model populated
 input:: [[Updated Domain Model]]
 output:: [[Verified Target Domain Model]]

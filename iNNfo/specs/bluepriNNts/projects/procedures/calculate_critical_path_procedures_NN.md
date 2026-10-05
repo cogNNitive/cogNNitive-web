@@ -14,8 +14,6 @@ title: "Calculate Critical Path Procedure"
 
 ## NN Work: Calculate Critical Path
 step_type:: task
-parent:: -
-next:: -
 condition:: A projects model is loaded
 input:: [[Active Projects Model]]
 output:: [[Critical Path Analysis]]
@@ -51,7 +49,6 @@ Calculate longest-path sequences across project phases to identify zero-slack ac
 ## NN Work: Highlight Critical Risks
 parent:: [[Calculate Critical Path]]
 step_type:: task
-next:: -
 condition:: Schedule sequences calculated
 input:: [[Schedule Sequences]]
 output:: [[Critical Path Analysis]]

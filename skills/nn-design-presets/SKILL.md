@@ -19,7 +19,7 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 
 > **MANDATORY ACTIVATION**: This skill MUST be activated whenever creating or styling any visual component, web app, HTML dashboard artifact, or web document in the cogNNitive ecosystem.
 >
-> **iNNfo Model Schema**: This skill is backed by the formal Level-2 [`design-presets`](../../iNNfo/specs/templates/design-presets/spec_NN.md) template, supporting structured multi-modal design tokens across Web UI, cogNNitive-video Video Overlays, and Generative Illustration prompt anchors.
+> **iNNfo Model Schema**: This skill is backed by the formal Level-2 [`design-presets`](../../iNNfo/specs/bluepriNNts/design-presets/spec_NN.md) template, supporting structured multi-modal design tokens across Web UI, cogNNitive-video Video Overlays, and Generative Illustration prompt anchors.
 
 Reference material — load on demand when generating visual artifacts, web files, or video assets. Each preset defines a complete visual identity: palette, UI typography stack, video title/subtitle overlays, and generative image prompt modifiers.
 

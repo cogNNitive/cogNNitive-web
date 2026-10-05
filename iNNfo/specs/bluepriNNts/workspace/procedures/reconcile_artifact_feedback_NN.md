@@ -32,8 +32,6 @@ procedure_model:: procedures/reconcile_artifact_feedback_NN.md
 
 ## NN Work: Artifact Feedback Reconciliation Workflow
 step_type:: task
-parent:: -
-next:: -
 condition:: Reviewed deliverable dropped in artifacts/ directory
 input:: [[Reviewed Deliverable Document]]
 output:: [[Published Final Deliverable]]
@@ -124,7 +122,6 @@ Executes deterministic mutations on Level 3 domain models via `innfo-mcp_apply_c
 ## NN Work: Step 6 - Artifact Sanitization and Lineage Registration
 parent:: [[Artifact Feedback Reconciliation Workflow]]
 step_type:: task
-next:: -
 condition:: Upstream models validated
 input:: [[Updated Domain Model]]
 output:: [[Published Final Deliverable]]

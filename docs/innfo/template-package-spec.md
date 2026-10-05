@@ -9,7 +9,7 @@ This document specifies the standard directory structure, asset organization, re
 A Level 2 template package consolidates a template specification alongside its associated samples, SOP procedures, and agent skills into a single versioned directory tree:
 
 ```
-specs/templates/<template-name>/<version>/
+specs/bluepriNNts/<template-name>/<version>/
 ├── spec_NN.md                # Canonical L2 template spec document
 ├── samples/                  # Sample L3 model files instantiating this template
 ├── procedures/               # Bundled SOP procedure spec files (*_NN.md)
@@ -92,13 +92,13 @@ skills:
 
 When resolving a template package by name and optional version, `innfo-mcp` searches across four local tiers in order:
 
-1. **Workspace Package Directory**: `./specs/templates/<name>/<version>/`
+1. **Workspace Package Directory**: `./specs/bluepriNNts/<name>/<version>/`
 2. **Workspace Flat Fallback**: `./templates/<name>_V_<version>_NN.md` or `./specs/`
 3. **Global User Cache**: `~/.agents/templates/<name>/<version>/`
 4. **Installed Skills Directory**: `~/.agents/skills/*/templates/<name>/<version>/`
 
 ### Immutability & Hydration
-- Remote package downloads write to temporary staging directories (`specs/templates/<name>/.staging-<pid>-<time>/`) and perform atomic rename operations to guarantee write completeness.
+- Remote package downloads write to temporary staging directories (`specs/bluepriNNts/<name>/.staging-<pid>-<time>/`) and perform atomic rename operations to guarantee write completeness.
 - Hydrated packages are **write-once immutable**: once a versioned package directory exists, existing contents are preserved without redundant re-downloads or overwrites.
 
 ---

@@ -14,8 +14,6 @@ title: "Audit Skill Gaps Procedure"
 
 ## NN Work: Audit Skill Gaps
 step_type:: task
-parent:: -
-next:: -
 condition:: An organization model is loaded
 input:: [[Active Organization Model]]
 output:: [[Skill Gap Analysis Report]]
@@ -51,7 +49,6 @@ Compare the declared skills of persons currently occupying each position with th
 ## NN Work: Generate Gap Report
 parent:: [[Audit Skill Gaps]]
 step_type:: task
-next:: -
 condition:: Competency evaluation complete
 input:: [[Evaluated Competencies]]
 output:: [[Skill Gap Analysis Report]]

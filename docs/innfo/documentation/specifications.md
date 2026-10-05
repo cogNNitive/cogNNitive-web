@@ -41,16 +41,16 @@ Domain-specific apps. Each declares concepts, markers, matrices, and relationshi
 
 | App | `template_version` | Source |
 |----------|--------------------|--------|
-| **Blank** | V_0-2-0 | [`specs/templates/blank/blank_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/blank/blank_V_0-2-0_NN.md) |
-| **Business** (composite) | V_0-2-1 | [`specs/templates/business/business_V_0-2-1_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-1_NN.md) |
-| **Business Model** | V_0-1-0 | [`specs/templates/business-model/business-model_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md) |
-| **Analysis** | V_0-1-0 | [`specs/templates/analysis/analysis_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md) |
-| **Innovation** | V_0-2-0 | [`specs/templates/innovation/innovation_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/innovation/innovation_V_0-2-0_NN.md) |
-| **cogNNitive** | V_0-2-0 | [`specs/templates/cogNNitive/cogNNitive_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/cogNNitive/cogNNitive_V_0-2-0_NN.md) |
-| **Organization** | V_0-2-0 | [`specs/templates/organization/organization_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md) |
-| **Procedures** | V_0-2-0 | [`specs/templates/procedures/procedures_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md) |
-| **Projects** | V_0-2-0 | [`specs/templates/projects/projects_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/projects/projects_V_0-2-0_NN.md) |
-| **Video** | V_0-3-2 | [`specs/templates/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
+| **Blank** | V_0-2-0 | [`specs/bluepriNNts/blank/blank_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/blank/blank_V_0-2-0_NN.md) |
+| **Business** (composite) | V_0-2-1 | [`specs/bluepriNNts/business/business_V_0-2-1_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/business_V_0-2-1_NN.md) |
+| **Business Model** | V_0-1-0 | [`specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md) |
+| **Analysis** | V_0-1-0 | [`specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md) |
+| **Innovation** | V_0-2-0 | [`specs/bluepriNNts/innovation/innovation_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/innovation/innovation_V_0-2-0_NN.md) |
+| **cogNNitive** | V_0-2-0 | [`specs/bluepriNNts/cogNNitive/cogNNitive_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/cogNNitive/cogNNitive_V_0-2-0_NN.md) |
+| **Organization** | V_0-2-0 | [`specs/bluepriNNts/organization/organization_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md) |
+| **Procedures** | V_0-2-0 | [`specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md) |
+| **Projects** | V_0-2-0 | [`specs/bluepriNNts/projects/projects_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/projects/projects_V_0-2-0_NN.md) |
+| **Video** | V_0-3-2 | [`specs/bluepriNNts/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
 
 Each app's `_V_0-1-0_` file (where one existed) stays frozen and resolvable for models still pinned to it.
 
@@ -60,14 +60,14 @@ Concrete data instances. Lightweight — just data and a parent pointer to their
 
 | Model | App | Source |
 |-------|----------|--------|
-| **Ghostbusters** | business V_0-2-1 | [`specs/templates/business/samples/Ghostbusters_V_0-2-1_business_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-1_business_NN.md) |
-| **Ghostbusters** | business V_0-2-0 | [`specs/templates/business/samples/Ghostbusters_V_0-2-0_business_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-0_business_NN.md) |
-| **Ghostbusters** | business V_0-1-0 | [`specs/templates/business/samples/Ghostbusters_V_0-1-0_business_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-1-0_business_NN.md) |
-| **Ghostbusters** | analysis V_0-2-0 | [`specs/templates/analysis/samples/Ghostbusters_V_0-2-0_analysis_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-2-0_analysis_NN.md) |
-| **Ghostbusters** | innovation V_0-2-0 | [`specs/templates/innovation/samples/Ghostbusters_V_0-2-0_innovation_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-2-0_innovation_NN.md) |
-| **Ghostbusters** | organization V_0-2-0 | [`specs/templates/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md) |
-| **Ghostbusters** | procedures V_0-2-0 | [`specs/templates/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md) |
-| **Ghostbusters** | projects V_0-2-0 | [`specs/templates/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md) |
+| **Ghostbusters** | business V_0-2-1 | [`specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-1_business_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-1_business_NN.md) |
+| **Ghostbusters** | business V_0-2-0 | [`specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-0_business_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-0_business_NN.md) |
+| **Ghostbusters** | business V_0-1-0 | [`specs/bluepriNNts/business/samples/Ghostbusters_V_0-1-0_business_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-1-0_business_NN.md) |
+| **Ghostbusters** | analysis V_0-2-0 | [`specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-2-0_analysis_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-2-0_analysis_NN.md) |
+| **Ghostbusters** | innovation V_0-2-0 | [`specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-2-0_innovation_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-2-0_innovation_NN.md) |
+| **Ghostbusters** | organization V_0-2-0 | [`specs/bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md) |
+| **Ghostbusters** | procedures V_0-2-0 | [`specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-2-0_procedures_NN.md) |
+| **Ghostbusters** | projects V_0-2-0 | [`specs/bluepriNNts/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md) |
 
 ## Traceability & change propagation
 
