@@ -39,6 +39,7 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 The video engine operates headlessly through programmatic modules:
 - **Vendored Parser Mirror (`scripts/lib/innfo-video-parser.generated.mjs`)**: The VUS parser bundled as a committed, self-contained ESM artifact (zod + spec embedded). Resolves by relative path — no npm package, no monorepo checkout, no `tsx`. Drift-guarded by `scripts/verify.js`.
 - **Scene Compiler (`scripts/remotion-scene-compiler.mjs`)**: Compiles Markdown/VUS video scripts into frame-accurate Remotion Composition Manifests with sequence tracks, transitions, lower-thirds (`lowerThird`), kinetic titles (`kineticTitle`), and concept callouts (`conceptCallout`).
+  - `kineticTitle` optional big-text controls (defaults unchanged when absent): `heading_size` / `subheading_size` (px; setting either adds a text shadow and wraps long titles) and `anchor` (`top` | `center` | `bottom`).
 - **Deterministic Asset Cache (`scripts/cache-manager.mjs`)**: Content-addressed SHA-256 cache under `.cognnitive/cache/video/` with isolated subdirectories (`tts/`, `images/`, `temp/`).
 - **Asset Synthesizer (`scripts/asset-synthesizer.mjs` / `scripts/tts-generator.mjs`)**: Synthesizes TTS voiceover tracks and image/motion assets, measuring audio durations via `@remotion/media-parser` (no FFmpeg-from-PATH).
 - **Engine Installer (`scripts/ensure-engine.mjs`)**: Idempotent, consent-gated install of the Remotion renderer runtime with a size + first-render browser notice.

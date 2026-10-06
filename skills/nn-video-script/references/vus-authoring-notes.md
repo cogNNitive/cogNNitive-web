@@ -59,3 +59,37 @@ Whatever text appears directly under a scene header (after any property
 lines) is treated as narration content. Markdown headers (`#`, `##`) inside
 that text are not just stylistically wrong — they can break downstream
 text-to-speech processing. Keep narration to plain prose.
+
+## First-class style props (compiler-level, pending VUS V_0-4-0)
+
+The canonical parser spec (`V_0-3-3`) has no style tokens, so these live in
+the scene compiler today and are forwarded as first-class props — not HTML
+comments. Precedence: `options.style` (series `style.json`) < video props <
+scene/layer props. All optional; defaults reproduce the previous render.
+
+```md
+# Video
+- video_font: Inter
+- video_aspect: 16:9
+- video_caption_style: tiktok   # none | tiktok | karaoke
+- video_caption_highlight: "#39E508"
+- video_transition: fade
+- video_transition_easing: bezier(0.16,1,0.3,1)
+
+## Scene 1: Hook
+- scene_transition: slide-left
+- scene_transition_duration: 15  # frames; default fps*0.5
+- caption_style: tiktok
+- caption_size: 80
+- caption_highlight: "#39E508"
+
+@@ Captions
+- layer_type: captions
+- layer_text_font: Inter
+```
+
+Prefer `layer_type: captions` over `<!-- overlay: captions {...} -->` — the
+comment form still parses (backward compatible) but is deprecated. Font props
+(`font_family, font_size, font_weight, text_stroke`) work on
+`lowerThird`, `kineticTitle`, and `conceptCallout` layers too, via either
+`font_*` or the legacy `layer_text_*` names.

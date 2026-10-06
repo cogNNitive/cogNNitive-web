@@ -195,10 +195,10 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-7-1",
+      "adopted": "V_0-7-2",
       "versions": [
         {
-          "blueprint_version": "V_0-7-1",
+          "blueprint_version": "V_0-7-2",
           "spec_version": "V_0-3-0",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"

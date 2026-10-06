@@ -18,6 +18,9 @@ export const LowerThird: React.FC<{ config: Record<string, unknown> }> = ({ conf
   const subtitle = (config.subtitle as string) || '';
   const accent = (config.accentColor as string) || '#3b82f6';
   const position = (config.position as string) || 'bottom-left';
+  const fontFamily = (config.fontFamily as string) || 'sans-serif';
+  const fontSize = Number(config.fontSize) || 40;
+  const stroke = config.textStroke as string | undefined;
 
   return (
     <AbsoluteFill style={{ padding: 64, ...(POSITION[position] || POSITION['bottom-left']) }}>
@@ -27,11 +30,12 @@ export const LowerThird: React.FC<{ config: Record<string, unknown> }> = ({ conf
           borderLeft: `8px solid ${accent}`,
           padding: '18px 28px',
           color: '#fff',
-          fontFamily: 'sans-serif',
+          fontFamily,
+          ...(stroke ? { WebkitTextStroke: `1px ${stroke}` } : {}),
           maxWidth: '60%',
         }}
       >
-        <div style={{ fontSize: 40, fontWeight: 700 }}>{title}</div>
+        <div style={{ fontSize, fontWeight: 700 }}>{title}</div>
         {subtitle ? <div style={{ fontSize: 26, opacity: 0.8 }}>{subtitle}</div> : null}
       </div>
     </AbsoluteFill>

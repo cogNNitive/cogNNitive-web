@@ -11,12 +11,13 @@ import { AbsoluteFill, Audio, Img, OffthreadVideo, Sequence, staticFile, useVide
 import { LowerThird } from './overlays/LowerThird';
 import { KineticTitle } from './overlays/KineticTitle';
 import { ConceptCallout } from './overlays/ConceptCallout';
+import { Captions } from './overlays/Captions';
 import { AvatarFrame } from './AvatarFrame';
 import { pickLayerPrimitive, layerSource } from './layer-primitive.mjs';
 
 type Overlay = {
   id: string;
-  type: 'lowerThird' | 'kineticTitle' | 'conceptCallout';
+  type: 'lowerThird' | 'kineticTitle' | 'conceptCallout' | 'captions';
   fromFrame: number;
   durationInFrames: number;
   config: Record<string, unknown>;
@@ -28,6 +29,8 @@ type AudioBinding = {
   fromFrame: number;
   durationInFrames: number;
   volume?: number;
+  /** Background music: loop the file for the scene's duration. */
+  loop?: boolean;
 };
 
 type SceneTrack = {
@@ -91,7 +94,7 @@ export const Scene: React.FC<{
 
         {audio.map((track) => (
           <Sequence key={track.id} from={track.fromFrame - scene.fromFrame} durationInFrames={track.durationInFrames}>
-            <Audio src={staticFile(track.assetPath)} volume={track.volume ?? 1} />
+            <Audio src={staticFile(track.assetPath)} volume={track.volume ?? 1} loop={track.loop === true} />
           </Sequence>
         ))}
 
@@ -151,6 +154,12 @@ function renderOverlay(overlay: Overlay, localFrom: number, fps: number): React.
       return (
         <Sequence key={overlay.id} from={localFrom} {...common}>
           <ConceptCallout config={overlay.config} />
+        </Sequence>
+      );
+    case 'captions':
+      return (
+        <Sequence key={overlay.id} from={localFrom} {...common}>
+          <Captions config={overlay.config} durationInFrames={overlay.durationInFrames} />
         </Sequence>
       );
     default:

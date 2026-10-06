@@ -310,6 +310,47 @@ describe('compile cache dir', () => {
   });
 });
 
+describe('compile progress + accumulated cost', () => {
+  it('emits plan first, then [i/N] per asset with item cost and accumulated spend', async () => {
+    const ws = workspace();
+    approve(ws);
+    const provider = fakeProvider();
+    const events = [];
+    const res = await compileVideo({ scriptPath: ws.scriptPath, ...paid(provider), onProgress: (e) => events.push(e) });
+
+    assert.equal(events[0].phase, 'plan');
+    assert.equal(events[0].ttsTotal, 2);
+    assert.equal(events[0].mediaTotal, 2);
+    assert.ok(events[0].totalUsd > 0);
+    assert.equal(res.plannedTotalUsd, events[0].totalUsd);
+
+    const tts = events.filter((e) => e.phase === 'tts-done');
+    const media = events.filter((e) => e.phase === 'media-done');
+    assert.deepEqual(tts.map((e) => [e.done, e.total]), [[1, 2], [2, 2]]);
+    assert.deepEqual(media.map((e) => [e.done, e.total]), [[1, 2], [2, 2]]);
+    assert.ok(tts.every((e) => e.fromCache === false && e.itemCostUsd > 0));
+
+    const dones = events.filter((e) => e.phase === 'tts-done' || e.phase === 'media-done');
+    const sum = Math.round(dones.reduce((n, e) => n + e.itemCostUsd, 0) * 1e6) / 1e6;
+    assert.equal(res.spentUsd, sum);
+    assert.equal(dones.at(-1).spentUsd, res.spentUsd);
+    assert.ok(Math.abs(res.spentUsd - res.plannedTotalUsd) < 0.0005, 'first run spends the whole plan');
+  });
+
+  it('a repeat run reports cache hits at $0 and spends nothing', async () => {
+    const ws = workspace();
+    approve(ws);
+    const provider = fakeProvider();
+    await compileVideo({ scriptPath: ws.scriptPath, ...paid(provider) });
+    const events = [];
+    const res = await compileVideo({ scriptPath: ws.scriptPath, ...paid(provider), onProgress: (e) => events.push(e) });
+    assert.equal(res.spentUsd, 0);
+    const dones = events.filter((e) => e.phase === 'tts-done' || e.phase === 'media-done');
+    assert.equal(dones.length, 4);
+    assert.ok(dones.every((e) => e.fromCache === true && e.itemCostUsd === 0 && e.spentUsd === 0));
+  });
+});
+
 describe('replicate/-prefixed model names in scripts', () => {
   const aliased = () => {
     const extra = '- scene_tts_model: replicate/minimax/speech-2.8-hd\n- replicate/minimax/speech-2.8-hd/voice_id: Ana\n- scene_duration: 3.0';

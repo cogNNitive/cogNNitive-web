@@ -58,6 +58,28 @@ export function resolveRemotionEntryPoint(scriptsDir = SCRIPTS_DIR) {
   return path.resolve(scriptsDir, 'remotion-entry.tsx');
 }
 
+/** True when `target` is `root` or lives under it. */
+function isInside(root, target) {
+  const rel = path.relative(path.resolve(root), path.resolve(target));
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
+/**
+ * The series folder that owns a script: the nearest ancestor (inclusive) holding
+ * `series_rules.md` or `script_template.md`. Undefined for scripts outside a series.
+ * @param {string} startDir
+ * @returns {string | undefined}
+ */
+export function findSeriesRoot(startDir) {
+  let dir = path.resolve(startDir);
+  for (;;) {
+    if (fs.existsSync(path.join(dir, 'series_rules.md')) || fs.existsSync(path.join(dir, 'script_template.md'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+}
+
 /**
  * Resolves a media source against the script directory and stages it into a
  * Remotion-served public directory, returning the bundle-relative name. The name
@@ -101,12 +123,13 @@ export function stageAsset(src, scriptDir, publicDir) {
  * so it is the test seam.
  *
  * @param {object} manifest
- * @param {{ scriptDir: string, publicDir: string }} opts
- * @returns {{ staged: number, missing: string[] }}
+ * @param {{ scriptDir: string, publicDir: string, seriesRoot?: string }} opts
+ * @returns {{ staged: number, missing: string[], escaped: string[] }}
  */
 export function resolveMediaLayers(manifest, opts) {
-  const { scriptDir, publicDir } = opts;
+  const { scriptDir, publicDir, seriesRoot } = opts;
   const missing = [];
+  const escaped = [];
   let staged = 0;
 
   const stageField = (obj, field) => {
@@ -128,9 +151,16 @@ export function resolveMediaLayers(manifest, opts) {
     for (const layer of layers) stageField(layer, 'layer_asset_source');
   }
 
-  for (const track of manifest?.tracks?.audio || []) stageField(track, 'assetPath');
+  for (const track of manifest?.tracks?.audio || []) {
+    // Music must stay inside the series tree (no-upward-escape rule). Narration is cache-produced and exempt.
+    if (track?.kind === 'music' && seriesRoot && typeof track.assetPath === 'string' && !isInside(seriesRoot, path.resolve(scriptDir, track.assetPath))) {
+      escaped.push(track.assetPath);
+      continue;
+    }
+    stageField(track, 'assetPath');
+  }
 
-  return { staged, missing };
+  return { staged, missing, escaped };
 }
 
 /**
@@ -144,8 +174,10 @@ export async function tryRemotionRender(input, deps = {}) {
   const { manifest, outputPath, concurrency = 4 } = input;
   const loadModule = deps.loadModule || ((id) => import(id).catch(() => null));
   const scriptsDir = deps.scriptsDir || SCRIPTS_DIR;
+  const onProgress = deps.onProgress || input.onProgress || (() => {});
 
   try {
+    onProgress({ phase: 'bundle-start' });
     const remotionBundler = await loadModule('@remotion/bundler');
     const remotionRenderer = await loadModule('@remotion/renderer');
 
@@ -171,6 +203,7 @@ export async function tryRemotionRender(input, deps = {}) {
       webpackOverride: (config) => config,
       ...(typeof publicDir === 'string' ? { publicDir } : {}),
     });
+    onProgress({ phase: 'bundle-done' });
 
     // The official contract: resolve the composition from the bundle, then render it.
     const composition = await remotionRenderer.selectComposition({
@@ -178,6 +211,7 @@ export async function tryRemotionRender(input, deps = {}) {
       id: COMPOSITION_ID,
       inputProps: manifest,
     });
+    onProgress({ phase: 'render-start', frames: composition?.durationInFrames });
 
     await remotionRenderer.renderMedia({
       composition,
@@ -209,6 +243,9 @@ export async function tryRemotionRender(input, deps = {}) {
  * @property {{ image?: string, tts?: string, avatar?: string }} [models] Chosen models, as passed to the cost estimator (part of plan_hash).
  * @property {Function} [ffmpegRun] Test seam for the faststart retry on marked avatar clips.
  * @property {Record<string, unknown>} [synthesizerOptions] Extra AssetSynthesizer options (test seam: env, fetch, sleep).
+ * @property {(e: object) => void} [onProgress] Progress listener: `plan` (totals + estimated USD)
+ *   first, then `tts-start`/`tts-done` and `media-start`/`media-done` with `[done/total]`,
+ *   model, cache hit, `itemCostUsd` and accumulated `spentUsd`.
  */
 
 /**
@@ -227,6 +264,7 @@ export async function tryRemotionRender(input, deps = {}) {
  * @property {string} [approvalPath] See VideoCompileOptions.
  * @property {{ image?: string, tts?: string, avatar?: string }} [models] See VideoCompileOptions.
  * @property {(id: string) => Promise<object|null>} [loadModule] Remotion module loader seam.
+ * @property {(e: object) => void} [onProgress] See VideoCompileOptions (also covers bundle/render phases).
  */
 
 /**
@@ -243,20 +281,40 @@ export async function tryRemotionRender(input, deps = {}) {
 /**
  * Runs every TTS / image synthesis a script needs through `synthesizer`. With a dry-run
  * synthesizer nothing is performed: billable work is only collected by its guard.
+ * `onProgress` receives `{ phase: 'tts-start'|'tts-done'|'media-start'|'media-done', done, total,
+ * scene, model, fromCache, itemCostUsd, spentUsd }`; `costByRef` maps the plan
+ * `ref` to its estimated USD (cache hits cost 0, so `spentUsd` is real accumulated spend).
  * @param {any} parsed Parsed script (layers receive `layer_asset_source` for real runs).
  * @param {AssetSynthesizer} synthesizer
  * @param {{ image?: string, tts?: string, avatar?: string }} models Chosen models (same flags as the estimator).
+ * @param {(e: object) => void} [onProgress]
+ * @param {Map<string, number>} [costByRef]
  */
-async function synthesizeScriptAssets(parsed, synthesizer, models) {
+async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = () => {}, costByRef = new Map()) {
   const audioAssets = {};
   let cachedAssetsUsed = 0;
   let newAssetsSynthesized = 0;
+  let spentUsd = 0;
+  const ttsScenes = parsed.scenes.filter((sc) => sc.narration && sc.narration.trim().length > 0);
+  const mediaTotal = parsed.scenes.reduce(
+    (n, sc) => n + (Array.isArray(sc.layers) ? sc.layers.filter((l) => l.properties?.layer_prompt || l.properties?.prompt).length : 0),
+    0,
+  );
+  let ttsDone = 0;
+  let mediaDone = 0;
+  /** Real accumulated spend: cache hits cost 0, misses cost the planned estimate. */
+  const charge = (ref, fromCache) => {
+    const itemCostUsd = fromCache ? 0 : Math.round((costByRef.get(ref) || 0) * 1e6) / 1e6;
+    spentUsd = Math.round((spentUsd + itemCostUsd) * 1e6) / 1e6;
+    return itemCostUsd;
+  };
 
   for (const sc of parsed.scenes) {
     // 1. TTS synthesis
     if (sc.narration && sc.narration.trim().length > 0) {
       const voiceOptions = buildTtsVoiceOptions(sc, models);
       const ttsModel = resolveModelId(sc.properties?.scene_tts_model, models.tts || DEFAULT_MODELS.tts);
+      onProgress({ phase: 'tts-start', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel });
       const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, { ref: sc.id, model: ttsModel });
       if (!ttsRes.dryRun) {
         if (ttsRes.fromCache) {
@@ -269,6 +327,9 @@ async function synthesizeScriptAssets(parsed, synthesizer, models) {
           sha256: ttsRes.sha256,
           durationSeconds: ttsRes.durationSeconds,
         };
+        ttsDone++;
+        const itemCostUsd = charge(sc.id, ttsRes.fromCache);
+        onProgress({ phase: 'tts-done', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel, fromCache: ttsRes.fromCache, itemCostUsd, spentUsd });
       }
     }
 
@@ -285,18 +346,23 @@ async function synthesizeScriptAssets(parsed, synthesizer, models) {
       };
       if (models.image) mediaOptions.modelOverride = models.image;
       const imageModel = resolveModelId(layer.properties?.layer_generation_model, models.image || DEFAULT_MODELS.image);
-      const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref: `${sc.id}/${layer.name}`, model: imageModel });
+      const ref = `${sc.id}/${layer.name}`;
+      onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
+      const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref, model: imageModel });
       if (mediaRes.dryRun) continue;
       if (mediaRes.fromCache) {
         cachedAssetsUsed++;
       } else {
         newAssetsSynthesized++;
       }
+      mediaDone++;
+      const itemCostUsd = charge(ref, mediaRes.fromCache);
+      onProgress({ phase: 'media-done', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel, fromCache: mediaRes.fromCache, itemCostUsd, spentUsd });
       // Update layer asset source to point to cached image
       layer.properties.layer_asset_source = mediaRes.assetPath;
     }
   }
-  return { audioAssets, cachedAssetsUsed, newAssetsSynthesized };
+  return { audioAssets, cachedAssetsUsed, newAssetsSynthesized, spentUsd };
 }
 
 /**
@@ -336,6 +402,9 @@ export async function compileVideo(options) {
   let audioAssets = {};
   let cachedAssetsUsed = 0;
   let newAssetsSynthesized = 0;
+  let spentUsd = 0;
+  let plannedTotalUsd = 0;
+  const onProgress = options.onProgress || (() => {});
 
   if (options.synthesizeAssets !== false || options.dryRun) {
     // Pass 1: plan. Read-only cache, dry-run guard: nothing is spent or written.
@@ -368,13 +437,33 @@ export async function compileVideo(options) {
     // Pre-flight: refuse the whole run BEFORE the first charge.
     planGuard.assertPlanAffordable();
 
+    // Totals + models + estimated cost, BEFORE the slow work starts.
+    plannedTotalUsd = planGuard.plannedTotalUsd;
+    const costByRef = new Map();
+    for (const item of planGuard.planned) {
+      if (item.blocked) continue;
+      costByRef.set(item.ref, Math.round(((costByRef.get(item.ref) || 0) + item.estUsd) * 1e6) / 1e6);
+    }
+    const ttsTotal = parsed.scenes.filter((sc) => sc.narration && sc.narration.trim().length > 0).length;
+    const mediaTotal = parsed.scenes.reduce(
+      (n, sc) => n + (Array.isArray(sc.layers) ? sc.layers.filter((l) => l.properties?.layer_prompt || l.properties?.prompt).length : 0),
+      0,
+    );
+    onProgress({
+      phase: 'plan',
+      ttsTotal,
+      mediaTotal,
+      models: [...new Set(planGuard.planned.map((p) => p.model))],
+      totalUsd: plannedTotalUsd,
+    });
+
     // Pass 2: synthesize for real.
     const synthesizer = new AssetSynthesizer({
       cacheManager: new CacheManager({ baseDir: cacheDir }),
       guard: makeGuard(false),
       ...synthOptions,
     });
-    ({ audioAssets, cachedAssetsUsed, newAssetsSynthesized } = await synthesizeScriptAssets(parsed, synthesizer, models));
+    ({ audioAssets, cachedAssetsUsed, newAssetsSynthesized, spentUsd } = await synthesizeScriptAssets(parsed, synthesizer, models, onProgress, costByRef));
   }
 
   // Avatar pickup: a lip-sync clip cached by synthesize-avatar.mjs replaces the still avatar layer
@@ -403,7 +492,7 @@ export async function compileVideo(options) {
   // and out-of-dir (`../shared/…`) paths both work. A missing asset is a loud
   // failure — never a silently dropped layer.
   const publicDir = path.join(scriptDir, 'public');
-  const staging = resolveMediaLayers(manifest, { scriptDir, publicDir });
+  const staging = resolveMediaLayers(manifest, { scriptDir, publicDir, seriesRoot: findSeriesRoot(scriptDir) });
   manifest.metadata.publicDir = publicDir;
 
   // Keep the human-visible local audio staging dir next to the script (developer aid).
@@ -415,6 +504,12 @@ export async function compileVideo(options) {
       const destAudio = path.join(localAudioDir, `${scId}_voiceover.mp3`);
       fs.copyFileSync(audioInfo.assetPath, destAudio);
     }
+  }
+
+  if (staging.escaped.length > 0) {
+    throw new VideoRenderError(
+      `Background audio escapes the series folder (no-upward-escape rule): ${staging.escaped.join(', ')}`,
+    );
   }
 
   if (staging.missing.length > 0) {
@@ -430,7 +525,7 @@ export async function compileVideo(options) {
     fs.writeFileSync(outResolved, JSON.stringify(manifest, null, 2), 'utf8');
   }
 
-  return { manifest, cachedAssetsUsed, newAssetsSynthesized, avatarVideos };
+  return { manifest, cachedAssetsUsed, newAssetsSynthesized, avatarVideos, spentUsd, plannedTotalUsd };
 }
 
 /**
@@ -440,9 +535,12 @@ export async function compileVideo(options) {
  */
 export async function renderVideo(options) {
   const startTime = Date.now();
+  const onProgress = options.onProgress || (() => {});
   let manifest;
   let cachedAssetsUsed = 0;
   let newAssetsSynthesized = 0;
+  let spentUsd = 0;
+  let plannedTotalUsd = 0;
 
   if (options.manifestPath && fs.existsSync(path.resolve(options.manifestPath))) {
     manifest = JSON.parse(fs.readFileSync(path.resolve(options.manifestPath), 'utf8'));
@@ -456,10 +554,13 @@ export async function renderVideo(options) {
       allowModels: options.allowModels,
       approvalPath: options.approvalPath,
       models: options.models,
+      onProgress,
     });
     manifest = compRes.manifest;
     cachedAssetsUsed = compRes.cachedAssetsUsed;
     newAssetsSynthesized = compRes.newAssetsSynthesized;
+    spentUsd = compRes.spentUsd || 0;
+    plannedTotalUsd = compRes.plannedTotalUsd || 0;
   } else {
     throw new Error('Either scriptPath or manifestPath must be provided for rendering');
   }
@@ -470,6 +571,7 @@ export async function renderVideo(options) {
   // Remotion is the ONLY renderer. A failure is a loud, named, non-zero error —
   // never a silent FFmpeg fallback or a mock MP4 masquerading as a render.
   const renderDeps = options.loadModule ? { loadModule: options.loadModule } : {};
+  renderDeps.onProgress = onProgress;
   const remotionResult = await tryRemotionRender(
     {
       manifest,
@@ -501,6 +603,8 @@ export async function renderVideo(options) {
     renderTimeMs,
     cachedAssetsUsed,
     newAssetsSynthesized,
+    spentUsd,
+    plannedTotalUsd,
     mocked,
   };
 }
@@ -536,6 +640,38 @@ export async function previewVideo(options) {
     previewUrl: `http://localhost:${port}`,
     port,
   };
+}
+
+/**
+ * Human progress reporter: plan totals + model + estimated cost first, then one
+ * `[i/N]` line per asset with its cost and the accumulated spend.
+ * @param {object} e Progress event (see `onProgress` in VideoCompileOptions).
+ */
+function cliReporter(e) {
+  const tag = (n, t) => `[${n}/${t}]`;
+  const money = (v) => '$' + Number(v || 0).toFixed(4);
+  switch (e.phase) {
+    case 'plan':
+      console.log(`🎙️ Hay que generar ${e.ttsTotal} audio(s) TTS y ${e.mediaTotal} imagen(es) con: ${e.models.join(', ') || 'local (gratis)'}. Estimado: ${money(e.totalUsd)}.`);
+      break;
+    case 'tts-done':
+      console.log(`🎙️ TTS ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`);
+      break;
+    case 'media-done':
+      console.log(`🖼️ Media ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`);
+      break;
+    case 'bundle-start':
+      console.log('📦 Bundleando composición Remotion...');
+      break;
+    case 'bundle-done':
+      console.log('📦 Bundle listo, resolviendo composición...');
+      break;
+    case 'render-start':
+      console.log(`🎬 Renderizando${e.frames ? ` ${e.frames} frames` : ''}...`);
+      break;
+    default:
+      break;
+  }
 }
 
 /**
@@ -622,13 +758,14 @@ async function main() {
         allowModels: args.allowModels,
         approvalPath: typeof args.approval === 'string' ? args.approval : undefined,
         models: { image: args['image-model'], tts: args['tts-model'], avatar: args['avatar-model'] },
+        onProgress: cliReporter,
       });
       if (result.dryRun) {
         printDryRun(result);
         return;
       }
       console.log(`✅ [video-engine-cli] Compiled manifest (${result.manifest.totalDurationInFrames} frames, ${result.manifest.totalDurationInSeconds.toFixed(2)}s)`);
-      console.log(`   Cached assets: ${result.cachedAssetsUsed}, New assets: ${result.newAssetsSynthesized}`);
+      console.log(`   Cached assets: ${result.cachedAssetsUsed}, New assets: ${result.newAssetsSynthesized}, Spent: $${result.spentUsd.toFixed(4)} of $${result.plannedTotalUsd.toFixed(4)} estimated`);
       if (result.avatarVideos.applied + result.avatarVideos.missing > 0) {
         console.log(`   Avatar clips: ${result.avatarVideos.applied} picked up from cache, ${result.avatarVideos.missing} still missing (run synthesize-avatar.mjs; never ad-hoc API calls). If clips exist but were not found, check that --avatar-model/--tts-model match the synthesize-avatar run.`);
       }
@@ -651,9 +788,10 @@ async function main() {
         approvalPath: typeof args.approval === 'string' ? args.approval : undefined,
         models: { image: args['image-model'], tts: args['tts-model'], avatar: args['avatar-model'] },
         allowMock: Boolean(args['allow-mock']),
+        onProgress: cliReporter,
       });
       console.log(`✅ [video-engine-cli] Rendered ${result.outputVideoPath}`);
-      console.log(`   Duration: ${result.totalDurationSeconds}s (${result.totalFrames} frames) in ${result.renderTimeMs}ms`);
+      console.log(`   Duration: ${result.totalDurationSeconds}s (${result.totalFrames} frames) in ${result.renderTimeMs}ms, Spent: $${result.spentUsd.toFixed(4)}`);
     } else if (command === 'preview') {
       const target = args._[1];
       const result = await previewVideo({

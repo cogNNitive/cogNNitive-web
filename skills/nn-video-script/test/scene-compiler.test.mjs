@@ -87,7 +87,7 @@ async function runTests() {
     assert.strictEqual(scene1.fromFrame, 0);
     assert.strictEqual(scene1.durationInFrames, 135);
     assert.strictEqual(scene1.sceneType, 'chapter_title');
-    assert.deepStrictEqual(scene1.transition, { type: 'fade', durationInFrames: 15 });
+    assert.deepStrictEqual(scene1.transition, { type: 'fade', durationInFrames: 15, easing: 'bezier(0.16,1,0.3,1)' });
 
     // Scene 2: 6.0s * 30 fps = 180 frames, starts at 135
     assert.strictEqual(scene2.fromFrame, 135);
@@ -266,6 +266,43 @@ Stay tuned for part two of our investigation.
     }
 
     console.log('✔ Canonical VUS @template scene declaration and parser parity test passed (Issue #107)');
+  }
+
+  // Test: first-class style props — captions default + font + transition easing, no HTML comments
+  {
+    const styled = `
+# Video
+- video_title: Styled Test
+- video_font: Inter
+- video_caption_style: tiktok
+- video_transition: fade
+
+# Scenes
+
+## Scene 1: Hook
+Hello world this is a caption test.
+- scene_duration: 4.0
+- caption_size: 90
+
+@@ Name Card
+- layer_type: lowerThird
+- layer_title: Host
+- font_family: Inter
+- font_size: 44
+`;
+    const manifest = compiler.compile(styled, { style: { video_caption_highlight: '#39E508' } });
+    const scene = manifest.tracks.scenes[0];
+    assert.strictEqual(scene.props.fontFamily, 'Inter');
+    assert.strictEqual(scene.props.captionStyle, 'tiktok');
+    assert.strictEqual(scene.transition.easing, 'bezier(0.16,1,0.3,1)');
+    const caps = manifest.tracks.overlays.find((o) => o.type === 'captions');
+    assert.ok(caps, 'scene caption default emits a captions overlay');
+    assert.strictEqual(caps.config.size, 90);
+    assert.strictEqual(caps.config.highlight, '#39E508');
+    const lt = manifest.tracks.overlays.find((o) => o.type === 'lowerThird');
+    assert.strictEqual(lt.config.fontFamily, 'Inter');
+    assert.strictEqual(lt.config.fontSize, 44);
+    console.log('✔ First-class style props: captions default + font + transition easing');
   }
 
   console.log('\nAll scene compiler unit tests passed! ✨');
