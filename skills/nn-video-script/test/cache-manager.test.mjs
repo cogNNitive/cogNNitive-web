@@ -17,6 +17,11 @@ import path from 'node:path';
 import { CacheManager } from '../scripts/cache-manager.mjs';
 import { AssetSynthesizer, probeAudioDuration } from '../scripts/asset-synthesizer.mjs';
 
+// Hermetic: a maintainer machine may export real provider keys. Tests must never reach a paid provider.
+for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'ELEVENLABS_API_KEY', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
+  delete process.env[k];
+}
+
 function makeTempCacheDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'cognnitive-cache-test-'));
 }

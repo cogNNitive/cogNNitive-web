@@ -26,7 +26,7 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 | [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
 | [`nn-design-presets`](skills/nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
 | [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-2-1` | Audit, update, and maintain cogNNitive skills. |
-| [`nn-video-script`](skills/nn-video-script.md) | `V_0-3-0` | Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series. |
+| [`nn-video-script`](skills/nn-video-script.md) | `V_0-4-0` | Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series. |
 <!-- /generated:skills-catalog -->
 
 ## Installation

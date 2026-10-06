@@ -114,7 +114,11 @@ function renderLayer(layer: Layer): React.ReactNode {
     case 'video':
       return (
         <AbsoluteFill>
-          <OffthreadVideo src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <OffthreadVideo
+            src={src}
+            muted={layer.layer_muted === true || layer.layer_muted === 'true'}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         </AbsoluteFill>
       );
     case 'avatar':

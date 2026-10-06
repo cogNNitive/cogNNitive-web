@@ -23,6 +23,11 @@ import {
   tryRemotionRender,
 } from '../scripts/video-engine-cli.mjs';
 
+// Hermetic: a maintainer machine may export real provider keys. Tests must never reach a paid provider.
+for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'ELEVENLABS_API_KEY', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
+  delete process.env[k];
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliPath = path.join(__dirname, '..', 'scripts', 'video-engine-cli.mjs');
 

@@ -13,18 +13,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { resolveDefaultCacheDir } from './lib/video-guard.mjs';
 
 export class CacheManager {
   /**
    * @param {Object} [options]
-   * @param {string} [options.baseDir] Base directory for video cache. Defaults to `.cognnitive/cache/video`.
+   * @param {string} [options.baseDir] Base directory for video cache. Defaults to `<workspaceRoot>/.cognnitive/cache/video`.
+   * @param {boolean} [options.readOnly] Never create directories or write files (used by dry runs and pre-flight planning).
+   * @param {string} [options.startDir] Where the workspace-root search starts when no baseDir is given (defaults to the cwd).
    */
   constructor(options = {}) {
     this.baseDir = options.baseDir
       ? path.resolve(options.baseDir)
-      : path.resolve(process.cwd(), '.cognnitive', 'cache', 'video');
+      : resolveDefaultCacheDir(options.startDir || process.cwd());
     this.categories = ['tts', 'images', 'temp'];
-    this.ensureDirs();
+    this.readOnly = Boolean(options.readOnly);
+    if (!this.readOnly) this.ensureDirs();
   }
 
   /**
@@ -47,7 +51,7 @@ export class CacheManager {
   getCacheDir(category = '') {
     if (!category) return this.baseDir;
     const catDir = path.join(this.baseDir, category);
-    if (!fs.existsSync(catDir)) {
+    if (!this.readOnly && !fs.existsSync(catDir)) {
       fs.mkdirSync(catDir, { recursive: true });
     }
     return catDir;
@@ -160,6 +164,7 @@ export class CacheManager {
    * @returns {Promise<string>} Full path to cached file
    */
   async put(hash, extension, data, category = 'tts') {
+    if (this.readOnly) throw new Error('CacheManager is read-only');
     const filePath = this.resolvePath(hash, extension, category);
     const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
     await fs.promises.writeFile(tmpPath, data);
@@ -176,6 +181,7 @@ export class CacheManager {
    * @returns {string} Full path to cached file
    */
   putSync(hash, extension, data, category = 'tts') {
+    if (this.readOnly) throw new Error('CacheManager is read-only');
     const filePath = this.resolvePath(hash, extension, category);
     const tmpPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
     fs.writeFileSync(tmpPath, data);

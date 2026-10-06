@@ -64,10 +64,10 @@ describe('Asset Cost Estimator & Video Model Catalog', () => {
     assert.equal(estimate.scenes[0].imageCost, 0.005);
     assert.equal(estimate.scenes[0].hasAvatar, false);
 
-    // Scene 2 uses Wan 2.7 T2I ($0.010) and InfiniteTalk ($0.012/s * 6s = $0.072)
+    // Scene 2 uses Wan 2.7 T2I ($0.010) and InfiniteTalk non-fast ($0.06/s * 6s = $0.36)
     assert.equal(estimate.scenes[1].imageCost, 0.010);
     assert.equal(estimate.scenes[1].hasAvatar, true);
-    assert.equal(estimate.scenes[1].avatarCost, 0.072);
+    assert.equal(estimate.scenes[1].avatarCost, 0.36);
   });
 
   it('generates markdown table with summary, itemized scenes, and tiers comparison', () => {
@@ -120,5 +120,15 @@ This is a very long narration with many words that would otherwise calculate to 
 `;
     const estimate = estimateScriptCost(scriptExplicitDuration);
     assert.equal(estimate.scenes[0].durationSeconds, 8);
+  });
+});
+
+describe('estimator model aliases', () => {
+  it('prices and lists the normalized id for a replicate/-prefixed scene model', () => {
+    const script = sampleScript.replace('Testing the first scene narration', 'Testing the first scene narration')
+      .replace('[scene_type=image_motion]\n[scene_duration=5]', '[scene_type=image_motion]\n[scene_duration=5]\n[scene_tts_model=replicate/minimax/speech-2.8-hd]');
+    const estimate = estimateScriptCost(script, {});
+    assert.ok(estimate.planModels.includes('minimax/speech-2.8-hd'));
+    assert.ok(!estimate.planModels.some((m) => m.startsWith('replicate/minimax')));
   });
 });

@@ -74,3 +74,12 @@ writes to the model file itself — that stays a single-writer responsibility
 (innfo-mcp applies the field values the script prints). See the script's own
 usage banner for the exact CLI contract (`--video-dir`, `--ref`,
 `--force-thumbnail`).
+
+## Cost-approval artifact
+
+Next to `script.md`, `asset_plan.md` carries a `plan_hash` and the human-written
+`asset_plan.approved.json` records the approval that `compile` requires before
+any billable synthesis. Neither file is part of the finalize/register step. The
+workspace-level `video-guard.json`, `.cognnitive/video-ledger.jsonl` and
+`.cognnitive/cache/video/` live at the workspace root, not in a Series or Video
+folder. See `cost-guardrails.md`.

@@ -13,12 +13,53 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { RemotionSceneCompiler } from './remotion-scene-compiler.mjs';
+import { fileURLToPath } from 'node:url';
+import { computePlanHash, formatStamp } from './lib/plan-approval.mjs';
+import { normalizeModelId } from './lib/video-guard.mjs';
+import { isAvatarLayer } from './lib/avatar-jobs.mjs';
+import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
 /**
  * Standard pricing catalog (USD) for supported video generation providers & models in cogNNitive Video.
  */
 export const PROVIDER_PRICING_CATALOG = {
   image: {
+    'black-forest-labs/flux-schnell': {
+      provider: 'Replicate',
+      modelName: 'FLUX.1 Schnell',
+      unitPrice: 0.003,
+      unit: 'image',
+      quality: 'Very High',
+      speed: 'Fast (~2-4s)',
+      description: 'Cost-effective FLUX 4-step inference (guard model id)',
+    },
+    'luma/uni-v1/text-to-image': {
+      provider: 'WaveSpeed AI / Luma',
+      modelName: 'Luma Uni-1 Text to Image',
+      unitPrice: 0.043,
+      unit: 'image',
+      quality: 'Very High',
+      speed: 'Moderate',
+      description: 'Luma Uni-1 text-to-image (approximate price from invoices)',
+    },
+    'black-forest-labs/flux-3/text-to-image': {
+      provider: 'WaveSpeed AI / BFL',
+      modelName: 'FLUX.3 Text to Image',
+      unitPrice: 0.05,
+      unit: 'image',
+      quality: 'Maximum',
+      speed: 'Moderate',
+      description: 'FLUX.3 text-to-image (approximate price)',
+    },
+    'wavespeed-ai/minimax-h3/image-edit': {
+      provider: 'WaveSpeed AI / MiniMax',
+      modelName: 'MiniMax H3 Image Edit',
+      unitPrice: 0.035,
+      unit: 'image',
+      quality: 'High',
+      speed: 'Moderate',
+      description: 'Image editing (approximate price)',
+    },
     'wavespeed-ai/z-image/turbo': {
       provider: 'WaveSpeed AI',
       modelName: 'Z-Image Turbo',
@@ -75,7 +116,15 @@ export const PROVIDER_PRICING_CATALOG = {
     },
   },
   tts: {
-    'wavespeed/minimax/speech-2.5-hd-preview': {
+    'minimax/speech-2.8-hd': {
+      provider: 'WaveSpeed AI / MiniMax',
+      modelName: 'MiniMax Speech 2.8 HD',
+      unitPricePer1kChars: 0.02,
+      priceNote: 'estimated: not verified against an invoice',
+      quality: 'Cinematic High-Definition',
+      languages: 'Spanish, English, Multilingual',
+      description: 'Default TTS model (guard model id). Price is an estimate.',
+    },    'wavespeed/minimax/speech-2.5-hd-preview': {
       provider: 'WaveSpeed AI / MiniMax',
       modelName: 'MiniMax Speech 2.5 HD',
       unitPricePer1kChars: 0.015,
@@ -101,10 +150,25 @@ export const PROVIDER_PRICING_CATALOG = {
     },
   },
   avatar: {
-    'wavespeed/infinitetalk': {
+    'wavespeed-ai/infinitetalk-fast': {
       provider: 'WaveSpeed AI',
-      modelName: 'InfiniteTalk (Ultra-Fast)',
-      unitPricePerSecond: 0.012,
+      modelName: 'InfiniteTalk Fast',
+      unitPricePerSecond: 0.015,
+      quality: 'Photorealistic LipSync',
+      speed: 'Fast',
+      description: 'Default avatar model (about $0.015/s from real invoices: a 3s clip cost $0.045)',
+    },
+    'wavespeed-ai/infinitetalk': {
+      provider: 'WaveSpeed AI',
+      modelName: 'InfiniteTalk (non-fast)',
+      unitPricePerSecond: 0.06,
+      quality: 'Photorealistic LipSync',
+      speed: 'Slow',
+      description: 'BLOCKED by default: about $0.06/s from real invoices (a 30s clip is $1.80)',
+    },    'wavespeed/infinitetalk': {
+      provider: 'WaveSpeed AI',
+      modelName: 'InfiniteTalk (non-fast)',
+      unitPricePerSecond: 0.06,
       quality: 'Photorealistic LipSync',
       speed: 'Realtime Fast Inference',
       description: 'High-performance digital talking avatar engine synchronized to speech audio',
@@ -140,14 +204,59 @@ export const PROVIDER_PRICING_CATALOG = {
   },
 };
 
+/** Default models. These are the real provider ids, identical to what the synthesizer and the spend guard use. */
+export const DEFAULT_MODELS = Object.freeze({
+  image: 'wavespeed-ai/z-image/turbo',
+  tts: 'minimax/speech-2.8-hd',
+  avatar: 'wavespeed-ai/infinitetalk-fast',
+});
+
+/**
+ * Provider model ids contain a slash; anything else (a loose label such as 'elevenlabs' or
+ * 'wavespeed-v1-flux') falls back. Shared by the estimator and the synthesizer so the plan
+ * prices exactly the models that will be called.
+ * @param {unknown} prop
+ * @param {string} fallback
+ * @returns {string}
+ */
+export function resolveModelId(prop, fallback) {
+  return normalizeModelId(typeof prop === 'string' && prop.includes('/') ? prop : fallback);
+}
+
+/** Conservative fallback rates (USD) for models missing from the catalog: never under-estimate. */
+const FALLBACK_RATES = { image: 0.025, ttsPer1kChars: 0.02, avatarPerSecond: 0.018, video: 0.035 };
+
+export function findCatalogEntry(category, model) {
+  const entries = PROVIDER_PRICING_CATALOG[category] || {};
+  if (entries[model]) return entries[model];
+  const key = Object.keys(entries).find((k) => k.endsWith('/' + model) || model.endsWith('/' + k));
+  return key ? entries[key] : null;
+}
+
+/**
+ * Estimated USD for ONE billable provider call, used by the spend guard (budget + ledger).
+ * @param {'image' | 'tts' | 'avatar' | 'video'} kind
+ * @param {string} model Provider model id
+ * @param {{ chars?: number, seconds?: number }} [units]
+ * @returns {number}
+ */
+export function estimateCallUsd(kind, model, units = {}) {
+  const entry = findCatalogEntry(kind, normalizeModelId(model));
+  let usd;
+  if (kind === 'tts') usd = ((units.chars || 0) / 1000) * (entry?.unitPricePer1kChars ?? FALLBACK_RATES.ttsPer1kChars);
+  else if (kind === 'avatar') usd = Math.ceil(units.seconds || 0) * (entry?.unitPricePerSecond ?? FALLBACK_RATES.avatarPerSecond);
+  else usd = entry?.unitPrice ?? FALLBACK_RATES[kind] ?? FALLBACK_RATES.image;
+  return Math.round(usd * 1e6) / 1e6;
+}
+
 /**
  * Calculates itemized per-scene and total production costs for a video script.
  *
  * @param {string} scriptContentOrPath Script markdown text or file path
  * @param {Object} [options]
  * @param {string} [options.defaultImageModel="wavespeed-ai/z-image/turbo"]
- * @param {string} [options.defaultTtsModel="wavespeed/minimax/speech-2.5-hd-preview"]
- * @param {string} [options.defaultAvatarModel="wavespeed/infinitetalk"]
+ * @param {string} [options.defaultTtsModel="minimax/speech-2.8-hd"]
+ * @param {string} [options.defaultAvatarModel="wavespeed-ai/infinitetalk-fast"]
  * @returns {Object} Cost estimation report
  */
 export function estimateScriptCost(scriptContentOrPath, options = {}) {
@@ -158,9 +267,13 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
 
   const compiler = new RemotionSceneCompiler(options);
   const parsed = compiler.parseScript(scriptContent);
-  const defaultImageModel = options.defaultImageModel || 'wavespeed-ai/z-image/turbo';
-  const defaultTtsModel = options.defaultTtsModel || (process.env.WAVESPEED_API_KEY ? 'wavespeed/minimax/speech-2.5-hd-preview' : 'local/synthetic');
-  const defaultAvatarModel = options.defaultAvatarModel || 'wavespeed/infinitetalk';
+  const defaultImageModel = options.defaultImageModel || DEFAULT_MODELS.image;
+  const defaultTtsModel = options.defaultTtsModel || DEFAULT_MODELS.tts;
+  const defaultAvatarModel = options.defaultAvatarModel || DEFAULT_MODELS.avatar;
+  const planModels = new Set();
+  const noteModel = (model) => {
+    if (model && !model.startsWith('local/')) planModels.add(model);
+  };
 
   const sceneEstimates = [];
   let totalCharacters = 0;
@@ -183,45 +296,43 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
 
     // Layer breakdown
     const imageLayers = (scene.layers || []).filter(l => l.type === 'image' || l.properties?.layer_type === 'image');
-    const avatarLayers = (scene.layers || []).filter(l => l.type === 'talking_avatar' || l.properties?.layer_type === 'talking_avatar' || l.name?.toLowerCase().includes('avatar'));
+    const avatarLayers = (scene.layers || []).filter(isAvatarLayer);
     const videoLayers = (scene.layers || []).filter(l => l.type === 'video' || l.type === 'ai_video' || l.properties?.layer_type === 'video' || l.properties?.layer_type === 'ai_video');
 
-    const imageCount = imageLayers.length > 0 ? imageLayers.length : (avatarLayers.length === 0 && videoLayers.length === 0 ? 1 : 0);
+    const noLayers = avatarLayers.length === 0 && videoLayers.length === 0;
+    const imageCount = imageLayers.length > 0 ? imageLayers.length : (noLayers ? 1 : 0);
     const avatarCount = avatarLayers.length;
     const videoCount = videoLayers.length;
 
-    // 1. Resolve Image Model Cost
-    let imageModelKey = defaultImageModel;
-    if (imageLayers.length > 0 && imageLayers[0].properties?.layer_generation_model) {
-      const modelProp = imageLayers[0].properties.layer_generation_model;
-      if (PROVIDER_PRICING_CATALOG.image[modelProp]) {
-        imageModelKey = modelProp;
-      } else if (modelProp.includes('wan-27')) {
-        imageModelKey = 'wavespeed/wan-27-t2i';
-      } else if (modelProp.includes('flux-schnell')) {
-        imageModelKey = 'replicate/flux-schnell';
-      } else if (modelProp.includes('flux-pro')) {
-        imageModelKey = 'replicate/flux-pro';
-      }
+    // 1. Image: one billable call per image layer, priced with the SAME model resolution the compile step uses.
+    const imageModels = imageLayers.length > 0
+      ? imageLayers.map((l) => resolveModelId(l.properties?.layer_generation_model, defaultImageModel))
+      : (noLayers ? [defaultImageModel] : []);
+    let sceneImageCost = 0;
+    for (const m of imageModels) {
+      sceneImageCost += estimateCallUsd('image', m);
+      noteModel(m);
     }
-    const imagePricing = PROVIDER_PRICING_CATALOG.image[imageModelKey] || PROVIDER_PRICING_CATALOG.image[defaultImageModel] || { unitPrice: 0.005, modelName: imageModelKey, provider: 'WaveSpeed AI' };
-    const sceneImageCost = imageCount * imagePricing.unitPrice;
+    const imageModelKey = imageModels[0] || defaultImageModel;
+    const imagePricing = findCatalogEntry('image', imageModelKey) || { modelName: imageModelKey, provider: 'Unlisted (fallback rate)' };
 
-    // 2. Resolve TTS Model Cost
-    const ttsModelKey = defaultTtsModel;
-    const ttsPricing = PROVIDER_PRICING_CATALOG.tts[ttsModelKey] || PROVIDER_PRICING_CATALOG.tts['wavespeed/minimax/speech-2.5-hd-preview'] || { unitPricePer1kChars: 0.015, modelName: ttsModelKey, provider: 'MiniMax' };
-    const sceneTtsCost = (charCount / 1000) * (ttsPricing.unitPricePer1kChars || 0.015);
+    // 2. TTS
+    const ttsModelKey = resolveModelId(scene.properties?.scene_tts_model, defaultTtsModel);
+    const ttsPricing = findCatalogEntry('tts', ttsModelKey) || { modelName: ttsModelKey, provider: 'Unlisted (fallback rate)' };
+    const sceneTtsCost = estimateCallUsd('tts', ttsModelKey, { chars: charCount });
+    if (charCount > 0) noteModel(ttsModelKey);
 
-    // 3. Resolve Talking Avatar Cost
+    // 3. Talking avatars: priced per layer by seconds
+    let sceneAvatarCost = 0;
     let avatarModelKey = defaultAvatarModel;
-    if (avatarLayers.length > 0 && avatarLayers[0].properties?.layer_avatar_model) {
-      const modelProp = avatarLayers[0].properties.layer_avatar_model;
-      if (PROVIDER_PRICING_CATALOG.avatar[modelProp]) {
-        avatarModelKey = modelProp;
-      }
-    }
-    const avatarPricing = PROVIDER_PRICING_CATALOG.avatar[avatarModelKey] || PROVIDER_PRICING_CATALOG.avatar[defaultAvatarModel];
-    const sceneAvatarCost = Math.round(avatarCount * (estimatedDurationSec * (avatarPricing?.unitPricePerSecond || 0.012)) * 10000) / 10000;
+    avatarLayers.forEach((l, idx) => {
+      const m = resolveModelId(l.properties?.layer_avatar_model, defaultAvatarModel);
+      if (idx === 0) avatarModelKey = m;
+      sceneAvatarCost += estimateCallUsd('avatar', m, { seconds: estimatedDurationSec });
+      noteModel(m);
+    });
+    sceneAvatarCost = Math.round(sceneAvatarCost * 10000) / 10000;
+    const avatarPricing = findCatalogEntry('avatar', avatarModelKey) || { modelName: avatarModelKey };
 
     // 4. Resolve Video Cost
     const sceneVideoCost = Math.round(videoCount * 0.030 * 10000) / 10000;
@@ -289,7 +400,15 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     },
   };
 
+  const planHash = computePlanHash(scriptContent, {
+    image: options.defaultImageModel,
+    tts: options.defaultTtsModel,
+    avatar: options.defaultAvatarModel,
+  });
+
   return {
+    planHash,
+    planModels: [...planModels].sort(),
     scenes: sceneEstimates,
     summary: {
       sceneCount: sceneEstimates.length,
@@ -318,9 +437,11 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
 export function formatAssetPlanMarkdown(estimateResult) {
   const { scenes, summary, tiers } = estimateResult;
 
-  let md = `# Asset Generation & Cost Estimation Plan\n\n`;
+  let md = formatStamp({ planHash: estimateResult.planHash, totalUsd: summary.grandTotalCost, models: estimateResult.planModels }) + `\n\n`;
+  md += `# Asset Generation & Cost Estimation Plan\n\n`;
+  md += `- **Plan Hash**: \`${estimateResult.planHash.slice(0, 8)}\` (full hash on the first line of this file)\n\n`;
   md += `> [!IMPORTANT]\n`;
-  md += `> **Pre-Generation Approval Gate**: Review the provider selections, model capabilities, and cost estimates below. Confirm approval before synthesizing assets or running the rendering pipeline.\n\n`;
+  md += `> **Pre-Generation Approval Gate**: Review the provider selections, model capabilities, and cost estimates below. Billable synthesis is refused until a human approves THIS plan with \`node scripts/approve-plan.mjs <this file>\`. Spend is then capped at 1.25x the total below.\n\n`;
 
   md += `## 1. Summary Overview\n\n`;
   md += `- **Total Scenes**: ${summary.sceneCount}\n`;
@@ -328,6 +449,7 @@ export function formatAssetPlanMarkdown(estimateResult) {
   md += `- **Visual Image Assets**: ${summary.totalImages} images\n`;
   if (summary.totalAvatars > 0) {
     md += `- **Talking Avatars (LipSync)**: ${summary.totalAvatars} avatar scenes\n`;
+    md += `- **Avatar cost is an ESTIMATE** (scene_duration, or words/2.5 until the narration audio exists). synthesize-avatar.mjs bills ceil(seconds) of the MEASURED audio, so the final figure can differ; produce avatars only with that script.` + `\n`;
   }
   md += `- **Voiceover Characters**: ${summary.totalCharacters.toLocaleString()} characters (MiniMax TTS)\n`;
   md += `- **Total Estimated Production Cost**: **\$${summary.grandTotalCost.toFixed(4)} USD**\n\n`;
@@ -365,33 +487,32 @@ export function formatAssetPlanMarkdown(estimateResult) {
   return md;
 }
 
-function parseCliArgs(argv) {
-  const args = { _: [] };
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--json') {
-      args.json = true;
-    } else if (arg === '--out' && i + 1 < argv.length) {
-      args.out = argv[++i];
-    } else if (arg === '--image-model' && i + 1 < argv.length) {
-      args.imageModel = argv[++i];
-    } else if (arg === '--tts-model' && i + 1 < argv.length) {
-      args.ttsModel = argv[++i];
-    } else if (arg === '--avatar-model' && i + 1 < argv.length) {
-      args.avatarModel = argv[++i];
-    } else if (!arg.startsWith('-')) {
-      args._.push(arg);
-    }
-  }
-  return args;
-}
+const USAGE = [
+  'Usage: node asset-cost-estimator.mjs <script.md> [options]',
+  '  --out <asset_plan.md>     write the Markdown plan (stamped with plan_hash) instead of printing it',
+  '  --json                    print the estimate as JSON (includes planHash and planModels)',
+  '  --image-model <id>        default image model (part of plan_hash; pass the same to compile)',
+  '  --tts-model <id>          default TTS model (part of plan_hash; pass the same to compile)',
+  '  --avatar-model <id>       default avatar model (part of plan_hash; pass the same to compile)',
+].join('\n');
 
 async function main() {
-  const args = parseCliArgs(process.argv.slice(2));
-  const scriptPath = args._[0];
+  let parsed;
+  try {
+    parsed = parseArgs(process.argv.slice(2), {
+      boolean: ['json'],
+      value: ['out', 'image-model', 'tts-model', 'avatar-model'],
+    });
+  } catch (err) {
+    if (!(err instanceof CliUsageError)) throw err;
+    console.error('Error: ' + err.message + '\n' + USAGE);
+    process.exit(1);
+  }
+  const args = parsed.flags;
+  const scriptPath = parsed._[0];
 
   if (!scriptPath) {
-    console.error('Usage: node asset-cost-estimator.mjs <path-to-script.md> [--out asset_plan.md] [--json]');
+    console.error(USAGE);
     process.exit(1);
   }
 
@@ -401,9 +522,9 @@ async function main() {
   }
 
   const estimate = estimateScriptCost(path.resolve(scriptPath), {
-    defaultImageModel: args.imageModel,
-    defaultTtsModel: args.ttsModel,
-    defaultAvatarModel: args.avatarModel,
+    defaultImageModel: args['image-model'],
+    defaultTtsModel: args['tts-model'],
+    defaultAvatarModel: args['avatar-model'],
   });
 
   if (args.json) {
@@ -417,13 +538,13 @@ async function main() {
     const outResolved = path.resolve(args.out);
     fs.mkdirSync(path.dirname(outResolved), { recursive: true });
     fs.writeFileSync(outResolved, formattedMd, 'utf8');
-    console.log(`✅ Asset generation and cost plan written to: ${outResolved}`);
+    console.log(`Asset generation and cost plan written to: ${outResolved}`);
   } else {
     console.log(formattedMd);
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([a-zA-Z]:)/, '$1'))) {
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
   main().catch(err => {
     console.error('Error executing cost estimator:', err);
     process.exit(1);

@@ -8,6 +8,8 @@
  *
  * Commands:
  *   compile <script.md> [--output <manifest.json>] [--fps <n>] [--cache-dir <dir>]
+ *           [--dry-run] [--allow-model <name>]... [--approval <approved.json>]
+ *           [--image-model <m>] [--tts-model <m>] [--avatar-model <m>]
  *   render  <script.md|manifest.json> --output <master.mp4> [--fps <n>] [--concurrency <n>]
  *   preview <script.md|manifest.json> [--port <3000>]
  *
@@ -21,6 +23,13 @@ import { fileURLToPath } from 'node:url';
 import { RemotionSceneCompiler } from './remotion-scene-compiler.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
+import { SpendGuard, loadGuard, resolveDefaultCacheDir } from './lib/video-guard.mjs';
+import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
+import { DEFAULT_MODELS, resolveModelId } from './asset-cost-estimator.mjs';
+import { applyCachedAvatars } from './lib/avatar-jobs.mjs';
+import { refreshFaststart } from './lib/faststart.mjs';
+import { buildTtsVoiceOptions } from './lib/tts-options.mjs';
+import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -194,6 +203,12 @@ export async function tryRemotionRender(input, deps = {}) {
  * @property {number} [height]
  * @property {string} [cacheDir]
  * @property {boolean} [synthesizeAssets=true]
+ * @property {boolean} [dryRun=false] List uncached billable work + estimated total; spend nothing, write nothing.
+ * @property {string[]} [allowModels] Models explicitly unlocked past the guard blocklist/allowlist (--allow-model).
+ * @property {string} [approvalPath] Approved-plan artifact (defaults to <scriptDir>/asset_plan.approved.json).
+ * @property {{ image?: string, tts?: string, avatar?: string }} [models] Chosen models, as passed to the cost estimator (part of plan_hash).
+ * @property {Function} [ffmpegRun] Test seam for the faststart retry on marked avatar clips.
+ * @property {Record<string, unknown>} [synthesizerOptions] Extra AssetSynthesizer options (test seam: env, fetch, sleep).
  */
 
 /**
@@ -208,6 +223,9 @@ export async function tryRemotionRender(input, deps = {}) {
  * @property {number} [quality=80]
  * @property {string} [cacheDir]
  * @property {boolean} [allowMock=false] Write a mock MP4 when Remotion is unavailable.
+ * @property {string[]} [allowModels] See VideoCompileOptions (used when rendering from a script).
+ * @property {string} [approvalPath] See VideoCompileOptions.
+ * @property {{ image?: string, tts?: string, avatar?: string }} [models] See VideoCompileOptions.
  * @property {(id: string) => Promise<object|null>} [loadModule] Remotion module loader seam.
  */
 
@@ -223,48 +241,24 @@ export async function tryRemotionRender(input, deps = {}) {
  */
 
 /**
- * Compiles a video script into a Remotion Composition Manifest, synthesizing
- * and caching TTS/media assets if requested.
- * @param {VideoCompileOptions} options
- * @returns {Promise<{ manifest: import('./remotion-scene-compiler.mjs').RemotionCompositionManifest, cachedAssetsUsed: number, newAssetsSynthesized: number }>}
+ * Runs every TTS / image synthesis a script needs through `synthesizer`. With a dry-run
+ * synthesizer nothing is performed: billable work is only collected by its guard.
+ * @param {any} parsed Parsed script (layers receive `layer_asset_source` for real runs).
+ * @param {AssetSynthesizer} synthesizer
+ * @param {{ image?: string, tts?: string, avatar?: string }} models Chosen models (same flags as the estimator).
  */
-export async function compileVideo(options) {
-  const scriptPath = path.resolve(options.scriptPath);
-  if (!fs.existsSync(scriptPath)) {
-    throw new Error(`Script file not found: ${scriptPath}`);
-  }
-
-  const scriptContent = fs.readFileSync(scriptPath, 'utf8');
-  const cacheManager = new CacheManager({ baseDir: options.cacheDir });
-  const synthesizer = new AssetSynthesizer({ cacheManager });
-  const compiler = new RemotionSceneCompiler({
-    fps: options.fps,
-    width: options.width,
-    height: options.height,
-  });
-
-  const parsed = compiler.parseScript(scriptContent);
+async function synthesizeScriptAssets(parsed, synthesizer, models) {
   const audioAssets = {};
   let cachedAssetsUsed = 0;
   let newAssetsSynthesized = 0;
 
-  if (options.synthesizeAssets !== false) {
-    for (const sc of parsed.scenes) {
-      // 1. TTS synthesis
-      if (sc.narration && sc.narration.trim().length > 0) {
-        const model = sc.properties?.scene_tts_model || 'elevenlabs';
-        const voiceOptions = {
-          model,
-          voice: sc.properties?.[`${model}/voice_id`] || sc.properties?.scene_voice || 'default',
-          speed: sc.properties?.[`${model}/speed`],
-          emotion: sc.properties?.[`${model}/emotion`],
-          pitch: sc.properties?.[`${model}/pitch`],
-          intensity: sc.properties?.[`${model}/intensity`],
-        };
-        for (const k of Object.keys(voiceOptions)) {
-          if (voiceOptions[k] === undefined) delete voiceOptions[k];
-        }
-        const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions);
+  for (const sc of parsed.scenes) {
+    // 1. TTS synthesis
+    if (sc.narration && sc.narration.trim().length > 0) {
+      const voiceOptions = buildTtsVoiceOptions(sc, models);
+      const ttsModel = resolveModelId(sc.properties?.scene_tts_model, models.tts || DEFAULT_MODELS.tts);
+      const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, { ref: sc.id, model: ttsModel });
+      if (!ttsRes.dryRun) {
         if (ttsRes.fromCache) {
           cachedAssetsUsed++;
         } else {
@@ -276,32 +270,124 @@ export async function compileVideo(options) {
           durationSeconds: ttsRes.durationSeconds,
         };
       }
+    }
 
-      // 2. Layer Media synthesis (WaveSpeed / AI Image Prompts)
-      if (Array.isArray(sc.layers)) {
-        for (const layer of sc.layers) {
-          const prompt = layer.properties?.layer_prompt || layer.properties?.prompt;
-          const provider = layer.properties?.layer_provider || 'wavespeed';
-          const model = layer.properties?.layer_generation_model || 'wavespeed-v1-flux';
-          if (prompt) {
-            const mediaRes = await synthesizer.resolveMedia(prompt, {
-              provider,
-              model,
-              title: `${sc.name} — ${layer.name}`,
-              accentColor: layer.properties?.layer_color || '#ef4444',
-            });
-            if (mediaRes.fromCache) {
-              cachedAssetsUsed++;
-            } else {
-              newAssetsSynthesized++;
-            }
-            // Update layer asset source to point to cached image
-            layer.properties.layer_asset_source = mediaRes.assetPath;
-          }
-        }
+    // 2. Layer Media synthesis (WaveSpeed / AI Image Prompts). Always runs, even when the
+    //    scene had narration: image costs must be planned and billed like any other call.
+    for (const layer of Array.isArray(sc.layers) ? sc.layers : []) {
+      const prompt = layer.properties?.layer_prompt || layer.properties?.prompt;
+      if (!prompt) continue;
+      const mediaOptions = {
+        provider: layer.properties?.layer_provider || 'wavespeed',
+        model: layer.properties?.layer_generation_model || 'wavespeed-v1-flux',
+        title: `${sc.name} — ${layer.name}`,
+        accentColor: layer.properties?.layer_color || '#ef4444',
+      };
+      if (models.image) mediaOptions.modelOverride = models.image;
+      const imageModel = resolveModelId(layer.properties?.layer_generation_model, models.image || DEFAULT_MODELS.image);
+      const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref: `${sc.id}/${layer.name}`, model: imageModel });
+      if (mediaRes.dryRun) continue;
+      if (mediaRes.fromCache) {
+        cachedAssetsUsed++;
+      } else {
+        newAssetsSynthesized++;
       }
+      // Update layer asset source to point to cached image
+      layer.properties.layer_asset_source = mediaRes.assetPath;
     }
   }
+  return { audioAssets, cachedAssetsUsed, newAssetsSynthesized };
+}
+
+/**
+ * Compiles a video script into a Remotion Composition Manifest, synthesizing and caching
+ * TTS/media assets. Billable work is planned first (no spend, no writes) and the WHOLE run
+ * is refused before the first charge when it is unapproved, uses a blocked model, or would
+ * pass the per-run or 24h cap. With `dryRun` it only returns that plan.
+ * @param {VideoCompileOptions} options
+ * @returns {Promise<{ manifest: import('./remotion-scene-compiler.mjs').RemotionCompositionManifest | null, cachedAssetsUsed: number, newAssetsSynthesized: number, dryRun?: boolean, plan?: any }>}
+ */
+export async function compileVideo(options) {
+  const scriptPath = path.resolve(options.scriptPath);
+  if (!fs.existsSync(scriptPath)) {
+    throw new Error(`Script file not found: ${scriptPath}`);
+  }
+
+  const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+  const scriptDir = path.dirname(scriptPath);
+  const loaded = loadGuard(scriptDir);
+  const models = options.models || {};
+  const allowModels = options.allowModels || [];
+  const approvalPath = options.approvalPath ? path.resolve(options.approvalPath) : path.join(scriptDir, APPROVAL_FILENAME);
+  const checkNow = () => checkApproval({ scriptContent, models, approvalPath, allowModels });
+  // Default cache lives at the workspace root so it is shared across series and cwd-independent.
+  const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir);
+  const synthOptions = { defaultModels: models, ...(options.synthesizerOptions || {}) };
+  const makeGuard = (dryRun) =>
+    new SpendGuard({ config: loaded.config, root: loaded.root, allowModels, dryRun, approval: checkNow });
+
+  const compiler = new RemotionSceneCompiler({
+    fps: options.fps,
+    width: options.width,
+    height: options.height,
+  });
+
+  const parsed = compiler.parseScript(scriptContent);
+  let audioAssets = {};
+  let cachedAssetsUsed = 0;
+  let newAssetsSynthesized = 0;
+
+  if (options.synthesizeAssets !== false || options.dryRun) {
+    // Pass 1: plan. Read-only cache, dry-run guard: nothing is spent or written.
+    const planGuard = makeGuard(true);
+    const planSynth = new AssetSynthesizer({
+      cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
+      guard: planGuard,
+      ...synthOptions,
+    });
+    const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models);
+
+    if (options.dryRun) {
+      return {
+        dryRun: true,
+        manifest: null,
+        cachedAssetsUsed: planned.cachedAssetsUsed,
+        newAssetsSynthesized: 0,
+        plan: {
+          items: planGuard.planned,
+          totalUsd: planGuard.plannedTotalUsd,
+          budgetUsd: loaded.config.budgetPerRunUsd,
+          dailyCapUsd: loaded.config.dailyCapUsd,
+          dailySpentUsd: planGuard.dailySpentUsd,
+          withinBudget: planGuard.plannedTotalUsd <= loaded.config.budgetPerRunUsd,
+          approval: checkNow(),
+        },
+      };
+    }
+
+    // Pre-flight: refuse the whole run BEFORE the first charge.
+    planGuard.assertPlanAffordable();
+
+    // Pass 2: synthesize for real.
+    const synthesizer = new AssetSynthesizer({
+      cacheManager: new CacheManager({ baseDir: cacheDir }),
+      guard: makeGuard(false),
+      ...synthOptions,
+    });
+    ({ audioAssets, cachedAssetsUsed, newAssetsSynthesized } = await synthesizeScriptAssets(parsed, synthesizer, models));
+  }
+
+  // Avatar pickup: a lip-sync clip cached by synthesize-avatar.mjs replaces the still avatar layer
+  // (cache read only: compile never synthesizes or spends on avatars).
+  const avatarVideos = applyCachedAvatars({
+    parsed,
+    scriptDir,
+    cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
+    resolveModel: (prop) => resolveModelId(prop, models.avatar || DEFAULT_MODELS.avatar),
+    audioFor: (sc) => audioAssets[sc.id]?.assetPath,
+  });
+  // A clip kept raw because ffmpeg was missing or failed is retried here once ffmpeg is available.
+  for (const clip of avatarVideos.clips) await refreshFaststart(clip, { run: options.ffmpegRun });
 
   const manifest = compiler.compile(parsed, {
     audioAssets,
@@ -316,7 +402,6 @@ export async function compileVideo(options) {
   // Sources resolve against the script dir, not the cwd, so in-dir (`assets/…`)
   // and out-of-dir (`../shared/…`) paths both work. A missing asset is a loud
   // failure — never a silently dropped layer.
-  const scriptDir = path.dirname(scriptPath);
   const publicDir = path.join(scriptDir, 'public');
   const staging = resolveMediaLayers(manifest, { scriptDir, publicDir });
   manifest.metadata.publicDir = publicDir;
@@ -345,7 +430,7 @@ export async function compileVideo(options) {
     fs.writeFileSync(outResolved, JSON.stringify(manifest, null, 2), 'utf8');
   }
 
-  return { manifest, cachedAssetsUsed, newAssetsSynthesized };
+  return { manifest, cachedAssetsUsed, newAssetsSynthesized, avatarVideos };
 }
 
 /**
@@ -368,6 +453,9 @@ export async function renderVideo(options) {
       width: options.width,
       height: options.height,
       cacheDir: options.cacheDir,
+      allowModels: options.allowModels,
+      approvalPath: options.approvalPath,
+      models: options.models,
     });
     manifest = compRes.manifest;
     cachedAssetsUsed = compRes.cachedAssetsUsed;
@@ -450,24 +538,56 @@ export async function previewVideo(options) {
   };
 }
 
-function parseCliArgs(argv) {
-  const args = { _: [] };
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg.startsWith('--')) {
-      const key = arg.slice(2);
-      const next = argv[i + 1];
-      if (next && !next.startsWith('--')) {
-        args[key] = next;
-        i++;
-      } else {
-        args[key] = true;
-      }
-    } else {
-      args._.push(arg);
-    }
+/**
+ * Prints the dry-run report: uncached billable work, estimated total, approval status.
+ * @param {{ cachedAssetsUsed: number, plan: any }} result
+ */
+function printDryRun(result) {
+  const { plan } = result;
+  console.log('Dry run: nothing was synthesized, spent or written.');
+  console.log('   Cached assets (free): ' + result.cachedAssetsUsed);
+  console.log('   Uncached billable calls: ' + plan.items.length);
+  for (const item of plan.items) {
+    const flag = item.blocked ? '  [BLOCKED: ' + item.blocked + ']' : '';
+    console.log('   - ' + item.kind + ' ' + item.model + ' ~$' + item.estUsd.toFixed(4) + (item.ref ? ' (' + item.ref + ')' : '') + flag);
   }
-  return args;
+  console.log('   Estimated total: $' + plan.totalUsd.toFixed(4) + ' (budget per run: $' + plan.budgetUsd.toFixed(2) + (plan.withinBudget ? '' : ' - OVER BUDGET') + ')');
+  console.log('   Spent in the last 24h: $' + plan.dailySpentUsd.toFixed(4) + ' (daily cap: $' + plan.dailyCapUsd.toFixed(2) + ')');
+  console.log('   Plan approval: ' + (plan.approval.ok ? 'approved' : 'NOT approved (' + plan.approval.reason + ')'));
+}
+
+const FLAG_SPEC = {
+  boolean: ['dry-run', 'allow-mock'],
+  value: [
+    'output', 'out', 'script', 'manifest', 'fps', 'width', 'height', 'concurrency', 'port',
+    'cache-dir', 'approval', 'image-model', 'tts-model', 'avatar-model',
+  ],
+  repeatable: ['allow-model'],
+};
+
+const USAGE = [
+  'Usage: node video-engine-cli.mjs <compile|render|preview> [options]',
+  '  compile <script.md> [--output manifest.json] [--fps n] [--width n] [--height n] [--cache-dir dir]',
+  '          [--dry-run] [--approval approved.json] [--allow-model name]...',
+  '          [--image-model id] [--tts-model id] [--avatar-model id]',
+  '  render  <script.md|manifest.json> --output master.mp4 [--fps n] [--concurrency n] [--cache-dir dir]',
+  '          [--allow-mock] [--approval approved.json] [--allow-model name]... [--image-model id] [--tts-model id] [--avatar-model id]',
+  '  preview <script.md|manifest.json> [--port n]',
+  '  --dry-run (compile only): list uncached billable work and the estimated total; spends and writes nothing.',
+  '  --approval: approved plan (default <script dir>/asset_plan.approved.json); --allow-model unlocks a blocked',
+  '  model only if a human recorded it in that approval. Values may also be given as --flag=value.',
+].join('\n');
+
+/** Parses argv strictly; returns `{ _, ...flags, allowModels }` or exits with the usage banner. */
+function parseCliArgs(argv) {
+  try {
+    const { _, flags } = parseArgs(argv, FLAG_SPEC);
+    return { _, ...flags, allowModels: flags['allow-model'] };
+  } catch (err) {
+    if (!(err instanceof CliUsageError)) throw err;
+    console.error(`❌ [video-engine-cli] ${err.message}\n${USAGE}`);
+    process.exit(1);
+  }
 }
 
 async function main() {
@@ -475,7 +595,12 @@ async function main() {
   const command = args._[0];
 
   if (!command) {
-    console.error('Usage: node video-engine-cli.mjs <compile|render|preview> [options]');
+    console.error(USAGE);
+    process.exit(1);
+  }
+
+  if (args['dry-run'] && command !== 'compile') {
+    console.error(`❌ [video-engine-cli] --dry-run is only supported by compile (render and preview would execute).`);
     process.exit(1);
   }
 
@@ -483,7 +608,7 @@ async function main() {
     if (command === 'compile') {
       const scriptPath = args._[1] || args.script;
       if (!scriptPath) {
-        console.error('Usage: node video-engine-cli.mjs compile <script.md> [--output manifest.json]');
+        console.error(USAGE);
         process.exit(1);
       }
       const result = await compileVideo({
@@ -493,14 +618,25 @@ async function main() {
         width: args.width ? Number(args.width) : undefined,
         height: args.height ? Number(args.height) : undefined,
         cacheDir: args['cache-dir'],
+        dryRun: Boolean(args['dry-run']),
+        allowModels: args.allowModels,
+        approvalPath: typeof args.approval === 'string' ? args.approval : undefined,
+        models: { image: args['image-model'], tts: args['tts-model'], avatar: args['avatar-model'] },
       });
+      if (result.dryRun) {
+        printDryRun(result);
+        return;
+      }
       console.log(`✅ [video-engine-cli] Compiled manifest (${result.manifest.totalDurationInFrames} frames, ${result.manifest.totalDurationInSeconds.toFixed(2)}s)`);
       console.log(`   Cached assets: ${result.cachedAssetsUsed}, New assets: ${result.newAssetsSynthesized}`);
+      if (result.avatarVideos.applied + result.avatarVideos.missing > 0) {
+        console.log(`   Avatar clips: ${result.avatarVideos.applied} picked up from cache, ${result.avatarVideos.missing} still missing (run synthesize-avatar.mjs; never ad-hoc API calls). If clips exist but were not found, check that --avatar-model/--tts-model match the synthesize-avatar run.`);
+      }
     } else if (command === 'render') {
       const target = args._[1] || args.script || args.manifest;
       const output = args.output || args.out;
       if (!target || !output) {
-        console.error('Usage: node video-engine-cli.mjs render <script.md|manifest.json> --output <master.mp4>');
+        console.error(USAGE);
         process.exit(1);
       }
       const isManifest = target.endsWith('.json');
@@ -511,6 +647,9 @@ async function main() {
         fps: args.fps ? Number(args.fps) : undefined,
         concurrency: args.concurrency ? Number(args.concurrency) : undefined,
         cacheDir: args['cache-dir'],
+        allowModels: args.allowModels,
+        approvalPath: typeof args.approval === 'string' ? args.approval : undefined,
+        models: { image: args['image-model'], tts: args['tts-model'], avatar: args['avatar-model'] },
         allowMock: Boolean(args['allow-mock']),
       });
       console.log(`✅ [video-engine-cli] Rendered ${result.outputVideoPath}`);

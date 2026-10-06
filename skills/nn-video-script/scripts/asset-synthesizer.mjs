@@ -14,6 +14,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { CacheManager } from './cache-manager.mjs';
+import { SpendGuard, loadGuard, isSystemVoice } from './lib/video-guard.mjs';
+import { resolveRegisteredVoice } from './lib/tts-options.mjs';
+import { buildAvatarRequest } from './lib/avatar-request.mjs';
+import { markNeedsFaststart } from './lib/faststart.mjs';
+import { estimateCallUsd, resolveModelId, DEFAULT_MODELS } from './asset-cost-estimator.mjs';
 
 const require = createRequire(import.meta.url);
 let sharp;
@@ -23,19 +28,25 @@ try {
   sharp = null;
 }
 
-/** @type {((args: { src: string, fields: { durationInSeconds: boolean } }) => Promise<{ durationInSeconds: number | null }>) | null} */
-let cachedParseMedia = null;
+/** @type {{ parseMedia: Function, nodeReader: unknown } | null | undefined} */
+let cachedMediaParser;
 
-/** Lazily resolves @remotion/media-parser (installed with the Remotion engine). */
-async function loadParseMedia() {
-  if (cachedParseMedia) return cachedParseMedia;
+/**
+ * Lazily resolves @remotion/media-parser AND its node reader (installed with the Remotion
+ * engine). A LOCAL path needs `reader: nodeReader`; the default web reader only accepts URLs.
+ * Returns null only when the module is truly unavailable.
+ * @returns {Promise<{ parseMedia: Function, nodeReader: unknown } | null>}
+ */
+async function loadMediaParser() {
+  if (cachedMediaParser !== undefined) return cachedMediaParser;
   try {
     const mod = await import('@remotion/media-parser');
-    cachedParseMedia = mod.parseMedia;
-    return cachedParseMedia;
+    const node = await import('@remotion/media-parser/node');
+    cachedMediaParser = { parseMedia: mod.parseMedia, nodeReader: node.nodeReader };
   } catch {
-    return null;
+    cachedMediaParser = null;
   }
+  return cachedMediaParser;
 }
 
 /**
@@ -49,32 +60,87 @@ async function loadParseMedia() {
 
 /**
  * Measures audio duration in seconds without FFmpeg-from-PATH, using the
- * `@remotion/media-parser` bundled with the Remotion engine. Returns 0 when the
- * file is missing or the parser is unavailable (the caller decides how to degrade).
+ * `@remotion/media-parser` bundled with the Remotion engine and its NODE reader. Never throws:
+ * `seconds` is 0 when the duration is unknown, and `error` says why (missing file, parser not
+ * installed, parser failure, no duration reported).
  * @param {string} filePath
- * @param {{ parseMedia?: Function }} [deps] Injectable seam for tests.
+ * @param {{ parseMedia?: Function, nodeReader?: unknown, loadModules?: () => Promise<any> }} [deps] Injectable seams for tests.
+ * @returns {Promise<{ seconds: number, error?: string }>}
+ */
+export async function probeAudioDurationDetailed(filePath, deps = {}) {
+  if (!fs.existsSync(filePath)) {
+    return { seconds: 0, error: 'audio file not found: ' + filePath };
+  }
+  let parseMedia = deps.parseMedia;
+  let nodeReader = deps.nodeReader;
+  if (!parseMedia) {
+    const mods = await (deps.loadModules || loadMediaParser)();
+    if (!mods) {
+      return { seconds: 0, error: '@remotion/media-parser is not installed (run scripts/ensure-engine.mjs), so audio durations cannot be measured' };
+    }
+    parseMedia = mods.parseMedia;
+    nodeReader = nodeReader || mods.nodeReader;
+  }
+  try {
+    const result = await parseMedia({
+      src: filePath,
+      reader: nodeReader,
+      fields: { durationInSeconds: true },
+      acknowledgeRemotionLicense: true,
+    });
+    const duration = result?.durationInSeconds;
+    if (typeof duration === 'number' && duration > 0) {
+      return { seconds: Math.round(duration * 1000) / 1000 };
+    }
+    return { seconds: 0, error: 'media-parser reported no duration for ' + filePath };
+  } catch (err) {
+    return { seconds: 0, error: 'media-parser failed: ' + (err?.message || String(err)) };
+  }
+}
+
+/**
+ * Seconds only (0 when unknown). The reason for a 0 is passed to `deps.onError` when given.
+ * @param {string} filePath
+ * @param {Parameters<typeof probeAudioDurationDetailed>[1] & { onError?: (message: string) => void }} [deps]
  * @returns {Promise<number>}
  */
 export async function probeAudioDuration(filePath, deps = {}) {
-  if (!fs.existsSync(filePath)) {
-    return 0;
-  }
+  const { seconds, error } = await probeAudioDurationDetailed(filePath, deps);
+  if (error && deps.onError) deps.onError(error);
+  return seconds;
+}
 
-  const parseMedia = deps.parseMedia || (await loadParseMedia());
-  if (!parseMedia) {
-    return 0;
-  }
+const WAVESPEED_BASE = 'https://api.wavespeed.ai/api/v3/';
 
-  try {
-    const result = await parseMedia({ src: filePath, fields: { durationInSeconds: true } });
-    const duration = result?.durationInSeconds;
-    if (typeof duration === 'number' && duration > 0) {
-      return Math.round(duration * 1000) / 1000;
-    }
-  } catch {
-    // unreadable container → treat as unknown duration
+/**
+ * Raised when a provider call fails AFTER it may have been billed (HTTP error, failed task,
+ * poll timeout, empty output). The task id is kept so the user can look the job up instead of
+ * paying for a blind retry. Nothing is cached and no other provider is tried.
+ */
+export class BillingFailureError extends Error {
+  /**
+   * @param {string} message
+   * @param {{ taskId?: string, timedOut?: boolean, retryable?: boolean, mayHaveBeenBilled?: boolean, preTask?: boolean }} [info]
+   *   `retryable`: resumable with the task id; `preTask`: rejected before any task existed (nothing billed);
+   *   `mayHaveBeenBilled`: the request may have reached the provider.
+   */
+  constructor(message, { taskId, timedOut = false, retryable = false, mayHaveBeenBilled = false, preTask = false } = {}) {
+    super(message);
+    this.name = 'BillingFailureError';
+    this.taskId = taskId;
+    this.timedOut = timedOut;
+    this.retryable = retryable;
+    this.mayHaveBeenBilled = mayHaveBeenBilled;
+    this.preTask = preTask;
   }
-  return 0;
+}
+
+/** Journal status for a failed avatar job (see lib/pending-predictions.mjs). */
+function journalStatus(err) {
+  if (err.timedOut) return 'timeout';
+  if (err.preTask || err.notSubmitted) return 'submit-rejected';
+  if (!err.taskId) return err.mayHaveBeenBilled ? 'submit-uncertain' : 'failed';
+  return err.retryable ? 'failed-after-submit' : 'failed';
 }
 
 export class AssetSynthesizer {
@@ -84,60 +150,346 @@ export class AssetSynthesizer {
    * @param {string} [options.ttsProvider="local"] "elevenlabs" | "edge-tts" | "local" | "mock"
    * @param {string} [options.mediaProvider="local"] "replicate" | "local" | "mock"
    * @param {string} [options.elevenLabsApiKey]
+   * @param {SpendGuard} [options.guard] Spend guard. Without one the synthesizer FAILS CLOSED: billable calls are refused.
+   * @param {{ image?: string, tts?: string, avatar?: string }} [options.defaultModels] Models used when a call names no provider model.
+   * @param {Record<string, string | undefined>} [options.env] Environment seam (defaults to process.env).
+   * @param {typeof fetch} [options.fetch] HTTP seam for tests.
+   * @param {(ms: number) => Promise<void>} [options.sleep] Poll-delay seam for tests.
+   * @param {() => number} [options.now] Clock seam for tests (bounded polling windows).
    */
   constructor(options = {}) {
+    this.env = options.env || process.env;
+    this._fetch = options.fetch || ((...args) => globalThis.fetch(...args));
+    this._sleep = options.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this._now = options.now || (() => Date.now());
+    /** Duration-probe seams (parseMedia, nodeReader, loadModules); tests only. */
+    this.probeDeps = options.probeDeps || {};
     this.cacheManager = options.cacheManager || new CacheManager();
-    this.ttsProvider = options.ttsProvider || process.env.TTS_PROVIDER || 'local';
-    this.mediaProvider = options.mediaProvider || process.env.MEDIA_PROVIDER || 'local';
-    this.elevenLabsApiKey = options.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY;
+    this.ttsProvider = options.ttsProvider || this.env.TTS_PROVIDER || 'local';
+    this.mediaProvider = options.mediaProvider || this.env.MEDIA_PROVIDER || 'local';
+    this.elevenLabsApiKey = options.elevenLabsApiKey || this.env.ELEVENLABS_API_KEY;
+    const chosen = Object.fromEntries(Object.entries(options.defaultModels || {}).filter(([, v]) => v));
+    this.defaultModels = { ...DEFAULT_MODELS, ...chosen };
+    if (options.guard) {
+      this.guard = options.guard;
+    } else {
+      const loaded = loadGuard(process.cwd());
+      this.guard = new SpendGuard({ config: loaded.config, root: loaded.root });
+    }
+    /** @type {Map<string, Promise<AssetSynthesisResult>>} */
+    this._inflight = new Map();
+    /** @type {Set<string>} Calls already planned in dry-run (a repeat would be a cache hit). */
+    this._planned = new Set();
+  }
+
+  /** Concurrent identical requests share one provider call. @private */
+  _singleFlight(key, fn) {
+    const existing = this._inflight.get(key);
+    if (existing) return existing;
+    const p = Promise.resolve()
+      .then(fn)
+      .finally(() => this._inflight.delete(key));
+    this._inflight.set(key, p);
+    return p;
+  }
+
+  /** Dry-run only: true when this call was already planned (it would be a cache hit). @private */
+  _alreadyPlanned(key) {
+    if (!this.guard.dryRun) return false;
+    if (this._planned.has(key)) return true;
+    this._planned.add(key);
+    return false;
+  }
+
+  /** Result for a call that was planned, not performed (dry-run). @private */
+  _skipped(sha256) {
+    return { assetPath: null, sha256, fromCache: false, dryRun: true, fileSizeBytes: 0 };
+  }
+
+  /** True when TTS would go to the MiniMax provider path (otherwise: local synthetic audio). @private */
+  _useMiniMax() {
+    return (
+      this.ttsProvider.includes('minimax') ||
+      (!this.elevenLabsApiKey && Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN))
+    );
+  }
+
+  /** @private */
+  _resolveTtsModel(voiceOptions = {}, meta = {}) {
+    return resolveModelId(meta.model, resolveModelId(voiceOptions.model, this.defaultModels.tts));
+  }
+
+  /** @private */
+  _resolveMediaModel(options = {}, meta = {}) {
+    return resolveModelId(meta.model, resolveModelId(options.model, this.defaultModels.image));
+  }
+
+  /**
+   * Finds the registry entry for a script voice: by registry key (the name) or by any entry's
+   * `voice_id` value (exact, case-sensitive). Returns null when there is none.
+   * @private
+   */
+  _findVoiceEntry(name) {
+    const voices = this.guard.config.voices || {};
+    if (Object.hasOwn(voices, name)) return voices[name];
+    return Object.values(voices).find((e) => e && e.voice_id && e.voice_id === name) || null;
+  }
+
+  /** @private */
+  _isSystemVoice(name) {
+    return isSystemVoice(name, this.guard.config.systemVoices || []);
+  }
+
+  /** Adds the registered voice id so it is part of the cache key (see lib/tts-options.mjs). @private */
+  _withResolvedVoice(voiceOptions) {
+    return resolveRegisteredVoice(voiceOptions, this.guard.config);
+  }
+
+  /**
+   * Billable path: the voice id to send. A named voice must be registered (by name or voice_id),
+   * or be a provider-native system voice; a pending clone always fails.
+   * @private
+   */
+  _voiceIdToSend(voiceOptions) {
+    if (voiceOptions.voiceId || voiceOptions.voice_id) return voiceOptions.voiceId || voiceOptions.voice_id;
+    const name = voiceOptions.voice;
+    if (typeof name !== 'string' || name === '' || name === 'default') return 'Friendly_Person';
+    const entry = this._findVoiceEntry(name);
+    if (entry && entry.pending) {
+      throw new Error('Voice "' + name + '" is pending (an unfinished clone). Re-run voice-clone with --force or remove the entry.');
+    }
+    if (this._isSystemVoice(name)) return name;
+    throw new Error(
+      'Voice "' + name + '" is not registered in video-guard.json voices (by name or voice_id) and is not a system voice. ' +
+        'Run voice-clone.mjs, add it to systemVoices, or use "default".',
+    );
+  }
+
+  /**
+   * Submits a WaveSpeed job (or, with `resumeTaskId`, only polls an existing one) and polls it
+   * to completion. EVERYTHING after the submit rethrows as a BillingFailureError that carries the
+   * task id, so a billed task is never lost:
+   *   - `timedOut`: the window ended (resumable);
+   *   - `retryable`: transient/recoverable (download, journal, post-process) and resumable;
+   *   - neither: the provider reported a terminal failure (failed/canceled): nothing to resume.
+   * A submit that throws after the request may have reached the server is "may have been billed";
+   * a 4xx before any task id is a `preTask` rejection (nothing was billed).
+   * Polling is bounded either by `maxPolls` or, for long jobs, by `windowMs` with a growing delay
+   * (`backoff`); transient poll exceptions are tolerated until the window ends.
+   * @private
+   */
+  async _runWaveSpeedJob({ model, body, maxPolls, intervalMs, what, windowMs, backoff, resumeTaskId, onSubmitting, onSubmitted, track = {} }) {
+    const key = this.env.WAVESPEED_API_KEY;
+    const snippet = async (res) => {
+      try {
+        return typeof res.text === 'function' ? ' Response: ' + String(await res.text()).slice(0, 300) : '';
+      } catch {
+        return '';
+      }
+    };
+    let taskId = resumeTaskId ? String(resumeTaskId) : undefined;
+    if (taskId) track.taskId = taskId;
+    if (!taskId) {
+      if (onSubmitting) {
+        try {
+          await onSubmitting();
+        } catch (e) {
+          const err = new Error('Could not journal the submit intent (' + e.message + '); nothing was sent.');
+          err.notSubmitted = true;
+          throw err;
+        }
+      }
+      let res;
+      try {
+        res = await this._fetch(WAVESPEED_BASE + model, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+          body: JSON.stringify(body),
+        });
+      } catch (e) {
+        throw new BillingFailureError(
+          what + ' request to ' + model + ' failed before a response (' + e.message + '); the request may have reached the provider and MAY HAVE BEEN BILLED.',
+          { retryable: true, mayHaveBeenBilled: true },
+        );
+      }
+      if (!res.ok) {
+        const preTask = res.status >= 400 && res.status < 500;
+        throw new BillingFailureError(
+          what + ' request to ' + model + ' failed (HTTP ' + res.status + ').' + (await snippet(res)) + (preTask ? '' : ' It MAY HAVE BEEN BILLED.'),
+          { preTask, mayHaveBeenBilled: !preTask, retryable: !preTask },
+        );
+      }
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new BillingFailureError(what + ' response could not be read (' + e.message + '); the job MAY HAVE BEEN BILLED.', { mayHaveBeenBilled: true, retryable: true });
+      }
+      const rawId = data.data?.id || data.id || data.task_id;
+      if (!rawId) {
+        throw new BillingFailureError(what + ' request to ' + model + ' returned no task id; it MAY HAVE BEEN BILLED. Check the provider dashboard.', { mayHaveBeenBilled: true, retryable: true });
+      }
+      taskId = String(rawId);
+      track.taskId = taskId;
+      try {
+        // Persist the id BEFORE polling so a timeout or crash can never lose a billed task.
+        if (onSubmitted) await onSubmitted(taskId);
+      } catch (e) {
+        throw new BillingFailureError(what + ' task ' + taskId + ' was submitted (billed) but could not be journaled: ' + e.message, { taskId, retryable: true });
+      }
+    }
+    const startedAt = this._now();
+    let delay = intervalMs;
+    for (let i = 0; windowMs !== undefined ? this._now() - startedAt < windowMs : i < maxPolls; i++) {
+      await this._sleep(delay);
+      if (backoff) delay = Math.min(Math.round(delay * backoff.factor), backoff.maxMs);
+      let pollData;
+      try {
+        const pollRes = await this._fetch(WAVESPEED_BASE + 'predictions/' + taskId + '/result', {
+          headers: { Authorization: 'Bearer ' + key },
+        });
+        if (!pollRes.ok) continue;
+        pollData = await pollRes.json();
+      } catch {
+        continue; // transient network/parse error: keep polling until the window ends
+      }
+      const status = pollData.data?.status || pollData.status;
+      if (status === 'completed' || status === 'succeeded') {
+        const url = pollData.data?.outputs?.[0] || pollData.outputs?.[0];
+        if (!url) throw new BillingFailureError(what + ' task ' + taskId + ' completed without an output.', { taskId, retryable: true });
+        try {
+          const dl = await this._fetch(url);
+          if (!dl.ok) throw new Error('HTTP ' + dl.status);
+          const buf = Buffer.from(await dl.arrayBuffer());
+          if (buf.length === 0) throw new Error('empty file');
+          return buf;
+        } catch (e) {
+          throw new BillingFailureError(what + ' task ' + taskId + ' output download failed (' + e.message + '); resume to download it again.', { taskId, retryable: true });
+        }
+      }
+      if (status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'error') {
+        const why = pollData.data?.error || pollData.error;
+        throw new BillingFailureError(what + ' task ' + taskId + ' ended with status "' + status + '".' + (why ? ' ' + String(why).slice(0, 300) : ''), { taskId });
+      }
+    }
+    throw new BillingFailureError(
+      'Timed out waiting for ' + what + ' task ' + taskId + ' (' + model + '); it may still be running or billed. Check the provider dashboard before retrying.',
+      { taskId, timedOut: true, retryable: true },
+    );
+  }
+
+  /** Replicate image prediction with the same fail-loud contract. @private */
+  async _runReplicateImageJob(prompt) {
+    const token = this.env.REPLICATE_API_TOKEN;
+    const res = await this._fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Token ' + token },
+      body: JSON.stringify({ version: 'black-forest-labs/flux-schnell', input: { prompt, aspect_ratio: '16:9' } }),
+    });
+    if (!res.ok) throw new BillingFailureError('Replicate image request failed (HTTP ' + res.status + ').');
+    const prediction = await res.json();
+    const pollUrl = prediction.urls?.get;
+    if (!pollUrl) throw new BillingFailureError('Replicate returned no poll URL; the prediction may still have been billed.');
+    for (let i = 0; i < 15; i++) {
+      await this._sleep(2000);
+      const pollRes = await this._fetch(pollUrl, { headers: { Authorization: 'Token ' + token } });
+      if (!pollRes.ok) continue;
+      const pollData = await pollRes.json();
+      if (pollData.status === 'succeeded' && pollData.output) {
+        const url = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
+        const dl = await this._fetch(url);
+        if (!dl.ok) throw new BillingFailureError('Replicate output download failed (HTTP ' + dl.status + ').');
+        const buf = Buffer.from(await dl.arrayBuffer());
+        if (buf.length === 0) throw new BillingFailureError('Replicate returned an empty file.');
+        return buf;
+      }
+      if (pollData.status === 'failed' || pollData.status === 'canceled') {
+        throw new BillingFailureError('Replicate prediction ended with status "' + pollData.status + '".');
+      }
+    }
+    throw new BillingFailureError('Timed out waiting for the Replicate prediction; it may still be billed. Check the dashboard before retrying.');
+  }
+
+  /**
+   * Runs one authorized provider call, settling the ledger as ok or failed.
+   * @private
+   */
+  async _billed(ticket, run) {
+    try {
+      const out = await run();
+      ticket.settle('ok');
+      return out;
+    } catch (err) {
+      ticket.settle('failed', err.message);
+      throw err;
+    }
   }
 
   /**
    * Synthesizes text-to-speech audio with deterministic caching.
    * @param {string} text
    * @param {Record<string, unknown>} [voiceOptions={}]
+   * @param {{ ref?: string, model?: string }} [meta={}] Ledger label and request-model override (not part of the cache key).
    * @returns {Promise<AssetSynthesisResult>}
    */
-  async synthesizeTTS(text, voiceOptions = {}) {
+  async synthesizeTTS(text, voiceOptions = {}, meta = {}) {
     const cleanText = (text || '').trim();
     if (!cleanText) {
       throw new Error('TTS synthesis requires non-empty text');
     }
-
-    const sha256 = this.cacheManager.computeHash(cleanText, voiceOptions);
+    const options = this._withResolvedVoice(voiceOptions);
+    const sha256 = this.cacheManager.computeHash(cleanText, options);
     const cachedPath = await this.cacheManager.get(sha256, 'mp3', 'tts');
 
     if (cachedPath) {
+      this.guard.recordCacheHit({ kind: 'tts', ref: meta.ref });
       const stats = fs.statSync(cachedPath);
-      const durationSeconds = await probeAudioDuration(cachedPath);
-      return {
-        assetPath: cachedPath,
-        sha256,
-        fromCache: true,
-        durationSeconds,
-        fileSizeBytes: stats.size,
-      };
+      const durationSeconds = await probeAudioDuration(cachedPath, this.probeDeps);
+      return { assetPath: cachedPath, sha256, fromCache: true, durationSeconds, fileSizeBytes: stats.size };
     }
 
-    // Synthesize audio buffer
-    let audioBuffer;
-    if (this.ttsProvider.includes('minimax') || (!this.elevenLabsApiKey && (process.env.WAVESPEED_API_KEY || process.env.REPLICATE_API_TOKEN))) {
-      audioBuffer = await this._synthesizeMiniMax(cleanText, voiceOptions);
-    } else {
-      audioBuffer = this._generateSyntheticAudio(cleanText, voiceOptions);
+    const billable = this._useMiniMax() && Boolean(this.env.WAVESPEED_API_KEY);
+    if (!billable) {
+      if (this.guard.dryRun) return this._skipped(sha256);
+      return this._storeTts(sha256, this._generateSyntheticAudio(cleanText, options));
     }
 
+    return this._singleFlight('tts:' + sha256, async () => {
+      if (this._alreadyPlanned('tts:' + sha256)) return this._skipped(sha256);
+      const voiceId = this._voiceIdToSend(options);
+      const model = this._resolveTtsModel(options, meta);
+      const ticket = await this.guard.authorize({
+        kind: 'tts',
+        model,
+        estUsd: estimateCallUsd('tts', model, { chars: cleanText.length }),
+        ref: meta.ref,
+      });
+      if (!ticket) return this._skipped(sha256);
+      const audioBuffer = await this._billed(ticket, () =>
+        this._runWaveSpeedJob({
+          model,
+          what: 'TTS',
+          maxPolls: 20,
+          intervalMs: 1500,
+          body: {
+            text: cleanText,
+            voice_id: voiceId,
+            speed: options.speed || 1.0,
+            language: options.language || 'Spanish',
+            emotion: options.emotion || 'neutral',
+          },
+        }),
+      );
+      return this._storeTts(sha256, audioBuffer);
+    });
+  }
+
+  /** @private */
+  async _storeTts(sha256, audioBuffer) {
     const assetPath = await this.cacheManager.put(sha256, 'mp3', audioBuffer, 'tts');
     const stats = fs.statSync(assetPath);
-    const durationSeconds = await probeAudioDuration(assetPath);
-
-    return {
-      assetPath,
-      sha256,
-      fromCache: false,
-      durationSeconds,
-      fileSizeBytes: stats.size,
-    };
+    const durationSeconds = await probeAudioDuration(assetPath, this.probeDeps);
+    return { assetPath, sha256, fromCache: false, durationSeconds, fileSizeBytes: stats.size };
   }
 
   /**
@@ -145,171 +497,142 @@ export class AssetSynthesizer {
    * @param {string} imagePath Base character portrait
    * @param {string} audioPath Voice narration track
    * @param {Record<string, unknown>} [avatarOptions={}]
+   * @param {{ ref?: string }} [meta={}] Ledger label (not part of the cache key).
    * @returns {Promise<AssetSynthesisResult>}
    */
-  async resolveTalkingAvatar(imagePath, audioPath, avatarOptions = {}) {
-    const sha256 = this.cacheManager.computeHash(`${imagePath}:${audioPath}`, avatarOptions);
-    const cachedPath = await this.cacheManager.get(sha256, 'mp4', 'temp');
+  resolveTalkingAvatar(imagePath, audioPath, avatarOptions = {}, meta = {}) {
+    // Avatar jobs are the expensive ones: bounded in-process AND across processes (slot lock files),
+    // and the cache is re-checked INSIDE the slot so duplicate requests never double-bill.
+    return this.guard.avatarLimit(() => this._resolveTalkingAvatar(imagePath, audioPath, avatarOptions, meta));
+  }
 
+  /**
+   * @param {{ ref?: string, cacheKey?: string, durationSeconds?: number, resumeTaskId?: string, windowMs?: number,
+   *   intervalMs?: number, backoff?: { factor: number, maxMs: number }, warn?: (m: string) => void,
+   *   postProcess?: (b: Buffer) => Promise<{ buffer: Buffer, applied: boolean }>,
+   *   pending?: { onSubmitting?: Function, onSubmitted?: Function, onResult?: Function } }} meta
+   *   A `cacheKey` marks a managed job (synthesize-avatar): it is never replaced by an offline placeholder.
+   * @private
+   */
+  async _resolveTalkingAvatar(imagePath, audioPath, avatarOptions = {}, meta = {}) {
+    const sha256 = meta.cacheKey || this.cacheManager.computeHash(`${imagePath}:${audioPath}`, avatarOptions);
+    const cachedPath = await this.cacheManager.get(sha256, 'mp4', 'temp');
     if (cachedPath) {
-      const stats = fs.statSync(cachedPath);
-      return {
-        assetPath: cachedPath,
-        sha256,
-        fromCache: true,
-        fileSizeBytes: stats.size,
-      };
+      this.guard.recordCacheHit({ kind: 'avatar', ref: meta.ref });
+      return { assetPath: cachedPath, sha256, fromCache: true, fileSizeBytes: fs.statSync(cachedPath).size };
     }
 
-    // Synthesize avatar lip-sync video via WaveSpeed InfiniteTalk or Replicate Wan-S2V
-    let videoBuffer;
-    const waveSpeedKey = process.env.WAVESPEED_API_KEY;
-    if (waveSpeedKey) {
+    if (!this.env.WAVESPEED_API_KEY) {
+      if (meta.cacheKey) throw new Error('WAVESPEED_API_KEY is not set: refusing to produce a placeholder avatar.');
+      if (this.guard.dryRun) return this._skipped(sha256);
+      // Offline placeholder: stored under its own key so it can never be served once a real key exists.
+      const stub = Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
+      const assetPath = await this.cacheManager.put(sha256 + '-offline', 'mp4', stub, 'temp');
+      return { assetPath, sha256, fromCache: false, fileSizeBytes: stub.length };
+    }
+
+    if (this._alreadyPlanned('avatar:' + sha256)) return this._skipped(sha256);
+    const model = resolveModelId(avatarOptions.model, this.defaultModels.avatar);
+    const resumeId = meta.resumeTaskId;
+    const resolution = avatarOptions.resolution || '720p';
+    let ticket = null;
+    let estUsd = 0;
+    let request = null;
+    if (!resumeId) {
+      // Everything that can be checked is checked BEFORE any spend: inputs (fail closed), duration, cap.
+      request = buildAvatarRequest({ imagePath, audioPath, resolution });
+      const seconds =
+        Number(meta.durationSeconds) || Number(avatarOptions.durationSeconds) || (await probeAudioDuration(audioPath, this.probeDeps)) || 0;
+      if (!(seconds > 0)) {
+        throw new Error('Cannot price the avatar job: the audio duration is unknown (refusing to bill on a guess).');
+      }
+      const maxSeconds = this.guard.config.maxAvatarSeconds;
+      if (seconds > maxSeconds) {
+        throw new Error('The avatar audio is ' + seconds + 's, over maxAvatarSeconds (' + maxSeconds + 's) in video-guard.json: refusing to bill it.');
+      }
+      estUsd = estimateCallUsd('avatar', model, { seconds });
+      ticket = await this.guard.authorize({ kind: 'avatar', model, estUsd, ref: meta.ref });
+      if (!ticket) return this._skipped(sha256);
+    }
+    const settle = (outcome, detail, extra) =>
+      ticket ? ticket.settle(outcome, detail, extra) : this.guard.noteOutcome({ kind: 'avatar', model, ref: meta.ref }, outcome, detail);
+    const fail = (err) => {
+      settle('failed', err.message, err.preTask || err.notSubmitted ? { refundUsd: estUsd } : undefined);
+      meta.pending?.onResult?.(journalStatus(err), err.message);
+    };
+
+    const track = {};
+    let assetPath;
+    let raw;
+    try {
+      raw = await this._runWaveSpeedJob({
+        model,
+        what: 'Avatar',
+        maxPolls: 30,
+        intervalMs: meta.intervalMs ?? 2000,
+        windowMs: meta.windowMs,
+        backoff: meta.backoff,
+        resumeTaskId: resumeId,
+        onSubmitting: meta.pending?.onSubmitting ? () => meta.pending.onSubmitting({ model, estUsd }) : undefined,
+        onSubmitted: meta.pending?.onSubmitted,
+        track,
+        body: request,
+      });
+      if (!(raw.length >= 12 && raw.subarray(4, 8).toString('latin1') === 'ftyp')) {
+        const peek = raw.subarray(0, 120).toString('utf8').replace(/[^\x20-\x7e]+/g, ' ').trim();
+        throw new BillingFailureError('Avatar task ' + track.taskId + ' returned something that is not an MP4 (no ftyp box; starts with: ' + peek + '). Nothing was cached; resume to download it again.', { taskId: track.taskId, retryable: true });
+      }
+      // The raw clip is cached FIRST (tmp+rename); faststart then improves a copy of it.
+      assetPath = await this.cacheManager.put(sha256, 'mp4', raw, 'temp');
+    } catch (err) {
+      const wrapped =
+        err instanceof BillingFailureError || err.notSubmitted
+          ? err
+          : new BillingFailureError('Avatar job failed after submit: ' + err.message, { taskId: track.taskId, retryable: Boolean(track.taskId), mayHaveBeenBilled: !track.taskId });
+      fail(wrapped);
+      throw wrapped;
+    }
+    settle('ok'); // only after the clip is safely in the cache
+    meta.pending?.onResult?.('completed');
+    if (meta.postProcess) {
       try {
-        const model = avatarOptions.model || 'wavespeed-ai/infinitetalk-fast';
-        const res = await fetch(`https://api.wavespeed.ai/api/v3/${model}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${waveSpeedKey}`,
-          },
-          body: JSON.stringify({
-            image: imagePath,
-            audio: audioPath,
-            resolution: avatarOptions.resolution || '720p',
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const taskId = data.data?.id || data.id || data.task_id;
-          if (taskId) {
-            for (let i = 0; i < 30; i++) {
-              await new Promise((r) => setTimeout(r, 2000));
-              const pollRes = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${taskId}/result`, {
-                headers: { 'Authorization': `Bearer ${waveSpeedKey}` },
-              });
-              if (pollRes.ok) {
-                const pollData = await pollRes.json();
-                const status = pollData.data?.status || pollData.status;
-                if (status === 'completed' || status === 'succeeded') {
-                  const videoUrl = pollData.data?.outputs?.[0] || pollData.outputs?.[0];
-                  if (videoUrl) {
-                    const vidRes = await fetch(videoUrl);
-                    videoBuffer = Buffer.from(await vidRes.arrayBuffer());
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
-      } catch (err) {
-        // Fallback
+        const out = await meta.postProcess(raw);
+        if (out?.applied) await this.cacheManager.put(sha256, 'mp4', out.buffer, 'temp');
+        else markNeedsFaststart(assetPath);
+      } catch (e) {
+        markNeedsFaststart(assetPath);
+        (meta.warn || ((m) => console.warn(m)))('faststart failed (' + e.message + '); the raw clip is cached and marked .needs-faststart.');
       }
     }
-
-    if (!videoBuffer) {
-      // Fallback local video container
-      videoBuffer = Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
-    }
-
-    const assetPath = await this.cacheManager.put(sha256, 'mp4', videoBuffer, 'temp');
-    const stats = fs.statSync(assetPath);
-
-    return {
-      assetPath,
-      sha256,
-      fromCache: false,
-      fileSizeBytes: stats.size,
-    };
+    return { assetPath, sha256, fromCache: false, fileSizeBytes: fs.statSync(assetPath).size };
   }
 
   /**
    * Resolves or synthesizes a visual image media asset from a prompt.
    * @param {string} prompt
    * @param {Record<string, unknown>} [options={}]
+   * @param {{ ref?: string, model?: string }} [meta={}] Ledger label and request-model override (not part of the cache key).
    * @returns {Promise<AssetSynthesisResult>}
    */
-  async resolveMedia(prompt, options = {}) {
+  async resolveMedia(prompt, options = {}, meta = {}) {
     const cleanPrompt = (prompt || '').trim();
     const sha256 = this.cacheManager.computeHash(cleanPrompt, options);
     const cachedPath = await this.cacheManager.get(sha256, 'png', 'images');
-
     if (cachedPath) {
-      const stats = fs.statSync(cachedPath);
-      return {
-        assetPath: cachedPath,
-        sha256,
-        fromCache: true,
-        fileSizeBytes: stats.size,
-      };
+      this.guard.recordCacheHit({ kind: 'image', ref: meta.ref });
+      return { assetPath: cachedPath, sha256, fromCache: true, fileSizeBytes: fs.statSync(cachedPath).size };
     }
 
-    const imageBuffer = await this._generateMediaFromPrompt(cleanPrompt, options);
-    const assetPath = await this.cacheManager.put(sha256, 'png', imageBuffer, 'images');
-    const stats = fs.statSync(assetPath);
+    const billable = Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN);
+    if (!billable && this.guard.dryRun) return this._skipped(sha256);
 
-    return {
-      assetPath,
-      sha256,
-      fromCache: false,
-      fileSizeBytes: stats.size,
-    };
-  }
-
-  /**
-   * Synthesizes MiniMax TTS via WaveSpeed or Replicate.
-   * @private
-   */
-  async _synthesizeMiniMax(text, voiceOptions = {}) {
-    const waveSpeedKey = process.env.WAVESPEED_API_KEY;
-    if (waveSpeedKey) {
-      try {
-        const model = voiceOptions.model || 'wavespeed-ai/minimax-speech-01';
-        const res = await fetch(`https://api.wavespeed.ai/api/v3/${model}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${waveSpeedKey}`,
-          },
-          body: JSON.stringify({
-            text,
-            voice_id: voiceOptions.voiceId || voiceOptions.voice_id || 'Friendly_Person',
-            speed: voiceOptions.speed || 1.0,
-            language: voiceOptions.language || 'Spanish',
-            emotion: voiceOptions.emotion || 'neutral',
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const taskId = data.data?.id || data.id || data.task_id;
-          if (taskId) {
-            for (let i = 0; i < 20; i++) {
-              await new Promise((r) => setTimeout(r, 1500));
-              const pollRes = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${taskId}/result`, {
-                headers: { 'Authorization': `Bearer ${waveSpeedKey}` },
-              });
-              if (pollRes.ok) {
-                const pollData = await pollRes.json();
-                const status = pollData.data?.status || pollData.status;
-                if (status === 'completed' || status === 'succeeded') {
-                  const audioUrl = pollData.data?.outputs?.[0] || pollData.outputs?.[0];
-                  if (audioUrl) {
-                    const audioRes = await fetch(audioUrl);
-                    return Buffer.from(await audioRes.arrayBuffer());
-                  }
-                }
-              }
-            }
-          }
-        }
-      } catch (err) {
-        // Fall through to the synthetic audio buffer on API error
-      }
-    }
-
-    return this._generateSyntheticAudio(text, voiceOptions);
+    return this._singleFlight('img:' + sha256, async () => {
+      if (billable && this._alreadyPlanned('img:' + sha256)) return this._skipped(sha256);
+      const imageBuffer = await this._generateMediaFromPrompt(cleanPrompt, options, meta);
+      if (imageBuffer === null) return this._skipped(sha256);
+      const assetPath = await this.cacheManager.put(sha256, 'png', imageBuffer, 'images');
+      return { assetPath, sha256, fromCache: false, fileSizeBytes: fs.statSync(assetPath).size };
+    });
   }
 
   /**
@@ -333,107 +656,44 @@ export class AssetSynthesizer {
     return buf;
   }
 
+
   /**
-   * Generates a high-quality 1920x1080 visual asset buffer from prompt/options
-   * using WaveSpeed / Replicate APIs when keys are available, or rich scenic composition.
+   * Generates a 1920x1080 visual asset: a billable provider image when a key is configured
+   * (WaveSpeed first, otherwise Replicate; one provider only, never both), or a free local
+   * scenic composition when no key exists. Returns null in dry-run.
    * @private
    */
-  async _generateMediaFromPrompt(prompt, options = {}) {
-    // 1. Check WaveSpeed API
-    const waveSpeedKey = process.env.WAVESPEED_API_KEY;
-    if (waveSpeedKey) {
-      try {
-        const model = options.model || 'wavespeed-ai/z-image/turbo';
-        const res = await fetch(`https://api.wavespeed.ai/api/v3/${model}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${waveSpeedKey}`,
-          },
-          body: JSON.stringify({
-            prompt,
-            size: options.size || '1024*1024',
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const taskId = data.data?.id || data.id || data.task_id;
-          if (taskId) {
-            for (let i = 0; i < 30; i++) {
-              await new Promise((r) => setTimeout(r, 2000));
-              const pollRes = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${taskId}/result`, {
-                headers: {
-                  'Authorization': `Bearer ${waveSpeedKey}`,
-                },
-              });
-              if (pollRes.ok) {
-                const pollData = await pollRes.json();
-                const status = pollData.data?.status || pollData.status;
-                if (status === 'completed' || status === 'succeeded') {
-                  const outputs = pollData.data?.outputs || pollData.outputs || [];
-                  const imgUrl = outputs[0];
-                  if (imgUrl) {
-                    const imgRes = await fetch(imgUrl);
-                    const arrayBuf = await imgRes.arrayBuffer();
-                    return Buffer.from(arrayBuf);
-                  }
-                  break;
-                } else if (status === 'failed' || status === 'canceled') {
-                  break;
-                }
-              }
-            }
-          }
-        }
-      } catch (err) {
-        // Fall through on API error
-      }
+  async _generateMediaFromPrompt(prompt, options = {}, meta = {}) {
+    if (this.env.WAVESPEED_API_KEY) {
+      const model = this._resolveMediaModel(options, meta);
+      const ticket = await this.guard.authorize({
+        kind: 'image',
+        model,
+        estUsd: estimateCallUsd('image', model),
+        ref: meta.ref,
+      });
+      if (!ticket) return null;
+      return this._billed(ticket, () =>
+        this._runWaveSpeedJob({
+          model,
+          what: 'Image',
+          maxPolls: 30,
+          intervalMs: 2000,
+          body: { prompt, size: options.size || '1024*1024' },
+        }),
+      );
     }
 
-    // 2. Check Replicate API
-    const replicateToken = process.env.REPLICATE_API_TOKEN;
-    if (replicateToken) {
-      try {
-        const res = await fetch('https://api.replicate.com/v1/predictions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Token ${replicateToken}`,
-          },
-          body: JSON.stringify({
-            version: 'black-forest-labs/flux-schnell',
-            input: { prompt, aspect_ratio: '16:9' },
-          }),
-        });
-        if (res.ok) {
-          const prediction = await res.json();
-          let pollUrl = prediction.urls?.get;
-          let outputUrl = null;
-          // Short poll loop (up to 30s)
-          for (let i = 0; i < 15 && pollUrl; i++) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            const pollRes = await fetch(pollUrl, {
-              headers: { 'Authorization': `Token ${replicateToken}` },
-            });
-            if (pollRes.ok) {
-              const pollData = await pollRes.json();
-              if (pollData.status === 'succeeded' && pollData.output) {
-                outputUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
-                break;
-              } else if (pollData.status === 'failed' || pollData.status === 'canceled') {
-                break;
-              }
-            }
-          }
-          if (outputUrl) {
-            const imgRes = await fetch(outputUrl);
-            const arrayBuf = await imgRes.arrayBuffer();
-            return Buffer.from(arrayBuf);
-          }
-        }
-      } catch (err) {
-        // Fall through on API error
-      }
+    if (this.env.REPLICATE_API_TOKEN) {
+      const model = 'black-forest-labs/flux-schnell';
+      const ticket = await this.guard.authorize({
+        kind: 'image',
+        model,
+        estUsd: estimateCallUsd('image', model),
+        ref: meta.ref,
+      });
+      if (!ticket) return null;
+      return this._billed(ticket, () => this._runReplicateImageJob(prompt));
     }
 
     // 3. High-quality artistic visual scene composition

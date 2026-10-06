@@ -51,6 +51,15 @@ import { parse as parseVus } from './lib/innfo-video-parser.generated.mjs';
  */
 
 /**
+ * @typedef {Object} RemotionLayerProps A layer entry inside `RemotionSceneTrack.props.layers`.
+ * @property {string} layer_type "image" | "video" | "talking_avatar" | "text" | ...
+ * @property {string} layer_asset_source Bundle-relative media name after staging.
+ * @property {number} [layer_level] Paint order (lower first).
+ * @property {boolean | "true" | "false"} [layer_muted] Video layers only: mute the clip's own audio. Set to true by compile
+ *   for cached avatar clips (narration is a separate Audio track); undefined for every other layer.
+ */
+
+/**
  * @typedef {Object} RemotionSceneTrack
  * @property {string} id
  * @property {"chapter_title" | "image_motion" | "kinetic_text" | "concept_diagram" | "split_screen"} sceneType
@@ -83,6 +92,36 @@ import { parse as parseVus } from './lib/innfo-video-parser.generated.mjs';
  * @property {{ scenes: RemotionSceneTrack[], audio: AudioTrackBinding[], overlays: VisualOverlayConfig[] }} tracks
  * @property {{ generator: string, generatedAt: string, scriptSource: string }} metadata
  */
+
+/**
+ * Splits raw scene prose into spoken narration and overlay hints.
+ *  - every `<!-- ... -->` comment (single or multi-line, anywhere) is removed from the narration;
+ *  - a comment of the form `overlay: <type> { json }` is returned as an overlay (malformed JSON is dropped);
+ *  - the remaining prose is one space-joined line, like the line scanner always produced (so the TTS
+ *    cache key does not depend on how the paragraph was wrapped).
+ * \param {string} content
+ * \returns {{ narration: string, overlays: { type: string, data: Record<string, unknown> }[] }}
+ */
+export function extractNarrationAndOverlays(content) {
+  const overlays = [];
+  const stripped = String(content).replace(/<!--([\s\S]*?)-->/g, (_all, inner) => {
+    const m = /^\s*overlay:\s*([A-Za-z0-9_-]+)\s*(\{[\S\s]*\})\s*$/.exec(inner);
+    if (m) {
+      try {
+        overlays.push({ type: m[1], data: JSON.parse(m[2]) });
+      } catch {
+        // malformed hint: dropped, never spoken
+      }
+    }
+    return ' ';
+  });
+  const narration = stripped
+    .split(/\r?\n/)
+    .map((l) => l.replace(/[ \t]{2,}/g, ' ').trim())
+    .filter(Boolean)
+    .join(' ');
+  return { narration, overlays };
+}
 
 export class RemotionSceneCompiler {
   /**
@@ -246,12 +285,25 @@ export class RemotionSceneCompiler {
             });
           }
 
+          // The vendored parser hands back the raw scene prose, HTML comments included. Overlay
+          // hints (<!-- overlay: type { json } -->) become overlay layers, and NO comment may ever be
+          // spoken: the narration is what goes to the paid TTS and into its cache key.
+          const { narration, overlays } = extractNarrationAndOverlays(sc.scene_content || '');
+          for (const ov of overlays) {
+            sceneLayers.push({
+              id: `${sceneId}_overlay_${sceneLayers.length + 1}`,
+              name: ov.type,
+              properties: { layer_type: ov.type, ...ov.data },
+              effects: [],
+            });
+          }
+
           result.scenes.push({
             id: sceneId,
             name: rawName,
             template: (sc.scene_templates && sc.scene_templates[0]) || null,
             properties: props,
-            narration: (sc.scene_content || '').trim(),
+            narration,
             layers: sceneLayers,
           });
         }

@@ -2,7 +2,7 @@
 name: nn-video-script
 description: |
   iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Supports Remotion scene compilation, deterministic SHA-256 asset caching, headless MP4 rendering, and thumbnail composition. Triggers: video script, cognnitive video, remotion video, series script, nn-video-script, {{slot}}, script_template.md, finalize video, render video script.
-version: "V_0-3-0"
+version: "V_0-4-0"
 last_updated: 2026-09-29
 license: MIT
 vus_spec:
@@ -55,9 +55,9 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    ```
 3. **Plan, Estimate & Consult Providers (Pre-Generation Gate)**:
    ```bash
-   node scripts/asset-cost-estimator.mjs <script.md> --out assets/{video-slug}/asset_plan.md
+   node scripts/asset-cost-estimator.mjs <script.md> --out assets/{video-slug}/asset_plan.md [--image-model <id>] [--tts-model <id>] [--avatar-model <id>]
    ```
-   *Present provider options (WaveSpeed AI, Replicate, ElevenLabs, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user for explicit approval before proceeding.*
+   *Present provider options (WaveSpeed AI, Replicate, ElevenLabs, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user for explicit approval before proceeding. The plan is stamped with a `plan_hash`. Approval is a HUMAN act that the engine enforces: the user runs `node scripts/approve-plan.mjs assets/{video-slug}/asset_plan.md` in an interactive terminal (typed confirmation, no `--yes`), which writes `asset_plan.approved.json`. Never run `approve-plan.mjs` yourself and never hand-write the approval file. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap, approval and ledger. Preview uncached billable work with `compile --dry-run`. Budget, the 24h cap, model allow/block lists and the ledger live in `video-guard.json` - see `references/cost-guardrails.md`.*
 4. **Ensure the Render Engine (consent-gated, idempotent)**:
    ```bash
    node scripts/ensure-engine.mjs
@@ -65,8 +65,16 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    *Remotion is the only renderer. The parser is vendored (no npm needed), but the renderer runtime is installed on demand. Before installing, state the approximate total size AND that a headless browser downloads on the first render. Re-running is a no-op once installed. Also verifies provider credentials (WaveSpeed/Replicate) with consent.*
 5. **Compile Composition & Synthesize Assets**:
    ```bash
-   node scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json
+   node scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json [--dry-run] [--approval <approved.json>] [--allow-model <name>]... [--image-model <id>] [--tts-model <id>] [--avatar-model <id>] [--cache-dir <dir>]
    ```
+   *Compile plans first and refuses the whole run before the first charge unless `asset_plan.approved.json` matches the current script (cache hits stay free), every model is allowed and covered by the approval, and the total fits `min(budgetPerRunUsd, 1.25 x approved total)` and the rolling `dailyCapUsd`. Pass the same `--image-model/--tts-model/--avatar-model` as the estimator. `--allow-model` only works for models a human recorded in the approval. Avatar jobs are serialized across processes and every billable call is appended to `.cognnitive/video-ledger.jsonl`. A `replicate/<vendor>/<model>` name in a script is normalized to the WaveSpeed id for the guard, pricing, URL, ledger and plan_hash. Voices are cloned once with `node scripts/voice-clone.mjs <name> <sample>`; `scene_voice` resolves by registered name or `voice_id`, or is a provider system voice listed in `systemVoices`; anything else fails before spend.*
+5b. **Synthesize Talking Avatars (guarded, after the first compile)**:
+   ```bash
+   node scripts/synthesize-avatar.mjs <script.md> [--scene <id>]... [--dry-run] [--resume <task-id>] [--force-resubmit] [--poll-window <min>] [--allow-model <name>] [--approval <file>] [--cache-dir <dir>]
+   node scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json   # picks the clips up, zero extra spend
+   ```
+   *Needs the narration audio that the first `compile` staged (`audio/<sceneId>_voiceover.mp3`), `WAVESPEED_API_KEY` and the human-approved plan. The price is per second of that audio (measured first; unmeasurable audio is refused), the default and only allowed model is `wavespeed-ai/infinitetalk-fast`, and the whole batch is refused before the first charge. A job takes minutes: the task id is journaled in `.cognnitive/pending-predictions.jsonl` before polling, and a re-run is REFUSED while the journal shows an outstanding job for the same scene (use the printed `--resume` command; `--force-resubmit` costs money). On a timeout or recoverable failure the script exits 3 with one complete resume command per task (resume never re-submits). Avatar images must be real files (prompt-only avatar layers need the image generated first by compile); stale staged audio is refused (re-run compile). Billing is ceil(seconds), capped by `maxAvatarSeconds` Outputs get `-movflags +faststart` when ffmpeg is on PATH. The second `compile` rewrites each cached avatar layer to a muted `video` layer.*
+
 6. **Render Master Video**:
    ```bash
    node scripts/video-engine-cli.mjs render renders/{ref}/manifest.json --output renders/{ref}/master.mp4
@@ -92,11 +100,20 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/ensure-engine.mjs` | Idempotent, consent-gated Remotion runtime install with a size + first-render browser notice. |
 | `scripts/cache-manager.mjs` | Deterministic SHA-256 asset cache manager under `.cognnitive/cache/video/`. |
 | `scripts/asset-synthesizer.mjs` | Multi-provider TTS and media synthesis with `@remotion/media-parser` duration measurement and cache support. |
+| `scripts/lib/video-guard.mjs` | Spend guard: validated `video-guard.json`, model allow/block lists, per-run and rolling 24h caps, append-only ledger, avatar limiter. |
+| `scripts/lib/plan-approval.mjs` | `plan_hash`, plan stamp parsing and approval-file checks. |
+| `scripts/lib/file-lock.mjs` | Cross-process lock files (ledger, voice registry, avatar slots). |
+| `scripts/lib/cli-args.mjs` | Strict argv parser shared by the CLIs (`--flag=value`, missing-value errors). |
+| `scripts/approve-plan.mjs` | HUMAN approval of a cost plan (interactive TTY + typed confirmation, no `--yes`): writes `asset_plan.approved.json` that `compile` requires for billable work. |
+| `scripts/synthesize-avatar.mjs` | Guarded talking-avatar synthesis (budget, daily cap, approval, ledger, cross-process slot, pending-task journal, `--resume`, faststart). The ONLY allowed way to produce avatars. |
+| `scripts/lib/avatar-jobs.mjs` | Avatar job definition shared by synthesize-avatar and compile: layer predicate, audio source, content-addressed cache key, cached-clip pickup. |
+| `scripts/voice-clone.mjs` | Clone a voice once (pending reservation under a lock, atomic registry write, ledgered); refuses re-cloning without `--force`. |
 | `scripts/asset-cost-estimator.mjs` | Pre-generation provider options catalog, per-scene character/layer calculator, and production cost estimator. |
-| `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`), headless rendering (`render`), and local web preview (`preview`). |
+| `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`), headless rendering (`render`), and local web preview (`preview`). `compile` enforces the approval gate; `--dry-run` previews spend. |
 | `scripts/check-script.mjs` | Zero-Unresolved-Placeholder Gate + No-Upward-Escape Rule. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast typography over clean 16:9 base images. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.
 See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines.
+See `references/cost-guardrails.md` for the spend gate (approval, budget, allowlist, ledger, dry run).

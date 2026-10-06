@@ -1,17 +1,49 @@
 {
-  "generatedAt": "2026-10-05T09:51:03.117Z",
-  "head": "933f31f32f88830e38b9bf64f11ce4c1569db254",
+  "generatedAt": "2026-10-06T08:44:29.754Z",
+  "head": "49d74e6c90054d3db32f4834bdaf1c64dc141b29",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.13.0",
-      "pinnedTagDate": "2026-10-04T14:39:57+02:00",
-      "commitsSincePin": 2,
+      "pinnedTag": "skills-v2.13.1",
+      "pinnedTagDate": "2026-10-05T11:45:50+02:00",
+      "commitsSincePin": 6,
       "filesTouched": [
-        "skills/nn-design-presets/SKILL.md",
-        "skills/nn-preflight/SKILL.md",
-        "skills/nn-video-script/scripts/vus-parse.mjs",
-        "skills/nn-video-script/test/vus-parse.test.mjs"
+        "skills/nn-video-script/SKILL.md",
+        "skills/nn-video-script/references/cost-guardrails.md",
+        "skills/nn-video-script/references/folder-contract.md",
+        "skills/nn-video-script/scripts/approve-plan.mjs",
+        "skills/nn-video-script/scripts/asset-cost-estimator.mjs",
+        "skills/nn-video-script/scripts/asset-synthesizer.mjs",
+        "skills/nn-video-script/scripts/cache-manager.mjs",
+        "skills/nn-video-script/scripts/lib/avatar-jobs.mjs",
+        "skills/nn-video-script/scripts/lib/avatar-request.mjs",
+        "skills/nn-video-script/scripts/lib/cli-args.mjs",
+        "skills/nn-video-script/scripts/lib/faststart.mjs",
+        "skills/nn-video-script/scripts/lib/file-lock.mjs",
+        "skills/nn-video-script/scripts/lib/pending-predictions.mjs",
+        "skills/nn-video-script/scripts/lib/plan-approval.mjs",
+        "skills/nn-video-script/scripts/lib/tts-options.mjs",
+        "skills/nn-video-script/scripts/lib/video-guard.mjs",
+        "skills/nn-video-script/scripts/remotion-scene-compiler.mjs",
+        "skills/nn-video-script/scripts/scene/Scene.tsx",
+        "skills/nn-video-script/scripts/synthesize-avatar.mjs",
+        "skills/nn-video-script/scripts/tts-generator.mjs",
+        "skills/nn-video-script/scripts/video-engine-cli.mjs",
+        "skills/nn-video-script/scripts/voice-clone.mjs",
+        "skills/nn-video-script/test/avatar-hardening.test.mjs",
+        "skills/nn-video-script/test/cache-manager.test.mjs",
+        "skills/nn-video-script/test/compile-gate.test.mjs",
+        "skills/nn-video-script/test/cost-estimator.test.mjs",
+        "skills/nn-video-script/test/fixtures/inflacion-script.md",
+        "skills/nn-video-script/test/guard-hardening.test.mjs",
+        "skills/nn-video-script/test/narration-clean.test.mjs",
+        "skills/nn-video-script/test/plan-approval.test.mjs",
+        "skills/nn-video-script/test/probe-duration.test.mjs",
+        "skills/nn-video-script/test/synthesize-avatar.test.mjs",
+        "skills/nn-video-script/test/synthesizer-guard.test.mjs",
+        "skills/nn-video-script/test/video-engine-cli.test.mjs",
+        "skills/nn-video-script/test/video-guard.test.mjs",
+        "skills/nn-video-script/test/voice-clone.test.mjs"
       ]
     },
     "blueprints": {
@@ -98,24 +130,16 @@
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.14.1",
-      "pinnedTagDate": "2026-10-04T14:39:57+02:00",
-      "commitsSincePin": 14,
-      "filesTouched": [
-        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/package.json",
-        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/check-workspace.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/check-workspace.ts",
-        "iNNfo/packages/innfo-mcp/vitest.config.ts"
-      ]
+      "pinnedTag": "innfo-mcp-v0.14.2",
+      "pinnedTagDate": "2026-10-05T11:45:50+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "innfo-console": {
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.9.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 4,
+      "commitsSincePin": 0,
       "filesTouched": []
     }
   }

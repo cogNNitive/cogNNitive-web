@@ -36,7 +36,7 @@ export class TTSGenerator {
    * @param {string} filePath
    */
   async probeDuration(filePath) {
-    return probeAudioDuration(filePath);
+    return probeAudioDuration(filePath, this.synthesizer.probeDeps);
   }
 }
 
