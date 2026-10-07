@@ -99,6 +99,18 @@ export function finalizeVideo({ videoDir, ref, forceThumbnail = false }) {
     messages.push('master:: master.mp4');
   }
 
+  // 1b. vertical master (dual-master: YouTube 16:9 + Shorts 9:16)
+  const verticalCandidates = [
+    path.join(renderDir, `${resolvedRef}_vertical.mp4`),
+    path.join(renderDir, 'master_vertical.mp4'),
+  ];
+  const verticalSrc = verticalCandidates.find((p) => fs.existsSync(p));
+  if (verticalSrc) {
+    const verticalDest = path.join(videoDir, 'master_vertical.mp4');
+    copyViaTempRename(verticalSrc, verticalDest);
+    fields.master_vertical = 'master_vertical.mp4';
+    messages.push('master_vertical:: master_vertical.mp4');
+  }
   // 2. thumbnail — series often design their own; preserve unless forced or absent.
   const thumbCandidates = [
     path.join(renderDir, `${resolvedRef}_thumbnail.png`),

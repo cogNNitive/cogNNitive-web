@@ -7909,7 +7909,7 @@ function displayStem(basename4) {
   return basename4.replace(/\.md$/i, "");
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
-var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar)(?:_|$)/i;
+var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar|changes)(?:_|$)/i;
 function segmentsOf(path2) {
   return path2.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
@@ -7927,6 +7927,8 @@ function roleOf(i) {
       return "lineage-record";
     case "sidecar":
       return "sidecar";
+    case "changes":
+      return "changeset";
     case "procedures":
       return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
     case "workspace":
@@ -7940,7 +7942,7 @@ function roleOf(i) {
 function isExcludedPath(path2) {
   const segs = segmentsOf(path2);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
-  return segs.some((s) => s === "staging" || s.startsWith(".") && s !== "..");
+  return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
 function compareMembers(a, b) {
   const pa = parseName(baseOf(a));
@@ -8207,7 +8209,12 @@ function resolveUnitPath(rawPath) {
   const isMd = /\.md$/i.test(forward);
   const isCsv = /\.csv$/i.test(forward);
   const isJson = /\.json$/i.test(forward);
-  if (!isMd && !isCsv && !isJson) return null;
+  if (!isMd && !isCsv && !isJson) {
+    if (new RegExp(`^${SLUG}$`).test(trimmed)) {
+      return { filePath: trimmed, kind: "model" };
+    }
+    return null;
+  }
   if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
   return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
 }
@@ -8249,6 +8256,54 @@ function parseKnowledgeUnitRef(input) {
     decoded.push(text.trim());
   }
   const [unitRaw, ...subunits] = decoded;
+  if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
+    if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
+    if (subunits.length === 2) {
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: unitRaw,
+        rowSlug: subunits[0],
+        colSlug: subunits[1]
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename(resolved.filePath),
+        slug: unitRaw,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    if (subunits.length === 0 && /(?:^matrix-|-matrix$)/i.test(unitRaw)) {
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: unitRaw
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename(resolved.filePath),
+        slug: unitRaw,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    const unit2 = {
+      kind: "element",
+      slug: unitRaw
+    };
+    return {
+      filePath: resolved.filePath,
+      fileName: basename(resolved.filePath),
+      slug: unitRaw,
+      kind: "model",
+      unit: unit2,
+      subunits,
+      raw: clean
+    };
+  }
   const isCsv = /\.csv$/i.test(resolved.filePath);
   if (isCsv) {
     if (resolved.kind === "model") return null;
@@ -8667,6 +8722,76 @@ function parseCsvTable(content, options = {}) {
 
 // iNNfo/packages/innfo-core/src/unitResolve.ts
 var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
+function resolveElementUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  let matchedHeading;
+  for (const h of headings) {
+    if (h.level === 2) {
+      const section2 = resolveHeadingSection(content, h.slug);
+      if (section2) {
+        for (let i = section2.startLine + 1; i < section2.endLine; i++) {
+          const m = lines[i].match(/^\s*slug\s*::\s*([^\s]+)/);
+          if (m && m[1].toLowerCase() === unit.slug.toLowerCase()) {
+            matchedHeading = h;
+            break;
+          }
+          if (/^#{1,6}\s/.test(lines[i])) break;
+        }
+      }
+    }
+    if (matchedHeading) break;
+  }
+  if (!matchedHeading) {
+    matchedHeading = headings.find(
+      (h) => h.slug === unit.slug || h.element && slugifyHeading(h.element) === unit.slug || h.slug.endsWith(`--${unit.slug}`)
+    );
+  }
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  if (subunits.length === 0) {
+    return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+  }
+  if (subunits.length === 1) {
+    const owned = sectionOwnLines(content, matchedHeading.slug);
+    if (!owned) return null;
+    const wanted = normalizeName(subunits[0]);
+    const found = [];
+    for (const i of owned) {
+      const field = lines[i].match(FIELD_LINE);
+      if (field && normalizeName(field[1]) === wanted) found.push(i);
+    }
+    return found.length > 0 ? { kind: "field", lines: found } : null;
+  }
+  return null;
+}
+function resolveMatrixUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  const matchedHeading = headings.find(
+    (h) => h.slug === unit.matrixSlug || h.slug === `matrices--${unit.matrixSlug}` || h.text.toLowerCase().includes(unit.matrixSlug.toLowerCase())
+  );
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  const row = unit.rowSlug ?? subunits[0];
+  const col = unit.colSlug ?? subunits[1];
+  if (row && col) {
+    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
+    if (!table) return null;
+    const wantedRow = normalizeName(row);
+    const wantedCol = normalizeName(col);
+    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
+    if (rowIdx === -1) return null;
+    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
+    if (colIdx === -1) return null;
+    const value = table.rows[rowIdx][colIdx];
+    if (value === void 0) return null;
+    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+  }
+  return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+}
 function resolveHeaderUnit(content, unit, subunits) {
   const headings = extractHeadings(content);
   const match = headings.find((h) => h.slug === unit.slug && h.level === unit.level);
@@ -8742,6 +8867,10 @@ function resolveUnit(content, ref) {
       const found = resolveJsonPointer(content, unit.pointer);
       return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
     }
+    case "element":
+      return resolveElementUnit(content, unit, subunits);
+    case "matrix":
+      return resolveMatrixUnit(content, unit, subunits);
     default:
       return assertNever(unit, "knowledge unit kind");
   }
@@ -8920,6 +9049,12 @@ async function writeOnce(root, t, bytes, o = {}) {
   }
 }
 
+// iNNfo/packages/innfo-core/src/changeset/parser.ts
+var import_yaml8 = __toESM(require_dist(), 1);
+
+// iNNfo/packages/innfo-core/src/changeset/serializer.ts
+var import_yaml9 = __toESM(require_dist(), 1);
+
 // iNNfo/packages/innfo-core/src/console/citations.ts
 var EXCERPT_CHAR_CAP = 500;
 var AGENT_MODIFICATION_CONCEPT = "NN Agent Modification";
@@ -8981,6 +9116,10 @@ function headingMatcher(ref) {
     case "row":
     case "pointer":
       return (h) => h.slug === ref.slug;
+    case "element":
+      return (h) => h.slug === ref.slug || h.element === unit.slug;
+    case "matrix":
+      return (h) => h.slug === ref.slug || h.slug === unit.matrixSlug;
     default:
       return assertNever(unit, "knowledge unit kind");
   }
@@ -8995,6 +9134,10 @@ function anchorOf(ref) {
       return ref.slug ?? unit.id;
     case "pointer":
       return unit.pointer;
+    case "element":
+      return ref.slug ?? unit.slug;
+    case "matrix":
+      return ref.slug ?? unit.matrixSlug;
     default:
       return assertNever(unit, "knowledge unit kind");
   }

@@ -110,7 +110,7 @@ function procedureIdOf(basename) {
   return displayStem(baseOf(basename)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
-var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar)(?:_|$)/i;
+var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar|changes)(?:_|$)/i;
 function segmentsOf(path) {
   return path.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
@@ -128,6 +128,8 @@ function roleOf(i) {
       return "lineage-record";
     case "sidecar":
       return "sidecar";
+    case "changes":
+      return "changeset";
     case "procedures":
       return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
     case "workspace":
@@ -141,7 +143,7 @@ function roleOf(i) {
 function isExcludedPath(path) {
   const segs = segmentsOf(path);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
-  return segs.some((s) => s === "staging" || s.startsWith(".") && s !== "..");
+  return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
 function familyOf(path) {
   const normalized = path.replace(/\\/g, "/");

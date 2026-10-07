@@ -756,6 +756,8 @@ var require_skills_commands = __commonJS({
     var { registerMcpAuto } = require_mcp_config_adapter();
     var DEFAULT_MANIFEST_URL = "https://cognnitive.com/use/manifest.md";
     var FALLBACK_MANIFEST_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/docs/use/manifest.md";
+    var RETIRED_SKILL_REPOS = ["cogNNitive/cogNNitive"];
+    var RETIRED_REPO_NOTICE = 'Your install points at the retired repo cogNNitive/cogNNitive (404). Back up ~/.agents/bootstrap-state.json and ~/.agents/skills/, then re-bootstrap: tell your agent "I want to use https://cognnitive.com/use". Do NOT downgrade to older public pins \u2014 they lack nn-upgrade and skills-manager.js.';
     var DEFAULT_SKILLS_DIR = path2.join(os.homedir(), ".agents", "skills");
     var DEFAULT_BLUEPRINTS_DIR = path2.join(os.homedir(), ".agents", "bluepriNNts");
     var DEFAULT_MCP_DIR = path2.join(os.homedir(), ".agents", "mcp");
@@ -828,6 +830,23 @@ var require_skills_commands = __commonJS({
     function saveState(file, state) {
       saveJsonAtomic(file, state, 2);
     }
+    function isRetiredPin(item) {
+      return !!item && RETIRED_SKILL_REPOS.includes(item.repo);
+    }
+    function warnOnRetiredPins(pins) {
+      if ((pins || []).some(isRetiredPin)) {
+        console.log(`
+NOTICE (retired repo): ${RETIRED_REPO_NOTICE}
+`);
+      }
+    }
+    function withRetiredHint(item, err) {
+      if (isRetiredPin(item) && /status:\s*404|Failed to (fetch|download).*404/.test(err.message)) {
+        return new Error(`${err.message}
+${RETIRED_REPO_NOTICE}`);
+      }
+      return err;
+    }
     function runTar(args, cwd) {
       return spawnSync("tar", args, { cwd, encoding: "utf-8" });
     }
@@ -858,7 +877,11 @@ var require_skills_commands = __commonJS({
       try {
         const tarball = path2.join(tmpRoot, "skill.tar.gz");
         const url = `https://codeload.github.com/${skill.repo}/tar.gz/${skill.commit}`;
-        await downloadFile(url, tarball);
+        try {
+          await downloadFile(url, tarball);
+        } catch (err) {
+          throw withRetiredHint(skill, err);
+        }
         const extractDir = path2.join(tmpRoot, "x");
         extractTarball(tarball, extractDir);
         const repoRoot = findRepoRoot(extractDir);
@@ -914,7 +937,11 @@ var require_skills_commands = __commonJS({
       try {
         const tarball = path2.join(tmpRoot, "tmpl.tar.gz");
         const url = `https://codeload.github.com/${template.repo}/tar.gz/${template.commit}`;
-        await downloadFile(url, tarball);
+        try {
+          await downloadFile(url, tarball);
+        } catch (err) {
+          throw withRetiredHint(template, err);
+        }
         const extractDir = path2.join(tmpRoot, "x");
         extractTarball(tarball, extractDir);
         const repoRoot = findRepoRoot(extractDir);
@@ -1037,6 +1064,7 @@ var require_skills_commands = __commonJS({
     async function cmdStatus(args) {
       const manifestRaw = await fetchManifestString();
       const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
+      warnOnRetiredPins([...skills, ...blueprints]);
       const state = loadState(args.stateFile);
       const rows = [];
       const outdatedSkills = [];
@@ -1683,7 +1711,11 @@ Projected skills to agent directories:`);
       cmdInstall,
       cmdUpdate,
       cmdSync,
-      cmdBootstrap
+      cmdBootstrap,
+      RETIRED_SKILL_REPOS,
+      RETIRED_REPO_NOTICE,
+      isRetiredPin,
+      withRetiredHint
     };
   }
 });

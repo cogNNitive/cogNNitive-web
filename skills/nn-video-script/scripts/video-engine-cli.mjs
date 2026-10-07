@@ -695,18 +695,37 @@ function printDryRun(result) {
 const FLAG_SPEC = {
   boolean: ['dry-run', 'allow-mock'],
   value: [
-    'output', 'out', 'script', 'manifest', 'fps', 'width', 'height', 'concurrency', 'port',
+    'output', 'out', 'script', 'manifest', 'fps', 'width', 'height', 'format', 'concurrency', 'port',
     'cache-dir', 'approval', 'image-model', 'tts-model', 'avatar-model',
   ],
   repeatable: ['allow-model'],
 };
 
+/** Named aspect presets: --format resolves to width/height unless explicit flags win. */
+export const FORMAT_PRESETS = {
+  '16:9': { width: 1920, height: 1080 },
+  '9:16': { width: 1080, height: 1920 },
+  '1:1': { width: 1080, height: 1080 },
+};
+
+/** @param {{ format?: string, width?: string, height?: string }} flags */
+export function resolveFormatSize(flags) {
+  const preset = flags.format ? FORMAT_PRESETS[flags.format] : null;
+  if (flags.format && !preset) {
+    throw new Error(`Unknown --format "${flags.format}" (expected 16:9, 9:16 or 1:1).`);
+  }
+  return {
+    width: flags.width ? Number(flags.width) : preset?.width,
+    height: flags.height ? Number(flags.height) : preset?.height,
+  };
+}
+
 const USAGE = [
   'Usage: node video-engine-cli.mjs <compile|render|preview> [options]',
-  '  compile <script.md> [--output manifest.json] [--fps n] [--width n] [--height n] [--cache-dir dir]',
+  '  compile <script.md> [--output manifest.json] [--fps n] [--width n] [--height n] [--format 16:9|9:16|1:1] [--cache-dir dir]',
   '          [--dry-run] [--approval approved.json] [--allow-model name]...',
   '          [--image-model id] [--tts-model id] [--avatar-model id]',
-  '  render  <script.md|manifest.json> --output master.mp4 [--fps n] [--concurrency n] [--cache-dir dir]',
+  '  render  <script.md|manifest.json> --output master.mp4 [--fps n] [--width n] [--height n] [--format 16:9|9:16|1:1] [--concurrency n] [--cache-dir dir]',
   '          [--allow-mock] [--approval approved.json] [--allow-model name]... [--image-model id] [--tts-model id] [--avatar-model id]',
   '  preview <script.md|manifest.json> [--port n]',
   '  --dry-run (compile only): list uncached billable work and the estimated total; spends and writes nothing.',
@@ -747,12 +766,13 @@ async function main() {
         console.error(USAGE);
         process.exit(1);
       }
+      const size = resolveFormatSize(args);
       const result = await compileVideo({
         scriptPath,
         outputPath: args.output || args.out,
         fps: args.fps ? Number(args.fps) : undefined,
-        width: args.width ? Number(args.width) : undefined,
-        height: args.height ? Number(args.height) : undefined,
+        width: size.width,
+        height: size.height,
         cacheDir: args['cache-dir'],
         dryRun: Boolean(args['dry-run']),
         allowModels: args.allowModels,
@@ -777,11 +797,18 @@ async function main() {
         process.exit(1);
       }
       const isManifest = target.endsWith('.json');
+      const renderSize = resolveFormatSize(args);
+      if (isManifest && (renderSize.width || renderSize.height)) {
+        console.error(`❌ [video-engine-cli] --width/--height/--format only apply when rendering from a script; re-compile the manifest instead.`);
+        process.exit(1);
+      }
       const result = await renderVideo({
         scriptPath: isManifest ? undefined : target,
         manifestPath: isManifest ? target : undefined,
         outputVideoPath: output,
         fps: args.fps ? Number(args.fps) : undefined,
+        width: renderSize.width,
+        height: renderSize.height,
         concurrency: args.concurrency ? Number(args.concurrency) : undefined,
         cacheDir: args['cache-dir'],
         allowModels: args.allowModels,

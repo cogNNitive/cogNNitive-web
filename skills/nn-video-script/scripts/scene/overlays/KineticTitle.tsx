@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 import { resolveKineticTitleLayout } from '../kinetic-title-layout.mjs';
 
 const THEME: Record<string, { color: string; background: string }> = {
@@ -17,6 +17,8 @@ const THEME: Record<string, { color: string; background: string }> = {
 
 export const KineticTitle: React.FC<{ config: Record<string, unknown>; fps?: number }> = ({ config }) => {
   const frame = useCurrentFrame();
+  const { width } = useVideoConfig();
+  const s = width / 1920;
   const heading = (config.heading as string) || '';
   const subheading = (config.subheading as string) || '';
   const theme = THEME[(config.theme as string) || 'dark'] || THEME.dark;
@@ -28,9 +30,10 @@ export const KineticTitle: React.FC<{ config: Record<string, unknown>; fps?: num
   const layout = resolveKineticTitleLayout(config);
 
   const scale = interpolate(frame, [0, 12], [0.85, 1], { extrapolateRight: 'clamp' });
+  const headingSize = (layout.big ? layout.headingSize : fontSize) * s;
 
   return (
-    <AbsoluteFill style={{ justifyContent: layout.justifyContent, alignItems: 'center', padding: layout.big ? '48px 0' : 0 }}>
+    <AbsoluteFill style={{ justifyContent: layout.justifyContent, alignItems: 'center', padding: layout.big ? `${48 * s}px 0` : 0 }}>
       <div
         style={{
           transform: `scale(${scale})`,
@@ -38,15 +41,15 @@ export const KineticTitle: React.FC<{ config: Record<string, unknown>; fps?: num
           color: theme.color,
           fontFamily,
           ...(stroke ? { WebkitTextStroke: `1px ${stroke}` } : {}),
-          padding: '32px 56px',
+          padding: `${32 * s}px ${56 * s}px`,
           textAlign: 'center',
           maxWidth: layout.maxWidth,
           textShadow: layout.textShadow,
           textWrap: layout.textWrap,
         }}
       >
-<        <div style={{ fontSize: layout.big ? layout.headingSize : fontSize, fontWeight: fontWeight, lineHeight: layout.big ? 1.08 : undefined }}>{heading}</div>
-        {subheading ? <div style={{ fontSize: layout.subheadingSize, opacity: 0.85 }}>{subheading}</div> : null}
+        <div style={{ fontSize: headingSize, fontWeight, lineHeight: layout.big ? 1.08 : undefined }}>{heading}</div>
+        {subheading ? <div style={{ fontSize: layout.subheadingSize * s, opacity: 0.85 }}>{subheading}</div> : null}
       </div>
     </AbsoluteFill>
   );

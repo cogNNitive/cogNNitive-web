@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-7-2"
+blueprint_version: "V_0-7-3"
 title: "Video App"
 procedures:
   - id: "generate-video-script"
@@ -80,7 +80,17 @@ description:: Master voiceover track of the video.
 ## NN Field Definition: master
 concept:: Video
 type:: video
-description:: Rendered video file of the video.
+description:: Rendered horizontal (16:9) video file of the video.
+
+## NN Field Definition: master_vertical
+concept:: Video
+type:: video
+description:: Rendered vertical (9:16) video file for Shorts/Reels/TikTok. Native `--format 9:16` render preferred; ffmpeg reframe fallback allowed.
+
+## NN Field Definition: formats
+concept:: Video
+type:: string
+description:: Rendered aspect formats for this video (e.g. 16:9, 9:16). Declared on the Series `series:` block; defaults to 16:9.
 
 ## NN Field Definition: status
 concept:: Video

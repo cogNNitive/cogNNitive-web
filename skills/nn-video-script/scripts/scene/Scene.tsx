@@ -60,7 +60,8 @@ export const Scene: React.FC<{
   audio?: AudioBinding[];
   overlays?: Overlay[];
 }> = ({ scene, audio = [], overlays = [] }) => {
-  const { fps } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
+  const s = width / 1920;
   const props = scene.props || {};
 
   const layers = drawableLayers(props);
@@ -82,10 +83,10 @@ export const Scene: React.FC<{
               alignItems: 'center',
               color: '#ffffff',
               fontFamily: 'sans-serif',
-              fontSize: 96,
+              fontSize: 96 * s,
               fontWeight: 800,
               textAlign: 'center',
-              padding: 80,
+              padding: 80 * s,
             }}
           >
             {title}

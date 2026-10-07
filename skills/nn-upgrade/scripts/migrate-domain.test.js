@@ -16,7 +16,7 @@ const { spawnSync } = require('node:child_process')
 const SCRIPT_DIR = __dirname
 const MIGRATE_CLI = path.join(SCRIPT_DIR, 'migrate-domain.js')
 const BACKUP_CLI = path.join(SCRIPT_DIR, 'backup-workspace.js')
-const { isOpaqueFile, removeEmptyDirsBottomUp } = require('./migrate-domain.js')
+const { isOpaqueFile, removeEmptyDirsBottomUp, freezeDomainSlugs } = require('./migrate-domain.js')
 const TARGETS_FIXTURE_DIR = path.resolve(
   SCRIPT_DIR,
   '../../../iNNfo/packages/innfo-core/tests/legacy/fixtures/targets',
@@ -360,6 +360,65 @@ async function runTests() {
         badRestoreRes.stderr.includes('Backup domain mismatch') || badRestoreRes.stdout.includes('Backup domain mismatch'),
       )
       console.log('✔ restore refuses backups created for different domain directories')
+    }
+
+    // 14. freezeDomainSlugs scans and freezes unfrozen Level-3 models
+    {
+      const freezeDir = path.join(tmpRoot, 'domain-freeze')
+      const kDir = path.join(freezeDir, 'kNNowledge')
+      fs.mkdirSync(kDir, { recursive: true })
+
+      const modelPath = path.join(kDir, 'product_V_0-1-0_NN.md')
+      fs.writeFileSync(
+        modelPath,
+        `---
+spec_version: "V_0-4-0"
+level: 3
+title: "Product"
+parent_spec:
+  name: "business"
+  url: "https://example.com/business.md"
+knowledge_version: "V_0-1-0"
+---
+
+# NN Item
+
+## NN Item: Widget One
+field:: value
+
+## NN Item: Widget Two
+field:: other
+`,
+        'utf8',
+      )
+
+      // Dry run via function
+      const dryResult = await freezeDomainSlugs(freezeDir, { dryRun: true })
+      assert.strictEqual(dryResult.scanned, 1)
+      assert.strictEqual(dryResult.modified, 1)
+      assert.strictEqual(dryResult.frozenModels[0].frozenCount, 2)
+      // verify file not modified yet
+      assert.ok(!fs.readFileSync(modelPath, 'utf8').includes('slug::'))
+
+      // Apply via function
+      const applyResult = await freezeDomainSlugs(freezeDir, { dryRun: false })
+      assert.strictEqual(applyResult.modified, 1)
+      const updatedContent = fs.readFileSync(modelPath, 'utf8')
+      assert.ok(updatedContent.includes('slug:: widget-one'))
+      assert.ok(updatedContent.includes('slug:: widget-two'))
+
+      // Second run is a noop
+      const noopResult = await freezeDomainSlugs(freezeDir, { dryRun: false })
+      assert.strictEqual(noopResult.modified, 0)
+
+      // Test CLI flag --freeze-slugs
+      const cliRes = runCli(['--domain-dir', freezeDir, '--freeze-slugs', '--json'])
+      assert.strictEqual(cliRes.status, 0)
+      const cliJson = JSON.parse(cliRes.stdout)
+      assert.strictEqual(cliJson.scanned, 1)
+      assert.strictEqual(cliJson.modified, 0) // already frozen
+
+      console.log('✔ freezeDomainSlugs routine scans Level-3 models and freezes all unfrozen slugs in place')
     }
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true })

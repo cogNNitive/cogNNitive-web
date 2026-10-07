@@ -8020,7 +8020,7 @@ function segmentsOf(path3) {
 function isExcludedPath(path3) {
   const segs = segmentsOf(path3);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
-  return segs.some((s) => s === "staging" || s.startsWith(".") && s !== "..");
+  return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
 var WIN32_PATH_LIMIT = 259;
 function checkPathBudget(absPath, platform) {

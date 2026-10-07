@@ -5,9 +5,11 @@
  */
 
 import React from 'react';
-import { AbsoluteFill } from 'remotion';
+import { AbsoluteFill, useVideoConfig } from 'remotion';
 
 export const ConceptCallout: React.FC<{ config: Record<string, unknown> }> = ({ config }) => {
+  const { width, height } = useVideoConfig();
+  const s = width / 1920;
   const label = (config.label as string) || '';
   const description = (config.description as string) || '';
   const highlight = (config.highlightColor as string) || '#eab308';
@@ -15,21 +17,21 @@ export const ConceptCallout: React.FC<{ config: Record<string, unknown> }> = ({ 
   const fontSize = Number(config.fontSize) || 34;
 
   return (
-    <AbsoluteFill style={{ padding: 64, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+    <AbsoluteFill style={{ padding: 64 * s, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
       <div
         style={{
           background: 'rgba(10,10,15,0.85)',
-          borderTop: `6px solid ${highlight}`,
-          padding: '20px 28px',
+          borderTop: `${Math.max(4, 6 * s)}px solid ${highlight}`,
+          padding: `${20 * s}px ${28 * s}px`,
           color: '#fff',
           fontFamily,
-          maxWidth: '55%',
+          maxWidth: height > width ? '90%' : '55%',
         }}
       >
-        <div style={{ fontSize, fontWeight: 700, color: highlight, textTransform: 'uppercase', letterSpacing: 2 }}>
+        <div style={{ fontSize: fontSize * s, fontWeight: 700, color: highlight, textTransform: 'uppercase', letterSpacing: 2 * s }}>
           {label}
         </div>
-        {description ? <div style={{ fontSize: 28, marginTop: 8 }}>{description}</div> : null}
+        {description ? <div style={{ fontSize: 28 * s, marginTop: 8 * s }}>{description}</div> : null}
       </div>
     </AbsoluteFill>
   );

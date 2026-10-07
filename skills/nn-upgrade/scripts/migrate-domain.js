@@ -17,6 +17,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
+const { pathToFileURL } = require('node:url')
 const { backupWorkspace, sha256 } = require('./backup-workspace.js')
 const {
   detectLegacy,
@@ -24,6 +25,15 @@ const {
   planLayoutMigration,
   cognitivizePreservedBodies,
 } = require('./lib/legacy-migrate.generated.cjs')
+
+let _corePromise = null
+function loadInnfoCore() {
+  if (!_corePromise) {
+    const corePath = path.resolve(__dirname, '../../../iNNfo/packages/innfo-core/dist/index.js')
+    _corePromise = import(pathToFileURL(corePath).href)
+  }
+  return _corePromise
+}
 
 const OPAQUE_EXTENSIONS = new Set([
   '.png',
@@ -533,6 +543,88 @@ async function runLayoutStep(ws, reader, opts, renamePlan) {
   }
 }
 
+/**
+ * Scans a domain directory for Level 3 models and freezes any unfrozen element slugs.
+ *
+ * @param {string} domainDir
+ * @param {{ dryRun?: boolean }} [options]
+ * @returns {Promise<{ scanned: number, modified: number, frozenModels: Array<{ file: string, frozenCount: number, slugs: string[] }> }>}
+ */
+async function freezeDomainSlugs(domainDir, options = {}) {
+  const dryRun = options.dryRun === true
+  const { parseKnowledge, serializeKnowledge, freeze_slugs } = await loadInnfoCore()
+  const ws = path.resolve(domainDir)
+  const candidateDirs = [path.join(ws, 'kNNowledge'), path.join(ws, 'models'), ws]
+
+  const markdownFiles = new Set()
+  for (const d of candidateDirs) {
+    if (fs.existsSync(d) && fs.statSync(d).isDirectory()) {
+      const entries = fs.readdirSync(d, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.md')) {
+          if (d === ws && (entry.name.startsWith('domaiNN_') || entry.name.startsWith('workspace_'))) {
+            continue
+          }
+          markdownFiles.add(path.join(d, entry.name))
+        }
+      }
+    }
+  }
+
+  let scanned = 0
+  let modified = 0
+  const frozenModels = []
+
+  for (const file of markdownFiles) {
+    const rel = path.relative(ws, file).replace(/\\/g, '/')
+    let content
+    try {
+      content = fs.readFileSync(file, 'utf-8')
+    } catch {
+      continue
+    }
+
+    let parsed
+    try {
+      parsed = parseKnowledge(content)
+    } catch {
+      continue
+    }
+
+    const fm = parsed.frontmatter || {}
+    const isLevel3 = fm.level === 3 || fm.role === 'knowledge' || Boolean(fm.parent_spec)
+    if (!isLevel3) continue
+
+    scanned++
+    let unfrozenCount = 0
+    for (const [, elements] of parsed.elements.entries()) {
+      for (const el of elements) {
+        if (!el.slugExplicit) {
+          unfrozenCount++
+        }
+      }
+    }
+
+    if (unfrozenCount > 0) {
+      freeze_slugs(parsed)
+      const frozenSlugs = []
+      for (const [, elements] of parsed.elements.entries()) {
+        for (const el of elements) {
+          if (el.slug) frozenSlugs.push(el.slug)
+        }
+      }
+      modified++
+      frozenModels.push({ file: rel, frozenCount: unfrozenCount, slugs: frozenSlugs })
+      if (!dryRun) {
+        const serialized = serializeKnowledge(parsed)
+        fs.writeFileSync(file, serialized, 'utf-8')
+      }
+    }
+  }
+
+  return { scanned, modified, frozenModels }
+}
+
 async function main() {
   const isJson = process.argv.includes('--json')
   const isApply = process.argv.includes('--apply')
@@ -557,6 +649,26 @@ async function main() {
   if (!fs.existsSync(ws) || !fs.statSync(ws).isDirectory()) {
     console.error(`Error: Domain directory not found: ${ws}`)
     process.exit(1)
+  }
+
+  // Freeze slugs flow
+  if (process.argv.includes('--freeze-slugs')) {
+    const dryRun = !isApply
+    const result = await freezeDomainSlugs(ws, { dryRun })
+    if (isJson) {
+      console.log(JSON.stringify(result, null, 2))
+    } else {
+      console.log(dryRun ? 'Domain Slug Freezing (DRY RUN):' : 'Domain Slug Freezing (APPLIED):')
+      console.log(`  Scanned: ${result.scanned} models`)
+      console.log(`  Models with unfrozen slugs: ${result.modified}`)
+      for (const m of result.frozenModels) {
+        console.log(`    ${m.file}: froze ${m.frozenCount} slugs (${m.slugs.join(', ')})`)
+      }
+      if (dryRun && result.modified > 0) {
+        console.log('\nRun with --apply to freeze slugs in place.')
+      }
+    }
+    return
   }
 
   // Restore flow
@@ -748,4 +860,5 @@ module.exports = {
   isOpaqueFile,
   removeEmptyDirsBottomUp,
   runRestore,
+  freezeDomainSlugs,
 }

@@ -7540,7 +7540,7 @@ function procedureIdOf(basename4) {
   return displayStem(baseOf(basename4)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
-var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar)(?:_|$)/i;
+var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar|changes)(?:_|$)/i;
 function segmentsOf(path4) {
   return path4.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
@@ -7558,6 +7558,8 @@ function roleOf(i) {
       return "lineage-record";
     case "sidecar":
       return "sidecar";
+    case "changes":
+      return "changeset";
     case "procedures":
       return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
     case "workspace":
@@ -7571,7 +7573,7 @@ function roleOf(i) {
 function isExcludedPath(path4) {
   const segs = segmentsOf(path4);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
-  return segs.some((s) => s === "staging" || s.startsWith(".") && s !== "..");
+  return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
 function familyOf(path4) {
   const normalized = path4.replace(/\\/g, "/");
@@ -7877,7 +7879,12 @@ function resolveUnitPath(rawPath) {
   const isMd = /\.md$/i.test(forward);
   const isCsv = /\.csv$/i.test(forward);
   const isJson = /\.json$/i.test(forward);
-  if (!isMd && !isCsv && !isJson) return null;
+  if (!isMd && !isCsv && !isJson) {
+    if (new RegExp(`^${SLUG}$`).test(trimmed)) {
+      return { filePath: trimmed, kind: "model" };
+    }
+    return null;
+  }
   if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
   return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
 }
@@ -7919,6 +7926,54 @@ function parseKnowledgeUnitRef(input) {
     decoded.push(text.trim());
   }
   const [unitRaw, ...subunits] = decoded;
+  if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
+    if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
+    if (subunits.length === 2) {
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: unitRaw,
+        rowSlug: subunits[0],
+        colSlug: subunits[1]
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename(resolved.filePath),
+        slug: unitRaw,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    if (subunits.length === 0 && /(?:^matrix-|-matrix$)/i.test(unitRaw)) {
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: unitRaw
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename(resolved.filePath),
+        slug: unitRaw,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    const unit2 = {
+      kind: "element",
+      slug: unitRaw
+    };
+    return {
+      filePath: resolved.filePath,
+      fileName: basename(resolved.filePath),
+      slug: unitRaw,
+      kind: "model",
+      unit: unit2,
+      subunits,
+      raw: clean
+    };
+  }
   const isCsv = /\.csv$/i.test(resolved.filePath);
   if (isCsv) {
     if (resolved.kind === "model") return null;
@@ -7962,6 +8017,17 @@ function serializeKnowledgeUnitRef(filePath, unit, subunits = []) {
       break;
     case "pointer":
       return `${filePath}@${unit.pointer.replace(/%/g, "%25").replace(/&/g, "%26")}`;
+    case "element":
+      head = unit.slug;
+      break;
+    case "matrix": {
+      const row = unit.rowSlug ?? subunits[0];
+      const col = unit.colSlug ?? subunits[1];
+      if (row && col) {
+        return `${filePath}@${unit.matrixSlug}&${normalizeName(row)}&${normalizeName(col)}`;
+      }
+      return `${filePath}@${unit.matrixSlug}`;
+    }
     default:
       return assertNever(unit, "knowledge unit kind");
   }
@@ -8109,6 +8175,76 @@ function parseCsvTable(content, options = {}) {
 
 // iNNfo/packages/innfo-core/src/unitResolve.ts
 var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
+function resolveElementUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  let matchedHeading;
+  for (const h of headings) {
+    if (h.level === 2) {
+      const section2 = resolveHeadingSection(content, h.slug);
+      if (section2) {
+        for (let i = section2.startLine + 1; i < section2.endLine; i++) {
+          const m = lines[i].match(/^\s*slug\s*::\s*([^\s]+)/);
+          if (m && m[1].toLowerCase() === unit.slug.toLowerCase()) {
+            matchedHeading = h;
+            break;
+          }
+          if (/^#{1,6}\s/.test(lines[i])) break;
+        }
+      }
+    }
+    if (matchedHeading) break;
+  }
+  if (!matchedHeading) {
+    matchedHeading = headings.find(
+      (h) => h.slug === unit.slug || h.element && slugifyHeading(h.element) === unit.slug || h.slug.endsWith(`--${unit.slug}`)
+    );
+  }
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  if (subunits.length === 0) {
+    return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+  }
+  if (subunits.length === 1) {
+    const owned = sectionOwnLines(content, matchedHeading.slug);
+    if (!owned) return null;
+    const wanted = normalizeName(subunits[0]);
+    const found = [];
+    for (const i of owned) {
+      const field = lines[i].match(FIELD_LINE);
+      if (field && normalizeName(field[1]) === wanted) found.push(i);
+    }
+    return found.length > 0 ? { kind: "field", lines: found } : null;
+  }
+  return null;
+}
+function resolveMatrixUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  const matchedHeading = headings.find(
+    (h) => h.slug === unit.matrixSlug || h.slug === `matrices--${unit.matrixSlug}` || h.text.toLowerCase().includes(unit.matrixSlug.toLowerCase())
+  );
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  const row = unit.rowSlug ?? subunits[0];
+  const col = unit.colSlug ?? subunits[1];
+  if (row && col) {
+    const table = parseMarkdownTable(lines.slice(section.startLine, section.endLine));
+    if (!table) return null;
+    const wantedRow = normalizeName(row);
+    const wantedCol = normalizeName(col);
+    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
+    if (rowIdx === -1) return null;
+    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
+    if (colIdx === -1) return null;
+    const value = table.rows[rowIdx][colIdx];
+    if (value === void 0) return null;
+    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+  }
+  return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+}
 function resolveHeaderUnit(content, unit, subunits) {
   const headings = extractHeadings(content);
   const match = headings.find((h) => h.slug === unit.slug && h.level === unit.level);
@@ -8184,6 +8320,10 @@ function resolveUnit(content, ref) {
       const found = resolveJsonPointer(content, unit.pointer);
       return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
     }
+    case "element":
+      return resolveElementUnit(content, unit, subunits);
+    case "matrix":
+      return resolveMatrixUnit(content, unit, subunits);
     default:
       return assertNever(unit, "knowledge unit kind");
   }
@@ -9258,8 +9398,77 @@ function validateUnitPointer(ref, referringPath, path4, resolver, diagnostics, c
     case "pointer":
       validatePointerUnit(ref, unit.pointer, resolved, path4, diagnostics, site);
       return;
+    case "element":
+      validateElementUnit(ref, unit.slug, subunits, resolved, path4, diagnostics, site);
+      return;
+    case "matrix":
+      validateMatrixUnit(ref, unit.matrixSlug, unit.rowSlug, unit.colSlug, resolved, path4, diagnostics, site);
+      return;
     default:
       return assertNever(unit, "knowledge unit kind");
+  }
+}
+function validateElementUnit(ref, slug, subunits, resolved, path4, diagnostics, site) {
+  if (!resolved.content) return;
+  const unitResult = resolveUnit(resolved.content, ref);
+  if (!unitResult) {
+    if (subunits.length > 0) {
+      const baseRef = { ...ref, subunits: [] };
+      const baseResult = resolveUnit(resolved.content, baseRef);
+      if (!baseResult) {
+        diagnostics.push({
+          path: path4,
+          message: `Source reference "${ref.raw}" points at element "@${slug}" which does not exist in "${ref.fileName}"`,
+          severity: "error",
+          code: "KU_UNKNOWN_ELEMENT_SLUG",
+          site,
+          target: ref.filePath
+        });
+      } else {
+        diagnostics.push({
+          path: path4,
+          message: `Source reference "${ref.raw}" points at field "&${subunits[0]}" which does not exist in element "@${slug}" of "${ref.fileName}"`,
+          severity: "error",
+          code: "KU_FIELD_OUTSIDE_SECTION",
+          site,
+          target: ref.filePath
+        });
+      }
+    } else {
+      diagnostics.push({
+        path: path4,
+        message: `Source reference "${ref.raw}" points at element "@${slug}" which does not exist in "${ref.fileName}"`,
+        severity: "error",
+        code: "KU_UNKNOWN_ELEMENT_SLUG",
+        site,
+        target: ref.filePath
+      });
+    }
+  }
+}
+function validateMatrixUnit(ref, matrixSlug, rowSlug, colSlug, resolved, path4, diagnostics, site) {
+  if (!resolved.content) return;
+  const unitResult = resolveUnit(resolved.content, ref);
+  if (!unitResult) {
+    if (rowSlug && colSlug) {
+      diagnostics.push({
+        path: path4,
+        message: `Source reference "${ref.raw}" points at matrix cell "&${rowSlug}&${colSlug}" which does not resolve in "${ref.fileName}"`,
+        severity: "error",
+        code: "KU_UNKNOWN_MATRIX_CELL",
+        site,
+        target: ref.filePath
+      });
+    } else {
+      diagnostics.push({
+        path: path4,
+        message: `Source reference "${ref.raw}" points at matrix "@${matrixSlug}" which does not exist in "${ref.fileName}"`,
+        severity: "error",
+        code: "KU_UNKNOWN_MATRIX_SLUG",
+        site,
+        target: ref.filePath
+      });
+    }
   }
 }
 function validatePointerUnit(ref, pointer, resolved, path4, diagnostics, site) {

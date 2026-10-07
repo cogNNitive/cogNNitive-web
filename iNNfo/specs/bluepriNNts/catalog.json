@@ -61,6 +61,18 @@
         }
       ]
     },
+    "changes": {
+      "name": "changes",
+      "adopted": "V_0-1-0",
+      "versions": [
+        {
+          "blueprint_version": "V_0-1-0",
+          "spec_version": "V_0-4-0",
+          "title": "Changeset Blueprint",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
+        }
+      ]
+    },
     "design-presets": {
       "name": "design-presets",
       "adopted": "V_0-3-0",
@@ -195,10 +207,10 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-7-2",
+      "adopted": "V_0-7-3",
       "versions": [
         {
-          "blueprint_version": "V_0-7-2",
+          "blueprint_version": "V_0-7-3",
           "spec_version": "V_0-3-0",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
