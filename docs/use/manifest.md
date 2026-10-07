@@ -33,10 +33,10 @@ agent-bootstrap:
         - name: innfo-mcp
           repo: cogNNitive/cogNNitive-web
           path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
-          version: "0.14.2"
-          ref: "innfo-mcp-v0.14.2"
-          commit: "6f15a85e0ce4f9ecb01c8ae3d9ac57ee8c89774f"
-          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/6f15a85e0ce4f9ecb01c8ae3d9ac57ee8c89774f/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
+          version: "0.14.3"
+          ref: "innfo-mcp-v0.14.3"
+          commit: "25ff1451a31863939dfec46d4f5857d58f449174"
+          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/25ff1451a31863939dfec46d4f5857d58f449174/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
     - name: nn-preflight
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-preflight
