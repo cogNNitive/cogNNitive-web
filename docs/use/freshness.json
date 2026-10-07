@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-07T20:10:37.141Z",
-  "head": "bc07cdc0ea7f29ae95dbf6b57121211495860033",
+  "generatedAt": "2026-10-07T20:32:46.829Z",
+  "head": "22ec58a74636b0cb81f8dc1466ecf72c092b8a24",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -65,7 +65,7 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.14.2",
       "pinnedTagDate": "2026-10-05T11:45:50+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
         "iNNfo/packages/innfo-mcp/package.json",
