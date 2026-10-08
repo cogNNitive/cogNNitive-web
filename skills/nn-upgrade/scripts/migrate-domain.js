@@ -625,6 +625,156 @@ async function freezeDomainSlugs(domainDir, options = {}) {
   return { scanned, modified, frozenModels }
 }
 
+/**
+ * Migration routine: rewrites display-name based references to explicit slugs
+ * across all Level-3 models in a domain (D16 / Slice S4).
+ *
+ * @param {string} domainDir
+ * @param {{ dryRun?: boolean }} [options]
+ * @returns {Promise<{ scanned: number, modified: number, rewrittenModels: Array<{ file: string, rewrites: number }> }>}
+ */
+async function migrateDomainReferences(domainDir, options = {}) {
+  const dryRun = options.dryRun === true
+  const { parseKnowledge, serializeKnowledge, slugifyHeading } = await loadInnfoCore()
+  const ws = path.resolve(domainDir)
+  const candidateDirs = [path.join(ws, 'kNNowledge'), path.join(ws, 'models'), ws]
+
+  const markdownFiles = new Set()
+  for (const d of candidateDirs) {
+    if (fs.existsSync(d) && fs.statSync(d).isDirectory()) {
+      const entries = fs.readdirSync(d, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.md')) {
+          if (d === ws && (entry.name.startsWith('domaiNN_') || entry.name.startsWith('workspace_'))) {
+            continue
+          }
+          markdownFiles.add(path.join(d, entry.name))
+        }
+      }
+    }
+  }
+
+  // Pass 1: Parse all Level-3 models and build element slug lookup tables
+  const parsedModels = []
+  for (const file of markdownFiles) {
+    const rel = path.relative(ws, file).replace(/\\/g, '/')
+    let content
+    try {
+      content = fs.readFileSync(file, 'utf-8')
+    } catch {
+      continue
+    }
+
+    let parsed
+    try {
+      parsed = parseKnowledge(content)
+    } catch {
+      continue
+    }
+
+    const fm = parsed.frontmatter || {}
+    const isLevel3 = fm.level === 3 || fm.role === 'knowledge' || Boolean(fm.parent_spec)
+    if (!isLevel3) continue
+
+    // Map: lowerName -> slug, lowerNorm -> slug
+    const nameToSlug = new Map()
+    for (const [, elements] of parsed.elements.entries()) {
+      for (const el of elements) {
+        if (el.slug) {
+          nameToSlug.set(el.name.trim().toLowerCase(), el.slug)
+        }
+      }
+    }
+
+    parsedModels.push({
+      file,
+      rel,
+      parsed,
+      nameToSlug,
+    })
+  }
+
+  // Pass 2: Rewrite references within each model
+  let scanned = parsedModels.length
+  let modified = 0
+  const rewrittenModels = []
+
+  for (const item of parsedModels) {
+    const { file, rel, parsed, nameToSlug } = item
+    let modelRewrites = 0
+
+    // 2a. Rewrite matrix row/col cells
+    if (parsed.matrices) {
+      for (const matrix of parsed.matrices) {
+        for (const cell of matrix.cells) {
+          if (cell.row && nameToSlug.has(cell.row.trim().toLowerCase())) {
+            const resolvedSlug = nameToSlug.get(cell.row.trim().toLowerCase())
+            if (cell.row !== resolvedSlug) {
+              cell.row = resolvedSlug
+              modelRewrites++
+            }
+          }
+          if (cell.col && nameToSlug.has(cell.col.trim().toLowerCase())) {
+            const resolvedSlug = nameToSlug.get(cell.col.trim().toLowerCase())
+            if (cell.col !== resolvedSlug) {
+              cell.col = resolvedSlug
+              modelRewrites++
+            }
+          }
+        }
+      }
+    }
+
+    // 2b. Rewrite element fields (reference fields and [[Name]] wikilinks)
+    for (const [, elements] of parsed.elements.entries()) {
+      for (const el of elements) {
+        for (const [k, v] of Object.entries(el.fields)) {
+          if (typeof v === 'string') {
+            let newVal = v
+            // Rewrite wikilinks [[Target]] -> [[target-slug]]
+            newVal = newVal.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
+              const lowerTarget = target.trim().toLowerCase()
+              if (nameToSlug.has(lowerTarget)) {
+                const s = nameToSlug.get(lowerTarget)
+                if (target.trim() !== s) {
+                  modelRewrites++
+                  return `[[${s}${alias ?? ''}]]`
+                }
+              }
+              return match
+            })
+
+            // Rewrite bare scalar reference if exact match with an element name
+            const trimmedVal = newVal.trim()
+            if (!trimmedVal.startsWith('[[') && nameToSlug.has(trimmedVal.toLowerCase())) {
+              const s = nameToSlug.get(trimmedVal.toLowerCase())
+              if (trimmedVal !== s) {
+                newVal = s
+                modelRewrites++
+              }
+            }
+
+            if (newVal !== v) {
+              el.fields[k] = newVal
+            }
+          }
+        }
+      }
+    }
+
+    if (modelRewrites > 0) {
+      modified++
+      rewrittenModels.push({ file: rel, rewrites: modelRewrites })
+      if (!dryRun) {
+        const serialized = serializeKnowledge(parsed)
+        fs.writeFileSync(file, serialized, 'utf-8')
+      }
+    }
+  }
+
+  return { scanned, modified, rewrittenModels }
+}
+
 async function main() {
   const isJson = process.argv.includes('--json')
   const isApply = process.argv.includes('--apply')
@@ -666,6 +816,26 @@ async function main() {
       }
       if (dryRun && result.modified > 0) {
         console.log('\nRun with --apply to freeze slugs in place.')
+      }
+    }
+    return
+  }
+
+  // Migrate references flow (Slice S4 / D16)
+  if (process.argv.includes('--migrate-references')) {
+    const dryRun = !isApply
+    const result = await migrateDomainReferences(ws, { dryRun })
+    if (isJson) {
+      console.log(JSON.stringify(result, null, 2))
+    } else {
+      console.log(dryRun ? 'Domain Reference Migration (DRY RUN):' : 'Domain Reference Migration (APPLIED):')
+      console.log(`  Scanned: ${result.scanned} models`)
+      console.log(`  Models with rewritten references: ${result.modified}`)
+      for (const m of result.rewrittenModels) {
+        console.log(`    ${m.file}: rewritten ${m.rewrites} references`)
+      }
+      if (dryRun && result.modified > 0) {
+        console.log('\nRun with --apply to rewrite references in place.')
       }
     }
     return
@@ -861,4 +1031,5 @@ module.exports = {
   removeEmptyDirsBottomUp,
   runRestore,
   freezeDomainSlugs,
+  migrateDomainReferences,
 }

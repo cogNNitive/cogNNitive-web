@@ -73,15 +73,17 @@ export function parsePlanMarkdown(markdown) {
 
 /**
  * @param {string} approvalPath
- * @param {{ planHash: string, totalUsd: number, allowedModels: string[], allowModels?: string[] }} data
+ * @param {{ planHash: string, totalUsd: number, allowedModels: string[], allowModels?: string[], delegated?: boolean, delegatedPhrase?: string }} data
  */
-export function writeApproval(approvalPath, { planHash, totalUsd, allowedModels, allowModels = [] }) {
+export function writeApproval(approvalPath, { planHash, totalUsd, allowedModels, allowModels = [], delegated = false, delegatedPhrase = '' }) {
   const body = {
     plan_hash: planHash,
     totalUsd,
     approvedAt: new Date().toISOString(),
     allowedModels,
     allowModels,
+    delegated,
+    delegatedPhrase,
   };
   fs.writeFileSync(approvalPath, JSON.stringify(body, null, 2) + '\n', 'utf8');
 }
@@ -91,11 +93,14 @@ const isStrings = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string
 /**
  * Checks that an approval artifact exists, is well-formed, matches the current
  * script + models, and covers every `--allow-model` of this run.
- * @param {{ scriptContent: string, models?: Record<string, string | null | undefined>, approvalPath: string, allowModels?: string[] }} input
- * @returns {{ ok: true, approval: { planHash: string, totalUsd: number, allowedModels: string[], allowModels: string[], approvedAt?: string } }
- *   | { ok: false, reason: 'missing' | 'invalid' | 'mismatch' | 'unapproved-model', message: string }}
+ * A delegated approval (agent-relayed human phrase, no TTY) is accepted only
+ * when `allowDelegated` is true (workspace opt-in via
+ * `video-guard.json: allowDelegatedApproval`); otherwise it is refused.
+ * @param {{ scriptContent: string, models?: Record<string, string | null | undefined>, approvalPath: string, allowModels?: string[], allowDelegated?: boolean }} input
+ * @returns {{ ok: true, approval: { planHash: string, totalUsd: number, allowedModels: string[], allowModels: string[], approvedAt?: string, delegated?: boolean, delegatedPhrase?: string } }
+ *   | { ok: false, reason: 'missing' | 'invalid' | 'mismatch' | 'unapproved-model' | 'delegated-not-allowed', message: string }}
  */
-export function checkApproval({ scriptContent, models = {}, approvalPath, allowModels = [] }) {
+export function checkApproval({ scriptContent, models = {}, approvalPath, allowModels = [], allowDelegated = false }) {
   const hint = 'Review the plan, then a human runs: node scripts/approve-plan.mjs <asset_plan.md>.';
   if (!fs.existsSync(approvalPath)) {
     return { ok: false, reason: 'missing', message: 'No approved plan found at ' + approvalPath + '. ' + hint };
@@ -111,6 +116,16 @@ export function checkApproval({ scriptContent, models = {}, approvalPath, allowM
     raw.totalUsd >= 0 && isStrings(raw.allowedModels) && isStrings(raw.allowModels);
   if (!wellFormed) {
     return { ok: false, reason: 'invalid', message: 'Approval file ' + approvalPath + ' is incomplete or malformed. ' + hint };
+  }
+  if (raw.delegated === true && allowDelegated !== true) {
+    return {
+      ok: false,
+      reason: 'delegated-not-allowed',
+      message:
+        'Approval file ' + approvalPath + ' is a delegated (agent-relayed) approval, but this workspace does not ' +
+        'opt in (video-guard.json: allowDelegatedApproval). Either approve interactively with approve-plan.mjs ' +
+        'or set "allowDelegatedApproval": true in video-guard.json. ' + hint,
+    };
   }
   if (raw.plan_hash !== computePlanHash(scriptContent, models)) {
     return {
@@ -139,6 +154,8 @@ export function checkApproval({ scriptContent, models = {}, approvalPath, allowM
       allowedModels: raw.allowedModels,
       allowModels: raw.allowModels,
       approvedAt: raw.approvedAt,
+      delegated: raw.delegated === true,
+      delegatedPhrase: typeof raw.delegatedPhrase === 'string' ? raw.delegatedPhrase : '',
     },
   };
 }

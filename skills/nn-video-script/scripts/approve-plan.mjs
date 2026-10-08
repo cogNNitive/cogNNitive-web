@@ -3,12 +3,17 @@
 /**
  * skills/nn-video-script/scripts/approve-plan.mjs
  *
- * Usage: node approve-plan.mjs <asset_plan.md> [--allow-model <name>]...
+ * Usage: node approve-plan.mjs <asset_plan.md> [--allow-model <name>]... [--delegated "<human phrase>"]
  *
  * Writes `asset_plan.approved.json` next to the plan, recording the plan hash,
  * the estimated total, the approved model set and any `--allow-model` overrides.
  * This is a HUMAN act: it needs an interactive terminal and a typed confirmation,
- * and there is deliberately no `--yes` flag. Agents must never run it for the user.
+ * and there is deliberately no `--yes` flag. Agents must never run it for the user
+ * — EXCEPT with `--delegated "<exact human phrase>"`, which records an
+ * agent-relayed approval (the human's explicit chat phrase, stored verbatim in
+ * the approval file for audit). Delegated approvals are honored by compile /
+ * synthesize-avatar ONLY in workspaces that opt in with
+ * `video-guard.json: { "allowDelegatedApproval": true }` (default false).
  * (A process with file-write access can still hand-write the JSON; see
  * references/cost-guardrails.md for the residual risk.)
  *
@@ -24,10 +29,10 @@ import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
 /**
  * @param {string} planPath
- * @param {{ allowModels?: string[] }} [opts]
+ * @param {{ allowModels?: string[], delegatedPhrase?: string }} [opts]
  * @returns {{ approvalPath: string, planHash: string, totalUsd: number, models: string[] }}
  */
-export function approvePlan(planPath, { allowModels = [] } = {}) {
+export function approvePlan(planPath, { allowModels = [], delegatedPhrase = '' } = {}) {
   const resolved = path.resolve(planPath);
   if (!fs.existsSync(resolved)) throw new Error('Plan file not found: ' + resolved);
   const { planHash, totalUsd, models } = parsePlanMarkdown(fs.readFileSync(resolved, 'utf8'));
@@ -37,7 +42,14 @@ export function approvePlan(planPath, { allowModels = [] } = {}) {
     );
   }
   const approvalPath = path.join(path.dirname(resolved), APPROVAL_FILENAME);
-  writeApproval(approvalPath, { planHash, totalUsd, allowedModels: models, allowModels });
+  writeApproval(approvalPath, {
+    planHash,
+    totalUsd,
+    allowedModels: models,
+    allowModels,
+    delegated: delegatedPhrase.length > 0,
+    delegatedPhrase,
+  });
   return { approvalPath, planHash, totalUsd, models };
 }
 
@@ -63,7 +75,7 @@ export async function confirmApproval({ input, output, isTTY, expected }) {
 async function main() {
   let parsed;
   try {
-    parsed = parseArgs(process.argv.slice(2), { repeatable: ['allow-model'] });
+    parsed = parseArgs(process.argv.slice(2), { repeatable: ['allow-model'], value: ['delegated'] });
   } catch (err) {
     if (!(err instanceof CliUsageError)) throw err;
     console.error('Error: ' + err.message);
@@ -71,11 +83,26 @@ async function main() {
   }
   const planPath = parsed._[0];
   if (!planPath) {
-    console.error('Usage: node approve-plan.mjs <asset_plan.md> [--allow-model <name>]...   (human approval of the spend)');
+    console.error('Usage: node approve-plan.mjs <asset_plan.md> [--allow-model <name>]... [--delegated "<human phrase>"]   (human approval of the spend)');
     process.exit(1);
   }
+  const delegatedPhrase = typeof parsed.flags['delegated'] === 'string' ? parsed.flags['delegated'].trim() : '';
+  if (delegatedPhrase) {
+    // Delegated (agent-relayed) approval: no TTY. The human's explicit phrase is
+    // recorded verbatim for audit; enforcement happens at compile time, which only
+    // honors delegated approvals in opted-in workspaces.
+    try {
+      const res = approvePlan(planPath, { allowModels: parsed.flags['allow-model'] || [], delegatedPhrase });
+      console.log('Approved plan by delegation (est. $' + res.totalUsd.toFixed(4) + ' USD) -> ' + res.approvalPath);
+      console.log('  recorded phrase: "' + delegatedPhrase + '"');
+    } catch (err) {
+      console.error('Error: ' + err.message);
+      process.exit(1);
+    }
+    return;
+  }
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    console.error('Error: approve-plan must be run interactively by a human (a TTY is required). Agents must not run it.');
+    console.error('Error: approve-plan must be run interactively by a human (a TTY is required). Agents must not run it — unless the human delegated explicitly via --delegated "<phrase>".');
     process.exit(1);
   }
   try {

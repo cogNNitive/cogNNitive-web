@@ -304,29 +304,19 @@
       })
 
       var rels = Array.isArray(el.relations) ? el.relations : []
-      var body = []
-      if (rels.length) {
-        var ul = document.createElement('ul')
-        ul.className = 'rel-list'
-        rels.forEach(function (r) {
-          var li = document.createElement('li')
-          li.appendChild(
-            document.createTextNode(String(r.field || 'related') + ' \u2192 '),
-          )
-          if (r.target && byId[r.target]) {
-            li.appendChild(
-              UI.ElementPill(
-                { id: r.target, label: r.targetLabel || r.target },
-                { href: '#el-' + r.target },
-              ),
-            )
-          } else {
-            li.appendChild(document.createTextNode(String(r.targetLabel || r.target || '?')))
-          }
-          ul.appendChild(li)
-        })
-        body.push(ul)
-      }
+      var relData = rels.map(function (r) {
+        return {
+          field: r.field || 'related',
+          target: r.target,
+          targetLabel: r.targetLabel || (r.target && byId[r.target] && byId[r.target].name) || r.target,
+        }
+      })
+
+      var pathBits = []
+      if (meta.template) pathBits.push(meta.template)
+      if (el.concept) pathBits.push(el.concept)
+      if (el.id) pathBits.push(el.id)
+      var cardPath = pathBits.length ? pathBits.join(' / ') : null
 
       return UI.ElementCard(
         {
@@ -336,12 +326,16 @@
           description: el.description,
           fields: fieldData,
           markers: markerData,
+          qud: { id: el.id, concept: el.concept, hash: el.hash, path: cardPath },
+          path: cardPath,
+          tags: Array.isArray(el.tags) ? el.tags.map(String) : null,
+          relations: relData.length ? relData : null,
         },
         {
           domId: 'el-' + (el.id || UI.slug(el.name || 'x')),
           collapsible: true,
           head: headerCite,
-          body: body,
+          byId: byId,
         },
       )
     }

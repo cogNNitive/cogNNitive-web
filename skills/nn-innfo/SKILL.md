@@ -30,7 +30,7 @@ description: |
    - Upon session exit or wizard completion:
      - Zero Discard Policy: all sessions are retained unconditionally in `conversations/`.
      - For non-trivial sessions, present 3 suggested titles (`[1] (Recommended)`), finalize frontmatter (`status: completed`), and rename to `conversations/YYYY-MM-DD_<slug>.md`.
-     - Prompt for promotion to `sources/conversations/` (`[full]`, `[none]` — the raw transcript is always registered in `conversations/`; promotion is optional; a promoted transcript is a write-once `<slug>_<UTC stamp>.md` cognitivized in place) for ingestion into the workspace knowledge graph and model citations (`sources:: [sources/conversations/<file>.md@<unit>]`).
+           - Auto-promote to `sources/conversations/` (announce it; `[none]` opts out — the raw transcript is always registered in `conversations/`; a promoted transcript is a write-once `<slug>_<UTC stamp>.md` cognitivized in place) for ingestion into the workspace knowledge graph and model citations (`sources:: [sources/conversations/<file>.md@<unit>]`).
 
 ---
 

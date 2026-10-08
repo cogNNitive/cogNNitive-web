@@ -305,12 +305,18 @@
         base_hash: el.hash,
         kind: payload.kind,
       }
-      if (anchorData.field) {
-        draft.field = anchorData.field
-        draft.original = el.fields ? el.fields[anchorData.field] : undefined
-        draft.proposed = payload.proposed
-      } else {
-        draft.comment = payload.comment
+      if (payload.field !== undefined || anchorData.field) {
+        draft.field = payload.field !== undefined ? payload.field : anchorData.field
+        draft.original =
+          payload.original !== undefined
+            ? payload.original
+            : el.fields
+              ? el.fields[anchorData.field]
+              : undefined
+        if (payload.proposed !== undefined) draft.proposed = payload.proposed
+      }
+      if (payload.comment !== undefined && payload.comment !== null) {
+        draft.comment = String(payload.comment)
       }
       store.addDraft(draft)
       refreshCount()
@@ -326,14 +332,192 @@
       applyDecorations()
     }
 
+    // Resolve an anchor to a KU-modal target. Returns null when the anchor is
+    // not modal-editable (card comments, tag/relation proposals use popovers
+    // or immediate comment drafts instead).
+    function kuModalTarget(anchorData) {
+      var el = elementsById[anchorData.elementId]
+      if (!el || typeof UI.EditModal !== 'function') return null
+      var base = {
+        citations: Array.isArray(el.citations) ? el.citations : [],
+        history: Array.isArray(el.history) ? el.history : [],
+      }
+      if (anchorData.relRetarget) {
+        return {
+          title: 'Retarget ' + (el.name || anchorData.elementId) + ' \u2192 ' + anchorData.relField,
+          fieldName: anchorData.relField,
+          type: 'reference',
+          value: anchorData.relTarget,
+          candidates: elements,
+          draftField: anchorData.relField,
+          original: anchorData.relTarget,
+          citations: base.citations,
+          history: base.history,
+        }
+      }
+      var field = anchorData.field
+      if (!field) return null
+      if (field === '__name') {
+        return {
+          title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 name',
+          fieldName: 'name',
+          type: 'string',
+          value: el.name,
+          draftField: 'name',
+          original: el.name,
+          citations: base.citations,
+          history: base.history,
+        }
+      }
+      if (field === '__description') {
+        return {
+          title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 description',
+          fieldName: 'description',
+          type: 'markdown',
+          value: el.description,
+          draftField: 'description',
+          original: el.description,
+          citations: base.citations,
+          history: base.history,
+        }
+      }
+      if (field.indexOf('marker:') === 0) {
+        var markerId = field.slice('marker:'.length)
+        var markers = el.markers || {}
+        return {
+          title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 marker ' + markerId,
+          fieldName: field,
+          type: 'string',
+          value: markers[markerId],
+          draftField: field,
+          original: markers[markerId],
+          citations: base.citations,
+          history: base.history,
+        }
+      }
+      var fieldVal = el.fields ? el.fields[field] : undefined
+      var schemaField = null
+      if (options.schema && Array.isArray(options.schema.fields)) {
+        schemaField = options.schema.fields.filter(function (f) {
+          return f.name === field
+        })[0]
+      }
+      var fieldType =
+        schemaField && schemaField.type
+          ? schemaField.type
+          : typeof fieldVal === 'number'
+            ? 'number'
+            : typeof fieldVal === 'boolean'
+              ? 'boolean'
+              : 'string'
+      return {
+        title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 ' + field,
+        fieldName: field,
+        type: fieldType,
+        value: fieldVal,
+        options: schemaField ? schemaField.options : undefined,
+        candidates:
+          schemaField && (schemaField.type === 'reference' || fieldType === 'reference')
+            ? elements
+            : undefined,
+        draftField: field,
+        original: fieldVal,
+        citations: base.citations.filter(function (c) {
+          return !c.field || c.field === field
+        }),
+        history: base.history,
+      }
+    }
+
+    function openModalFor(anchorData, target) {
+      var modal = UI.EditModal(
+        {
+          title: target.title,
+          fieldName: target.fieldName,
+          type: target.type,
+          value: target.value,
+          options: target.options,
+          candidates: target.candidates,
+          citations: target.citations,
+          history: target.history,
+          isComment: false,
+        },
+        {
+          doc: doc,
+          onSave: function (res) {
+            if (res.isComment) {
+              saveDraft(anchorData, { kind: 'comment', comment: res.comment })
+            } else {
+              saveDraft(anchorData, {
+                kind: 'correction',
+                field: target.draftField,
+                original: target.original,
+                proposed: res.proposed,
+                comment: res.comment,
+              })
+            }
+            closePopover()
+          },
+          onCancel: function () {
+            closePopover()
+            if (lastAnchor && typeof lastAnchor.focus === 'function') lastAnchor.focus()
+          },
+        },
+      )
+      doc.body.appendChild(modal)
+      openPopover = modal
+      if (typeof modal.showModal === 'function') {
+        modal.showModal()
+      } else {
+        modal.setAttribute('open', 'open')
+      }
+    }
+
     function openFor(anchor, anchorData) {
       closePopover()
       lastAnchor = anchor
+
+      // Tag / relation membership has no core draft op yet: record proposals
+      // as comment drafts (never auto-applied corrections).
+      if (anchorData.tagRemove) {
+        saveDraft(anchorData, {
+          kind: 'comment',
+          field: 'tags',
+          comment: 'Propose removing tag "' + anchorData.tagRemove + '"',
+        })
+        refreshCount()
+        return
+      }
+      if (anchorData.relUnlink) {
+        saveDraft(anchorData, {
+          kind: 'comment',
+          field: 'relations',
+          comment:
+            'Propose unlinking ' + anchorData.relField + ' \u2192 ' + anchorData.relUnlink,
+        })
+        refreshCount()
+        return
+      }
+
+      var target = kuModalTarget(anchorData)
+      if (target) {
+        openModalFor(anchorData, target)
+        return
+      }
+
       var kinds = anchorData.field ? ['comment', 'correction'] : ['comment', 'delete']
+      if (anchorData.tagAdd) kinds = ['comment']
+      if (anchorData.relAdd) kinds = ['comment']
       var activeKind = kinds[0]
       var data = {
         kinds: kinds,
-        label: anchorData.field ? 'Annotate field' : 'Annotate element',
+        label: anchorData.tagAdd
+          ? 'Propose tag'
+          : anchorData.relAdd
+            ? 'Propose relation'
+            : anchorData.field
+              ? 'Annotate field'
+              : 'Annotate element',
       }
       if (anchorData.field && elementsById[anchorData.elementId]) {
         var el = elementsById[anchorData.elementId]
@@ -343,7 +527,20 @@
         doc: doc,
         onSave: function () {
           var ta = pop.querySelector('textarea')
-          if (activeKind === 'delete') {
+          var text = ta ? ta.value : ''
+          if (anchorData.tagAdd) {
+            saveDraft(anchorData, {
+              kind: 'comment',
+              field: 'tags',
+              comment: 'Propose tag: ' + text,
+            })
+          } else if (anchorData.relAdd) {
+            saveDraft(anchorData, {
+              kind: 'comment',
+              field: 'relations',
+              comment: 'Propose relation: ' + text,
+            })
+          } else if (activeKind === 'delete') {
             saveDraft(anchorData, { kind: 'delete' })
           } else if (anchorData.field && activeKind === 'correction' && ta) {
             saveDraft(anchorData, { kind: 'correction', proposed: ta.value })
@@ -377,11 +574,55 @@
     }
 
     function annotateControl(anchorData, label) {
-      var b = makeEl(doc, 'button', 'innfo-review-anchor', label || '+')
+      var b =
+        typeof UI.EditAnchor === 'function'
+          ? UI.EditAnchor({ label: label || 'Annotate' })
+          : makeEl(doc, 'button', 'innfo-review-anchor', label || '+')
       b.setAttribute('data-innfo-review-ctl', '1')
       b.setAttribute('data-innfo-ctl', anchorData.field ? 'field-anchor' : 'card-anchor')
+      if (anchorData.field) b.setAttribute('data-field', String(anchorData.field))
       b.setAttribute('type', 'button')
       b.setAttribute('aria-label', anchorData.field ? 'Annotate field' : 'Annotate element')
+      b.addEventListener('click', function () {
+        openFor(b, anchorData)
+      })
+      return b
+    }
+
+    // Pencil toggle (card redesign): pins all hover-reveal edit anchors on one
+    // card via [data-editing]. Rendered top-right by decorateCard; review-owned,
+    // so disable() removes it with the other controls.
+    function editToggleControl(card) {
+      var t =
+        typeof UI.EditToggle === 'function'
+          ? UI.EditToggle()
+          : makeEl(doc, 'button', 'innfo-review-anchor', '\u270e')
+      t.setAttribute('data-innfo-review-ctl', '1')
+      t.setAttribute('data-innfo-ctl', 'edit-toggle')
+      t.setAttribute('type', 'button')
+      t.setAttribute('aria-pressed', 'false')
+      t.setAttribute('aria-label', 'Toggle edit controls on this card')
+      t.setAttribute('title', 'Toggle edit controls on this card')
+      t.addEventListener('click', function () {
+        var on = card.getAttribute('data-editing') === 'true'
+        card.setAttribute('data-editing', on ? 'false' : 'true')
+        t.setAttribute('aria-pressed', on ? 'false' : 'true')
+      })
+      return t
+    }
+
+    // Pencils for name / description / marker KUs. They reuse openFor with a
+    // virtual field so every editable KU funnels into the same KU modal.
+    function kuEditControl(anchorData, label) {
+      var b =
+        typeof UI.EditAnchor === 'function'
+          ? UI.EditAnchor({ label: label })
+          : makeEl(doc, 'button', 'innfo-review-anchor', '\u270e')
+      b.setAttribute('data-innfo-review-ctl', '1')
+      b.setAttribute('data-innfo-ctl', anchorData.ctl || 'ku-anchor')
+      b.setAttribute('type', 'button')
+      b.setAttribute('aria-label', label)
+      b.setAttribute('title', label)
       b.addEventListener('click', function () {
         openFor(b, anchorData)
       })
@@ -444,8 +685,41 @@
       var elId = card.getAttribute('data-element-id')
       var head = card.querySelector('.innfo-card-head') || card
       if (!card.querySelector('[data-innfo-ctl="card-anchor"]')) {
-        head.appendChild(annotateControl({ elementId: elId }, '\u270e'))
+        head.appendChild(annotateControl({ elementId: elId }, 'Annotate element'))
       }
+      if (!card.querySelector('[data-innfo-ctl="edit-toggle"]')) {
+        head.appendChild(editToggleControl(card))
+      }
+      var nameEl = card.querySelector('.innfo-card-name')
+      if (nameEl && !nameEl.querySelector('[data-innfo-ctl="name-anchor"]')) {
+        nameEl.appendChild(
+          kuEditControl({ elementId: elId, field: '__name', ctl: 'name-anchor' }, 'Edit element name'),
+        )
+      }
+      var descEl = card.querySelector('.innfo-card-desc')
+      if (descEl && !descEl.querySelector('[data-innfo-ctl="desc-anchor"]')) {
+        descEl.appendChild(
+          kuEditControl(
+            { elementId: elId, field: '__description', ctl: 'desc-anchor' },
+            'Edit description',
+          ),
+        )
+      }
+      Array.prototype.forEach.call(
+        card.querySelectorAll('[data-marker-id]'),
+        function (chip) {
+          if (chip.querySelector('[data-innfo-ctl="marker-anchor"]')) return
+          var markerId = chip.getAttribute('data-marker-id')
+          chip.appendChild(
+            kuEditControl(
+              { elementId: elId, field: 'marker:' + markerId, ctl: 'marker-anchor' },
+              'Edit marker ' + markerId,
+            ),
+          )
+        },
+      )
+      decorateTagRow(card, elId)
+      decorateRelList(card, elId)
       if (!head.querySelector('[data-innfo-component="reviewed-toggle"]') && store) {
         var el = elementsById[elId]
         var state = el ? reviewState(el, store.reviewed()) : 'none'
@@ -465,12 +739,88 @@
       }
     }
 
+    // Tags are not KUs (no sub-ID, no modal): membership is proposed with
+    // +/x controls that record comment drafts. Marker chips keep pencils.
+    function decorateTagRow(card, elId) {
+      var row = card.querySelector('[data-innfo-component="tag-row"]')
+      if (!row) return
+      Array.prototype.forEach.call(row.querySelectorAll('.innfo-tag'), function (tag) {
+        if (tag.querySelector('[data-innfo-ctl="tag-remove"]')) return
+        var name = tag.getAttribute('data-tag') || tag.textContent
+        var x = makeEl(doc, 'button', 'innfo-tag-remove', '\u00d7')
+        x.setAttribute('data-innfo-review-ctl', '1')
+        x.setAttribute('data-innfo-ctl', 'tag-remove')
+        x.setAttribute('type', 'button')
+        x.setAttribute('aria-label', 'Propose removing tag ' + name)
+        x.setAttribute('title', 'Propose removing tag ' + name)
+        x.addEventListener('click', function () {
+          openFor(x, { elementId: elId, tagRemove: name })
+        })
+        tag.appendChild(x)
+      })
+      if (!row.querySelector('[data-innfo-ctl="tag-add"]')) {
+        var add = makeEl(doc, 'button', 'innfo-tag-add', '+ tag')
+        add.setAttribute('data-innfo-review-ctl', '1')
+        add.setAttribute('data-innfo-ctl', 'tag-add')
+        add.setAttribute('type', 'button')
+        add.setAttribute('aria-label', 'Propose a new tag')
+        add.addEventListener('click', function () {
+          openFor(add, { elementId: elId, tagAdd: true })
+        })
+        row.appendChild(add)
+      }
+    }
+
+    // Relations are reference-KUs: pencil = retarget (KU modal with a
+    // reference widget), x = unlink proposal, link = navigate (kit-owned).
+    function decorateRelList(card, elId) {
+      var list = card.querySelector('[data-innfo-component="rel-list"]')
+      if (!list) return
+      Array.prototype.forEach.call(
+        list.querySelectorAll('.innfo-rel-row'),
+        function (rowItem) {
+          var field = rowItem.getAttribute('data-rel-field') || 'related'
+          var target = rowItem.getAttribute('data-rel-target') || ''
+          if (!rowItem.querySelector('[data-innfo-ctl="rel-retarget"]')) {
+            var re = kuEditControl(
+              { elementId: elId, relRetarget: true, relField: field, relTarget: target, ctl: 'rel-retarget' },
+              'Retarget relation ' + field,
+            )
+            rowItem.appendChild(re)
+          }
+          if (!rowItem.querySelector('[data-innfo-ctl="rel-unlink"]')) {
+            var un = makeEl(doc, 'button', 'innfo-rel-act danger', '\u00d7')
+            un.setAttribute('data-innfo-review-ctl', '1')
+            un.setAttribute('data-innfo-ctl', 'rel-unlink')
+            un.setAttribute('type', 'button')
+            un.setAttribute('aria-label', 'Propose unlinking ' + field)
+            un.setAttribute('title', 'Propose unlinking ' + field)
+            un.addEventListener('click', function () {
+              openFor(un, { elementId: elId, relUnlink: target, relField: field })
+            })
+            rowItem.appendChild(un)
+          }
+        },
+      )
+      if (!card.querySelector('[data-innfo-ctl="rel-add"]')) {
+        var add = makeEl(doc, 'button', 'innfo-rel-add', '+ relation')
+        add.setAttribute('data-innfo-review-ctl', '1')
+        add.setAttribute('data-innfo-ctl', 'rel-add')
+        add.setAttribute('type', 'button')
+        add.setAttribute('aria-label', 'Propose a new relation')
+        add.addEventListener('click', function () {
+          openFor(add, { elementId: elId, relAdd: true })
+        })
+        list.appendChild(add)
+      }
+    }
+
     function decorateFieldRow(row) {
       if (row.querySelector('[data-innfo-ctl="field-anchor"]')) return
       var card = row.closest('[data-innfo-component="element-card"]')
       var elId = card ? card.getAttribute('data-element-id') : ''
       var field = row.getAttribute('data-field')
-      row.appendChild(annotateControl({ elementId: elId, field: field }, '\u270e'))
+      row.appendChild(annotateControl({ elementId: elId, field: field }, 'Annotate field'))
     }
 
     function decorateBadges() {

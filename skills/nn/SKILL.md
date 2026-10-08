@@ -94,6 +94,6 @@ Each option displays its origin badge (e.g. `[p1] Extract Key Risks [blueprint:b
 5. **Conversations as Reference & Source Protocol (Zero Discard)**:
    - Silently allocate `conversations/YYYY-MM-DD_HHmmss.md` upon session start (`status: in_progress`).
    - Zero Discard Policy: all sessions are retained unconditionally.
-   - Upon session close, suggest 3 descriptive titles (`[1] (Recommended)`), finalize frontmatter (`status: completed`), rename to `conversations/YYYY-MM-DD_<slug>.md`, and offer promotion to `sources/conversations/`.
+    - Upon session close, suggest 3 descriptive titles (`[1] (Recommended)`), finalize frontmatter (`status: completed`), rename to `conversations/YYYY-MM-DD_<slug>.md`, and auto-promote to `sources/conversations/` (announce it; the user can opt out with `[none]`).
 6. **Session Language Coherence**:
    - Maintain the user's active conversation language across all prompts, responses, and menus throughout the session.

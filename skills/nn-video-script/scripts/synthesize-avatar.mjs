@@ -116,7 +116,7 @@ export async function synthesizeAvatars(o) {
   const loaded = loadGuard(scriptDir);
   const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir);
   const approvalPath = o.approvalPath ? path.resolve(o.approvalPath) : path.join(scriptDir, APPROVAL_FILENAME);
-  const checkNow = () => checkApproval({ scriptContent, models, approvalPath, allowModels });
+  const checkNow = () => checkApproval({ scriptContent, models, approvalPath, allowModels, allowDelegated: loaded.config.allowDelegatedApproval === true });
   const avatarStaleMs = windowMs + 10 * 60 * 1000;
   const makeGuard = (dryRun) =>
     new SpendGuard({ config: loaded.config, root: loaded.root, allowModels, dryRun, approval: checkNow, avatarStaleMs });

@@ -33,6 +33,7 @@ above wins, otherwise the nearest `.git`, otherwise the script directory. A stra
     "wavespeed-ai/minimax-h3/image-edit"
   ],
   "blockedModels": ["wavespeed-ai/infinitetalk"],
+  "allowDelegatedApproval": false,
   "systemVoices": ["Friendly_Person", "Wise_Woman", "Deep_Voice_Man", "English_*", "..."],
   "voices": { "<Name>": { "voice_id": "<id>", "series": "<slug>" } }
 }
@@ -54,6 +55,8 @@ fallback): budgets and `dailyCapUsd` must be finite numbers >= 0,
 - `maxAvatarSeconds`: longest avatar audio that may be billed (finite number > 0, default 300).
 - `maxAvatarConcurrency`: simultaneous avatar jobs, enforced in-process and across
   processes with lock files under `.cognnitive/locks/` (stale locks are broken).
+- `allowDelegatedApproval`: when `true`, compile/synthesize-avatar honor
+  agent-relayed (`--delegated`) plan approvals (section 2b). Default `false`.
 
 ## 2. Plan approval is an artifact (a human act)
 
@@ -80,6 +83,27 @@ typed confirmation stop `approve-plan.mjs` from being run casually by an agent, 
 anything with file-write access to the workspace can still hand-write
 `asset_plan.approved.json`. Add a workspace permission rule that denies agent
 writes to `**/asset_plan.approved.json` and `video-guard.json`.
+
+### 2b. Delegated approval (opt-in, default off)
+
+Workspaces that prefer chat-based approval can set
+`"allowDelegatedApproval": true` in `video-guard.json`. The flow is then:
+
+1. The human writes an explicit approval phrase in the chat (naming episode and
+   total, e.g. `apruebo el plan de huelga-general, $1.60`).
+2. The agent runs `node scripts/approve-plan.mjs <asset_plan.md> --delegated "<exact phrase>"`.
+   No TTY is needed; the phrase is recorded verbatim (`delegated: true`,
+   `delegatedPhrase`) in `asset_plan.approved.json` for audit.
+3. `compile` / `synthesize-avatar` honor that approval only when the workspace
+   opted in; otherwise they refuse it (`delegated-not-allowed`) and require the
+   interactive approval from section 2.
+
+Trade-off: a chat phrase is weaker than a TTY — a malicious document in the
+workspace could in principle contain an approval-looking phrase (prompt
+injection) that an incautious agent relays. Only opt in if the human reviews
+every plan total before uttering the phrase, and never enable it together with
+fully autonomous agent loops. The plan-hash match, model coverage, 1.25x cap,
+per-run budget and 24h cap all still apply to delegated approvals.
 
 ## 3. Dry run
 

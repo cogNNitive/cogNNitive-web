@@ -28,7 +28,7 @@
  * member and leaves earlier consoles byte-identical.
  */
 
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -104,6 +104,7 @@ function parseArgs(argv) {
     tree: false,
     all: false,
     stale: false,
+    domain: false,
     filter: null,
     model: null,
   }
@@ -120,6 +121,8 @@ function parseArgs(argv) {
       args.all = true
     } else if (a === '--stale') {
       args.stale = true
+    } else if (a === '--domain') {
+      args.domain = true
     } else if (a === '--filter') {
       i++
       if (i < slice.length) {
@@ -414,13 +417,13 @@ async function main() {
       console.log('All models are fresh. Nothing to export.')
       return
     }
-  } else if (args.all || args.filter || args.model) {
+  } else if (args.all || args.filter || args.model || args.domain) {
     selected = candidateModels
   }
 
-  if (selected.length === 0) {
+  if (selected.length === 0 && !args.domain) {
     console.error(
-      'No models selected. Use --all, --stale, --filter <pattern>, or pass a model name/id substring.',
+      'No models selected. Use --all, --stale, --domain, --filter <pattern>, or pass a model name/id substring.',
     )
     process.exit(1)
   }
@@ -534,6 +537,106 @@ async function main() {
       console.log(`✔ ${basename(result.path)} → ./${result.path}`)
     }
   }
+
+  if (args.domain) {
+    const domainHtmlPath = join(root, 'domaiNN_console.html')
+    // Build combined payload aggregating all models in the workspace
+    const allElements = []
+    const allMatrices = []
+    const allConcepts = []
+    const seenConcepts = new Set()
+    const modelSummaries = []
+
+    for (const m of candidateModels) {
+      const relPath = relative(root, m.filePath).replace(/\\/g, '/')
+      const fileName = basename(relPath)
+      const modelStem = fileName.replace(/\.[^/.]+$/, '')
+      const payload = payloadHelper.buildConsolePayload({
+        content: m.content,
+        path: relPath,
+        resolver,
+        ledgerEntries,
+      })
+      if (payload && payload.model) {
+        const mTitle = (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
+        const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
+        const modelConcepts = new Set()
+        if (Array.isArray(payload.model.elements)) {
+          for (const el of payload.model.elements) {
+            if (el) {
+              el.modelId = mId
+              el.modelTitle = mTitle
+              el.modelFile = fileName
+              const cName = el.concept || 'Element'
+              const eName = el.name || el.id || ''
+              const cSlug = cName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+              const eSlug = eName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+              el.unitSlug = `${fileName}@${cSlug}--${eSlug}`
+              el.canonicalUnit = `${fileName}@## ${cName}: ${eName}`
+              allElements.push(el)
+              if (el.concept) modelConcepts.add(el.concept)
+            }
+          }
+        }
+        if (Array.isArray(payload.model.matrices)) {
+          for (const mat of payload.model.matrices) {
+            if (mat) {
+              mat.modelId = mId
+              mat.modelTitle = mTitle
+              mat.modelFile = fileName
+              allMatrices.push(mat)
+            }
+          }
+        }
+        modelSummaries.push({
+          id: mId,
+          title: mTitle,
+          filePath: fileName,
+          conceptNames: Array.from(modelConcepts),
+          elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
+        })
+      }
+      if (payload && payload.schema && Array.isArray(payload.schema.concepts)) {
+        for (const c of payload.schema.concepts) {
+          if (c && c.name && !seenConcepts.has(c.name)) {
+            seenConcepts.add(c.name)
+            allConcepts.push(c)
+          }
+        }
+      }
+    }
+
+    const domainPayload = {
+      schema: { concepts: allConcepts },
+      model: {
+        meta: {
+          title: basename(root) + ' Domain',
+          model: basename(root),
+          modelId: basename(root),
+          modelVersion: 'V_1-0-0',
+          generated: new Date().toISOString(),
+          models: modelSummaries,
+        },
+        elements: allElements,
+        matrices: allMatrices,
+      },
+    }
+
+    let domainHtml = renderConsole(resolvedShell, null, config, domainPayload)
+    if (!domainHtml.includes('data-theme=')) {
+      domainHtml = domainHtml.replace('<html lang="en">', '<html lang="en" data-theme="light">')
+    }
+    await writeFile(domainHtmlPath, domainHtml, 'utf-8')
+    if (bundle) {
+      await writeFile(join(root, 'innfo-console.bundle.js'), bundle, 'utf-8')
+    }
+    const uiCssPath = join(consoleDir, 'innfo-ui.css')
+    if (existsSync(uiCssPath)) {
+      await writeFile(join(root, 'innfo-ui.css'), await readFile(uiCssPath, 'utf-8'), 'utf-8')
+    }
+    console.log(`✔ domaiNN_console.html → ./domaiNN_console.html (${candidateModels.length} models, ${allElements.length} elements)`)
+  }
+
   console.log(`Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`)
 }
 

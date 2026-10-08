@@ -584,6 +584,15 @@ Derived deliverables are generated in a single pass directly to `artifacts/[Deli
 | **Validation Report** | `artifacts/` | `artifacts/Impact_Audit_report_20261001T101500Z.md` | Written by `--check-impact --report`; identical findings write nothing new |
 | **Curated CSV** | `artifacts/curated/` | `artifacts/curated/prices_20261001T101500Z.csv` | Citation-ready CSV from `--curate-csv` |
 | **Procedure Spec** | `procedures/` | `procedures/Document_Ingest_V_1-0-0_procedures_NN.md` | Procedure spec compliant with `procedures_V_0-1-0_NN.md` |
+| **Transformation Template** | `traNNsformations/` | `traNNsformations/Summary.md` | Single-shot template applied with `--apply <name>` |
+
+> **Templates vs Procedures (backlog 30, decided 2026-10-07: keep both).**
+> `traNNsformations/` holds single-shot transformation templates (one input → one
+> output, `--apply`). `procedures/` holds multi-step orchestrated SOPs (FSM over
+> `Work` steps with `next::`). Rule of thumb: if it fits in one pass with no
+> branching, it is a template; if it has steps, conditions, or tools, it is a
+> procedure. Do not merge them and do not rename `traNNsformations/` — the CLI
+> vocabulary (`--apply`) depends on it.
 
 ---
 

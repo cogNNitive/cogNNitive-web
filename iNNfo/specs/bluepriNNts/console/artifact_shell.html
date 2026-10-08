@@ -26,6 +26,7 @@
       The runtime no-ops on re-execution, so the fallback tags below are
       safe: exactly one copy boots.
   -->
+    <link rel="stylesheet" href="./innfo-ui.css" />
     <style>
       /* Semantic tokens come from InnfoUI (data-theme driven). Local aliases keep
          this shell's layout variables working without hard-coded colors. */
@@ -55,7 +56,7 @@
       }
       body {
         margin: 0;
-        background: var(--bg);
+        background: #f1f5f9;
         color: var(--text);
         font-family: var(--font);
         line-height: 1.55;
@@ -65,33 +66,45 @@
         font-family: var(--mono);
         font-size: 0.85em;
       }
+      /* Layout: Clean responsive Admin Dashboard with DaisyUI Drawer & Sticky Header */
       #innfo-layout {
-        display: grid;
-        grid-template-columns: 220px 1fr;
-        gap: 0;
-        align-items: start;
+        display: flex;
+        flex: 1 1 auto;
+        min-height: calc(100vh - 65px);
+        background: #f1f5f9;
+      }
+      .innfo-drawer-wrapper {
+        display: flex;
+        width: 100%;
+        min-height: 100vh;
+      }
+      #innfo-rail {
+        width: 320px;
+        min-width: 320px;
+        max-width: 360px;
+        position: sticky;
+        top: 65px;
+        height: calc(100vh - 65px);
+        border-right: 1px solid var(--border);
+        background: #ffffff;
+        padding: 16px 12px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+        box-sizing: border-box;
       }
       @media (max-width: 820px) {
         #innfo-layout {
-          grid-template-columns: 1fr;
+          flex-direction: column;
         }
-      }
-      #innfo-rail {
-        position: sticky;
-        top: 0;
-        border-right: 1px solid var(--border);
-        background: var(--surface);
-        padding: 16px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        max-height: 100vh;
-        overflow-y: auto;
-      }
-      @media (max-width: 820px) {
         #innfo-rail {
+          width: 100%;
+          min-width: 100%;
+          max-width: 100%;
           position: static;
-          max-height: none;
+          top: auto;
+          height: auto;
           border-right: none;
           border-bottom: 1px solid var(--border);
         }
@@ -102,63 +115,230 @@
         align-items: center;
         text-align: left;
         background: transparent;
-        border: none;
-        border-left: 3px solid transparent;
-        border-radius: 6px;
-        padding: 7px 10px;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        padding: 6px 10px;
         cursor: pointer;
-        font-size: 0.84rem;
+        font-size: 0.82rem;
         color: var(--text);
         font: inherit;
+        font-weight: 500;
+        transition: background 0.15s ease, border-color 0.15s ease;
       }
       .innfo-rail-item:hover {
         background: var(--surface-2);
       }
       .innfo-rail-item.active {
         background: var(--surface-2);
-        border-left-color: var(--primary);
+        border-color: var(--border);
+        color: var(--primary);
         font-weight: 700;
       }
-      main {
-        padding: 24px 28px 96px;
-        max-width: 1080px;
-        min-width: 0;
-      }
-      .innfo-toolbar {
+      .innfo-rail-header {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        padding: 4px 8px;
+        margin-top: 10px;
+        margin-bottom: 4px;
         display: flex;
-        gap: 10px;
+        justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
       }
-      #innfo-search {
-        flex: 1 1 280px;
-        max-width: 420px;
+      .innfo-facet-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+      .innfo-facet-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         padding: 8px 12px;
-        font: inherit;
-        font-size: 0.9rem;
+        font-size: 0.82rem;
+        font-weight: 600;
         color: var(--text);
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+      .innfo-facet-btn:hover {
+        background: var(--surface-2);
+        border-color: #cbd5e1;
+      }
+      .innfo-facet-btn.active {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: rgba(37, 99, 235, 0.05);
+      }
+      .innfo-facet-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 50;
+        min-width: 260px;
+        max-width: 380px;
+        max-height: 360px;
+        overflow-y: auto;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        padding: 6px;
+        display: none;
+      }
+      .innfo-facet-menu.open {
+        display: block;
+      }
+      .innfo-facet-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: var(--radius-sm);
+        font-size: 0.82rem;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.1s ease;
+      }
+      .innfo-facet-item:hover {
+        background: var(--surface-2);
+      }
+      .innfo-facet-checkbox {
+        cursor: pointer;
+      }
+      details[open] .innfo-rail-chevron {
+        transform: rotate(90deg);
+      }
+      main {
+        flex: 1;
+        padding: 24px 32px 96px;
+        max-width: 1200px;
+        min-width: 0;
+        box-sizing: border-box;
+        background: #f1f5f9;
+      }
+      /* Dashboard KPI Stats Cards */
+      .innfo-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .innfo-stat-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .innfo-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      .innfo-stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .innfo-stat-body {
+        min-width: 0;
+      }
+      .innfo-stat-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 2px;
+      }
+      .innfo-stat-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--text);
+      }
+      .innfo-navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 24px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+      .innfo-toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      #innfo-search-wrap {
+        position: relative;
+        flex: 1 1 280px;
+        max-width: 460px;
+      }
+      #innfo-search-wrap .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+      }
+      #innfo-search {
+        width: 100%;
+        padding: 9px 14px 9px 38px;
+        font: inherit;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        box-sizing: border-box;
       }
       #innfo-search:focus-visible {
         outline: none;
-        box-shadow: 0 0 0 2px var(--text);
+        background: var(--surface);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
       }
       .innfo-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 16px 18px;
-        margin-bottom: 12px;
-        scroll-margin-top: 12px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        scroll-margin-top: 14px;
         box-shadow: var(--shadow-card);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .innfo-card:hover {
+        border-color: rgba(37, 99, 235, 0.4);
       }
       .innfo-card h3 {
         margin: 0 0 4px 0;
-        font-size: 1rem;
+        font-size: 1.05rem;
         font-weight: 700;
+        letter-spacing: -0.01em;
       }
       .innfo-card-concept {
         color: var(--muted);
@@ -352,19 +532,21 @@
       .innfo-reviewer-chip {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         background: var(--surface-2);
         border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 3px 10px;
-        font-size: 0.78rem;
+        border-radius: var(--radius-sm);
+        padding: 4px 12px;
+        font-size: 0.8rem;
         font-weight: 500;
         margin-left: auto;
         cursor: pointer;
         user-select: none;
+        transition: border-color 0.15s ease, background 0.15s ease;
       }
       .innfo-reviewer-chip:hover {
-        border-color: var(--muted);
+        border-color: var(--primary);
+        background: var(--surface);
       }
       .innfo-reviewer-label {
         color: var(--muted);
@@ -378,11 +560,11 @@
         border: none;
         cursor: pointer;
         padding: 0;
-        font-size: 0.82rem;
+        font-size: 0.85rem;
         line-height: 1;
         display: flex;
         align-items: center;
-        opacity: 0.7;
+        opacity: 0.8;
       }
       .innfo-reviewer-edit:hover {
         opacity: 1;
@@ -513,14 +695,22 @@
       <nav id="innfo-rail" aria-label="Concept rail"></nav>
       <main>
         <div class="innfo-toolbar">
-          <input
-            id="innfo-search"
-            type="search"
-            placeholder="Search elements…"
-            aria-label="Search elements"
-          />
+          <div id="innfo-search-wrap">
+            <span class="search-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input
+              id="innfo-search"
+              type="search"
+              placeholder="Search elements…"
+              aria-label="Search elements"
+            />
+          </div>
+          <div id="innfo-filter-facets" class="flex items-center gap-2 flex-wrap"></div>
+          <div id="innfo-active-filters" class="flex items-center gap-1.5 flex-wrap w-full mt-1"></div>
         </div>
         <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
+        <div id="innfo-stats-bar" class="innfo-stats-grid"></div>
         <div id="innfo-tab-explorer" class="innfo-tab-panel active">
           <div id="innfo-doc"></div>
           <div id="innfo-content"></div>
@@ -555,10 +745,10 @@
       {}
     </script>
 
+    <script src="./innfo-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
 <script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
-    <script src="./innfo-console.bundle.js"></script>
   </body>
 </html>

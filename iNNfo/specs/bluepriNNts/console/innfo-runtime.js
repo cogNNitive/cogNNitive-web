@@ -189,7 +189,19 @@
   }
 
   function elementHaystack(element) {
-    var parts = [element.concept, element.name, element.description]
+    var parts = [
+      element.concept,
+      element.name,
+      element.description,
+      element.modelId,
+      element.modelFile,
+      element.modelTitle,
+      element.unitSlug,
+      element.canonicalUnit,
+    ]
+    if (Array.isArray(element.tags)) {
+      parts.push(element.tags.join(' '))
+    }
     if (isObject(element.fields)) {
       parts.push(Object.keys(element.fields).join(' '))
       parts.push(
@@ -208,14 +220,170 @@
       .toLowerCase()
   }
 
-  function filterElements(elements, query) {
+  function parseFilterQuery(query) {
+    var raw = String(query == null ? '' : query).trim()
+    if (!raw) return { textTokens: [], operators: [] }
+    var parts = raw.match(/(?:[^\s"]+|"[^"]*")+/g) || []
+    var textTokens = []
+    var operators = []
+
+    parts.forEach(function (part) {
+      var unquoted = part.replace(/^"|"$/g, '')
+      var colonIdx = unquoted.indexOf(':')
+      if (colonIdx > 0) {
+        var key = unquoted.slice(0, colonIdx).toLowerCase()
+        var val = unquoted.slice(colonIdx + 1).toLowerCase()
+        operators.push({ key: key, val: val, raw: unquoted })
+      } else {
+        textTokens.push(unquoted.toLowerCase())
+      }
+    })
+    return { textTokens: textTokens, operators: operators }
+  }
+
+  function filterElements(elements, query, context) {
     var list = Array.isArray(elements) ? elements : []
-    var q = String(query == null ? '' : query)
-      .trim()
-      .toLowerCase()
-    if (!q) return list.slice()
+    var parsed = parseFilterQuery(query)
+    if (!parsed.textTokens.length && !parsed.operators.length) return list.slice()
+
+    var ctx = context && typeof context === 'object' ? context : {}
+    var draftsById = ctx.draftsById || {}
+    var reviewedMap = ctx.reviewed || {}
+
+    // Group positive facets by key so multiple selections match using OR (e.g. model:A model:B matches A or B)
+    var modelOps = []
+    var conceptOps = []
+    var tagOps = []
+    var otherOps = []
+
+    for (var k = 0; k < parsed.operators.length; k++) {
+      var oper = parsed.operators[k]
+      if (oper.key === 'model' || oper.key === 'file') {
+        modelOps.push(oper)
+      } else if (oper.key === 'concept') {
+        conceptOps.push(oper)
+      } else if (oper.key === 'tag') {
+        tagOps.push(oper)
+      } else {
+        otherOps.push(oper)
+      }
+    }
+
     return list.filter(function (el) {
-      return isObject(el) && elementHaystack(el).indexOf(q) !== -1
+      if (!isObject(el)) return false
+      var haystack = elementHaystack(el)
+
+      for (var i = 0; i < parsed.textTokens.length; i++) {
+        if (haystack.indexOf(parsed.textTokens[i]) === -1) return false
+      }
+
+      // Check model facet (OR across multiple model selections)
+      if (modelOps.length > 0) {
+        var modelHaystack = (
+          String(el.modelId || '') +
+          ' ' +
+          String(el.modelFile || '') +
+          ' ' +
+          String(el.modelTitle || '')
+        ).toLowerCase()
+        var matchesAnyModel = modelOps.some(function (op) {
+          return modelHaystack.indexOf(op.val) !== -1
+        })
+        if (!matchesAnyModel) return false
+      }
+
+      // Check concept facet (OR across multiple concept selections)
+      if (conceptOps.length > 0) {
+        var elConcept = String(el.concept || '').toLowerCase()
+        var matchesAnyConcept = conceptOps.some(function (op) {
+          return elConcept.indexOf(op.val) !== -1
+        })
+        if (!matchesAnyConcept) return false
+      }
+
+      // Check tag facet (OR across multiple tag selections)
+      if (tagOps.length > 0) {
+        var matchesAnyTag = tagOps.some(function (op) {
+          var hasTag = false
+          if (Array.isArray(el.tags)) {
+            hasTag = el.tags.some(function (t) {
+              return String(t).toLowerCase().indexOf(op.val) !== -1
+            })
+          }
+          if (!hasTag && el.fields && isObject(el.fields)) {
+            if (Array.isArray(el.fields.tags)) {
+              hasTag = el.fields.tags.some(function (t) {
+                return String(t).toLowerCase().indexOf(op.val) !== -1
+              })
+            } else if (typeof el.fields.tags === 'string') {
+              hasTag = el.fields.tags.toLowerCase().indexOf(op.val) !== -1
+            } else if (typeof el.fields.tag === 'string') {
+              hasTag = el.fields.tag.toLowerCase().indexOf(op.val) !== -1
+            }
+          }
+          return hasTag
+        })
+        if (!matchesAnyTag) return false
+      }
+
+      for (var j = 0; j < otherOps.length; j++) {
+        var op = otherOps[j]
+        if (op.key === '!concept') {
+          var elConceptNot = String(el.concept || '').toLowerCase()
+          if (elConceptNot.indexOf(op.val) !== -1) return false
+        } else if (op.key === '!model' || op.key === '!file') {
+          var modelHaystackNot = (
+            String(el.modelId || '') +
+            ' ' +
+            String(el.modelFile || '') +
+            ' ' +
+            String(el.modelTitle || '')
+          ).toLowerCase()
+          if (modelHaystackNot.indexOf(op.val) !== -1) return false
+        } else if (op.key === 'tag') {
+          var hasTag = false
+          if (Array.isArray(el.tags)) {
+            hasTag = el.tags.some(function (t) {
+              return String(t).toLowerCase().indexOf(op.val) !== -1
+            })
+          }
+          if (!hasTag && el.fields && isObject(el.fields)) {
+            if (Array.isArray(el.fields.tags)) {
+              hasTag = el.fields.tags.some(function (t) {
+                return String(t).toLowerCase().indexOf(op.val) !== -1
+              })
+            } else if (typeof el.fields.tags === 'string') {
+              hasTag = el.fields.tags.toLowerCase().indexOf(op.val) !== -1
+            } else if (typeof el.fields.tag === 'string') {
+              hasTag = el.fields.tag.toLowerCase().indexOf(op.val) !== -1
+            }
+          }
+          if (!hasTag) return false
+        } else if (op.key === 'is') {
+          if (op.val === 'draft') {
+            if (!draftsById[el.id]) return false
+          } else if (op.val === 'reviewed') {
+            if (!reviewedMap[el.id]) return false
+          } else if (op.val === 'changed') {
+            if (!reviewedMap[el.id] || reviewedMap[el.id] === el.hash) return false
+          }
+        } else if (op.key === '!is') {
+          if (op.val === 'draft') {
+            if (draftsById[el.id]) return false
+          } else if (op.val === 'reviewed') {
+            if (reviewedMap[el.id]) return false
+          }
+        } else if (op.key === 'has') {
+          if (!el.fields || el.fields[op.val] === undefined || el.fields[op.val] === null || el.fields[op.val] === '') {
+            return false
+          }
+        } else if (op.key === '!has') {
+          if (el.fields && el.fields[op.val] !== undefined && el.fields[op.val] !== null && el.fields[op.val] !== '') {
+            return false
+          }
+        }
+      }
+      return true
     })
   }
 
@@ -641,7 +809,7 @@
     if (existingOpen) {
       banner.appendChild(existingOpen)
     } else if (banner.id === 'innfo-feedback-banner') {
-      var openBtn = el('button', 'innfo-feedback-open', 'Export feedback')
+      var openBtn = el('button', 'innfo-feedback-open', 'Export changes')
       if (openBtn) {
         openBtn.id = 'innfo-feedback-open'
         openBtn.setAttribute('type', 'button')
@@ -656,18 +824,318 @@
     }
   }
 
-  function renderRail(doc, concepts, counts, draftCountsByConcept, onSelect) {
+  function renderStatsBar(doc, elements, concepts, matrices, draftCount) {
+    var host = doc.getElementById('innfo-stats-bar')
+    if (!host) return
+    host.innerHTML = ''
+
+    var totalElements = Array.isArray(elements) ? elements.length : 0
+    var totalConcepts = Array.isArray(concepts) ? concepts.length : 0
+    var totalMatrices = Array.isArray(matrices) ? matrices.length : 0
+    var pendingReviews = typeof draftCount === 'number' ? draftCount : 0
+
+    var stats = [
+      {
+        label: 'Total Elements',
+        value: totalElements,
+        icon: 'boxes',
+        color: '#3b82f6',
+        bg: '#eff6ff',
+      },
+      {
+        label: 'Active Concepts',
+        value: totalConcepts,
+        icon: 'layers',
+        color: '#8b5cf6',
+        bg: '#f5f3ff',
+      },
+      {
+        label: 'Matrices',
+        value: totalMatrices,
+        icon: 'table',
+        color: '#10b981',
+        bg: '#ecfdf5',
+      },
+      {
+        label: 'Review Notes',
+        value: pendingReviews,
+        icon: 'file-text',
+        color: pendingReviews > 0 ? '#ef4444' : '#6b7280',
+        bg: pendingReviews > 0 ? '#fef2f2' : '#f3f4f6',
+      },
+    ]
+
+    stats.forEach(function (s) {
+      var card = el('div', 'innfo-stat-card')
+      var iconWrap = el('div', 'innfo-stat-icon')
+      iconWrap.style.backgroundColor = s.bg
+      iconWrap.style.color = s.color
+      iconWrap.innerHTML = UI.icon(s.icon, 22)
+
+      var body = el('div', 'innfo-stat-body')
+      var label = el('div', 'innfo-stat-label', s.label)
+      var val = el('div', 'innfo-stat-value', s.value)
+
+      body.appendChild(label)
+      body.appendChild(val)
+      card.appendChild(iconWrap)
+      card.appendChild(body)
+      host.appendChild(card)
+    })
+  }
+
+  function renderFilterBar(doc, state, onQueryChange, activeQuery) {
+    var host = doc.getElementById('innfo-filter-facets')
+    var activeHost = doc.getElementById('innfo-active-filters')
+    if (!host) return
+    host.innerHTML = ''
+    if (activeHost) activeHost.innerHTML = ''
+
+    var models = state && state.meta && Array.isArray(state.meta.models) ? state.meta.models : []
+    var parsed = parseFilterQuery(activeQuery || '')
+
+    // Extract active values for model and concept
+    var activeModels = []
+    var activeConcepts = []
+    parsed.operators.forEach(function (op) {
+      if (op.key === 'model' || op.key === 'file') activeModels.push(op.val.toLowerCase())
+      else if (op.key === 'concept') activeConcepts.push(op.val.toLowerCase())
+    })
+
+    function toggleFacet(key, val, add) {
+      var newOps = []
+      var removed = false
+      var lowerVal = String(val).toLowerCase()
+
+      parsed.operators.forEach(function (op) {
+        if ((op.key === key || (key === 'model' && op.key === 'file')) && op.val.toLowerCase() === lowerVal) {
+          if (!add) removed = true
+          else newOps.push(op)
+        } else {
+          newOps.push(op)
+        }
+      })
+
+      if (add && !removed) {
+        var needsQuote = String(val).indexOf(' ') !== -1
+        var formattedVal = needsQuote ? '"' + val + '"' : val
+        newOps.push({ key: key, val: val, raw: key + ':' + formattedVal })
+      }
+
+      var queryParts = parsed.textTokens.map(function (t) {
+        return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+      })
+      newOps.forEach(function (op) {
+        if (op.raw) queryParts.push(op.raw)
+        else {
+          var nq = String(op.val).indexOf(' ') !== -1
+          queryParts.push(op.key + ':' + (nq ? '"' + op.val + '"' : op.val))
+        }
+      })
+
+      var nextQuery = queryParts.join(' ')
+      if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
+    }
+
+    // 1. Models Dropdown
+    if (models.length > 1) {
+      var mWrap = el('div', 'innfo-facet-dropdown')
+      var mBtn = el('button', 'innfo-facet-btn' + (activeModels.length > 0 ? ' active' : ''))
+      mBtn.setAttribute('type', 'button')
+      var mIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 14 }) : '📄'
+      var mLabel = activeModels.length > 0 ? 'Models (' + activeModels.length + ')' : 'Models'
+      mBtn.innerHTML = mIcon + ' <span>' + mLabel + '</span> <span style="font-size: 10px;">▼</span>'
+
+      var mMenu = el('div', 'innfo-facet-menu')
+      models.forEach(function (m) {
+        var item = el('label', 'innfo-facet-item')
+        var cb = el('input', 'innfo-facet-checkbox')
+        cb.type = 'checkbox'
+        var mMatchKey = (m.id || m.filePath || '').toLowerCase()
+        var isChecked = activeModels.some(function (am) {
+          return am === mMatchKey || (m.filePath && am === m.filePath.toLowerCase()) || (m.id && am === m.id.toLowerCase())
+        })
+        cb.checked = isChecked
+
+        cb.addEventListener('change', function () {
+          toggleFacet('model', m.id || m.filePath, cb.checked)
+        })
+
+        var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', m.title || m.filePath)
+        nameSpan.title = m.filePath || m.title || ''
+        var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(m.elementCount || 0))
+
+        item.appendChild(cb)
+        item.appendChild(nameSpan)
+        item.appendChild(cntBadge)
+        mMenu.appendChild(item)
+      })
+
+      mBtn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        var isOpen = mMenu.classList.contains('open')
+        doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        if (!isOpen) mMenu.classList.add('open')
+      })
+
+      mWrap.appendChild(mBtn)
+      mWrap.appendChild(mMenu)
+      host.appendChild(mWrap)
+    }
+
+    // 2. Concepts Dropdown
+    var allConcepts = []
+    if (state && Array.isArray(state.elements)) {
+      var conceptCounts = {}
+      state.elements.forEach(function (e) {
+        if (e && e.concept) {
+          conceptCounts[e.concept] = (conceptCounts[e.concept] || 0) + 1
+        }
+      })
+      Object.keys(conceptCounts).sort().forEach(function (cName) {
+        allConcepts.push({ name: cName, count: conceptCounts[cName] })
+      })
+    }
+
+    if (allConcepts.length > 0) {
+      var cWrap = el('div', 'innfo-facet-dropdown')
+      var cBtn = el('button', 'innfo-facet-btn' + (activeConcepts.length > 0 ? ' active' : ''))
+      cBtn.setAttribute('type', 'button')
+      var cIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('layers', { size: 14 }) : '🏷️'
+      var cLabel = activeConcepts.length > 0 ? 'Concepts (' + activeConcepts.length + ')' : 'Concepts'
+      cBtn.innerHTML = cIcon + ' <span>' + cLabel + '</span> <span style="font-size: 10px;">▼</span>'
+
+      var cMenu = el('div', 'innfo-facet-menu')
+      allConcepts.forEach(function (c) {
+        var item = el('label', 'innfo-facet-item')
+        var cb = el('input', 'innfo-facet-checkbox')
+        cb.type = 'checkbox'
+        var isChecked = activeConcepts.indexOf(c.name.toLowerCase()) !== -1
+        cb.checked = isChecked
+
+        cb.addEventListener('change', function () {
+          toggleFacet('concept', c.name, cb.checked)
+        })
+
+        var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', c.name)
+        var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(c.count))
+
+        item.appendChild(cb)
+        item.appendChild(nameSpan)
+        item.appendChild(cntBadge)
+        cMenu.appendChild(item)
+      })
+
+      cBtn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        var isOpen = cMenu.classList.contains('open')
+        doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        if (!isOpen) cMenu.classList.add('open')
+      })
+
+      cWrap.appendChild(cBtn)
+      cWrap.appendChild(cMenu)
+      host.appendChild(cWrap)
+    }
+
+    // 3. Clear button if any filter is active
+    if (activeQuery) {
+      var clearBtn = el('button', 'btn btn-ghost btn-xs text-xs text-slate-500 hover:text-error', 'Clear filters')
+      clearBtn.setAttribute('type', 'button')
+      clearBtn.addEventListener('click', function () {
+        if (typeof onQueryChange === 'function') onQueryChange('')
+      })
+      host.appendChild(clearBtn)
+    }
+
+    // 4. Render Active Filter Pills below the bar
+    if (activeHost && (parsed.operators.length > 0 || parsed.textTokens.length > 0)) {
+      parsed.operators.forEach(function (op) {
+        var pill = el('span', 'badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
+        var labelText = op.key + ':' + op.val
+        pill.innerHTML = '<span>' + labelText + '</span>'
+        var removeBtn = el('button', 'ml-1 hover:text-error cursor-pointer font-bold', '×')
+        removeBtn.setAttribute('type', 'button')
+        removeBtn.addEventListener('click', function (e) {
+          e.stopPropagation()
+          toggleFacet(op.key, op.val, false)
+        })
+        pill.appendChild(removeBtn)
+        activeHost.appendChild(pill)
+      })
+
+      parsed.textTokens.forEach(function (token) {
+        var pill = el('span', 'badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
+        pill.innerHTML = '<span>"' + token + '"</span>'
+        var removeBtn = el('button', 'ml-1 hover:text-error cursor-pointer font-bold', '×')
+        removeBtn.setAttribute('type', 'button')
+        removeBtn.addEventListener('click', function (e) {
+          e.stopPropagation()
+          var nextTokens = parsed.textTokens.filter(function (t) { return t !== token })
+          var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || (o.key + ':' + o.val) })).join(' ')
+          if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
+        })
+        pill.appendChild(removeBtn)
+        activeHost.appendChild(pill)
+      })
+    }
+
+    // Close menus on outside click
+    if (!doc.__facetOutsideListener) {
+      doc.__facetOutsideListener = true
+      doc.addEventListener('click', function () {
+        doc.querySelectorAll('.innfo-facet-menu').forEach(function (m) {
+          m.classList.remove('open')
+        })
+      })
+    }
+  }
+
+  function renderRail(doc, concepts, counts, draftCountsByConcept, onSelect, state) {
     var rail = doc.getElementById('innfo-rail')
     if (!rail) return
     rail.innerHTML = ''
-    concepts.forEach(function (concept, index) {
+
+    var models = state && state.meta && Array.isArray(state.meta.models) && state.meta.models.length > 1
+      ? state.meta.models
+      : null
+
+    // 1. If Domain has multiple models, show a clean, compact list of models at the top
+    if (models) {
+      var mHdr = el('div', 'innfo-rail-header')
+      mHdr.innerHTML = '<span>Models (' + models.length + ')</span>'
+      rail.appendChild(mHdr)
+
+      models.forEach(function (m) {
+        var mBtn = (doc.createElement ? doc.createElement('button') : el('button'))
+        mBtn.className = 'innfo-rail-item text-xs py-1.5'
+        mBtn.setAttribute('data-model', String(m.id || m.filePath))
+        var iconHtml = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 13, class: 'text-primary shrink-0 mr-1.5' }) : '📄 '
+        var titleText = m.title || m.filePath || 'Model'
+        mBtn.innerHTML = '<span class="flex items-center truncate flex-1" title="' + (m.filePath || titleText) + '">' + iconHtml + '<span class="truncate">' + titleText + '</span></span>' +
+          '<span class="badge badge-xs badge-ghost font-mono text-[10px] ml-1">' + (m.elementCount || 0) + '</span>'
+
+        mBtn.addEventListener('click', function () {
+          if (typeof onSelect === 'function') onSelect('model:' + (m.id || m.filePath))
+        })
+        rail.appendChild(mBtn)
+      })
+    }
+
+    // 2. Concepts list (clean, flat, and responsive)
+    var cHdr = el('div', 'innfo-rail-header')
+    cHdr.innerHTML = '<span>Concepts (' + (concepts ? concepts.length : 0) + ')</span>'
+    rail.appendChild(cHdr)
+
+    ;(Array.isArray(concepts) ? concepts : []).forEach(function (concept, index) {
       var name = typeof concept === 'string' ? concept : concept.name
       var count = counts[name] || 0
       var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
-      var btn = el('button', 'innfo-rail-item')
+      var btn = (doc.createElement ? doc.createElement('button') : el('button'))
       if (!btn) return
+      btn.className = 'innfo-rail-item'
       btn.setAttribute('data-concept', String(name))
-      var pill = UI.ConceptPill({ id: name, label: name, index: index, count: count })
+      var pill = UI.ConceptPill({ id: name, label: name, index: index, count: count }, { document: doc })
       if (pill) btn.appendChild(pill)
       if (draftCount > 0) {
         var badge = el('span', 'innfo-rail-badge', String(draftCount))
@@ -677,20 +1145,62 @@
         }
       }
       btn.addEventListener('click', function () {
-        if (typeof onSelect === 'function') onSelect(String(name))
+        if (typeof onSelect === 'function') onSelect('concept:' + String(name))
       })
       rail.appendChild(btn)
     })
   }
 
-  // Cards are review-agnostic: C's controller decorates them after render
-  // (the B D19 Suggest button and per-card draft badge are gone).
-  function mountElementCards(doc, elements, drafts, refs) {
+  // Cards project live drafts: active draft edits and notes are visually badged,
+  // new draft elements are projected, and deleted elements are styled.
+  function mountElementCards(doc, elements, drafts, refs, concepts) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
 
-    elements.forEach(function (element) {
+    var draftsByElementId = {}
+    var newDrafts = []
+    ;(Array.isArray(drafts) ? drafts : []).forEach(function (d) {
+      if (!d) return
+      if (d.kind === 'new') {
+        newDrafts.push(d)
+      } else if (d.element_id) {
+        draftsByElementId[String(d.element_id)] = d
+      }
+    })
+
+    var projectedElements = (Array.isArray(elements) ? elements : []).map(function (el) {
+      if (!isObject(el)) return el
+      var clone = Object.assign({}, el)
+      if (clone.fields && isObject(clone.fields)) {
+        clone.fields = Object.assign({}, clone.fields)
+      } else {
+        clone.fields = {}
+      }
+      var draft = draftsByElementId[clone.id]
+      if (draft) {
+        clone._draft = draft
+        if (draft.kind === 'correction' && draft.field && draft.proposed !== undefined) {
+          clone.fields[draft.field] = draft.proposed
+        }
+      }
+      return clone
+    })
+
+    newDrafts.forEach(function (nd) {
+      projectedElements.push({
+        id: nd.element_id || ('new-' + nd.id),
+        name: nd.element || 'New Draft Element',
+        concept: nd.concept || 'Draft',
+        description: nd.comment || 'Draft element pending application',
+        fields: nd.fields && isObject(nd.fields) ? nd.fields : {},
+        _draft: nd,
+      })
+    })
+
+    var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
+
+    projectedElements.forEach(function (element) {
       var fields = []
       if (isObject(element.fields)) {
         Object.keys(element.fields).forEach(function (k) {
@@ -721,6 +1231,74 @@
           },
         },
       )
+
+      // Discrete concept color left border & badge affordance
+      var cDef = (Array.isArray(concepts) ? concepts : []).find(function (c) {
+        return c && (typeof c === 'string' ? c : c.name) === element.concept
+      })
+      var cColor = (cDef && cDef.color) || '#3b82f6'
+      var hexColor = visuals && typeof visuals.getHexColor === 'function' ? visuals.getHexColor(cColor) : cColor
+      card.style.borderLeft = '3px solid ' + hexColor
+
+      var head = card.querySelector('.innfo-card-head, header')
+      if (head) {
+        var metaWrap = el('div', 'flex items-center gap-1.5 flex-wrap ml-auto mr-2')
+        if (element.concept) {
+          var cBadge = el('span', 'badge badge-outline badge-xs text-xs font-semibold')
+          cBadge.style.borderColor = hexColor
+          cBadge.style.color = hexColor
+          cBadge.textContent = element.concept
+          metaWrap.appendChild(cBadge)
+        }
+        if (element.modelFile) {
+          var mBadge = el('span', 'badge badge-ghost badge-xs text-xs font-mono', element.modelFile)
+          mBadge.setAttribute('title', 'Knowledge Unit: ' + (element.canonicalUnit || element.unitSlug || element.modelFile))
+          metaWrap.appendChild(mBadge)
+
+          var kuText = element.canonicalUnit || element.unitSlug || (element.modelFile + '@' + element.id)
+          var copyBtn = el('button', 'btn btn-ghost btn-xs p-0.5 text-slate-400 hover:text-primary transition-colors cursor-pointer')
+          copyBtn.setAttribute('type', 'button')
+          copyBtn.setAttribute('title', 'Copy Knowledge Unit locator: ' + kuText)
+          copyBtn.setAttribute('aria-label', 'Copy Knowledge Unit locator')
+          copyBtn.innerHTML = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('copy', { size: 12 }) : '📋'
+          copyBtn.addEventListener('click', function (ev) {
+            ev.stopPropagation()
+            if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(kuText)
+              copyBtn.innerHTML = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('check', { size: 12, class: 'text-success' }) : '✓'
+              setTimeout(function () {
+                copyBtn.innerHTML = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('copy', { size: 12 }) : '📋'
+              }, 2000)
+            }
+          })
+          metaWrap.appendChild(copyBtn)
+        }
+        var insertBeforeNode = head.children && head.children.length > 1 ? head.children[1] : null
+        head.insertBefore(metaWrap, insertBeforeNode)
+      }
+
+      if (element._draft) {
+        var d = element._draft
+        var badgeCls = 'badge badge-sm ' + (d.kind === 'correction' ? 'badge-warning' : d.kind === 'new' ? 'badge-info' : d.kind === 'delete' ? 'badge-error' : 'badge-neutral')
+        var badgeText = d.kind === 'correction' ? 'Draft Edit' : d.kind === 'new' ? 'New Draft' : d.kind === 'delete' ? 'Delete Proposed' : 'Has Comment'
+        var draftBadge = doc.createElement('span')
+        draftBadge.className = 'innfo-card-draft-badge ' + badgeCls + ' ml-2'
+        draftBadge.textContent = badgeText
+
+        var titleEl = card.querySelector('.innfo-card-title, h3, header')
+        if (titleEl) {
+          titleEl.appendChild(draftBadge)
+        }
+
+        if (d.kind === 'delete') {
+          card.classList.add('opacity-50', 'line-through')
+        } else if (d.kind === 'correction') {
+          card.classList.add('border-l-4', 'border-warning')
+        } else if (d.kind === 'new') {
+          card.classList.add('border-l-4', 'border-info')
+        }
+      }
+
       content.appendChild(card)
     })
   }
@@ -1778,7 +2356,7 @@
     }
     tabs.push({
       id: 'review',
-      label: 'Review Summary',
+      label: 'Changes',
       icon: 'review',
       targetId: 'innfo-tab-review',
       count: draftCount,
@@ -1786,6 +2364,7 @@
 
     tabsNav.innerHTML = ''
     tabsNav.style.display = 'flex'
+    tabsNav.className = 'innfo-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
 
     var initialHash = String(doc.location ? doc.location.hash || '' : '').replace(/^#/, '')
     var activeTabId = initialHash || (hasDomain ? 'canonical' : tabs[0].id)
@@ -1800,7 +2379,10 @@
         var btn = tabsNav.querySelector('.innfo-view-tab[data-tab="' + t.id + '"]')
         var panel = doc.getElementById(t.targetId)
         var isActive = t.id === tabId
-        if (btn) btn.classList.toggle('active', isActive)
+        if (btn) {
+          btn.classList.toggle('active', isActive)
+          btn.classList.toggle('tab-active', isActive)
+        }
         if (panel) panel.classList.toggle('active', isActive)
       })
 
@@ -1818,13 +2400,14 @@
     }
 
     tabs.forEach(function (t) {
-      var btn = el('button', 'innfo-view-tab' + (t.id === activeTabId ? ' active' : ''))
+      var btn = el('button', 'innfo-view-tab tab flex items-center gap-2' + (t.id === activeTabId ? ' active tab-active' : ''))
       if (!btn) return
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
-      var iconHtml = UI.icon(t.icon, 15)
+      var iconName = t.icon === 'chart' ? 'bar-chart-2' : t.icon === 'matrices' ? 'table' : t.icon === 'explorer' ? 'boxes' : t.icon === 'review' ? 'edit' : t.icon
+      var iconHtml = UI.icon(iconName, 15)
       var countBadge =
-        t.count > 0 ? '<span class="innfo-rail-badge">' + t.count + '</span>' : ''
+        t.count > 0 ? '<span class="innfo-rail-badge badge badge-sm badge-neutral">' + t.count + '</span>' : ''
       btn.innerHTML = iconHtml + '<span>' + t.label + '</span>' + countBadge
       btn.addEventListener('click', function () {
         selectTab(t.id)
@@ -1842,27 +2425,47 @@
     host.innerHTML = ''
 
     var drafts = state && state.store ? state.store.drafts() : []
-    var root = el('div', 'innfo-review-tab-content')
+    var root = el('div', 'innfo-review-tab-content p-6 max-w-5xl mx-auto')
     if (!root) return
 
-    var head = el('section', 'innfo-review-head')
+    var head = el('section', 'innfo-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
     if (head) {
-      head.appendChild(el('h2', null, 'Review Summary & Pending Feedback'))
+      var titleWrap = el('div')
+      titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', 'Proposed Changes'))
       var count = el(
         'p',
-        'innfo-review-count',
-        drafts.length + (drafts.length === 1 ? ' pending draft' : ' pending drafts'),
+        'innfo-review-count text-sm opacity-70 mt-1',
+        drafts.length + (drafts.length === 1 ? ' pending change' : ' pending changes'),
       )
-      if (count) head.appendChild(count)
+      if (count) titleWrap.appendChild(count)
+      head.appendChild(titleWrap)
+
+      if (drafts.length > 0) {
+        var exportBtn = el('button', 'innfo-btn innfo-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
+        if (exportBtn) {
+          exportBtn.setAttribute('type', 'button')
+          if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
+            exportBtn.innerHTML = InnfoIcons.getSvg('download', { size: 14 }) + '<span>Export changes</span>'
+          }
+          exportBtn.addEventListener('click', function () {
+            openExportModal(doc, state)
+          })
+          head.appendChild(exportBtn)
+        }
+      }
       root.appendChild(head)
     }
 
     var listSection = el('section', 'innfo-review-list-section')
     if (listSection) {
       if (drafts.length === 0) {
-        listSection.appendChild(
-          el('div', 'empty-state', 'No review drafts yet. Annotate an element in review mode.'),
-        )
+        var empty = el('div', 'empty-state alert alert-info bg-base-100 border border-base-200 text-sm p-4 rounded-lg flex items-center gap-3')
+        if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
+          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Annotate an element in review mode.</span>'
+        } else {
+          empty.textContent = 'No proposed changes yet. Annotate an element in review mode.'
+        }
+        listSection.appendChild(empty)
       } else {
         var byId = {}
         ;(state && state.elements ? state.elements : []).forEach(function (e) {
@@ -2133,9 +2736,9 @@
       var style = active.createElement('style')
       style.setAttribute('data-innfo-feedback', '')
       style.textContent =
-        '[data-innfo-feedback-root]{display:block;}' +
-        '#innfo-feedback-banner{padding:16px 24px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e5e7eb);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}' +
-        '#innfo-feedback-banner strong{font-size:1.1rem;font-weight:700;}' +
+        '[data-innfo-feedback-root]{display:block;position:sticky;top:0;z-index:40;background:var(--surface,#ffffff);}' +
+        '#innfo-feedback-banner{padding:12px 24px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e5e7eb);display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);}' +
+        '#innfo-feedback-banner strong{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;}' +
         '#innfo-feedback-banner .innfo-banner-version,#innfo-feedback-banner .innfo-banner-needs,#innfo-feedback-banner .innfo-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
         '#innfo-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;margin-left:auto;}' +
         '#innfo-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
@@ -2213,19 +2816,21 @@
     // Modal
     var modal = active.createElement('dialog')
     modal.id = 'innfo-feedback-modal'
-    modal.setAttribute('aria-label', 'Export reviewer feedback')
+    modal.setAttribute('aria-label', 'Export proposed changes')
     modal.innerHTML =
-      '<h2>Export reviewer feedback</h2>' +
+      '<h2>Export proposed changes</h2>' +
       '<div data-innfo="preview"></div>' +
-      '<label>Reviewer identifier (required)' +
+      '<label>Author / Reviewer identifier (required)' +
       '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
       '</label>' +
       '<div data-innfo="errors" style="display: none;"></div>' +
-      '<h3>Export JSON</h3>' +
-      '<textarea data-innfo="export-json" readonly></textarea>' +
+      '<h3>Proposed Changeset (_changes_NN.md)</h3>' +
+      '<textarea data-innfo="export-json" data-innfo-changeset="true" readonly></textarea>' +
       '<div class="innfo-feedback-actions">' +
-      '<button data-innfo="download" type="button">Download feedback JSON</button>' +
-      '<button data-innfo="copy" type="button">Copy to clipboard</button>' +
+      '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
+      '<button data-innfo="copy-changeset-prompt" type="button">Copy Changeset Prompt</button>' +
+      '<button data-innfo="download" type="button" style="display: none;">Download feedback JSON</button>' +
+      '<button data-innfo="copy" type="button" style="display: none;">Copy to clipboard</button>' +
       '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
       '<h3>Instructions</h3>' +
@@ -2247,6 +2852,103 @@
     }
 
     return root
+  }
+
+  function formatChangesetValue(val) {
+    if (val === undefined || val === null) return '""'
+    var str = typeof val === 'object' ? JSON.stringify(val) : String(val)
+    if (str.indexOf('"') !== -1 || str.indexOf('\n') !== -1 || str.indexOf(':') !== -1 || str.indexOf(' ') !== -1) {
+      return JSON.stringify(str)
+    }
+    return str
+  }
+
+  function draftToChange(draft, index, modelTitle) {
+    var d = isObject(draft) ? draft : {}
+    var id = d.id || 'c-' + String(index + 1).padStart(2, '0')
+    var model = modelTitle || 'model'
+    var elementTarget = d.element_id || d.element || 'elem'
+    var target = d.field ? model + '@' + elementTarget + '&' + d.field : model + '@' + elementTarget
+    var op = 'update_field'
+    if (d.kind === 'delete') {
+      op = 'remove_element'
+      target = model + '@' + elementTarget
+    } else if (d.kind === 'comment' || (!d.proposed && !d.field)) {
+      op = 'comment'
+    }
+
+    var lines = []
+    lines.push('## NN Change: ' + id)
+    lines.push('op:: ' + op)
+    lines.push('target:: ' + target)
+    if (op === 'update_field') {
+      if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
+      if (d.proposed !== undefined) lines.push('to:: ' + formatChangesetValue(d.proposed))
+    }
+    if (d.comment) {
+      lines.push('notes:: ' + formatChangesetValue(d.comment))
+    }
+    return lines.join('\n')
+  }
+
+  function serializeChangesetMarkdown(meta, drafts) {
+    var title = meta.title || meta.source_knowledge || 'Proposed Changes'
+    var author = meta.author || 'reviewer'
+    var lines = [
+      '---',
+      'spec_version: "V_0-4-0"',
+      'parent_spec: "changes"',
+      'blueprint_version: "0.1.0"',
+      'status: proposed',
+      'title: ' + JSON.stringify(title),
+      'author: ' + JSON.stringify(author),
+      '---',
+      '',
+      '> [!NOTE]',
+      '> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).',
+      '',
+      '# NN index',
+      '',
+      '* [[Change]]',
+      '',
+      '# NN Change',
+      '',
+    ]
+    var modelName = meta.source_knowledge || 'model'
+    var blocks = drafts.map(function (d, i) {
+      return draftToChange(d, i, modelName)
+    })
+    lines.push(blocks.join('\n\n'))
+    lines.push('')
+    return lines.join('\n')
+  }
+
+  function composeChangesetExport(state, identifier) {
+    var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
+    var drafts = state && state.store ? state.store.drafts() : []
+    var model = state && state.modelTitle ? state.modelTitle : 'Model'
+    var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
+    var reviewerSlug = slugify(reviewer) || 'reviewer'
+    var stamp = stampFromDate(new Date())
+
+    var exportMeta = {
+      source_knowledge: model,
+      title: 'Review Changes: ' + model,
+      author: reviewer,
+    }
+
+    if (!reviewer || reviewer === DEFAULT_REVIEWER_NAME) {
+      return { ok: false, errors: ['Reviewer identifier is required.'] }
+    }
+
+    var text = serializeChangesetMarkdown(exportMeta, drafts)
+    var filename = model + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
+    return {
+      ok: true,
+      text: text,
+      filename: filename,
+      items: drafts.length,
+    }
   }
 
   function composeExport(state, identifier) {
@@ -2290,11 +2992,17 @@
     var check = validateFeedback(payload)
     if (!check.ok) return { ok: false, errors: check.errors }
 
+    var stamp = stampFromDate(state && state.exportedAt ? new Date(state.exportedAt) : new Date())
+    var changesetMd = serializeChangesetMarkdown(exportMeta, drafts)
+    var changesetFilename = model + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
+
     return {
       ok: true,
       payload: payload,
       text: serializeFeedback(payload),
       filename: buildFeedbackFilename(model, String(version).replace(/^V_/, ''), reviewer),
+      changesetText: changesetMd,
+      changesetFilename: changesetFilename,
       items: payload.items.length,
     }
   }
@@ -2314,6 +3022,70 @@
       }).join('') +
       '</ul>'
     errorContainer.style.display = 'block'
+  }
+
+  function downloadChangesetExport(doc, state) {
+    var identifierInput = doc.querySelector('#innfo-feedback-modal [data-innfo="identifier"]')
+    var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+    var composed = composeExport(state, identifier)
+    if (!composed.ok) {
+      renderErrors(doc, composed.errors)
+      return composed
+    }
+    renderErrors(doc, [])
+    var blob = new Blob([composed.changesetText], { type: 'text/markdown;charset=utf-8' })
+    var url = URL.createObjectURL(blob)
+    var anchor = doc.createElement('a')
+    anchor.href = url
+    anchor.download = composed.changesetFilename
+    doc.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    setTimeout(function () {
+      URL.revokeObjectURL(url)
+    }, 1000)
+    return { ok: true, filename: composed.changesetFilename, items: composed.items }
+  }
+
+  function copyChangesetPrompt(doc, state) {
+    var modal = doc.getElementById('innfo-feedback-modal')
+    var status = modal && modal.querySelector('[data-innfo="copy-status"]')
+    var textarea = modal && modal.querySelector('[data-innfo="export-json"]')
+    function announce(msg) {
+      if (status) status.textContent = msg
+    }
+    var composed = composeExport(state, _readIdentifier(modal))
+    if (!composed.ok) {
+      announce('Cannot copy: fix the validation errors first.')
+      return composed
+    }
+    var promptText =
+      'Please apply the following changeset to update ' +
+      (state ? state.modelTitle : 'the model') +
+      ':\n\n```markdown\n' +
+      composed.changesetText +
+      '```\n'
+    try {
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === 'function'
+      ) {
+        navigator.clipboard.writeText(promptText).then(
+          function () {
+            announce('Copied changeset prompt to clipboard.')
+          },
+          function () {
+            announce(fallbackCopy(doc, textarea, promptText))
+          },
+        )
+        return composed
+      }
+      announce(fallbackCopy(doc, textarea, promptText))
+    } catch {
+      announce('Copy failed. Select the text and press Ctrl+C.')
+    }
+    return composed
   }
 
   function downloadFeedbackExport(doc, state) {
@@ -2358,19 +3130,25 @@
 
     var composed = composeExport(state, identifier)
     var downloadBtn = modal.querySelector('[data-innfo="download"]')
+    var downloadCsBtn = modal.querySelector('[data-innfo="download-changeset"]')
     var copyBtn = modal.querySelector('[data-innfo="copy"]')
+    var copyCsBtn = modal.querySelector('[data-innfo="copy-changeset-prompt"]')
     var textarea = modal.querySelector('[data-innfo="export-json"]')
 
     if (composed.ok) {
       renderErrors(doc, [])
-      if (textarea) textarea.value = composed.text
+      if (textarea) textarea.value = composed.changesetText || composed.text
       if (downloadBtn) downloadBtn.disabled = false
+      if (downloadCsBtn) downloadCsBtn.disabled = false
       if (copyBtn) copyBtn.disabled = false
+      if (copyCsBtn) copyCsBtn.disabled = false
     } else {
       renderErrors(doc, composed.errors)
       if (textarea) textarea.value = ''
       if (downloadBtn) downloadBtn.disabled = true
+      if (downloadCsBtn) downloadCsBtn.disabled = true
       if (copyBtn) copyBtn.disabled = true
+      if (copyCsBtn) copyCsBtn.disabled = true
     }
     return composed
   }
@@ -2453,11 +3231,11 @@
       instructions.textContent =
         'Review ' +
         drafts.length +
-        ' pending draft(s), then download or copy the feedback JSON.'
+        ' pending draft(s), then download or copy the feedback JSON or Changeset.'
     }
     if (agentPrompt) {
       agentPrompt.textContent =
-        'Apply the attached feedback JSON to ' +
+        'Apply the attached feedback JSON or Changeset to ' +
         (state ? state.modelTitle : 'Model') +
         ' (' +
         (state ? state.modelVersion : '') +
@@ -2494,6 +3272,21 @@
       })
     }
 
+    var downloadCsBtn = modal.querySelector('[data-innfo="download-changeset"]')
+    if (downloadCsBtn && !downloadCsBtn.getAttribute('data-innfo-bound')) {
+      downloadCsBtn.setAttribute('data-innfo-bound', '1')
+      downloadCsBtn.addEventListener('click', function () {
+        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
+        setReviewerName(identifier)
+        var res = downloadChangesetExport(doc, state)
+        if (res && res.ok) {
+          if (typeof modal.close === 'function') modal.close()
+          else modal.removeAttribute('open')
+        }
+      })
+    }
+
     var copyBtn = modal.querySelector('[data-innfo="copy"]')
     if (copyBtn && !copyBtn.getAttribute('data-innfo-bound')) {
       copyBtn.setAttribute('data-innfo-bound', '1')
@@ -2501,6 +3294,16 @@
         var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
         if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
         copyExport(doc, state)
+      })
+    }
+
+    var copyCsBtn = modal.querySelector('[data-innfo="copy-changeset-prompt"]')
+    if (copyCsBtn && !copyCsBtn.getAttribute('data-innfo-bound')) {
+      copyCsBtn.setAttribute('data-innfo-bound', '1')
+      copyCsBtn.addEventListener('click', function () {
+        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
+        copyChangesetPrompt(doc, state)
       })
     }
   }
@@ -2568,23 +3371,64 @@
         }
       })
 
-      mountElementCards(active, filterElements(elements, activeSearchQuery || ''), currentDrafts, refs)
+      var draftsById = {}
+      currentDrafts.forEach(function (d) {
+        if (d && d.element_id) draftsById[d.element_id] = true
+      })
+      var filterCtx = {
+        draftsById: draftsById,
+        reviewed: state.store && typeof state.store.reviewed === 'function' ? state.store.reviewed() : {},
+      }
+
+      mountElementCards(active, filterElements(elements, activeSearchQuery || '', filterCtx), currentDrafts, refs, concepts)
+      renderFilterBar(active, state, function (nextQuery) {
+        var sBox = active.getElementById('innfo-search')
+        if (sBox) sBox.value = nextQuery
+        refresh(nextQuery)
+      }, activeSearchQuery)
       renderBanner(active, meta, config.needs, currentDrafts.length, function () {
         refresh(activeSearchQuery)
       }, state)
-      renderRail(active, concepts, counts, draftCountsByConcept, function (concept) {
+      renderRail(active, concepts, counts, draftCountsByConcept, function (token) {
         var search = active.getElementById('innfo-search')
         if (search) {
-          search.value = concept
-          refresh(concept)
+          search.value = token
+          refresh(token)
         }
-      })
+      }, state)
+
+      // Hide documentation overview tree when filtering elements so filtered cards are immediately visible
+      var docHost = active.getElementById('innfo-doc')
+      if (docHost) {
+        docHost.style.display = activeSearchQuery ? 'none' : ''
+      }
+
+      // If filtering and not currently on Explorer, activate Explorer tab
+      if (activeSearchQuery) {
+        var tabsNav = active.getElementById('innfo-view-tabs')
+        if (tabsNav) {
+          var explorerBtn = tabsNav.querySelector('.innfo-view-tab[data-tab="explorer"]')
+          if (explorerBtn && !explorerBtn.classList.contains('active') && typeof explorerBtn.click === 'function') {
+            explorerBtn.click()
+          }
+        }
+      }
+
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)
       })
       renderViewTabs(active, config, model, meta, state, function () {
         refresh(activeSearchQuery)
       })
+      renderStatsBar(active, elements, concepts, matrices, currentDrafts.length)
+
+      if (typeof history !== 'undefined' && history.replaceState && active.location) {
+        if (activeSearchQuery) {
+          history.replaceState(null, '', '#q=' + encodeURIComponent(activeSearchQuery))
+        } else if (active.location.hash && active.location.hash.indexOf('#q=') === 0) {
+          history.replaceState(null, '', active.location.pathname + active.location.search)
+        }
+      }
 
       var content = active.getElementById('innfo-content') || active.getElementById('content')
       if (content) {
@@ -2596,7 +3440,22 @@
       ensureFeedbackUi(active, state)
     }
 
-    refresh('')
+    var initialQuery = ''
+    if (typeof active.location !== 'undefined' && active.location.hash) {
+      var hashMatch = active.location.hash.match(/^#q=(.+)$/)
+      if (hashMatch) {
+        try {
+          initialQuery = decodeURIComponent(hashMatch[1])
+        } catch {}
+      }
+    }
+
+    var searchBox = active.getElementById('innfo-search')
+    if (searchBox && initialQuery) {
+      searchBox.value = initialQuery
+    }
+
+    refresh(initialQuery)
 
     // C3: the controller builds the toggle into the (now rendered) banner and
     // listens for innfo:rendered; created after the first paint so the banner
@@ -2703,6 +3562,7 @@
     renderRefDialog: renderRefDialog,
     renderCitationDialog: renderCitationDialog,
     renderBanner: renderBanner,
+    renderFilterBar: renderFilterBar,
     renderRail: renderRail,
     renderDocument: renderDocument,
     renderDocumentView: renderDocumentView,
@@ -2724,6 +3584,9 @@
     draftToItem: draftToItem,
     downloadFeedbackExport: downloadFeedbackExport,
     composeExport: composeExport,
+    composeChangesetExport: composeChangesetExport,
+    downloadChangesetExport: downloadChangesetExport,
+    copyChangesetPrompt: copyChangesetPrompt,
     serializeFeedback: serializeFeedback,
     downloadExport: downloadExport,
     buildExportDoc: buildExportDoc,

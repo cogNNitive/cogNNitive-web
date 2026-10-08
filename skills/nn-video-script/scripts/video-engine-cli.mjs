@@ -385,7 +385,7 @@ export async function compileVideo(options) {
   const models = options.models || {};
   const allowModels = options.allowModels || [];
   const approvalPath = options.approvalPath ? path.resolve(options.approvalPath) : path.join(scriptDir, APPROVAL_FILENAME);
-  const checkNow = () => checkApproval({ scriptContent, models, approvalPath, allowModels });
+  const checkNow = () => checkApproval({ scriptContent, models, approvalPath, allowModels, allowDelegated: loaded.config.allowDelegatedApproval === true });
   // Default cache lives at the workspace root so it is shared across series and cwd-independent.
   const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir);
   const synthOptions = { defaultModels: models, ...(options.synthesizerOptions || {}) };

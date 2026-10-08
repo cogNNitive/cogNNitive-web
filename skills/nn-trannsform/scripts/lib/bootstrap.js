@@ -64,7 +64,7 @@ At the beginning of every interactive session in this workspace, AI coding agent
 - **Zero Unilateral Mutation (Consent First)**: NEVER move, rename, or delete user files (including raw files in \`sources/import/\`) without explicit confirmation.
 - **Recommended Option First**: In all menus or option lists, present the \`(Recommended)\` option first based on domain state.
 - **Optimistic Execution & Informative Grace**: Proceed immediately on safe, standard, non-destructive actions while clearly announcing intent and providing an easy interruption path.
-- **Conversations as Reference & Source**: Continuously log session turns and offer promotion to \`sources/conversations/\` at session completion.
+- **Conversations as Reference & Source**: Continuously log session turns and auto-promote to \`sources/conversations/\` at session completion (the user can opt out).
 `;
 }
 
@@ -109,8 +109,8 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `---\n` +
       `level: 3\n` +
       `parent_spec:\n` +
-      `  name: "workspace"\n` +
-      `  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"\n` +
+      `  name: "domaiNN"\n` +
+      `  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\n` +
       `knowledge_version: "V_0-1-0"\n` +
       `title: "${projectName} Workspace"\n` +
       `---\n\n` +

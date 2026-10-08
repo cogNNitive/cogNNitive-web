@@ -36,6 +36,10 @@ export const DEFAULT_GUARD = Object.freeze({
   ],
   blockedModels: ['wavespeed-ai/infinitetalk'],
   voices: {},
+  // When true, compile/synthesize-avatar accept delegated (agent-relayed) plan
+  // approvals. Default false: delegation is opt-in per workspace because a chat
+  // phrase is weaker than a TTY (prompt-injection surface). See cost-guardrails.md.
+  allowDelegatedApproval: false,
   // Provider-native voices that need no registration or cloning; a trailing * is a prefix glob.
   systemVoices: [
     'Friendly_Person', 'Wise_Woman', 'Deep_Voice_Man', 'Inspirational_girl', 'Calm_Woman', 'Casual_Guy', 'Lively_Girl', 'Patient_Man', 'Young_Knight', 'Determined_Man', 'Lovely_Girl', 'Decent_Boy', 'Imposing_Manner', 'Elegant_Man', 'Abbess', 'Sweet_Girl_2', 'Exuberant_Girl', 'English_*',
@@ -143,6 +147,9 @@ export function validateConfig(config, source) {
     problems.push('allowedModels must be a non-empty array of model ids');
   }
   if (!isStringArray(config.blockedModels)) problems.push('blockedModels must be an array of model ids');
+  if (config.allowDelegatedApproval !== undefined && typeof config.allowDelegatedApproval !== 'boolean') {
+    problems.push('allowDelegatedApproval must be a boolean');
+  }
   if (!isStringArray(config.systemVoices)) problems.push('systemVoices must be an array of voice names (a trailing * is allowed)');
   if (!config.voices || typeof config.voices !== 'object' || Array.isArray(config.voices)) {
     problems.push('voices must be an object');

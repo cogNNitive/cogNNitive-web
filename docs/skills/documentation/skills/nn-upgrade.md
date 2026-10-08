@@ -11,6 +11,8 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 Guided domaiNN upgrade and layout migration engine. Owns the **consent-gated migrations** detected by `nn-preflight`.
 
+> Contract split: the skill owns consent, backup, plan validation and recovery. Per-layout maps (which retired path maps where) live in the versioned procedure `upgrade_and_migrate_legacy_workspace_NN.md` (`maps-V_0-1-0`), not here.
+
 ---
 
 ## Canonical Activation Gate Protocol (MANDATORY)
@@ -19,11 +21,21 @@ Delegates to `nn-preflight` (session greeting + deterministic preflight integrit
 
 ---
 
+## Glossary
+
+- **Dry run** — read-only plan report + deterministic `planHash`, zero writes. Always first.
+- **planHash** — SHA over the normalized plan; `--apply` revalidates it and aborts that domain on mismatch (no partial writes).
+- **Full-tree backup** — timestamped copy of the whole domaiNN **outside** the workspace + SHA-256 manifest (`manifest.sha256`), before the first write.
+- **Rehydration** (Flow B) — materialize the adopted bluepriNNt locally, repoint `parent_spec`, bump version, re-validate; restore on failure.
+- **Never half-migrate** — any failure or interruption restores from backup (`--restore <backupDir>`).
+
+---
+
 ## Capabilities & Flows
 
 ### Flow A — Domain Layout Migration (`legacy-layout`)
 
-Migrates legacy workspaces (`models/`, `specs/templates/`, `workspace_NN.md`, `export/`, `sources/nn|original|export|archive`, `_V_` kNNowledge names, legacy keys) to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` / `artifacts` structure:
+Migrates a legacy domaiNN to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` / `artifacts` structure (retired-to-canonical maps: see the procedure):
 
 1. **Min-MCP Check**: Requires `innfo-mcp` `>= 0.12.0`.
 2. **Dry Run**: `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir>` produces a plan report and deterministic `planHash`.
@@ -43,6 +55,10 @@ Upgrades bluepriNNt versions for adopted models within a canonical domaiNN:
 5. **Migrate & Validate** — hydrate adopted bluepriNNts, repoint `parent_spec`, apply mappings, bump version, and re-validate through `innfo-mcp`.
 6. **Confirm** — report versions, gap kinds, mappings, validation outcomes, and backup path.
 
+### Flow C — Batch Domain Update
+
+`batch-update.js --dir <parent>` orchestrates Flow A across sibling domaiNNs (aggregator, continue-on-failure, per-domain backup + journal). See the skill for scan/select/apply/rollback phases.
+
 ---
 
 ## Core Rules
@@ -50,3 +66,4 @@ Upgrades bluepriNNt versions for adopted models within a canonical domaiNN:
 - Consent first; verified full-tree backup before migrate; ask only on real impact; never half-migrate.
 - Unlisted models / custom bluepriNNts without schema maps are preserved with language layer only or offered import-as-source.
 - Interrupted runs are detected and recover cleanly with `--restore <backupDir>`.
+- No retired paths in the skill: legacy detail lives in the procedure and its maps.

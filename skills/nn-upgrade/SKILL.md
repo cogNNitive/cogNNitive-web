@@ -1,8 +1,8 @@
 ---
 name: nn-upgrade
-description: Guided, consent-gated migration and upgrade of user domaiNN workspaces. Supports two flows: (1) Domain Layout Migration from legacy models/workspace layout to canonical domaiNN/kNNowledge layout via migrate-domain.js, and (2) bluepriNNt version upgrades for adopted templates. Triggers: template upgrade, upgrade templates, workspace upgrade, domain migration, migrate domain, migrar workspace, migrar dominio, actualizar plantillas.
-version: "V_0-2-0"
-last_updated: 2026-09-29
+description: Guided, consent-gated migration and upgrade of user domaiNN workspaces. Supports three flows: (1) Domain Layout Migration from a legacy layout to the canonical domaiNN layout via migrate-domain.js, (2) bluepriNNt version upgrades for adopted templates, and (3) batch migration across sibling domaiNNs. Triggers: template upgrade, upgrade templates, workspace upgrade, domain migration, migrate domain, migrar workspace, migrar dominio, actualizar plantillas.
+version: "V_0-3-0"
+last_updated: 2026-10-07
 metadata:
   source_type: original
 license: MIT
@@ -28,10 +28,35 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 Guided domaiNN upgrade and layout migration engine. Owns **consent-gated migrations** detected
 by `nn-preflight`.
 
+This skill owns the **migration contract** (consent, backup, plan validation, recovery).
+It does NOT own legacy knowledge: the per-layout maps (which retired paths map to which
+canonical paths, which frontmatter keys are renamed, which schema maps apply) live in the
+versioned procedure `upgrade_and_migrate_legacy_workspace_NN.md` and its data maps.
+When a new retired layout appears, the procedure versions — this skill does not change.
+
 Supports three distinct flows:
-1. **Flow A — Domain Layout Migration** (`legacy-layout` detected): migrates legacy workspaces (`models/`, `specs/templates/`, `workspace_NN.md`, legacy keys) to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` structure.
+1. **Flow A — Domain Layout Migration** (`legacy-layout` detected): migrates a legacy
+   domaiNN to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` / `artifacts` layout.
 2. **Flow B — bluepriNNt Version Upgrade** (`upgrade-available` detected): upgrades bluepriNNt versions for adopted models within a canonical domaiNN.
 3. **Flow C — Batch Domain Update** (`--dir <parent>`): orchestrates Flow A migration across many sibling domaiNNs in one parent directory via `batch-update.js`, reusing `migrate-domain.js` per domain.
+
+---
+
+## Glossary
+
+- **Dry run:** a read-only execution that produces a plan report plus a deterministic
+  `planHash` and writes nothing. Always run first; show the report before asking consent.
+- **planHash:** SHA over the normalized migration plan. `--apply` revalidates it
+  in-process: a mismatch aborts that domain with no partial writes (something changed
+  between planning and applying).
+- **Full-tree backup:** a timestamped copy of the whole domaiNN written **outside**
+  the workspace, with a SHA-256 manifest (`manifest.sha256`). Required before the
+  first write; every recovery path restores from it.
+- **Rehydration (Flow B):** materializing the adopted (current catalog) bluepriNNt
+  locally so `parent_spec` can be repointed, the version bumped, and the model
+  re-validated. On validation failure, restore from the backup.
+- **Never half-migrate:** any failure restores the pre-migration state from backup
+  (`--restore <backupDir>`); an interrupted run is detected and recovered the same way.
 
 ---
 
@@ -47,7 +72,10 @@ Run `migrate-domain.js` in dry-run mode:
 ```bash
 node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir>
 ```
-The dry-run produces a detailed report of moved files, rewritten files, and unmapped custom bluepriNNts, plus a deterministic `planHash`. No files are written.
+The dry-run produces a detailed report (moved files, rewritten files, unmapped custom
+bluepriNNts) plus a deterministic `planHash`. No files are written. For WHAT each
+retired path maps to, see the procedure (`upgrade_and_migrate_legacy_workspace_NN.md`,
+Layout Maps) — this skill does not enumerate retired paths.
 
 ### Phase A2 — Consent Gate
 Present the dry-run report and request explicit confirmation:
@@ -154,3 +182,4 @@ and never-half-migrate guarantees this flow inherits.
 3. **Never half-migrate**: Failed migrations restore cleanly from backup.
 4. **Zero workspace pollution**: All temporary checkouts and backups stay outside the working tree.
 5. **Deterministic recovery**: Use `migrate-domain.js --restore <backupDir>` if any interrupted run is encountered.
+6. **No retired paths here**: This skill never names retired layouts or keys. Legacy detail lives in the procedure and its maps; keep it that way.
