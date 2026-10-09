@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-09T14:29:41.495Z",
-  "head": "403bb4fdc178b8481015a3d9833f519961e26af9",
+  "generatedAt": "2026-10-09T14:31:19.349Z",
+  "head": "4feae594a457c9cd69f54ee7b9bfa1bad866f54c",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -93,7 +93,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.23.0",
       "pinnedTagDate": "2026-10-07T22:29:27+02:00",
-      "commitsSincePin": 28,
+      "commitsSincePin": 29,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
@@ -102,6 +102,7 @@
         "iNNfo/specs/bluepriNNts/console/innfo-preact-init.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-model-viewer.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
@@ -110,6 +111,8 @@
         "iNNfo/specs/bluepriNNts/design-presets/samples/Ghostbusters_V_0-3-1_design-presets_NN.md",
         "iNNfo/specs/bluepriNNts/design-presets/spec_NN.md",
         "iNNfo/specs/bluepriNNts/domaiNN/assets/domaiNN_console.html",
+        "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
+        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
         "iNNfo/specs/bluepriNNts/video/procedures/generate_video_script_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/video/samples/Ghostbusters_V_0-9-0_video_NN.md",
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/SKILL.md",
@@ -192,6 +195,7 @@
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/test/vus-parse.test.mjs",
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/test/vus-spec-pin.test.mjs",
         "iNNfo/specs/bluepriNNts/video/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
         "iNNfo/specs/bluepriNNts/workspace/procedures/upgrade_and_migrate_legacy_workspace_NN.md"
       ]
     },
@@ -199,7 +203,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.23.0",
       "pinnedTagDate": "2026-10-07T22:29:27+02:00",
-      "commitsSincePin": 28,
+      "commitsSincePin": 29,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
@@ -208,6 +212,7 @@
         "iNNfo/specs/bluepriNNts/console/innfo-preact-init.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-model-viewer.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
@@ -216,6 +221,8 @@
         "iNNfo/specs/bluepriNNts/design-presets/samples/Ghostbusters_V_0-3-1_design-presets_NN.md",
         "iNNfo/specs/bluepriNNts/design-presets/spec_NN.md",
         "iNNfo/specs/bluepriNNts/domaiNN/assets/domaiNN_console.html",
+        "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
+        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
         "iNNfo/specs/bluepriNNts/video/procedures/generate_video_script_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/video/samples/Ghostbusters_V_0-9-0_video_NN.md",
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/SKILL.md",
@@ -298,6 +305,7 @@
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/test/vus-parse.test.mjs",
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/test/vus-spec-pin.test.mjs",
         "iNNfo/specs/bluepriNNts/video/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
         "iNNfo/specs/bluepriNNts/workspace/procedures/upgrade_and_migrate_legacy_workspace_NN.md"
       ]
     },
@@ -305,9 +313,10 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.14.3",
       "pinnedTagDate": "2026-10-07T22:29:27+02:00",
-      "commitsSincePin": 11,
+      "commitsSincePin": 12,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/src/server.ts",
         "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/innfo-mcp/src/tools/resolver-node.spec.ts",
@@ -321,7 +330,7 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.9.0",
       "pinnedTagDate": "2026-10-03T18:51:36+02:00",
-      "commitsSincePin": 16,
+      "commitsSincePin": 17,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
@@ -330,6 +339,7 @@
         "iNNfo/specs/bluepriNNts/console/innfo-preact-init.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-model-viewer.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
