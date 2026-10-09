@@ -6,19 +6,19 @@ This document specifies the standard directory structure, asset organization, re
 
 ## 1. Directory Layout
 
-A Level 2 template package consolidates a template specification alongside its associated samples, SOP procedures, and agent skills into a single versioned directory tree:
+A Level 2 template package consolidates a template specification alongside its associated samples, SOP procedures, and agent skills into a single directory tree. In this repository the layout is flat (the version lives in the spec frontmatter as `blueprint_version`, not in a directory segment):
 
 ```
-specs/bluepriNNts/<template-name>/<version>/
+iNNfo/specs/bluepriNNts/<template-name>/
 ├── spec_NN.md                # Canonical L2 template spec document
 ├── samples/                  # Sample L3 model files instantiating this template
 ├── procedures/               # Bundled SOP procedure spec files (*_NN.md)
-└── skills/                   # Attached agent skill manifests & definitions
+└── skills/<skill-name>/      # Embedded agent skills (SKILL.md, scripts/, references/, test/)
 ```
 
 ### Path Conventions
 - `<template-name>`: Lowercase identifier of the template (e.g. `business`, `projects`, `organization`).
-- `<version>`: Normalized semantic version segment (e.g. `V_0-2-0` or `0.2.0`).
+- Version: the `blueprint_version` frontmatter field of `spec_NN.md` (e.g. `V_0-2-0`). Resolvers that hydrate a package remotely store it under a `<version>/` directory.
 - Main Spec File: `spec_NN.md` (or `<template-name>_V_<version>_NN.md`).
 
 ---
@@ -39,12 +39,14 @@ procedures:
 ```
 
 ### `skills/`
-Contains agent skill manifests (`SKILL.md`) and associated action logic attached to this template. Skills declared in frontmatter under `skills:` specify their repository and relative path:
+Contains agent skills embedded in the package, one folder per skill (`skills/<skill-name>/SKILL.md` plus its scripts, references and tests). The folder name is the skill identity. `list_blueprint_skills` discovers these folders and returns each one with `embedded: true` and a resolved absolute `path`. Installing the bluepriNNt projects each embedded skill into the user's skills directory (`~/.agents/skills/<skill-name>/`), and any change under `skills/**` requires a `blueprint_version` bump of the owning package. Embedded skills must be text-only, because remote hydration writes UTF-8.
+
+Skills that live outside the package are declared in frontmatter under `skills:`, with their repository and relative path:
 
 ```yaml
 skills:
   - name: "nn-reforma-casa"
-    repo: "cogNNitive/cogNNitive"
+    repo: "cogNNitive/cogNNitive-web"
     path: "skills/nn-reforma-casa"
 ```
 
@@ -81,7 +83,7 @@ procedures:
     path: "procedures/audit_NN.md"
 skills:
   - name: "nn-audit"
-    repo: "cogNNitive/cogNNitive"
+    repo: "cogNNitive/cogNNitive-web"
     path: "skills/nn-audit"
 ---
 ```

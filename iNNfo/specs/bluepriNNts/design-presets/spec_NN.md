@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "Design Presets App"
-blueprint_version: "V_0-3-0"
+blueprint_version: "V_0-3-1"
 relationship_types:
   hierarchy:
     enabled: true
@@ -100,7 +100,7 @@ Visual identity should not be trapped in unstructured text guides or isolated wi
 - Provide a standardized Level-2 template for design systems and visual presets.
 - Define multi-modal tokens spanning Web UI, cogNNitive-video Video Overlays, and Generative Illustration.
 - Enable direct binding from Video elements and Series via `preset:: [[PresetName]]`.
-- Serve as the structured data foundation for `skills/nn-design-presets` and `skills/nn-video-script`.
+- Serve as the structured data foundation for `skills/nn-design-presets` and the `nn-video-script` skill embedded in the `video` bluepriNNt.
 
 ## Specification
 

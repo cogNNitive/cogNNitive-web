@@ -13,5 +13,4 @@
 - [nn-skills-lifecycle](skills/nn-skills-lifecycle.md)
 - [nn-design-presets](skills/nn-design-presets.md)
 - [nn-upgrade](skills/nn-upgrade.md)
-- [nn-video-script](skills/nn-video-script.md)
 - [Sample Workflows](sample-workflows.md)

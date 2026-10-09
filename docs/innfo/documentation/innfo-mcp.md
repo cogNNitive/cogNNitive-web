@@ -35,7 +35,7 @@
 | `record_feedback_verdict` | Append a validated verdict entry to the root feedback-ledger.jsonl. Refuses writes if item is orphaned or stale without confirm_stale. |
 | `evaluate_feedback_items` | Evaluate feedback items staleness and orphan status against current model. Appends stale entries to the root feedback-ledger.jsonl idempotently. |
 | `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
-| `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10 |
+| `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
 <!-- /generated:mcp-tools -->
 
 ### `apply_change` operations

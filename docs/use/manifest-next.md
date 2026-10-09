@@ -74,14 +74,6 @@ agent-bootstrap:
       commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
       requires: [nn-preflight]
       description: Audit, update, and maintain cogNNitive skills.
-    - name: nn-video-script
-      repo: cogNNitive/cogNNitive-web
-      path: skills/nn-video-script
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-      requires: [nn-innfo]
-      description: Author, gate, and finalize cogNNitive-video (VUS) video scripts, asset pipeline, and thumbnails inside iNNfo Series.
   blueprints:
     - name: domaiNN
       repo: cogNNitive/cogNNitive-web

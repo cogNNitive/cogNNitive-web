@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-7-3"
+blueprint_version: "V_0-9-0"
 title: "Video App"
 procedures:
   - id: "generate-video-script"
@@ -106,13 +106,13 @@ description:: Public YouTube URL of the uploaded video (optional).
 ## NN Field Definition: preset
 concept:: Video
 type:: string
-description:: Design preset reference (e.g. [[Ghostbusters Tech Noir]], [[morado-nazareno]]) for typography and illustration style. Resolved by skills/nn-video-script as style tokens; scene props override it.
+description:: Design preset reference (e.g. [[Ghostbusters Tech Noir]], [[morado-nazareno]]) for typography and illustration style. Resolved by nn-video-script as style tokens; scene props override it.
 
 ## NN Field Definition: aspect
 concept:: Video
 type:: select
 options:: [16:9, 9:16, 1:1]
-description:: Target aspect ratio. Compiled to video_width/height by skills/nn-video-script.
+description:: Target aspect ratio. Compiled to video_width/height by nn-video-script.
 
 ## NN Field Definition: caption_style
 concept:: Video
@@ -166,7 +166,7 @@ description:: Active-word highlight color for TikTok-style captions.
 
 ## Philosophy
 
-The Video App models one video as a single Element that owns its own media folder. The script is a **generated artifact** authored in cogNNitive Video syntax (scenes `@`, layers `@@`, `layer_type`, `scene_templates`, `scene_tts_model`, overlays, transitions) and compiled by the [`skills/nn-video-script`](https://github.com/cogNNitive/cogNNitive/tree/main/skills/nn-video-script) skill into Remotion Composition Manifests — it is not re-modelled as iNNfo data. The Element records where its files live and which sources it derives from (`sources::`), so the model never re-encodes structure the video engine already expresses.
+The Video App models one video as a single Element that owns its own media folder. The script is a **generated artifact** authored in cogNNitive Video syntax (scenes `@`, layers `@@`, `layer_type`, `scene_templates`, `scene_tts_model`, overlays, transitions) and compiled by the [`skills/nn-video-script`](https://github.com/cogNNitive/cogNNitive/tree/main/iNNfo/specs/bluepriNNts/video/skills/nn-video-script) skill embedded in this bluepriNNt into Remotion Composition Manifests — it is not re-modelled as iNNfo data. The Element records where its files live and which sources it derives from (`sources::`), so the model never re-encodes structure the video engine already expresses.
 
 ## Production Hierarchy: Workspace → Subject → Series → Video
 
@@ -203,7 +203,7 @@ Renaming the Element renames its folder with it. One video, one folder, all of i
 
 ### Folder contract (D4)
 
-Assets are scoped at exactly three levels — workspace, series, video — matching the three folder levels above. A script's asset paths **MUST NOT resolve above its own Series folder**: `../../shared/x.mp4` (staying inside the Series) is allowed; a path that climbs out to another Series or the workspace root (e.g. `../../../../assets/x.mp4`) is rejected. `http(s)://` references are allowed; `file://`, absolute paths, and `asset://` are rejected outright. `skills/nn-video-script`'s `check-script.mjs` enforces this mechanically as part of script validation — see the procedure below.
+Assets are scoped at exactly three levels — workspace, series, video — matching the three folder levels above. A script's asset paths **MUST NOT resolve above its own Series folder**: `../../shared/x.mp4` (staying inside the Series) is allowed; a path that climbs out to another Series or the workspace root (e.g. `../../../../assets/x.mp4`) is rejected. `http(s)://` references are allowed; `file://`, absolute paths, and `asset://` are rejected outright. `nn-video-script`'s `check-script.mjs` enforces this mechanically as part of script validation — see the procedure below.
 
 `renders/<ref>/` and `.cognnitive/cache/video/`, wherever they appear inside a video or series folder, are engine output and cache stores: gitignored, and never treated as iNNfo Artifacts or scanned as knowledge inputs. The generic procedure's finalize step promotes the files a video actually keeps (`master`, `thumbnail`, `voiceover`) out of `renders/<ref>/` into the video's own folder; nothing in `renders/` or cache directories is directly referenced by a Video Element's fields once finalize has run.
 
@@ -214,6 +214,45 @@ The cogNNitive Video Engine compiles scripts into typed Remotion Composition Man
 - **Audio Bindings**: Precise TTS voiceover track synchronization probed to prevent audio clipping.
 - **Visual Overlays**: Frame-timed `lowerThird`, `kineticTitle`, and `conceptCallout` overlays.
 - **Headless CLI**: Headless Remotion rendering and preview server execution via `video-engine-cli.mjs`.
+
+## Video Blueprint Templates
+
+This blueprint is the canonical home for the three reusable template definitions shared by every series that inherits it. They are authored in cogNNitive Video syntax and resolved by `nn-video-script`; the Level 3 script authors no JSON or CSS for them.
+
+**Inheritance and override precedence.** Template resolution walks from the most specific to the most general source: a script-local `@…_template` block wins, then the nearest series `series_blueprint.md` (a sibling of `series_rules.md`), then this domain blueprint (`spec_NN.md`), then the built-in system default. A series-level override for a template name always takes precedence over the domain default, and a referenced template that cannot be resolved falls back to the system default without failing compilation.
+
+### @template
+
+Scene-level style contract inherited by every scene unless the scene overrides it.
+
+- font_family: Inter
+- transition_default: fade
+- transition_easing: bezier(0.16,1,0.3,1)
+- caption_style: none
+- enter_animation: fade-in
+- exit_animation: fade-out
+
+### @caption_template
+
+Caption overlay contract: typography, active-word highlight, positioning, and enter/exit animation.
+
+- caption_style: tiktok
+- caption_size: 80
+- caption_highlight: "#39E508"
+- font_family: Inter
+- position: bottom
+- enter_animation: fade-in
+- exit_animation: fade-out
+
+### @broll_template
+
+B-Roll overlay contract: default duration, fit mode, positioning, and enter/exit animation.
+
+- duration: 4
+- fit: cover
+- position: bottom
+- enter_animation: fade-in
+- exit_animation: fade-out
 
 ## Objectives
 
@@ -278,7 +317,7 @@ The `Video` concept is the only concept of this template. One `## NN Video: <nam
 ### Methodologies
 
 - One `Video` Element per video, kept as the single entry point of the model.
-- Treat the script as an external artifact: point at it with `script`, never inline it. Author, gate, and finalize it with `skills/nn-video-script`.
+- Treat the script as an external artifact: point at it with `script`, never inline it. Author, gate, and finalize it with the embedded `nn-video-script` skill.
 - Keep all of a video's media in its own folder; never scatter files across the workspace, and never let a script's asset paths climb above their own Series folder (D4).
 - Keep `sources::` as the single traceability channel back to normalized sources, and — for a Video that is part of the Subject/Series hierarchy — as the same channel that binds its one Subject Element.
 - When grouping videos into a Series, reuse this template as the Series' own Level-3 model (a `series:` frontmatter block on a model that itself contains the Series' Video Elements) instead of inventing a separate registry format.

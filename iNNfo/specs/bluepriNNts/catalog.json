@@ -75,10 +75,10 @@
     },
     "design-presets": {
       "name": "design-presets",
-      "adopted": "V_0-3-0",
+      "adopted": "V_0-3-1",
       "versions": [
         {
-          "blueprint_version": "V_0-3-0",
+          "blueprint_version": "V_0-3-1",
           "spec_version": "V_0-3-0",
           "title": "Design Presets App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
@@ -207,10 +207,10 @@
     },
     "video": {
       "name": "video",
-      "adopted": "V_0-7-3",
+      "adopted": "V_0-9-0",
       "versions": [
         {
-          "blueprint_version": "V_0-7-3",
+          "blueprint_version": "V_0-9-0",
           "spec_version": "V_0-3-0",
           "title": "Video App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"

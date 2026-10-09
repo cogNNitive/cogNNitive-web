@@ -28,7 +28,7 @@
  * member and leaves earlier consoles byte-identical.
  */
 
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -206,6 +206,7 @@ function extractModelMetaFromHtml(htmlContent) {
 }
 
 const BUNDLE_KEY = 'innfo-console.bundle'
+const UI_CSS_FILENAME = 'innfo-ui.css'
 const consoleDirRel = (stem) => `artifacts/${stem}_console`
 
 /** Workspace-relative members of the family `(dir, key, ext)`, via the core name contract. */
@@ -513,6 +514,13 @@ async function main() {
       bundleName = basename(vendored.path)
     }
 
+    // The shared stylesheet ships once per console folder (fixed name, like the domain export).
+    const uiCssPath = join(consoleDir, UI_CSS_FILENAME)
+    if (existsSync(uiCssPath)) {
+      await mkdir(join(root, dir), { recursive: true })
+      await writeFile(join(root, dir, UI_CSS_FILENAME), await readFile(uiCssPath, 'utf-8'), 'utf-8')
+    }
+
     // Re-render with the previous `generated` stamp: identical bytes mean nothing changed.
     const latestRel = await latestConsole(root, stem)
     if (latestRel) {
@@ -630,9 +638,9 @@ async function main() {
     if (bundle) {
       await writeFile(join(root, 'innfo-console.bundle.js'), bundle, 'utf-8')
     }
-    const uiCssPath = join(consoleDir, 'innfo-ui.css')
+    const uiCssPath = join(consoleDir, UI_CSS_FILENAME)
     if (existsSync(uiCssPath)) {
-      await writeFile(join(root, 'innfo-ui.css'), await readFile(uiCssPath, 'utf-8'), 'utf-8')
+      await writeFile(join(root, UI_CSS_FILENAME), await readFile(uiCssPath, 'utf-8'), 'utf-8')
     }
     console.log(`✔ domaiNN_console.html → ./domaiNN_console.html (${candidateModels.length} models, ${allElements.length} elements)`)
   }

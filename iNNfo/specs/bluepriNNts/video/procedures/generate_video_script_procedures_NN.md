@@ -22,7 +22,7 @@ title: "Generate cogNNitive Video Script Procedure"
 
 ## NN Procedure: Generate Video Script
 category:: transformation
-summary:: Frame a Video from its bound Subject and Series, author and gate a cogNNitive Video script with skills/nn-video-script, register it, generate an asset generation and cost estimation plan (asset_plan.md), compile Remotion manifests and render headlessly via video-engine-cli.mjs, finalize and register the rendered assets, and conduct a closing conversation retrospective for continuous improvement.
+summary:: Frame a Video from its bound Subject and Series, author and gate a cogNNitive Video script with the nn-video-script skill (installed at ~/.agents/skills/nn-video-script), register it, generate an asset generation and cost estimation plan (asset_plan.md), compile Remotion manifests and render headlessly via video-engine-cli.mjs, finalize and register the rendered assets, and conduct a closing conversation retrospective for continuous improvement.
 inputs_required:: Subject Element (via sources::) and Series registry model
 outputs_expected:: Registered Video Assets
 executed_by:: Video Producer
@@ -75,7 +75,7 @@ output:: [[Validated Script]]
 output_status:: verified
 tool:: [[nn-video-script Skill]]
 scope:: internal
-Run `node scripts/check-script.mjs <script.md> --series-root <series-dir>` first — the zero-unresolved-placeholder gate, the leftover-slot-comment check, the header check, and the no-upward-escape asset check, in that order — then run `node scripts/remotion-scene-compiler.mjs <script.md>`. Either check failing stops the procedure before anything is registered.
+Run `node ~/.agents/skills/nn-video-script/scripts/check-script.mjs <script.md> --series-root <series-dir>` first — the zero-unresolved-placeholder gate, the leftover-slot-comment check, the header check, and the no-upward-escape asset check, in that order — then run `node ~/.agents/skills/nn-video-script/scripts/remotion-scene-compiler.mjs <script.md>`. Either check failing stops the procedure before anything is registered.
 
 ## NN Work: Register Script Artifact
 parent:: [[Generate Video Script Workflow]]
@@ -104,7 +104,7 @@ Before triggering synthesis of any image, video motion, audio/TTS, or multimodal
 2. **Interactive Provider & Model Consultation**: Present and explain the available provider options and models to the user:
    - **Image Generation Providers**: WaveSpeed AI (`wavespeed-ai/z-image/turbo`, `flux-schnell`, `flux-1-dev`), Replicate (`black-forest-labs/flux-schnell`, `flux-1-dev`), or Local SVG/Static Compositor, detailing quality, generation latency, and unit pricing.
    - **Voiceover / TTS Providers**: ElevenLabs (`eleven_multilingual_v2`, `eleven_turbo_v2`), OpenAI TTS (`tts-1`, `tts-1-hd`), or Windows SAPI / Edge-TTS (Local/Free), detailing voice realism, multi-language support, and per-thousand character pricing.
-3. **Per-Scene & Total Cost Estimation**: Run `node scripts/asset-cost-estimator.mjs <script.md> --out staging/video/{video-slug}/asset_plan.md` to compute exact character counts, scene by scene, and calculate:
+3. **Per-Scene & Total Cost Estimation**: Run `node ~/.agents/skills/nn-video-script/scripts/asset-cost-estimator.mjs <script.md> --out staging/video/{video-slug}/asset_plan.md` to compute exact character counts, scene by scene, and calculate:
    - Itemized per-scene cost (visual model cost + TTS voiceover cost).
    - Grand total estimated production budget ($ USD).
    - Comparison across Budget, Professional Studio, Cinema, and Offline/Free quality tiers.
@@ -121,7 +121,7 @@ output:: [[Compiled Composition Manifest]]
 output_status:: verified
 tool:: [[cogNNitive Video Tool]]
 scope:: internal
-Execute `node scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json`. The engine computes deterministic SHA-256 hashes, performs TTS audio and media synthesis with cache-first lookup under `.cognnitive/cache/video/`, aligns audio duration with Remotion timeline frames, and emits the typed `RemotionCompositionManifest`.
+Execute `node ~/.agents/skills/nn-video-script/scripts/video-engine-cli.mjs compile <script.md> --output renders/{ref}/manifest.json`. The engine computes deterministic SHA-256 hashes, performs TTS audio and media synthesis with cache-first lookup under `.cognnitive/cache/video/`, aligns audio duration with Remotion timeline frames, and emits the typed `RemotionCompositionManifest`.
 
 ## NN Work: Render Master Video
 parent:: [[Generate Video Script Workflow]]
@@ -133,7 +133,7 @@ output:: [[Rendered Output]]
 output_status:: verified
 tool:: [[cogNNitive Video Tool]]
 scope:: internal
-Execute `node scripts/video-engine-cli.mjs render renders/{ref}/manifest.json --output renders/{ref}/master.mp4`. The engine headlessly renders the Remotion composition to an MP4 master file and outputs summary execution metrics (duration, frames, render time, cache hits).
+Execute `node ~/.agents/skills/nn-video-script/scripts/video-engine-cli.mjs render renders/{ref}/manifest.json --output renders/{ref}/master.mp4`. The engine headlessly renders the Remotion composition to an MP4 master file and outputs summary execution metrics (duration, frames, render time, cache hits).
 
 ## NN Work: Compose Video Thumbnail
 parent:: [[Generate Video Script Workflow]]
@@ -145,7 +145,7 @@ output:: [[Composed Video Thumbnail]]
 output_status:: verified
 tool:: [[nn-video-script Skill]]
 scope:: internal
-Run `node scripts/render-thumbnail.mjs --base <path> --title <title> [--subtitle <subt>] [--badge <badge>] --out <out>`. It programmatically composites bold high-contrast title, subtitle/metadata, and brand badge pill onto the clean base image at 2560x1440 resolution using SVG vector templating and sharp.
+Run `node ~/.agents/skills/nn-video-script/scripts/render-thumbnail.mjs --base <path> --title <title> [--subtitle <subt>] [--badge <badge>] --out <out>`. It programmatically composites bold high-contrast title, subtitle/metadata, and brand badge pill onto the clean base image at 2560x1440 resolution using SVG vector templating and sharp.
 
 ## NN Work: Finalize Video Assets
 parent:: [[Generate Video Script Workflow]]
@@ -157,7 +157,7 @@ output:: [[Finalized Video Assets]]
 output_status:: verified
 tool:: [[nn-video-script Skill]]
 scope:: internal
-Run `node scripts/finalize-video.mjs --video-dir <dir> [--ref <r>] [--force-thumbnail]`. It picks `renders/{ref}/` (failing when several candidates exist and no `--ref` is given), copies `master`/`thumbnail`/`voiceover` into the video's own folder via a temp-file-then-rename, preserves an existing thumbnail unless `--force-thumbnail` is passed, skips a missing voiceover without error, and prints the field values to set. It never edits the model file itself.
+Run `node ~/.agents/skills/nn-video-script/scripts/finalize-video.mjs --video-dir <dir> [--ref <r>] [--force-thumbnail]`. It picks `renders/{ref}/` (failing when several candidates exist and no `--ref` is given), copies `master`/`thumbnail`/`voiceover` into the video's own folder via a temp-file-then-rename, preserves an existing thumbnail unless `--force-thumbnail` is passed, skips a missing voiceover without error, and prints the field values to set. It never edits the model file itself.
 
 ## NN Work: Register Video Assets
 parent:: [[Generate Video Script Workflow]]
@@ -252,11 +252,11 @@ description:: Actionable suggestions for refining Series rules, script templates
 
 ## NN Tools: nn-video-script Skill
 type:: automated
-description:: The skills/nn-video-script skill authoring (from script_template.md), gating (check-script.mjs, remotion-scene-compiler.mjs), and finalizing (finalize-video.mjs) script syntax inside a Series folder.
+description:: The nn-video-script skill (embedded in this bluepriNNt, installed at ~/.agents/skills/nn-video-script) authoring (from script_template.md), gating (check-script.mjs, remotion-scene-compiler.mjs), and finalizing (finalize-video.mjs) script syntax inside a Series folder.
 
 ## NN Tools: cogNNitive Video Tool
 type:: automated
-description:: Embedded programmatic video compilation and headless Remotion rendering engine (skills/nn-video-script/scripts/video-engine-cli.mjs) with deterministic SHA-256 asset caching and frame-accurate timeline synthesis.
+description:: Embedded programmatic video compilation and headless Remotion rendering engine (~/.agents/skills/nn-video-script/scripts/video-engine-cli.mjs) with deterministic SHA-256 asset caching and frame-accurate timeline synthesis.
 
 ## NN Tools: AI Agent
 type:: automated

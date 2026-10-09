@@ -147,16 +147,6 @@ tags:: [docs, skills, upgrade, migration, templates]
 
 Guided, consent-gated migration of a workspace to the latest adopted iNNfo Level-2 templates.
 
-## NN Page: nn-video-script
-title:: nn-video-script
-source:: skills/nn-video-script.md
-route:: skills/nn-video-script.md
-order:: 90
-parent:: [[Canonical Skills]]
-tags:: [docs, skills, video, vus, series]
-
-Forked, iNNfo-aware authoring of cogNNitive-video VUS video scripts inside a workspace's Series/Video production hierarchy.
-
 ## NN Page: Sample Workflows
 title:: Sample Workflows
 source:: sample-workflows.md

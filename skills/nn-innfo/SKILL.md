@@ -313,7 +313,7 @@ The `innfo-mcp` server exposes 17 deterministic tools built on `@cognnitive/innf
 | `query_units` | Queries specific units/elements within a knowledge document or source. |
 | `resolve_sources` | Resolves source citations and evidence linkages. |
 | `list_blueprint_procedures` | Discovers SOP procedures transitively across the `includes` tree (depth 10). |
-| `list_blueprint_skills` | Discovers agent skills transitively across the `includes` tree (depth 10). |
+| `list_blueprint_skills` | Discovers agent skills transitively across the `includes` tree (depth 10). Skills embedded in a package (`skills/<name>/SKILL.md`) are returned with `embedded: true` and a resolved absolute `path`. |
 
 **Golden Rule:** The specification/app URL always comes from `parent_spec.url` or from the user. Never hardcode or invent URLs.
 
@@ -726,7 +726,7 @@ When authoring or auditing models that rely on external data drops (e.g. client 
 
 ## 16. Model Procedure & Skill Discovery
 
-Executable procedures and agent skills are content declared dynamically in models and apps (not a fixed catalog in the skill). They are discovered by calling the MCP tools `list_blueprint_procedures` and `list_blueprint_skills`, which transitively walk the `parent_spec` hierarchy and the `includes` composition tree to a depth of 10 levels, deduplicating procedures by `id` and skills by `name`.
+Executable procedures and agent skills are content declared dynamically in models and apps (not a fixed catalog in the skill). They are discovered by calling the MCP tools `list_blueprint_procedures` and `list_blueprint_skills`, which transitively walk the `parent_spec` hierarchy and the `includes` composition tree to a depth of 10 levels, deduplicating procedures by `id` and skills by `name`. A skill shipped inside a package under `skills/<name>/SKILL.md` is discovered from disk and returned with `embedded: true` and an absolute `path`; it wins over a same-name frontmatter `skills:` entry.
 
 Additionally, procedures are discovered by reading the `## NN Procedure: ...` sections of the active model and the workspace's `procedures/` folder (predicate: Level 3 documents whose `parent_spec` resolves to the procedures bluepriNNt).
 
