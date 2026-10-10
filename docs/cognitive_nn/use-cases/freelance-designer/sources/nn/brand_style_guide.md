@@ -4,7 +4,7 @@ sha256: "7c2d1e9f4a8b3c5e7a9d1b3f5a7c9e1d3f5a7b9c1e3d5f7a9b1c3e5d7f9a1b3c"
 normalized_at: "2026-08-26T10:00:00Z"
 provenance:
   verified: true
-  method: "nn-trannsform"
+  method: "nn-sources"
 ---
 
 # Verdant Roasters — Brand Identity & Style Guide

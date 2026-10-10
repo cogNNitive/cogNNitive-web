@@ -1,5 +1,5 @@
----
-title: "Interaction Flows & Statechart — cogNNitive Skills"
+﻿---
+title: "Interaction Flows & Statechart â€” cogNNitive Skills"
 description: "Deterministic state machine, decision matrix, and navigation paths across cogNNitive agent skills from the nn entry point."
 html_url: https://cognnitive.com/skills/docs/#/skills/interaction-flows
 generator: https://cognnitive.com/skills/nn-design-presets
@@ -7,13 +7,13 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 # Interaction Flows & Statechart
 
-**Architecture**: Finite State Machine (FSM) · **Design Pattern**: Front Controller · **Entry Point**: `nn`
+**Architecture**: Finite State Machine (FSM) Â· **Design Pattern**: Front Controller Â· **Entry Point**: `nn`
 
 ---
 
 ## 1. Overview
 
-Rather than relying on ambiguous conversational narrative, user-agent interactions in **cogNNitive** are architected as a **Deterministic State Machine (FSM)** coordinated by a **Front Controller** (`nn-start`). 
+Rather than relying on ambiguous conversational narrative, user-agent interactions in **cogNNitive** are architected as a **Deterministic State Machine (FSM)** coordinated by a **Front Controller** (`nn`). 
 
 Whenever a user inputs `nn` or any domain trigger into an agent such as OpenCode, Claude Code, or Antigravity, the system transitions across explicit states with strict guards and governance protocols.
 
@@ -37,7 +37,7 @@ stateDiagram-v2
     Input_NN --> Gate
     Gate --> RouterTriage: Gate passed (Zero Interruption if OK)
 
-    state "1. Front Controller (nn-start)" as RouterTriage {
+    state "1. Front Controller (nn)" as RouterTriage {
         [*] --> EvaluateContext: Check for intent keywords
         EvaluateContext --> IntentMenu: Ambiguous or bare "nn"
         EvaluateContext --> DispatchSkill: Clear domain intent detected
@@ -59,14 +59,14 @@ stateDiagram-v2
                 ConfirmA --> PhaseB_Model: "Yes -> Phase B: Populate Model (Level 3)"
                 ConfirmA --> PhaseA_Template: Adjust template
                 PhaseB_Model --> ConfirmB: User approves Level 3 model?
-                ConfirmB --> SaveModel: "Yes -> Persist to models/"
+                ConfirmB --> SaveModel: "Yes -> Persist to kNNowledge/"
             }
         }
 
-        state "nn-trannsform (Ingestion & Pipelines)" as Trannsform {
-            [*] --> WorkspaceCheck: Validate sources/ and models/
-            WorkspaceCheck --> Normalize: Ingest (sources/original -> sources/nn)
-            Normalize --> ProcedureExecution: Execute procedures_V_0-2-0_NN.md
+        state "nn-sources (Ingestion & Pipelines)" as Sources {
+            [*] --> WorkspaceCheck: Validate sources/ and kNNowledge/
+            WorkspaceCheck --> Normalize: Ingest (cognitivize raw sources in place)
+            Normalize --> ProcedureExecution: Execute the procedures blueprint (iNNfo/specs/bluepriNNts/procedures/spec_NN.md)
             ProcedureExecution --> ExportArtifacts: Persist deliverables to artifacts/
         }
 
@@ -84,12 +84,12 @@ stateDiagram-v2
     }
 
     RouterTriage --> Innfo: Model authoring, schema or wizard
-    RouterTriage --> Trannsform: Documents, normalization or SOP pipeline
+    RouterTriage --> Sources: Documents, normalization or SOP pipeline
     RouterTriage --> SiteGen: Web design, site generation or visual assets
     RouterTriage --> Lifecycle: Skill install, audit or updates
 
     Innfo --> GovernanceClosing: Task completed or canceled
-    Trannsform --> GovernanceClosing: Task completed or canceled
+    Sources --> GovernanceClosing: Task completed or canceled
     SiteGen --> GovernanceClosing: Task completed or canceled
     Lifecycle --> GovernanceClosing: Task completed or canceled
 
@@ -111,7 +111,7 @@ The table below defines the deterministic transition rules executed by the agent
 | **`IDLE`** | User enters `nn` | Preflight exit code 0 | Greet with canonical badge, inspect intent | **`ROUTER_TRIAGE`** |
 | **`ROUTER_TRIAGE`** | No additional intent | Input is solely `nn` | Ask user to describe their situation in 1 sentence; present recommended option first | **`AWAITING_USER_INTENT`** |
 | **`ROUTER_TRIAGE`** | "create model" / "wizard" | Matches `nn-innfo` domain | Activate `nn-innfo`, present Entry Menu `[a]` to `[y]` | **`INNFO_ENTRY`** |
-| **`ROUTER_TRIAGE`** | "ingest pdf" / "transform" | Matches `nn-trannsform` | Activate `nn-trannsform`, verify workspace layout | **`TRANNNSFORM_SETUP`** |
+| **`ROUTER_TRIAGE`** | "ingest pdf" / "transform" | Matches `nn-sources` | Activate `nn-sources`, verify workspace layout | **`SOURCES_SETUP`** |
 | **`ROUTER_TRIAGE`** | "generate website" / "ui" | Matches `nn-site-generator` | Prompt for visual palette preset (`nn-design-presets`) | **`SITEGEN_STYLE_SELECTION`** |
 | **`ROUTER_TRIAGE`** | "update skills" / "audit" | Matches `nn-skills-lifecycle` | Compare local commits against remote manifest | **`LIFECYCLE_DIFF_PREVIEW`** |
 | **`INNFO_ENTRY`** | Option `[a]` selected | New model requested | Launch Phase A (Template design Level 2) | **`WIZARD_PHASE_A`** |

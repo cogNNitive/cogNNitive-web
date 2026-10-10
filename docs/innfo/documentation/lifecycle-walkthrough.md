@@ -71,7 +71,7 @@ workspace/
 
 Run the scanner:
 ```bash
-node skills/nn-trannsform/scripts/index.js --scan --src "docs/innfo/samples/lifecycle-ghostbusters/workspace"
+node skills/nn-sources/scripts/index.js --scan --src "docs/innfo/samples/lifecycle-ghostbusters/workspace"
 ```
 
 Each co-located sidecar carries flat, deterministic traceability frontmatter:
@@ -117,7 +117,7 @@ laser_lock_frequency:: 14.8 MHz
 
 ### Citation Invariants
 1. **Heading-level anchors**: Citations point directly to `@## <Heading>`, guaranteeing precision down to individual paragraphs.
-2. **Auditability**: Running `node skills/nn-trannsform/scripts/index.js --check-impact` validates that all model pointers resolve accurately.
+2. **Auditability**: Running `node skills/nn-sources/scripts/index.js --check-impact` validates that all model pointers resolve accurately.
 
 ---
 
@@ -148,7 +148,7 @@ When an existing source changes over time:
    ⚠️  [IMPACT WARNING] A newer member of "sources/import/commercial_pricing_memo" affects downstream models:
        - kNNowledge/Ghostbusters_Operations_NN.md (Standard Class IV Elimination): cites "commercial_pricing_memo.md@## Manhattan Commercial Rates" [unit_missing_in_latest]
    ```
-4. **On-Demand Audit**: Running `node skills/nn-trannsform/scripts/index.js --check-impact` highlights the exact missing citation and suggests the closest matching heading:
+4. **On-Demand Audit**: Running `node skills/nn-sources/scripts/index.js --check-impact` highlights the exact missing citation and suggests the closest matching heading:
    ```text
    ❌ kNNowledge/Ghostbusters_Operations_NN.md (Standard Class IV Elimination): references missing heading "## Manhattan Commercial Rates" in "sources/import/commercial_pricing_memo_<UTC suffix>.md" (Did you mean: ## Downtown Commercial Rates?).
    ```

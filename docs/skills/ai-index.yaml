@@ -19,12 +19,12 @@ pages:
     last_modified: "2026-09-22"
     format: markdown
     url: "https://cognnitive.com/skills/documentation/README.md"
-  - path: "/documentation/skills/nn-start"
-    title: "nn-start"
+  - path: "/documentation/skills/nn"
+    title: "nn"
     description: "Front controller, setup, environment readiness gate, and skill routing"
     last_modified: "2026-09-28"
     format: markdown
-    url: "https://cognnitive.com/skills/documentation/skills/nn-start.md"
+    url: "https://cognnitive.com/skills/documentation/skills/nn.md"
   - path: "/documentation/skills/nn-preflight"
     title: "nn-preflight"
     description: "Environment readiness gate (Node.js, MCP availability, workspace layout)"
@@ -37,12 +37,12 @@ pages:
     last_modified: "2026-09-22"
     format: markdown
     url: "https://cognnitive.com/skills/documentation/skills/nn-innfo.md"
-  - path: "/documentation/skills/nn-trannsform"
-    title: "nn-trannsform"
+  - path: "/documentation/skills/nn-sources"
+    title: "nn-sources"
     description: "Document ingestion and transformation pipeline"
     last_modified: "2026-09-22"
     format: markdown
-    url: "https://cognnitive.com/skills/documentation/skills/nn-trannsform.md"
+    url: "https://cognnitive.com/skills/documentation/skills/nn-sources.md"
   - path: "/documentation/skills/nn-site-generator"
     title: "nn-site-generator"
     description: "Static website generation and Docsify suites"

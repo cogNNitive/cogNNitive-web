@@ -60,9 +60,9 @@ output:: "scripts/"
 # NN SkillRef
 
 ## NN SkillRef: traNNsform Normalization
-name:: "nn-trannsform"
+name:: "nn-sources"
 trigger:: "trannsform, transform, normalize, scan documents"
-path:: "skills/nn-trannsform/SKILL.md"
+path:: "skills/nn-sources/SKILL.md"
 
 ## NN SkillRef: iNNfo Model Authoring
 name:: "nn-innfo"
@@ -127,7 +127,7 @@ method:: "aplicación de template video sobre el modelo iNNfo para generar scrip
 ```
 raw/  ──[Raw Ingestion]──▶  sources/  ──[FORMAT Model]──▶  models/  ──[Video Script]──▶  scripts/
  │  tipo: raw                │  tipo: markdown             │  tipo: format-model        │  tipo: script
- │  skill: nn-trannsform     │  skill: nn-innfo            │  skill: nn-trannsform      │
+ │  skill: nn-sources     │  skill: nn-innfo            │  skill: nn-sources      │
  │  modo: normalize-only     │  template: business         │  template: video          │
 ```
 

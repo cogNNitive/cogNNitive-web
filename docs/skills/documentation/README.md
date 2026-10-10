@@ -18,9 +18,9 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 
 | Skill | Version | Description |
 |-------|---------|-------------|
-| [`nn`](skills/nn.md) | `V_3-4-0` | Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router. |
-| [`nn-trannsform`](skills/nn-trannsform.md) | `V_3-4-2` | Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md). |
-| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-6` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
+| [`nn`](skills/nn.md) | `V_3-4-2` | Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router. |
+| [`nn-sources`](skills/nn-sources.md) | `V_3-5-0` | Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync. |
+| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-8` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
 | [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-2` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
 | [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-3-0` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
 | [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |

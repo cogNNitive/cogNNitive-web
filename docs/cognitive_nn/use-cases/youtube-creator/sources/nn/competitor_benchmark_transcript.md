@@ -4,7 +4,7 @@ sha256: "5e7a9b1c3e5d7f9a1b3c5e7a9d1b3f5a7c9e1d3f5a7b9c1e3d5f7a9b1c3e5d7f"
 normalized_at: "2026-08-27T12:00:00Z"
 provenance:
   verified: true
-  method: "nn-trannsform"
+  method: "nn-sources"
 ---
 
 # Competitor Video Transcript & Field Benchmarks

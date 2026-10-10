@@ -27,12 +27,12 @@ Reference material — load on demand when generating visual artifacts, web file
 
 ## Visual Style Selection Protocol
 
-When generating or discussing a visual component or web artifact, prompt the user with the visual style selector. **ALWAYS** provide the reference to the interactive HTML Showcase preview so the user can test all 5 styles before choosing:
+When generating or discussing a visual component or web artifact, prompt the user with the visual style selector. **ALWAYS** provide the reference to the interactive HTML Showcase preview so the user can test all 6 styles before choosing:
 
 ```markdown
 🎨 Visual Artifact Style Selection:
 
-Before creating your interface, test and preview all 5 design styles in real time:
+Before creating your interface, test and preview all 6 design styles in real time:
 👉 [Open Interactive Design Presets Showcase](./demo/index.html)
 
 Which visual design style would you like to apply to this artifact/component?

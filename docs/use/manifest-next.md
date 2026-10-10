@@ -13,9 +13,9 @@ agent-bootstrap:
       ref: "main"
       commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
       description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
-    - name: nn-trannsform
+    - name: nn-sources
       repo: cogNNitive/cogNNitive-web
-      path: skills/nn-trannsform
+      path: skills/nn-sources
       version: "V_3-4-2"
       ref: "main"
       commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
@@ -196,7 +196,7 @@ agent-bootstrap:
     - id: transform
       label: Transform a document
       description: Normalize a PDF/DOCX/XLSX into clean Markdown, or export to HTML.
-      skill: nn-trannsform
+      skill: nn-sources
 ---
 
 > **PREVIEW — not for production.** This channel renders from the current branch tips

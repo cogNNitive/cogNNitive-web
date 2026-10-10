@@ -97,15 +97,15 @@ tags:: [docs, skills, innfo, modeling, wizard, mcp]
 
 Semantic modeling assistant, schema validator, and conversational Model Creation Wizard (Template L2 to Model L3).
 
-## NN Page: nn-trannsform
-title:: nn-trannsform
-source:: skills/nn-trannsform.md
-route:: skills/nn-trannsform.md
+## NN Page: nn-sources
+title:: nn-sources
+source:: skills/nn-sources.md
+route:: skills/nn-sources.md
 order:: 40
 parent:: [[Canonical Skills]]
-tags:: [docs, skills, transform, ingestion, provenance]
+tags:: [docs, skills, sources, ingestion, provenance]
 
-Multi-modal document ingestion, Markdown normalization with scanner provenance, and multi-step procedure orchestration.
+Multi-modal document ingestion, Markdown normalization with mandatory sidecar provenance, and domaiNN lineage synchronization.
 
 ## NN Page: nn-site-generator
 title:: nn-site-generator

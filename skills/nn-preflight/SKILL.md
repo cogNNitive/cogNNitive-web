@@ -53,7 +53,7 @@ Handle the runner process exit code deterministically:
 
 ## Consumer Skill Delegation
 
-All consumer skills (`nn`, `nn-innfo`, `nn-trannsform`, `nn-site-generator`, `nn-skills-lifecycle`, `nn-design-presets`) MUST delegate their activation gate in §0 to this canonical protocol using exactly:
+All consumer skills (`nn`, `nn-innfo`, `nn-sources`, `nn-site-generator`, `nn-skills-lifecycle`, `nn-design-presets`) MUST delegate their activation gate in §0 to this canonical protocol using exactly:
 
 ```markdown
 ## 0. Activation Gate
@@ -85,7 +85,7 @@ Environment readiness gate for cogNNitive workflows. Runs deterministic checks a
 8. **Workspace Source Integrity Audit (`scanWorkspaceSources`)**: when `--workspace-dir` is provided:
    - Discovers raw files across `sources/import/` and `sources/conversations/` (sidecars themselves are not sources; `staging`, `archive` and dot folders are skipped).
    - Raw media binaries (`.mp3`, `.wav`, `.m4a`, `.mp4`, etc.) without a sidecar are classified as informational `raw-media` (pending transcription) and do not flip the exit code to warning.
-   - Verifies that every raw file has a co-located sidecar whose `sha256` matches the SHA-256 of the raw bytes. A file with no sidecar (`unnormalized`) or a changed file (`stale`, sidecar hash mismatch) is reported as an actionable warning recommending `node skills/nn-trannsform/scripts/index.js --scan` (or `--cognitivize <path>`); a sidecar whose raw file is gone is reported as `dangling` and kept (only a consent-gated `--gc` deletes). A domaiNN without `* -text` in its `.gitattributes` gets a `text-policy-missing` warning (it does not change `sources_integrity.ok`), since line-ending conversion can break raw-byte hashes. Emits structured `sources_integrity` payload in `--json` mode.
+   - Verifies that every raw file has a co-located sidecar whose `sha256` matches the SHA-256 of the raw bytes. A file with no sidecar (`unnormalized`) or a changed file (`stale`, sidecar hash mismatch) is reported as an actionable warning recommending `node skills/nn-sources/scripts/index.js --scan` (or `--cognitivize <path>`); a sidecar whose raw file is gone is reported as `dangling` and kept (only a consent-gated `--gc` deletes). A domaiNN without `* -text` in its `.gitattributes` gets a `text-policy-missing` warning (it does not change `sources_integrity.ok`), since line-ending conversion can break raw-byte hashes. Emits structured `sources_integrity` payload in `--json` mode.
 
 ## Tier 3 Checks (workspace template upgrades — informational)
 

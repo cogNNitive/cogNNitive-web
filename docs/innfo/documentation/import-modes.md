@@ -170,7 +170,7 @@ aborts with a non-zero exit and no proposal.
 The proposal is produced by:
 
 ```bash
-node skills/nn-trannsform/scripts/index.js --converge youtube_analytics_monthly --src <workspace>
+node skills/nn-sources/scripts/index.js --converge youtube_analytics_monthly --src <workspace>
 ```
 
 It is **read-only**: it compares the two newest members of the family and never
@@ -191,7 +191,7 @@ reviewer feedback. After applying, mark the family applied so re-running
 `--converge` is a no-op:
 
 ```bash
-node skills/nn-trannsform/scripts/index.js --converge-mark youtube_analytics_monthly --version <model-version> --src <workspace>
+node skills/nn-sources/scripts/index.js --converge-mark youtube_analytics_monthly --version <model-version> --src <workspace>
 ```
 
 Removed keys are **flag-only**: convergence lists them but never deletes or

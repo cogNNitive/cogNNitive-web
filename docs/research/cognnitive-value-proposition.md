@@ -365,7 +365,7 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
    set so a dismissed drop is not re-offered every session. *Tradeoff:* needs a
    small state file (a workspace cache); note there is already an untracked
    `.cognnitive/cache/` directory in this checkout whose role is unverified.
-   *Touch points:* `nn-start` (session front controller), `nn-trannsform`
+   *Touch points:* `nn-start` (session front controller), `nn-sources`
    (`--scan-external`), `nn-innfo` (pre-authoring prompt already exists).
 3. **Source-family-aware citations** — allow a citation to resolve to "the latest
    snapshot of family X" instead of pinning one timestamped file. *Why:* today a
@@ -380,7 +380,7 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
 ### 8.2 Usability
 
 6. **Publish the "Import modes & dynamic sources" page** and link it from
-   `docs/index.md` §1 and the nn-trannsform skill.
+   `docs/index.md` §1 and the nn-sources skill.
 7. **A single canonical "Why cogNNitive" page** to replace the current four-way
    scatter of value-prop copy.
 8. **Add a "what importing costs" note** — one sentence telling the user that
@@ -405,20 +405,20 @@ Ranked by value-to-effort. Each notes the tradeoff so the decision is explicit.
 | Claim in this document | Verified in |
 | :--- | :--- |
 | IMPORT → MANAGE → EXPORT lifecycle | `README.md:9-21`, `docs/index.md:21-77` |
-| Immutable originals + SHA-256 + staging + cognitivize-in-place | `README.md:19`, `skills/nn-trannsform/SKILL.md:122-144` |
-| `staging/` never a citation target | `skills/nn-trannsform/SKILL.md:194` |
+| Immutable originals + SHA-256 + staging + cognitivize-in-place | `README.md:19`, `skills/nn-sources/SKILL.md:122-144` |
+| `staging/` never a citation target | `skills/nn-sources/SKILL.md:194` |
 | Citation grammar; source/citation/lineage terms | `docs/innfo/documentation/sources-citations-lineage.md:9-18,24-44` |
-| Sources catalog + progressive-disclosure summaries | `iNNfo/specs/bluepriNNts/sources/spec_NN.md:61-64,86-88`; `skills/nn-trannsform/SKILL.md:179-192` |
+| Sources catalog + progressive-disclosure summaries | `iNNfo/specs/bluepriNNts/sources/spec_NN.md:61-64,86-88`; `skills/nn-sources/SKILL.md:179-192` |
 | Two-tier `_summary` / `_source` split | `sources-citations-lineage.md:56-61` |
-| External Watch Roots, `dynamic`/`static`, `--scan-external` | `skills/nn-trannsform/SKILL.md:227-251` |
+| External Watch Roots, `dynamic`/`static`, `--scan-external` | `skills/nn-sources/SKILL.md:227-251` |
 | Pre-authoring (not session-start) prompt | `skills/nn-innfo/SKILL.md:682-688` |
-| Source family evolution guidance | `skills/nn-trannsform/SKILL.md:250-251` |
-| Dynamic sources + impact warnings + `--check-impact` | `skills/nn-trannsform/SKILL.md:209-225`; `docs/innfo/documentation/lifecycle-walkthrough.md:140-153` |
+| Source family evolution guidance | `skills/nn-sources/SKILL.md:250-251` |
+| Dynamic sources + impact warnings + `--check-impact` | `skills/nn-sources/SKILL.md:209-225`; `docs/innfo/documentation/lifecycle-walkthrough.md:140-153` |
 | Per-source archive / version chain | `sources-citations-lineage.md:195-218` |
 | Heading-slug citations; line ranges rejected | `sources-citations-lineage.md:81-83` |
 | Lineage record sections + `--check` drift | `sources-citations-lineage.md:92-110` |
 | Git vs. native semver (complementary) | `sources-citations-lineage.md:149-281` |
 | Zero vendor lock-in (Markdown + Git) | `README.md:50`, `docs/index.md:97` |
-| Reviewer feedback ingestion + `reconcile_feedback` | `skills/nn-trannsform/SKILL.md:200-207` |
-| Row-level CSV citation + `--curate-csv` | `skills/nn-trannsform/SKILL.md:253-264` |
+| Reviewer feedback ingestion + `reconcile_feedback` | `skills/nn-sources/SKILL.md:200-207` |
+| Row-level CSV citation + `--curate-csv` | `skills/nn-sources/SKILL.md:253-264` |
 | Canonical vocabulary (kNNowledge / bluepriNNt / domaiNN) | `docs/innfo/documentation/vocabulary.md:11-19`; `AGENTS.md` |

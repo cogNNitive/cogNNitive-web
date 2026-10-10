@@ -487,6 +487,29 @@ related:: [[Alpha Task|My Alpha]]
 
       console.log('✔ migrateDomainReferences rewrites display-name references and matrix cells to slugs in place')
     }
+
+    // 11. ESM host: skill scripts must still load as CommonJS when the consuming
+    //     domaiNN declares "type": "module" in its .agents/package.json (backlog #23).
+    {
+      const hostDir = path.join(tmpRoot, 'esm-host')
+      const agentsDir = path.join(hostDir, '.agents')
+      const skillDest = path.join(agentsDir, 'skills', 'nn-upgrade')
+      fs.mkdirSync(agentsDir, { recursive: true })
+      fs.writeFileSync(path.join(agentsDir, 'package.json'), JSON.stringify({ type: 'module' }), 'utf-8')
+      fs.cpSync(path.resolve(SCRIPT_DIR, '..'), skillDest, { recursive: true })
+
+      const res = spawnSync(
+        process.execPath,
+        [path.join(skillDest, 'scripts', 'migrate-domain.js'), '--domain-dir', hostDir],
+        { encoding: 'utf-8' },
+      )
+      const output = `${res.stdout || ''}\n${res.stderr || ''}`
+      assert.ok(
+        !/require is not defined|ERR_REQUIRE_ESM|Cannot use import statement/.test(output),
+        `nn-upgrade scripts must run as CommonJS inside a "type":"module" domaiNN, got: ${output.trim()}`,
+      )
+      console.log('✔ nn-upgrade scripts run as CommonJS inside a "type":"module" domaiNN')
+    }
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true })
   }

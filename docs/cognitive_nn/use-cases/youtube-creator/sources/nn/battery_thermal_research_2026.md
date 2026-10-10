@@ -4,7 +4,7 @@ sha256: "9b3c5e7a1d3f5b7c9e1a3d5f7b9c1e3a5d7f9b1c3e5a7d9f1b3c5e7a9d1f3b5c"
 normalized_at: "2026-08-27T11:00:00Z"
 provenance:
   verified: true
-  method: "nn-trannsform"
+  method: "nn-sources"
 ---
 
 # Battery Thermal Dynamics & Degradation Benchmark

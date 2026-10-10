@@ -151,7 +151,11 @@ async function findModelFiles(dir) {
     for (const e of entries) {
       if (e.isDirectory()) {
         if (!skip.has(e.name)) await walk(join(d, e.name))
-      } else if (e.isFile() && payloadHelper.isNNName(e.name) && !payloadHelper.isSidecarName(e.name)) {
+      } else if (
+        e.isFile() &&
+        payloadHelper.isNNName(e.name) &&
+        !payloadHelper.isSidecarName(e.name)
+      ) {
         out.push(join(d, e.name))
       }
     }
@@ -305,7 +309,9 @@ async function renderTree(models, root) {
         const isLastItem = j === items.length - 1
         const itemPrefix = isLastItem ? '└── ' : '├── '
         const fileIndent = isLastItem ? '    ' : '│   '
-        console.log(`${childIndent}${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`)
+        console.log(
+          `${childIndent}${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`,
+        )
         const targetRel = relative(root, item.statusInfo.targetHtmlPath).replace(/\\/g, '/')
         console.log(`${childIndent}${fileIndent}└── ${targetRel}`)
       }
@@ -322,7 +328,11 @@ function injectSlots(shell, config, schema, model) {
       new RegExp(`(<script type="application/json" id="${id}">)[\\s\\S]*?(</script>)`),
       (_m, open, close) => `${open}\n${serialize(json)}\n${close}`,
     )
-  return slot(slot(slot(shell, 'innfo-config', config), 'innfo-schema', schema), 'innfo-model', model)
+  return slot(
+    slot(slot(shell, 'innfo-config', config), 'innfo-schema', schema),
+    'innfo-model',
+    model,
+  )
 }
 
 /** Console HTML for one model: the bundle name is injected so each console loads its own pinned bundle. */
@@ -441,10 +451,7 @@ async function main() {
   // default config and static <script> tags. Those tags are not injectSlots targets, so
   // normalize every occurrence to the ref derived from the vendored bundle banner —
   // otherwise a generated console loads a stale bundle version first (#95).
-  const resolvedShell = shell.replace(
-    /@innfo-console-v\d+\.\d+\.\d+/g,
-    `@${consoleCdnRef}`,
-  )
+  const resolvedShell = shell.replace(/@innfo-console-v\d+\.\d+\.\d+/g, `@${consoleCdnRef}`)
 
   const config = {
     needs: [
@@ -464,7 +471,10 @@ async function main() {
   }
 
   let ledgerEntries = []
-  const rootLedgerPath = join(root, payloadHelper.FEEDBACK_LEDGER_FILENAME || 'feedback-ledger.jsonl')
+  const rootLedgerPath = join(
+    root,
+    payloadHelper.FEEDBACK_LEDGER_FILENAME || 'feedback-ledger.jsonl',
+  )
   if (existsSync(rootLedgerPath)) {
     try {
       const rawLedger = await readFile(rootLedgerPath, 'utf-8')
@@ -475,7 +485,32 @@ async function main() {
     }
   }
 
-  const resolver = payloadHelper.createFsSourceResolver ? payloadHelper.createFsSourceResolver(root) : undefined
+  const resolver = payloadHelper.createFsSourceResolver
+    ? payloadHelper.createFsSourceResolver(root)
+    : undefined
+
+  // Single shared schema path (innfo-core) — the MCP `build_console_payload`
+  // tool calls the same helper, so both producers emit byte-identical slots.
+  const resolveModelSchema = async (content) => {
+    const fm = frontmatterOf(content)
+    if (!fm?.parent_spec?.name) return undefined
+    try {
+      const resolution = await payloadHelper.resolveConsoleSchema({
+        rootDir: root,
+        parentName: fm.parent_spec.name,
+        parentUrl: fm.parent_spec.url,
+      })
+      for (const warning of resolution.warnings) {
+        process.stderr.write(`WARNING: [export-console] ${warning}\n`)
+      }
+      return resolution.schema
+    } catch (err) {
+      process.stderr.write(
+        `WARNING: [export-console] Schema resolution failed: ${err?.message ?? err}\n`,
+      )
+      return undefined
+    }
+  }
 
   let written = 0
   let unchanged = 0
@@ -483,18 +518,7 @@ async function main() {
     const stem = m.name
     const relPath = relative(root, m.filePath).replace(/\\/g, '/')
 
-    let schema = undefined
-    const fm = frontmatterOf(m.content)
-    if (fm.parent_spec?.name) {
-      const tier1Path = join(root, 'specs', 'bluepriNNts', fm.parent_spec.name)
-      if (existsSync(tier1Path)) {
-        // tier 1 exists
-      } else {
-        process.stderr.write(
-          `WARNING: [export-console] Schema resolution for parent_spec '${fm.parent_spec.name}' not found at Tier 1; derived schema used.\n`,
-        )
-      }
-    }
+    const schema = await resolveModelSchema(m.content)
 
     const build = (generated) =>
       payloadHelper.buildConsolePayload({
@@ -510,7 +534,11 @@ async function main() {
     // The bundle is its own write-once family per folder; an unchanged bundle is deduplicated.
     let bundleName = null
     if (bundle) {
-      const vendored = await payloadHelper.writeOnce(root, { dir, key: BUNDLE_KEY, ext: 'js' }, bundle)
+      const vendored = await payloadHelper.writeOnce(
+        root,
+        { dir, key: BUNDLE_KEY, ext: 'js' },
+        bundle,
+      )
       bundleName = basename(vendored.path)
     }
 
@@ -526,7 +554,10 @@ async function main() {
     if (latestRel) {
       const previous = await readFile(join(root, latestRel), 'utf-8')
       const previousGenerated = extractModelMetaFromHtml(previous)?.generated
-      if (previousGenerated && renderConsole(resolvedShell, bundleName, config, build(previousGenerated)) === previous) {
+      if (
+        previousGenerated &&
+        renderConsole(resolvedShell, bundleName, config, build(previousGenerated)) === previous
+      ) {
         unchanged++
         console.log(`= ${basename(latestRel)} unchanged`)
         continue
@@ -534,9 +565,14 @@ async function main() {
     }
 
     const html = renderConsole(resolvedShell, bundleName, config, build(undefined))
-    const result = await payloadHelper.writeOnce(root, { dir, key: `${stem}_console`, ext: 'html' }, html, {
-      inputs: [relPath],
-    })
+    const result = await payloadHelper.writeOnce(
+      root,
+      { dir, key: `${stem}_console`, ext: 'html' },
+      html,
+      {
+        inputs: [relPath],
+      },
+    )
     if (result.status === 'deduplicated') {
       unchanged++
       console.log(`= ${basename(result.path)} unchanged`)
@@ -559,14 +595,18 @@ async function main() {
       const relPath = relative(root, m.filePath).replace(/\\/g, '/')
       const fileName = basename(relPath)
       const modelStem = fileName.replace(/\.[^/.]+$/, '')
+      const schema = await resolveModelSchema(m.content)
       const payload = payloadHelper.buildConsolePayload({
         content: m.content,
         path: relPath,
+        schema,
         resolver,
         ledgerEntries,
       })
       if (payload && payload.model) {
-        const mTitle = (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
+        const mTitle =
+          (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) ||
+          modelStem
         const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
         const modelConcepts = new Set()
         if (Array.isArray(payload.model.elements)) {
@@ -577,8 +617,14 @@ async function main() {
               el.modelFile = fileName
               const cName = el.concept || 'Element'
               const eName = el.name || el.id || ''
-              const cSlug = cName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-              const eSlug = eName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+              const cSlug = cName
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+              const eSlug = eName
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
               el.unitSlug = `${fileName}@${cSlug}--${eSlug}`
               el.canonicalUnit = `${fileName}@## ${cName}: ${eName}`
               allElements.push(el)
@@ -642,10 +688,14 @@ async function main() {
     if (existsSync(uiCssPath)) {
       await writeFile(join(root, UI_CSS_FILENAME), await readFile(uiCssPath, 'utf-8'), 'utf-8')
     }
-    console.log(`✔ domaiNN_console.html → ./domaiNN_console.html (${candidateModels.length} models, ${allElements.length} elements)`)
+    console.log(
+      `✔ domaiNN_console.html → ./domaiNN_console.html (${candidateModels.length} models, ${allElements.length} elements)`,
+    )
   }
 
-  console.log(`Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`)
+  console.log(
+    `Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`,
+  )
 }
 
 main().catch((err) => {

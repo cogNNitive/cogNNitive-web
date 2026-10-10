@@ -35,7 +35,7 @@ sha256: "4a8f9b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a"
 size_bytes: 524288
 source_format: pdf
 normalized_at: "2026-10-01T10:00:00.000Z"
-normalized_by: "nn-trannsform"
+normalized_by: "nn-sources"
 ---
 ```
 

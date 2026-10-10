@@ -28,7 +28,7 @@
       "level": 2,
       "aliases": ["app", "template"],
       "sense": "Level-2 domain schema specification file (formerly Template / App; e.g. business_V_0-2-0_NN.md)",
-      "excludes": ["traNNsformations", "vue-sfc-template", "generic-english"],
+      "excludes": ["vue-sfc-template", "generic-english"],
       "stable_identifiers": [
         "specs/bluepriNNts/",
         "blueprint_version",
@@ -85,7 +85,7 @@
     },
     "cognitivize": {
       "canonical": true,
-      "sense": "Operation that creates or refreshes a sidecar in place, leaving the original file untouched. One innfo-core operation (cognitivize), surfaced through the nn-trannsform CLI (--cognitivize <file|dir>) and the innfo-mcp tool; raw imports land verbatim in sources/import/ and are cognitivized there.",
+      "sense": "Operation that creates or refreshes a sidecar in place, leaving the original file untouched. One innfo-core operation (cognitivize), surfaced through the nn-sources CLI (--cognitivize <file|dir>) and the innfo-mcp tool; raw imports land verbatim in sources/import/ and are cognitivized there.",
       "excludes": [],
       "stable_identifiers": ["cognitivize", "--cognitivize"]
     },
@@ -103,7 +103,7 @@
     },
     "drift-gate": {
       "canonical": true,
-      "sense": "Consistency check that the managed view sections of the persisted lineage record (*_cogNNitive_NN.md) equal a fresh core projection. Runs in nn-trannsform --lineage --check, scripts/verify.js, and the innfo-mcp check_workspace tool.",
+      "sense": "Consistency check that the managed view sections of the persisted lineage record (*_cogNNitive_NN.md) equal a fresh core projection. Runs in nn-sources --lineage --check, scripts/verify.js, and the innfo-mcp check_workspace tool.",
       "excludes": [],
       "stable_identifiers": ["checkLineageDrift", "LINEAGE_DRIFT"]
     },

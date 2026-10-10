@@ -34,7 +34,6 @@ const SIDEBAR_PATH = path.join(REPO_ROOT, 'docs', 'innfo', 'documentation', '_si
 // Step 3a contract: opinionated .gitignore emitted at workspace root.
 const GITIGNORE_PATTERNS = [
   'staging/',
-  'original/',
   'specs/',
   '*.env',
   '*.token',

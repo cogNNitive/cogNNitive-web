@@ -4,7 +4,7 @@ sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 normalized_at: "2026-08-23T10:00:00Z"
 provenance:
   verified: true
-  method: "nn-trannsform"
+  method: "nn-sources"
 ---
 
 # Customer Discovery & Investor Transcripts

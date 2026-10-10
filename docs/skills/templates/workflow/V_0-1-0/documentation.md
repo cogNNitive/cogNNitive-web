@@ -13,7 +13,7 @@ Use this template when you need to:
 - Chain multiple agent skills in a defined sequence
 - Document a multi-step transformation workflow
 - Create reusable processing workflows for content ingestion, model authoring, or script generation
-- Coordinate skills like `nn-trannsform`, `nn-innfo`, and others in a single declarative file
+- Coordinate skills like `nn-sources`, `nn-innfo`, and others in a single declarative file
 
 ## Concepts
 
@@ -60,7 +60,7 @@ legacy `_F`/`_FORMAT` markers.
 |---|---|---|
 | Concept section | `# NN <Concept>` (H1) | `# NN Stage` |
 | Element | `## NN <Concept>: <Element>` (H2) | `## NN Stage: Raw Ingestion` |
-| Property | `key:: value` (line immediately after the element heading) | `skill:: [[nn-trannsform]]` |
+| Property | `key:: value` (line immediately after the element heading) | `skill:: [[nn-sources]]` |
 | Matrix block | `# NN matrices: <matrix-name>` followed by a Markdown table | `# NN matrices: Stage-Skill matrix` |
 
 Reference fields (`skill`, `from_type`, `to_type`) use WikiLink syntax `[[Target Element]]`.

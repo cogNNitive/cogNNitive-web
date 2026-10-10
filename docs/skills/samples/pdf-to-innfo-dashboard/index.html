@@ -123,11 +123,11 @@
     <p class="subtitle">Take a Wikipedia article PDF, run it through the full cogNNitive pipeline: normalize with traNNsform, model with iNNfo, and export an interactive Charts.js dashboard.</p>
     <div class="arrow">&#x1F4D1; Wikipedia PDF &rarr; &#x1F4CA; Interactive Dashboard</div>
     <div class="pipeline">
-      <span class="skill-badge">nn-trannsform</span>
+      <span class="skill-badge">nn-sources</span>
       <span class="arrow-chev">&rarr;</span>
       <span class="skill-badge">nn-innfo</span>
       <span class="arrow-chev">&rarr;</span>
-      <span class="skill-badge">nn-trannsform</span>
+      <span class="skill-badge">nn-sources</span>
       <span class="arrow-chev">&rarr;</span>
       <span class="skill-badge">&#x1F4CA; Dashboard</span>
     </div>
@@ -159,7 +159,7 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
   <section>
     <span class="section-label">2 &mdash; The workflow</span>
     <h2 class="section-title">Follow the <span class="accent">steps</span></h2>
-    <p class="section-desc">Run these steps in your AI agent (OpenCode, Claude Code, etc.). This sample chains two skills: <strong>nn-trannsform</strong> for document processing and HTML export, and <strong>nn-innfo</strong> for model authoring.</p>
+    <p class="section-desc">Run these steps in your AI agent (OpenCode, Claude Code, etc.). This sample chains two skills: <strong>nn-sources</strong> for document processing and HTML export, and <strong>nn-innfo</strong> for model authoring.</p>
 
     <div class="steps">
       <div class="step-card">
@@ -191,7 +191,7 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
 
       <div class="step-card">
         <h4>Agent exports the dashboard</h4>
-        <p>Using <strong>nn-trannsform</strong>'s export pipeline, the agent reads the model, resolves the specialization, and generates a standalone HTML dashboard with Charts.js visualizations: cast grid, budget vs. box office bar chart, awards timeline, and plot summary.</p>
+        <p>Using <strong>nn-sources</strong>'s export pipeline, the agent reads the model, resolves the specialization, and generates a standalone HTML dashboard with Charts.js visualizations: cast grid, budget vs. box office bar chart, awards timeline, and plot summary.</p>
         <div class="code-snip">open traNNsform/output/WhatsUpDoc_1972_dashboard.html</div>
       </div>
     </div>
@@ -207,7 +207,7 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
       <div class="file-card">
         <div class="file-icon">&#x1F4D1;</div>
         <div class="file-name">Stage 1: Import</div>
-        <div class="file-desc"><strong>nn-trannsform</strong> &mdash; Normalize the PDF to structured Markdown via pdf-parse</div>
+        <div class="file-desc"><strong>nn-sources</strong> &mdash; Normalize the PDF to structured Markdown via pdf-parse</div>
       </div>
       <div class="file-card">
         <div class="file-icon">&#x1F9E0;</div>
@@ -222,12 +222,12 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
       <div class="file-card">
         <div class="file-icon">&#x1F4CA;</div>
         <div class="file-name">Stage 4: Export</div>
-        <div class="file-desc"><strong>nn-trannsform</strong> &mdash; Generate interactive HTML dashboard with Chart.js</div>
+        <div class="file-desc"><strong>nn-sources</strong> &mdash; Generate interactive HTML dashboard with Chart.js</div>
       </div>
     </div>
 
     <div style="margin-top: var(--space-lg); padding: var(--space-md); background: var(--canvas-inert); border-radius: var(--radius); font-family: var(--mono); font-size: 13px; line-height: 1.8; text-align: center;">
-      PDF &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-trannsform import</span> &#x27A1;&#xFE0F; Normalized MD &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-innfo analyze</span> &#x27A1;&#xFE0F; Concepts &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-innfo author</span> &#x27A1;&#xFE0F; *_NN.md &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-trannsform export</span> &#x27A1;&#xFE0F; dashboard.html
+      PDF &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-sources import</span> &#x27A1;&#xFE0F; Normalized MD &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-innfo analyze</span> &#x27A1;&#xFE0F; Concepts &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-innfo author</span> &#x27A1;&#xFE0F; *_NN.md &#x27A1;&#xFE0F; <span style="color: var(--brand);">nn-sources export</span> &#x27A1;&#xFE0F; dashboard.html
     </div>
 
     <div style="margin-top: var(--space-lg); background: #F0F4F8; border: 1px solid #B8D0E0; border-radius: var(--radius); padding: var(--space-md) var(--space-lg); font-size: 14px; color: #1A3A5C;">

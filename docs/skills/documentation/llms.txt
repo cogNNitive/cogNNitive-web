@@ -8,7 +8,7 @@
 - [nn](skills/nn.md)
 - [nn-preflight](skills/nn-preflight.md)
 - [nn-innfo](skills/nn-innfo.md)
-- [nn-trannsform](skills/nn-trannsform.md)
+- [nn-sources](skills/nn-sources.md)
 - [nn-site-generator](skills/nn-site-generator.md)
 - [nn-skills-lifecycle](skills/nn-skills-lifecycle.md)
 - [nn-design-presets](skills/nn-design-presets.md)

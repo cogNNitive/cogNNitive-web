@@ -1351,13 +1351,13 @@ function printHumanReport(results) {
         }
       }
     }
-    console.log('  Remediation: Run `node scripts/index.js --scan` (nn-trannsform --scan) or `--cognitivize <path>` to synchronize sources.\n');
+    console.log('  Remediation: Run `node scripts/index.js --scan` (nn-sources --scan) or `--cognitivize <path>` to synchronize sources.\n');
   }
 
   const textPolicyItem = results.items.find((item) => item.type === 'source-integrity' && item.status === 'text-policy-missing');
   if (textPolicyItem) {
     console.log(`\n⚠️  ${textPolicyItem.detail}`);
-    console.log('  Remediation: add the line `* -text` to the domaiNN .gitattributes (nn-trannsform bootstrap writes it).\n');
+    console.log('  Remediation: add the line `* -text` to the domaiNN .gitattributes (nn-sources bootstrap writes it).\n');
   }
 
   if (results.summary.templatesCompositionBlockers > 0 || results.summary.templatesCompositionWarnings > 0) {

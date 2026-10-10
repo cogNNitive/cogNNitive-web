@@ -15,7 +15,7 @@ Primary interactive entry point and front controller for system governance, setu
 
 ## 0. Activation Contract
 
-Activates whenever the user invokes `/nn`, `/nn-start`, `/start`, or begins a session in a cogNNitive domain workspace.
+Activates whenever the user invokes `/nn`, `/start`, or begins a session in a cogNNitive domain workspace.
 
 ---
 

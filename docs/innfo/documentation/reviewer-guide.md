@@ -57,4 +57,4 @@ Drafts are stored in `localStorage` under a single key, `innfo-console:v2:<meta.
 Drafts saved by older consoles under the legacy title-and-version key (`innfo-console:drafts:*`) are **not** read, migrated or deleted: they simply stop being shown.
 
 ### 9. Ingesting Feedback
-Normalized feedback documents ingest via `nn-trannsform` or the `reconcile_feedback` procedure, with items indexed under `### fb-001` headings followed by `- **Kind**:` bullets.
+Normalized feedback documents ingest via `nn-sources` or the `reconcile_feedback` procedure, with items indexed under `### fb-001` headings followed by `- **Kind**:` bullets.

@@ -20,7 +20,7 @@ sources/conversations/       (<file>.<ext>_sidecar_NN.md) (model Citations:     
 
 ## 1. Sources — In-Place Cognition & Origin Metadata
 
-`nn-trannsform` scans the active source subtrees (`sources/import/` and
+`nn-sources` scans the active source subtrees (`sources/import/` and
 `sources/conversations/`), and for each file writes a co-located sidecar
 `<file>.<ext>_sidecar_NN.md` through the single `cognitivize` operation. The raw
 file's bytes and path are never changed, and there is no `sources/nn/` mirror.
@@ -132,20 +132,20 @@ the record itself, and `staging/` never appear as nodes.
 The persisted record is only trustworthy if its managed view sections equal a
 fresh projection. The drift gate recomputes the projection and compares the
 on-disk text of `# NN Sources`, `# NN ModelRecords`, and `# NN Artifacts` byte by
-byte. It runs in three sites — `nn-trannsform --lineage --check`,
+byte. It runs in three sites — `nn-sources --lineage --check`,
 `node scripts/verify.js`, and the MCP `check_workspace` tool — and never compares
 the `# NN Procedures` journal, hand-authored blocks, or frontmatter. Fixing drift
 is the job of `--lineage` (regeneration), never of the gate.
 
 ### Append-Only Journal
 
-- **`# NN Procedures`** is an **append-only run log**. Each pipeline execution (`--scan`, `--import-url`, `--apply`) appends one `## NN Procedures:` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). Existing procedure entries are never rewritten or lost on resync.
+- **`# NN Procedures`** is an **append-only run log**. Each pipeline execution (`--scan`, `--import-url`) appends one `## NN Procedures:` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). Existing procedure entries are never rewritten or lost on resync.
 
 ---
 
 ## 4. Artifact Citations & Deliverables
 
-`nn-trannsform` derives deliverables into `artifacts/` (reports, dashboards,
+`nn-sources` derives deliverables into `artifacts/` (reports, dashboards,
 summaries). Every output is **write-once**: it gets a UTC suffix
 `_YYYYMMDDTHHmmssZ` before the extension, with `-2`, `-3`… as a same-second
 tie-break. Running a producer twice on unchanged input writes nothing (dedup
@@ -186,7 +186,7 @@ A changed source is not snapshotted; it becomes a **new family member**. The
 previous member keeps its bytes, so existing citations keep resolving. The V-chain
 is the family ordered by name, not an archive directory.
 
-Garbage collection only *proposes*: `nn-trannsform --gc` (dry run) lists the
+Garbage collection only *proposes*: `nn-sources --gc` (dry run) lists the
 non-latest, uncited members, and only `--gc --apply --yes --paths <list>` deletes
 the intersection of the user-confirmed list and a freshly recomputed plan. Cited
 members, the latest member, and the lineage record are never proposed. Deleting a
