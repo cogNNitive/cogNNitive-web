@@ -76,13 +76,13 @@ A `presenter` Layer supplies a source portrait and synchronizes facial movement 
 
 ```markdown
 # NN index
-* [[El cocodrilo de Singapur]]
+* [[Welcome Clip]]
   * [[Hook]]
 
 # NN Video
-## NN Video: El cocodrilo de Singapur
-slug:: el-cocodrilo-de-singapur
-title:: El cocodrilo de Singapur
+## NN Video: Welcome Clip
+slug:: welcome-clip
+title:: Welcome Clip
 
 # NN Scene
 ## NN Scene: Hook

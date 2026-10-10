@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-10T16:02:51.334Z",
-  "head": "7f0a0813cebd5ea674c1c45b881d5e10e5d40e3d",
+  "generatedAt": "2026-10-10T16:30:23.351Z",
+  "head": "90faf47a12aac5d67c67e71d8231ddaa5442e75a",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -17,7 +17,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.26.0",
       "pinnedTagDate": "2026-10-10T12:11:29+02:00",
-      "commitsSincePin": 26,
+      "commitsSincePin": 29,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-3_analysis_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/spec_NN.md",
@@ -37,7 +37,6 @@
         "iNNfo/specs/bluepriNNts/organization/spec_NN.md",
         "iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-3_projects_NN.md",
         "iNNfo/specs/bluepriNNts/projects/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/video-script/samples/el-cocodrilo-de-singapur_V_0-1-0_video-script_NN.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/references/cost-guardrails.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/references/folder-contract.md",
@@ -135,8 +134,6 @@
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/test/vus-spec-pin.test.mjs",
         "iNNfo/specs/bluepriNNts/video/spec_NN.md",
         "iNNfo/specs/bluepriNNts/video/web/index.html",
-        "iNNfo/specs/bluepriNNts/villabotijos-today/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/villabotijos-today/templates_V_0-1-0_villabotijos-today_NN.md",
         "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
       ]
     },
@@ -144,7 +141,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.26.0",
       "pinnedTagDate": "2026-10-10T12:11:29+02:00",
-      "commitsSincePin": 26,
+      "commitsSincePin": 29,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-3_analysis_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/spec_NN.md",
@@ -164,7 +161,6 @@
         "iNNfo/specs/bluepriNNts/organization/spec_NN.md",
         "iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-3_projects_NN.md",
         "iNNfo/specs/bluepriNNts/projects/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/video-script/samples/el-cocodrilo-de-singapur_V_0-1-0_video-script_NN.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/references/cost-guardrails.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/references/folder-contract.md",
@@ -262,8 +258,6 @@
         "iNNfo/specs/bluepriNNts/video/skills/nn-video-script/test/vus-spec-pin.test.mjs",
         "iNNfo/specs/bluepriNNts/video/spec_NN.md",
         "iNNfo/specs/bluepriNNts/video/web/index.html",
-        "iNNfo/specs/bluepriNNts/villabotijos-today/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/villabotijos-today/templates_V_0-1-0_villabotijos-today_NN.md",
         "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html"
       ]
     },
@@ -280,15 +274,10 @@
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.9.4",
-      "pinnedTagDate": "2026-10-10T16:58:14+02:00",
-      "commitsSincePin": 4,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "innfo-console-v0.9.5",
+      "pinnedTagDate": "2026-10-10T17:58:12+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }

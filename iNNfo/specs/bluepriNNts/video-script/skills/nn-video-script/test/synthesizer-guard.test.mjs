@@ -434,10 +434,10 @@ describe('system voices and lookup by voice_id', () => {
   });
 
   it('resolves a script voice by registry key OR by an entry voice_id (exact, case-sensitive)', async () => {
-    const voices = { Villabotijos01: { voice_id: 'dcrR2vs2jKo', series: 's' } };
-    assert.equal(await run(voices, 'Villabotijos01'), 'dcrR2vs2jKo');
-    assert.equal(await run(voices, 'dcrR2vs2jKo'), 'dcrR2vs2jKo');
-    await assert.rejects(run(voices, 'DCRR2VS2JKO'), /not registered/);
+    const voices = { Presenter01: { voice_id: 'voiceId01', series: 's' } };
+    assert.equal(await run(voices, 'Presenter01'), 'voiceId01');
+    assert.equal(await run(voices, 'voiceId01'), 'voiceId01');
+    await assert.rejects(run(voices, 'VOICEID01'), /not registered/);
   });
 
   it('keeps the cache key of system voices unchanged (no re-billing of cached lines)', async () => {

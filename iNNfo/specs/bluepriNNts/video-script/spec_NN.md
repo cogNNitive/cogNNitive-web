@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-1-0"
+blueprint_version: "V_0-1-1"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -81,7 +81,7 @@ description:: Human title of the video. The engine derives the manifest composit
 concept:: Scene
 type:: reference
 target_concepts:: [Template]
-description:: Reference to a Template instance (tool, voice, model) shipped by the Series' L3 Template-data document, e.g. [[Villabotijos Today :: Celedonio Full]]. Optional.
+description:: Reference to a Template instance (tool, voice, model) shipped by the Series' L3 Template-data document, e.g. [[My Series :: Presenter Full]]. Optional.
 
 ## NN Field Definition: music
 concept:: Scene
