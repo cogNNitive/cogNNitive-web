@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-10T07:31:16.032Z",
-  "head": "b83a282a724f80a5b0c7b8ea50acfa911f535e3b",
+  "generatedAt": "2026-10-10T07:52:22.535Z",
+  "head": "2e0f34886636d5fe2b6111c9c89d662fc77c102d",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -14,77 +14,26 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.24.0",
-      "pinnedTagDate": "2026-10-09T16:20:05+02:00",
-      "commitsSincePin": 38,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-icons.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
-        "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "iNNfo/specs/bluepriNNts/domaiNN/assets/domaiNN_console.html",
-        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js",
-        "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
-        "iNNfo/specs/bluepriNNts/metrics/procedures/create_timeline_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-2_metrics_NN.md",
-        "iNNfo/specs/bluepriNNts/metrics/scripts/verify.harness.js",
-        "iNNfo/specs/bluepriNNts/metrics/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/procedures/assets/console-view-procedure.js",
-        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
-        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-3-2_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/procedures/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
-        "iNNfo/specs/bluepriNNts/workspace/assets/workspace_hub.html",
-        "iNNfo/specs/bluepriNNts/workspace/procedures/compile_workspace_hub_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.25.0",
+      "pinnedTagDate": "2026-10-10T04:10:21+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.24.0",
-      "pinnedTagDate": "2026-10-09T16:20:05+02:00",
-      "commitsSincePin": 38,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-icons.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
-        "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "iNNfo/specs/bluepriNNts/domaiNN/assets/domaiNN_console.html",
-        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js",
-        "iNNfo/specs/bluepriNNts/metrics/assets/timeline.html",
-        "iNNfo/specs/bluepriNNts/metrics/procedures/create_timeline_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-2_metrics_NN.md",
-        "iNNfo/specs/bluepriNNts/metrics/scripts/verify.harness.js",
-        "iNNfo/specs/bluepriNNts/metrics/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/procedures/assets/console-view-procedure.js",
-        "iNNfo/specs/bluepriNNts/procedures/assets/procedure_console.html",
-        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-3-2_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/procedures/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/workspace/assets/model_console.html",
-        "iNNfo/specs/bluepriNNts/workspace/assets/workspace_hub.html",
-        "iNNfo/specs/bluepriNNts/workspace/procedures/compile_workspace_hub_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.25.0",
+      "pinnedTagDate": "2026-10-10T04:10:21+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.15.0",
       "pinnedTagDate": "2026-10-09T16:20:05+02:00",
-      "commitsSincePin": 8,
+      "commitsSincePin": 9,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/src/server.ts",
         "iNNfo/packages/innfo-mcp/src/tools/build-console-payload.spec.ts",
         "iNNfo/packages/innfo-mcp/src/tools/build-console-payload.ts",
@@ -98,23 +47,10 @@
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.9.1",
-      "pinnedTagDate": "2026-10-09T16:20:05+02:00",
-      "commitsSincePin": 50,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-icons.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
-        "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "scripts/console-views.mjs",
-        "scripts/export-console.mjs"
-      ]
+      "pinnedTag": "innfo-console-v0.9.2",
+      "pinnedTagDate": "2026-10-10T04:10:21+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }
