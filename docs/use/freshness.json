@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-10T14:32:11.968Z",
-  "head": "fb877922d1f07c40d94a12f8f1ed00dbcfeb3708",
+  "generatedAt": "2026-10-10T14:54:12.165Z",
+  "head": "5915db59ddca50249c2c482dad24f8852cfbf90c",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -17,7 +17,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.26.0",
       "pinnedTagDate": "2026-10-10T12:11:29+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-3_analysis_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/spec_NN.md",
@@ -44,7 +44,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.26.0",
       "pinnedTagDate": "2026-10-10T12:11:29+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-3_analysis_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/spec_NN.md",
@@ -79,17 +79,12 @@
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.9.2",
-      "pinnedTagDate": "2026-10-10T04:10:21+02:00",
-      "commitsSincePin": 12,
+      "pinnedTag": "innfo-console-v0.9.3",
+      "pinnedTagDate": "2026-10-10T16:27:14+02:00",
+      "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "scripts/console-views.mjs",
-        "scripts/export-console.mjs"
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js"
       ]
     }
   }

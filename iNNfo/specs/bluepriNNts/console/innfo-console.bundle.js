@@ -4014,10 +4014,16 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           conceptId: element.concept,
           description: element.description,
           fields: fields,
+          qud: { id: element.id, concept: element.concept, hash: element.hash, path: element.canonicalUnit || element.modelFile || element.modelTitle || null },
+          path: element.canonicalUnit || element.modelFile || element.modelTitle || null,
+          tags: Array.isArray(element.tags) ? element.tags.map(String) : null,
+          relations:
+            Array.isArray(element.relations) && element.relations.length ? element.relations : null,
         },
         {
           domId: String(element.id || ''),
           collapsible: false,
+          byId: refs,
           onRef: function (refId) {
             var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
             if (target) renderRefDialog(doc, target)
