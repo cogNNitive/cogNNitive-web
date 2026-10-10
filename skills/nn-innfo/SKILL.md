@@ -144,7 +144,7 @@ When the user invokes the skill without an explicit intent (e.g., bare `/nn-innf
 - **[a] (Recommended)** Create a new model (Conversational Wizard)
 - **[b]** Edit / extend an existing model (Conversational Wizard)
 - **[c]** Audit & validate model (MCP Syntax + Architecture Coherence)
-- **[d]** Export / update console artifacts (Workspace Consoles & Hub)
+- **[d]** Export / update console artifacts (domaiNN console)
 - **[x]** Execute a model procedure — delegate selection and execution to the canonical Procedure Execution Protocol (§16-bis), which discovers procedures from model `## NN Procedure:` sections, blueprint frontmatter, and `workspace/procedures/`
 - **[w]** View & consult documentation — browse iNNfo specs, primitives, and guides
 - **[y]** Cancel / help
@@ -600,7 +600,11 @@ When the user selects option `[d]` (Export / update console artifacts):
 1. Verify active model context via the Active Model Selection Gate (§0a-bis).
 2. Execute console compilation for the active model:
    - Run `node <path-to>/export-console.mjs . <model_name>` (or `--stale` / `--all` depending on user intent). The CLI ships in the cogNNitive repo at `scripts/export-console.mjs`; run it from a checkout, or from the copy installed under `~/.agents/console/` once console assets are distributed.
-   - The CLI resolves its console assets (`artifact_shell.html` + `innfo-console.bundle.js`) from `$INNFO_CONSOLE_DIR`, then `~/.agents/console/`, then the repo's `iNNfo/specs/bluepriNNts/console/`. Set `INNFO_CONSOLE_DIR` when running outside a checkout.
+   - The CLI resolves its console assets from `$INNFO_CONSOLE_DIR`, then the repo's `iNNfo/specs/bluepriNNts/console/`, then `~/.agents/console/`. The installed set is `export-console.mjs`, `console-views.mjs`, `artifact_shell.html`, `innfo-console.bundle.js`, `innfo-ui.css` and `console-payload.generated.cjs`, all flat in one folder; `--domain` needs every one of them. Set `INNFO_CONSOLE_DIR` when running outside a checkout.
+   - After upgrading, run `skills-manager install` (or `update`, which also adds the console files a newer release introduced) so the set is complete; `--domain` fails with a clear error when `console-views.mjs` or `innfo-ui.css` is missing.
+   - `--domain` also reads bluepriNNt console views from the installed bluepriNNt packages in `$INNFO_BLUEPRINTS_DIR`, defaulting to `~/.agents/bluepriNNts/`, and warns on stderr when a model's bluepriNNt package cannot be found there.
+   - `--view <id>` writes one console holding only that custom view, for the whole domain, to `artifacts/<id>_view/`. It cannot be combined with `--domain`, `--all`, `--stale`, `--filter` or a model name (exit 2), and it needs the same assets as `--domain`. Its drafts are kept apart from the domain console's.
+   - `--domain` and `--view` print a size breakdown, warn on stderr above 5 MB and fail above 15 MB without writing anything.
    - If the user requests inspection or status, invoke with `--status` or `--tree` (read-only mode).
 3. Present the compiled artifact path (the latest member of the write-once family, e.g. `artifacts/<stem>_console/<stem>_console_<UTC stamp>.html`; earlier exports are never overwritten) with instructions for opening offline or in browser.
 
@@ -779,7 +783,7 @@ Executable procedures and agent skills are content declared dynamically in model
 
 Additionally, procedures are discovered by reading the `## NN Procedure: ...` sections of the active model and the workspace's `procedures/` folder (predicate: Level 3 documents whose `parent_spec` resolves to the procedures bluepriNNt).
 
-The template console procedure (historically referred to as "master.html", "showroom", or "gallery") generates the canonical interactive console for a model (e.g. `business_console.html`, `procedures_console.html`). For multi-model workspaces, the `workspace_hub` procedure generates the aggregated workspace portal (`artifacts/workspace_hub.html`). If the user asks for a "console", "master", "hub", "showroom", "gallery", or "visual framework", offer to generate the corresponding canonical console or workspace hub.
+The template console procedure (historically referred to as "master.html", "showroom", or "gallery") generates the canonical interactive console for a model (e.g. `business_console.html`, `procedures_console.html`). A domaiNN console aggregates every model and registered view into one self-contained `domaiNN_console.html` (see `console-architecture`). If the user asks for a "console", "master", "showroom", "gallery", or "visual framework", offer to generate the corresponding canonical console.
 
 ---
 

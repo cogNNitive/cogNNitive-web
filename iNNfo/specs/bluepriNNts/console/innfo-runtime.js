@@ -53,6 +53,37 @@
     return raw || 'feedback'
   }
 
+  // D4: exports are named after the immutable model_slug, never the human
+  // title. An explicit slug wins; otherwise the model id (then title) is slugified.
+  function modelSlugOf(state) {
+    var s = isObject(state) ? state : {}
+    var slugMod = getInnfoSlug()
+    var candidates = [s.modelSlug, s.modelId, s.modelTitle]
+    for (var i = 0; i < candidates.length; i++) {
+      var c = candidates[i]
+      if (typeof c !== 'string' || !c.trim()) continue
+      var out = slugMod ? slugMod.slugify(c) : ''
+      if (out) return out
+    }
+    // Nothing slugifies (e.g. a non-Latin title with no ASCII id): derive a
+    // stable suffix from the title so distinct models never share a filename.
+    var seed = [s.modelTitle, s.modelId].filter(function (v) {
+      return typeof v === 'string' && v.trim()
+    })[0]
+    return 'model-' + shortHash(seed || '')
+  }
+
+  // FNV-1a (32-bit) rendered as 8 lowercase hex digits; deterministic across runs.
+  function shortHash(text) {
+    var h = 0x811c9dc5
+    var str = String(text)
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i)
+      h = Math.imul(h, 0x01000193) >>> 0
+    }
+    return ('00000000' + h.toString(16)).slice(-8)
+  }
+
   function slugifyReviewer(value) {
     var text = String(value == null ? '' : value)
       .toLowerCase()
@@ -1355,11 +1386,10 @@
   }
 
   // Renders uPlot charts from the pure-data series mapping (charts capability).
-  // Boot-gated by hasNeed(config,'charts'); missing/invalid series skip the
+  // Called by a view with a host element; a missing/invalid series skips the
   // chart with a console warning; requires the vendored uPlot global that ships
   // inside innfo-console.bundle.js. Never evaluates slot JavaScript.
-  function renderCharts(doc, model, meta) {
-    var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-charts') : null
+  function renderCharts(host, model, meta) {
     if (!host) return
     var compiled = compileChartSeries(isObject(model) ? model.series : {}, meta)
     compiled.missing.forEach(function (c) {
@@ -1646,8 +1676,8 @@
     }
   }
 
-  function renderStudioView(doc, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange) {
-    var studioHost = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-studio-view') : null
+  function renderStudioView(host, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange) {
+    var studioHost = host
     if (!studioHost) return
 
     function computeValues() {
@@ -1865,9 +1895,13 @@
     studioHost.appendChild(studioWrap)
   }
 
-  function renderTimelineGrid(doc, model, meta) {
-    var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-timeline-grid') : null
-    if (!host) return
+  function renderTimelineGrid(container, model, meta, hooks) {
+    if (!container) return
+    var editRow = hooks && typeof hooks.onEditRow === 'function' ? hooks.onEditRow : null
+    var host = el('div', 'innfo-timeline-grid-host')
+    container.appendChild(host)
+    var studioHost = el('div', 'innfo-studio-host')
+    container.appendChild(studioHost)
     var rows = Array.isArray(model && model.rows) ? model.rows : []
     if (!rows.length) {
       host.innerHTML = ''
@@ -2078,6 +2112,17 @@
           })
           actionsSpan.appendChild(filterBtn)
         }
+        if (editRow) {
+          var editBtn = el('button', 'innfo-row-btn innfo-edit-btn')
+          editBtn.setAttribute('type', 'button')
+          editBtn.setAttribute('title', 'Propose a change to ' + (r.label || r.id))
+          editBtn.innerHTML = UI.icon('edit', 12)
+          editBtn.addEventListener('click', function (e) {
+            e.stopPropagation()
+            editRow(r.id)
+          })
+          actionsSpan.appendChild(editBtn)
+        }
         tdMetric.appendChild(actionsSpan)
 
         var markerSvg = r.variable ? UI.icon('star', 11) : r.source === 'derived' ? UI.icon('derived', 11) : UI.icon('calc', 11)
@@ -2267,155 +2312,584 @@
 
     function onStateChange() {
       renderView()
-      renderStudioView(doc, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
+      renderStudioView(studioHost, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
     }
 
     renderView()
-    renderStudioView(doc, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
+    renderStudioView(studioHost, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
   }
 
-  function renderViewTabs(doc, config, model, meta, state, onRefresh) {
-    var mainEl = doc && typeof doc.querySelector === 'function' ? doc.querySelector('main') : null
-    var tabsNav = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-view-tabs') : null
+  /* View registry. A view is a classic script that calls the registerView
+     bound by viewRegistrar(id, source); the id is the file slug. A rejected
+     registration throws AND is recorded in registry.errors(), which boot
+     renders as the #innfo-view-errors notice (a throw inside a <script> is
+     otherwise visible only in devtools). */
+  var VIEW_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
+  var RESERVED_VIEW_IDS = ['explorer', 'matrices', 'review']
+  var ICON_NAME_RE = /^[a-z0-9-]+$/
+  var VIEW_KINDS = ['editable', 'readonly']
+  // The frame has no scripts and no same-origin access, so a meta-refresh
+  // navigation inside it is accepted and out of scope here.
+  var VIEW_CSP_META =
+    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; base-uri \'none\'; form-action \'none\'; img-src data: blob:; style-src \'unsafe-inline\'">'
 
-    // Dynamic Review Tab & View Tabs Injection (Task 2.4 / Level 2 Template Consoles)
-    if (!tabsNav && mainEl) {
-      tabsNav = el('nav', 'innfo-view-tabs')
-      if (tabsNav) {
-        tabsNav.id = 'innfo-view-tabs'
-        tabsNav.style.display = 'none'
-        var toolbar = mainEl.querySelector('.innfo-toolbar')
-        if (toolbar && toolbar.nextSibling) {
-          mainEl.insertBefore(tabsNav, toolbar.nextSibling)
-        } else if (mainEl.firstChild) {
-          mainEl.insertBefore(tabsNav, mainEl.firstChild)
-        } else {
-          mainEl.appendChild(tabsNav)
+  function nonEmptyString(v) {
+    return typeof v === 'string' && v.trim() !== ''
+  }
+
+  // Returns '' when valid, otherwise a message naming the view id and field.
+  function validateViewDef(def) {
+    if (!def || typeof def !== 'object') return 'view "(missing id)": definition must be an object'
+    var id = typeof def.id === 'string' ? def.id : ''
+    var at = 'view "' + (id || '(missing id)') + '": '
+    if (!VIEW_ID_RE.test(id)) return at + 'id must be a slug of lowercase alphanumerics and hyphens'
+    if (RESERVED_VIEW_IDS.indexOf(id) >= 0) return at + 'id is reserved'
+    if (!nonEmptyString(def.title)) return at + 'title must be a non-empty string'
+    if (typeof def.icon !== 'string' || !ICON_NAME_RE.test(def.icon)) {
+      return at + 'icon must be a slug of lowercase alphanumerics and hyphens'
+    }
+    if (typeof def.order !== 'number' || !isFinite(def.order)) return at + 'order must be a finite number'
+    if (VIEW_KINDS.indexOf(def.kind) < 0) return at + 'kind must be "editable" or "readonly"'
+    if (typeof def.mount !== 'function') return at + 'mount must be a function'
+    return ''
+  }
+
+  function createViewRegistry() {
+    var views = []
+    var errors = []
+
+    function report(id, sources, reason) {
+      errors.push({ id: id, sources: sources, reason: reason })
+    }
+
+    function reject(id, sources, reason) {
+      report(id, sources, reason)
+      throw new Error(reason)
+    }
+
+    function register(def) {
+      var id = def && typeof def.id === 'string' && def.id ? def.id : '(missing id)'
+      var source = def && def.source ? String(def.source) : 'registerView'
+      var reason = validateViewDef(def)
+      if (reason) reject(id, [source], reason)
+      for (var i = 0; i < views.length; i++) {
+        if (views[i].id === id) {
+          reject(id, [views[i].source, source], 'view "' + id + '": duplicate id (already registered by ' + views[i].source + ')')
         }
+      }
+      views.push(Object.assign({}, def, { source: source }))
+      return id
+    }
+
+    // Binds the file slug and source; a declared id that differs is rejected.
+    function registrar(id, source) {
+      return function (def) {
+        if (def && def.id !== undefined && def.id !== id) {
+          reject(id, [source], 'view "' + id + '": declared id "' + def.id + '" does not match the file slug')
+        }
+        return register(Object.assign({}, def, { id: id, source: source }))
       }
     }
 
-    if (!tabsNav) return
+    return {
+      register: register,
+      registrar: registrar,
+      report: report,
+      list: function () {
+        return views.slice()
+      },
+      errors: function () {
+        return errors.slice()
+      },
+    }
+  }
 
-    // Ensure tab panels exist
+  var defaultViewRegistry = createViewRegistry()
+
+  // Creates the nav, the explorer/matrices/review panels and moves the hosts
+  // into them. Idempotent: existing nodes are reused.
+  function ensureTabShell(doc, model) {
+    var mainEl = doc && typeof doc.querySelector === 'function' ? doc.querySelector('main') : null
+    var tabsNav = doc.getElementById('innfo-view-tabs')
+    if (!tabsNav && mainEl) {
+      tabsNav = el('nav', 'innfo-view-tabs')
+      tabsNav.id = 'innfo-view-tabs'
+      tabsNav.style.display = 'none'
+      var toolbar = mainEl.querySelector('.innfo-toolbar')
+      if (toolbar && toolbar.nextSibling) mainEl.insertBefore(tabsNav, toolbar.nextSibling)
+      else if (mainEl.firstChild) mainEl.insertBefore(tabsNav, mainEl.firstChild)
+      else mainEl.appendChild(tabsNav)
+    }
+    if (!tabsNav) return null
+
     var explorerPanel = doc.getElementById('innfo-tab-explorer')
     if (!explorerPanel && mainEl) {
       explorerPanel = el('div', 'innfo-tab-panel active')
-      if (explorerPanel) {
-        explorerPanel.id = 'innfo-tab-explorer'
-        var docHost = doc.getElementById('innfo-doc')
-        var contentHost = doc.getElementById('innfo-content')
-        var matricesHost = doc.getElementById('innfo-matrices')
-        var chartsHost = doc.getElementById('innfo-charts')
-
-        var firstHost = docHost || contentHost || matricesHost || chartsHost
-        if (firstHost && firstHost.parentNode === mainEl) {
-          mainEl.insertBefore(explorerPanel, firstHost)
-          if (docHost) explorerPanel.appendChild(docHost)
-          if (contentHost) explorerPanel.appendChild(contentHost)
-          if (matricesHost) explorerPanel.appendChild(matricesHost)
-          if (chartsHost) explorerPanel.appendChild(chartsHost)
-        } else {
-          mainEl.appendChild(explorerPanel)
-        }
+      explorerPanel.id = 'innfo-tab-explorer'
+      var hosts = ['innfo-doc', 'innfo-content', 'innfo-matrices']
+        .map(function (id) {
+          return doc.getElementById(id)
+        })
+        .filter(Boolean)
+      if (hosts.length && hosts[0].parentNode === mainEl) {
+        mainEl.insertBefore(explorerPanel, hosts[0])
+        hosts.forEach(function (h) {
+          explorerPanel.appendChild(h)
+        })
+      } else {
+        mainEl.appendChild(explorerPanel)
       }
+    }
+
+    // Matrices get their own panel; the host must not stay inside the
+    // explorer panel, which is hidden while the Matrices tab is active.
+    var hasMatrices = Array.isArray(model && model.matrices) && model.matrices.length > 0
+    if (!doc.getElementById('innfo-tab-matrices') && hasMatrices && explorerPanel && explorerPanel.parentNode) {
+      var matricesPanel = el('div', 'innfo-tab-panel')
+      matricesPanel.id = 'innfo-tab-matrices'
+      var matricesHostEl = doc.getElementById('innfo-matrices')
+      if (!matricesHostEl) {
+        matricesHostEl = el('div')
+        matricesHostEl.id = 'innfo-matrices'
+      }
+      matricesPanel.appendChild(matricesHostEl)
+      explorerPanel.parentNode.insertBefore(matricesPanel, explorerPanel.nextSibling)
     }
 
     var reviewPanel = doc.getElementById('innfo-tab-review')
     if (!reviewPanel && mainEl) {
       reviewPanel = el('div', 'innfo-tab-panel')
-      if (reviewPanel) {
-        reviewPanel.id = 'innfo-tab-review'
-        mainEl.appendChild(reviewPanel)
-      }
+      reviewPanel.id = 'innfo-tab-review'
+      mainEl.appendChild(reviewPanel)
     }
+    return { nav: tabsNav, main: mainEl, review: reviewPanel, explorer: explorerPanel }
+  }
 
-    var hasDomain =
-      hasNeed(config, 'timeline-grid') ||
-      (Array.isArray(model && model.rows) && model.rows.length > 0 && meta && meta.months)
-    var hasStudio = !!(doc && typeof doc.getElementById === 'function' && doc.getElementById('innfo-tab-studio'))
-    var hasMatrices = Array.isArray(model && model.matrices) && model.matrices.length > 0
-    var hasExplorer =
-      (Array.isArray(model && model.elements) && model.elements.length > 0) || !!explorerPanel
+  // meta.consoleScope = { view: id } marks a standalone --view export: no built-in
+  // tabs, only that view, and drafts kept apart from the domain console's.
+  function consoleScopeOf(meta) {
+    var scope = meta && meta.consoleScope
+    return isObject(scope) && nonEmptyString(scope.view) ? scope.view : ''
+  }
 
-    var drafts = state && state.store ? state.store.drafts() : []
-    var draftCount = drafts.length
+  // Built-in tabs, registered per boot (they are not in the registry).
+  function builtinViews(doc, config, model, meta, shell) {
+    var views = []
+    // A standalone --view artifact mounts that view alone.
+    if (consoleScopeOf(meta)) return views
+    if ((Array.isArray(model && model.elements) && model.elements.length > 0) || shell.explorer) {
+      views.push({ id: 'explorer', title: 'Model Explorer', icon: 'explorer', order: 100, panelId: 'innfo-tab-explorer' })
+    }
+    if (Array.isArray(model && model.matrices) && model.matrices.length > 0) {
+      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 110, panelId: 'innfo-tab-matrices' })
+    }
+    return views
+  }
 
-    var tabs = []
-    if (hasDomain) {
-      tabs.push({ id: 'canonical', label: 'Canonical Spreadsheet', icon: 'timeline', targetId: 'innfo-tab-domain' })
-      if (hasStudio) {
-        tabs.push({ id: 'studio', label: 'Domain Studio', icon: 'chart', targetId: 'innfo-tab-studio' })
-      }
+  function renderViewErrors(doc, errors, nav) {
+    var host = doc.getElementById('innfo-view-errors')
+    if (!errors.length) {
+      if (host && host.parentNode) host.parentNode.removeChild(host)
+      return
     }
-    if (hasExplorer) {
-      tabs.push({ id: 'explorer', label: 'Model Explorer', icon: 'explorer', targetId: 'innfo-tab-explorer' })
+    if (!host) {
+      host = el('div', 'innfo-view-errors alert alert-error text-sm mb-3')
+      host.id = 'innfo-view-errors'
+      host.setAttribute('role', 'alert')
+      nav.parentNode.insertBefore(host, nav)
     }
-    if (hasMatrices) {
-      tabs.push({ id: 'matrices', label: 'Matrices', icon: 'matrices', targetId: 'innfo-tab-matrices' })
-    }
-    tabs.push({
-      id: 'review',
-      label: 'Changes',
-      icon: 'review',
-      targetId: 'innfo-tab-review',
-      count: draftCount,
+    host.innerHTML = ''
+    errors.forEach(function (e) {
+      host.appendChild(el('p', null, e.reason + ' [' + e.sources.join(' | ') + ']'))
     })
+  }
 
-    tabsNav.innerHTML = ''
-    tabsNav.style.display = 'flex'
-    tabsNav.className = 'innfo-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
-
-    var initialHash = String(doc.location ? doc.location.hash || '' : '').replace(/^#/, '')
-    var activeTabId = initialHash || (hasDomain ? 'canonical' : tabs[0].id)
-    var tabFound = false
-    tabs.forEach(function (t) {
-      if (t.id === activeTabId) tabFound = true
-    })
-    if (!tabFound) activeTabId = tabs[0].id
-
-    function selectTab(tabId) {
-      tabs.forEach(function (t) {
-        var btn = tabsNav.querySelector('.innfo-view-tab[data-tab="' + t.id + '"]')
-        var panel = doc.getElementById(t.targetId)
-        var isActive = t.id === tabId
-        if (btn) {
-          btn.classList.toggle('active', isActive)
-          btn.classList.toggle('tab-active', isActive)
+  /* The hash carries the active tab and the search query together:
+     "#<tab>&q=<encoded query>", "#<tab>", "#q=<encoded query>" or empty. */
+  function parseViewHash(hash) {
+    var out = { tab: '', q: '' }
+    String(hash || '')
+      .replace(/^#/, '')
+      .split('&')
+      .forEach(function (part) {
+        if (part.indexOf('q=') === 0) {
+          try {
+            out.q = decodeURIComponent(part.slice(2))
+          } catch {
+            out.q = ''
+          }
+        } else if (part && !out.tab) {
+          out.tab = part
         }
-        if (panel) panel.classList.toggle('active', isActive)
       })
+    return out
+  }
 
-      if (tabId === 'review' && state) {
-        renderReviewTab(doc, state, config, onRefresh)
+  function buildViewHash(tab, query) {
+    var parts = []
+    if (tab) parts.push(tab)
+    if (query) parts.push('q=' + encodeURIComponent(query))
+    return parts.length ? '#' + parts.join('&') : ''
+  }
+
+  var TAB_ICONS = { chart: 'bar-chart-2', matrices: 'table', explorer: 'boxes', review: 'edit' }
+
+  // Builds the tabs once from built-ins plus registered views. Panels are
+  // created here; a registered view's mount runs on first activation only.
+  function mountTabs(doc, opts) {
+    var registry = opts.registry || defaultViewRegistry
+    var shell = ensureTabShell(doc, opts.model)
+    if (!shell) return null
+    var nav = shell.nav
+    var tabs = builtinViews(doc, opts.config, opts.model, opts.meta, shell)
+    // Problems found while mounting belong to this boot; the registry only
+    // keeps registration errors, so booting again never duplicates notices.
+    var bootErrors = []
+    function report(id, sources, reason) {
+      bootErrors.push({ id: id, sources: sources, reason: reason })
+    }
+    var scopedView = consoleScopeOf(opts.meta)
+    if (scopedView && shell.explorer) shell.explorer.classList.remove('active')
+    registry.list().forEach(function (v) {
+      if (scopedView && v.id !== scopedView) return
+      var clash = tabs.filter(function (t) {
+        return t.id === v.id
+      })[0]
+      var panelId = 'innfo-tab-' + v.id
+      var existing = doc.getElementById(panelId)
+      if (clash) {
+        report(v.id, [clash.id + ' (built-in)', v.source], 'view "' + v.id + '": duplicate id (a built-in tab already uses it)')
+      } else if (existing && existing.getAttribute('data-innfo-view') !== v.id) {
+        // The panel belongs to the shell or a built-in tab; never mount into it.
+        report(v.id, [v.source], 'view "' + v.id + '": panel #' + panelId + ' already exists and is not owned by this view')
+      } else {
+        tabs.push(Object.assign({}, v, { panelId: 'innfo-tab-' + v.id, external: true }))
       }
+    })
+    tabs.sort(function (a, b) {
+      return a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    })
+    tabs.push({ id: 'review', title: 'Changes', icon: 'review', panelId: 'innfo-tab-review' })
 
-      if (doc.location && typeof doc.location.replace === 'function' && doc.location.hash !== '#' + tabId) {
+    tabs.forEach(function (t) {
+      if (t.external && !doc.getElementById(t.panelId) && shell.main) {
+        var panel = el('div', 'innfo-tab-panel')
+        panel.id = t.panelId
+        panel.setAttribute('data-innfo-view', t.id)
+        shell.main.insertBefore(panel, shell.review)
+      }
+    })
+
+    nav.innerHTML = ''
+    nav.style.display = 'flex'
+    nav.className = 'innfo-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
+    tabs.forEach(function (t) {
+      var btn = el('button', 'innfo-view-tab tab flex items-center gap-2')
+      btn.setAttribute('type', 'button')
+      btn.dataset.tab = t.id
+      var label = el('span', null, t.title)
+      btn.innerHTML = UI.icon(TAB_ICONS[t.icon] || t.icon, 15)
+      btn.appendChild(label)
+      btn.addEventListener('click', function () {
+        select(t.id, false)
+      })
+      nav.appendChild(btn)
+    })
+    updateTabBadges(doc, opts.state)
+
+    var current = ''
+    var mounted = {}
+
+    function showErrors() {
+      renderViewErrors(doc, registry.errors().concat(bootErrors), nav)
+    }
+
+    var observers = []
+
+    // Embedding guard. Only ctx.mountHtml may create a frame: editable views
+    // share the draft store, so an embedded document could try to reach it,
+    // and a readonly view is limited to the sandboxed static frame. Any
+    // iframe, object, embed or frame that mountHtml did not create is removed
+    // and reported with the view id.
+    //
+    // This is an accident guard for trusted view code (a MutationObserver
+    // reacts after insertion), NOT a security boundary. Shadow roots are out
+    // of scope: the observer does not see into them.
+    var FRAME_TAGS = ['IFRAME', 'OBJECT', 'EMBED', 'FRAME']
+    var FRAME_SELECTOR = 'iframe, object, embed, frame'
+    var ownFrames = []
+    function stripIframes(t, root) {
+      var found = FRAME_TAGS.indexOf(root.nodeName) >= 0 ? [root] : []
+      if (root.querySelectorAll) found = found.concat([].slice.call(root.querySelectorAll(FRAME_SELECTOR)))
+      found = found.filter(function (f) {
+        return ownFrames.indexOf(f) < 0
+      })
+      found.forEach(function (f) {
+        if (f.parentNode) f.parentNode.removeChild(f)
+      })
+      if (found.length) {
+        report(
+          t.id,
+          [t.source],
+          'view "' + t.id + '": views must not mount iframes, objects or embeds; use ctx.mountHtml (removed)',
+        )
+        showErrors()
+      }
+    }
+
+    // scope: the subtree watched. Editable views are watched across the whole
+    // body (they hold the draft store); readonly views inside their panel.
+    function guardIframes(t, scope) {
+      var View = doc.defaultView
+      if (!View || typeof View.MutationObserver !== 'function') return
+      var observer = new View.MutationObserver(function (records) {
+        records.forEach(function (r) {
+          ;[].slice.call(r.addedNodes).forEach(function (n) {
+            if (n.nodeType === 1 && scope.contains(n)) stripIframes(t, n)
+          })
+        })
+      })
+      observer.observe(scope, { childList: true, subtree: true })
+      observers.push(observer)
+    }
+
+    // The same facades for every editable view: one store, one modal slot
+    // (the review controller's), one changeset. The controller exists only
+    // with the feedback-export need.
+    function editableParts(t) {
+      function controller() {
+        var c = opts.getController()
+        if (!c) throw new Error('review is not enabled (feedback-export need missing)')
+        return c
+      }
+      function anchor(a) {
+        return { elementId: a.elementId, field: a.field }
+      }
+      return {
+        store: {
+          drafts: function () {
+            return opts.state.store.drafts()
+          },
+          propose: function (p) {
+            p = p && typeof p === 'object' ? p : {}
+            if (ITEM_KINDS.indexOf(p.kind) < 0) {
+              throw new Error(
+                'cannot propose: kind must be one of ' + ITEM_KINDS.join(', ') + ' (got "' + p.kind + '")',
+              )
+            }
+            if (p.kind === 'comment' && !nonEmptyString(p.comment)) {
+              throw new Error('cannot propose: a comment needs non-empty comment text')
+            }
+            if (p.kind === 'correction') {
+              if (!nonEmptyString(p.field)) throw new Error('cannot propose: a correction needs a field')
+              if (p.proposed === undefined || p.proposed === null) {
+                throw new Error('cannot propose: a correction needs a proposed value')
+              }
+            }
+            var payload = { kind: p.kind, proposed: p.proposed, comment: p.comment }
+            if (p.kind === 'correction') {
+              // Same source the modal path uses (kuModalTarget): name and
+              // description live on the element, other fields under fields.
+              var src = (opts.state.elements || []).filter(function (e) {
+                return e && e.id === p.elementId
+              })[0]
+              if (src) {
+                payload.field = p.field
+                payload.original =
+                  p.field === 'name'
+                    ? src.name
+                    : p.field === 'description'
+                      ? src.description
+                      : src.fields
+                        ? src.fields[p.field]
+                        : undefined
+              }
+            }
+            var saved = controller().propose(anchor(p), payload)
+            if (!saved) throw new Error('cannot propose: unknown element "' + p.elementId + '"')
+            return saved
+          },
+          remove: function (id) {
+            opts.state.store.removeDraft(id)
+            var c = opts.getController()
+            if (c) c.refresh()
+            else opts.onDraftsChanged()
+          },
+          onChange: function (fn) {
+            return opts.subscribe(fn, function (err) {
+              report(t.id, [t.source], 'view "' + t.id + '": onChange listener failed: ' + String(err && err.message ? err.message : err))
+              showErrors()
+            })
+          },
+        },
+        modal: {
+          edit: function (a) {
+            return controller().openEdit(anchor(a))
+          },
+          comment: function (a) {
+            return controller().openEdit(Object.assign(anchor(a), { comment: true }))
+          },
+        },
+        changeset: {
+          count: function () {
+            return opts.state.store.drafts().length
+          },
+          compose: function (identifier) {
+            return composeExport(opts.state, identifier)
+          },
+          openExport: function () {
+            openExportModal(doc, opts.state)
+          },
+        },
+      }
+    }
+
+    // Static HTML only: an opaque-origin sandbox without scripts, forms or
+    // top navigation, and a CSP that keeps the document offline.
+    function mountHtml(panel, html) {
+      var frame = el('iframe')
+      frame.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox')
+      frame.setAttribute('referrerpolicy', 'no-referrer')
+      frame.setAttribute('srcdoc', VIEW_CSP_META + String(html))
+      ;[].slice.call(panel.querySelectorAll('iframe')).forEach(function (f) {
+        f.parentNode.removeChild(f)
+      })
+      ownFrames = ownFrames.filter(function (f) {
+        return f.parentNode
+      })
+      ownFrames.push(frame)
+      panel.appendChild(frame)
+      // No handle is returned: the view never holds the live frame.
+    }
+
+    function mountView(t) {
+      var panel = doc.getElementById(t.panelId)
+      if (!panel) {
+        mounted[t.id] = { api: {}, failed: true }
+        report(t.id, [t.source], 'view "' + t.id + '": no panel #' + t.panelId + ' to mount into')
+        showErrors()
+        return
+      }
+      panel.innerHTML = ''
+      var editable = t.kind !== 'readonly'
+      var scope = editable ? doc.body || panel : panel
+      guardIframes(t, scope)
+      try {
+        var ctx = {
+          id: t.id,
+          container: panel,
+          doc: doc,
+          ui: UI,
+          payload: {
+            schema: opts.schema,
+            model: opts.model,
+            meta: opts.meta,
+            models: Array.isArray(opts.meta && opts.meta.models) ? opts.meta.models : [],
+          },
+        }
+        if (editable) Object.assign(ctx, editableParts(t))
+        else
+          ctx.mountHtml = function (html) {
+            return mountHtml(panel, html)
+          }
+        mounted[t.id] = { api: t.mount(ctx) || {} }
+      } catch (err) {
+        var msg = String(err && err.message ? err.message : err)
+        mounted[t.id] = { api: {}, failed: true }
+        panel.appendChild(el('div', 'innfo-view-error alert alert-error text-sm', 'View "' + t.id + '" failed to mount: ' + msg))
+        report(t.id, [t.source], 'view "' + t.id + '": mount failed: ' + msg)
+        showErrors()
+      }
+      stripIframes(t, scope)
+    }
+
+    function hook(id, name) {
+      var m = mounted[id]
+      if (m && !m.failed && typeof m.api[name] === 'function') {
         try {
-          doc.location.replace('#' + tabId)
+          m.api[name]()
+        } catch (err) {
+          report(id, [], 'view "' + id + '": ' + name + ' failed: ' + String(err && err.message ? err.message : err))
+          showErrors()
+        }
+      }
+    }
+
+    function select(tabId, fromHash) {
+      var next = tabs.filter(function (t) {
+        return t.id === tabId
+      })[0]
+      if (!next || tabId === current) return
+      var prev = current
+      current = tabId
+      tabs.forEach(function (t) {
+        var btn = nav.querySelector('.innfo-view-tab[data-tab="' + t.id + '"]')
+        var panel = doc.getElementById(t.panelId)
+        btn.classList.toggle('active', t.id === tabId)
+        btn.classList.toggle('tab-active', t.id === tabId)
+        if (panel) panel.classList.toggle('active', t.id === tabId)
+      })
+      if (prev) hook(prev, 'onHide')
+      if (tabId === 'review' && opts.state) renderReviewTab(doc, opts.state, opts.config, opts.onRefresh)
+      if (next.external) {
+        if (mounted[tabId]) hook(tabId, 'onShow')
+        else mountView(next)
+      }
+      var nextHash = buildViewHash(tabId, opts.getQuery ? opts.getQuery() : '')
+      if (!fromHash && doc.location && doc.location.hash !== nextHash) {
+        try {
+          doc.location.hash = nextHash
         } catch {
           // ignore navigation errors in iframe or file://
         }
       }
     }
 
-    tabs.forEach(function (t) {
-      var btn = el('button', 'innfo-view-tab tab flex items-center gap-2' + (t.id === activeTabId ? ' active tab-active' : ''))
-      if (!btn) return
-      btn.setAttribute('type', 'button')
-      btn.dataset.tab = t.id
-      var iconName = t.icon === 'chart' ? 'bar-chart-2' : t.icon === 'matrices' ? 'table' : t.icon === 'explorer' ? 'boxes' : t.icon === 'review' ? 'edit' : t.icon
-      var iconHtml = UI.icon(iconName, 15)
-      var countBadge =
-        t.count > 0 ? '<span class="innfo-rail-badge badge badge-sm badge-neutral">' + t.count + '</span>' : ''
-      btn.innerHTML = iconHtml + '<span>' + t.label + '</span>' + countBadge
-      btn.addEventListener('click', function () {
-        selectTab(t.id)
+    function tabFromHash() {
+      var id = parseViewHash(doc.location ? doc.location.hash : '').tab
+      return tabs.some(function (t) {
+        return t.id === id
       })
-      tabsNav.appendChild(btn)
-    })
+        ? id
+        : ''
+    }
 
-    selectTab(activeTabId)
+    var onHashChange = function () {
+      var id = tabFromHash()
+      if (id) select(id, true)
+    }
+    if (doc.defaultView) doc.defaultView.addEventListener('hashchange', onHashChange)
+    showErrors()
+    return {
+      tabs: tabs,
+      current: function () {
+        return current
+      },
+      select: select,
+      destroy: function () {
+        if (doc.defaultView) doc.defaultView.removeEventListener('hashchange', onHashChange)
+        observers.forEach(function (o) {
+          o.disconnect()
+        })
+        observers = []
+      },
+      hashTab: tabFromHash,
+      // Runs after the first refresh so a tab already chosen during boot (an
+      // initial search) is kept and the default view is not mounted for
+      // nothing, and after the review controller exists (ctx.modal needs it).
+      activateInitial: function () {
+        if (!current) select(tabFromHash() || tabs[0].id, true)
+      },
+    }
+  }
+
+  function updateTabBadges(doc, state) {
+    var btn = doc.querySelector('.innfo-view-tab[data-tab="review"]')
+    if (!btn) return
+    var old = btn.querySelector('.innfo-rail-badge')
+    if (old && old.parentNode) old.parentNode.removeChild(old)
+    var n = state && state.store ? state.store.drafts().length : 0
+    if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
   }
 
   // C11: the review tab renders through the kit DraftList from the v2 store.
@@ -2489,6 +2963,8 @@
 
   function focusElementCard(doc, elementId) {
     if (!doc || !elementId) return
+    // A scoped console has no explorer to focus a card in.
+    if (doc.documentElement && doc.documentElement.hasAttribute('data-innfo-scope')) return
     // 1. Switch active tab to explorer if view tabs exist
     var tabsNav = doc.getElementById('innfo-view-tabs')
     if (tabsNav) {
@@ -2942,7 +3418,7 @@
     }
 
     var text = serializeChangesetMarkdown(exportMeta, drafts)
-    var filename = model + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
+    var filename = modelSlugOf(state) + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
     return {
       ok: true,
       text: text,
@@ -2994,13 +3470,14 @@
 
     var stamp = stampFromDate(state && state.exportedAt ? new Date(state.exportedAt) : new Date())
     var changesetMd = serializeChangesetMarkdown(exportMeta, drafts)
-    var changesetFilename = model + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
+    var modelSlug = modelSlugOf(state)
+    var changesetFilename = modelSlug + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
 
     return {
       ok: true,
       payload: payload,
       text: serializeFeedback(payload),
-      filename: buildFeedbackFilename(model, String(version).replace(/^V_/, ''), reviewer),
+      filename: buildFeedbackFilename(modelSlug, String(version).replace(/^V_/, ''), reviewer),
       changesetText: changesetMd,
       changesetFilename: changesetFilename,
       items: payload.items.length,
@@ -3315,9 +3792,31 @@
     return downloadFeedbackExport(doc, state)
   }
 
-  function boot(doc) {
+  // Listeners a boot adds to the document/window, removed when the same
+  // document boots again so a re-boot never doubles them.
+  var bootTeardowns = typeof WeakMap === 'function' ? new WeakMap() : null
+
+  function boot(doc, opts) {
+    var registry = (opts && opts.registry) || defaultViewRegistry
     var active = doc || (typeof document !== 'undefined' ? document : null)
     if (!active) return { ok: false, reason: 'no-document' }
+    var cleanups = []
+    if (bootTeardowns) {
+      var previous = bootTeardowns.get(active)
+      if (previous) previous()
+      bootTeardowns.set(active, function () {
+        cleanups.forEach(function (fn) {
+          fn()
+        })
+        cleanups = []
+      })
+    }
+    function listen(target, type, fn) {
+      target.addEventListener(type, fn)
+      cleanups.push(function () {
+        target.removeEventListener(type, fn)
+      })
+    }
     var config = parseConfig(slotText(active, 'innfo-config'))
     var slots = parseSlots(slotText(active, 'innfo-schema'), slotText(active, 'innfo-model'))
     var schema = slots.schema
@@ -3338,17 +3837,41 @@
             return { name: c }
           })
 
+    var scopedView = consoleScopeOf(meta)
+    var scopedDef = scopedView
+      ? registry.list().filter(function (v) {
+          return v.id === scopedView
+        })[0]
+      : null
+    if (scopedView) {
+      // The search toolbar, concept rail and stats bar only serve the explorer, which a
+      // scoped console does not show. Removed, not hidden: their CSS would override [hidden].
+      ;['innfo-rail', 'innfo-stats-bar'].forEach(function (id) {
+        var node = active.getElementById(id)
+        if (node && node.parentNode) node.parentNode.removeChild(node)
+      })
+      var scopedToolbar = active.querySelector('.innfo-toolbar')
+      if (scopedToolbar && scopedToolbar.parentNode) scopedToolbar.parentNode.removeChild(scopedToolbar)
+      if (active.documentElement) active.documentElement.setAttribute('data-innfo-scope', scopedView)
+    }
+    var baseTitle = String(meta.title || meta.model || 'Model')
+    var baseId = String(meta.modelId || meta.model || meta.title || 'model')
+
     var state = {
-      modelTitle: String(meta.title || meta.model || 'Model'),
+      modelTitle: scopedView ? baseTitle + ' - ' + (scopedDef ? scopedDef.title : scopedView) : baseTitle,
       modelVersion: String(meta.modelVersion || meta.knowledge_version || 'V_0-0-0'),
       artifactName: String(meta.title || 'console') + '_console.html',
       modelId: meta.modelId || meta.model || meta.title || 'model',
+      modelSlug: scopedView
+        ? modelSlugOf({ modelSlug: meta.model_slug || meta.modelSlug, modelId: baseId, modelTitle: baseTitle }) + '-' + scopedView
+        : meta.model_slug || meta.modelSlug || undefined,
       sourceSha256: meta.sha256 || meta.source_sha256,
-      meta: meta,
+      // The changeset title comes from meta.title; a scoped export names its view there.
+      meta: scopedView ? Object.assign({}, meta, { title: baseTitle + ' - ' + (scopedDef ? scopedDef.title : scopedView) }) : meta,
       elements: elements,
       store: Review.createDraftStore(
         typeof localStorage !== 'undefined' ? localStorage : null,
-        String(meta.modelId || meta.model || meta.title || 'model'),
+        baseId + (scopedView ? '::view:' + scopedView : ''),
       ),
     }
 
@@ -3360,16 +3883,95 @@
     var refs = hasNeed(config, 'reference-popup') ? buildRefsByName(elements) : null
     var activeSearchQuery = ''
 
-    function refresh(query) {
-      if (query !== undefined) activeSearchQuery = query
-      var currentDrafts = state.store.drafts()
-      var draftCountsByConcept = {}
+    function draftCountsOf(currentDrafts) {
+      var byConcept = {}
       currentDrafts.forEach(function (d) {
         if (d) {
           var c = d.concept || (d.target && d.target.concept)
-          if (c) draftCountsByConcept[c] = (draftCountsByConcept[c] || 0) + 1
+          if (c) byConcept[c] = (byConcept[c] || 0) + 1
         }
       })
+      return byConcept
+    }
+
+    function selectRailToken(token) {
+      var search = active.getElementById('innfo-search')
+      if (search) {
+        search.value = token
+        refresh(token)
+      }
+    }
+
+    // Lightweight update after a draft is saved: refreshes only the draft-count
+    // surfaces and leaves the mounted element cards (and their focus) intact.
+    var draftListeners = []
+    function subscribeDrafts(fn, onError) {
+      var entry = { fn: fn, onError: onError }
+      draftListeners.push(entry)
+      return function () {
+        draftListeners = draftListeners.filter(function (l) {
+          return l !== entry
+        })
+      }
+    }
+    // A destroyed or re-booted console must never call its views again.
+    cleanups.push(function () {
+      draftListeners = []
+    })
+
+    function updateDraftSurfaces() {
+      var currentDrafts = state.store.drafts()
+      var n = currentDrafts.length
+      var bannerCount = active.querySelector('.innfo-banner-drafts')
+      if (bannerCount) bannerCount.textContent = ' drafts: ' + n
+      updateTabBadges(active, state)
+      renderReviewTab(active, state, config, function () {
+        refresh(activeSearchQuery)
+      })
+      renderStatsBar(active, elements, concepts, matrices, n)
+      renderRail(active, concepts, counts, draftCountsOf(currentDrafts), selectRailToken, state)
+    }
+
+    // A listener may propose or remove drafts, which re-enters this function.
+    // Nested notifications are coalesced: at most one extra full pass runs,
+    // and a last surfaces-only pass guarantees the counts show the final state.
+    var refreshingDrafts = false
+    var refreshQueued = false
+    function refreshDraftCounts() {
+      if (refreshingDrafts) {
+        refreshQueued = true
+        return
+      }
+      refreshingDrafts = true
+      try {
+        var extra = 0
+        do {
+          refreshQueued = false
+          updateDraftSurfaces()
+          draftListeners.slice().forEach(function (entry) {
+            try {
+              entry.fn()
+            } catch (err) {
+              // A listener must not break the host's draft surfaces; the
+              // owning view reports it in the view error notice.
+              if (entry.onError) entry.onError(err)
+            }
+          })
+        } while (refreshQueued && ++extra <= 1)
+        if (refreshQueued) updateDraftSurfaces()
+      } finally {
+        refreshingDrafts = false
+        refreshQueued = false
+      }
+    }
+
+    // keepTab: the caller already chose the tab (hash navigation), so a
+    // changed query must not switch to Explorer.
+    function refresh(query, keepTab) {
+      var queryChanged = query !== undefined && query !== activeSearchQuery
+      if (query !== undefined) activeSearchQuery = query
+      var currentDrafts = state.store.drafts()
+      var draftCountsByConcept = draftCountsOf(currentDrafts)
 
       var draftsById = {}
       currentDrafts.forEach(function (d) {
@@ -3389,13 +3991,7 @@
       renderBanner(active, meta, config.needs, currentDrafts.length, function () {
         refresh(activeSearchQuery)
       }, state)
-      renderRail(active, concepts, counts, draftCountsByConcept, function (token) {
-        var search = active.getElementById('innfo-search')
-        if (search) {
-          search.value = token
-          refresh(token)
-        }
-      }, state)
+      renderRail(active, concepts, counts, draftCountsByConcept, selectRailToken, state)
 
       // Hide documentation overview tree when filtering elements so filtered cards are immediately visible
       var docHost = active.getElementById('innfo-doc')
@@ -3403,30 +3999,26 @@
         docHost.style.display = activeSearchQuery ? 'none' : ''
       }
 
-      // If filtering and not currently on Explorer, activate Explorer tab
-      if (activeSearchQuery) {
-        var tabsNav = active.getElementById('innfo-view-tabs')
-        if (tabsNav) {
-          var explorerBtn = tabsNav.querySelector('.innfo-view-tab[data-tab="explorer"]')
-          if (explorerBtn && !explorerBtn.classList.contains('active') && typeof explorerBtn.click === 'function') {
-            explorerBtn.click()
-          }
-        }
+      // A new query moves to Explorer; the hash is rewritten below, so this
+      // switch does not push a history entry.
+      if (activeSearchQuery && queryChanged && !keepTab && tabs && !scopedView) {
+        tabs.select('explorer', true)
       }
 
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)
       })
-      renderViewTabs(active, config, model, meta, state, function () {
-        refresh(activeSearchQuery)
-      })
+      updateTabBadges(active, state)
       renderStatsBar(active, elements, concepts, matrices, currentDrafts.length)
 
-      if (typeof history !== 'undefined' && history.replaceState && active.location) {
-        if (activeSearchQuery) {
-          history.replaceState(null, '', '#q=' + encodeURIComponent(activeSearchQuery))
-        } else if (active.location.hash && active.location.hash.indexOf('#q=') === 0) {
-          history.replaceState(null, '', active.location.pathname + active.location.search)
+      var hist = active.defaultView && active.defaultView.history ? active.defaultView.history : typeof history !== 'undefined' ? history : null
+      if (hist && hist.replaceState && active.location) {
+        var shownTab = tabs ? tabs.current() || tabs.hashTab() : ''
+        var nextHash = buildViewHash(shownTab, activeSearchQuery)
+        if (activeSearchQuery || parseViewHash(active.location.hash).q) {
+          if (nextHash !== active.location.hash) {
+            hist.replaceState(null, '', nextHash || active.location.pathname + active.location.search)
+          }
         }
       }
 
@@ -3441,13 +4033,8 @@
     }
 
     var initialQuery = ''
-    if (typeof active.location !== 'undefined' && active.location.hash) {
-      var hashMatch = active.location.hash.match(/^#q=(.+)$/)
-      if (hashMatch) {
-        try {
-          initialQuery = decodeURIComponent(hashMatch[1])
-        } catch {}
-      }
+    if (!scopedView && typeof active.location !== 'undefined' && active.location.hash) {
+      initialQuery = parseViewHash(active.location.hash).q
     }
 
     var searchBox = active.getElementById('innfo-search')
@@ -3455,7 +4042,29 @@
       searchBox.value = initialQuery
     }
 
-    refresh(initialQuery)
+    // Tabs are built once, before the first refresh, and never remounted.
+    var tabs = mountTabs(active, {
+      getQuery: function () {
+        return activeSearchQuery
+      },
+      registry: registry,
+      getController: function () {
+        return state.controller
+      },
+      subscribe: subscribeDrafts,
+      onDraftsChanged: refreshDraftCounts,
+      config: config,
+      schema: schema,
+      model: model,
+      meta: meta,
+      state: state,
+      onRefresh: function () {
+        refresh(activeSearchQuery)
+      },
+    })
+
+    if (tabs) cleanups.push(tabs.destroy)
+    refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
     // C3: the controller builds the toggle into the (now rendered) banner and
     // listens for innfo:rendered; created after the first paint so the banner
@@ -3466,23 +4075,21 @@
         elements: elements,
         needs: config.needs,
         store: state.store,
+        onDraftsChanged: refreshDraftCounts,
       })
     }
+
+    // The first view mounts here, after the initial search had its say.
+    if (tabs) tabs.activateInitial()
 
     if (hasNeed(config, 'document-view')) {
       renderDocumentView(active, elements, concepts)
     }
     renderMatrices(active, matrices)
-    if (hasNeed(config, 'charts')) {
-      renderCharts(active, model, meta)
-    }
-    if (hasNeed(config, 'timeline-grid') || (Array.isArray(model.rows) && model.rows.length > 0)) {
-      renderTimelineGrid(active, model, meta)
-    }
 
     var searchBox = active.getElementById('innfo-search')
     if (searchBox) {
-      searchBox.addEventListener('input', function (event) {
+      listen(searchBox, 'input', function (event) {
         refresh(event.target && event.target.value ? event.target.value : '')
       })
     }
@@ -3498,19 +4105,26 @@
     }
 
     function onHash() {
+      var parsed = parseViewHash(active.location ? active.location.hash : '')
+      if (!scopedView && parsed.q !== activeSearchQuery) {
+        // Back/forward to an entry with a different query: follow it.
+        var box = active.getElementById('innfo-search')
+        if (box) box.value = parsed.q
+        refresh(parsed.q, true)
+      }
       var id = String(active.location ? active.location.hash || '' : '').replace(/^#/, '')
       if (!id) return
       var target = active.getElementById(id)
       if (target && typeof target.scrollIntoView === 'function') target.scrollIntoView()
     }
     if (typeof active.defaultView !== 'undefined' && active.defaultView) {
-      active.defaultView.addEventListener('hashchange', onHash)
+      listen(active.defaultView, 'hashchange', onHash)
     } else if (typeof window !== 'undefined' && window.addEventListener) {
-      window.addEventListener('hashchange', onHash)
+      listen(window, 'hashchange', onHash)
     }
     onHash()
 
-    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller }
+    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry }
   }
 
   function autoBoot() {
@@ -3577,7 +4191,11 @@
     monthAxis: monthAxis,
     renderCharts: renderCharts,
     renderTimelineGrid: renderTimelineGrid,
-    renderViewTabs: renderViewTabs,
+    createViewRegistry: createViewRegistry,
+    registerView: defaultViewRegistry.register,
+    viewRegistrar: defaultViewRegistry.registrar,
+    mountTabs: mountTabs,
+    updateTabBadges: updateTabBadges,
     renderReviewTab: renderReviewTab,
     focusElementCard: focusElementCard,
     ensureFeedbackUi: ensureFeedbackUi,

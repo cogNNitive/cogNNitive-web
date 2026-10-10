@@ -38,9 +38,8 @@ Validation runs automatically on every parse via `@cognnitive/innfo-core`. A pas
 - **GraphViewer** — node and relationship graph visualization of the model.
 - **MatricesGrid** / **MetamatrixConfig** — evaluable matrices between concepts.
 - **ModelInfoPanel** — workspace and metamodel inspection.
-- **ConsoleHubView** — embedded, sandboxed view of the workspace hub and each model's canonical template console (e.g. `procedures_console.html`).
 
-Interactive domain visualizations and guided procedures are delivered as standalone template console artifacts (e.g. `assets/*_console.html`) rendered via `ConsoleHubView`.
+Interactive domain visualizations and guided procedures are delivered as standalone console artifacts (e.g. `domaiNN_console.html`, `assets/*_console.html`); the editor does not host an in-app Consoles view (D13/D18) — open the artifact directly.
 
 ## File preview and lineage
 

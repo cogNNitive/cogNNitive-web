@@ -28,17 +28,17 @@ double-clicking the file from `file://`.
    **fallbacks**, not a mechanism that guarantees a single boot — do not assume
    re-execution is a strict no-op.
 
-Three shells are canonical: `console/artifact_shell.html`,
-`procedures/assets/procedure_console.html`, and
-`workspace/assets/model_console.html`. All three use the same three-tag boot
-and declare the **same two JSON slots** (`#innfo-schema`, `#innfo-model`);
-what differs is their DOM anchors — the console shell uses
+Two shells are canonical: `console/artifact_shell.html` and
+`workspace/assets/model_console.html`. Both use the same three-tag boot and
+declare the **same two JSON slots** (`#innfo-schema`, `#innfo-model`); what
+differs is their DOM anchors — the console shell uses
 `#innfo-banner` / `#innfo-rail` / `#innfo-search` / `#innfo-content` /
-`#innfo-matrices` / `#innfo-export-modal`, the procedure console uses
-`#doc-title` / `#doc-meta` / `#rail` / `#proc-tabs` / `#progress` /
-`#step-body` / `#matrix-port` / `#content`, and the model console uses
-`#doc-title` / `#rail` (boots `InnfoModelViewer`, including per-field
-citation icons and `#innfo-citation-dialog`).
+`#innfo-matrices` / `#innfo-export-modal`, and the model console uses
+`#doc-title` / `#rail` (boots `InnfoModelViewer`, including per-field citation
+icons and `#innfo-citation-dialog`). The procedures stepper is no longer a
+shell: it is the registered `procedure` view
+(`procedures/assets/console-view-procedure.js`), which builds its own scoped
+DOM inside the view container and never uses global ids.
 
 ### What is in the bundle
 
@@ -103,7 +103,6 @@ still load the pre-bundle `innfo-runtime.js` from the CDN and the mirror **only*
 | Asset | Runtime loaded |
 | :--- | :--- |
 | `business/assets/model_viewer.html` | `innfo-runtime.js` (CDN + mirror) |
-| `metrics/assets/timeline.html` | `innfo-runtime.js` (CDN + mirror) |
 
 Do not assume every artifact uses the bundle. `innfo-runtime.js` is a legacy
 per-shell runtime, **not** the canonical runtime.

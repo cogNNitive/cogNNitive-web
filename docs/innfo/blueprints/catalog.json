@@ -123,10 +123,10 @@
     },
     "metrics": {
       "name": "metrics",
-      "adopted": "V_0-4-1",
+      "adopted": "V_0-4-2",
       "versions": [
         {
-          "blueprint_version": "V_0-4-1",
+          "blueprint_version": "V_0-4-2",
           "spec_version": "V_0-3-0",
           "title": "Metrics App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
@@ -147,10 +147,10 @@
     },
     "procedures": {
       "name": "procedures",
-      "adopted": "V_0-3-1",
+      "adopted": "V_0-3-2",
       "versions": [
         {
-          "blueprint_version": "V_0-3-1",
+          "blueprint_version": "V_0-3-2",
           "spec_version": "V_0-3-0",
           "title": "Procedures App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"

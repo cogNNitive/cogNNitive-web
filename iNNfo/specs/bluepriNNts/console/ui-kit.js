@@ -953,14 +953,17 @@
 
     // Mode Selector: Propose Value vs Comment (D15)
     var modeWrap = makeEl(doc, 'div', 'innfo-edit-mode-selector')
-    var isComment = Boolean(data.isComment)
+    // commentOnly: there is no value to propose, so the mode is fixed and the
+    // toggle is not offered.
+    var commentOnly = Boolean(data.commentOnly)
+    var isComment = commentOnly || Boolean(data.isComment)
     var btnPropose = makeEl(doc, 'button', 'innfo-edit-mode-btn' + (!isComment ? ' active' : ''), 'Propose value')
     var btnComment = makeEl(doc, 'button', 'innfo-edit-mode-btn' + (isComment ? ' active' : ''), 'Comment')
     btnPropose.setAttribute('type', 'button')
     btnComment.setAttribute('type', 'button')
     modeWrap.appendChild(btnPropose)
     modeWrap.appendChild(btnComment)
-    panelEdit.appendChild(modeWrap)
+    if (!commentOnly) panelEdit.appendChild(modeWrap)
 
     var formPropose = makeEl(doc, 'div', 'innfo-edit-form-propose')
     formPropose.style.display = isComment ? 'none' : 'block'
@@ -1075,7 +1078,16 @@
     var actions = makeEl(doc, 'div', 'innfo-edit-modal-actions')
     var saveBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-save', 'Save draft')
     saveBtn.setAttribute('type', 'button')
+    var saveError = makeEl(doc, 'p', 'innfo-edit-error')
+    saveError.setAttribute('role', 'alert')
+    saveError.style.display = 'none'
     saveBtn.addEventListener('click', function () {
+      if (isComment && String(commentTa.value).trim() === '') {
+        saveError.textContent = 'Enter a comment before saving.'
+        saveError.style.display = 'block'
+        return
+      }
+      saveError.style.display = 'none'
       var result = {
         isComment: isComment,
         comment: commentTa.value,
@@ -1107,6 +1119,7 @@
     })
     actions.appendChild(saveBtn)
     actions.appendChild(cancelBtn)
+    modal.appendChild(saveError)
     modal.appendChild(actions)
 
     return modal

@@ -1285,11 +1285,13 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
         const entry = state.blueprints[template.name];
         return pathPresent && (!entry || entry.commit !== template.commit);
       };
+      const consoleSetInstalled = (consoleAssets || []).some((asset) => fs.existsSync(path2.join(consoleDir, path2.basename(asset.file || asset.url))));
       const isOutdatedConsole = (asset) => {
         const fileName = path2.basename(asset.file || asset.url);
         const pathPresent = fs.existsSync(path2.join(consoleDir, fileName));
+        if (!pathPresent) return consoleSetInstalled;
         const entry = state.console ? state.console[fileName] : null;
-        return pathPresent && (!entry || entry.commit !== asset.commit);
+        return !entry || entry.commit !== asset.commit;
       };
       let selectedSkills = skills.filter(isOutdatedSkill);
       let selectedBlueprints = blueprints.filter(isOutdatedBlueprint);

@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-4-1"
+blueprint_version: "V_0-4-2"
 title: "Metrics App"
 relationship_types:
   hierarchy:
@@ -22,9 +22,6 @@ procedures:
     name: "Create Timeline"
     path: "procedures/create_timeline_procedures_NN.md"
 assets:
-  - id: "timeline-layout"
-    name: "Timeline HTML Layout"
-    path: "assets/timeline.html"
   - id: "model-data-template"
     name: "MODEL_DATA JSON Template"
     path: "assets/MODEL_DATA.template.json"

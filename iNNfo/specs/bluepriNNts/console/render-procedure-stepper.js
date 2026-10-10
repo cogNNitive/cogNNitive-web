@@ -49,17 +49,6 @@
     skipped: '↷',
   }
 
-  function parseJSON(id) {
-    var node = document.getElementById(id)
-    if (!node) return null
-    try {
-      return JSON.parse(node.textContent.trim() || '{}')
-    } catch (e) {
-      console.error('Bad JSON in #' + id, e)
-      return null
-    }
-  }
-
   function isObject(v) {
     return v !== null && typeof v === 'object' && !Array.isArray(v)
   }
@@ -72,26 +61,26 @@
       .replace(/"/g, '&quot;')
   }
 
-  function boot() {
-    if (typeof document === 'undefined' || !document.getElementById) {
-      return { ok: false, reason: 'no-document' }
+  function mount(container, payload, hooks) {
+    if (!container || typeof container.querySelector !== 'function') {
+      return { ok: false, reason: 'no-container' }
     }
-    var schema = parseJSON('innfo-schema') || {}
-    var model = parseJSON('innfo-model') || {}
+    // `document` is shadowed with the container's own document, so every
+    // `document.createElement` below stays inside this view's DOM tree.
+    var document = container.ownerDocument || (typeof globalThis !== 'undefined' ? globalThis.document : null)
+    var doc = document
+    var schema = (payload && payload.schema) || {}
+    var model = (payload && payload.model) || {}
     var elements = Array.isArray(model.elements) ? model.elements : []
     var matrices = Array.isArray(model.matrices) ? model.matrices : []
     var meta = model.meta || {}
 
     var byId = {}
     var byName = {}
-    var elemsByConcept = {}
     elements.forEach(function (el) {
       if (!el) return
       if (el.id) byId[el.id] = el
       if (el.name) byName[el.name] = el
-      if (el.concept) {
-        ;(elemsByConcept[el.concept] = elemsByConcept[el.concept] || []).push(el)
-      }
     })
 
     // Build Work tree: roots = procedures, children = steps.
@@ -123,37 +112,61 @@
       sortChildren(p.children)
     })
 
-    // Header
-    var titleEl = document.getElementById('doc-title')
-    if (titleEl) titleEl.textContent = meta.title || 'Procedures Console'
-    var metaEl = document.getElementById('doc-meta')
-    if (metaEl) {
-      var bits = []
-      if (meta.template) bits.push('<span><strong>Template</strong> ' + esc(meta.template) + '</span>')
-      if (meta.modelVersion) bits.push('<span><strong>Model</strong> ' + esc(meta.modelVersion) + '</span>')
-      if (meta.generated)
-        bits.push(
-          '<span><strong>Generated</strong> ' +
-            esc(String(meta.generated).replace('T', ' ').replace(/\..*/, '')) +
-            '</span>',
-        )
-      metaEl.innerHTML = bits.join('')
-    }
+    // Build the procedures view DOM inside the container (no shell, no global ids).
+    container.innerHTML = ''
+    var root = doc.createElement('div')
+    root.className = 'innfo-procedure-view'
+    var header = doc.createElement('div')
+    header.className = 'proc-view-header'
+    var titleEl = doc.createElement('h1')
+    titleEl.className = 'proc-title'
+    titleEl.textContent = meta.title || 'Procedures Console'
+    header.appendChild(titleEl)
+    var metaEl = doc.createElement('div')
+    metaEl.className = 'meta-line'
+    header.appendChild(metaEl)
+    root.appendChild(header)
 
-    var rail = document.getElementById('rail')
-    var tabsHost = document.getElementById('proc-tabs')
-    var stepProgress = document.getElementById('progress')
-    var stepBody = document.getElementById('step-body')
-    var matrixPort = document.getElementById('matrix-port')
-    var content = document.getElementById('content')
-    var viewProcedures = document.getElementById('view-procedures')
-    var viewMatrices = document.getElementById('view-matrices')
-    var viewConcept = document.getElementById('view-concept')
-    var mainTabs = document.querySelectorAll('.tabs .tab')
+    var tabsHost = doc.createElement('div')
+    tabsHost.className = 'proc-tabs'
+    root.appendChild(tabsHost)
+    var subTabsNav = doc.createElement('nav')
+    subTabsNav.className = 'subtabs'
+    var wizardTab = doc.createElement('button')
+    wizardTab.className = 'subtab active'
+    wizardTab.setAttribute('data-mode', 'wizard')
+    wizardTab.setAttribute('type', 'button')
+    wizardTab.textContent = 'Interactive Runner & DAG'
+    var docTab = doc.createElement('button')
+    docTab.className = 'subtab'
+    docTab.setAttribute('data-mode', 'document')
+    docTab.setAttribute('type', 'button')
+    docTab.textContent = 'Document'
+    subTabsNav.appendChild(wizardTab)
+    subTabsNav.appendChild(docTab)
+    root.appendChild(subTabsNav)
+    var docBody = doc.createElement('div')
+    docBody.className = 'procedures-doc hidden'
+    root.appendChild(docBody)
+    var wizardBody = doc.createElement('div')
+    var stepProgress = doc.createElement('div')
+    var stepBody = doc.createElement('div')
+    wizardBody.appendChild(stepProgress)
+    wizardBody.appendChild(stepBody)
+    root.appendChild(wizardBody)
+    container.appendChild(root)
+    var subTabs = subTabsNav.querySelectorAll('.subtab')
 
-    if (!tabsHost || !stepBody || !matrixPort) {
-      return { ok: false, reason: 'missing-shell' }
-    }
+    var bits = []
+    if (meta.template) bits.push('<span><strong>Template</strong> ' + esc(meta.template) + '</span>')
+    if (meta.modelVersion) bits.push('<span><strong>Model</strong> ' + esc(meta.modelVersion) + '</span>')
+    if (meta.generated)
+      bits.push(
+        '<span><strong>Generated</strong> ' +
+          esc(String(meta.generated).replace('T', ' ').replace(/\..*/, '')) +
+          '</span>',
+      )
+    metaEl.innerHTML = bits.join('')
 
     // ---- Execution Runtime State ----
     var activeProcedure = procedures[0] || null
@@ -162,6 +175,10 @@
     var auditLogs = []
     var timerSeconds = 0
     var timerInterval = null
+    var timerElRef = null
+    var auditLogView = null
+    var logDialog = null
+    var refDialog = null
 
     function initRuntimeState() {
       stepStates = {}
@@ -181,11 +198,10 @@
       timerSeconds = 0
       timerInterval = setInterval(function () {
         timerSeconds++
-        var timerEl = document.getElementById('run-timer')
-        if (timerEl) {
+        if (timerElRef) {
           var mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
           var secs = String(timerSeconds % 60).padStart(2, '0')
-          timerEl.textContent = mins + ':' + secs
+          timerElRef.textContent = mins + ':' + secs
         }
       }, 1000)
     }
@@ -204,8 +220,13 @@
         rt.renderRefDialog(document, element)
         return
       }
-      var dialog = document.getElementById('innfo-ref-dialog')
-      if (!dialog) return
+      // Fallback ref dialog, scoped to this view's container (never a global id).
+      if (!refDialog) {
+        refDialog = doc.createElement('dialog')
+        refDialog.className = 'innfo-ref-dialog'
+        root.appendChild(refDialog)
+      }
+      var dialog = refDialog
       dialog.innerHTML = ''
       var h = document.createElement('h2')
       h.textContent = element && element.name ? element.name : 'Element'
@@ -240,38 +261,11 @@
       return { node: b, ok: true }
     }
 
-    // ---- View switching ----
-    function showView(name) {
-      if (viewProcedures) viewProcedures.classList.toggle('active', name === 'procedures')
-      if (viewMatrices) viewMatrices.classList.toggle('active', name === 'matrices')
-      if (viewConcept) viewConcept.classList.toggle('active', name === 'concept')
-      mainTabs.forEach(function (b) {
-        var v = b.getAttribute('data-view')
-        b.classList.toggle('active', v === name || (v === 'procedures' && name === 'concept'))
-      })
-    }
-
-    function switchView(name) {
-      showView(name)
-      if (name === 'matrices') renderMatrices()
-      else if (name === 'concept') renderConcept()
-      else renderProcedures()
-    }
-
-    mainTabs.forEach(function (b) {
-      b.addEventListener('click', function () {
-        railSelection = 'procedures'
-        renderRail()
-        switchView(b.getAttribute('data-view'))
-      })
-    })
-
-    // ---- Rail ----
+    // ---- Concepts (kept for step colouring; rail/matrices/concept views are dropped) ----
     var concepts = (schema.concepts || []).slice()
     concepts.sort(function (a, b) {
       return (b.weight || 0) - (a.weight || 0)
     })
-    var railSelection = 'procedures'
 
     function conceptColor(name) {
       var c = null
@@ -285,115 +279,8 @@
       return '#171717'
     }
 
-    function renderRail() {
-      if (!rail) return
-      var label = rail.querySelector('.rail-label')
-      rail.innerHTML = ''
-      if (label) rail.appendChild(label)
-      var procsBtn = document.createElement('button')
-      procsBtn.className = 'rail-item' + (railSelection === 'procedures' ? ' active' : '')
-      procsBtn.innerHTML = '<span>Procedures</span><span class="count">' + procedures.length + '</span>'
-      procsBtn.addEventListener('click', function () {
-        railSelection = 'procedures'
-        renderRail()
-        switchView('procedures')
-      })
-      rail.appendChild(procsBtn)
-      concepts.forEach(function (c) {
-        var name = typeof c === 'string' ? c : c.name
-        var col = conceptColor(name)
-        var b = document.createElement('button')
-        b.className = 'rail-item' + (railSelection === name ? ' active' : '')
-        b.innerHTML =
-          '<span class="rail-dot" style="background:' + col + '"></span>' +
-          '<span class="rail-label-text">' + esc(name) + '</span>' +
-          '<span class="count">' + (elemsByConcept[name] || []).length + '</span>'
-        b.addEventListener('click', function () {
-          railSelection = name
-          renderRail()
-          switchView('concept')
-        })
-        rail.appendChild(b)
-      })
-      // Matrices section
-      var mLabel = document.createElement('div')
-      mLabel.className = 'rail-label'
-      mLabel.textContent = 'Matrices'
-      rail.appendChild(mLabel)
-      matrices.forEach(function (mx) {
-        if (!mx || !mx.name) return
-        var key = 'matrix:' + mx.name
-        var b = document.createElement('button')
-        b.className = 'rail-item' + (railSelection === key ? ' active' : '')
-        b.innerHTML =
-          '<span class="rail-dot" style="background:#171717"></span>' +
-          '<span class="rail-label-text">' + esc(mx.name) + '</span>' +
-          '<span class="count">' + (Array.isArray(mx.rows) ? mx.rows.length : 0) + '</span>'
-        b.addEventListener('click', function () {
-          railSelection = key
-          renderRail()
-          switchView('matrices')
-        })
-        rail.appendChild(b)
-      })
-    }
-
-    // ---- Concept content ----
-    function renderConcept() {
-      if (!content) return
-      content.innerHTML = ''
-      if (!railSelection || railSelection === 'procedures' || railSelection === 'matrices' || railSelection.indexOf('matrix:') === 0) {
-        content.innerHTML = '<div class="empty-state">Select a concept from the rail.</div>'
-        return
-      }
-      var list = elemsByConcept[railSelection] || []
-      if (!list.length) {
-        content.innerHTML = '<div class="empty-state">No <code>' + esc(railSelection) + '</code> elements found.</div>'
-        return
-      }
-      var wrap = document.createElement('div')
-      wrap.className = 'concept-list'
-      list.forEach(function (el) {
-        var card = document.createElement('section')
-        card.className = 'concept-card'
-        var h = document.createElement('h3')
-        h.textContent = el.name || '(unnamed)'
-        card.appendChild(h)
-        var tag = document.createElement('span')
-        tag.className = 'concept-tag'
-        tag.style.color = conceptColor(el.concept)
-        tag.style.borderColor = conceptColor(el.concept) + '55'
-        tag.style.background = conceptColor(el.concept) + '14'
-        tag.textContent = el.concept || 'Element'
-        card.appendChild(tag)
-        if (el.description) {
-          var p = document.createElement('p')
-          p.textContent = el.description
-          card.appendChild(p)
-        }
-        if (isObject(el.fields)) {
-          var dl = document.createElement('dl')
-          dl.className = 'field-list'
-          Object.keys(el.fields).forEach(function (k) {
-            var dt = document.createElement('dt')
-            dt.textContent = k
-            var dd = document.createElement('dd')
-            dd.textContent = String(el.fields[k])
-            dl.appendChild(dt)
-            dl.appendChild(dd)
-          })
-          if (dl.children.length) card.appendChild(dl)
-        }
-        wrap.appendChild(card)
-      })
-      content.appendChild(wrap)
-    }
-
     // ---- Procedure view mode: Document (default) | Wizard ----
     var proceduresMode = 'wizard'
-    var docBody = document.getElementById('doc-body')
-    var wizardBody = document.getElementById('wizard-body')
-    var subTabs = document.querySelectorAll('.subtabs .subtab')
 
     function renderProcedures() {
       if (proceduresMode === 'wizard') {
@@ -639,19 +526,19 @@
       logCol.className = 'exec-log-col'
       var logHeader = document.createElement('div')
       logHeader.className = 'exec-col-header'
-      logHeader.innerHTML = '<span>' + vIcon('clipboard', 14) + ' Execution Log</span><button class="btn-xs" id="btn-export-log">' + vIcon('copy', 12) + ' Export</button>'
+      logHeader.innerHTML = '<span>' + vIcon('clipboard', 14) + ' Execution Log</span><button class="btn-xs btn-export-log" type="button">' + vIcon('copy', 12) + ' Export</button>'
       logCol.appendChild(logHeader)
 
       var logView = document.createElement('div')
       logView.className = 'exec-log-view'
-      logView.id = 'audit-log-container'
+      auditLogView = logView
       logCol.appendChild(logView)
       ws.appendChild(logCol)
 
       stepBody.appendChild(ws)
 
       // Bind Export Log Button
-      var exportBtn = document.getElementById('btn-export-log')
+      var exportBtn = logHeader.querySelector('.btn-export-log')
       if (exportBtn) {
         exportBtn.addEventListener('click', function () {
           openExportModal(chain)
@@ -679,9 +566,10 @@
           '<div class="proc-progress-track"><div class="proc-progress-fill" style="width:' + pct + '%"></div></div>' +
         '</div>' +
         '<div class="proc-status-right">' +
-          '<span class="proc-timer">' + vIcon('clock', 13) + ' <span id="run-timer">' + formatTimer() + '</span></span>' +
+          '<span class="proc-timer">' + vIcon('clock', 13) + ' <span data-innfo-timer>' + formatTimer() + '</span></span>' +
         '</div>'
       stepProgress.appendChild(barWrap)
+      timerElRef = stepProgress.querySelector('[data-innfo-timer]')
     }
 
     function formatTimer() {
@@ -859,7 +747,7 @@
         outCard.innerHTML =
           '<div class="io-panel-label">' + vIcon('package', 12) + ' Produced Output</div>' +
           '<div class="io-panel-name">' + esc(cur.fields.output) + '</div>' +
-          '<label class="io-check-label"><input type="checkbox" ' + (isDone ? 'checked' : '') + ' id="chk-output-done" /> Status: <code>' + esc(cur.fields.output_status || 'verified') + '</code></label>'
+          '<label class="io-check-label"><input type="checkbox" ' + (isDone ? 'checked' : '') + ' /> Status: <code>' + esc(cur.fields.output_status || 'verified') + '</code></label>'
         ioGrid.appendChild(outCard)
       }
 
@@ -901,15 +789,15 @@
         decBox.innerHTML =
           '<div class="exec-box-title" style="color:var(--warning)">' + vIcon('decision', 13) + ' Decision Gate: Choose Branch Path</div>' +
           '<div class="decision-btn-row">' +
-            '<button class="btn-branch btn-primary" type="button" id="btn-branch-pass">Proceed Path (Standard) ▶</button>' +
-            '<button class="btn-branch" type="button" id="btn-branch-alt">Rework / Alternate Path ↺</button>' +
+            '<button class="btn-branch btn-primary btn-branch-pass" type="button">Proceed Path (Standard) ▶</button>' +
+            '<button class="btn-branch btn-branch-alt" type="button">Rework / Alternate Path ↺</button>' +
           '</div>'
 
-        decBox.querySelector('#btn-branch-pass').addEventListener('click', function () {
+        decBox.querySelector('.btn-branch-pass').addEventListener('click', function () {
           addLog('Decision Gate: Passed standard branch on step "' + cur.el.name + '"', 'Operator', 'done')
           completeCurrentStep(chain)
         })
-        decBox.querySelector('#btn-branch-alt').addEventListener('click', function () {
+        decBox.querySelector('.btn-branch-alt').addEventListener('click', function () {
           addLog('Decision Gate: Selected rework / alternative branch on step "' + cur.el.name + '"', 'Operator', 'warning')
           currentStepIndex = Math.max(0, currentStepIndex - 1)
           renderExecutionWorkspace()
@@ -983,7 +871,7 @@
 
     // ---- Live Audit Log ----
     function renderAuditLog() {
-      var container = document.getElementById('audit-log-container')
+      var container = auditLogView
       if (!container) return
       container.innerHTML = ''
       auditLogs.forEach(function (log) {
@@ -996,14 +884,14 @@
       })
     }
 
-    // ---- Export Modal ----
+    // ---- Export Modal (scoped to this view; never a global id) ----
     function openExportModal(chain) {
-      var dialog = document.getElementById('innfo-export-modal')
+      var dialog = logDialog
       if (!dialog) {
-        dialog = document.createElement('dialog')
-        dialog.id = 'innfo-export-modal'
+        dialog = doc.createElement('dialog')
         dialog.className = 'export-dialog'
-        document.body.appendChild(dialog)
+        logDialog = dialog
+        root.appendChild(dialog)
       }
       dialog.innerHTML = ''
 
@@ -1046,49 +934,6 @@
 
       dialog.appendChild(box)
       if (typeof dialog.showModal === 'function') dialog.showModal()
-    }
-
-    // ---- Matrices ----
-    function renderMatrices() {
-      if (!matrixPort) return
-      matrixPort.innerHTML = ''
-      var selected = railSelection.indexOf('matrix:') === 0 ? railSelection.slice(7) : null
-      var target = selected ? matrixByIdName(selected) : null
-      if (!target) {
-        matrixPort.innerHTML = '<div class="empty-state">Select a matrix from the rail.</div>'
-        return
-      }
-      matrixPort.appendChild(renderMatrixBlock(target))
-    }
-
-    function renderMatrixBlock(mx) {
-      var block = document.createElement('div')
-      block.className = 'matrix-block'
-      var h = document.createElement('h3')
-      h.textContent = mx.name || 'Matrix'
-      block.appendChild(h)
-      var scroll = document.createElement('div')
-      scroll.className = 'matrix-scroll'
-      var rows = mx.rows || []
-      var cols = mx.cols || []
-      var cells = mx.cells || {}
-      var html = "<table class='matrix'><thead><tr><th></th>"
-      cols.forEach(function (c) {
-        html += '<th>' + esc(c) + '</th>'
-      })
-      html += '</tr></thead><tbody>'
-      rows.forEach(function (r) {
-        html += '<tr><th>' + esc(r) + '</th>'
-        cols.forEach(function (c) {
-          var v = cells[r] && cells[r][c] != null ? cells[r][c] : ''
-          html += '<td>' + esc(String(v)) + '</td>'
-        })
-        html += '</tr>'
-      })
-      html += '</tbody></table>'
-      scroll.innerHTML = html
-      block.appendChild(scroll)
-      return block
     }
 
     // ---- helpers ----
@@ -1141,42 +986,34 @@
       return d
     }
 
-    // ---- Boot ----
+    // ---- Initial render ----
     initRuntimeState()
-    renderRail()
     renderTabs()
-    switchView('procedures')
+    renderProcedures()
 
     return {
       ok: true,
       procedures: procedures.length,
       steps: activeProcedure ? chainOf(activeProcedure).length : 0,
       matrices: matrices.length,
+      onHide: function () {
+        if (timerInterval) clearInterval(timerInterval)
+        timerInterval = null
+      },
+      onShow: function () {
+        startTimer()
+      },
+      unmount: function () {
+        if (timerInterval) clearInterval(timerInterval)
+        timerInterval = null
+        if (container) container.innerHTML = ''
+      },
     }
   }
-
-  function autoBoot() {
-    try {
-      if (typeof document === 'undefined' || !document.getElementById) return
-      if (!document.getElementById('doc-title') || !document.getElementById('proc-tabs')) return
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () {
-          boot()
-        })
-      } else {
-        boot()
-      }
-    } catch (err) {
-      if (typeof console !== 'undefined' && console.warn)
-        console.warn('innfo-procedure-stepper boot failed', err)
-    }
-  }
-
-  autoBoot()
 
   return {
     version: RENDERER_VERSION,
     RENDERER_VERSION: RENDERER_VERSION,
-    boot: boot,
+    mount: mount,
   }
 })

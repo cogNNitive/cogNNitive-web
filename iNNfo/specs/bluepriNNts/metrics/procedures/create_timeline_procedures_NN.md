@@ -19,7 +19,7 @@ input:: [[Source Workspace Models]]
 output:: [[Console HTML]]
 output_status:: verified
 tool:: [[AI Agent]]
-Generate a standalone Timeline console adhering to the **Monoconsole Architecture Pattern (`[Canonical Spreadsheet | Domain Studio]`)**: analyze its models, agree a metric plan with the user, build (or complete) the L3 metrics model, check the console activation gate, snapshot the model into the innfo-model slots (meta + rows + pre-computed series-as-data), and verify headless with zero page errors. The console delivers a dual-tab experience: (1) **Canonical Spreadsheet** providing 100% deterministic compliance with the template contract (formula graph, sticky headers, cell overrides, growth selectors, CSV export), and (2) **Domain Studio / Simulator** offering real-time parameter sliders, scenario projection curves, and reactive KPI aggregation. Both tabs share a single reactive state store so simulations in the Studio immediately reflect in the Spreadsheet and export outputs. The console supports dark/light mode reactivity via `class="dark"` and listens for `innfo:theme-change` postMessage events when embedded in workspace hubs. RESOLUTION RECORD (code-as-slot): series-as-data was ADOPTED; the executable-logic slot (FORMULAS/DEPS/SERIES as JS inside the slot) was REJECTED because it breaks the two-slot contract, needs eval, and harms `file://` safety — this procedure contains no eval-based slot path.
+Generate a standalone Timeline console as the registered `timeline` console view: analyze its models, agree a metric plan with the user, build (or complete) the L3 metrics model, check the console activation gate, snapshot the model into the innfo-model slots (meta + rows + pre-computed series-as-data), and verify headless with zero page errors. The `timeline` view renders the timeline grid and the scenario studio from one shared reactive state, through the shared runtime; every proposed change lands in the console's single changeset (D8/D13). It inherits the runtime theme via `data-theme`. RESOLUTION RECORD (code-as-slot): series-as-data was ADOPTED; the executable-logic slot (FORMULAS/DEPS/SERIES as JS inside the slot) was REJECTED because it breaks the two-slot contract, needs eval, and harms `file://` safety — this procedure contains no eval-based slot path.
 
 ## NN Work: Analyze Workspace Models
 parent:: [[Create Timeline]]
@@ -63,7 +63,7 @@ input:: [[Console Runtime]]
 output:: [[Gate Verdict]]
 output_status:: verified
 tool:: [[Verify Harness]]
-Run the activation gate probe (`verify.harness.js --probe --root <folder> --file <console.html>`): the console runtime pins (`console/needs-registry.json` CDN + raw mirror) must be reachable AND the `file://` smoke load of the reference shell must pass with zero page errors AND the `charts` capability must be registered in `console/needs-registry.json`. If the gate is CLOSED (runtime pins unreachable, the `file://` smoke fails, or `charts` is not registered): STOP — no `*_console.html` is produced and the inline `timeline.html` stays canonical and untouched. Only an OPEN gate authorizes console generation. Until the gate opens, the inline dashboard remains the canonical artifact.
+Run the activation gate probe (`verify.harness.js --probe --root <folder> --file <console.html>`): the console runtime pins (`console/needs-registry.json` CDN + raw mirror) must be reachable AND the `file://` smoke load of the reference shell must pass with zero page errors AND the `charts` capability must be registered in `console/needs-registry.json`. If the gate is CLOSED (runtime pins unreachable, the `file://` smoke fails, or `charts` is not registered): STOP — no console containing the `timeline` view is produced. Only an OPEN gate authorizes console generation.
 
 ## NN Work: Extract Model Snapshot
 parent:: [[Create Timeline]]
@@ -92,11 +92,11 @@ parent:: [[Create Timeline]]
 step_type:: task
 next:: [[Inject Model Snapshot]]
 condition:: Dependencies mapped
-input:: [[Timeline Layout]]
+input:: [[Timeline View]]
 output:: [[Console HTML]]
 output_status:: draft
 tool:: [[AI Agent]]
-Build the console from the modernized Timeline Layout asset (`../assets/timeline.html`): declare `needs[]` in `<script type="application/json" id="innfo-config">` using registered capabilities only — the pilot declares `timeline-grid`, `charts` plus the minimal set (`concept-rail`, `fulltext-search`, `matrix-grids`, `hash-routing`, `reference-popup`), adding `feedback-export` only when the export UI is required (pins resolve through `console/needs-registry.json`, never hand-edit URLs). The layout implements the Monoconsole pattern (`[Canonical Spreadsheet | Domain Studio]`) and theme synchronization (`innfo:theme-change` message listener). Reference the single-file console bundle (`console/innfo-console.bundle.js`) with static `<script src>` tags (jsDelivr pin primary, raw mirror fallback — no `fetch()`, no `type=module`), and ship the vendored `innfo-console.bundle.js` next to the output for offline `file://` double-click. Change nothing else in the shell. Write the deliverable folder as `export/<Model>_V_<version>_console/` containing `<Model>_V_<version>_console.html` plus `innfo-console.bundle.js` — self-contained and portable.
+Generate the console by running `export-console.mjs --view timeline` (or the domain export, where `timeline` is a tab): the exporter discovers the `metrics` bluepriNNt view (`assets/console-view-timeline.js`), inlines the single-file bundle once and writes `artifacts/timeline_view/timeline_view_<stamp>.html` (or `domaiNN_console.html`). The view renders through the shared runtime; do not build a console from a layout shell and do not inline runtime code.
 
 ## NN Work: Inject Model Snapshot
 parent:: [[Create Timeline]]
@@ -161,8 +161,8 @@ The `open | closed` outcome of the activation gate probe. `closed` keeps the inl
 ## NN Artifact: Model Data Block
 The innfo-model snapshot embedded in the artifact: `meta` (the 11 required keys), `rows` with model/derived provenance and growth rules, and the pre-computed pure-JSON `series{}` block. Single point to update when the model changes.
 
-## NN Artifact: Timeline Layout
-The thinned console shell at `../assets/timeline.html`: `innfo-config needs[]` plus the `innfo-schema` / `innfo-model` slots and the static bundle tags. No inline runtime.
+## NN Artifact: Timeline View
+The registered `timeline` view at `../assets/console-view-timeline.js`: a classic script that reads the projection the exporter derived into `meta.models[]` and renders the timeline grid, the scenario studio and the charts through the shared runtime. No inline runtime.
 
 ## NN Artifact: Console HTML
 The standalone deliverable file (`<Model>_V_<version>_console.html`): slots only, shared runtime via static tags, vendored bundle next to the output.

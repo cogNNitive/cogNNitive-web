@@ -295,9 +295,9 @@
     }
 
     function saveDraft(anchorData, payload) {
-      if (!store) return
+      if (!store) return null
       var el = elementsById[anchorData.elementId]
-      if (!el) return
+      if (!el) return null
       var draft = {
         element_id: anchorData.elementId,
         concept: el.concept,
@@ -318,17 +318,16 @@
       if (payload.comment !== undefined && payload.comment !== null) {
         draft.comment = String(payload.comment)
       }
-      store.addDraft(draft)
+      var saved = store.addDraft(draft)
       refreshCount()
+      return saved
     }
 
+    // The host owns every draft-count surface (banner, Review tab badge,
+    // pending text) and updates them through onDraftsChanged without
+    // remounting the cards; decorations are re-applied here.
     function refreshCount() {
-      if (!doc.querySelector) return
-      var counter = doc.querySelector('[data-innfo="draft-count"]')
-      if (counter && store) {
-        var n = store.drafts().length
-        counter.textContent = counter.textContent.replace(/drafts:\s*\d+/, 'drafts: ' + n)
-      }
+      if (typeof options.onDraftsChanged === 'function') options.onDraftsChanged()
       applyDecorations()
     }
 
@@ -440,12 +439,15 @@
           candidates: target.candidates,
           citations: target.citations,
           history: target.history,
-          isComment: false,
+          isComment: !!target.isComment,
+          commentOnly: !!target.commentOnly,
         },
         {
           doc: doc,
           onSave: function (res) {
-            if (res.isComment) {
+            if (res.isComment || target.commentOnly) {
+              // Defence in depth: the kit already blocks an empty comment.
+              if (String(res.comment == null ? '' : res.comment).trim() === '') return
               saveDraft(anchorData, { kind: 'comment', comment: res.comment })
             } else {
               saveDraft(anchorData, {
@@ -473,6 +475,37 @@
       }
     }
 
+    // Entry point for registered views: opens the one shared edit modal. With
+    // anchorData.comment it opens in comment mode (an element-level comment
+    // when there is no field). Returns false when the anchor has no modal.
+    function openEdit(anchorData) {
+      // Validate first: an invalid call must not close the open popover or
+      // move the focus anchor.
+      var target = kuModalTarget(anchorData)
+      var el = elementsById[anchorData.elementId]
+      if (!target && anchorData.comment && el) {
+        target = {
+          title: 'Comment on ' + (el.name || anchorData.elementId),
+          fieldName: 'comment',
+          type: 'string',
+          value: '',
+          commentOnly: true,
+          citations: [],
+          history: [],
+        }
+      }
+      if (!target) return false
+      // Cancel returns focus to whatever had it when the view asked; focus
+      // inside the modal being replaced does not count.
+      var focused = doc.activeElement
+      if (openPopover && focused && openPopover.contains(focused)) focused = lastAnchor
+      closePopover()
+      lastAnchor = focused && focused !== doc.body ? focused : null
+      if (anchorData.comment) target = Object.assign({}, target, { isComment: true })
+      openModalFor(anchorData, target)
+      return true
+    }
+
     function openFor(anchor, anchorData) {
       closePopover()
       lastAnchor = anchor
@@ -485,7 +518,6 @@
           field: 'tags',
           comment: 'Propose removing tag "' + anchorData.tagRemove + '"',
         })
-        refreshCount()
         return
       }
       if (anchorData.relUnlink) {
@@ -495,7 +527,6 @@
           comment:
             'Propose unlinking ' + anchorData.relField + ' \u2192 ' + anchorData.relUnlink,
         })
-        refreshCount()
         return
       }
 
@@ -733,7 +764,6 @@
             store.markReviewed(elId, el.hash)
           }
           applyDecorations()
-          refreshCount()
         })
         head.appendChild(rt)
       }
@@ -1042,6 +1072,11 @@
       enable: enable,
       disable: disable,
       decorate: decorate,
+      openEdit: openEdit,
+      propose: saveDraft,
+      // Re-renders the host's count surfaces and re-applies decorations after
+      // the store changed outside saveDraft (e.g. a draft removed by a view).
+      refresh: refreshCount,
       destroy: destroy,
       isEnabled: function () {
         return enabled

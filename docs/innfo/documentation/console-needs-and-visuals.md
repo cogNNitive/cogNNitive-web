@@ -49,11 +49,13 @@ Two mismatches are worth stating plainly.
   individually. The shipped shells, however, load the single
   `innfo-console.bundle.js`. The registry is therefore **not** a literal manifest
   of what the current shells load.
-- **`guided-procedure` does not gate the stepper.** `render-procedure-stepper.js`
-  auto-boots whenever its DOM anchors exist: `autoBoot()` checks for `#doc-title`
-  and `#proc-tabs` and calls `boot()` if both are present. The
-  `guided-procedure` entry carries a `renderer` hint, but the runtime need gate is
-  not what starts the stepper — the anchors are.
+- **`guided-procedure` does not gate the stepper.** The stepper is the registered
+  `procedure` view (`procedures/assets/console-view-procedure.js`, order 20): the
+  view registry starts it through `InnfoProcedureStepper.mount(container, payload)`
+  when its tab is first activated. The `guided-procedure` entry carries a
+  `renderer` hint, but the runtime need gate is not what starts the stepper —
+  the view registration is. `render-procedure-stepper.js` no longer auto-boots
+  and creates no global ids.
 
 ---
 

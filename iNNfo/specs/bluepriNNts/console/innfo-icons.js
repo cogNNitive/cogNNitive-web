@@ -86,13 +86,18 @@
     return ICONS[key] || ICONS['help-circle'] || ICONS['box'] || '';
   }
 
+  // The name lands in a class attribute: keep only slug characters.
+  function safeClassName(name) {
+    return String(name || '').toLowerCase().replace(/[^a-z0-9-]/g, '') || 'default';
+  }
+
   function getSvg(name, options) {
     var opts = options || {};
     var size = opts.size || 16;
     var cls = opts.class || opts.className || '';
     var strokeWidth = opts.strokeWidth || 2;
     var paths = getIconPaths(name);
-    return '<svg class="lucide lucide-' + (name || 'default') + (cls ? ' ' + cls : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strokeWidth + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
+    return '<svg class="lucide lucide-' + safeClassName(name) + (cls ? ' ' + cls : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strokeWidth + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
   }
 
   function Icon(props) {
@@ -102,7 +107,7 @@
     var strokeWidth = p.strokeWidth || 2;
     var paths = getIconPaths(p.name);
     if (typeof window !== 'undefined' && window.html) {
-      return window.html`<svg class=${"lucide lucide-" + (p.name || "default") + (cls ? " " + cls : "")} width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${strokeWidth} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: paths }}></svg>`;
+      return window.html`<svg class=${"lucide lucide-" + safeClassName(p.name) + (cls ? " " + cls : "")} width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${strokeWidth} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: paths }}></svg>`;
     }
     return getSvg(p.name, p);
   }

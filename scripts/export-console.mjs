@@ -24,6 +24,9 @@
  * Output (write-once, never overwritten):
  *   <workspaceRoot>/artifacts/<stem>_console/<stem>_console_<UTC stamp>.html
  *   <workspaceRoot>/artifacts/<stem>_console/innfo-console.bundle_<UTC stamp>.js
+ * `--domain` additionally writes ONE self-contained, fixed-name file that is
+ * overwritten on every export: <workspaceRoot>/domaiNN_console.html (bundle, CSS,
+ * slots and the discovered views inlined; see scripts/console-views.mjs).
  * Re-running on an unchanged model writes nothing; a changed model adds a new
  * member and leaves earlier consoles byte-identical.
  */
@@ -105,6 +108,8 @@ function parseArgs(argv) {
     all: false,
     stale: false,
     domain: false,
+    view: null,
+    viewMissing: false,
     filter: null,
     model: null,
   }
@@ -123,6 +128,13 @@ function parseArgs(argv) {
       args.stale = true
     } else if (a === '--domain') {
       args.domain = true
+    } else if (a === '--view') {
+      i++
+      if (i < slice.length && !slice[i].startsWith('--')) args.view = slice[i]
+      else {
+        args.viewMissing = true
+        if (i < slice.length) i--
+      }
     } else if (a === '--filter') {
       i++
       if (i < slice.length) {
@@ -345,8 +357,20 @@ async function main() {
   const args = parseArgs(process.argv)
   if (!args.root) {
     console.error(
-      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--filter <pattern>] [<ModelName>]',
+      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id> (whole domain, one view; no model selection)] [--filter <pattern>] [<ModelName>]',
     )
+    process.exit(2)
+  }
+  if (args.viewMissing) {
+    console.error('Error: --view needs a view id.')
+    process.exit(2)
+  }
+  if (args.view && args.domain) {
+    console.error('Error: --view and --domain are mutually exclusive.')
+    process.exit(2)
+  }
+  if (args.view && (args.all || args.stale || args.filter || args.model)) {
+    console.error('Error: --view cannot be combined with --all, --stale, --filter or a model name; it always exports the whole domain.')
     process.exit(2)
   }
   const root = resolve(args.root)
@@ -432,7 +456,7 @@ async function main() {
     selected = candidateModels
   }
 
-  if (selected.length === 0 && !args.domain) {
+  if (selected.length === 0 && !args.domain && !args.view) {
     console.error(
       'No models selected. Use --all, --stale, --domain, --filter <pattern>, or pass a model name/id substring.',
     )
@@ -452,6 +476,67 @@ async function main() {
   // normalize every occurrence to the ref derived from the vendored bundle banner —
   // otherwise a generated console loads a stale bundle version first (#95).
   const resolvedShell = shell.replace(/@innfo-console-v\d+\.\d+\.\d+/g, `@${consoleCdnRef}`)
+
+  // Views are discovered, validated and the inline assets read before anything is
+  // written, so a bad view or a missing asset leaves the workspace untouched.
+  let domainViews = []
+  let uiCss = ''
+  let viewsLib = null
+  let preparedAssets = null
+  if (args.domain || args.view) {
+    // Loaded lazily: every other mode keeps running as a lone copy of this file, and
+    // only --domain needs the sibling lib. The lib sits NEXT TO this script (not in a
+    // lib/ folder) because the installer places every console asset flat by basename.
+    const viewsLibUrl = new URL('./console-views.mjs', import.meta.url).href
+    try {
+      viewsLib = await import(viewsLibUrl)
+    } catch (err) {
+      // Only the lib itself being absent is reported here; a missing module imported
+      // from inside it (err.url is that module) is a real fault and must surface.
+      if (err.code !== 'ERR_MODULE_NOT_FOUND' || err.url !== viewsLibUrl) throw err
+      console.error(`Error: --domain needs console-views.mjs next to this script (${fileURLToPath(viewsLibUrl)}).`)
+      process.exit(1)
+    }
+    // Where bluepriNNt packages (and their console views) live. In a repo checkout the
+    // console dir sits inside the packages folder; an installed set is flat in
+    // ~/.agents/console and the packages are installed beside it in ~/.agents/bluepriNNts.
+    const packagesDir =
+      process.env.INNFO_BLUEPRINTS_DIR ||
+      (consoleDir === repoConsoleDir ? dirname(consoleDir) : join(homedir(), '.agents', 'bluepriNNts'))
+    const uiCssPath = join(consoleDir, 'innfo-ui.css')
+    if (!existsSync(uiCssPath)) {
+      console.error(`Error: ${uiCssPath} not found; --domain inlines the console CSS.`)
+      process.exit(1)
+    }
+    uiCss = await readFile(uiCssPath, 'utf-8')
+    try {
+      domainViews = await viewsLib.discoverViews({
+        domainRoot: root,
+        specNames: candidateModels.map((m) => payloadHelper.parentSpecNameOf(m.fm)).filter(Boolean),
+        packagesDir,
+        onWarning: (message) => process.stderr.write(`WARNING: [export-console] ${message}
+`),
+      })
+    } catch (err) {
+      console.error(`Error: ${err.message}`)
+      process.exit(1)
+    }
+    if (args.view) {
+      const wanted = domainViews.find((v) => v.id === args.view)
+      if (!wanted) {
+        const ids = domainViews.map((v) => v.id)
+        console.error(`Error: unknown view "${args.view}"; available views: ${ids.length ? ids.join(', ') : '(none)'}`)
+        process.exit(1)
+      }
+      domainViews = [wanted]
+    }
+    try {
+      preparedAssets = viewsLib.assertInlinable(resolvedShell, { bundle, css: uiCss, views: domainViews })
+    } catch (err) {
+      console.error(`Error: ${err.message}`)
+      process.exit(1)
+    }
+  }
 
   const config = {
     needs: [
@@ -510,6 +595,117 @@ async function main() {
       )
       return undefined
     }
+  }
+
+  let standalone = null
+  if (args.domain || args.view) {
+    // Build combined payload aggregating all models in the workspace
+    const allElements = []
+    const allMatrices = []
+    const allConcepts = []
+    const seenConcepts = new Set()
+    const modelSummaries = []
+
+    for (const m of candidateModels) {
+      const relPath = relative(root, m.filePath).replace(/\\/g, '/')
+      const fileName = basename(relPath)
+      const modelStem = fileName.replace(/\.[^/.]+$/, '')
+      const payload = payloadHelper.buildConsolePayload({
+        content: m.content,
+        path: relPath,
+        resolver,
+        ledgerEntries,
+      })
+      if (payload && payload.model) {
+        const mTitle = (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
+        const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
+        const modelConcepts = new Set()
+        if (Array.isArray(payload.model.elements)) {
+          for (const el of payload.model.elements) {
+            if (el) {
+              el.modelId = mId
+              el.modelTitle = mTitle
+              el.modelFile = fileName
+              const cName = el.concept || 'Element'
+              const eName = el.name || el.id || ''
+              const cSlug = cName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+              const eSlug = eName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+              el.unitSlug = `${fileName}@${cSlug}--${eSlug}`
+              el.canonicalUnit = `${fileName}@## ${cName}: ${eName}`
+              allElements.push(el)
+              if (el.concept) modelConcepts.add(el.concept)
+            }
+          }
+        }
+        if (Array.isArray(payload.model.matrices)) {
+          for (const mat of payload.model.matrices) {
+            if (mat) {
+              mat.modelId = mId
+              mat.modelTitle = mTitle
+              mat.modelFile = fileName
+              allMatrices.push(mat)
+            }
+          }
+        }
+        const blueprintName = payloadHelper.parentSpecNameOf(m.fm)
+        const projection = viewsLib.deriveProjection(payload.model.elements)
+        modelSummaries.push({
+          id: mId,
+          title: mTitle,
+          filePath: fileName,
+          blueprint: blueprintName ? viewsLib.parseSpecName(blueprintName).base : null,
+          conceptNames: Array.from(modelConcepts),
+          elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
+          ...(projection ? { projection } : {}),
+        })
+      }
+      if (payload && payload.schema && Array.isArray(payload.schema.concepts)) {
+        for (const c of payload.schema.concepts) {
+          if (c && c.name && !seenConcepts.has(c.name)) {
+            seenConcepts.add(c.name)
+            allConcepts.push(c)
+          }
+        }
+      }
+    }
+
+    const domainPayload = {
+      schema: { concepts: allConcepts },
+      model: {
+        meta: {
+          title: basename(root) + ' Domain',
+          model: basename(root),
+          modelId: basename(root),
+          modelVersion: 'V_1-0-0',
+          generated: new Date().toISOString(),
+          models: modelSummaries,
+        },
+        elements: allElements,
+        matrices: allMatrices,
+      },
+    }
+
+    if (args.view) domainPayload.model.meta.consoleScope = { view: args.view }
+    let domainHtml = viewsLib.inlineConsoleAssets(renderConsole(resolvedShell, null, config, domainPayload), preparedAssets)
+    if (!domainHtml.includes('data-theme=')) {
+      domainHtml = domainHtml.replace('<html lang="en">', '<html lang="en" data-theme="light">')
+    }
+    // Final size gate, before the first write of this run.
+    const bytes = (text) => Buffer.byteLength(text, 'utf8')
+    const budget = viewsLib.evaluateSizeBudget({
+      bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
+      models: bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
+      views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
+      total: bytes(domainHtml),
+    })
+    if (budget.status === 'fail') {
+      console.error(`Error: ${budget.message}`)
+      process.exit(1)
+    }
+    if (budget.status === 'warn') process.stderr.write(`WARNING: [export-console] ${budget.message}
+`)
+    console.log(budget.breakdown)
+    standalone = { html: domainHtml, elements: allElements.length }
   }
 
   let written = 0
@@ -584,113 +780,34 @@ async function main() {
 
   if (args.domain) {
     const domainHtmlPath = join(root, 'domaiNN_console.html')
-    // Build combined payload aggregating all models in the workspace
-    const allElements = []
-    const allMatrices = []
-    const allConcepts = []
-    const seenConcepts = new Set()
-    const modelSummaries = []
-
-    for (const m of candidateModels) {
-      const relPath = relative(root, m.filePath).replace(/\\/g, '/')
-      const fileName = basename(relPath)
-      const modelStem = fileName.replace(/\.[^/.]+$/, '')
-      const schema = await resolveModelSchema(m.content)
-      const payload = payloadHelper.buildConsolePayload({
-        content: m.content,
-        path: relPath,
-        schema,
-        resolver,
-        ledgerEntries,
-      })
-      if (payload && payload.model) {
-        const mTitle =
-          (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) ||
-          modelStem
-        const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
-        const modelConcepts = new Set()
-        if (Array.isArray(payload.model.elements)) {
-          for (const el of payload.model.elements) {
-            if (el) {
-              el.modelId = mId
-              el.modelTitle = mTitle
-              el.modelFile = fileName
-              const cName = el.concept || 'Element'
-              const eName = el.name || el.id || ''
-              const cSlug = cName
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '')
-              const eSlug = eName
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '')
-              el.unitSlug = `${fileName}@${cSlug}--${eSlug}`
-              el.canonicalUnit = `${fileName}@## ${cName}: ${eName}`
-              allElements.push(el)
-              if (el.concept) modelConcepts.add(el.concept)
-            }
-          }
-        }
-        if (Array.isArray(payload.model.matrices)) {
-          for (const mat of payload.model.matrices) {
-            if (mat) {
-              mat.modelId = mId
-              mat.modelTitle = mTitle
-              mat.modelFile = fileName
-              allMatrices.push(mat)
-            }
-          }
-        }
-        modelSummaries.push({
-          id: mId,
-          title: mTitle,
-          filePath: fileName,
-          conceptNames: Array.from(modelConcepts),
-          elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
-        })
-      }
-      if (payload && payload.schema && Array.isArray(payload.schema.concepts)) {
-        for (const c of payload.schema.concepts) {
-          if (c && c.name && !seenConcepts.has(c.name)) {
-            seenConcepts.add(c.name)
-            allConcepts.push(c)
-          }
-        }
-      }
-    }
-
-    const domainPayload = {
-      schema: { concepts: allConcepts },
-      model: {
-        meta: {
-          title: basename(root) + ' Domain',
-          model: basename(root),
-          modelId: basename(root),
-          modelVersion: 'V_1-0-0',
-          generated: new Date().toISOString(),
-          models: modelSummaries,
-        },
-        elements: allElements,
-        matrices: allMatrices,
-      },
-    }
-
-    let domainHtml = renderConsole(resolvedShell, null, config, domainPayload)
-    if (!domainHtml.includes('data-theme=')) {
-      domainHtml = domainHtml.replace('<html lang="en">', '<html lang="en" data-theme="light">')
-    }
-    await writeFile(domainHtmlPath, domainHtml, 'utf-8')
-    if (bundle) {
-      await writeFile(join(root, 'innfo-console.bundle.js'), bundle, 'utf-8')
-    }
-    const uiCssPath = join(consoleDir, UI_CSS_FILENAME)
-    if (existsSync(uiCssPath)) {
-      await writeFile(join(root, UI_CSS_FILENAME), await readFile(uiCssPath, 'utf-8'), 'utf-8')
-    }
+    await writeFile(domainHtmlPath, standalone.html, 'utf-8')
     console.log(
-      `✔ domaiNN_console.html → ./domaiNN_console.html (${candidateModels.length} models, ${allElements.length} elements)`,
+      `✔ domaiNN_console.html → ./domaiNN_console.html (${candidateModels.length} models, ${standalone.elements} elements, ${domainViews.length} views)`,
     )
+    // Earlier exports wrote these beside the page; it inlines both now. Nothing is deleted.
+    const leftovers = ['innfo-console.bundle.js', 'innfo-ui.css'].filter((name) => existsSync(join(root, name)))
+    if (leftovers.length > 0) {
+      process.stderr.write(
+        `WARNING: [export-console] ${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.\n`,
+      )
+    }
+  }
+
+  if (args.view) {
+    // Write-once family per view; the bundle is inlined, so no sibling file exists.
+    const result = await payloadHelper.writeOnce(
+      root,
+      { dir: `artifacts/${args.view}_view`, key: `${args.view}_view`, ext: 'html' },
+      standalone.html,
+      { inputs: candidateModels.map((m) => relative(root, m.filePath).replace(/\\/g, '/')) },
+    )
+    if (result.status === 'deduplicated') {
+      unchanged++
+      console.log(`= ${basename(result.path)} unchanged`)
+    } else {
+      written++
+      console.log(`✔ ${basename(result.path)} → ./${result.path} (view ${args.view}, ${standalone.elements} elements)`)
+    }
   }
 
   console.log(
