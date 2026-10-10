@@ -648,11 +648,16 @@ async function main() {
           }
         }
         const blueprintName = payloadHelper.parentSpecNameOf(m.fm)
+        const changeCount = (Array.isArray(ledgerEntries) ? ledgerEntries : []).filter(function (e) {
+          return e && e.target ? String(e.target).indexOf(fileName) !== -1 : false
+        }).length
         modelSummaries.push({
           id: mId,
           title: mTitle,
           filePath: fileName,
           blueprint: blueprintName ? viewsLib.parseSpecName(blueprintName).base : null,
+          version: (m.fm && m.fm.knowledge_version) || null,
+          changeCount: changeCount,
           conceptNames: Array.from(modelConcepts),
           elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
         })

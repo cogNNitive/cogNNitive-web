@@ -1131,25 +1131,30 @@
       ? state.meta.models
       : null
 
-    // 1. If Domain has multiple models, show a clean, compact list of models at the top
+    // 1. Domain blueprint cards (mockup-2 layout): one card per model with its
+    //    blueprint tag, version, element/concept counts and a pending-changes badge.
+    //    Clicking a card sets the `model:` facet, filtering the unified console.
     if (models) {
-      var mHdr = el('div', 'innfo-rail-header')
-      mHdr.innerHTML = '<span>Models (' + models.length + ')</span>'
-      rail.appendChild(mHdr)
-
       models.forEach(function (m) {
-        var mBtn = (doc.createElement ? doc.createElement('button') : el('button'))
-        mBtn.className = 'innfo-rail-item text-xs py-1.5'
-        mBtn.setAttribute('data-model', String(m.id || m.filePath))
-        var iconHtml = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 13, class: 'text-primary shrink-0 mr-1.5' }) : '📄 '
+        var card = (doc.createElement ? doc.createElement('div') : el('div'))
+        if (!card) return
+        card.className = 'innfo-bp-card'
+        card.setAttribute('data-model', String(m.id || m.filePath))
+        var tagText = m.blueprint || m.tag || ''
         var titleText = m.title || m.filePath || 'Model'
-        mBtn.innerHTML = '<span class="flex items-center truncate flex-1" title="' + (m.filePath || titleText) + '">' + iconHtml + '<span class="truncate">' + titleText + '</span></span>' +
-          '<span class="badge badge-xs badge-ghost font-mono text-[10px] ml-1">' + (m.elementCount || 0) + '</span>'
+        var versionText = m.version || m.modelVersion || ''
+        var conceptCount = Array.isArray(m.conceptNames) ? m.conceptNames.length : (m.conceptCount || 0)
+        var changeCount = m.changeCount || m.draftCount || 0
+        card.innerHTML =
+          '<div class="bp-top"><span class="bp-tag">' + tagText + '</span><span class="bp-version">' + versionText + '</span></div>' +
+          '<div class="bp-title">' + titleText + '</div>' +
+          (changeCount > 0 ? '<span class="bp-changes">' + changeCount + ' pending</span>' : '') +
+          '<div class="bp-meta"><span><strong>' + (m.elementCount || 0) + '</strong> elements</span><span><strong>' + conceptCount + '</strong> concepts</span></div>'
 
-        mBtn.addEventListener('click', function () {
+        card.addEventListener('click', function () {
           if (typeof onSelect === 'function') onSelect('model:' + (m.id || m.filePath))
         })
-        rail.appendChild(mBtn)
+        rail.appendChild(card)
       })
     }
 

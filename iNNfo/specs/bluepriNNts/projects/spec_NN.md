@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-2"
+blueprint_version: "V_0-3-3"
 title: "Projects App"
 procedures:
   - id: "calculate-critical-path"
@@ -341,7 +341,7 @@ scope:: internal
 
 ### Canonical Sample
 
-The official sample for this template is at `specs/templates/projects/samples/Ghostbusters_V_0-2-0_projects_NN.md`. It exercises project phases, milestones, deliverables, task dependencies (`depends_on`), risk mitigation, and RACI matrices.
+The official sample for this template is at `specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-3_projects_NN.md`. It exercises project phases, milestones, deliverables, task dependencies (`depends_on`), risk mitigation, and RACI matrices.
 
 # Concept Guidance Documentation
 

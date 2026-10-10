@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-2"
+blueprint_version: "V_0-3-3"
 title: "Organization App"
 procedures:
   - id: "audit-skill-gaps"
@@ -276,7 +276,7 @@ validate and render your model.
 
 ### Canonical Sample
 
-The official sample for this template is at `specs/templates/organization/samples/Ghostbusters_V_0-2-0_organization_NN.md`. It exercises all concept types, lists, and the positions-roles, persons-positions, and functions-positions matrices.
+The official sample for this template is at `specs/bluepriNNts/organization/samples/Ghostbusters_V_0-3-3_organization_NN.md`. It exercises all concept types, lists, and the positions-roles, persons-positions, and functions-positions matrices.
 
 # Concept Guidance Documentation
 

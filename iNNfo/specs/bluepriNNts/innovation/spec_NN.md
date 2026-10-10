@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-2"
+blueprint_version: "V_0-3-3"
 title: "Innovation App"
 procedures:
   - id: "score-innovation-pipeline"
@@ -407,7 +407,7 @@ title: "<Innovation Portfolio Title>"
 
 ### Canonical Sample
 
-The official sample for this template is at `specs/templates/innovation/samples/Ghostbusters_V_0-2-0_innovation_NN.md`. It exercises R&D programs, personnel roles, opportunity pipelines, execution initiatives, and governance matrices.
+The official sample for this template is at `specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-3-3_innovation_NN.md`. It exercises R&D programs, personnel roles, opportunity pipelines, execution initiatives, and governance matrices.
 
 # Concept Guidance Documentation
 

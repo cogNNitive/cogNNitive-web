@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-0"
+blueprint_version: "V_0-3-1"
 title: "Business Model App"
 relationship_types:
   hierarchy:
@@ -802,7 +802,7 @@ The application will resolve the `parent` URL, download this template, and use i
 
 This template has no sample of its own — its concepts are exercised by the
 `business` umbrella sample at
-`specs/templates/business/samples/Ghostbusters_V_0-2-0_business_NN.md`, whose
+`specs/bluepriNNts/business/samples/Ghostbusters_V_0-2-0_business_NN.md`, whose
 `parent_spec` is `business_V_0-2-0` (which `includes` this template and
 `analysis`).
 

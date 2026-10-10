@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -160,7 +160,7 @@ Concept / Field / Marker / Matrix Definition to validate and render the model.
 ### Canonical Sample
 
 The official sample for this template is
-`specs/templates/business/samples/Ghostbusters_V_0-2-3_business_NN.md` — the
+`specs/bluepriNNts/business/samples/Ghostbusters_V_0-4-1_business_NN.md` — the
 `V_0-2-1` Ghostbusters sample re-pointed at this version.
 `Ghostbusters_V_0-2-1_business_NN.md` is kept for consumers still pinned to
 `V_0-2-1`. `V_0-2-1` added the `Compile Strategic Master` procedure; `V_0-2-2`
