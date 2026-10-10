@@ -3234,11 +3234,11 @@
         '#innfo-feedback-modal input{width:100%;padding:8px 12px;margin:8px 0;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);box-sizing:border-box;}' +
         '#innfo-feedback-modal pre{background:var(--surface-2,#f3f4f6);border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:12px;white-space:pre-wrap;font-size:0.8rem;}' +
         '[data-innfo="errors"]{color:#dc2626;font-size:0.85rem;margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;}' +
-        '#innfo-feedback-modal button[data-innfo="download"]{appearance:none;border:1px solid var(--primary,#2563eb);background:var(--primary,#2563eb);color:#ffffff;font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#innfo-feedback-modal button[data-innfo="download"]:hover{background:var(--primary-hover,#1d4ed8);}' +
-        '#innfo-feedback-modal [data-innfo="export-json"]{width:100%;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.78rem;border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:10px;box-sizing:border-box;}' +
+        '#innfo-feedback-modal button[data-innfo="download-changeset"]{appearance:none;border:1px solid var(--primary,#2563eb);background:var(--primary,#2563eb);color:#ffffff;font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#innfo-feedback-modal button[data-innfo="download-changeset"]:hover{background:var(--primary-hover,#1d4ed8);}' +
+        '#innfo-feedback-modal [data-innfo="changeset-preview"]{width:100%;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.78rem;border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:10px;box-sizing:border-box;}' +
         '#innfo-feedback-modal .innfo-feedback-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}' +
-        '#innfo-feedback-modal button[data-innfo="copy"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#innfo-feedback-modal button[data-innfo="copy-changeset-prompt"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
         '#innfo-feedback-modal button:disabled{opacity:0.5;cursor:not-allowed;}' +
         '#innfo-feedback-modal [data-innfo="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}'
       root.appendChild(style)
@@ -3312,12 +3312,10 @@
       '</label>' +
       '<div data-innfo="errors" style="display: none;"></div>' +
       '<h3>Proposed Changeset (_changes_NN.md)</h3>' +
-      '<textarea data-innfo="export-json" data-innfo-changeset="true" readonly></textarea>' +
+      '<textarea data-innfo="changeset-preview" readonly></textarea>' +
       '<div class="innfo-feedback-actions">' +
       '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
       '<button data-innfo="copy-changeset-prompt" type="button">Copy Changeset Prompt</button>' +
-      '<button data-innfo="download" type="button" style="display: none;">Download feedback JSON</button>' +
-      '<button data-innfo="copy" type="button" style="display: none;">Copy to clipboard</button>' +
       '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
       '<h3>Instructions</h3>' +
@@ -3538,7 +3536,7 @@
   function copyChangesetPrompt(doc, state) {
     var modal = doc.getElementById('innfo-feedback-modal')
     var status = modal && modal.querySelector('[data-innfo="copy-status"]')
-    var textarea = modal && modal.querySelector('[data-innfo="export-json"]')
+    var textarea = modal && modal.querySelector('[data-innfo="changeset-preview"]')
     function announce(msg) {
       if (status) status.textContent = msg
     }
@@ -3576,29 +3574,6 @@
     return composed
   }
 
-  function downloadFeedbackExport(doc, state) {
-    var identifierInput = doc.querySelector('#innfo-feedback-modal [data-innfo="identifier"]')
-    var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
-    var composed = composeExport(state, identifier)
-    if (!composed.ok) {
-      renderErrors(doc, composed.errors)
-      return composed
-    }
-    renderErrors(doc, [])
-    var blob = new Blob([composed.text], { type: 'application/json' })
-    var url = URL.createObjectURL(blob)
-    var anchor = doc.createElement('a')
-    anchor.href = url
-    anchor.download = composed.filename
-    doc.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-    setTimeout(function () {
-      URL.revokeObjectURL(url)
-    }, 1000)
-    return { ok: true, filename: composed.filename, items: composed.items }
-  }
-
   function updateExportPreview(doc, state) {
     var modal = doc.getElementById('innfo-feedback-modal')
     if (!modal) return { ok: false }
@@ -3617,62 +3592,20 @@
     }
 
     var composed = composeExport(state, identifier)
-    var downloadBtn = modal.querySelector('[data-innfo="download"]')
     var downloadCsBtn = modal.querySelector('[data-innfo="download-changeset"]')
-    var copyBtn = modal.querySelector('[data-innfo="copy"]')
     var copyCsBtn = modal.querySelector('[data-innfo="copy-changeset-prompt"]')
-    var textarea = modal.querySelector('[data-innfo="export-json"]')
+    var textarea = modal.querySelector('[data-innfo="changeset-preview"]')
 
     if (composed.ok) {
       renderErrors(doc, [])
-      if (textarea) textarea.value = composed.changesetText || composed.text
-      if (downloadBtn) downloadBtn.disabled = false
+      if (textarea) textarea.value = composed.changesetText
       if (downloadCsBtn) downloadCsBtn.disabled = false
-      if (copyBtn) copyBtn.disabled = false
       if (copyCsBtn) copyCsBtn.disabled = false
     } else {
       renderErrors(doc, composed.errors)
       if (textarea) textarea.value = ''
-      if (downloadBtn) downloadBtn.disabled = true
       if (downloadCsBtn) downloadCsBtn.disabled = true
-      if (copyBtn) copyBtn.disabled = true
       if (copyCsBtn) copyCsBtn.disabled = true
-    }
-    return composed
-  }
-
-  function copyExport(doc, state) {
-    var modal = doc.getElementById('innfo-feedback-modal')
-    var status = modal && modal.querySelector('[data-innfo="copy-status"]')
-    var textarea = modal && modal.querySelector('[data-innfo="export-json"]')
-    function announce(msg) {
-      if (status) status.textContent = msg
-    }
-    var composed = composeExport(state, _readIdentifier(modal))
-    if (!composed.ok) {
-      announce('Cannot copy: fix the validation errors first.')
-      return composed
-    }
-    var text = composed.text
-    try {
-      if (
-        typeof navigator !== 'undefined' &&
-        navigator.clipboard &&
-        typeof navigator.clipboard.writeText === 'function'
-      ) {
-        navigator.clipboard.writeText(text).then(
-          function () {
-            announce('Copied feedback JSON to clipboard.')
-          },
-          function () {
-            announce(fallbackCopy(doc, textarea, text))
-          },
-        )
-        return composed
-      }
-      announce(fallbackCopy(doc, textarea, text))
-    } catch {
-      announce('Copy failed. Press Ctrl+C with the JSON selected.')
     }
     return composed
   }
@@ -3689,17 +3622,17 @@
         if (typeof textarea.select === 'function') textarea.select()
       }
       var ok = typeof doc.execCommand === 'function' ? doc.execCommand('copy') : false
-      if (ok) return 'Copied feedback JSON to clipboard.'
-      return 'Select the JSON and press Ctrl+C to copy.'
+      if (ok) return 'Copied changeset to clipboard.'
+      return 'Select the changeset and press Ctrl+C to copy.'
     } catch {
-      return 'Copy failed. Select the JSON and press Ctrl+C.'
+      return 'Copy failed. Select the changeset and press Ctrl+C.'
     }
   }
 
   function openExportModal(doc, state) {
     var modal = doc.getElementById('innfo-feedback-modal') || doc.getElementById('innfo-export-modal')
     if (!modal) {
-      downloadFeedbackExport(doc, state)
+      downloadChangesetExport(doc, state)
       return
     }
     var identifierInput = modal.querySelector('[data-innfo="identifier"]')
@@ -3719,11 +3652,11 @@
       instructions.textContent =
         'Review ' +
         drafts.length +
-        ' pending draft(s), then download or copy the feedback JSON or Changeset.'
+        ' pending draft(s), then download or copy the changeset.'
     }
     if (agentPrompt) {
       agentPrompt.textContent =
-        'Apply the attached feedback JSON or Changeset to ' +
+        'Apply the attached changeset to ' +
         (state ? state.modelTitle : 'Model') +
         ' (' +
         (state ? state.modelVersion : '') +
@@ -3745,21 +3678,6 @@
       })
     }
 
-    var downloadBtn = modal.querySelector('[data-innfo="download"]')
-    if (downloadBtn && !downloadBtn.getAttribute('data-innfo-bound')) {
-      downloadBtn.setAttribute('data-innfo-bound', '1')
-      downloadBtn.addEventListener('click', function () {
-        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
-        if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
-        setReviewerName(identifier)
-        var res = downloadFeedbackExport(doc, state)
-        if (res && res.ok) {
-          if (typeof modal.close === 'function') modal.close()
-          else modal.removeAttribute('open')
-        }
-      })
-    }
-
     var downloadCsBtn = modal.querySelector('[data-innfo="download-changeset"]')
     if (downloadCsBtn && !downloadCsBtn.getAttribute('data-innfo-bound')) {
       downloadCsBtn.setAttribute('data-innfo-bound', '1')
@@ -3775,16 +3693,6 @@
       })
     }
 
-    var copyBtn = modal.querySelector('[data-innfo="copy"]')
-    if (copyBtn && !copyBtn.getAttribute('data-innfo-bound')) {
-      copyBtn.setAttribute('data-innfo-bound', '1')
-      copyBtn.addEventListener('click', function () {
-        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
-        if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
-        copyExport(doc, state)
-      })
-    }
-
     var copyCsBtn = modal.querySelector('[data-innfo="copy-changeset-prompt"]')
     if (copyCsBtn && !copyCsBtn.getAttribute('data-innfo-bound')) {
       copyCsBtn.setAttribute('data-innfo-bound', '1')
@@ -3794,13 +3702,6 @@
         copyChangesetPrompt(doc, state)
       })
     }
-  }
-
-  function downloadExport(doc, state, identifier) {
-    if (identifier && String(identifier).trim()) {
-      setReviewerName(String(identifier).trim())
-    }
-    return downloadFeedbackExport(doc, state)
   }
 
   // Listeners a boot adds to the document/window, removed when the same
@@ -4211,13 +4112,11 @@
     focusElementCard: focusElementCard,
     ensureFeedbackUi: ensureFeedbackUi,
     draftToItem: draftToItem,
-    downloadFeedbackExport: downloadFeedbackExport,
     composeExport: composeExport,
     composeChangesetExport: composeChangesetExport,
     downloadChangesetExport: downloadChangesetExport,
     copyChangesetPrompt: copyChangesetPrompt,
     serializeFeedback: serializeFeedback,
-    downloadExport: downloadExport,
     buildExportDoc: buildExportDoc,
     boot: boot,
   }
