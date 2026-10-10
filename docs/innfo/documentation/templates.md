@@ -10,7 +10,7 @@ All templates are validated against Level 1 (`iNNfo_V_0-2-1`) and are declared i
 
 | Template / App | Adopted Version | Description & Scope | Source Spec |
 |---|---|---|---|
-| **Video** | `V_0-3-2` | Video production, cogNNitive-video VUS scripts, voiceover & talking avatars | [`specs/bluepriNNts/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
+| **Video Script** | `V_0-1-0` | Native iNNfo video scripting: Scenes, Layers, Templates, TTS voiceover & talking avatars | [`specs/bluepriNNts/video-script/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md) |
 | **Business** | `V_0-2-5` | Composite template combining Business Model and Analysis | [`specs/bluepriNNts/business/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business/spec_NN.md) |
 | **Business Model** | `V_0-2-3` | Value propositions, segments, and channels | [`specs/bluepriNNts/business-model/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md) |
 | **Analysis** | `V_0-2-1` | Strategic analysis, SWOT, and evaluable matrices | [`specs/bluepriNNts/analysis/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md) |

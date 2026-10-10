@@ -50,7 +50,7 @@ Domain-specific apps. Each declares concepts, markers, matrices, and relationshi
 | **Organization** | V_0-2-0 | [`specs/bluepriNNts/organization/organization_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/organization/organization_V_0-2-0_NN.md) |
 | **Procedures** | V_0-2-0 | [`specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/procedures/procedures_V_0-2-0_NN.md) |
 | **Projects** | V_0-2-0 | [`specs/bluepriNNts/projects/projects_V_0-2-0_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/projects/projects_V_0-2-0_NN.md) |
-| **Video** | V_0-3-2 | [`specs/bluepriNNts/video/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/video/spec_NN.md) |
+| **Video Script** | V_0-1-0 | [`specs/bluepriNNts/video-script/spec_NN.md`](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md) |
 
 Each app's `_V_0-1-0_` file (where one existed) stays frozen and resolvable for models still pinned to it.
 

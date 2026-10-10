@@ -1,0 +1,83 @@
+# Video Folder Contract (D4)
+
+Normative source: spec `video-folder-contract`. This file is the
+authoring-facing summary an agent reads while drafting a script or running
+the finalize step; it does not redefine the contract, only restates its
+shape close to the tools that enforce it.
+
+## Three-level asset scoping
+
+Assets are scoped at exactly three levels:
+
+- **Workspace scope** — shared across every series in the workspace. Never
+  referenced directly from a video script document; if a workspace-level asset
+  is needed by a series, it is staged into that series' own `shared/` folder
+  first (a copy, not a live reference — see AD3/AD1 in `design.md`).
+- **Series scope** — shared across every video in one series
+  (`series/<series-slug>/shared/`, plus the series' own blueprint and its
+  L3 Template-data document).
+- **Video scope** — owned by exactly one video. Because a Series is modeled as
+  a blueprint plus an L3 Template-data document (AD1), `{modelDir}` resolution
+  is unchanged, so a video's own folder resolves to
+  `series/<series-slug>/assets/<video-slug>/` — the standard iNNfo
+  `{modelDir}/assets/{slug}/` rule, applied where the Series model happens to
+  live.
+
+```
+<workspace>/
+  series/<series-slug>/
+    <SeriesName>_V_x-y-z_video-script_NN.md   # Series L3 Template data (Template instances)
+    series/                                   # Series blueprint (includes video-script)
+    shared/                                    # series scope
+    assets/<video-slug>/                       # video scope = Element-owned folder
+      <Video>_V_x-y-z_video-script_NN.md       # the video's own L3 script document
+      asset_plan.md  master.mp4  thumbnail.png  voiceover.<ext>  media/
+      renders/<ref>/  .cognnitive-video/           # ephemeral — see below
+```
+
+## The no-upward-escape rule
+
+Every relative asset path inside a video script document MUST resolve inside
+that video's own Series folder tree (`series/<series-slug>/`). A path that
+climbs above it — reaching another series, or the workspace root — is invalid,
+even if the target file happens to exist there.
+
+- `../../shared/x.mp4` (staying inside the series) — **allowed**.
+- `../../../../assets/x.mp4` (escaping the series folder) — **rejected**.
+- `http(s)://...` — **allowed** (external references are not a folder-escape
+  concern).
+- `file://...`, an absolute path, or `asset://...` — **rejected outright**,
+  regardless of what they resolve to.
+
+The engine applies this as a pre-compile guard; never assume a path is fine
+because it "looks relative".
+
+## Ephemeral engine directories are not Artifacts
+
+`renders/` and `.cognnitive-video/` — wherever they occur inside a video or series
+folder — are gitignored, transient engine output. They are never treated as
+iNNfo Artifacts, never scanned as knowledge inputs or sources, and never
+referenced by a Video Element's own fields once finalize has run. The
+generic procedure (and this skill's own tooling) is responsible for ensuring
+`.gitignore` covers `**/renders/` and `**/.cognnitive-video/` in any workspace that
+produces videos.
+
+## The finalize/register step
+
+`scripts/finalize-video.mjs` is the mechanical promotion step: it copies
+`master`, `thumbnail`, and `voiceover` out of a render's `renders/<ref>/`
+directory into the video's own folder, using a temp-file-then-rename copy so
+a partially-written file is never mistaken for a finished one. It never
+writes to the model file itself — that stays a single-writer responsibility
+(innfo-mcp applies the field values the script prints). See the script's own
+usage banner for the exact CLI contract (`--video-dir`, `--ref`,
+`--force-thumbnail`).
+
+## Cost-approval artifact
+
+Next to the video's script document, `asset_plan.md` carries a `plan_hash` and the human-written
+`asset_plan.approved.json` records the approval that `compile` requires before
+any billable synthesis. Neither file is part of the finalize/register step. The
+workspace-level `video-guard.json`, `.cognnitive/video-ledger.jsonl` and
+`.cognnitive/cache/video/` live at the workspace root, not in a Series or Video
+folder. See `cost-guardrails.md`.

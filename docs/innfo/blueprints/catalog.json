@@ -205,15 +205,27 @@
         }
       ]
     },
-    "video": {
-      "name": "video",
-      "adopted": "V_0-9-0",
+    "video-script": {
+      "name": "video-script",
+      "adopted": "V_0-1-0",
       "versions": [
         {
-          "blueprint_version": "V_0-9-0",
-          "spec_version": "V_0-3-0",
-          "title": "Video App",
-          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video/spec_NN.md"
+          "blueprint_version": "V_0-1-0",
+          "spec_version": "V_0-4-0",
+          "title": "Video Script App",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
+        }
+      ]
+    },
+    "villabotijos-today": {
+      "name": "villabotijos-today",
+      "adopted": "V_0-1-0",
+      "versions": [
+        {
+          "blueprint_version": "V_0-1-0",
+          "spec_version": "V_0-4-0",
+          "title": "Villabotijos Today Series",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/villabotijos-today/spec_NN.md"
         }
       ]
     },

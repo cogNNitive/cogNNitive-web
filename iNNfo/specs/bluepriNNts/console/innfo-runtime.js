@@ -1127,48 +1127,14 @@
     if (!rail) return
     rail.innerHTML = ''
 
-    var models = state && state.meta && Array.isArray(state.meta.models) && state.meta.models.length > 1
-      ? state.meta.models
-      : null
-
-    // 1. Domain blueprint cards (mockup-2 layout): one card per model with its
-    //    blueprint tag, version, element/concept counts and a pending-changes badge.
-    //    Clicking a card sets the `model:` facet, filtering the unified console.
-    if (models) {
-      models.forEach(function (m) {
-        var card = (doc.createElement ? doc.createElement('div') : el('div'))
-        if (!card) return
-        card.className = 'innfo-bp-card'
-        card.setAttribute('data-model', String(m.id || m.filePath))
-        var tagText = m.blueprint || m.tag || ''
-        var titleText = m.title || m.filePath || 'Model'
-        var versionText = m.version || m.modelVersion || ''
-        var conceptCount = Array.isArray(m.conceptNames) ? m.conceptNames.length : (m.conceptCount || 0)
-        var changeCount = m.changeCount || m.draftCount || 0
-        card.innerHTML =
-          '<div class="bp-top"><span class="bp-tag">' + tagText + '</span><span class="bp-version">' + versionText + '</span></div>' +
-          '<div class="bp-title">' + titleText + '</div>' +
-          (changeCount > 0 ? '<span class="bp-changes">' + changeCount + ' pending</span>' : '') +
-          '<div class="bp-meta"><span><strong>' + (m.elementCount || 0) + '</strong> elements</span><span><strong>' + conceptCount + '</strong> concepts</span></div>'
-
-        card.addEventListener('click', function () {
-          if (typeof onSelect === 'function') onSelect('model:' + (m.id || m.filePath))
-        })
-        rail.appendChild(card)
-      })
+    function mk(tag) {
+      return doc.createElement ? doc.createElement(tag) : el(tag)
     }
-
-    // 2. Concepts list (clean, flat, and responsive)
-    var cHdr = el('div', 'innfo-rail-header')
-    cHdr.innerHTML = '<span>Concepts (' + (concepts ? concepts.length : 0) + ')</span>'
-    rail.appendChild(cHdr)
-
-    ;(Array.isArray(concepts) ? concepts : []).forEach(function (concept, index) {
-      var name = typeof concept === 'string' ? concept : concept.name
+    function conceptButton(name, index) {
       var count = counts[name] || 0
       var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
-      var btn = (doc.createElement ? doc.createElement('button') : el('button'))
-      if (!btn) return
+      var btn = mk('button')
+      if (!btn) return null
       btn.className = 'innfo-rail-item'
       btn.setAttribute('data-concept', String(name))
       var pill = UI.ConceptPill({ id: name, label: name, index: index, count: count }, { document: doc })
@@ -1183,7 +1149,123 @@
       btn.addEventListener('click', function () {
         if (typeof onSelect === 'function') onSelect('concept:' + String(name))
       })
-      rail.appendChild(btn)
+      return btn
+    }
+    function conceptNamesForModel(m) {
+      var mid = String(m.id || m.filePath)
+      var seen = {}
+      var out = []
+      ;(state && Array.isArray(state.elements) ? state.elements : []).forEach(function (e) {
+        if (!e) return
+        if (String(e.modelId || e.modelFile || '') !== mid) return
+        if (e.concept && !seen[e.concept]) {
+          seen[e.concept] = true
+          out.push(e.concept)
+        }
+      })
+      if (!out.length && Array.isArray(m.conceptNames)) {
+        m.conceptNames.forEach(function (c) {
+          if (c && !seen[c]) {
+            seen[c] = true
+            out.push(c)
+          }
+        })
+      }
+      return out
+    }
+
+    var models = state && state.meta && Array.isArray(state.meta.models) && state.meta.models.length > 1
+      ? state.meta.models
+      : null
+
+    // Hierarchical rail: Level 1 = one <details> per model, Level 2 = its concepts
+    // nested inside. Clicking a model sets the `model:` facet; clicking a concept
+    // sets the `concept:` facet. Falls back to the flat concept list for single-model
+    // consoles (models absent or length <= 1).
+    if (models) {
+      var list = mk('ul')
+      if (list) list.className = 'menu menu-xs bg-base-100 p-2 w-full'
+      var globalIndex = 0
+      var globalConcepts = Array.isArray(concepts) ? concepts : []
+      function conceptColor(name) {
+        var def = globalConcepts.filter(function (c) {
+          return (typeof c === 'string' ? c : c.name) === name
+        })[0]
+        return (def && def.color) || null
+      }
+      models.forEach(function (m) {
+        var mid = String(m.id || m.filePath)
+        var li = mk('li')
+        var details = mk('details')
+        details.className = 'collapse collapse-arrow'
+        details.open = true
+        var summary = mk('summary')
+        summary.className = 'collapse-title min-h-0 py-2 pr-6'
+        summary.setAttribute('data-model', mid)
+        var fileIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 14 }) : ''
+        summary.innerHTML =
+          '<span class="flex items-center gap-2 min-w-0">' + fileIcon +
+          '<span class="truncate font-semibold">' + (m.title || m.filePath || 'Model') + '</span></span>' +
+          '<span class="badge badge-ghost badge-xs">' + (m.elementCount || 0) + '</span>'
+        summary.addEventListener('click', function () {
+          if (typeof onSelect === 'function') onSelect('model:' + mid)
+        })
+        details.appendChild(summary)
+
+        var sub = mk('ul')
+        var names = conceptNamesForModel(m)
+        var modelSet = {}
+        names.forEach(function (n) {
+          modelSet[n] = true
+        })
+        if (!names.length) {
+          globalConcepts.forEach(function (c) {
+            var nm = typeof c === 'string' ? c : c.name
+            if (nm && !modelSet[nm]) {
+              modelSet[nm] = true
+              names.push(nm)
+            }
+          })
+        }
+        names.forEach(function (name) {
+          var cli = mk('li')
+          var a = mk('a')
+          if (a) {
+            a.setAttribute('data-concept', String(name))
+            var CONCEPT_PALETTE = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']
+            var color = conceptColor(name) || CONCEPT_PALETTE[globalIndex % CONCEPT_PALETTE.length]
+            globalIndex += 1
+            var dot = color
+              ? '<span class="innfo-concept-dot" style="background:' + color + ';flex:none;"></span>'
+              : ''
+            a.innerHTML =
+              dot + '<span class="truncate">' + String(name) + '</span>' +
+              '<span class="badge badge-ghost badge-xs">' + ((counts && counts[name]) || 0) + '</span>'
+            a.addEventListener('click', function (e) {
+              if (e && e.preventDefault) e.preventDefault()
+              if (typeof onSelect === 'function') onSelect('concept:' + String(name))
+            })
+          }
+          cli.appendChild(a)
+          sub.appendChild(cli)
+        })
+        details.appendChild(sub)
+
+        li.appendChild(details)
+        list.appendChild(li)
+      })
+      rail.appendChild(list)
+      return
+    }
+
+    // Flat fallback (single-model console).
+    var cHdr = el('div', 'innfo-rail-header')
+    cHdr.innerHTML = '<span>Concepts (' + (concepts ? concepts.length : 0) + ')</span>'
+    rail.appendChild(cHdr)
+    ;(Array.isArray(concepts) ? concepts : []).forEach(function (concept, index) {
+      var name = typeof concept === 'string' ? concept : concept.name
+      var btn = conceptButton(name, index)
+      if (btn) rail.appendChild(btn)
     })
   }
 
