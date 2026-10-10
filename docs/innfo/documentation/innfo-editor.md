@@ -39,7 +39,7 @@ Validation runs automatically on every parse via `@cognnitive/innfo-core`. A pas
 - **MatricesGrid** / **MetamatrixConfig** — evaluable matrices between concepts.
 - **ModelInfoPanel** — workspace and metamodel inspection.
 
-Interactive domain visualizations and guided procedures are delivered as standalone console artifacts (e.g. `domaiNN_console.html`, `assets/*_console.html`); the editor does not host an in-app Consoles view (D13/D18) — open the artifact directly.
+Interactive domain visualizations and guided procedures are delivered through the generated console (`domaiNN_console.html`), which hosts bluepriNNt and domaiNN views as tabs; the editor does not host an in-app Consoles view (D13/D18) — open the artifact directly.
 
 ## File preview and lineage
 

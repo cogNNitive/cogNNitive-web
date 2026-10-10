@@ -99,10 +99,10 @@
     },
     "domaiNN": {
       "name": "domaiNN",
-      "adopted": "V_0-2-0",
+      "adopted": "V_0-3-0",
       "versions": [
         {
-          "blueprint_version": "V_0-2-0",
+          "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-3-0",
           "title": "DomaiNN Blueprint",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
@@ -123,10 +123,10 @@
     },
     "metrics": {
       "name": "metrics",
-      "adopted": "V_0-4-2",
+      "adopted": "V_0-4-3",
       "versions": [
         {
-          "blueprint_version": "V_0-4-2",
+          "blueprint_version": "V_0-4-3",
           "spec_version": "V_0-3-0",
           "title": "Metrics App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"

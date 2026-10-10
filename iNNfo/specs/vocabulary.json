@@ -76,6 +76,13 @@
         "actioNN URL references"
       ]
     },
+    "referenced skill": {
+      "canonical": true,
+      "aliases": ["external skill"],
+      "sense": "A third-party agent skill a bluepriNNt declares in its frontmatter `skills:` array, pinned to a commit + sha256 digest with an SPDX license, and fetched from its upstream repo at install time (never vendored, never fetched at runtime). Its guarantee is bounded to reproducible + unmodified-since-pin + license-declared; the maintainer does not vouch for the author. Distinct from an embedded skill, which is vendored and curated.",
+      "excludes": ["embedded skill", "vendored skill"],
+      "stable_identifiers": ["install-external", "distribution: referenced"]
+    },
     "sidecar": {
       "canonical": true,
       "level": 3,

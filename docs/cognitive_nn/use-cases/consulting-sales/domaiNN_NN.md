@@ -10,40 +10,39 @@ title: "Consulting Sales RFP Workspace"
 > [!NOTE]
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
-# NN Workspace
+# NN domaiNN
 knowledge_dir:: kNNowledge/
-sources_dir:: sources/nn/
 
 Governed commercial consulting workspace connecting enterprise RFP requirements, rate cards, consultant staffing matrices, and verified case studies.
 
-# NN Models
+# NN kNNowledge
 
-## NN Models: Fintech RFP Response Model
+## NN kNNowledge: Fintech RFP Response Model
 path:: kNNowledge/Fintech_RFP_Response_V_1-0-0_commercial_NN.md
-template:: business
+blueprint:: business
 status:: active
 author:: Sales Director
 
-## NN Models: Consulting Team Matrix Model
+## NN kNNowledge: Consulting Team Matrix Model
 path:: kNNowledge/Consulting_Team_Matrix_V_1-0-0_organization_NN.md
-template:: organization
+blueprint:: organization
 status:: active
 author:: Operations Director
 
-# NN Sources
-
-## NN Sources: Sources Catalog
+## NN kNNowledge: Sources Catalog
 path:: sources_NN.md
+blueprint:: sources
+status:: active
 
-# NN Procedures
-
-## NN Procedures: Procedures Catalog
+## NN kNNowledge: Procedures Catalog
 path:: procedures_NN.md
+blueprint:: procedures
+status:: active
 
-# NN Artifacts
-
-## NN Artifacts: Artifacts Catalog
+## NN kNNowledge: Artifacts Catalog
 path:: artifacts_NN.md
+blueprint:: artifacts
+status:: active
 
 # NN Tags
 

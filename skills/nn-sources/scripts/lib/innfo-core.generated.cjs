@@ -8533,6 +8533,11 @@ function normalizeSkills(fm) {
       name,
       repo: str(obj.repo),
       path: str(obj.path),
+      ...obj.commit ? { commit: str(obj.commit) } : {},
+      ...obj.ref ? { ref: str(obj.ref) } : {},
+      ...obj.sha256 ? { sha256: str(obj.sha256) } : {},
+      ...obj.license ? { license: str(obj.license) } : {},
+      ...obj.distribution ? { distribution: str(obj.distribution) } : {},
       ...obj.source_template ? { source_template: str(obj.source_template) } : {}
     };
   });

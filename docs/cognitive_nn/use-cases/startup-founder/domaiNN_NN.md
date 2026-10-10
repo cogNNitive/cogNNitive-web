@@ -10,34 +10,33 @@ title: "SaaS Startup Founder Workspace"
 > [!NOTE]
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
-# NN Workspace
+# NN domaiNN
 knowledge_dir:: kNNowledge/
-sources_dir:: sources/nn/
 
 Early-stage SaaS startup workspace capturing customer discovery, problem-solution fit hypotheses, pricing tiers, and investor pitch deck materials.
 
-# NN Models
+# NN kNNowledge
 
-## NN Models: SaaS Founder Business Model
+## NN kNNowledge: SaaS Founder Business Model
 path:: kNNowledge/SaaS_Founder_V_1-0-0_business_NN.md
-template:: business
+blueprint:: business
 status:: active
 author:: Startup Founder
 
-# NN Sources
-
-## NN Sources: Sources Catalog
+## NN kNNowledge: Sources Catalog
 path:: sources_NN.md
+blueprint:: sources
+status:: active
 
-# NN Procedures
-
-## NN Procedures: Procedures Catalog
+## NN kNNowledge: Procedures Catalog
 path:: procedures_NN.md
+blueprint:: procedures
+status:: active
 
-# NN Artifacts
-
-## NN Artifacts: Artifacts Catalog
+## NN kNNowledge: Artifacts Catalog
 path:: artifacts_NN.md
+blueprint:: artifacts
+status:: active
 
 # NN Tags
 

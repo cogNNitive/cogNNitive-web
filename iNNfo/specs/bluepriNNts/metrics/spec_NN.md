@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-4-2"
+blueprint_version: "V_0-4-3"
 title: "Metrics App"
 relationship_types:
   hierarchy:
@@ -17,17 +17,6 @@ relationship_types:
     enabled: false
   sequence:
     enabled: true
-procedures:
-  - id: "create-timeline"
-    name: "Create Timeline"
-    path: "procedures/create_timeline_procedures_NN.md"
-assets:
-  - id: "model-data-template"
-    name: "MODEL_DATA JSON Template"
-    path: "assets/MODEL_DATA.template.json"
-  - id: "verify-harness"
-    name: "Timeline Verify Harness"
-    path: "scripts/verify.harness.js"
 ---
 
 > [!NOTE]
@@ -190,18 +179,18 @@ values:: [Includes]
 A projection is only as trustworthy as the metric graph behind it. This template
 treats every number as a node: base variables feed metric rows through declared
 formulas, evolution rules project them across months, and scenarios select which
-rows participate. The `Create Timeline` procedure snapshots that graph into a
-standalone `Timeline` HTML artifact — data (`MODEL_DATA`), logic (`FORMULAS`),
-and dependencies (`DEPS`) kept strictly separate so a model change means
-re-snapshotting one JSON block, never rewriting the dashboard.
+rows participate. The blueprint ships the registered `timeline` console view;
+the runtime mounts it inside the domaiNN console, and the view reads the metrics
+model elements straight from the shared payload — no snapshot, no separate
+dashboard, no per-model artifact to regenerate.
 
 ## Objectives
 
 - Model any quantified domain (rental yield, SaaS revenue, project costs) as typed metric rows with explicit dependencies.
 - Consolidate measured history and future projection in one table: `historical` scenarios anchor the sheet on actuals, `projection` scenarios extend it.
 - Keep input variables, evolution rules, and scenarios as first-class concepts instead of spreadsheet folklore.
-- Score rows with `is_variable` / `is_formula` / `is_derived` markers so the artifact knows what is editable, computed, or artifact-invented help.
-- Generate the `Timeline` HTML dashboard deterministically via the embedded `create-timeline` procedure.
+- Score rows with `is_variable` / `is_formula` / `is_derived` markers so the console knows what is editable, computed, or artifact-invented help.
+- Render the `Timeline` grid through the registered `timeline` view in the domaiNN console.
 
 ## Specification
 
@@ -270,14 +259,14 @@ title: "<Metrics Model Title>"
 
 ### Canonical Sample
 
-The official sample for this template is at `specs/templates/metrics/samples/Ghostbusters_V_0-1-0_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, the three evaluable matrices, and the item-markers matrix.
+The official sample for this template is at `iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-3_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, the three evaluable matrices, and the item-markers matrix.
 
 ### Parent Chain
 
 ```yaml
 # From the Ghostbusters metrics sample:
 parent_spec:
-  name: "metrics_V_0-1-0"
+  name: "metrics_V_0-4-3"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
 
 # This template's parent:
@@ -298,8 +287,8 @@ A quantified row of the model: either an editable input, a computed result, or a
 
 Each Metrics element carries its value, its verbatim formula text, the rows it
 depends on (`dependsOn`), its category (`metricType`), its unit, and its monthly
-evolution rule. Computed rows reference their inputs; the Create Timeline
-procedure mirrors those references into the artifact DEPS map.
+evolution rule. Computed rows reference their inputs; the `timeline` view reads
+those references straight from the model elements.
 
 ### Methodologies
 
@@ -362,7 +351,7 @@ Named scenarios (e.g. short-stay, monthly, hybrid) with a month horizon,
 a `scenarioType` (`historical` for measured past data, `projection` for
 future data), and notes on assumptions. The scenario-metrics matrix declares
 which metric rows each scenario includes. Historical rows carry verbatim
-`history` values in the artifact MODEL_DATA; the dashboard renders them
+`history` values in the metrics elements; the `timeline` view renders them
 distinctly from computed months.
 
 NOTE — V_0-1-0 scope: the artifact renders one neutral flow (actuals +

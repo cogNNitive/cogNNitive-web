@@ -7,7 +7,7 @@ parent_spec:
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "DomaiNN Blueprint"
 blueprint_name: "domaiNN"
-blueprint_version: "V_0-2-0"
+blueprint_version: "V_0-3-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -27,6 +27,7 @@ relationship_types:
 
 * [[domaiNN]]
 * [[kNNowledge]]
+* [[bluepriNNts]]
 * [[Tags]]
 
 # NN Concept Definition
@@ -42,6 +43,12 @@ icon:: file-symlink
 type:: knowledge
 color:: purple
 weight:: 95
+
+## NN Concept Definition: bluepriNNts
+icon:: copy
+type:: model
+color:: grey
+weight:: 90
 
 ## NN Concept Definition: Tags
 icon:: tag
@@ -90,6 +97,18 @@ description:: Lifecycle status of the kNNowledge document within this domaiNN.
 concept:: kNNowledge
 type:: string
 description:: Author or owner of the kNNowledge document within this domaiNN.
+
+<!-- bluepriNNts fields: local blueprint inventory -->
+
+## NN Field Definition: path
+concept:: bluepriNNts
+type:: model
+description:: domaiNN-relative path to a local bluepriNNt spec (spec_NN.md).
+
+## NN Field Definition: category
+concept:: bluepriNNts
+type:: string
+description:: Domain classification or strategic focus of the local bluepriNNt.
 
 <!-- Tags fields -->
 
@@ -141,6 +160,7 @@ A domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge d
 |---|---|---|
 | **domaiNN** | text | Prose description, entry point, and directory conventions of the container |
 | **kNNowledge** | knowledge | kNNowledge documents in the domaiNN with metadata and blueprint binding |
+| **bluepriNNts** | model | Local bluepriNNt specs the domaiNN references (path + category) |
 | **Tags** | category | Centralized taxonomy tags with color, icon, and description |
 
 ### Directory Conventions

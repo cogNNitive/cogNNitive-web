@@ -262,6 +262,44 @@ var require_projection = __commonJS({
   }
 });
 
+// scripts/lib/skill-tree-digest.js
+var require_skill_tree_digest = __commonJS({
+  "scripts/lib/skill-tree-digest.js"(exports2, module2) {
+    var crypto = require("crypto");
+    var fs = require("fs");
+    var path2 = require("path");
+    var SKIP_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git"]);
+    function walkFiles(rootDir) {
+      const files = [];
+      const stack = [""];
+      while (stack.length > 0) {
+        const rel = stack.pop();
+        for (const entry of fs.readdirSync(path2.join(rootDir, rel), { withFileTypes: true })) {
+          if (entry.name.startsWith(".")) continue;
+          const child = rel ? path2.join(rel, entry.name) : entry.name;
+          if (entry.isDirectory()) {
+            if (SKIP_DIRS.has(entry.name)) continue;
+            stack.push(child);
+          } else if (entry.isFile()) {
+            files.push(child.split(path2.sep).join("/"));
+          }
+        }
+      }
+      return files.sort();
+    }
+    function skillTreeDigest(rootDir) {
+      const hash = crypto.createHash("sha256");
+      for (const posixPath of walkFiles(rootDir)) {
+        const fileHash = crypto.createHash("sha256").update(fs.readFileSync(path2.join(rootDir, posixPath.split("/").join(path2.sep)))).digest("hex");
+        hash.update(`${posixPath}\0${fileHash}
+`);
+      }
+      return hash.digest("hex");
+    }
+    module2.exports = { skillTreeDigest };
+  }
+});
+
 // scripts/lib/github-client.js
 var require_github_client = __commonJS({
   "scripts/lib/github-client.js"(exports2, module2) {
@@ -745,6 +783,7 @@ var require_skills_commands = __commonJS({
       classifyProjection,
       hashTree
     } = require_projection();
+    var { skillTreeDigest } = require_skill_tree_digest();
     var {
       fetchString,
       fetchJson,
@@ -888,6 +927,14 @@ ${RETIRED_REPO_NOTICE}`);
         const src = path2.join(repoRoot, skill.path);
         if (!fs.existsSync(src)) {
           throw new Error(`path ${skill.path} not found in ${skill.repo} at ${skill.commit}`);
+        }
+        if (skill.sha256) {
+          const actual = skillTreeDigest(src);
+          if (actual !== String(skill.sha256)) {
+            throw new Error(
+              `integrity mismatch for ${skill.name}: expected sha256 ${skill.sha256}, got ${actual}`
+            );
+          }
         }
         const dest = path2.join(skillsDir, skill.name);
         fs.mkdirSync(skillsDir, { recursive: true });
@@ -1268,6 +1315,42 @@ ${failures} item(s) failed to install.`);
       }
       console.log(`
 Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), and ${toInstallConsole.length} console asset(s).`);
+    }
+    async function cmdInstallExternal(args) {
+      const { name, repo, commit } = args;
+      const skillPath = args.path;
+      if (!name || !repo || !skillPath || !commit) {
+        throw new Error("install-external requires --name, --repo, --path and --commit");
+      }
+      if (!/^[0-9a-f]{40}$/i.test(String(commit))) {
+        throw new Error(`--commit '${commit}' is not a 40-char hex sha`);
+      }
+      const skillsDir = args.skillsDir || DEFAULT_SKILLS_DIR;
+      const state = loadState(args.stateFile);
+      const integrity = args.sha256 ? "verified via sha256" : "NOT pinned (commit only)";
+      const menu = `Referenced external skill (third-party, NOT curated by cogNNitive):
+  - ${name}  ${repo}/${skillPath} @ ${String(commit).slice(0, 7)}
+  integrity: ${integrity}
+
+[a] Install
+[b] Skip
+`;
+      const proceed = await consentOrAbort(`install external skill ${name}`, [`external-skill:${name}`], menu, args.yes);
+      if (!proceed) return;
+      await installSkillAtCommit(
+        { name, repo, path: skillPath, commit, sha256: args.sha256 },
+        skillsDir,
+        state
+      );
+      projectSkillsToAgents({
+        canonicalSkillsDir: skillsDir,
+        targetAgent: args.agent || "auto",
+        scope: args.scope || "global",
+        state,
+        skillNames: [name]
+      });
+      saveState(args.stateFile, state);
+      console.log(`installed referenced external skill ${name} @ ${String(commit).slice(0, 7)}`);
     }
     async function cmdUpdate(args) {
       const manifestRaw = await fetchManifestString();
@@ -1759,6 +1842,7 @@ Projected skills to agent directories:`);
       consentOrAbort,
       cmdStatus,
       cmdInstall,
+      cmdInstallExternal,
       cmdUpdate,
       cmdSync,
       cmdBootstrap,
@@ -1785,7 +1869,13 @@ function parseArgs(argv) {
     yes: false,
     direction: "local-to-global",
     agent: "auto",
-    scope: "global"
+    scope: "global",
+    // install-external flags
+    name: null,
+    repo: null,
+    path: null,
+    commit: null,
+    sha256: null
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -1812,7 +1902,7 @@ function parseArgs(argv) {
       }
       args.scope = value;
       i++;
-    } else if (arg === "--skills-dir" || arg === "--templates-dir" || arg === "--mcp-dir" || arg === "--console-dir" || arg === "--state") {
+    } else if (arg === "--skills-dir" || arg === "--templates-dir" || arg === "--mcp-dir" || arg === "--console-dir" || arg === "--state" || arg === "--name" || arg === "--repo" || arg === "--path" || arg === "--commit" || arg === "--sha256") {
       const value = argv[i + 1];
       if (value === void 0 || value.startsWith("--")) {
         throw new Error(`Option ${arg} requires a value`);
@@ -1821,7 +1911,12 @@ function parseArgs(argv) {
       else if (arg === "--templates-dir") args.blueprintsDir = value;
       else if (arg === "--mcp-dir") args.mcpDir = value;
       else if (arg === "--console-dir") args.consoleDir = value;
-      else args.state = value;
+      else if (arg === "--state") args.state = value;
+      else if (arg === "--name") args.name = value;
+      else if (arg === "--repo") args.repo = value;
+      else if (arg === "--path") args.path = value;
+      else if (arg === "--commit") args.commit = value;
+      else args.sha256 = value;
       i++;
     } else if (arg.startsWith("--")) {
       throw new Error(`Unknown option: ${arg}`);
@@ -1836,6 +1931,7 @@ function usage() {
   node scripts/skills-manager.js bootstrap [--scope <global|workspace>] [--agent <auto|opencode|claude|antigravity>] [--yes]
   node scripts/skills-manager.js status    [--skills-dir <dir>] [--templates-dir <dir>] [--state <file>]
   node scripts/skills-manager.js install   [--skills-dir <dir>] [--templates-dir <dir>] [--state <file>] [--yes]
+  node scripts/skills-manager.js install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>] [--skills-dir <dir>] [--state <file>] [--yes]
   node scripts/skills-manager.js update    [item ...] [--skills-dir <dir>] [--templates-dir <dir>] [--state <file>] [--yes]
   node scripts/skills-manager.js sync      [--skills-dir <dir>] [--templates-dir <dir>] [--direction <local-to-global|global-to-local>] [--yes]
 
@@ -1843,6 +1939,7 @@ Commands:
   bootstrap Full zero-touch ecosystem setup: skills, templates, MCP bundles, and agent registration.
   status    Compare installed commits (state file) against manifest pins.
   install   Install missing skills and templates at their pinned commit.
+  install-external  Install a single referenced external skill (third-party) from its upstream repo at a pinned commit, verifying its sha256 tree digest when given.
   update    Update outdated skills and templates at their pinned commit.
   sync      Synchronize skill and template files between local repository and global agent directory.
 
@@ -1869,7 +1966,7 @@ async function main() {
     process.exit(1);
   }
   const command = args.positional.shift();
-  if (!command || !["bootstrap", "status", "install", "update", "sync"].includes(command)) {
+  if (!command || !["bootstrap", "status", "install", "install-external", "update", "sync"].includes(command)) {
     usage();
     process.exit(1);
   }
@@ -1889,12 +1986,18 @@ async function main() {
     yes: args.yes,
     direction: args.direction,
     agent: args.agent,
-    scope: args.scope
+    scope: args.scope,
+    name: args.name,
+    repo: args.repo,
+    path: args.path,
+    commit: args.commit,
+    sha256: args.sha256
   };
   try {
     if (command === "bootstrap") await commands.cmdBootstrap(resolvedArgs);
     else if (command === "status") await commands.cmdStatus(resolvedArgs);
     else if (command === "install") await commands.cmdInstall(resolvedArgs);
+    else if (command === "install-external") await commands.cmdInstallExternal(resolvedArgs);
     else if (command === "update") await commands.cmdUpdate(resolvedArgs);
     else await commands.cmdSync(resolvedArgs);
   } catch (err) {

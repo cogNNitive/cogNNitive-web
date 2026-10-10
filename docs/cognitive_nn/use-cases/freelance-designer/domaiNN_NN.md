@@ -10,34 +10,33 @@ title: "Freelance Web Designer Workspace"
 > [!NOTE]
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
-# NN Workspace
+# NN domaiNN
 knowledge_dir:: kNNowledge/
-sources_dir:: sources/nn/
 
 Client design project workspace capturing kickoff briefs, brand style guides, design tokens, and interactive sign-off deliverables.
 
-# NN Models
+# NN kNNowledge
 
-## NN Models: Client Website Specification Model
+## NN kNNowledge: Client Website Specification Model
 path:: kNNowledge/Client_Website_V_1-0-0_site_spec_NN.md
-template:: site_spec
+blueprint:: site_spec
 status:: active
 author:: Freelance Designer
 
-# NN Sources
-
-## NN Sources: Sources Catalog
+## NN kNNowledge: Sources Catalog
 path:: sources_NN.md
+blueprint:: sources
+status:: active
 
-# NN Procedures
-
-## NN Procedures: Procedures Catalog
+## NN kNNowledge: Procedures Catalog
 path:: procedures_NN.md
+blueprint:: procedures
+status:: active
 
-# NN Artifacts
-
-## NN Artifacts: Artifacts Catalog
+## NN kNNowledge: Artifacts Catalog
 path:: artifacts_NN.md
+blueprint:: artifacts
+status:: active
 
 # NN Tags
 

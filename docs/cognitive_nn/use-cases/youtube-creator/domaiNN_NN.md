@@ -10,40 +10,39 @@ title: "YouTube Content Creator Workspace"
 > [!NOTE]
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
-# NN Workspace
+# NN domaiNN
 knowledge_dir:: kNNowledge/
-sources_dir:: sources/nn/
 
 Technical video production workspace connecting research papers, benchmark datasets, fact-checked video scripts, and multi-asset studio deliverables.
 
-# NN Models
+# NN kNNowledge
 
-## NN Models: Episode 42 Video Script Model
+## NN kNNowledge: Episode 42 Video Script Model
 path:: kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md
-template:: video_script
+blueprint:: video_script
 status:: active
 author:: YouTube Creator
 
-# NN Procedures
-
-## NN Procedures: Episode 42 Production Workflow
+## NN kNNowledge: Episode 42 Production Workflow
 path:: procedures/Episode_42_Production_V_1-0-0_procedures_NN.md
-template:: procedures
+blueprint:: procedures
 status:: active
 author:: Production Lead
 
-## NN Procedures: Procedures Catalog
-path:: procedures_NN.md
-
-# NN Sources
-
-## NN Sources: Sources Catalog
+## NN kNNowledge: Sources Catalog
 path:: sources_NN.md
+blueprint:: sources
+status:: active
 
-# NN Artifacts
+## NN kNNowledge: Procedures Catalog
+path:: procedures_NN.md
+blueprint:: procedures
+status:: active
 
-## NN Artifacts: Artifacts Catalog
+## NN kNNowledge: Artifacts Catalog
 path:: artifacts_NN.md
+blueprint:: artifacts
+status:: active
 
 # NN Tags
 
