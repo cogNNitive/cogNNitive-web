@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures"
+  name: "procedures_V_0-3-2"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-3-0"
 title: "Ingest Visual Catalog Procedure"

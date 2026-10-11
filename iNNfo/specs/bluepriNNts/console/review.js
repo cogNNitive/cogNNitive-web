@@ -77,31 +77,42 @@
     }
   }
 
-  function createDraftStore(storage, modelId) {
+  function createDraftStore(storage, modelId, modelVersion) {
     var resolved = resolveStorage(storage)
     var backing = resolved.storage
     var persistent = resolved.persistent
     var key = STORE_PREFIX + String(modelId == null ? '' : modelId)
+    var liveVersion = modelVersion == null ? '' : String(modelVersion)
+
+    function emptyState() {
+      return {
+        v: STORE_VERSION,
+        modelId: modelId,
+        modelVersion: liveVersion,
+        drafts: [],
+        reviewed: {},
+      }
+    }
 
     function read() {
       var raw
       try {
         raw = backing.getItem(key)
       } catch {
-        return { v: STORE_VERSION, modelId: modelId, drafts: [], reviewed: {} }
+        return emptyState()
       }
-      if (!raw) return { v: STORE_VERSION, modelId: modelId, drafts: [], reviewed: {} }
+      if (!raw) return emptyState()
       var parsed
       try {
         parsed = JSON.parse(raw)
       } catch {
-        return { v: STORE_VERSION, modelId: modelId, drafts: [], reviewed: {} }
+        return emptyState()
       }
       if (!isObject(parsed) || parsed.v !== STORE_VERSION) {
-        return { v: STORE_VERSION, modelId: modelId, drafts: [], reviewed: {} }
+        return emptyState()
       }
       if (String(parsed.modelId) !== String(modelId)) {
-        return { v: STORE_VERSION, modelId: modelId, drafts: [], reviewed: {} }
+        return emptyState()
       }
       var drafts = Array.isArray(parsed.drafts)
         ? parsed.drafts.map(function (d) {
@@ -114,7 +125,17 @@
           reviewed[id] = String(parsed.reviewed[id])
         })
       }
-      return { v: STORE_VERSION, modelId: modelId, drafts: drafts, reviewed: reviewed }
+      // The version the drafts were authored against is sticky while drafts
+      // exist; a fully exported (empty) store rebases to the live version.
+      var recorded =
+        drafts.length > 0 && parsed.modelVersion != null ? String(parsed.modelVersion) : liveVersion
+      return {
+        v: STORE_VERSION,
+        modelId: modelId,
+        modelVersion: recorded,
+        drafts: drafts,
+        reviewed: reviewed,
+      }
     }
 
     function write(state) {
@@ -130,6 +151,9 @@
     return {
       persistent: persistent,
       key: key,
+      modelVersion: function () {
+        return state.modelVersion
+      },
       drafts: function () {
         return deepCopy(state.drafts)
       },
@@ -453,6 +477,30 @@
       }
     }
 
+    // Incoming/outgoing relations for an element, for the modal's Connections
+    // Sankey. Outgoing come from the element's own relations; incoming are the
+    // relations of every other element that target it.
+    function connectionsFor(el) {
+      if (!el) return { center: '', incoming: [], outgoing: [] }
+      var outgoing = []
+      ;(Array.isArray(el.relations) ? el.relations : []).forEach(function (r) {
+        if (!r) return
+        var t = elementsById[r.target]
+        outgoing.push({ id: r.target, label: r.targetLabel || (t && t.name) || r.target, field: r.field })
+      })
+      var incoming = []
+      Object.keys(elementsById).forEach(function (id) {
+        var other = elementsById[id]
+        if (!other || id === el.id) return
+        ;(Array.isArray(other.relations) ? other.relations : []).forEach(function (r) {
+          if (r && r.target === el.id) {
+            incoming.push({ id: other.id, label: other.name || other.id, field: r.field })
+          }
+        })
+      })
+      return { center: el.name || el.id || '', incoming: incoming, outgoing: outgoing }
+    }
+
     function openModalFor(anchorData, target) {
       var modal = UI.EditModal(
         {
@@ -466,6 +514,7 @@
           history: target.history,
           isComment: !!target.isComment,
           commentOnly: !!target.commentOnly,
+          connections: connectionsFor(elementsById[anchorData.elementId]),
           startTab: anchorData.info ? 'history' : 'edit',
         },
         {

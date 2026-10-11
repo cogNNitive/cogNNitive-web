@@ -16,7 +16,7 @@
       2. Paste the Schema JSON Contract into #innfo-schema.
       3. Paste the Model JSON Contract into #innfo-model.
     The shared runtime (innfo-runtime.js, window.InnfoConsole) renders the rail
-    cards, search, facets, KPI stats, cards, matrices, drafts and export modal.
+    cards, search, facets, cards, matrices, drafts and export modal.
     Do NOT inline runtime code here.
   -->
     <link rel="stylesheet" href="./innfo-ui.css" />
@@ -163,11 +163,6 @@
       .innfo-content-scroll { flex: 1; overflow-y: auto; padding: 22px 30px 90px; max-width: 1200px; width: 100%; box-sizing: border-box; }
 
       /* Runtime regions (kept identical to the previous shell) */
-      .innfo-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px; }
-      .innfo-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow-card); display: flex; align-items: center; gap: 16px; }
-      .innfo-stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-      .innfo-stat-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-      .innfo-stat-value { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
       .innfo-facet-dropdown { position: relative; display: inline-block; }
       .innfo-facet-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
       .innfo-facet-btn.active { border-color: var(--primary); color: var(--primary); }
@@ -188,6 +183,88 @@
       .innfo-matrix table { border-collapse: collapse; font-size: 0.82rem; width: 100%; }
       .innfo-matrix th, .innfo-matrix td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
       .empty-state { color: var(--muted); font-size: 0.9rem; padding: 40px 0; }
+
+      /* Model Explorer cards/table toggle + element table */
+      .innfo-explorer-toolbar { display: flex; justify-content: flex-end; margin: 0 0 12px; }
+      .innfo-viewmode { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+      .innfo-viewmode-btn { appearance: none; border: none; background: var(--surface); color: var(--muted); font: inherit; font-size: 0.8rem; font-weight: 600; padding: 5px 12px; cursor: pointer; }
+      .innfo-viewmode-btn + .innfo-viewmode-btn { border-left: 1px solid var(--border); }
+      .innfo-viewmode-btn:hover { color: var(--text); background: var(--surface-2); }
+      .innfo-viewmode-btn.active { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
+      .innfo-element-table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+      .innfo-element-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+      .innfo-element-table th, .innfo-element-table td { border-bottom: 1px solid var(--border); padding: 6px 10px; text-align: left; vertical-align: top; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .innfo-element-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface-2); cursor: pointer; user-select: none; }
+      .innfo-element-table thead th:hover { color: var(--text); }
+      .innfo-element-table thead th.sorted { color: var(--primary); }
+      .innfo-element-table-sort { margin-left: 4px; font-size: 0.7rem; }
+      .innfo-element-table tbody tr:hover { background: var(--surface-2); }
+      .innfo-element-table-name { font-weight: 600; }
+      .innfo-element-table-empty { color: var(--muted); text-align: center; padding: 30px 0; }
+
+      /* Concept guidance sidebar (right) */
+      aside.innfo-guide { width: 320px; min-width: 280px; max-width: 340px; border-left: 1px solid var(--border); background: var(--surface); padding: 16px 18px; overflow-y: auto; height: calc(100vh - 57px); position: sticky; top: 57px; }
+      @media (max-width: 1100px) { aside.innfo-guide { display: none; } }
+      .innfo-guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .innfo-guide-desc { font-size: 0.84rem; color: var(--muted); margin: 0 0 14px; }
+      .innfo-guide-section { margin-bottom: 14px; }
+      .innfo-guide-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 6px; }
+      .innfo-guide-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 0.8rem; }
+      .innfo-guide-list dt { color: var(--muted); font-weight: 600; }
+      .innfo-guide-list li { font-size: 0.8rem; }
+      .innfo-guide-meta { font-size: 0.72rem; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; }
+
+      /* Sankey relation flow (KU modal Connections tab) */
+      .innfo-sankey { width: 100%; overflow-x: auto; }
+      .innfo-sankey-svg { width: 100%; height: auto; min-width: 520px; }
+      .innfo-sankey-node { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
+      .innfo-sankey-center { fill: color-mix(in srgb, var(--primary) 14%, var(--surface)); stroke: var(--primary); }
+      .innfo-sankey-link { fill: none; stroke: color-mix(in srgb, var(--primary) 45%, var(--border)); stroke-width: 1.6; opacity: 0.8; }
+      .innfo-sankey-label { font-size: 12px; fill: var(--text); }
+      .innfo-sankey-field { font-size: 10px; fill: var(--muted); font-family: var(--mono); }
+      .innfo-sankey-center-label { font-size: 12px; font-weight: 700; fill: var(--primary); }
+      .innfo-sankey-empty { color: var(--muted); font-size: 0.9rem; padding: 20px 0; }
+
+      /* Media lightbox */
+      #innfo-media-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(880px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
+      #innfo-media-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+      .innfo-media-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+      .innfo-media-image { max-width: 100%; max-height: 70vh; object-fit: contain; align-self: center; border-radius: var(--radius); }
+      .innfo-media-bar { display: flex; align-items: center; gap: 12px; }
+      .innfo-media-nav { appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem; line-height: 1; padding: 4px 12px; cursor: pointer; }
+      .innfo-media-nav:disabled { opacity: 0.4; cursor: default; }
+      .innfo-media-count { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+      .innfo-media-download { margin-left: auto; font-size: 0.8rem; color: var(--link); }
+      .innfo-card-thumb--zoom { cursor: zoom-in; }
+
+      /* Type-aware field values */
+      .innfo-field-bool { font-weight: 600; }
+      .innfo-field-bool[data-value="true"] { color: var(--primary); }
+      .innfo-field-bool[data-value="false"] { color: var(--muted); }
+      .innfo-field-url { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+      .innfo-field-code { font-family: var(--mono); font-size: 0.82em; background: var(--surface-2); border-radius: var(--radius-sm); padding: 0 4px; }
+      .innfo-field-markdown { white-space: pre-wrap; }
+      .innfo-field-image { max-height: 90px; border-radius: var(--radius-sm); display: block; margin-top: 2px; }
+      .innfo-field-list { color: var(--text); }
+
+      /* Incoming relations on cards */
+      .innfo-card-incoming { margin-top: 8px; }
+      .innfo-card-incoming-label { display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
+
+      /* Field detail dialog */
+      #innfo-field-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(720px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
+      #innfo-field-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+      .innfo-field-detail-body { padding: 0 16px 16px; }
+      .innfo-field-detail-meta { font-size: 0.8rem; color: var(--muted); margin: 0 0 8px; }
+      .innfo-field-detail-value { white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 0.82rem; background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
+
+      /* Metamodel map */
+      .innfo-metamodel { display: flex; justify-content: center; padding: 12px 0; }
+      .innfo-metamodel-svg { width: 100%; max-width: 620px; height: auto; }
+      .innfo-metamodel-node { fill: color-mix(in srgb, var(--primary) 12%, var(--surface)); stroke: var(--primary); stroke-width: 1.4; }
+      .innfo-metamodel-label { font-size: 12px; fill: var(--text); font-weight: 600; }
+      .innfo-metamodel-edge { stroke: color-mix(in srgb, var(--primary) 40%, var(--border)); stroke-width: 1.5; }
+      .innfo-metamodel-edge-label { font-size: 10px; fill: var(--muted); font-family: var(--mono); }
       .innfo-reviewer-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 12px; font-size: 0.8rem; cursor: pointer; }
       .innfo-rail-badge, .innfo-card-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 999px; padding: 1px 6px; min-width: 16px; height: 16px; }
       .innfo-highlight { animation: innfo-pulse-glow 2.5s ease-out; }
@@ -224,7 +301,6 @@
         <div class="innfo-action-bar">
           <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
         </div>
-        <div id="innfo-stats-bar" class="innfo-stats-grid"></div>
         <div id="innfo-tab-explorer" class="innfo-tab-panel active">
           <div id="innfo-doc"></div>
           <div id="innfo-content"></div>
@@ -258,7 +334,7 @@
 
     <script src="./innfo-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.6/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.7/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   </body>

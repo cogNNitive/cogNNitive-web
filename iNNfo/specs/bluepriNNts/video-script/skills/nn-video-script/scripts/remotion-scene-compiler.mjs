@@ -319,6 +319,7 @@ export class RemotionSceneCompiler {
       layer_level: fields.level !== undefined ? Number(fields.level) : undefined,
       layer_position: fields.position,
       layer_avatar_model: fields.model,
+      layer_fit: fields.fit,
     };
     for (const key of Object.keys(properties)) {
       if (properties[key] === undefined) delete properties[key];
@@ -424,7 +425,7 @@ export class RemotionSceneCompiler {
       durationInFrames,
       enterAnimation,
       exitAnimation,
-      config: { assetPath: props.assetPath || '', fit: 'cover', position: props.position || 'center' },
+      config: { assetPath: props.assetPath || '', fit: props.fit || 'cover', position: props.position || 'center' },
     };
   }
 
@@ -610,7 +611,7 @@ export class RemotionSceneCompiler {
           } else {
             overlayTracks.push(this.createBrollOverlay({
               id: ovId, fromFrame: ovFrom, durationInFrames: frames,
-              props: { assetPath: layer.properties.layer_asset_source || '', position: layer.position },
+              props: { assetPath: layer.properties.layer_asset_source || '', position: layer.position, fit: layer.properties.layer_fit },
               enterAnimation: layer.enterAnimation, exitAnimation: layer.exitAnimation,
             }));
           }

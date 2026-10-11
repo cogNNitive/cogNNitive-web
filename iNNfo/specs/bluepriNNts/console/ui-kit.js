@@ -244,6 +244,13 @@
     '.innfo-ku-badge .innfo-ku-label{color:var(--innfo-muted)}',
     '.innfo-ku-badge .innfo-ku-value{color:var(--innfo-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.innfo-ku-badge .innfo-ku-icon{display:inline-flex;color:var(--innfo-muted);flex:0 0 auto}',
+    // Field badges carry free text, so they read as full-width rows: the value
+    // wraps and is never clipped, and the badge grows to fill the line while the
+    // action cluster stays pinned beside it.
+    '.innfo-ku-badge[data-ku-kind=field]{flex:1 1 16em;min-width:0;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
+    '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-label{flex:0 0 auto;white-space:nowrap;font-weight:600}',
+    '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
+    '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-icon{margin-top:.18em}',
     '.innfo-ku-badge[data-ku-changes]{border-style:dashed}',
     '.innfo-ku-change-pip{position:absolute;top:-.5em;right:-.5em;min-width:1.2em;height:1.2em;padding:0 .25em;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;line-height:1;border-radius:999px;background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border:1px solid var(--innfo-status-pending);cursor:pointer}',
     '.innfo-ku-actions{display:inline-flex;align-items:center;gap:.1em;flex:0 0 auto}',
@@ -252,8 +259,26 @@
     '.innfo-ku-action:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
     '.innfo-ku-action[data-ku-action=edit]:hover{color:var(--innfo-link)}',
     '.innfo-ku-action:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
-    '.innfo-card-fields{display:flex;flex-wrap:wrap;gap:.4em;align-items:center;margin:.6em 0 0}',
+    '.innfo-card-fields{display:flex;flex-wrap:wrap;gap:.4em;align-items:flex-start;margin:.6em 0 0}',
     '.innfo-card-desc-actions{margin-left:.4em}',
+    // Element-card Dense Row (V01): a one-line bar (image chip, name, concept,
+    // markers, two facts, field count, actions, chevron) over a collapsible body.
+    // Scoped to the element-card so it wins over any shell-level card styles.
+    '[data-innfo-component=element-card] .innfo-card-head{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;cursor:pointer}',
+    '[data-innfo-component=element-card] .innfo-card-thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);flex:0 0 auto;display:block}',
+    '[data-innfo-component=element-card] .innfo-card-thumb--empty{display:inline-flex;align-items:center;justify-content:center;color:var(--innfo-muted);border-style:dashed}',
+    '[data-innfo-component=element-card] .innfo-card-facts{display:flex;gap:.9em;min-width:0;flex:1 1 auto;font-size:.8rem;color:var(--innfo-muted)}',
+    '[data-innfo-component=element-card] .innfo-card-fact{max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '[data-innfo-component=element-card] .innfo-card-fact b{color:var(--innfo-text);font-weight:600}',
+    '[data-innfo-component=element-card] .innfo-card-count{font-size:.68rem;font-weight:600;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:999px;padding:1px 8px;white-space:nowrap;flex:0 0 auto}',
+    '[data-innfo-component=element-card] .innfo-card-toggle{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:.15em;border-radius:var(--innfo-radius-sm);flex:0 0 auto}',
+    '[data-innfo-component=element-card] .innfo-card-toggle:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
+    '[data-innfo-component=element-card] .innfo-card-toggle .innfo-icon{transition:transform .15s ease}',
+    '[data-innfo-component=element-card][data-open=true] .innfo-card-toggle .innfo-icon{transform:rotate(180deg)}',
+    '[data-innfo-component=element-card][data-open=false] .innfo-card-body{display:none}',
+    '[data-innfo-component=element-card][data-open=false] .innfo-card-path{display:none}',
+    '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-wrap:wrap;gap:.4em;align-items:flex-start;margin:.6em 0 0}',
+    '@media (max-width:640px){[data-innfo-component=element-card] .innfo-card-facts{display:none}}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
@@ -399,6 +424,8 @@
     'cite-reviewer': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="m9 10 2 2 4-4"></path>',
     'cite-document': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line>',
     'cite-error': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+    chevron: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline>',
+    image: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>',
   }
 
   function icon(name, size, cls) {
@@ -700,11 +727,58 @@
     return btn
   }
 
+  // Type-aware read rendering for a field value. Returns null when the value
+  // should fall back to the plain KuBadge text (string/number/select/etc.), so
+  // existing output is unchanged for the common case.
+  function FieldValue(data, opts) {
+    var doc = resolveDoc(opts)
+    var d = data && typeof data === 'object' ? data : {}
+    var value = d.value
+    var type = String(d.type || '').toLowerCase()
+    if (type === 'boolean' || typeof value === 'boolean') {
+      var b = makeEl(doc, 'span', 'innfo-field-bool', value ? 'Yes' : 'No')
+      b.setAttribute('data-value', value ? 'true' : 'false')
+      return b
+    }
+    if (Array.isArray(value)) {
+      return makeEl(doc, 'span', 'innfo-ku-value innfo-field-list', value.map(String).join(', '))
+    }
+    if (typeof value === 'string' && /^https?:\/\//i.test(value)) {
+      var a = makeEl(doc, 'a', 'innfo-field-url', value)
+      a.setAttribute('href', value)
+      a.setAttribute('target', '_blank')
+      a.setAttribute('rel', 'noopener noreferrer')
+      return a
+    }
+    if (type === 'code') {
+      return makeEl(doc, 'code', 'innfo-field-code', value == null ? '' : String(value))
+    }
+    if (type === 'markdown' || type === 'markdown_inline') {
+      return makeEl(doc, 'span', 'innfo-field-markdown', value == null ? '' : String(value))
+    }
+    if (type === 'image' || type === 'image_url' || type === 'asset' || type === 'video' || type === 'audio') {
+      if (typeof value === 'string' && looksLikeImageValue(value)) {
+        var img = makeEl(doc, 'img', 'innfo-field-image')
+        img.setAttribute('src', value)
+        img.setAttribute('alt', String(d.name || ''))
+        img.setAttribute('loading', 'lazy')
+        return img
+      }
+    }
+    return null
+  }
+
   function FieldRow(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.FieldRow: data required')
     var doc = resolveDoc(opts)
     var hasRef = !!(data.ref && data.ref.id)
-    var badge = KuBadge({ kind: 'field', name: data.name, value: hasRef ? null : data.value })
+    var valueNode = hasRef ? null : FieldValue(data, opts)
+    var badge = KuBadge({
+      kind: 'field',
+      name: data.name,
+      value: hasRef ? null : data.value,
+      valueNode: valueNode,
+    })
     if (hasRef) {
       badge.appendChild(
         ElementPill({ id: data.ref.id, label: data.ref.label || data.ref.id }, {
@@ -729,6 +803,41 @@
     return badge
   }
 
+  // ---- Element-card Dense Row (V01) ----
+  //
+  // The bar is always one line: image chip, name, concept, markers, up to two
+  // at-a-glance facts, a field count, the actions and a chevron. The body
+  // (description, field badges, tags, relations) opens on demand. Values never
+  // clip: the bar truncates with a title tooltip and the field badges show the
+  // full value on expand. The image chip is the first field whose value looks
+  // like an image; with no such field a dashed placeholder keeps rows aligned.
+
+  var IMAGE_VALUE_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#]|$)/i
+
+  function looksLikeImageValue(v) {
+    if (typeof v !== 'string') return false
+    var s = v.trim().toLowerCase()
+    if (!s) return false
+    if (s.indexOf('data:image/') === 0 || s.indexOf('blob:') === 0) return true
+    return IMAGE_VALUE_RE.test(s)
+  }
+
+  function imageFieldOf(fields) {
+    var list = Array.isArray(fields) ? fields : []
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && looksLikeImageValue(list[i].value)) return list[i]
+    }
+    return null
+  }
+
+  function factValueOf(f) {
+    if (!f) return ''
+    if (f.ref && f.ref.label) return String(f.ref.label)
+    if (f.value == null || f.value === '') return ''
+    if (typeof f.value === 'boolean') return f.value ? 'Yes' : 'No'
+    return String(f.value)
+  }
+
   function ElementCard(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ElementCard: data required')
     var doc = resolveDoc(opts)
@@ -740,7 +849,31 @@
     card.setAttribute('data-open', open ? 'true' : 'false')
     if (opts && opts.domId) card.setAttribute('id', String(opts.domId))
 
+    var fields = Array.isArray(data.fields) ? data.fields : []
+    var imageField = imageFieldOf(fields)
+    var collapsible = !(opts && opts.collapsible === false)
+
     var head = makeEl(doc, 'header', 'innfo-card-head')
+
+    // Image chip: a real thumbnail when a field value looks like an image, a
+    // dashed placeholder otherwise (keeps every row aligned).
+    var thumb
+    if (imageField) {
+      thumb = makeEl(doc, 'img', 'innfo-card-thumb')
+      thumb.setAttribute('alt', '')
+      thumb.setAttribute('loading', 'lazy')
+      thumb.setAttribute('src', String(imageField.value))
+      thumb.addEventListener('error', function () {
+        var ph = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--empty')
+        ph.innerHTML = icon('image', 16)
+        if (thumb.parentNode) thumb.parentNode.replaceChild(ph, thumb)
+      })
+    } else {
+      thumb = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--empty')
+      thumb.innerHTML = icon('image', 16)
+    }
+    head.appendChild(thumb)
+
     var conceptOpts = (opts && opts.concept) || {}
     head.appendChild(
       KuBadge({
@@ -767,26 +900,72 @@
         if (n) head.appendChild(n)
       })
     }
-    if (opts && opts.collapsible) {
+
+    // Up to two at-a-glance facts (skips the image field and empty values).
+    var facts = makeEl(doc, 'span', 'innfo-card-facts')
+    var shown = 0
+    for (var i = 0; i < fields.length && shown < 2; i++) {
+      var f = fields[i]
+      if (!f || f === imageField) continue
+      var val = factValueOf(f)
+      if (val === '') continue
+      var name = String(f.name == null ? '' : f.name)
+      var fact = makeEl(doc, 'span', 'innfo-card-fact')
+      fact.appendChild(makeEl(doc, 'b', null, name))
+      fact.appendChild(doc.createTextNode(' ' + val))
+      fact.setAttribute('title', name + ': ' + val)
+      facts.appendChild(fact)
+      shown++
+    }
+    head.appendChild(facts)
+
+    if (fields.length) {
+      head.appendChild(
+        makeEl(
+          doc,
+          'span',
+          'innfo-card-count',
+          fields.length + ' ' + (fields.length === 1 ? 'field' : 'fields'),
+        ),
+      )
+    }
+
+    function setOpen(next) {
+      open = next
+      card.setAttribute('data-open', open ? 'true' : 'false')
+      var tg = head.querySelector('.innfo-card-toggle')
+      if (tg) tg.setAttribute('aria-expanded', open ? 'true' : 'false')
+    }
+
+    if (collapsible) {
       var toggle = makeEl(doc, 'button', 'innfo-card-toggle')
       toggle.setAttribute('type', 'button')
+      toggle.setAttribute('aria-label', 'Toggle details')
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false')
-      toggle.addEventListener('click', function () {
-        open = !open
-        toggle.setAttribute('aria-expanded', open ? 'true' : 'false')
-        card.setAttribute('data-open', open ? 'true' : 'false')
+      toggle.innerHTML = icon('chevron', 16)
+      toggle.addEventListener('click', function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        setOpen(!open)
       })
       head.appendChild(toggle)
+
+      // Clicking the bar (but not an interactive child) toggles too.
+      head.addEventListener('click', function (ev) {
+        var t = ev && ev.target
+        if (t && typeof t.closest === 'function' && t.closest('button, a, input, select, textarea')) {
+          return
+        }
+        setOpen(!open)
+      })
     }
     card.appendChild(head)
 
     var body = makeEl(doc, 'section', 'innfo-card-body')
     if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
-    var fields = Array.isArray(data.fields) ? data.fields : []
     if (fields.length) {
       var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
-      fields.forEach(function (f) {
-        if (f) fieldRow.appendChild(FieldRow(f, { onRef: opts && opts.onRef, onCite: opts && opts.onCite }))
+      fields.forEach(function (fr) {
+        if (fr) fieldRow.appendChild(FieldRow(fr, { onRef: opts && opts.onRef, onCite: opts && opts.onCite }))
       })
       body.appendChild(fieldRow)
     }
@@ -800,6 +979,15 @@
     var relations = Array.isArray(data.relations) ? data.relations : null
     if (relations) {
       body.appendChild(RelList({ relations: relations, byId: (opts && opts.byId) || {} }))
+    }
+    var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
+    if (incoming && incoming.length) {
+      var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
+      incWrap.appendChild(
+        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Referenced by (' + incoming.length + ')'),
+      )
+      incWrap.appendChild(RelList({ relations: incoming, byId: (opts && opts.byId) || {} }))
+      body.appendChild(incWrap)
     }
     card.appendChild(body)
     if (data.path) card.appendChild(makeEl(doc, 'footer', 'innfo-card-path', data.path))
@@ -997,8 +1185,11 @@
     tabBtnEdit.setAttribute('type', 'button')
     var tabBtnHistory = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'History & Provenance')
     tabBtnHistory.setAttribute('type', 'button')
+    var tabBtnConnections = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'Connections')
+    tabBtnConnections.setAttribute('type', 'button')
     navTabs.appendChild(tabBtnEdit)
     navTabs.appendChild(tabBtnHistory)
+    navTabs.appendChild(tabBtnConnections)
     modal.appendChild(navTabs)
 
     // Panel 1: Edit Form
@@ -1115,27 +1306,34 @@
     panelHistory.appendChild(citeSection)
     modal.appendChild(panelHistory)
 
+    // Panel 3: Connections (Sankey-style relation flow)
+    var panelConnections = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-connections-modal-body')
+    panelConnections.setAttribute('data-tab', 'connections')
+    panelConnections.style.display = 'none'
+    panelConnections.appendChild(SankeyFlow(data.connections || {}, { doc: doc }))
+    modal.appendChild(panelConnections)
+
     // Tab switcher events
+    var tabButtons = { edit: tabBtnEdit, history: tabBtnHistory, connections: tabBtnConnections }
+    var tabPanels = { edit: panelEdit, history: panelHistory, connections: panelConnections }
+    function showTab(name) {
+      Object.keys(tabButtons).forEach(function (k) {
+        tabButtons[k].className = 'innfo-modal-tab-btn' + (k === name ? ' active' : '')
+        tabPanels[k].style.display = k === name ? 'block' : 'none'
+      })
+    }
     tabBtnEdit.addEventListener('click', function () {
-      tabBtnEdit.className = 'innfo-modal-tab-btn active'
-      tabBtnHistory.className = 'innfo-modal-tab-btn'
-      panelEdit.style.display = 'block'
-      panelHistory.style.display = 'none'
+      showTab('edit')
     })
     tabBtnHistory.addEventListener('click', function () {
-      tabBtnHistory.className = 'innfo-modal-tab-btn active'
-      tabBtnEdit.className = 'innfo-modal-tab-btn'
-      panelEdit.style.display = 'none'
-      panelHistory.style.display = 'block'
+      showTab('history')
+    })
+    tabBtnConnections.addEventListener('click', function () {
+      showTab('connections')
     })
 
-    var startTab = data.startTab === 'history' ? 'history' : 'edit'
-    if (startTab === 'history') {
-      tabBtnHistory.className = 'innfo-modal-tab-btn active'
-      tabBtnEdit.className = 'innfo-modal-tab-btn'
-      panelEdit.style.display = 'none'
-      panelHistory.style.display = 'block'
-    }
+    var startTab = data.startTab === 'history' ? 'history' : data.startTab === 'connections' ? 'connections' : 'edit'
+    if (startTab !== 'edit') showTab(startTab)
 
     var actions = makeEl(doc, 'div', 'innfo-edit-modal-actions')
     var saveBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-save', 'Save draft')
@@ -1253,6 +1451,106 @@
   }
 
 
+  // A compact 3-column Sankey-style flow for a knowledge unit: incoming
+  // relations flow into the centre node, outgoing relations flow out. Pure SVG,
+  // no layout library. Data: { center, incoming: [{label, field}], outgoing: [...] }.
+  function SankeyFlow(data, opts) {
+    var doc = resolveDoc(opts)
+    var d = data && typeof data === 'object' ? data : {}
+    var incoming = Array.isArray(d.incoming) ? d.incoming : []
+    var outgoing = Array.isArray(d.outgoing) ? d.outgoing : []
+    var wrap = makeEl(doc, 'div', 'innfo-sankey')
+    wrap.setAttribute('data-innfo-component', 'sankey')
+    if (!incoming.length && !outgoing.length) {
+      wrap.appendChild(makeEl(doc, 'p', 'innfo-sankey-empty', 'No relations recorded for this knowledge unit.'))
+      return wrap
+    }
+    var NS = 'http://www.w3.org/2000/svg'
+    var rowH = 34
+    var gap = 12
+    var pad = 18
+    var width = 680
+    var colW = 210
+    var rows = Math.max(incoming.length, outgoing.length, 1)
+    var height = pad * 2 + rows * rowH + (rows - 1) * gap
+    var svg = doc.createElementNS(NS, 'svg')
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height)
+    svg.setAttribute('class', 'innfo-sankey-svg')
+    svg.setAttribute('role', 'img')
+    svg.setAttribute('aria-label', 'Knowledge unit relation flow')
+    svg.setAttribute('preserveAspectRatio', 'xMidYMin meet')
+
+    function nodeY(i) {
+      return pad + i * (rowH + gap)
+    }
+    function rect(x, y, cls) {
+      var r = doc.createElementNS(NS, 'rect')
+      r.setAttribute('x', x)
+      r.setAttribute('y', y)
+      r.setAttribute('width', colW)
+      r.setAttribute('height', rowH)
+      r.setAttribute('rx', '6')
+      r.setAttribute('class', cls)
+      return r
+    }
+    function label(x, y, text, cls, anchor) {
+      var t = doc.createElementNS(NS, 'text')
+      t.setAttribute('x', x)
+      t.setAttribute('y', y)
+      t.setAttribute('class', cls)
+      if (anchor) t.setAttribute('text-anchor', anchor)
+      t.textContent = String(text == null ? '' : text)
+      return t
+    }
+    function truncate(s, n) {
+      s = String(s == null ? '' : s)
+      return s.length > n ? s.slice(0, n - 1) + '\u2026' : s
+    }
+    function flow(x1, y1, x2, y2) {
+      var p = doc.createElementNS(NS, 'path')
+      var mx = (x1 + x2) / 2
+      p.setAttribute('d', 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2)
+      p.setAttribute('class', 'innfo-sankey-link')
+      return p
+    }
+
+    var leftX = 0
+    var centerX = (width - colW) / 2
+    var rightX = width - colW
+    var centerRows = Math.max(incoming.length, outgoing.length, 1)
+    var centerY = nodeY(Math.floor((centerRows - 1) / 2))
+    var centerMidY = centerY + rowH / 2
+
+    incoming.forEach(function (link, i) {
+      svg.appendChild(flow(leftX + colW, nodeY(i) + rowH / 2, centerX, centerMidY))
+    })
+    outgoing.forEach(function (link, i) {
+      svg.appendChild(flow(centerX + colW, centerMidY, rightX, nodeY(i) + rowH / 2))
+    })
+
+    function node(link, x, i) {
+      svg.appendChild(rect(x, nodeY(i), 'innfo-sankey-node'))
+      svg.appendChild(label(x + 10, nodeY(i) + 21, truncate(link && link.label, 24), 'innfo-sankey-label'))
+      if (link && link.field) {
+        svg.appendChild(label(x + colW - 8, nodeY(i) + 21, truncate(link.field, 12), 'innfo-sankey-field', 'end'))
+      }
+    }
+    incoming.forEach(function (link, i) {
+      node(link, leftX, i)
+    })
+    outgoing.forEach(function (link, i) {
+      node(link, rightX, i)
+    })
+
+    svg.appendChild(rect(centerX, centerY, 'innfo-sankey-node innfo-sankey-center'))
+    svg.appendChild(
+      label(centerX + colW / 2, centerY + 22, truncate(d.center || 'This unit', 26), 'innfo-sankey-center-label', 'middle'),
+    )
+
+    wrap.appendChild(svg)
+    return wrap
+  }
+
   var REVIEW_STATES = ['none', 'reviewed', 'changed']
 
   function ReviewedToggle(data) {
@@ -1360,7 +1658,8 @@
 
     if (kind === 'field') {
       if (data.name != null) badge.appendChild(makeEl(doc, 'span', 'innfo-ku-label', data.name + ':'))
-      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
+      if (data.valueNode) badge.appendChild(data.valueNode)
+      else badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
     } else if (kind === 'cell') {
       badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
     } else if (kind === 'marker') {
@@ -1464,6 +1763,7 @@
     StatusBadge: StatusBadge,
     CitationIcon: CitationIcon,
     FieldRow: FieldRow,
+    FieldValue: FieldValue,
     ElementCard: ElementCard,
     CITATION_ORIGIN_LABELS: CITATION_ORIGIN_LABELS,
     DraftList: DraftList,
@@ -1471,6 +1771,7 @@
     ReviewedToggle: ReviewedToggle,
     RailProgress: RailProgress,
     EditModal: EditModal,
+    SankeyFlow: SankeyFlow,
     FieldStringWidget: FieldStringWidget,
     FieldNumberWidget: FieldNumberWidget,
     FieldBooleanWidget: FieldBooleanWidget,

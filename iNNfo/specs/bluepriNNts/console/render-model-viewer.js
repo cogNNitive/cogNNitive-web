@@ -368,6 +368,7 @@
         {
           domId: 'el-' + (el.id || UI.slug(el.name || 'x')),
           collapsible: true,
+          open: false,
           head: headerCite,
           byId: byId,
           concept: {

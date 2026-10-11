@@ -168,6 +168,34 @@
       )
     metaEl.innerHTML = bits.join('')
 
+    // Blueprint procedure catalog (parent + includes). `usage` reads first,
+    // labelled "Getting started"; the rest keep their declared names.
+    var blueprintProcedures = Array.isArray(schema.procedures) ? schema.procedures.slice() : []
+    if (blueprintProcedures.length > 0) {
+      blueprintProcedures.sort(function (a, b) {
+        if (a && a.id === 'usage') return -1
+        if (b && b.id === 'usage') return 1
+        return 0
+      })
+      var procListEl = doc.createElement('div')
+      procListEl.className = 'proc-blueprint-list'
+      procListEl.setAttribute('data-innfo-procedures', 'blueprint')
+      var procLabelEl = doc.createElement('span')
+      procLabelEl.className = 'proc-blueprint-label'
+      procLabelEl.textContent = 'Procedures'
+      procListEl.appendChild(procLabelEl)
+      blueprintProcedures.forEach(function (p) {
+        if (!p) return
+        var itemEl = doc.createElement('span')
+        itemEl.className =
+          'proc-blueprint-item' + (p.id === 'usage' ? ' proc-blueprint-usage' : '')
+        itemEl.setAttribute('data-procedure-id', p.id)
+        itemEl.textContent = p.id === 'usage' ? 'Getting started' : p.name || p.id
+        procListEl.appendChild(itemEl)
+      })
+      header.appendChild(procListEl)
+    }
+
     // ---- Execution Runtime State ----
     var activeProcedure = procedures[0] || null
     var currentStepIndex = 0

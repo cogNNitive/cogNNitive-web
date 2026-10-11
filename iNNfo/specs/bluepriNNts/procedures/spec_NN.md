@@ -223,6 +223,12 @@ executed_by:: Lead Engineer
 procedure_model:: procedures/workflow_NN.md
 ```
 
+### Usage Procedure
+
+Every blueprint that ships procedures (any `*_NN.md` under its `procedures/` tree) MUST also ship a file named `usage_procedures_NN.md` there — its "how to use this blueprint" guide. It is an ordinary procedure (consumed by a human as a stepper in the console and by an AI agent as an executable Work sequence) whose steps walk from an empty model to a useful one, and it pins this `procedures` blueprint as its parent. Blueprints with no `procedures/` tree are exempt.
+
+The convention is by file name, not frontmatter, so it never collides with the template-immutability guard (which exempts everything under `procedures/`). It is enforced by `scripts/check-usage-procedure.mjs` (a `verify.js` step).
+
 # Concept Guidance Documentation
 
 ## Procedure

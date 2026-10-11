@@ -7401,6 +7401,7 @@ __export(trannsformPrimitives_exports, {
   formatUtcStamp: () => formatUtcStamp,
   headingSlugParts: () => headingSlugParts,
   importRaw: () => importRaw,
+  isConsoleModel: () => isConsoleModel,
   isExcludedPath: () => isExcludedPath,
   isJsonPointer: () => isJsonPointer,
   isModelCandidate: () => isModelCandidate,
@@ -7625,6 +7626,12 @@ function isModelCandidate(f) {
   if (isExcludedPath(f.path)) return false;
   if (parseName(baseOf(f.path)).kind !== "nn") return false;
   return roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) }) === "knowledge";
+}
+function isConsoleModel(f) {
+  if (isExcludedPath(f.path)) return false;
+  const role = roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) });
+  if (role === "knowledge") return true;
+  return role === "procedure" && !segmentsOf(f.path).includes("procedures");
 }
 var VERSION_TOKEN_RE = /_V_\d+-\d+-\d+/i;
 var STRUCTURAL_STEM_RE = /^(?:iNNfo|defiNNition|defiNNe|meta-bluepriNNt)(?:_V_\d+-\d+-\d+)?$/i;
@@ -10258,6 +10265,7 @@ async function importRaw(root, externalAbs, o = {}) {
   formatUtcStamp,
   headingSlugParts,
   importRaw,
+  isConsoleModel,
   isExcludedPath,
   isJsonPointer,
   isModelCandidate,

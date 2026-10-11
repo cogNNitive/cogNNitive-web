@@ -40,6 +40,7 @@ __export(index_exports, {
   formatMemberName: () => formatMemberName,
   formatNNName: () => formatNNName,
   formatUtcStamp: () => formatUtcStamp,
+  isConsoleModel: () => isConsoleModel,
   isExcludedPath: () => isExcludedPath,
   isModelCandidate: () => isModelCandidate,
   isNNName: () => isNNName,
@@ -195,6 +196,12 @@ function isModelCandidate(f) {
   if (isExcludedPath(f.path)) return false;
   if (parseName(baseOf(f.path)).kind !== "nn") return false;
   return roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) }) === "knowledge";
+}
+function isConsoleModel(f) {
+  if (isExcludedPath(f.path)) return false;
+  const role = roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) });
+  if (role === "knowledge") return true;
+  return role === "procedure" && !segmentsOf(f.path).includes("procedures");
 }
 var VERSION_TOKEN_RE = /_V_\d+-\d+-\d+/i;
 var STRUCTURAL_STEM_RE = /^(?:iNNfo|defiNNition|defiNNe|meta-bluepriNNt)(?:_V_\d+-\d+-\d+)?$/i;

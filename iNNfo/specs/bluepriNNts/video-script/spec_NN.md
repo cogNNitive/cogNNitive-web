@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-1-2"
+blueprint_version: "V_0-1-3"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -146,6 +146,12 @@ description:: Paint order of the Layer as a numeric string (higher renders on to
 concept:: Layer
 type:: string
 description:: Optional provider model override for a `presenter` Layer (the avatar/lip-sync model id, e.g. `wavespeed-ai/infinitetalk`). Other Layer types ignore it.
+
+## NN Field Definition: fit
+concept:: Layer
+type:: select
+options:: [cover, contain]
+description:: How a media Layer (background, b-roll) fits its box. `cover` fills and crops; `contain` shows the whole asset with margins. Optional; defaults to `cover`.
 
 ## NN Field Definition: tool
 concept:: Template
