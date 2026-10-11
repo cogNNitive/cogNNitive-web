@@ -1,9 +1,9 @@
 ---
 name: nn-video-script
 description: |
-  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Supports Remotion scene compilation, deterministic SHA-256 asset caching, headless MP4 rendering, and thumbnail composition. Triggers: video script, cognnitive video, remotion video, series script, nn-video-script, video-script blueprint, finalize video, render video script.
-version: "V_0-4-0"
-last_updated: 2026-10-10
+  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Supports Remotion scene compilation, deterministic SHA-256 asset caching, headless MP4 rendering, clip assembly, and thumbnail composition. Triggers: video script, cognnitive video, remotion video, series script, nn-video-script, video-script blueprint, finalize video, render video script, assemble video, concat clips.
+version: "V_0-4-1"
+last_updated: 2026-10-11
 license: MIT
 engine:
   package: "@remotion/renderer"
@@ -34,7 +34,7 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 ## 1. Engine Architecture & Remotion Compilation
 
 The video engine operates headlessly through programmatic modules:
-- **Scene Compiler (`scripts/remotion-scene-compiler.mjs`)**: Compiles the structured iNNfo video-script model (a Level-3 kNNowledge document adopting the `video-script` blueprint) into frame-accurate Remotion Composition Manifests with sequence tracks, transitions, lower-thirds (`lowerThird`), kinetic titles (`kineticTitle`), and concept callouts (`conceptCallout`). It reads the model structurally and never re-parses markdown.
+- **Scene Compiler (`scripts/remotion-scene-compiler.mjs`)**: Compiles the structured iNNfo video-script model (a Level-3 kNNowledge document adopting the `video-script` blueprint) into frame-accurate Remotion Composition Manifests with sequence tracks, transitions, lower-thirds (`lowerThird`), and kinetic titles (`kineticTitle`). It reads the model structurally and never re-parses markdown.
   - `kineticTitle` optional big-text controls (defaults unchanged when absent): `heading_size` / `subheading_size` (px; setting either adds a text shadow and wraps long titles) and `anchor` (`top` | `center` | `bottom`).
 - **Deterministic Asset Cache (`scripts/cache-manager.mjs`)**: Content-addressed SHA-256 cache under `.cognnitive/cache/video/` with isolated subdirectories (`tts/`, `images/`, `temp/`).
 - **Asset Synthesizer (`scripts/asset-synthesizer.mjs` / `scripts/tts-generator.mjs`)**: Synthesizes TTS voiceover tracks and image/motion assets, measuring audio durations via `@remotion/media-parser` (no FFmpeg-from-PATH).
@@ -57,6 +57,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    node scripts/ensure-engine.mjs
    ```
    *Remotion is the only renderer. The renderer runtime is installed on demand; the scene compiler reads the iNNfo model directly. Before installing, state the approximate total size AND that a headless browser downloads on the first render. Re-running is a no-op once installed. Also verifies provider credentials (WaveSpeed/Replicate) with consent.*
+   *Remotion is a third-party, source-available product the user installs on their own account — cogNNitive does not distribute it. It is free for individuals and organizations of up to 3 people (automation included); larger organizations need a Company License. Surface the install notice's licence link (`https://www.remotion.dev/docs/license`) to the user.*
 5. **Compile Composition & Synthesize Assets**:
    ```bash
    node scripts/video-engine-cli.mjs compile <script_NN.md> --output renders/{ref}/manifest.json [--dry-run] [--approval <approved.json>] [--allow-model <name>]... [--image-model <id>] [--tts-model <id>] [--avatar-model <id>] [--cache-dir <dir>]
@@ -77,6 +78,11 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    # cheap fallback only (burned-in captions may crop): node scripts/render-vertical.mjs --source renders/{ref}/master.mp4 --out renders/{ref}/master_vertical.mp4
    ```
    *A Remotion failure is a loud, non-zero error — there is no FFmpeg fallback. Pass `--allow-mock` only for CI placeholders. `--format 16:9|9:16|1:1` sets width/height (explicit flags win); `render` from a manifest refuses size flags — re-compile. Overlays scale with `width/1920` via `useVideoConfig`, so the vertical master keeps captions in frame. The second compile reuses cached TTS/images: zero extra provider cost.*
+6b. **Assemble Master from Clips (optional)** — when some segments are pass-through or produced outside Remotion:
+   ```bash
+   node scripts/assemble-video.mjs <clip1> <clip2> ... --out renders/{ref}/master.mp4
+   ```
+   *Final-assembly layer: joins already-produced clips into one master with the FFmpeg concat demuxer in stream-copy mode (`-f concat -c copy`, +faststart). Assembly only — no re-encode and NO scene effects. Clips MUST share codec/resolution/fps; an ffprobe precheck refuses a mismatched set with a named error before ffmpeg can emit a glitched file. `--dry-run` prints the ffmpeg command. FFmpeg scene effects (zoompan, burned-in `.ass` captions) are prohibited and out of scope.*
 7. **Compose Video Thumbnail**:
    ```bash
    node scripts/render-thumbnail.mjs --base <path> --title <title> --out <out>
@@ -108,6 +114,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/asset-cost-estimator.mjs` | Pre-generation provider options catalog, per-scene character/layer calculator, and production cost estimator. |
 | `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`), headless rendering (`render`), and local web preview (`preview`). `compile` enforces the approval gate; `--dry-run` previews spend. `--format 16:9\|9:16\|1:1` presets width/height. |
 | `scripts/render-vertical.mjs` | Cheap ffmpeg 16:9 → 9:16 reframe fallback (blur bg + header + title). Prefer native `--format 9:16`. |
+| `scripts/assemble-video.mjs` | Final-assembly layer: joins already-produced clips into one master via the FFmpeg concat demuxer (`-f concat -c copy`, +faststart) with an ffprobe consistency precheck. Assembly only — no scene effects. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast typography over clean 16:9 base images. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
 

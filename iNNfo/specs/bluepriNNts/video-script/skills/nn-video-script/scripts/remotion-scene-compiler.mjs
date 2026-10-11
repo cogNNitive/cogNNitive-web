@@ -54,13 +54,14 @@ export const TYPE_RENDERERS = {
   caption: { kind: 'overlay', renderer: 'Captions', manifest: 'captions' },
   brand: { kind: 'layer', renderer: 'layer-primitive', manifest: 'image' },
   quote: { kind: 'overlay', renderer: 'Quote', manifest: 'quote' },
+  watermark: { kind: 'overlay', renderer: 'Watermark', manifest: 'watermark' },
 };
 
 /**
- * Default `type::` → required Fields contract. Mirrors the `video-script`
- * blueprint's `validation.conditional_fields`; a caller may pass the blueprint's
- * map through `checkScript(model, { conditionalFields })` so the blueprint stays
- * the single source of truth when it is reachable.
+ * Default `type::` → required Fields contract. This is the effective contract the
+ * pre-compile guard enforces and MUST stay in sync with the `video-script`
+ * blueprint's `validation.conditional_fields` frontmatter; they are currently
+ * identical. The engine does not read the blueprint map at compile time.
  */
 export const DEFAULT_CONDITIONAL_FIELDS = {
   presenter: ['asset', 'prompt'],
@@ -71,6 +72,7 @@ export const DEFAULT_CONDITIONAL_FIELDS = {
   quote: ['text'],
   caption: ['text'],
   brand: ['asset'],
+  watermark: ['text'],
 };
 
 /**
@@ -112,7 +114,7 @@ export class ScriptValidationError extends Error {
 }
 
 /** Overlay layers sequenced into non-overlapping slots, and their default seconds. */
-const SEQUENTIAL_OVERLAY_TYPES = { quote: 3, 'lower-third': 4, 'b-roll': 4 };
+const SEQUENTIAL_OVERLAY_TYPES = { quote: 3, 'b-roll': 4 };
 
 /** Extracts the instance name from a `[[Doc :: Name]]` template reference. */
 function templateRefName(ref) {
@@ -267,6 +269,10 @@ export class RemotionSceneCompiler {
       const resolvedTemplate = refName && templates[refName] ? { name: refName, ...templates[refName] } : null;
       const properties = {};
       if (fields.music) properties.scene_background_audio = fields.music;
+      if (fields.music_volume !== undefined && String(fields.music_volume).trim() !== '') {
+        const mv = Number(fields.music_volume);
+        if (Number.isFinite(mv)) properties.scene_music_volume = mv;
+      }
       // Carry the resolved template's model/voice so downstream pricing + TTS
       // agree without reading any script-declared voice/model field.
       if (resolvedTemplate) {
@@ -312,6 +318,7 @@ export class RemotionSceneCompiler {
       layer_text_content: fields.text,
       layer_level: fields.level !== undefined ? Number(fields.level) : undefined,
       layer_position: fields.position,
+      layer_avatar_model: fields.model,
     };
     for (const key of Object.keys(properties)) {
       if (properties[key] === undefined) delete properties[key];
@@ -344,6 +351,21 @@ export class RemotionSceneCompiler {
         title: props.title || '',
         subtitle: props.subtitle || '',
         position: props.position || 'bottom-left',
+      },
+    };
+  }
+
+  createWatermarkOverlay({ id, fromFrame, durationInFrames, props, enterAnimation, exitAnimation }) {
+    return {
+      id,
+      type: 'watermark',
+      fromFrame,
+      durationInFrames,
+      enterAnimation,
+      exitAnimation,
+      config: {
+        text: props.text || '',
+        position: props.position || 'bottom',
       },
     };
   }
@@ -412,10 +434,9 @@ export class RemotionSceneCompiler {
    * rejected: the compiler never re-parses script markdown.
    * @param {object | string} input Structured model or lowered object
    * @param {Object} [options]
-   * @param {Record<string, number>} [options.audioDurations] Map of sceneId -> duration in seconds
-   * @param {Record<string, { assetPath: string, sha256?: string, durationSeconds?: number }>} [options.audioAssets]
-   * @param {Record<string, number>} [options.mediaDurations] Map of sceneId -> media duration in seconds
-   * @param {Record<string, { tool?: string, voice?: string, model?: string }>} [options.templates] Resolved Template instances
+    * @param {Record<string, number>} [options.audioDurations] Map of sceneId -> duration in seconds
+    * @param {Record<string, { assetPath: string, sha256?: string, durationSeconds?: number }>} [options.audioAssets]
+    * @param {Record<string, { tool?: string, voice?: string, model?: string }>} [options.templates] Resolved Template instances
    * @param {string} [options.scriptSource="script.model"]
    * @returns {object} RemotionCompositionManifest
    */
@@ -443,7 +464,6 @@ export class RemotionSceneCompiler {
     const height = options.height || parsed.height || this.height;
     const audioDurations = options.audioDurations || {};
     const audioAssets = options.audioAssets || {};
-    const mediaDurations = options.mediaDurations || {};
 
     const compositionId = (parsed.title || 'composition')
       .toLowerCase()
@@ -465,8 +485,6 @@ export class RemotionSceneCompiler {
         durationInSeconds = audioDurations[sceneId];
       } else if (audioAssets[sceneId]?.durationSeconds !== undefined) {
         durationInSeconds = audioAssets[sceneId].durationSeconds;
-      } else if (mediaDurations[sceneId] !== undefined) {
-        durationInSeconds = mediaDurations[sceneId];
       } else if (sc.narration && sc.narration.trim().length > 0) {
         const words = sc.narration.trim().split(/\s+/).length;
         durationInSeconds = Math.max(3, words / this.wordsPerSecond);
@@ -531,7 +549,7 @@ export class RemotionSceneCompiler {
           assetPath: sc.music,
           fromFrame,
           durationInFrames,
-          volume: DEFAULT_BG_MUSIC_VOLUME,
+          volume: Number.isFinite(sc.properties?.scene_music_volume) ? sc.properties.scene_music_volume : DEFAULT_BG_MUSIC_VOLUME,
           loop: true,
           sha256: crypto.createHash('sha256').update(`bgmusic:${sc.music}`).digest('hex'),
         });
@@ -558,6 +576,12 @@ export class RemotionSceneCompiler {
           overlayTracks.push(this.createLowerThirdOverlay({
             id: ovId, fromFrame, durationInFrames,
             props: { title: text, position: layer.position },
+            enterAnimation: layer.enterAnimation, exitAnimation: layer.exitAnimation,
+          }));
+        } else if (layer.type === 'watermark') {
+          overlayTracks.push(this.createWatermarkOverlay({
+            id: ovId, fromFrame, durationInFrames,
+            props: { text, position: layer.position },
             enterAnimation: layer.enterAnimation, exitAnimation: layer.exitAnimation,
           }));
         } else if (layer.type === 'title') {

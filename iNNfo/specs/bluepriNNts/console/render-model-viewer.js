@@ -93,7 +93,17 @@
     })
 
     // ---- Header ----
-    document.getElementById('doc-title').textContent = meta.title || 'Model Viewer'
+    var docTitleEl = document.getElementById('doc-title')
+    if (docTitleEl) {
+      docTitleEl.textContent = ''
+      docTitleEl.appendChild(
+        UI.KuBadge({
+          kind: 'document',
+          id: meta.modelId || 'model',
+          label: meta.title || 'Model Viewer',
+        }),
+      )
+    }
     var metaBits = []
     if (meta.template)
       metaBits.push('<span><strong>Template</strong> ' + esc(meta.template) + '</span>')
@@ -258,6 +268,30 @@
       return c && c.color
     }
 
+    function conceptIcon(name) {
+      var c = concepts.filter(function (x) {
+        return x.name === name
+      })[0]
+      return c && c.icon
+    }
+
+    // Header/cell badges for a matrix, driven by the additive payload `head`
+    // metadata; falls back to plain labels when it is absent.
+    function matrixHeaderBadge(entry, key) {
+      var e = entry || {}
+      if (e.kind === 'marker') {
+        return UI.KuBadge({ kind: 'marker', id: key, label: e.label || key, markerKind: 'field' })
+      }
+      return UI.KuBadge({
+        kind: 'element',
+        id: key,
+        label: e.label || key,
+        index: conceptIndex(e.concept),
+        color: conceptColorName(e.concept),
+        icon: conceptIcon(e.concept),
+      })
+    }
+
     function renderConceptSection(name, list) {
       var sec = document.createElement('section')
       sec.className = 'concept'
@@ -336,6 +370,11 @@
           collapsible: true,
           head: headerCite,
           byId: byId,
+          concept: {
+            index: conceptIndex(el.concept),
+            color: conceptColorName(el.concept),
+            icon: conceptIcon(el.concept),
+          },
         },
       )
     }
@@ -344,28 +383,46 @@
       var block = document.createElement('div')
       block.className = 'matrix-block'
       var h = document.createElement('h3')
-      h.textContent = mx.name || 'Matrix'
+      h.appendChild(
+        UI.KuBadge({ kind: 'element', id: UI.slug(mx.name || 'matrix'), label: mx.name || 'Matrix', icon: 'matrices' }),
+      )
       block.appendChild(h)
       var scroll = document.createElement('div')
       scroll.className = 'matrix-scroll'
       var rows = mx.rows || [],
         cols = mx.cols || [],
         cells = mx.cells || {}
-      var html = "<table class='matrix'><thead><tr><th></th>"
+      var head = mx.head || {}
+      var headCols = head.cols || {}
+      var headRows = head.rows || {}
+      var table = document.createElement('table')
+      table.className = 'matrix'
+      var thead = document.createElement('thead')
+      var headRow = document.createElement('tr')
+      headRow.appendChild(document.createElement('th'))
       cols.forEach(function (c) {
-        html += '<th>' + esc(c) + '</th>'
+        var th = document.createElement('th')
+        th.appendChild(matrixHeaderBadge(headCols[c], c))
+        headRow.appendChild(th)
       })
-      html += '</tr></thead><tbody>'
+      thead.appendChild(headRow)
+      table.appendChild(thead)
+      var tbody = document.createElement('tbody')
       rows.forEach(function (r) {
-        html += '<tr><th>' + esc(r) + '</th>'
+        var tr = document.createElement('tr')
+        var th = document.createElement('th')
+        th.appendChild(matrixHeaderBadge(headRows[r], r))
+        tr.appendChild(th)
         cols.forEach(function (c) {
           var v = cells[r] && cells[r][c] != null ? cells[r][c] : ''
-          html += '<td>' + esc(String(v)) + '</td>'
+          var td = document.createElement('td')
+          td.appendChild(UI.KuBadge({ kind: 'cell', value: String(v) }))
+          tr.appendChild(td)
         })
-        html += '</tr>'
+        tbody.appendChild(tr)
       })
-      html += '</tbody></table>'
-      scroll.innerHTML = html
+      table.appendChild(tbody)
+      scroll.appendChild(table)
       block.appendChild(scroll)
       return block
     }

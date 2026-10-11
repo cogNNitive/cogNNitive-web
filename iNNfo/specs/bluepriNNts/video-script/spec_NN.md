@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-1-1"
+blueprint_version: "V_0-1-2"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -28,6 +28,7 @@ validation:
     quote: [text]
     caption: [text]
     brand: [asset]
+    watermark: [text]
 ---
 
 > [!NOTE]
@@ -88,6 +89,11 @@ concept:: Scene
 type:: file
 description:: Scene-level background music file. Music is a Scene field and MUST NOT be modeled as a Layer.
 
+## NN Field Definition: music_volume
+concept:: Scene
+type:: string
+description:: Optional background-music volume for the Scene's `music::` track (a number 0–1, e.g. `0.1`). Defaults to the engine value when absent.
+
 ## NN Field Definition: transition
 concept:: Scene
 type:: select
@@ -97,8 +103,8 @@ description:: Transition into the Scene. Optional.
 ## NN Field Definition: type
 concept:: Layer
 type:: select
-options:: [presenter, background, b-roll, title, lower-third, caption, brand, quote]
-description:: Required Layer discriminator. Allowed fields are conditional on this value.
+options:: [presenter, background, b-roll, title, lower-third, caption, brand, quote, watermark]
+description:: Required Layer discriminator. Allowed fields are conditional on this value. `watermark` renders a small persistent text notice (e.g. an AI-disclosure line).
 
 ## NN Field Definition: asset
 concept:: Layer
@@ -135,6 +141,11 @@ description:: Exit motion of the Layer overlay. Optional.
 concept:: Layer
 type:: string
 description:: Paint order of the Layer as a numeric string (higher renders on top). Optional.
+
+## NN Field Definition: model
+concept:: Layer
+type:: string
+description:: Optional provider model override for a `presenter` Layer (the avatar/lip-sync model id, e.g. `wavespeed-ai/infinitetalk`). Other Layer types ignore it.
 
 ## NN Field Definition: tool
 concept:: Template
@@ -196,6 +207,7 @@ value → the required Field names) and enforced by the engine's pre-compile gua
 | `quote` | `text` |
 | `caption` | `text` |
 | `brand` | `asset` |
+| `watermark` | `text` |
 
 `caption` defaults to the owning Scene's body prose when `text` is omitted at the
 guard's discretion.

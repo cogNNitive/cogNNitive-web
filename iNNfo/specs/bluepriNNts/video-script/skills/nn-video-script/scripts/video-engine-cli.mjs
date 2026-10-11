@@ -24,7 +24,7 @@ import { RemotionSceneCompiler, ScriptValidationError } from './remotion-scene-c
 import { loadKnowledgeModel, loadTemplateModels } from './lib/knowledge-model.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
-import { SpendGuard, loadGuard, resolveDefaultCacheDir } from './lib/video-guard.mjs';
+import { SpendGuard, loadGuard, resolveDefaultCacheDir, normalizeModelId } from './lib/video-guard.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
 import { DEFAULT_MODELS, resolveModelId } from './asset-cost-estimator.mjs';
 import { applyCachedAvatars } from './lib/avatar-jobs.mjs';
@@ -346,13 +346,13 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
       const prompt = layer.properties?.layer_prompt || layer.properties?.prompt;
       if (!prompt) continue;
       const mediaOptions = {
-        provider: layer.properties?.layer_provider || 'wavespeed',
-        model: layer.properties?.layer_generation_model || 'wavespeed-v1-flux',
+        provider: 'wavespeed',
+        model: 'wavespeed-v1-flux',
         title: `${sc.name} — ${layer.name}`,
-        accentColor: layer.properties?.layer_color || '#ef4444',
+        accentColor: '#ef4444',
       };
       if (models.image) mediaOptions.modelOverride = models.image;
-      const imageModel = resolveModelId(layer.properties?.layer_generation_model, models.image || DEFAULT_MODELS.image);
+      const imageModel = normalizeModelId(models.image || DEFAULT_MODELS.image);
       const ref = `${sc.id}/${layer.name}`;
       onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
       const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref, model: imageModel });

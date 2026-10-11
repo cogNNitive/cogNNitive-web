@@ -240,6 +240,31 @@
     return allHashed
   }
 
+  // The payload groups resolved citations by field (`{ field: [citation] }`), but
+  // UI.EditModal renders a flat list of `{ origin, source, quote }`. Flatten and
+  // map here so the modal's "Source Provenance & Citations" section renders.
+  function flattenCitations(citations) {
+    if (Array.isArray(citations)) return citations
+    if (!isObject(citations)) return []
+    var out = []
+    Object.keys(citations).forEach(function (field) {
+      var list = citations[field]
+      if (!Array.isArray(list)) return
+      list.forEach(function (c) {
+        if (!isObject(c)) return
+        out.push({
+          field: field,
+          origin: c.error ? 'error' : c.origin,
+          source: c.anchor ? String(c.path || '') + ' \u2192 ' + c.anchor : String(c.path || c.source || ''),
+          quote: c.excerpt,
+          exists: c.exists,
+          error: c.error,
+        })
+      })
+    })
+    return out
+  }
+
   function draftToItem(draft) {
     var d = isObject(draft) ? draft : {}
     var target = {
@@ -338,7 +363,7 @@
       var el = elementsById[anchorData.elementId]
       if (!el || typeof UI.EditModal !== 'function') return null
       var base = {
-        citations: Array.isArray(el.citations) ? el.citations : [],
+        citations: flattenCitations(el.citations),
         history: Array.isArray(el.history) ? el.history : [],
       }
       if (anchorData.relRetarget) {
@@ -441,6 +466,7 @@
           history: target.history,
           isComment: !!target.isComment,
           commentOnly: !!target.commentOnly,
+          startTab: anchorData.info ? 'history' : 'edit',
         },
         {
           doc: doc,
@@ -506,10 +532,15 @@
       return true
     }
 
+    // Info entry point: the same single modal, opened on the History/Provenance
+    // tab. Available in both review modes (it is not a review control).
+    function openInfo(anchorData) {
+      return openEdit(Object.assign({}, anchorData, { info: true }))
+    }
+
     function openFor(anchor, anchorData) {
       closePopover()
       lastAnchor = anchor
-
       // Tag / relation membership has no core draft op yet: record proposals
       // as comment drafts (never auto-applied corrections).
       if (anchorData.tagRemove) {
@@ -699,7 +730,7 @@
         var focused = idx >= 0 ? visible[idx] : visible[0]
         var fieldRow = focused.querySelector('[data-innfo-ctl="field-anchor"]')
         var anchor = focused.querySelector('[data-innfo-ctl="card-anchor"]')
-        if (fieldRow && document.activeElement && document.activeElement.closest && document.activeElement.closest('[data-innfo-component="field-row"]')) {
+        if (fieldRow && document.activeElement && document.activeElement.closest &&         document.activeElement.closest('[data-ku-kind="field"]')) {
           fieldRow.dispatchEvent(new Event('click', { bubbles: true }))
         } else if (anchor) {
           anchor.dispatchEvent(new Event('click', { bubbles: true }))
@@ -721,7 +752,7 @@
       if (!card.querySelector('[data-innfo-ctl="edit-toggle"]')) {
         head.appendChild(editToggleControl(card))
       }
-      var nameEl = card.querySelector('.innfo-card-name')
+      var nameEl = card.querySelector('.innfo-card-head [data-ku-kind="element"]')
       if (nameEl && !nameEl.querySelector('[data-innfo-ctl="name-anchor"]')) {
         nameEl.appendChild(
           kuEditControl({ elementId: elId, field: '__name', ctl: 'name-anchor' }, 'Edit element name'),
@@ -853,6 +884,97 @@
       row.appendChild(annotateControl({ elementId: elId, field: field }, 'Annotate field'))
     }
 
+    // Every knowledge-unit badge gets an info action, ALWAYS (review on or off).
+    // Actions sit in a ku-actions cluster OUTSIDE the badge root, never nested.
+    function decorateInfoActions(root) {
+      var host = root || doc
+      if (!host.querySelectorAll || typeof UI.KuActions !== 'function') return
+      function attach(badge, elementId, field) {
+        if (!badge || badge.getAttribute('data-ku-actions') === 'true') return
+        badge.setAttribute('data-ku-actions', 'true')
+        var actions = UI.KuActions(
+          {},
+          {
+            onInfo: function () {
+              openInfo({ elementId: elementId, field: field })
+            },
+          },
+        )
+        actions.setAttribute('data-innfo-ctl', 'ku-info-actions')
+        if (badge.parentNode) badge.parentNode.insertBefore(actions, badge.nextSibling)
+      }
+      Array.prototype.forEach.call(
+        host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
+        function (card) {
+          var elId = card.getAttribute('data-element-id')
+          attach(card.querySelector('.innfo-card-head [data-ku-kind="element"]'), elId, '__name')
+          Array.prototype.forEach.call(
+            card.querySelectorAll('[data-ku-kind="field"][data-field]'),
+            function (b) {
+              attach(b, elId, b.getAttribute('data-field'))
+            },
+          )
+        },
+      )
+    }
+
+    // Pending-change pip: a count badge on the unit it targets, visible in both
+    // review modes (it reflects stored drafts). Clicking opens the modal.
+    function decorateChangePips(root) {
+      if (!store || typeof store.drafts !== 'function') return
+      var host = root || doc
+      if (!host.querySelectorAll) return
+      var drafts = store.drafts() || []
+      var byEl = {}
+      var byField = {}
+      drafts.forEach(function (d) {
+        if (!d || !d.element_id) return
+        var eid = String(d.element_id)
+        byEl[eid] = (byEl[eid] || 0) + 1
+        if (d.field) {
+          var k = eid + '#' + String(d.field)
+          byField[k] = (byField[k] || 0) + 1
+        }
+      })
+      function applyPip(badge, n, elementId, field) {
+        if (!badge) return
+        var existing = badge.querySelector('[data-innfo-component="ku-change-pip"]')
+        if (n > 0) {
+          badge.setAttribute('data-ku-changes', String(n))
+          if (!existing) {
+            var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(n))
+            pip.setAttribute('data-innfo-component', 'ku-change-pip')
+            pip.setAttribute('type', 'button')
+            pip.setAttribute('aria-label', n + ' pending change' + (n === 1 ? '' : 's'))
+            pip.addEventListener('click', function (ev) {
+              if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+              openInfo({ elementId: elementId, field: field })
+            })
+            badge.appendChild(pip)
+          } else {
+            existing.textContent = String(n)
+          }
+        } else {
+          badge.removeAttribute('data-ku-changes')
+          if (existing && existing.parentNode) existing.parentNode.removeChild(existing)
+        }
+      }
+      Array.prototype.forEach.call(
+        host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
+        function (card) {
+          var elId = card.getAttribute('data-element-id')
+          applyPip(card.querySelector('.innfo-card-head [data-ku-kind="element"]'), byEl[elId] || 0, elId, '__name')
+          Array.prototype.forEach.call(
+            card.querySelectorAll('[data-ku-kind="field"][data-field]'),
+            function (b) {
+              var f = b.getAttribute('data-field')
+              applyPip(b, byField[elId + '#' + f] || 0, elId, f)
+            },
+          )
+        },
+      )
+    }
+
     function decorateBadges() {
       if (!doc.querySelectorAll) return
       var feedbackState = Array.isArray(meta.feedbackState) ? meta.feedbackState : []
@@ -948,6 +1070,8 @@
 
     function applyDecorations() {
       decorateBadges()
+      decorateInfoActions()
+      decorateChangePips()
       if (!enabled) return
       decorate(doc)
       decorateRailProgress()
@@ -963,7 +1087,7 @@
         decorateCard,
       )
       Array.prototype.forEach.call(
-        host.querySelectorAll('[data-innfo-component="field-row"][data-field]'),
+        host.querySelectorAll('[data-ku-kind="field"][data-field]'),
         decorateFieldRow,
       )
     }
@@ -979,6 +1103,8 @@
       if (toggleEl) toggleEl.setAttribute('aria-pressed', enabled ? 'true' : 'false')
       decorateCounter()
       decorateBadges()
+      decorateInfoActions(root || doc)
+      decorateChangePips(root || doc)
       if (enabled) {
         decorate(root || doc)
         decorateRailProgress()
@@ -1095,6 +1221,7 @@
     verdictsByElement: verdictsByElement,
     changedIds: changedIds,
     canReview: canReview,
+    flattenCitations: flattenCitations,
     draftToItem: draftToItem,
   }
 })

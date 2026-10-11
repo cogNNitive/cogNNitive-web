@@ -431,12 +431,6 @@ export function inlineConsoleAssets(shell, assets) {
     .replace(BUNDLE_TAGS, () => [bundleScript, ...viewScripts].join('\n'))
 }
 
-function finiteNumber(value) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null
-  const n = Number(String(value == null ? '' : value).trim())
-  return Number.isFinite(n) ? n : null
-}
-
 /** The only place the size thresholds live (bytes of the final HTML). */
 export const CONSOLE_SIZE_BUDGET = Object.freeze({ warnBytes: 5_000_000, failBytes: 15_000_000 })/**
  * Pure size gate. Inputs are UTF-8 byte counts: bundle = inlined bundle + CSS, models =

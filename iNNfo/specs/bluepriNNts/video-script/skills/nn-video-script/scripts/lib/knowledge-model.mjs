@@ -104,6 +104,9 @@ export function parseKnowledgeDocument(content) {
       }
       const element = { type: concept, name: em[2].trim(), description: '', fields: {}, markers: {}, slug: undefined, slugExplicit: false };
       i++;
+      // Tolerate blank line(s) between the element heading and its property block
+      // (Markdown formatters and the Cognitive editor insert them).
+      while (i < lines.length && lines[i].trim() === '') i++;
       // Property block: consecutive `key:: value` lines.
       for (; i < lines.length; i++) {
         const tm = lines[i].trim();

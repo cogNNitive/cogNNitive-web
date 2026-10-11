@@ -27,6 +27,7 @@ InnfoUI = {
   ORIGIN_VARIANTS,       // ['error','agent','human','reviewer','document']
   CITATION_ORIGIN_LABELS,
   ConceptPill(data, opts?), ElementPill(data, opts?), MarkerChip(data), StatusBadge(data),
+  KuBadge(data, opts?), KuActions(data, opts?),
   CitationIcon(data, opts?), FieldRow(data, opts?), ElementCard(data, opts?),
 }
 ```
@@ -43,17 +44,41 @@ Every component root carries `data-innfo-component="<kebab-name>"`. Invalid
 | `MarkerChip({ id, label, kind, value? })` | `span` | `data-marker-id`, `data-kind` |
 | `StatusBadge({ status, count? })` | `span` | `data-status` (`pending`\|`applied`\|`rejected`\|`stale`) |
 | `CitationIcon({ variant, field }, { onOpen? })` | `button` | `data-origin`, `data-field`; click stops propagation |
-| `FieldRow({ name, value, citations?, ref? }, { onRef?, onCite? })` | `div` | `data-field`; one `CitationIcon` per distinct origin in canonical order |
+| `FieldRow({ name, value, citations?, ref? }, { onRef?, onCite? })` | `ku-badge` (kind `field`) | `data-ku-kind="field"`, `data-field`; one `CitationIcon` per distinct origin in canonical order |
 | `ElementCard({ id, name, conceptId?, description?, fields, markers? }, opts)` | `article` | `data-element-id`, `data-concept-id`, `data-open` |
 
+### Knowledge-unit badges (`KuBadge`)
+
+`KuBadge` is the single family for every knowledge unit: one grammar, one
+presentation per canonical address. `data.kind` is one of `document`, `element`,
+`concept`, `field`, `cell`, `marker`, `reference`. The badge shape encodes the kind
+(`data-ku-kind`); the concept color encodes the concept (`data-concept-slot`,
+1..12); the slug is the identity (`data-element-id` / `data-concept-id` /
+`data-field` / `data-marker-id`). A `field` badge reads `name: value`; a `cell`
+badge shows the value only; an `element` badge carries the concept-color border and
+the concept icon; a `concept`/`document` badge carries a concept-tinted fill.
+
+- `KuBadge({ kind, id?, name?, value?, label?, index?, color?, icon?, markerKind?, changes? }, opts?)`.
+- `opts.onInfo` / `opts.onEdit` / `opts.onChanges` render the action cluster OUTSIDE
+  the badge root (in `KuActions`), so an action is never nested inside a navigable
+  badge; `opts.href` / `opts.onSelect` make the badge navigable when it has no action.
+- `data.changes > 0` renders a count pip child (`ku-change-pip`) and sets
+  `data-ku-changes`; the badge border reflects pending changes.
+
+`KuActions({}, { onInfo?, onEdit? })` renders `data-innfo-component="ku-actions"`
+with `[data-ku-action="info"]` and/or `[data-ku-action="edit"]`. The kit holds no
+mode state: the edit control exists only because the caller passed `onEdit`.
+
 `ElementCard` opts: `domId`, `collapsible`, `open`, `head[]` (into
-`.innfo-card-head`), `body[]` (into `.innfo-card-body`), `onRef`, `onCite`.
+`.innfo-card-head`), `body[]` (into `.innfo-card-body`), `concept` (concept
+color/icon/index for the name badge), `onRef`, `onCite`.
 
 ## Tokens
 
 `TOKEN_VALUES` holds a light and a dark value for every `--innfo-*` token:
 surfaces (`--innfo-bg`/`-surface`/`-surface-2`), text (`--innfo-text`/`-muted`/
-`-border`), `--innfo-accent`/`-link`/`-focus`, 12 `--innfo-concept-N`, status
+`-border`), `--innfo-accent`/`-link`/`-focus`, 12 `--innfo-concept-N` plus a
+matching `--innfo-concept-N-bg` tint for tinted badge fills, status
 (`--innfo-status-{pending,applied,rejected,stale}` + `-bg`), origin
 (`--innfo-origin-{agent,human,reviewer,document,error}`), radii, `--innfo-font`,
 `--innfo-mono`, `--innfo-shadow`. `generateTokenCss` is the only place the CSS is
@@ -95,8 +120,9 @@ never migrated to tokens, and are excluded from the shell guard (it skips
 - One card commit point per renderer: `InnfoConsole.refresh` -> `mountElementCards`
   and the viewer's `render()`.
 - Stable hooks: `[data-innfo-component=element-card][data-element-id]`,
-  `[data-innfo-component=field-row][data-field]` inside it,
-  `[data-innfo-component=concept-pill][data-concept-id]`, and the
-  `.innfo-card-head` / `.innfo-card-body` containers.
+  `[data-innfo-component=ku-badge][data-ku-kind=field][data-field]` inside it,
+  `[data-innfo-component=concept-pill][data-concept-id]`, the `ku-actions` cluster
+  (`[data-ku-action]`), the change pip (`[data-innfo-component=ku-change-pip]`),
+  and the `.innfo-card-head` / `.innfo-card-body` containers.
 - `TOKEN_VALUES`, `TEXT_PAIRS`, `StatusBadge` (with `stale`) and the review
   components are exported for the review UX layer.

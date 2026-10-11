@@ -105,6 +105,29 @@ async function runTests() {
     console.log('✔ Overlay components map from type:: with text from the text:: field');
   }
 
+  // Test 3b: a full-scene lower-third must not displace quote/b-roll slots.
+  {
+    const m = model({
+      title: 'Overlay Slots',
+      scenes: [scene('Scene', 'scene', 'narration narration narration narration narration narration')],
+      layers: [
+        layer('Lower Third', 'lt', { type: 'lower-third', text: 'Host Name', position: 'bottom' }),
+        layer('Quote', 'q', { type: 'quote', text: 'A quote' }),
+        layer('B-Roll', 'br', { type: 'b-roll', asset: 'media/shot.png' }),
+      ],
+    });
+    const manifest = compiler.compile(m);
+    const overlays = manifest.tracks.overlays;
+    const quote = overlays.find((o) => o.type === 'quote');
+    const broll = overlays.find((o) => o.type === 'broll');
+    const scene0 = manifest.tracks.scenes[0];
+    assert.ok(quote, 'quote is emitted');
+    assert.ok(broll, 'b-roll is not dropped when a lower-third is present');
+    assert.strictEqual(quote.fromFrame, scene0.fromFrame, 'lower-third does not displace the quote into a later slot');
+    assert.strictEqual(broll.fromFrame, quote.fromFrame + quote.durationInFrames, 'quote and b-roll are back-to-back slots');
+    console.log('✔ full-scene lower-third does not displace quote/b-roll slots');
+  }
+
   // Test 4: audio-driven duration synchronization.
   {
     const m = model({ title: 'Audio', scenes: [scene('One', 'one', 'hello world')] });

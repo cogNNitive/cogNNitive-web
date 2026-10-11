@@ -782,7 +782,16 @@
     if (!banner) return
     var existingOpen = banner.querySelector('#innfo-feedback-open') || banner.querySelector('#innfo-export-open')
     banner.innerHTML = ''
-    var title = el('strong', null, String(meta.title || meta.model || 'iNNfo Console'))
+    var title = el('span', 'innfo-banner-title', null)
+    if (title) {
+      title.appendChild(
+        UI.KuBadge({
+          kind: 'document',
+          id: meta.modelId || meta.model || 'model',
+          label: String(meta.title || meta.model || 'iNNfo Console'),
+        }),
+      )
+    }
     var version = el(
       'span',
       'innfo-banner-version',
@@ -1269,6 +1278,17 @@
     })
   }
 
+  function conceptMetaOf(concepts, name) {
+    var list = Array.isArray(concepts) ? concepts : []
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i]
+      if ((typeof c === 'string' ? c : c.name) === name) {
+        return { index: i, color: c && c.color, icon: c && c.icon }
+      }
+    }
+    return { index: 0 }
+  }
+
   // Cards project live drafts: active draft edits and notes are visually badged,
   // new draft elements are projected, and deleted elements are styled.
   function mountElementCards(doc, elements, drafts, refs, concepts) {
@@ -1349,6 +1369,7 @@
           domId: String(element.id || ''),
           collapsible: false,
           byId: refs,
+          concept: conceptMetaOf(concepts, element.concept),
           onRef: function (refId) {
             var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
             if (target) renderRefDialog(doc, target)
@@ -1427,20 +1448,52 @@
     })
   }
 
-  function renderMatrices(doc, matrices) {
+  function renderMatrices(doc, matrices, concepts) {
     var host = doc.getElementById('innfo-matrices')
     if (!host) return
     host.innerHTML = ''
+    var conceptList = Array.isArray(concepts) ? concepts : []
+    function conceptMeta(name) {
+      for (var i = 0; i < conceptList.length; i++) {
+        var c = conceptList[i]
+        if ((typeof c === 'string' ? c : c.name) === name) return { meta: c, index: i }
+      }
+      return { meta: null, index: 0 }
+    }
+    function headerBadge(entry, key) {
+      var e = entry || {}
+      if (e.kind === 'marker') {
+        return UI.KuBadge({ kind: 'marker', id: key, label: e.label || key, markerKind: 'field' })
+      }
+      var cm = conceptMeta(e.concept)
+      return UI.KuBadge({
+        kind: 'element',
+        id: key,
+        label: e.label || key,
+        index: cm.index,
+        color: cm.meta && cm.meta.color,
+        icon: cm.meta && cm.meta.icon,
+      })
+    }
     ;(Array.isArray(matrices) ? matrices : []).forEach(function (matrix) {
       if (!isObject(matrix)) return
       var section = el('section', 'innfo-matrix')
       if (!section) return
-      section.appendChild(el('h3', null, String(matrix.name || 'Matrix')))
+      var titleEl = el('h3', null, null)
+      if (titleEl) {
+        titleEl.appendChild(
+          UI.KuBadge({ kind: 'element', id: 'matrix-' + UI.slug(matrix.name || 'matrix'), label: matrix.name || 'Matrix', icon: 'matrices' }),
+        )
+        section.appendChild(titleEl)
+      }
       var table = el('table', null, null)
       if (!table) return
       var rows = Array.isArray(matrix.rows) ? matrix.rows : []
       var cols = Array.isArray(matrix.cols) ? matrix.cols : []
       var cells = isObject(matrix.cells) ? matrix.cells : {}
+      var head = isObject(matrix.head) ? matrix.head : {}
+      var headCols = isObject(head.cols) ? head.cols : {}
+      var headRows = isObject(head.rows) ? head.rows : {}
 
       var isStructured = rows.length && isObject(rows[0])
       if (isStructured && !cols.length) {
@@ -1453,23 +1506,30 @@
         cols = Object.keys(colMap)
       }
 
-      var head = el('tr', null, null)
-      if (head) {
-        head.appendChild(el('th', null, ''))
+      var headTr = el('tr', null, null)
+      if (headTr) {
+        headTr.appendChild(el('th', null, ''))
         cols.forEach(function (c) {
-          if (head) head.appendChild(el('th', null, String(c)))
+          var th = el('th', null, null)
+          if (th) th.appendChild(headerBadge(headCols[c], String(c)))
+          headTr.appendChild(th)
         })
-        table.appendChild(head)
+        table.appendChild(headTr)
       }
       rows.forEach(function (r) {
         var tr = el('tr', null, null)
         if (!tr) return
+        var rowKey = isStructured ? (r.sourceId || r.sourceLabel || '') : String(r)
         var rowLabel = isStructured ? (r.sourceLabel || r.sourceId || '') : String(r)
         var rowCells = isStructured ? (r.cells || {}) : (cells[r] || cells[String(r)] || {})
-        tr.appendChild(el('th', null, rowLabel))
+        var rowTh = el('th', null, null)
+        if (rowTh) rowTh.appendChild(headerBadge(headRows[rowKey] || headRows[rowLabel], rowLabel))
+        tr.appendChild(rowTh)
         cols.forEach(function (c) {
           var value = rowCells[c] != null ? String(rowCells[c]) : ''
-          tr.appendChild(el('td', null, value))
+          var td = el('td', null, null)
+          if (td) td.appendChild(UI.KuBadge({ kind: 'cell', value: value }))
+          tr.appendChild(td)
         })
         table.appendChild(tr)
       })
@@ -4079,7 +4139,7 @@
     if (hasNeed(config, 'document-view')) {
       renderDocumentView(active, elements, concepts)
     }
-    renderMatrices(active, matrices)
+    renderMatrices(active, matrices, concepts)
 
     var searchBox = active.getElementById('innfo-search')
     if (searchBox) {

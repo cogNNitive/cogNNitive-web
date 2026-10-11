@@ -101,12 +101,17 @@ export async function runEnsureEngine(options = {}) {
 
   if (options.check) {
     print(`❌ ensure-engine: engine missing (pin ${pin}). Run without --check to install.`);
+    print('    Remotion is a third-party product installed on your own account: https://www.remotion.dev/docs/license');
     return 1;
   }
 
   print(`⚠️  ensure-engine: Remotion runtime is not installed.`);
   print(`    Approximate total download: ${APPROX_TOTAL_MB}.`);
   print(`    A headless browser (Chromium) downloads on the first render.`);
+  print(`    Remotion is a third-party, source-available product that YOU install on your`);
+  print(`    own account — cogNNitive does not distribute it. It is free for individuals and`);
+  print(`    organizations of up to 3 people (automation included); larger organizations need`);
+  print(`    a Company License. Review the terms: https://www.remotion.dev/docs/license`);
 
   const accepted = options.yes ? true : await confirm('Install the Remotion runtime now?');
   if (!accepted) {

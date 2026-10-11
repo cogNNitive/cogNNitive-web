@@ -705,8 +705,8 @@ export class AssetSynthesizer {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
 
-    const provider = escapeXml(options.provider || options.layer_provider || 'WaveSpeed');
-    const model = escapeXml(options.model || options.layer_generation_model || 'wavespeed-v1-flux');
+    const provider = escapeXml(options.provider || 'WaveSpeed');
+    const model = escapeXml(options.model || 'wavespeed-v1-flux');
     const title = escapeXml(options.title || options.layer_name || 'SCENE LAYER');
     const cleanPrompt = escapeXml(prompt);
     const accent = options.accentColor || '#e11d48';

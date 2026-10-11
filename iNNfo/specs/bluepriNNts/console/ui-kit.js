@@ -38,6 +38,18 @@
       '--innfo-concept-10': '#eab308',
       '--innfo-concept-11': '#a855f7',
       '--innfo-concept-12': '#6b7280',
+      '--innfo-concept-1-bg': '#eff6ff',
+      '--innfo-concept-2-bg': '#f5f3ff',
+      '--innfo-concept-3-bg': '#f0fdfa',
+      '--innfo-concept-4-bg': '#fffbeb',
+      '--innfo-concept-5-bg': '#fdf2f8',
+      '--innfo-concept-6-bg': '#f0fdf4',
+      '--innfo-concept-7-bg': '#fff7ed',
+      '--innfo-concept-8-bg': '#eef2ff',
+      '--innfo-concept-9-bg': '#fef2f2',
+      '--innfo-concept-10-bg': '#fefce8',
+      '--innfo-concept-11-bg': '#faf5ff',
+      '--innfo-concept-12-bg': '#f9fafb',
       '--innfo-status-pending': '#92400e',
       '--innfo-status-applied': '#166534',
       '--innfo-status-rejected': '#b91c1c',
@@ -81,6 +93,18 @@
       '--innfo-concept-10': '#facc15',
       '--innfo-concept-11': '#c084fc',
       '--innfo-concept-12': '#9ca3af',
+      '--innfo-concept-1-bg': '#172554',
+      '--innfo-concept-2-bg': '#2e1065',
+      '--innfo-concept-3-bg': '#042f2e',
+      '--innfo-concept-4-bg': '#451a03',
+      '--innfo-concept-5-bg': '#500724',
+      '--innfo-concept-6-bg': '#052e16',
+      '--innfo-concept-7-bg': '#431407',
+      '--innfo-concept-8-bg': '#1e1b4b',
+      '--innfo-concept-9-bg': '#450a0a',
+      '--innfo-concept-10-bg': '#422006',
+      '--innfo-concept-11-bg': '#3b0764',
+      '--innfo-concept-12-bg': '#111827',
       '--innfo-status-pending': '#fbbf24',
       '--innfo-status-applied': '#4ade80',
       '--innfo-status-rejected': '#f87171',
@@ -151,7 +175,7 @@
     'html[data-innfo-filter=changed] [data-innfo-component=element-card]:not([data-innfo-changed]){display:none}',
     '.innfo-popover-comment,.innfo-popover-proposed{display:block;width:100%;font:inherit;box-sizing:border-box}',
     '@media (max-width:640px){.innfo-annotation-popover{width:100%}.innfo-review-toggle,.innfo-changed-filter{width:100%}}',
-    '.innfo-edit-modal{border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-lg);padding:0;max-width:540px;width:100%;background:var(--innfo-surface);color:var(--innfo-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
+    '.innfo-edit-modal{border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-lg);padding:0;max-width:760px;width:100%;max-height:86vh;overflow:auto;background:var(--innfo-surface);color:var(--innfo-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
     '.innfo-edit-modal::backdrop{background:rgba(0,0,0,.35)}',
     '.innfo-edit-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--innfo-border)}',
     '.innfo-edit-modal-head h2{margin:0;font-size:1.05rem;font-weight:700}',
@@ -213,10 +237,37 @@
     '.innfo-rel-add{appearance:none;border:1px dashed var(--innfo-border);background:none;color:var(--innfo-muted);font:inherit;font-size:.78rem;border-radius:var(--innfo-radius-sm);padding:.1em .55em;cursor:pointer;align-self:flex-start}',
     '.innfo-rel-add:hover{color:var(--innfo-link);border-color:var(--innfo-link)}',
     '@media (max-width:640px){.innfo-edit-anchor,.innfo-edit-toggle,.innfo-qud-btn,.innfo-rel-act{min-width:32px;min-height:32px}.innfo-qud{font-size:.7rem}}',
+    // Knowledge-unit badge family (KuBadge) + action cluster + change pip.
+    '.innfo-ku-unit{display:inline-flex;align-items:center;gap:.25em;max-width:100%}',
+    '.innfo-ku-badge{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.1em .5em;background:var(--innfo-surface);color:var(--innfo-text);max-width:100%}',
+    '.innfo-ku-badge[data-ku-kind=field],.innfo-ku-badge[data-ku-kind=cell]{background:var(--innfo-surface-2)}',
+    '.innfo-ku-badge .innfo-ku-label{color:var(--innfo-muted)}',
+    '.innfo-ku-badge .innfo-ku-value{color:var(--innfo-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.innfo-ku-badge .innfo-ku-icon{display:inline-flex;color:var(--innfo-muted);flex:0 0 auto}',
+    '.innfo-ku-badge[data-ku-changes]{border-style:dashed}',
+    '.innfo-ku-change-pip{position:absolute;top:-.5em;right:-.5em;min-width:1.2em;height:1.2em;padding:0 .25em;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;line-height:1;border-radius:999px;background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border:1px solid var(--innfo-status-pending);cursor:pointer}',
+    '.innfo-ku-actions{display:inline-flex;align-items:center;gap:.1em;flex:0 0 auto}',
+    '.innfo-ku-action{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);font:inherit;padding:.1em .3em;border-radius:var(--innfo-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:1.6em;min-height:1.5em;opacity:.55;transition:opacity .15s ease,color .15s ease,border-color .15s ease}',
+    '.innfo-ku-unit:hover .innfo-ku-action,.innfo-ku-action:focus-visible{opacity:1}',
+    '.innfo-ku-action:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
+    '.innfo-ku-action[data-ku-action=edit]:hover{color:var(--innfo-link)}',
+    '.innfo-ku-action:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
+    '.innfo-card-fields{display:flex;flex-wrap:wrap;gap:.4em;align-items:center;margin:.6em 0 0}',
+    '.innfo-card-desc-actions{margin-left:.4em}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
       '[data-concept-slot="' + slot + '"] .innfo-concept-dot{background:var(--innfo-concept-' + slot + ')}',
+    )
+  }
+  for (var kslot = 1; kslot <= 12; kslot++) {
+    COMPONENT_CSS.push(
+      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=element]{border-color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=element] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=reference]{border-color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=reference] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=concept],[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=document]{border-color:var(--innfo-concept-' + kslot + ');background:var(--innfo-concept-' + kslot + '-bg)}',
+      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .innfo-ku-icon,[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=document] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
     )
   }
   var COMPONENT_CSS_TEXT = COMPONENT_CSS.join('\n')
@@ -652,19 +703,14 @@
   function FieldRow(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.FieldRow: data required')
     var doc = resolveDoc(opts)
-    var row = makeEl(doc, 'div', 'innfo-field-row')
-    row.setAttribute('data-innfo-component', 'field-row')
-    row.setAttribute('data-field', String(data.name == null ? '' : data.name))
-    var dt = makeEl(doc, 'dt', null, data.name)
-    var dd = makeEl(doc, 'dd')
-    if (data.ref && data.ref.id) {
-      dd.appendChild(
+    var hasRef = !!(data.ref && data.ref.id)
+    var badge = KuBadge({ kind: 'field', name: data.name, value: hasRef ? null : data.value })
+    if (hasRef) {
+      badge.appendChild(
         ElementPill({ id: data.ref.id, label: data.ref.label || data.ref.id }, {
           onSelect: opts && opts.onRef ? function () { opts.onRef(data.ref.id) } : undefined,
         }),
       )
-    } else {
-      dd.appendChild(doc.createTextNode(String(data.value == null ? '' : data.value)))
     }
     if (Array.isArray(data.citations) && data.citations.length) {
       var seen = {}
@@ -673,16 +719,14 @@
         if (seen[v]) return
         seen[v] = true
         if (variants.indexOf(v) === -1) return
-        dd.appendChild(
+        badge.appendChild(
           CitationIcon({ variant: v, field: data.name }, {
             onOpen: opts && opts.onCite ? opts.onCite : undefined,
           }),
         )
       })
     }
-    row.appendChild(dt)
-    row.appendChild(dd)
-    return row
+    return badge
   }
 
   function ElementCard(data, opts) {
@@ -697,7 +741,17 @@
     if (opts && opts.domId) card.setAttribute('id', String(opts.domId))
 
     var head = makeEl(doc, 'header', 'innfo-card-head')
-    head.appendChild(makeEl(doc, 'h3', 'innfo-card-name', data.name || data.id))
+    var conceptOpts = (opts && opts.concept) || {}
+    head.appendChild(
+      KuBadge({
+        kind: 'element',
+        id: data.id,
+        label: data.name || data.id,
+        index: conceptOpts.index,
+        color: conceptOpts.color,
+        icon: conceptOpts.icon,
+      }),
+    )
     if (Array.isArray(data.markers)) {
       data.markers.forEach(function (m) {
         if (m) head.appendChild(MarkerChip(m))
@@ -730,11 +784,11 @@
     if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
     var fields = Array.isArray(data.fields) ? data.fields : []
     if (fields.length) {
-      var dl = makeEl(doc, 'dl', 'innfo-card-fields')
+      var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
       fields.forEach(function (f) {
-        if (f) dl.appendChild(FieldRow(f, { onRef: opts && opts.onRef, onCite: opts && opts.onCite }))
+        if (f) fieldRow.appendChild(FieldRow(f, { onRef: opts && opts.onRef, onCite: opts && opts.onCite }))
       })
-      body.appendChild(dl)
+      body.appendChild(fieldRow)
     }
     if (Array.isArray(opts && opts.body)) {
       ;(opts.body || []).forEach(function (n) {
@@ -1075,6 +1129,14 @@
       panelHistory.style.display = 'block'
     })
 
+    var startTab = data.startTab === 'history' ? 'history' : 'edit'
+    if (startTab === 'history') {
+      tabBtnHistory.className = 'innfo-modal-tab-btn active'
+      tabBtnEdit.className = 'innfo-modal-tab-btn'
+      panelEdit.style.display = 'none'
+      panelHistory.style.display = 'block'
+    }
+
     var actions = makeEl(doc, 'div', 'innfo-edit-modal-actions')
     var saveBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-save', 'Save draft')
     saveBtn.setAttribute('type', 'button')
@@ -1228,6 +1290,136 @@
     return span
   }
 
+  // ---- Knowledge-unit badge family (KuBadge) ----
+  //
+  // One grammar for every knowledge unit: the badge shape encodes the unit kind,
+  // the concept color encodes the concept, the slug is the identity. Actions (info
+  // / edit) live OUTSIDE the badge in KuActions, never nested, and the pending-
+  // change pip is a count badge child. The kit holds no mode state: the edit action
+  // exists only because the caller passed onEdit.
+  var KU_KINDS = ['document', 'element', 'concept', 'field', 'cell', 'marker', 'reference']
+  var KU_KIND_ICON = {
+    document: 'cite-document',
+    concept: 'explorer',
+    marker: 'star',
+    field: 'derived',
+    cell: 'calc',
+  }
+
+  function isInfoOrEditAction(opts) {
+    return !!(
+      opts &&
+      (typeof opts.onInfo === 'function' ||
+        typeof opts.onEdit === 'function' ||
+        typeof opts.onChanges === 'function')
+    )
+  }
+
+  function KuBadge(data, opts) {
+    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.KuBadge: data required')
+    var doc = resolveDoc(opts)
+    var kind = KU_KINDS.indexOf(data.kind) !== -1 ? data.kind : 'element'
+    var hasAction = isInfoOrEditAction(opts)
+    var navigable = !!((opts && opts.href) || (opts && opts.onSelect))
+    var interactive = navigable && !hasAction
+    var tag = interactive ? (opts && opts.href ? 'a' : 'button') : 'span'
+    var badge = makeEl(doc, tag, 'innfo-ku-badge')
+    badge.setAttribute('data-innfo-component', 'ku-badge')
+    badge.setAttribute('data-ku-kind', kind)
+    if (interactive && opts.href) badge.setAttribute('href', String(opts.href))
+    if (tag === 'button') {
+      badge.setAttribute('type', 'button')
+      badge.addEventListener('click', function () {
+        if (opts && typeof opts.onSelect === 'function') opts.onSelect(data)
+      })
+    }
+
+    if (kind === 'document' || kind === 'concept') {
+      if (data.id != null) badge.setAttribute('data-concept-id', String(data.id))
+      if (kind === 'concept' || data.index != null || data.color) {
+        badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
+      }
+    } else if (kind === 'element' || kind === 'reference') {
+      if (data.id != null) badge.setAttribute('data-element-id', String(data.id))
+      if (data.index != null || data.color) badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
+    } else if (kind === 'field') {
+      badge.setAttribute('data-field', String(data.name == null ? '' : data.name))
+      if (data.index != null || data.color) badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
+    } else if (kind === 'marker') {
+      badge.setAttribute('data-marker-id', String(data.id == null ? '' : data.id))
+      badge.setAttribute('data-kind', String(data.markerKind == null ? '' : data.markerKind))
+      if (data.index != null || data.color) badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
+    }
+
+    var iconName = data.icon || KU_KIND_ICON[kind]
+    if (iconName) {
+      var wrapIcon = makeEl(doc, 'span', 'innfo-ku-icon')
+      wrapIcon.innerHTML = icon(iconName, 13)
+      badge.appendChild(wrapIcon)
+    }
+
+    if (kind === 'field') {
+      if (data.name != null) badge.appendChild(makeEl(doc, 'span', 'innfo-ku-label', data.name + ':'))
+      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
+    } else if (kind === 'cell') {
+      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
+    } else if (kind === 'marker') {
+      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', String(data.label == null ? '' : data.label)))
+      if (data.value != null) badge.appendChild(makeEl(doc, 'b', null, data.value))
+    } else {
+      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', String(data.label == null ? '' : data.label)))
+    }
+
+    var changes = Number(data.changes) || 0
+    if (changes > 0) {
+      badge.setAttribute('data-ku-changes', String(changes))
+      var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(changes))
+      pip.setAttribute('data-innfo-component', 'ku-change-pip')
+      pip.setAttribute('type', 'button')
+      pip.setAttribute('aria-label', changes + ' pending ' + (changes === 1 ? 'change' : 'changes'))
+      pip.setAttribute('title', changes + ' pending ' + (changes === 1 ? 'change' : 'changes'))
+      pip.addEventListener('click', function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        if (opts && typeof opts.onChanges === 'function') opts.onChanges()
+      })
+      badge.appendChild(pip)
+    }
+    return badge
+  }
+
+  function KuActions(data, opts) {
+    var doc = resolveDoc(opts)
+    var cluster = makeEl(doc, 'span', 'innfo-ku-actions')
+    cluster.setAttribute('data-innfo-component', 'ku-actions')
+    if (opts && typeof opts.onInfo === 'function') {
+      var info = makeEl(doc, 'button', 'innfo-ku-action')
+      info.setAttribute('type', 'button')
+      info.setAttribute('data-ku-action', 'info')
+      info.setAttribute('aria-label', 'Knowledge unit info')
+      info.setAttribute('title', 'Info')
+      info.innerHTML = icon('info', 14)
+      info.addEventListener('click', function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        opts.onInfo(data)
+      })
+      cluster.appendChild(info)
+    }
+    if (opts && typeof opts.onEdit === 'function') {
+      var edit = makeEl(doc, 'button', 'innfo-ku-action')
+      edit.setAttribute('type', 'button')
+      edit.setAttribute('data-ku-action', 'edit')
+      edit.setAttribute('aria-label', 'Edit knowledge unit')
+      edit.setAttribute('title', 'Edit')
+      edit.innerHTML = icon('pencil', 14)
+      edit.addEventListener('click', function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        opts.onEdit(data)
+      })
+      cluster.appendChild(edit)
+    }
+    return cluster
+  }
+
   // Token injection at load when a document exists. The bundle loads up to 3
   // times per shell; ensureTokens is idempotent, so this is safe.
   if (typeof document !== 'undefined' && document.head) {
@@ -1262,6 +1454,8 @@
     ConceptPill: ConceptPill,
     ElementPill: ElementPill,
     MarkerChip: MarkerChip,
+    KuBadge: KuBadge,
+    KuActions: KuActions,
     QudChip: QudChip,
     TagRow: TagRow,
     RelList: RelList,

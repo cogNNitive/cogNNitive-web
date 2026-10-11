@@ -7369,6 +7369,7 @@ __export(index_exports, {
   FEEDBACK_LEDGER_FILENAME: () => FEEDBACK_LEDGER_FILENAME,
   KNOWN_AGENT_TOOL_IDS: () => KNOWN_AGENT_TOOL_IDS,
   NORMALIZED_KNOWN_AGENT_TOOL_IDS: () => NORMALIZED_KNOWN_AGENT_TOOL_IDS,
+  attachChangesetHistory: () => attachChangesetHistory,
   buildConsolePayload: () => buildConsolePayload,
   buildConsoleSchemaSlot: () => buildConsoleSchemaSlot,
   canonicalJsonStringify: () => canonicalJsonStringify,
@@ -7390,9 +7391,12 @@ __export(index_exports, {
   isNNName: () => isNNName,
   isSidecarName: () => isSidecarName,
   latestOfFamily: () => latestOfFamily,
+  loadChangesetRecords: () => loadChangesetRecords,
+  normalizeAddressKey: () => normalizeAddressKey,
   normalizeModelId: () => normalizeModelId,
   normalizeToolId: () => normalizeToolId,
   parentSpecNameOf: () => parentSpecNameOf,
+  parseChangesetTarget: () => parseChangesetTarget,
   parseFeedbackLedger: () => parseFeedbackLedger,
   parseFrontmatter: () => parseFrontmatter,
   parseName: () => parseName,
@@ -9278,13 +9282,13 @@ function parseSpecName(name) {
   return { base, version };
 }
 async function getMarkdownFiles(dir) {
-  const { readdir } = await import("node:fs/promises");
-  const { join: join3 } = await import("node:path");
+  const { readdir: readdir2 } = await import("node:fs/promises");
+  const { join: join4 } = await import("node:path");
   const files = [];
   try {
-    const entries = await readdir(dir, { withFileTypes: true });
+    const entries = await readdir2(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = join3(dir, entry.name);
+      const fullPath = join4(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
         files.push(...await getMarkdownFiles(fullPath));
@@ -9308,7 +9312,7 @@ function blueprintVersionFromFrontmatter(content) {
   const v = parseFrontmatter(content)?.blueprint_version;
   return v ? normalizeVersion(String(v)) : void 0;
 }
-function compareVersions(a, b) {
+function compareDottedVersions(a, b) {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);
   const len = Math.max(pa.length, pb.length);
@@ -9320,14 +9324,14 @@ function compareVersions(a, b) {
   return 0;
 }
 async function matchSpecPath(reqParsed, filePath) {
-  const { readFile: readFile2 } = await import("node:fs/promises");
+  const { readFile: readFile3 } = await import("node:fs/promises");
   const { basename: basename5 } = await import("node:path");
   const fileParsed = parseSpecName(basename5(filePath));
   if (fileParsed.base !== reqParsed.base) return false;
   if (!reqParsed.version) return true;
   if (fileParsed.version) return fileParsed.version === reqParsed.version;
   try {
-    const content = await readFile2(filePath, "utf-8");
+    const content = await readFile3(filePath, "utf-8");
     const fmVersion = versionFromFrontmatter(content);
     return fmVersion !== void 0 && fmVersion === reqParsed.version;
   } catch (err) {
@@ -9339,19 +9343,19 @@ async function matchSpecPath(reqParsed, filePath) {
 }
 async function preferHighestVersion(matches) {
   if (matches.length === 0) return null;
-  const { readFile: readFile2 } = await import("node:fs/promises");
+  const { readFile: readFile3 } = await import("node:fs/promises");
   const { basename: basename5 } = await import("node:path");
   let best = matches[0];
   let bestVersion;
   for (const m of matches) {
     const nameVersion = parseSpecName(basename5(m)).version;
-    const v = nameVersion ?? versionFromFrontmatter(await readFile2(m, "utf-8").catch(() => ""));
+    const v = nameVersion ?? versionFromFrontmatter(await readFile3(m, "utf-8").catch(() => ""));
     if (!bestVersion && v) {
       best = m;
       bestVersion = v;
       continue;
     }
-    if (bestVersion && v && compareVersions(v, bestVersion) > 0) {
+    if (bestVersion && v && compareDottedVersions(v, bestVersion) > 0) {
       best = m;
       bestVersion = v;
     }
@@ -9368,23 +9372,23 @@ async function findLocalSpec(specsDir, reqName) {
   return preferHighestVersion(matches);
 }
 async function findSpecInPackageDir(dir, base) {
-  const { readdir } = await import("node:fs/promises");
-  const { join: join3 } = await import("node:path");
+  const { readdir: readdir2 } = await import("node:fs/promises");
+  const { join: join4 } = await import("node:path");
   try {
-    const entries = await readdir(dir, { withFileTypes: true });
+    const entries = await readdir2(dir, { withFileTypes: true });
     const files = entries.filter((e) => e.isFile() && /\.(md|markdown)$/i.test(e.name)).map((e) => e.name);
     if (files.length === 0) return null;
     const specNN = files.find((f) => f.toLowerCase() === "spec_nn.md");
-    if (specNN) return join3(dir, specNN);
+    if (specNN) return join4(dir, specNN);
     const baseV = files.find((f) => f.toLowerCase().startsWith(`${base.toLowerCase()}_v_`));
-    if (baseV) return join3(dir, baseV);
+    if (baseV) return join4(dir, baseV);
     const baseNN = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}_nn.md`);
-    if (baseNN) return join3(dir, baseNN);
+    if (baseNN) return join4(dir, baseNN);
     const specMd = files.find((f) => f.toLowerCase() === "spec.md");
-    if (specMd) return join3(dir, specMd);
+    if (specMd) return join4(dir, specMd);
     const baseMd = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}.md`);
-    if (baseMd) return join3(dir, baseMd);
-    return join3(dir, files[0]);
+    if (baseMd) return join4(dir, baseMd);
+    return join4(dir, files[0]);
   } catch (err) {
     if (err?.code !== "ENOENT") {
       console.warn(`[resolver] Failed to scan package dir ${dir}: ${err}`);
@@ -9397,18 +9401,18 @@ function isDirectSpecEntryName(filePath, base) {
   return entry === "spec_nn.md" || entry === `${base.toLowerCase()}_nn.md` || entry.startsWith(`${base.toLowerCase()}_v_`);
 }
 async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
-  const { readdir, readFile: readFile2 } = await import("node:fs/promises");
-  const { join: join3 } = await import("node:path");
+  const { readdir: readdir2, readFile: readFile3 } = await import("node:fs/promises");
+  const { join: join4 } = await import("node:path");
   const { homedir } = await import("node:os");
-  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join3(homedir(), ".agents", "bluepriNNts");
-  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join3(homedir(), ".agents", "skills");
+  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join4(homedir(), ".agents", "bluepriNNts");
+  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join4(homedir(), ".agents", "skills");
   const parsed = parseSpecName(reqName);
   const base = parsed.base;
   const targetVersion = reqVersion ? normalizeVersion(reqVersion) : parsed.version;
-  const wsPackageBaseDir = join3(rootDir, "specs", "bluepriNNts", base);
+  const wsPackageBaseDir = join4(rootDir, "specs", "bluepriNNts", base);
   const unversionedSpecFile = await findSpecInPackageDir(wsPackageBaseDir, base);
   if (unversionedSpecFile && isDirectSpecEntryName(unversionedSpecFile, base)) {
-    const content = await readFile2(unversionedSpecFile, "utf-8").catch(() => "");
+    const content = await readFile3(unversionedSpecFile, "utf-8").catch(() => "");
     const fmVersion = versionFromFrontmatter(content);
     const bpVersion = blueprintVersionFromFrontmatter(content);
     return {
@@ -9421,14 +9425,14 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     };
   }
   try {
-    const entries = await readdir(wsPackageBaseDir, { withFileTypes: true });
+    const entries = await readdir2(wsPackageBaseDir, { withFileTypes: true });
     const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
     let matchDir = null;
     let matchVer;
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join3(wsPackageBaseDir, d.name);
+          matchDir = join4(wsPackageBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -9437,9 +9441,9 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       let bestVer = "";
       for (const d of verDirs) {
         const v = normalizeVersion(d.name);
-        if (!bestVer || compareVersions(v, bestVer) > 0) {
+        if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join3(wsPackageBaseDir, d.name);
+          matchDir = join4(wsPackageBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -9462,11 +9466,11 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       console.warn(`[resolver] Failed to scan package tier dir: ${err}`);
     }
   }
-  const flatSearchDirs = [join3(rootDir, "specs")];
+  const flatSearchDirs = [join4(rootDir, "specs")];
   for (const dir of flatSearchDirs) {
     const matchFile = await findLocalSpec(dir, reqName);
     if (matchFile) {
-      const content = await readFile2(matchFile, "utf-8").catch(() => "");
+      const content = await readFile3(matchFile, "utf-8").catch(() => "");
       const v = targetVersion || versionFromFrontmatter(content) || "0.1.0";
       return {
         name: base,
@@ -9478,16 +9482,16 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       };
     }
   }
-  const globalBaseDir = join3(globalDir, base);
+  const globalBaseDir = join4(globalDir, base);
   try {
-    const entries = await readdir(globalBaseDir, { withFileTypes: true });
+    const entries = await readdir2(globalBaseDir, { withFileTypes: true });
     const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
     let matchDir = null;
     let matchVer;
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join3(globalBaseDir, d.name);
+          matchDir = join4(globalBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -9496,9 +9500,9 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       let bestVer = "";
       for (const d of verDirs) {
         const v = normalizeVersion(d.name);
-        if (!bestVer || compareVersions(v, bestVer) > 0) {
+        if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join3(globalBaseDir, d.name);
+          matchDir = join4(globalBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -9518,7 +9522,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     } else if (verDirs.length === 0) {
       const specFile = await findSpecInPackageDir(globalBaseDir, base);
       if (specFile) {
-        const specContent = await readFile2(specFile, "utf-8").catch(() => "");
+        const specContent = await readFile3(specFile, "utf-8").catch(() => "");
         const fmVersion = versionFromFrontmatter(specContent);
         const bpVersion = blueprintVersionFromFrontmatter(specContent);
         if (!targetVersion || fmVersion === targetVersion || bpVersion === targetVersion) {
@@ -9536,7 +9540,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   } catch {
     const matchFile = await findLocalSpec(globalDir, reqName);
     if (matchFile) {
-      const content = await readFile2(matchFile, "utf-8").catch(() => "");
+      const content = await readFile3(matchFile, "utf-8").catch(() => "");
       const v = targetVersion || versionFromFrontmatter(content) || "0.1.0";
       return {
         name: base,
@@ -9549,19 +9553,19 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     }
   }
   try {
-    const skillEntries = await readdir(skillsDir, { withFileTypes: true });
+    const skillEntries = await readdir2(skillsDir, { withFileTypes: true });
     const skillDirs = skillEntries.filter((e) => e.isDirectory()).map((e) => e.name);
     for (const skillName of skillDirs) {
-      const skillPkgBase = join3(skillsDir, skillName, "bluepriNNts", base);
+      const skillPkgBase = join4(skillsDir, skillName, "bluepriNNts", base);
       try {
-        const entries = await readdir(skillPkgBase, { withFileTypes: true });
+        const entries = await readdir2(skillPkgBase, { withFileTypes: true });
         const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
         let matchDir = null;
         let matchVer;
         if (targetVersion) {
           for (const d of verDirs) {
             if (normalizeVersion(d.name) === targetVersion) {
-              matchDir = join3(skillPkgBase, d.name);
+              matchDir = join4(skillPkgBase, d.name);
               matchVer = targetVersion;
               break;
             }
@@ -9570,9 +9574,9 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
           let bestVer = "";
           for (const d of verDirs) {
             const v = normalizeVersion(d.name);
-            if (!bestVer || compareVersions(v, bestVer) > 0) {
+            if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
               bestVer = v;
-              matchDir = join3(skillPkgBase, d.name);
+              matchDir = join4(skillPkgBase, d.name);
               matchVer = v;
             }
           }
@@ -9591,9 +9595,9 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
           }
         }
       } catch {
-        const matchFile = await findLocalSpec(join3(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join3(skillsDir, skillName), reqName);
+        const matchFile = await findLocalSpec(join4(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join4(skillsDir, skillName), reqName);
         if (matchFile) {
-          const content = await readFile2(matchFile, "utf-8").catch(() => "");
+          const content = await readFile3(matchFile, "utf-8").catch(() => "");
           const v = targetVersion || versionFromFrontmatter(content) || "0.1.0";
           return {
             name: base,
@@ -10134,8 +10138,164 @@ async function writeOnce(root, t, bytes, o = {}) {
   }
 }
 
+// iNNfo/packages/innfo-core/src/changeset/types.ts
+function isChangeStatus(val) {
+  return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);
+}
+function isChangeOp(val) {
+  return typeof val === "string" && [
+    "update_field",
+    "add_element",
+    "remove_element",
+    "rename_element",
+    "rename_concept",
+    "update_matrix_cell",
+    "comment"
+  ].includes(val);
+}
+
 // iNNfo/packages/innfo-core/src/changeset/parser.ts
 var import_yaml8 = __toESM(require_dist(), 1);
+function stripQuotes(str2) {
+  const trimmed = str2.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "string") return parsed;
+    } catch {
+    }
+    return trimmed.slice(1, -1);
+  }
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+function parseFieldsValue(str2) {
+  const trimmed = str2.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null) {
+        const out = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          out[k] = String(v);
+        }
+        return out;
+      }
+    } catch {
+    }
+  }
+  return void 0;
+}
+function parseChangeset(rawContent) {
+  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(rawContent.trimStart());
+  let frontmatter = {
+    spec_version: "V_0-4-0",
+    parent_spec: "changes",
+    blueprint_version: "0.1.0",
+    status: "proposed",
+    proposal_sha: ""
+  };
+  let body = rawContent;
+  if (frontmatterMatch) {
+    const yamlText = frontmatterMatch[1];
+    body = frontmatterMatch[2];
+    try {
+      const parsedYaml = (0, import_yaml8.parse)(yamlText);
+      if (typeof parsedYaml === "object" && parsedYaml !== null) {
+        frontmatter = {
+          ...frontmatter,
+          ...parsedYaml
+        };
+      }
+    } catch {
+    }
+  }
+  const changeHeadingRegex = /^##\s+NN\s+Change:\s*(.+)$/i;
+  const lines = body.split(/\r?\n/);
+  const changes = [];
+  let currentChange = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const headingMatch = changeHeadingRegex.exec(line.trim());
+    if (headingMatch) {
+      if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
+        changes.push(currentChange);
+      }
+      currentChange = {
+        id: headingMatch[1].trim()
+      };
+      continue;
+    }
+    if (!currentChange) continue;
+    const propMatch = /^([a-zA-Z0-9_-]+)::\s*(.*)$/.exec(line.trim());
+    if (!propMatch) continue;
+    const key = propMatch[1].trim();
+    const rawVal = propMatch[2].trim();
+    switch (key) {
+      case "op":
+        if (!isChangeOp(rawVal)) {
+          throw new Error(`Invalid changeset op: "${rawVal}"`);
+        }
+        currentChange.op = rawVal;
+        break;
+      case "target":
+        currentChange.target = rawVal;
+        break;
+      case "from":
+        currentChange.from = stripQuotes(rawVal);
+        break;
+      case "to":
+        currentChange.to = stripQuotes(rawVal);
+        break;
+      case "concept":
+        currentChange.concept = rawVal;
+        break;
+      case "name":
+        currentChange.name = stripQuotes(rawVal);
+        break;
+      case "slug":
+        currentChange.slug = rawVal;
+        break;
+      case "fields": {
+        const parsedObj = parseFieldsValue(rawVal);
+        if (parsedObj) {
+          currentChange.fields = parsedObj;
+        }
+        break;
+      }
+      case "author":
+        currentChange.author = stripQuotes(rawVal);
+        break;
+      case "notes":
+        currentChange.notes = stripQuotes(rawVal);
+        break;
+      case "status":
+        if (!isChangeStatus(rawVal)) {
+          throw new Error(`Invalid changeset status: "${rawVal}"`);
+        }
+        currentChange.status = rawVal;
+        break;
+      case "resolution":
+        currentChange.resolution = stripQuotes(rawVal);
+        break;
+      case "resolved_slug":
+        currentChange.resolved_slug = rawVal;
+        break;
+      default:
+        break;
+    }
+  }
+  if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
+    changes.push(currentChange);
+  }
+  return {
+    frontmatter,
+    changes,
+    rawContent
+  };
+}
 
 // iNNfo/packages/innfo-core/src/changeset/serializer.ts
 var import_yaml9 = __toESM(require_dist(), 1);
@@ -10356,6 +10516,96 @@ function citationFieldsFor(conceptName, fields, schema) {
   return Array.from(result);
 }
 
+// iNNfo/packages/innfo-core/src/console/element-history.ts
+var import_promises = require("node:fs/promises");
+var import_node_path = require("node:path");
+function isChangesetFile(name) {
+  if (!isNNName(name) || isSidecarName(name)) return false;
+  const parsed = parseName(name);
+  return parsed.kind === "nn" && parsed.stem.endsWith("_changes");
+}
+function parseChangesetTarget(target) {
+  const at = String(target || "").indexOf("@");
+  if (at === -1) return { modelPart: "", elementPart: "" };
+  const rest = String(target).slice(at + 1);
+  return {
+    modelPart: String(target).slice(0, at).trim(),
+    elementPart: rest.split("&")[0].trim()
+  };
+}
+function normalizeAddressKey(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+function stripWrappingQuotes(value) {
+  if (typeof value !== "string") return value;
+  const t = value.trim();
+  if (t.length >= 2 && t.startsWith('"') && t.endsWith('"')) return t.slice(1, -1);
+  return value;
+}
+async function loadChangesetRecords(rootDir) {
+  const dir = (0, import_node_path.join)(rootDir, "changes");
+  let names;
+  try {
+    names = await (0, import_promises.readdir)(dir);
+  } catch {
+    return [];
+  }
+  const records = [];
+  for (const name of names.filter(isChangesetFile).sort()) {
+    let raw;
+    try {
+      raw = await (0, import_promises.readFile)((0, import_node_path.join)(dir, name), "utf-8");
+    } catch {
+      continue;
+    }
+    let doc;
+    try {
+      doc = parseChangeset(raw);
+    } catch {
+      continue;
+    }
+    const fm = doc.frontmatter;
+    records.push({
+      path: `changes/${name}`,
+      status: fm.status,
+      author: fm.author,
+      appliedAt: fm.applied_at,
+      changes: doc.changes.map((c) => ({
+        id: c.id,
+        op: c.op,
+        target: c.target,
+        author: c.author,
+        notes: c.notes,
+        status: c.status
+      }))
+    });
+  }
+  return records;
+}
+function attachChangesetHistory(elements, changesets) {
+  if (!Array.isArray(changesets) || changesets.length === 0) return;
+  for (const cs of changesets) {
+    for (const change of cs.changes) {
+      const { elementPart } = parseChangesetTarget(change.target);
+      if (!elementPart) continue;
+      const key = normalizeAddressKey(elementPart);
+      for (const el of elements) {
+        if (normalizeAddressKey(el.id) !== key && normalizeAddressKey(el.name) !== key) continue;
+        const item = {
+          id: change.id,
+          op: change.op,
+          author: change.author || cs.author,
+          timestamp: cs.appliedAt,
+          notes: stripWrappingQuotes(change.notes),
+          status: change.status || cs.status
+        };
+        if (!el.history) el.history = [];
+        el.history.push(item);
+      }
+    }
+  }
+}
+
 // iNNfo/packages/innfo-core/src/console/feedback-ledger.ts
 var FEEDBACK_LEDGER_FILENAME = "feedback-ledger.jsonl";
 var ALLOWED_STATUSES = /* @__PURE__ */ new Set(["pending", "applied", "rejected", "stale"]);
@@ -10541,36 +10791,36 @@ function evaluateFeedbackItems(options) {
 
 // iNNfo/packages/innfo-core/src/console/fs-source-resolver.ts
 var import_node_fs2 = require("node:fs");
-var import_node_path = require("node:path");
+var import_node_path2 = require("node:path");
 function createFsSourceResolver(rootDir) {
-  const rootResolved = (0, import_node_path.resolve)(rootDir);
+  const rootResolved = (0, import_node_path2.resolve)(rootDir);
   return (refPath, referringPath) => {
     const candidateDirs = [];
     if (referringPath) {
-      const absReferring = (0, import_node_path.isAbsolute)(referringPath) ? referringPath : (0, import_node_path.resolve)(rootDir, referringPath);
-      let cur = (0, import_node_path.dirname)(absReferring);
+      const absReferring = (0, import_node_path2.isAbsolute)(referringPath) ? referringPath : (0, import_node_path2.resolve)(rootDir, referringPath);
+      let cur = (0, import_node_path2.dirname)(absReferring);
       while (true) {
-        const sourcesDir = (0, import_node_path.join)(cur, "sources");
+        const sourcesDir = (0, import_node_path2.join)(cur, "sources");
         if ((0, import_node_fs2.existsSync)(sourcesDir)) {
           candidateDirs.push(cur);
         }
-        if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
+        if (cur === rootResolved || (0, import_node_path2.dirname)(cur) === cur) {
           break;
         }
-        const relToRoot = (0, import_node_path.relative)(rootResolved, cur);
+        const relToRoot = (0, import_node_path2.relative)(rootResolved, cur);
         if (relToRoot.startsWith("..")) {
           break;
         }
-        cur = (0, import_node_path.dirname)(cur);
+        cur = (0, import_node_path2.dirname)(cur);
       }
     }
     if (!candidateDirs.includes(rootResolved)) {
       candidateDirs.push(rootResolved);
     }
     for (const dir of candidateDirs) {
-      const abs = (0, import_node_path.resolve)(dir, refPath);
-      const rel = (0, import_node_path.relative)(dir, abs);
-      if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
+      const abs = (0, import_node_path2.resolve)(dir, refPath);
+      const rel = (0, import_node_path2.relative)(dir, abs);
+      if (rel === "" || rel.startsWith("..") || (0, import_node_path2.isAbsolute)(rel)) {
         continue;
       }
       if ((0, import_node_fs2.existsSync)(abs)) {
@@ -10587,8 +10837,8 @@ function createFsSourceResolver(rootDir) {
       }
     }
     const primaryDir = candidateDirs[0] ?? rootResolved;
-    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
-    const targetParent = (0, import_node_path.dirname)(targetAbs);
+    const targetAbs = (0, import_node_path2.resolve)(primaryDir, refPath);
+    const targetParent = (0, import_node_path2.dirname)(targetAbs);
     const parentExists = (0, import_node_fs2.existsSync)(targetParent);
     if (!parentExists) {
       return { exists: false, parentExists: false };
@@ -10596,7 +10846,7 @@ function createFsSourceResolver(rootDir) {
     let suggestions;
     try {
       const entries = (0, import_node_fs2.readdirSync)(targetParent, { withFileTypes: true });
-      const targetBase = (0, import_node_path.basename)(refPath);
+      const targetBase = (0, import_node_path2.basename)(refPath);
       const targetStem = targetBase.replace(/\.[^.]+$/, "");
       const files = entries.filter((e) => e.isFile()).map((e) => e.name);
       const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
@@ -10703,7 +10953,7 @@ function normalizeModelId(filePath, fallbackTitle) {
   return displayStem(normalized.replace(/^.*?\/(kNNowledge|models)\//i, "$1/"));
 }
 function buildConsolePayload(options) {
-  const { content, path: modelPath, schema: inputSchema, resolver, ledgerEntries, generated } = options;
+  const { content, path: modelPath, schema: inputSchema, resolver, ledgerEntries, changesets, generated } = options;
   const rawSha256 = computeSha256(content);
   const parsed = parseKnowledge(content);
   const fm = parsed.frontmatter || parseFrontmatter(content) || {};
@@ -10806,17 +11056,32 @@ function buildConsolePayload(options) {
           cellsObj[cell.row][cell.col] = cell.value;
         }
       }
+      const isItemMarkers = mat.name === "item-markers matrix" || (mat.target || "").toLowerCase() === "markers";
+      const headRows = {};
+      const headCols = {};
+      for (const r of rows) {
+        headRows[r] = { label: r, concept: mat.source || void 0, kind: "element" };
+      }
+      for (const c of cols) {
+        headCols[c] = {
+          label: c,
+          concept: mat.target || void 0,
+          kind: isItemMarkers ? "marker" : "element"
+        };
+      }
       matrices.push({
         name: mat.name,
         source: mat.source || "",
         target: mat.target || "",
         rows,
         cols,
+        head: { rows: headRows, cols: headCols },
         cells: cellsObj
       });
     }
   }
   const schemaSlot = buildConsoleSchemaSlot(inputSchema, elements);
+  attachChangesetHistory(elements, changesets);
   const genTime = generated || (/* @__PURE__ */ new Date()).toISOString();
   const normalizedSource = modelPath ? modelPath.split("\\").join("/").replace(/^models\//i, "kNNowledge/").replace(/^.*?\/(kNNowledge\/)/i, "$1") : fm.title ? `kNNowledge/${slugify(fm.title)}_NN.md` : "kNNowledge/Model_NN.md";
   const sourceFile = normalizedSource.startsWith("kNNowledge/") ? normalizedSource : `kNNowledge/${normalizedSource}`;
@@ -10846,13 +11111,13 @@ function buildConsolePayload(options) {
 }
 
 // iNNfo/packages/innfo-core/src/console/schema-resolution.ts
-var import_node_path2 = require("node:path");
-var import_promises = require("node:fs/promises");
+var import_node_path3 = require("node:path");
+var import_promises2 = require("node:fs/promises");
 async function resolveBlueprintContent(rootDir, name, url, globalDir, skillsDir) {
-  const version = url ? parseSpecName((0, import_node_path2.basename)(url)).version : void 0;
+  const version = url ? parseSpecName((0, import_node_path3.basename)(url)).version : void 0;
   const pkg = await resolveBlueprintPackage(rootDir, name, version, { globalDir, skillsDir });
   if (pkg) {
-    const content = await (0, import_promises.readFile)(pkg.specFilePath, "utf-8").catch(() => null);
+    const content = await (0, import_promises2.readFile)(pkg.specFilePath, "utf-8").catch(() => null);
     if (content !== null) return content;
   }
   const canonical = findCanonicalBlueprint(name) || (url ? findCanonicalBlueprint(url) : null);
@@ -10925,6 +11190,7 @@ async function resolveConsoleSchema(opts) {
   FEEDBACK_LEDGER_FILENAME,
   KNOWN_AGENT_TOOL_IDS,
   NORMALIZED_KNOWN_AGENT_TOOL_IDS,
+  attachChangesetHistory,
   buildConsolePayload,
   buildConsoleSchemaSlot,
   canonicalJsonStringify,
@@ -10946,9 +11212,12 @@ async function resolveConsoleSchema(opts) {
   isNNName,
   isSidecarName,
   latestOfFamily,
+  loadChangesetRecords,
+  normalizeAddressKey,
   normalizeModelId,
   normalizeToolId,
   parentSpecNameOf,
+  parseChangesetTarget,
   parseFeedbackLedger,
   parseFrontmatter,
   parseName,
