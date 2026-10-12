@@ -417,6 +417,39 @@ export function assertInlinable(shell, assets) {
   return prepared(assets)
 }
 
+// Comments are matched first so a `<script` mentioned inside one is never read as an element.
+const HTML_COMMENT_OR_SCRIPT = /<!--[\s\S]*?-->|<script\b([^>]*)>([\s\S]*?)<\/script>/gi
+const SCRIPT_SRC_ATTR = /\ssrc\s*=/i
+const SCRIPT_TYPE_ATTR = /\stype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
+const EXECUTABLE_SCRIPT_TYPES = new Set(['', 'text/javascript', 'application/javascript', 'module'])
+const CSP_META = /(<meta\s+http-equiv="Content-Security-Policy"\s+content=")([^"]*)(")/i
+
+/**
+ * Adds a `'sha256-...'` source to the page's `script-src` for every executable inline script
+ * (the inlined bundle and views), so the CSP can forbid inline scripts in general. JSON data
+ * islands and external scripts are not executed inline and get no hash. Returns the page
+ * unchanged when it declares no Content-Security-Policy meta.
+ */
+export function allowInlineScripts(html) {
+  const meta = CSP_META.exec(html)
+  if (!meta) return html
+  const hashes = new Set()
+  for (const m of html.matchAll(HTML_COMMENT_OR_SCRIPT)) {
+    if (m[2] === undefined) continue // a comment
+    const attrs = m[1]
+    if (SCRIPT_SRC_ATTR.test(attrs)) continue
+    const typeMatch = SCRIPT_TYPE_ATTR.exec(attrs)
+    const type = typeMatch ? (typeMatch[1] ?? typeMatch[2] ?? typeMatch[3]).trim().toLowerCase() : ''
+    if (!EXECUTABLE_SCRIPT_TYPES.has(type)) continue
+    // The HTML parser normalizes CRLF and CR to LF before the script text is hashed.
+    const text = m[2].replace(/\r\n?/g, '\n')
+    hashes.add(`'sha256-${createHash('sha256').update(text, 'utf8').digest('base64')}'`)
+  }
+  if (hashes.size === 0) return html
+  const policy = meta[2].replace(/(script-src[^;]*)/, (directive) => `${directive} ${[...hashes].join(' ')}`)
+  return html.replace(CSP_META, (_all, open, _policy, close) => `${open}${policy}${close}`)
+}
+
 /**
  * One self-contained page: the bundle appears once (the vendored, CDN and raw
  * mirror tags collapse into it, because each extra copy would replace
@@ -425,10 +458,12 @@ export function assertInlinable(shell, assets) {
 export function inlineConsoleAssets(shell, assets) {
   assertShell(shell)
   const { css, header, bundleScript, viewScripts } = prepared(assets)
-  return shell
-    .replace(CSS_LINK, () => `<style>${escapeStyle(css)}</style>`)
-    .replace(VIEWPORT, (meta) => (header ? `${meta}\n${header}` : meta))
-    .replace(BUNDLE_TAGS, () => [bundleScript, ...viewScripts].join('\n'))
+  return allowInlineScripts(
+    shell
+      .replace(CSS_LINK, () => `<style>${escapeStyle(css)}</style>`)
+      .replace(VIEWPORT, (meta) => (header ? `${meta}\n${header}` : meta))
+      .replace(BUNDLE_TAGS, () => [bundleScript, ...viewScripts].join('\n')),
+  )
 }
 
 /** The only place the size thresholds live (bytes of the final HTML). */

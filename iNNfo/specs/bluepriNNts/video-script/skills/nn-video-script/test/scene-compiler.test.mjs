@@ -12,7 +12,7 @@
  */
 
 import assert from 'node:assert';
-import { RemotionSceneCompiler } from '../scripts/remotion-scene-compiler.mjs';
+import { RemotionSceneCompiler, assignLayersToScenes } from '../scripts/remotion-scene-compiler.mjs';
 
 /** Builds a read_knowledge-shaped model for tests. */
 function model({ title = 'Test Video', scenes = [], layers = [] } = {}) {
@@ -169,6 +169,58 @@ async function runTests() {
     const abs = model({ title: 'Bad', scenes: [scene('One', 'one', 'hi', { music: 'C:/x.m4a' })] });
     assert.throws(() => compiler.compile(abs), /Invalid music/i);
     console.log('✔ scene music:: emits a looping bgmusic track; absolute paths are rejected');
+  }
+
+  // Test 7: nested layer binding via explicit parentSlug (even without slug prefix match).
+  {
+    const scs = [
+      scene('Scene Alpha', 'scene-alpha', 'Narration for alpha'),
+      scene('Scene Beta', 'scene-beta', 'Narration for beta'),
+    ];
+    const lys = [
+      { type: 'Layer', name: 'Random Title', slug: 'unrelated-slug-xyz', parentSlug: 'scene-beta', fields: { type: 'title', text: 'Overlay on Beta' } },
+      { type: 'Layer', name: 'Alpha Avatar', slug: 'avatar-standalone', parentElement: { concept: 'Scene', name: 'Scene Alpha', slug: 'scene-alpha' }, fields: { type: 'presenter', asset: 'avatar.png', prompt: 'Talking avatar' } },
+    ];
+    const buckets = assignLayersToScenes(scs, lys);
+    assert.strictEqual(buckets[0].length, 1);
+    assert.strictEqual(buckets[0][0].name, 'Alpha Avatar');
+    assert.strictEqual(buckets[1].length, 1);
+    assert.strictEqual(buckets[1][0].name, 'Random Title');
+
+    // Compile end-to-end to verify scene track layer lowering
+    const m = model({
+      title: 'Nested Test Video',
+      scenes: scs,
+      layers: lys,
+    });
+    const manifest = compiler.compile(m);
+    assert.strictEqual(manifest.tracks.scenes.length, 2);
+    // Alpha has 1 layer (presenter)
+    assert.strictEqual(manifest.tracks.scenes[0].props.layers.length, 1);
+    assert.strictEqual(manifest.tracks.scenes[0].props.layers[0].name, 'Alpha Avatar');
+    // Beta has 1 overlay (title)
+    const betaOverlays = manifest.tracks.overlays.filter((o) => o.fromFrame >= manifest.tracks.scenes[1].fromFrame);
+    assert.strictEqual(betaOverlays.length, 1);
+    assert.strictEqual(betaOverlays[0].type, 'kineticTitle');
+    console.log('✔ explicit parentSlug / parentElement binds layers without slug-prefix match');
+  }
+
+  // Test 8: legacy flat fallback continues binding via slug prefix.
+  {
+    const scs = [
+      scene('Scene Alpha', 'scene-alpha', 'Alpha narration'),
+      scene('Scene Beta', 'scene-beta', 'Beta narration'),
+    ];
+    const lys = [
+      { type: 'Layer', name: 'Layer A', slug: 'scene-alpha-title', fields: { type: 'title', text: 'Alpha Title' } },
+      { type: 'Layer', name: 'Layer B', slug: 'scene-beta-lowerthird', fields: { type: 'lower-third', text: 'Beta Subtitle' } },
+    ];
+    const buckets = assignLayersToScenes(scs, lys);
+    assert.strictEqual(buckets[0].length, 1);
+    assert.strictEqual(buckets[0][0].slug, 'scene-alpha-title');
+    assert.strictEqual(buckets[1].length, 1);
+    assert.strictEqual(buckets[1][0].slug, 'scene-beta-lowerthird');
+    console.log('✔ legacy flat scripts lacking parentSlug resolve via slug-prefix fallback');
   }
 
   console.log('\nAll scene compiler unit tests passed! ✨');

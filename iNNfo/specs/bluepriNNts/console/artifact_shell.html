@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Inline executable scripts are allowed only by sha256 hash: scripts/console-views.mjs
+         appends the hashes to script-src when it inlines the bundle and views. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; frame-src 'self' blob: data: about:; connect-src 'self'; object-src 'none'; base-uri 'none'"
+    />
     <title>iNNfo Console</title>
     <!--
     artifact_shell.html — thin console shell for innfo-console artifacts.
@@ -21,7 +27,8 @@
   -->
     <link rel="stylesheet" href="./innfo-ui.css" />
     <style>
-      :root {
+      :root,
+      [data-theme] {
         --bg: var(--innfo-bg);
         --surface: var(--innfo-surface);
         --surface-2: var(--innfo-surface-2);
@@ -61,6 +68,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 16px;
+        flex-wrap: wrap;
         padding: 10px 20px;
         background: var(--surface);
         border-bottom: 1px solid var(--border);
@@ -68,20 +76,20 @@
         top: 0;
         z-index: 30;
       }
-      .innfo-brand { display: flex; align-items: center; gap: 10px; }
+      .innfo-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
       .innfo-badge-domain {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.5px;
         text-transform: uppercase;
-        color: var(--primary);
-        background: color-mix(in srgb, var(--primary) 10%, transparent);
-        border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+        color: #ffffff;
+        background: var(--primary);
+        border: 1px solid var(--primary);
         padding: 3px 8px;
         border-radius: var(--radius-sm);
       }
-      .innfo-domain-title { margin: 0; font-size: 1.1rem; font-weight: 800; }
-      .innfo-mode { font-size: 0.76rem; color: var(--muted); }
+      .innfo-domain-title { margin: 0; font-size: var(--innfo-fs-title, 1.25rem); font-weight: 800; letter-spacing: -0.02em; }
+      .innfo-mode { font-size: 0.8rem; color: var(--muted); }
       .innfo-mode strong { color: var(--text); }
 
       #innfo-layout { display: flex; flex: 1 1 auto; align-items: stretch; min-height: 0; }
@@ -100,9 +108,22 @@
         top: 57px;
         overflow: hidden;
       }
-      @media (max-width: 820px) {
+      @media (max-width: 1024px) {
+        .innfo-navbar { position: static; padding: 8px 12px; gap: 8px; }
+        .innfo-action-bar { position: static; padding: 6px 12px; }
         #innfo-layout { flex-direction: column; }
-        aside.innfo-rail { width: 100%; min-width: 100%; max-width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+        aside.innfo-rail {
+          width: 100%;
+          min-width: 0;
+          max-width: 100%;
+          height: auto;
+          max-height: 210px;
+          position: static;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        .innfo-filter-zone { padding: 8px 10px; gap: 6px; }
+        #innfo-rail { padding: 6px 8px; }
       }
       .innfo-filter-zone {
         background: var(--filter-zone-bg);
@@ -146,6 +167,10 @@
       .innfo-bp-card .bp-changes { font-size: 0.66rem; font-weight: 700; color: var(--warning); background: color-mix(in srgb, var(--warning) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--surface)); padding: 1px 6px; border-radius: 999px; }
 
       main { flex: 1; min-width: 0; padding: 0 30px 90px; }
+      @media (max-width: 640px) {
+        main { padding: 0 12px 64px; }
+        .innfo-content-scroll { padding: 12px 10px 64px; }
+      }
       .innfo-action-bar {
         min-height: 38px;
         padding: 6px 18px;
@@ -159,6 +184,9 @@
         position: sticky;
         top: 57px;
         z-index: 20;
+      }
+      @media (max-width: 1024px) {
+        .innfo-action-bar { position: static; top: auto; }
       }
       .innfo-content-scroll { flex: 1; overflow-y: auto; padding: 22px 30px 90px; max-width: 1200px; width: 100%; box-sizing: border-box; }
 
@@ -178,10 +206,10 @@
       .innfo-tab-panel.active { display: block; }
       .innfo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow-card); }
       .innfo-card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
-      .innfo-card-fields { display: grid; grid-template-columns: 170px 1fr; gap: 4px 12px; font-size: 0.84rem; margin: 10px 0 0; }
       .innfo-card-fields dt { color: var(--muted); font-weight: 600; }
       .innfo-matrix table { border-collapse: collapse; font-size: 0.82rem; width: 100%; }
       .innfo-matrix th, .innfo-matrix td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+      .innfo-matrix td.innfo-matrix-cell-empty .innfo-ku-badge { opacity: 0.38; border-style: dotted; }
       .empty-state { color: var(--muted); font-size: 0.9rem; padding: 40px 0; }
 
       /* Model Explorer cards/table toggle + element table */
@@ -249,7 +277,7 @@
 
       /* Incoming relations on cards */
       .innfo-card-incoming { margin-top: 8px; }
-      .innfo-card-incoming-label { display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
+      .innfo-card-incoming-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
 
       /* Field detail dialog */
       #innfo-field-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(720px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
@@ -334,7 +362,7 @@
 
     <script src="./innfo-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.7/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.8/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   </body>

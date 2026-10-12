@@ -178,7 +178,8 @@
           })
         : []
       var runtime = isObject(parsed.runtime) ? parsed.runtime : {}
-      return { needs: needs, runtime: runtime }
+      var defaultView = typeof parsed.defaultView === 'string' ? parsed.defaultView : ''
+      return { needs: needs, runtime: runtime, defaultView: defaultView }
     } catch {
       return fallback
     }
@@ -452,15 +453,29 @@
     return { nodes: nodes, roots: roots }
   }
 
+  function cleanRefValue(raw) {
+    var s = String(raw == null ? '' : raw).trim()
+    if (s.slice(0, 2) === '[[' && s.slice(-2) === ']]') s = s.slice(2, -2).trim()
+    var pipe = s.indexOf('|')
+    if (pipe !== -1) s = s.slice(0, pipe).trim()
+    var colon = s.lastIndexOf(':')
+    if (colon !== -1) s = s.slice(colon + 1).trim()
+    return s
+  }
+
   function resolveParentId(node, nodes) {
-    if (!node) return null
+    if (!node || !nodes) return null
     var field = node.fields && node.fields.parent
     if (field && field !== '-' && field !== '') {
-      // field may hold the parent NAME; find a node by element name
+      var cleaned = cleanRefValue(field)
+      if (nodes[field]) return field
+      if (cleaned && nodes[cleaned]) return cleaned
       for (var id in nodes) {
-        if (nodes[id].el && nodes[id].el.name === field) return id
+        if (nodes[id] && nodes[id].el) {
+          var nm = nodes[id].el.name
+          if (nm === field || (cleaned && nm === cleaned)) return id
+        }
       }
-      return null
     }
     var rels = node.relations || []
     for (var i = 0; i < rels.length; i++) {
@@ -491,7 +506,7 @@
   }
 
   function nextStep(node, nodes) {
-    if (!node) return null
+    if (!node || !nodes) return null
     var rel = (node.relations || []).filter(function (r) {
       return r.field === 'next' && r.target && nodes[r.target]
     })
@@ -501,9 +516,14 @@
     }
     var label = node.fields && node.fields.next
     if (label && label !== '-' && label !== '') {
+      var cleaned = cleanRefValue(label)
+      if (nodes[label] && nodes[label].parentId === node.parentId) return nodes[label]
+      if (cleaned && nodes[cleaned] && nodes[cleaned].parentId === node.parentId) return nodes[cleaned]
       for (var id in nodes) {
         var n = nodes[id]
-        if (n.el && n.el.name === label && n.parentId === node.parentId) return n
+        if (n && n.el && (n.el.name === label || (cleaned && n.el.name === cleaned)) && n.parentId === node.parentId) {
+          return n
+        }
       }
     }
     return null
@@ -769,6 +789,45 @@
   /* Browser console: banner, rail, search, cards, matrices, drafts, export modal.
      Runs only where document/localStorage exist; pure helpers above stay DOM-free. */
 
+  // Escape untrusted text before it is concatenated into an innerHTML string.
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+  }
+
+  // Transient message for failures the reviewer must see (e.g. drafts not saved).
+  // Replaces any previous toast instead of stacking them.
+  function showToast(doc, message) {
+    if (!doc || !doc.body || typeof doc.createElement !== 'function') return null
+    var old = doc.querySelector('[data-innfo="toast"]')
+    if (old && old.parentNode) old.parentNode.removeChild(old)
+    var toast = doc.createElement('div')
+    toast.setAttribute('data-innfo', 'toast')
+    toast.setAttribute('role', 'alert')
+    toast.className = 'innfo-toast'
+    toast.style.cssText =
+      'position:fixed;right:16px;bottom:16px;z-index:10000;max-width:360px;padding:10px 14px;' +
+      'border-radius:6px;background:#7f1d1d;color:#fff;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.25);'
+    toast.textContent = String(message)
+    doc.body.appendChild(toast)
+    setTimeout(function () {
+      if (toast.parentNode) toast.parentNode.removeChild(toast)
+    }, 8000)
+    return toast
+  }
+
+  function notifyStoreError(doc, err) {
+    showToast(
+      doc,
+      'Your draft could not be saved (browser storage is full or blocked). It stays in this tab only: export your changes now.' +
+        (err && err.name ? ' [' + err.name + ']' : ''),
+    )
+  }
+
   function el(tag, cls, text) {
     var node = typeof document !== 'undefined' ? document.createElement(tag) : null
     if (!node) return null
@@ -809,17 +868,11 @@
       'innfo-banner-version',
       ' ' + String(meta.modelVersion || meta.knowledge_version || ''),
     )
-    var needsBadge = el(
-      'span',
-      'innfo-banner-needs',
-      ' needs: ' + (needs && needs.length ? needs.join(', ') : 'none'),
-    )
     var draftsBadge = el('span', 'innfo-banner-drafts', ' drafts: ' + (draftCount || 0))
     draftsBadge.setAttribute('data-innfo', 'draft-count')
 
     banner.appendChild(title)
     banner.appendChild(version)
-    banner.appendChild(needsBadge)
     banner.appendChild(draftsBadge)
 
     // Staleness signal: the reviewer's drafts were authored against a model
@@ -1062,7 +1115,7 @@
       parsed.operators.forEach(function (op) {
         var pill = el('span', 'badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
         var labelText = op.key + ':' + op.val
-        pill.innerHTML = '<span>' + labelText + '</span>'
+        pill.innerHTML = '<span>' + escapeHtml(labelText) + '</span>'
         var removeBtn = el('button', 'ml-1 hover:text-error cursor-pointer font-bold', '×')
         removeBtn.setAttribute('type', 'button')
         removeBtn.addEventListener('click', function (e) {
@@ -1075,13 +1128,13 @@
 
       parsed.textTokens.forEach(function (token) {
         var pill = el('span', 'badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
-        pill.innerHTML = '<span>"' + token + '"</span>'
+        pill.innerHTML = '<span>"' + escapeHtml(token) + '"</span>'
         var removeBtn = el('button', 'ml-1 hover:text-error cursor-pointer font-bold', '×')
         removeBtn.setAttribute('type', 'button')
         removeBtn.addEventListener('click', function (e) {
           e.stopPropagation()
           var nextTokens = parsed.textTokens.filter(function (t) { return t !== token })
-          var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || (o.key + ':' + o.val) })).join(' ')
+          var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || formatFacetToken(o.key, o.val) })).join(' ')
           if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
         })
         pill.appendChild(removeBtn)
@@ -1100,10 +1153,26 @@
     }
   }
 
-  function renderRail(doc, concepts, counts, draftCountsByConcept, onSelect, state) {
+  function formatFacetToken(key, val) {
+    var s = String(val == null ? '' : val)
+    return key + ':' + (s.indexOf(' ') !== -1 ? '"' + s + '"' : s)
+  }
+
+  function renderRail(doc, concepts, counts, draftCountsByConcept, onSelect, state, activeQuery) {
     var rail = doc.getElementById('innfo-rail')
     if (!rail) return
     rail.innerHTML = ''
+
+    var queryStr = activeQuery !== undefined
+      ? activeQuery
+      : (doc.getElementById('innfo-search') && doc.getElementById('innfo-search').value) || ''
+    var parsedRailQuery = parseFilterQuery(queryStr)
+    var activeModels = []
+    var activeConcepts = []
+    parsedRailQuery.operators.forEach(function (op) {
+      if (op.key === 'model' || op.key === 'file') activeModels.push(String(op.val).toLowerCase())
+      else if (op.key === 'concept') activeConcepts.push(String(op.val).toLowerCase())
+    })
 
     function mk(tag) {
       return doc.createElement ? doc.createElement(tag) : el(tag)
@@ -1113,7 +1182,8 @@
       var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
       var btn = mk('button')
       if (!btn) return null
-      btn.className = 'innfo-rail-item'
+      var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
+      btn.className = 'innfo-rail-item' + (isActive ? ' active' : '')
       btn.setAttribute('data-concept', String(name))
       var pill = UI.ConceptPill({ id: name, label: name, index: index, count: count }, { document: doc })
       if (pill) btn.appendChild(pill)
@@ -1125,7 +1195,7 @@
         }
       }
       btn.addEventListener('click', function () {
-        if (typeof onSelect === 'function') onSelect('concept:' + String(name))
+        if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
       })
       return btn
     }
@@ -1161,6 +1231,7 @@
     // sets the `concept:` facet. Falls back to the flat concept list for single-model
     // consoles (models absent or length <= 1).
     if (models) {
+      if (state && !state._collapsedModels) state._collapsedModels = {}
       var list = mk('ul')
       if (list) list.className = 'menu menu-xs bg-base-100 p-2 w-full'
       var globalIndex = 0
@@ -1176,17 +1247,31 @@
         var li = mk('li')
         var details = mk('details')
         details.className = 'collapse collapse-arrow'
-        details.open = true
+        details.open = !(state && state._collapsedModels && state._collapsedModels[mid])
         var summary = mk('summary')
-        summary.className = 'collapse-title min-h-0 py-2 pr-6'
+        var isModelActive = activeModels.indexOf(mid.toLowerCase()) !== -1
+        summary.className = 'collapse-title min-h-0 py-2 pr-8' + (isModelActive ? ' active' : '')
         summary.setAttribute('data-model', mid)
         var fileIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 14 }) : ''
         summary.innerHTML =
           '<span class="flex items-center gap-2 min-w-0">' + fileIcon +
-          '<span class="truncate font-semibold">' + (m.title || m.filePath || 'Model') + '</span></span>' +
-          '<span class="badge badge-ghost badge-xs">' + (m.elementCount || 0) + '</span>'
-        summary.addEventListener('click', function () {
-          if (typeof onSelect === 'function') onSelect('model:' + mid)
+          '<span class="truncate font-semibold">' + escapeHtml(m.title || m.filePath || 'Model') + '</span></span>' +
+          '<span class="badge badge-ghost badge-xs">' + (Number(m.elementCount) || 0) + '</span>'
+        summary.addEventListener('click', function (e) {
+          // Clicking the chevron zone on the right edge toggles accordion open/close
+          // without clobbering the active search filter.
+          var w = summary.clientWidth || 0
+          var x = e && typeof e.offsetX === 'number' ? e.offsetX : 0
+          if (w > 0 && x > w - 30) {
+            if (state && state._collapsedModels) {
+              setTimeout(function () {
+                state._collapsedModels[mid] = !details.open
+              }, 0)
+            }
+            return
+          }
+          if (e && typeof e.preventDefault === 'function') e.preventDefault()
+          if (typeof onSelect === 'function') onSelect(formatFacetToken('model', mid))
         })
         details.appendChild(summary)
 
@@ -1210,18 +1295,23 @@
           var a = mk('a')
           if (a) {
             a.setAttribute('data-concept', String(name))
+            if (activeConcepts.indexOf(String(name).toLowerCase()) !== -1) {
+              a.className = 'active'
+            }
             var CONCEPT_PALETTE = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']
-            var color = conceptColor(name) || CONCEPT_PALETTE[globalIndex % CONCEPT_PALETTE.length]
+            var rawColor = String(conceptColor(name) || '').trim()
+            var SAFE_CSS_COLOR = /^(#[0-9a-fA-F]{3,8}|(rgb|hsl)a?\([0-9a-zA-Z.,%\s\/]*\)|[a-zA-Z]+)$/
+            var color = SAFE_CSS_COLOR.test(rawColor) ? rawColor : CONCEPT_PALETTE[globalIndex % CONCEPT_PALETTE.length]
             globalIndex += 1
             var dot = color
-              ? '<span class="innfo-concept-dot" style="background:' + color + ';flex:none;"></span>'
+              ? '<span class="innfo-concept-dot" style="background:' + escapeHtml(color) + ';flex:none;"></span>'
               : ''
             a.innerHTML =
-              dot + '<span class="truncate">' + String(name) + '</span>' +
-              '<span class="badge badge-ghost badge-xs">' + ((counts && counts[name]) || 0) + '</span>'
+              '<span class="flex items-center gap-2 min-w-0">' + dot + '<span class="truncate">' + escapeHtml(name) + '</span></span>' +
+              '<span class="badge badge-ghost badge-xs">' + (Number(counts && counts[name]) || 0) + '</span>'
             a.addEventListener('click', function (e) {
               if (e && e.preventDefault) e.preventDefault()
-              if (typeof onSelect === 'function') onSelect('concept:' + String(name))
+              if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
             })
           }
           cli.appendChild(a)
@@ -1544,7 +1634,10 @@
 
       var head = card.querySelector('.innfo-card-head, header')
       if (head) {
-        var metaWrap = el('div', 'flex items-center gap-1.5 flex-wrap ml-auto mr-2')
+        var metaWrap = el('div', 'innfo-card-meta')
+        // Tailwind utilities are no-ops in the console shell; pin the cluster
+        // right with real CSS so the name stays tight to the thumbnail.
+        metaWrap.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-left:auto;margin-right:8px;flex-wrap:wrap;'
         if (element.concept) {
           var cBadge = el('span', 'badge badge-outline badge-xs text-xs font-semibold')
           cBadge.style.borderColor = hexColor
@@ -1553,10 +1646,8 @@
           metaWrap.appendChild(cBadge)
         }
         if (element.modelFile) {
-          var mBadge = el('span', 'badge badge-ghost badge-xs text-xs font-mono', element.modelFile)
-          mBadge.setAttribute('title', 'Knowledge Unit: ' + (element.canonicalUnit || element.unitSlug || element.modelFile))
-          metaWrap.appendChild(mBadge)
-
+          // Model filename badge dropped: the expanded footer (innfo-card-path)
+          // already carries the full Knowledge Unit locator. The copy button stays.
           var kuText = element.canonicalUnit || element.unitSlug || (element.modelFile + '@' + element.id)
           var copyBtn = el('button', 'btn btn-ghost btn-xs p-0.5 text-slate-400 hover:text-primary transition-colors cursor-pointer')
           copyBtn.setAttribute('type', 'button')
@@ -1799,13 +1890,21 @@
       tr.appendChild(conceptTd)
 
       fieldCols.forEach(function (k) {
-        var val = displayCellText(element.fields ? element.fields[k] : '')
+        var rawVal = element.fields && element.fields[k] !== undefined ? element.fields[k] : ''
+        if ((rawVal === '' || rawVal == null) && Array.isArray(element.relations)) {
+          var relMatches = element.relations
+            .filter(function (r) { return r && r.field === k })
+            .map(function (r) { return r.targetLabel || r.target || '' })
+            .filter(Boolean)
+          if (relMatches.length) rawVal = relMatches.join(', ')
+        }
+        var val = displayCellText(rawVal)
         var td = el('td', 'innfo-element-table-cell', val)
         if (val) td.setAttribute('title', val)
         td.addEventListener('dblclick', function () {
           renderFieldDetailDialog(doc, {
             name: k,
-            value: element.fields ? element.fields[k] : '',
+            value: rawVal,
             type: fieldTypeOf(schema, k),
             elementName: element.name || element.id || '',
           })
@@ -1935,7 +2034,8 @@
         tr.appendChild(rowTh)
         cols.forEach(function (c) {
           var value = rowCells[c] != null ? String(rowCells[c]) : ''
-          var td = el('td', null, null)
+          var isEmpty = value === '' || value === '-'
+          var td = el('td', isEmpty ? 'innfo-matrix-cell-empty' : null, null)
           if (td) td.appendChild(UI.KuBadge({ kind: 'cell', value: value }))
           tr.appendChild(td)
         })
@@ -2595,7 +2695,7 @@
         if (focusedRow) {
           var filterBanner = el('div', 'innfo-timeline-filter-banner')
           var bannerText = el('span', 'innfo-filter-banner-text')
-          bannerText.innerHTML = UI.icon('target', 14) + ' <span>Showing dependency tree for: <strong>' + (focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
+          bannerText.innerHTML = UI.icon('target', 14) + ' <span>Showing dependency tree for: <strong>' + escapeHtml(focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
           var clearBtn = el('button', 'innfo-filter-banner-clear')
           clearBtn.setAttribute('type', 'button')
           clearBtn.innerHTML = UI.icon('close', 12) + ' <span>Clear Filter</span>'
@@ -2774,7 +2874,7 @@
           var trChart = el('tr', 'innfo-timeline-chart-row')
           var tdChartSticky = el('td', 'td-sticky')
           var chartLabel = el('span', 'innfo-chart-row-label')
-          chartLabel.innerHTML = UI.icon('chart', 12) + ' <span>Monthly: ' + (r.label || r.id) + '</span>'
+          chartLabel.innerHTML = UI.icon('chart', 12) + ' <span>Monthly: ' + escapeHtml(r.label || r.id) + '</span>'
           tdChartSticky.appendChild(chartLabel)
           trChart.appendChild(tdChartSticky)
 
@@ -3393,6 +3493,12 @@
         btn.classList.toggle('tab-active', t.id === tabId)
         if (panel) panel.classList.toggle('active', t.id === tabId)
       })
+      if (!scopedView && doc.querySelector) {
+        var railAside = doc.querySelector('aside.innfo-rail')
+        if (railAside) {
+          railAside.style.display = tabId === 'explorer' ? '' : 'none'
+        }
+      }
       if (prev) hook(prev, 'onHide')
       if (tabId === 'review' && opts.state) renderReviewTab(doc, opts.state, opts.config, opts.onRefresh)
       if (next.external) {
@@ -3416,6 +3522,23 @@
       })
         ? id
         : ''
+    }
+
+    // First tab shown on a fresh load: the model explorer is the domain
+    // console's primary content, so it wins over the registry order (a
+    // blueprint's `procedure` view otherwise lands first and becomes the
+    // default). A `config.defaultView` from #innfo-config overrides it.
+    function defaultTabId() {
+      var has = function (id) {
+        return tabs.some(function (t) {
+          return t.id === id
+        })
+      }
+      if (scopedView && has(scopedView)) return scopedView
+      var preferred = opts.config && opts.config.defaultView
+      if (preferred && has(preferred)) return preferred
+      if (has('explorer')) return 'explorer'
+      return tabs[0].id
     }
 
     var onHashChange = function () {
@@ -3442,7 +3565,7 @@
       // initial search) is kept and the default view is not mounted for
       // nothing, and after the review controller exists (ctx.modal needs it).
       activateInitial: function () {
-        if (!current) select(tabFromHash() || tabs[0].id, true)
+        if (!current) select(tabFromHash() || defaultTabId(), true)
       },
     }
   }
@@ -3454,6 +3577,14 @@
     if (old && old.parentNode) old.parentNode.removeChild(old)
     var n = state && state.store ? state.store.drafts().length : 0
     if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
+  }
+
+  function elementsByIdOf(state) {
+    var byId = {}
+    ;(state && state.elements ? state.elements : []).forEach(function (e) {
+      if (e && e.id) byId[e.id] = e
+    })
+    return byId
   }
 
   // C11: the review tab renders through the kit DraftList from the v2 store.
@@ -3476,7 +3607,41 @@
         drafts.length + (drafts.length === 1 ? ' pending change' : ' pending changes'),
       )
       if (count) titleWrap.appendChild(count)
+      var staleCount = drafts.filter(function (d) {
+        return Review.isTargetChanged(d, elementsByIdOf(state))
+      }).length
+      if (staleCount > 0) {
+        var staleNote = el(
+          'p',
+          'innfo-review-stale text-sm mt-1',
+          staleCount + (staleCount === 1 ? ' draft targets' : ' drafts target') +
+            ' an element that changed since it was written: review before exporting.',
+        )
+        if (staleNote) {
+          staleNote.setAttribute('data-innfo', 'stale-drafts')
+          staleNote.style.color = '#b45309'
+          titleWrap.appendChild(staleNote)
+        }
+      }
       head.appendChild(titleWrap)
+
+      var exportedIds = state && Array.isArray(state.exportedDraftIds) ? state.exportedDraftIds : []
+      var exportedPending = drafts.filter(function (d) {
+        return exportedIds.indexOf(d.id) !== -1
+      })
+      if (exportedPending.length > 0 && state.store && typeof state.store.clearDrafts === 'function') {
+        var clearBtn = el('button', 'innfo-btn innfo-clear-exported btn btn-ghost btn-sm', 'Clear exported drafts (' + exportedPending.length + ')')
+        if (clearBtn) {
+          clearBtn.setAttribute('type', 'button')
+          clearBtn.setAttribute('data-innfo', 'clear-exported')
+          clearBtn.addEventListener('click', function () {
+            state.store.clearDrafts(exportedPending.map(function (d) { return d.id }))
+            state.exportedDraftIds = []
+            if (typeof onRefresh === 'function') onRefresh()
+          })
+          head.appendChild(clearBtn)
+        }
+      }
 
       if (drafts.length > 0) {
         var exportBtn = el('button', 'innfo-btn innfo-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
@@ -3505,13 +3670,10 @@
         }
         listSection.appendChild(empty)
       } else {
-        var byId = {}
-        ;(state && state.elements ? state.elements : []).forEach(function (e) {
-          if (e && e.id) byId[e.id] = e
-        })
         listSection.appendChild(
-          UI.DraftList({ drafts: drafts, byId: byId }, {
+          UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, {
             doc: doc,
+            isTargetChanged: Review.isTargetChanged,
             onDelete: function (id) {
               if (state && state.store) state.store.removeDraft(id)
               if (typeof onRefresh === 'function') onRefresh()
@@ -3663,6 +3825,14 @@
       img.setAttribute('src', item.value)
       img.setAttribute('alt', item.name || '')
       img.className = 'innfo-media-image'
+      img.addEventListener('error', function () {
+        var cur = img.getAttribute('src') || ''
+        var relMatch = !img.getAttribute('data-retried') && cur.match(/^.+?(\bsources\/.+)$/)
+        if (relMatch) {
+          img.setAttribute('data-retried', '1')
+          img.setAttribute('src', relMatch[1])
+        }
+      })
       if (body) body.appendChild(img)
 
       var bar = el('div', 'innfo-media-bar')
@@ -3757,8 +3927,12 @@
       UI && typeof UI.FieldValue === 'function'
         ? UI.FieldValue({ value: field.value, type: field.type, name: field.name }, { doc: doc })
         : null
-    if (valueNode) body.appendChild(valueNode)
-    else body.appendChild(el('pre', 'innfo-field-detail-value', displayCellText(field.value)))
+    if (valueNode) {
+      body.appendChild(valueNode)
+    } else {
+      var textVal = displayCellText(field.value)
+      body.appendChild(el('pre', 'innfo-field-detail-value', textVal !== '' ? textVal : '(empty)'))
+    }
     dialog.appendChild(head)
     dialog.appendChild(body)
     try {
@@ -3803,7 +3977,8 @@
     var NS = 'http://www.w3.org/2000/svg'
     var size = 560
     var mid = size / 2
-    var r = nodes.length > 1 ? 210 : 0
+    var r = nodes.length > 1 ? 190 : 0
+    var nodeR = 34
     var pos = {}
     nodes.forEach(function (name, i) {
       var a = -Math.PI / 2 + (i * 2 * Math.PI) / nodes.length
@@ -3815,19 +3990,47 @@
     svg.setAttribute('role', 'img')
     svg.setAttribute('aria-label', 'Model metamodel map')
 
+    var defs = doc.createElementNS(NS, 'defs')
+    var marker = doc.createElementNS(NS, 'marker')
+    marker.setAttribute('id', 'innfo-metamodel-arrow')
+    marker.setAttribute('viewBox', '0 0 10 10')
+    marker.setAttribute('refX', '9')
+    marker.setAttribute('refY', '5')
+    marker.setAttribute('markerWidth', '6')
+    marker.setAttribute('markerHeight', '6')
+    marker.setAttribute('orient', 'auto-start-reverse')
+    var arrowPath = doc.createElementNS(NS, 'path')
+    arrowPath.setAttribute('d', 'M 0 1 L 10 5 L 0 9 z')
+    arrowPath.setAttribute('fill', 'var(--primary, #2563eb)')
+    marker.appendChild(arrowPath)
+    defs.appendChild(marker)
+    svg.appendChild(defs)
+
     ;(Array.isArray(matrices) ? matrices : []).forEach(function (m) {
       if (!m || !m.source || !m.target || !pos[m.source] || !pos[m.target]) return
+      var sx = pos[m.source].x
+      var sy = pos[m.source].y
+      var tx = pos[m.target].x
+      var ty = pos[m.target].y
+      var dx = tx - sx
+      var dy = ty - sy
+      var dist = Math.sqrt(dx * dx + dy * dy) || 1
+      var x1 = dist > nodeR * 2 ? sx + (dx / dist) * nodeR : sx
+      var y1 = dist > nodeR * 2 ? sy + (dy / dist) * nodeR : sy
+      var x2 = dist > nodeR * 2 ? tx - (dx / dist) * (nodeR + 4) : tx
+      var y2 = dist > nodeR * 2 ? ty - (dy / dist) * (nodeR + 4) : ty
       var line = doc.createElementNS(NS, 'line')
-      line.setAttribute('x1', pos[m.source].x)
-      line.setAttribute('y1', pos[m.source].y)
-      line.setAttribute('x2', pos[m.target].x)
-      line.setAttribute('y2', pos[m.target].y)
+      line.setAttribute('x1', x1)
+      line.setAttribute('y1', y1)
+      line.setAttribute('x2', x2)
+      line.setAttribute('y2', y2)
       line.setAttribute('class', 'innfo-metamodel-edge')
+      line.setAttribute('marker-end', 'url(#innfo-metamodel-arrow)')
       svg.appendChild(line)
       if (m.name) {
         var lt = doc.createElementNS(NS, 'text')
-        lt.setAttribute('x', (pos[m.source].x + pos[m.target].x) / 2)
-        lt.setAttribute('y', (pos[m.source].y + pos[m.target].y) / 2)
+        lt.setAttribute('x', (sx + tx) / 2)
+        lt.setAttribute('y', (sy + ty) / 2 - 6)
         lt.setAttribute('text-anchor', 'middle')
         lt.setAttribute('class', 'innfo-metamodel-edge-label')
         lt.textContent = String(m.name)
@@ -3839,15 +4042,31 @@
       var c = doc.createElementNS(NS, 'circle')
       c.setAttribute('cx', pos[name].x)
       c.setAttribute('cy', pos[name].y)
-      c.setAttribute('r', '30')
+      c.setAttribute('r', String(nodeR))
       c.setAttribute('class', 'innfo-metamodel-node')
+      c.style.cursor = 'pointer'
+      var title = doc.createElementNS(NS, 'title')
+      title.textContent = String(name)
+      c.appendChild(title)
+      c.addEventListener('click', function () {
+        var search = doc.getElementById('innfo-search')
+        if (search) {
+          search.value = formatFacetToken('concept', name)
+          if (typeof CustomEvent === 'function') {
+            search.dispatchEvent(new CustomEvent('input', { bubbles: true }))
+          }
+        }
+        var expBtn = doc.querySelector('.innfo-view-tab[data-tab="explorer"]')
+        if (expBtn && typeof expBtn.click === 'function') expBtn.click()
+      })
       svg.appendChild(c)
       var t = doc.createElementNS(NS, 'text')
       t.setAttribute('x', pos[name].x)
       t.setAttribute('y', pos[name].y + 4)
       t.setAttribute('text-anchor', 'middle')
       t.setAttribute('class', 'innfo-metamodel-label')
-      t.textContent = name.length > 12 ? name.slice(0, 11) + '\u2026' : name
+      t.style.pointerEvents = 'none'
+      t.textContent = name.length > 18 ? name.slice(0, 17) + '\u2026' : name
       svg.appendChild(t)
     })
 
@@ -4029,12 +4248,14 @@
       var style = active.createElement('style')
       style.setAttribute('data-innfo-feedback', '')
       style.textContent =
-        '[data-innfo-feedback-root]{display:block;position:sticky;top:0;z-index:40;background:var(--surface,#ffffff);}' +
-        '#innfo-feedback-banner{padding:12px 24px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e5e7eb);display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);}' +
+        '[data-innfo-feedback-root]{display:block;position:relative;z-index:40;background:var(--surface,#ffffff);}' +
+        '#innfo-feedback-banner{padding:8px 20px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e5e7eb);display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);}' +
         '#innfo-feedback-banner strong{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;}' +
         '#innfo-feedback-banner .innfo-banner-version,#innfo-feedback-banner .innfo-banner-needs,#innfo-feedback-banner .innfo-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
         '#innfo-feedback-banner .innfo-banner-stale{color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;font-size:0.78rem;font-weight:600;padding:2px 8px;}' +
+        '#innfo-feedback-banner .innfo-reviewer-chip{margin-left:auto;}' +
         '#innfo-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;margin-left:auto;}' +
+        '#innfo-feedback-banner .innfo-reviewer-chip~#innfo-feedback-open{margin-left:0;}' +
         '#innfo-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
         '#innfo-feedback-modal{border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-lg,8px);padding:20px;max-width:560px;width:100%;background:var(--surface,#ffffff);color:var(--text,#111827);}' +
         '#innfo-feedback-modal::backdrop{background:rgba(0,0,0,0.35);}' +
@@ -4064,11 +4285,6 @@
     version.className = 'innfo-banner-version'
     version.textContent = ' ' + (state ? state.modelVersion : '')
     banner.appendChild(version)
-
-    var needsBadge = active.createElement('span')
-    needsBadge.className = 'innfo-banner-needs'
-    needsBadge.textContent = ' needs: ' + (config.needs && config.needs.length ? config.needs.join(', ') : 'none')
-    banner.appendChild(needsBadge)
 
     var draftsBadge = active.createElement('span')
     draftsBadge.className = 'innfo-banner-drafts'
@@ -4155,17 +4371,34 @@
     return str
   }
 
-  function draftToChange(draft, index, modelTitle) {
+  // Builds one `## NN Change` block addressed the way `apply_change` resolves it:
+  // `<file stem>@<element slug>[&field]`. The draft carries `model_id` (the model's
+  // file stem) and `element_slug`; `fallbackModel` only covers drafts saved before
+  // those fields existed.
+  function oneLine(v) {
+    return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
+  }
+
+  function draftToChange(draft, index, fallbackModel) {
     var d = isObject(draft) ? draft : {}
-    var id = d.id || 'c-' + String(index + 1).padStart(2, '0')
-    var model = modelTitle || 'model'
-    var elementTarget = d.element_id || d.element || 'elem'
-    var target = d.field ? model + '@' + elementTarget + '&' + d.field : model + '@' + elementTarget
+    var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
+    var model = oneLine(d.model_id || fallbackModel || 'model')
+    var elementTarget = oneLine(d.element_slug || d.element || d.element_id || 'elem')
+    var canUpdate = !!d.field && d.proposed !== undefined
     var op = 'update_field'
+    var target = model + '@' + elementTarget + (d.field ? '&' + oneLine(d.field) : '')
     if (d.kind === 'delete') {
       op = 'remove_element'
       target = model + '@' + elementTarget
-    } else if (d.kind === 'comment' || (!d.proposed && !d.field)) {
+    } else if (d.kind === 'new') {
+      if (d.concept && d.element) {
+        // A new element is addressed by its concept; the engine reads name/fields below.
+        op = 'add_element'
+        target = model + '@' + oneLine(d.concept)
+      } else {
+        op = 'comment'
+      }
+    } else if (d.kind === 'comment' || !canUpdate) {
       op = 'comment'
     }
 
@@ -4173,9 +4406,17 @@
     lines.push('## NN Change: ' + id)
     lines.push('op:: ' + op)
     lines.push('target:: ' + target)
+    // The engine rejects the change if the element's content hash moved on since the draft.
+    if ((op === 'update_field' || op === 'remove_element') && d.base_hash) {
+      lines.push('base_hash:: ' + oneLine(d.base_hash))
+    }
     if (op === 'update_field') {
       if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
-      if (d.proposed !== undefined) lines.push('to:: ' + formatChangesetValue(d.proposed))
+      lines.push('to:: ' + formatChangesetValue(d.proposed))
+    } else if (op === 'add_element') {
+      lines.push('concept:: ' + oneLine(d.concept))
+      lines.push('name:: ' + formatChangesetValue(d.element))
+      if (isObject(d.proposed)) lines.push('fields:: ' + JSON.stringify(d.proposed))
     }
     if (d.comment) {
       lines.push('notes:: ' + formatChangesetValue(d.comment))
@@ -4183,7 +4424,7 @@
     return lines.join('\n')
   }
 
-  function serializeChangesetMarkdown(meta, drafts) {
+  function serializeChangesetMarkdown(meta, drafts, fallbackModel) {
     var title = meta.title || meta.source_knowledge || 'Proposed Changes'
     var author = meta.author || 'reviewer'
     var lines = [
@@ -4206,7 +4447,7 @@
       '# NN Change',
       '',
     ]
-    var modelName = meta.source_knowledge || 'model'
+    var modelName = fallbackModel || meta.source_knowledge || 'model'
     var blocks = drafts.map(function (d, i) {
       return draftToChange(d, i, modelName)
     })
@@ -4233,7 +4474,7 @@
       return { ok: false, errors: ['Reviewer identifier is required.'] }
     }
 
-    var text = serializeChangesetMarkdown(exportMeta, drafts)
+    var text = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
     var filename = modelSlugOf(state) + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
     return {
       ok: true,
@@ -4285,7 +4526,7 @@
     if (!check.ok) return { ok: false, errors: check.errors }
 
     var stamp = stampFromDate(state && state.exportedAt ? new Date(state.exportedAt) : new Date())
-    var changesetMd = serializeChangesetMarkdown(exportMeta, drafts)
+    var changesetMd = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
     var modelSlug = modelSlugOf(state)
     var changesetFilename = modelSlug + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
 
@@ -4311,7 +4552,7 @@
     errorContainer.innerHTML =
       '<strong>Validation errors:</strong><ul>' +
       errors.map(function (e) {
-        return '<li>' + e + '</li>'
+        return '<li>' + escapeHtml(e) + '</li>'
       }).join('') +
       '</ul>'
     errorContainer.style.display = 'block'
@@ -4337,7 +4578,18 @@
     setTimeout(function () {
       URL.revokeObjectURL(url)
     }, 1000)
+    markDraftsExported(state)
     return { ok: true, filename: composed.changesetFilename, items: composed.items }
+  }
+
+  // Remembers which drafts just left in an export so the Review tab can offer to
+  // clear them; drafts are never removed automatically (the file may be lost).
+  function markDraftsExported(state) {
+    if (!state || !state.store) return
+    state.exportedDraftIds = state.store.drafts().map(function (d) {
+      return d.id
+    })
+    if (typeof state.refreshUi === 'function') state.refreshUi()
   }
 
   function copyChangesetPrompt(doc, state) {
@@ -4367,6 +4619,7 @@
         navigator.clipboard.writeText(promptText).then(
           function () {
             announce('Copied changeset prompt to clipboard.')
+            markDraftsExported(state)
           },
           function () {
             announce(fallbackCopy(doc, textarea, promptText))
@@ -4391,11 +4644,9 @@
     var preview = modal.querySelector('[data-innfo="preview"]')
     if (preview) {
       preview.innerHTML = ''
-      var byId = {}
-      ;(state && state.elements ? state.elements : []).forEach(function (e) {
-        if (e && e.id) byId[e.id] = e
-      })
-      preview.appendChild(UI.DraftList({ drafts: drafts, byId: byId }, { doc: doc }))
+      preview.appendChild(
+        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged }),
+      )
     }
 
     var composed = composeExport(state, identifier)
@@ -4591,9 +4842,29 @@
       elements: elements,
       store: Review.createDraftStore(
         typeof localStorage !== 'undefined' ? localStorage : null,
-        baseId + (scopedView ? '::view:' + scopedView : ''),
+        // A domain console keys its drafts by the stable domain id, never by content.
+        String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : ''),
         liveModelVersion,
+        {
+          onError: function (err) {
+            notifyStoreError(active, err)
+          },
+          // Another tab changed the drafts: repaint from the merged store.
+          onRemoteChange: function () {
+            state.refreshUi()
+          },
+        },
       ),
+    }
+    state.refreshUi = function () {
+      refresh(activeSearchQuery)
+      refreshDraftCounts()
+    }
+    cleanups.push(function () {
+      if (state.store && typeof state.store.destroy === 'function') state.store.destroy()
+    })
+    if (state.store && state.store.persistent === false) {
+      showToast(active, 'Browser storage is unavailable: drafts are kept in memory and will be lost on reload. Export your changes before leaving.')
     }
 
     var counts = {}
@@ -4926,6 +5197,7 @@
     renderNavbarMeta: renderNavbarMeta,
     renderFilterBar: renderFilterBar,
     renderRail: renderRail,
+    renderErrors: renderErrors,
     mountElementTable: mountElementTable,
     renderExplorerToolbar: renderExplorerToolbar,
     sortTableElements: sortTableElements,

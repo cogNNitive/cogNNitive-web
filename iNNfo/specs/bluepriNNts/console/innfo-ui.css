@@ -3,7 +3,7 @@
  * Offline-first, standalone component classes: .table, .card, .modal, .tabs, .drawer, .badge, .steps, .stats
  */
 
-:root {
+:root, [data-theme] {
   --b1: var(--innfo-surface, #ffffff);
   --b2: var(--innfo-surface-2, #f3f4f6);
   --b3: var(--innfo-border, #e5e7eb);
@@ -24,6 +24,26 @@
   --wac: #ffffff;
   --er: var(--innfo-status-rejected, #b91c1c);
   --erc: #ffffff;
+  --fallback-b1: var(--innfo-surface, #ffffff);
+  --fallback-b2: var(--innfo-surface-2, #f3f4f6);
+  --fallback-b3: var(--innfo-border, #e5e7eb);
+  --fallback-bc: var(--innfo-text, #111827);
+  --fallback-p: var(--innfo-link, #2563eb);
+  --fallback-pc: #ffffff;
+  --fallback-s: var(--innfo-concept-2, #8b5cf6);
+  --fallback-sc: #ffffff;
+  --fallback-a: var(--innfo-link, #2563eb);
+  --fallback-ac: #ffffff;
+  --fallback-n: var(--innfo-accent, #1f2937);
+  --fallback-nc: var(--innfo-bg, #ffffff);
+  --fallback-in: var(--innfo-link, #2563eb);
+  --fallback-inc: #ffffff;
+  --fallback-su: var(--innfo-status-applied, #166534);
+  --fallback-suc: #ffffff;
+  --fallback-wa: var(--innfo-status-pending, #92400e);
+  --fallback-wac: #ffffff;
+  --fallback-er: var(--innfo-status-rejected, #b91c1c);
+  --fallback-erc: #ffffff;
   --rounded-box: var(--innfo-radius-lg, 10px);
   --rounded-btn: var(--innfo-radius, 8px);
   --rounded-badge: var(--innfo-radius-sm, 6px);
@@ -34,6 +54,8 @@
   --tab-border: 1px;
   --tab-radius: var(--innfo-radius-sm, 6px);
 }
+.bg-base-100 { background-color: var(--innfo-surface, #ffffff); color: var(--innfo-text, #111827); }
+.bg-base-200 { background-color: var(--innfo-surface-2, #f3f4f6); color: var(--innfo-text, #111827); }
 
 .alert {
     display: grid;
@@ -162,15 +184,64 @@
   .btn:disabled {
   pointer-events: none
 }
+  /* sizes & variants */
+  .btn-xs {
+  height: 1.5rem;
+  min-height: 1.5rem;
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+  font-size: 0.72rem;
+}
+  .btn-sm {
+  height: 2rem;
+  min-height: 2rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.8rem;
+}
+  .btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: inherit;
+}
+  .btn-ghost:hover {
+  background-color: var(--innfo-surface-2, rgba(0, 0, 0, 0.06));
+}
   /* shapes */
   .btn-square {
   height: 3rem;
   width: 3rem;
   padding: 0px
 }
+  .btn-square.btn-xs {
+  height: 1.5rem;
+  min-height: 1.5rem;
+  width: 1.5rem;
+  padding: 0px
+}
+  .btn-square.btn-sm {
+  height: 2rem;
+  min-height: 2rem;
+  width: 2rem;
+  padding: 0px
+}
   .btn-circle {
   height: 3rem;
   width: 3rem;
+  border-radius: 9999px;
+  padding: 0px
+}
+  .btn-circle.btn-xs {
+  height: 1.5rem;
+  min-height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 9999px;
+  padding: 0px
+}
+  .btn-circle.btn-sm {
+  height: 2rem;
+  min-height: 2rem;
+  width: 2rem;
   border-radius: 9999px;
   padding: 0px
 }
@@ -2576,6 +2647,36 @@ details.collapse summary {
   transform-origin: 75% 75%;
   box-shadow: 2px 2px;
   pointer-events: none;
+}
+#innfo-rail .collapse-arrow > .collapse-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 2.1rem 0.45rem 0.65rem;
+  min-height: 0;
+  border-radius: var(--innfo-radius-sm, 6px);
+  cursor: pointer;
+}
+#innfo-rail .collapse-arrow > .collapse-title:after {
+  top: 50%;
+  inset-inline-end: 0.8rem;
+  --tw-translate-y: -50%;
+}
+#innfo-rail .menu a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--innfo-radius-sm, 6px);
+}
+#innfo-rail .menu a.active,
+#innfo-rail .collapse-title.active,
+#innfo-rail .innfo-rail-item.active {
+  background-color: color-mix(in srgb, var(--innfo-link, #2563eb) 12%, var(--innfo-surface, #ffffff));
+  color: var(--innfo-link, #2563eb);
+  font-weight: 600;
 }
 .collapse-plus > .collapse-title:after {
   position: absolute;
@@ -5225,7 +5326,8 @@ details.collapse summary {
 /* ===== Procedure stepper view styles (migrated from procedures/assets/procedure_console.html in S2e) ===== */
 /* Semantic tokens come from InnfoUI (data-theme driven). Local aliases keep
        this shell's layout variables working without hard-coded colors. */
-    :root {
+    .innfo-procedure-view,
+    .innfo-proc-host {
       --bg: var(--innfo-bg);
       --surface: var(--innfo-surface);
       --surface-2: var(--innfo-surface-2);
@@ -5253,21 +5355,21 @@ details.collapse summary {
       --shadow-lg: var(--innfo-shadow);
       --font: var(--innfo-font);
       --mono: var(--innfo-mono);
-    }
-    * { box-sizing: border-box; }
-    body {
       margin: 0;
-      background: var(--bg);
       color: var(--text);
       font-family: var(--font);
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
     }
-    code { font-family: var(--mono); font-size: 0.85em; }
 
-    header {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
+    .innfo-procedure-view header,
+    .innfo-procedure-view .proc-view-header,
+    .innfo-proc-host header,
+    .innfo-proc-host .proc-view-header {
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       background: var(--surface);
       display: flex;
       justify-content: space-between;
@@ -5275,7 +5377,8 @@ details.collapse summary {
       flex-wrap: wrap;
       gap: 12px;
     }
-    header .badge {
+    .innfo-procedure-view header .badge,
+    .innfo-proc-host header .badge {
       display: inline-block;
       font-size: 0.65rem;
       font-weight: 700;
@@ -5287,9 +5390,64 @@ details.collapse summary {
       border-radius: 4px;
       margin-bottom: 4px;
     }
-    header h1 { margin: 0 0 4px; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.4px; }
-    header .meta-line { font-size: 0.8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
-    header .meta-line span strong { color: var(--text); font-weight: 600; }
+    .innfo-procedure-view header h1,
+    .innfo-procedure-view .proc-view-header .proc-title,
+    .innfo-proc-host header h1,
+    .innfo-proc-host .proc-view-header .proc-title {
+      margin: 0 0 4px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+    .innfo-procedure-view header .meta-line,
+    .innfo-procedure-view .proc-view-header .meta-line,
+    .innfo-proc-host header .meta-line,
+    .innfo-proc-host .proc-view-header .meta-line {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 14px;
+    }
+    .innfo-procedure-view header .meta-line span strong,
+    .innfo-procedure-view .proc-view-header .meta-line span strong,
+    .innfo-proc-host header .meta-line span strong,
+    .innfo-proc-host .proc-view-header .meta-line span strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .proc-blueprint-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      font-size: 0.76rem;
+    }
+    .proc-blueprint-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .proc-blueprint-item {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .proc-blueprint-item.proc-blueprint-usage {
+      background: var(--primary-light);
+      border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+      color: var(--primary);
+    }
 
     .layout { display: grid; grid-template-columns: 220px 1fr; gap: 0; align-items: start; }
     @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
@@ -5344,7 +5502,8 @@ details.collapse summary {
     nav.rail button.rail-item .rail-label-text { flex: 1 1 auto; min-width: 0; }
     nav.rail button.rail-item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--text); }
 
-    main { max-width: 1320px; padding: 20px 24px 96px; min-width: 0; }
+    .innfo-procedure-view main,
+    .innfo-proc-host main { max-width: 1320px; padding: 20px 24px 96px; min-width: 0; }
 
     /* Primary tabs: Procedures | Matrices */
     .tabs {
@@ -5545,7 +5704,8 @@ details.collapse summary {
       font-weight: 600;
       color: var(--text-faint);
     }
-    .btn-xs {
+    .innfo-procedure-view .btn-xs,
+    .innfo-proc-host .btn-xs {
       appearance: none;
       border: 1px solid var(--border);
       background: var(--surface);
@@ -5560,7 +5720,8 @@ details.collapse summary {
       align-items: center;
       gap: 4px;
     }
-    .btn-xs:hover { background: var(--surface-3); }
+    .innfo-procedure-view .btn-xs:hover,
+    .innfo-proc-host .btn-xs:hover { background: var(--surface-3); }
 
     /* SVG DAG Canvas */
     .exec-dag-view {
@@ -5845,7 +6006,8 @@ details.collapse summary {
     }
     .btn-group-right { display: flex; gap: 8px; }
 
-    button.btn {
+    .innfo-procedure-view button.btn,
+    .innfo-proc-host button.btn {
       appearance: none;
       font: inherit;
       font-size: 0.82rem;
@@ -5862,10 +6024,14 @@ details.collapse summary {
       gap: 6px;
       transition: all 0.12s ease;
     }
-    button.btn:hover:not(:disabled) { background: var(--surface-2); }
-    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    button.btn-primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
-    button.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .innfo-procedure-view button.btn:hover:not(:disabled),
+    .innfo-proc-host button.btn:hover:not(:disabled) { background: var(--surface-2); }
+    .innfo-procedure-view button.btn:disabled,
+    .innfo-proc-host button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .innfo-procedure-view button.btn-primary,
+    .innfo-proc-host button.btn-primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
+    .innfo-procedure-view button.btn-primary:hover:not(:disabled),
+    .innfo-proc-host button.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 
     /* Live Execution Log */
     .exec-log-view {
@@ -5978,42 +6144,61 @@ details.collapse summary {
 
     .empty-state { color: var(--muted); font-size: 0.9rem; padding: 40px 0; }
 
-    /* Reference Dialog */
-    #innfo-ref-dialog {
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-lg);
+    /* Shared Console Dialogs (Reference, Field Detail, Media, Citations) */
+    #innfo-ref-dialog,
+    #innfo-field-dialog,
+    #innfo-media-dialog,
+    #innfo-citation-dialog {
+      border: 1px solid var(--innfo-border, var(--border));
+      border-radius: var(--innfo-radius-lg, 10px);
       padding: 0;
-      max-width: 480px;
+      max-width: 560px;
       width: 100%;
-      background: var(--surface);
-      color: var(--text);
-      box-shadow: var(--shadow-lg);
+      background: var(--innfo-surface, var(--surface));
+      color: var(--innfo-text, var(--text));
+      box-shadow: var(--innfo-shadow, 0 10px 25px rgba(0, 0, 0, 0.18));
     }
-    #innfo-ref-dialog::backdrop { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); }
-    #innfo-ref-dialog .innfo-ref-head {
+    #innfo-media-dialog { max-width: min(880px, 92vw); }
+    #innfo-field-dialog { max-width: min(720px, 92vw); }
+    #innfo-ref-dialog::backdrop,
+    #innfo-field-dialog::backdrop,
+    #innfo-media-dialog::backdrop,
+    #innfo-citation-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+    }
+    .innfo-ref-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--innfo-border, var(--border));
     }
-    #innfo-ref-dialog .innfo-ref-head h2 { margin: 0; font-size: 1.05rem; font-weight: 700; }
-    #innfo-ref-dialog .innfo-ref-close {
+    .innfo-ref-head h2 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+    .innfo-ref-close {
       appearance: none;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
-      border-radius: var(--radius-sm);
+      border: 1px solid var(--innfo-border, var(--border));
+      background: var(--innfo-surface, var(--surface));
+      color: var(--innfo-muted, var(--muted));
+      border-radius: var(--innfo-radius-sm, 6px);
       width: 28px;
       height: 28px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    #innfo-ref-dialog .innfo-ref-body { padding: 16px 20px 20px; }
-    #innfo-ref-dialog .innfo-ref-tag { display: inline-block; font-size: 0.64rem; font-weight: 600; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); padding: 1px 8px; border-radius: 999px; margin-bottom: 10px; }
-    #innfo-ref-dialog .innfo-ref-desc { margin: 0 0 12px; font-size: 0.88rem; }
-    #innfo-ref-dialog .innfo-ref-fields { display: grid; grid-template-columns: 170px 1fr; gap: 3px 14px; margin: 0; font-size: 0.8rem; }
-    #innfo-ref-dialog .innfo-ref-fields dt { color: var(--muted); font-weight: 600; }
-    #innfo-ref-dialog .innfo-ref-fields dd { margin: 0; }
+    .innfo-ref-close:hover {
+      background: var(--innfo-surface-2, var(--surface-2));
+      color: var(--innfo-text, var(--text));
+    }
+    .innfo-ref-body,
+    .innfo-field-detail-body { padding: 16px 20px 20px; }
+    .innfo-ref-tag { display: inline-block; font-size: 0.64rem; font-weight: 600; color: var(--innfo-muted, var(--muted)); background: var(--innfo-surface-2, var(--surface-2)); border: 1px solid var(--innfo-border, var(--border)); padding: 1px 8px; border-radius: 999px; margin-bottom: 10px; }
+    .innfo-ref-desc { margin: 0 0 12px; font-size: 0.88rem; }
+    .innfo-ref-fields { display: grid; grid-template-columns: 170px 1fr; gap: 3px 14px; margin: 0; font-size: 0.8rem; }
+    .innfo-ref-fields dt { color: var(--innfo-muted, var(--muted)); font-weight: 600; }
+    .innfo-ref-fields dd { margin: 0; }

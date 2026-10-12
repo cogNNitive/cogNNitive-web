@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const CONCEPT_HEADING_RE = /^#\s+NN\s+(.+?)\s*$/;
-const ELEMENT_HEADING_RE = /^##\s+NN\s+(.+?):\s*(.*)$/;
+const ELEMENT_HEADING_RE = /^(#{2,6})\s+NN\s+(.+?):\s*(.*)$/;
 const PROPERTY_RE = /^([A-Za-z_][A-Za-z0-9_]*)::\s?(.*)$/;
 
 /** True when `value` is already a structured iNNfo model (read_knowledge shape). */
@@ -93,19 +93,44 @@ export function parseKnowledgeDocument(content) {
       // Concept-level taxonomy is not needed to lower the model.
       continue;
     }
-    // Only element sections carry `## NN <Concept>: <Name>` headings.
+
     const lines = section.lines;
+    const headingStack = [];
     let i = 0;
     while (i < lines.length) {
       const em = ELEMENT_HEADING_RE.exec(lines[i].trim());
-      if (!em || em[1].trim().toLowerCase() !== concept.toLowerCase()) {
+      if (!em) {
         i++;
         continue;
       }
-      const element = { type: concept, name: em[2].trim(), description: '', fields: {}, markers: {}, slug: undefined, slugExplicit: false };
+      const depth = em[1].length;
+      const elConcept = em[2].trim();
+      const elName = em[3].trim();
+
+      // Heading stack management: pop entries with depth >= current depth
+      while (headingStack.length > 0 && headingStack[headingStack.length - 1].depth >= depth) {
+        headingStack.pop();
+      }
+      const parent = headingStack.length > 0 ? headingStack[headingStack.length - 1] : undefined;
+
+      const element = {
+        type: elConcept,
+        name: elName,
+        description: '',
+        fields: {},
+        markers: {},
+        slug: undefined,
+        slugExplicit: false,
+        headingDepth: depth,
+        parentElement: parent ? { concept: parent.concept, name: parent.name, slug: parent.slug } : undefined,
+        parentSlug: parent ? parent.slug : undefined,
+      };
+
+      const stackEntry = { depth, concept: elConcept, name: elName, slug: undefined };
+      headingStack.push(stackEntry);
+
       i++;
       // Tolerate blank line(s) between the element heading and its property block
-      // (Markdown formatters and the Cognitive editor insert them).
       while (i < lines.length && lines[i].trim() === '') i++;
       // Property block: consecutive `key:: value` lines.
       for (; i < lines.length; i++) {
@@ -118,20 +143,44 @@ export function parseKnowledgeDocument(content) {
         if (key === 'slug') {
           element.slug = value;
           element.slugExplicit = true;
+          stackEntry.slug = value;
         } else {
           element.fields[key] = value;
         }
       }
-      // Free-form body after the property block is the description (narration prose).
+      // Free-form body after the property block is the description (stops before the next element heading)
       const descLines = [];
       for (; i < lines.length; i++) {
         const hm = ELEMENT_HEADING_RE.exec(lines[i].trim());
-        if (hm && hm[1].trim().toLowerCase() === concept.toLowerCase()) break;
+        if (hm) break;
         descLines.push(lines[i]);
       }
       element.description = descLines.join('\n').trim();
-      if (!element.slug) element.slug = slugify(element.name);
-      (elements[concept] = elements[concept] || []).push(element);
+      if (!element.slug) {
+        element.slug = slugify(element.name);
+        stackEntry.slug = element.slug;
+      }
+      (elements[elConcept] = elements[elConcept] || []).push(element);
+    }
+  }
+
+  // Resolve parentSlug for elements that have parentElement
+  for (const list of Object.values(elements)) {
+    for (const el of list) {
+      if (el.parentElement) {
+        if (!el.parentElement.slug) {
+          const parentList = elements[el.parentElement.concept] || [];
+          const parentNode = parentList.find(
+            (p) => p.name.toLowerCase() === el.parentElement.name.toLowerCase(),
+          );
+          if (parentNode?.slug) {
+            el.parentElement.slug = parentNode.slug;
+          }
+        }
+        if (el.parentElement.slug && !el.parentSlug) {
+          el.parentSlug = el.parentElement.slug;
+        }
+      }
     }
   }
 

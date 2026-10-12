@@ -7387,6 +7387,7 @@ __export(index_exports, {
   feedbackStateFor: () => feedbackStateFor,
   findEnclosingAgentModification: () => findEnclosingAgentModification,
   groupCitationsByField: () => groupCitationsByField,
+  hashParsedElement: () => hashParsedElement,
   isConsoleModel: () => isConsoleModel,
   isExcludedPath: () => isExcludedPath,
   isNNName: () => isNNName,
@@ -7662,7 +7663,7 @@ function parseIndexBlock(content) {
 }
 
 // iNNfo/packages/innfo-core/src/parser/sections.ts
-var UNIFIED_ELEMENT_RE = /^\s*##\s+NN\s+([^:\n]+?):\s+(.*)$/;
+var UNIFIED_ELEMENT_RE = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
 var PROPERTY_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
 var SECTION_RE = /^NN\s+(?:(matrices):\s*(.*)|(.*))/;
 function sectionName(rawTitle) {
@@ -7681,10 +7682,14 @@ function sectionTitle(rawTitle) {
   }
   return rawTitle;
 }
-function parseElementHeading(line) {
+function parseElementHeadingFull(line) {
   const match = line.match(UNIFIED_ELEMENT_RE);
-  if (match) return match[2].trim();
-  return null;
+  if (!match) return null;
+  return {
+    depth: match[1].length,
+    concept: match[2].trim(),
+    name: match[3].trim()
+  };
 }
 function parsePropertyLine(line) {
   const match = line.match(PROPERTY_RE);
@@ -7733,6 +7738,7 @@ function parseConceptSection(conceptName, content) {
   let descriptionLines = [];
   const leadingLines = [];
   let seenElement = false;
+  const headingStack = [];
   const finishElement = (node) => {
     node.trailingBlankLine = descriptionLines.length > 0 && descriptionLines[descriptionLines.length - 1] === "";
     const firstProseIndex = descriptionLines.findIndex((l) => l.trim() !== "");
@@ -7740,11 +7746,36 @@ function parseConceptSection(conceptName, content) {
     node.description = descriptionLines.join("\n").trim();
     nodes.push(node);
   };
-  const startElement = (name) => {
+  const startElement = (heading) => {
     if (current) {
       finishElement(current);
     }
-    const node = { type: conceptName, name, description: "", fields: {}, markers: {} };
+    while (headingStack.length > 0 && headingStack[headingStack.length - 1].depth >= heading.depth) {
+      headingStack.pop();
+    }
+    const parent = headingStack.length > 0 ? headingStack[headingStack.length - 1] : void 0;
+    const node = {
+      type: heading.concept,
+      name: heading.name,
+      description: "",
+      fields: {},
+      markers: {},
+      headingDepth: heading.depth,
+      sectionConcept: conceptName,
+      ...parent ? {
+        parentElement: {
+          concept: parent.concept,
+          name: parent.name,
+          ...parent.slug ? { slug: parent.slug } : {}
+        }
+      } : {}
+    };
+    headingStack.push({
+      depth: heading.depth,
+      concept: heading.concept,
+      name: heading.name,
+      slug: node.slug
+    });
     descriptionLines = [];
     seenElement = true;
     return node;
@@ -7752,9 +7783,9 @@ function parseConceptSection(conceptName, content) {
   let conceptTags;
   let rawConceptTags;
   for (const line of lines) {
-    const headingName = parseElementHeading(line);
-    if (headingName !== null) {
-      current = startElement(headingName);
+    const heading = parseElementHeadingFull(line);
+    if (heading !== null) {
+      current = startElement(heading);
       continue;
     }
     if (current) {
@@ -7763,6 +7794,9 @@ function parseConceptSection(conceptName, content) {
         if (prop[0] === "slug") {
           current.slug = String(prop[1]);
           current.slugExplicit = true;
+          if (headingStack.length > 0 && headingStack[headingStack.length - 1].name === current.name) {
+            headingStack[headingStack.length - 1].slug = current.slug;
+          }
         } else if (prop[0] === "tags") {
           current.tags = parseTagList(String(prop[1]));
           current.rawTags = String(prop[1]);
@@ -8377,6 +8411,35 @@ function deriveElementSlugs(elements) {
       }
     }
   }
+  for (const [, elementNodes] of elements.entries()) {
+    for (const el of elementNodes) {
+      if (el.parentElement) {
+        if (!el.parentElement.slug) {
+          let parentNode;
+          const parentConceptNodes = elements.get(el.parentElement.concept);
+          if (parentConceptNodes) {
+            parentNode = parentConceptNodes.find(
+              (p) => p.name.toLowerCase() === el.parentElement.name.toLowerCase()
+            );
+          }
+          if (!parentNode) {
+            for (const [, nodes] of elements.entries()) {
+              parentNode = nodes.find(
+                (p) => p.name.toLowerCase() === el.parentElement.name.toLowerCase() && p.type.toLowerCase() === el.parentElement.concept.toLowerCase()
+              );
+              if (parentNode) break;
+            }
+          }
+          if (parentNode?.slug) {
+            el.parentElement.slug = parentNode.slug;
+          }
+        }
+        if (el.parentElement.slug && !el.parentSlug) {
+          el.parentSlug = el.parentElement.slug;
+        }
+      }
+    }
+  }
   return Array.from(colliding.entries()).map(([slug, info]) => ({
     slug,
     elements: Array.from(info.elements),
@@ -8458,11 +8521,14 @@ function parseKnowledge(content) {
     } else if (type === "concept") {
       const parsed = parseConceptSection(name, bodyContent);
       if (parsed.elements.length > 0) {
-        const existing = elements.get(name);
-        if (existing) {
-          existing.push(...parsed.elements);
-        } else {
-          elements.set(name, parsed.elements);
+        for (const el of parsed.elements) {
+          const targetConcept = el.type || name;
+          const existing = elements.get(targetConcept);
+          if (existing) {
+            existing.push(el);
+          } else {
+            elements.set(targetConcept, [el]);
+          }
         }
       }
       if (parsed.tags) {
@@ -10256,6 +10322,9 @@ function parseChangeset(rawContent) {
       case "to":
         currentChange.to = stripQuotes(rawVal);
         break;
+      case "base_hash":
+        currentChange.base_hash = stripQuotes(rawVal);
+        break;
       case "concept":
         currentChange.concept = rawVal;
         break;
@@ -10306,6 +10375,49 @@ function parseChangeset(rawContent) {
 
 // iNNfo/packages/innfo-core/src/changeset/serializer.ts
 var import_yaml9 = __toESM(require_dist(), 1);
+
+// iNNfo/packages/innfo-core/src/console/element-hash.ts
+function canonicalJsonStringify(value) {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return "[" + value.map(canonicalJsonStringify).join(",") + "]";
+  }
+  const obj = value;
+  const sortedKeys = Object.keys(obj).sort();
+  const pairs = [];
+  for (const k of sortedKeys) {
+    if (obj[k] !== void 0) {
+      pairs.push(JSON.stringify(k) + ":" + canonicalJsonStringify(obj[k]));
+    }
+  }
+  return "{" + pairs.join(",") + "}";
+}
+function computeElementHash(element) {
+  const canonical = canonicalJsonStringify({
+    concept: element.concept,
+    description: element.description ?? "",
+    fields: element.fields ?? {},
+    markers: element.markers ?? {},
+    name: element.name
+  });
+  return computeSha256(canonical).slice(0, 16);
+}
+function hashParsedElement(concept, node) {
+  const fields = { ...node.fields || {} };
+  delete fields.concept;
+  delete fields.name;
+  const description = node.description || fields.description || "";
+  if (fields.description) delete fields.description;
+  return computeElementHash({
+    concept,
+    name: node.name || "Element",
+    description,
+    fields,
+    markers: { ...node.markers || {} }
+  });
+}
 
 // iNNfo/packages/innfo-core/src/console/citations.ts
 var EXCERPT_CHAR_CAP = 500;
@@ -10911,33 +11023,6 @@ function buildConsoleSchemaSlot(schema, elements, procedures) {
 }
 
 // iNNfo/packages/innfo-core/src/console/payload-builder.ts
-function canonicalJsonStringify(value) {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) {
-    return "[" + value.map(canonicalJsonStringify).join(",") + "]";
-  }
-  const obj = value;
-  const sortedKeys = Object.keys(obj).sort();
-  const pairs = [];
-  for (const k of sortedKeys) {
-    if (obj[k] !== void 0) {
-      pairs.push(JSON.stringify(k) + ":" + canonicalJsonStringify(obj[k]));
-    }
-  }
-  return "{" + pairs.join(",") + "}";
-}
-function computeElementHash(element) {
-  const canonical = canonicalJsonStringify({
-    concept: element.concept,
-    description: element.description ?? "",
-    fields: element.fields ?? {},
-    markers: element.markers ?? {},
-    name: element.name
-  });
-  return computeSha256(canonical).slice(0, 16);
-}
 var WIKILINK_TARGET_RE = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g;
 function extractWikilinksFromValue(val) {
   if (typeof val === "string") {
@@ -11005,6 +11090,7 @@ function buildConsolePayload(options) {
         markers,
         hash
       };
+      if (node.slug) elem.slug = node.slug;
       rawElements.push({ elem, rawFields: { ...fields } });
       if (!elementsByName.has(name.toLowerCase())) {
         elementsByName.set(name.toLowerCase(), elem);
@@ -11236,6 +11322,7 @@ async function resolveConsoleSchema(opts) {
   feedbackStateFor,
   findEnclosingAgentModification,
   groupCitationsByField,
+  hashParsedElement,
   isConsoleModel,
   isExcludedPath,
   isNNName,

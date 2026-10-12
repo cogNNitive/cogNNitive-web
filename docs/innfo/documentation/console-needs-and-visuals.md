@@ -35,7 +35,16 @@ hard-coded app palette.
   contains the need. A missing config or a missing `needs[]` array means no needs
   are enabled.
 - Needs that are not listed are simply never matched — there is no implicit
-  default set.
+  default set. The list is **configuration, not UI**: it drives `hasNeed()` and is
+  never rendered into the console banner.
+
+### Default view
+
+On a fresh load the console opens on the **Model Explorer** (the domain's primary
+content), not on the first registered view — a blueprint's `procedure` view would
+otherwise land first. Precedence is: a `--view`-scoped console opens on its scoped
+view; otherwise `#innfo-config.defaultView` if it names a real tab; otherwise
+`explorer`; otherwise the first tab. `defaultView` is a string tab id:
 
 ---
 

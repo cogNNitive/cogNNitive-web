@@ -429,6 +429,16 @@
       return proc.children ? proc.children[0] : null
     }
 
+    function cleanRef(raw) {
+      var s = String(raw == null ? '' : raw).trim()
+      if (s.slice(0, 2) === '[[' && s.slice(-2) === ']]') s = s.slice(2, -2).trim()
+      var pipe = s.indexOf('|')
+      if (pipe !== -1) s = s.slice(0, pipe).trim()
+      var colon = s.lastIndexOf(':')
+      if (colon !== -1) s = s.slice(colon + 1).trim()
+      return s
+    }
+
     function nextStep(step) {
       if (RT && typeof RT.nextStep === 'function') return RT.nextStep(step, nodeById)
       var relation = (step.relations || []).filter(function (r) {
@@ -439,9 +449,13 @@
         if (cand && cand.parentId === step.parentId) return cand
       }
       var label = step.fields && step.fields.next
-      if (label && label !== '-' && byName[label]) {
-        var cand2 = nodeById[byName[label].id]
-        if (cand2 && cand2.parentId === step.parentId) return cand2
+      if (label && label !== '-') {
+        var cleaned = cleanRef(label)
+        var target = byName[label] || byName[cleaned] || byId[label] || byId[cleaned]
+        if (target) {
+          var cand2 = nodeById[target.id]
+          if (cand2 && cand2.parentId === step.parentId) return cand2
+        }
       }
       return null
     }
@@ -466,8 +480,9 @@
       if (RT && typeof RT.resolveParentId === 'function') return RT.resolveParentId(node, nodeById)
       var field = node.fields && node.fields.parent
       if (field && field !== '-' && field !== '') {
-        var targetEl = byName[field]
-        return targetEl ? targetEl.id : null
+        var cleaned = cleanRef(field)
+        var targetEl = byName[field] || byName[cleaned] || byId[field] || byId[cleaned]
+        if (targetEl) return targetEl.id
       }
       var rels = node.relations || []
       for (var i = 0; i < rels.length; i++) {

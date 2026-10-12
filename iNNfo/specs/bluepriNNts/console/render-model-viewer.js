@@ -115,10 +115,18 @@
           esc(String(meta.generated).replace('T', ' ').replace(/\..*/, '')) +
           '</span>',
       )
-    if (meta.sourceUrl)
+    if (meta.sourceUrl) {
+      var srcUrl = String(meta.sourceUrl).trim()
+      // Only http(s), same-document and relative hrefs become links; anything with
+      // another scheme (javascript:, data:, ...) is shown as plain text.
+      var hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(srcUrl)
+      var safeHref = hasScheme ? /^https?:/i.test(srcUrl) : !/^[\s\\]|^\/\/\s*$/.test(srcUrl)
       metaBits.push(
-        '<span><a href="' + esc(meta.sourceUrl) + '" target="_blank" rel="noopener">source</a></span>',
+        safeHref
+          ? '<span><a href="' + esc(srcUrl) + '" target="_blank" rel="noopener">source</a></span>'
+          : '<span>' + esc(srcUrl) + '</span>',
       )
+    }
     document.getElementById('doc-meta').innerHTML = metaBits.join('')
 
     var content = document.getElementById('content')

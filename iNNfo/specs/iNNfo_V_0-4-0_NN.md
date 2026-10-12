@@ -47,12 +47,22 @@ iNNfo uses three structural markers. The `NN` token is required and distinguishe
 |---|---|---|
 | Concept section | `# NN <Concept>` (H1) | `# NN Stakeholders` |
 | Element | `## NN <Concept>: <Element>` (H2) | `## NN Stakeholders: Customer` |
+| Nested Element | `#{3,6} NN <Concept>: <Element>` (H3–H6) | `### NN Layer: Title` |
 | Identity slug | `slug:: <slug>` (first property line) | `slug:: customer` |
 | Property | `key:: value` (consecutive lines) | `importance:: high` |
 
 A **Concept** is a named type declared by a bluepriNNt. A Concept section is introduced by an H1 heading `# NN <Concept>`.
 
-An **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept).
+An **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept for top-level H2 headings).
+
+### Hierarchical Element Headings (Level-3 Documents)
+
+Level-3 kNNowledge documents may author child elements inline beneath their parent element using deeper Markdown headings (`### NN`, `#### NN`, up to `###### NN`), without requiring separate top-level `# NN <ChildConcept>` sections.
+
+- **Nesting Rules**: A child heading `#{3,6} NN <ChildConcept>: <Element>` attaches to the nearest shallower element heading on the heading stack. The parentage relationship (`ParentConcept -> ChildConcept`) MUST be declared as a valid direct parent-child edge in the governing bluepriNNt's `# NN index` (`schema.taxonomy`). Disallowed nesting is rejected by validation (`INVALID_NESTED_CONCEPT`).
+- **Parent Identity**: The child element receives `parentSlug` referencing the parent element's slug.
+- **Prose Separation**: Any prose body authored for the parent element belongs exclusively to the parent and concludes immediately before the child's heading.
+- **Backward Compatibility**: Flat H2 headings in separate `# NN <ChildConcept>` sections remain 100% valid and supported.
 
 An **Element Slug** is declared on the line immediately following the `## NN` heading via `slug:: <slug>`. The slug MUST be lowercase kebab-case conforming to `^[a-z0-9]+(?:-[a-z0-9]+)*$`. The slug is immutable: renaming an element modifies its display name in the `## NN` heading but preserves `slug::` unchanged.
 

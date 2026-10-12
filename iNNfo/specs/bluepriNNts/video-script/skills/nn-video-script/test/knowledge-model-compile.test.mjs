@@ -263,6 +263,46 @@ async function runTests() {
     console.log('✔ structural adapter stays contract-aligned with read_knowledge (drift guard)');
   }
 
+  // 6. Hierarchical headings: structural adapter parses ### NN Layer under ## NN Scene.
+  {
+    const nestedScript = `---
+level: 3
+title: "Nested Guion"
+---
+
+# NN Video
+## NN Video: Test
+title:: Nested Video
+
+# NN Scene
+## NN Scene: First Scene
+slug:: first-scene
+Narration for first scene.
+
+### NN Layer: Title Layer
+slug:: custom-title-layer
+type:: title
+text:: Hello World
+
+### NN Layer: Avatar Layer
+type:: presenter
+asset:: media/avatar.png
+prompt:: Talking head
+`;
+    const adapted = parseKnowledgeDocument(nestedScript);
+    assert.strictEqual(adapted.elements.Scene.length, 1);
+    assert.strictEqual(adapted.elements.Layer.length, 2);
+    assert.strictEqual(adapted.elements.Layer[0].parentSlug, 'first-scene');
+    assert.strictEqual(adapted.elements.Layer[1].parentSlug, 'first-scene');
+
+    const compiler = new RemotionSceneCompiler();
+    const manifest = compiler.compile(adapted);
+    assert.strictEqual(manifest.tracks.scenes.length, 1);
+    assert.strictEqual(manifest.tracks.scenes[0].props.layers.length, 1);
+    assert.strictEqual(manifest.tracks.overlays.length, 1);
+    console.log('✔ structural adapter parses nested ### NN Layer headings and binds to parent Scene');
+  }
+
   fs.rmSync(dir, { recursive: true, force: true });
   console.log('\nAll iNNfo model compile tests passed! ✨');
 }

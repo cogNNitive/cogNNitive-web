@@ -609,6 +609,7 @@ async function main() {
     const allMatrices = []
     const allConcepts = []
     const seenConcepts = new Set()
+    const allFields = {}
     const allProcedures = []
     const seenProcedureIds = new Set()
     const modelSummaries = []
@@ -617,20 +618,35 @@ async function main() {
       const relPath = relative(root, m.filePath).replace(/\\/g, '/')
       const fileName = basename(relPath)
       const modelStem = fileName.replace(/\.[^/.]+$/, '')
+      const modelSchemaResolution = await resolveModelSchema(m.content)
       const payload = payloadHelper.buildConsolePayload({
         content: m.content,
         path: relPath,
         resolver,
         ledgerEntries,
         changesets,
+        schema: modelSchemaResolution.schema,
+        procedures: modelSchemaResolution.procedures,
       })
       if (payload && payload.model) {
         const mTitle = (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
         const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
         const modelConcepts = new Set()
+        // Element ids are only unique inside one model; the domain console keys drafts,
+        // review marks and relations by id, so qualify them with the model's file stem.
+        const qualifiedIds = new Map()
         if (Array.isArray(payload.model.elements)) {
           for (const el of payload.model.elements) {
+            if (el) qualifiedIds.set(el.id, `${mId}/${el.id}`)
+          }
+          for (const el of payload.model.elements) {
             if (el) {
+              el.id = qualifiedIds.get(el.id)
+              if (Array.isArray(el.relations)) {
+                for (const rel of el.relations) {
+                  if (rel && qualifiedIds.has(rel.target)) rel.target = qualifiedIds.get(rel.target)
+                }
+              }
               el.modelId = mId
               el.modelTitle = mTitle
               el.modelFile = fileName
@@ -670,17 +686,23 @@ async function main() {
           elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
         })
       }
-      if (payload && payload.schema && Array.isArray(payload.schema.concepts)) {
-        for (const c of payload.schema.concepts) {
-          if (c && c.name && !seenConcepts.has(c.name)) {
-            seenConcepts.add(c.name)
-            allConcepts.push(c)
+      if (payload && payload.schema) {
+        if (Array.isArray(payload.schema.concepts)) {
+          for (const c of payload.schema.concepts) {
+            if (c && c.name && !seenConcepts.has(c.name)) {
+              seenConcepts.add(c.name)
+              allConcepts.push(c)
+            }
+          }
+        }
+        if (payload.schema.fields && typeof payload.schema.fields === 'object') {
+          for (const [k, v] of Object.entries(payload.schema.fields)) {
+            if (k && v && !allFields[k]) allFields[k] = v
           }
         }
       }
       // Aggregate the blueprint procedure catalog (parent + includes) across the
       // domain, deduplicated by id; the stepper reads `usage` first.
-      const modelSchemaResolution = await resolveModelSchema(m.content)
       for (const p of modelSchemaResolution.procedures) {
         if (p && p.id && !seenProcedureIds.has(p.id)) {
           seenProcedureIds.add(p.id)
@@ -689,14 +711,29 @@ async function main() {
       }
     }
 
+    // The domain version follows the content of every model, so the console's stale-draft
+    // banner fires when any model changed. It must stay a valid V_x-y-z (export file names
+    // and feedback meta validate that), hence a decimal derived from the content hash.
+    // The draft store key (`domainId`) is deliberately NOT content-derived, or drafts would
+    // vanish on every edit: no payload slot exposes the domaiNN document id, so it is the
+    // root folder name plus a short hash of the resolved root path.
+    const contentHash = createHash('sha256')
+    for (const m of candidateModels) {
+      const relPath = relative(root, m.filePath).replace(/\\/g, '/')
+      contentHash.update(`${relPath}\0${createHash('sha256').update(m.content, 'utf8').digest('hex')}\n`)
+    }
+    const domainVersion = `V_1-0-${parseInt(contentHash.digest('hex').slice(0, 7), 16)}`
+    const domainId = `${basename(root)}-${createHash('sha256').update(resolve(root).toLowerCase(), 'utf8').digest('hex').slice(0, 8)}`
+
     const domainPayload = {
-      schema: { concepts: allConcepts, procedures: allProcedures },
+      schema: { concepts: allConcepts, fields: allFields, procedures: allProcedures },
       model: {
         meta: {
           title: basename(root) + ' Domain',
           model: basename(root),
           modelId: basename(root),
-          modelVersion: 'V_1-0-0',
+          domainId,
+          modelVersion: domainVersion,
           generated: undefined,
           models: modelSummaries,
         },

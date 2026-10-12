@@ -154,8 +154,29 @@ export function assignLayersToScenes(sceneElements, layerElements) {
   const buckets = sceneElements.map(() => []);
   let last = 0;
   for (const layer of layerElements) {
-    const lslug = (layer.slug || slugify(layer.name)).toLowerCase();
-    let idx = sceneSlugs.findIndex((s) => s && lslug.includes(s));
+    let idx = -1;
+    // 1. Prioritize explicit parentSlug
+    if (layer.parentSlug) {
+      const pslug = String(layer.parentSlug).toLowerCase();
+      idx = sceneSlugs.findIndex((s) => s === pslug);
+    }
+    // 2. Prioritize explicit parentElement (slug or name)
+    if (idx === -1 && layer.parentElement) {
+      if (layer.parentElement.slug) {
+        const pslug = String(layer.parentElement.slug).toLowerCase();
+        idx = sceneSlugs.findIndex((s) => s === pslug);
+      }
+      if (idx === -1 && layer.parentElement.name) {
+        const pname = String(layer.parentElement.name).toLowerCase();
+        idx = sceneElements.findIndex((s) => s.name.toLowerCase() === pname);
+      }
+    }
+    // 3. Fall back to legacy slug prefix matching
+    if (idx === -1) {
+      const lslug = (layer.slug || slugify(layer.name)).toLowerCase();
+      idx = sceneSlugs.findIndex((s) => s && lslug.includes(s));
+    }
+    // 4. Fall back to preceding scene
     if (idx === -1) idx = sceneSlugs.length > 0 ? last : -1;
     if (idx >= 0) {
       last = idx;

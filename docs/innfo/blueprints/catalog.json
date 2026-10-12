@@ -207,10 +207,10 @@
     },
     "video-script": {
       "name": "video-script",
-      "adopted": "V_0-1-3",
+      "adopted": "V_0-1-4",
       "versions": [
         {
-          "blueprint_version": "V_0-1-3",
+          "blueprint_version": "V_0-1-4",
           "spec_version": "V_0-4-0",
           "title": "Video Script App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"

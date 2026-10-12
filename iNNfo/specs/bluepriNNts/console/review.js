@@ -45,6 +45,10 @@
       kind: ITEM_KINDS.indexOf(d.kind) !== -1 ? d.kind : 'comment',
       created_at: d.created_at != null ? String(d.created_at) : null,
     }
+    // Engine address of the target (file stem + element slug), captured with the draft
+    // so a changeset export does not have to guess it from display titles.
+    if (d.model_id != null && d.model_id !== '') draft.model_id = String(d.model_id)
+    if (d.element_slug != null && d.element_slug !== '') draft.element_slug = String(d.element_slug)
     if (d.field !== undefined && d.field !== null) draft.field = String(d.field)
     if (d.original !== undefined) draft.original = d.original
     if (d.proposed !== undefined) draft.proposed = d.proposed
@@ -77,7 +81,10 @@
     }
   }
 
-  function createDraftStore(storage, modelId, modelVersion) {
+  // Options: `onError(err)` is called when a write fails (the draft stays in memory
+  // only); `onRemoteChange()` is called after another tab changed this store.
+  function createDraftStore(storage, modelId, modelVersion, options) {
+    var opts = isObject(options) ? options : {}
     var resolved = resolveStorage(storage)
     var backing = resolved.storage
     var persistent = resolved.persistent
@@ -138,15 +145,43 @@
       }
     }
 
-    function write(state) {
+    // A failed write is reported, and the in-memory state then runs ahead of storage:
+    // until a write succeeds again, mutations build on memory rather than on a re-read
+    // that would silently drop the unsaved drafts.
+    var memoryAhead = false
+
+    function write(next) {
       try {
-        backing.setItem(key, JSON.stringify(state))
-      } catch {
-        /* storage full or unavailable; keep the in-memory view */
+        backing.setItem(key, JSON.stringify(next))
+        memoryAhead = false
+      } catch (err) {
+        memoryAhead = true
+        if (typeof opts.onError === 'function') opts.onError(err)
       }
     }
 
     var state = read()
+
+    // Read-merge-write: every mutation starts from what storage holds now, so a draft
+    // saved in another tab since our last read is kept instead of overwritten.
+    function mutate(change) {
+      if (!memoryAhead) state = read()
+      var result = change(state)
+      write(state)
+      return result
+    }
+
+    var onStorage = null
+    var listenTarget = typeof window !== 'undefined' && window && window.addEventListener ? window : null
+    if (listenTarget && persistent) {
+      onStorage = function (event) {
+        if (event && event.key !== null && event.key !== undefined && event.key !== key) return
+        if (memoryAhead) return
+        state = read()
+        if (typeof opts.onRemoteChange === 'function') opts.onRemoteChange()
+      }
+      listenTarget.addEventListener('storage', onStorage)
+    }
 
     return {
       persistent: persistent,
@@ -165,25 +200,48 @@
         if (!raw.element_id || !raw.base_hash) {
           throw new TypeError('InnfoReview.createDraftStore: element_id and base_hash required')
         }
-        var draft = normalizeDraft(raw, raw.id || nextDraftId(state.drafts))
-        state.drafts.push(draft)
-        write(state)
-        return deepCopy(draft)
+        return deepCopy(
+          mutate(function (s) {
+            var draft = normalizeDraft(raw, raw.id || nextDraftId(s.drafts))
+            s.drafts.push(draft)
+            return draft
+          }),
+        )
       },
       removeDraft: function (id) {
-        state.drafts = state.drafts.filter(function (d) {
-          return d && d.id !== id
+        return deepCopy(
+          mutate(function (s) {
+            s.drafts = s.drafts.filter(function (d) {
+              return d && d.id !== id
+            })
+            return s.drafts
+          }),
+        )
+      },
+      // Removes the given drafts (all of them without arguments), e.g. once exported.
+      clearDrafts: function (ids) {
+        var drop = Array.isArray(ids) ? ids : null
+        mutate(function (s) {
+          s.drafts = drop
+            ? s.drafts.filter(function (d) {
+                return d && drop.indexOf(d.id) === -1
+              })
+            : []
         })
-        write(state)
-        return deepCopy(state.drafts)
       },
       markReviewed: function (id, hash) {
-        state.reviewed[String(id)] = String(hash)
-        write(state)
+        mutate(function (s) {
+          s.reviewed[String(id)] = String(hash)
+        })
       },
       unmarkReviewed: function (id) {
-        delete state.reviewed[String(id)]
-        write(state)
+        mutate(function (s) {
+          delete s.reviewed[String(id)]
+        })
+      },
+      destroy: function () {
+        if (listenTarget && onStorage) listenTarget.removeEventListener('storage', onStorage)
+        onStorage = null
       },
     }
   }
@@ -198,6 +256,8 @@
   function isTargetChanged(draft, elementsById) {
     var d = isObject(draft) ? draft : {}
     var byId = isObject(elementsById) ? elementsById : {}
+    // A proposed new element has no target in the model yet, so it cannot be stale.
+    if (d.kind === 'new') return false
     var el = byId[d.element_id]
     if (!el) return true
     return el.hash !== d.base_hash
@@ -353,6 +413,8 @@
         element: el.name || el.id,
         base_hash: el.hash,
         kind: payload.kind,
+        model_id: el.modelId || meta.modelId,
+        element_slug: el.slug,
       }
       if (payload.field !== undefined || anchorData.field) {
         draft.field = payload.field !== undefined ? payload.field : anchorData.field
