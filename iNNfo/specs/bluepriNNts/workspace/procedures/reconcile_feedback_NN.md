@@ -138,7 +138,7 @@ Orchestrates feedback ingestion, triage diff preview, and console compilation.
 
 ## NN Tools: iNNfo MCP Server
 scope:: external
-Provides `evaluate_feedback_items`, `record_feedback_verdict`, `apply_change`, `validate_knowledge`, and `build_console_payload` semantic tools.
+Provides `evaluate_feedback_items`, `record_feedback_verdict`, `apply_change`, and `validate_knowledge` semantic tools.
 
 # NN Artifact
 

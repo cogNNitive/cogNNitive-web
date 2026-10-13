@@ -28,15 +28,13 @@ double-clicking the file from `file://`.
    **fallbacks**, not a mechanism that guarantees a single boot — do not assume
    re-execution is a strict no-op.
 
-Two shells are canonical: `console/artifact_shell.html` and
-`workspace/assets/model_console.html`. Both use the same three-tag boot and
-declare the **same two JSON slots** (`#innfo-schema`, `#innfo-model`); what
-differs is their DOM anchors — the console shell uses
+One shell is canonical: `console/artifact_shell.html`. It declares the two JSON
+slots (`#innfo-schema`, `#innfo-model`) and the DOM anchors
 `#innfo-banner` / `#innfo-rail` / `#innfo-search` / `#innfo-content` /
-`#innfo-matrices` / `#innfo-export-modal`, and the model console uses
-`#doc-title` / `#rail` (boots `InnfoModelViewer`, including per-field citation
-icons and `#innfo-citation-dialog`). The procedures stepper is no longer a
-shell: it is the registered `procedure` view
+`#innfo-matrices` / `#innfo-export-modal`. The retired
+`workspace/assets/model_console.html` shell and its `InnfoModelViewer` are gone:
+every console is the domain console, optionally scoped. The procedures stepper
+is not a shell either: it is the registered `procedure` view
 (`procedures/assets/console-view-procedure.js`), which builds its own scoped
 DOM inside the view container and never uses global ids.
 
@@ -49,8 +47,7 @@ sources, concatenated in order:
 | :--- | :--- | :--- |
 | 1 | `visuals.js` | `InnfoVisuals` |
 | 2 | `innfo-runtime.js` | `InnfoConsole` |
-| 3 | `render-model-viewer.js` | `InnfoModelViewer` |
-| 4 | `render-procedure-stepper.js` | `InnfoProcedureStepper` |
+| 3 | `render-procedure-stepper.js` | `InnfoProcedureStepper` |
 
 ---
 
@@ -107,12 +104,11 @@ still load the pre-bundle `innfo-runtime.js` from the CDN and the mirror **only*
 Do not assume every artifact uses the bundle. `innfo-runtime.js` is a legacy
 per-shell runtime, **not** the canonical runtime.
 
-`business/assets/model_viewer.html` is superseded by the three-tag,
-bundle-booted `workspace/assets/model_console.html` (`Compile Model
-Console`), which also renders origin-typed citation icons per field. The old
-shell stays byte-unchanged and reachable for one transition cycle; the
-business template's `Compile Model Viewer` procedure that used to target it
-was removed in `template_version` `V_0-2-6`.
+The legacy `business/assets/model_viewer.html` and the `Compile Model Viewer`
+procedure that targeted it (removed in `template_version` `V_0-2-6`) are frozen
+history. Model consultation now lives in the single console shell
+(`console/artifact_shell.html`), which renders origin-typed citation icons per
+field; there is no separate model console asset.
 
 ---
 

@@ -11,7 +11,7 @@
 ## Tools
 
 <!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
-**21** tools
+**20** tools
 
 | Tool | Description |
 |------|-------------|
@@ -31,7 +31,6 @@
 | `query_units` | Run a read-only content query over one workspace file and return matching knowledge-unit URIs: "path?filter=value[&filter...][&projection]". Filters use exact match (trimmed, case-insensitive); a trailing bare segment projects one column/field over the matches. Capped at 100 results with truncated=true. Pass max_values_chars to cap projected value characters for slice-only surgical reads. Never writes files. |
 | `cognitivize` | Create or refresh the sidecar (`<file>_sidecar_NN.md`) of one raw markdown, CSV, or JSON file in place, so it can be cited. Binary formats (pdf, docx, images, ...) are never converted here: the result has status `requires-cli` and nothing is written (use the nn-sources CLI). Paths outside the workspace, sidecars, and NN documents are rejected. |
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "reviewer" \| "document"), resolved from the heading the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
-| `build_console_payload` | Compile canonical schema and model JSON slot strings for an iNNfo model console artifact. Returns escaped slot strings and outputPath. |
 | `record_feedback_verdict` | Append a validated verdict entry to the root feedback-ledger.jsonl. Refuses writes if item is orphaned or stale without confirm_stale. |
 | `evaluate_feedback_items` | Evaluate feedback items staleness and orphan status against current model. Appends stale entries to the root feedback-ledger.jsonl idempotently. |
 | `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |

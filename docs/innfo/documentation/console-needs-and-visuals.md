@@ -54,7 +54,7 @@ Two mismatches are worth stating plainly.
 
 - **The registry still pins pre-bundle files.** Its `runtime.cdn` / `fallback` /
   `vendored` entries point at `innfo-runtime.js`, and `renderers.*` list
-  `render-model-viewer.js`, `render-procedure-stepper.js`, and `visuals.js`
+  `render-procedure-stepper.js` and `visuals.js`
   individually. The shipped shells, however, load the single
   `innfo-console.bundle.js`. The registry is therefore **not** a literal manifest
   of what the current shells load.
@@ -96,8 +96,6 @@ surface but not another.
   renders `STEP_TYPE_ICONS[step_type]` (`task`, `decision`, `event`) for step
   nodes. Concept color drives the concept rail and element tags, not the step
   icon.
-- **`visuals.js` is not the only palette.** `render-model-viewer.js` ships its own
-  `COLORS` map (with names such as `violet` and `gray`), and the editor duplicates
-  the palette as `COLOR_HEX` in `useConceptVisuals.ts`. Three palettes exist and
-  can drift; `visuals.js` mirrors the editor palette but is not imported by every
-  renderer.
+- **`visuals.js` is not the only palette.** The editor duplicates the palette as
+  `COLOR_HEX` in `useConceptVisuals.ts`; `visuals.js` mirrors the editor palette
+  but is not imported by every renderer.

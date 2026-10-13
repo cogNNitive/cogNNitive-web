@@ -836,16 +836,86 @@
     return node
   }
 
-  // The console header (`.innfo-navbar`) carries an empty extra slot
-  // (`#innfo-navbar-extra`); this stamps the artifact's last-generated moment so
-  // a reader can see how fresh the console is without opening the model header.
-  function renderNavbarMeta(doc, meta) {
+  // Only http(s) and relative source URLs become links; any other scheme
+  // (javascript:, data:, ...) is rejected. Returns '' when unsafe. Verbatim port
+  // of the retired model viewer's predicate.
+  function safeSourceHref(url) {
+    var raw = String(url == null ? '' : url).trim()
+    if (!raw) return ''
+    var hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)
+    var safe = hasScheme ? /^https?:/i.test(raw) : !/^[\s\\]|^\/\/\s*$/.test(raw)
+    return safe ? raw : ''
+  }
+
+  // The console header (`.innfo-navbar`) carries the model identity: the title in
+  // `#innfo-domain-title` (the single model's title when scoped, else `meta.title`),
+  // an optional `.innfo-scope-label`, and an extra meta line in `#innfo-navbar-extra`
+  // (Template, Version, Generated). Every value is rendered as text, so a hostile
+  // title stays inert; a field absent from `meta` is omitted, never a placeholder.
+  function renderNavbarIdentity(doc, meta) {
+    meta = meta || {}
+    var models = Array.isArray(meta.models) ? meta.models : []
+    var titleEl = doc.getElementById('innfo-domain-title')
+    if (titleEl) {
+      var title =
+        models.length === 1 && models[0] && models[0].title
+          ? models[0].title
+          : meta.title || meta.model || 'iNNfo Console'
+      titleEl.textContent = String(title)
+    }
+
+    var label = meta.consoleScope && meta.consoleScope.label
+    var labelEl = doc.querySelector('.innfo-scope-label')
+    if (label) {
+      if (!labelEl) {
+        labelEl = doc.createElement('span')
+        labelEl.className = 'innfo-scope-label'
+        if (titleEl && titleEl.parentNode) {
+          titleEl.parentNode.insertBefore(labelEl, titleEl.nextSibling)
+        } else if (titleEl) {
+          titleEl.appendChild(labelEl)
+        }
+      }
+      labelEl.textContent = String(label)
+    } else if (labelEl && labelEl.parentNode) {
+      labelEl.parentNode.removeChild(labelEl)
+    }
+
     var host = doc.getElementById('innfo-navbar-extra')
-    if (!host) return
-    var generated = meta && meta.generated
-    if (!generated) return
-    var stamp = String(generated).replace('T', ' ').replace(/\..*/, '').replace(/Z$/, '').trim()
-    host.textContent = 'Last updated ' + stamp + ' UTC'
+    if (host) {
+      var first = models[0] || null
+      var parts = []
+      var template = (first && first.blueprint) || meta.template
+      var version = (first && first.version) || meta.modelVersion
+      if (template) parts.push('Template ' + String(template))
+      if (version) parts.push('Version ' + String(version))
+      if (meta.generated) {
+        var stamp = String(meta.generated)
+          .replace('T', ' ')
+          .replace(/\..*/, '')
+          .replace(/Z$/, '')
+          .trim()
+        parts.push('Generated ' + stamp + ' UTC')
+      }
+      host.textContent = ''
+      if (parts.length) host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
+      if (meta.sourceUrl) {
+        if (parts.length) host.appendChild(doc.createTextNode(' \u00b7 '))
+        var href = safeSourceHref(meta.sourceUrl)
+        if (href) {
+          var link = doc.createElement('a')
+          link.className = 'innfo-source-link'
+          link.setAttribute('href', href)
+          link.setAttribute('target', '_blank')
+          link.setAttribute('rel', 'noopener')
+          link.textContent = 'source'
+          host.appendChild(link)
+        } else {
+          // Unsafe or absent scheme: shown as plain text, never a link.
+          host.appendChild(doc.createTextNode(String(meta.sourceUrl).trim()))
+        }
+      }
+    }
   }
 
   // Inline reviewer identity field for the header: a labelled text input whose
@@ -1685,7 +1755,7 @@
 
   // Cards project live drafts: active draft edits and notes are visually badged,
   // new draft elements are projected, and deleted elements are styled.
-  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById) {
+  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -1709,6 +1779,12 @@
     projectedElements.forEach(function (element) {
       var fields = []
       var elCitations = element && isObject(element.citations) ? element.citations : {}
+      var sourcesEntries = []
+      Object.keys(elCitations).forEach(function (k) {
+        if ((k === 'sources' || k === 'source') && Array.isArray(elCitations[k])) {
+          sourcesEntries = sourcesEntries.concat(elCitations[k])
+        }
+      })
       if (isObject(element.fields)) {
         Object.keys(element.fields).forEach(function (k) {
           var val = element.fields[k]
@@ -1787,9 +1863,17 @@
               : null,
         },
         {
-          domId: String(element.id || ''),
+          domId: 'el-' + String(element.id || ''),
           collapsible: true,
-          open: false,
+          open: focusId != null && String(element.id || '') === String(focusId),
+          head:
+            UI && typeof UI.CitationIcons === 'function'
+              ? UI.CitationIcons('sources', sourcesEntries, {
+                  onOpen: function () {
+                    renderCitationDialog(doc, 'sources', sourcesEntries)
+                  },
+                })
+              : undefined,
           byId: refs,
           concept: conceptMetaOf(concepts, element.concept),
           onRef: function (refId) {
@@ -3925,8 +4009,8 @@
         if (firstTab && typeof firstTab.click === 'function') firstTab.click()
       }
     }
-    // 2. Find card by id
-    var card = doc.getElementById(String(elementId))
+    // 2. Find card by id (cards carry the `el-` prefixed domId, matching `#el-` hrefs)
+    var card = doc.getElementById('el-' + String(elementId))
     if (card) {
       if (typeof card.scrollIntoView === 'function') {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -5191,7 +5275,10 @@
       modelSlug: scopedView
         ? modelSlugOf({ modelSlug: meta.model_slug || meta.modelSlug, modelId: baseId, modelTitle: baseTitle }) + '-' + scopedView
         : meta.model_slug || meta.modelSlug || undefined,
-      sourceSha256: meta.sha256 || meta.source_sha256,
+      sourceSha256:
+      (Array.isArray(meta.models) && meta.models.length === 1 && meta.models[0] && meta.models[0].sha256) ||
+      meta.sha256 ||
+      meta.source_sha256,
       // The changeset title comes from meta.title; a scoped export names its view there.
       meta: scopedView ? Object.assign({}, meta, { title: baseTitle + ' - ' + (scopedDef ? scopedDef.title : scopedView) }) : meta,
       elements: elements,
@@ -5231,6 +5318,9 @@
 
     var refs = hasNeed(config, 'reference-popup') ? buildRefsByName(elements) : null
     var activeSearchQuery = ''
+    // Deep-link focus: the element id a `#el-<id>` hash asked to open, consumed
+    // once by the next card render and then cleared.
+    var focusId = null
     // Model Explorer view mode ('cards' | 'table') and the table sort state.
     var explorerView = 'cards'
     var sortState = { key: '', dir: 'asc' }
@@ -5382,7 +5472,8 @@
           refresh(activeSearchQuery)
         })
       } else {
-        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById)
+        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId)
+        focusId = null
       }
       renderFilterBar(active, state, function (nextQuery) {
         var sBox = active.getElementById('innfo-search')
@@ -5467,7 +5558,7 @@
     })
 
     if (tabs) cleanups.push(tabs.destroy)
-    renderNavbarMeta(active, meta)
+    renderNavbarIdentity(active, meta)
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
     // C3: the controller builds the toggle into the (now rendered) banner and
@@ -5524,6 +5615,38 @@
     }
 
     function onHash() {
+      var raw = String(active.location ? active.location.hash || '' : '').replace(/^#/, '')
+      // Deep link: #el-<model-qualified element id> opens that element's card.
+      if (raw.indexOf('el-') === 0) {
+        if (scopedView) return
+        var elemId = raw.slice(3)
+        try {
+          elemId = decodeURIComponent(elemId)
+        } catch {
+          /* keep the raw id */
+        }
+        var targetEl = null
+        for (var ei = 0; ei < elements.length; ei++) {
+          if (elements[ei] && String(elements[ei].id || '') === elemId) {
+            targetEl = elements[ei]
+            break
+          }
+        }
+        if (!targetEl) return
+        focusId = elemId
+        var query = activeSearchQuery
+        var visible = filterElements([targetEl], activeSearchQuery, { draftsById: {}, reviewed: {} })
+        if (!visible.length) {
+          query = 'concept:' + String(targetEl.concept || '')
+          var searchInput = active.getElementById('innfo-search')
+          if (searchInput) searchInput.value = query
+        }
+        if (tabs) tabs.select('explorer', true)
+        refresh(query, true)
+        var card = active.getElementById('el-' + elemId)
+        if (card && typeof card.scrollIntoView === 'function') card.scrollIntoView()
+        return
+      }
       var parsed = parseViewHash(active.location ? active.location.hash : '')
       if (!scopedView && parsed.q !== activeSearchQuery) {
         // Back/forward to an entry with a different query: follow it.
@@ -5531,9 +5654,8 @@
         if (box) box.value = parsed.q
         refresh(parsed.q, true)
       }
-      var id = String(active.location ? active.location.hash || '' : '').replace(/^#/, '')
-      if (!id) return
-      var target = active.getElementById(id)
+      if (!raw) return
+      var target = active.getElementById(raw)
       if (target && typeof target.scrollIntoView === 'function') target.scrollIntoView()
     }
     if (typeof active.defaultView !== 'undefined' && active.defaultView) {
@@ -5595,7 +5717,8 @@
     renderRefDialog: renderRefDialog,
     renderCitationDialog: renderCitationDialog,
     renderBanner: renderBanner,
-    renderNavbarMeta: renderNavbarMeta,
+    renderNavbarIdentity: renderNavbarIdentity,
+    safeSourceHref: safeSourceHref,
     renderFilterBar: renderFilterBar,
     renderRail: renderRail,
     renderErrors: renderErrors,

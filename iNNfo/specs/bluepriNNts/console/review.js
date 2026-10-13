@@ -1404,10 +1404,11 @@
 
     toggleEl = buildToggle()
     if (doc.addEventListener) doc.addEventListener('innfo:rendered', onRendered)
-    // One initial pass: covers a render that preceded the controller's creation
-    // (verdict badges show with review mode off).
-    decorateCounter()
-    decorateBadges()
+    // One initial pass: covers the render that preceded the controller's creation.
+    // With the model viewer retired (SCS) no second render follows boot, so the
+    // initial paint must be decorated completely (badges, info actions, pips),
+    // not just badges + counter.
+    onRendered({ detail: { root: doc.getElementById('innfo-content') || doc } })
 
     return {
       enable: enable,

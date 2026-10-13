@@ -2,8 +2,8 @@
 
 `ui-kit.js` is the single source of truth for console **design tokens** and
 **presentational components**. It is one UMD source in the console bundle
-(global `InnfoUI`) and ships **before** `innfo-runtime.js` and
-`render-model-viewer.js`, which consume it through UMD factory injection.
+(global `InnfoUI`) and ships **before** `innfo-runtime.js`, which consumes it
+through UMD factory injection.
 
 - Tokens are injected once as `<style data-innfo-tokens="<VERSION>">`.
 - Theming is driven solely by `data-theme` on `<html>` (`light` / `dark` / absent

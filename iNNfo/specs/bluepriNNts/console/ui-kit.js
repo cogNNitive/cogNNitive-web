@@ -741,6 +741,32 @@
     return btn
   }
 
+  // Header-level citation icons: one CitationIcon per distinct origin/error
+  // variant, in canonical order. Returns an array of nodes (empty when nothing to
+  // show), so `ElementCard` can append it to `.innfo-card-head` via `opts.head`.
+  function CitationIcons(fieldName, entries, opts) {
+    var list = Array.isArray(entries) ? entries : []
+    if (!list.length) return []
+    var doc = resolveDoc(opts)
+    var present = {}
+    list.forEach(function (entry) {
+      var raw = entry && entry.error ? 'error' : entry && entry.origin
+      present[CITATION_ORIGIN_LABELS[raw] ? raw : 'document'] = true
+    })
+    var wrap = makeEl(doc, 'span', 'cite-icons')
+    var order = ['error', 'agent', 'human', 'reviewer', 'document']
+    order.forEach(function (variant) {
+      if (!present[variant]) return
+      wrap.appendChild(
+        CitationIcon(
+          { variant: variant, field: fieldName },
+          { doc: doc, onOpen: opts && typeof opts.onOpen === 'function' ? opts.onOpen : undefined },
+        ),
+      )
+    })
+    return wrap.children.length ? [wrap] : []
+  }
+
   function normalizeAssetPath(v) {
     if (typeof v !== 'string') return ''
     var s = v.replace(/\\/g, '/')
@@ -2155,6 +2181,7 @@
     EditAnchor: EditAnchor,
     StatusBadge: StatusBadge,
     CitationIcon: CitationIcon,
+    CitationIcons: CitationIcons,
     FieldRow: FieldRow,
     FieldValue: FieldValue,
     ElementCard: ElementCard,
