@@ -10,23 +10,23 @@ agent-bootstrap:
       repo: cogNNitive/cogNNitive-web
       path: skills/nn
       version: "V_3-4-2"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
     - name: nn-sources
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-sources
       version: "V_3-5-0"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       requires: [nn-innfo, nn-preflight]
       description: Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync.
     - name: nn-innfo
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-innfo
       version: "V_0-5-8"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
       blueprints: [domaiNN]
       mcp:
@@ -40,38 +40,38 @@ agent-bootstrap:
     - name: nn-preflight
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-preflight
-      version: "V_0-2-2"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      version: "V_0-2-3"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
     - name: nn-upgrade
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-upgrade
       version: "V_0-3-0"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       requires: [nn-preflight]
       description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
     - name: nn-site-generator
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-site-generator
       version: "V_0-2-0"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       description: Create or edit websites, add analytics, add contact forms.
     - name: nn-design-presets
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-design-presets
       version: "V_1-4-0"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       description: cogNNitive visual design presets — palettes, typography, spacing.
     - name: nn-skills-lifecycle
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-skills-lifecycle
       version: "V_1-2-1"
-      ref: "skills-v2.16.0"
-      commit: "b4fa814ca30215178586976cc3b36b482302a62d"
+      ref: "skills-v2.17.0"
+      commit: "4aa55d1f09291ca60b546f7aa6572e3c13660405"
       requires: [nn-preflight]
       description: Audit, update, and maintain cogNNitive skills.
   blueprints:
