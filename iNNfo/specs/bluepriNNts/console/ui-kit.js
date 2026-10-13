@@ -17,18 +17,18 @@
   // contrast table; the contrast suite recomputes these independently.
   var TOKEN_VALUES = {
     light: {
-      // morado-nazareno brand: purple #4D0E4E primary on a flat light canvas,
-      // soft lavender-grey borders, ink #111112 / muted #636366. Concept colors
-      // stay app-driven data; only brand + neutrals live here.
-      '--innfo-bg': '#faf9fc',
+      // nn-shad-cn monochrome neutral preset: near-black #171717 primary on a
+      // crisp white/zinc canvas, neutral #e5e5e5 borders, ink #0a0a0a / muted #666666.
+      // Concept colors stay app-driven data; only brand + neutrals live here.
+      '--innfo-bg': '#fafafa',
       '--innfo-surface': '#ffffff',
-      '--innfo-surface-2': '#f5f3f8',
-      '--innfo-text': '#191724',
-      '--innfo-muted': '#6b6879',
-      '--innfo-border': '#eceaf2',
-      '--innfo-accent': '#4d0e4e',
-      '--innfo-link': '#5c1560',
-      '--innfo-focus': '#7a2c86',
+      '--innfo-surface-2': '#f4f4f5',
+      '--innfo-text': '#0a0a0a',
+      '--innfo-muted': '#666666',
+      '--innfo-border': '#e5e5e5',
+      '--innfo-accent': '#171717',
+      '--innfo-link': '#171717',
+      '--innfo-focus': '#52525b',
       '--innfo-concept-1': '#3b82f6',
       '--innfo-concept-2': '#8b5cf6',
       '--innfo-concept-3': '#14b8a6',
@@ -78,66 +78,6 @@
         "Plus Jakarta Sans, Geist Sans, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       '--innfo-mono': "Geist Mono, 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
       '--innfo-shadow': '0 1px 2px rgba(0, 0, 0, .06)',
-    },
-    dark: {
-      '--innfo-bg': '#0f172a',
-      '--innfo-surface': '#1e293b',
-      '--innfo-surface-2': '#263549',
-      '--innfo-text': '#e2e8f0',
-      '--innfo-muted': '#94a3b8',
-      '--innfo-border': '#334155',
-      '--innfo-accent': '#cbd5e1',
-      '--innfo-link': '#60a5fa',
-      '--innfo-focus': '#60a5fa',
-      '--innfo-concept-1': '#60a5fa',
-      '--innfo-concept-2': '#a78bfa',
-      '--innfo-concept-3': '#2dd4bf',
-      '--innfo-concept-4': '#fbbf24',
-      '--innfo-concept-5': '#f472b6',
-      '--innfo-concept-6': '#4ade80',
-      '--innfo-concept-7': '#fb923c',
-      '--innfo-concept-8': '#818cf8',
-      '--innfo-concept-9': '#f87171',
-      '--innfo-concept-10': '#facc15',
-      '--innfo-concept-11': '#c084fc',
-      '--innfo-concept-12': '#9ca3af',
-      '--innfo-concept-1-bg': '#172554',
-      '--innfo-concept-2-bg': '#2e1065',
-      '--innfo-concept-3-bg': '#042f2e',
-      '--innfo-concept-4-bg': '#451a03',
-      '--innfo-concept-5-bg': '#500724',
-      '--innfo-concept-6-bg': '#052e16',
-      '--innfo-concept-7-bg': '#431407',
-      '--innfo-concept-8-bg': '#1e1b4b',
-      '--innfo-concept-9-bg': '#450a0a',
-      '--innfo-concept-10-bg': '#422006',
-      '--innfo-concept-11-bg': '#3b0764',
-      '--innfo-concept-12-bg': '#111827',
-      '--innfo-status-pending': '#fbbf24',
-      '--innfo-status-applied': '#4ade80',
-      '--innfo-status-rejected': '#f87171',
-      '--innfo-status-stale': '#94a3b8',
-      '--innfo-status-pending-bg': '#451a03',
-      '--innfo-status-applied-bg': '#052e16',
-      '--innfo-status-rejected-bg': '#450a0a',
-      '--innfo-status-stale-bg': '#1e293b',
-      '--innfo-origin-agent': '#a78bfa',
-      '--innfo-origin-human': '#60a5fa',
-      '--innfo-origin-reviewer': '#fbbf24',
-      '--innfo-origin-document': '#9ca3af',
-      '--innfo-origin-error': '#f87171',
-      '--innfo-radius-sm': '6px',
-      '--innfo-radius': '8px',
-      '--innfo-radius-lg': '10px',
-      '--innfo-fs-hero': '1.5rem',
-      '--innfo-fs-title': '1.25rem',
-      '--innfo-fs-body': '0.9375rem',
-      '--innfo-fs-caption': '0.8125rem',
-      '--innfo-fs-min': '0.75rem',
-      '--innfo-font':
-        "Plus Jakarta Sans, Geist Sans, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-      '--innfo-mono': "Geist Mono, 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
-      '--innfo-shadow': '0 1px 2px rgba(0, 0, 0, .4)',
     },
   }
 
@@ -282,14 +222,15 @@
     '.innfo-ku-action:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
     '.innfo-ku-action[data-ku-action=edit]:hover{color:var(--innfo-link)}',
     '.innfo-ku-action:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
-    '.innfo-card-fields{display:flex;flex-wrap:wrap;gap:.4em;align-items:flex-start;margin:.6em 0 0}',
+    '.innfo-card-fields{display:flex;flex-direction:column;gap:.45em;align-items:stretch;margin:.6em 0 0}',
     '.innfo-card-desc-actions{margin-left:.4em}',
     // Element-card Dense Row (V01): a one-line bar (image chip, name, concept,
     // markers, field count, actions, chevron) over a collapsible body.
     // Scoped to the element-card so it wins over any shell-level card styles.
     '[data-innfo-component=element-card] .innfo-card-head{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;cursor:pointer;min-width:0}',
-    '[data-innfo-component=element-card] .innfo-card-thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);flex:0 0 auto;display:block}',
-    '[data-innfo-component=element-card] .innfo-card-thumb--empty{display:inline-flex;align-items:center;justify-content:center;color:var(--innfo-muted);border-style:dashed}',
+    '[data-innfo-component=element-card] .innfo-card-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1.5px solid var(--innfo-border);background:var(--innfo-surface-2);flex:0 0 auto;display:block}',
+    '.innfo-field-image-wrap{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}',
+    '[data-innfo-component=element-card] .innfo-card-thumb--empty,[data-innfo-component=element-card] .innfo-card-thumb--concept{display:inline-flex;align-items:center;justify-content:center;color:var(--card-concept-color,var(--innfo-accent));background:var(--card-concept-bg,var(--innfo-surface-2));border:1.5px solid var(--card-concept-color,var(--innfo-border))}',
     '[data-innfo-component=element-card] .innfo-card-count{font-size:.75rem;font-weight:600;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:999px;padding:1px 8px;white-space:nowrap;flex:0 0 auto}',
     '[data-innfo-component=element-card] .innfo-card-toggle{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:.15em;border-radius:var(--innfo-radius-sm);flex:0 0 auto}',
     '[data-innfo-component=element-card] .innfo-card-toggle:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
@@ -297,7 +238,28 @@
     '[data-innfo-component=element-card][data-open=true] .innfo-card-toggle .innfo-icon{transform:rotate(180deg)}',
     '[data-innfo-component=element-card][data-open=false] .innfo-card-body{display:none}',
     '[data-innfo-component=element-card][data-open=false] .innfo-card-path{display:none}',
-    '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-wrap:wrap;gap:.4em;align-items:flex-start;margin:.6em 0 0}',
+    '[data-innfo-component=element-card][data-open=true] .innfo-card-collapsed-strip{display:none!important}',
+    '[data-innfo-component=element-card][data-open=true] .innfo-card-summary-preview{display:none}',
+    '[data-innfo-component=element-card] .innfo-card-summary-preview{font-size:.82rem;color:var(--innfo-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch;margin-left:.25em}',
+    '[data-innfo-component=element-card] .innfo-card-status-pill{display:inline-flex;align-items:center;gap:.28em;font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--innfo-status-applied-bg);color:var(--innfo-status-applied);border:1px solid rgba(22,101,52,.22);white-space:nowrap}',
+    '[data-innfo-component=element-card] .innfo-card-status-pill[data-status=draft],[data-innfo-component=element-card] .innfo-card-status-pill[data-status=pending]{background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border-color:rgba(180,83,9,.22)}',
+    '[data-innfo-component=element-card] .innfo-card-collapsed-strip{display:flex;align-items:center;justify-content:space-between;gap:.65em;padding:7px 12px;margin:8px -12px -10px -12px;background:var(--innfo-surface-2);border-top:1px solid var(--innfo-border);border-radius:0 0 var(--innfo-radius) var(--innfo-radius);flex-wrap:wrap}',
+    '.innfo-collapsed-strip-left,.innfo-collapsed-strip-right{display:inline-flex;align-items:center;gap:.4em;flex-wrap:wrap;min-width:0}',
+    '.innfo-strip-group{display:inline-flex;align-items:center;gap:.35em;flex-wrap:wrap}',
+    '.innfo-strip-key{font-family:var(--innfo-mono);font-size:.73rem;font-weight:600;color:var(--innfo-muted);margin-right:.15em}',
+    '.innfo-obj-chips{display:inline-flex;align-items:center;gap:.35em;flex-wrap:wrap}',
+    '.innfo-obj-chip{display:inline-flex;align-items:center;border:1px solid var(--innfo-border);border-radius:5px;overflow:hidden;font-family:var(--innfo-mono);font-size:.73rem;line-height:1.25;background:var(--innfo-surface)}',
+    '.innfo-obj-chip-k{padding:2px 6px;background:var(--innfo-surface-2);color:var(--innfo-muted);border-right:1px solid var(--innfo-border);font-weight:500}',
+    '.innfo-obj-chip-v{padding:2px 6px;color:var(--innfo-text);font-weight:600}',
+    '.innfo-obj-chip-v[data-bool=true]{color:var(--innfo-status-applied)}',
+    '.innfo-strip-rel{display:inline-flex;align-items:center;gap:.25em;font-size:.75rem;font-weight:600;color:var(--innfo-accent);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap}',
+    '.innfo-strip-rel:hover{border-color:var(--innfo-accent);background:var(--innfo-surface-2)}',
+    '.innfo-file-pill{display:inline-flex;align-items:center;gap:.35em;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px;padding:2px 8px;font-family:var(--innfo-mono);font-size:.76rem;color:var(--innfo-text)}',
+    '.innfo-file-pill-icon{display:inline-flex;color:var(--innfo-accent)}',
+    '.innfo-file-pill-path{font-family:inherit;font-size:inherit;background:transparent;padding:0;border:none}',
+    '.innfo-card-meta-strip{display:flex;align-items:center;justify-content:space-between;gap:.5em;flex-wrap:wrap;padding:6px 10px;margin:.55em 0;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px}',
+    '.innfo-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--innfo-mono);font-size:.73rem;color:var(--innfo-muted);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:5px;padding:2px 7px}',
+    '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden;background:var(--innfo-surface)}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
@@ -306,6 +268,7 @@
   }
   for (var kslot = 1; kslot <= 12; kslot++) {
     COMPONENT_CSS.push(
+      '[data-innfo-component=element-card][data-concept-slot="' + kslot + '"]{--card-concept-color:var(--innfo-concept-' + kslot + ');--card-concept-bg:var(--innfo-concept-' + kslot + '-bg);border-left:4px solid var(--innfo-concept-' + kslot + ')}',
       '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=element]{border-color:var(--innfo-concept-' + kslot + ')}',
       '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=element] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
       '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=reference]{border-color:var(--innfo-concept-' + kslot + ')}',
@@ -316,26 +279,14 @@
   }
   var COMPONENT_CSS_TEXT = COMPONENT_CSS.join('\n')
 
-  // D2: light is the default; an OS dark preference applies unless the author
-  // pinned light; an explicit [data-theme=dark] always wins.
+  // Light-only theme: pins color-scheme: light and never switches on OS dark mode.
   function generateTokenCss(values) {
     var v = values || TOKEN_VALUES
+    var light = v.light || v
     return (
       ':root, [data-theme=light] {\n' +
-      declBlock(v.light) +
-      '\n}\n' +
-      '@media (prefers-color-scheme: dark) {\n' +
-      '  :root:not([data-theme=light]) {\n' +
-      declBlock(v.dark)
-        .split('\n')
-        .map(function (l) {
-          return '  ' + l
-        })
-        .join('\n') +
-      '\n  }\n' +
-      '}\n' +
-      '[data-theme=dark] {\n' +
-      declBlock(v.dark) +
+      '  color-scheme: light;\n' +
+      declBlock(light) +
       '\n}\n' +
       COMPONENT_CSS_TEXT +
       '\n'
@@ -347,6 +298,9 @@
   function ensureTokens(doc) {
     var d = doc || (typeof document !== 'undefined' ? document : null)
     if (!d || !d.head) throw new Error('InnfoUI.ensureTokens: no document')
+    if (d.documentElement && !d.documentElement.getAttribute('data-theme')) {
+      d.documentElement.setAttribute('data-theme', 'light')
+    }
     var existing = d.querySelector('style[' + TOKENS_ATTR + ']')
     if (existing && existing.getAttribute(TOKENS_ATTR) === UI_VERSION) return existing
     var css = generateTokenCss()
@@ -366,11 +320,11 @@
   function setTheme(doc, theme) {
     var d = doc || (typeof document !== 'undefined' ? document : null)
     if (!d || !d.documentElement) throw new Error('InnfoUI.setTheme: no document')
-    if (theme !== 'light' && theme !== 'dark' && theme !== null) {
-      throw new TypeError('InnfoUI.setTheme: expected light|dark|null')
+    if (theme !== 'light' && theme !== null) {
+      throw new TypeError('InnfoUI.setTheme: expected light|null')
     }
     if (theme === null) d.documentElement.removeAttribute('data-theme')
-    else d.documentElement.setAttribute('data-theme', theme)
+    else d.documentElement.setAttribute('data-theme', 'light')
   }
 
   // ---- Shared helpers ----
@@ -445,6 +399,19 @@
     'cite-error': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
     chevron: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline>',
     image: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>',
+    sliders: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>',
+    'message-square': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>',
+    'git-commit': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line>',
+    check: ' fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline>',
+    'arrow-up-right': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>',
+    box: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path>',
+    boxes: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"></path><path d="m7 16.5-4.74-2.85"></path><path d="m7 16.5 5-3"></path><path d="M7 16.5v5.17"></path><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"></path><path d="m17 16.5-5-3"></path><path d="m17 16.5 4.74-2.85"></path><path d="M17 16.5v5.17"></path><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"></path><path d="M12 8 7.26 5.15"></path><path d="m12 8 4.74-2.85"></path><path d="M12 13.5V8"></path>',
+    layers: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path>',
+    'flask-conical': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path><path d="M8.5 2h7"></path><path d="M7 16h10"></path>',
+    cpu: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"></rect><rect width="6" height="6" x="9" y="9" rx="1"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path><path d="M2 9h2"></path><path d="M20 15h2"></path><path d="M20 9h2"></path><path d="M9 2v2"></path><path d="M9 20v2"></path>',
+    shield: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>',
+    wrench: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>',
+    'git-branch': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path>',
   }
 
   function icon(name, size, cls) {
@@ -484,18 +451,21 @@
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ConceptPill: data required')
     var doc = resolveDoc(opts)
     var interactive = !!(opts && opts.onSelect)
+    var slot = conceptSlot(data)
     var pill = makeEl(doc, interactive ? 'button' : 'span', 'innfo-concept-pill')
     pill.setAttribute('data-innfo-component', 'concept-pill')
     pill.setAttribute('data-concept-id', String(data.id == null ? '' : data.id))
-    pill.setAttribute('data-concept-slot', String(conceptSlot(data)))
+    pill.setAttribute('data-concept-slot', String(slot))
     if (interactive) {
       pill.setAttribute('type', 'button')
       pill.addEventListener('click', function () {
         opts.onSelect(data)
       })
     }
-    var dot = makeEl(doc, 'i', 'innfo-concept-dot')
-    pill.appendChild(dot)
+    var cIcon = makeEl(doc, 'span', 'innfo-concept-pill-icon')
+    cIcon.setAttribute('aria-hidden', 'true')
+    cIcon.innerHTML = icon(resolveConceptIconName(data.label || data.id, { index: slot - 1, color: data.color, icon: data.icon }), 12)
+    pill.appendChild(cIcon)
     pill.appendChild(doc.createTextNode(String(data.label == null ? '' : data.label)))
     if (data.count != null) pill.appendChild(makeEl(doc, 'span', 'innfo-concept-count', ' (' + data.count + ')'))
     return pill
@@ -514,6 +484,17 @@
       pill.addEventListener('click', function () {
         if (opts && opts.onSelect) opts.onSelect(data)
       })
+    }
+    var hasConceptMeta = !!(data.concept || data.color || data.index != null || data.slot != null || data.hexColor)
+    if (hasConceptMeta) {
+      var eSlot = Number(data.slot) || conceptSlot({ index: data.index, color: data.color })
+      pill.setAttribute('data-concept-slot', String(eSlot))
+      pill.classList.add('innfo-element-pill--concept')
+      if (data.hexColor) pill.style.setProperty('--pill-concept-color', String(data.hexColor))
+      var eIcon = makeEl(doc, 'span', 'innfo-element-concept-icon')
+      eIcon.setAttribute('aria-hidden', 'true')
+      eIcon.innerHTML = icon(resolveConceptIconName(data.concept, { index: eSlot - 1, color: data.color, icon: data.icon }), 12)
+      pill.appendChild(eIcon)
     }
     if (data.origin) {
       var wrap = makeEl(doc, 'span', 'innfo-element-origin')
@@ -657,11 +638,24 @@
       var li = makeEl(doc, 'li', 'innfo-rel-row')
       if (r.field) li.setAttribute('data-rel-field', String(r.field))
       if (r.target) li.setAttribute('data-rel-target', String(r.target))
-      li.appendChild(makeEl(doc, 'span', 'innfo-rel-field', (r.field || 'related') + ' \u2192'))
-      var label = r.targetLabel || (byId[r.target] && byId[r.target].name) || r.target || '?'
+      var relFieldChip = makeEl(doc, 'span', 'innfo-rel-field innfo-ku-field-chip', (r.field || 'related') + ' \u2192')
+      li.appendChild(relFieldChip)
+      var targetRec = r.target && byId[r.target] ? byId[r.target] : null
+      var label = r.targetLabel || (targetRec && targetRec.name) || r.target || '?'
       if (r.target) {
         li.appendChild(
-          ElementPill({ id: r.target, label: label }, { href: '#el-' + r.target }),
+          ElementPill(
+            {
+              id: r.target,
+              label: label,
+              concept: r.targetConcept || (targetRec && targetRec.concept),
+              color: r.targetColor || (targetRec && targetRec._conceptColor),
+              hexColor: r.targetHexColor || (targetRec && targetRec._conceptHexColor),
+              slot: r.targetSlot || (targetRec && targetRec._conceptSlot),
+              index: targetRec && targetRec._conceptIndex,
+            },
+            { href: '#el-' + r.target, doc: doc },
+          ),
         )
       } else {
         li.appendChild(doc.createTextNode(String(label)))
@@ -679,7 +673,7 @@
     btn.setAttribute('aria-pressed', 'false')
     btn.setAttribute('aria-label', 'Toggle edit controls on this card')
     btn.setAttribute('title', 'Toggle edit controls on this card')
-    btn.innerHTML = icon('pencil', 14)
+    btn.innerHTML = icon('sliders', 14)
     return btn
   }
 
@@ -689,9 +683,10 @@
     btn.setAttribute('data-innfo-component', 'edit-anchor')
     btn.setAttribute('type', 'button')
     var label = (data && data.label) || 'Edit'
+    var iconName = (data && data.icon) || 'pencil'
     btn.setAttribute('aria-label', label)
     btn.setAttribute('title', label)
-    btn.innerHTML = icon('pencil', 13)
+    btn.innerHTML = icon(iconName, 13)
     return btn
   }
 
@@ -746,54 +741,175 @@
     return btn
   }
 
-  // Type-aware read rendering for a field value. Returns null when the value
-  // should fall back to the plain KuBadge text (string/number/select/etc.), so
-  // existing output is unchanged for the common case.
+  function normalizeAssetPath(v) {
+    if (typeof v !== 'string') return ''
+    var s = v.replace(/\\/g, '/')
+    if (/^(data:|blob:|https?:|file:)/i.test(s)) return v
+    // Already rebased to the rendered console location by export-console.mjs
+    // (rebaseModelAssets); leave it alone or the prefix is stripped and the
+    // stamped console 404s.
+    if (/^\.{1,2}\//.test(s)) return s
+    var m = s.match(/^.+?\/((?:sources|kNNowledge|assets|evidence)\/.+)$/)
+    return m ? m[1] : v
+  }
+
+  // Type-aware read rendering for a field value. Returns a DOM node, or null
+  // when the value should fall back to the plain KuBadge text (string, empty
+  // select, etc.), so existing output is unchanged for the common case.
+  //
+  // FIELD_RENDERERS is keyed by the declared field type — the L1 set
+  // (iNNfo_V_0-4-0 §Field Definition: string, select, reference, markdown_inline,
+  // markdown_file, image, file, video, audio, url, knowledge, citation) plus the
+  // legacy aliases older payloads still emit. reference/citation have no entry:
+  // FieldRow resolves them to ElementPill / CitationIcon from data.ref and
+  // data.citations. Value-shape renderers (boolean / list / object / url) and
+  // shape heuristics (image / asset path) run regardless of the declared type,
+  // matching the console's runtime-detected payloads.
+  var FIELD_RENDERERS = {
+    boolean: renderFieldBoolean,
+    select: renderFieldSelect,
+    markdown: renderFieldMarkdown,
+    markdown_inline: renderFieldMarkdown,
+    markdown_file: renderFieldFile,
+    image: renderFieldImage,
+    image_url: renderFieldImage,
+    asset: renderFieldImage,
+    file: renderFieldFile,
+    video: renderFieldMedia,
+    audio: renderFieldMedia,
+    url: renderFieldUrl,
+    code: renderFieldCode,
+    knowledge: renderFieldFile,
+  }
+
+  function renderFieldBoolean(d, doc) {
+    var b = makeEl(doc, 'span', 'innfo-field-bool', d.value ? 'Yes' : 'No')
+    b.setAttribute('data-value', d.value ? 'true' : 'false')
+    return b
+  }
+
+  function renderFieldSelect(d, doc) {
+    var v = d.value == null ? '' : String(d.value)
+    if (!v.trim()) return null
+    var pill = makeEl(doc, 'span', 'innfo-field-select', v)
+    pill.setAttribute('data-value', v)
+    return pill
+  }
+
+  function renderFieldUrl(d, doc) {
+    var a = makeEl(doc, 'a', 'innfo-field-url', d.value)
+    a.setAttribute('href', d.value)
+    a.setAttribute('target', '_blank')
+    a.setAttribute('rel', 'noopener noreferrer')
+    return a
+  }
+
+  function renderFieldCode(d, doc) {
+    return makeEl(doc, 'code', 'innfo-field-code', d.value == null ? '' : String(d.value))
+  }
+
+  function renderFieldMarkdown(d, doc) {
+    return makeEl(doc, 'span', 'innfo-field-markdown', d.value == null ? '' : String(d.value))
+  }
+
+  function renderFieldList(d, doc) {
+    return makeEl(doc, 'span', 'innfo-ku-value innfo-field-list', d.value.map(String).join(', '))
+  }
+
+  function renderFieldObject(d, doc) {
+    var chipWrap = makeEl(doc, 'span', 'innfo-ku-value innfo-obj-chips')
+    Object.keys(d.value).forEach(function (k) {
+      var chip = makeEl(doc, 'span', 'innfo-obj-chip')
+      chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-k', k))
+      var rawV = d.value[k]
+      var vNode = makeEl(doc, 'span', 'innfo-obj-chip-v', rawV == null ? '' : String(rawV))
+      if (rawV === true || rawV === 'true') vNode.setAttribute('data-bool', 'true')
+      else if (rawV === false || rawV === 'false') vNode.setAttribute('data-bool', 'false')
+      chip.appendChild(vNode)
+      chipWrap.appendChild(chip)
+    })
+    return chipWrap
+  }
+
+  function renderFieldImage(d, doc) {
+    if (d.name === 'sources') return null
+    if (typeof d.value !== 'string' || !looksLikeImageValue(d.value)) return null
+    var normImgPath = normalizeAssetPath(d.value)
+    var imgWrap = makeEl(doc, 'span', 'innfo-ku-value innfo-field-image-wrap')
+    var img = makeEl(doc, 'img', 'innfo-field-image')
+    img.setAttribute('src', normImgPath)
+    img.setAttribute('alt', String(d.name || ''))
+    img.setAttribute('loading', 'lazy')
+    img.addEventListener('error', function () {
+      var cur = img.getAttribute('src') || ''
+      var relMatch = !img.getAttribute('data-retried') && cur.match(/^.+?\b((?:sources|kNNowledge|assets|evidence)\/.+)$/)
+      if (relMatch) {
+        img.setAttribute('data-retried', '1')
+        img.setAttribute('src', relMatch[1])
+        return
+      }
+      if (img.parentNode) img.parentNode.removeChild(img)
+    })
+    imgWrap.appendChild(img)
+    imgWrap.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', normImgPath))
+    return imgWrap
+  }
+
+  function renderFieldFile(d, doc) {
+    var raw = String(d.value == null ? '' : d.value)
+      .replace(/^\[\[\s*/, '')
+      .replace(/\s*\]\]$/, '')
+    var cleanPath = normalizeAssetPath(raw)
+    var filePill = makeEl(doc, 'span', 'innfo-ku-value innfo-file-pill')
+    var fileIcon = makeEl(doc, 'span', 'innfo-file-pill-icon')
+    fileIcon.innerHTML = icon('cite-document', 12)
+    filePill.appendChild(fileIcon)
+    filePill.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', cleanPath))
+    return filePill
+  }
+
+  function renderFieldMedia(d, doc) {
+    if (typeof d.value !== 'string' || !d.value.trim()) return null
+    var src = normalizeAssetPath(d.value)
+    var tag = String(d.type || '').toLowerCase() === 'audio' ? 'audio' : 'video'
+    var media = makeEl(doc, tag, 'innfo-field-media')
+    media.setAttribute('controls', 'controls')
+    media.setAttribute('src', src)
+    media.setAttribute('preload', 'metadata')
+    var wrap = makeEl(doc, 'span', 'innfo-ku-value innfo-field-media-wrap')
+    wrap.appendChild(media)
+    wrap.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', src))
+    return wrap
+  }
+
+  function isAssetPath(value) {
+    if (typeof value !== 'string') return false
+    return /^(?:.+?\/)?(?:sources|kNNowledge|assets|evidence)\/[^\s]+\.[a-z0-9]{2,5}$/i.test(value.replace(/\\/g, '/'))
+  }
+
   function FieldValue(data, opts) {
     var doc = resolveDoc(opts)
     var d = data && typeof data === 'object' ? data : {}
     var value = d.value
     var type = String(d.type || '').toLowerCase()
-    if (type === 'boolean' || typeof value === 'boolean') {
-      var b = makeEl(doc, 'span', 'innfo-field-bool', value ? 'Yes' : 'No')
-      b.setAttribute('data-value', value ? 'true' : 'false')
-      return b
+
+    // 1. Value-shape renderers, independent of the declared type.
+    if (type === 'boolean' || typeof value === 'boolean') return renderFieldBoolean(d, doc)
+    if (Array.isArray(value)) return renderFieldList(d, doc)
+    if (value !== null && typeof value === 'object') return renderFieldObject(d, doc)
+    if (typeof value === 'string' && /^https?:\/\//i.test(value)) return renderFieldUrl(d, doc)
+
+    // 2. Declared-type renderer.
+    var byType = FIELD_RENDERERS[type]
+    if (byType) {
+      var typed = byType(d, doc)
+      if (typed) return typed
     }
-    if (Array.isArray(value)) {
-      return makeEl(doc, 'span', 'innfo-ku-value innfo-field-list', value.map(String).join(', '))
-    }
-    if (typeof value === 'string' && /^https?:\/\//i.test(value)) {
-      var a = makeEl(doc, 'a', 'innfo-field-url', value)
-      a.setAttribute('href', value)
-      a.setAttribute('target', '_blank')
-      a.setAttribute('rel', 'noopener noreferrer')
-      return a
-    }
-    if (type === 'code') {
-      return makeEl(doc, 'code', 'innfo-field-code', value == null ? '' : String(value))
-    }
-    if (type === 'markdown' || type === 'markdown_inline') {
-      return makeEl(doc, 'span', 'innfo-field-markdown', value == null ? '' : String(value))
-    }
-    if (type === 'image' || type === 'image_url' || type === 'asset' || type === 'video' || type === 'audio') {
-      if (typeof value === 'string' && looksLikeImageValue(value)) {
-        var img = makeEl(doc, 'img', 'innfo-field-image')
-        img.setAttribute('src', value)
-        img.setAttribute('alt', String(d.name || ''))
-        img.setAttribute('loading', 'lazy')
-        img.addEventListener('error', function () {
-          var cur = img.getAttribute('src') || ''
-          var relMatch = !img.getAttribute('data-retried') && cur.match(/^.+?(\bsources\/.+)$/)
-          if (relMatch) {
-            img.setAttribute('data-retried', '1')
-            img.setAttribute('src', relMatch[1])
-            return
-          }
-          var fb = makeEl(doc, 'code', 'innfo-field-code', String(value))
-          if (img.parentNode) img.parentNode.replaceChild(fb, img)
-        })
-        return img
-      }
+
+    // 3. Shape heuristics for values with no declared (or recognized) type.
+    if (typeof value === 'string') {
+      if (d.name !== 'sources' && looksLikeImageValue(value)) return renderFieldImage(d, doc)
+      if (isAssetPath(value)) return renderFieldFile(d, doc)
     }
     return null
   }
@@ -819,9 +935,21 @@
     }
     if (hasRef) {
       badge.appendChild(
-        ElementPill({ id: data.ref.id, label: data.ref.label || data.ref.id }, {
-          onSelect: opts && opts.onRef ? function () { opts.onRef(data.ref.id) } : undefined,
-        }),
+        ElementPill(
+          {
+            id: data.ref.id,
+            label: data.ref.label || data.ref.id,
+            concept: data.ref.concept,
+            color: data.ref.color,
+            hexColor: data.ref.hexColor,
+            slot: data.ref.slot,
+            index: data.ref.index,
+          },
+          {
+            doc: doc,
+            onSelect: opts && opts.onRef ? function () { opts.onRef(data.ref.id) } : undefined,
+          },
+        ),
       )
     }
     if (Array.isArray(data.citations) && data.citations.length) {
@@ -841,14 +969,13 @@
     return badge
   }
 
-  // ---- Element-card Dense Row (V01) ----
+  // ---- Element-card Selected Hybrid (V1 + V4) ----
   //
-  // The bar is always one line: image chip, name, concept, markers, a field
-  // count, the actions and a chevron. The body (description, field badges,
-  // tags, relations) opens on demand. Values never clip: the bar truncates with
-  // a title tooltip and the field badges show the full value on expand. The
-  // image chip is the first field whose value looks like an image; with no such
-  // field a dashed placeholder keeps rows aligned.
+  // Collapsed state: V1 header bar (thumbnail, name, status/markers, 1-line summary,
+  // count & chevron) + Variant 4 bottom inline pill strip (structured object chips
+  // such as photo_metadata and compact outgoing relation wikilink pills).
+  // Expanded state: Full Variant 1 editorial layout (lineage/QUD meta bar, narrative
+  // lead, 3-column structured property rows, and outgoing/incoming relations footer).
 
   var IMAGE_VALUE_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#]|$)/i
 
@@ -860,12 +987,55 @@
     return IMAGE_VALUE_RE.test(s)
   }
 
+  // Last-resort prefix retry for payloads exported before the export-time
+  // rebase (scripts/export-console.mjs rebaseModelAssets); a correctly exported
+  // console loads the src on the first try.
+  function retryImageSrc(img, fallback) {
+    var cur = img.getAttribute('src') || ''
+    if (/^(data:|blob:|https?:|file:)/i.test(cur)) {
+      fallback()
+      return
+    }
+    var tried = (img.getAttribute('data-retried') || '').split('|')
+    var tail = cur.replace(/\\/g, '/')
+    var m = tail.match(/^.+?\/(sources\/.+|kNNowledge\/.+|assets\/.+|evidence\/.+)$/)
+    var candidates = []
+    if (m) candidates.push(m[1])
+    for (var i = 0; i < candidates.length; i++) {
+      if (tried.indexOf(candidates[i]) === -1 && candidates[i] !== cur) {
+        img.setAttribute('data-retried', (img.getAttribute('data-retried') || '') + '|' + candidates[i])
+        img.setAttribute('src', candidates[i])
+        return
+      }
+    }
+    fallback()
+  }
+
+  function targetRecHex(rec) {
+    return rec && rec._conceptHexColor ? rec._conceptHexColor : null
+  }
+
   function imageFieldOf(fields) {
     var list = Array.isArray(fields) ? fields : []
     for (var i = 0; i < list.length; i++) {
       if (list[i] && looksLikeImageValue(list[i].value)) return list[i]
     }
     return null
+  }
+
+  var CONCEPT_SLOT_ICONS = ['box', 'boxes', 'flask-conical', 'git-branch', 'wrench', 'layers', 'cpu', 'shield', 'target', 'cite-document', 'cite-human', 'explorer']
+
+  function resolveConceptIconName(conceptName, conceptOpts) {
+    if (conceptOpts && conceptOpts.icon) return String(conceptOpts.icon)
+    var s = String(conceptName || '').toLowerCase()
+    if (/edge|probe|test|flask|case/i.test(s)) return 'flask-conical'
+    if (/proc|workflow|flow|pipeline/i.test(s)) return 'git-branch'
+    if (/work|task|step|action|tool/i.test(s)) return 'wrench'
+    if (/doc|artifact|report|file/i.test(s)) return 'cite-document'
+    if (/role|user|human|actor|team/i.test(s)) return 'cite-human'
+    if (/agent|ai|model|bot/i.test(s)) return 'cite-agent'
+    var slot = conceptSlot(conceptOpts)
+    return CONCEPT_SLOT_ICONS[(slot - 1) % CONCEPT_SLOT_ICONS.length] || 'layers'
   }
 
   function ElementCard(data, opts) {
@@ -882,36 +1052,40 @@
     var fields = Array.isArray(data.fields) ? data.fields : []
     var imageField = imageFieldOf(fields)
     var collapsible = !(opts && opts.collapsible === false)
+    var byId = (opts && opts.byId) || {}
 
     var head = makeEl(doc, 'header', 'innfo-card-head')
 
-    // Image chip: a real thumbnail when a field value looks like an image, a
-    // dashed placeholder otherwise (keeps every row aligned).
-    var thumb
-    if (imageField) {
-      thumb = makeEl(doc, 'img', 'innfo-card-thumb')
-      thumb.setAttribute('alt', '')
-      thumb.setAttribute('loading', 'lazy')
-      thumb.setAttribute('src', String(imageField.value))
-      thumb.addEventListener('error', function () {
-        var cur = thumb.getAttribute('src') || ''
-        var relMatch = !thumb.getAttribute('data-retried') && cur.match(/^.+?(\bsources\/.+)$/)
-        if (relMatch) {
-          thumb.setAttribute('data-retried', '1')
-          thumb.setAttribute('src', relMatch[1])
-          return
-        }
-        var ph = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--empty')
-        ph.innerHTML = icon('image', 16)
-        if (thumb.parentNode) thumb.parentNode.replaceChild(ph, thumb)
-      })
-    } else {
-      thumb = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--empty')
-      thumb.innerHTML = icon('image', 16)
-    }
-    head.appendChild(thumb)
-
     var conceptOpts = (opts && opts.concept) || {}
+    if (data.conceptId || conceptOpts.index != null || conceptOpts.color) {
+      card.setAttribute('data-concept-slot', String(conceptSlot(conceptOpts)))
+    }
+    var conceptIconName = resolveConceptIconName(data.conceptId, conceptOpts)
+
+    function makeConceptThumb() {
+      var ph = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--concept innfo-card-thumb--empty')
+      ph.setAttribute('data-concept-icon', conceptIconName)
+      ph.setAttribute('title', String(data.conceptId || 'Element'))
+      ph.setAttribute('aria-hidden', 'true')
+      ph.innerHTML = icon(conceptIconName, 18)
+      return ph
+    }
+
+    if (imageField) {
+      var thumb = makeEl(doc, 'img', 'innfo-card-thumb')
+      thumb.setAttribute('alt', String(data.name || data.id || ''))
+      thumb.setAttribute('loading', 'lazy')
+      thumb.setAttribute('src', normalizeAssetPath(String(imageField.value)))
+      thumb.addEventListener('error', function () {
+        retryImageSrc(thumb, function () {
+          var ph = makeConceptThumb()
+          if (thumb.parentNode) thumb.parentNode.replaceChild(ph, thumb)
+        })
+      })
+      head.appendChild(thumb)
+    } else {
+      head.appendChild(makeConceptThumb())
+    }
     head.appendChild(
       KuBadge({
         kind: 'element',
@@ -922,13 +1096,44 @@
         icon: conceptOpts.icon,
       }),
     )
+
+    // Surface semantic status pill in header if element has a status field
+    var statusField = null
+    var summaryField = null
+    for (var fi = 0; fi < fields.length; fi++) {
+      var fItem = fields[fi]
+      if (!fItem) continue
+      if (fItem.name === 'status' && typeof fItem.value === 'string' && fItem.value.trim()) {
+        statusField = fItem.value.trim()
+      } else if (fItem.name === 'summary' && typeof fItem.value === 'string' && fItem.value.trim()) {
+        summaryField = fItem.value.trim()
+      }
+    }
+    if (statusField) {
+      var stPill = makeEl(doc, 'span', 'innfo-card-status-pill')
+      var stNorm = statusField.toLowerCase()
+      stPill.setAttribute('data-status', stNorm)
+      if (stNorm === 'reviewed' || stNorm === 'applied' || stNorm === 'completed' || stNorm === 'verified') {
+        var chk = makeEl(doc, 'span', 'innfo-status-pill-icon')
+        chk.innerHTML = icon('check', 11)
+        stPill.appendChild(chk)
+      }
+      stPill.appendChild(doc.createTextNode(statusField))
+      head.appendChild(stPill)
+    }
+
     if (Array.isArray(data.markers)) {
       data.markers.forEach(function (m) {
         if (m) head.appendChild(MarkerChip(m))
       })
     }
-    // QUD slug lives in the collapsible body, not the head: the collapsed bar
-    // stays a single identity line, the locator copies stay one click away.
+
+    if (summaryField) {
+      var sumPrev = makeEl(doc, 'span', 'innfo-card-summary-preview', summaryField)
+      sumPrev.setAttribute('title', summaryField)
+      head.appendChild(sumPrev)
+    }
+
     var qudNode = null
     if (data.qud && (data.qud.id || data.qud === true)) {
       var qudData = data.qud === true ? { id: data.id } : data.qud
@@ -971,7 +1176,6 @@
       })
       head.appendChild(toggle)
 
-      // Clicking the bar (but not an interactive child) toggles too.
       head.addEventListener('click', function (ev) {
         var t = ev && ev.target
         if (t && typeof t.closest === 'function' && t.closest('button, a, input, select, textarea')) {
@@ -982,13 +1186,119 @@
     }
     card.appendChild(head)
 
-    var body = makeEl(doc, 'section', 'innfo-card-body')
-    if (qudNode) body.appendChild(qudNode)
-    if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
     var headline = String(data.name || data.id || '')
     var bodyFields = fields.filter(function (fr) {
       return fr && String(fr.value == null ? '' : fr.value) !== headline
     })
+    var relations = Array.isArray(data.relations) ? data.relations : null
+
+    // Variant 4 Bottom Inline Pill Strip for Collapsed State
+    if (collapsible) {
+      var stripLeft = makeEl(doc, 'div', 'innfo-collapsed-strip-left')
+      var stripRight = makeEl(doc, 'div', 'innfo-collapsed-strip-right')
+
+      // 1. Object fields (e.g., photo_metadata) rendered as inline key-value chip groups
+      var objFields = bodyFields.filter(function (fr) {
+        return fr && fr.value !== null && typeof fr.value === 'object' && !Array.isArray(fr.value)
+      })
+      objFields.forEach(function (fr) {
+        var grp = makeEl(doc, 'span', 'innfo-strip-group')
+        grp.appendChild(makeEl(doc, 'span', 'innfo-strip-key', fr.name + ':'))
+        Object.keys(fr.value).forEach(function (k) {
+          var chip = makeEl(doc, 'span', 'innfo-obj-chip')
+          chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-k', k))
+          var rawV = fr.value[k]
+          var vNode = makeEl(doc, 'span', 'innfo-obj-chip-v', rawV == null ? '' : String(rawV))
+          if (rawV === true || rawV === 'true') vNode.setAttribute('data-bool', 'true')
+          chip.appendChild(vNode)
+          grp.appendChild(chip)
+        })
+        stripLeft.appendChild(grp)
+      })
+
+      // 2. If no object fields, surface up to 3 compact scalar fields when card has multiple fields
+      var relFieldSet = {}
+      if (relations) {
+        relations.forEach(function (r) {
+          if (r && r.field) relFieldSet[r.field] = true
+        })
+      }
+      if (!objFields.length && bodyFields.length > 1) {
+        var compactScalars = bodyFields.filter(function (fr) {
+          if (!fr || fr.ref || fr.value == null || relFieldSet[fr.name]) return false
+          if (fr.name === 'summary' || fr.name === 'long_description' || fr.name === 'description' || fr.name === 'status' || fr.name === 'sources') return false
+          if (typeof fr.value === 'object') return false
+          var sv = normalizeAssetPath(String(fr.value))
+          if (!sv || sv.length > 36 || looksLikeImageValue(sv) || /^\[\[.*\]\]$/.test(sv)) return false
+          return true
+        }).slice(0, 3)
+        compactScalars.forEach(function (fr) {
+          var chip = makeEl(doc, 'span', 'innfo-obj-chip')
+          chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-k', fr.name))
+          chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-v', normalizeAssetPath(String(fr.value))))
+          stripLeft.appendChild(chip)
+        })
+      }
+
+      // 3. Outgoing relations rendered as Field KU chip + target-concept-colored Element KU pill
+      if (relations && relations.length) {
+        relations.slice(0, 3).forEach(function (r) {
+          if (!r || typeof r !== 'object') return
+          var tRec = r.target && byId[r.target] ? byId[r.target] : null
+          var rLabel = r.targetLabel || (tRec && tRec.name) || r.target || '?'
+          var relGroup = makeEl(doc, 'span', 'innfo-strip-rel-group')
+          if (r.field) {
+            var fChip = makeEl(doc, 'span', 'innfo-ku-field-chip innfo-strip-rel-field', '~ ' + r.field)
+            relGroup.appendChild(fChip)
+          }
+          var pill = makeEl(doc, 'a', 'innfo-strip-rel')
+          if (r.target) pill.setAttribute('href', '#el-' + r.target)
+          var tConcept = r.targetConcept || (tRec && tRec.concept)
+          var tSlot = r.targetSlot || (tRec && tRec._conceptSlot)
+          var tHex = r.targetHexColor || (tRec && targetRecHex(tRec))
+          if (tSlot) pill.setAttribute('data-concept-slot', String(tSlot))
+          if (tHex) pill.style.setProperty('--pill-concept-color', String(tHex))
+          if (tConcept || tSlot) {
+            var tIco = makeEl(doc, 'span', 'innfo-strip-rel-icon')
+            tIco.setAttribute('aria-hidden', 'true')
+            tIco.innerHTML = icon(resolveConceptIconName(tConcept, { index: (Number(tSlot) || 1) - 1 }), 11)
+            pill.appendChild(tIco)
+          }
+          pill.appendChild(doc.createTextNode((!r.field ? '' : '') + rLabel + ' ↗'))
+          relGroup.appendChild(pill)
+          stripRight.appendChild(relGroup)
+        })
+      }
+
+      if (stripLeft.children.length || stripRight.children.length) {
+        var collapsedStrip = makeEl(doc, 'div', 'innfo-card-collapsed-strip')
+        collapsedStrip.appendChild(stripLeft)
+        collapsedStrip.appendChild(stripRight)
+        card.appendChild(collapsedStrip)
+      }
+    }
+
+    var body = makeEl(doc, 'section', 'innfo-card-body')
+    var hasHistory = Array.isArray(data.history) && data.history.length > 0
+    if (qudNode || hasHistory) {
+      var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
+      if (qudNode) metaStrip.appendChild(qudNode)
+      if (hasHistory) {
+        var firstHist = data.history[0] || {}
+        var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
+        if (firstHist.id || firstHist.author) {
+          histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
+        }
+        var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
+        var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
+        linIco.innerHTML = icon('git-commit', 12)
+        linPill.appendChild(linIco)
+        linPill.appendChild(doc.createTextNode(histText))
+        metaStrip.appendChild(linPill)
+      }
+      body.appendChild(metaStrip)
+    }
+    if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
     if (bodyFields.length) {
       var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
       bodyFields.forEach(function (fr) {
@@ -1003,9 +1313,8 @@
     }
     var tags = Array.isArray(data.tags) ? data.tags : null
     if (tags) body.appendChild(TagRow({ tags: tags }))
-    var relations = Array.isArray(data.relations) ? data.relations : null
     if (relations) {
-      body.appendChild(RelList({ relations: relations, byId: (opts && opts.byId) || {} }))
+      body.appendChild(RelList({ relations: relations, byId: byId }))
     }
     var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
     if (incoming && incoming.length) {
@@ -1013,7 +1322,7 @@
       incWrap.appendChild(
         makeEl(doc, 'span', 'innfo-card-incoming-label', 'Referenced by (' + incoming.length + ')'),
       )
-      incWrap.appendChild(RelList({ relations: incoming, byId: (opts && opts.byId) || {} }))
+      incWrap.appendChild(RelList({ relations: incoming, byId: byId }))
       body.appendChild(incWrap)
     }
     card.appendChild(body)
@@ -1036,9 +1345,16 @@
         opts && typeof opts.isTargetChanged === 'function'
           ? opts.isTargetChanged(d, byId)
           : !el || el.hash !== d.base_hash
+      // A stale draft whose proposed value already equals the current value was
+      // applied out-of-band: 'already applied', not 'target changed'.
+      var applied =
+        changed && opts && typeof opts.isAlreadyApplied === 'function'
+          ? opts.isAlreadyApplied(d, byId)
+          : false
       var li = makeEl(doc, 'li', 'innfo-draft-row card bg-base-100 border border-base-200 shadow-xs')
       li.setAttribute('data-draft-id', String(d.id))
-      if (changed) li.setAttribute('data-target-changed', 'true')
+      if (changed && !applied) li.setAttribute('data-target-changed', 'true')
+      if (applied) li.setAttribute('data-already-applied', 'true')
 
       var cardBody = makeEl(doc, 'div', 'card-body p-4 flex flex-row items-center justify-between gap-4')
 
@@ -1048,12 +1364,41 @@
       left.appendChild(kindBadge)
 
       var targetLabel = el ? el.name || d.element_id : d.element || d.element_id
-      var targetSpan = makeEl(
-        doc,
-        'span',
-        'innfo-draft-target font-semibold text-sm',
-        targetLabel + (d.field ? '.' + d.field : '')
+      var targetConcept = d.concept || (el && el.concept) || null
+      var targetSpan = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5 font-semibold text-sm')
+      if (targetConcept) {
+        var cPill = ConceptPill(
+          {
+            id: targetConcept,
+            label: targetConcept,
+            index: el && el._conceptIndex != null ? el._conceptIndex : 0,
+            color: el && el._conceptColor,
+          },
+          { doc: doc },
+        )
+        targetSpan.appendChild(cPill)
+      }
+      var ePill = ElementPill(
+        {
+          id: d.element_id || targetLabel,
+          label: targetLabel,
+          concept: targetConcept,
+          color: el && el._conceptColor,
+          hexColor: el && el._conceptHexColor,
+          slot: el && el._conceptSlot,
+          index: el && el._conceptIndex,
+        },
+        { doc: doc, href: d.element_id ? '#el-' + d.element_id : undefined },
       )
+      targetSpan.appendChild(ePill)
+      if (d.field) {
+        var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '→')
+        arrowSpan.setAttribute('aria-hidden', 'true')
+        targetSpan.appendChild(arrowSpan)
+        var fBadge = makeEl(doc, 'span', 'innfo-ku-field-chip', '~ ' + d.field)
+        fBadge.setAttribute('data-ku-kind', 'field')
+        targetSpan.appendChild(fBadge)
+      }
       left.appendChild(targetSpan)
 
       var text = d.comment != null ? d.comment : d.proposed != null ? d.proposed : ''
@@ -1062,7 +1407,10 @@
       cardBody.appendChild(left)
 
       var right = makeEl(doc, 'div', 'flex items-center gap-2 shrink-0')
-      if (changed) {
+      if (applied) {
+        var appliedBadge = makeEl(doc, 'span', 'innfo-draft-already-applied badge badge-neutral badge-sm', 'already applied')
+        right.appendChild(appliedBadge)
+      } else if (changed) {
         var warnBadge = makeEl(doc, 'span', 'innfo-draft-target-changed badge badge-error badge-sm', 'target changed')
         right.appendChild(warnBadge)
       }
@@ -1592,6 +1940,7 @@
   }
 
   var REVIEW_STATES = ['none', 'reviewed', 'changed']
+  var REVIEW_LABELS = { none: 'Mark reviewed', reviewed: 'Reviewed', changed: 'Changed' }
 
   function ReviewedToggle(data) {
     if (!data || typeof data !== 'object') {
@@ -1599,7 +1948,7 @@
     }
     var state = REVIEW_STATES.indexOf(data.state) !== -1 ? data.state : 'none'
     var doc = resolveDoc(null)
-    var b = makeEl(doc, 'button', 'innfo-reviewed-toggle', state)
+    var b = makeEl(doc, 'button', 'innfo-reviewed-toggle', REVIEW_LABELS[state])
     b.setAttribute('data-innfo-component', 'reviewed-toggle')
     b.setAttribute('type', 'button')
     b.setAttribute('data-state', String(state))
@@ -1777,7 +2126,7 @@
   if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('message', function (e) {
       if (e && e.data && e.data.type === 'innfo:theme-change') {
-        setTheme(document, e.data.theme === 'dark' ? 'dark' : 'light')
+        setTheme(document, 'light')
       }
     })
   }
@@ -1792,6 +2141,7 @@
     icon: icon,
     slug: slug,
     conceptSlot: conceptSlot,
+    resolveConceptIconName: resolveConceptIconName,
     ORIGIN_VARIANTS: ['error', 'agent', 'human', 'reviewer', 'document'],
     ConceptPill: ConceptPill,
     ElementPill: ElementPill,

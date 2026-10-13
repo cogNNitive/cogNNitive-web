@@ -49,6 +49,10 @@
     // so a changeset export does not have to guess it from display titles.
     if (d.model_id != null && d.model_id !== '') draft.model_id = String(d.model_id)
     if (d.element_slug != null && d.element_slug !== '') draft.element_slug = String(d.element_slug)
+    // Matrix-cell drafts target a matrix coordinate, not an element unit.
+    if (d.matrix != null && d.matrix !== '') draft.matrix = String(d.matrix)
+    if (d.row != null && d.row !== '') draft.row = String(d.row)
+    if (d.col != null && d.col !== '') draft.col = String(d.col)
     if (d.field !== undefined && d.field !== null) draft.field = String(d.field)
     if (d.original !== undefined) draft.original = d.original
     if (d.proposed !== undefined) draft.proposed = d.proposed
@@ -197,7 +201,8 @@
       },
       addDraft: function (input) {
         var raw = isObject(input) ? input : {}
-        if (!raw.element_id || !raw.base_hash) {
+        var isMatrix = raw.matrix != null && raw.matrix !== '' && raw.row != null && raw.col != null
+        if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
           throw new TypeError('InnfoReview.createDraftStore: element_id and base_hash required')
         }
         return deepCopy(
@@ -258,9 +263,36 @@
     var byId = isObject(elementsById) ? elementsById : {}
     // A proposed new element has no target in the model yet, so it cannot be stale.
     if (d.kind === 'new') return false
+    // Matrix-cell drafts have no element hash to compare against.
+    if (d.matrix) return false
     var el = byId[d.element_id]
     if (!el) return true
     return el.hash !== d.base_hash
+  }
+
+  function currentFieldValue(el, field) {
+    if (!isObject(el) || field === undefined || field === null) return undefined
+    var key = String(field)
+    if (el.fields && isObject(el.fields) && el.fields[key] !== undefined) return el.fields[key]
+    if (key === 'name') return el.name
+    if (key === 'description') return el.description
+    return el[key]
+  }
+
+  // A stale draft whose proposed value already equals the element's current
+  // value has nothing to review: the change was applied out-of-band (e.g. an
+  // engine-side changeset). It reads 'already applied' and is excluded from
+  // export, instead of the misleading 'target changed'.
+  function isAlreadyApplied(draft, elementsById) {
+    var d = isObject(draft) ? draft : {}
+    if (d.proposed === undefined || d.proposed === null) return false
+    var byId = isObject(elementsById) ? elementsById : {}
+    var el = byId[d.element_id]
+    if (!el) return false
+    if (!isTargetChanged(d, byId)) return false
+    var current = currentFieldValue(el, d.field)
+    if (current === undefined || current === null) return false
+    return String(current) === String(d.proposed)
   }
 
   function progressByConcept(elements, drafts, reviewed) {
@@ -338,7 +370,7 @@
         if (!isObject(c)) return
         out.push({
           field: field,
-          origin: c.error ? 'error' : c.origin,
+          origin: c.error ? 'error' : (c.origin || 'document'),
           source: c.anchor ? String(c.path || '') + ' \u2192 ' + c.anchor : String(c.path || c.source || ''),
           quote: c.excerpt,
           exists: c.exists,
@@ -351,12 +383,20 @@
 
   function draftToItem(draft) {
     var d = isObject(draft) ? draft : {}
-    var target = {
-      element_id: String(d.element_id || ''),
-      concept: String(d.concept || ''),
-      element: String(d.element || ''),
-    }
-    if (d.field !== undefined && d.field !== null) target.field = String(d.field)
+    var isMatrix = d.matrix != null && d.matrix !== ''
+    var target = isMatrix
+      ? {
+          matrix: String(d.matrix),
+          row: String(d.row || ''),
+          col: String(d.col || ''),
+          element: String(d.element || ''),
+        }
+      : {
+          element_id: String(d.element_id || ''),
+          concept: String(d.concept || ''),
+          element: String(d.element || ''),
+        }
+    if (!isMatrix && d.field !== undefined && d.field !== null) target.field = String(d.field)
     var item = {
       id: typeof d.id === 'string' && d.id ? d.id : 'fb-001',
       kind: ITEM_KINDS.indexOf(d.kind) !== -1 ? d.kind : 'comment',
@@ -365,7 +405,7 @@
     if (d.original !== undefined) item.original = d.original
     if (d.proposed !== undefined) item.proposed = d.proposed
     if (d.comment !== undefined && d.comment !== null) item.comment = String(d.comment)
-    item.base_hash = String(d.base_hash || '')
+    if (!isMatrix) item.base_hash = String(d.base_hash || '')
     return item
   }
 
@@ -405,6 +445,24 @@
 
     function saveDraft(anchorData, payload) {
       if (!store) return null
+      if (anchorData.matrixCell) {
+        var matrixDraft = {
+          matrix: anchorData.matrix,
+          row: anchorData.row,
+          col: anchorData.col,
+          element: anchorData.matrix,
+          kind: payload.kind,
+          model_id: meta.modelId,
+          original: anchorData.original,
+        }
+        if (payload.proposed !== undefined) matrixDraft.proposed = payload.proposed
+        if (payload.comment !== undefined && payload.comment !== null) {
+          matrixDraft.comment = String(payload.comment)
+        }
+        var savedMatrix = store.addDraft(matrixDraft)
+        refreshCount()
+        return savedMatrix
+      }
       var el = elementsById[anchorData.elementId]
       if (!el) return null
       var draft = {
@@ -446,6 +504,20 @@
     // not modal-editable (card comments, tag/relation proposals use popovers
     // or immediate comment drafts instead).
     function kuModalTarget(anchorData) {
+      // Matrix cells are edited through the same modal, addressed by coordinate.
+      if (anchorData.matrixCell) {
+        if (typeof UI.EditModal !== 'function') return null
+        return {
+          title: 'Edit ' + anchorData.matrix + ' → ' + anchorData.row + ' × ' + anchorData.col,
+          fieldName: '__cell',
+          type: 'string',
+          value: anchorData.original,
+          draftField: '__cell',
+          original: anchorData.original,
+          citations: [],
+          history: [],
+        }
+      }
       var el = elementsById[anchorData.elementId]
       if (!el || typeof UI.EditModal !== 'function') return null
       var base = {
@@ -749,7 +821,7 @@
     function annotateControl(anchorData, label) {
       var b =
         typeof UI.EditAnchor === 'function'
-          ? UI.EditAnchor({ label: label || 'Annotate' })
+          ? UI.EditAnchor({ label: label || 'Annotate', icon: anchorData.field ? 'pencil' : 'message-square' })
           : makeEl(doc, 'button', 'innfo-review-anchor', label || '+')
       b.setAttribute('data-innfo-review-ctl', '1')
       b.setAttribute('data-innfo-ctl', anchorData.field ? 'field-anchor' : 'card-anchor')
@@ -857,11 +929,29 @@
       ensureCardFocusable(card)
       var elId = card.getAttribute('data-element-id')
       var head = card.querySelector('.innfo-card-head') || card
+      var headRightRef =
+        head.querySelector('.innfo-card-count') || head.querySelector('.innfo-card-toggle') || null
+      if (!head.querySelector('[data-innfo-component="reviewed-toggle"]') && store) {
+        var elForRev = elementsById[elId]
+        var stateForRev = elForRev ? reviewState(elForRev, store.reviewed()) : 'none'
+        var rt = UI.ReviewedToggle({ state: stateForRev })
+        rt.setAttribute('data-innfo-review-ctl', '1')
+        rt.addEventListener('click', function () {
+          var current = store.reviewed()
+          if (Object.prototype.hasOwnProperty.call(current, elId)) {
+            store.unmarkReviewed(elId)
+          } else if (elForRev) {
+            store.markReviewed(elId, elForRev.hash)
+          }
+          applyDecorations()
+        })
+        head.insertBefore(rt, headRightRef)
+      }
       if (!card.querySelector('[data-innfo-ctl="card-anchor"]')) {
-        head.appendChild(annotateControl({ elementId: elId }, 'Annotate element'))
+        head.insertBefore(annotateControl({ elementId: elId }, 'Annotate element'), headRightRef)
       }
       if (!card.querySelector('[data-innfo-ctl="edit-toggle"]')) {
-        head.appendChild(editToggleControl(card))
+        head.insertBefore(editToggleControl(card), headRightRef)
       }
       var nameEl = card.querySelector('.innfo-card-head [data-ku-kind="element"]')
       if (nameEl && !nameEl.querySelector('[data-innfo-ctl="name-anchor"]')) {
@@ -893,22 +983,7 @@
       )
       decorateTagRow(card, elId)
       decorateRelList(card, elId)
-      if (!head.querySelector('[data-innfo-component="reviewed-toggle"]') && store) {
-        var el = elementsById[elId]
-        var state = el ? reviewState(el, store.reviewed()) : 'none'
-        var rt = UI.ReviewedToggle({ state: state })
-        rt.setAttribute('data-innfo-review-ctl', '1')
-        rt.addEventListener('click', function () {
-          var current = store.reviewed()
-          if (Object.prototype.hasOwnProperty.call(current, elId)) {
-            store.unmarkReviewed(elId)
-          } else if (el) {
-            store.markReviewed(elId, el.hash)
-          }
-          applyDecorations()
-        })
-        head.appendChild(rt)
-      }
+
     }
 
     // Tags are not KUs (no sub-ID, no modal): membership is proposed with
@@ -995,6 +1070,27 @@
       row.appendChild(annotateControl({ elementId: elId, field: field }, 'Annotate field'))
     }
 
+    // Matrix cells are not element units: each editable cell carries an anchor
+    // that proposes an `update_matrix_cell` draft (row × col coordinate).
+    function decorateMatrixCell(td) {
+      if (!enabled || td.querySelector('[data-innfo-ctl="matrix-cell-anchor"]')) return
+      var anchorData = {
+        matrixCell: true,
+        matrix: td.getAttribute('data-matrix'),
+        row: td.getAttribute('data-row'),
+        col: td.getAttribute('data-col'),
+        original: td.getAttribute('data-cell-raw') || '',
+        field: '__cell',
+        ctl: 'matrix-cell-anchor',
+      }
+      var b = kuEditControl(
+        anchorData,
+        'Edit matrix cell ' + anchorData.row + ' \u00d7 ' + anchorData.col,
+      )
+      b.setAttribute('data-field', '__cell')
+      td.appendChild(b)
+    }
+
     // Every knowledge-unit badge gets an info action, ALWAYS (review on or off).
     // Actions sit in a ku-actions cluster OUTSIDE the badge root, never nested.
     function decorateInfoActions(root) {
@@ -1012,7 +1108,11 @@
           },
         )
         actions.setAttribute('data-innfo-ctl', 'ku-info-actions')
-        if (badge.parentNode) badge.parentNode.insertBefore(actions, badge.nextSibling)
+        if (badge.getAttribute('data-ku-kind') === 'field') {
+          badge.appendChild(actions)
+        } else if (badge.parentNode) {
+          badge.parentNode.insertBefore(actions, badge.nextSibling)
+        }
       }
       Array.prototype.forEach.call(
         host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
@@ -1201,6 +1301,10 @@
         host.querySelectorAll('[data-ku-kind="field"][data-field]'),
         decorateFieldRow,
       )
+      Array.prototype.forEach.call(
+        host.querySelectorAll('td[data-matrix][data-row][data-col]'),
+        decorateMatrixCell,
+      )
     }
 
     function onRendered(event) {
@@ -1328,6 +1432,7 @@
     createReviewController: createReviewController,
     reviewState: reviewState,
     isTargetChanged: isTargetChanged,
+    isAlreadyApplied: isAlreadyApplied,
     progressByConcept: progressByConcept,
     verdictsByElement: verdictsByElement,
     changedIds: changedIds,

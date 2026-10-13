@@ -346,10 +346,54 @@ function injectSlots(shell, config, schema, model) {
   )
 }
 
+// Image fields hold asset paths relative to the domain (or repo) root, but a
+// console is written at a different depth: the domain console sits at the root,
+// a stamped console under artifacts/<stem>_console/. Each file therefore needs
+// its own rebase, or the thumbnail 404s under file://.
+const IMAGE_ASSET_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)(?:[?#]|$)/i
+
+function rebaseAssetValue(value, outDirAbs, rootAbs) {
+  if (typeof value !== 'string') return value
+  const trimmed = value.trim()
+  if (!trimmed || /^(data:|blob:|https?:|file:)/i.test(trimmed)) return value
+  if (!IMAGE_ASSET_RE.test(trimmed)) return value
+  for (const base of [rootAbs, repoRoot, process.cwd()]) {
+    const abs = resolve(base, trimmed)
+    if (existsSync(abs)) {
+      let rel = relative(outDirAbs, abs).replace(/\\/g, '/')
+      if (!rel.startsWith('.')) rel = './' + rel
+      return rel
+    }
+  }
+  return value
+}
+
+function rebaseModelAssets(model, outDirAbs, rootAbs) {
+  if (!model || !Array.isArray(model.elements)) return model
+  return {
+    ...model,
+    elements: model.elements.map((el) => {
+      if (!el || !el.fields || typeof el.fields !== 'object') return el
+      const fields = { ...el.fields }
+      let changed = false
+      for (const [k, v] of Object.entries(fields)) {
+        const next = rebaseAssetValue(v, outDirAbs, rootAbs)
+        if (next !== v) {
+          fields[k] = next
+          changed = true
+        }
+      }
+      return changed ? { ...el, fields } : el
+    }),
+  }
+}
+
 /** Console HTML for one model: the bundle name is injected so each console loads its own pinned bundle. */
-function renderConsole(shell, bundleName, config, payload) {
+function renderConsole(shell, bundleName, config, payload, outDirAbs, rootAbs) {
   const pinned = bundleName ? shell.replace('./innfo-console.bundle.js', `./${bundleName}`) : shell
-  return injectSlots(pinned, config, payload.schema, payload.model)
+  const model =
+    outDirAbs && rootAbs ? rebaseModelAssets(payload.model, outDirAbs, rootAbs) : payload.model
+  return injectSlots(pinned, config, payload.schema, model)
 }
 
 async function main() {
@@ -745,7 +789,7 @@ async function main() {
     if (args.view) domainPayload.model.meta.consoleScope = { view: args.view }
     const buildDomainHtml = (generated) => {
       domainPayload.model.meta.generated = generated
-      let html = viewsLib.inlineConsoleAssets(renderConsole(resolvedShell, null, config, domainPayload), preparedAssets)
+      let html = viewsLib.inlineConsoleAssets(renderConsole(resolvedShell, null, config, domainPayload, root, root), preparedAssets)
       if (!html.includes('data-theme=')) {
         html = html.replace('<html lang="en">', '<html lang="en" data-theme="light">')
       }
@@ -816,7 +860,7 @@ async function main() {
       const previousGenerated = extractModelMetaFromHtml(previous)?.generated
       if (
         previousGenerated &&
-        renderConsole(resolvedShell, bundleName, config, build(previousGenerated)) === previous
+        renderConsole(resolvedShell, bundleName, config, build(previousGenerated), join(root, dir), root) === previous
       ) {
         unchanged++
         console.log(`= ${basename(latestRel)} unchanged`)
@@ -824,7 +868,7 @@ async function main() {
       }
     }
 
-    const html = renderConsole(resolvedShell, bundleName, config, build(undefined))
+    const html = renderConsole(resolvedShell, bundleName, config, build(undefined), join(root, dir), root)
     const result = await payloadHelper.writeOnce(
       root,
       { dir, key: `${stem}_console`, ext: 'html' },

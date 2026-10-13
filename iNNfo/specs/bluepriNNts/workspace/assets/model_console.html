@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,6 +17,7 @@
     /* Semantic tokens come from InnfoUI (data-theme driven). Local aliases keep
        this shell's layout variables working without hard-coded colors. */
     :root {
+      color-scheme: light;
       --bg: var(--innfo-bg);
       --surface: var(--innfo-surface);
       --surface-2: var(--innfo-surface-2);
@@ -268,7 +269,7 @@
   </script>
     <!-- Shared console bundle (static tags: CDN primary, mirror fallback, vendored copy — no fetch, no modules). Composes uPlot, visuals, innfo-runtime (window.InnfoConsole, citation icons + dialog) and render-model-viewer (window.InnfoModelViewer). -->
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.8/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.9.9/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
     <script src="./innfo-console.bundle.js"></script>

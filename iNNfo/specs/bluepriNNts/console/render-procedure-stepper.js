@@ -272,6 +272,38 @@
       if (typeof dialog.showModal === 'function') dialog.showModal()
     }
 
+    function appendWithKuPills(hostEl, rawText) {
+      var text = String(rawText == null ? '' : rawText)
+      var names = Object.keys(byName).filter(function (n) { return n && n.length >= 3 }).sort(function (a, b) { return b.length - a.length })
+      var escapedNames = names.map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\    function refButton(label, name) {') })
+      var patternParts = ['\\bfb-\\d+\\b']
+      if (escapedNames.length) patternParts.push(escapedNames.join('|'))
+      var re = new RegExp('(' + patternParts.join('|') + ')', 'g')
+      var lastIdx = 0
+      var match
+      while ((match = re.exec(text)) !== null) {
+        if (match.index > lastIdx) {
+          hostEl.appendChild(document.createTextNode(text.slice(lastIdx, match.index)))
+        }
+        var token = match[0]
+        if (/^fb-\d+$/.test(token)) {
+          var chg = document.createElement('span')
+          chg.className = 'innfo-ku-field-chip'
+          chg.textContent = token
+          hostEl.appendChild(chg)
+        } else if (byName[token]) {
+          var rb = refButton(token, token)
+          hostEl.appendChild(rb.node)
+        } else {
+          hostEl.appendChild(document.createTextNode(token))
+        }
+        lastIdx = re.lastIndex
+      }
+      if (lastIdx < text.length) {
+        hostEl.appendChild(document.createTextNode(text.slice(lastIdx)))
+      }
+    }
+
     function refButton(label, name) {
       var target = byName[name]
       if (!target) {
@@ -352,8 +384,7 @@
         var h = document.createElement(isRoot ? 'h2' : 'h3')
         var iconName = step.fields.step_type || 'task'
         var svg = vIcon(iconName, 16)
-        var stepColor = conceptColor('Work')
-        h.style.color = stepColor
+        h.style.color = 'var(--innfo-accent, #171717)'
         h.innerHTML =
           '<span class="step-type-icon">' +
           (svg || STEP_TYPE_ICONS[step.fields.step_type] || '•') +
@@ -366,17 +397,20 @@
           p.textContent = step.el.description
           block.appendChild(p)
         }
+        var chipsWrap = document.createElement('div')
+        chipsWrap.className = 'chips'
+        if (step.fields.scope) chipsWrap.appendChild(chip('Scope: ' + step.fields.scope, 'active'))
         if (!isRoot) {
-          var chipsWrap = document.createElement('div')
-          chipsWrap.className = 'chips'
-          if (step.fields.condition) chipsWrap.appendChild(chip('IF ' + step.fields.condition, 'warning'))
+          if (step.fields.condition) chipsWrap.appendChild(chip('IF: ' + step.fields.condition, 'warning'))
           if (step.fields.step_type) chipsWrap.appendChild(chip(step.fields.step_type, 'active'))
           if (step.fields.output_status) chipsWrap.appendChild(chip(step.fields.output_status, 'done'))
           if (step.fields.tool) {
             var toolRef = refButton(step.fields.tool, step.fields.tool)
             chipsWrap.appendChild(chipWithNode(toolRef.node, 'active'))
           }
-          if (chipsWrap.children.length) block.appendChild(chipsWrap)
+        }
+        if (chipsWrap.children.length) block.appendChild(chipsWrap)
+        if (!isRoot) {
           var io = document.createElement('div')
           io.className = 'io'
           if (step.fields.input) io.appendChild(ioPill('Input', step.fields.input, 'in'))
@@ -721,6 +755,18 @@
       statusPill.textContent = state === 'done' ? 'Completed' : state === 'active' ? 'In Progress' : 'Pending'
 
       headerRow.appendChild(typePill)
+      if (cur.fields.condition) {
+        var condPill = document.createElement('span')
+        condPill.className = 'step-cond-pill'
+        condPill.textContent = 'IF: ' + cur.fields.condition
+        headerRow.appendChild(condPill)
+      }
+      if (cur.fields.scope) {
+        var scopePill = document.createElement('span')
+        scopePill.className = 'step-scope-pill'
+        scopePill.textContent = 'Scope: ' + cur.fields.scope
+        headerRow.appendChild(scopePill)
+      }
       headerRow.appendChild(statusPill)
       card.appendChild(headerRow)
 
@@ -733,7 +779,7 @@
       if (cur.el.description) {
         var pDesc = document.createElement('p')
         pDesc.className = 'exec-step-desc'
-        pDesc.textContent = cur.el.description
+        appendWithKuPills(pDesc, cur.el.description)
         card.appendChild(pDesc)
       }
 

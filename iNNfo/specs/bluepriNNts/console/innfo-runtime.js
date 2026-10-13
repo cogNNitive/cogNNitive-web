@@ -264,7 +264,7 @@
       var colonIdx = unquoted.indexOf(':')
       if (colonIdx > 0) {
         var key = unquoted.slice(0, colonIdx).toLowerCase()
-        var val = unquoted.slice(colonIdx + 1).toLowerCase()
+        var val = unquoted.slice(colonIdx + 1).replace(/^["']|["']$/g, '').toLowerCase()
         operators.push({ key: key, val: val, raw: unquoted })
       } else {
         textTokens.push(unquoted.toLowerCase())
@@ -684,7 +684,7 @@
       if (!d.id) {
         item.id = draftId
       }
-      if (!item.base_hash) {
+      if (!item.base_hash && !(d && d.matrix)) {
         throw new Error('innfo-console: draft "' + draftId + '" is missing required base_hash')
       }
       return item
@@ -848,6 +848,30 @@
     host.textContent = 'Last updated ' + stamp + ' UTC'
   }
 
+  // Inline reviewer identity field for the header: a labelled text input whose
+  // editability is self-evident (no pencil emoji). Persists to localStorage.
+  function buildReviewerChip(doc) {
+    var chip = doc.createElement('label')
+    chip.className = 'innfo-reviewer-chip'
+    var label = doc.createElement('span')
+    label.className = 'innfo-reviewer-label'
+    label.textContent = 'Reviewer'
+    var input = doc.createElement('input')
+    input.className = 'innfo-reviewer-name'
+    input.type = 'text'
+    input.setAttribute('aria-label', 'Reviewer name')
+    var current = getReviewerName()
+    input.value = current === DEFAULT_REVIEWER_NAME ? '' : current
+    input.placeholder = DEFAULT_REVIEWER_NAME
+    input.addEventListener('change', function () {
+      setReviewerName(input.value)
+      input.value = getReviewerName() === DEFAULT_REVIEWER_NAME ? '' : getReviewerName()
+    })
+    chip.appendChild(label)
+    chip.appendChild(input)
+    return chip
+  }
+
   function renderBanner(doc, meta, needs, draftCount, onReviewerChange, state) {
     var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
     if (!banner) return
@@ -892,41 +916,9 @@
       }
     }
 
-    // Reviewer Profile Chip (Requirement: Reviewer Identity Profile Chip)
-    var reviewerName = getReviewerName()
-    var chip = el('div', 'innfo-reviewer-chip')
-    if (chip) {
-      var chipLabel = el('span', 'innfo-reviewer-label', 'Reviewer: ')
-      var chipName = el('span', 'innfo-reviewer-name', reviewerName)
-      var editBtn = el('button', 'innfo-reviewer-edit', '✏️')
-      if (editBtn) {
-        editBtn.setAttribute('type', 'button')
-        editBtn.setAttribute('title', 'Edit reviewer identity')
-        editBtn.setAttribute('aria-label', 'Edit reviewer identity')
-      }
-      function handleEdit() {
-        // C5: the reviewer identifier is edited in the feedback modal's
-        // identifier field, not a window.prompt.
-        var modal = doc.getElementById('innfo-feedback-modal')
-        if (!modal) return
-        if (typeof modal.showModal === 'function' && !modal.open) {
-          modal.showModal()
-        } else {
-          modal.setAttribute('open', 'open')
-        }
-        var input = modal.querySelector('[data-innfo="identifier"]')
-        if (input && typeof input.focus === 'function') input.focus()
-      }
-      chip.addEventListener('click', function (e) {
-        if (e.target === editBtn || editBtn.contains(e.target) || e.target === chipName) {
-          handleEdit()
-        }
-      })
-      if (chipLabel) chip.appendChild(chipLabel)
-      if (chipName) chip.appendChild(chipName)
-      if (editBtn) chip.appendChild(editBtn)
-      banner.appendChild(chip)
-    }
+    // Reviewer identity: an inline editable field in the header (no emoji, no
+    // separate modal — the input itself signals editability).
+    banner.appendChild(buildReviewerChip(doc))
 
     if (existingOpen) {
       banner.appendChild(existingOpen)
@@ -1023,11 +1015,14 @@
           toggleFacet('model', m.id || m.filePath, cb.checked)
         })
 
+        var mItemIco = el('span', 'innfo-facet-item-icon')
+        if (mItemIco) mItemIco.innerHTML = mIcon
         var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', m.title || m.filePath)
         nameSpan.title = m.filePath || m.title || ''
         var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(m.elementCount || 0))
 
         item.appendChild(cb)
+        if (mItemIco) item.appendChild(mItemIco)
         item.appendChild(nameSpan)
         item.appendChild(cntBadge)
         mMenu.appendChild(item)
@@ -1079,10 +1074,18 @@
           toggleFacet('concept', c.name, cb.checked)
         })
 
+        var cMetaFacet = conceptMetaOf((state && state.schema && state.schema.concepts) || (state && state.concepts), c.name)
+        var cIcoFacet = el('span', 'innfo-facet-item-icon')
+        if (cIcoFacet && UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
+          cIcoFacet.style.color = cMetaFacet.hexColor
+          cIcoFacet.innerHTML = UI.icon(UI.resolveConceptIconName(c.name, cMetaFacet), 12)
+        }
         var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', c.name)
+        if (cMetaFacet.hexColor) nameSpan.style.color = cMetaFacet.hexColor
         var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(c.count))
 
         item.appendChild(cb)
+        if (cIcoFacet) item.appendChild(cIcoFacet)
         item.appendChild(nameSpan)
         item.appendChild(cntBadge)
         cMenu.appendChild(item)
@@ -1110,14 +1113,52 @@
       host.appendChild(clearBtn)
     }
 
-    // 4. Render Active Filter Pills below the bar
+    // 4. Render Active Filter Pills below the bar as Semantic KU Pills
     if (activeHost && (parsed.operators.length > 0 || parsed.textTokens.length > 0)) {
+      var schemaConcepts = (state && state.concepts && state.concepts.length ? state.concepts : (state && state.schema && state.schema.concepts)) || allConcepts.map(function (c) { return c.name })
       parsed.operators.forEach(function (op) {
-        var pill = el('span', 'badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
-        var labelText = op.key + ':' + op.val
-        pill.innerHTML = '<span>' + escapeHtml(labelText) + '</span>'
-        var removeBtn = el('button', 'ml-1 hover:text-error cursor-pointer font-bold', '×')
+        var pill = el('span', 'innfo-active-filter-pill badge badge-sm badge-outline gap-1.5 text-[11px] py-2 px-2.5 bg-base-100')
+        pill.setAttribute('data-filter-key', String(op.key))
+        if (op.key === 'concept' || op.key === '!concept') {
+          var cMeta = conceptMetaOf(schemaConcepts, op.val)
+          pill.classList.add('innfo-active-filter-pill--concept')
+          pill.setAttribute('data-concept-slot', String(cMeta.slot))
+          if (cMeta.hexColor) {
+            pill.style.setProperty('--pill-concept-color', cMeta.hexColor)
+            pill.style.borderColor = cMeta.hexColor
+            pill.style.color = cMeta.hexColor
+            pill.style.backgroundColor = 'color-mix(in srgb, ' + cMeta.hexColor + ' 10%, #ffffff)'
+          }
+          if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
+            var cIco = el('span', 'innfo-filter-pill-icon')
+            cIco.setAttribute('aria-hidden', 'true')
+            cIco.innerHTML = UI.icon(UI.resolveConceptIconName(op.val, cMeta), 12)
+            pill.appendChild(cIco)
+          }
+          var matchedConcept = conceptByName(schemaConcepts, op.val)
+          var cDisplay = (matchedConcept && matchedConcept.name) || op.val
+          pill.appendChild(el('span', 'font-semibold', (op.key === '!concept' ? '!Concept: ' : 'Concept: ') + cDisplay))
+        } else if (op.key === 'model' || op.key === 'file') {
+          pill.classList.add('innfo-active-filter-pill--model')
+          if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
+            var mIco = el('span', 'innfo-filter-pill-icon')
+            mIco.setAttribute('aria-hidden', 'true')
+            mIco.innerHTML = InnfoIcons.getSvg('file-text', { size: 12 })
+            pill.appendChild(mIco)
+          }
+          var matchedModel = models.filter(function (m) {
+            var mid = String(m.id || m.filePath || '').toLowerCase()
+            return mid === String(op.val).toLowerCase()
+          })[0]
+          var mDisplay = (matchedModel && (matchedModel.title || matchedModel.id)) || op.val
+          pill.appendChild(el('span', 'font-semibold', 'Model: ' + mDisplay))
+        } else {
+          var labelText = op.key + ':' + op.val
+          pill.appendChild(el('span', 'font-mono', labelText))
+        }
+        var removeBtn = el('button', 'innfo-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
         removeBtn.setAttribute('type', 'button')
+        removeBtn.setAttribute('aria-label', 'Remove filter ' + op.key)
         removeBtn.addEventListener('click', function (e) {
           e.stopPropagation()
           toggleFacet(op.key, op.val, false)
@@ -1127,9 +1168,9 @@
       })
 
       parsed.textTokens.forEach(function (token) {
-        var pill = el('span', 'badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
-        pill.innerHTML = '<span>"' + escapeHtml(token) + '"</span>'
-        var removeBtn = el('button', 'ml-1 hover:text-error cursor-pointer font-bold', '×')
+        var pill = el('span', 'innfo-active-filter-pill badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
+        pill.appendChild(el('span', null, '"' + token + '"'))
+        var removeBtn = el('button', 'innfo-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
         removeBtn.setAttribute('type', 'button')
         removeBtn.addEventListener('click', function (e) {
           e.stopPropagation()
@@ -1254,9 +1295,9 @@
         summary.setAttribute('data-model', mid)
         var fileIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 14 }) : ''
         summary.innerHTML =
-          '<span class="flex items-center gap-2 min-w-0">' + fileIcon +
+          '<span class="innfo-rail-model-pill flex items-center gap-2 min-w-0" data-ku-kind="document">' + fileIcon +
           '<span class="truncate font-semibold">' + escapeHtml(m.title || m.filePath || 'Model') + '</span></span>' +
-          '<span class="badge badge-ghost badge-xs">' + (Number(m.elementCount) || 0) + '</span>'
+          '<span class="innfo-rail-count badge badge-ghost badge-xs">' + (Number(m.elementCount) || 0) + '</span>'
         summary.addEventListener('click', function (e) {
           // Clicking the chevron zone on the right edge toggles accordion open/close
           // without clobbering the active search filter.
@@ -1298,17 +1339,16 @@
             if (activeConcepts.indexOf(String(name).toLowerCase()) !== -1) {
               a.className = 'active'
             }
-            var CONCEPT_PALETTE = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']
-            var rawColor = String(conceptColor(name) || '').trim()
-            var SAFE_CSS_COLOR = /^(#[0-9a-fA-F]{3,8}|(rgb|hsl)a?\([0-9a-zA-Z.,%\s\/]*\)|[a-zA-Z]+)$/
-            var color = SAFE_CSS_COLOR.test(rawColor) ? rawColor : CONCEPT_PALETTE[globalIndex % CONCEPT_PALETTE.length]
-            globalIndex += 1
-            var dot = color
-              ? '<span class="innfo-concept-dot" style="background:' + escapeHtml(color) + ';flex:none;"></span>'
+            var cMeta = conceptMetaOf(globalConcepts, name)
+            var color = cMeta.hexColor
+            a.setAttribute('data-concept-slot', String(cMeta.slot))
+            if (color) a.style.setProperty('--rail-concept-color', color)
+            var cSvg = UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function'
+              ? '<span class="innfo-rail-concept-icon" aria-hidden="true">' + UI.icon(UI.resolveConceptIconName(name, cMeta), 13) + '</span>'
               : ''
             a.innerHTML =
-              '<span class="flex items-center gap-2 min-w-0">' + dot + '<span class="truncate">' + escapeHtml(name) + '</span></span>' +
-              '<span class="badge badge-ghost badge-xs">' + (Number(counts && counts[name]) || 0) + '</span>'
+              '<span class="innfo-rail-concept-pill flex items-center gap-1.5 min-w-0" data-ku-kind="concept">' + cSvg + '<span class="truncate">' + escapeHtml(name) + '</span></span>' +
+              '<span class="innfo-rail-count badge badge-ghost badge-xs">' + (Number(counts && counts[name]) || 0) + '</span>'
             a.addEventListener('click', function (e) {
               if (e && e.preventDefault) e.preventDefault()
               if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
@@ -1424,13 +1464,27 @@
     host.innerHTML = ''
 
     var name = concept.name || 'Concept'
+    var gMeta = conceptMetaOf(schema && schema.concepts, name)
     var head = el('div', 'innfo-guide-head')
-    var badge = el('span', 'badge badge-outline badge-sm', name)
-    if (concept.color) {
-      badge.style.borderColor = concept.color
-      badge.style.color = concept.color
+    var badge = el('span', 'innfo-card-concept-badge badge badge-outline badge-sm')
+    if (gMeta && gMeta.hexColor) {
+      badge.style.setProperty('--card-concept-color', gMeta.hexColor)
+      badge.style.borderColor = gMeta.hexColor
+      badge.style.color = gMeta.hexColor
     }
+    if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
+      var gIco = el('span', 'innfo-concept-pill-icon')
+      gIco.setAttribute('aria-hidden', 'true')
+      gIco.innerHTML = UI.icon(UI.resolveConceptIconName(name, gMeta), 13)
+      badge.appendChild(gIco)
+    }
+    badge.appendChild(doc.createTextNode(name))
     head.appendChild(badge)
+
+    var count = counts && counts[name] != null ? counts[name] : null
+    if (count != null) {
+      head.appendChild(el('span', 'innfo-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')))
+    }
     host.appendChild(head)
 
     var description = concept.description || concept.summary || ''
@@ -1440,13 +1494,27 @@
     if (fields.length) {
       var fs = el('section', 'innfo-guide-section')
       fs.appendChild(el('h4', 'innfo-guide-title', 'Fields (' + fields.length + ')'))
-      var fdl = el('dl', 'innfo-guide-list')
+      var fdl = el('dl', 'innfo-guide-list innfo-guide-field-list')
       fields.forEach(function (f) {
         if (!f) return
         var label = f.label || f.name
         if (label == null) return
-        fdl.appendChild(el('dt', null, String(label)))
-        fdl.appendChild(el('dd', null, String(f.type || f.widget || '')))
+        var dt = el('dt', 'innfo-guide-field-dt')
+        var fChip = el('span', 'innfo-ku-field-chip', '~ ' + String(label))
+        fChip.setAttribute('data-ku-kind', 'field')
+        dt.appendChild(fChip)
+        var dd = el('dd', 'innfo-guide-field-dd')
+        var fTypeStr = String(f.type || f.widget || 'string')
+        var tBadge = el('span', 'innfo-ku-field-type', fTypeStr)
+        dd.appendChild(tBadge)
+        var targetC = f.target || f.targetConcept || null
+        if (targetC) {
+          var tcMeta = conceptMetaOf(schema && schema.concepts, targetC)
+          var tcPill = UI.ConceptPill({ id: targetC, label: targetC, index: tcMeta.index, color: tcMeta.color }, { doc: doc })
+          dd.appendChild(tcPill)
+        }
+        fdl.appendChild(dt)
+        fdl.appendChild(dd)
       })
       fs.appendChild(fdl)
       host.appendChild(fs)
@@ -1456,10 +1524,12 @@
     if (markers.length) {
       var ms = el('section', 'innfo-guide-section')
       ms.appendChild(el('h4', 'innfo-guide-title', 'Markers (' + markers.length + ')'))
-      var mul = el('ul', 'innfo-guide-list')
+      var mul = el('div', 'innfo-guide-marker-row')
       markers.forEach(function (m) {
         if (!m) return
-        mul.appendChild(el('li', null, String(m.label || m.name || '')))
+        var mLabel = String(m.label || m.name || '')
+        if (!mLabel) return
+        mul.appendChild(UI.MarkerChip({ id: mLabel, label: '! ' + mLabel, kind: 'marker' }))
       })
       ms.appendChild(mul)
       host.appendChild(ms)
@@ -1469,30 +1539,75 @@
     if (matrixList.length) {
       var mts = el('section', 'innfo-guide-section')
       mts.appendChild(el('h4', 'innfo-guide-title', 'Matrices (' + matrixList.length + ')'))
-      var mtl = el('ul', 'innfo-guide-list')
+      var mtl = el('ul', 'innfo-guide-list innfo-guide-matrix-list')
       matrixList.forEach(function (m) {
         if (!m) return
-        mtl.appendChild(el('li', null, String(m.name || m.source + ' \u2192 ' + m.target)))
+        var mli = el('li', 'innfo-guide-matrix-item')
+        var mTitle = el('span', 'innfo-guide-matrix-name', String(m.name || (m.source + ' \u2192 ' + m.target)))
+        mli.appendChild(mTitle)
+        if (m.source && m.target) {
+          var pairWrap = el('div', 'innfo-guide-matrix-pair')
+          var sMeta = conceptMetaOf(schema && schema.concepts, m.source)
+          var tMeta = conceptMetaOf(schema && schema.concepts, m.target)
+          pairWrap.appendChild(UI.ConceptPill({ id: m.source, label: m.source, index: sMeta.index, color: sMeta.color }, { doc: doc }))
+          pairWrap.appendChild(el('span', 'innfo-guide-matrix-arrow', '⇄'))
+          pairWrap.appendChild(UI.ConceptPill({ id: m.target, label: m.target, index: tMeta.index, color: tMeta.color }, { doc: doc }))
+          mli.appendChild(pairWrap)
+        }
+        mtl.appendChild(mli)
       })
       mts.appendChild(mtl)
       host.appendChild(mts)
     }
-
-    var count = counts && counts[name] != null ? counts[name] : null
-    if (count != null) {
-      host.appendChild(el('div', 'innfo-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')))
-    }
   }
+
+  var SLOT_HEX_PALETTE = [
+    '#3b82f6', // 1: blue
+    '#8b5cf6', // 2: violet
+    '#14b8a6', // 3: teal
+    '#f59e0b', // 4: amber
+    '#ec4899', // 5: pink
+    '#22c55e', // 6: green
+    '#f97316', // 7: orange
+    '#6366f1', // 8: indigo
+    '#ef4444', // 9: red
+    '#eab308', // 10: yellow
+    '#a855f7', // 11: purple
+    '#6b7280', // 12: grey
+  ]
 
   function conceptMetaOf(concepts, name) {
     var list = Array.isArray(concepts) ? concepts : []
+    var idx = -1
+    var found = null
+    var target = String(name || '').toLowerCase()
     for (var i = 0; i < list.length; i++) {
       var c = list[i]
-      if ((typeof c === 'string' ? c : c.name) === name) {
-        return { index: i, color: c && c.color, icon: c && c.icon }
+      var cName = typeof c === 'string' ? c : c && c.name
+      if (cName === name || (target && String(cName || '').toLowerCase() === target)) {
+        idx = i
+        found = typeof c === 'object' ? c : null
+        break
       }
     }
-    return { index: 0 }
+    if (idx === -1) {
+      var h = 0
+      for (var j = 0; j < target.length; j++) h = (h * 31 + target.charCodeAt(j)) >>> 0
+      idx = target ? h % 12 : 0
+    }
+    var rawColor = found && found.color ? String(found.color).trim() : undefined
+    var safeRaw = rawColor && /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{2,20})$/.test(rawColor) ? rawColor : undefined
+    var slot = UI && typeof UI.conceptSlot === 'function' ? UI.conceptSlot({ index: idx, color: safeRaw }) : (idx % 12) + 1
+    var hexColor = safeRaw && safeRaw.charAt(0) === '#'
+      ? safeRaw
+      : SLOT_HEX_PALETTE[(slot - 1) % SLOT_HEX_PALETTE.length]
+    return {
+      index: idx,
+      slot: slot,
+      color: safeRaw || hexColor,
+      hexColor: hexColor,
+      icon: found && found.icon,
+    }
   }
 
   // Projects live drafts over the element list: a correction draft patches its
@@ -1578,20 +1693,78 @@
     var projectedElements = projectElements(elements, drafts)
 
     var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
+    if (refs && isObject(refs)) {
+      Object.keys(refs).forEach(function (rk) {
+        var rEl = refs[rk]
+        if (rEl && isObject(rEl) && rEl.concept) {
+          var rMeta = conceptMetaOf(concepts, rEl.concept)
+          rEl._conceptHexColor = rMeta.hexColor
+          rEl._conceptSlot = rMeta.slot
+          rEl._conceptColor = rMeta.color
+          rEl._conceptIndex = rMeta.index
+        }
+      })
+    }
 
     projectedElements.forEach(function (element) {
       var fields = []
+      var elCitations = element && isObject(element.citations) ? element.citations : {}
       if (isObject(element.fields)) {
         Object.keys(element.fields).forEach(function (k) {
           var val = element.fields[k]
-          var target = refs && isObject(refs[String(val)]) ? refs[String(val)] : null
+          var cleanKey = typeof val === 'string' ? val.replace(/^\[\[|\]\]$/g, '').trim() : String(val)
+          var target =
+            refs && isObject(refs[String(val)])
+              ? refs[String(val)]
+              : refs && isObject(refs[cleanKey])
+                ? refs[cleanKey]
+                : null
+          if (!target && Array.isArray(element.relations)) {
+            var relMatch = element.relations.find(function (r) {
+              return r && r.field === k && r.target
+            })
+            if (relMatch) {
+              target =
+                refs && isObject(refs[relMatch.target])
+                  ? refs[relMatch.target]
+                  : { id: relMatch.target, name: relMatch.targetLabel || cleanKey || relMatch.target }
+            }
+          }
+          var fieldCites = Array.isArray(elCitations[k]) && elCitations[k].length ? elCitations[k] : undefined
+          var targetCMeta = target && target.concept ? conceptMetaOf(concepts, target.concept) : null
           fields.push({
             name: k,
             value: val,
             type: fieldTypeOf(schema, k),
-            ref: target ? { id: target.id || String(val), label: String(val) } : undefined,
+            ref: target
+              ? {
+                  id: target.id || String(val),
+                  label: target.name || cleanKey || String(val),
+                  concept: target.concept,
+                  color: targetCMeta && targetCMeta.color,
+                  hexColor: targetCMeta && targetCMeta.hexColor,
+                  slot: targetCMeta && targetCMeta.slot,
+                  index: targetCMeta && targetCMeta.index,
+                }
+              : undefined,
+            citations: fieldCites,
           })
         })
+      }
+
+      var markerList = []
+      if (isObject(element.markers)) {
+        Object.keys(element.markers).forEach(function (mkKey) {
+          var mkVal = element.markers[mkKey]
+          markerList.push({
+            id: mkKey,
+            label: mkKey,
+            kind: 'marker',
+            value: Array.isArray(mkVal) ? mkVal.join(', ') : mkVal,
+          })
+        })
+      } else if (Array.isArray(element.markers)) {
+        markerList = element.markers
       }
 
       var card = UI.ElementCard(
@@ -1601,6 +1774,8 @@
           conceptId: element.concept,
           description: element.description,
           fields: fields,
+          markers: markerList.length ? markerList : undefined,
+          history: Array.isArray(element.history) && element.history.length ? element.history : undefined,
           qud: { id: element.id, concept: element.concept, hash: element.hash, path: element.canonicalUnit || element.modelFile || element.modelTitle || null },
           path: element.canonicalUnit || element.modelFile || element.modelTitle || null,
           tags: Array.isArray(element.tags) ? element.tags.map(String) : null,
@@ -1621,54 +1796,38 @@
             var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
             if (target) renderRefDialog(doc, target)
           },
+          onCite: function (citeData) {
+            var fName = citeData && citeData.field
+            var list = fName && Array.isArray(elCitations[fName]) ? elCitations[fName] : []
+            renderCitationDialog(doc, fName || element.name || element.id, list)
+          },
         },
       )
 
-      // Discrete concept color left border & badge affordance
-      var cDef = (Array.isArray(concepts) ? concepts : []).find(function (c) {
-        return c && (typeof c === 'string' ? c : c.name) === element.concept
-      })
-      var cColor = (cDef && cDef.color) || '#3b82f6'
-      var hexColor = visuals && typeof visuals.getHexColor === 'function' ? visuals.getHexColor(cColor) : cColor
-      card.style.borderLeft = '3px solid ' + hexColor
+      // Discrete concept color left border, perimeter tint & badge affordance
+      var cMeta = conceptMetaOf(concepts, element.concept)
+      var hexColor = cMeta.hexColor
+      card.style.setProperty('--card-concept-color', hexColor)
+      card.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 35%, var(--innfo-border, #e5e5e5))'
+      card.style.borderLeft = '4px solid ' + hexColor
 
       var head = card.querySelector('.innfo-card-head, header')
-      if (head) {
-        var metaWrap = el('div', 'innfo-card-meta')
-        // Tailwind utilities are no-ops in the console shell; pin the cluster
-        // right with real CSS so the name stays tight to the thumbnail.
-        metaWrap.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-left:auto;margin-right:8px;flex-wrap:wrap;'
-        if (element.concept) {
-          var cBadge = el('span', 'badge badge-outline badge-xs text-xs font-semibold')
-          cBadge.style.borderColor = hexColor
-          cBadge.style.color = hexColor
-          cBadge.textContent = element.concept
-          metaWrap.appendChild(cBadge)
+      if (head && element.concept) {
+        var cBadge = el('span', 'innfo-card-concept-badge badge badge-outline badge-xs text-xs font-semibold')
+        cBadge.setAttribute('data-concept-slot', String(cMeta.slot))
+        cBadge.style.borderColor = hexColor
+        cBadge.style.color = hexColor
+        cBadge.style.backgroundColor = 'color-mix(in srgb, ' + hexColor + ' 10%, #ffffff)'
+        if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
+          var cIcoSpan = el('span', 'innfo-concept-pill-icon')
+          cIcoSpan.setAttribute('aria-hidden', 'true')
+          cIcoSpan.innerHTML = UI.icon(UI.resolveConceptIconName(element.concept, cMeta), 12)
+          cBadge.appendChild(cIcoSpan)
         }
-        if (element.modelFile) {
-          // Model filename badge dropped: the expanded footer (innfo-card-path)
-          // already carries the full Knowledge Unit locator. The copy button stays.
-          var kuText = element.canonicalUnit || element.unitSlug || (element.modelFile + '@' + element.id)
-          var copyBtn = el('button', 'btn btn-ghost btn-xs p-0.5 text-slate-400 hover:text-primary transition-colors cursor-pointer')
-          copyBtn.setAttribute('type', 'button')
-          copyBtn.setAttribute('title', 'Copy Knowledge Unit locator: ' + kuText)
-          copyBtn.setAttribute('aria-label', 'Copy Knowledge Unit locator')
-          copyBtn.innerHTML = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('copy', { size: 12 }) : '📋'
-          copyBtn.addEventListener('click', function (ev) {
-            ev.stopPropagation()
-            if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(kuText)
-              copyBtn.innerHTML = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('check', { size: 12, class: 'text-success' }) : '✓'
-              setTimeout(function () {
-                copyBtn.innerHTML = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('copy', { size: 12 }) : '📋'
-              }, 2000)
-            }
-          })
-          metaWrap.appendChild(copyBtn)
-        }
+        cBadge.appendChild(doc.createTextNode(element.concept))
         var elementBadge = head.querySelector('[data-ku-kind="element"]')
-        if (elementBadge && elementBadge.nextSibling) head.insertBefore(metaWrap, elementBadge.nextSibling)
-        else head.appendChild(metaWrap)
+        if (elementBadge) head.insertBefore(cBadge, elementBadge)
+        else head.appendChild(cBadge)
       }
 
       if (element._draft) {
@@ -1697,6 +1856,11 @@
       // image fields (parity with the editor's NodeMedia gallery).
       var mediaItems = collectMediaItems(element)
       var thumbEl = card.querySelector('.innfo-card-thumb')
+      if (thumbEl && thumbEl.classList && thumbEl.classList.contains('innfo-card-thumb--concept')) {
+        thumbEl.style.color = hexColor
+        thumbEl.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 38%, var(--innfo-border, #e5e5e5))'
+        thumbEl.style.backgroundColor = 'color-mix(in srgb, ' + hexColor + ' 12%, #ffffff)'
+      }
       if (mediaItems.length && thumbEl && thumbEl.tagName === 'IMG') {
         thumbEl.classList.add('innfo-card-thumb--zoom')
         thumbEl.setAttribute('role', 'button')
@@ -1713,6 +1877,17 @@
             renderMediaDialog(doc, mediaItems, 0)
           }
         })
+      }
+      if (mediaItems.length) {
+        var fieldImgs = card.querySelectorAll('.innfo-field-image')
+        for (var fii = 0; fii < fieldImgs.length; fii++) {
+          ;(function (fImg) {
+            fImg.addEventListener('click', function (ev) {
+              if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+              renderMediaDialog(doc, mediaItems, 0)
+            })
+          })(fieldImgs[fii])
+        }
       }
 
       content.appendChild(card)
@@ -1811,11 +1986,7 @@
     var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
     var conceptList = Array.isArray(concepts) ? concepts : []
     function conceptColor(name) {
-      var cDef = conceptList.filter(function (c) {
-        return c && (typeof c === 'string' ? c : c.name) === name
-      })[0]
-      var c = (cDef && cDef.color) || '#3b82f6'
-      return visuals && typeof visuals.getHexColor === 'function' ? visuals.getHexColor(c) : c
+      return conceptMetaOf(conceptList, name).hexColor
     }
 
     var fieldCols = elementFieldColumns(projected)
@@ -1868,8 +2039,21 @@
       tr.setAttribute('data-element-id', String(element.id || ''))
       if (element._draft) tr.classList.add('innfo-element-table-draft')
 
+      var rowCMeta = conceptMetaOf(conceptList, element.concept)
       var nameTd = el('td', 'innfo-element-table-name')
-      nameTd.appendChild(el('span', null, element.name || element.id || ''))
+      var elPill = UI.ElementPill(
+        {
+          id: element.id,
+          label: element.name || element.id || '',
+          concept: element.concept,
+          color: rowCMeta.color,
+          hexColor: rowCMeta.hexColor,
+          slot: rowCMeta.slot,
+          index: rowCMeta.index,
+        },
+        { doc: doc },
+      )
+      nameTd.appendChild(elPill)
       if (element._draft) {
         nameTd.appendChild(
           el(
@@ -1882,10 +2066,15 @@
       tr.appendChild(nameTd)
 
       var conceptTd = el('td')
-      var cBadge = el('span', 'badge badge-outline badge-xs', element.concept || '')
-      var hex = conceptColor(element.concept)
-      cBadge.style.borderColor = hex
-      cBadge.style.color = hex
+      var cBadge = UI.ConceptPill(
+        {
+          id: element.concept || '',
+          label: element.concept || '',
+          index: rowCMeta.index,
+          color: rowCMeta.color,
+        },
+        { doc: doc },
+      )
       conceptTd.appendChild(cBadge)
       tr.appendChild(conceptTd)
 
@@ -1973,13 +2162,15 @@
         return UI.KuBadge({ kind: 'marker', id: key, label: e.label || key, markerKind: 'field' })
       }
       var cm = conceptMeta(e.concept)
+      var cMetaFull = conceptMetaOf(conceptList, e.concept)
+      var resolvedIcon = (cm.meta && cm.meta.icon) || (UI && typeof UI.resolveConceptIconName === 'function' ? UI.resolveConceptIconName(e.concept, cMetaFull) : undefined)
       return UI.KuBadge({
         kind: 'element',
         id: key,
         label: e.label || key,
-        index: cm.index,
-        color: cm.meta && cm.meta.color,
-        icon: cm.meta && cm.meta.icon,
+        index: cMetaFull.index,
+        color: cMetaFull.color,
+        icon: resolvedIcon,
       })
     }
     ;(Array.isArray(matrices) ? matrices : []).forEach(function (matrix) {
@@ -2015,7 +2206,19 @@
 
       var headTr = el('tr', null, null)
       if (headTr) {
-        headTr.appendChild(el('th', null, ''))
+        var cornerTh = el('th', 'innfo-matrix-corner', null)
+        var srcConcept = matrix.source || (rows.length && headRows[isStructured ? (rows[0].sourceId || rows[0].sourceLabel) : rows[0]] && headRows[isStructured ? (rows[0].sourceId || rows[0].sourceLabel) : rows[0]].concept) || null
+        var tgtConcept = matrix.target || (cols.length && headCols[cols[0]] && headCols[cols[0]].concept) || null
+        if (cornerTh && srcConcept && tgtConcept) {
+          var sMetaM = conceptMetaOf(conceptList, srcConcept)
+          var tMetaM = conceptMetaOf(conceptList, tgtConcept)
+          var cornerWrap = el('div', 'innfo-matrix-corner-pills')
+          cornerWrap.appendChild(UI.ConceptPill({ id: srcConcept, label: srcConcept + ' ↓', index: sMetaM.index, color: sMetaM.color }, { doc: doc }))
+          cornerWrap.appendChild(el('span', 'innfo-matrix-corner-sep', '×'))
+          cornerWrap.appendChild(UI.ConceptPill({ id: tgtConcept, label: tgtConcept + ' →', index: tMetaM.index, color: tMetaM.color }, { doc: doc }))
+          cornerTh.appendChild(cornerWrap)
+        }
+        headTr.appendChild(cornerTh)
         cols.forEach(function (c) {
           var th = el('th', null, null)
           if (th) th.appendChild(headerBadge(headCols[c], String(c)))
@@ -2035,8 +2238,16 @@
         cols.forEach(function (c) {
           var value = rowCells[c] != null ? String(rowCells[c]) : ''
           var isEmpty = value === '' || value === '-'
-          var td = el('td', isEmpty ? 'innfo-matrix-cell-empty' : null, null)
-          if (td) td.appendChild(UI.KuBadge({ kind: 'cell', value: value }))
+          var td = el('td', isEmpty ? 'innfo-matrix-cell-empty' : 'innfo-matrix-cell-filled', null)
+          if (td) {
+            td.setAttribute('data-matrix', String(matrix.name || 'matrix'))
+            td.setAttribute('data-row', String(rowLabel))
+            td.setAttribute('data-col', String(c))
+            td.setAttribute('data-cell-raw', isEmpty ? '' : value)
+            var cellBadge = UI.KuBadge({ kind: 'cell', value: isEmpty ? '—' : value })
+            if (!isEmpty) cellBadge.setAttribute('data-cell-value', value.toLowerCase())
+            td.appendChild(cellBadge)
+          }
           tr.appendChild(td)
         })
         table.appendChild(tr)
@@ -3581,8 +3792,18 @@
 
   function elementsByIdOf(state) {
     var byId = {}
+    var concepts = (state && state.schema && state.schema.concepts) || (state && state.concepts) || []
     ;(state && state.elements ? state.elements : []).forEach(function (e) {
-      if (e && e.id) byId[e.id] = e
+      if (e && e.id) {
+        if (e.concept && !e._conceptHexColor) {
+          var cm = conceptMetaOf(concepts, e.concept)
+          e._conceptHexColor = cm.hexColor
+          e._conceptSlot = cm.slot
+          e._conceptColor = cm.color
+          e._conceptIndex = cm.index
+        }
+        byId[e.id] = e
+      }
     })
     return byId
   }
@@ -3607,8 +3828,9 @@
         drafts.length + (drafts.length === 1 ? ' pending change' : ' pending changes'),
       )
       if (count) titleWrap.appendChild(count)
+      var byIdForStale = elementsByIdOf(state)
       var staleCount = drafts.filter(function (d) {
-        return Review.isTargetChanged(d, elementsByIdOf(state))
+        return Review.isTargetChanged(d, byIdForStale) && !Review.isAlreadyApplied(d, byIdForStale)
       }).length
       if (staleCount > 0) {
         var staleNote = el(
@@ -3662,7 +3884,7 @@
     var listSection = el('section', 'innfo-review-list-section')
     if (listSection) {
       if (drafts.length === 0) {
-        var empty = el('div', 'empty-state alert alert-info bg-base-100 border border-base-200 text-sm p-4 rounded-lg flex items-center gap-3')
+        var empty = el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg flex items-center gap-3')
         if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
           empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Annotate an element in review mode.</span>'
         } else {
@@ -3674,6 +3896,7 @@
           UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, {
             doc: doc,
             isTargetChanged: Review.isTargetChanged,
+            isAlreadyApplied: Review.isAlreadyApplied,
             onDelete: function (id) {
               if (state && state.store) state.store.removeDraft(id)
               if (typeof onRefresh === 'function') onRefresh()
@@ -3743,7 +3966,10 @@
     if (head && h) head.appendChild(h)
     if (head && close) head.appendChild(close)
     var body = el('div', 'innfo-ref-body')
-    var tag = el('span', 'innfo-ref-tag', String(element.concept || 'Element'))
+    var tag = UI && typeof UI.ConceptPill === 'function'
+      ? UI.ConceptPill({ id: element.concept || 'Element', label: String(element.concept || 'Element') }, { doc: doc })
+      : el('span', 'innfo-ref-tag', String(element.concept || 'Element'))
+    if (tag) tag.classList.add('innfo-ref-tag')
     if (body && tag) body.appendChild(tag)
     if (body && element.description) {
       var p = el('p', 'innfo-ref-desc', element.description)
@@ -3822,7 +4048,9 @@
 
       var body = el('div', 'innfo-media-body')
       var img = doc.createElement('img')
-      img.setAttribute('src', item.value)
+      var rawSrc = String(item.value || '')
+      var normMatch = rawSrc.replace(/\\/g, '/').match(/^.+?\/((?:sources|kNNowledge|assets|evidence)\/.+)$/)
+      img.setAttribute('src', normMatch ? normMatch[1] : rawSrc)
       img.setAttribute('alt', item.name || '')
       img.className = 'innfo-media-image'
       img.addEventListener('error', function () {
@@ -3975,10 +4203,10 @@
       return
     }
     var NS = 'http://www.w3.org/2000/svg'
-    var size = 560
+    var size = 680
     var mid = size / 2
-    var r = nodes.length > 1 ? 190 : 0
-    var nodeR = 34
+    var r = nodes.length > 1 ? 235 : 0
+    var nodeR = 36
     var pos = {}
     nodes.forEach(function (name, i) {
       var a = -Math.PI / 2 + (i * 2 * Math.PI) / nodes.length
@@ -4006,7 +4234,37 @@
     defs.appendChild(marker)
     svg.appendChild(defs)
 
+    // Edges: matrices (explicit) + element field refs (implicit).
+    var edges = []
+    var seenEdge = {}
+    var pairCounts = {}
+    function pushEdge(source, target, name, kind) {
+      if (!source || !target || !pos[source] || !pos[target]) return
+      var key = source + '>' + target + '>' + (name || '')
+      if (seenEdge[key]) return
+      seenEdge[key] = true
+      var pairKey = source < target ? source + '|' + target : target + '|' + source
+      var slot = pairCounts[pairKey] || 0
+      pairCounts[pairKey] = slot + 1
+      edges.push({ source: source, target: target, name: name, kind: kind || 'matrix', pairKey: pairKey, slot: slot })
+    }
     ;(Array.isArray(matrices) ? matrices : []).forEach(function (m) {
+      if (m) pushEdge(m.source, m.target, m.name, 'matrix')
+    })
+    var byConcept = {}
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      if (e && e.concept) byConcept[e.id] = e.concept
+    })
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      if (!e || !e.concept || !Array.isArray(e.relations)) return
+      e.relations.forEach(function (r) {
+        if (!r || !r.target) return
+        var tc = byConcept[r.target]
+        if (tc && tc !== e.concept) pushEdge(e.concept, tc, r.field || '', 'relation')
+      })
+    })
+    var pendingEdgeLabels = []
+    edges.forEach(function (m) {
       if (!m || !m.source || !m.target || !pos[m.source] || !pos[m.target]) return
       var sx = pos[m.source].x
       var sy = pos[m.source].y
@@ -4015,26 +4273,37 @@
       var dx = tx - sx
       var dy = ty - sy
       var dist = Math.sqrt(dx * dx + dy * dy) || 1
-      var x1 = dist > nodeR * 2 ? sx + (dx / dist) * nodeR : sx
-      var y1 = dist > nodeR * 2 ? sy + (dy / dist) * nodeR : sy
-      var x2 = dist > nodeR * 2 ? tx - (dx / dist) * (nodeR + 4) : tx
-      var y2 = dist > nodeR * 2 ? ty - (dy / dist) * (nodeR + 4) : ty
+      var totalForPair = pairCounts[m.pairKey] || 1
+      // Canonical normal vector so parallel edges between the same pair separate cleanly
+      var canonDx = m.source < m.target ? dx : -dx
+      var canonDy = m.source < m.target ? dy : -dy
+      var nx = -canonDy / dist
+      var ny = canonDx / dist
+      var offsetIndex = m.slot - (totalForPair - 1) / 2
+      var perpShift = offsetIndex * 24
+      var x1 = (dist > nodeR * 2 ? sx + (dx / dist) * nodeR : sx) + nx * perpShift
+      var y1 = (dist > nodeR * 2 ? sy + (dy / dist) * nodeR : sy) + ny * perpShift
+      var x2 = (dist > nodeR * 2 ? tx - (dx / dist) * (nodeR + 4) : tx) + nx * perpShift
+      var y2 = (dist > nodeR * 2 ? ty - (dy / dist) * (nodeR + 4) : ty) + ny * perpShift
       var line = doc.createElementNS(NS, 'line')
       line.setAttribute('x1', x1)
       line.setAttribute('y1', y1)
       line.setAttribute('x2', x2)
       line.setAttribute('y2', y2)
       line.setAttribute('class', 'innfo-metamodel-edge')
+      line.setAttribute('data-edge-kind', m.kind || 'matrix')
+      if (m.kind === 'relation') {
+        line.setAttribute('stroke-dasharray', '5,4')
+      }
       line.setAttribute('marker-end', 'url(#innfo-metamodel-arrow)')
       svg.appendChild(line)
       if (m.name) {
-        var lt = doc.createElementNS(NS, 'text')
-        lt.setAttribute('x', (sx + tx) / 2)
-        lt.setAttribute('y', (sy + ty) / 2 - 6)
-        lt.setAttribute('text-anchor', 'middle')
-        lt.setAttribute('class', 'innfo-metamodel-edge-label')
-        lt.textContent = String(m.name)
-        svg.appendChild(lt)
+        var rawName = String(m.name)
+        var shortName = rawName.length > 20 ? rawName.replace(/\s+Matrix$/i, '') : rawName
+        var tFrac = 0.5
+        var lx = x1 + (x2 - x1) * tFrac
+        var ly = y1 + (y2 - y1) * tFrac
+        pendingEdgeLabels.push({ x: lx, y: ly, text: shortName, fullText: rawName, kind: m.kind })
       }
     })
 
@@ -4044,6 +4313,12 @@
       c.setAttribute('cy', pos[name].y)
       c.setAttribute('r', String(nodeR))
       c.setAttribute('class', 'innfo-metamodel-node')
+      var nodeMeta = conceptMetaOf((schema && schema.concepts && schema.concepts.length ? schema.concepts : nodes), name)
+      if (nodeMeta && nodeMeta.hexColor) {
+        c.style.stroke = nodeMeta.hexColor
+        c.style.strokeWidth = '2.5px'
+        c.style.fill = 'color-mix(in srgb, ' + nodeMeta.hexColor + ' 10%, #ffffff)'
+      }
       c.style.cursor = 'pointer'
       var title = doc.createElementNS(NS, 'title')
       title.textContent = String(name)
@@ -4070,8 +4345,41 @@
       svg.appendChild(t)
     })
 
+    pendingEdgeLabels.forEach(function (lbl) {
+      var padX = 7
+      var boxW = Math.max(38, lbl.text.length * 6.8 + padX * 2)
+      var boxH = 18
+      var bg = doc.createElementNS(NS, 'rect')
+      bg.setAttribute('x', lbl.x - boxW / 2)
+      bg.setAttribute('y', lbl.y - boxH / 2 - 2)
+      bg.setAttribute('width', boxW)
+      bg.setAttribute('height', boxH)
+      bg.setAttribute('rx', '9')
+      bg.setAttribute('class', 'innfo-metamodel-edge-bg')
+      svg.appendChild(bg)
+
+      var lt = doc.createElementNS(NS, 'text')
+      lt.setAttribute('x', lbl.x)
+      lt.setAttribute('y', lbl.y + 2)
+      lt.setAttribute('text-anchor', 'middle')
+      lt.setAttribute('class', 'innfo-metamodel-edge-label')
+      lt.textContent = lbl.text
+      if (lbl.fullText && lbl.fullText !== lbl.text) {
+        var lTitle = doc.createElementNS(NS, 'title')
+        lTitle.textContent = lbl.fullText
+        lt.appendChild(lTitle)
+      }
+      svg.appendChild(lt)
+    })
+
     var wrap = el('div', 'innfo-metamodel')
     wrap.appendChild(svg)
+    var legend = el('div', 'innfo-metamodel-legend')
+    legend.innerHTML =
+      '<span class="innfo-mm-legend-item"><span class="innfo-mm-line innfo-mm-line--matrix"></span> Matrix relationship</span>' +
+      '<span class="innfo-mm-legend-item"><span class="innfo-mm-line innfo-mm-line--relation"></span> Element reference (relation)</span>' +
+      '<span class="innfo-mm-legend-hint">Click any concept node to filter in Model Explorer</span>'
+    wrap.appendChild(legend)
     host.appendChild(wrap)
   }
 
@@ -4248,14 +4556,14 @@
       var style = active.createElement('style')
       style.setAttribute('data-innfo-feedback', '')
       style.textContent =
-        '[data-innfo-feedback-root]{display:block;position:relative;z-index:40;background:var(--surface,#ffffff);}' +
-        '#innfo-feedback-banner{padding:8px 20px;background:var(--surface,#ffffff);border-bottom:1px solid var(--border,#e5e7eb);display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);}' +
-        '#innfo-feedback-banner strong{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;}' +
+        '[data-innfo-feedback-root]{display:flex;align-items:center;gap:12px;margin-left:auto;position:relative;z-index:40;}' +
+        '#innfo-feedback-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:transparent;border:none;box-shadow:none;padding:0;}' +
+        '#innfo-feedback-banner strong{font-size:0.95rem;font-weight:700;letter-spacing:-0.01em;}' +
         '#innfo-feedback-banner .innfo-banner-version,#innfo-feedback-banner .innfo-banner-needs,#innfo-feedback-banner .innfo-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
         '#innfo-feedback-banner .innfo-banner-stale{color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;font-size:0.78rem;font-weight:600;padding:2px 8px;}' +
-        '#innfo-feedback-banner .innfo-reviewer-chip{margin-left:auto;}' +
-        '#innfo-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;margin-left:auto;}' +
-        '#innfo-feedback-banner .innfo-reviewer-chip~#innfo-feedback-open{margin-left:0;}' +
+        '#innfo-feedback-banner .innfo-reviewer-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted,#6b7280);}' +
+        '#innfo-feedback-banner .innfo-reviewer-name{width:9rem;padding:4px 8px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.8rem;}' +
+        '#innfo-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
         '#innfo-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
         '#innfo-feedback-modal{border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-lg,8px);padding:20px;max-width:560px;width:100%;background:var(--surface,#ffffff);color:var(--text,#111827);}' +
         '#innfo-feedback-modal::backdrop{background:rgba(0,0,0,0.35);}' +
@@ -4268,7 +4576,11 @@
         '#innfo-feedback-modal .innfo-feedback-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}' +
         '#innfo-feedback-modal button[data-innfo="copy-changeset-prompt"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
         '#innfo-feedback-modal button:disabled{opacity:0.5;cursor:not-allowed;}' +
-        '#innfo-feedback-modal [data-innfo="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}'
+        '#innfo-feedback-modal [data-innfo="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}' +
+        '#innfo-feedback-modal .innfo-feedback-head{display:flex;align-items:center;gap:12px;}' +
+        '#innfo-feedback-modal .innfo-feedback-head h2{margin:0;flex:1;}' +
+        '#innfo-feedback-modal button[data-innfo="close"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:transparent;font-size:1.2rem;line-height:1;padding:2px 10px;border-radius:6px;cursor:pointer;}' +
+        '#innfo-feedback-modal .innfo-feedback-seal{font-size:0.8rem;color:var(--muted,#6b7280);margin:8px 0;}'
       root.appendChild(style)
     }
 
@@ -4292,33 +4604,15 @@
     draftsBadge.textContent = ' drafts: 0'
     banner.appendChild(draftsBadge)
 
-    // Reviewer chip
-    var reviewerName = getReviewerName()
-    var chip = active.createElement('div')
-    chip.className = 'innfo-reviewer-chip'
-    var chipLabel = active.createElement('span')
-    chipLabel.className = 'innfo-reviewer-label'
-    chipLabel.textContent = 'Reviewer: '
-    var chipName = active.createElement('span')
-    chipName.className = 'innfo-reviewer-name'
-    chipName.textContent = reviewerName
-    var editBtn = active.createElement('button')
-    editBtn.className = 'innfo-reviewer-edit'
-    editBtn.setAttribute('type', 'button')
-    editBtn.setAttribute('title', 'Edit reviewer identity')
-    editBtn.setAttribute('aria-label', 'Edit reviewer identity')
-    editBtn.textContent = '✏️'
-    chip.appendChild(chipLabel)
-    chip.appendChild(chipName)
-    chip.appendChild(editBtn)
-    banner.appendChild(chip)
+    // Reviewer identity: inline editable field.
+    banner.appendChild(buildReviewerChip(active))
 
     // Open button
     var openBtn = active.createElement('button')
     openBtn.id = 'innfo-feedback-open'
     openBtn.setAttribute('type', 'button')
     openBtn.className = 'innfo-feedback-open'
-    openBtn.textContent = 'Export feedback'
+    openBtn.textContent = 'Export changes'
     banner.appendChild(openBtn)
 
     root.appendChild(banner)
@@ -4328,7 +4622,9 @@
     modal.id = 'innfo-feedback-modal'
     modal.setAttribute('aria-label', 'Export proposed changes')
     modal.innerHTML =
-      '<h2>Export proposed changes</h2>' +
+      '<div class="innfo-feedback-head"><h2>Export proposed changes</h2>' +
+      '<button data-innfo="close" type="button" aria-label="Close">×</button></div>' +
+      '<p class="innfo-feedback-seal">Sealed proposal: do not edit the file after download — any edit invalidates proposal_sha (PROPOSAL_TAMPERED). To retry, export a new file.</p>' +
       '<div data-innfo="preview"></div>' +
       '<label>Author / Reviewer identifier (required)' +
       '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
@@ -4348,7 +4644,13 @@
 
     root.appendChild(modal)
 
-    if (active.body) {
+    // Single-header layout: the feedback controls live inside the top navbar
+    // (no second application header). Fall back to the body top for shells
+    // that ship no navbar.
+    var navbar = active.querySelector ? active.querySelector('.innfo-navbar') : null
+    if (navbar) {
+      navbar.appendChild(root)
+    } else if (active.body) {
       active.body.insertBefore(root, active.body.firstChild)
     }
 
@@ -4384,10 +4686,20 @@
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
     var model = oneLine(d.model_id || fallbackModel || 'model')
     var elementTarget = oneLine(d.element_slug || d.element || d.element_id || 'elem')
-    var canUpdate = !!d.field && d.proposed !== undefined
-    var op = 'update_field'
-    var target = model + '@' + elementTarget + (d.field ? '&' + oneLine(d.field) : '')
-    if (d.kind === 'delete') {
+    var matrixName = d.matrix != null && d.matrix !== '' ? oneLine(d.matrix) : ''
+    var isMatrix = !!matrixName
+    var canUpdate = (!!d.field && d.proposed !== undefined) || (isMatrix && d.proposed !== undefined)
+    var isRename = !isMatrix && canUpdate && String(d.field).toLowerCase() === 'name'
+    var op = isMatrix ? 'update_matrix_cell' : 'update_field'
+    var target = isMatrix
+      ? model + '@' + matrixName + '&' + oneLine(d.row) + '&' + oneLine(d.col)
+      : model + '@' + elementTarget + (d.field ? '&' + oneLine(d.field) : '')
+    if (isRename) {
+      // Element display name is identity, not a field — the engine rejects
+      // update_field on &name (PRECONDITION_FAILED). Emit rename_element.
+      op = 'rename_element'
+      target = model + '@' + elementTarget
+    } else if (d.kind === 'delete') {
       op = 'remove_element'
       target = model + '@' + elementTarget
     } else if (d.kind === 'new') {
@@ -4407,11 +4719,17 @@
     lines.push('op:: ' + op)
     lines.push('target:: ' + target)
     // The engine rejects the change if the element's content hash moved on since the draft.
-    if ((op === 'update_field' || op === 'remove_element') && d.base_hash) {
+    if ((op === 'update_field' || op === 'remove_element' || op === 'rename_element') && d.base_hash) {
       lines.push('base_hash:: ' + oneLine(d.base_hash))
     }
-    if (op === 'update_field') {
+    if (op === 'rename_element') {
       if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
+      lines.push('name:: ' + formatChangesetValue(d.proposed))
+    } else if (op === 'update_field') {
+      if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
+      lines.push('to:: ' + formatChangesetValue(d.proposed))
+    } else if (op === 'update_matrix_cell') {
+      if (d.original !== undefined && d.original !== '') lines.push('from:: ' + formatChangesetValue(d.original))
       lines.push('to:: ' + formatChangesetValue(d.proposed))
     } else if (op === 'add_element') {
       lines.push('concept:: ' + oneLine(d.concept))
@@ -4487,6 +4805,12 @@
   function composeExport(state, identifier) {
     var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
     var drafts = state && state.store ? state.store.drafts() : []
+    // Already-applied drafts (stale hash, proposed == current value) carry no
+    // change: exclude them from the export instead of shipping redundancies.
+    var byId = elementsByIdOf(state)
+    drafts = drafts.filter(function (d) {
+      return !Review.isAlreadyApplied(d, byId)
+    })
     var model = state && state.modelTitle ? state.modelTitle : 'Model'
     var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
 
@@ -4645,7 +4969,7 @@
     if (preview) {
       preview.innerHTML = ''
       preview.appendChild(
-        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged }),
+        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged, isAlreadyApplied: Review.isAlreadyApplied }),
       )
     }
 
@@ -4723,10 +5047,40 @@
 
     updateExportPreview(doc, state)
 
+    function closeModal() {
+      if (typeof modal.close === 'function') {
+        try {
+          if (modal.open) modal.close()
+          else modal.removeAttribute('open')
+        } catch {
+          modal.removeAttribute('open')
+        }
+      } else modal.removeAttribute('open')
+    }
+
     if (typeof modal.showModal === 'function') {
       if (!modal.open) modal.showModal()
     } else {
       modal.setAttribute('open', 'open')
+    }
+
+    var closeBtn = modal.querySelector('[data-innfo="close"]')
+    if (closeBtn && !closeBtn.getAttribute('data-innfo-bound')) {
+      closeBtn.setAttribute('data-innfo-bound', '1')
+      closeBtn.addEventListener('click', function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation()
+        closeModal()
+      })
+    }
+    if (!modal.getAttribute('data-innfo-dismiss-bound')) {
+      modal.setAttribute('data-innfo-dismiss-bound', '1')
+      modal.addEventListener('click', function (ev) {
+        if (ev && ev.target === modal) closeModal()
+      })
+      modal.addEventListener('cancel', function (ev) {
+        if (ev && ev.preventDefault) ev.preventDefault()
+        closeModal()
+      })
     }
 
     if (identifierInput && !identifierInput.getAttribute('data-innfo-bound')) {
@@ -4794,18 +5148,19 @@
     var meta = isObject(model.meta) ? model.meta : {}
     var elements = Array.isArray(model.elements) ? model.elements : []
     var matrices = Array.isArray(model.matrices) ? model.matrices : []
-    var concepts = Array.isArray(schema.concepts) && schema.concepts.length > 0
-      ? schema.concepts
-      : elements
-          .map(function (e) {
-            return e && e.concept
-          })
-          .filter(function (c, i, arr) {
-            return typeof c === 'string' && arr.indexOf(c) === i
-          })
-          .map(function (c) {
-            return { name: c }
-          })
+    var concepts = (Array.isArray(schema.concepts) ? schema.concepts.slice() : []).map(function (c) {
+      return typeof c === 'string' ? { name: c } : c
+    })
+    var seenBootConceptNames = {}
+    concepts.forEach(function (c) {
+      if (c && c.name) seenBootConceptNames[c.name] = true
+    })
+    elements.forEach(function (e) {
+      if (e && typeof e.concept === 'string' && e.concept && !seenBootConceptNames[e.concept]) {
+        seenBootConceptNames[e.concept] = true
+        concepts.push({ name: e.concept })
+      }
+    })
 
     var scopedView = consoleScopeOf(meta)
     var scopedDef = scopedView
@@ -4840,6 +5195,8 @@
       // The changeset title comes from meta.title; a scoped export names its view there.
       meta: scopedView ? Object.assign({}, meta, { title: baseTitle + ' - ' + (scopedDef ? scopedDef.title : scopedView) }) : meta,
       elements: elements,
+      schema: schema,
+      concepts: concepts,
       store: Review.createDraftStore(
         typeof localStorage !== 'undefined' ? localStorage : null,
         // A domain console keys its drafts by the stable domain id, never by content.
@@ -4889,12 +5246,42 @@
       return byConcept
     }
 
+    // Rail selections accumulate (OR), matching the facet checkboxes: clicking a
+    // concept/model toggles it in the query instead of replacing the whole filter,
+    // so activating more than one concept unions the results.
     function selectRailToken(token) {
       var search = active.getElementById('innfo-search')
-      if (search) {
-        search.value = token
-        refresh(token)
+      var current = activeSearchQuery !== undefined ? activeSearchQuery : search ? search.value : ''
+      var m = /^([!]?[a-z]+):(.*)$/.exec(String(token || ''))
+      if (!m) {
+        if (search) {
+          search.value = token
+          refresh(token)
+        }
+        return
       }
+      var key = m[1]
+      var val = m[2].replace(/^["']|["']$/g, '')
+      var parsed = parseFilterQuery(current)
+      var ops = parsed.operators.slice()
+      var at = -1
+      for (var i = 0; i < ops.length; i++) {
+        if (ops[i].key === key && String(ops[i].val).toLowerCase() === val.toLowerCase()) {
+          at = i
+          break
+        }
+      }
+      if (at !== -1) ops.splice(at, 1)
+      else ops.push({ key: key, val: val })
+      var queryParts = parsed.textTokens.map(function (t) {
+        return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+      })
+      ops.forEach(function (op) {
+        queryParts.push(op.raw || formatFacetToken(op.key, op.val))
+      })
+      var next = queryParts.join(' ')
+      if (search) search.value = next
+      refresh(next)
     }
 
     // Lightweight update after a draft is saved: refreshes only the draft-count
@@ -5100,7 +5487,21 @@
     if (tabs) tabs.activateInitial()
 
     if (hasNeed(config, 'document-view')) {
-      renderDocumentView(active, elements, concepts)
+      var hasProcTab = !!(
+        tabs &&
+        Array.isArray(tabs.tabs) &&
+        tabs.tabs.some(function (t) {
+          return t && t.id === 'procedure'
+        })
+      )
+      var docElements = hasProcTab
+        ? (Array.isArray(elements)
+            ? elements.filter(function (e) {
+                return !e || e.concept !== 'Work'
+              })
+            : [])
+        : elements
+      renderDocumentView(active, docElements, concepts)
     }
     renderMatrices(active, matrices, concepts)
     renderMetamodelView(active, schema, matrices, elements)
