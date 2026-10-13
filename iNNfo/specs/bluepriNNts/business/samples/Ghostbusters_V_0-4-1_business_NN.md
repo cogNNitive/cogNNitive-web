@@ -17,36 +17,43 @@ Ghostbusters is a professional paranormal investigation and elimination service 
 # NN Stakeholders
 
 ## NN Stakeholders: Ghostbusters Founders (Venkman, Stantz, Spengler)
+slug:: ghostbusters-founders-venkman-stantz-spengler
 relationship_model:: Co-founders & Equity Partners
 tags:: [internal, executive, equity, founders]
 Co-founders and principal operators. They hold equal equity, bring complementary expertise (leadership, engineering, theoretical physics), and are the public face of the brand.
 
 ## NN Stakeholders: Winston Zeddemore (Field Operator)
+slug:: winston-zeddemore-field-operator
 relationship_model:: Salaried Field Operator
 tags:: [internal, operations, field, operator]
 Fourth team member, hired as field operator. Brings military experience and a pragmatic perspective. Salaried employee with equity participation.
 
 ## NN Stakeholders: Janine Melnitz (Office Manager)
+slug:: janine-melnitz-office-manager
 relationship_model:: Office Manager & Dispatcher
 tags:: [internal, administration, dispatch, operations]
 Office manager and first point of contact. Handles scheduling, billing, and client intake.
 
 ## NN Stakeholders: Dana Barrett
+slug:: dana-barrett
 relationship_model:: Anchor Commercial Client
 tags:: [external, client, residential, vip]
 High-profile client. Her apartment haunting at 550 Central Park West was the catalyst that validated the business model.
 
 ## NN Stakeholders: Mayor of New York City
+slug:: mayor-of-new-york-city
 relationship_model:: Municipal Sponsor & Civic Authority
 tags:: [external, municipal, government, sponsor]
 Government stakeholder who initially suppresses the Ghostbusters but later relies on them during the Gozer crisis.
 
 ## NN Stakeholders: EPA (Walter Peck)
+slug:: epa-walter-peck
 relationship_model:: Regulatory Oversight & Adversary
 tags:: [external, regulatory, oversight, antagonist]
 Regulatory antagonist. Represents the risk of government interference with untested technology.
 
 ## NN Stakeholders: Gozer the Gozerian
+slug:: gozer-the-gozerian
 relationship_model:: Extradimensional Threat
 tags:: [external, existential-threat, supernatural]
 Existential threat — the entity whose invasion validated the Ghostbusters' technology at the highest possible stakes.
@@ -54,36 +61,43 @@ Existential threat — the entity whose invasion validated the Ghostbusters' tec
 # NN Segments
 
 ## NN Segments: Residential Hauntings
+slug:: residential-hauntings
 tags:: [b2c, residential, emergency, high-emotion]
 Homeowners and apartment dwellers experiencing paranormal activity. High emotional distress, willing to pay premium for rapid response.
 
 ## NN Segments: Commercial Properties
+slug:: commercial-properties
 tags:: [b2b, commercial, retainer, property-management]
 Businesses with supernatural disturbances threatening operations. Larger contracts, ongoing maintenance relationships possible.
 
 ## NN Segments: Government & Institutional
+slug:: government-institutional
 tags:: [b2g, institutional, high-value, municipal]
 City, state, or federal agencies dealing with paranormal threats. High-value contracts, bureaucratic procurement.
 
 ## NN Segments: Emergency / Crisis Response
+slug:: emergency-crisis-response
 tags:: [crisis, rapid-response, premium, high-stakes]
 Immediate, high-stakes situations involving mass hauntings or interdimensional events. Premium pricing.
 
 # NN Profiles
 
 ## NN Profiles: Distressed Homeowner
+slug:: distressed-homeowner
 relationship_type:: Dedicated Personal Support
 persona_notes:: Terrified urban resident seeking immediate paranormal relief, reassurance, and rapid bedroom/hallway clearance.
 tags:: [residential, panicked, urgent]
 Middle-class NYC resident experiencing unexplained phenomena. Panicked, skeptical, desperate. Needs reassurance and fast action.
 
 ## NN Profiles: Property Manager
+slug:: property-manager
 relationship_type:: Commercial Contract Management
 persona_notes:: Pragmatic facility executive prioritizing tenant retention, asset protection, and zero public panic.
 tags:: [commercial, pragmatic, b2b]
 Pragmatic, cost-conscious, concerned about tenant complaints and property value.
 
 ## NN Profiles: City Official
+slug:: city-official
 relationship_type:: Bureaucratic Liaison
 persona_notes:: Risk-averse municipal bureaucrat needing official safety sign-offs, containment guarantees, and political cover.
 tags:: [government, bureaucratic, risk-averse]
@@ -92,29 +106,37 @@ Bureaucratic, image-conscious, needs political cover before engaging unconventio
 # NN Persona
 
 ## NN Persona: Nancy the Homeowner
+slug:: nancy-the-homeowner
 tags:: [persona, residential, queens, homeowner]
 34-year-old teacher from Queens. Lives alone in a pre-war walk-up. Recently divorced, already on edge. Noticed objects moving at night, cold spots in the hallway. Found old newspaper clippings about the previous tenant who "went mad." Googled "paranormal investigator NYC" at 2 AM. Budget is tight but she cannot sleep another night.
 
 ## NN Persona: Carl the Property Manager
+slug:: carl-the-property-manager
 tags:: [persona, commercial, midtown, property-manager]
 52-year-old managing a Midtown commercial building. Tenants are complaining about flickering lights, slamming doors, and a foul smell on the 7th floor. His boss wants it fixed yesterday. Carl does not believe in ghosts but he believes in lease renewals. Needs a discreet, professional solution with minimal media attention.
 
 # NN Segmentation
 
 ## NN Segmentation: Geography
+slug:: geography
 Primary: NYC five boroughs. Secondary: Tri-state area (within 2-hour response radius). Future: national expansion via franchise model.
 ## NN Segmentation: Urgency Level
+slug:: urgency-level
 Critical (active threat — response within 15 min), High (disturbance reported — within 1 hr), Standard (investigation only — scheduled within 72 hrs).
 ## NN Segmentation: Entity Class
+slug:: entity-class
 Class I (residual energy, minor poltergeist), Class II (full apparition, interactive entity), Class III (ancient/demonic, reality-warping), Class IV (god-like entity, interdimensional).
 
 # NN Market trends
 
 ## NN Market trends: Rising Supernatural Reports
+slug:: rising-supernatural-reports
 Year-over-year increase in paranormal claims across the Northeast correlates with heightened public awareness and media coverage.
 ## NN Market trends: Skeptic-to-Believer Shift
+slug:: skeptic-to-believer-shift
 Cultural shift as traditional institutions (church, police) fail to address paranormal phenomena, driving demand for alternative services.
 ## NN Market trends: Insurance Industry Adaptation
+slug:: insurance-industry-adaptation
 Major insurers beginning to offer paranormal damage riders, legitimizing the market and reducing out-of-pocket costs for clients.
 
 # NN Market size
@@ -124,27 +146,34 @@ The paranormal services market in NYC is estimated at $12M annually, growing at 
 # NN Competition
 
 ## NN Competition: Traditional Exterminators
+slug:: traditional-exterminators
 Limited effectiveness. Cannot handle spectral entities. Low price but irrelevant solution.
 ## NN Competition: Religious Institutions
+slug:: religious-institutions
 Exorcisms and blessings. Mixed effectiveness, limited availability, no containment technology.
 ## NN Competition: Paranormal Investigators
+slug:: paranormal-investigators
 Amateur groups. Investigate but do not solve. No revenue model beyond content creation.
 ## NN Competition: Government Agencies
+slug:: government-agencies
 Potential future competitors if the government develops its own paranormal response capability.
 
 # NN Roles
 
 ## NN Roles: Field Operator
+slug:: field-operator
 scope:: internal
 tags:: [operations, frontline, field-unit, proton-certified]
 Front-line ghost capture and containment. Requires Proton Pack certification and at least 50 logged captures.
 
 ## NN Roles: Research Scientist
+slug:: research-scientist
 scope:: internal
 tags:: [research, ecto-physics, r-and-d, hardware]
 Analysis of entity types, PKE readings, and containment protocols. Develops new trapping methodologies.
 
 ## NN Roles: Dispatch Coordinator
+slug:: dispatch-coordinator
 scope:: internal
 tags:: [intake, communications, logistics, triage]
 Manages incoming calls, prioritizes responses, routes teams based on entity classification and location.
@@ -152,43 +181,58 @@ Manages incoming calls, prioritizes responses, routes teams based on entity clas
 # NN Problems
 
 ## NN Problems: Paranormal Infestation
+slug:: paranormal-infestation
 Unwanted spectral presence causing property damage, emotional distress, and business disruption.
 ## NN Problems: Fear and Emotional Trauma
+slug:: fear-and-emotional-trauma
 Inhabitants experience anxiety, sleep disruption, and psychological distress from supernatural encounters.
 ## NN Problems: Property Value Impact
+slug:: property-value-impact
 Properties with known paranormal activity lose market value and become uninsurable.
 ## NN Problems: Lack of Alternatives
+slug:: lack-of-alternatives
 Traditional services (police, clergy, exterminators) cannot handle paranormal threats effectively.
 
 # NN Value propositions
 
 ## NN Value propositions: Guaranteed Entity Removal
+slug:: guaranteed-entity-removal
 We solve the problem. If we can't contain it, you don't pay.
 ## NN Value propositions: Rapid Response
+slug:: rapid-response
 Average arrival time under 30 minutes in the NYC metro area.
 ## NN Value propositions: Proprietary Technology
+slug:: proprietary-technology
 Nuclear-powered containment systems (Proton Pack, Ghost Trap, Containment Unit) that no competitor possesses.
 ## NN Value propositions: Insurance Documentation
+slug:: insurance-documentation
 Detailed incident reports accepted by major insurance providers for property claims.
 
 # NN Messages
 
 ## NN Messages: "We're ready to believe you."
+slug:: were-ready-to-believe-you
 Acknowledges the client's experience without judgment. Lowers resistance to calling for help.
 ## NN Messages: "We have the tools. We have the talent."
+slug:: we-have-the-tools-we-have-the-talent
 Confidence-building message emphasizing proprietary technology and trained personnel.
 ## NN Messages: "Don't be afraid of the dark. Call us."
+slug:: dont-be-afraid-of-the-dark-call-us
 Memorable, slightly humorous tagline that makes the brand approachable.
 
 # NN Channels
 
 ## NN Channels: Phone Hotline
+slug:: phone-hotline
 24/7 dispatch line. Primary intake channel for emergency calls.
 ## NN Channels: Word of Mouth
+slug:: word-of-mouth
 Referrals from past clients. Most effective channel for residential segment.
 ## NN Channels: Media Coverage
+slug:: media-coverage
 News reports of high-profile captures drive massive awareness spikes.
 ## NN Channels: Website
+slug:: website
 Information, service booking, and testimonial showcase.
 
 # NN Relationships
@@ -198,63 +242,85 @@ Ghostbusters builds relationships through a combination of emergency responsiven
 # NN Perceptions
 
 ## NN Perceptions: Eccentric but Effective
+slug:: eccentric-but-effective
 The public sees Ghostbusters as unconventional outsiders — but they get results where nobody else can.
 ## NN Perceptions: Nuisance / Public Threat
+slug:: nuisance-public-threat
 Regulators and skeptics view unlicensed nuclear accelerators as a public safety hazard.
 ## NN Perceptions: Pop Culture Heroes
+slug:: pop-culture-heroes
 Media coverage positions the team as underdog celebrities, which drives demand but also scrutiny.
 
 # NN Emotions
 
 ## NN Emotions: Relief
+slug:: relief
 Clients describe overwhelming relief when the team arrives and the entity is contained.
 ## NN Emotions: Fear
+slug:: fear
 Pre-service anxiety — clients are terrified of the unknown and uncertain about the outcome.
 ## NN Emotions: Gratitude
+slug:: gratitude
 Post-service thankfulness often leads to referrals and repeat business for commercial clients.
 
 # NN Behaviors
 
 ## NN Behaviors: Late-Night Crisis Calls
+slug:: late-night-crisis-calls
 60% of residential calls come between 10 PM and 4 AM — peak paranormal activity hours.
 ## NN Behaviors: Research Before Calling
+slug:: research-before-calling
 Clients typically spend 2-3 days researching symptoms online before making the first call.
 ## NN Behaviors: Referral-Driven Hiring
+slug:: referral-driven-hiring
 40% of new clients come through word-of-mouth from previous clients.
 
 # NN Journey
 
 ## NN Journey: 1. Paranormal Incident
+slug:: 1-paranormal-incident
 Client experiences unexplained phenomena. Fear and confusion set in.
 ## NN Journey: 2. Research & Denial
+slug:: 2-research-denial
 Client searches online, asks friends, tries to rationalize. Average 3 days.
 ## NN Journey: 3. First Contact
+slug:: 3-first-contact
 Client calls Ghostbusters hotline. Dispatch triages the situation and assigns team.
 ## NN Journey: 4. On-Site Investigation
+slug:: 4-on-site-investigation
 Team arrives, scans with PKE meter, classifies entity, briefs the client.
 ## NN Journey: 5. Containment Operation
+slug:: 5-containment-operation
 Active ghost capture using Proton Pack and Ghost Trap. Client watches from safe distance.
 ## NN Journey: 6. Post-Service Follow-up
+slug:: 6-post-service-follow-up
 Incident report delivered. Insurance docs provided. Satisfaction survey sent within 24 hours.
 
 # NN Solutions
 
 ## NN Solutions: Paranormal Abatement
+slug:: paranormal-abatement
 Complete service from investigation through containment and long-term monitoring.
 ## NN Solutions: Preventative Assessment
+slug:: preventative-assessment
 proactive scanning of properties with no active disturbance to identify potential weak points.
 ## NN Solutions: Emergency Response
+slug:: emergency-response
 Rapid deployment for active crisis situations including mass hauntings and interdimensional breaches.
 
 # NN Products and services
 
 ## NN Products and services: Paranormal Investigation
+slug:: paranormal-investigation
 Initial site assessment using PKE meters and other detection equipment.
 ## NN Products and services: Entity Containment
+slug:: entity-containment
 Active ghost capture using Proton Pack and Ghost Trap. Core revenue service.
 ## NN Products and services: Containment Unit Maintenance
+slug:: containment-unit-maintenance
 Long-term storage and monitoring of captured entities at the firehouse facility.
 ## NN Products and services: Consultation & Training
+slug:: consultation-training
 Advising businesses and government on paranormal preparedness and safety protocols.
 
 # NN Portfolio
@@ -264,32 +330,43 @@ Ghostbusters offers a tiered service portfolio: Residential (single-visit contai
 # NN Components
 
 ## NN Components: Proton Pack
+slug:: proton-pack
 Nuclear-powered particle accelerator worn as backpack. Fires a proton stream to destabilize entities.
 ## NN Components: Ghost Trap
+slug:: ghost-trap
 Portable containment device. Activated remotely, triggered under the entity during capture.
 ## NN Components: PKE Meter
+slug:: pke-meter
 Psychokinetic energy meter. Detects and measures paranormal energy signatures.
 ## NN Components: Containment Unit
+slug:: containment-unit
 Basement-level storage facility for captured entities. Grid-powered with emergency backup.
 
 # NN Features
 
 ## NN Features: Cross-trap Stabilization
+slug:: cross-trap-stabilization
 Multiple traps can be linked for simultaneous capture of multiple entities.
 ## NN Features: Entity Classification Database
+slug:: entity-classification-database
 Growing library of entity types, behaviors, and optimal capture protocols.
 ## NN Features: Remote PKE Monitoring
+slug:: remote-pke-monitoring
 Installed sensors in commercial properties provide 24/7 paranormal activity monitoring.
 
 # NN Roadmap
 
 ## NN Roadmap: Phase 1 — NYC Metro Dominance
+slug:: phase-1-nyc-metro-dominance
 Establish coverage across all five boroughs and major commuter rail corridors.
 ## NN Roadmap: Phase 2 — Regional Expansion
+slug:: phase-2-regional-expansion
 Open satellite operations in Boston, Philadelphia, and Washington DC.
 ## NN Roadmap: Phase 3 — National Franchise
+slug:: phase-3-national-franchise
 License the Ghostbusters brand and technology to trained operators in major US cities.
 ## NN Roadmap: Phase 4 — International
+slug:: phase-4-international
 Partner with European and Asian paranormal response agencies for cross-border containment.
 
 # NN Pricing
@@ -299,18 +376,21 @@ Ghostbusters charges a flat fee per call-out plus variable costs. Residential se
 # NN Offerings
 
 ## NN Offerings: Ghostbusters: The Video Game
+slug:: ghostbusters-the-video-game
 pricing_model:: Licensing Royalty (15% net sales)
 components_list:: Game Engine Integration, Voice Acting, Story Campaign, Spectral Physics Simulator
 tags:: [licensing, digital, brand-equity, media]
 Official video game tie-in that generates licensing revenue and brand awareness.
 
 ## NN Offerings: Merchandise Line
+slug:: merchandise-line
 pricing_model:: Unit Retail Margin (60%)
 components_list:: T-shirts, Proton Pack Replicas, Ghost Traps, Ecto-1 Diecast Models, Ectoplasm Slime
 tags:: [retail, physical, merchandising, brand]
 T-shirts, Proton Pack replicas, and ghost figures sold through the website and at events.
 
 ## NN Offerings: Training Workshops
+slug:: training-workshops
 pricing_model:: Fixed Per Seat ($2,500/seat)
 components_list:: 2-Day Theory, PKE Calibration, Live Capture Drill, Certified Elimination Operator Diploma
 tags:: [education, certification, b2b, workforce]
@@ -323,8 +403,10 @@ Ghostbusters: When there's something strange in your neighborhood. Professional 
 # NN Marketing
 
 ## NN Marketing: Guerilla Marketing
+slug:: guerilla-marketing
 Appearing at high-visibility paranormal events and offering free consultations generates media coverage.
 ## NN Marketing: Referral Program
+slug:: referral-program
 15% discount for clients who refer a new customer.
 
 # NN Naming
@@ -346,15 +428,19 @@ The Ghostbusters logo is one of the most recognized in the world. A white ghost 
 # NN Media plan
 
 ## NN Media plan: Local News Coverage
+slug:: local-news-coverage
 Pitch stories to NYC news stations after each major containment operation. Zero media spend, high credibility.
 ## NN Media plan: Social Media
+slug:: social-media
 Active Twitter account sharing capture stories and safety tips. Moderate engagement, strong brand voice.
 ## NN Media plan: Yellow Pages
+slug:: yellow-pages
 Traditional listing still drives 15% of first-time residential calls.
 
 # NN Communication
 
 ## NN Communication: Press Relations
+slug:: press-relations
 Managed through selective media appearances and press releases after significant events.
 
 # NN Pitch
@@ -384,8 +470,10 @@ Ghostbusters originated from the observation that traditional methods (police, c
 # NN Inspiration
 
 ## NN Inspiration: Parapsychology Research at Columbia
+slug:: parapsychology-research-at-columbia
 Dr. Venkman's ESP experiments, while controversial, revealed measurable psychokinetic energy patterns that could be detected and influenced.
 ## NN Inspiration: Particle Physics Breakthrough
+slug:: particle-physics-breakthrough
 Dr. Spengler's theoretical work on proton streams demonstrated that focused particle beams could destabilize spectral entities.
 
 # NN Opportunity
@@ -399,15 +487,19 @@ Operational and growing. Ghostbusters is post-revenue with a proven business mod
 # NN Challenges
 
 ## NN Challenges: Regulatory Risk
+slug:: regulatory-risk
 Operating unlicensed nuclear accelerators without clear regulatory framework. The EPA shutdown remains an existential threat.
 ## NN Challenges: Talent Pipeline
+slug:: talent-pipeline
 There is no university program for paranormal containment. Every operator must be trained in-house over 6 months.
 ## NN Challenges: Public Perception
+slug:: public-perception
 Balancing the need for media coverage against the risk of being perceived as a novelty act.
 
 # NN Business objectives
 
 ## NN Business objectives: Market Leadership
+slug:: market-leadership
 Establish Ghostbusters as the default professional paranormal response service in the Northeast.
 
 # NN Mission
@@ -421,57 +513,76 @@ A world where no one has to fear the unknown because professional paranormal res
 # NN Organizational values
 
 ## NN Organizational values: Science Over Superstition
+slug:: science-over-superstition
 Every claim is tested, measured, and documented. We believe in what we can prove.
 ## NN Organizational values: No Entity Left Behind
+slug:: no-entity-left-behind
 Every call is answered. No situation is too small or too strange.
 ## NN Organizational values: Courage with Caution
+slug:: courage-with-caution
 We run toward danger — but we do it with safety protocols, redundant systems, and a containment plan.
 
 # NN Organizational goals
 
 ## NN Organizational goals: 100% Containment Rate
+slug:: 100-containment-rate
 Every entity engagement results in successful capture. Zero escapes on record.
 ## NN Organizational goals: Sub-20 Minute Response
+slug:: sub-20-minute-response
 Reduce average dispatch-to-arrival time to under 20 minutes across NYC.
 ## NN Organizational goals: Expand to 3 New Markets
+slug:: expand-to-3-new-markets
 Open satellite operations in Boston, Philadelphia, and Washington DC within 24 months.
 
 # NN Operations
 
 ## NN Operations: Dispatch & Routing
+slug:: dispatch-routing
 Real-time fleet management optimized for shortest response time based on entity classification.
 
 # NN Activities
 
 ## NN Activities: 24/7 Dispatch Management
+slug:: 247-dispatch-management
 Monitoring calls, triaging entity classifications, routing nearest available team.
 ## NN Activities: Equipment Maintenance
+slug:: equipment-maintenance
 Daily inspection and calibration of Proton Packs, Ghost Traps, and PKE meters.
 ## NN Activities: Entity Research
+slug:: entity-research
 Documenting and classifying captured entities. Developing new containment protocols.
 ## NN Activities: Public Relations
+slug:: public-relations
 Managing media inquiries, publishing capture reports, maintaining brand reputation.
 
 # NN Functions
 
 ## NN Functions: Field Operations
+slug:: field-operations
 On-site investigation, containment, and post-service documentation.
 ## NN Functions: Research & Development
+slug:: research-development
 Improving capture technology, developing new containment methods, analyzing entity data.
 ## NN Functions: Administration
+slug:: administration
 Billing, scheduling, regulatory compliance, insurance coordination.
 ## NN Functions: Marketing & Communications
+slug:: marketing-communications
 Brand management, media relations, referral program administration.
 
 # NN Resources
 
 ## NN Resources: Ecto-1
+slug:: ecto-1
 Modified 1959 Cadillac Miller-Meteor ambulance. Primary response vehicle with equipment storage.
 ## NN Resources: Firehouse HQ
+slug:: firehouse-hq
 Converted Tribeca firehouse serving as headquarters, equipment lab, and containment facility.
 ## NN Resources: Containment Grid
+slug:: containment-grid
 Basement-level entity storage with redundant power and emergency venting.
 ## NN Resources: Intellectual Property
+slug:: intellectual-property
 Proprietary designs for all capture technology. Trade secrets for containment protocols.
 
 # NN Team
@@ -481,47 +592,61 @@ Field Division — All capture-certified operators. Rotating 3-person teams on 1
 # NN Contributions
 
 ## NN Contributions: PKE Meter Calibration Algorithm
+slug:: pke-meter-calibration-algorithm
 Dr. Spengler's logarithmic scaling model improved detection range by 300%.
 ## NN Contributions: Split-Stream Capture Maneuver
+slug:: split-stream-capture-maneuver
 Venkman's tactical formation for cornering Class III entities. Adopted as standard protocol.
 
 # NN Compensations
 
 ## NN Compensations: Field Operator Base Salary
+slug:: field-operator-base-salary
 $85,000/year with performance bonus per successful capture ($500/entity).
 ## NN Compensations: Equity Participation
+slug:: equity-participation
 All founding team members hold equal shares. New partner-track operators eligible after 2 years.
 ## NN Compensations: Hazard Pay
+slug:: hazard-pay
 1.5x base rate for Class IV entity engagements.
 
 # NN Goals
 
 ## NN Goals: Capture Certification for All Staff
+slug:: capture-certification-for-all-staff
 Every field operator must achieve 50 successful captures before leading a team.
 ## NN Goals: Zero Safety Incidents
+slug:: zero-safety-incidents
 No proton pack malfunctions, no containment breaches, no operator injuries.
 
 # NN Skills
 
 ## NN Skills: Proton Pack Operation
+slug:: proton-pack-operation
 Proficiency in aiming, firing, and managing energy output of the particle accelerator.
 ## NN Skills: Entity Classification
+slug:: entity-classification
 Ability to identify entity type, threat level, and optimal capture protocol within 30 seconds of PKE scan.
 ## NN Skills: Crisis Communication
+slug:: crisis-communication
 De-escalation techniques for panicked clients. Clear reporting under high-stress conditions.
 
 # NN Position
 
 ## NN Position: Lead Field Operator
+slug:: lead-field-operator
 Senior operator responsible for team coordination and capture authorization.
 ## NN Position: Staff Scientist
+slug:: staff-scientist
 Conducts entity analysis, develops capture protocols, maintains equipment.
 ## NN Position: Dispatch Manager
+slug:: dispatch-manager
 Oversees call intake, team routing, and incident tracking.
 
 # NN Person
 
 ## NN Person: Dr. Egon Spengler
+slug:: dr-egon-spengler
 position_ref:: [[Staff Scientist]]
 compensation:: Equal partner equity share (25%), $75,000 base salary, full laboratory access.
 contributions:: Invented the Proton Pack, PKE Meter, and Containment Grid; leads theoretical ecto-physics research.
@@ -530,6 +655,7 @@ tags:: [founder, partner, r-and-d, physics, core-team]
 Dr. Egon Spengler is the chief intellectual architect of Ghostbusters Inc., specializing in quantum ecto-physics and high-energy particle containment.
 
 ## NN Person: Dr. Peter Venkman
+slug:: dr-peter-venkman
 position_ref:: [[Lead Field Operator]]
 compensation:: Equal partner equity share (25%), $75,000 base salary, commercial bonus commissions.
 contributions:: Leads client negotiations, marketing, press relations, and operational decision-making.
@@ -538,6 +664,7 @@ tags:: [founder, partner, commercial, press, core-team]
 Dr. Peter Venkman brings psychological insight, commercial charisma, and public leadership to the firm's business operations.
 
 ## NN Person: Dr. Raymond Stantz
+slug:: dr-raymond-stantz
 position_ref:: [[Staff Scientist]]
 compensation:: Equal partner equity share (25%), $75,000 base salary, equipment trade access.
 contributions:: Co-developed the Proton Pack, maintains Ecto-1, and conducts field entrapment operations.
@@ -546,6 +673,7 @@ tags:: [founder, partner, engineering, occult-studies, core-team]
 Dr. Ray Stantz combines deep enthusiasm for occult history with practical mechanical and engineering expertise.
 
 ## NN Person: Winston Zeddemore
+slug:: winston-zeddemore
 position_ref:: [[Lead Field Operator]]
 compensation:: $60,000 base salary, overtime hazard pay ($500 per captured class-V entity), healthcare benefits.
 contributions:: Operates heavy field hardware, manages Ecto-1 driving duties, and executes frontline captures.
@@ -554,6 +682,7 @@ tags:: [partner, field-operations, heavy-equipment, veteran, core-team]
 Winston Zeddemore joined the team during peak NYC spectral activity, providing steady discipline and reliable execution under pressure.
 
 ## NN Person: Janine Melnitz
+slug:: janine-melnitz
 position_ref:: [[Dispatch Manager]]
 compensation:: $48,000 base salary, full health insurance, overtime dispatch bonuses.
 contributions:: Handles emergency intake calls, manages billing and legal notices, and monitors the containment grid warning alarms.
@@ -564,12 +693,14 @@ Janine Melnitz commands headquarters administration, maintaining operational foc
 # NN Project
 
 ## NN Project: NYC Coverage Expansion
+slug:: nyc-coverage-expansion
 tags:: [expansion, municipal, multi-borough, scaling]
 Extend guaranteed sub-30-minute response radius from Manhattan to all boroughs.
 
 # NN Phases
 
 ## NN Phases: Phase 1 — Brooklyn Coverage
+slug:: phase-1-brooklyn-coverage
 phase_status:: completed
 start_date:: "2026-04-01"
 end_date:: "2026-06-30"
@@ -577,6 +708,7 @@ tags:: [expansion, brooklyn, satellite-office]
 Establish satellite dispatch in Brooklyn. Hire and train 2 new teams. Target: Q2.
 
 ## NN Phases: Phase 2 — Queens & Bronx
+slug:: phase-2-queens-bronx
 phase_status:: in_progress
 start_date:: "2026-07-01"
 end_date:: "2026-09-30"
@@ -584,6 +716,7 @@ tags:: [expansion, queens, bronx, recruitment]
 Mirror Brooklyn model. Target: Q3.
 
 ## NN Phases: Phase 3 — Staten Island & Long Island
+slug:: phase-3-staten-island-long-island
 phase_status:: not_started
 start_date:: "2026-10-01"
 end_date:: "2026-12-31"
@@ -593,18 +726,21 @@ Lower-density coverage with on-call teams. Target: Q4.
 # NN Milestone
 
 ## NN Milestone: Brooklyn Dispatch Active
+slug:: brooklyn-dispatch-active
 target_date:: "2026-06-30"
 milestone_status:: achieved
 tags:: [milestone, operations, brooklyn]
 Satellite office opened. 2 teams operational. 15-minute response time achieved.
 
 ## NN Milestone: 1,000th Entity Contained
+slug:: 1000th-entity-contained
 target_date:: "2026-09-15"
 milestone_status:: in_progress
 tags:: [milestone, validation, metrics, insurance]
 Statistical significance for insurance data. Enables better premium negotiation with partners.
 
 ## NN Milestone: First Regional Replication
+slug:: first-regional-replication
 target_date:: "2026-12-15"
 milestone_status:: planned
 tags:: [milestone, franchise, replication]
@@ -613,28 +749,37 @@ Boston or Philadelphia satellite launched. Validates the expansion playbook.
 # NN Metrics
 
 ## NN Metrics: Response Time
+slug:: response-time
 Average minutes from call to arrival. Target: <30 min. Current: 27 min.
 ## NN Metrics: Containment Success Rate
+slug:: containment-success-rate
 Percentage of engagements resulting in successful capture. Target: 100%. Current: 97%.
 ## NN Metrics: Client Satisfaction (CSAT)
+slug:: client-satisfaction-csat
 Post-service survey score. Target: 4.5/5. Current: 4.7/5.
 ## NN Metrics: Recurring Revenue Share
+slug:: recurring-revenue-share
 Percentage of revenue from commercial contracts. Target: 40%. Current: 25%.
 
 # NN Finance
 
 ## NN Finance: Revenue & Cost Structure
+slug:: revenue-cost-structure
 Detailed financial model available in the Revenue, Costs, and Projections sections below.
 
 # NN Revenue
 
 ## NN Revenue: Residential Call-Out Fees
+slug:: residential-call-out-fees
 $5,000 per incident average. 60% of total revenue.
 ## NN Revenue: Commercial Contracts
+slug:: commercial-contracts
 $50,000/year average for quarterly inspection + priority dispatch. 25% of total revenue.
 ## NN Revenue: Government Consulting
+slug:: government-consulting
 Retainer agreements with NYC and NY State. 10% of total revenue.
 ## NN Revenue: Merchandise & Licensing
+slug:: merchandise-licensing
 Branded merchandise and video game royalties. 5% of total revenue.
 
 # NN Life Time Value
@@ -644,14 +789,19 @@ Residential LTV: $8,500 (1.7 average incidents per customer lifespan). Commercia
 # NN Costs
 
 ## NN Costs: Payroll & Benefits
+slug:: payroll-benefits
 4 full-time operators + 1 office manager. $420,000/year total.
 ## NN Costs: Equipment Maintenance Spend
+slug:: equipment-maintenance-spend
 Proton Pack calibration, trap refurbishment, PKE meter replacement. $85,000/year.
 ## NN Costs: Facility Operations
+slug:: facility-operations
 Firehouse lease, utilities, containment grid power. $120,000/year.
 ## NN Costs: Insurance & Legal
+slug:: insurance-legal
 Liability insurance, legal retainers, regulatory compliance. $95,000/year.
 ## NN Costs: Vehicle Operations
+slug:: vehicle-operations
 Ecto-1 fuel, maintenance, insurance. $25,000/year.
 
 # NN Customer Acquisition Cost
@@ -665,81 +815,104 @@ Per-incident unit economics: Average revenue $5,000. Average direct cost $1,800 
 # NN Funding sources
 
 ## NN Funding sources: Founder Capital
+slug:: founder-capital
 $30,000 pooled from personal savings to acquire initial equipment and lease deposit.
 ## NN Funding sources: Revenue Reinvestment
+slug:: revenue-reinvestment
 100% of operating profits reinvested in expansion. No external funding to date.
 
 # NN Shareholders
 
 ## NN Shareholders: Venkman Equity Stake
+slug:: venkman-equity-stake
 25% equity. Parapsychology lead. Public-facing partner.
 ## NN Shareholders: Stantz Equity Stake
+slug:: stantz-equity-stake
 25% equity. Engineering lead. Equipment design and maintenance.
 ## NN Shareholders: Spengler Equity Stake
+slug:: spengler-equity-stake
 25% equity. R&D lead. Theoretical foundation and containment design.
 ## NN Shareholders: Zeddemore Equity Stake
+slug:: zeddemore-equity-stake
 15% equity. Field operations lead. Joined as employee, promoted to partner.
 ## NN Shareholders: Reserve Pool
+slug:: reserve-pool
 10% equity reserved for future key hires and partner-track operators.
 
 # NN Projections
 
 ## NN Projections: Year 1 Revenue
+slug:: year-1-revenue
 $1.2M (actual). 240 incidents resolved.
 ## NN Projections: Year 2 Revenue
+slug:: year-2-revenue
 $2.8M (projected). NYC coverage expansion driving volume growth.
 ## NN Projections: Year 3 Revenue
+slug:: year-3-revenue
 $5.5M (projected). Regional expansion to 3 cities.
 
 # NN Legal
 
 ## NN Legal: Regulatory Framework
+slug:: regulatory-framework
 Operating under a novel legal classification — no existing statutes cover paranormal containment services.
 
 # NN Legal issues
 
 ## NN Legal issues: Unlicensed Nuclear Operation
+slug:: unlicensed-nuclear-operation
 Proton Packs do not comply with standard nuclear regulatory frameworks. Legal workaround required.
 ## NN Legal issues: Liability for Property Damage
+slug:: liability-for-property-damage
 Containment operations occasionally cause collateral damage. Insurance covers most but not all scenarios.
 ## NN Legal issues: Entity Rights Status
+slug:: entity-rights-status
 Legal question: are contained entities "property"? Can they be held indefinitely? No legal precedent exists.
 
 # NN Contracts
 
 ## NN Contracts: Standard Service Agreement
+slug:: standard-service-agreement
 One-page contract: scope of work, fee schedule, liability waiver, confidentiality clause.
 ## NN Contracts: Commercial Maintenance Contract
+slug:: commercial-maintenance-contract
 Annual agreement with quarterly inspection schedule, priority dispatch, and volume pricing.
 ## NN Contracts: Government Retainer
+slug:: government-retainer
 Multi-year agreement with defined SLAs, reporting requirements, and escalation procedures.
 
 # NN Analysis
 
 ## NN Analysis: Strategic Assessment
+slug:: strategic-assessment
 Ghostbusters operates in a unique market with no direct competition but significant regulatory and operational risks.
 
 # NN Assumptions
 
 ## NN Assumptions: Paranormal threats are real and measurable
+slug:: paranormal-threats-are-real-and-measurable
 tags:: [core-belief, foundational, science]
 PKE activity can be quantified, categorized, and contained using electromagnetic particle beams.
 
 ## NN Assumptions: Clients will pay premium prices for containment services
+slug:: clients-will-pay-premium-prices-for-containment-services
 tags:: [commercial, pricing, demand]
 Severe emotional distress and asset depreciation incentivize clients to accept premium incident fees.
 
 ## NN Assumptions: Municipal governments will tolerate unlicensed paranormal operations
+slug:: municipal-governments-will-tolerate-unlicensed-paranormal-operations
 tags:: [regulatory, civic, political]
 Civic necessity during crisis events supersedes strict statutory compliance in the short term.
 
 ## NN Assumptions: The containment unit will not reach critical mass
+slug:: the-containment-unit-will-not-reach-critical-mass
 tags:: [facility, physics, safety]
 Subterranean vault grid storage capacity can accommodate entity intake through controlled ionization cycles.
 
 # NN Risks
 
 ## NN Risks: Technology Failure
+slug:: technology-failure
 impact:: critical
 probability:: low
 mitigation:: Triple-redundant containment barriers, fail-safe magnetic seals, and routine accelerator cycle checks.
@@ -747,6 +920,7 @@ tags:: [hardware, containment, critical-risk]
 Proton pack malfunction or containment unit breach could cause catastrophic damage.
 
 ## NN Risks: Regulatory Shutdown
+slug:: regulatory-shutdown
 impact:: high
 probability:: medium
 mitigation:: Proactive municipal liaison, third-party radiation safety certifications, and emergency service MOU with City Hall.
@@ -754,6 +928,7 @@ tags:: [regulatory, epa, compliance]
 EPA or city government could revoke operating permits due to safety concerns.
 
 ## NN Risks: Reputation Crisis
+slug:: reputation-crisis
 impact:: high
 probability:: low
 mitigation:: Comprehensive incident reports, public relations disclosure protocols, and satisfaction guarantees.
@@ -761,6 +936,7 @@ tags:: [brand, pr, reputation]
 A single high-profile failure could destroy the brand's credibility.
 
 ## NN Risks: Liability Exposure
+slug:: liability-exposure
 impact:: high
 probability:: medium
 mitigation:: $10M umbrella commercial liability coverage and signed pre-service client damage waivers.
@@ -770,10 +946,13 @@ Property damage or personal injury during operations could result in lawsuits be
 # NN Suggestions
 
 ## NN Suggestions: Pursue Regulatory Framework
+slug:: pursue-regulatory-framework
 Proactively work with NYC government to establish a paranormal services licensing category.
 ## NN Suggestions: Diversify Revenue Streams
+slug:: diversify-revenue-streams
 Reduce reliance on incident fees by growing commercial contract and consulting revenue.
 ## NN Suggestions: Build Talent Pipeline
+slug:: build-talent-pipeline
 Create an internal certification program with a clear career ladder from trainee to lead operator.
 
 # NN Unfair advantage
@@ -787,22 +966,28 @@ Strengths: Proprietary technology, proven track record, brand recognition, 100% 
 # NN Keys
 
 ## NN Keys: Technology Moats
+slug:: technology-moats
 Protect intellectual property. File patents on capture mechanisms and containment protocols.
 ## NN Keys: Regulatory Strategy
+slug:: regulatory-strategy
 Shift from defensive compliance to proactive framework creation. Shape the rules before they are written for us.
 ## NN Keys: Talent Density
+slug:: talent-density
 Hire slow, train deep. Every operator must be capable of independent decision-making under extreme conditions.
 
 # NN Validation
 
 ## NN Validation: Gozer Case Study
+slug:: gozer-case-study
 The 1984 Gozer incident validated the core business hypothesis under maximum-stakes conditions.
 
 # NN Coherence
 
 ## NN Coherence: Problems ↔ Value Propositions
+slug:: problems-value-propositions
 Direct mapping between all identified problems and our service value props. No orphaned problems.
 ## NN Coherence: Segments ↔ Channels
+slug:: segments-channels
 Residential segment reached via phone/digital. Commercial via direct sales. Government via RFP response.
 ## NN Coherence: Revenue ↔ Cost Structure
 slug:: coherence-revenue-cost-structure
@@ -811,8 +996,10 @@ High-margin incident revenue supports fixed cost base. Commercial contracts prov
 # NN Experiments
 
 ## NN Experiments: Satellite Dispatch Feasibility
+slug:: satellite-dispatch-feasibility
 Pilot a 3-month Brooklyn dispatch trial to validate response time, volume, and unit economics before committing to full expansion.
 ## NN Experiments: Franchise Interest Survey
+slug:: franchise-interest-survey
 Survey 50 paranormal enthusiast groups to gauge interest in a licensed operator model.
 
 # NN matrices: journey map

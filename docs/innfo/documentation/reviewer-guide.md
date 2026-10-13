@@ -52,9 +52,9 @@ Click **Export feedback** in the header banner. The modal shows a live **preview
 Files are named `<Model>_V_<Version>_<user>_feedback_<YYYYMMDD-HHMMSS>.json`. Each item carries `id`, `kind`, `target` (`element_id`, `concept`, `element`, optional `field`), `comment`/`proposed`, and `base_hash`; items never carry `status`.
 
 ### 8. Where Drafts Live
-Drafts are stored in `localStorage` under a single key, `innfo-console:v2:<meta.modelId>`, anchored by `element_id` plus `base_hash`. Drafts therefore **survive a model version rebump** as long as the `modelId` is unchanged. A draft whose element is missing or whose hash drifted is flagged **target changed** and remains exportable.
+Drafts are stored in `localStorage` under a single key, `innfo-console:v3:<storeKey>`, anchored by `element_id` plus `base_hash`. The `storeKey` is the console's stable store key only: the domain id for a domain console (`<folder>-<hash>`), or `<domain id>::view:<id>` for a standalone view export. The store records **no model or domain version**: staleness is **per draft**, so a draft whose element hash drifted is flagged **target changed** and remains exportable, while a model version bump never invalidates unrelated drafts.
 
-Drafts saved by older consoles under the legacy title-and-version key (`innfo-console:drafts:*`) are **not** read, migrated or deleted: they simply stop being shown.
+Drafts saved by older consoles under an earlier store version (`innfo-console:v2:*`) or the legacy title-and-version key (`innfo-console:drafts:*`) are **not** read, migrated or deleted: a store written with an earlier `STORE_VERSION` simply reads as empty.
 
 ### 9. Ingesting Feedback
 Normalized feedback documents ingest via `nn-sources` or the `reconcile_feedback` procedure, with items indexed under `### fb-001` headings followed by `- **Kind**:` bullets.

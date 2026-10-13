@@ -9287,6 +9287,20 @@ function projectLineage(files) {
       citations
     });
   }
+  const changesets = [];
+  for (const cf of live) {
+    const parsedName = parseName(getBasename(cf.path));
+    if (parsedName.kind !== "nn" || parsedName.sidecarOf !== void 0) continue;
+    const parsed = parseKnowledge(cf.content);
+    const fm = parsed.frontmatter ?? {};
+    if (roleOf({ path: cf.path, parentSpecName: parentSpecNameOf(fm) }) !== "changeset") continue;
+    changesets.push({
+      name: parsed.frontmatter?.title || displayStem(getBasename(cf.path)),
+      changeset_ref: cf.path,
+      status: typeof fm.status === "string" ? fm.status : void 0,
+      changes: [...parsed.elements.entries()].flatMap(([, els]) => els.map((el) => el.name))
+    });
+  }
   const sourcePaths = new Set(subjects.map((s) => s.subject));
   const familySizes = /* @__PURE__ */ new Map();
   for (const f of live) {
@@ -9321,7 +9335,7 @@ function projectLineage(files) {
       citations
     });
   }
-  return { sources, knowledge, artifacts, diagnostics };
+  return { sources, knowledge, artifacts, changesets, diagnostics };
 }
 
 // iNNfo/packages/innfo-core/src/validator/workspaceSources.ts
@@ -9920,7 +9934,8 @@ function readLineageSnapshot(root) {
     const content = fs.readFileSync(path.join(rootDir, rel), "utf8");
     if (isNNName(rel) && !isSidecarName(rel)) {
       const parsed = parseKnowledge(content);
-      if (roleOf({ path: rel, parentSpecName: parsed.frontmatter?.parent_spec?.name }) !== "knowledge") {
+      const role = roleOf({ path: rel, parentSpecName: parsed.frontmatter?.parent_spec?.name });
+      if (role !== "knowledge" && role !== "changeset") {
         continue;
       }
     }

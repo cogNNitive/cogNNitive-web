@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-1-0"
+blueprint_version: "V_0-2-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 ---
@@ -79,6 +79,11 @@ concept:: Change
 type:: string
 description:: Rationale, commit note, or review critique.
 
+## NN Field Definition: sources
+concept:: Change
+type:: citation
+description:: Evidence the change derives from, in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, or a bare path). Written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.
+
 ## NN Field Definition: status
 concept:: Change
 type:: select
@@ -120,6 +125,7 @@ Each change is declared as an element of concept Change:
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.
 - to: Proposed value.
+- sources: Evidence the change derives from (a citation); written by the proposer and sealed with the proposal.
 - Execution annotations (status, resolution, resolved_slug) record the outcome of applying the change.
 
 ## Template
@@ -129,8 +135,11 @@ Each change is declared as an element of concept Change:
 ```markdown
 ---
 spec_version: "V_0-4-0"
-parent_spec: "changes"
-blueprint_version: "V_0-1-0"
+level: 3
+parent_spec:
+  name: changes
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
+blueprint_version: "V_0-2-0"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

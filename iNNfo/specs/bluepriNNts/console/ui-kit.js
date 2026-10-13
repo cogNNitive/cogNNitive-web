@@ -730,7 +730,7 @@
     btn.setAttribute('type', 'button')
     btn.setAttribute('data-origin', String(variant))
     btn.setAttribute('data-field', String(data.field == null ? '' : data.field))
-    var label = (CITATION_ORIGIN_LABELS[variant] || variant) + ': ' + (data.field == null ? '' : data.field)
+    var label = 'Origin: ' + (data.field == null ? '' : data.field)
     btn.setAttribute('aria-label', label)
     btn.setAttribute('title', label)
     btn.innerHTML = icon('cite-' + variant, 14)
@@ -1584,11 +1584,11 @@
     head.appendChild(closeBtn)
     modal.appendChild(head)
 
-    // Unified Modal Navigation: Tabs (Edit vs History & Provenance)
+    // Unified Modal Navigation: Tabs (Edit vs Lineage)
     var navTabs = makeEl(doc, 'div', 'innfo-modal-tabs')
     var tabBtnEdit = makeEl(doc, 'button', 'innfo-modal-tab-btn active', 'Edit')
     tabBtnEdit.setAttribute('type', 'button')
-    var tabBtnHistory = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'History & Provenance')
+    var tabBtnHistory = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'Lineage')
     tabBtnHistory.setAttribute('type', 'button')
     var tabBtnConnections = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'Connections')
     tabBtnConnections.setAttribute('type', 'button')
@@ -1671,14 +1671,14 @@
     panelEdit.appendChild(formComment)
     modal.appendChild(panelEdit)
 
-    // Panel 2: History & Provenance
+    // Panel 2: Lineage
     var panelHistory = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-history-modal-body')
     panelHistory.setAttribute('data-tab', 'history')
     panelHistory.style.display = 'none'
 
     // History section
     var histSection = makeEl(doc, 'div', 'innfo-history-section')
-    histSection.appendChild(makeEl(doc, 'h3', 'innfo-history-title', 'Changeset Lineage & Revision History'))
+    histSection.appendChild(makeEl(doc, 'h3', 'innfo-history-title', 'History'))
     var historyItems = Array.isArray(data.history) ? data.history : []
     if (historyItems.length) {
       historyItems.forEach(function (h) {
@@ -1693,9 +1693,9 @@
     }
     panelHistory.appendChild(histSection)
 
-    // Provenance & Citations section
+    // Citations section
     var citeSection = makeEl(doc, 'div', 'innfo-history-section')
-    citeSection.appendChild(makeEl(doc, 'h3', 'innfo-history-title', 'Source Provenance & Citations'))
+    citeSection.appendChild(makeEl(doc, 'h3', 'innfo-history-title', 'Citations'))
     var citeItems = Array.isArray(data.citations) ? data.citations : []
     if (citeItems.length) {
       citeItems.forEach(function (c) {

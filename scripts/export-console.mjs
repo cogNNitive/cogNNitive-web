@@ -593,11 +593,24 @@ async function main() {
     process.exit(1)
   }
   const uiCss = await readFile(uiCssPath, 'utf-8')
+
+  // Changeset lineage: read changes/*_changes_NN.md so each element can carry its
+  // `history` in the model slot, and the domain payload carries the `changes`
+  // collection (the console is static/offline and never reads the files).
+  const changesets = payloadHelper.loadChangesetRecords
+    ? await payloadHelper.loadChangesetRecords(root)
+    : []
+
   let domainViews
   try {
     domainViews = await viewsLib.discoverViews({
       domainRoot: root,
-      specNames: payloadModels.map((m) => payloadHelper.parentSpecNameOf(m.fm)).filter(Boolean),
+      // The domain's changesets are not payload models, but the `changes` blueprint
+      // ships the read-only Changes view: include its spec name when a domain has any.
+      specNames: [
+        ...payloadModels.map((m) => payloadHelper.parentSpecNameOf(m.fm)),
+        ...(Array.isArray(changesets) && changesets.length > 0 ? ['changes'] : []),
+      ].filter(Boolean),
       packagesDir,
       onWarning: (message) => process.stderr.write(`WARNING: [export-console] ${message}\n`),
     })
@@ -653,12 +666,6 @@ async function main() {
       // ignore parse error
     }
   }
-
-  // Changeset lineage: read changes/*_changes_NN.md so each element can carry its
-  // `history` in the model slot (the console is static/offline and never reads it).
-  const changesets = payloadHelper.loadChangesetRecords
-    ? await payloadHelper.loadChangesetRecords(root)
-    : []
 
   const resolver = payloadHelper.createFsSourceResolver
     ? payloadHelper.createFsSourceResolver(root)
@@ -718,11 +725,12 @@ async function main() {
       const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
       const modelConcepts = new Set()
       // Element ids are only unique inside one model; the console keys drafts,
-      // review marks and relations by id, so qualify them with the model's file stem.
+      // review marks and relations by id, so qualify them with the model id (the
+      // model part of a changeset target), making the id the D5 element address.
       const qualifiedIds = new Map()
       if (Array.isArray(payload.model.elements)) {
         for (const el of payload.model.elements) {
-          if (el) qualifiedIds.set(el.id, `${mId}/${el.id}`)
+          if (el) qualifiedIds.set(el.id, `${mId}@${el.id}`)
         }
         for (const el of payload.model.elements) {
           if (el) {
@@ -801,18 +809,11 @@ async function main() {
     }
   }
 
-  // The version follows the content of the exported models, so the console's stale-draft
-  // banner fires when one changes. It must stay a valid V_x-y-z (export file names and
-  // feedback meta validate that), hence a decimal derived from the content hash. The
-  // draft store key (`domainId`) is deliberately NOT content-derived, or drafts would
-  // vanish on every edit; a scoped console appends `::scope:<hash8 of sorted model ids>`
-  // so different scopes never share a draft store (the runtime appends `::view:<id>`).
-  const contentHash = createHash('sha256')
-  for (const m of payloadModels) {
-    const relPath = relative(root, m.filePath).replace(/\\/g, '/')
-    contentHash.update(`${relPath}\0${createHash('sha256').update(m.content, 'utf8').digest('hex')}\n`)
-  }
-  const domainVersion = `V_1-0-${parseInt(contentHash.digest('hex').slice(0, 7), 16)}`
+  // No fabricated domain version: the domain meta carries `generated` plus the real
+  // per-model `knowledge_version` / `sha256` in `models[]` (D4). The draft store key
+  // (`domainId`) is deliberately NOT content-derived, or drafts would vanish on every
+  // edit; a scoped console appends `::scope:<hash8 of sorted model ids>` so different
+  // scopes never share a draft store (the runtime appends `::view:<id>`).
   const baseDomainId = `${basename(root)}-${hashSlice(resolve(root).toLowerCase(), 8)}`
   const domainId = scoped
     ? `${baseDomainId}::scope:${hashSlice([...scopeModelIds].sort().join('\n'), 8)}`
@@ -826,12 +827,16 @@ async function main() {
         model: basename(root),
         modelId: basename(root),
         domainId,
-        modelVersion: domainVersion,
         generated: undefined,
         models: modelSummaries,
       },
       elements: allElements,
       matrices: allMatrices,
+      // D2: the domain's changesets, newest first by file stamp. Read-only, never
+      // written into a model.
+      changes: (Array.isArray(changesets) ? changesets.slice() : []).sort((a, b) =>
+        String(b.path).localeCompare(String(a.path)),
+      ),
     },
   }
 

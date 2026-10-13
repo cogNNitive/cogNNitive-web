@@ -12,6 +12,7 @@ title: "Ghostbusters Inc. Ecto-Tech Innovation Portfolio Model"
 
 # NN Program
 ## NN Program: Ecto-Tech R&D Program
+slug:: ecto-tech-rd-program
 programName:: "Ecto-Tech R&D Program"
 programObjectives:: "Accelerate spectral entrapment throughput, expand vault containment capacity by 400%, and guarantee field crew safety during high-mass entity containment."
 programScope:: "Advanced particle beam physics, muon trap wireless triggers, subterranean vault automation, and vehicle fleet power integration."
@@ -28,6 +29,7 @@ The central R&D program governing hardware innovations, field gear enhancements,
 # NN Person
 
 ## NN Person: Dr. Egon Spengler
+slug:: dr-egon-spengler
 personId:: "PER-001"
 personName:: "Dr. Egon Spengler"
 personDescription:: "Chief Science Officer and co-founder specializing in quantum ecto-physics, nuclear particle acceleration, and vault containment engineering."
@@ -39,6 +41,7 @@ tags:: [founder, r-and-d, physics, inventor]
 Leads theoretical ecto-physics research, particle beam calculations, and hardware prototype design across all portfolio initiatives.
 
 ## NN Person: Dr. Raymond Stantz
+slug:: dr-raymond-stantz
 personId:: "PER-002"
 personName:: "Dr. Raymond Stantz"
 personDescription:: "Staff Scientist, engineer, and co-founder overseeing mechanical fabrication, vehicle custom modification, and field gear assembly."
@@ -50,6 +53,7 @@ tags:: [founder, engineering, fabrication, mechanic]
 Oversees mechanical fabrication, vehicle equipment integration, and field hardware testing for R&D initiatives.
 
 ## NN Person: Dr. Peter Venkman
+slug:: dr-peter-venkman
 personId:: "PER-003"
 personName:: "Dr. Peter Venkman"
 personDescription:: "Operations Director and co-founder managing commercial client contracts, marketing, investor relations, and financial governance."
@@ -61,6 +65,7 @@ tags:: [founder, commercial, investor-relations, governance]
 Evaluates commercial viability, investor relations, and client adoption for new hardware innovations.
 
 ## NN Person: Winston Zeddemore
+slug:: winston-zeddemore
 personId:: "PER-004"
 personName:: "Winston Zeddemore"
 personDescription:: "Field Operations Specialist bringing military logistics expertise, tactical field handling, and equipment durability feedback."
@@ -73,6 +78,7 @@ Provides frontline operator feedback, ergonomics testing, and field reliability 
 
 # NN Opportunity
 ## NN Opportunity: Automated Remote Trap Triggering
+slug:: automated-remote-trap-triggering
 opportunityId:: "OPP-001"
 opportunityName:: "Automated Remote Trap Triggering"
 opportunityDescription:: "Transitioning from traditional pneumatic foot-pedal cables to encrypted RF wireless triggering mechanisms to eliminate trip hazards and speed up containment."
@@ -88,6 +94,7 @@ tags:: [opportunity, hardware, wireless, safety]
 Transitioning from pneumatic foot-pedal cables to encrypted RF wireless triggering mechanisms to improve field response efficiency.
 
 ## NN Opportunity: Super-Charged Particle Stream Neutralizer
+slug:: super-charged-particle-stream-neutralizer
 opportunityId:: "OPP-002"
 opportunityName:: "Super-Charged Particle Stream Neutralizer"
 opportunityDescription:: "Developing a high-frequency beam stream neutralizer to increase particle thrower locking efficiency and prevent pack overheating."
@@ -105,6 +112,7 @@ Developing a secondary frequency modulator to increase particle beam locking eff
 # NN Initiative
 
 ## NN Initiative: Wireless Muon Trap Foot-Pedal
+slug:: wireless-muon-trap-foot-pedal
 initiativeId:: "INI-001"
 initiativeName:: "Wireless Muon Trap Foot-Pedal"
 initiativeType:: "Hardware Innovation"
@@ -134,6 +142,7 @@ initiativeNotes:: "Passed internal bench testing on 2026-08-18. Field deployment
 tags:: [initiative, hardware, rf-trigger, field-tested]
 
 ## NN Initiative: Subterranean Grid Power Auto-Coupler
+slug:: subterranean-grid-power-auto-coupler
 initiativeId:: "INI-002"
 initiativeName:: "Subterranean Grid Power Auto-Coupler"
 initiativeType:: "Facility Automation"

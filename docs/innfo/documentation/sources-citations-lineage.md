@@ -127,6 +127,22 @@ the record itself, and `staging/` never appear as nodes.
 
 `derived_from` fields are typed `citation` and carry exact upstream `@` or file-level references. `version` is `V<rank>` (the 1-based position in the family order) and `superseded_by` holds the next member's path; the latest member carries neither `superseded_by` nor any archive field.
 
+### The Console Lineage Tab & the Changeset Chain
+
+In the generated console, each element modal exposes a **Lineage** tab with two
+sections: **History** (the changesets that touched the element) and **Citations**
+(the Sources it derives from). A per-field **Origin** control opens the Citation
+for that field. The canonical nouns are **Source**, **Citation** and **Lineage**
+— never "provenance", "traceability" or "grounding".
+
+A changeset is itself a lineage node. A field's `sources` points at the change
+that last touched it (`changes/<cs>@## NN Change: <id>`); that change carries the
+evidence it derives from (`sources::`, sealed with the proposal) and, when it
+replaced an earlier citation, the value it displaced (`replaced_sources::`). The
+chain is followed field → change → (`sources` | `replaced_sources`) → … until a
+Source or a change with neither. Git keeps the file history; no model snapshot is
+needed.
+
 ### Drift gate
 
 The persisted record is only trustworthy if its managed view sections equal a

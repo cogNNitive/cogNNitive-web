@@ -17,6 +17,7 @@ The Ghostbusters Subterranean Containment Grid Upgrade Project aims to expand sp
 # NN Phases
 
 ## NN Phases: Engineering & Prototyping
+slug:: engineering-prototyping
 phase_status:: completed
 start_date:: "2026-08-01"
 end_date:: "2026-08-20"
@@ -24,6 +25,7 @@ tags:: [phase, engineering, schematics]
 Design particle confinement schematics, calculate voltage load tolerance, and gain partner approval.
 
 ## NN Phases: Hardware Fabrication & Vault Coupling
+slug:: hardware-fabrication-vault-coupling
 phase_status:: in_progress
 start_date:: "2026-08-21"
 end_date:: "2026-09-15"
@@ -31,6 +33,7 @@ tags:: [phase, fabrication, electrical, heavy-hardware]
 Fabricate secondary laser matrix cells, install heavy transformer relays, and wire auxiliary generators.
 
 ## NN Phases: Grid Stress Testing & Commissioning
+slug:: grid-stress-testing-commissioning
 phase_status:: not_started
 start_date:: "2026-09-16"
 end_date:: "2026-10-01"
@@ -40,16 +43,19 @@ Conduct high-voltage load testing under simulated power outages and gain municip
 # NN Milestone
 
 ## NN Milestone: Blueprint Approval Gate
+slug:: blueprint-approval-gate
 target_date:: "2026-08-20"
 milestone_status:: achieved
 tags:: [milestone, approval, design]
 
 ## NN Milestone: Auxiliary Containment Cell Installation
+slug:: auxiliary-containment-cell-installation
 target_date:: "2026-09-15"
 milestone_status:: in_progress
 tags:: [milestone, facility, capacity]
 
 ## NN Milestone: Full Grid Containment Signoff
+slug:: full-grid-containment-signoff
 target_date:: "2026-10-01"
 milestone_status:: planned
 tags:: [milestone, compliance, signoff]
@@ -57,20 +63,24 @@ tags:: [milestone, compliance, signoff]
 # NN Deliverable
 
 ## NN Deliverable: High-Voltage Vault Blueprint
+slug:: high-voltage-vault-blueprint
 tags:: [deliverable, schematics, engineering]
 Technical schematics detailing laser grid confinement fields and transformer wiring.
 
 ## NN Deliverable: Auxiliary Laser Matrix Cell
+slug:: auxiliary-laser-matrix-cell
 tags:: [deliverable, hardware, containment-cell]
 Secondary subterranean storage cell expanding ghost capacity by 400 units.
 
 ## NN Deliverable: Automated Backup Power Switch
+slug:: automated-backup-power-switch
 tags:: [deliverable, electrical, generator, fail-safe]
 Automatic transfer switch coupling main city power to the auxiliary diesel generator upon voltage drop.
 
 # NN Task
 
 ## NN Task: Calibrate Particle Accelerators
+slug:: calibrate-particle-accelerators
 status:: done
 priority:: high
 duration:: 4d
@@ -82,6 +92,7 @@ tags:: [task, calibration, accelerator, physics]
 Calculate required megawatt load to stabilize high-density spectral entities in vault cells.
 
 ## NN Task: Install Auxiliary Laser Matrix
+slug:: install-auxiliary-laser-matrix
 status:: in_progress
 priority:: critical
 depends_on:: [[Calibrate Particle Accelerators]]
@@ -94,6 +105,7 @@ tags:: [task, installation, laser-matrix, subterranean]
 Mount high-frequency laser emitter banks inside the subterranean vault expansion chamber.
 
 ## NN Task: Couple Diesel Backup Generator
+slug:: couple-diesel-backup-generator
 status:: in_progress
 priority:: high
 depends_on:: [[Install Auxiliary Laser Matrix]]
@@ -106,6 +118,7 @@ tags:: [task, power, generator, backup]
 Wire the heavy auxiliary diesel generator to the containment grid automatic transfer switch.
 
 ## NN Task: Execute Full Load Grid Test
+slug:: execute-full-load-grid-test
 status:: backlog
 priority:: critical
 depends_on:: [[Couple Diesel Backup Generator]]
@@ -120,12 +133,14 @@ Simulate main city power shutdown to verify automatic switchover and laser grid 
 # NN Risk
 
 ## NN Risk: Municipal Power Grid Surge
+slug:: municipal-power-grid-surge
 impact:: high
 probability:: medium
 mitigation:: Install secondary transformer dampener capacitors and automatic surge suppressors.
 tags:: [risk, electrical, surge, infrastructure]
 
 ## NN Risk: Containment Grid Overfill
+slug:: containment-grid-overfill
 impact:: high
 probability:: low
 mitigation:: Purge inactive spectral class-I vapors to mobile holding units prior to peak season.
@@ -134,16 +149,19 @@ tags:: [risk, capacity, safety, vault]
 # NN Project roles
 
 ## NN Project roles: Chief Science Officer
+slug:: chief-science-officer
 scope:: internal
 tags:: [project-role, engineering, leadership]
 Leads nuclear engineering design, voltage calculations, and containment grid testing.
 
 ## NN Project roles: Senior Paranormal Technician
+slug:: senior-paranormal-technician
 scope:: internal
 tags:: [project-role, installation, field-ops]
 Handles heavy hardware installation, wiring, and high-voltage generator coupling.
 
 ## NN Project roles: Operations Director
+slug:: operations-director
 scope:: internal
 tags:: [project-role, management, finance]
 Manages budget allocation, municipal relations, and overall project schedule.

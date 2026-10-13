@@ -1,41 +1,107 @@
 {
-  "generatedAt": "2026-10-13T17:20:13.589Z",
-  "head": "958db6798a0658840e964eaaf4d1cf896941e861",
+  "generatedAt": "2026-10-13T21:36:57.692Z",
+  "head": "3cda13791e78ec9c390a55d299f7e42e2d6fc3c7",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.18.0",
       "pinnedTagDate": "2026-10-13T18:33:32+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 4,
+      "filesTouched": [
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-sources/scripts/lib/innfo-core.generated.cjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.30.0",
       "pinnedTagDate": "2026-10-13T18:33:32+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 6,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-3_analysis_NN.md",
+        "iNNfo/specs/bluepriNNts/business-model/samples/Ghostbusters_V_0-3-1_business-model_NN.md",
+        "iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-4-1_business_NN.md",
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/changes/assets/console-view-changes.js",
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/design-presets/samples/Ghostbusters_V_0-3-1_design-presets_NN.md",
+        "iNNfo/specs/bluepriNNts/documentation/samples/Ghostbusters_V_0-3-2_documentation_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-3-3_innovation_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-3_metrics_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-3-3_organization_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-3-2_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-3_projects_NN.md",
+        "iNNfo/specs/bluepriNNts/repository/samples/Ghostbusters_V_0-2-0_repository_NN.md"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.30.0",
       "pinnedTagDate": "2026-10-13T18:33:32+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 6,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/analysis/samples/Ghostbusters_V_0-3-3_analysis_NN.md",
+        "iNNfo/specs/bluepriNNts/business-model/samples/Ghostbusters_V_0-3-1_business-model_NN.md",
+        "iNNfo/specs/bluepriNNts/business/samples/Ghostbusters_V_0-4-1_business_NN.md",
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/changes/assets/console-view-changes.js",
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/design-presets/samples/Ghostbusters_V_0-3-1_design-presets_NN.md",
+        "iNNfo/specs/bluepriNNts/documentation/samples/Ghostbusters_V_0-3-2_documentation_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/samples/Ghostbusters_V_0-3-3_innovation_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-3_metrics_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/samples/Ghostbusters_V_0-3-3_organization_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-3-2_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/samples/Ghostbusters_V_0-3-3_projects_NN.md",
+        "iNNfo/specs/bluepriNNts/repository/samples/Ghostbusters_V_0-2-0_repository_NN.md"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.17.0",
       "pinnedTagDate": "2026-10-13T18:33:32+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 4,
+      "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
+        "iNNfo/packages/innfo-mcp/src/server.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/feedback-verdict.spec.ts",
+        "iNNfo/packages/innfo-mcp/test/apply-change-persist.test.ts",
+        "iNNfo/packages/innfo-mcp/test/apply-change-rejections.test.ts",
+        "iNNfo/packages/innfo-mcp/test/apply-change.test.ts",
+        "iNNfo/packages/innfo-mcp/test/console-export-roundtrip.test.ts"
+      ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.10.0",
       "pinnedTagDate": "2026-10-13T18:33:32+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 6,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "scripts/export-console.mjs"
+      ]
     }
   }
 }

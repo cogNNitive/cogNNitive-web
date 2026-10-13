@@ -11,8 +11,8 @@
   // D5: the kit is a hard dependency; fail loudly rather than degrade silently.
   if (!UI) throw new Error('InnfoUI missing: load ui-kit.js first')
 
-  var STORE_PREFIX = 'innfo-console:v2:'
-  var STORE_VERSION = 2
+  var STORE_PREFIX = 'innfo-console:v3:'
+  var STORE_VERSION = 3
   var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
   var REVIEW_STATES = ['none', 'reviewed', 'changed']
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
@@ -87,19 +87,20 @@
 
   // Options: `onError(err)` is called when a write fails (the draft stays in memory
   // only); `onRemoteChange()` is called after another tab changed this store.
-  function createDraftStore(storage, modelId, modelVersion, options) {
+  // The store is keyed by the console's stable store key only (the domain id for a
+  // domain console, `::view:<id>` for a standalone view). It records no model or
+  // domain version: staleness is per draft (`base_hash`), never at the store level.
+  function createDraftStore(storage, modelId, options) {
     var opts = isObject(options) ? options : {}
     var resolved = resolveStorage(storage)
     var backing = resolved.storage
     var persistent = resolved.persistent
     var key = STORE_PREFIX + String(modelId == null ? '' : modelId)
-    var liveVersion = modelVersion == null ? '' : String(modelVersion)
 
     function emptyState() {
       return {
         v: STORE_VERSION,
         modelId: modelId,
-        modelVersion: liveVersion,
         drafts: [],
         reviewed: {},
       }
@@ -136,14 +137,9 @@
           reviewed[id] = String(parsed.reviewed[id])
         })
       }
-      // The version the drafts were authored against is sticky while drafts
-      // exist; a fully exported (empty) store rebases to the live version.
-      var recorded =
-        drafts.length > 0 && parsed.modelVersion != null ? String(parsed.modelVersion) : liveVersion
       return {
         v: STORE_VERSION,
         modelId: modelId,
-        modelVersion: recorded,
         drafts: drafts,
         reviewed: reviewed,
       }
@@ -190,9 +186,6 @@
     return {
       persistent: persistent,
       key: key,
-      modelVersion: function () {
-        return state.modelVersion
-      },
       drafts: function () {
         return deepCopy(state.drafts)
       },
@@ -358,7 +351,7 @@
 
   // The payload groups resolved citations by field (`{ field: [citation] }`), but
   // UI.EditModal renders a flat list of `{ origin, source, quote }`. Flatten and
-  // map here so the modal's "Source Provenance & Citations" section renders.
+  // map here so the modal's "Citations" section renders.
   function flattenCitations(citations) {
     if (Array.isArray(citations)) return citations
     if (!isObject(citations)) return []
@@ -715,7 +708,7 @@
       return true
     }
 
-    // Info entry point: the same single modal, opened on the History/Provenance
+    // Info entry point: the same single modal, opened on the Lineage
     // tab. Available in both review modes (it is not a review control).
     function openInfo(anchorData) {
       return openEdit(Object.assign({}, anchorData, { info: true }))

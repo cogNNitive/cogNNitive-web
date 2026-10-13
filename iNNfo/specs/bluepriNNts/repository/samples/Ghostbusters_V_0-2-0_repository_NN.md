@@ -13,6 +13,7 @@ title: "Ghostbusters Inc. Firmware & Telemetry Repository Model"
 # NN Repository
 
 ## NN Repository: ghostbusters-core
+slug:: ghostbusters-core
 name:: ghostbusters/ectoplasm-telemetry
 remote_url:: https://github.com/ghostbusters/ectoplasm-telemetry
 description:: Central telemetry firmware and laser containment grid control daemon.
@@ -20,6 +21,7 @@ description:: Central telemetry firmware and laser containment grid control daem
 # NN State
 
 ## NN State: Production Operational
+slug:: production-operational
 status:: active
 default_branch:: main
 visibility:: private
@@ -28,6 +30,7 @@ Primary operational release line running continuously on Tribeca headquarters la
 # NN Releases
 
 ## NN Releases: Release v2.4.0
+slug:: release-v240
 version:: v2.4.0
 released_at:: 2026-09-01T12:00:00Z
 notes:: High-voltage grid laser stabilization and PKE sensor auto-calibration firmware.
@@ -35,12 +38,14 @@ notes:: High-voltage grid laser stabilization and PKE sensor auto-calibration fi
 # NN Changes
 
 ## NN Changes: Patch Particle Valve Controller
+slug:: patch-particle-valve-controller
 summary:: Calibrate thrower stream decay rate and reduce heat dissipation by 18%.
 author:: Egon Spengler
 hash:: 8f4e2a1
 Critical particle valve governor update preventing thermal pack runaway during prolonged entity tethering.
 
 ## NN Changes: Add Containment Telemetry Socket
+slug:: add-containment-telemetry-socket
 summary:: Stream real-time vault pressure telemetry to Ecto-1 mobile radio unit.
 author:: Ray Stantz
 hash:: 3b9c7d2

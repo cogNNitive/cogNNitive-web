@@ -17,6 +17,7 @@ title: "Ghostbusters Inc. Visual Design Presets"
 # NN DesignPreset
 
 ## NN DesignPreset: Ghostbusters Tech Noir
+slug:: ghostbusters-tech-noir
 name:: Ghostbusters Tech Noir
 description:: High-contrast nocturnal aesthetic with proton-beam amber and ectoplasm cyan accents.
 category:: unified
@@ -29,6 +30,7 @@ illustration_negative_prompt:: cartoonish, bright pastel colors, low contrast, o
 sample_preview:: assets/ghostbusters-tech-noir.png
 
 ## NN DesignPreset: Retro Spengler Comic
+slug:: retro-spengler-comic
 name:: Retro Spengler Comic
 description:: Vintage hand-drawn comic book art style with halftones, bold ink lines, and vibrant retro colors.
 category:: unified
@@ -41,6 +43,7 @@ illustration_negative_prompt:: realistic photograph, 3d cgi, soft gradients, cle
 sample_preview:: assets/retro-spengler-comic.png
 
 ## NN DesignPreset: Ecto Neon Glow
+slug:: ecto-neon-glow
 name:: Ecto Neon Glow
 description:: Vibrant glowing neon style on deep black backgrounds, inspired by paranormal entity signatures.
 category:: video

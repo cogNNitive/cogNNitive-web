@@ -1,7 +1,7 @@
 ---
 name: nn-innfo
-version: "V_0-5-8"
-last_updated: 2026-10-09
+version: "V_0-5-9"
+last_updated: 2026-10-13
 metadata:
   source_type: "original"
   mcp: "innfo-mcp"
@@ -346,7 +346,7 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
 | `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
 | `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
-| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist with snapshot archival) from changes/ documents or legacy intent operations. |
+| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or legacy intent operations. |
 | `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
 | `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
 | `init_knowledge` | Initialize or repair a level-3 knowledge document file: writes canonical YAML frontmatter and, when the file has no concept sections and the blueprint resolves, scaffolds a starter body (index block + one section per Concept) from the blueprint schema. Returns blueprintResolved / scaffolded / warnings. |
@@ -426,6 +426,15 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
 8. **Conversational instruction:** If the project has cognitivized sources (files under `sources/` with sidecars), the agent should suggest adding `sources::`. If it is a greenfield / creative model from scratch, the agent does NOT request or require citations. In both cases the skill's general rule applies: never invent a `<ref>` or content that is not verifiably present in the cited file.
 9. **Retrieval queries (`?`) are never a citation.** A `path?filter=value` expression (e.g. `metricas_q3.csv?segmento=Enterprise`) selects a SET of units for retrieval tools — it MUST NEVER appear inside `sources::` (the validator rejects it: run the query, then cite the resulting `@` pointers). `@` addresses one unit; `?` selects many; the two never mix in one string.
 10. **`conflicts::` flags disagreeing Sources.** `conflicts::` is a reserved, OPTIONAL element property with the identical pointer-array grammar as `sources::` (same `<ref>` syntax, same bracketed-list requirement, same `@unit`/`&subunit` addressing). It is used when 2+ cited Sources genuinely disagree on a fact backing the element. The validator checks each `conflicts::` pointer exactly like a `sources::` pointer (same malformed-reference errors), but a `conflicts::` reference is **never** treated as a citation edge — it never contributes to `node.sources` or to any Lineage relationship. A valid `conflicts::` pointer instead raises a `SRC_CONFLICT_FLAGGED` warning, surfacing the disagreement for human review. Resolution is manual and out of band: state which Source is authoritative (or how the conflict was reconciled) in the element's `rationale::` field — there is no automated precedence or conflict-resolution ranking.
+11. **A change derived from evidence MUST carry `sources::`.** A change block (`## NN Change: <id>`) that derives from a Source, an imported old domain, or a transcript MUST declare a `sources::` line citing its evidence, in the single `<ref>` grammar above (a bare path or `<path>@<unit>`); a change with no evidence — a bare review comment — omits it. The proposer writes it at proposal time and it is sealed into the proposal; `apply_change` only verifies that every citation resolves and **never adds, removes or rewrites** it (an unresolvable citation rejects the whole changeset with `CITATION_UNRESOLVED`, writing nothing). Example:
+    ```markdown
+    ## NN Change: c-01
+    op:: update_field
+    target:: strategy@vision&statement
+    from:: "Initial draft"
+    to:: "Accelerate renewable adoption"
+    sources:: sources/import/client_interview_transcript.md@## Key Feedback
+    ```
 
 ---
 
