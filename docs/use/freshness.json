@@ -1,14 +1,15 @@
 {
-  "generatedAt": "2026-10-13T06:20:43.414Z",
-  "head": "85f31270785aa36f2f378788c13714feefb4b480",
+  "generatedAt": "2026-10-13T06:51:28.453Z",
+  "head": "bd0b4a1d9747884032232a52eb1c0c33b1dc36b3",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.16.0",
       "pinnedTagDate": "2026-10-10T03:37:00+02:00",
-      "commitsSincePin": 16,
+      "commitsSincePin": 17,
       "filesTouched": [
         "skills/nn-innfo/SKILL.md",
+        "skills/nn-preflight/SKILL.md",
         "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
         "skills/nn-preflight/scripts/preflight-check.js",
         "skills/nn-skills-lifecycle/scripts/skills-manager.js",
@@ -53,28 +54,20 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.16.0",
       "pinnedTagDate": "2026-10-12T11:36:36+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 2,
       "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/innfo-mcp/test/apply-change-rejections.test.ts"
       ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.9.8",
-      "pinnedTagDate": "2026-10-12T11:36:36+02:00",
-      "commitsSincePin": 10,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
-        "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "scripts/export-console.mjs"
-      ]
+      "pinnedTag": "innfo-console-v0.9.9",
+      "pinnedTagDate": "2026-10-13T07:40:08+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }
