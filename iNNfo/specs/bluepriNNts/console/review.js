@@ -308,18 +308,73 @@
     return out
   }
 
-  function verdictsByElement(feedbackState, elementsById) {
-    var entries = Array.isArray(feedbackState) ? feedbackState : []
-    var byId = isObject(elementsById) ? elementsById : {}
+  function normalizeAddressKey(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+  }
+
+  // Badges derive only from changesets: `applied` / `conflict` from each element's
+  // changeset `history`, `proposed` from the domain payload's proposed changesets.
+  // Local drafts and reviewer verdicts never produce a badge; entries whose element
+  // no longer exists are dropped.
+  function badgesByElement(elements, changes) {
+    var list = Array.isArray(elements) ? elements : []
+    var changesets = Array.isArray(changes) ? changes : []
     var out = {}
-    entries.forEach(function (entry) {
-      if (!isObject(entry)) return
-      var elId = entry.element_id
-      if (!elId || !byId[elId]) return
-      var status = entry.status
-      if (!status) return
+    function bump(elId, status) {
+      if (!elId || !status) return
       if (!out[elId]) out[elId] = {}
       out[elId][status] = (out[elId][status] || 0) + 1
+    }
+    list.forEach(function (el) {
+      if (!el || !el.id) return
+      var history = Array.isArray(el.history) ? el.history : []
+      history.forEach(function (h) {
+        if (!isObject(h)) return
+        if (h.status === 'applied' || h.status === 'conflict') bump(el.id, h.status)
+      })
+    })
+    function keysOf(el) {
+      var keys = {}
+      if (el && el.id) {
+        var id = String(el.id)
+        keys[normalizeAddressKey(id)] = true
+        var at = id.indexOf('@')
+        if (at !== -1) keys[normalizeAddressKey(id.slice(at + 1))] = true
+      }
+      if (el && el.name) keys[normalizeAddressKey(el.name)] = true
+      return keys
+    }
+    changesets.forEach(function (cs) {
+      if (!isObject(cs) || cs.status !== 'proposed') return
+      var items = Array.isArray(cs.changes) ? cs.changes : []
+      items.forEach(function (c) {
+        if (!isObject(c)) return
+        var target = String(c.target || '')
+        var at = target.indexOf('@')
+        if (at === -1) return
+        var modelPart = target.slice(0, at)
+        var elementPart = target.slice(at + 1).split('&')[0].trim()
+        if (!elementPart) return
+        var forms = [normalizeAddressKey(elementPart), normalizeAddressKey(modelPart + elementPart)]
+        for (var i = 0; i < list.length; i++) {
+          var el = list[i]
+          if (!el || !el.id) continue
+          var keys = keysOf(el)
+          var hit = false
+          for (var f = 0; f < forms.length; f++) {
+            if (forms[f] && keys[forms[f]]) {
+              hit = true
+              break
+            }
+          }
+          if (hit) {
+            bump(el.id, 'proposed')
+            break
+          }
+        }
+      })
     })
     return out
   }
@@ -374,34 +429,6 @@
     return out
   }
 
-  function draftToItem(draft) {
-    var d = isObject(draft) ? draft : {}
-    var isMatrix = d.matrix != null && d.matrix !== ''
-    var target = isMatrix
-      ? {
-          matrix: String(d.matrix),
-          row: String(d.row || ''),
-          col: String(d.col || ''),
-          element: String(d.element || ''),
-        }
-      : {
-          element_id: String(d.element_id || ''),
-          concept: String(d.concept || ''),
-          element: String(d.element || ''),
-        }
-    if (!isMatrix && d.field !== undefined && d.field !== null) target.field = String(d.field)
-    var item = {
-      id: typeof d.id === 'string' && d.id ? d.id : 'fb-001',
-      kind: ITEM_KINDS.indexOf(d.kind) !== -1 ? d.kind : 'comment',
-      target: target,
-    }
-    if (d.original !== undefined) item.original = d.original
-    if (d.proposed !== undefined) item.proposed = d.proposed
-    if (d.comment !== undefined && d.comment !== null) item.comment = String(d.comment)
-    if (!isMatrix) item.base_hash = String(d.base_hash || '')
-    return item
-  }
-
   // ---- Review controller (Slice 2) ----
 
   function makeEl(doc, tag, cls, text) {
@@ -415,6 +442,7 @@
     var options = isObject(opts) ? opts : {}
     var meta = isObject(options.meta) ? options.meta : {}
     var elements = Array.isArray(options.elements) ? options.elements : []
+    var changes = Array.isArray(options.changes) ? options.changes : []
     var needs = Array.isArray(options.needs) ? options.needs : []
     var store = options.store
     var elementsById = {}
@@ -1181,14 +1209,13 @@
 
     function decorateBadges() {
       if (!doc.querySelectorAll) return
-      var feedbackState = Array.isArray(meta.feedbackState) ? meta.feedbackState : []
-      if (!feedbackState.length) return
-      var verdicts = verdictsByElement(feedbackState, elementsById)
+      var badges = badgesByElement(elements, changes)
+      if (!Object.keys(badges).length) return
       Array.prototype.forEach.call(
         doc.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
         function (card) {
           var elId = card.getAttribute('data-element-id')
-          var statuses = verdicts[elId]
+          var statuses = badges[elId]
           if (!statuses) return
           var head = card.querySelector('.innfo-card-head') || card
           var host = head.querySelector('[data-innfo-review-badges]')
@@ -1428,10 +1455,9 @@
     isTargetChanged: isTargetChanged,
     isAlreadyApplied: isAlreadyApplied,
     progressByConcept: progressByConcept,
-    verdictsByElement: verdictsByElement,
+    badgesByElement: badgesByElement,
     changedIds: changedIds,
     canReview: canReview,
     flattenCitations: flattenCitations,
-    draftToItem: draftToItem,
   }
 })

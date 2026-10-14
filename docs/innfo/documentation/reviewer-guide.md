@@ -34,7 +34,7 @@ Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cance
 ### 4. Reviewed Marks, Progress and Verdict Badges
 - Each card has a **reviewed** toggle. A mark counts as reviewed only while its recorded hash matches the element's current hash; if the element changed, the toggle shows **changed** and does not count.
 - The concept rail shows `reviewed/total` plus the pending-draft count per concept, in both console renderers.
-- Elements with entries in `meta.feedbackState` show a status badge (`pending`, `applied`, `rejected`, `stale`). These badges come from the feedback ledger, never from local drafts, and reviewers cannot set a verdict from the console.
+- Elements targeted by a changeset show a status badge: `applied` or `conflict` for changes an applied changeset performed, and `proposed` for a change in a proposed changeset. These badges come from changesets, never from local drafts, and reviewers cannot set a verdict from the console.
 
 ### 5. Changed-Since-Last-Review Filter
 `changed` shows only elements whose current hash differs from the hash recorded when last marked reviewed. Never-reviewed elements are not changed.
@@ -46,15 +46,15 @@ In review mode:
 
 Shortcuts are ignored while typing in an input, textarea or select, while a popover is open, or with Ctrl/Meta/Alt held. The popover traps Tab focus, and the draft counter is announced through an `aria-live="polite"` region.
 
-### 7. Exporting the Feedback Document
-Click **Export feedback** in the header banner. The modal shows a live **preview** of every item, validates the document as you type the identifier, and disables **Download** and **Copy to clipboard** while invalid, naming the offending item. Download and copy always emit the **same bytes**. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the JSON for manual copy or `document.execCommand('copy')`, and reports the outcome.
+### 7. Exporting the Changeset
+Click **Export changes** in the header banner. The modal shows a live **preview** of the changeset your drafts produce (one `## NN Change:` per draft), and disables **Download** and **Copy changeset** until a reviewer identifier is entered. Download and copy always emit the **same bytes** — the changeset document. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the preview for manual copy or `document.execCommand('copy')`, and reports the outcome.
 
-Files are named `<Model>_V_<Version>_<user>_feedback_<YYYYMMDD-HHMMSS>.json`. Each item carries `id`, `kind`, `target` (`element_id`, `concept`, `element`, optional `field`), `comment`/`proposed`, and `base_hash`; items never carry `status`.
+Files are named `<model>_<reviewer-slug>_<YYYYMMDD-HHmmss>_changes_NN.md`. Each change carries `op`, `target` (the D5 address `model@element&field`), `from`/`to` or `notes`, and `author::`; changes never carry a `status` verdict.
 
 ### 8. Where Drafts Live
 Drafts are stored in `localStorage` under a single key, `innfo-console:v3:<storeKey>`, anchored by `element_id` plus `base_hash`. The `storeKey` is the console's stable store key only: the domain id for a domain console (`<folder>-<hash>`), or `<domain id>::view:<id>` for a standalone view export. The store records **no model or domain version**: staleness is **per draft**, so a draft whose element hash drifted is flagged **target changed** and remains exportable, while a model version bump never invalidates unrelated drafts.
 
 Drafts saved by older consoles under an earlier store version (`innfo-console:v2:*`) or the legacy title-and-version key (`innfo-console:drafts:*`) are **not** read, migrated or deleted: a store written with an earlier `STORE_VERSION` simply reads as empty.
 
-### 9. Ingesting Feedback
-Normalized feedback documents ingest via `nn-sources` or the `reconcile_feedback` procedure, with items indexed under `### fb-001` headings followed by `- **Kind**:` bullets.
+### 9. Applying a Reviewed Changeset
+The reviewer returns the exported `_changes_NN.md` file; the agent applies it with `apply_change`, which validates and persists the changes atomically and records the outcome in the changeset. There is no separate feedback import: changesets are the only change record.

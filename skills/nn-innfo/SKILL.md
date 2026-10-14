@@ -1,6 +1,6 @@
 ---
 name: nn-innfo
-version: "V_0-5-9"
+version: "V_0-5-10"
 last_updated: 2026-10-13
 metadata:
   source_type: "original"
@@ -337,7 +337,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/innfo-core`.
 
 <!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
-**20** tools
+**18** tools
 
 | Tool | Description |
 |------|-------------|
@@ -356,9 +356,7 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `check_domain` | Run one consolidated domain integrity pass over every Level-3 knowledge document: validate each against its blueprint and traceability, self-heal missing blueprint packages/specs (write-once hydration), classify each pinned blueprint version against the published catalog, compare the managed sections of the lineage record with a fresh projection (error LINEAGE_DRIFT in the lineage field of the report; read-only), and return one report with a per-knowledge status and a domain aggregate. Non-blocking and informational — validation failures never fail the tool. |
 | `query_units` | Run a read-only content query over one workspace file and return matching knowledge-unit URIs: "path?filter=value[&filter...][&projection]". Filters use exact match (trimmed, case-insensitive); a trailing bare segment projects one column/field over the matches. Capped at 100 results with truncated=true. Pass max_values_chars to cap projected value characters for slice-only surgical reads. Never writes files. |
 | `cognitivize` | Create or refresh the sidecar (`<file>_sidecar_NN.md`) of one raw markdown, CSV, or JSON file in place, so it can be cited. Binary formats (pdf, docx, images, ...) are never converted here: the result has status `requires-cli` and nothing is written (use the nn-sources CLI). Paths outside the workspace, sidecars, and NN documents are rejected. |
-| `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "reviewer" \| "document"), resolved from the heading the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
-| `record_feedback_verdict` | Append a validated verdict entry to the root feedback-ledger.jsonl. Refuses writes if item is orphaned or stale without confirm_stale. |
-| `evaluate_feedback_items` | Evaluate feedback items staleness and orphan status against current model. Appends stale entries to the root feedback-ledger.jsonl idempotently. |
+| `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
 | `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
 <!-- /generated:mcp-tools -->
@@ -460,16 +458,6 @@ Every skill-driven `.md` write (new model, app, specialization, or full-file rew
 3. **FORBIDDEN:** shell `echo` / `printf` redirection for file writes — they mangle encodings, join lines, and drop trailing newlines.
 4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_knowledge` — no encoding or line-joining diagnostics may appear.
 
-#### Agent Modification lineage (MANDATORY on every successful `apply_change`)
-
-Whenever an `innfo-mcp_apply_change` call returns `success: true` **and** a `modification` field, you MUST paste that block **verbatim** into your reply, under its own `## NN Agent Modification: <slug>` heading exactly as returned (the block already opens with that heading — reproduce it, do not re-slug it). This makes the synthetic reasoning addressable by heading-slug, so a promoted transcript is citeable via `@` pointers — pasted modifications via `sources:: [sources/conversations/<session-slug>_<UTC stamp>.md@## NN Agent Modification: <scope>]` and transcript turns via `sources:: [sources/conversations/<session-slug>_<UTC stamp>.md@## NN Turn NN: <author-id>]`. The `#` fragment form (`#<slug>`) MUST NOT be used for `## NN …: …` headings: the Concept/Element boundary in their slug contains `--`, which `parseSourceRef` rejects (`KU_MALFORMED`).
-
-- The returned block carries `rationale:: _`. Replace `_` with your concrete reasoning for the change **at paste time** — the pasted block MUST NOT keep an unfilled `rationale:: _`.
-- The returned block carries `author:: _`. Replace `_` with your own tool id — the identifier of the agent you are (e.g. `OpenCode`, `Antigravity`, `ClaudeCode`) — **at paste time**; the pasted block MUST NOT keep an unfilled `author:: _`.
-- Pass `rationale` (and, when the user explicitly authorized the change, `approved_by: "user"`) and your own `author: "<your-tool-id>"` in the `apply_change` `args` so the block is populated at the source: `args: { …, rationale: "why", approved_by: "user", author: "<your-tool-id>" }`. The tool id you pass IS the id you paste — same identifier convention.
-- On a **failed** mutation (`success: false`, no `modification`), do NOT fabricate a block.
-- One heading per successful change; do not merge multiple modifications under one heading.
-
 #### Atomic version bump
 
 To raise the version of a Level 3 model and its associated app (parent_spec), use the MCP's `bump_version` operation — do NOT edit the frontmatter by hand:
@@ -531,7 +519,7 @@ Shall we proceed with this modification?
 - [x] Cancel
 ```
 
-Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_knowledge`. Feed the "Rationale" line from this preview into `apply_change` as `args.rationale`, and — since the user just confirmed — pass `args.approved_by: "user"` and `args.author: "<your-tool-id>"` so the block is populated at the source. Then paste the returned `modification` block verbatim per §5 (Agent Modification lineage).
+Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_knowledge`.
 
 #### Applying a Source-Convergence Proposal
 

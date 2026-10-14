@@ -125,11 +125,6 @@ async function main() {
     totalPassed += duplicateBodyHashResult.passed;
     totalFailed += duplicateBodyHashResult.failed;
 
-    const changeLogTest = require('./unit/test-change-log');
-    const changeLogResult = await changeLogTest.run();
-    totalPassed += changeLogResult.passed;
-    totalFailed += changeLogResult.failed;
-
     const impactCheckerTest = require('./unit/test-impact-checker');
     const impactCheckerResult = await impactCheckerTest.run();
     totalPassed += impactCheckerResult.passed;

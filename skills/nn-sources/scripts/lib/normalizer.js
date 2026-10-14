@@ -69,12 +69,6 @@ function createNormalizer({ projectDir, webImportMeta = {}, notes = new Map() })
       metadata.source_type = 'conversation_transcript';
     }
 
-    if (ext === 'json' && converters.isFeedbackJsonPath(rel)) {
-      // Throws on an invalid payload, so the scan skips and reports the file.
-      converters.validateFeedbackJson(JSON.parse(Buffer.from(bytes).toString('utf8')));
-      metadata.source_type = 'feedback';
-    }
-
     if (TEXT_NATIVE_FORMATS.has(ext)) return { body: '', normalizedBy, metadata };
 
     if (dotExt in converters.PROMPT_CONVERTERS) {

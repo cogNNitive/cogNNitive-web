@@ -1,41 +1,93 @@
 {
-  "generatedAt": "2026-10-13T22:12:26.877Z",
-  "head": "b1e06bbcc8f479df7660113c4cd1d607d437f186",
+  "generatedAt": "2026-10-14T04:10:57.377Z",
+  "head": "b8cd1cd5ee83c86d5a6afbd1249c18d56a8a0cd0",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.19.0",
       "pinnedTagDate": "2026-10-13T23:35:42+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 5,
+      "filesTouched": [
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-innfo/templates/workspace_spec_iNNfo_NN.md",
+        "skills/nn-sources/SKILL.md",
+        "skills/nn-sources/scripts/lib/change-log.js",
+        "skills/nn-sources/scripts/lib/normalizer.js",
+        "skills/nn-sources/scripts/lib/scanner-converters.js",
+        "skills/nn-sources/scripts/scanner.js",
+        "skills/nn-sources/test/run.js",
+        "skills/nn-sources/test/unit/test-change-log.js",
+        "skills/nn-sources/test/unit/test-scanner.js"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.31.0",
       "pinnedTagDate": "2026-10-13T23:35:42+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 5,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/feedback.schema.json",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/reconcile_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.31.0",
       "pinnedTagDate": "2026-10-13T23:35:42+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 5,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/feedback.schema.json",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/reconcile_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.18.0",
       "pinnedTagDate": "2026-10-13T23:35:42+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 4,
+      "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
+        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/server.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/feedback-verdict.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/feedback-verdict.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/resolve-sources.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/resolve-sources.ts"
+      ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.11.0",
       "pinnedTagDate": "2026-10-13T23:35:42+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 4,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/feedback.schema.json",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "scripts/export-console.mjs"
+      ]
     }
   }
 }

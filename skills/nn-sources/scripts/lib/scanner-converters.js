@@ -323,144 +323,6 @@ function convertSubtitles(content, baseName) {
 }
 
 /**
- * Detects reviewer-feedback JSON by its canonical drop zone
- * (sources/import/feedback/).
- * @param {string} filePath
- * @returns {boolean}
- */
-function isFeedbackJsonPath(filePath) {
-  const normalized = String(filePath || '').replace(/\\/g, '/');
-  return /(^|\/)import\/feedback\//.test(normalized);
-}
-
-const FEEDBACK_ITEM_KINDS = ['correction', 'comment', 'new', 'delete'];
-const FORBIDDEN_FEEDBACK_META_KEYS = [
-  'knowledge',
-  'knowledge_version',
-  'session_label',
-  'source_model',
-  'source_model_version',
-];
-const FORBIDDEN_FEEDBACK_ITEM_KEYS = [
-  'status',
-  'layer',
-  'severity',
-  'target_hash',
-  'stale',
-  'field',
-];
-
-/**
- * Validates a parsed reviewer-feedback payload against the innfo-console
- * feedback contract (mirrors iNNfo/specs/bluepriNNts/console/feedback.schema.json).
- * Unknown draft fields are ignored. Throws naming the offending item id.
- * @param {any} parsed
- * @returns {{ meta: Record<string, any>, items: Array<Record<string, any>> }}
- */
-function validateFeedbackJson(parsed) {
-  const fail = (msg) => {
-    throw new Error(`feedback: ${msg}`);
-  };
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    fail('document must be an object with meta and items');
-  }
-  const meta = parsed.meta;
-  if (!meta || typeof meta !== 'object') fail('meta: required object is missing');
-  for (const key of FORBIDDEN_FEEDBACK_META_KEYS) {
-    if (Object.prototype.hasOwnProperty.call(meta, key)) {
-      fail(`meta.${key}: forbidden property is present`);
-    }
-  }
-  for (const key of Object.keys(meta)) {
-    if (key.startsWith('source_model') && !FORBIDDEN_FEEDBACK_META_KEYS.includes(key)) {
-      fail(`meta.${key}: forbidden property is present`);
-    }
-  }
-  for (const field of ['source_knowledge', 'artifact', 'artifact_version', 'author', 'viewer']) {
-    if (!meta[field] || typeof meta[field] !== 'string') fail(`meta.${field}: required non-empty string is missing`);
-  }
-  if (!/^V_\d+-\d+-\d+$/.test(String(meta.source_knowledge_version || ''))) {
-    fail(`meta.source_knowledge_version: must match V_x-y-z (got ${meta.source_knowledge_version})`);
-  }
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/.test(String(meta.exported_at || ''))) {
-    fail(`meta.exported_at: must be ISO-8601 with seconds (got ${meta.exported_at})`);
-  }
-  const slug = meta.feedback_slug;
-  if (typeof slug !== 'string' || slug.trim() === '') fail('meta.feedback_slug: required slug is missing');
-  if (meta.source_sha256 !== undefined) {
-    if (typeof meta.source_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(meta.source_sha256)) {
-      fail('meta.source_sha256: must be a 64-character hex string');
-    }
-  }
-  if (!Array.isArray(parsed.items)) fail('items: required array is missing');
-
-  for (let i = 0; i < parsed.items.length; i++) {
-    const item = parsed.items[i];
-    const where = item && typeof item.id === 'string' ? item.id : `#${i}`;
-    if (!item || typeof item !== 'object') fail(`${where}: must be an object`);
-    for (const key of FORBIDDEN_FEEDBACK_ITEM_KEYS) {
-      if (Object.prototype.hasOwnProperty.call(item, key)) {
-        fail(`${where}.${key}: forbidden property is present`);
-      }
-    }
-    if (!/^fb-\d{3,}$/.test(String(item.id || ''))) fail(`${where}: id must match fb-NNN (got ${item.id})`);
-    if (!FEEDBACK_ITEM_KINDS.includes(item.kind)) {
-      fail(`${where}: kind must be one of ${FEEDBACK_ITEM_KINDS.join('|')} (got ${item.kind})`);
-    }
-    if (!item.target || typeof item.target !== 'object' || Object.keys(item.target).length === 0) {
-      fail(`${where}: target must be a non-empty object`);
-    }
-    if (item.base_hash !== undefined) {
-      if (typeof item.base_hash !== 'string' || !/^[0-9a-f]{16}$/.test(item.base_hash)) {
-        fail(`${where}.base_hash: must match ^[0-9a-f]{16}$`);
-      }
-    }
-  }
-  return { meta, items: parsed.items };
-}
-
-/**
- * Converts reviewer-feedback JSON into citable markdown: one ## NN Meta
- * section plus one ### heading per item so each item is addressable via
- * sources:: <file>.md#<fb-NNN>.
- * @param {string} content
- * @param {string} baseName
- * @returns {string}
- */
-function convertFeedbackJson(content, baseName) {
-  let parsed;
-  try {
-    parsed = JSON.parse(content);
-  } catch (err) {
-    throw new Error(`feedback: invalid JSON in ${baseName} (${err.message})`);
-  }
-  const { meta, items } = validateFeedbackJson(parsed);
-
-  let out = `# NN Feedback: ${baseName}\n\n`;
-  out += `## NN Meta\n\n`;
-  out += `- **Source kNNowledge**: ${meta.source_knowledge} (${meta.source_knowledge_version})\n`;
-  out += `- **Artifact**: ${meta.artifact} (v${meta.artifact_version})\n`;
-  out += `- **Exported At**: ${meta.exported_at}\n`;
-  out += `- **Author**: ${meta.author}\n`;
-  out += `- **Slug**: ${meta.feedback_slug}\n`;
-  out += `- **Viewer**: ${meta.viewer}\n\n`;
-
-  out += `## NN Items (${items.length})\n\n`;
-  for (const item of items) {
-    out += `### ${item.id}\n\n`;
-    out += `- **Kind**: ${item.kind}\n`;
-    const target = item.target || {};
-    const targetBits = Object.keys(target).map((k) => `${k}: ${target[k]}`);
-    if (targetBits.length > 0) out += `- **Target**: ${targetBits.join('; ')}\n`;
-    if (item.original !== undefined) out += `- **Original**: ${String(item.original)}\n`;
-    if (item.proposed !== undefined) out += `- **Proposed**: ${String(item.proposed)}\n`;
-    if (item.comment) out += `- **Comment**: ${item.comment}\n`;
-    out += `\n`;
-  }
-  return out;
-}
-
-/**
  * Converts JSON content into structured markdown dataset schema profile or formatted code block.
  * Removes legacy Slack/Teams chat heuristics.
  * @param {string} content
@@ -582,7 +444,6 @@ function convertOkFormat(ext, filePath, baseName) {
     case '.md':
       return stripFrontmatter(content);
     case '.json':
-      if (isFeedbackJsonPath(filePath)) return convertFeedbackJson(content, baseName);
       return convertJson(content, baseName);
     case '.csv':
       return convertCsv(content, baseName);
@@ -1068,9 +929,6 @@ module.exports = {
   reflowExtractedText,
   layoutItemsToText,
   convertJson,
-  convertFeedbackJson,
-  validateFeedbackJson,
-  isFeedbackJsonPath,
   convertOkFormat,
   convertDocx,
   convertPdf,

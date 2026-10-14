@@ -20,13 +20,7 @@
   // by the export gate so the user must enter a real one before exporting.
   var DEFAULT_REVIEWER_NAME = 'reviewer'
   var MODEL_VERSION_PATTERN = /^V_\d+-\d+-\d+$/
-  var EXPORTED_AT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/
-  var ITEM_ID_PATTERN = /^fb-\d{3,}$/
-  var SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-  var FILENAME_PATTERN =
-    /^([A-Za-z0-9-]+)_V_(\d+-\d+-\d+)_([a-z0-9-]+)_feedback_(\d{8}-\d{6})\.json$/
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
-  var ITEM_STATUSES = ['pending', 'applied', 'rejected']
 
   function isObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -139,31 +133,6 @@
       pad2(d.getUTCMinutes()) +
       pad2(d.getUTCSeconds())
     )
-  }
-
-  function buildFeedbackFilename(model, version, slug, when) {
-    if (!model || typeof model !== 'string' || !/^[A-Za-z0-9-]+$/.test(model)) {
-      throw new Error('innfo-console: model must be a non-empty alphanumeric identifier')
-    }
-    if (!/^\d+-\d+-\d+$/.test(String(version))) {
-      throw new Error('innfo-console: version must use hyphen separators (x-y-z)')
-    }
-    var cleanSlug = slugify(slug)
-    if (!SLUG_PATTERN.test(cleanSlug)) {
-      throw new Error('innfo-console: slug is not URL-safe after slugify')
-    }
-    var stamp = stampFromDate(when === undefined ? new Date() : when)
-    return model + '_V_' + version + '_' + cleanSlug + '_feedback_' + stamp + '.json'
-  }
-
-  function parseFeedbackFilename(filename) {
-    var m = FILENAME_PATTERN.exec(String(filename || ''))
-    if (!m) return null
-    return { model: m[1], version: m[2], slug: m[3], stamp: m[4] }
-  }
-
-  function isValidExportedAt(value) {
-    return typeof value === 'string' && EXPORTED_AT_PATTERN.test(value)
   }
 
   function parseConfig(raw) {
@@ -542,21 +511,6 @@
     return out
   }
 
-  function checkStaleness(feedbackVersion, liveVersion) {
-    var fb = String(feedbackVersion || '')
-    var live = String(liveVersion || '')
-    if (fb === live) return { stale: false, report: 'feedback matches live model ' + live }
-    return {
-      stale: true,
-      report:
-        'stale feedback: pinned to ' +
-        (fb || '(unknown)') +
-        ' but live model is ' +
-        (live || '(unknown)') +
-        ' — confirm before applying',
-    }
-  }
-
   // ---- Charts (shared console capability) ----
   // The runtime renders charts from pure-data series only: `compileChartSeries`
   // maps innfo-model.series{chartId:number[]} into uPlot-ready xs/ys arrays and
@@ -646,144 +600,6 @@
       labels.push(String(y) + '-' + pad2(m))
     }
     return labels
-  }
-
-  var FORBIDDEN_META_PROPERTIES = [
-    'knowledge',
-    'knowledge_version',
-    'session_label',
-    'source_model',
-    'source_model_version',
-  ]
-  var FORBIDDEN_ITEM_PROPERTIES = [
-    'status',
-    'layer',
-    'severity',
-    'target_hash',
-    'stale',
-    'field',
-  ]
-  var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
-  var SOURCE_SHA256_PATTERN = /^[0-9a-f]{64}$/
-
-  function draftToItem(draft) {
-    return Review.draftToItem(draft)
-  }
-
-  function buildExportDoc(args) {
-    var input = isObject(args) ? args : {}
-    var meta = isObject(input.meta) ? Object.assign({}, input.meta) : {}
-    var drafts = Array.isArray(input.drafts)
-      ? input.drafts
-      : Array.isArray(input.items)
-        ? input.items
-        : []
-    var items = drafts.map(function (d, index) {
-      var item = draftToItem(d)
-      var draftId = d && d.id ? d.id : 'fb-' + String(index + 1).padStart(3, '0')
-      if (!d.id) {
-        item.id = draftId
-      }
-      if (!item.base_hash && !(d && d.matrix)) {
-        throw new Error('innfo-console: draft "' + draftId + '" is missing required base_hash')
-      }
-      return item
-    })
-    return { meta: meta, items: items }
-  }
-
-  function serializeFeedback(doc) {
-    return JSON.stringify(doc, null, 2) + '\n'
-  }
-
-  function validateFeedback(doc) {
-    var errors = []
-    if (!isObject(doc)) return { ok: false, errors: ['document: must be an object'] }
-
-    var meta = doc.meta
-    if (!isObject(meta)) {
-      errors.push('meta: required object is missing')
-    } else {
-      FORBIDDEN_META_PROPERTIES.forEach(function (key) {
-        if (Object.prototype.hasOwnProperty.call(meta, key)) {
-          errors.push('meta.' + key + ': forbidden property is present')
-        }
-      })
-      Object.keys(meta).forEach(function (key) {
-        if (key.indexOf('source_model') === 0 && FORBIDDEN_META_PROPERTIES.indexOf(key) === -1) {
-          errors.push('meta.' + key + ': forbidden property is present')
-        }
-      })
-      if (!meta.source_knowledge || typeof meta.source_knowledge !== 'string') {
-        errors.push('meta.source_knowledge: required non-empty string is missing')
-      }
-      if (!MODEL_VERSION_PATTERN.test(String(meta.source_knowledge_version || ''))) {
-        errors.push(
-          'meta.source_knowledge_version: must match V_x-y-z (got ' + meta.source_knowledge_version + ')',
-        )
-      }
-      if (!meta.artifact || typeof meta.artifact !== 'string') {
-        errors.push('meta.artifact: required non-empty string is missing')
-      }
-      if (!meta.artifact_version || typeof meta.artifact_version !== 'string') {
-        errors.push('meta.artifact_version: required non-empty string is missing')
-      }
-      if (!isValidExportedAt(meta.exported_at)) {
-        errors.push(
-          'meta.exported_at: must be ISO-8601 with seconds (got ' + meta.exported_at + ')',
-        )
-      }
-      if (!meta.author || typeof meta.author !== 'string') {
-        errors.push('meta.author: required non-empty string is missing')
-      }
-      var slug = meta.feedback_slug
-      if (typeof slug !== 'string' || !SLUG_PATTERN.test(slugify(slug))) {
-        errors.push('meta.feedback_slug: required URL-safe slug is missing')
-      }
-      if (!meta.viewer || typeof meta.viewer !== 'string') {
-        errors.push('meta.viewer: required non-empty string is missing')
-      }
-      if (meta.source_sha256 !== undefined) {
-        if (typeof meta.source_sha256 !== 'string' || !SOURCE_SHA256_PATTERN.test(meta.source_sha256)) {
-          errors.push('meta.source_sha256: must be a 64-character hex string')
-        }
-      }
-    }
-
-    if (!Array.isArray(doc.items)) {
-      errors.push('items: required array is missing')
-    } else {
-      doc.items.forEach(function (item, index) {
-        var where = isObject(item) && typeof item.id === 'string' ? item.id : '#' + index
-        if (!isObject(item)) {
-          errors.push(where + ': must be an object')
-          return
-        }
-        FORBIDDEN_ITEM_PROPERTIES.forEach(function (key) {
-          if (Object.prototype.hasOwnProperty.call(item, key)) {
-            errors.push(where + '.' + key + ': forbidden property is present')
-          }
-        })
-        if (!ITEM_ID_PATTERN.test(String(item.id || ''))) {
-          errors.push(where + ': id must match fb-NNN (got ' + item.id + ')')
-        }
-        if (ITEM_KINDS.indexOf(item.kind) === -1) {
-          errors.push(
-            where + ': kind must be one of ' + ITEM_KINDS.join('|') + ' (got ' + item.kind + ')',
-          )
-        }
-        if (!isObject(item.target) || Object.keys(item.target).length === 0) {
-          errors.push(where + ': target must be a non-empty object')
-        }
-        if (item.base_hash !== undefined) {
-          if (typeof item.base_hash !== 'string' || !BASE_HASH_PATTERN.test(item.base_hash)) {
-            errors.push(where + '.base_hash: must match ^[0-9a-f]{16}$')
-          }
-        }
-      })
-    }
-
-    return { ok: errors.length === 0, errors: errors }
   }
 
   /* Browser console: banner, rail, search, cards, matrices, drafts, export modal.
@@ -4709,7 +4525,7 @@
       '<textarea data-innfo="changeset-preview" readonly></textarea>' +
       '<div class="innfo-feedback-actions">' +
       '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
-      '<button data-innfo="copy-changeset-prompt" type="button">Copy Changeset Prompt</button>' +
+      '<button data-innfo="copy-changeset-prompt" type="button">Copy changeset</button>' +
       '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
       '<h3>Instructions</h3>' +
@@ -4919,16 +4735,6 @@
       return { ok: false, errors: ['Reviewer identifier is required.'] }
     }
 
-    var payload
-    try {
-      payload = buildExportDoc({ meta: exportMeta, drafts: drafts })
-    } catch (err) {
-      return { ok: false, errors: [err.message] }
-    }
-
-    var check = validateFeedback(payload)
-    if (!check.ok) return { ok: false, errors: check.errors }
-
     var stamp = stampFromDate(state && state.exportedAt ? new Date(state.exportedAt) : new Date())
     var changesetMd = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
     var modelSlug = modelSlugOf(state)
@@ -4936,12 +4742,9 @@
 
     return {
       ok: true,
-      payload: payload,
-      text: serializeFeedback(payload),
-      filename: buildFeedbackFilename(modelSlug, String(version).replace(/^V_/, ''), reviewer),
       changesetText: changesetMd,
       changesetFilename: changesetFilename,
-      items: payload.items.length,
+      items: drafts.length,
     }
   }
 
@@ -5008,30 +4811,27 @@
       announce('Cannot copy: fix the validation errors first.')
       return composed
     }
-    var promptText =
-      'Please apply the following changeset to update ' +
-      (state ? state.modelTitle : 'the model') +
-      ':\n\n```markdown\n' +
-      composed.changesetText +
-      '```\n'
+    // The clipboard receives exactly the changeset bytes the download would
+    // contain — never a wrapper prompt.
+    var changesetText = composed.changesetText
     try {
       if (
         typeof navigator !== 'undefined' &&
         navigator.clipboard &&
         typeof navigator.clipboard.writeText === 'function'
       ) {
-        navigator.clipboard.writeText(promptText).then(
+        navigator.clipboard.writeText(changesetText).then(
           function () {
-            announce('Copied changeset prompt to clipboard.')
+            announce('Copied changeset to clipboard.')
             markDraftsExported(state)
           },
           function () {
-            announce(fallbackCopy(doc, textarea, promptText))
+            announce(fallbackCopy(doc, textarea, changesetText))
           },
         )
         return composed
       }
-      announce(fallbackCopy(doc, textarea, promptText))
+      announce(fallbackCopy(doc, textarea, changesetText))
     } catch {
       announce('Copy failed. Select the text and press Ctrl+C.')
     }
@@ -5564,6 +5364,7 @@
       state.controller = Review.createReviewController(active, {
         meta: meta,
         elements: elements,
+        changes: Array.isArray(model.changes) ? model.changes : [],
         needs: config.needs,
         store: state.store,
         onDraftsChanged: refreshDraftCounts,
@@ -5691,19 +5492,13 @@
   var PUBLIC_API = {
     version: CONSOLE_VERSION,
     CONSOLE_VERSION: CONSOLE_VERSION,
-    FILENAME_PATTERN: FILENAME_PATTERN,
     REVIEWER_STORAGE_KEY: REVIEWER_STORAGE_KEY,
     ITEM_KINDS: ITEM_KINDS,
-    ITEM_STATUSES: ITEM_STATUSES,
     slugify: slugify,
     slugifyReviewer: slugifyReviewer,
     stampFromDate: stampFromDate,
     getReviewerName: getReviewerName,
     setReviewerName: setReviewerName,
-    buildFeedbackFilename: buildFeedbackFilename,
-    parseFeedbackFilename: parseFeedbackFilename,
-    isValidExportedAt: isValidExportedAt,
-    validateFeedback: validateFeedback,
     parseConfig: parseConfig,
     hasNeed: hasNeed,
     parseSlots: parseSlots,
@@ -5733,7 +5528,6 @@
     firstChild: firstChild,
     nextStep: nextStep,
     chainOf: chainOf,
-    checkStaleness: checkStaleness,
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
     renderCharts: renderCharts,
@@ -5746,13 +5540,10 @@
     renderReviewTab: renderReviewTab,
     focusElementCard: focusElementCard,
     ensureFeedbackUi: ensureFeedbackUi,
-    draftToItem: draftToItem,
     composeExport: composeExport,
     composeChangesetExport: composeChangesetExport,
     downloadChangesetExport: downloadChangesetExport,
     copyChangesetPrompt: copyChangesetPrompt,
-    serializeFeedback: serializeFeedback,
-    buildExportDoc: buildExportDoc,
     boot: boot,
   }
 

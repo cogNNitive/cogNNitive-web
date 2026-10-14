@@ -1,7 +1,7 @@
 ---
 name: nn-sources
 description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and keep the domaiNN lineage record in sync. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
-version: "V_3-5-0"
+version: "V_3-5-1"
 last_updated: 2026-10-09
 empty_sections_mode: "ask-per-section"
 license: MIT
@@ -230,15 +230,6 @@ node scripts/index.js --cognitivize "<file-or-dir>" --src "<project-dir>"
 - Re-running on unchanged bytes writes nothing; changed bytes refresh the sidecar in place. The raw file is never modified.
 - The innfo-mcp server exposes the same operation as the `cognitivize` tool for `md`, `csv` and `json` files only; for a binary it returns the non-throwing status `requires-cli` and writes nothing, so run the CLI for those.
 
-#### 2a-1. Reviewer Feedback Ingestion (`sources/import/feedback/`)
-
-Reviewer consoles export structured feedback JSON (see `iNNfo/specs/bluepriNNts/console/feedback.schema.json`). The drop zone is `sources/import/feedback/`. Files MUST be named `{PrimaryModel}_V_{version}_{slug}_feedback_{YYYYMMDD-HHMMSS}.json` (the name the console exports; it is kept as dropped).
-
-1. **Routing**: during `--scan`, `.json` files under `import/feedback/` are validated as reviewer feedback and tagged `source_type: feedback`; every other `sources/import/` JSON file is cognitivized as a plain JSON source. The legacy Slack/Teams heuristic parser (`convertChatJson`) is removed — chat transcripts ingest via the `conversations/` lifecycle, never via `.json` heuristics.
-2. **Validation**: each payload validates against the feedback contract (`meta` with `source_knowledge`, `source_knowledge_version` as `V_x-y-z`, `artifact`, `artifact_version`, `exported_at` ISO-8601 with seconds, `author`, `feedback_slug`, `viewer`; items with `id` as `fb-NNN`, `kind` as `correction|comment|new|delete`, non-empty `target`). Unknown draft fields are ignored. A file failing validation is **skipped and reported in the registry — the run never aborts**.
-3. **Sidecar contract**: a valid feedback file gets a co-located, bodyless sidecar `<name>.json_sidecar_NN.md` with the standard origin frontmatter (`source_file`, `sha256`, `size_bytes`, `normalized_at`, `normalized_by`) **plus** `source_type: "feedback"`. An invalid file gets no sidecar.
-4. **Citation**: the raw JSON is the citation target, addressed with a JSON Pointer per item: `sources:: sources/import/feedback/<file>.json@/items/0`. Downstream, the `reconcile_feedback_NN.md` procedure carries accepted items back into the model (staleness check, diff preview, `apply_change` per item, `validate_knowledge`, single patch bump, stable-name console regeneration).
-
 #### 2a-2. Dynamic Sources & Impact Checking (`--check-impact` / `--normalize-file`)
 
 When an existing source file is modified in `sources/import/`, its SHA-256 hash changes:
@@ -441,13 +432,12 @@ Interaction dialogues are first-class source streams. The transcript lifecycle �
    ```
 
    A participant the user declines to name (or skips) renders the deterministic placeholder `unnamed`; promotion still completes — a missing name never blocks or aborts the promotion.
-2. **Cognitivize in Place**: Promoted transcripts link to their origin (`origin_transcript: conversations/...`) and render each turn under a `## NN Turn NN: <author-id>` heading (1-based, 2-digit zero-padded: `## NN Turn 01: Architect`, …, `## NN Turn 100: X`). The promoted file is Markdown, so its co-located sidecar (`<slug>_<stamp>.md_sidecar_NN.md`) is bodyless and records `source_type: conversation_transcript`; the transcript itself is the citation target. The sequential number makes every turn heading unique and addressable under the workspace heading rules. Downstream models cite these sources using canonical `@` pointer grammar: `sources:: [sources/conversations/<session-slug>_<YYYYMMDDTHHmmssZ>.md@## NN Turn 01: Architect]`. Turn headings carry no `author::` key: embedded modification blocks self-describe as they travel across turns.
+2. **Cognitivize in Place**: Promoted transcripts link to their origin (`origin_transcript: conversations/...`) and render each turn under a `## NN Turn NN: <author-id>` heading (1-based, 2-digit zero-padded: `## NN Turn 01: Architect`, …, `## NN Turn 100: X`). The promoted file is Markdown, so its co-located sidecar (`<slug>_<stamp>.md_sidecar_NN.md`) is bodyless and records `source_type: conversation_transcript`; the transcript itself is the citation target. The sequential number makes every turn heading unique and addressable under the workspace heading rules. Downstream models cite these sources using canonical `@` pointer grammar: `sources:: [sources/conversations/<session-slug>_<YYYYMMDDTHHmmssZ>.md@## NN Turn 01: Architect]`. Turn headings carry no `author::` key.
 3. **CLI Promotion**:
    ```bash
    node scripts/index.js --promote-conv "conversations/YYYY-MM-DD_<slug>.md" --format full
    ```
    The CLI path is a mechanical verbatim copy (no turn headings added); the agent-driven path — naming step + turn-structured body passed as `fullContent` — produces the author-attributed promoted transcript.
-4. **Agent Modification lineage**: When an agent turn in the transcript pasted a `## NN Agent Modification: <slug>` block (per `nn-innfo` §5), that heading survives promotion into the promoted transcript and is citeable via the `@` pointer grammar: `sources:: [sources/conversations/<session-slug>_<YYYYMMDDTHHmmssZ>.md@## NN Agent Modification: <scope>]`. This is how synthetic agent reasoning enters the workspace Lineage graph.
 
 #### 2g. Capability Assessment — Decision Matrix
 

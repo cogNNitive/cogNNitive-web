@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-3-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
 title: "Workspace Specification App"
-template_version: "V_0-8-0"
+template_version: "V_0-8-1"
 relationship_types:
   hierarchy:
     enabled: true

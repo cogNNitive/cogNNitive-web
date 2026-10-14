@@ -652,21 +652,6 @@ async function main() {
     },
   }
 
-  let ledgerEntries = []
-  const rootLedgerPath = join(
-    root,
-    payloadHelper.FEEDBACK_LEDGER_FILENAME || 'feedback-ledger.jsonl',
-  )
-  if (existsSync(rootLedgerPath)) {
-    try {
-      const rawLedger = await readFile(rootLedgerPath, 'utf-8')
-      const parsed = payloadHelper.parseFeedbackLedger(rawLedger)
-      ledgerEntries = parsed.entries
-    } catch {
-      // ignore parse error
-    }
-  }
-
   const resolver = payloadHelper.createFsSourceResolver
     ? payloadHelper.createFsSourceResolver(root)
     : undefined
@@ -715,7 +700,6 @@ async function main() {
       content: m.content,
       path: relPath,
       resolver,
-      ledgerEntries,
       changesets,
       schema: modelSchemaResolution.schema,
       procedures: modelSchemaResolution.procedures,
@@ -765,9 +749,24 @@ async function main() {
         }
       }
       const blueprintName = payloadHelper.parentSpecNameOf(m.fm)
-      const changeCount = (Array.isArray(ledgerEntries) ? ledgerEntries : []).filter(function (e) {
-        return e && e.target ? String(e.target).indexOf(fileName) !== -1 : false
-      }).length
+      // Per-model change count comes from the domain's changesets (the only change
+      // record), matched by the model part of each change's D5 target.
+      const modelKeys = [mTitle, mId, modelStem].map(function (v) {
+        return String(v || '').toLowerCase()
+      })
+      const changeCount = (Array.isArray(changesets) ? changesets : []).reduce(function (n, cs) {
+        const items = cs && Array.isArray(cs.changes) ? cs.changes : []
+        return (
+          n +
+          items.filter(function (c) {
+            if (!c || !c.target) return false
+            const t = String(c.target)
+            const at = t.indexOf('@')
+            const modelPart = (at === -1 ? t : t.slice(0, at)).trim().toLowerCase()
+            return modelPart !== '' && modelKeys.indexOf(modelPart) !== -1
+          }).length
+        )
+      }, 0)
       modelSummaries.push({
         id: mId,
         title: mTitle,

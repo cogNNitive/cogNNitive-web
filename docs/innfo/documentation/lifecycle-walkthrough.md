@@ -133,8 +133,8 @@ The model produces client- and regulatory-facing deliverables:
    exported_at: "2026-09-12T12:00:00Z"
    ---
    ```
-2. **Human Review Loop**: Walter Peck (EPA) reviews the document and submits structured feedback ([`sources/import/feedback/...json`](../samples/lifecycle-ghostbusters/workspace/sources/import/feedback/Ghostbusters_Operations_V_1-0-0_epa-review_feedback_20260912-120000.json)).
-3. **Re-ingestion**: The scanner cognitivizes the feedback JSON in `sources/import/feedback/` in place, allowing the agent to guide interactive model updates via `reconcile_feedback`.
+2. **Human Review Loop**: Walter Peck (EPA) reviews the compiled console and exports a changeset (`<model>_<reviewer>_<stamp>_changes_NN.md`).
+3. **Apply**: The agent applies the reviewer's changeset with `apply_change`, which validates and persists each change atomically and records the outcome in the changeset — no separate feedback import exists.
 
 ---
 

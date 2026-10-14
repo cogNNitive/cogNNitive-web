@@ -206,42 +206,23 @@ async function run() {
     assertEqual(orphanRun.orphans.map((o) => o.sourceFile), ['sources/import/orphan_item.txt'], 'the orphan names its missing raw file');
     assertTrue(!fs.existsSync(path.join(orphanProj, 'sources', 'archive')), 'orphan handling never archives');
 
-    // --- Feedback JSON ----------------------------------------------------
+    // --- A JSON in the retired feedback drop zone is a plain JSON source ---
     const feedbackProj = path.join(TEST_TEMP, 'feedback-project');
     const feedbackDir = path.join(feedbackProj, 'sources', 'import', 'feedback');
-    const validFeedbackDoc = {
-      meta: {
-        source_knowledge: 'Ghostbusters',
-        source_knowledge_version: 'V_0-2-1',
-        artifact: 'Ghostbusters_V_0-2-1_console.html',
-        artifact_version: '0.1.0',
-        exported_at: '2026-09-09T12:00:00Z',
-        author: 'Reviewer',
-        feedback_slug: 'round-2',
-        viewer: 'innfo-console/0.1.0',
-      },
-      items: [
-        { id: 'fb-001', kind: 'correction', target: { concept: 'Problems', element: 'Paranormal Infestation', field: 'severity' }, original: 'low', proposed: 'high' },
-      ],
-    };
-    const feedbackFile = path.join(feedbackDir, 'Ghostbusters_V_0-2-1_round-2_feedback_20260909T120000Z.json');
-    write(feedbackFile, JSON.stringify(validFeedbackDoc));
-    write(path.join(feedbackDir, 'Broken_V_0-2-1_x_feedback_20260909T120000Z.json'), JSON.stringify({ meta: {}, items: [{ id: 'bad', kind: 'rewrite', target: {}, status: 'pending' }] }));
+    write(path.join(feedbackDir, 'round2.json'), JSON.stringify({ meta: { source_knowledge: 'X' }, items: [{ id: 'fb-001' }] }));
     write(path.join(feedbackProj, 'sources', 'import', 'config.json'), JSON.stringify({ key: 'value' }));
 
-    assertEqual(typeof scanner.convertFeedbackJson, 'function', 'convertFeedbackJson is exported from scanner');
+    assertEqual(typeof scanner.convertFeedbackJson, 'undefined', 'no feedback converter is exported');
+    assertEqual(typeof scanner.validateFeedbackJson, 'undefined', 'no feedback validator is exported');
+    assertEqual(typeof scanner.isFeedbackJsonPath, 'undefined', 'no feedback path predicate is exported');
+
     const fbRun = await scanner.scanAndProcess(feedbackProj, { autoAcceptPrompt: true });
-    const fbSidecar = read(path.join(feedbackDir, sidecarOf('Ghostbusters_V_0-2-1_round-2_feedback_20260909T120000Z.json')));
-    assertTrue(/source_type: feedback/.test(fbSidecar), 'feedback sidecar carries source_type: feedback');
-    assertTrue(!/is_synthetic/.test(fbSidecar), 'feedback sidecar does not carry is_synthetic');
-    assertTrue(!fbSidecar.includes('fb-001'), 'feedback sidecar has no body: the raw JSON is the citation target');
-    const invalidEntry = fbRun.registry.find((e) => e.name.includes('Broken_V_0-2-1'));
-    assertTrue(Boolean(invalidEntry), 'invalid feedback appears in the registry report');
-    assertTrue(!/Processed/.test(invalidEntry ? invalidEntry.status : ''), 'invalid feedback is skipped, not processed');
-    assertTrue(!fs.existsSync(path.join(feedbackDir, sidecarOf('Broken_V_0-2-1_x_feedback_20260909T120000Z.json'))), 'invalid feedback gets no sidecar');
+    const fbSidecar = read(path.join(feedbackDir, sidecarOf('round2.json')));
+    assertTrue(!/source_type: feedback/.test(fbSidecar), 'no sidecar records a feedback source type');
+    assertTrue(!/is_synthetic/.test(fbSidecar), 'the sidecar does not carry is_synthetic');
     const genericSidecar = read(path.join(feedbackProj, 'sources', 'import', sidecarOf('config.json')));
     assertTrue(!/source_type: feedback/.test(genericSidecar), 'generic JSON is not tagged as feedback');
-    assertEqual(fbRun.processedCount, 2, 'the valid feedback and the generic JSON are processed; the invalid one does not abort the run');
+    assertEqual(fbRun.processedCount, 2, 'both JSON files are cognitivized as plain JSON sources');
 
     // --- singleFile filter -------------------------------------------------
     write(path.join(importDir, 'Other.txt'), 'Other file');

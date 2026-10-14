@@ -40,7 +40,7 @@ iNNfo supports three complementary pathways for knowledge modeling, curation, an
 3. **Pathway 3: Asynchronous Console Review (Three-Tier Consoles)**
    - Domain experts and non-technical stakeholders review compiled standalone HTML consoles (`<Model>_V_<Version>_console.html`).
    - Features zero-build offline `file://` execution, persistent reviewer identity (`localStorage['innfo_reviewer_name']`), visual review badges on cards/rails, and a Universal Review Tab.
-   - Stakeholders annotate and export standardized feedback JSON payloads (`<Model>_V_<Version>_<user>_feedback_<timestamp>.json` with `### fb-001` normalized anchors) which are reconciled back into the domain using `reconcile_feedback` for automated model updates. Note: in-console draft creation arrives with Change C.
+   - Stakeholders annotate in place and export a changeset (`<model>_<reviewer>_<timestamp>_changes_NN.md`) which the agent applies to the domain with `apply_change` for automated model updates.
 
 ---
 
