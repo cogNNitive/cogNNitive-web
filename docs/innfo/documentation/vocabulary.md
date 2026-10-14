@@ -24,6 +24,7 @@ this page is the human-readable rendering of it.
 | Ecosystem / Role | **write-once** | *(none)* | Producer rule: each output is a new family member named with a UTC suffix _YYYYMMDDTHHmmssZ (with -2, -3... same-second tie-breaks) placed before the extension; existing bytes are never overwritten, and latest-of-family is resolved by name. GC only proposes deletions and deletes only with explicit user consent. |
 | Ecosystem / Role | **drift-gate** | *(none)* | Consistency check that the managed view sections of the persisted lineage record (*_cogNNitive_NN.md) equal a fresh core projection. Runs in nn-sources --lineage --check, scripts/verify.js, and the innfo-mcp check_workspace tool. |
 | Ecosystem / Role | **assistant** | `coach`, `architecture coach` | Interactive architecture mentor and modeling guide persona in iNNfo |
+| Ecosystem / Role | **console** | *(none)* | User-facing UI that shows and reviews a domaiNN: the domain console (`domaiNN_console.html`, one per domaiNN) whose specialized surfaces are views shown as tabs. Replaces the retired Vue "editor" and the hosted "cognnitive.com/innfo/app/" web app. |
 
 ## Level Terms Detail
 
@@ -104,6 +105,11 @@ this page is the human-readable rendering of it.
 - **Deprecated Aliases**: `coach`, `architecture coach`
 - **Excluded Senses** (not renamed): `system-prompt-generic`
 
+### **console**
+
+- **Sense**: User-facing UI that shows and reviews a domaiNN: the domain console (`domaiNN_console.html`, one per domaiNN) whose specialized surfaces are views shown as tabs. Replaces the retired Vue "editor" and the hosted "cognnitive.com/innfo/app/" web app.
+- **Excluded Senses** (not renamed): `terminal-console`, `browser-dev-console`, `game-console`
+
 ## Retired Identifiers (Documentation Only)
 
 The following table lists retired identifiers and their canonical replacements.
@@ -135,6 +141,8 @@ This mapping is documentation-only; no runtime aliases exist.
 | `nn-workspace-git` | `nn-domain-git` | skill | Skill renamed to reflect domaiNN terminology |
 | `capability_folders` | `capability_folders` | mapping | Openspec capability folders retain their existing kebab-case names per D13 |
 | `13 legacy tool names` | `13 canonical blueprint/knowledge tool names` | mcp_tools | list_knowledge, read_knowledge, init_knowledge, validate_knowledge, validate_knowledge_url, get_blueprint, validate_blueprint, list_blueprints, hydrate_blueprint, list_blueprint_procedures, list_blueprint_skills, sync_domain_manifest, check_domain |
+| `editor` | `console` | ui_term | Retired user-facing UI term: the Vue innfo-editor app is replaced by the domain console (see the console term). Not used in user-facing copy. |
+| `hosted app` | `console` | ui_term | Retired user-facing UI term for the cognnitive.com/innfo/app/ web application; the domain console replaces it. Distinct from the "app" alias of bluepriNNt, which keeps its entry and is untouched. |
 
 ## Consumer Notes
 

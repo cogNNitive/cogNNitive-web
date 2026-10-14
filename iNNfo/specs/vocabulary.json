@@ -121,6 +121,12 @@
       "excludes": ["system-prompt-generic"],
       "stable_identifiers": [],
       "planned_migrations": []
+    },
+    "console": {
+      "canonical": true,
+      "sense": "User-facing UI that shows and reviews a domaiNN: the domain console (`domaiNN_console.html`, one per domaiNN) whose specialized surfaces are views shown as tabs. Replaces the retired Vue \"editor\" and the hosted \"cognnitive.com/innfo/app/\" web app.",
+      "excludes": ["terminal-console", "browser-dev-console", "game-console"],
+      "stable_identifiers": ["domaiNN_console.html", "innfo-console.bundle.js"]
     }
   },
   "retired_identifiers": [
@@ -291,6 +297,20 @@
       "new": "13 canonical blueprint/knowledge tool names",
       "kind": "mcp_tools",
       "notes": "list_knowledge, read_knowledge, init_knowledge, validate_knowledge, validate_knowledge_url, get_blueprint, validate_blueprint, list_blueprints, hydrate_blueprint, list_blueprint_procedures, list_blueprint_skills, sync_domain_manifest, check_domain"
+    },
+    {
+      "id": "editor",
+      "old": "editor",
+      "new": "console",
+      "kind": "ui_term",
+      "notes": "Retired user-facing UI term: the Vue innfo-editor app is replaced by the domain console (see the console term). Not used in user-facing copy."
+    },
+    {
+      "id": "hosted app",
+      "old": "hosted app",
+      "new": "console",
+      "kind": "ui_term",
+      "notes": "Retired user-facing UI term for the cognnitive.com/innfo/app/ web application; the domain console replaces it. Distinct from the \"app\" alias of bluepriNNt, which keeps its entry and is untouched."
     }
   ]
 }

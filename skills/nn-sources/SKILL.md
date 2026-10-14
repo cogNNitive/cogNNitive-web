@@ -493,17 +493,16 @@ When a user requests to remove, delete, or unlink a source completely from the w
    - Removes matching assets in `assets/` (by stem or slug).
    - Re-scans, re-syncs the workspace `index.md`, and re-generates the lineage record in idempotent replace mode, eliminating all dangling references.
 
-#### 2i. Upgrading a Domain Created with the Retired Layout
+#### 2i. Replacing a Domain Created with the Retired Layout
 
-Domains created before cognitivize-in-place used a mirrored normalized tree and a snapshot archive under `sources/`, plus separate `original` and `export` folders (and a root `export/` folder for deliverables). The runtime of this skill never reads or writes those folders; `nn-preflight` reports such a domain as `legacy-layout`. Upgrade it with the consent-gated migrator of `nn-upgrade` instead of moving files by hand:
+Domains created before cognitivize-in-place used a mirrored normalized tree and a snapshot archive under `sources/`, plus separate `original` and `export` folders (and a root `export/` folder for deliverables). The runtime of this skill never reads or writes those folders; `nn-preflight` reports such a domain as `legacy-layout`. Such a domain is not migrated in place. Create a new domain and import the old one as a Source with `nn-upgrade`:
 
 ```bash
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "<domain>" [--layout-only]
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "<domain>" --apply --plan-hash "<hash>" --yes
+node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "<old-domain>" --import-as-source --new-domain-dir "<new-domain>"
 ```
 
-- The first command is a dry run: it prints the moves, deletes (byte-identical duplicates and retired mirrors only), the sidecars to write, the citation rewrites and a `Plan Hash`. `--layout-only` limits it to the layout step. The apply command needs that hash (it refuses if the tree changed since the dry run) and `--yes`, and takes a full backup first (`--restore <backupDir>` rolls back).
-- Existing archive snapshots are left in place as inert files that still resolve as plain paths; citations into them are reported as warnings and never rewritten, and nothing the user wrote is deleted.
+- The old tree is copied byte-identically under the new domain's `sources/`; the old directory is never modified, and nothing the user wrote is deleted.
+- The new domain's content is then derived from that Source with agent changesets that cite it.
 
 ---
 

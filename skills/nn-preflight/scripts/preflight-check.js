@@ -986,7 +986,7 @@ async function runCheck(options = {}) {
           type: 'workspace-layout',
           name: 'Workspace Layout',
           status: 'warning',
-          detail: `Domain layout is '${layoutVerdict.kind}'. Run 'nn-upgrade' to migrate to canonical kNNowledge/ layout.`,
+          detail: `Domain layout is '${layoutVerdict.kind}'. This domain is not migrated in place: create a new domain and import it as a Source (nn-upgrade --import-as-source).`,
           signals: layoutVerdict.signals
         });
       }

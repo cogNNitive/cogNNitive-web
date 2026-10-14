@@ -210,6 +210,6 @@ async function detectLegacy(r) {
     return { kind: "current" };
   }
   const kind = hasCurrentSignal ? "mixed" : "legacy";
-  const hint = "Run 'nn-upgrade' (or 'node skills/nn-upgrade/scripts/migrate-domain.js') to migrate this domain to the canonical domaiNN/kNNowledge layout.";
+  const hint = "A legacy domain is not migrated in place. Create a new domain and import this one as a Source: 'node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>'.";
   return { kind, signals, hint };
 }

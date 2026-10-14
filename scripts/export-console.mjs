@@ -16,30 +16,34 @@
  *   node scripts/export-console.mjs <workspaceRoot> --status
  *   node scripts/export-console.mjs <workspaceRoot> --tree
  *   node scripts/export-console.mjs <workspaceRoot> --list
- *   node scripts/export-console.mjs <workspaceRoot> --domain
- *   node scripts/export-console.mjs <workspaceRoot> --all
- *   node scripts/export-console.mjs <workspaceRoot> --stale
- *   node scripts/export-console.mjs <workspaceRoot> --filter <pattern>
- *   node scripts/export-console.mjs <workspaceRoot> <ModelNameSubstring>
+ *   node scripts/export-console.mjs <workspaceRoot> --domain [--no-open]
+ *   node scripts/export-console.mjs <workspaceRoot> --all [--no-open]
+ *   node scripts/export-console.mjs <workspaceRoot> --stale [--no-open]
+ *   node scripts/export-console.mjs <workspaceRoot> --filter <pattern> [--no-open]
+ *   node scripts/export-console.mjs <workspaceRoot> <ModelNameSubstring> [--no-open]
  *
- * Output:
- *   `--domain` (no selection) writes ONE fixed-name file that is overwritten when
- *   its bytes move: <workspaceRoot>/domaiNN_console.html.
- *   A selection (`<ModelName>`, `--filter`, `--all`, `--stale`) and a lone `--view`
- *   write write-once members under <workspaceRoot>/artifacts/<scope>_console/ (or
- *   `artifacts/<view>_view/`, `artifacts/<view>-<scope>_view/`); the scope key is
+ * Output (single writer `writeConsole`, shared with the MCP):
+ *   `--domain` (no selection) writes ONE fixed-name file at the domain root:
+ *   <workspaceRoot>/domaiNN_console.html.
+ *   A selection (`<ModelName>`, `--filter`, `--all`, `--stale`) writes ONE stable file
+ *   <workspaceRoot>/artifacts/<scope>_console/<scope>_console.html; the scope key is
  *   the single model's stem or `<firstStem>-plus<N-1>-<hash6>`.
- * Re-running on unchanged input writes nothing; a changed model adds a new member
- * and leaves earlier consoles byte-identical.
+ *   Both are replaced through a temporary file and a rename, and only when their
+ *   bytes move. A lone `--view` still writes a write-once family under
+ *   `artifacts/<view>_view/` (or `artifacts/<view>-<scope>_view/`).
+ * After a write the console is opened in a browser (detached) unless `--no-open`.
+ *
+ * Importing this module has no side effect: the CLI runs only as the entry point.
  */
 
-import { readdir, readFile, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { readdir, readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises'
+import { existsSync, realpathSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
 import { homedir } from 'node:os'
 import { createRequire } from 'node:module'
+import { spawn } from 'node:child_process'
 
 const req = createRequire(import.meta.url)
 const here = dirname(fileURLToPath(import.meta.url))
@@ -49,21 +53,34 @@ const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console'
 const SHELL_FILENAME = 'artifact_shell.html'
 const LEGACY_SHELL_FILENAME = 'artifact_blueprint.html'
 
+/** A failure the caller can report: `code` is stable, `message` is human-readable. */
+export class ConsoleExportError extends Error {
+  constructor(message, code = 'CONSOLE_EXPORT_FAILED') {
+    super(message)
+    this.name = 'ConsoleExportError'
+    this.code = code
+  }
+}
+
 function findShell(dir) {
   return [SHELL_FILENAME, LEGACY_SHELL_FILENAME]
     .map((name) => join(dir, name))
     .find((p) => existsSync(p))
 }
 
-const consoleDir =
-  [process.env.INNFO_CONSOLE_DIR, repoConsoleDir, join(homedir(), '.agents', 'console')]
-    .filter(Boolean)
-    .find((dir) => findShell(dir)) || repoConsoleDir
+/** Console asset folder: `$INNFO_CONSOLE_DIR`, the repo checkout, this script's own folder, then `~/.agents/console`. */
+function resolveConsoleDir() {
+  return (
+    [process.env.INNFO_CONSOLE_DIR, repoConsoleDir, here, join(homedir(), '.agents', 'console')]
+      .filter(Boolean)
+      .find((dir) => findShell(dir)) || repoConsoleDir
+  )
+}
 
-const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
-const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
+/** The console payload mirror (single innfo-core build shared by every producer). */
+let payloadHelper = null
 
-function loadPayloadHelper() {
+function loadPayloadHelper(consoleDir) {
   const candidates = process.env.INNFO_CONSOLE_DIR
     ? [join(consoleDir, 'console-payload.generated.cjs')]
     : [
@@ -75,20 +92,40 @@ function loadPayloadHelper() {
       try {
         return req(c)
       } catch (err) {
-        console.error(`Error loading console payload mirror from ${c}: ${err.message}`)
-        process.exit(1)
+        throw new ConsoleExportError(
+          `Error loading console payload mirror from ${c}: ${err.message}`,
+          'CONSOLE_ASSETS_NOT_FOUND',
+        )
       }
     }
   }
-  const preferred = candidates[0]
-  console.error(
-    `Error: Console payload mirror not found at ${preferred}.\n` +
+  throw new ConsoleExportError(
+    `Console payload mirror not found at ${candidates[0]}.\n` +
       'Build it with "node scripts/build-console-payload.mjs" or install console assets.',
+    'CONSOLE_ASSETS_NOT_FOUND',
   )
-  process.exit(1)
 }
 
-const payloadHelper = loadPayloadHelper()
+/**
+ * Resolve the console assets and load the payload mirror. Throws a
+ * `ConsoleExportError` with code `CONSOLE_ASSETS_NOT_FOUND` when they are missing;
+ * never exits the process.
+ */
+async function ensureAssets() {
+  const consoleDir = resolveConsoleDir()
+  const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
+  const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
+  if (!existsSync(shellPath)) {
+    throw new ConsoleExportError(
+      `Console assets not found: ${shellPath}\n` +
+        'Install the console assets (skills-manager install) or set INNFO_CONSOLE_DIR to ' +
+        'the folder holding artifact_shell.html and innfo-console.bundle.js.',
+      'CONSOLE_ASSETS_NOT_FOUND',
+    )
+  }
+  payloadHelper = loadPayloadHelper(consoleDir)
+  return { consoleDir, shellPath, bundlePath }
+}
 
 function computeSha256(content) {
   return payloadHelper?.computeSha256
@@ -114,6 +151,7 @@ function parseArgs(argv) {
     viewMissing: false,
     filter: null,
     model: null,
+    open: true,
   }
   const slice = argv.slice(2)
   for (let i = 0; i < slice.length; i++) {
@@ -130,6 +168,8 @@ function parseArgs(argv) {
       args.stale = true
     } else if (a === '--domain') {
       args.domain = true
+    } else if (a === '--no-open') {
+      args.open = false
     } else if (a === '--view') {
       i++
       if (i < slice.length && !slice[i].startsWith('--')) args.view = slice[i]
@@ -244,8 +284,8 @@ const hashSlice = (text, len) =>
 
 /**
  * Every console HTML that can report model status: `domaiNN_console.html` plus the
- * newest member of every `artifacts/*_console/` family. A console lists the models it
- * covers in `meta.models`; an old per-model console has no list and reads `uncompiled`.
+ * stable file of every `artifacts/<key>_console/` folder. A console lists the models it
+ * covers in `meta.models`; a folder without its stable file (old stamped leftovers) is inert.
  */
 async function statusConsoles(rootDir) {
   const out = []
@@ -266,9 +306,8 @@ async function statusConsoles(rootDir) {
   }
   for (const e of entries) {
     if (!e.isDirectory() || !e.name.endsWith('_console')) continue
-    const dir = `artifacts/${e.name}`
-    const latest = payloadHelper.latestOfFamily(await familyMembers(rootDir, dir, e.name, 'html'))
-    if (latest) await read(latest.path)
+    const rel = `artifacts/${e.name}/${e.name}.html`
+    if (existsSync(join(rootDir, rel))) await read(rel)
   }
   return out
 }
@@ -302,6 +341,32 @@ async function inspectModelStatus(model, rootDir, consoles) {
     return { status: 'fresh', targetHtmlPath, embeddedMeta: newest.meta }
   }
   return { status: 'stale', targetHtmlPath, embeddedMeta: newest.meta }
+}
+
+/**
+ * Freshness of the domain console: `uncompiled` when the file is absent, `fresh` when
+ * every live model appears in the embedded `meta.models` with the same
+ * `knowledge_version` and content `sha256` (and nothing else is embedded), else `stale`.
+ */
+async function inspectDomainConsole(models, rootDir) {
+  const file = join(rootDir, payloadHelper.consoleOutputPath('domain'))
+  if (!existsSync(file)) return 'uncompiled'
+  let embedded
+  try {
+    embedded = extractModelMetaFromHtml(await readFile(file, 'utf-8'))?.models
+  } catch {
+    return 'stale'
+  }
+  if (!Array.isArray(embedded) || embedded.length !== models.length) return 'stale'
+  for (const m of models) {
+    const relPath = relative(rootDir, m.filePath).replace(/\\/g, '/')
+    const fileName = basename(relPath)
+    const entry = embedded.find((e) => e && (e.filePath === fileName || e.filePath === relPath))
+    if (!entry) return 'stale'
+    if ((entry.version ?? null) !== (m.fm.knowledge_version || null)) return 'stale'
+    if (entry.sha256 !== computeSha256(m.content)) return 'stale'
+  }
+  return 'fresh'
 }
 
 /** Scope family key: one model `<stem>`; several `<firstStem>-plus<N-1>-<hash6>`. */
@@ -431,41 +496,50 @@ function renderConsole(shell, bundleName, config, payload, outDirAbs, rootAbs) {
   return injectSlots(pinned, config, payload.schema, model)
 }
 
-async function main() {
-  const args = parseArgs(process.argv)
-  if (!args.root) {
-    console.error(
-      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--filter <pattern>] [<ModelName>]',
-    )
-    process.exit(2)
-  }
-  if (args.viewMissing) {
-    console.error('Error: --view needs a view id.')
-    process.exit(2)
-  }
-  if (args.view && args.domain) {
-    console.error('Error: --view and --domain are mutually exclusive.')
-    process.exit(2)
-  }
-  const hasSelection = Boolean(args.all || args.stale || args.filter || args.model)
-  if (args.domain && hasSelection) {
-    console.error(
-      'Error: --domain exports the whole domaiNN and cannot select models; drop the model name, --filter, --all or --stale.',
-    )
-    process.exit(2)
-  }
-  const root = resolve(args.root)
-  if (!existsSync(shellPath)) {
-    console.error(
-      `Console assets not found: ${shellPath}\n` +
-        'Install the console assets (skills-manager install) or set INNFO_CONSOLE_DIR to ' +
-        'the folder holding artifact_shell.html and innfo-console.bundle.js.',
-    )
-    process.exit(1)
-  }
-  const shell = await readFile(shellPath, 'utf-8')
-  const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
+/* ── Opening the console ───────────────────────────────────────── */
 
+/** Platform command that opens `file` in the default browser, or null when unsupported. */
+export function openCommandFor(platform, file) {
+  if (platform === 'win32') return { command: 'rundll32', args: ['url.dll,FileProtocolHandler', file] }
+  if (platform === 'darwin') return { command: 'open', args: [file] }
+  if (platform === 'linux') return { command: 'xdg-open', args: [file] }
+  return null
+}
+
+/** Default launcher: a detached, unref-ed child that never keeps this process alive. */
+async function defaultLauncher(command, args) {
+  await new Promise((resolvePromise, reject) => {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: true })
+    child.once('error', reject)
+    child.once('spawn', () => {
+      child.unref()
+      resolvePromise()
+    })
+  })
+}
+
+/** Open `file` when `open` is true. Never throws: failures come back as `opened: false` + `openError`. */
+async function openConsole(file, { open, launcher, platform }) {
+  if (!open) return { opened: false }
+  const cmd = openCommandFor(platform, file)
+  if (!cmd) {
+    return { opened: false, openError: `Opening a browser is not supported on platform "${platform}".` }
+  }
+  // Defence in depth: refuse shell-significant characters instead of launching.
+  if (platform === 'win32' && /[&^%|<>"]/.test(file)) {
+    return { opened: false, openError: `Refusing to open a path with shell-significant characters: ${file}` }
+  }
+  try {
+    await (launcher ?? defaultLauncher)(cmd.command, cmd.args)
+    return { opened: true }
+  } catch (err) {
+    return { opened: false, openError: String(err?.message ?? err) }
+  }
+}
+
+/* ── Model discovery ───────────────────────────────────────────── */
+
+async function loadModels(root) {
   const models = []
   for (const f of await findModelFiles(root)) {
     const content = await readFile(f, 'utf-8')
@@ -480,85 +554,88 @@ async function main() {
     }
   }
   models.sort((a, b) => (a.filePath < b.filePath ? -1 : a.filePath > b.filePath ? 1 : 0))
+  return models
+}
 
-  const consoles = await statusConsoles(root)
-
-  if (args.status) {
-    console.log(`Status (${models.length} model(s)):`)
-    for (const m of models) {
-      const rel = relative(root, m.filePath).replace(/\\/g, '/')
-      const info = await inspectModelStatus(m, root, consoles)
-      console.log(`  ${rel} [${info.status}]`)
-    }
-    return
+/** Atomic replace: write `<file>.tmp`, then rename it over `file`. */
+async function writeFileAtomic(file, text) {
+  await mkdir(dirname(file), { recursive: true })
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`
+  try {
+    await writeFile(tmp, text, 'utf-8')
+    await rename(tmp, file)
+  } catch (err) {
+    await rm(tmp, { force: true }).catch(() => {})
+    throw err
   }
+}
 
-  if (args.tree) {
-    await renderTree(models, root, consoles)
-    return
-  }
+/** Per-model `knowledge_version` + content `sha256` embedded in the console meta, keyed by model id. */
+function versionsOf(modelSummaries) {
+  const out = {}
+  for (const s of modelSummaries) out[s.id] = { knowledge_version: s.version, sha256: s.sha256 }
+  return out
+}
 
-  if (args.list) {
-    console.log('Models:')
-    for (const m of models) console.log(`  ${relative(root, m.filePath).replace(/\\/g, '/')}`)
-    console.log(`(${models.length} models)`)
-    return
-  }
+/**
+ * The single console writer, shared by the CLI and the MCP.
+ *
+ * Options: rootDir (domain root); scope ("domain" by default, { model: id } for one
+ * model, or { selected: models } for the CLI multi-model selection); view (a lone view
+ * export, written as a write-once family); open (default true); launcher (injected
+ * opener, for tests); platform (default process.platform); log (progress lines,
+ * default silent so the MCP never writes to stdout); models (pre-scanned models).
+ *
+ * Resolves to { path, relativePath, status ("written" or "unchanged"),
+ * knowledgeVersions, opened, openError, breakdown, summary }. Throws ConsoleExportError.
+ */
+export async function writeConsole(opts = {}) {
+  const {
+    rootDir,
+    scope = 'domain',
+    view = null,
+    open = true,
+    launcher,
+    platform = process.platform,
+    log = () => {},
+  } = opts
+  if (!rootDir) throw new ConsoleExportError('writeConsole needs a rootDir.', 'ROOT_REQUIRED')
+  const root = resolve(rootDir)
+  const { consoleDir, shellPath, bundlePath } = await ensureAssets()
+  const shell = await readFile(shellPath, 'utf-8')
+  const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
 
-  let candidateModels = models
+  const models = opts.models ?? (await loadModels(root))
 
-  if (args.filter) {
-    candidateModels = candidateModels.filter(
-      (m) =>
-        m.name.toLowerCase().includes(args.filter.toLowerCase()) ||
-        m.filePath.toLowerCase().includes(args.filter.toLowerCase()),
-    )
-  }
-
-  if (args.model) {
-    candidateModels = candidateModels.filter(
-      (m) =>
-        m.name.toLowerCase().includes(args.model.toLowerCase()) ||
-        m.filePath.toLowerCase().includes(args.model.toLowerCase()),
-    )
-  }
-
-  // No scope option narrows the model set: `--domain` and a lone `--view` cover the
-  // whole domaiNN. Any selection (`<ModelName>`, `--filter`, `--all`, `--stale`) only
-  // narrows `candidateModels` and produces ONE scoped console over the selected set.
-  const wholeDomain = args.domain || (args.view && !hasSelection)
-
+  const wholeDomain = scope === 'domain'
   let selected = []
-  if (hasSelection) {
-    if (args.stale) {
-      for (const m of candidateModels) {
-        if ((await inspectModelStatus(m, root, consoles)).status !== 'fresh') selected.push(m)
-      }
+  if (!wholeDomain) {
+    if (Array.isArray(scope.selected)) {
+      selected = scope.selected
+    } else if (typeof scope.model === 'string') {
+      const wanted = scope.model
+      selected = models.filter(
+        (m) => m.name === wanted || basename(m.filePath).replace(/\.[^/.]+$/, '') === wanted,
+      )
       if (selected.length === 0) {
-        console.log('All models are fresh. Nothing to export.')
-        return
+        throw new ConsoleExportError(`No model "${wanted}" found in ${root}.`, 'MODEL_NOT_FOUND')
       }
     } else {
-      selected = candidateModels
+      throw new ConsoleExportError('Unsupported console scope.', 'SCOPE_INVALID')
+    }
+    if (selected.length === 0) {
+      throw new ConsoleExportError('No models selected.', 'MODEL_NOT_FOUND')
     }
   }
-
-  if (!wholeDomain && selected.length === 0) {
-    console.error(
-      'No models selected. Use --all, --stale, --domain, --filter <pattern>, or pass a model name/id substring.',
-    )
-    process.exit(1)
-  }
-
   const scoped = !wholeDomain
-  const payloadModels = wholeDomain ? candidateModels : selected
+  const payloadModels = wholeDomain ? models : selected
 
   const consoleCdnRef = parseConsoleCdnRef(bundle)
   if (!consoleCdnRef) {
-    console.error(
+    throw new ConsoleExportError(
       `Cannot derive console CDN pin: no "Version X.Y.Z." banner found in ${bundlePath}`,
+      'CONSOLE_ASSETS_NOT_FOUND',
     )
-    process.exit(1)
   }
 
   // The shell ships a release-pinned CDN ref (e.g. @innfo-console-v0.1.0) in its
@@ -578,8 +655,10 @@ async function main() {
     // Only the lib itself being absent is reported here; a missing module imported
     // from inside it (err.url is that module) is a real fault and must surface.
     if (err.code !== 'ERR_MODULE_NOT_FOUND' || err.url !== viewsLibUrl) throw err
-    console.error(`Error: console-views.mjs must sit next to this script (${fileURLToPath(viewsLibUrl)}).`)
-    process.exit(1)
+    throw new ConsoleExportError(
+      `console-views.mjs must sit next to this script (${fileURLToPath(viewsLibUrl)}).`,
+      'CONSOLE_ASSETS_NOT_FOUND',
+    )
   }
   // Where bluepriNNt packages (and their console views) live. In a repo checkout the
   // console dir sits inside the packages folder; an installed set is flat in
@@ -589,13 +668,15 @@ async function main() {
     (consoleDir === repoConsoleDir ? dirname(consoleDir) : join(homedir(), '.agents', 'bluepriNNts'))
   const uiCssPath = join(consoleDir, 'innfo-ui.css')
   if (!existsSync(uiCssPath)) {
-    console.error(`Error: ${uiCssPath} not found; the console inlines its CSS.`)
-    process.exit(1)
+    throw new ConsoleExportError(
+      `${uiCssPath} not found; the console inlines its CSS.`,
+      'CONSOLE_ASSETS_NOT_FOUND',
+    )
   }
   const uiCss = await readFile(uiCssPath, 'utf-8')
 
   // Changeset lineage: read changes/*_changes_NN.md so each element can carry its
-  // `history` in the model slot, and the domain payload carries the `changes`
+  // history in the model slot, and the domain payload carries the changes
   // collection (the console is static/offline and never reads the files).
   const changesets = payloadHelper.loadChangesetRecords
     ? await payloadHelper.loadChangesetRecords(root)
@@ -605,7 +686,7 @@ async function main() {
   try {
     domainViews = await viewsLib.discoverViews({
       domainRoot: root,
-      // The domain's changesets are not payload models, but the `changes` blueprint
+      // The domain's changesets are not payload models, but the changes blueprint
       // ships the read-only Changes view: include its spec name when a domain has any.
       specNames: [
         ...payloadModels.map((m) => payloadHelper.parentSpecNameOf(m.fm)),
@@ -615,15 +696,16 @@ async function main() {
       onWarning: (message) => process.stderr.write(`WARNING: [export-console] ${message}\n`),
     })
   } catch (err) {
-    console.error(`Error: ${err.message}`)
-    process.exit(1)
+    throw new ConsoleExportError(err.message, 'VIEWS_INVALID')
   }
-  if (args.view) {
-    const wanted = domainViews.find((v) => v.id === args.view)
+  if (view) {
+    const wanted = domainViews.find((v) => v.id === view)
     if (!wanted) {
       const ids = domainViews.map((v) => v.id)
-      console.error(`Error: unknown view "${args.view}"; available views: ${ids.length ? ids.join(', ') : '(none)'}`)
-      process.exit(1)
+      throw new ConsoleExportError(
+        `unknown view "${view}"; available views: ${ids.length ? ids.join(', ') : '(none)'}`,
+        'VIEW_UNKNOWN',
+      )
     }
     domainViews = [wanted]
   }
@@ -631,8 +713,7 @@ async function main() {
   try {
     preparedAssets = viewsLib.assertInlinable(resolvedShell, { bundle, css: uiCss, views: domainViews })
   } catch (err) {
-    console.error(`Error: ${err.message}`)
-    process.exit(1)
+    throw new ConsoleExportError(err.message, 'VIEWS_INVALID')
   }
 
   const config = {
@@ -685,11 +766,14 @@ async function main() {
   const allMatrices = []
   const allConcepts = []
   const seenConcepts = new Set()
-  const allFields = {}
+  const allFields = []
+  const fieldIndex = new Map()
   const allProcedures = []
   const seenProcedureIds = new Set()
   const modelSummaries = []
   const scopeModelIds = []
+  // The changes bluepriNNt version every model payload was built against (identical across models).
+  let changesBlueprintVersion = ''
 
   for (const m of payloadModels) {
     const relPath = relative(root, m.filePath).replace(/\\/g, '/')
@@ -705,6 +789,7 @@ async function main() {
       procedures: modelSchemaResolution.procedures,
     })
     if (payload && payload.model) {
+      changesBlueprintVersion = (payload.model.meta && payload.model.meta.changesBlueprintVersion) || changesBlueprintVersion
       const mTitle = (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
       const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
       const modelConcepts = new Set()
@@ -792,9 +877,20 @@ async function main() {
           }
         }
       }
-      if (payload.schema.fields && typeof payload.schema.fields === 'object') {
-        for (const [k, v] of Object.entries(payload.schema.fields)) {
-          if (k && v && !allFields[k]) allFields[k] = v
+      // Declared field definitions: one entry per (concept, name), first wins like
+      // concepts; a conflicting redeclaration by a later blueprint is warned about.
+      for (const f of Array.isArray(payload.schema.fields) ? payload.schema.fields : []) {
+        if (!f || !f.concept || !f.name) continue
+        const key = `${String(f.concept).toLowerCase()} ${String(f.name).toLowerCase()}`
+        const kept = fieldIndex.get(key)
+        if (!kept) {
+          fieldIndex.set(key, f)
+          allFields.push(f)
+        } else if (JSON.stringify(kept) !== JSON.stringify(f)) {
+          process.stderr.write(
+            `WARNING: [export-console] Field ${f.concept}.${f.name} is declared differently by more than one bluepriNNt; keeping the first declaration
+`,
+          )
         }
       }
     }
@@ -827,6 +923,7 @@ async function main() {
         modelId: basename(root),
         domainId,
         generated: undefined,
+        changesBlueprintVersion,
         models: modelSummaries,
       },
       elements: allElements,
@@ -841,32 +938,27 @@ async function main() {
 
   if (scoped) {
     const scope = { models: [...scopeModelIds].sort(), label: scopeLabelOf(selected) }
-    if (args.view) scope.view = args.view
+    if (view) scope.view = view
     domainPayload.model.meta.consoleScope = scope
-  } else if (args.view) {
-    domainPayload.model.meta.consoleScope = { view: args.view }
+  } else if (view) {
+    domainPayload.model.meta.consoleScope = { view: view }
   }
 
-  // Output location. Whole-domaiNN without a view owns the fixed-name
-  // `domaiNN_console.html`; every other export is a write-once member of an
-  // `artifacts/` family (`<key>_console/`, `<view>_view/`, `<view>-<key>_view/`).
+  // Output location. A console (whole-domaiNN or model-scoped) owns ONE stable file
+  // from the shared path builder; only a lone view export keeps a write-once family
+  // (<view>_view/, <view>-<key>_view/).
   const scopeKey = scoped ? scopeKeyOf(selected, root) : null
-  let outDirRel = null
+  let familyDir = null
   let familyKey = null
-  if (!wholeDomain) {
-    if (args.view) {
-      outDirRel = `artifacts/${args.view}-${scopeKey}_view`
-      familyKey = `${args.view}-${scopeKey}_view`
-    } else {
-      outDirRel = `artifacts/${scopeKey}_console`
-      familyKey = `${scopeKey}_console`
-    }
-  } else if (args.view) {
-    outDirRel = `artifacts/${args.view}_view`
-    familyKey = `${args.view}_view`
+  let relativePath = null
+  if (view) {
+    familyKey = scoped ? `${view}-${scopeKey}_view` : `${view}_view`
+    familyDir = `artifacts/${familyKey}`
+  } else {
+    relativePath = payloadHelper.consoleOutputPath(wholeDomain ? 'domain' : { model: scopeKey })
   }
 
-  const outDirAbs = outDirRel ? join(root, outDirRel) : root
+  const outDirAbs = familyDir ? join(root, familyDir) : dirname(join(root, relativePath))
   const buildHtml = (generated) => {
     domainPayload.model.meta.generated = generated
     let html = viewsLib.inlineConsoleAssets(
@@ -888,48 +980,51 @@ async function main() {
     views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
     total: bytes(html),
   })
-  if (budget.status === 'fail') {
-    console.error(`Error: ${budget.message}`)
-    process.exit(1)
-  }
+  if (budget.status === 'fail') throw new ConsoleExportError(budget.message, 'CONSOLE_TOO_LARGE')
   if (budget.status === 'warn') process.stderr.write(`WARNING: [export-console] ${budget.message}\n`)
-  console.log(budget.breakdown)
+  log(budget.breakdown)
 
   const inputs = payloadModels.map((m) => relative(root, m.filePath).replace(/\\/g, '/'))
-  let written = 0
-  let unchanged = 0
+  const knowledgeVersions = versionsOf(modelSummaries)
+  let status
+  let absPath
+  let relPath
 
-  if (!outDirRel) {
-    // Whole-domaiNN console: one fixed-name file, overwritten only when the bytes move.
-    const domainHtmlPath = join(root, 'domaiNN_console.html')
-    let domainUnchanged = false
-    if (existsSync(domainHtmlPath)) {
-      const previous = await readFile(domainHtmlPath, 'utf-8')
+  if (!familyDir) {
+    // Stable file: replaced through a temp file + rename, only when the bytes move.
+    absPath = join(root, relativePath)
+    relPath = relativePath
+    let isUnchanged = false
+    if (existsSync(absPath)) {
+      const previous = await readFile(absPath, 'utf-8')
       const previousGenerated = extractModelMetaFromHtml(previous)?.generated
-      if (previousGenerated && buildHtml(previousGenerated) === previous) domainUnchanged = true
+      // Re-render with the previous generated stamp: identical bytes mean nothing changed.
+      if (previousGenerated && buildHtml(previousGenerated) === previous) isUnchanged = true
     }
-    if (domainUnchanged) {
-      unchanged++
-      console.log('= domaiNN_console.html unchanged')
+    if (isUnchanged) {
+      status = 'unchanged'
+      log(`= ${basename(absPath)} unchanged`)
     } else {
-      await writeFile(domainHtmlPath, html, 'utf-8')
-      written++
-      console.log(
-        `✔ domaiNN_console.html → ./domaiNN_console.html (${payloadModels.length} models, ${allElements.length} elements, ${domainViews.length} views)`,
-      )
+      await writeFileAtomic(absPath, html)
+      status = 'written'
+      const detail = wholeDomain
+        ? `${payloadModels.length} models, ${allElements.length} elements, ${domainViews.length} views`
+        : `${allElements.length} elements`
+      log(`✔ ${basename(absPath)} → ./${relPath} (${detail})`)
     }
-    // Earlier exports wrote these beside the page; it inlines both now. Nothing is deleted.
-    const leftovers = ['innfo-console.bundle.js', 'innfo-ui.css'].filter((name) => existsSync(join(root, name)))
-    if (leftovers.length > 0) {
-      process.stderr.write(
-        `WARNING: [export-console] ${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.\n`,
-      )
+    if (wholeDomain) {
+      // Earlier exports wrote these beside the page; it inlines both now. Nothing is deleted.
+      const leftovers = ['innfo-console.bundle.js', 'innfo-ui.css'].filter((name) => existsSync(join(root, name)))
+      if (leftovers.length > 0) {
+        process.stderr.write(
+          `WARNING: [export-console] ${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.\n`,
+        )
+      }
     }
   } else {
-    // Write-once family member; the bundle, CSS and views are inlined, so no sibling file.
-    const members = await familyMembers(root, outDirRel, familyKey, 'html')
+    // Lone view export: a write-once family member; assets are inlined, so no sibling file.
+    const members = await familyMembers(root, familyDir, familyKey, 'html')
     const latest = payloadHelper.latestOfFamily(members)
-    // Re-render with the previous `generated` stamp: identical bytes mean nothing changed.
     let isUnchanged = false
     if (latest) {
       const previous = await readFile(join(root, latest.path), 'utf-8')
@@ -937,34 +1032,169 @@ async function main() {
       if (previousGenerated && buildHtml(previousGenerated) === previous) isUnchanged = true
     }
     if (isUnchanged) {
-      unchanged++
-      console.log(`= ${basename(latest.path)} unchanged`)
+      status = 'unchanged'
+      absPath = join(root, latest.path)
+      relPath = latest.path
+      log(`= ${basename(latest.path)} unchanged`)
     } else {
       const result = await payloadHelper.writeOnce(
         root,
-        { dir: outDirRel, key: familyKey, ext: 'html' },
+        { dir: familyDir, key: familyKey, ext: 'html' },
         html,
         { inputs },
       )
+      absPath = join(root, result.path)
+      relPath = result.path
       if (result.status === 'deduplicated') {
-        unchanged++
-        console.log(`= ${basename(result.path)} unchanged`)
+        status = 'unchanged'
+        log(`= ${basename(result.path)} unchanged`)
       } else {
-        written++
-        const detail = args.view
-          ? `view ${args.view}, ${allElements.length} elements`
-          : `${allElements.length} elements`
-        console.log(`✔ ${basename(result.path)} → ./${result.path} (${detail})`)
+        status = 'written'
+        log(`✔ ${basename(result.path)} → ./${result.path} (view ${view}, ${allElements.length} elements)`)
       }
     }
   }
 
+  const opening = await openConsole(absPath, { open, launcher, platform })
+  return {
+    path: absPath,
+    relativePath: relPath,
+    status,
+    knowledgeVersions,
+    opened: opening.opened,
+    ...(opening.openError ? { openError: opening.openError } : {}),
+  }
+}
+
+async function main() {
+  const args = parseArgs(process.argv)
+  if (!args.root) {
+    console.error(
+      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--filter <pattern>] [--no-open] [<ModelName>]',
+    )
+    process.exit(2)
+  }
+  if (args.viewMissing) {
+    console.error('Error: --view needs a view id.')
+    process.exit(2)
+  }
+  if (args.view && args.domain) {
+    console.error('Error: --view and --domain are mutually exclusive.')
+    process.exit(2)
+  }
+  const hasSelection = Boolean(args.all || args.stale || args.filter || args.model)
+  if (args.domain && hasSelection) {
+    console.error(
+      'Error: --domain exports the whole domaiNN and cannot select models; drop the model name, --filter, --all or --stale.',
+    )
+    process.exit(2)
+  }
+  const root = resolve(args.root)
+  await ensureAssets()
+  const models = await loadModels(root)
+
+  const consoles = await statusConsoles(root)
+
+  if (args.status) {
+    console.log(`Status (${models.length} model(s)):`)
+    for (const m of models) {
+      const rel = relative(root, m.filePath).replace(/\\/g, '/')
+      const info = await inspectModelStatus(m, root, consoles)
+      console.log(`  ${rel} [${info.status}]`)
+    }
+    console.log(`Domain console: ${payloadHelper.consoleOutputPath('domain')} [${await inspectDomainConsole(models, root)}]`)
+    return
+  }
+
+  if (args.tree) {
+    await renderTree(models, root, consoles)
+    return
+  }
+
+  if (args.list) {
+    console.log('Models:')
+    for (const m of models) console.log(`  ${relative(root, m.filePath).replace(/\\/g, '/')}`)
+    console.log(`(${models.length} models)`)
+    return
+  }
+
+  let candidateModels = models
+
+  if (args.filter) {
+    candidateModels = candidateModels.filter(
+      (m) =>
+        m.name.toLowerCase().includes(args.filter.toLowerCase()) ||
+        m.filePath.toLowerCase().includes(args.filter.toLowerCase()),
+    )
+  }
+
+  if (args.model) {
+    candidateModels = candidateModels.filter(
+      (m) =>
+        m.name.toLowerCase().includes(args.model.toLowerCase()) ||
+        m.filePath.toLowerCase().includes(args.model.toLowerCase()),
+    )
+  }
+
+  // No scope option narrows the model set: --domain and a lone --view cover the
+  // whole domaiNN. Any selection (a model name, --filter, --all, --stale) only
+  // narrows candidateModels and produces ONE scoped console over the selected set.
+  const wholeDomain = args.domain || (args.view && !hasSelection)
+
+  let selected = []
+  if (hasSelection) {
+    if (args.stale) {
+      for (const m of candidateModels) {
+        if ((await inspectModelStatus(m, root, consoles)).status !== 'fresh') selected.push(m)
+      }
+      if (selected.length === 0) {
+        console.log('All models are fresh. Nothing to export.')
+        return
+      }
+    } else {
+      selected = candidateModels
+    }
+  }
+
+  if (!wholeDomain && selected.length === 0) {
+    console.error(
+      'No models selected. Use --all, --stale, --domain, --filter <pattern>, or pass a model name/id substring.',
+    )
+    process.exit(1)
+  }
+
+  const result = await writeConsole({
+    rootDir: root,
+    scope: wholeDomain ? 'domain' : { selected },
+    view: args.view,
+    open: args.open,
+    models,
+    log: (line) => console.log(line),
+  })
+  const written = result.status === 'written' ? 1 : 0
+  const unchanged = result.status === 'unchanged' ? 1 : 0
+  if (result.openError) {
+    process.stderr.write(`WARNING: [export-console] could not open the console: ${result.openError}\n`)
+  }
   console.log(
     `Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`,
   )
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+/** True when this module is the process entry point, so importing it never runs the CLI. */
+function isEntryPoint() {
+  if (!process.argv[1]) return false
+  try {
+    return realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))
+  } catch {
+    return false
+  }
+}
+
+if (isEntryPoint()) {
+  main().catch((err) => {
+    if (err instanceof ConsoleExportError) console.error(`Error: ${err.message}`)
+    else console.error(err)
+    process.exit(1)
+  })
+}

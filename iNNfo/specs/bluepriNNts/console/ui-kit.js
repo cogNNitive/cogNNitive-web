@@ -117,7 +117,7 @@
     '.innfo-popover-original{color:var(--innfo-muted)}',
     '.innfo-popover-proposed{display:block;width:100%;font:inherit}',
     '.innfo-rail-progress{color:var(--innfo-muted);font-size:.75rem}',
-    '.innfo-review-toggle,.innfo-changed-filter{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:var(--innfo-radius-sm);cursor:pointer}',
+    '.innfo-review-toggle,.innfo-changed-filter,.innfo-new-element{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:var(--innfo-radius-sm);cursor:pointer}',
     '.innfo-review-toggle[aria-pressed=true],.innfo-changed-filter[aria-pressed=true]{background:var(--innfo-accent);color:var(--innfo-surface)}',
     '.innfo-review-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease}',
     '.innfo-review-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
@@ -129,7 +129,7 @@
     '.innfo-review-badges{display:inline-flex;gap:.3em;align-items:center;margin-left:.4em}',
     'html[data-innfo-filter=changed] [data-innfo-component=element-card]:not([data-innfo-changed]){display:none}',
     '.innfo-popover-comment,.innfo-popover-proposed{display:block;width:100%;font:inherit;box-sizing:border-box}',
-    '@media (max-width:640px){.innfo-annotation-popover{width:100%}.innfo-review-toggle,.innfo-changed-filter{width:100%}}',
+    '@media (max-width:640px){.innfo-annotation-popover{width:100%}.innfo-review-toggle,.innfo-changed-filter,.innfo-new-element{width:100%}}',
     '.innfo-edit-modal{border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-lg);padding:0;max-width:760px;width:100%;max-height:86vh;overflow:auto;background:var(--innfo-surface);color:var(--innfo-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
     '.innfo-edit-modal::backdrop{background:rgba(0,0,0,.35)}',
     '.innfo-edit-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--innfo-border)}',
@@ -262,6 +262,22 @@
     '.innfo-card-meta-strip{display:flex;align-items:center;justify-content:space-between;gap:.5em;flex-wrap:wrap;padding:6px 10px;margin:.55em 0;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px}',
     '.innfo-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--innfo-mono);font-size:.73rem;color:var(--innfo-muted);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:5px;padding:2px 7px}',
     '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden;background:var(--innfo-surface)}',
+    // ElementMini (collection item): accent stripe + small thumb + name + optional meta. No fields.
+    '.innfo-mini{display:flex;align-items:center;gap:.5em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-left:3px solid var(--innfo-mini-accent,var(--innfo-border));border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
+    'button.innfo-mini,a.innfo-mini{font:inherit;color:inherit;cursor:pointer;text-decoration:none}',
+    '.innfo-mini:hover{border-color:var(--innfo-mini-accent,var(--innfo-focus))}',
+    '.innfo-mini-thumb{width:20px;height:20px;border-radius:5px;flex:0 0 auto}',
+    '.innfo-mini-text{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}',
+    '.innfo-mini-name{font-size:.8rem;font-weight:600;color:var(--innfo-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.innfo-mini-meta{font-size:.68rem;color:var(--innfo-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.innfo-mini-markers{display:flex;gap:.25em;flex:0 0 auto}',
+    '.innfo-mini>.innfo-card-status-pill{flex:0 0 auto}',
+    // ElementPreview (generic floating detail) + the mini's info affordance.
+    '.innfo-preview{position:fixed;z-index:60;width:clamp(26rem,60vw,52rem);max-width:calc(100vw - 1.5rem);max-height:calc(100vh - 1.5rem);overflow:auto;overscroll-behavior:contain;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius,10px);box-shadow:0 12px 32px rgba(0,0,0,.16);padding:.6rem .8rem}',
+    '.innfo-preview[hidden]{display:none}',
+    '.innfo-preview .innfo-card{border:none;box-shadow:none;margin:0}',
+    '.innfo-mini-info{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:none;background:transparent;color:var(--innfo-muted);cursor:pointer;border-radius:50%}',
+    '.innfo-mini-info:hover,.innfo-mini-info[aria-expanded=true]{color:var(--innfo-text);background:var(--innfo-surface-2)}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
@@ -1066,6 +1082,215 @@
     return CONCEPT_SLOT_ICONS[(slot - 1) % CONCEPT_SLOT_ICONS.length] || 'layers'
   }
 
+  /* Shared identity thumb: the element's image if it declares one, otherwise a
+     concept-icon placeholder. Reused by ElementCard and ElementMini so a
+     knowledge unit's identity is rendered by a single code path. */
+  function elementThumb(doc, data, conceptIconName, iconSize) {
+    var imageField = imageFieldOf(Array.isArray(data.fields) ? data.fields : [])
+    function makeConceptThumb() {
+      var ph = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--concept innfo-card-thumb--empty')
+      ph.setAttribute('data-concept-icon', conceptIconName)
+      ph.setAttribute('title', String(data.conceptId || 'Element'))
+      ph.setAttribute('aria-hidden', 'true')
+      ph.innerHTML = icon(conceptIconName, iconSize || 18)
+      return ph
+    }
+    if (imageField) {
+      var thumb = makeEl(doc, 'img', 'innfo-card-thumb')
+      thumb.setAttribute('alt', String(data.name || data.id || ''))
+      thumb.setAttribute('loading', 'lazy')
+      thumb.setAttribute('src', normalizeAssetPath(String(imageField.value)))
+      thumb.addEventListener('error', function () {
+        retryImageSrc(thumb, function () {
+          var ph = makeConceptThumb()
+          if (thumb.parentNode) thumb.parentNode.replaceChild(ph, thumb)
+        })
+      })
+      return thumb
+    }
+    return makeConceptThumb()
+  }
+
+  /* ElementPreview — a generic floating detail popover anchored to any trigger.
+     It reveals a detail node (by default the full ElementCard) on hover, on focus
+     and, when pinned, on click. The host is fixed-positioned so it escapes
+     scrollable/overflow containers (e.g. a board column). Any compact
+     representation (mini, pill, marker, timeline row) can reuse it. */
+  var _previewHost = null
+  function previewHostEl(doc) {
+    if (_previewHost && _previewHost.ownerDocument === doc && _previewHost.parentNode) return _previewHost
+    _previewHost = makeEl(doc, 'div', 'innfo-preview')
+    _previewHost.setAttribute('data-innfo-component', 'element-preview')
+    _previewHost.setAttribute('role', 'dialog')
+    _previewHost.hidden = true
+    ;(doc.body || doc.documentElement).appendChild(_previewHost)
+    return _previewHost
+  }
+  function placePreview(host, anchor) {
+    var doc = host.ownerDocument
+    var r = anchor.getBoundingClientRect()
+    host.hidden = false
+    host.style.visibility = 'hidden'
+    var w = host.offsetWidth || 0
+    var h = host.offsetHeight || 0
+    var vw = doc.documentElement.clientWidth
+    var vh = doc.documentElement.clientHeight
+    host.style.left = Math.min(Math.max(8, r.left), Math.max(8, vw - w - 8)) + 'px'
+    var top = r.bottom + 8
+    if (top + h > vh - 8) top = r.top - h - 8 >= 8 ? r.top - h - 8 : Math.max(8, vh - h - 8)
+    host.style.top = top + 'px'
+    host.style.visibility = ''
+  }
+  function ElementPreview(trigger, data, opts) {
+    if (!trigger) return null
+    var doc = resolveDoc(opts)
+    var openDelay = opts && typeof opts.openDelay === 'number' ? opts.openDelay : 220
+    var timer = null
+    var pinned = false
+    function buildContent() {
+      if (opts && typeof opts.render === 'function') return opts.render(data)
+      if (opts && opts.content) return opts.content
+      return ElementCard(data, {
+        doc: doc,
+        byId: opts && opts.byId,
+        concept: opts && opts.concept,
+        collapsible: false,
+        open: true,
+      })
+    }
+    function open() {
+      clearTimeout(timer)
+      var host = previewHostEl(doc)
+      host.innerHTML = ''
+      host.appendChild(buildContent())
+      placePreview(host, trigger)
+      trigger.setAttribute('aria-expanded', 'true')
+    }
+    function close() {
+      clearTimeout(timer)
+      if (pinned) doc.removeEventListener('click', onDocClick, true)
+      pinned = false
+      if (_previewHost) {
+        _previewHost.hidden = true
+        _previewHost.innerHTML = ''
+      }
+      trigger.setAttribute('aria-expanded', 'false')
+    }
+    function schedule() {
+      if (pinned) return
+      clearTimeout(timer)
+      timer = setTimeout(open, openDelay)
+    }
+    function onLeave() { if (!pinned) close() }
+    function onKey(e) { if (e && e.key === 'Escape') close() }
+    function onDocClick(e) {
+      var t = e && e.target
+      if (t && (trigger.contains(t) || (_previewHost && _previewHost.contains(t)))) return
+      close()
+    }
+    trigger.addEventListener('mouseenter', schedule)
+    trigger.addEventListener('mouseleave', onLeave)
+    trigger.addEventListener('focus', schedule)
+    trigger.addEventListener('blur', onLeave)
+    trigger.addEventListener('keydown', onKey)
+    return {
+      open: open,
+      close: close,
+      togglePin: function () {
+        if (pinned) { close() } else { pinned = true; doc.addEventListener('click', onDocClick, true); open() }
+      },
+      destroy: function () {
+        close()
+        trigger.removeEventListener('mouseenter', schedule)
+        trigger.removeEventListener('mouseleave', onLeave)
+        trigger.removeEventListener('focus', schedule)
+        trigger.removeEventListener('blur', onLeave)
+        trigger.removeEventListener('keydown', onKey)
+      },
+    }
+  }
+
+  /* ElementMini — the collection item: identity only (concept-color accent stripe
+     + small thumb + name + one optional meta line), NEVER the field grid. This is
+     the middle representation between ElementPill (inline token) and ElementCard
+     (detail surface); it fits narrow board columns, related lists and search hits.
+     With `opts.preview` it reveals the full ElementCard on hover/focus and, via a
+     small info affordance, on click. */
+  function ElementMini(data, opts) {
+    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ElementMini: data required')
+    var doc = resolveDoc(opts)
+    var tag = opts && opts.href ? 'a' : opts && opts.onSelect ? 'button' : 'div'
+    var mini = makeEl(doc, tag, 'innfo-mini')
+    mini.setAttribute('data-innfo-component', 'element-mini')
+    mini.setAttribute('data-element-id', String(data.id == null ? '' : data.id))
+    if (data.conceptId) mini.setAttribute('data-concept-id', String(data.conceptId))
+    var conceptOpts = (opts && opts.concept) || {}
+    var slot = conceptSlot({
+      index: data.index != null ? data.index : conceptOpts.index,
+      color: data.color || conceptOpts.color,
+    })
+    mini.setAttribute('data-concept-slot', String(slot))
+    mini.style.setProperty('--innfo-mini-accent', 'var(--innfo-concept-' + slot + ')')
+    if (opts && opts.domId) mini.setAttribute('id', String(opts.domId))
+    if (tag === 'a' && opts && opts.href) mini.setAttribute('href', String(opts.href))
+    if (tag === 'button') {
+      mini.setAttribute('type', 'button')
+      mini.addEventListener('click', function () {
+        if (opts && opts.onSelect) opts.onSelect(data)
+      })
+    }
+    var iconName = resolveConceptIconName(data.conceptId, conceptOpts)
+    var thumb = elementThumb(doc, data, iconName, 14)
+    thumb.classList.add('innfo-mini-thumb')
+    mini.appendChild(thumb)
+    var text = makeEl(doc, 'span', 'innfo-mini-text')
+    text.appendChild(makeEl(doc, 'span', 'innfo-mini-name', String(data.name || data.id || '')))
+    if (data.meta) text.appendChild(makeEl(doc, 'span', 'innfo-mini-meta', String(data.meta)))
+    mini.appendChild(text)
+    if (Array.isArray(data.markers) && data.markers.length) {
+      var mks = makeEl(doc, 'span', 'innfo-mini-markers')
+      data.markers.forEach(function (m) {
+        if (m) mks.appendChild(MarkerChip(m))
+      })
+      mini.appendChild(mks)
+    }
+    if (data.status) {
+      var st = makeEl(doc, 'span', 'innfo-card-status-pill')
+      st.setAttribute('data-status', String(data.status).toLowerCase())
+      st.appendChild(doc.createTextNode(String(data.status)))
+      mini.appendChild(st)
+    }
+    if (opts && opts.preview) {
+      var previewOpts = typeof opts.preview === 'object' && opts.preview !== null ? opts.preview : {}
+      var ctl = ElementPreview(mini, data, {
+        doc: doc,
+        concept: conceptOpts,
+        byId: opts && opts.byId,
+        render: previewOpts.render,
+        content: previewOpts.content,
+        openDelay: previewOpts.openDelay,
+      })
+      // Info affordance for touch/keyboard. Only on a non-interactive container:
+      // nesting a button inside a link/button is invalid.
+      if (previewOpts.affordance !== false && tag === 'div') {
+        var info = makeEl(doc, 'button', 'innfo-mini-info')
+        info.setAttribute('type', 'button')
+        info.setAttribute('data-innfo-component', 'mini-info')
+        info.setAttribute('aria-label', 'Show details')
+        info.setAttribute('aria-expanded', 'false')
+        info.innerHTML = icon('info', 13)
+        info.addEventListener('click', function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation()
+          if (ctl) ctl.togglePin()
+          var host = doc.querySelector('[data-innfo-component=element-preview]')
+          info.setAttribute('aria-expanded', host && !host.hidden ? 'true' : 'false')
+        })
+        mini.appendChild(info)
+      }
+    }
+    return mini
+  }
+
   function ElementCard(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ElementCard: data required')
     var doc = resolveDoc(opts)
@@ -1078,7 +1303,6 @@
     if (opts && opts.domId) card.setAttribute('id', String(opts.domId))
 
     var fields = Array.isArray(data.fields) ? data.fields : []
-    var imageField = imageFieldOf(fields)
     var collapsible = !(opts && opts.collapsible === false)
     var byId = (opts && opts.byId) || {}
 
@@ -1090,30 +1314,7 @@
     }
     var conceptIconName = resolveConceptIconName(data.conceptId, conceptOpts)
 
-    function makeConceptThumb() {
-      var ph = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--concept innfo-card-thumb--empty')
-      ph.setAttribute('data-concept-icon', conceptIconName)
-      ph.setAttribute('title', String(data.conceptId || 'Element'))
-      ph.setAttribute('aria-hidden', 'true')
-      ph.innerHTML = icon(conceptIconName, 18)
-      return ph
-    }
-
-    if (imageField) {
-      var thumb = makeEl(doc, 'img', 'innfo-card-thumb')
-      thumb.setAttribute('alt', String(data.name || data.id || ''))
-      thumb.setAttribute('loading', 'lazy')
-      thumb.setAttribute('src', normalizeAssetPath(String(imageField.value)))
-      thumb.addEventListener('error', function () {
-        retryImageSrc(thumb, function () {
-          var ph = makeConceptThumb()
-          if (thumb.parentNode) thumb.parentNode.replaceChild(ph, thumb)
-        })
-      })
-      head.appendChild(thumb)
-    } else {
-      head.appendChild(makeConceptThumb())
-    }
+    head.appendChild(elementThumb(doc, data, conceptIconName, 18))
     head.appendChild(
       KuBadge({
         kind: 'element',
@@ -1471,14 +1672,27 @@
     return input
   }
 
+  // A long or multi-line string has no single-line editor: it is edited in a
+  // textarea and proposed verbatim (Edit Modal Value Type Safety, S3b P0-2).
   function FieldStringWidget(value, opts) {
+    var str = value == null ? '' : String(value)
+    if (str.indexOf('\n') !== -1 || str.length > 70) {
+      var doc = resolveDoc(opts)
+      var ta = makeEl(doc, 'textarea', 'innfo-edit-textarea')
+      ta.setAttribute('data-innfo-widget', 'string')
+      ta.setAttribute('rows', '4')
+      ta.value = str
+      return ta
+    }
     var inp = FieldInput('text', value, opts)
     inp.setAttribute('data-innfo-widget', 'string')
     return inp
   }
 
   function FieldNumberWidget(value, opts) {
-    return FieldInput('number', value, opts)
+    var inp = FieldInput('number', value, opts)
+    inp.setAttribute('data-innfo-widget', 'number')
+    return inp
   }
 
   function FieldBooleanWidget(value, opts) {
@@ -1496,17 +1710,37 @@
     return label
   }
 
+  // A select never loses the value it edits: it always carries a blank option,
+  // and when the current value is not among the declared options one extra
+  // option carrying it is added (marked) and selected, so an unchanged save
+  // proposes the original value (Edit Modal Value Type Safety, S3b P0-2).
   function FieldSelectWidget(value, options, opts) {
     var doc = resolveDoc(opts)
     var select = makeEl(doc, 'select', 'innfo-edit-select')
     select.setAttribute('data-innfo-widget', 'select')
     var list = Array.isArray(options) ? options : []
+    var current = value == null ? '' : String(value)
+    var blank = makeEl(doc, 'option', null, '')
+    blank.value = ''
+    if (current === '') blank.selected = true
+    select.appendChild(blank)
+    var found = false
     list.forEach(function (opt) {
       var op = makeEl(doc, 'option', null, opt)
-      op.value = opt
-      if (String(opt) === String(value)) op.selected = true
+      op.value = String(opt)
+      if (String(opt) === current) {
+        op.selected = true
+        found = true
+      }
       select.appendChild(op)
     })
+    if (!found && current !== '') {
+      var extra = makeEl(doc, 'option', null, current)
+      extra.value = current
+      extra.selected = true
+      extra.setAttribute('data-not-in-options', 'true')
+      select.appendChild(extra)
+    }
     return select
   }
 
@@ -1606,9 +1840,12 @@
     // Mode Selector: Propose Value vs Comment (D15)
     var modeWrap = makeEl(doc, 'div', 'innfo-edit-mode-selector')
     // commentOnly: there is no value to propose, so the mode is fixed and the
-    // toggle is not offered.
+    // toggle is not offered. A list/object value keeps the toggle visible but
+    // disables Propose: there is no list editor, only a comment (S3b P0-2).
     var commentOnly = Boolean(data.commentOnly)
-    var isComment = commentOnly || Boolean(data.isComment)
+    var valueIsContainer =
+      Boolean(data.valueCommentOnly) || (data.value !== null && typeof data.value === 'object')
+    var isComment = commentOnly || valueIsContainer || Boolean(data.isComment)
     var btnPropose = makeEl(doc, 'button', 'innfo-edit-mode-btn' + (!isComment ? ' active' : ''), 'Propose value')
     var btnComment = makeEl(doc, 'button', 'innfo-edit-mode-btn' + (isComment ? ' active' : ''), 'Comment')
     btnPropose.setAttribute('type', 'button')
@@ -1616,6 +1853,13 @@
     modeWrap.appendChild(btnPropose)
     modeWrap.appendChild(btnComment)
     if (!commentOnly) panelEdit.appendChild(modeWrap)
+    if (valueIsContainer) {
+      btnPropose.disabled = true
+      btnPropose.setAttribute('aria-disabled', 'true')
+      panelEdit.appendChild(
+        makeEl(doc, 'p', 'innfo-edit-note', 'List and object values are proposed as a comment.'),
+      )
+    }
 
     var formPropose = makeEl(doc, 'div', 'innfo-edit-form-propose')
     formPropose.style.display = isComment ? 'none' : 'block'
@@ -1630,6 +1874,7 @@
     formComment.appendChild(commentTa)
 
     btnPropose.addEventListener('click', function () {
+      if (valueIsContainer) return
       isComment = false
       btnPropose.className = 'innfo-edit-mode-btn active'
       btnComment.className = 'innfo-edit-mode-btn'
@@ -1651,7 +1896,11 @@
     var fieldLabel = makeEl(doc, 'label', 'innfo-edit-field-label', data.fieldName ? data.fieldName : 'Value')
     fieldsContainer.appendChild(fieldLabel)
 
-    if (fieldType === 'number') {
+    if (valueIsContainer) {
+      // No value editor: a list or object is proposed as a comment only, never
+      // String()-coerced into a text control (S3b P0-2).
+      widgetRef = null
+    } else if (fieldType === 'number') {
       widgetRef = FieldNumberWidget(data.value, opts)
     } else if (fieldType === 'boolean') {
       widgetRef = FieldBooleanWidget(data.value, opts)
@@ -1666,7 +1915,7 @@
     } else {
       widgetRef = FieldStringWidget(data.value, opts)
     }
-    fieldsContainer.appendChild(widgetRef)
+    if (widgetRef) fieldsContainer.appendChild(widgetRef)
     formPropose.appendChild(fieldsContainer)
 
     panelEdit.appendChild(formPropose)
@@ -1763,7 +2012,16 @@
         comment: commentTa.value,
       }
       if (!isComment) {
-        if (fieldType === 'boolean') {
+        if (fieldType === 'number') {
+          var raw = widgetRef ? widgetRef.value : ''
+          var num = Number(raw)
+          if (String(raw).trim() === '' || !isFinite(num)) {
+            saveError.textContent = 'Enter a valid number.'
+            saveError.style.display = 'block'
+            return
+          }
+          result.proposed = num
+        } else if (fieldType === 'boolean') {
           var cb = widgetRef.querySelector('input[type="checkbox"]')
           result.proposed = cb ? cb.checked : false
         } else if (fieldType === 'multiselect') {
@@ -1790,6 +2048,192 @@
     actions.appendChild(saveBtn)
     actions.appendChild(cancelBtn)
     modal.appendChild(saveError)
+    modal.appendChild(actions)
+
+    return modal
+  }
+
+  // New element: concept picker, a name, and one widget per field the schema
+  // declares on the picked concept. Built on the same dialog shell and widgets as
+  // EditModal. onSave receives { concept, name, fields } where fields holds only
+  // the filled values (a blank input is not a value).
+  function NewElementModal(data, opts) {
+    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.NewElementModal: data required')
+    var doc = resolveDoc(opts)
+    var concepts = Array.isArray(data.concepts) ? data.concepts : []
+    var modal = makeEl(doc, 'dialog', 'innfo-edit-modal')
+    modal.setAttribute('data-innfo-component', 'new-element-modal')
+    modal.setAttribute('role', 'dialog')
+    modal.setAttribute('aria-modal', 'true')
+
+    function dismiss() {
+      if (typeof modal.close === 'function') modal.close()
+      else modal.removeAttribute('open')
+    }
+    function cancel() {
+      dismiss()
+      if (opts && typeof opts.onCancel === 'function') opts.onCancel()
+    }
+
+    var head = makeEl(doc, 'div', 'innfo-edit-modal-head')
+    head.appendChild(makeEl(doc, 'h2', null, data.title || 'New element'))
+    var closeBtn = makeEl(doc, 'button', 'innfo-edit-modal-close', '\u00D7')
+    closeBtn.setAttribute('type', 'button')
+    closeBtn.addEventListener('click', cancel)
+    head.appendChild(closeBtn)
+    modal.appendChild(head)
+
+    var body = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-edit-modal-body')
+
+    var conceptLabel = makeEl(doc, 'label', 'innfo-edit-field-label', 'Concept')
+    var picker = makeEl(doc, 'select', 'innfo-edit-select')
+    picker.setAttribute('data-innfo-role', 'concept')
+    picker.appendChild(makeEl(doc, 'option', null, ''))
+    picker.firstChild.value = ''
+    concepts.forEach(function (c) {
+      var op = makeEl(doc, 'option', null, c.name)
+      op.value = String(c.name)
+      picker.appendChild(op)
+    })
+    // Model picker: only when the console holds several models. A model-scoped
+    // console has exactly one, so the draft targets it without asking.
+    var models = Array.isArray(data.models)
+      ? data.models.filter(function (m) {
+          return m && m.id
+        })
+      : []
+    var modelPicker = null
+    if (models.length > 1) {
+      modelPicker = makeEl(doc, 'select', 'innfo-edit-select')
+      modelPicker.setAttribute('data-innfo-role', 'model')
+      models.forEach(function (m) {
+        var mo = makeEl(doc, 'option', null, m.title || m.id)
+        mo.value = String(m.id)
+        modelPicker.appendChild(mo)
+      })
+      var preset = models.filter(function (m) {
+        return String(m.id) === String(data.defaultModel)
+      })[0]
+      if (preset) modelPicker.value = String(preset.id)
+      body.appendChild(makeEl(doc, 'label', 'innfo-edit-field-label', 'Model'))
+      body.appendChild(modelPicker)
+    }
+    body.appendChild(conceptLabel)
+    body.appendChild(picker)
+
+    var nameLabel = makeEl(doc, 'label', 'innfo-edit-field-label', 'Name')
+    var nameInput = FieldInput('text', '', opts)
+    nameInput.setAttribute('data-innfo-role', 'name')
+    body.appendChild(nameLabel)
+    body.appendChild(nameInput)
+
+    var fieldsHost = makeEl(doc, 'div', 'innfo-edit-fields')
+    body.appendChild(fieldsHost)
+    modal.appendChild(body)
+
+    // [{ name, type, node }] for the currently picked concept.
+    var current = []
+
+    function widgetFor(def) {
+      var type = def.type || 'string'
+      var node
+      if (type === 'number') node = FieldNumberWidget('', opts)
+      else if (type === 'boolean') node = FieldBooleanWidget(false, opts)
+      else if (type === 'select') node = FieldSelectWidget('', def.options, opts)
+      else if (type === 'multiselect') node = FieldMultiSelectWidget([], def.options, opts)
+      else if (type === 'reference') node = FieldReferenceWidget('', data.candidates, opts)
+      else if (type === 'markdown' || type === 'markdown_inline') node = FieldMarkdownWidget('', opts)
+      else node = FieldStringWidget('', opts)
+      node.setAttribute('data-innfo-field', def.name)
+      return { name: def.name, type: type, node: node }
+    }
+
+    // The filled value of one widget, or undefined when it is blank.
+    function valueOf(w) {
+      var node = w.node
+      if (w.type === 'boolean') {
+        var cb = node.querySelector('input[type="checkbox"]')
+        return cb && cb.checked ? true : undefined
+      }
+      if (w.type === 'multiselect') {
+        var boxes = node.querySelectorAll('input[type="checkbox"]:checked')
+        var picked = Array.prototype.map.call(boxes, function (b) {
+          return b.value
+        })
+        return picked.length ? picked : undefined
+      }
+      if (w.type === 'reference') {
+        var ref = node.querySelector('input')
+        return ref && String(ref.value).trim() !== '' ? ref.value : undefined
+      }
+      var raw = String(node.value == null ? '' : node.value)
+      if (raw.trim() === '') return undefined
+      if (w.type === 'number') {
+        var num = Number(raw)
+        return isFinite(num) ? num : undefined
+      }
+      return raw
+    }
+
+    function renderFields() {
+      fieldsHost.innerHTML = ''
+      current = []
+      var chosen = concepts.filter(function (c) {
+        return c.name === picker.value
+      })[0]
+      if (!chosen) return
+      var defs = Array.isArray(chosen.fields) ? chosen.fields : []
+      defs.forEach(function (def) {
+        if (!def || !def.name) return
+        var w = widgetFor(def)
+        current.push(w)
+        fieldsHost.appendChild(makeEl(doc, 'label', 'innfo-edit-field-label', def.name))
+        fieldsHost.appendChild(w.node)
+      })
+    }
+    picker.addEventListener('change', renderFields)
+
+    var saveError = makeEl(doc, 'p', 'innfo-edit-error')
+    saveError.setAttribute('role', 'alert')
+    saveError.style.display = 'none'
+    modal.appendChild(saveError)
+
+    var actions = makeEl(doc, 'div', 'innfo-edit-modal-actions')
+    var saveBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-save', 'Save draft')
+    saveBtn.setAttribute('type', 'button')
+    saveBtn.addEventListener('click', function () {
+      var name = String(nameInput.value == null ? '' : nameInput.value).trim()
+      if (!picker.value) {
+        saveError.textContent = 'Pick a concept before saving.'
+        saveError.style.display = 'block'
+        return
+      }
+      if (!name) {
+        saveError.textContent = 'Enter a name before saving.'
+        saveError.style.display = 'block'
+        return
+      }
+      saveError.style.display = 'none'
+      var fields = {}
+      current.forEach(function (w) {
+        var v = valueOf(w)
+        if (v !== undefined) fields[w.name] = v
+      })
+      if (opts && typeof opts.onSave === 'function') {
+        opts.onSave({
+          concept: picker.value,
+          name: name,
+          fields: fields,
+          modelId: modelPicker ? modelPicker.value : models.length === 1 ? String(models[0].id) : undefined,
+        })
+      }
+      dismiss()
+    })
+    var cancelBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-cancel', 'Cancel')
+    cancelBtn.setAttribute('type', 'button')
+    cancelBtn.addEventListener('click', cancel)
+    actions.appendChild(saveBtn)
+    actions.appendChild(cancelBtn)
     modal.appendChild(actions)
 
     return modal
@@ -2187,12 +2631,15 @@
     FieldRow: FieldRow,
     FieldValue: FieldValue,
     ElementCard: ElementCard,
+    ElementMini: ElementMini,
+    ElementPreview: ElementPreview,
     CITATION_ORIGIN_LABELS: CITATION_ORIGIN_LABELS,
     DraftList: DraftList,
     AnnotationPopover: AnnotationPopover,
     ReviewedToggle: ReviewedToggle,
     RailProgress: RailProgress,
     EditModal: EditModal,
+    NewElementModal: NewElementModal,
     SankeyFlow: SankeyFlow,
     FieldStringWidget: FieldStringWidget,
     FieldNumberWidget: FieldNumberWidget,

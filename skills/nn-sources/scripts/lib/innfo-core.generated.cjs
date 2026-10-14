@@ -8653,7 +8653,15 @@ function parsePropertyLine(line) {
 function parsePropertyValue(raw) {
   const value = raw.trim();
   if (value === "") return "";
-  if (value.startsWith('"') && value.endsWith('"') && value.length >= 2 || value.startsWith("'") && value.endsWith("'") && value.length >= 2) {
+  if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+    try {
+      const parsed = JSON.parse(value);
+      if (typeof parsed === "string") return parsed;
+    } catch {
+    }
+    return value.slice(1, -1);
+  }
+  if (value.startsWith("'") && value.endsWith("'") && value.length >= 2) {
     return value.slice(1, -1);
   }
   if (value.startsWith("[[") && value.endsWith("]]")) {

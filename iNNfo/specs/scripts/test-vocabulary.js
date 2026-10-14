@@ -105,6 +105,20 @@ function run() {
     assertTrue(!!terms.ageNNt, 'ageNNt term entry exists');
     assertTrue(!!terms.assistant, 'assistant term entry exists');
 
+    // User-facing UI term: console (S3 D17). "editor" and "hosted app" are retired UI terms.
+    assertTrue(!!terms.console, 'console term entry exists');
+    if (terms.console) {
+      assertTrue(terms.console.canonical === true, 'console is marked canonical');
+      assertTrue(
+        typeof terms.console.sense === 'string' && terms.console.sense.includes('domain console'),
+        'console sense names the domain console',
+      );
+      assertTrue(
+        typeof terms.console.sense === 'string' && /user-facing/i.test(terms.console.sense),
+        'console sense marks it user-facing',
+      );
+    }
+
     // Retired identifier alias table verification
     const retired = vocab.retired_identifiers;
     assertTrue(Array.isArray(retired) || typeof retired === 'object', 'retired_identifiers table exists');
@@ -162,6 +176,25 @@ function run() {
     // Capability folders mapping recorded (names kept per D13)
     const capFoldersEntry = findRetired('capability_folders');
     assertTrue(!!capFoldersEntry, 'capability_folders mapping is recorded in retired_identifiers');
+
+    // Retired UI terms: editor & hosted app -> console (S3 D17). The `app` alias of
+    // bluepriNNt is a different entry and stays.
+    const editorEntry = findRetired('editor');
+    assertTrue(!!editorEntry, 'editor is in retired_identifiers');
+    if (editorEntry) {
+      assertEqual(editorEntry.new, 'console', 'editor replacement is console');
+      assertEqual(editorEntry.kind, 'ui_term', 'editor is a retired UI term');
+    }
+    const hostedAppEntry = findRetired('hosted app');
+    assertTrue(!!hostedAppEntry, 'hosted app is in retired_identifiers');
+    if (hostedAppEntry) {
+      assertEqual(hostedAppEntry.new, 'console', 'hosted app replacement is console');
+      assertEqual(hostedAppEntry.kind, 'ui_term', 'hosted app is a retired UI term');
+    }
+    assertTrue(
+      Array.isArray(terms.bluepriNNt.aliases) && terms.bluepriNNt.aliases.includes('app'),
+      'the app alias of bluepriNNt is untouched by the UI-term retirement',
+    );
 
     // Documentation-only check: assert table has documentation_only: true or runtime_consumers: []
     assertTrue(vocab.documentation_only === true || (vocab.meta && vocab.meta.documentation_only === true), 'retired table is documentation only (no runtime aliases)');

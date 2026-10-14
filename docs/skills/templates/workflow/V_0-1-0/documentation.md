@@ -123,7 +123,7 @@ The orchestrator reads these values literally and passes them to the loaded skil
 
 ## Sample
 
-See [`samples/example_workflow_NN.md`](./samples/example_workflow_NN.md) for a complete three-stage workflow example (Raw Ingestion → FORMAT Model → Video Script).
+See [`samples/example_workflow_NN.md`](./samples/example_workflow_NN.md) for a complete three-stage workflow example (Raw Ingestion → FORMAT Model → Script Generation).
 
 ## Template Location
 

@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-2-0"
+blueprint_version: "V_0-3-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 ---
@@ -31,7 +31,7 @@ weight:: 100
 ## NN Field Definition: op
 concept:: Change
 type:: select
-options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, comment]
+options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, comment, add_model]
 description:: Mutation or review operation.
 
 ## NN Field Definition: target
@@ -57,7 +57,7 @@ description:: Target concept for add_element operations.
 ## NN Field Definition: name
 concept:: Change
 type:: string
-description:: Display name for added or renamed entities.
+description:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id).
 
 ## NN Field Definition: slug
 concept:: Change
@@ -83,6 +83,21 @@ description:: Rationale, commit note, or review critique.
 concept:: Change
 type:: citation
 description:: Evidence the change derives from, in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, or a bare path). Written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.
+
+## NN Field Definition: blueprint_name
+concept:: Change
+type:: string
+description:: add_model only. Name of the parent bluepriNNt of the model to create.
+
+## NN Field Definition: blueprint_url
+concept:: Change
+type:: string
+description:: add_model only. Immutable URL of the parent bluepriNNt of the model to create.
+
+## NN Field Definition: knowledge_version
+concept:: Change
+type:: string
+description:: add_model only. Optional initial knowledge_version of the created model (inferred from the bluepriNNt when omitted).
 
 ## NN Field Definition: status
 concept:: Change
@@ -121,10 +136,11 @@ Every graph mutation in cogNNitive is represented as a structured changeset docu
 A changeset document lives in the changes/ directory at the domain root with the filename pattern <workspace_id>_<author>_<stamp>_changes_NN.md.
 
 Each change is declared as an element of concept Change:
-- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, comment.
+- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, comment, add_model.
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.
 - to: Proposed value.
+- add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset.
 - sources: Evidence the change derives from (a citation); written by the proposer and sealed with the proposal.
 - Execution annotations (status, resolution, resolved_slug) record the outcome of applying the change.
 
@@ -139,7 +155,7 @@ level: 3
 parent_spec:
   name: changes
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
-blueprint_version: "V_0-2-0"
+blueprint_version: "V_0-3-0"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

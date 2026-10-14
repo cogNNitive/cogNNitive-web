@@ -111,7 +111,7 @@ This skill guides LLMs and agents in authoring, creating from scratch (wizard), 
 > 1. The `iNNfo` repository is the **Single Source of Truth** for all apps and specs. Do NOT duplicate app files across repositories.
 > 2. When resolving apps/specs without MCP: if a git fallback clone is required, the agent MUST clone into the system temporary directory (`$env:TEMP/innfo_tmp` or `~/.agents/tmp/`), read the required file, and **immediately delete the temporary folder**. The agent MUST NEVER clone git repositories or leave checkouts inside the user's workspace directory.
 > 3. **Windows Network Resilience**: In Windows environments, do NOT execute bare `curl` in PowerShell (which aliases to `Invoke-WebRequest` and fails SSL handshakes). Use `curl.exe` explicitly, Node.js native fetch (`node -e "fetch(...)"`), or git archive.
-> 4. **Web GUI & Preview Integration**: When asked to preview a model or element in Web GUI environments, prefer generating structured Markdown cards with interactive deep links (`https://cognnitive.com/innfo/app/?view=editor&model={model_id}#{element_id}`) or inline SVG diagrams instead of un-sanitizable `<iframe>` tags.
+> 4. **Web GUI & Preview Integration**: When asked to preview a model or element in Web GUI environments, prefer generating structured Markdown cards that point to the domaiNN console (see section 12) or inline SVG diagrams instead of un-sanitizable `<iframe>` tags.
 
 ---
 
@@ -337,7 +337,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/innfo-core`.
 
 <!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
-**18** tools
+**21** tools
 
 | Tool | Description |
 |------|-------------|
@@ -346,10 +346,13 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
 | `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
 | `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
-| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or legacy intent operations. |
+| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or legacy intent operations. After an applied or partially applied changeset the domain console is regenerated and opened in a browser tab (pass open: false to skip). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
+| `regenerate_console` | Regenerate the domain console (or one model-scoped console) and open it in a browser tab. Idempotent: an up-to-date console is reported as unchanged. Also the retry path after an apply whose console regeneration failed. The result carries console and next_steps: you MUST relay next_steps.notice to the user. |
+| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, comment, add_model); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
+| `init_domain` | Create an empty, conformant domaiNN container in a new directory: the canonical folders (kNNowledge/, sources/import/, sources/conversations/, conversations/, artifacts/, procedures/, staging/, changes/), a .gitattributes with * -text and a domaiNN_NN.md manifest listing no models. Refuses a directory that exists and is not empty. It is not a changeset; add models afterwards with an add_model changeset (propose_changeset) or init_knowledge. Migration recipe: init_domain for a NEW domain, import the old domain as a source (migrate-domain.js --import-as-source), derive add_model/add_element changes that cite it through sources::, propose_changeset, review, apply_change. |
 | `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
 | `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
-| `init_knowledge` | Initialize or repair a level-3 knowledge document file: writes canonical YAML frontmatter and, when the file has no concept sections and the blueprint resolves, scaffolds a starter body (index block + one section per Concept) from the blueprint schema. Returns blueprintResolved / scaffolded / warnings. |
+| `init_knowledge` | Create a new level-3 knowledge document. Create-only: it is a wrapper over a one-change add_model changeset (written to changes/ and applied), so the creation is recorded as a change. It scaffolds canonical YAML frontmatter and a starter body (index block + one section per Concept) from the resolved blueprint schema; an unresolvable blueprint fails and writes nothing. An existing id fails with MODEL_EXISTS and the file is untouched (it never repairs or rewrites a document). Returns filePath, content and changeset on success (none of them on failure), plus console and next_steps: you MUST relay next_steps.notice to the user. |
 | `list_blueprints` | List all available Level 2 spec blueprints across local domain, global environment, and installed skills |
 | `hydrate_blueprint` | Hydrate (copy) a Level 2 spec blueprint from global or skill store into active domain blueprints directory |
 | `sync_domain_manifest` | Reconcile the domain manifest ## NN Knowledge entries against discovered Level-3 knowledge files: additively appends new entries, archives entries whose file disappeared, and reactivates tool-owned entries whose file returned. Never touches hand-authored entries lacking the <!-- nn:auto --> ownership marker. Defaults to a dry run. |
@@ -453,10 +456,27 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
 
 Every skill-driven `.md` write (new model, app, specialization, or full-file rewrite) MUST go through a single canonical path so files validate cleanly:
 
-1. **Preferred:** scaffold via `innfo-mcp_init_knowledge` (frontmatter version inferred from the resolved parent — never hand-written), then apply content with `innfo-mcp_apply_change` or a documented file-write tool.
+1. **Preferred:** create the model with `innfo-mcp_init_knowledge` (create-only; it records an applied `add_model` changeset and infers the frontmatter version from the resolved parent, never hand-written), or propose it with `innfo-mcp_propose_changeset` (`add_model`). Then change content through a changeset: `innfo-mcp_propose_changeset` for reviewed changes, `innfo-mcp_apply_change` for direct operations. There is no other file-write path.
 2. **Encoding:** UTF-8 without BOM, LF line endings, exactly one trailing newline.
 3. **FORBIDDEN:** shell `echo` / `printf` redirection for file writes — they mangle encodings, join lines, and drop trailing newlines.
 4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_knowledge` — no encoding or line-joining diagnostics may appear.
+
+#### Review-and-approve flow (changesets)
+
+Every content change a user should review goes through a changeset, never a direct file edit:
+
+1. `innfo-mcp_propose_changeset({ operations })` writes a sealed changeset with `status: proposed` under `changes/`. You derive the operations (`update_field`, `add_element`, `remove_element`, `rename_element`, `rename_concept`, `update_matrix_cell`, `comment`, `add_model`); the tool does not interpret conversations. It validates before writing and never applies.
+2. The tool regenerates the domain console (`artifacts/<stem>_console/<stem>_console.html`, a stable file overwritten in place) and opens it in a browser tab. `innfo-mcp_regenerate_console` does the same on demand and is the retry path when a regeneration failed.
+3. The user reviews the proposal in the console, can add drafts there (edit a field, comment, or **New element**), and exports a changeset file from it.
+4. The user replies **OK** and you call `innfo-mcp_apply_change({ changeset })`. After an applied or partially applied changeset the console is regenerated again so it shows the result.
+
+The result of `propose_changeset`, `apply_change`, `regenerate_console` and `init_knowledge` carries `next_steps`. You MUST relay `next_steps.notice` to the user verbatim: it lists the numbered steps above, the console path when the browser could not be opened, and the OK shortcut ("simply reply OK to apply them"). The console is static HTML and cannot call the MCP, so approval always comes back through you.
+
+#### New domain and migration
+
+- `innfo-mcp_init_domain({ dir, name })` creates an empty, conformant domaiNN in a new directory (canonical folders, `changes/`, `.gitattributes` with `* -text`, a manifest listing no models). It refuses a non-empty directory and is not a changeset.
+- Add models afterwards with an `add_model` change (alone or together with `add_element` changes in the same changeset) via `propose_changeset`, or with `init_knowledge`.
+- Migration recipe: `init_domain` for a NEW domain, import the old domain as a source (`node skills/nn-upgrade/scripts/migrate-domain.js --import-as-source`), derive `add_model` / `add_element` changes that cite it through `sources::`, `propose_changeset`, review in the console, reply OK, `apply_change`.
 
 #### Atomic version bump
 
@@ -557,7 +577,7 @@ When the user picks option `[c]` (Audit & validate model), the agent executes de
 
 1. ⚠️ [Logical Coherence] Broken Reference
    - Finding: Element `Enterprise Customer` references `CommercialDirector`, which does not exist.
-   - Functional impact: It will break the navigation-tree links in iNNfo Modeler.
+   - Functional impact: It will break the navigation-tree links in the domaiNN console.
    - Suggested fix: Create the `CommercialDirector` element or correct the name.
 
 Would you like me to apply the recommended fix automatically?
@@ -670,46 +690,26 @@ When the project scales to multiple sub-models, present the **4 Architectural Al
 
 ---
 
-## 12. Visual Expectation Checklist (App Verification)
+## 12. Visual Expectation Checklist (Console Verification)
 
-Upon completing the creation or modification of a model, the agent MUST print the Visual Checklist with dynamic deep links instead of the generic `https://cognnitive.com/innfo/app/`.
+Upon completing the creation or modification of a model, the agent MUST print the Visual Checklist pointing to the domaiNN console, the single review surface. Print its file path, never a web link.
 
-### Deep URL construction instruction:
-- **Base URL**: `https://cognnitive.com/innfo/app/?view=editor`
-- **Model Query Parameter**: `&model=<model_id>` (where `<model_id>` is the model identifier/filename without extension, e.g. `arenzano_V_1-2-0_business`).
-- **Workspace Query Parameter** (optional): `&ws=<workspace_folder_name>` — the root folder name of the workspace where the model lives (e.g. `rejas_rehabilitacion`). Include it whenever the workspace folder is known: it lets the editor reopen the correct workspace from the recent list instead of the most recently opened one. Links to models living in different workspaces MUST each carry their own `&ws=`. When the folder name is unknown, omit `&ws=` — the editor then resolves the model across the user's recently opened workspaces.
-- **Concept Deep Link (Hash)**: `#@<ConceptName>` (URL-encoded if containing spaces, e.g. `#@Market%20trends`).
-- **Element Deep Link (Hash)**: `#<ConceptName>.<ElementName>` (e.g. `#Products.CogNNitive`).
+### Console location
+- Regenerate the console first (option `[d]`, `apply_change` regeneration) so it reflects the change. Print the path of the generated `domaiNN_console.html` (under `artifacts/<stem>_console/`) and tell the user to open it in a browser; it is self-contained and works offline.
+- Name the model to look for (`<model_id>`), not a URL: the console lists every model in the domaiNN.
 
-If there is an active model in context, use its `model_id` and show interactive links to its main sections.
+### Review is a file
 
-### Live preview URL (when the MCP exposes it)
-
-When the innfo-mcp process runs with `INNFO_PREVIEW=1`, every successful mutating
-tool call (`apply_change`, `sync_domain_manifest`) returns a `preview_app_url`
-field in its envelope. **Print `preview_app_url` verbatim** in addition to (not
-instead of) the static deep links above.
-
-That URL opens the editor tab as a **read-only live mirror** of the session: it
-subscribes to the MCP change stream and re-renders the affected model on every
-later mutation, preserving the current view and selected node. It is bound to
-the session — it stops working when the MCP process exits — and editing inside
-it is disabled by design, so the user changes the model by prompting the agent,
-never in the preview tab. When the field is absent, print the static deep links
-only.
+The console is a static file the MCP regenerates. Relay `next_steps.notice` (it carries the console path) and let the user open the file. To change the model the user prompts the agent, or drafts changes in the console and exports a changeset.
 
 Example of dynamic checklist to generate:
 ```markdown
-📋 Visual Expectation Checklist in iNNfo Modeler (assuming workspace is already open):
+📋 Visual Expectation Checklist in the domaiNN console (open `<console path>` in a browser):
 
-- [ ] 🌳 [**Navigation Sidebar Tree**](https://cognnitive.com/innfo/app/?view=editor&model=<model_id>&ws=<workspace_folder_name>):
-      Hierarchical structure based on `# NN index` with fluid navigation across concepts and elements.
-- [ ] 📋 [**Concept Field Panels** (e.g. <Concept>)](https://cognnitive.com/innfo/app/?view=editor&model=<model_id>&ws=<workspace_folder_name>#@<Concept_url_encoded>):
-      Detailed view rendered for each `key:: value` (properties, types, and references).
-- [ ] 🎴 [**Element Cards** (e.g. <Element>)](https://cognnitive.com/innfo/app/?view=editor&model=<model_id>&ws=<workspace_folder_name>#<Concept_url_encoded>.<Element_url_encoded>):
-      Interactive cards for each `## NN <Concept>: <Element>` block showing metadata and descriptions.
-- [ ] 📊 [**Comparative Matrix Tables**](https://cognnitive.com/innfo/app/?view=matrices&model=<model_id>&ws=<workspace_folder_name>):
-      N-to-M relationship tables and `item-markers matrix` rendered with interactive cells (`X` / `-`).
+- [ ] 🌳 **Navigation tree** — `<model_id>`: hierarchical structure based on `# NN index`, with concepts and elements.
+- [ ] 📋 **Concept field panels** (e.g. <Concept>): each `key:: value` (properties, types and references) rendered per concept.
+- [ ] 🎴 **Element cards** (e.g. <Element>): one card per `## NN <Concept>: <Element>` block with its metadata and description.
+- [ ] 📊 **Comparative matrix tables**: N-to-M relationship tables and `item-markers matrix` rendered with interactive cells (`X` / `-`).
 ```
 
 ---

@@ -49,8 +49,8 @@ template:: "business"
 input:: "sources/"
 output:: "models/"
 
-## NN Stage: Video Script
-id:: "video-script"
+## NN Stage: Script Generation
+id:: "script-generation"
 description:: "Toma el modelo iNNfo y genera un script de Video para el comercial final"
 skill:: [[traNNsform Normalization]]
 template:: "video"
@@ -110,7 +110,7 @@ method:: "aplicación de template video sobre el modelo iNNfo para generar scrip
 | :--- | :---: | :---: |
 | Raw Ingestion | X | |
 | FORMAT Model | | X |
-| Video Script | X | |
+| Script Generation | X | |
 
 # NN matrices: Stage-Artifact matrix
 
@@ -118,14 +118,14 @@ method:: "aplicación de template video sobre el modelo iNNfo para generar scrip
 | :--- | :---: | :---: | :---: | :---: |
 | Raw Ingestion | X | | | |
 | FORMAT Model | | | X | |
-| Video Script | | | | X |
+| Script Generation | | | | X |
 
 ---
 
 ## Workflow Data Flow
 
 ```
-raw/  ──[Raw Ingestion]──▶  sources/  ──[FORMAT Model]──▶  models/  ──[Video Script]──▶  scripts/
+raw/  ──[Raw Ingestion]──▶  sources/  ──[FORMAT Model]──▶  models/  ──[Script Generation]──▶  scripts/
  │  tipo: raw                │  tipo: markdown             │  tipo: format-model        │  tipo: script
  │  skill: nn-sources     │  skill: nn-innfo            │  skill: nn-sources      │
  │  modo: normalize-only     │  template: business         │  template: video          │

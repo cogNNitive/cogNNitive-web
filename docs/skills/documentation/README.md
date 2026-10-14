@@ -22,7 +22,7 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 | [`nn-sources`](skills/nn-sources.md) | `V_3-5-1` | Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync. |
 | [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-10` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
 | [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-3` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
-| [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-3-0` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
+| [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-4-0` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
 | [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
 | [`nn-design-presets`](skills/nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
 | [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-2-1` | Audit, update, and maintain cogNNitive skills. |

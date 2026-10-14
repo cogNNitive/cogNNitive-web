@@ -1,8 +1,8 @@
 ---
 name: nn-upgrade
-description: Guided, consent-gated migration and upgrade of user domaiNN workspaces. Supports three flows: (1) Domain Layout Migration from a legacy layout to the canonical domaiNN layout via migrate-domain.js, (2) bluepriNNt version upgrades for adopted templates, and (3) batch migration across sibling domaiNNs. Triggers: template upgrade, upgrade templates, workspace upgrade, domain migration, migrate domain, migrar workspace, migrar dominio, actualizar plantillas.
-version: "V_0-3-0"
-last_updated: 2026-10-07
+description: Guided, consent-gated upgrade of user domaiNN workspaces. Upgrades bluepriNNt versions for adopted templates (Flow B), freezes unfrozen element slugs (--freeze-slugs), and points an old or broken domain at the new-domain recipe (create a new domain and import the old one as a Source). There is no in-place migration of an old domain. Triggers: template upgrade, upgrade templates, workspace upgrade, domain migration, migrate domain, migrar workspace, migrar dominio, actualizar plantillas.
+version: "V_0-4-0"
+last_updated: 2026-10-14
 metadata:
   source_type: original
 license: MIT
@@ -25,20 +25,20 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 
 ## Role
 
-Guided domaiNN upgrade and layout migration engine. Owns **consent-gated migrations** detected
-by `nn-preflight`.
+Guided domaiNN upgrade engine. Owns **consent-gated upgrades** detected by `nn-preflight`
+(consent, backup, plan validation, recovery).
 
-This skill owns the **migration contract** (consent, backup, plan validation, recovery).
-It does NOT own legacy knowledge: the per-layout maps (which retired paths map to which
-canonical paths, which frontmatter keys are renamed, which schema maps apply) live in the
-versioned procedure `upgrade_and_migrate_legacy_workspace_NN.md` and its data maps.
-When a new retired layout appears, the procedure versions — this skill does not change.
+This skill does NOT migrate an old domain in place. An old or broken domain is replaced by a
+new domain: create a new domain and import the old one as a Source. The old tree is kept
+byte-identical under `sources/` and nothing in it is rewritten or deleted.
 
-Supports three distinct flows:
-1. **Flow A — Domain Layout Migration** (`legacy-layout` detected): migrates a legacy
-   domaiNN to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` / `artifacts` layout.
-2. **Flow B — bluepriNNt Version Upgrade** (`upgrade-available` detected): upgrades bluepriNNt versions for adopted models within a canonical domaiNN.
-3. **Flow C — Batch Domain Update** (`--dir <parent>`): orchestrates Flow A migration across many sibling domaiNNs in one parent directory via `batch-update.js`, reusing `migrate-domain.js` per domain.
+The skill ships two things:
+1. **Flow B — bluepriNNt Version Upgrade** (`upgrade-available` detected): upgrades bluepriNNt
+   versions for adopted models within a current domaiNN.
+2. **The new-domain pointer** (`legacy-layout` or a broken domain): the recipe below.
+
+It also exposes one maintenance option, `--freeze-slugs`, the remedy named by the console's
+`UNFROZEN_MODEL` error.
 
 ---
 
@@ -46,77 +46,27 @@ Supports three distinct flows:
 
 - **Dry run:** a read-only execution that produces a plan report plus a deterministic
   `planHash` and writes nothing. Always run first; show the report before asking consent.
-- **planHash:** SHA over the normalized migration plan. `--apply` revalidates it
-  in-process: a mismatch aborts that domain with no partial writes (something changed
-  between planning and applying).
-- **Full-tree backup:** a timestamped copy of the whole domaiNN written **outside**
-  the workspace, with a SHA-256 manifest (`manifest.sha256`). Required before the
-  first write; every recovery path restores from it.
-- **Rehydration (Flow B):** materializing the adopted (current catalog) bluepriNNt
-  locally so `parent_spec` can be repointed, the version bumped, and the model
-  re-validated. On validation failure, restore from the backup.
-- **Never half-migrate:** any failure restores the pre-migration state from backup
-  (`--restore <backupDir>`); an interrupted run is detected and recovered the same way.
-
----
-
-## Flow A: Domain Layout Migration (`legacy-layout`)
-
-When `nn-preflight` reports verdict `legacy-layout`:
-
-### Phase A0 — Min-MCP Gate Check
-Layout migration requires `innfo-mcp` `>= 0.12.0`. If MCP is below the minimum, halt and instruct the user to update the MCP server first.
-
-### Phase A1 — Dry Run & Report
-Run `migrate-domain.js` in dry-run mode:
-```bash
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir>
-```
-The dry-run produces a detailed report (moved files, rewritten files, unmapped custom
-bluepriNNts) plus a deterministic `planHash`. No files are written. For WHAT each
-retired path maps to, see the procedure (`upgrade_and_migrate_legacy_workspace_NN.md`,
-Layout Maps) — this skill does not enumerate retired paths.
-
-### Phase A2 — Consent Gate
-Present the dry-run report and request explicit confirmation:
-```markdown
-⚠️ Legacy layout detected. Migration will convert the domain to the canonical domaiNN/kNNowledge layout.
-Plan Hash: <hash>
-
-[a] (Recommended) Apply domain migration now
-[b] Cancel and keep legacy layout
-```
-On `[b]`, cancel and perform no writes.
-
-### Phase A3 — Verified Backup & In-Place Migration
-Execute the migration with the confirmed `planHash`:
-```bash
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --apply --plan-hash <hash> --yes
-```
-- Performs a timestamped full-tree out-of-tree backup with SHA-256 manifest.
-- Applies language migration and schema maps in place with journaling (`journal.json`).
-- Validates the migrated domain via MCP (`validate_knowledge` with `domain: true`).
-
-### Phase A4 — Failure Recovery & Import-as-Source
-- **Failure**: Any failure automatically restores the pre-migration state from the backup via `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --restore <backupDir>`.
-- **Import-as-Source Alternative**: For domains with unmapped custom bluepriNNts or complex hand-edited legacy structures, offer the import-as-source exit:
-  ```bash
-  node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --import-as-source --new-domain-dir <newDir>
-  ```
-  This scaffolds a fresh canonical domaiNN and imports the legacy tree byte-identically into `sources/legacy/` with complete provenance and citation lineage.
+- **planHash:** SHA over the normalized plan. The apply phase revalidates it: a mismatch
+  aborts that domain with no partial writes (something changed between planning and applying).
+- **Backup:** a timestamped copy of the whole domaiNN written **outside** the workspace, with
+  a SHA-256 manifest (`manifest.sha256`). Required before the first write.
+- **Rehydration (Flow B):** materializing the adopted (current catalog) bluepriNNt locally so
+  `parent_spec` can be repointed, the version bumped, and the model re-validated. On
+  validation failure, restore from the backup.
+- **Never half-upgrade:** any failure restores the pre-upgrade state from the backup.
 
 ---
 
 ## Flow B: bluepriNNt Version Upgrade
 
 ### Phase B0 — Detect
-Run the Tier-3 upgrade scan (via `nn-preflight` `--workspace-dir`) and present the per-model classification.
+Run the Tier-3 upgrade scan (via `nn-preflight` `--workspace-dir`) and present the per-model classification. This is the dry run: it writes nothing.
 
 ### Phase B1 — Inform & Consent
 Present upgrade options. Consent is mandatory before any mutation.
 
 ### Phase B2 — Backup
-Create a timestamped full-tree backup outside the workspace:
+Create a timestamped backup outside the workspace:
 ```bash
 node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>
 ```
@@ -124,62 +74,37 @@ node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>
 ### Phase B3 — Impact Analysis
 Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use.
 
-### Phase B4 — Migrate & Validate
-Hydrate adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump version, and re-validate through MCP. On validation failure, restore from backup.
+### Phase B4 — Rehydrate & Validate
+Hydrate adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump version, and re-validate through MCP. On validation failure, restore from the backup.
 
 ---
 
-## Flow C: Batch Domain Update
+## Freezing slugs
 
-Orchestrates **Flow A** migration across many sibling domaiNNs in one parent directory.
-A single CLI, `batch-update.js`, wraps `migrate-domain.js`: the batch is an aggregator,
-never a fused transaction, and it reuses the migration unit instead of reimplementing it.
-v1 covers **Flow A** (offline/deterministic layout migration) only — Flow B
-(bluepriNNt version upgrade) batching is deferred. The batch tool never deletes
-legacy/quarantine code.
-
-### Phase C0 — Discovery / Scan
+When the console reports `UNFROZEN_MODEL`, freeze the element slugs of the domain's Level 3 models:
 ```bash
-node skills/nn-upgrade/scripts/batch-update.js --dir <parent> --scan
+node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs          # dry run
+node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs --apply  # write
 ```
-Discovers sibling domaiNNs under `<parent>` (excluding `-backup-*`, `_archive`,
-`_templates`, and dot-dirs), classifying each `ready` / `noop` / `blocked` / `skipped`,
-and writes a re-runnable `<parent>/batch-plan.json` recording each domain's `path`,
-op count, and `planHash`. Read-only with respect to domains (zero domain writes).
-Add `--json` for machine-readable output.
+The dry run lists the models and slugs it would freeze. `--apply` writes them in place. Present the dry run and get consent before `--apply`.
 
-### Phase C1 — Selection & Consent
-Selection is non-interactive and expressed ONLY through `--only a,b` / `--exclude x,y`
-and/or a frozen plan (`--plan <file>`) — there are no numbered menus. Present the plan
-and request consent; the consent token is `--yes`. An empty selection applies nothing.
+---
 
-### Phase C2 — Apply
+## Old or broken domain: create a new domain
+
+When `nn-preflight` reports `legacy-layout`, or a domain cannot be upgraded, do not migrate it in place. Create a new domain and import the old one as a Source:
 ```bash
-node skills/nn-upgrade/scripts/batch-update.js --dir <parent> --apply [--only a,b] --yes
+node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>
 ```
-Re-validates each selected domain's `planHash` in process (a mismatch aborts that domain
-with no partial writes), then delegates to `migrate-domain.js --apply --plan-hash <hash>
---yes`. A soft per-parent lock (`<parent>/.nn-batch.lock`; `--force` bypasses it) guards
-concurrent batches. Each domain keeps its own backup + `journal.json`; an aggregate
-`<parent>/batch-journal-<stamp>.json` references them. Failure policy is
-continue-on-failure: one bad domain never rolls back the good ones. Re-running skips
-already-applied / `noop` domains with no new backup.
-
-### Phase C3 — Rollback
-```bash
-node skills/nn-upgrade/scripts/batch-update.js --rollback <parent>/batch-journal-<stamp>.json --yes
-```
-Restores `applied` domains in **reverse order** via `migrate-domain.js --restore`.
-Requires `--yes`. See the Core Rules below for the consent, verified full-tree backup,
-and never-half-migrate guarantees this flow inherits.
+This scaffolds a new domaiNN and copies the old tree byte-identically under the new domain's `sources/`. The old directory is never modified. The agent then derives the new domain's content from that Source (proposing changesets that cite it); the detailed recipe lives in the `init_domain` flow of the MCP.
 
 ---
 
 ## Core Rules
 
 1. **Consent first**: No mutation before explicit user confirmation.
-2. **Verified full-tree backup**: Out-of-tree backup + SHA-256 manifest must exist before the first write.
-3. **Never half-migrate**: Failed migrations restore cleanly from backup.
+2. **Verified backup**: An out-of-tree backup with a SHA-256 manifest must exist before the first write of Flow B.
+3. **Never half-upgrade**: A failed upgrade restores cleanly from the backup.
 4. **Zero workspace pollution**: All temporary checkouts and backups stay outside the working tree.
-5. **Deterministic recovery**: Use `migrate-domain.js --restore <backupDir>` if any interrupted run is encountered.
-6. **No retired paths here**: This skill never names retired layouts or keys. Legacy detail lives in the procedure and its maps; keep it that way.
+5. **No in-place migration**: An old domain is imported as a Source into a new domain; nothing rewrites or deletes user data.
+6. **No retired paths here**: This skill never names retired layouts or keys. Legacy detail lives in the procedure `upgrade_and_migrate_legacy_workspace_NN.md`; keep it that way.

@@ -73,6 +73,28 @@ mode state: the edit control exists only because the caller passed `onEdit`.
 `.innfo-card-head`), `body[]` (into `.innfo-card-body`), `concept` (concept
 color/icon/index for the name badge), `onRef`, `onCite`.
 
+### Edit modal widgets (`EditModal`)
+
+`EditModal(data, { doc, onSave, onCancel })` is the one shared value editor (the
+review controller owns it). It never changes the type of the value it edits:
+
+- `type: 'number'` → `input[type=number]`; Save proposes `Number(input)`. An
+  empty or non-finite input shows an inline error (`.innfo-edit-error`) and does
+  not call `onSave`.
+- `type: 'select'` → `select[data-innfo-widget=select]` whose first option is
+  blank (value `""`). When the current value is not among `options`, one extra
+  option carrying it is added and selected, marked `data-not-in-options="true"`,
+  so an unchanged save proposes the original value.
+- `type: 'boolean'` / `'multiselect'` / `'reference'` / `'markdown'` keep their
+  dedicated widgets (`data-innfo-widget`).
+- a string containing a newline **or** longer than 70 characters edits in a
+  `textarea` and is proposed verbatim; other strings keep the single-line input.
+- an array or object value opens the modal comment-only: the Propose control is
+  disabled, a note (`List and object values are proposed as a comment.`) is
+  shown, and the value is never `String()`-coerced or passed to a text control.
+  A `commentOnly` target (an element-level comment) hides the mode toggle
+  entirely instead.
+
 ## Tokens
 
 `TOKEN_VALUES` holds a light and a dark value for every `--innfo-*` token:

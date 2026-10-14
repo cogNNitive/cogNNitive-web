@@ -21,6 +21,25 @@
     return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
+  // Declared definition of a field, keyed by (concept, field) so two concepts that
+  // share a field name keep their own type/options. Case-insensitive on both parts.
+  function fieldDefOf(schema, concept, field) {
+    var fields = schema && Array.isArray(schema.fields) ? schema.fields : []
+    var c = String(concept == null ? '' : concept).toLowerCase()
+    var n = String(field == null ? '' : field).toLowerCase()
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i]
+      if (
+        f &&
+        String(f.concept == null ? '' : f.concept).toLowerCase() === c &&
+        String(f.name == null ? '' : f.name).toLowerCase() === n
+      ) {
+        return f
+      }
+    }
+    return null
+  }
+
   function deepCopy(value) {
     return JSON.parse(JSON.stringify(value))
   }
@@ -195,7 +214,16 @@
       addDraft: function (input) {
         var raw = isObject(input) ? input : {}
         var isMatrix = raw.matrix != null && raw.matrix !== '' && raw.row != null && raw.col != null
-        if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
+        if (raw.kind === 'new') {
+          // A new element has no target in the model yet: it is addressed by its
+          // model, concept and name instead of an element id and hash.
+          var missing = ['model_id', 'concept', 'element'].filter(function (key) {
+            return raw[key] == null || raw[key] === ''
+          })
+          if (missing.length) {
+            throw new TypeError('InnfoReview.createDraftStore: new draft requires ' + missing.join(', '))
+          }
+        } else if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
           throw new TypeError('InnfoReview.createDraftStore: element_id and base_hash required')
         }
         return deepCopy(
@@ -524,6 +552,17 @@
     // Resolve an anchor to a KU-modal target. Returns null when the anchor is
     // not modal-editable (card comments, tag/relation proposals use popovers
     // or immediate comment drafts instead).
+    function referenceCandidates(def) {
+      var allowed = def && Array.isArray(def.target_concepts) ? def.target_concepts : []
+      if (!allowed.length) return elements
+      var set = allowed.map(function (c) {
+        return String(c).toLowerCase()
+      })
+      return elements.filter(function (e) {
+        return e && set.indexOf(String(e.concept).toLowerCase()) !== -1
+      })
+    }
+
     function kuModalTarget(anchorData) {
       // Matrix cells are edited through the same modal, addressed by coordinate.
       if (anchorData.matrixCell) {
@@ -599,12 +638,7 @@
         }
       }
       var fieldVal = el.fields ? el.fields[field] : undefined
-      var schemaField = null
-      if (options.schema && Array.isArray(options.schema.fields)) {
-        schemaField = options.schema.fields.filter(function (f) {
-          return f.name === field
-        })[0]
-      }
+      var schemaField = fieldDefOf(options.schema, el.concept, field)
       var fieldType =
         schemaField && schemaField.type
           ? schemaField.type
@@ -613,15 +647,20 @@
             : typeof fieldVal === 'boolean'
               ? 'boolean'
               : 'string'
+      // A list or object value has no value editor: the modal opens comment-only
+      // with Propose disabled (Edit Modal Value Type Safety, S3b P0-2).
+      var valueIsContainer = fieldVal !== null && typeof fieldVal === 'object'
       return {
         title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 ' + field,
         fieldName: field,
         type: fieldType,
         value: fieldVal,
+        valueCommentOnly: valueIsContainer,
         options: schemaField ? schemaField.options : undefined,
+        target_concepts: schemaField ? schemaField.target_concepts : undefined,
         candidates:
           schemaField && (schemaField.type === 'reference' || fieldType === 'reference')
-            ? elements
+            ? referenceCandidates(schemaField)
             : undefined,
         draftField: field,
         original: fieldVal,
@@ -669,6 +708,7 @@
           history: target.history,
           isComment: !!target.isComment,
           commentOnly: !!target.commentOnly,
+          valueCommentOnly: !!target.valueCommentOnly,
           connections: connectionsFor(elementsById[anchorData.elementId]),
           startTab: anchorData.info ? 'history' : 'edit',
         },
@@ -892,6 +932,87 @@
       b.addEventListener('click', function () {
         openFor(b, anchorData)
       })
+      return b
+    }
+
+    // ---- New element (kind: 'new' draft) ----
+
+    function schemaConcepts() {
+      var list = options.schema && Array.isArray(options.schema.concepts) ? options.schema.concepts : []
+      return list
+        .map(function (c) {
+          return typeof c === 'string' ? { name: c } : c
+        })
+        .filter(function (c) {
+          return c && c.name
+        })
+    }
+
+    // Fields the schema declares on one concept, from the flattened list the
+    // payload carries (the same source the edit modal reads).
+    function declaredFieldsOf(concept) {
+      var all = options.schema && Array.isArray(options.schema.fields) ? options.schema.fields : []
+      var key = String(concept).toLowerCase()
+      return all.filter(function (f) {
+        return f && f.name && String(f.concept == null ? '' : f.concept).toLowerCase() === key
+      })
+    }
+
+    function openNew() {
+      var concepts = schemaConcepts()
+      if (!concepts.length || typeof UI.NewElementModal !== 'function') return false
+      closePopover()
+      var modal = UI.NewElementModal(
+        {
+          concepts: concepts.map(function (c) {
+            return { name: c.name, fields: declaredFieldsOf(c.name) }
+          }),
+          candidates: elements,
+          // meta.models[].id is the model id a changeset target resolves; in a domain
+          // console meta.modelId is only the folder name.
+          models: Array.isArray(meta.models) ? meta.models : [],
+          defaultModel: meta.modelId,
+        },
+        {
+          doc: doc,
+          onSave: function (res) {
+            if (!store) return
+            var draft = {
+              kind: 'new',
+              model_id: res.modelId || meta.modelId,
+              concept: res.concept,
+              element: res.name,
+            }
+            if (Object.keys(res.fields).length) draft.proposed = res.fields
+            store.addDraft(draft)
+            refreshCount()
+            closePopover()
+          },
+          onCancel: function () {
+            closePopover()
+          },
+        },
+      )
+      doc.body.appendChild(modal)
+      openPopover = modal
+      if (typeof modal.showModal === 'function') modal.showModal()
+      else modal.setAttribute('open', 'open')
+      return true
+    }
+
+    function buildNewElementButton() {
+      var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
+      if (!banner || !store || !canReview(meta, elements, needs)) return null
+      var existing = banner.querySelector('[data-innfo="new-element"]')
+      if (existing) return existing
+      if (!schemaConcepts().length) return null
+      var b = makeEl(doc, 'button', 'innfo-new-element', 'New element')
+      b.setAttribute('data-innfo', 'new-element')
+      b.setAttribute('type', 'button')
+      b.addEventListener('click', openNew)
+      var openBtn = banner.querySelector('#innfo-feedback-open')
+      if (openBtn && openBtn.parentNode) openBtn.parentNode.insertBefore(b, openBtn)
+      else banner.appendChild(b)
       return b
     }
 
@@ -1333,6 +1454,7 @@
       // toggle and changed filter are re-inserted here (idempotent).
       if (canReview(meta, elements, needs)) {
         toggleEl = buildToggle()
+        buildNewElementButton()
         if (enabled && toggleEl) buildChangedFilter()
       }
       if (toggleEl) toggleEl.setAttribute('aria-pressed', enabled ? 'true' : 'false')
@@ -1435,6 +1557,7 @@
       disable: disable,
       decorate: decorate,
       openEdit: openEdit,
+      openNew: openNew,
       propose: saveDraft,
       // Re-renders the host's count surfaces and re-applies decorations after
       // the store changed outside saveDraft (e.g. a draft removed by a view).
@@ -1451,6 +1574,7 @@
     STORE_VERSION: STORE_VERSION,
     createDraftStore: createDraftStore,
     createReviewController: createReviewController,
+    fieldDefOf: fieldDefOf,
     reviewState: reviewState,
     isTargetChanged: isTargetChanged,
     isAlreadyApplied: isAlreadyApplied,

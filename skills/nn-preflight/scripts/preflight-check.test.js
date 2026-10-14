@@ -2050,6 +2050,39 @@ agent-bootstrap:
     }
   }
 
+  // Legacy layout message names the new-domain recipe, never an in-place migration (S4)
+  {
+    const emptyManifest = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const server = await serveRoutes({ '/manifest.md': emptyManifest });
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-cli-legacy-msg-'));
+    try {
+      fs.mkdirSync(path.join(tmpDir, 'sources', 'nn'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'sources', 'nn', 'raw_NN.md'), '# raw\n', 'utf8');
+
+      const res = await runScriptAsync([
+        '--json',
+        '--workspace-dir', tmpDir,
+        '--manifest-url', `${server.url}/manifest.md`,
+      ]);
+      const parsedRes = JSON.parse(res.stdout);
+      const item = parsedRes.items.find((i) => i.type === 'workspace-layout');
+      assert.ok(item, `legacy layout must be reported, got: ${res.stdout}`);
+      assert.ok(item.detail.includes('--import-as-source'), item.detail);
+      assert.ok(/new domain/i.test(item.detail), item.detail);
+      assert.ok(!/to migrate to canonical/i.test(item.detail), 'must not promise an in-place migration');
+      console.log('✔ legacy layout message points at the new-domain import recipe');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
   console.log('All preflight-check unit tests passed successfully!\n');
 }
 

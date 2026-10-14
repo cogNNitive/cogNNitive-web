@@ -3,7 +3,8 @@
 /**
  * skills/nn-upgrade/scripts/migrate-domain.test.js
  *
- * Test suite for migrate-domain.js and full-tree backup-workspace.js
+ * Test suite for migrate-domain.js: the retired in-place flows are rejected, while
+ * --freeze-slugs and --import-as-source keep working.
  */
 
 const assert = require('node:assert')
@@ -15,19 +16,15 @@ const { spawnSync } = require('node:child_process')
 
 const SCRIPT_DIR = __dirname
 const MIGRATE_CLI = path.join(SCRIPT_DIR, 'migrate-domain.js')
-const BACKUP_CLI = path.join(SCRIPT_DIR, 'backup-workspace.js')
-const { isOpaqueFile, removeEmptyDirsBottomUp, freezeDomainSlugs, migrateDomainReferences } = require('./migrate-domain.js')
-const TARGETS_FIXTURE_DIR = path.resolve(
-  SCRIPT_DIR,
-  '../../../iNNfo/packages/innfo-core/tests/legacy/fixtures/targets',
-)
+const { freezeDomainSlugs } = require('./migrate-domain.js')
+
+async function loadCore() {
+  const { pathToFileURL } = require('node:url')
+  return import(pathToFileURL(path.resolve(__dirname, '../../../iNNfo/packages/innfo-core/dist/index.js')).href)
+}
 
 function runCli(args) {
   return spawnSync(process.execPath, [MIGRATE_CLI, ...args], { encoding: 'utf-8' })
-}
-
-function runBackupCli(args) {
-  return spawnSync(process.execPath, [BACKUP_CLI, ...args], { encoding: 'utf-8' })
 }
 
 function sha256File(file) {
@@ -68,185 +65,42 @@ function populateLegacyDomain(dir) {
 }
 
 async function runTests() {
-  console.log('Running migrate-domain.js & backup-workspace.js unit tests...')
+  console.log('Running migrate-domain.js unit tests...')
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'migrate-domain-test-'))
 
   try {
-    // 1. backup-workspace.js full-tree backup test
+    // 1. Retired flags are rejected as unknown options and write nothing
     {
-      const wsDir = path.join(tmpRoot, 'backup-test-ws')
-      fs.mkdirSync(wsDir, { recursive: true })
-      populateLegacyDomain(wsDir)
-      fs.writeFileSync(path.join(wsDir, 'domaiNN_NN.md'), '# domaiNN Root\n', 'utf-8')
-
-      const res = runBackupCli(['--workspace-dir', wsDir, '--json'])
-      assert.strictEqual(res.status, 0, res.stderr)
-      const data = JSON.parse(res.stdout)
-      assert.ok(data.ok, 'backup succeeded')
-      assert.ok(fs.existsSync(data.target), 'backup target created')
-      assert.ok(
-        fs.existsSync(path.join(data.target, 'workspace_NN.md')),
-        'workspace_NN.md present in backup',
-      )
-      assert.ok(
-        fs.existsSync(path.join(data.target, 'domaiNN_NN.md')),
-        'domaiNN_NN.md present in backup',
-      )
-      assert.ok(
-        fs.existsSync(path.join(data.target, 'models', 'core_NN.md')),
-        'models/core_NN.md present in backup',
-      )
-      console.log('✔ backup-workspace performs full-tree backup including root docs')
-    }
-
-    // 2. Dry-run writes nothing
-    {
-      const domainDir = path.join(tmpRoot, 'dry-run-domain')
+      const domainDir = path.join(tmpRoot, 'retired-flags-domain')
       fs.mkdirSync(domainDir, { recursive: true })
       populateLegacyDomain(domainDir)
+      const before = fs.readdirSync(domainDir).sort()
 
-      const beforeFiles = fs.readdirSync(domainDir)
-      const res = runCli(['--domain-dir', domainDir])
-      assert.strictEqual(res.status, 0, res.stderr)
-      assert.ok(res.stdout.includes('Plan Hash:'), 'prints plan hash')
-      assert.ok(res.stdout.includes('DRY RUN'), 'identifies dry run')
+      const retired = [
+        ['--layout-only'],
+        ['--apply', '--plan-hash', 'abc', '--yes'],
+        ['--restore', path.join(tmpRoot, 'no-backup')],
+        ['--migrate-references'],
+        ['--migrate-references', '--apply'],
+      ]
+      for (const flags of retired) {
+        const res = runCli(['--domain-dir', domainDir, ...flags])
+        assert.notStrictEqual(res.status, 0, `${flags[0]} must exit non-zero`)
+        assert.ok(
+          `${res.stderr}${res.stdout}`.includes(`unknown option: ${flags[0]}`),
+          `${flags[0]} reports "unknown option", got: ${res.stderr}`,
+        )
+      }
+      assert.deepStrictEqual(fs.readdirSync(domainDir).sort(), before, 'rejected flags wrote nothing')
 
-      const afterFiles = fs.readdirSync(domainDir)
-      assert.deepStrictEqual(beforeFiles, afterFiles, 'dry-run modified no files')
-      console.log('✔ dry-run outputs complete plan report and writes nothing to disk')
+      const bare = runCli(['--domain-dir', domainDir])
+      assert.notStrictEqual(bare.status, 0, 'no mode flag prints usage and exits non-zero')
+      assert.ok(bare.stderr.includes('Usage:'), 'usage names the surviving modes')
+      assert.ok(!/--layout-only|--restore|--plan-hash|--migrate-references/.test(bare.stderr), 'usage names no retired flag')
+      console.log('✔ retired Flow A flags and --migrate-references are rejected as unknown options')
     }
 
-    // 3. Plan hash mismatch aborts write run
-    {
-      const domainDir = path.join(tmpRoot, 'hash-mismatch-domain')
-      fs.mkdirSync(domainDir, { recursive: true })
-      populateLegacyDomain(domainDir)
-
-      const dryRes = runCli(['--domain-dir', domainDir, '--json'])
-      const plan = JSON.parse(dryRes.stdout)
-      const planHash = plan.planHash
-
-      // Modify tree after dry-run
-      fs.writeFileSync(path.join(domainDir, 'models', 'new_NN.md'), '# New\n', 'utf-8')
-
-      const applyRes = runCli(['--domain-dir', domainDir, '--apply', '--plan-hash', planHash, '--yes'])
-      assert.strictEqual(applyRes.status, 1, 'apply must fail on hash mismatch')
-      assert.ok(applyRes.stderr.includes('hash mismatch') || applyRes.stdout.includes('hash mismatch'))
-      console.log('✔ --apply with stale --plan-hash aborts without write')
-    }
-
-    // 4. Successful apply migration
-    let backupDirUsed = ''
-    {
-      const domainDir = path.join(tmpRoot, 'apply-domain')
-      fs.mkdirSync(domainDir, { recursive: true })
-      populateLegacyDomain(domainDir)
-
-      const dryRes = runCli(['--domain-dir', domainDir, '--json'])
-      const plan = JSON.parse(dryRes.stdout)
-      const planHash = plan.planHash
-
-      const applyRes = runCli(['--domain-dir', domainDir, '--apply', '--plan-hash', planHash, '--yes'])
-      assert.strictEqual(applyRes.status, 0, applyRes.stderr)
-      assert.ok(fs.existsSync(path.join(domainDir, 'domaiNN_NN.md')), 'domaiNN_NN.md exists')
-      assert.ok(!fs.existsSync(path.join(domainDir, 'workspace_NN.md')), 'workspace_NN.md moved')
-      assert.ok(fs.existsSync(path.join(domainDir, 'kNNowledge', 'core_NN.md')), 'kNNowledge/core_NN.md exists')
-      assert.ok(!fs.existsSync(path.join(domainDir, 'models')), 'models/ moved')
-
-      const domainnContent = fs.readFileSync(path.join(domainDir, 'domaiNN_NN.md'), 'utf-8')
-      assert.ok(domainnContent.includes('# NN domaiNN'), 'NN Workspace renamed to NN domaiNN')
-      assert.ok(domainnContent.includes('## NN kNNowledge'), 'NN Models renamed to NN kNNowledge')
-      assert.ok(domainnContent.includes('path:: kNNowledge/core_NN.md'), 'path:: reference rewritten')
-      assert.ok(domainnContent.includes('fuentes:: ["kNNowledge/core_NN.md"]'), 'fuentes array reference rewritten')
-      assert.ok(domainnContent.includes('[Core](./kNNowledge/core_NN.md)'), 'markdown link rewritten')
-      assert.ok(domainnContent.includes('name: "domaiNN"'), 'parent_spec name renamed to domaiNN')
-
-      const coreContent = fs.readFileSync(path.join(domainDir, 'kNNowledge', 'core_NN.md'), 'utf-8')
-      assert.ok(coreContent.includes('fuentes:: ["kNNowledge/core_NN.md"]'), 'model fuentes array reference rewritten')
-
-      // Check feedback JSON
-      const feedbackPath = path.join(domainDir, 'feedback', 'core_feedback_20260929-120000.json')
-      assert.ok(fs.existsSync(feedbackPath), 'feedback file preserved')
-      const feedback = JSON.parse(fs.readFileSync(feedbackPath, 'utf-8'))
-      assert.strictEqual(feedback.source_knowledge, 'core')
-      assert.strictEqual(feedback.target_blueprint, 'custom_app')
-      assert.strictEqual(feedback.source_model, undefined)
-
-      // Find backup dir
-      const match = applyRes.stdout.match(/Backup created at: (.*)/)
-      if (match) backupDirUsed = match[1].trim()
-
-      console.log('✔ --apply successfully migrates domain layout, keys, and references in place')
-    }
-
-    // 5. Double run is noop
-    {
-      const domainDir = path.join(tmpRoot, 'apply-domain')
-      const res = runCli(['--domain-dir', domainDir])
-      assert.strictEqual(res.status, 0, res.stderr)
-      assert.ok(res.stdout.includes('already up to date') || res.stdout.includes('noop'))
-      console.log('✔ second run on migrated domain is a clean noop')
-    }
-
-    // 6. Interrupted run offering --restore and verified restore
-    {
-      const domainDir = path.join(tmpRoot, 'interrupted-domain')
-      fs.mkdirSync(domainDir, { recursive: true })
-      populateLegacyDomain(domainDir)
-
-      const initialSha = sha256File(path.join(domainDir, 'workspace_NN.md'))
-
-      const dryRes = runCli(['--domain-dir', domainDir, '--json'])
-      const plan = JSON.parse(dryRes.stdout)
-      const planHash = plan.planHash
-
-      // Simulate fault injection with --fail-after 1
-      const failRes = runCli([
-        '--domain-dir',
-        domainDir,
-        '--apply',
-        '--plan-hash',
-        planHash,
-        '--yes',
-        '--fail-after',
-        '1',
-      ])
-      assert.strictEqual(failRes.status, 1, 'fault injection stops process')
-
-      // Next run detects interrupted run
-      const nextRun = runCli(['--domain-dir', domainDir])
-      assert.strictEqual(nextRun.status, 1)
-      assert.ok(nextRun.stderr.includes('--restore') || nextRun.stdout.includes('--restore'))
-
-      // Extract backup path from journal or stderr
-      const backupDirMatch = (failRes.stdout + failRes.stderr + nextRun.stdout + nextRun.stderr).match(/Backup:\s*([^\r\n]+)/)
-      assert.ok(backupDirMatch, 'backup directory found')
-      const backupDir = backupDirMatch[1].trim()
-
-      // Run restore
-      const restoreRes = runCli(['--domain-dir', domainDir, '--restore', backupDir])
-      assert.strictEqual(restoreRes.status, 0, restoreRes.stderr)
-      assert.ok(fs.existsSync(path.join(domainDir, 'workspace_NN.md')))
-      assert.ok(!fs.existsSync(path.join(domainDir, 'domaiNN_NN.md')))
-      const restoredSha = sha256File(path.join(domainDir, 'workspace_NN.md'))
-      assert.strictEqual(initialSha, restoredSha, 'restored file matches initial sha256')
-      console.log('✔ interrupted run offers --restore and restores byte-identical state')
-    }
-
-    // 7. Malformed frontmatter blocks migration
-    {
-      const domainDir = path.join(tmpRoot, 'blocked-domain')
-      fs.mkdirSync(domainDir, { recursive: true })
-      populateLegacyDomain(domainDir)
-      fs.writeFileSync(path.join(domainDir, 'models', 'broken_NN.md'), '---bad [yaml\n---\n', 'utf-8')
-
-      const res = runCli(['--domain-dir', domainDir])
-      assert.strictEqual(res.status, 1)
-      assert.ok(res.stdout.includes('BLOCKED') || res.stderr.includes('BLOCKED'))
-      console.log('✔ malformed document stops at dry-run and blocks write consent')
-    }
-
-    // 8. Import-as-source mode
+    // 2. Import-as-source mode
     {
       const legacyDir = path.join(tmpRoot, 'source-legacy-domain')
       const newDomainDir = path.join(tmpRoot, 'imported-target-domain')
@@ -264,105 +118,35 @@ async function runTests() {
       ])
       assert.strictEqual(res.status, 0, res.stderr)
       assert.ok(fs.existsSync(path.join(newDomainDir, 'domaiNN_NN.md')), 'new domaiNN created')
-      assert.ok(
-        fs.existsSync(path.join(newDomainDir, 'sources', 'legacy', 'workspace_NN.md')),
-        'legacy tree copied under sources/legacy',
-      )
-      const importedLegacySha = sha256File(path.join(newDomainDir, 'sources', 'legacy', 'workspace_NN.md'))
-      assert.strictEqual(initialLegacySha, importedLegacySha, 'imported legacy domain is byte-identical')
-      console.log('✔ --import-as-source scaffolds domaiNN and imports legacy tree byte-identically')
+      const importedFile = path.join(newDomainDir, 'sources', 'import', 'source-legacy-domain', 'workspace_NN.md')
+      assert.ok(fs.existsSync(importedFile), 'old tree copied under sources/import/<old-domain-folder>')
+      assert.strictEqual(initialLegacySha, sha256File(importedFile), 'imported legacy domain is byte-identical')
+      assert.ok(!fs.existsSync(path.join(newDomainDir, 'sources', 'legacy')), 'no sources/legacy directory')
+      console.log('✔ --import-as-source imports the old tree under sources/import/<old-domain-folder> byte-identically')
+
+      // The new domain is exactly the init_domain scaffold (same plan), plus the import.
+      const { planDomainScaffold, createFsSourceResolver, resolveCitation } = await loadCore()
+      const plan = planDomainScaffold({ name: 'imported-target-domain' })
+      for (const dir of plan.dirs) {
+        assert.ok(fs.statSync(path.join(newDomainDir, dir)).isDirectory(), `scaffold folder ${dir}`)
+      }
+      for (const file of plan.files) {
+        assert.strictEqual(fs.readFileSync(path.join(newDomainDir, file.path), 'utf-8'), file.content, `scaffold file ${file.path}`)
+      }
+      assert.ok(fs.statSync(path.join(newDomainDir, 'changes')).isDirectory(), 'changes/ exists')
+      assert.strictEqual(fs.readFileSync(path.join(newDomainDir, '.gitattributes'), 'utf-8'), '* -text\n')
+      assert.ok(!fs.readFileSync(path.join(newDomainDir, 'domaiNN_NN.md'), 'utf-8').includes('Legacy'), 'no inline legacy manifest')
+      const leftovers = fs.readdirSync(newDomainDir).filter((f) => f.endsWith('.tmp'))
+      assert.deepStrictEqual(leftovers, [], 'no staging files left behind')
+
+      // A sources:: citation into the import resolves like any citation.
+      const citation = 'sources/import/source-legacy-domain/workspace_NN.md'
+      const resolved = resolveCitation(citation, 'sources', createFsSourceResolver(newDomainDir), path.join(newDomainDir, 'changes', 'x_changes_NN.md'))
+      assert.strictEqual(resolved.exists, true, 'citation into the import resolves')
+      console.log('✔ --import-as-source reuses the init_domain scaffold and citations into the import resolve')
     }
 
-    // 9. isOpaqueFile seam tests
-    {
-      const invalidUtf8 = Buffer.from([0xff, 0xfe, 0x12, 0x34])
-      assert.strictEqual(isOpaqueFile(invalidUtf8, 'data.bin'), true, 'invalid UTF-8 is opaque')
-
-      const validPngUtf8 = Buffer.from('just some text')
-      assert.strictEqual(isOpaqueFile(validPngUtf8, 'image.png'), true, '.png is always opaque')
-
-      const mdText = Buffer.from('# Hello markdown', 'utf8')
-      assert.strictEqual(isOpaqueFile(mdText, 'doc.md'), false, '.md is not opaque')
-      console.log('✔ isOpaqueFile correctly classifies binary vs text files')
-    }
-
-    // 10. removeEmptyDirsBottomUp seam tests
-    {
-      const testDir = path.join(tmpRoot, 'clean-test')
-      fs.mkdirSync(path.join(testDir, 'empty-sub', 'nested'), { recursive: true })
-      fs.mkdirSync(path.join(testDir, 'non-empty'), { recursive: true })
-      fs.writeFileSync(path.join(testDir, 'non-empty', 'keep.txt'), 'keep me', 'utf8')
-
-      const leftovers = removeEmptyDirsBottomUp(testDir)
-      assert.deepStrictEqual(leftovers, ['non-empty/keep.txt'])
-      assert.ok(!fs.existsSync(path.join(testDir, 'empty-sub')), 'empty directory removed')
-      assert.ok(fs.existsSync(path.join(testDir, 'non-empty', 'keep.txt')), 'non-empty file preserved')
-      console.log('✔ removeEmptyDirsBottomUp prunes empty dirs without losing non-empty files')
-    }
-
-    // 11. Opaque binary file migration preserving sha256 byte-for-byte
-    {
-      const domainDir = path.join(tmpRoot, 'opaque-test-domain')
-      fs.mkdirSync(domainDir, { recursive: true })
-      populateLegacyDomain(domainDir)
-
-      // Add a binary PNG file in models/
-      const pngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x01, 0x02])
-      fs.writeFileSync(path.join(domainDir, 'models', 'diagram.png'), pngBuffer)
-      const origPngSha = sha256File(path.join(domainDir, 'models', 'diagram.png'))
-
-      const dryRes = runCli(['--domain-dir', domainDir, '--json'])
-      const plan = JSON.parse(dryRes.stdout)
-      const planHash = plan.planHash
-
-      const applyRes = runCli(['--domain-dir', domainDir, '--apply', '--plan-hash', planHash, '--yes'])
-      assert.strictEqual(applyRes.status, 0, applyRes.stderr)
-      assert.ok(fs.existsSync(path.join(domainDir, 'kNNowledge', 'diagram.png')), 'opaque file moved to kNNowledge')
-      assert.ok(!fs.existsSync(path.join(domainDir, 'models', 'diagram.png')), 'old opaque file removed')
-
-      const migratedPngSha = sha256File(path.join(domainDir, 'kNNowledge', 'diagram.png'))
-      assert.strictEqual(origPngSha, migratedPngSha, 'opaque binary file matches sha256 byte-for-byte with no corruption')
-      console.log('✔ opaque binary files are moved byte-for-byte without text corruption')
-    }
-
-    // 12. Leftover preservation via removeEmptyDirsBottomUp
-    {
-      const testModelsDir = path.join(tmpRoot, 'test-models-leftover')
-      fs.mkdirSync(path.join(testModelsDir, 'empty-dir'), { recursive: true })
-      fs.writeFileSync(path.join(testModelsDir, 'unmigrated.txt'), 'content', 'utf8')
-
-      const leftovers = removeEmptyDirsBottomUp(testModelsDir)
-      assert.deepStrictEqual(leftovers, ['unmigrated.txt'])
-      assert.ok(fs.existsSync(path.join(testModelsDir, 'unmigrated.txt')), 'unmigrated file preserved')
-      assert.ok(!fs.existsSync(path.join(testModelsDir, 'empty-dir')), 'empty subdir pruned')
-      console.log('✔ removeEmptyDirsBottomUp preserves unmigrated files in legacy directories')
-    }
-
-    // 13. Restore refuses mismatching domain
-    {
-      const domainDir1 = path.join(tmpRoot, 'domain-1')
-      const domainDir2 = path.join(tmpRoot, 'domain-2')
-      fs.mkdirSync(domainDir1, { recursive: true })
-      fs.mkdirSync(domainDir2, { recursive: true })
-      populateLegacyDomain(domainDir1)
-      populateLegacyDomain(domainDir2)
-
-      const dryRes = runCli(['--domain-dir', domainDir1, '--json'])
-      const planHash = JSON.parse(dryRes.stdout).planHash
-      const applyRes = runCli(['--domain-dir', domainDir1, '--apply', '--plan-hash', planHash, '--yes'])
-      const match = applyRes.stdout.match(/Backup created at: (.*)/)
-      assert.ok(match, 'backup dir found')
-      const backupDir = match[1].trim()
-
-      const badRestoreRes = runCli(['--domain-dir', domainDir2, '--restore', backupDir])
-      assert.strictEqual(badRestoreRes.status, 1, 'restore must fail when domain does not match journal')
-      assert.ok(
-        badRestoreRes.stderr.includes('Backup domain mismatch') || badRestoreRes.stdout.includes('Backup domain mismatch'),
-      )
-      console.log('✔ restore refuses backups created for different domain directories')
-    }
-
-    // 14. freezeDomainSlugs scans and freezes unfrozen Level-3 models
+    // 3. freezeDomainSlugs scans and freezes unfrozen Level-3 models
     {
       const freezeDir = path.join(tmpRoot, 'domain-freeze')
       const kDir = path.join(freezeDir, 'kNNowledge')
@@ -421,74 +205,7 @@ field:: other
       console.log('✔ freezeDomainSlugs routine scans Level-3 models and freezes all unfrozen slugs in place')
     }
 
-    // 15. migrateDomainReferences scans and rewrites display-name references to slugs (D16 / Slice S4)
-    {
-      const refMigrateDir = path.join(tmpRoot, 'test-domain-ref-migrate')
-      const kDir = path.join(refMigrateDir, 'kNNowledge')
-      fs.mkdirSync(kDir, { recursive: true })
-
-      const modelPath = path.join(kDir, 'tasks_NN.md')
-      fs.writeFileSync(
-        modelPath,
-        `---
-spec_version: "V_0-4-0"
-parent_spec:
-  name: "tasks"
-  url: "https://example.com/tasks.md"
-knowledge_version: "V_0-1-0"
----
-
-# NN Task
-
-## NN Task: Alpha Task
-slug:: alpha-task
-related:: [[Beta Task]]
-
-## NN Task: Beta Task
-slug:: beta-task
-related:: [[Alpha Task|My Alpha]]
-
-# NN Metrics
-
-## NN Matrix: Task Matrix
-| Task | Alpha Task | Beta Task |
-|---|---|---|
-| Alpha Task | - | 1 |
-| Beta Task | 0 | - |
-`,
-        'utf8',
-      )
-
-      // Dry run
-      const dryResult = await migrateDomainReferences(refMigrateDir, { dryRun: true })
-      assert.strictEqual(dryResult.scanned, 1)
-      assert.strictEqual(dryResult.modified, 1)
-      assert.ok(dryResult.rewrittenModels[0].rewrites >= 2)
-      // verify not written yet
-      assert.ok(fs.readFileSync(modelPath, 'utf8').includes('[[Beta Task]]'))
-
-      // Apply
-      const applyResult = await migrateDomainReferences(refMigrateDir, { dryRun: false })
-      assert.strictEqual(applyResult.modified, 1)
-      const updated = fs.readFileSync(modelPath, 'utf8')
-      assert.ok(updated.includes('[[beta-task]]'))
-      assert.ok(updated.includes('[[alpha-task|My Alpha]]'))
-
-      // Second run is a clean no-op
-      const noopResult = await migrateDomainReferences(refMigrateDir, { dryRun: false })
-      assert.strictEqual(noopResult.modified, 0)
-
-      // CLI test
-      const cliRes = runCli(['--domain-dir', refMigrateDir, '--migrate-references', '--json'])
-      assert.strictEqual(cliRes.status, 0)
-      const cliJson = JSON.parse(cliRes.stdout)
-      assert.strictEqual(cliJson.scanned, 1)
-      assert.strictEqual(cliJson.modified, 0)
-
-      console.log('✔ migrateDomainReferences rewrites display-name references and matrix cells to slugs in place')
-    }
-
-    // 11. ESM host: skill scripts must still load as CommonJS when the consuming
+    // 4. ESM host: skill scripts must still load as CommonJS when the consuming
     //     domaiNN declares "type": "module" in its .agents/package.json (backlog #23).
     {
       const hostDir = path.join(tmpRoot, 'esm-host')

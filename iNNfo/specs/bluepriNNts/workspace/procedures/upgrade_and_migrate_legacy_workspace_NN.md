@@ -3,143 +3,128 @@ level: 3
 parent_spec:
   name: "procedures_V_0-3-2"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
-title: "Upgrade and Migrate Legacy Workspace Procedure"
+knowledge_version: "V_0-3-0"
+title: "Upgrade a Workspace or Import a Legacy Domain Procedure"
 ---
 
 > [!NOTE]
 > This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
 
-> Layout maps version: `maps-V_0-1-0` (2026-10-07). When a new retired layout appears, version the maps below — `nn-upgrade` (the skill) does not change.
+> There is no in-place migration of an old domain. A current domaiNN is upgraded (bluepriNNt versions); an old or broken domain is replaced by a new domain that imports the old one as a Source. The skill `nn-upgrade` owns consent, backup and recovery; THIS procedure owns the step tables and the legacy detector.
 
 # NN Work
 
-## NN Work: Upgrade and Migrate Legacy Workspace
+## NN Work: Upgrade a Workspace or Import a Legacy Domain
 step_type:: task
-condition:: Legacy workspace detected (preflight verdict `legacy-layout`) or adopted bluepriNNt versions available (`upgrade-available`)
-input:: [[Legacy Workspace Directory]]
+condition:: Adopted bluepriNNt versions available (`upgrade-available`) or a legacy domain detected (preflight verdict `legacy-layout`)
+input:: [[Workspace Directory]]
 output:: [[Validated Canonical Workspace]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Execute a consent-gated migration of a legacy iNNfo domaiNN to the canonical `domaiNN` / `kNNowledge` / `bluepriNNts` / `artifacts` layout, or a bluepriNNt version upgrade inside a canonical domaiNN. The skill `nn-upgrade` owns consent, backup, plan validation and recovery; THIS procedure owns the per-layout maps below.
+Route by the preflight verdict. `upgrade-available` on a current domaiNN runs the bluepriNNt version upgrade (Back Up, Analyze Impact, Rehydrate and Validate). `legacy-layout`, or a domain that cannot be upgraded, runs Import Legacy Domain as Source. Nothing here rewrites or deletes a user domain's content.
 
-## NN Work: Apply Layout Maps (maps-V_0-1-0)
-parent:: [[Upgrade and Migrate Legacy Workspace]]
+## NN Work: Detect Legacy Layout
+parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
 step_type:: task
-next:: [[Rebind Parent Specs and Deduplicate Slugs]]
-condition:: Migration initiated with a confirmed planHash
-input:: [[Legacy Workspace Directory]]
-output:: [[Mapped Workspace Tree]]
+next:: [[Import Legacy Domain as Source]]
+condition:: Preflight reports `legacy-layout`
+input:: [[Workspace Directory]]
+output:: [[Legacy Detection Report]]
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: [[innfo-mcp]]
 scope:: internal
-Apply these retired-to-canonical mappings (the migrator `migrate-domain.js` implements them; this table is the source of truth when they diverge):
+Read-only detection. A domain is reported as legacy when any of these signals is present; the report lists the signals and writes nothing.
 
-| Retired | Canonical | Notes |
-|---|---|---|
-| `models/` | `kNNowledge/` | model files move, citations rewritten |
-| `specs/templates/` | `specs/bluepriNNts/` | local bluepriNNt specs move |
-| `workspace_NN.md` | `domaiNN_NN.md` | entrypoint rename, `parent_spec.name` → `domaiNN` |
-| `sources/nn/` mirror tree | co-located sidecars | mirror retired, sources cognitivized in place |
-| `sources/original/` | `sources/import/` | single raw-import location |
-| `sources/export/` | `artifacts/` | generated outputs live in `artifacts/` |
-| `sources/archive/` citations | kept, flagged | archive prefixes are reported, never silently rewritten |
-| `export/` | `artifacts/` | retired output root |
-| legacy frontmatter keys (`template_version`, `template_name`, `models_dir`, `templates_dir`, `target_template`, `model_version`) | `blueprint_version`, `blueprint_name`, `knowledge_dir`, `blueprints_dir`, `target_blueprint`, `knowledge_version` | language migration, journaled |
-| `parent_spec.name: "workspace"` | `parent_spec.name: "domaiNN"` | entrypoint identity (Issue #103 Bug 2) |
+| Signal | Meaning |
+|---|---|
+| `workspace_NN.md` entrypoint | pre-domaiNN entrypoint |
+| `models/` or `specs/templates/` folders | pre-kNNowledge / pre-bluepriNNts folders |
+| `export/`, `sources/original/`, `sources/nn/`, `sources/export/` | retired layout folders (`sources/archive/` is never a signal) |
+| legacy frontmatter keys (`template_version`, `template_name`, `models_dir`, `templates_dir`, `target_template`, `model_version`) | pre-rename keys |
+| legacy L1/L0 `parent_spec` | specification parent below the current level |
 
-## NN Work: Scan Workspace and Discover Legacy Models
-parent:: [[Upgrade and Migrate Legacy Workspace]]
+## NN Work: Import Legacy Domain as Source
+parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
 step_type:: task
-next:: [[Normalize AST and Clean Deprecated Syntax]]
-condition:: Migration initiated
-input:: [[Legacy Workspace Directory]]
-output:: [[Workspace Discovery Inventory]]
-output_status:: verified
-tool:: [[AI Agent]]
-scope:: internal
-Recursively scan `kNNowledge/`, `sources/`, `procedures/`, and `artifacts/` in the workspace (plus any retired roots the Layout Maps name). Read YAML frontmatters to identify model levels, bluepriNNt references, version formats, and deprecated folder configurations.
-
-## NN Work: Normalize AST and Clean Deprecated Syntax
-parent:: [[Upgrade and Migrate Legacy Workspace]]
-step_type:: task
-next:: [[Rebind Parent Specs and Deduplicate Slugs]]
-condition:: Discovery inventory completed
-input:: [[Workspace Discovery Inventory]]
-output:: [[Normalized Model Documents]]
-output_status:: verified
-tool:: [[AI Agent]]
-scope:: internal
-Iterate through discovered Level 3 models to:
-1. Strip `# NN index` sections (which belong exclusively to Level 2 bluepriNNts).
-2. Convert text-type concept sections from heading elements to plain Markdown body prose.
-3. Normalize key-value syntax (`key:: value`).
-
-## NN Work: Rebind Parent Specs and Deduplicate Slugs
-parent:: [[Upgrade and Migrate Legacy Workspace]]
-step_type:: task
-next:: [[Synthesize Workspace Manifest and Validate]]
-condition:: AST normalized
-input:: [[Normalized Model Documents]]
-output:: [[Rebound Validated Models]]
-output_status:: verified
-tool:: [[AI Agent]]
-scope:: internal
-Update `parent_spec.url` in each model to the canonical remote/monorepo URLs. Resolve duplicate element names and slug collisions across the model graph. Verify that all internal reference links point to valid existing models or sources.
-
-## NN Work: Synthesize Workspace Manifest and Validate
-parent:: [[Upgrade and Migrate Legacy Workspace]]
-step_type:: task
-condition:: Models rebound and validated
-input:: [[Rebound Validated Models]]
+condition:: Legacy domain detected, or a domain that cannot be upgraded
+input:: [[Legacy Detection Report]]
 output:: [[Validated Canonical Workspace]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Generate or update the root `domaiNN_NN.md` manifest:
-1. Populate the domaiNN concept with directory conventions and environment parameters.
-2. Catalog all discovered models, specs, bluepriNNts, and catalogs (`# NN Sources`, `# NN Procedures`, `# NN Artifacts`).
-3. Run the strict validator (`validateFormatContent` / `innfo-mcp`) to ensure 0 errors and 0 warnings.
+Create a new domain and import the old one as a Source:
+1. Run `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>`. The old tree is copied byte-identically under the new domain's `sources/`; the old directory is never modified.
+2. Derive the new domain's content from that Source with agent changesets that cite it, then validate the new domain with `innfo-mcp`.
+
+## NN Work: Back Up Before Upgrade
+parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+step_type:: task
+next:: [[Analyze Upgrade Impact]]
+condition:: Adopted bluepriNNt versions available and the user consented
+input:: [[Workspace Directory]]
+output:: [[Verified Backup]]
+output_status:: verified
+tool:: [[AI Agent]]
+scope:: internal
+Run `node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>`: a timestamped copy outside the workspace with a SHA-256 manifest. No write happens before this backup exists.
+
+## NN Work: Analyze Upgrade Impact
+parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+step_type:: task
+next:: [[Rehydrate and Validate]]
+condition:: Backup verified
+input:: [[Verified Backup]]
+output:: [[Impact Report]]
+output_status:: verified
+tool:: [[AI Agent]]
+scope:: internal
+Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use.
+
+## NN Work: Rehydrate and Validate
+parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+step_type:: task
+condition:: Impact analysis done
+input:: [[Impact Report]]
+output:: [[Validated Canonical Workspace]]
+output_status:: verified
+tool:: [[innfo-mcp]]
+scope:: internal
+Materialize the adopted bluepriNNts locally, repoint `parent_spec`, update `blueprint_name`, bump the version and re-validate with `innfo-mcp` (0 errors, 0 warnings). On validation failure, restore from the backup.
 
 # NN Tools
 
 ## NN Tools: AI Agent
 scope:: external
-LLM coding agent or automation runner that parses Markdown AST, rewrites frontmatters, and synthesizes manifests.
+LLM coding agent or automation runner that runs the upgrade, reads the Source and proposes changesets.
 
 ## NN Tools: innfo-mcp
 scope:: internal
-Deterministic validation and AST engine wrapping `@cognnitive/innfo-core` to verify model conformance.
+Deterministic validation and AST engine wrapping `@cognnitive/innfo-core` to verify model conformance and detect legacy layouts.
 
 # NN Artifact
 
-## NN Artifact: Legacy Workspace Directory
+## NN Artifact: Workspace Directory
 type:: spec
 format:: directory
-Root directory of the legacy workspace containing unmigrated models or outdated specifications.
+Root directory of the domaiNN to upgrade or to detect as legacy.
 
-## NN Artifact: Workspace Discovery Inventory
+## NN Artifact: Legacy Detection Report
 type:: data
 format:: json
-Parsed inventory of all files, frontmatters, versions, and bluepriNNt dependencies in the workspace.
+Read-only list of legacy signals found in the domain.
 
-## NN Artifact: Normalized Model Documents
-type:: spec
-format:: markdown
-Collection of Level 3 Markdown models with standardized AST syntax and clean body sections.
+## NN Artifact: Verified Backup
+type:: data
+format:: directory
+Timestamped out-of-tree copy of the domain with a SHA-256 manifest.
 
-## NN Artifact: Rebound Validated Models
-type:: spec
+## NN Artifact: Impact Report
+type:: data
 format:: markdown
-Models with canonical `parent_spec` references and resolved element uniqueness.
+Diff of the pinned and adopted bluepriNNt schemas and the mapping questions it raises.
 
 ## NN Artifact: Validated Canonical Workspace
 type:: spec
 format:: markdown
-Complete canonical-layout workspace with synchronized `domaiNN_NN.md` manifest passing all integrity gates.
-
-## NN Artifact: Mapped Workspace Tree
-type:: spec
-format:: directory
-Workspace tree after the Layout Maps were applied, before rebind and validation.
+Domain whose manifest passes all integrity gates.
