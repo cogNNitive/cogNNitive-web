@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-15T17:07:28.895Z",
-  "head": "a9f1dfe23fcf99f8cf1f03ce5f0d85a96a1bc274",
+  "generatedAt": "2026-10-15T17:17:18.550Z",
+  "head": "804f8f598b69ec2036d39fbda9a1abc9ebe8627e",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -15,12 +15,13 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
@@ -30,12 +31,13 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
@@ -52,12 +54,13 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.15.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
