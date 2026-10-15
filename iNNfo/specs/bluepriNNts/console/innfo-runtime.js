@@ -703,7 +703,45 @@
         parts.push('Generated ' + stamp + ' UTC')
       }
       host.textContent = ''
-      if (parts.length) host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
+      if (parts.length) {
+        host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
+        var infoBtn = doc.createElement('button')
+        infoBtn.className = 'innfo-navbar-info-btn'
+        infoBtn.type = 'button'
+        infoBtn.setAttribute('aria-label', 'Domain info')
+        infoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+
+        var popover = doc.createElement('div')
+        popover.className = 'innfo-navbar-info-popover'
+        popover.style.display = 'none'
+
+        var popoverLines = []
+        if (template) popoverLines.push('<div><strong>Template:</strong> ' + String(template) + '</div>')
+        if (version) popoverLines.push('<div><strong>Version:</strong> ' + String(version) + '</div>')
+        if (meta.generated) {
+          var stamp = String(meta.generated).replace('T', ' ').replace(/\..*/, '').replace(/Z$/, '').trim()
+          popoverLines.push('<div><strong>Generated:</strong> ' + stamp + ' UTC</div>')
+        }
+        popover.innerHTML = popoverLines.join('')
+
+        infoBtn.addEventListener('click', function (ev) {
+          ev.stopPropagation()
+          popover.style.display = popover.style.display === 'none' ? 'block' : 'none'
+        })
+
+        doc.addEventListener('click', function (ev) {
+          if (!popover.contains(ev.target) && ev.target !== infoBtn) {
+            popover.style.display = 'none'
+          }
+        })
+
+        var brand = doc.querySelector('.innfo-brand')
+        if (brand && !brand.querySelector('.innfo-navbar-info-btn')) {
+          brand.style.position = 'relative'
+          brand.appendChild(infoBtn)
+          brand.appendChild(popover)
+        }
+      }
       if (meta.sourceUrl) {
         if (parts.length) host.appendChild(doc.createTextNode(' \u00b7 '))
         var href = safeSourceHref(meta.sourceUrl)
@@ -765,6 +803,8 @@
     var version = el('span', 'innfo-banner-version', ' ' + domainModelVersion(meta))
     var draftsBadge = el('span', 'innfo-banner-drafts', ' drafts: ' + (draftCount || 0))
     draftsBadge.setAttribute('data-innfo', 'draft-count')
+    var dockDrafts = doc.querySelector('#innfo-review-dock .innfo-dock-drafts')
+    if (dockDrafts) dockDrafts.textContent = 'Drafts: ' + (draftCount || 0)
 
     banner.appendChild(title)
     banner.appendChild(version)
@@ -892,6 +932,29 @@
         if (!isOpen) mMenu.classList.add('open')
       })
 
+      if (activeModels.length > 0) {
+        var mClear = el('span', 'innfo-facet-clear', '×')
+        mClear.setAttribute('role', 'button')
+        mClear.setAttribute('title', 'Clear models filter')
+        mClear.addEventListener('click', function (e) {
+          e.stopPropagation()
+          var newOps = parsed.operators.filter(function (op) {
+            return op['key'] !== 'model' && op['key'] !== 'file'
+          })
+          var queryParts = parsed.textTokens.map(function (t) {
+            return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+          })
+          newOps.forEach(function (op) {
+            if (op.raw) queryParts.push(op.raw)
+            else {
+              var nq = String(op.val).indexOf(' ') !== -1
+              queryParts.push(op['key'] + ':' + (nq ? '"' + op.val + '"' : op.val))
+            }
+          })
+          if (typeof onQueryChange === 'function') onQueryChange(queryParts.join(' '))
+        })
+        mBtn.appendChild(mClear)
+      }
       mWrap.appendChild(mBtn)
       mWrap.appendChild(mMenu)
       host.appendChild(mWrap)
@@ -955,6 +1018,29 @@
         if (!isOpen) cMenu.classList.add('open')
       })
 
+      if (activeConcepts.length > 0) {
+        var cClear = el('span', 'innfo-facet-clear', '×')
+        cClear.setAttribute('role', 'button')
+        cClear.setAttribute('title', 'Clear concepts filter')
+        cClear.addEventListener('click', function (e) {
+          e.stopPropagation()
+          var newOps = parsed.operators.filter(function (op) {
+            return op['key'] !== 'concept' && op['key'] !== '!concept'
+          })
+          var queryParts = parsed.textTokens.map(function (t) {
+            return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+          })
+          newOps.forEach(function (op) {
+            if (op.raw) queryParts.push(op.raw)
+            else {
+              var nq = String(op.val).indexOf(' ') !== -1
+              queryParts.push(op['key'] + ':' + (nq ? '"' + op.val + '"' : op.val))
+            }
+          })
+          if (typeof onQueryChange === 'function') onQueryChange(queryParts.join(' '))
+        })
+        cBtn.appendChild(cClear)
+      }
       cWrap.appendChild(cBtn)
       cWrap.appendChild(cMenu)
       host.appendChild(cWrap)
@@ -1800,6 +1886,68 @@
     })
   }
 
+  function mountElementBadges(doc, elements, drafts, concepts, refs) {
+    var content = doc.getElementById('innfo-content')
+    if (!content) return
+    content.innerHTML = ''
+    var wrap = el('div', 'innfo-element-badges-wrap')
+    wrap.setAttribute('data-innfo-component', 'element-badges-view')
+    var projectedElements = projectElements(elements, drafts)
+    projectedElements.forEach(function (element) {
+      var cMeta = conceptMetaOf(concepts, element.concept)
+      var pill = UI.ElementPill(
+        {
+          id: element.id,
+          label: element.name || element.id || '',
+          concept: element.concept,
+          color: cMeta && cMeta.color,
+          hexColor: cMeta && cMeta.hexColor,
+        },
+        {
+          doc: doc,
+          href: '#el-' + encodeURIComponent(String(element.id || '')),
+          onClick: function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault()
+            renderRefDialog(doc, element)
+          },
+        }
+      )
+      wrap.appendChild(pill)
+    })
+    content.appendChild(wrap)
+  }
+
+  function mountElementMiniCards(doc, elements, drafts, concepts, refs, incomingById, actions) {
+    var content = doc.getElementById('innfo-content')
+    if (!content) return
+    content.innerHTML = ''
+    var grid = el('div', 'innfo-element-minicards-grid')
+    grid.setAttribute('data-innfo-component', 'element-minicards-view')
+    var projectedElements = projectElements(elements, drafts)
+    projectedElements.forEach(function (element) {
+      var cMeta = conceptMetaOf(concepts, element.concept)
+      var mini = UI.ElementMini(
+        {
+          id: element.id,
+          name: element.name || element.id || '',
+          conceptId: element.concept,
+          description: element.description,
+          fields: element.fields,
+        },
+        {
+          doc: doc,
+          concept: cMeta,
+          preview: true,
+          onClick: function () {
+            renderRefDialog(doc, element)
+          },
+        }
+      )
+      grid.appendChild(mini)
+    })
+    content.appendChild(grid)
+  }
+
   // ---- Explorer element table (table view + header sort) -------------------
 
   // Union of field keys across the projected elements, alphabetical.
@@ -2036,7 +2184,7 @@
     var group = el('div', 'innfo-viewmode')
     group.setAttribute('role', 'group')
     group.setAttribute('aria-label', 'Element view mode')
-    ;[['cards', 'Cards'], ['table', 'Table']].forEach(function (pair) {
+    ;[['sheets', 'Sheets'], ['cards', 'Cards'], ['badges', 'Badges'], ['table', 'Table']].forEach(function (pair) {
       var b = el('button', 'innfo-viewmode-btn', pair[1])
       b.setAttribute('type', 'button')
       b.setAttribute('data-mode', pair[0])
@@ -3366,6 +3514,7 @@
     nav.style.display = 'flex'
     nav.className = 'innfo-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
     tabs.forEach(function (t) {
+      if (t.id === 'review' || t.id === 'changes') return
       var btn = el('button', 'innfo-view-tab tab flex items-center gap-2')
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
@@ -3607,14 +3756,26 @@
       tabs.forEach(function (t) {
         var btn = nav.querySelector('.innfo-view-tab[data-tab="' + t.id + '"]')
         var panel = doc.getElementById(t.panelId)
-        btn.classList.toggle('active', t.id === tabId)
-        btn.classList.toggle('tab-active', t.id === tabId)
+        if (btn) {
+          btn.classList.toggle('active', t.id === tabId)
+          btn.classList.toggle('tab-active', t.id === tabId)
+        }
         if (panel) panel.classList.toggle('active', t.id === tabId)
       })
+      var dockChangesBtn = doc.querySelector('[data-innfo="dock-changes"]')
+      if (dockChangesBtn) dockChangesBtn.classList.toggle('active', tabId === 'review')
       if (!scopedView && doc.querySelector) {
         var railAside = doc.querySelector('aside.innfo-rail')
         if (railAside) {
           railAside.style.display = tabId === 'explorer' ? '' : 'none'
+        }
+        var toolbar = doc.querySelector('.innfo-toolbar')
+        if (toolbar) {
+          toolbar.style.display = tabId === 'explorer' ? '' : 'none'
+        }
+        var filterZone = doc.querySelector('.innfo-filter-zone')
+        if (filterZone) {
+          filterZone.style.display = tabId === 'explorer' ? '' : 'none'
         }
       }
       if (prev) hook(prev, 'onHide')
@@ -3690,11 +3851,18 @@
 
   function updateTabBadges(doc, state) {
     var btn = doc.querySelector('.innfo-view-tab[data-tab="review"]')
-    if (!btn) return
-    var old = btn.querySelector('.innfo-rail-badge')
-    if (old && old.parentNode) old.parentNode.removeChild(old)
+    var dockBtn = doc.querySelector('[data-innfo="dock-changes"]')
     var n = state && state.store ? state.store.drafts().length : 0
-    if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
+    if (btn) {
+      var old = btn.querySelector('.innfo-rail-badge')
+      if (old && old.parentNode) old.parentNode.removeChild(old)
+      if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
+    }
+    if (dockBtn) {
+      var oldDockBadge = dockBtn.querySelector('.innfo-dock-badge')
+      if (oldDockBadge && oldDockBadge.parentNode) oldDockBadge.parentNode.removeChild(oldDockBadge)
+      if (n > 0) dockBtn.appendChild(el('span', 'innfo-dock-badge badge badge-sm badge-neutral ml-1', String(n)))
+    }
   }
 
   function elementsByIdOf(state) {
@@ -4522,17 +4690,6 @@
     draftsBadge.textContent = ' drafts: 0'
     banner.appendChild(draftsBadge)
 
-    // Reviewer identity: inline editable field.
-    banner.appendChild(buildReviewerChip(active))
-
-    // Open button
-    var openBtn = active.createElement('button')
-    openBtn.id = 'innfo-feedback-open'
-    openBtn.setAttribute('type', 'button')
-    openBtn.className = 'innfo-feedback-open'
-    openBtn.textContent = 'Export changes'
-    banner.appendChild(openBtn)
-
     root.appendChild(banner)
 
     // Modal
@@ -4548,19 +4705,106 @@
       '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
       '</label>' +
       '<div data-innfo="errors" style="display: none;"></div>' +
-      '<h3>Proposed Changeset (_changes_NN.md)</h3>' +
-      '<textarea data-innfo="changeset-preview" readonly></textarea>' +
       '<div class="innfo-feedback-actions">' +
       '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
       '<button data-innfo="copy-changeset-prompt" type="button">Copy changeset</button>' +
       '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
-      '<h3>Instructions</h3>' +
+      '<details class="innfo-modal-details">' +
+      '<summary>View generated changeset &amp; prompt</summary>' +
+      '<h4>Changeset content (_changes_NN.md)</h4>' +
+      '<textarea data-innfo="changeset-preview" readonly></textarea>' +
+      '<h4>Instructions</h4>' +
       '<pre data-innfo="instructions"></pre>' +
-      '<h3>Agent prompt</h3>' +
-      '<pre data-innfo="agent-prompt"></pre>'
+      '<h4>Agent prompt</h4>' +
+      '<pre data-innfo="agent-prompt"></pre>' +
+      '</details>'
 
     root.appendChild(modal)
+
+    // Contextual Floating Review Dock
+    var oldDock = active.getElementById('innfo-review-dock')
+    if (oldDock && oldDock.parentNode) oldDock.parentNode.removeChild(oldDock)
+    var dock = active.createElement('div')
+    dock.id = 'innfo-review-dock'
+    dock.className = 'innfo-review-dock'
+    dock.setAttribute('data-innfo-component', 'review-dock')
+    dock.setAttribute('aria-label', 'Review floating dock')
+    dock.style.display = 'none'
+
+    var dockStatus = active.createElement('div')
+    dockStatus.className = 'innfo-dock-status'
+    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Review Mode</span>'
+    dock.appendChild(dockStatus)
+
+    var sep1 = active.createElement('span')
+    sep1.className = 'innfo-dock-sep'
+    dock.appendChild(sep1)
+
+    // Reviewer identity inside floating dock
+    dock.appendChild(buildReviewerChip(active))
+
+    var sep2 = active.createElement('span')
+    sep2.className = 'innfo-dock-sep'
+    dock.appendChild(sep2)
+
+    // Changes view toggle button
+    var changesBtn = active.createElement('button')
+    changesBtn.type = 'button'
+    changesBtn.className = 'innfo-dock-changes'
+    changesBtn.setAttribute('data-innfo', 'dock-changes')
+    changesBtn.textContent = 'Changes'
+    changesBtn.addEventListener('click', function () {
+      if (state && state.tabs) {
+        if (state.tabs.current() === 'review') {
+          state.tabs.select('explorer')
+        } else {
+          state.tabs.select('review')
+        }
+      }
+    })
+    dock.appendChild(changesBtn)
+
+    var dockDraftsEl = active.createElement('span')
+    dockDraftsEl.className = 'innfo-dock-drafts'
+    dockDraftsEl.textContent = 'Drafts: 0'
+    dock.appendChild(dockDraftsEl)
+
+    // Open button (Export changes)
+    var openBtn = active.createElement('button')
+    openBtn.id = 'innfo-dock-export-btn'
+    openBtn.setAttribute('type', 'button')
+    openBtn.className = 'innfo-feedback-open innfo-dock-export'
+    openBtn.textContent = 'Export changes'
+    dock.appendChild(openBtn)
+
+    var exitBtn = active.createElement('button')
+    exitBtn.type = 'button'
+    exitBtn.className = 'innfo-dock-exit'
+    exitBtn.textContent = 'Exit'
+    exitBtn.setAttribute('aria-label', 'Exit review mode')
+    exitBtn.addEventListener('click', function () {
+      var toggle = active.querySelector('[data-innfo="review-toggle"]')
+      if (toggle && (toggle.getAttribute('aria-pressed') === 'true' || toggle.classList.contains('active'))) {
+        toggle.click()
+      } else if (state && state.controller && typeof state.controller.disable === 'function') {
+        state.controller.disable()
+      }
+      dock.style.setProperty('display', 'none', 'important')
+      dock.removeAttribute('data-visible')
+      dock.classList.remove('active', 'innfo-dock-blinking')
+      if (dock._blinkTimer) {
+        clearTimeout(dock._blinkTimer)
+        dock._blinkTimer = null
+      }
+    })
+    dock.appendChild(exitBtn)
+
+    if (active.body) {
+      active.body.appendChild(dock)
+    } else {
+      root.appendChild(dock)
+    }
 
     // Single-header layout: the feedback controls live inside the top navbar
     // (no second application header). Fall back to the body top for shells
@@ -5157,7 +5401,7 @@
     // once by the next card render and then cleared.
     var focusId = null
     // Model Explorer view mode ('cards' | 'table') and the table sort state.
-    var explorerView = 'cards'
+    var explorerView = 'sheets'
     var sortState = { key: '', dir: 'asc' }
 
     function draftCountsOf(currentDrafts) {
@@ -5255,6 +5499,8 @@
       var n = currentDrafts.length
       var bannerCount = active.querySelector('.innfo-banner-drafts')
       if (bannerCount) bannerCount.textContent = ' drafts: ' + n
+      var dockCount = active.querySelector('#innfo-review-dock .innfo-dock-drafts')
+      if (dockCount) dockCount.textContent = 'Drafts: ' + n
       updateTabBadges(active, state)
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)
@@ -5330,6 +5576,10 @@
           }
           refresh(activeSearchQuery)
         })
+      } else if (explorerView === 'badges') {
+        mountElementBadges(active, filteredElements, currentDrafts, concepts, refs)
+      } else if (explorerView === 'cards') {
+        mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions)
       } else {
         mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions)
         focusId = null
@@ -5416,7 +5666,10 @@
       },
     })
 
-    if (tabs) cleanups.push(tabs.destroy)
+    if (tabs) {
+      state.tabs = tabs
+      cleanups.push(tabs.destroy)
+    }
     renderNavbarIdentity(active, meta)
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
@@ -5578,6 +5831,8 @@
     renderRail: renderRail,
     renderErrors: renderErrors,
     mountElementTable: mountElementTable,
+    mountElementBadges: mountElementBadges,
+    mountElementMiniCards: mountElementMiniCards,
     renderExplorerToolbar: renderExplorerToolbar,
     sortTableElements: sortTableElements,
     renderMediaDialog: renderMediaDialog,

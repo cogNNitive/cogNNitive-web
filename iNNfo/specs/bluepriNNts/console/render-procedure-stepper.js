@@ -118,6 +118,7 @@
     root.className = 'innfo-procedure-view'
     var header = doc.createElement('div')
     header.className = 'proc-view-header'
+    header.style.display = 'none'
     var titleEl = doc.createElement('h1')
     titleEl.className = 'proc-title'
     titleEl.textContent = meta.title || 'Procedures Console'
@@ -132,17 +133,10 @@
     root.appendChild(tabsHost)
     var subTabsNav = doc.createElement('nav')
     subTabsNav.className = 'subtabs'
-    var wizardTab = doc.createElement('button')
-    wizardTab.className = 'subtab active'
-    wizardTab.setAttribute('data-mode', 'wizard')
-    wizardTab.setAttribute('type', 'button')
-    wizardTab.textContent = 'Interactive Runner & DAG'
     var docTab = doc.createElement('button')
-    docTab.className = 'subtab'
-    docTab.setAttribute('data-mode', 'document')
+    docTab.className = 'subtab innfo-proc-toggle-btn'
     docTab.setAttribute('type', 'button')
-    docTab.textContent = 'Document'
-    subTabsNav.appendChild(wizardTab)
+    docTab.textContent = 'View Document'
     subTabsNav.appendChild(docTab)
     root.appendChild(subTabsNav)
     var docBody = doc.createElement('div')
@@ -155,7 +149,6 @@
     wizardBody.appendChild(stepBody)
     root.appendChild(wizardBody)
     container.appendChild(root)
-    var subTabs = subTabsNav.querySelectorAll('.subtab')
 
     var bits = []
     if (meta.template) bits.push('<span><strong>Template</strong> ' + esc(meta.template) + '</span>')
@@ -275,7 +268,7 @@
     function appendWithKuPills(hostEl, rawText) {
       var text = String(rawText == null ? '' : rawText)
       var names = Object.keys(byName).filter(function (n) { return n && n.length >= 3 }).sort(function (a, b) { return b.length - a.length })
-      var escapedNames = names.map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\    function refButton(label, name) {') })
+      var escapedNames = names.map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') })
       var patternParts = ['\\bfb-\\d+\\b']
       if (escapedNames.length) patternParts.push(escapedNames.join('|'))
       var re = new RegExp('(' + patternParts.join('|') + ')', 'g')
@@ -310,6 +303,30 @@
         var span = document.createElement('span')
         span.textContent = label
         return { node: span, ok: false }
+      }
+      var UI = GLOBAL.InnfoUI
+      if (UI && typeof UI.ElementPill === 'function' && target.id) {
+        var cMeta = null
+        concepts.forEach(function (x) {
+          if (x && x.name === target.concept) cMeta = x
+        })
+        var pill = UI.ElementPill(
+          {
+            id: target.id,
+            label: target.name || label,
+            concept: target.concept,
+            color: cMeta && cMeta.color,
+            hexColor: cMeta && cMeta.hexColor,
+          },
+          {
+            doc: document,
+            onClick: function (ev) {
+              if (ev && ev.preventDefault) ev.preventDefault()
+              openRef(target)
+            },
+          }
+        )
+        return { node: pill, ok: true }
       }
       var b = document.createElement('button')
       b.className = 'chip-ref'
@@ -346,23 +363,22 @@
       if (proceduresMode === 'wizard') {
         if (docBody) docBody.classList.add('hidden')
         if (wizardBody) wizardBody.classList.remove('hidden')
+        if (docTab) docTab.textContent = 'View Document'
         renderExecutionWorkspace()
       } else {
         if (wizardBody) wizardBody.classList.add('hidden')
         if (docBody) docBody.classList.remove('hidden')
+        if (docTab) docTab.textContent = 'View Workflow'
         renderDocument()
       }
-      subTabs.forEach(function (b) {
-        b.classList.toggle('active', b.getAttribute('data-mode') === proceduresMode)
-      })
     }
 
-    subTabs.forEach(function (b) {
-      b.addEventListener('click', function () {
-        proceduresMode = b.getAttribute('data-mode') === 'wizard' ? 'wizard' : 'document'
+    if (docTab) {
+      docTab.addEventListener('click', function () {
+        proceduresMode = proceduresMode === 'wizard' ? 'document' : 'wizard'
         renderProcedures()
       })
-    })
+    }
 
     // Document view: full procedure as a readable document (presentational).
     function renderDocument() {
@@ -583,7 +599,7 @@
       dagCol.className = 'exec-dag-col'
       var dagHeader = document.createElement('div')
       dagHeader.className = 'exec-col-header'
-      dagHeader.innerHTML = '<span>' + vIcon('workflow', 14) + ' Flow & Topology</span><span class="count-badge">' + chain.length + ' steps</span>'
+      dagHeader.innerHTML = '<span>' + vIcon('workflow', 14) + ' Workflow</span><span class="count-badge">' + chain.length + ' steps</span>'
       dagCol.appendChild(dagHeader)
 
       var dagView = document.createElement('div')
@@ -692,6 +708,10 @@
         g.addEventListener('click', function () {
           currentStepIndex = i
           renderExecutionWorkspace()
+          var activeCard = ws.querySelector('.exec-step-card')
+          if (activeCard && typeof activeCard.scrollIntoView === 'function') {
+            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          }
         })
 
         var rect = document.createElementNS(svgNS, 'rect')
@@ -739,7 +759,8 @@
       var cur = chain[currentStepIndex]
       var state = stepStates[cur.el.id] || 'active'
       var card = document.createElement('article')
-      card.className = 'exec-step-card'
+      card.className = 'exec-step-card innfo-card'
+      card.setAttribute('data-innfo-component', 'element-card')
 
       // Step Header
       var headerRow = document.createElement('div')

@@ -61,6 +61,7 @@ for installed locations):
 |---|---|
 | `status` | Compares installed vs. pinned commits; prints a table, plus a file-count diff preview (via the GitHub compare API) for anything outdated. |
 | `install` | Installs skills missing from the skills directory, at their pinned commit. |
+| `install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>]` | **Opt-in.** Installs a *referenced* external (third-party) skill from its upstream repo at the pinned commit, verifying the `sha256` tree digest when given. Never invoked by `install`/`update`/`sync`. |
 | `update [skill ...]` | Updates outdated skills — or a given subset, auto-pulling in any outdated `requires` — at their pinned commit. |
 | `sync [--direction local-to-global\|global-to-local]` | **Maintainer / repo-only.** Recursively copies skill directories between a repo checkout's `skills/` and `--skills-dir` (default `~/.agents/skills`). It resolves the repo `skills/` folder relative to the script, so it is not meant for installed copies. |
 
@@ -70,10 +71,21 @@ pinned `path` into `~/.agents/skills/{name}/` with an atomic rename
 (backup-and-rollback on failure). `sync` is a plain recursive file copy in
 either direction — it does not touch the manifest or the state file.
 
-**Consent is mandatory** for every mutating command (`install`, `update`,
-`sync`): `--yes` skips the interactive prompt; without a TTY and without
-`--yes`, the script prints `needs decision: ...` and exits `2` without applying
-anything.
+**Referenced external skills (opt-in).** A bluepriNNt may *recommend* a
+third-party skill by declaring it in its frontmatter `skills:` array, pinned to a
+`commit` and a `sha256` tree digest with an SPDX `license`. Such a skill is
+`referenced`, never vendored into the repo, and carries a deliberately **bounded**
+guarantee — reproducible (pinned commit), unmodified since the pin (digest
+verified at install) and license-declared; cogNNitive does not vouch for its
+author. Unlike the `embedded` skills curated under `skills/`, a referenced skill
+never enters the manifest and is never fetched by `install`/`update`/`sync`: it
+installs only through the explicit `install-external` subcommand. See the
+guarantee tiers in [`docs/innfo/template-package-spec.md`](../../docs/innfo/template-package-spec.md).
+
+**Consent is mandatory** for every mutating command (`install`,
+`install-external`, `update`, `sync`): `--yes` skips the interactive prompt;
+without a TTY and without `--yes`, the script prints `needs decision: ...` and
+exits `2` without applying anything.
 
 Nothing here links, junctions, or symlinks a skill directory back to its
 source — every install, update, and sync is a copy. See

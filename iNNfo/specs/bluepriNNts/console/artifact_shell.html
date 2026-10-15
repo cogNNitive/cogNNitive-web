@@ -78,6 +78,8 @@
         z-index: 30;
       }
       .innfo-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .innfo-brand-logo { display: inline-flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+      .innfo-brand-logo svg { display: block; }
       .innfo-badge-domain {
         font-size: 0.75rem;
         font-weight: 700;
@@ -311,30 +313,37 @@
   <body>
     <header class="innfo-navbar">
       <div class="innfo-brand">
+        <span class="innfo-brand-logo" aria-label="iNNfo logo" title="iNNfo ecosystem">
+          <svg viewBox="0 0 800 600" width="28" height="21" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M 160 490 L 160 295 Q 160 270 180 285 L 330 475 Q 350 490 350 470 L 350 235 Q 350 210 370 225 L 530 415 Q 550 430 550 410 L 550 90 L 495 145 L 550 90 L 605 145" stroke="#4D0E4E" stroke-width="82" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
         <span class="innfo-badge-domain">DomaiNN</span>
         <h1 class="innfo-domain-title" id="innfo-domain-title">iNNfo Console</h1>
       </div>
       <div class="innfo-mode" id="innfo-navbar-extra"></div>
     </header>
 
+    <div class="innfo-action-bar innfo-action-bar--top">
+      <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
+    </div>
     <div id="innfo-layout">
       <aside class="innfo-rail" aria-label="Blueprint rail">
-        <div class="innfo-filter-zone innfo-toolbar">
-          <div id="innfo-search-wrap">
-            <span class="search-icon" aria-hidden="true">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </span>
-            <input id="innfo-search" type="search" placeholder="Search elements…" aria-label="Search elements" title="Filters: concept: and model: widen with OR; tag: narrows with AND (exact match); tag-any: widens with OR" />
-          </div>
-          <div id="innfo-filter-facets"></div>
-          <div id="innfo-active-filters"></div>
-        </div>
         <nav id="innfo-rail"></nav>
       </aside>
 
       <main>
-        <div class="innfo-action-bar">
-          <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
+        <div class="innfo-filter-zone innfo-toolbar">
+          <div class="innfo-filter-main-row">
+            <div id="innfo-search-wrap">
+              <span class="search-icon" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </span>
+              <input id="innfo-search" type="search" placeholder="Search elements…" aria-label="Search elements" title="Filters: concept: and model: widen with OR; tag: narrows with AND (exact match); tag-any: widens with OR" />
+            </div>
+            <div id="innfo-filter-facets"></div>
+          </div>
+          <div id="innfo-active-filters"></div>
         </div>
         <div id="innfo-tab-explorer" class="innfo-tab-panel active">
           <div id="innfo-doc"></div>

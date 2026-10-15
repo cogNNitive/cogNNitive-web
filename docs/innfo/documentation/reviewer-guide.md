@@ -58,3 +58,28 @@ Drafts saved by older consoles under an earlier store version (`innfo-console:v2
 
 ### 9. Applying a Reviewed Changeset
 The reviewer returns the exported `_changes_NN.md` file; the agent applies it with `apply_change`, which validates and persists the changes atomically and records the outcome in the changeset. There is no separate feedback import: changesets are the only change record.
+
+---
+
+## Governance Review vs. Agent Review
+
+The interaction pattern described above — an artifact leaves the chat, opens in a side panel, feedback is anchored to the exact element or field, and the loop closes by feeding a change back — is the same one AI coding agents (OpenCode, Claude Code, Antigravity) offer when they surface a generated file for review. The pattern is not theirs: it is the comment model of Google Docs, Figma and GitHub pull requests. What separates this console from a generic review pane is not the surface, but the **contract behind it**.
+
+| Aspect | This console | Typical agent review |
+| --- | --- | --- |
+| Feedback consumer | The apply engine, through a sealed changeset | The agent that regenerates, in-session |
+| Identity | Declared `Reviewer` identifier, required before export | Usually anonymous |
+| Persistence | A changeset under `changes/` — the only change record | Usually none |
+| Lifecycle | `proposed` → `applied` / `partially_applied` / `conflict` / `rejected` | Converges on "good enough" |
+| Verdict | Recorded by the apply engine, never set from the console | Implied by the next generation |
+| Staleness | Per-draft `base_hash`; a drifted draft reads `target changed` | Typically unnoticed |
+
+Three properties follow that make this governance rather than annotation:
+
+1. **Attribution.** Every draft is exported under a declared reviewer identity, which names the file (`<model>_<reviewer-slug>_<stamp>_changes_NN.md`) and is recorded on each change as `author::`. The review has a signer.
+2. **Provenance and sealing.** The proposal is sealed with `proposal_sha`, a SHA-256 over the proposed change elements. The apply engine verifies it before mutating: a tampered proposal aborts with `PROPOSAL_TAMPERED`. The changeset — with its `author`, `notes` and `sources` — is the only change record; no parallel ledger, change-log or reviewer JSON exists.
+3. **Propose / decide separation.** The console can only *propose*. The verdict (`applied`, `partially_applied`, `conflict`, `rejected`) and the model version transition (`base_version` → `result_version`) are recorded on apply, by the engine. A reviewer cannot approve their own proposal from the UI.
+
+An agent-review comment steers a regeneration and is spent in the process; it leaves no approver and no base. A console review produces a durable, attributable and verifiable decision that the agent then executes. That is the difference that lets the same interface serve governance.
+
+> **Vocabulary note.** An earlier feedback model exported JSON items carrying a `pending` status. It is retired: changesets are the only change record, and the status vocabulary is now `proposed`, `applied`, `partially_applied`, `conflict`, `rejected`.

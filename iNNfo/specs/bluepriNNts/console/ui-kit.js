@@ -239,7 +239,7 @@
     '[data-innfo-component=element-card] .innfo-card-toggle .innfo-icon{transition:transform .15s ease}',
     '[data-innfo-component=element-card][data-open=true] .innfo-card-toggle .innfo-icon{transform:rotate(180deg)}',
     '[data-innfo-component=element-card][data-open=false] .innfo-card-body{display:none}',
-    '[data-innfo-component=element-card][data-open=false] .innfo-card-path{display:none}',
+    '[data-innfo-component=element-card][data-open=false] .innfo-card-footer{display:none}',
     '[data-innfo-component=element-card][data-open=true] .innfo-card-collapsed-strip{display:none!important}',
     '[data-innfo-component=element-card][data-open=true] .innfo-card-summary-preview{display:none}',
     '[data-innfo-component=element-card] .innfo-card-summary-preview{font-size:.82rem;color:var(--innfo-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch;margin-left:.25em}',
@@ -267,7 +267,7 @@
     '.innfo-markdown .innfo-md-heading{margin:.6em 0 .3em;font-size:1rem;font-weight:700}',
     '.innfo-markdown code{font-family:var(--innfo-mono);font-size:.82em;background:var(--innfo-surface-2);border-radius:4px;padding:0 .3em}',
     '.innfo-markdown a{color:var(--innfo-link);text-decoration:underline}',
-    '.innfo-markdown .innfo-md-quote{margin:.5em 0;padding:.2em .8em;border-left:3px solid var(--innfo-border);color:var(--innfo-muted)}',
+    '.innfo-markdown .innfo-md-quote{margin:.5em 0;padding:.2em .8em;border-left:1px solid var(--innfo-border);color:var(--innfo-muted)}',
     '.innfo-markdown .innfo-md-quote[data-callout]{border-left-color:var(--innfo-accent);background:var(--innfo-surface-2)}',
     '.innfo-markdown .innfo-md-callout-title{display:block;font-size:.72rem;letter-spacing:.04em;color:var(--innfo-accent)}',
     '.innfo-file-pill[data-knowledge-bound=true]{cursor:pointer}',
@@ -278,7 +278,7 @@
     '.innfo-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--innfo-mono);font-size:.73rem;color:var(--innfo-muted);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:5px;padding:2px 7px}',
     '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden;background:var(--innfo-surface)}',
     // ElementMini (collection item): accent stripe + small thumb + name + optional meta. No fields.
-    '.innfo-mini{display:flex;align-items:center;gap:.5em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-left:3px solid var(--innfo-mini-accent,var(--innfo-border));border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
+    '.innfo-mini{display:flex;align-items:center;gap:.5em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-left:1px solid var(--innfo-border);border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
     'button.innfo-mini,a.innfo-mini{font:inherit;color:inherit;cursor:pointer;text-decoration:none}',
     '.innfo-mini:hover{border-color:var(--innfo-mini-accent,var(--innfo-focus))}',
     '.innfo-mini-thumb{width:20px;height:20px;border-radius:5px;flex:0 0 auto}',
@@ -1548,6 +1548,18 @@
         icon: conceptOpts.icon,
       }),
     )
+    if (data.concept) {
+      head.appendChild(
+        KuBadge({
+          kind: 'concept',
+          id: data.concept,
+          label: data.concept,
+          index: conceptOpts.index,
+          color: conceptOpts.color,
+          icon: conceptOpts.icon,
+        }),
+      )
+    }
 
     // Surface semantic status pill in header if element has a status field
     var statusField = null
@@ -1732,9 +1744,8 @@
 
     var body = makeEl(doc, 'section', 'innfo-card-body')
     var hasHistory = Array.isArray(data.history) && data.history.length > 0
-    if (qudNode || hasHistory) {
+    if (hasHistory) {
       var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
-      if (qudNode) metaStrip.appendChild(qudNode)
       if (hasHistory) {
         var firstHist = data.history[0] || {}
         var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
@@ -1773,20 +1784,30 @@
     // No tag row without tags (the review controller adds its own for "+ tag").
     var tags = Array.isArray(data.tags) ? data.tags : []
     if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
-    if (relations) {
-      body.appendChild(RelList({ relations: relations, byId: byId }))
+    if (relations && relations.length) {
+      var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
+      outWrap.appendChild(
+        makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
+      )
+      outWrap.appendChild(RelList({ relations: relations, byId: byId }))
+      body.appendChild(outWrap)
     }
     var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
     if (incoming && incoming.length) {
       var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
       incWrap.appendChild(
-        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Referenced by (' + incoming.length + ')'),
+        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
       )
       incWrap.appendChild(RelList({ relations: incoming, byId: byId }))
       body.appendChild(incWrap)
     }
     card.appendChild(body)
-    if (data.path) card.appendChild(makeEl(doc, 'footer', 'innfo-card-path', data.path))
+    if (data.path || qudNode) {
+      var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
+      if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
+      if (qudNode) cardFooter.appendChild(qudNode)
+      card.appendChild(cardFooter)
+    }
     return card
   }
 

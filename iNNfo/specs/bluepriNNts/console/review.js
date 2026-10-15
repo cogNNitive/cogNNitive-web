@@ -1050,18 +1050,20 @@
     }
 
     function buildNewElementButton() {
+      var dock = doc.getElementById('innfo-review-dock')
       var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      if (!banner || !store || !canReview(meta, elements, needs)) return null
-      var existing = banner.querySelector('[data-innfo="new-element"]')
+      var host = dock || banner
+      if (!host || !store || !canReview(meta, elements, needs)) return null
+      var existing = doc.querySelector('[data-innfo="new-element"]')
       if (existing) return existing
       if (!schemaConcepts().length) return null
-      var b = makeEl(doc, 'button', 'innfo-new-element', 'New element')
+      var b = makeEl(doc, 'button', 'innfo-new-element innfo-dock-changes', '+ New element')
       b.setAttribute('data-innfo', 'new-element')
       b.setAttribute('type', 'button')
       b.addEventListener('click', openNew)
-      var openBtn = banner.querySelector('#innfo-feedback-open')
-      if (openBtn && openBtn.parentNode) openBtn.parentNode.insertBefore(b, openBtn)
-      else banner.appendChild(b)
+      var exportBtn = host.querySelector('#innfo-dock-export-btn') || host.querySelector('#innfo-feedback-open')
+      if (exportBtn && exportBtn.parentNode) exportBtn.parentNode.insertBefore(b, exportBtn)
+      else host.appendChild(b)
       return b
     }
 
@@ -1188,7 +1190,9 @@
         if (!cardBody || typeof UI.TagRow !== 'function') return
         row = UI.TagRow({ tags: [] }, { doc: doc })
         row.setAttribute('data-innfo-review-ctl', '1')
-        cardBody.insertBefore(row, cardBody.querySelector('[data-innfo-component="rel-list"]'))
+        var relList = cardBody.querySelector('[data-innfo-component="rel-list"]')
+        var refChild = relList && relList.parentNode === cardBody ? relList : null
+        cardBody.insertBefore(row, refChild)
       }
       Array.prototype.forEach.call(row.querySelectorAll('.innfo-tag'), function (tag) {
         if (tag.querySelector('[data-innfo-ctl="tag-remove"]')) return
@@ -1529,12 +1533,13 @@
 
     function buildToggle() {
       if (!canReview(meta, elements, needs)) return null
+      var extra = doc.getElementById('innfo-navbar-extra')
       var banner =
         doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      if (!banner) return null
-      if (banner.querySelector('[data-innfo="review-toggle"]')) {
-        return banner.querySelector('[data-innfo="review-toggle"]')
-      }
+      var host = extra || banner
+      if (!host) return null
+      var existing = doc.querySelector('[data-innfo="review-toggle"]')
+      if (existing) return existing
       var b = makeEl(doc, 'button', 'innfo-review-toggle', 'Review mode')
       b.setAttribute('data-innfo', 'review-toggle')
       b.setAttribute('type', 'button')
@@ -1543,9 +1548,7 @@
         if (enabled) disable()
         else enable()
       })
-      var openBtn = banner.querySelector('#innfo-feedback-open')
-      if (openBtn && openBtn.parentNode) openBtn.parentNode.insertBefore(b, openBtn)
-      else banner.appendChild(b)
+      host.appendChild(b)
       return b
     }
 
@@ -1556,6 +1559,17 @@
       if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       buildChangedFilter()
       applyDecorations()
+      var dock = doc.getElementById('innfo-review-dock')
+      if (dock) {
+        dock.style.removeProperty('display')
+        dock.setAttribute('data-visible', 'true')
+        dock.classList.add('active', 'innfo-dock-blinking')
+        if (dock._blinkTimer) clearTimeout(dock._blinkTimer)
+        dock._blinkTimer = setTimeout(function () {
+          dock.classList.remove('innfo-dock-blinking')
+          dock._blinkTimer = null
+        }, 5000)
+      }
     }
 
     function disable() {
@@ -1567,6 +1581,16 @@
         html().removeAttribute('data-innfo-filter')
       }
       if (toggleEl) toggleEl.setAttribute('aria-pressed', 'false')
+      var dock = doc.getElementById('innfo-review-dock')
+      if (dock) {
+        dock.style.setProperty('display', 'none', 'important')
+        dock.removeAttribute('data-visible')
+        dock.classList.remove('active', 'innfo-dock-blinking')
+        if (dock._blinkTimer) {
+          clearTimeout(dock._blinkTimer)
+          dock._blinkTimer = null
+        }
+      }
       Array.prototype.forEach.call(doc.querySelectorAll('[data-innfo-review-ctl]'), function (n) {
         if (n.parentNode) n.parentNode.removeChild(n)
       })

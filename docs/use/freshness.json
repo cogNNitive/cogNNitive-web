@@ -1,61 +1,67 @@
 {
-  "generatedAt": "2026-10-15T09:04:26.779Z",
-  "head": "dd42b39ea68e01bf5558b03a01e36840d432a18d",
+  "generatedAt": "2026-10-15T17:07:28.895Z",
+  "head": "a9f1dfe23fcf99f8cf1f03ce5f0d85a96a1bc274",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.22.0",
-      "pinnedTagDate": "2026-10-15T09:05:44+02:00",
+      "pinnedTag": "skills-v2.22.1",
+      "pinnedTagDate": "2026-10-15T10:33:09+02:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "skills/nn-preflight/SKILL.md",
-        "skills/nn-preflight/scripts/domain-probe.js",
-        "skills/nn-preflight/scripts/domain-probe.test.js",
-        "skills/nn-preflight/scripts/lib/legacy-detect.generated.cjs",
-        "skills/nn-preflight/scripts/preflight-check.js",
-        "skills/nn-preflight/scripts/preflight-check.test.js",
-        "skills/nn-sources/SKILL.md",
-        "skills/nn-sources/test/unit/test-bootstrap-recursive.js",
-        "skills/nn-upgrade/SKILL.md",
-        "skills/nn/SKILL.md"
+        "skills/nn-skills-lifecycle/SKILL.md"
       ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 7,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 7,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.22.0",
-      "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/package.json",
-        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/server.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/check-workspace.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/check-workspace.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/legacy-hint.ts",
-        "iNNfo/packages/innfo-mcp/vitest.config.ts"
-      ]
+      "pinnedTag": "innfo-mcp-v0.23.0",
+      "pinnedTagDate": "2026-10-15T10:33:09+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "innfo-console": {
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.15.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 7,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     }
   }
 }

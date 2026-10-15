@@ -604,7 +604,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     '[data-innfo-component=element-card] .innfo-card-toggle .innfo-icon{transition:transform .15s ease}',
     '[data-innfo-component=element-card][data-open=true] .innfo-card-toggle .innfo-icon{transform:rotate(180deg)}',
     '[data-innfo-component=element-card][data-open=false] .innfo-card-body{display:none}',
-    '[data-innfo-component=element-card][data-open=false] .innfo-card-path{display:none}',
+    '[data-innfo-component=element-card][data-open=false] .innfo-card-footer{display:none}',
     '[data-innfo-component=element-card][data-open=true] .innfo-card-collapsed-strip{display:none!important}',
     '[data-innfo-component=element-card][data-open=true] .innfo-card-summary-preview{display:none}',
     '[data-innfo-component=element-card] .innfo-card-summary-preview{font-size:.82rem;color:var(--innfo-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch;margin-left:.25em}',
@@ -632,7 +632,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     '.innfo-markdown .innfo-md-heading{margin:.6em 0 .3em;font-size:1rem;font-weight:700}',
     '.innfo-markdown code{font-family:var(--innfo-mono);font-size:.82em;background:var(--innfo-surface-2);border-radius:4px;padding:0 .3em}',
     '.innfo-markdown a{color:var(--innfo-link);text-decoration:underline}',
-    '.innfo-markdown .innfo-md-quote{margin:.5em 0;padding:.2em .8em;border-left:3px solid var(--innfo-border);color:var(--innfo-muted)}',
+    '.innfo-markdown .innfo-md-quote{margin:.5em 0;padding:.2em .8em;border-left:1px solid var(--innfo-border);color:var(--innfo-muted)}',
     '.innfo-markdown .innfo-md-quote[data-callout]{border-left-color:var(--innfo-accent);background:var(--innfo-surface-2)}',
     '.innfo-markdown .innfo-md-callout-title{display:block;font-size:.72rem;letter-spacing:.04em;color:var(--innfo-accent)}',
     '.innfo-file-pill[data-knowledge-bound=true]{cursor:pointer}',
@@ -643,7 +643,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     '.innfo-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--innfo-mono);font-size:.73rem;color:var(--innfo-muted);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:5px;padding:2px 7px}',
     '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden;background:var(--innfo-surface)}',
     // ElementMini (collection item): accent stripe + small thumb + name + optional meta. No fields.
-    '.innfo-mini{display:flex;align-items:center;gap:.5em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-left:3px solid var(--innfo-mini-accent,var(--innfo-border));border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
+    '.innfo-mini{display:flex;align-items:center;gap:.5em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-left:1px solid var(--innfo-border);border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
     'button.innfo-mini,a.innfo-mini{font:inherit;color:inherit;cursor:pointer;text-decoration:none}',
     '.innfo-mini:hover{border-color:var(--innfo-mini-accent,var(--innfo-focus))}',
     '.innfo-mini-thumb{width:20px;height:20px;border-radius:5px;flex:0 0 auto}',
@@ -1913,6 +1913,18 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         icon: conceptOpts.icon,
       }),
     )
+    if (data.concept) {
+      head.appendChild(
+        KuBadge({
+          kind: 'concept',
+          id: data.concept,
+          label: data.concept,
+          index: conceptOpts.index,
+          color: conceptOpts.color,
+          icon: conceptOpts.icon,
+        }),
+      )
+    }
 
     // Surface semantic status pill in header if element has a status field
     var statusField = null
@@ -2097,9 +2109,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
     var body = makeEl(doc, 'section', 'innfo-card-body')
     var hasHistory = Array.isArray(data.history) && data.history.length > 0
-    if (qudNode || hasHistory) {
+    if (hasHistory) {
       var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
-      if (qudNode) metaStrip.appendChild(qudNode)
       if (hasHistory) {
         var firstHist = data.history[0] || {}
         var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
@@ -2138,20 +2149,30 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     // No tag row without tags (the review controller adds its own for "+ tag").
     var tags = Array.isArray(data.tags) ? data.tags : []
     if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
-    if (relations) {
-      body.appendChild(RelList({ relations: relations, byId: byId }))
+    if (relations && relations.length) {
+      var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
+      outWrap.appendChild(
+        makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
+      )
+      outWrap.appendChild(RelList({ relations: relations, byId: byId }))
+      body.appendChild(outWrap)
     }
     var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
     if (incoming && incoming.length) {
       var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
       incWrap.appendChild(
-        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Referenced by (' + incoming.length + ')'),
+        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
       )
       incWrap.appendChild(RelList({ relations: incoming, byId: byId }))
       body.appendChild(incWrap)
     }
     card.appendChild(body)
-    if (data.path) card.appendChild(makeEl(doc, 'footer', 'innfo-card-path', data.path))
+    if (data.path || qudNode) {
+      var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
+      if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
+      if (qudNode) cardFooter.appendChild(qudNode)
+      card.appendChild(cardFooter)
+    }
     return card
   }
 
@@ -4342,18 +4363,20 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     }
 
     function buildNewElementButton() {
+      var dock = doc.getElementById('innfo-review-dock')
       var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      if (!banner || !store || !canReview(meta, elements, needs)) return null
-      var existing = banner.querySelector('[data-innfo="new-element"]')
+      var host = dock || banner
+      if (!host || !store || !canReview(meta, elements, needs)) return null
+      var existing = doc.querySelector('[data-innfo="new-element"]')
       if (existing) return existing
       if (!schemaConcepts().length) return null
-      var b = makeEl(doc, 'button', 'innfo-new-element', 'New element')
+      var b = makeEl(doc, 'button', 'innfo-new-element innfo-dock-changes', '+ New element')
       b.setAttribute('data-innfo', 'new-element')
       b.setAttribute('type', 'button')
       b.addEventListener('click', openNew)
-      var openBtn = banner.querySelector('#innfo-feedback-open')
-      if (openBtn && openBtn.parentNode) openBtn.parentNode.insertBefore(b, openBtn)
-      else banner.appendChild(b)
+      var exportBtn = host.querySelector('#innfo-dock-export-btn') || host.querySelector('#innfo-feedback-open')
+      if (exportBtn && exportBtn.parentNode) exportBtn.parentNode.insertBefore(b, exportBtn)
+      else host.appendChild(b)
       return b
     }
 
@@ -4480,7 +4503,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         if (!cardBody || typeof UI.TagRow !== 'function') return
         row = UI.TagRow({ tags: [] }, { doc: doc })
         row.setAttribute('data-innfo-review-ctl', '1')
-        cardBody.insertBefore(row, cardBody.querySelector('[data-innfo-component="rel-list"]'))
+        var relList = cardBody.querySelector('[data-innfo-component="rel-list"]')
+        var refChild = relList && relList.parentNode === cardBody ? relList : null
+        cardBody.insertBefore(row, refChild)
       }
       Array.prototype.forEach.call(row.querySelectorAll('.innfo-tag'), function (tag) {
         if (tag.querySelector('[data-innfo-ctl="tag-remove"]')) return
@@ -4821,12 +4846,13 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
     function buildToggle() {
       if (!canReview(meta, elements, needs)) return null
+      var extra = doc.getElementById('innfo-navbar-extra')
       var banner =
         doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      if (!banner) return null
-      if (banner.querySelector('[data-innfo="review-toggle"]')) {
-        return banner.querySelector('[data-innfo="review-toggle"]')
-      }
+      var host = extra || banner
+      if (!host) return null
+      var existing = doc.querySelector('[data-innfo="review-toggle"]')
+      if (existing) return existing
       var b = makeEl(doc, 'button', 'innfo-review-toggle', 'Review mode')
       b.setAttribute('data-innfo', 'review-toggle')
       b.setAttribute('type', 'button')
@@ -4835,9 +4861,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         if (enabled) disable()
         else enable()
       })
-      var openBtn = banner.querySelector('#innfo-feedback-open')
-      if (openBtn && openBtn.parentNode) openBtn.parentNode.insertBefore(b, openBtn)
-      else banner.appendChild(b)
+      host.appendChild(b)
       return b
     }
 
@@ -4848,6 +4872,17 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       buildChangedFilter()
       applyDecorations()
+      var dock = doc.getElementById('innfo-review-dock')
+      if (dock) {
+        dock.style.removeProperty('display')
+        dock.setAttribute('data-visible', 'true')
+        dock.classList.add('active', 'innfo-dock-blinking')
+        if (dock._blinkTimer) clearTimeout(dock._blinkTimer)
+        dock._blinkTimer = setTimeout(function () {
+          dock.classList.remove('innfo-dock-blinking')
+          dock._blinkTimer = null
+        }, 5000)
+      }
     }
 
     function disable() {
@@ -4859,6 +4894,16 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         html().removeAttribute('data-innfo-filter')
       }
       if (toggleEl) toggleEl.setAttribute('aria-pressed', 'false')
+      var dock = doc.getElementById('innfo-review-dock')
+      if (dock) {
+        dock.style.setProperty('display', 'none', 'important')
+        dock.removeAttribute('data-visible')
+        dock.classList.remove('active', 'innfo-dock-blinking')
+        if (dock._blinkTimer) {
+          clearTimeout(dock._blinkTimer)
+          dock._blinkTimer = null
+        }
+      }
       Array.prototype.forEach.call(doc.querySelectorAll('[data-innfo-review-ctl]'), function (n) {
         if (n.parentNode) n.parentNode.removeChild(n)
       })
@@ -5642,7 +5687,45 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         parts.push('Generated ' + stamp + ' UTC')
       }
       host.textContent = ''
-      if (parts.length) host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
+      if (parts.length) {
+        host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
+        var infoBtn = doc.createElement('button')
+        infoBtn.className = 'innfo-navbar-info-btn'
+        infoBtn.type = 'button'
+        infoBtn.setAttribute('aria-label', 'Domain info')
+        infoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+
+        var popover = doc.createElement('div')
+        popover.className = 'innfo-navbar-info-popover'
+        popover.style.display = 'none'
+
+        var popoverLines = []
+        if (template) popoverLines.push('<div><strong>Template:</strong> ' + String(template) + '</div>')
+        if (version) popoverLines.push('<div><strong>Version:</strong> ' + String(version) + '</div>')
+        if (meta.generated) {
+          var stamp = String(meta.generated).replace('T', ' ').replace(/\..*/, '').replace(/Z$/, '').trim()
+          popoverLines.push('<div><strong>Generated:</strong> ' + stamp + ' UTC</div>')
+        }
+        popover.innerHTML = popoverLines.join('')
+
+        infoBtn.addEventListener('click', function (ev) {
+          ev.stopPropagation()
+          popover.style.display = popover.style.display === 'none' ? 'block' : 'none'
+        })
+
+        doc.addEventListener('click', function (ev) {
+          if (!popover.contains(ev.target) && ev.target !== infoBtn) {
+            popover.style.display = 'none'
+          }
+        })
+
+        var brand = doc.querySelector('.innfo-brand')
+        if (brand && !brand.querySelector('.innfo-navbar-info-btn')) {
+          brand.style.position = 'relative'
+          brand.appendChild(infoBtn)
+          brand.appendChild(popover)
+        }
+      }
       if (meta.sourceUrl) {
         if (parts.length) host.appendChild(doc.createTextNode(' \u00b7 '))
         var href = safeSourceHref(meta.sourceUrl)
@@ -5704,6 +5787,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var version = el('span', 'innfo-banner-version', ' ' + domainModelVersion(meta))
     var draftsBadge = el('span', 'innfo-banner-drafts', ' drafts: ' + (draftCount || 0))
     draftsBadge.setAttribute('data-innfo', 'draft-count')
+    var dockDrafts = doc.querySelector('#innfo-review-dock .innfo-dock-drafts')
+    if (dockDrafts) dockDrafts.textContent = 'Drafts: ' + (draftCount || 0)
 
     banner.appendChild(title)
     banner.appendChild(version)
@@ -5831,6 +5916,29 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         if (!isOpen) mMenu.classList.add('open')
       })
 
+      if (activeModels.length > 0) {
+        var mClear = el('span', 'innfo-facet-clear', '×')
+        mClear.setAttribute('role', 'button')
+        mClear.setAttribute('title', 'Clear models filter')
+        mClear.addEventListener('click', function (e) {
+          e.stopPropagation()
+          var newOps = parsed.operators.filter(function (op) {
+            return op['key'] !== 'model' && op['key'] !== 'file'
+          })
+          var queryParts = parsed.textTokens.map(function (t) {
+            return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+          })
+          newOps.forEach(function (op) {
+            if (op.raw) queryParts.push(op.raw)
+            else {
+              var nq = String(op.val).indexOf(' ') !== -1
+              queryParts.push(op['key'] + ':' + (nq ? '"' + op.val + '"' : op.val))
+            }
+          })
+          if (typeof onQueryChange === 'function') onQueryChange(queryParts.join(' '))
+        })
+        mBtn.appendChild(mClear)
+      }
       mWrap.appendChild(mBtn)
       mWrap.appendChild(mMenu)
       host.appendChild(mWrap)
@@ -5894,6 +6002,29 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         if (!isOpen) cMenu.classList.add('open')
       })
 
+      if (activeConcepts.length > 0) {
+        var cClear = el('span', 'innfo-facet-clear', '×')
+        cClear.setAttribute('role', 'button')
+        cClear.setAttribute('title', 'Clear concepts filter')
+        cClear.addEventListener('click', function (e) {
+          e.stopPropagation()
+          var newOps = parsed.operators.filter(function (op) {
+            return op['key'] !== 'concept' && op['key'] !== '!concept'
+          })
+          var queryParts = parsed.textTokens.map(function (t) {
+            return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+          })
+          newOps.forEach(function (op) {
+            if (op.raw) queryParts.push(op.raw)
+            else {
+              var nq = String(op.val).indexOf(' ') !== -1
+              queryParts.push(op['key'] + ':' + (nq ? '"' + op.val + '"' : op.val))
+            }
+          })
+          if (typeof onQueryChange === 'function') onQueryChange(queryParts.join(' '))
+        })
+        cBtn.appendChild(cClear)
+      }
       cWrap.appendChild(cBtn)
       cWrap.appendChild(cMenu)
       host.appendChild(cWrap)
@@ -6739,6 +6870,68 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     })
   }
 
+  function mountElementBadges(doc, elements, drafts, concepts, refs) {
+    var content = doc.getElementById('innfo-content')
+    if (!content) return
+    content.innerHTML = ''
+    var wrap = el('div', 'innfo-element-badges-wrap')
+    wrap.setAttribute('data-innfo-component', 'element-badges-view')
+    var projectedElements = projectElements(elements, drafts)
+    projectedElements.forEach(function (element) {
+      var cMeta = conceptMetaOf(concepts, element.concept)
+      var pill = UI.ElementPill(
+        {
+          id: element.id,
+          label: element.name || element.id || '',
+          concept: element.concept,
+          color: cMeta && cMeta.color,
+          hexColor: cMeta && cMeta.hexColor,
+        },
+        {
+          doc: doc,
+          href: '#el-' + encodeURIComponent(String(element.id || '')),
+          onClick: function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault()
+            renderRefDialog(doc, element)
+          },
+        }
+      )
+      wrap.appendChild(pill)
+    })
+    content.appendChild(wrap)
+  }
+
+  function mountElementMiniCards(doc, elements, drafts, concepts, refs, incomingById, actions) {
+    var content = doc.getElementById('innfo-content')
+    if (!content) return
+    content.innerHTML = ''
+    var grid = el('div', 'innfo-element-minicards-grid')
+    grid.setAttribute('data-innfo-component', 'element-minicards-view')
+    var projectedElements = projectElements(elements, drafts)
+    projectedElements.forEach(function (element) {
+      var cMeta = conceptMetaOf(concepts, element.concept)
+      var mini = UI.ElementMini(
+        {
+          id: element.id,
+          name: element.name || element.id || '',
+          conceptId: element.concept,
+          description: element.description,
+          fields: element.fields,
+        },
+        {
+          doc: doc,
+          concept: cMeta,
+          preview: true,
+          onClick: function () {
+            renderRefDialog(doc, element)
+          },
+        }
+      )
+      grid.appendChild(mini)
+    })
+    content.appendChild(grid)
+  }
+
   // ---- Explorer element table (table view + header sort) -------------------
 
   // Union of field keys across the projected elements, alphabetical.
@@ -6975,7 +7168,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var group = el('div', 'innfo-viewmode')
     group.setAttribute('role', 'group')
     group.setAttribute('aria-label', 'Element view mode')
-    ;[['cards', 'Cards'], ['table', 'Table']].forEach(function (pair) {
+    ;[['sheets', 'Sheets'], ['cards', 'Cards'], ['badges', 'Badges'], ['table', 'Table']].forEach(function (pair) {
       var b = el('button', 'innfo-viewmode-btn', pair[1])
       b.setAttribute('type', 'button')
       b.setAttribute('data-mode', pair[0])
@@ -8305,6 +8498,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     nav.style.display = 'flex'
     nav.className = 'innfo-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
     tabs.forEach(function (t) {
+      if (t.id === 'review' || t.id === 'changes') return
       var btn = el('button', 'innfo-view-tab tab flex items-center gap-2')
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
@@ -8546,14 +8740,26 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       tabs.forEach(function (t) {
         var btn = nav.querySelector('.innfo-view-tab[data-tab="' + t.id + '"]')
         var panel = doc.getElementById(t.panelId)
-        btn.classList.toggle('active', t.id === tabId)
-        btn.classList.toggle('tab-active', t.id === tabId)
+        if (btn) {
+          btn.classList.toggle('active', t.id === tabId)
+          btn.classList.toggle('tab-active', t.id === tabId)
+        }
         if (panel) panel.classList.toggle('active', t.id === tabId)
       })
+      var dockChangesBtn = doc.querySelector('[data-innfo="dock-changes"]')
+      if (dockChangesBtn) dockChangesBtn.classList.toggle('active', tabId === 'review')
       if (!scopedView && doc.querySelector) {
         var railAside = doc.querySelector('aside.innfo-rail')
         if (railAside) {
           railAside.style.display = tabId === 'explorer' ? '' : 'none'
+        }
+        var toolbar = doc.querySelector('.innfo-toolbar')
+        if (toolbar) {
+          toolbar.style.display = tabId === 'explorer' ? '' : 'none'
+        }
+        var filterZone = doc.querySelector('.innfo-filter-zone')
+        if (filterZone) {
+          filterZone.style.display = tabId === 'explorer' ? '' : 'none'
         }
       }
       if (prev) hook(prev, 'onHide')
@@ -8629,11 +8835,18 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
   function updateTabBadges(doc, state) {
     var btn = doc.querySelector('.innfo-view-tab[data-tab="review"]')
-    if (!btn) return
-    var old = btn.querySelector('.innfo-rail-badge')
-    if (old && old.parentNode) old.parentNode.removeChild(old)
+    var dockBtn = doc.querySelector('[data-innfo="dock-changes"]')
     var n = state && state.store ? state.store.drafts().length : 0
-    if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
+    if (btn) {
+      var old = btn.querySelector('.innfo-rail-badge')
+      if (old && old.parentNode) old.parentNode.removeChild(old)
+      if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
+    }
+    if (dockBtn) {
+      var oldDockBadge = dockBtn.querySelector('.innfo-dock-badge')
+      if (oldDockBadge && oldDockBadge.parentNode) oldDockBadge.parentNode.removeChild(oldDockBadge)
+      if (n > 0) dockBtn.appendChild(el('span', 'innfo-dock-badge badge badge-sm badge-neutral ml-1', String(n)))
+    }
   }
 
   function elementsByIdOf(state) {
@@ -9461,17 +9674,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     draftsBadge.textContent = ' drafts: 0'
     banner.appendChild(draftsBadge)
 
-    // Reviewer identity: inline editable field.
-    banner.appendChild(buildReviewerChip(active))
-
-    // Open button
-    var openBtn = active.createElement('button')
-    openBtn.id = 'innfo-feedback-open'
-    openBtn.setAttribute('type', 'button')
-    openBtn.className = 'innfo-feedback-open'
-    openBtn.textContent = 'Export changes'
-    banner.appendChild(openBtn)
-
     root.appendChild(banner)
 
     // Modal
@@ -9487,19 +9689,106 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
       '</label>' +
       '<div data-innfo="errors" style="display: none;"></div>' +
-      '<h3>Proposed Changeset (_changes_NN.md)</h3>' +
-      '<textarea data-innfo="changeset-preview" readonly></textarea>' +
       '<div class="innfo-feedback-actions">' +
       '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
       '<button data-innfo="copy-changeset-prompt" type="button">Copy changeset</button>' +
       '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
-      '<h3>Instructions</h3>' +
+      '<details class="innfo-modal-details">' +
+      '<summary>View generated changeset &amp; prompt</summary>' +
+      '<h4>Changeset content (_changes_NN.md)</h4>' +
+      '<textarea data-innfo="changeset-preview" readonly></textarea>' +
+      '<h4>Instructions</h4>' +
       '<pre data-innfo="instructions"></pre>' +
-      '<h3>Agent prompt</h3>' +
-      '<pre data-innfo="agent-prompt"></pre>'
+      '<h4>Agent prompt</h4>' +
+      '<pre data-innfo="agent-prompt"></pre>' +
+      '</details>'
 
     root.appendChild(modal)
+
+    // Contextual Floating Review Dock
+    var oldDock = active.getElementById('innfo-review-dock')
+    if (oldDock && oldDock.parentNode) oldDock.parentNode.removeChild(oldDock)
+    var dock = active.createElement('div')
+    dock.id = 'innfo-review-dock'
+    dock.className = 'innfo-review-dock'
+    dock.setAttribute('data-innfo-component', 'review-dock')
+    dock.setAttribute('aria-label', 'Review floating dock')
+    dock.style.display = 'none'
+
+    var dockStatus = active.createElement('div')
+    dockStatus.className = 'innfo-dock-status'
+    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Review Mode</span>'
+    dock.appendChild(dockStatus)
+
+    var sep1 = active.createElement('span')
+    sep1.className = 'innfo-dock-sep'
+    dock.appendChild(sep1)
+
+    // Reviewer identity inside floating dock
+    dock.appendChild(buildReviewerChip(active))
+
+    var sep2 = active.createElement('span')
+    sep2.className = 'innfo-dock-sep'
+    dock.appendChild(sep2)
+
+    // Changes view toggle button
+    var changesBtn = active.createElement('button')
+    changesBtn.type = 'button'
+    changesBtn.className = 'innfo-dock-changes'
+    changesBtn.setAttribute('data-innfo', 'dock-changes')
+    changesBtn.textContent = 'Changes'
+    changesBtn.addEventListener('click', function () {
+      if (state && state.tabs) {
+        if (state.tabs.current() === 'review') {
+          state.tabs.select('explorer')
+        } else {
+          state.tabs.select('review')
+        }
+      }
+    })
+    dock.appendChild(changesBtn)
+
+    var dockDraftsEl = active.createElement('span')
+    dockDraftsEl.className = 'innfo-dock-drafts'
+    dockDraftsEl.textContent = 'Drafts: 0'
+    dock.appendChild(dockDraftsEl)
+
+    // Open button (Export changes)
+    var openBtn = active.createElement('button')
+    openBtn.id = 'innfo-dock-export-btn'
+    openBtn.setAttribute('type', 'button')
+    openBtn.className = 'innfo-feedback-open innfo-dock-export'
+    openBtn.textContent = 'Export changes'
+    dock.appendChild(openBtn)
+
+    var exitBtn = active.createElement('button')
+    exitBtn.type = 'button'
+    exitBtn.className = 'innfo-dock-exit'
+    exitBtn.textContent = 'Exit'
+    exitBtn.setAttribute('aria-label', 'Exit review mode')
+    exitBtn.addEventListener('click', function () {
+      var toggle = active.querySelector('[data-innfo="review-toggle"]')
+      if (toggle && (toggle.getAttribute('aria-pressed') === 'true' || toggle.classList.contains('active'))) {
+        toggle.click()
+      } else if (state && state.controller && typeof state.controller.disable === 'function') {
+        state.controller.disable()
+      }
+      dock.style.setProperty('display', 'none', 'important')
+      dock.removeAttribute('data-visible')
+      dock.classList.remove('active', 'innfo-dock-blinking')
+      if (dock._blinkTimer) {
+        clearTimeout(dock._blinkTimer)
+        dock._blinkTimer = null
+      }
+    })
+    dock.appendChild(exitBtn)
+
+    if (active.body) {
+      active.body.appendChild(dock)
+    } else {
+      root.appendChild(dock)
+    }
 
     // Single-header layout: the feedback controls live inside the top navbar
     // (no second application header). Fall back to the body top for shells
@@ -10096,7 +10385,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     // once by the next card render and then cleared.
     var focusId = null
     // Model Explorer view mode ('cards' | 'table') and the table sort state.
-    var explorerView = 'cards'
+    var explorerView = 'sheets'
     var sortState = { key: '', dir: 'asc' }
 
     function draftCountsOf(currentDrafts) {
@@ -10194,6 +10483,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       var n = currentDrafts.length
       var bannerCount = active.querySelector('.innfo-banner-drafts')
       if (bannerCount) bannerCount.textContent = ' drafts: ' + n
+      var dockCount = active.querySelector('#innfo-review-dock .innfo-dock-drafts')
+      if (dockCount) dockCount.textContent = 'Drafts: ' + n
       updateTabBadges(active, state)
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)
@@ -10269,6 +10560,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           }
           refresh(activeSearchQuery)
         })
+      } else if (explorerView === 'badges') {
+        mountElementBadges(active, filteredElements, currentDrafts, concepts, refs)
+      } else if (explorerView === 'cards') {
+        mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions)
       } else {
         mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions)
         focusId = null
@@ -10355,7 +10650,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       },
     })
 
-    if (tabs) cleanups.push(tabs.destroy)
+    if (tabs) {
+      state.tabs = tabs
+      cleanups.push(tabs.destroy)
+    }
     renderNavbarIdentity(active, meta)
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
@@ -10517,6 +10815,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     renderRail: renderRail,
     renderErrors: renderErrors,
     mountElementTable: mountElementTable,
+    mountElementBadges: mountElementBadges,
+    mountElementMiniCards: mountElementMiniCards,
     renderExplorerToolbar: renderExplorerToolbar,
     sortTableElements: sortTableElements,
     renderMediaDialog: renderMediaDialog,
@@ -10675,6 +10975,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     root.className = 'innfo-procedure-view'
     var header = doc.createElement('div')
     header.className = 'proc-view-header'
+    header.style.display = 'none'
     var titleEl = doc.createElement('h1')
     titleEl.className = 'proc-title'
     titleEl.textContent = meta.title || 'Procedures Console'
@@ -10689,17 +10990,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     root.appendChild(tabsHost)
     var subTabsNav = doc.createElement('nav')
     subTabsNav.className = 'subtabs'
-    var wizardTab = doc.createElement('button')
-    wizardTab.className = 'subtab active'
-    wizardTab.setAttribute('data-mode', 'wizard')
-    wizardTab.setAttribute('type', 'button')
-    wizardTab.textContent = 'Interactive Runner & DAG'
     var docTab = doc.createElement('button')
-    docTab.className = 'subtab'
-    docTab.setAttribute('data-mode', 'document')
+    docTab.className = 'subtab innfo-proc-toggle-btn'
     docTab.setAttribute('type', 'button')
-    docTab.textContent = 'Document'
-    subTabsNav.appendChild(wizardTab)
+    docTab.textContent = 'View Document'
     subTabsNav.appendChild(docTab)
     root.appendChild(subTabsNav)
     var docBody = doc.createElement('div')
@@ -10712,7 +11006,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     wizardBody.appendChild(stepBody)
     root.appendChild(wizardBody)
     container.appendChild(root)
-    var subTabs = subTabsNav.querySelectorAll('.subtab')
 
     var bits = []
     if (meta.template) bits.push('<span><strong>Template</strong> ' + esc(meta.template) + '</span>')
@@ -10832,7 +11125,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     function appendWithKuPills(hostEl, rawText) {
       var text = String(rawText == null ? '' : rawText)
       var names = Object.keys(byName).filter(function (n) { return n && n.length >= 3 }).sort(function (a, b) { return b.length - a.length })
-      var escapedNames = names.map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\    function refButton(label, name) {') })
+      var escapedNames = names.map(function (n) { return n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') })
       var patternParts = ['\\bfb-\\d+\\b']
       if (escapedNames.length) patternParts.push(escapedNames.join('|'))
       var re = new RegExp('(' + patternParts.join('|') + ')', 'g')
@@ -10867,6 +11160,30 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         var span = document.createElement('span')
         span.textContent = label
         return { node: span, ok: false }
+      }
+      var UI = GLOBAL.InnfoUI
+      if (UI && typeof UI.ElementPill === 'function' && target.id) {
+        var cMeta = null
+        concepts.forEach(function (x) {
+          if (x && x.name === target.concept) cMeta = x
+        })
+        var pill = UI.ElementPill(
+          {
+            id: target.id,
+            label: target.name || label,
+            concept: target.concept,
+            color: cMeta && cMeta.color,
+            hexColor: cMeta && cMeta.hexColor,
+          },
+          {
+            doc: document,
+            onClick: function (ev) {
+              if (ev && ev.preventDefault) ev.preventDefault()
+              openRef(target)
+            },
+          }
+        )
+        return { node: pill, ok: true }
       }
       var b = document.createElement('button')
       b.className = 'chip-ref'
@@ -10903,23 +11220,22 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       if (proceduresMode === 'wizard') {
         if (docBody) docBody.classList.add('hidden')
         if (wizardBody) wizardBody.classList.remove('hidden')
+        if (docTab) docTab.textContent = 'View Document'
         renderExecutionWorkspace()
       } else {
         if (wizardBody) wizardBody.classList.add('hidden')
         if (docBody) docBody.classList.remove('hidden')
+        if (docTab) docTab.textContent = 'View Workflow'
         renderDocument()
       }
-      subTabs.forEach(function (b) {
-        b.classList.toggle('active', b.getAttribute('data-mode') === proceduresMode)
-      })
     }
 
-    subTabs.forEach(function (b) {
-      b.addEventListener('click', function () {
-        proceduresMode = b.getAttribute('data-mode') === 'wizard' ? 'wizard' : 'document'
+    if (docTab) {
+      docTab.addEventListener('click', function () {
+        proceduresMode = proceduresMode === 'wizard' ? 'document' : 'wizard'
         renderProcedures()
       })
-    })
+    }
 
     // Document view: full procedure as a readable document (presentational).
     function renderDocument() {
@@ -11140,7 +11456,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       dagCol.className = 'exec-dag-col'
       var dagHeader = document.createElement('div')
       dagHeader.className = 'exec-col-header'
-      dagHeader.innerHTML = '<span>' + vIcon('workflow', 14) + ' Flow & Topology</span><span class="count-badge">' + chain.length + ' steps</span>'
+      dagHeader.innerHTML = '<span>' + vIcon('workflow', 14) + ' Workflow</span><span class="count-badge">' + chain.length + ' steps</span>'
       dagCol.appendChild(dagHeader)
 
       var dagView = document.createElement('div')
@@ -11249,6 +11565,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         g.addEventListener('click', function () {
           currentStepIndex = i
           renderExecutionWorkspace()
+          var activeCard = ws.querySelector('.exec-step-card')
+          if (activeCard && typeof activeCard.scrollIntoView === 'function') {
+            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          }
         })
 
         var rect = document.createElementNS(svgNS, 'rect')
@@ -11296,7 +11616,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       var cur = chain[currentStepIndex]
       var state = stepStates[cur.el.id] || 'active'
       var card = document.createElement('article')
-      card.className = 'exec-step-card'
+      card.className = 'exec-step-card innfo-card'
+      card.setAttribute('data-innfo-component', 'element-card')
 
       // Step Header
       var headerRow = document.createElement('div')

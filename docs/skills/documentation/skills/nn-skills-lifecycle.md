@@ -33,8 +33,11 @@ Executes the canonical activation gate defined in [`nn-preflight`](skills/nn-pre
 | `bootstrap [--scope <global\|workspace>]` | Zero-touch ecosystem setup: downloads pinned skills, templates, MCP bundles, and configures agent MCP settings. |
 | `status` | Compares installed vs. pinned commits; prints status table and diff-file count preview. |
 | `install` | Installs missing skills from GitHub tarballs into `~/.agents/skills/{name}/` (or workspace). |
+| `install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>]` | **Opt-in.** Installs a *referenced* external (third-party) skill at its pinned commit, verifying the `sha256` tree digest when given. Never invoked by `install`/`update`. |
 | `update [skill ...]` | Updates outdated skills to their pinned commit. |
 | `sync [--direction ...]` | Recursively copies skill files between workspace `skills/` and global directory. |
+
+**Referenced external skills.** A bluepriNNt may recommend a third-party skill by declaring it in its frontmatter `skills:` array pinned to a `commit` + `sha256` digest with an SPDX `license`. It is never vendored and its guarantee is deliberately bounded — reproducible, unmodified since the pin, and license-declared; cogNNitive does not vouch for its author. Install it only with `install-external`; the ordinary `install`/`update` never fetch a referenced skill. See the guarantee tiers in the template package spec.
 
 **Consent is mandatory**: Any mutating command requires user confirmation before altering files.
 
