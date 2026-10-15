@@ -159,16 +159,11 @@
     '.innfo-history-notes{font-weight:500;color:var(--innfo-text)}',
     '.innfo-history-empty{color:var(--innfo-muted);font-size:.82rem;font-style:italic}',
     // Element-card redesign: hover-reveal edit anchors (same pattern as
-    // .innfo-review-anchor), per-card edit toggle, QKUD chip, tags, relations.
+    // .innfo-review-anchor), QKUD chip, tags, relations.
     '.innfo-edit-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease;display:inline-flex;align-items:center;justify-content:center;min-width:1.9em;min-height:1.6em}',
     '.innfo-edit-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
     '[data-innfo-component=element-card]:hover .innfo-edit-anchor,[data-innfo-component=field-row]:hover .innfo-edit-anchor{opacity:.85}',
     '.innfo-edit-anchor:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px;opacity:1}',
-    '[data-innfo-component=element-card][data-editing] .innfo-edit-anchor,[data-innfo-component=element-card][data-editing] .innfo-review-anchor{opacity:.9}',
-    '.innfo-edit-toggle{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-muted);font:inherit;padding:.25em .5em;border-radius:var(--innfo-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-left:auto}',
-    '.innfo-edit-toggle:hover{color:var(--innfo-text);border-color:var(--innfo-focus)}',
-    '[data-innfo-component=element-card][data-editing] .innfo-edit-toggle{color:var(--innfo-link);border-color:var(--innfo-link);background:var(--innfo-surface)}',
-    '.innfo-edit-toggle:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
     '.innfo-qud{display:inline-flex;align-items:center;gap:.35em;font-family:var(--innfo-mono);font-size:.75rem;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.15em .3em .15em .6em;max-width:100%;min-width:0}',
     // The KU-detail chip holds a long mono id; the wrapper must be able to
     // shrink below its content so a long id never widens the page on narrow
@@ -195,7 +190,7 @@
     '.innfo-rel-act.danger:hover{color:var(--innfo-status-rejected)}',
     '.innfo-rel-add{appearance:none;border:1px dashed var(--innfo-border);background:none;color:var(--innfo-muted);font:inherit;font-size:.78rem;border-radius:var(--innfo-radius-sm);padding:.1em .55em;cursor:pointer;align-self:flex-start}',
     '.innfo-rel-add:hover{color:var(--innfo-link);border-color:var(--innfo-link)}',
-    '@media (max-width:640px){.innfo-edit-anchor,.innfo-edit-toggle,.innfo-qud-btn,.innfo-rel-act{min-width:32px;min-height:32px}.innfo-qud{font-size:.75rem}}',
+    '@media (max-width:640px){.innfo-edit-anchor,.innfo-qud-btn,.innfo-rel-act{min-width:32px;min-height:32px}.innfo-qud{font-size:.75rem}}',
     // Knowledge-unit badge family (KuBadge) + action cluster + change pip.
     '.innfo-ku-unit{display:inline-flex;align-items:center;gap:.25em;max-width:100%}',
     '.innfo-card-fields>.innfo-ku-unit,.innfo-card-fields>.innfo-ku-badge{flex:1 1 16rem;min-width:0}',
@@ -714,18 +709,6 @@
       ul.appendChild(li)
     })
     return ul
-  }
-
-  function EditToggle(data, opts) {
-    var doc = resolveDoc(opts)
-    var btn = makeEl(doc, 'button', 'innfo-edit-toggle')
-    btn.setAttribute('data-innfo-component', 'edit-toggle')
-    btn.setAttribute('type', 'button')
-    btn.setAttribute('aria-pressed', 'false')
-    btn.setAttribute('aria-label', 'Toggle edit controls on this card')
-    btn.setAttribute('title', 'Toggle edit controls on this card')
-    btn.innerHTML = icon('sliders', 14)
-    return btn
   }
 
   function EditAnchor(data, opts) {
@@ -2915,7 +2898,6 @@
     QudChip: QudChip,
     TagRow: TagRow,
     RelList: RelList,
-    EditToggle: EditToggle,
     EditAnchor: EditAnchor,
     StatusBadge: StatusBadge,
     CitationIcon: CitationIcon,

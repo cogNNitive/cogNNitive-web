@@ -528,7 +528,9 @@
           col: anchorData.col,
           element: anchorData.matrix,
           kind: payload.kind,
-          model_id: meta.modelId,
+          // The owning model, not the domain: the changeset target must resolve in
+          // apply_change. Falls back to the domain id only for legacy anchors.
+          model_id: anchorData.modelId || meta.modelId,
           original: anchorData.original,
         }
         if (payload.proposed !== undefined) matrixDraft.proposed = payload.proposed
@@ -944,28 +946,6 @@
       return b
     }
 
-    // Pencil toggle (card redesign): pins all hover-reveal edit anchors on one
-    // card via [data-editing]. Rendered top-right by decorateCard; review-owned,
-    // so disable() removes it with the other controls.
-    function editToggleControl(card) {
-      var t =
-        typeof UI.EditToggle === 'function'
-          ? UI.EditToggle()
-          : makeEl(doc, 'button', 'innfo-review-anchor', '\u270e')
-      t.setAttribute('data-innfo-review-ctl', '1')
-      t.setAttribute('data-innfo-ctl', 'edit-toggle')
-      t.setAttribute('type', 'button')
-      t.setAttribute('aria-pressed', 'false')
-      t.setAttribute('aria-label', 'Toggle edit controls on this card')
-      t.setAttribute('title', 'Toggle edit controls on this card')
-      t.addEventListener('click', function () {
-        var on = card.getAttribute('data-editing') === 'true'
-        card.setAttribute('data-editing', on ? 'false' : 'true')
-        t.setAttribute('aria-pressed', on ? 'false' : 'true')
-      })
-      return t
-    }
-
     // Pencils for name / description / marker KUs. They reuse openFor with a
     // virtual field so every editable KU funnels into the same KU modal.
     function kuEditControl(anchorData, label) {
@@ -1105,11 +1085,17 @@
         if (typeof event.preventDefault === 'function') event.preventDefault()
         var focused = idx >= 0 ? visible[idx] : visible[0]
         var fieldRow = focused.querySelector('[data-innfo-ctl="field-anchor"]')
-        var anchor = focused.querySelector('[data-innfo-ctl="card-anchor"]')
-        if (fieldRow && document.activeElement && document.activeElement.closest &&         document.activeElement.closest('[data-ku-kind="field"]')) {
+        if (
+          fieldRow &&
+          document.activeElement &&
+          document.activeElement.closest &&
+          document.activeElement.closest('[data-ku-kind="field"]')
+        ) {
           fieldRow.dispatchEvent(new Event('click', { bubbles: true }))
-        } else if (anchor) {
-          anchor.dispatchEvent(new Event('click', { bubbles: true }))
+        } else {
+          // The card-level annotate popover was retired: `c` opens the shared KU
+          // modal in comment mode for the focused element.
+          openEdit({ elementId: focused.getAttribute('data-element-id'), comment: true })
         }
       }
     }
@@ -1139,12 +1125,6 @@
           applyDecorations()
         })
         head.insertBefore(rt, headRightRef)
-      }
-      if (!card.querySelector('[data-innfo-ctl="card-anchor"]')) {
-        head.insertBefore(annotateControl({ elementId: elId }, 'Annotate element'), headRightRef)
-      }
-      if (!card.querySelector('[data-innfo-ctl="edit-toggle"]')) {
-        head.insertBefore(editToggleControl(card), headRightRef)
       }
       var nameEl = card.querySelector('.innfo-card-head [data-ku-kind="element"]')
       if (nameEl && !nameEl.querySelector('[data-innfo-ctl="name-anchor"]')) {
@@ -1270,7 +1250,7 @@
       var card = row.closest('[data-innfo-component="element-card"]')
       var elId = card ? card.getAttribute('data-element-id') : ''
       var field = row.getAttribute('data-field')
-      row.appendChild(annotateControl({ elementId: elId, field: field }, 'Annotate field'))
+      row.appendChild(annotateControl({ elementId: elId, field: field }, 'Edit field'))
     }
 
     // Matrix cells are not element units: each editable cell carries an anchor
@@ -1284,6 +1264,8 @@
         row: td.getAttribute('data-row'),
         col: td.getAttribute('data-col'),
         original: td.getAttribute('data-cell-raw') || '',
+        // The model that owns the matrix (the draft's D5 target model part).
+        modelId: td.getAttribute('data-matrix-model') || '',
         field: '__cell',
         ctl: 'matrix-cell-anchor',
       }
@@ -1492,21 +1474,36 @@
       if (html() && html().getAttribute('data-innfo-filter') === 'changed') applyChangedFilter()
     }
 
+    // One malformed node must never abort the whole decoration pass: a throw
+    // here used to leave every later target (matrix cells in particular)
+    // undecorated. Each node is decorated in isolation; failures are logged.
+    function safeDecorate(fn) {
+      return function (node) {
+        try {
+          fn(node)
+        } catch (err) {
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('innfo review: skipped decorating a node', err)
+          }
+        }
+      }
+    }
+
     function decorate(root) {
       if (!enabled) return
       var host = root || doc
       if (!host.querySelectorAll) return
       Array.prototype.forEach.call(
         host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
-        decorateCard,
+        safeDecorate(decorateCard),
       )
       Array.prototype.forEach.call(
         host.querySelectorAll('[data-ku-kind="field"][data-field]'),
-        decorateFieldRow,
+        safeDecorate(decorateFieldRow),
       )
       Array.prototype.forEach.call(
         host.querySelectorAll('td[data-matrix][data-row][data-col]'),
-        decorateMatrixCell,
+        safeDecorate(decorateMatrixCell),
       )
     }
 

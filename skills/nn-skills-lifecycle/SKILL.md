@@ -2,7 +2,7 @@
 name: nn-skills-lifecycle
 description: Install, create, audit, and maintain cogNNitive skills. Entry point for the skill ecosystem. Invoke with /nn-skills-lifecycle.
 disable-model-invocation: true
-version: "V_1-2-1"
+version: "V_1-3-0"
 last_updated: 2026-10-04
 metadata:
   source: actioNN

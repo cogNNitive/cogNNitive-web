@@ -1428,6 +1428,23 @@
     if (count != null) {
       head.appendChild(el('span', 'innfo-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')))
     }
+    // Collapsible: the toggle lives in the head and survives re-renders because
+    // the collapsed state is a class on the aside, not on the rebuilt children.
+    var collapseBtn = el('button', 'innfo-guide-collapse')
+    collapseBtn.setAttribute('type', 'button')
+    var setCollapsed = function (collapsed) {
+      if (collapsed) host.classList.add('is-collapsed')
+      else host.classList.remove('is-collapsed')
+      collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+      collapseBtn.setAttribute('aria-label', collapsed ? 'Expand concept details' : 'Collapse concept details')
+      collapseBtn.setAttribute('title', collapsed ? 'Expand' : 'Collapse')
+      collapseBtn.innerHTML = UI.icon(collapsed ? 'chevron-left' : 'chevron-right', 15)
+    }
+    setCollapsed(host.classList.contains('is-collapsed'))
+    collapseBtn.addEventListener('click', function () {
+      setCollapsed(!host.classList.contains('is-collapsed'))
+    })
+    head.appendChild(collapseBtn)
     host.appendChild(head)
 
     var description = concept.description || concept.summary || ''
@@ -1456,6 +1473,7 @@
           var tcPill = UI.ConceptPill({ id: targetC, label: targetC, index: tcMeta.index, color: tcMeta.color }, { doc: doc })
           dd.appendChild(tcPill)
         }
+        if (f.description) dd.appendChild(el('p', 'innfo-guide-field-desc', String(f.description)))
         fdl.appendChild(dt)
         fdl.appendChild(dd)
       })
@@ -2298,6 +2316,10 @@
             td.setAttribute('data-row', String(rowLabel))
             td.setAttribute('data-col', String(c))
             if (matrix.target) td.setAttribute('data-matrix-target', String(matrix.target))
+            // The owning model address: a matrix-cell draft must target the model
+            // that owns the matrix, never the domain id (apply_change resolves the
+            // model by file stem / title, and `meta.modelId` is the domain).
+            if (matrix.modelId) td.setAttribute('data-matrix-model', String(matrix.modelId))
             td.setAttribute('data-cell-raw', isEmpty ? '' : value)
             var cellBadge = UI.KuBadge({ kind: 'cell', value: isEmpty ? '—' : value })
             if (!isEmpty) cellBadge.setAttribute('data-cell-value', value.toLowerCase())

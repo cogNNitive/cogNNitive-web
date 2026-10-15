@@ -16,15 +16,11 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
-const { pathToFileURL } = require('node:url')
 
-let _corePromise = null
-function loadInnfoCore() {
-  if (!_corePromise) {
-    const corePath = path.resolve(__dirname, '../../../iNNfo/packages/innfo-core/dist/index.js')
-    _corePromise = import(pathToFileURL(corePath).href)
-  }
-  return _corePromise
+// Bundled core primitives (scripts/build-preflight-primitives.mjs), so the skill runs
+// from an installed ~/.agents/skills/nn-upgrade without the iNNfo/ source tree.
+async function loadInnfoCore() {
+  return require('./lib/innfo-core.generated.cjs')
 }
 
 function getArg(flag) {

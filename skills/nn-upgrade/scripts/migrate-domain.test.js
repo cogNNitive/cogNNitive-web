@@ -227,6 +227,28 @@ field:: other
       )
       console.log('✔ nn-upgrade scripts run as CommonJS inside a "type":"module" domaiNN')
     }
+
+    // 5. Shipped layout: the skill dir copied outside the repo has no iNNfo/ tree, so
+    //     --freeze-slugs must work from its own bundled core.
+    {
+      const installed = path.join(tmpRoot, 'installed', '.agents', 'skills', 'nn-upgrade')
+      fs.cpSync(path.resolve(SCRIPT_DIR, '..'), installed, { recursive: true })
+      const domainDir = path.join(tmpRoot, 'standalone-domain')
+      fs.mkdirSync(path.join(domainDir, 'kNNowledge'), { recursive: true })
+      fs.writeFileSync(
+        path.join(domainDir, 'kNNowledge', 'product_V_0-1-0_NN.md'),
+        '---\nspec_version: "V_0-4-0"\nlevel: 3\ntitle: "Product"\nparent_spec:\n  name: "business"\n  url: "https://example.com/business.md"\nknowledge_version: "V_0-1-0"\n---\n\n# NN Item\n\n## NN Item: Widget One\nfield:: value\n',
+        'utf8',
+      )
+      const res = spawnSync(
+        process.execPath,
+        [path.join(installed, 'scripts', 'migrate-domain.js'), '--domain-dir', domainDir, '--freeze-slugs', '--json'],
+        { encoding: 'utf-8' },
+      )
+      assert.strictEqual(res.status, 0, `freeze-slugs from an installed skill dir failed: ${res.stderr}`)
+      assert.strictEqual(JSON.parse(res.stdout).modified, 1)
+      console.log('✔ --freeze-slugs runs from an installed skill dir without the iNNfo/ tree')
+    }
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true })
   }

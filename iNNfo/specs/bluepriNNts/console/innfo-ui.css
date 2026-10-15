@@ -6360,18 +6360,12 @@ button.btn-primary:hover:not(:disabled) {
   gap: 8px;
 }
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle,
-[data-innfo-component="element-card"] .innfo-card-head > [data-innfo-ctl="card-anchor"],
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-card-count,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-card-toggle {
   margin-left: auto;
 }
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle ~ [data-innfo-ctl="card-anchor"],
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle ~ .innfo-edit-toggle,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle ~ .innfo-card-count,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle ~ .innfo-card-toggle,
-[data-innfo-component="element-card"] .innfo-card-head > [data-innfo-ctl="card-anchor"] ~ .innfo-edit-toggle,
-[data-innfo-component="element-card"] .innfo-card-head > [data-innfo-ctl="card-anchor"] ~ .innfo-card-count,
-[data-innfo-component="element-card"] .innfo-card-head > [data-innfo-ctl="card-anchor"] ~ .innfo-card-toggle,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-card-count ~ .innfo-card-toggle {
   margin-left: 4px;
 }
@@ -6976,6 +6970,50 @@ button.btn-primary:hover:not(:disabled) {
   font-weight: 700;
   color: #71717a;
   font-size: 0.8rem;
+}
+.innfo-guide-collapse {
+  margin-left: auto;
+  appearance: none;
+  border: 1px solid #e5e5e5;
+  background: #f4f4f5;
+  color: #52525b;
+  border-radius: 6px;
+  padding: 3px 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.innfo-guide-collapse:hover {
+  color: #0a0a0a;
+  border-color: #a1a1aa;
+}
+.innfo-guide-field-dd {
+  flex-wrap: wrap;
+}
+.innfo-guide-field-desc {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: #71717a;
+}
+aside.innfo-guide.is-collapsed {
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
+  padding: 12px 6px;
+  overflow: hidden;
+}
+aside.innfo-guide.is-collapsed .innfo-guide-head {
+  justify-content: center;
+  margin-bottom: 0;
+}
+aside.innfo-guide.is-collapsed .innfo-guide-head > :not(.innfo-guide-collapse) {
+  display: none;
+}
+aside.innfo-guide.is-collapsed > :not(.innfo-guide-head) {
+  display: none;
 }
 
 /* G5: Matrices (0,0) Corner Dual-Concept Header & Semantic Cell Pills */

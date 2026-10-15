@@ -1,7 +1,7 @@
 ---
 name: nn-upgrade
 description: Guided, consent-gated upgrade of user domaiNN workspaces. Upgrades bluepriNNt versions for adopted templates (Flow B), freezes unfrozen element slugs (--freeze-slugs), and points an old or broken domain at the new-domain recipe (create a new domain and import the old one as a Source). There is no in-place migration of an old domain. Triggers: template upgrade, upgrade templates, workspace upgrade, domain migration, migrate domain, migrar workspace, migrar dominio, actualizar plantillas.
-version: "V_0-4-1"
+version: "V_0-4-2"
 last_updated: 2026-10-14
 metadata:
   source_type: original
