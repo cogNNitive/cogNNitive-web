@@ -95,6 +95,62 @@ review controller owns it). It never changes the type of the value it edits:
   A `commentOnly` target (an element-level comment) hides the mode toggle
   entirely instead.
 
+### Read rendering of declared field types (`FieldValue`)
+
+The caller resolves the declared type from (concept, field) and passes it as `type`.
+
+- `select` renders a pill (`.innfo-field-select`, `data-value`); an empty value renders nothing.
+  The edit modal offers exactly the declared options plus the blank option and the preserved
+  current value.
+- `image` / `video` / `audio` render a preview or a native player followed by the path. A media
+  `src` is set only for a relative path or an `http(s)` URL; any other value (`javascript:`,
+  `data:`, ...) is shown as text.
+- `knowledge` renders a document pill. It is clickable only when the caller passes
+  `opts.onKnowledge` (and `opts.isKnowledgeBound(value)` returns true); the runtime binds it to the
+  `model:` filter of the model the value names. An unbound pill is inert; the console never
+  creates or binds a model.
+- `reference` edits against the same model's elements, narrowed to the field's
+  `target_concepts` when declared, and always proposes `[[Display Name]]`.
+
+### Markdown (`InnfoUI.Markdown`)
+
+`Markdown(text, { doc })` renders a fixed subset by building DOM nodes only; it never parses
+markup, so raw HTML is shown as text. `markdown` and `markdown_inline` fields use it;
+`markdown_file` stays a path pill.
+
+Supported subset: `#`-`######` headings, `-`/`*`/`+` and `1.` lists, `> ` block quotes and
+`> [!NOTE]`-style callouts (NOTE, TIP, IMPORTANT, WARNING, CAUTION), paragraphs with line breaks,
+`**strong**`, `*em*` / `_em_`, `` `code` `` and `[text](url)`. A link is an `a` (with
+`target="_blank"` and `rel="noopener noreferrer"`) only for `http(s)` or a relative path; control
+characters, `//` and `\` prefixes and every other scheme render the whole `[text](url)` as text.
+Anything else (tables, images, nested lists, HTML) is literal text, so nothing is lost.
+`InnfoUI.safeHref(url)` exposes the same link check.
+
+### Tags and the filter
+
+`ElementCard` renders `TagRow` from `element.tags` only when it is non-empty (the review
+controller adds its own row for "+ tag" on untagged cards). With `opts.onTag` each chip is a
+button; the runtime wires it to add `tag:<t>` to the active filter.
+
+`element.tags` is the only tag source (a field merely named `tags` is not one). Filter facets
+combine as follows:
+
+| Token | Meaning |
+|---|---|
+| `tag:a tag:b` | AND, exact and case-insensitive: the element carries both |
+| `tag-any:a tag-any:b` | OR group: the element carries at least one |
+| `concept:` / `model:` (repeated) | OR within the facet |
+| different facets, text | AND |
+
+The search box tooltip states the asymmetry (tags narrow, concepts and models widen).
+
+### Open original
+
+A citation entry with an `href` (written by `export-console.mjs`, relative to the console file)
+shows an "Open original" link in the citation dialog when the `href` is a relative path or an
+`http(s)` URL. Error entries and unsafe hrefs show none; there is no preview, code or lineage mode
+for the file.
+
 ## Tokens
 
 `TOKEN_VALUES` holds a light and a dark value for every `--innfo-*` token:

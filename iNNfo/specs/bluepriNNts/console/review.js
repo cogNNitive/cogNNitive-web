@@ -21,6 +21,24 @@
     return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
+  // The definition governing a matrix cell: the column Marker of the reserved
+  // item-markers matrix, otherwise the matrix definition of the same name.
+  // The reserved matrix is recognised like payload-builder does: by name OR by a
+  // `markers` target.
+  function matrixCellDef(schema, matrix, col, target) {
+    if (!schema) return null
+    function byName(list, name) {
+      var want = String(name).toLowerCase()
+      return (Array.isArray(list) ? list : []).filter(function (d) {
+        return d && String(d.name).toLowerCase() === want
+      })[0]
+    }
+    var isItemMarkers =
+      String(matrix).toLowerCase() === 'item-markers matrix' || String(target || '').toLowerCase() === 'markers'
+    if (isItemMarkers) return byName(schema.markers, col) || null
+    return byName(schema.matrices, matrix) || null
+  }
+
   // Declared definition of a field, keyed by (concept, field) so two concepts that
   // share a field name keep their own type/options. Case-insensitive on both parts.
   function fieldDefOf(schema, concept, field) {
@@ -38,6 +56,15 @@
       }
     }
     return null
+  }
+
+  // The field value as written in the document: a console file rebases media paths
+  // for display and keeps the document text in el.rawFields.
+  function docFieldValue(el, key) {
+    if (el && isObject(el.rawFields) && Object.prototype.hasOwnProperty.call(el.rawFields, key)) {
+      return el.rawFields[key]
+    }
+    return el && el.fields ? el.fields[key] : undefined
   }
 
   function deepCopy(value) {
@@ -294,7 +321,7 @@
   function currentFieldValue(el, field) {
     if (!isObject(el) || field === undefined || field === null) return undefined
     var key = String(field)
-    if (el.fields && isObject(el.fields) && el.fields[key] !== undefined) return el.fields[key]
+    if (el.fields && isObject(el.fields) && el.fields[key] !== undefined) return docFieldValue(el, key)
     if (key === 'name') return el.name
     if (key === 'description') return el.description
     return el[key]
@@ -528,9 +555,7 @@
         draft.original =
           payload.original !== undefined
             ? payload.original
-            : el.fields
-              ? el.fields[anchorData.field]
-              : undefined
+            : docFieldValue(el, anchorData.field)
         if (payload.proposed !== undefined) draft.proposed = payload.proposed
       }
       if (payload.comment !== undefined && payload.comment !== null) {
@@ -552,14 +577,20 @@
     // Resolve an anchor to a KU-modal target. Returns null when the anchor is
     // not modal-editable (card comments, tag/relation proposals use popovers
     // or immediate comment drafts instead).
-    function referenceCandidates(def) {
+    // Candidates are the owner's own model only (a reference never crosses
+    // models) and, when the definition declares target_concepts, only those concepts.
+    function modelKeyOf(e) {
+      return String(e.modelId || e.modelFile || '')
+    }
+
+    function referenceCandidates(def, owner) {
       var allowed = def && Array.isArray(def.target_concepts) ? def.target_concepts : []
-      if (!allowed.length) return elements
       var set = allowed.map(function (c) {
         return String(c).toLowerCase()
       })
       return elements.filter(function (e) {
-        return e && set.indexOf(String(e.concept).toLowerCase()) !== -1
+        if (!e || (owner && modelKeyOf(e) !== modelKeyOf(owner))) return false
+        return !set.length || set.indexOf(String(e.concept).toLowerCase()) !== -1
       })
     }
 
@@ -567,11 +598,28 @@
       // Matrix cells are edited through the same modal, addressed by coordinate.
       if (anchorData.matrixCell) {
         if (typeof UI.EditModal !== 'function') return null
+        var cellDef = matrixCellDef(options.schema, anchorData.matrix, anchorData.col, anchorData.target)
+        var cellValues = cellDef && Array.isArray(cellDef.values) ? cellDef.values : null
+        var cellWidget = cellDef ? String(cellDef.widgetType || cellDef.widget || '') : ''
+        var cellType = 'string'
+        var cellValue = anchorData.original
+        if (cellWidget === 'boolean') {
+          cellType = 'boolean'
+          // Any filled cell (a declared value, X, true) reads as checked.
+          cellValue = anchorData.original !== '' && anchorData.original !== '-' && anchorData.original !== 'false'
+        } else if (
+          (cellWidget === 'set' || cellWidget === 'scale' || cellWidget === 'cycle') &&
+          cellValues &&
+          cellValues.length
+        ) {
+          cellType = 'select'
+        }
         return {
           title: 'Edit ' + anchorData.matrix + ' → ' + anchorData.row + ' × ' + anchorData.col,
           fieldName: '__cell',
-          type: 'string',
-          value: anchorData.original,
+          type: cellType,
+          options: cellType === 'select' ? cellValues : undefined,
+          value: cellValue,
           draftField: '__cell',
           original: anchorData.original,
           citations: [],
@@ -585,12 +633,13 @@
         history: Array.isArray(el.history) ? el.history : [],
       }
       if (anchorData.relRetarget) {
+        var relTargetEl = elementsById[anchorData.relTarget]
         return {
           title: 'Retarget ' + (el.name || anchorData.elementId) + ' \u2192 ' + anchorData.relField,
           fieldName: anchorData.relField,
           type: 'reference',
-          value: anchorData.relTarget,
-          candidates: elements,
+          value: relTargetEl ? '[[' + (relTargetEl.name || relTargetEl.id) + ']]' : anchorData.relTarget,
+          candidates: referenceCandidates(fieldDefOf(options.schema, el.concept, anchorData.relField), el),
           draftField: anchorData.relField,
           original: anchorData.relTarget,
           citations: base.citations,
@@ -637,7 +686,7 @@
           history: base.history,
         }
       }
-      var fieldVal = el.fields ? el.fields[field] : undefined
+      var fieldVal = docFieldValue(el, field)
       var schemaField = fieldDefOf(options.schema, el.concept, field)
       var fieldType =
         schemaField && schemaField.type
@@ -660,7 +709,7 @@
         target_concepts: schemaField ? schemaField.target_concepts : undefined,
         candidates:
           schemaField && (schemaField.type === 'reference' || fieldType === 'reference')
-            ? referenceCandidates(schemaField)
+            ? referenceCandidates(schemaField, el)
             : undefined,
         draftField: field,
         original: fieldVal,
@@ -827,7 +876,7 @@
       }
       if (anchorData.field && elementsById[anchorData.elementId]) {
         var el = elementsById[anchorData.elementId]
-        data.original = el.fields ? el.fields[anchorData.field] : undefined
+        data.original = docFieldValue(el, anchorData.field)
       }
       var pop = UI.AnnotationPopover(data, {
         doc: doc,
@@ -1132,7 +1181,15 @@
     // +/x controls that record comment drafts. Marker chips keep pencils.
     function decorateTagRow(card, elId) {
       var row = card.querySelector('[data-innfo-component="tag-row"]')
-      if (!row) return
+      if (!row) {
+        // The card shows no row for an untagged element; the "+ tag" control still
+        // needs one, and it goes away again when review mode is disabled.
+        var cardBody = card.querySelector('.innfo-card-body')
+        if (!cardBody || typeof UI.TagRow !== 'function') return
+        row = UI.TagRow({ tags: [] }, { doc: doc })
+        row.setAttribute('data-innfo-review-ctl', '1')
+        cardBody.insertBefore(row, cardBody.querySelector('[data-innfo-component="rel-list"]'))
+      }
       Array.prototype.forEach.call(row.querySelectorAll('.innfo-tag'), function (tag) {
         if (tag.querySelector('[data-innfo-ctl="tag-remove"]')) return
         var name = tag.getAttribute('data-tag') || tag.textContent
@@ -1219,6 +1276,7 @@
       var anchorData = {
         matrixCell: true,
         matrix: td.getAttribute('data-matrix'),
+        target: td.getAttribute('data-matrix-target') || '',
         row: td.getAttribute('data-row'),
         col: td.getAttribute('data-col'),
         original: td.getAttribute('data-cell-raw') || '',

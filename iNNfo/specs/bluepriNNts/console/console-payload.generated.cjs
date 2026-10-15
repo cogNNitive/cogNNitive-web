@@ -10991,6 +10991,7 @@ function buildConsolePayload(options) {
         fields,
         markers
       });
+      const tags = [.../* @__PURE__ */ new Set([...node.tags ?? [], ...parsed.conceptTags?.[concept] ?? []])];
       const elem = {
         id,
         slug: node.slug,
@@ -10999,7 +11000,8 @@ function buildConsolePayload(options) {
         description,
         fields,
         markers,
-        hash
+        hash,
+        tags
       };
       rawElements.push({ elem, rawFields: { ...fields } });
       if (!elementsByName.has(name.toLowerCase())) {

@@ -255,6 +255,7 @@
     var modelOps = []
     var conceptOps = []
     var tagOps = []
+    var tagAnyOps = []
     var otherOps = []
 
     for (var k = 0; k < parsed.operators.length; k++) {
@@ -263,8 +264,11 @@
         modelOps.push(oper)
       } else if (oper.key === 'concept') {
         conceptOps.push(oper)
-      } else if (oper.key === 'tag') {
-        tagOps.push(oper)
+      } else if (oper.key === 'tag' || oper.key === 'tag-any') {
+        // A half-typed \`tag:\` has no value yet: it constrains nothing.
+        if (String(oper.val == null ? '' : oper.val).trim() === '') continue
+        if (oper.key === 'tag') tagOps.push(oper)
+        else tagAnyOps.push(oper)
       } else {
         otherOps.push(oper)
       }
@@ -302,29 +306,24 @@
         if (!matchesAnyConcept) return false
       }
 
-      // Check tag facet (OR across multiple tag selections)
-      if (tagOps.length > 0) {
-        var matchesAnyTag = tagOps.some(function (op) {
-          var hasTag = false
-          if (Array.isArray(el.tags)) {
-            hasTag = el.tags.some(function (t) {
-              return String(t).toLowerCase().indexOf(op.val) !== -1
+      // Tag facet: element.tags is the only tag source, matched exactly (case-insensitive).
+      // `tag:` tokens AND together; `tag-any:` tokens form one OR group.
+      if (tagOps.length > 0 || tagAnyOps.length > 0) {
+        var elTags = Array.isArray(el.tags)
+          ? el.tags.map(function (t) {
+              return String(t).toLowerCase()
             })
-          }
-          if (!hasTag && el.fields && isObject(el.fields)) {
-            if (Array.isArray(el.fields.tags)) {
-              hasTag = el.fields.tags.some(function (t) {
-                return String(t).toLowerCase().indexOf(op.val) !== -1
-              })
-            } else if (typeof el.fields.tags === 'string') {
-              hasTag = el.fields.tags.toLowerCase().indexOf(op.val) !== -1
-            } else if (typeof el.fields.tag === 'string') {
-              hasTag = el.fields.tag.toLowerCase().indexOf(op.val) !== -1
-            }
-          }
-          return hasTag
+          : []
+        var hasAllTags = tagOps.every(function (op) {
+          return elTags.indexOf(op.val) !== -1
         })
-        if (!matchesAnyTag) return false
+        if (!hasAllTags) return false
+        if (tagAnyOps.length > 0) {
+          var hasAnyTag = tagAnyOps.some(function (op) {
+            return elTags.indexOf(op.val) !== -1
+          })
+          if (!hasAnyTag) return false
+        }
       }
 
       for (var j = 0; j < otherOps.length; j++) {
@@ -341,25 +340,6 @@
             String(el.modelTitle || '')
           ).toLowerCase()
           if (modelHaystackNot.indexOf(op.val) !== -1) return false
-        } else if (op.key === 'tag') {
-          var hasTag = false
-          if (Array.isArray(el.tags)) {
-            hasTag = el.tags.some(function (t) {
-              return String(t).toLowerCase().indexOf(op.val) !== -1
-            })
-          }
-          if (!hasTag && el.fields && isObject(el.fields)) {
-            if (Array.isArray(el.fields.tags)) {
-              hasTag = el.fields.tags.some(function (t) {
-                return String(t).toLowerCase().indexOf(op.val) !== -1
-              })
-            } else if (typeof el.fields.tags === 'string') {
-              hasTag = el.fields.tags.toLowerCase().indexOf(op.val) !== -1
-            } else if (typeof el.fields.tag === 'string') {
-              hasTag = el.fields.tag.toLowerCase().indexOf(op.val) !== -1
-            }
-          }
-          if (!hasTag) return false
         } else if (op.key === 'is') {
           if (op.val === 'draft') {
             if (!draftsById[el.id]) return false
@@ -1534,6 +1514,39 @@
     return projectedElements
   }
 
+  // A knowledge field names a model: strip `[[ ]]`, an alias or anchor, a leading
+  // `kNNowledge/` path and the `_NN.md` / `.md` suffix, case-insensitively.
+  function knowledgeStem(value) {
+    var s = String(value == null ? '' : value).trim()
+    s = s.replace(/^\[\[\s*/, '').replace(/\s*\]\]$/, '')
+    s = s.split('|')[0].split('#')[0].replace(/\\/g, '/')
+    s = s.replace(/^(?:.*\/)?kNNowledge\//i, '')
+    return s.replace(/_NN\.md$/i, '').replace(/\.md$/i, '').trim().toLowerCase()
+  }
+
+  // The `meta.models[]` entry a knowledge value names (file stem, id or title), or
+  // null. Full-path matches win over bare-name matches.
+  function resolveKnowledgeModel(meta, value) {
+    var models = Array.isArray(meta && meta.models) ? meta.models : []
+    var want = knowledgeStem(value)
+    if (!want) return null
+    var wantTail = want.split('/').pop()
+    function keysOf(m) {
+      return [m.id, m.title, m.filePath].map(knowledgeStem).filter(Boolean)
+    }
+    for (var i = 0; i < models.length; i++) {
+      if (models[i] && keysOf(models[i]).indexOf(want) !== -1) return models[i]
+    }
+    for (var j = 0; j < models.length; j++) {
+      if (!models[j]) continue
+      var tails = keysOf(models[j]).map(function (k) {
+        return k.split('/').pop()
+      })
+      if (tails.indexOf(wantTail) !== -1) return models[j]
+    }
+    return null
+  }
+
   // Resolves a field's declared type from the schema, for type-aware read
   // rendering (FieldValue). Falls back to '' (plain text).
   var fieldDefOf = Review.fieldDefOf
@@ -1561,7 +1574,7 @@
 
   // Cards project live drafts: active draft edits and notes are visually badged,
   // new draft elements are projected, and deleted elements are styled.
-  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId) {
+  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -1682,6 +1695,9 @@
               : undefined,
           byId: refs,
           concept: conceptMetaOf(concepts, element.concept),
+          onTag: actions && actions.onTag,
+          onKnowledge: actions && actions.onKnowledge,
+          isKnowledgeBound: actions && actions.isKnowledgeBound,
           onRef: function (refId) {
             var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
             if (target) renderRefDialog(doc, target)
@@ -2133,6 +2149,7 @@
             td.setAttribute('data-matrix', String(matrix.name || 'matrix'))
             td.setAttribute('data-row', String(rowLabel))
             td.setAttribute('data-col', String(c))
+            if (matrix.target) td.setAttribute('data-matrix-target', String(matrix.target))
             td.setAttribute('data-cell-raw', isEmpty ? '' : value)
             var cellBadge = UI.KuBadge({ kind: 'cell', value: isEmpty ? '—' : value })
             if (!isEmpty) cellBadge.setAttribute('data-cell-value', value.toLowerCase())
@@ -4333,6 +4350,17 @@
       addField('Error', entry.error)
       if (dl && dl.children.length) body.appendChild(dl)
 
+      if (entry.href && !entry.error) {
+        var openHref = UI && typeof UI.safeHref === 'function' ? UI.safeHref(entry.href) : safeSourceHref(entry.href)
+        var openLink = openHref ? el('a', 'innfo-cite-open', 'Open original') : null
+        if (openLink) {
+          openLink.setAttribute('href', openHref)
+          openLink.setAttribute('target', '_blank')
+          openLink.setAttribute('rel', 'noopener noreferrer')
+          body.appendChild(openLink)
+        }
+      }
+
       if (entry.excerpt) {
         var excerptText = entry.excerpt + (entry.truncated ? ' … (truncated)' : '')
         var pre = el('pre', 'innfo-cite-excerpt', excerptText)
@@ -5181,6 +5209,30 @@
       refresh(next)
     }
 
+    // Click-throughs add a facet instead of toggling it: clicking a chip or a
+    // knowledge pill twice must not silently drop the filter.
+    function addFacetToken(key, val) {
+      var search = active.getElementById('innfo-search')
+      var current = activeSearchQuery !== undefined ? activeSearchQuery : search ? search.value : ''
+      var present = parseFilterQuery(current).operators.some(function (op) {
+        return op.key === key && String(op.val).toLowerCase() === String(val).toLowerCase()
+      })
+      if (!present) selectRailToken(formatFacetToken(key, val))
+    }
+
+    var cardActions = {
+      onTag: function (tag) {
+        addFacetToken('tag', tag)
+      },
+      isKnowledgeBound: function (value) {
+        return !!resolveKnowledgeModel(meta, value)
+      },
+      onKnowledge: function (value) {
+        var bound = resolveKnowledgeModel(meta, value)
+        if (bound) addFacetToken('model', String(bound.id || bound.filePath))
+      },
+    }
+
     // Lightweight update after a draft is saved: refreshes only the draft-count
     // surfaces and leaves the mounted element cards (and their focus) intact.
     var draftListeners = []
@@ -5279,7 +5331,7 @@
           refresh(activeSearchQuery)
         })
       } else {
-        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId)
+        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions)
         focusId = null
       }
       renderFilterBar(active, state, function (nextQuery) {

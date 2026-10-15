@@ -1,7 +1,7 @@
 ---
 name: nn-sources
 description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and keep the domaiNN lineage record in sync. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
-version: "V_3-5-1"
+version: "V_3-5-2"
 last_updated: 2026-10-09
 empty_sections_mode: "ask-per-section"
 license: MIT

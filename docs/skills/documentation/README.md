@@ -19,9 +19,9 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 | Skill | Version | Description |
 |-------|---------|-------------|
 | [`nn`](skills/nn.md) | `V_3-4-2` | Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router. |
-| [`nn-sources`](skills/nn-sources.md) | `V_3-5-1` | Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync. |
-| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-10` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
-| [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-3` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
+| [`nn-sources`](skills/nn-sources.md) | `V_3-5-2` | Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync. |
+| [`nn-innfo`](skills/nn-innfo.md) | `V_0-5-11` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
+| [`nn-preflight`](skills/nn-preflight.md) | `V_0-2-4` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
 | [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-4-0` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
 | [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
 | [`nn-design-presets`](skills/nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |

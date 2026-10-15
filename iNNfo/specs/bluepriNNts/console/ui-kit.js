@@ -259,6 +259,21 @@
     '.innfo-file-pill{display:inline-flex;align-items:center;gap:.35em;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px;padding:2px 8px;font-family:var(--innfo-mono);font-size:.76rem;color:var(--innfo-text)}',
     '.innfo-file-pill-icon{display:inline-flex;color:var(--innfo-accent)}',
     '.innfo-file-pill-path{font-family:inherit;font-size:inherit;background:transparent;padding:0;border:none}',
+    '.innfo-markdown{display:block;font-size:.88rem;line-height:1.5;color:var(--innfo-text);overflow-wrap:anywhere}',
+    '.innfo-markdown>:first-child{margin-top:0}',
+    '.innfo-markdown>:last-child{margin-bottom:0}',
+    '.innfo-markdown p{margin:.4em 0}',
+    '.innfo-markdown ul,.innfo-markdown ol{margin:.4em 0;padding-left:1.4em}',
+    '.innfo-markdown .innfo-md-heading{margin:.6em 0 .3em;font-size:1rem;font-weight:700}',
+    '.innfo-markdown code{font-family:var(--innfo-mono);font-size:.82em;background:var(--innfo-surface-2);border-radius:4px;padding:0 .3em}',
+    '.innfo-markdown a{color:var(--innfo-link);text-decoration:underline}',
+    '.innfo-markdown .innfo-md-quote{margin:.5em 0;padding:.2em .8em;border-left:3px solid var(--innfo-border);color:var(--innfo-muted)}',
+    '.innfo-markdown .innfo-md-quote[data-callout]{border-left-color:var(--innfo-accent);background:var(--innfo-surface-2)}',
+    '.innfo-markdown .innfo-md-callout-title{display:block;font-size:.72rem;letter-spacing:.04em;color:var(--innfo-accent)}',
+    '.innfo-file-pill[data-knowledge-bound=true]{cursor:pointer}',
+    '.innfo-file-pill[data-knowledge-bound=true]:hover{border-color:var(--innfo-accent)}',
+    '.innfo-tag[role=button]{cursor:pointer}',
+    '.innfo-tag[role=button]:hover{border-color:var(--innfo-link)}',
     '.innfo-card-meta-strip{display:flex;align-items:center;justify-content:space-between;gap:.5em;flex-wrap:wrap;padding:6px 10px;margin:.55em 0;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px}',
     '.innfo-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--innfo-mono);font-size:.73rem;color:var(--innfo-muted);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:5px;padding:2px 7px}',
     '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden;background:var(--innfo-surface)}',
@@ -633,12 +648,30 @@
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.TagRow: data required')
     var doc = resolveDoc(opts)
     var tags = Array.isArray(data.tags) ? data.tags : []
+    var onTag = opts && typeof opts.onTag === 'function' ? opts.onTag : null
     var row = makeEl(doc, 'div', 'innfo-tag-row')
     row.setAttribute('data-innfo-component', 'tag-row')
     tags.forEach(function (t) {
       var tag = makeEl(doc, 'span', 'innfo-tag')
       tag.setAttribute('data-tag', String(t))
       tag.appendChild(doc.createTextNode(String(t)))
+      if (onTag) {
+        tag.setAttribute('role', 'button')
+        tag.setAttribute('tabindex', '0')
+        tag.setAttribute('title', 'Filter by tag ' + String(t))
+        tag.addEventListener('click', function (ev) {
+          // The review +/x controls live inside the chip and keep their own action.
+          var inner = ev && ev.target && typeof ev.target.closest === 'function' && ev.target.closest('[data-innfo-ctl]')
+          if (inner) return
+          onTag(String(t))
+        })
+        tag.addEventListener('keydown', function (ev) {
+          if (ev && ev.target === tag && (ev.key === 'Enter' || ev.key === ' ')) {
+            if (ev.preventDefault) ev.preventDefault()
+            onTag(String(t))
+          }
+        })
+      }
       row.appendChild(tag)
     })
     return row
@@ -785,6 +818,160 @@
     return wrap.children.length ? [wrap] : []
   }
 
+  // ---- Markdown (safe subset) ----
+  // Builds DOM nodes only: every piece of text goes through createTextNode or
+  // textContent and every URL through setAttribute, so no markup in the input is
+  // ever parsed. Anything outside the subset stays literal text.
+
+  // http(s) and relative targets only. Control characters are refused outright
+  // (browsers strip tabs and newlines inside a scheme), as are protocol-relative
+  // and backslash-leading values.
+  function safeHref(url) {
+    var raw = String(url == null ? '' : url)
+    if (/[\u0000-\u001f\u007f]/.test(raw)) return ''
+    raw = raw.trim()
+    if (!raw) return ''
+    if (/^[\\/]{2}/.test(raw) || raw.charAt(0) === '\\') return ''
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return /^https?:/i.test(raw) ? raw : ''
+    return raw
+  }
+
+  var MD_INLINE =
+    /`([^`\n]+)`|\[([^\]\n]+)\]\(([^)\s]*)\)|\*\*([^*\n]+?)\*\*|\*([^*\s][^*\n]*?)\*|_([^_\s][^_\n]*?)_/
+  var MD_HEADING = /^(#{1,6})\s+(.*)$/
+  var MD_LIST = /^\s{0,3}([-*+]|\d+[.)])\s+(.*)$/
+  var MD_QUOTE = /^\s{0,3}>\s?(.*)$/
+  var MD_CALLOUTS = ['note', 'tip', 'important', 'warning', 'caution']
+
+  function mdInline(doc, parent, text) {
+    var re = new RegExp(MD_INLINE.source, 'g')
+    var last = 0
+    var m
+    function addText(s) {
+      if (s) parent.appendChild(doc.createTextNode(s))
+    }
+    function wrap(tag, inner) {
+      var node = makeEl(doc, tag)
+      mdInline(doc, node, inner)
+      parent.appendChild(node)
+    }
+    while ((m = re.exec(text)) !== null) {
+      addText(text.slice(last, m.index))
+      last = m.index + m[0].length
+      if (m[1] !== undefined) {
+        parent.appendChild(makeEl(doc, 'code', null, m[1]))
+      } else if (m[2] !== undefined) {
+        var href = safeHref(m[3])
+        if (!href) {
+          addText(m[0])
+          continue
+        }
+        var a = makeEl(doc, 'a', null, m[2])
+        a.setAttribute('href', href)
+        a.setAttribute('target', '_blank')
+        a.setAttribute('rel', 'noopener noreferrer')
+        parent.appendChild(a)
+      } else if (m[4] !== undefined) {
+        wrap('strong', m[4])
+      } else if (m[5] !== undefined) {
+        wrap('em', m[5])
+      } else if (/\w/.test(m.index > 0 ? text.charAt(m.index - 1) : '')) {
+        addText(m[0]) // snake_case_word, not emphasis
+      } else {
+        wrap('em', m[6])
+      }
+    }
+    addText(text.slice(last))
+  }
+
+  function mdParagraph(doc, parent, lines) {
+    var p = makeEl(doc, 'p')
+    lines.forEach(function (line, idx) {
+      if (idx) p.appendChild(doc.createElement('br'))
+      mdInline(doc, p, line)
+    })
+    parent.appendChild(p)
+  }
+
+  function Markdown(text, opts) {
+    var doc = resolveDoc(opts)
+    var root = makeEl(doc, 'div', 'innfo-markdown')
+    root.setAttribute('data-innfo-component', 'markdown')
+    var lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')
+    var i = 0
+    function blank(l) {
+      return !/\S/.test(l)
+    }
+    while (i < lines.length) {
+      var line = lines[i]
+      if (blank(line)) {
+        i++
+        continue
+      }
+      var hm = MD_HEADING.exec(line)
+      if (hm) {
+        var h = makeEl(doc, 'h' + hm[1].length, 'innfo-md-heading')
+        mdInline(doc, h, hm[2])
+        root.appendChild(h)
+        i++
+        continue
+      }
+      var lm = MD_LIST.exec(line)
+      if (lm) {
+        var ordered = /\d/.test(lm[1].charAt(0))
+        var list = makeEl(doc, ordered ? 'ol' : 'ul')
+        while (i < lines.length && (lm = MD_LIST.exec(lines[i])) && /\d/.test(lm[1].charAt(0)) === ordered) {
+          var li = makeEl(doc, 'li')
+          mdInline(doc, li, lm[2])
+          list.appendChild(li)
+          i++
+        }
+        root.appendChild(list)
+        continue
+      }
+      var qm = MD_QUOTE.exec(line)
+      if (qm) {
+        var quoted = []
+        while (i < lines.length && (qm = MD_QUOTE.exec(lines[i]))) {
+          quoted.push(qm[1])
+          i++
+        }
+        var bq = makeEl(doc, 'blockquote', 'innfo-md-quote')
+        var co = /^\[!([A-Za-z]+)\]\s*$/.exec(quoted[0])
+        if (co && MD_CALLOUTS.indexOf(co[1].toLowerCase()) !== -1) {
+          bq.setAttribute('data-callout', co[1].toLowerCase())
+          bq.appendChild(makeEl(doc, 'strong', 'innfo-md-callout-title', co[1].toUpperCase()))
+          quoted.shift()
+        }
+        var group = []
+        quoted.concat(['']).forEach(function (ql) {
+          if (blank(ql)) {
+            if (group.length) mdParagraph(doc, bq, group)
+            group = []
+          } else {
+            group.push(ql)
+          }
+        })
+        root.appendChild(bq)
+        continue
+      }
+      var para = []
+      while (
+        i < lines.length &&
+        !blank(lines[i]) &&
+        !MD_HEADING.test(lines[i]) &&
+        !MD_LIST.test(lines[i]) &&
+        !MD_QUOTE.test(lines[i])
+      ) {
+        para.push(lines[i])
+        i++
+      }
+      mdParagraph(doc, root, para)
+    }
+    return root
+  }
+  // ---- end Markdown ----
+
   function normalizeAssetPath(v) {
     if (typeof v !== 'string') return ''
     var s = v.replace(/\\/g, '/')
@@ -823,7 +1010,7 @@
     audio: renderFieldMedia,
     url: renderFieldUrl,
     code: renderFieldCode,
-    knowledge: renderFieldFile,
+    knowledge: renderFieldKnowledge,
   }
 
   function renderFieldBoolean(d, doc) {
@@ -853,7 +1040,9 @@
   }
 
   function renderFieldMarkdown(d, doc) {
-    return makeEl(doc, 'span', 'innfo-field-markdown', d.value == null ? '' : String(d.value))
+    var node = Markdown(d.value, { doc: doc })
+    node.className = 'innfo-markdown innfo-field-markdown'
+    return node
   }
 
   function renderFieldList(d, doc) {
@@ -915,6 +1104,9 @@
   function renderFieldMedia(d, doc) {
     if (typeof d.value !== 'string' || !d.value.trim()) return null
     var src = normalizeAssetPath(d.value)
+    // Only a relative path or an http(s) URL may become a media src; anything else
+    // (javascript:, data:, ...) falls back to the plain text value.
+    if (!safeHref(src)) return null
     var tag = String(d.type || '').toLowerCase() === 'audio' ? 'audio' : 'video'
     var media = makeEl(doc, tag, 'innfo-field-media')
     media.setAttribute('controls', 'controls')
@@ -924,6 +1116,35 @@
     wrap.appendChild(media)
     wrap.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', src))
     return wrap
+  }
+
+  // A knowledge field names a model. The pill is clickable only when the caller
+  // can bind it (opts.onKnowledge, and opts.isKnowledgeBound when given); an
+  // unbound pill is inert.
+  function renderFieldKnowledge(d, doc, opts) {
+    var pill = renderFieldFile(d, doc)
+    pill.setAttribute('data-field-type', 'knowledge')
+    var raw = String(d.value == null ? '' : d.value)
+    var bound =
+      !!opts &&
+      typeof opts.onKnowledge === 'function' &&
+      (typeof opts.isKnowledgeBound !== 'function' || !!opts.isKnowledgeBound(raw))
+    if (bound) {
+      pill.setAttribute('data-knowledge-bound', 'true')
+      pill.setAttribute('role', 'button')
+      pill.setAttribute('tabindex', '0')
+      pill.addEventListener('click', function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        opts.onKnowledge(raw)
+      })
+      pill.addEventListener('keydown', function (ev) {
+        if (ev && (ev.key === 'Enter' || ev.key === ' ')) {
+          if (ev.preventDefault) ev.preventDefault()
+          opts.onKnowledge(raw)
+        }
+      })
+    }
+    return pill
   }
 
   function isAssetPath(value) {
@@ -941,12 +1162,14 @@
     if (type === 'boolean' || typeof value === 'boolean') return renderFieldBoolean(d, doc)
     if (Array.isArray(value)) return renderFieldList(d, doc)
     if (value !== null && typeof value === 'object') return renderFieldObject(d, doc)
-    if (typeof value === 'string' && /^https?:\/\//i.test(value)) return renderFieldUrl(d, doc)
+    if (typeof value === 'string' && /^https?:\/\//i.test(value) && type !== 'video' && type !== 'audio') {
+      return renderFieldUrl(d, doc)
+    }
 
     // 2. Declared-type renderer.
     var byType = FIELD_RENDERERS[type]
     if (byType) {
-      var typed = byType(d, doc)
+      var typed = byType(d, doc, opts)
       if (typed) return typed
     }
 
@@ -1531,7 +1754,14 @@
     if (bodyFields.length) {
       var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
       bodyFields.forEach(function (fr) {
-        fieldRow.appendChild(FieldRow(fr, { onRef: opts && opts.onRef, onCite: opts && opts.onCite }))
+        fieldRow.appendChild(
+          FieldRow(fr, {
+            onRef: opts && opts.onRef,
+            onCite: opts && opts.onCite,
+            onKnowledge: opts && opts.onKnowledge,
+            isKnowledgeBound: opts && opts.isKnowledgeBound,
+          }),
+        )
       })
       body.appendChild(fieldRow)
     }
@@ -1540,8 +1770,9 @@
         if (n) body.appendChild(n)
       })
     }
-    var tags = Array.isArray(data.tags) ? data.tags : null
-    if (tags) body.appendChild(TagRow({ tags: tags }))
+    // No tag row without tags (the review controller adds its own for "+ tag").
+    var tags = Array.isArray(data.tags) ? data.tags : []
+    if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
     if (relations) {
       body.appendChild(RelList({ relations: relations, byId: byId }))
     }
@@ -1763,13 +1994,16 @@
     return wrap
   }
 
+  // Candidates are the elements the caller allows. The datalist offers display
+  // names; the proposal is always the exact reference grammar `[[Display Name]]`
+  // (see refProposal), never a slug.
   function FieldReferenceWidget(value, candidates, opts) {
     var doc = resolveDoc(opts)
     var wrap = makeEl(doc, 'div', 'innfo-edit-reference')
     wrap.setAttribute('data-innfo-widget', 'reference')
     var input = makeEl(doc, 'input', 'innfo-edit-input')
     input.setAttribute('type', 'text')
-    input.setAttribute('placeholder', 'target-slug or [[slug]]')
+    input.setAttribute('placeholder', 'Element name, e.g. [[Display Name]]')
     if (value != null) input.value = String(value)
     wrap.appendChild(input)
 
@@ -1779,15 +2013,40 @@
     dl.id = datalistId
     var list = Array.isArray(candidates) ? candidates : []
     list.forEach(function (c) {
+      var label = typeof c === 'string' ? c : c && (c.name || c.id)
+      if (!label) return
       var op = makeEl(doc, 'option')
-      var slugVal = typeof c === 'string' ? c : c.slug || c.id || c.name
-      var labelVal = typeof c === 'string' ? c : (c.name ? c.name + ' (' + slugVal + ')' : slugVal)
-      op.value = slugVal
-      op.textContent = labelVal
+      op.value = String(label)
+      op.textContent = c && typeof c === 'object' && c.concept ? label + ' (' + c.concept + ')' : String(label)
       dl.appendChild(op)
     })
     wrap.appendChild(dl)
     return wrap
+  }
+
+  // `[[Name]]` stays as is, a bare name is wrapped, blank stays blank.
+  function refProposal(raw) {
+    var v = String(raw == null ? '' : raw).trim()
+    if (!v) return ''
+    return /^\[\[[^\]]*\]\]$/.test(v) ? v : '[[' + v + ']]'
+  }
+
+  // The display name a typed reference resolves to among the candidates
+  // (case-insensitive), or null: an unknown name or one holding a bracket is not a
+  // valid reference target.
+  function refCandidateName(raw, candidates) {
+    var v = String(raw == null ? '' : raw).trim()
+    var m = /^\[\[([^\]]*)\]\]$/.exec(v)
+    var name = (m ? m[1] : v).trim()
+    if (!name || /[\[\]]/.test(name)) return null
+    var want = name.toLowerCase()
+    var list = Array.isArray(candidates) ? candidates : []
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i]
+      var label = typeof c === 'string' ? c : c && (c.name || c.id)
+      if (label && String(label).toLowerCase() === want) return String(label)
+    }
+    return null
   }
 
   function FieldMarkdownWidget(value, opts) {
@@ -2029,7 +2288,19 @@
           result.proposed = Array.prototype.map.call(checkedBoxes, function (b) { return b.value })
         } else if (fieldType === 'reference') {
           var refInp = widgetRef.querySelector('input')
-          result.proposed = refInp ? refInp.value : ''
+          var refRaw = refInp ? refInp.value : ''
+          // Unchanged input proposes the original value as is.
+          if (refRaw === String(data.value == null ? '' : data.value) || String(refRaw).trim() === '') {
+            result.proposed = refRaw === String(data.value == null ? '' : data.value) ? refRaw : refProposal(refRaw)
+          } else {
+            var refName = refCandidateName(refRaw, data.candidates)
+            if (refName === null) {
+              saveError.textContent = 'Pick an existing element name; brackets are not allowed.'
+              saveError.style.display = 'block'
+              return
+            }
+            result.proposed = '[[' + refName + ']]'
+          }
         } else {
           result.proposed = widgetRef.value
         }
@@ -2630,6 +2901,8 @@
     CitationIcons: CitationIcons,
     FieldRow: FieldRow,
     FieldValue: FieldValue,
+    Markdown: Markdown,
+    safeHref: safeHref,
     ElementCard: ElementCard,
     ElementMini: ElementMini,
     ElementPreview: ElementPreview,
