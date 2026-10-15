@@ -1,13 +1,12 @@
 ---
 title: "iNNfo — The Knowledge Modeling Hub"
-description: "Model, edit, and validate knowledge models with the iNNfo Modeler browser app and your AI coding agent of choice (OpenCode Desktop, Google Antigravity, Claude Code, Cursor, Codex)."
+description: "Model, edit, and validate knowledge models with the domain console and your AI coding agent of choice (OpenCode Desktop, Google Antigravity, Claude Code, Cursor, Codex)."
 ---
 
 # Transform your documentation into structured, validated knowledge models.
 
 Model, edit, and query knowledge visually in your browser or conversationally with your AI coding agent of choice (OpenCode Desktop, Google Antigravity, Claude Code, Cursor, Codex).
 
-- [Open iNNfo Modeler App](https://cognnitive.com/innfo/app/)
 - [Explore Documentation](https://cognnitive.com/innfo/documentation/)
 
 ---
@@ -35,12 +34,12 @@ flowchart TD
     end
 
     subgraph Step3["Step 3: Delivery & Access"]
-        MCP <--> Modeler["🛠️ iNNfo Modeler App (Web Editor)"]
+        MCP <--> Console["🖥️ Domain Console (domaiNN_console.html)"]
         MCP <--> AgentChat["💬 Conversational Queries & MCP Tools\n(OpenCode, Antigravity, Claude Code)"]
     end
 
     subgraph Step4["Step 4: Artifact Generation"]
-        Modeler & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
+        Console & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
     end
 ```
 

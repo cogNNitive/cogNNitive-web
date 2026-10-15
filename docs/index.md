@@ -8,7 +8,7 @@ description: Turn ideas scattered in brains and files into a living, structured 
 
 Turn ideas, insights, and data scattered through human brains and computer files into a **living knowledge base powered by AI** that continuously evolves, maintains absolute traceability, and never locks you into proprietary silos.
 
-- [Open iNNfo Modeler App](https://cognnitive.com/innfo/app/)
+- [Read the docs](https://cognnitive.com/innfo/documentation/)
 - [Real-World Use Cases](use-cases.md)
 - [Explore Agent Skills](https://cognnitive.com/skills)
 
@@ -68,7 +68,7 @@ Cognitivized sources are structured into predictable **kNNowledge documents** (`
 * **Radical Fine-Grained Traceability**: Every element cites its exact lineage using the `@` grammar (`sources:: [sources/import/meeting.md@## Budget]`).
 * **Universal Access Freedom**:
   1. **Text Editors**: Open and edit directly with Obsidian, VS Code, Notepad, or Logseq.
-  2. **iNNfo Modeler**: Use the zero-install web UI to visually navigate graphs and edit matrices.
+  2. **Domain console**: Open the self-contained `domaiNN_console.html` to visually navigate models, lineage, and matrices.
   3. **AI Pair-Programming Agents**: Direct OpenCode, Antigravity, or Claude Code in natural language to expand and refine models.
 
 ### 3. EXPORT: Artifacts and Closed Feedback Loop
@@ -97,7 +97,7 @@ Explore how cogNNitive delivers tangible value across different roles:
 2. **Zero Vendor Lock-in**: 100% plain Markdown files in your own Git repository. You retain complete ownership of your knowledge forever.
 3. **AI You Can Actually Trust**: Deterministic section-level citations eliminate hallucinations and ensure your AI pair-programmer operates on ground truth.
 4. **Effortless Company Updates**: When business assumptions, prices, or specs change, update the model and all downstream artifacts reflect the change automatically.
-5. **Universal Freedom of Access**: Work visually with the web modeler app, textually in VS Code / Obsidian, or conversationally via your AI agent.
+5. **Universal Freedom of Access**: Work visually with the domain console, textually in VS Code / Obsidian, or conversationally via your AI agent.
 6. **100% Free & Open Source**: Built for the open community under the MIT license. No hidden cloud subscriptions or artificial limits.
 
 ---

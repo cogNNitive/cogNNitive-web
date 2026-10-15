@@ -38,7 +38,7 @@ smarter model, by **structure around the model**.
 | :--- | :--- | :--- |
 | **Efficiency** | Import once, reuse forever; feed the model only the slice it needs. | Source normalisation, a sources catalog of short summaries, and bounded model reads. |
 | **Traceability** | Every model statement points to an exact heading in an exact source version. | `sources::` citations, write-once source families, the lineage record. |
-| **Versatility & review comfort** | Review in a text editor, a visual web app, or a conversation — same files. | Text editors, iNNfo Modeler, AI agents; reviewer feedback re-ingests. |
+| **Versatility & review comfort** | Review in a text editor, the domain console, or a conversation — same files. | Text editors, the domain console, AI agents; reviewer feedback re-ingests. |
 | **No vendor lock-in** | Plain Markdown plus Git; the knowledge is yours forever. | Files on disk; Git is the copy-of-record and the collaboration layer. |
 
 ### Efficiency
@@ -64,7 +64,7 @@ downstream citation.
 ### Versatility & review comfort
 
 The same files are readable three ways without conversion — a plain editor, the
-zero-install web modeler, or an AI agent. Reviewer feedback is a first-class
+self-contained domain console, or an AI agent. Reviewer feedback is a first-class
 input: reviewer consoles export structured feedback that re-enters the pipeline
 and can be applied to the model with a diff preview.
 

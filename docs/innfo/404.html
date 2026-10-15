@@ -4,25 +4,11 @@
     <meta charset="utf-8" />
     <title>cogNNitive — iNNfo</title>
     <script>
-      (function() {
-        var path = window.location.pathname;
-        var search = window.location.search;
-        var hash = window.location.hash;
-        if (path.startsWith('/innfo/app')) {
-          var subpath = path.slice('/innfo/app'.length);
-          var target = '/innfo/app/?p=' + encodeURIComponent(subpath + search + hash);
-          window.location.replace(target);
-        } else if (path.startsWith('/app')) {
-          var subpath = path.slice(4);
-          var target = '/innfo/app/?p=' + encodeURIComponent(subpath + search + hash);
-          window.location.replace(target);
-        } else {
-          window.location.replace('/');
-        }
-      })();
+      var p = window.location.pathname;
+      window.location.replace(p.indexOf('/innfo/app') === 0 ? '/innfo/app/' : '/');
     </script>
   </head>
   <body>
-    <p>Redirecting to cogNNitive...</p>
+    <noscript><p><a href="/">Go to cogNNitive</a> or read the <a href="/innfo/app/">retirement notice</a>.</p></noscript>
   </body>
 </html>

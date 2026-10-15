@@ -1,6 +1,6 @@
 # Installing AI Agents
 
-To edit, bootstrap, and maintain **cogNNitive** knowledge models (`*_NN.md`), you can interact with them visually using the web modeler or drive them directly via **local AI coding agents**.
+To edit, bootstrap, and maintain **cogNNitive** knowledge models (`*_NN.md`), you can read them visually in the domain console or drive them directly via **local AI coding agents**.
 
 An AI coding agent is software that runs locally on your computer (desktop app or CLI). Unlike web-based chat interfaces, local agents have secure permission to inspect workspace directories, create files, run validation tools via MCP (Model Context Protocol), and keep your models synchronized.
 

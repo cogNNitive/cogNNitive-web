@@ -114,7 +114,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `title: "${projectName} Workspace"\n` +
       `---\n\n` +
       `> [!NOTE]\n` +
-      `> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n` +
+      `> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.\n\n` +
       `# NN index\n\n` +
       `* [[Workspace]]\n` +
       `* [[Models]]\n` +

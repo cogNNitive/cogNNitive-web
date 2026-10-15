@@ -1,6 +1,6 @@
 ---
 title: About — iNNfo
-description: Learn about iNNfo, the hub for the iNNfo ecosystem — the iNNfo Modeler, innfo-core, innfo-mcp, and the spec chain.
+description: Learn about iNNfo, the hub for the iNNfo ecosystem — the domain console, innfo-core, innfo-mcp, and the spec chain.
 html_url: https://cognnitive.com/innfo/about
 generator: https://cognnitive.com/skills/nn-design-presets
 ---
@@ -16,8 +16,6 @@ packages, and the spec chain:
 
 ```
 iNNfo/
-├── apps/
-│   └── innfo-editor/  // Vue 3 workspace editor — the iNNfo Modeler
 ├── packages/
 │   ├── innfo-core/    // TS parser, resolver, validator
 │   └── innfo-mcp/     // MCP server for AI agents
@@ -25,18 +23,16 @@ iNNfo/
 └── docs/             // This website
 ```
 
-## App
+## Domain console
 
-@cognnitive/innfo-editor v0.1.0
+domaiNN_console.html
 
-### iNNfo Modeler
+### iNNfo domain console
 
-A Vue 3 workspace editor with Pinia state management and Vue Router. Uses the File
-System Access API to open a workspace folder, runs a single recursive parse pass into
-one normalized model graph, and edits nodes through block sheets, a table view, and
-metamodel-driven forms. Validation runs automatically on every parse; a graph viewer,
-matrix grids, and an AI-guidance sidebar round out the workspace. Directory handles
-persist in IndexedDB for a fast reopen.
+One self-contained HTML file per domaiNN, generated locally by
+`export-console.mjs` or the MCP `regenerate_console` tool. It
+shows the domain's kNNowledge, its lineage and citations, and reviews it through
+changesets. No server and no account are needed; open the file in a browser.
 
 ## Packages
 
@@ -46,8 +42,8 @@ persist in IndexedDB for a fast reopen.
 
 Framework-agnostic TypeScript library: the iNNfo parser, model types (Concept,
 Element, Field, Marker, Matrix, Relationship), IO drivers for the browser and Node, a
-validator against template schemas, and a parent-spec-chain resolver. Both the Modeler
-and the MCP server run on top of it.
+validator against template schemas, and a parent-spec-chain resolver. Both the domain console
+tooling and the MCP server run on top of it.
 
 @cognnitive/innfo-mcp v0.1.0
 

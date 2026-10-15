@@ -6,7 +6,7 @@
     <title>About — iNNfo</title>
     <meta
       name="description"
-      content="Learn about iNNfo, the hub for the iNNfo ecosystem — the iNNfo Modeler, innfo-core, innfo-mcp, and the spec chain."
+      content="Learn about iNNfo, the hub for the iNNfo ecosystem — the domain console, innfo-core, innfo-mcp, and the spec chain."
     />
     <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets" />
     <link rel="canonical" href="https://cognnitive.com/innfo/about" />
@@ -22,7 +22,7 @@
         "@type": "WebSite",
         "name": "iNNfo",
         "url": "https://cognnitive.com/innfo/",
-        "description": "The hub for the iNNfo ecosystem. iNNfo Modeler, innfo-core, innfo-mcp, and the spec chain.",
+        "description": "The hub for the iNNfo ecosystem. the domain console, innfo-core, innfo-mcp, and the spec chain.",
         "author": { "@type": "Organization", "name": "cogNNitive" },
         "inLanguage": "en",
         "isAccessibleForFree": true
@@ -102,11 +102,6 @@
               "
             >
               iNNfo/<br />
-              ├── apps/<br />
-              │&nbsp;&nbsp; └── innfo-editor/ &nbsp;<span
-                style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
-                >// Vue 3 workspace editor — the iNNfo Modeler</span
-              ><br />
               ├── packages/<br />
               │&nbsp;&nbsp; ├── innfo-core/ &nbsp;&nbsp;&nbsp;<span
                 style="color: var(--ink-muted); font-family: var(--sans); font-size: 12px"
@@ -126,18 +121,16 @@
               >
             </div>
 
-            <h2 style="font-size: 22px; margin-bottom: var(--space-md)">App</h2>
+            <h2 style="font-size: 22px; margin-bottom: var(--space-md)">Domain console</h2>
 
             <div class="card" style="margin-bottom: var(--space-md)">
-              <span class="card-tag">@cognnitive/innfo-editor v0.1.0</span>
-              <h3 style="margin-top: var(--space-sm)">iNNfo Modeler</h3>
+              <span class="card-tag">domaiNN_console.html</span>
+              <h3 style="margin-top: var(--space-sm)">iNNfo domain console</h3>
               <p>
-                A Vue 3 workspace editor with Pinia state management and Vue Router. Uses the File
-                System Access API to open a workspace folder, runs a single recursive parse pass into
-                one normalized model graph, and edits nodes through block sheets, a table view, and
-                metamodel-driven forms. Validation runs automatically on every parse; a graph viewer,
-                matrix grids, and an AI-guidance sidebar round out the workspace. Directory handles
-                persist in IndexedDB for a fast reopen.
+                One self-contained HTML file per domaiNN, generated locally by
+                <code>export-console.mjs</code> or the MCP <code>regenerate_console</code> tool. It
+                shows the domain's kNNowledge, its lineage and citations, and reviews it through
+                changesets. No server and no account are needed; open the file in a browser.
               </p>
             </div>
 
@@ -153,8 +146,8 @@
               <p>
                 Framework-agnostic TypeScript library: the iNNfo parser, model types (Concept,
                 Element, Field, Marker, Matrix, Relationship), IO drivers for the browser and Node, a
-                validator against template schemas, and a parent-spec-chain resolver. Both the Modeler
-                and the MCP server run on top of it.
+                validator against template schemas, and a parent-spec-chain resolver. Both the domain console
+                tooling and the MCP server run on top of it.
               </p>
             </div>
 

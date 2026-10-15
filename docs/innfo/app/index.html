@@ -3,63 +3,199 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cogNNitive Modeler</title>
+    <title>The hosted app was retired — cogNNitive</title>
+    <meta
+      name="description"
+      content="The hosted iNNfo web app was retired. cogNNitive now uses the domain console, a self-contained HTML file generated locally."
+    />
+    <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets" />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://cognnitive.com/innfo/app/" />
+    <link rel="icon" type="image/svg+xml" href="/innfo/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      /* Inline loading splash - shown while the bundle loads, replaced by Vue on mount */
-      #app-loader {
-        position: fixed;
-        inset: 0;
+      :root {
+        --canvas: #ffffff;
+        --canvas-inert: #fafafc;
+        --brand: #4d0e4e;
+        --brand-light: #6a1b6b;
+        --brand-subtle: #f6eef6;
+        --border: #f2f2f7;
+        --ink: #111112;
+        --ink-muted: #636366;
+        --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', monospace;
+        --radius: 10px;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--ink);
+        background: var(--canvas-inert);
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: var(--brand); }
+      a:hover { color: var(--brand-light); }
+
+      .header {
+        background: var(--canvas);
+        border-bottom: 1px solid var(--border);
+      }
+      .header-inner {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px 24px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        background: #ffffff;
-        z-index: 9999;
+        justify-content: space-between;
+        gap: 16px;
       }
-      #app-loader svg {
-        width: 120px;
-        height: 90px;
-        animation: innfo-spin 1.4s linear infinite;
+      .brand { font-weight: 800; font-size: 20px; text-decoration: none; color: var(--brand); }
+      .nav { display: flex; gap: 16px; font-size: 14px; font-weight: 600; }
+      .nav a { text-decoration: none; color: var(--ink-muted); }
+      .nav a:hover { color: var(--brand); }
+
+      main { max-width: 720px; margin: 0 auto; padding: 48px 24px 64px; }
+      .eyebrow {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--brand);
+        background: var(--brand-subtle);
+        padding: 4px 10px;
+        border-radius: 999px;
       }
-      @keyframes innfo-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+      h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.15; margin: 16px 0; letter-spacing: -0.02em; }
+      h2 { font-size: 20px; margin: 40px 0 12px; }
+      p { margin-bottom: 16px; color: var(--ink); }
+      .lede { font-size: 18px; color: var(--ink-muted); }
+      code {
+        font-family: var(--mono);
+        font-size: 0.9em;
+        background: var(--brand-subtle);
+        padding: 2px 6px;
+        border-radius: 6px;
+        overflow-wrap: anywhere;
       }
-      @media (prefers-reduced-motion: reduce) {
-        #app-loader svg {
-          animation: none;
-        }
+
+      .cards { display: grid; gap: 12px; list-style: none; }
+      .cards a {
+        display: block;
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        text-decoration: none;
+        color: var(--ink);
       }
+      .cards a:hover { border-color: var(--brand); }
+      .cards strong { display: block; color: var(--brand); }
+      .cards span { color: var(--ink-muted); font-size: 14px; }
+
+      .actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
+      .btn {
+        display: inline-block;
+        padding: 12px 20px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        text-decoration: none;
+        background: var(--brand);
+        color: #fff;
+      }
+      .btn:hover { background: var(--brand-light); color: #fff; }
+      .btn.secondary { background: var(--canvas); color: var(--brand); border: 1px solid var(--brand); }
+      .btn.secondary:hover { background: var(--brand-subtle); color: var(--brand); }
+
+      footer { max-width: 720px; margin: 0 auto; padding: 0 24px 40px; font-size: 14px; color: var(--ink-muted); }
     </style>
-    <script>
-      (function() {
-        var search = window.location.search;
-        if (search.includes('p=')) {
-          var params = new URLSearchParams(search);
-          var p = params.get('p');
-          if (p) {
-            var decoded = decodeURIComponent(p);
-            var newUrl = '/innfo/app' + (decoded.startsWith('/') ? decoded : '/' + decoded);
-            window.history.replaceState(null, '', newUrl);
-          }
-        }
-      })();
-    </script>
-    <script type="module" crossorigin src="/innfo/app/assets/index-Q60cdp6f.js"></script>
-    <link rel="stylesheet" crossorigin href="/innfo/app/assets/index-Dp5RnUtg.css">
   </head>
   <body>
-    <div id="app">
-      <!-- Replaced by Vue on mount; prevents blank page while the bundle loads -->
-      <div id="app-loader" role="status" aria-label="Loading cogNNitive Modeler">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" aria-hidden="true">
-          <path d="M 160 490 L 160 295 Q 160 270 180 285 L 330 475 Q 350 490 350 470 L 350 235 Q 350 210 370 225 L 530 415 Q 550 430 550 410 L 550 90 L 495 145 L 550 90 L 605 145"
-                fill="none"
-                stroke="#4D0E4E"
-                stroke-width="82"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-        </svg>
+    <header class="header">
+      <div class="header-inner">
+        <a class="brand" href="/">cogNNitive</a>
+        <nav class="nav" aria-label="Primary">
+          <a href="/innfo/">iNNfo</a>
+          <a href="/innfo/documentation/">Docs</a>
+        </nav>
       </div>
-    </div>
+    </header>
+
+    <main>
+      <span class="eyebrow">Retired</span>
+      <h1>The hosted iNNfo app was retired</h1>
+      <p class="lede">
+        There is no web app at this address anymore. cogNNitive now works with the
+        <strong>domain console</strong>, and nothing needs to be uploaded to a server.
+      </p>
+
+      <h2>What replaces it</h2>
+      <p>
+        The domain console is one self-contained HTML file, <code>domaiNN_console.html</code>,
+        generated locally from your workspace. Open it by double-clicking; it runs offline.
+        Changes are reviewed in the console and applied through changesets, so every edit stays
+        traceable in your plain-text files.
+      </p>
+
+      <h2>How to get one</h2>
+      <p>
+        Ask your AI agent to regenerate the console with the MCP tool
+        <code>regenerate_console</code>, or run <code>node scripts/export-console.mjs</code>
+        against your workspace.
+      </p>
+
+      <h2>Where to read more</h2>
+      <ul class="cards">
+        <li>
+          <a href="/innfo/documentation/#/usage">
+            <strong>Usage</strong>
+            <span>Day-to-day workflow with iNNfo documents and your AI agent.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/innfo/documentation/#/offline-consoles">
+            <strong>Offline consoles</strong>
+            <span>How a generated console is built and why it runs from a double-click.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/innfo/documentation/#/reviewer-guide">
+            <strong>Reviewer guide</strong>
+            <span>Reviewing proposed changes in the console.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/innfo/documentation/#/innfo-mcp">
+            <strong>innfo-mcp</strong>
+            <span>The MCP server and its tools, including <code>regenerate_console</code>.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/innfo/documentation/#/installing-ai-agents">
+            <strong>Installing AI agents</strong>
+            <span>Connect your AI agent to a workspace.</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="actions">
+        <a class="btn" href="/innfo/documentation/">Read the docs</a>
+        <a class="btn secondary" href="/innfo/">Back to iNNfo</a>
+      </div>
+    </main>
+
+    <footer>
+      <p>cogNNitive · iNNfo documents are plain-text Markdown files.</p>
+    </footer>
   </body>
 </html>

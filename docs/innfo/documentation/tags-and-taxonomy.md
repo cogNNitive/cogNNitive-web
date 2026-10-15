@@ -82,9 +82,9 @@ description:: Mission-critical features required for Fortune 500 deployments.
 
 ---
 
-## 4. Progressive Resolution in the Modeler & Procedures
+## 4. Progressive Resolution in the Console & Procedures
 
-When the cogNNitive visual editor (`innfo-editor`) or an agent procedure encounters a tag:
+When the domain console or an agent procedure encounters a tag:
 
 1. **Workspace Hit**: If the tag matches an entry in `workspace_NN.md`, it renders as an enriched badge with its designated color, icon, and a hover tooltip showing its description.
 2. **Graceful Fallback**: If the tag was created ad-hoc in the model and has no workspace entry, it renders as a neutral gray badge. It remains completely valid and never triggers validation warnings.
@@ -93,7 +93,7 @@ When the cogNNitive visual editor (`innfo-editor`) or an agent procedure encount
 
 ## 5. View Projection and Filtering
 
-In `innfo-editor`, clicking the **Search (Magnifying Glass)** icon in the header opens the search and filter popup:
+In the domain console, the search and filter controls in the header narrow the view:
 
 * **Conceptos Tab**: Filters models by domain structure (e.g. show only `Offerings` or `Stakeholders`).
 * **Etiquetas Tab**: Displays all tags present in the workspace and active models.

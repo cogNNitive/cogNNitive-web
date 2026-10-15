@@ -5,7 +5,7 @@ cogNNitive turns ideas, insights, and data scattered through human brains and co
 
 ## Key repos
 
-- cogNNitive: https://github.com/cogNNitive/cogNNitive — monorepo: iNNfo specification engine (parser, validator, MCP server), agent skills, iNNfo Modeler app, and this site
+- cogNNitive: https://github.com/cogNNitive/cogNNitive — monorepo: iNNfo specification engine (parser, validator, MCP server), agent skills, the domain console, and this site
 
 ## Bootstrap
 1. Install OpenCode from https://opencode.ai/download

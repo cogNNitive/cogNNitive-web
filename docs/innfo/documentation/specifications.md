@@ -21,8 +21,7 @@ The **iNNfo** specification. Every model is a single `_NN.md` document with opti
 
 The `status` frontmatter field on a spec file uses the `defiNNition` vocabulary
 `Draft | Stable | Deprecated`. `iNNfo_V_0-3-0` is the adopted L1 (`status: "Stable"`).
-The **adopted** version is defined by `DEFAULT_INNFO_VERSION` in
-`apps/innfo-editor/src/utils/constants.ts`, not by mutating older spec files:
+The **adopted** version is the highest published spec in `specs/`, not a mutation of older spec files:
 `iNNfo_V_0-2-2_NN.md`, `iNNfo_V_0-2-1_NN.md`, `iNNfo_V_0-2-0_NN.md` and `iNNfo_V_0-1-0_NN.md` are immutable and keep whatever
 `status` they were published with; they are simply no longer the default, and stay
 resolvable forever for models authored against them.
@@ -78,7 +77,7 @@ part of the project. What reads it, and how a change flows through:
 |---|---|---|
 | `@cognnitive/innfo-core` | Parses the parent chain, extracts app schema, validates models | `packages/innfo-core/src/resolver.ts`, `schema.ts`, `validator/` |
 | `innfo-mcp` (MCP server) | Wraps core. Resolves local `specs/` first, then network `fetch`, then persists write-once into `specs/` | `packages/innfo-mcp/src/tools/spec.ts`, `resolver-node.ts` |
-| `innfo-editor` (UI) | `resolveParentSpecs()` — workspace `specs/` handle → dev-only `/specs/…` → network. URLs built from one constant | `apps/innfo-editor/src/services/SpecResolverService.ts`, `utils/constants.ts` |
+| Domain console (UI) | Reads the schema and models embedded by `export-console.mjs` at generation time | `scripts/export-console.mjs`, `iNNfo/specs/bluepriNNts/console/` |
 | Skills (`skills/nn-innfo`) | Delegates all resolution/validation to `innfo-mcp`; bundles a copy of `workspace_spec_NN` | `skills/nn-innfo/` |
 | Bootstrap manifest | Pins skills and templates by `repo` + `path` + `version` + `commit`; CI validates | `docs/use/manifest.md` |
 | Docs | Describe the resolver protocol and level system | `docs/innfo/documentation/ecosystem.md`, this page |
@@ -88,9 +87,8 @@ part of the project. What reads it, and how a change flows through:
 - **Immutable, filename-encoded.** Every file under `specs/` carries its version in the
   filename. A bump always creates a new file; a published file is never edited in place
   or deleted while a model still references it (`spec-versioning` R-SV-01/R-SV-02).
-- **Single source of the version string.** `apps/innfo-editor/src/utils/constants.ts`
-  (`DEFAULT_INNFO_VERSION`, `DEFAULT_TEMPLATE_VERSION`). No `.ts`/`.vue` file hardcodes the
-  version elsewhere.
+- **Single source of the version string.** The spec file itself (frontmatter `spec_version`
+  and `blueprint_version`); no code file hardcodes it elsewhere.
 - **`parent_spec.url` pins a versioned filename** — never a mutable alias (R-SV-08).
 - **Write-once persistence is the whole integrity guarantee** — nothing is silently
   replaced, so there is nothing to hash-verify (`spec-resolution` R-LSR-02).

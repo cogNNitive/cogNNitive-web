@@ -39,18 +39,16 @@ Level 2 apps declare the concepts, markers, and relationship types available to 
 
 ## Working with the ecosystem
 
-1. Open [innfo-editor](innfo-editor) and start from a starter app, a sample model, or an existing workspace folder.
-2. Edit concepts, elements, and fields through the editor's per-node views.
-3. Validation runs automatically on every parse — check the header badge or open the full validation report.
-4. Use the "Use AI" button to open the AI Guide, or connect an AI agent directly via [innfo-mcp](innfo-mcp).
+1. Create or open a workspace folder and let your AI agent author the models through [innfo-mcp](innfo-mcp).
+2. Generate the domain console (`domaiNN_console.html`) with `export-console.mjs` or the MCP `regenerate_console` tool and open it in a browser; see [offline consoles](offline-consoles).
+3. Validation runs on every write through [innfo-mcp](innfo-mcp) (`validate_model`).
+4. Reviewers send feedback as changesets; see the [reviewer guide](reviewer-guide).
 
-## Running the editor
+## Generating the console
 
 ```bash
 # From the iNNfo repo root
-npm install
-npm run build -w @cognnitive/innfo-core
-npm run dev -w @cognnitive/innfo-editor
+node scripts/export-console.mjs <workspaceRoot> --domain
 ```
 
-Open the local dev server URL printed in the terminal.
+The command writes `domaiNN_console.html` at the domain root; open it in a browser.

@@ -320,7 +320,7 @@
         <a href="documentation" class="nav-link">Docs</a>
       </nav>
       <div class="header-actions">
-        <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open App</a>
+        <a href="https://cognnitive.com/innfo/documentation/" class="btn-primary">Read the docs</a>
       </div>
     </div>
   </header>
@@ -332,7 +332,7 @@
         <h1>Modular skills that give your <span class="accent">AI coding agent</span> specialized powers.</h1>
         <p>Teach your AI agent domain capabilities: model evaluation, skills management, document transformation, and web design.</p>
         <div class="hero-actions">
-          <a href="https://cognnitive.com/innfo/app/" class="btn-primary">Open iNNfo Modeler App &rarr;</a>
+          <a href="https://cognnitive.com/innfo/documentation/" class="btn-primary">Read the docs &rarr;</a>
           <a href="documentation" class="btn-secondary">Explore Skills Documentation</a>
         </div>
       </div>
@@ -379,7 +379,7 @@
       <div class="container">
         <div class="section-title">
           <h2>Skills Integration Architecture</h2>
-          <p>How agent skills integrate OpenCode, innfo-mcp, and the iNNfo Modeler App into a single pipeline.</p>
+          <p>How agent skills integrate OpenCode, innfo-mcp, and the domain console into a single pipeline.</p>
         </div>
         <div class="diagram-card">
           <pre class="mermaid">
@@ -395,12 +395,12 @@ flowchart TD
     end
 
     subgraph Step3["Step 3: Delivery & Access"]
-        MCP <--> Modeler["🛠️ iNNfo Modeler App (Web Editor)"]
+        MCP <--> Console["🖥️ Domain Console (domaiNN_console.html)"]
         MCP <--> AgentChat["💬 OpenCode Conversational Queries"]
     end
 
     subgraph Step4["Step 4: Artifact Generation"]
-        Modeler & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
+        Console & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
     end
 
     classDef s1 fill:#FAFAFC,stroke:#636366,color:#111112;
@@ -410,7 +410,7 @@ flowchart TD
 
     class U,Router,RawDocs s1;
     class Models,MCP s2;
-    class Modeler,AgentChat s3;
+    class Console,AgentChat s3;
     class Artifacts s4;
           </pre>
         </div>

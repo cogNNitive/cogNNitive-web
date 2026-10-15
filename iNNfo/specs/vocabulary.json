@@ -124,7 +124,7 @@
     },
     "console": {
       "canonical": true,
-      "sense": "User-facing UI that shows and reviews a domaiNN: the domain console (`domaiNN_console.html`, one per domaiNN) whose specialized surfaces are views shown as tabs. Replaces the retired Vue \"editor\" and the hosted \"cognnitive.com/innfo/app/\" web app.",
+      "sense": "User-facing UI that shows and reviews a domaiNN: the domain console (`domaiNN_console.html`, one per domaiNN) whose specialized surfaces are views shown as tabs. Replaces the retired Vue \"editor\" and the retired hosted web app.",
       "excludes": ["terminal-console", "browser-dev-console", "game-console"],
       "stable_identifiers": ["domaiNN_console.html", "innfo-console.bundle.js"]
     }
@@ -303,14 +303,14 @@
       "old": "editor",
       "new": "console",
       "kind": "ui_term",
-      "notes": "Retired user-facing UI term: the Vue innfo-editor app is replaced by the domain console (see the console term). Not used in user-facing copy."
+      "notes": "Retired user-facing UI term: the Vue editor app is replaced by the domain console (see the console term). Not used in user-facing copy."
     },
     {
       "id": "hosted app",
       "old": "hosted app",
       "new": "console",
       "kind": "ui_term",
-      "notes": "Retired user-facing UI term for the cognnitive.com/innfo/app/ web application; the domain console replaces it. Distinct from the \"app\" alias of bluepriNNt, which keeps its entry and is untouched."
+      "notes": "Retired user-facing UI term for the hosted web application; the domain console replaces it. Distinct from the \"app\" alias of bluepriNNt, which keeps its entry and is untouched."
     }
   ]
 }

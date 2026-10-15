@@ -13,7 +13,7 @@ How cogNNitive transforms everyday workflows from scattered chaos into living, t
 ## 1. 🚀 The Startup Founder & Early-Stage Team
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/startup-founder/) · [🧠 Open kNNowledge in App](https://cognnitive.com/innfo/app/?model=https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use-cases/startup-founder/models/SaaS_Founder_V_1-0-0_business_NN.md) · [🌐 Open Knowledge Base App](https://cognnitive.com/innfo/app/?workspace=startup-founder) · [📊 View Deliverable](use-cases/startup-founder/artifacts/pitch_deck_summary.md)
+> [📁 Local domaiNN](use-cases/startup-founder/) · [📊 View Deliverable](use-cases/startup-founder/artifacts/pitch_deck_summary.md)
 
 ### The Reality & Pain
 Founder notes live across WhatsApp chats, Notion pages, recorded Zoom calls with prospects, and Google Slides. When the pricing kNNowledge or ICP (Ideal Customer Profile) shifts:
@@ -35,7 +35,7 @@ Founder notes live across WhatsApp chats, Notion pages, recorded Zoom calls with
 ## 2. 💼 The Sales Director (Mid-Size Consulting Firm)
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/consulting-sales/) · [🧠 Open kNNowledge in App](https://cognnitive.com/innfo/app/?model=https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use-cases/consulting-sales/models/Fintech_RFP_Response_V_1-0-0_commercial_NN.md) · [🌐 Open Knowledge Base App](https://cognnitive.com/innfo/app/?workspace=consulting-sales) · [📊 View Deliverable](use-cases/consulting-sales/artifacts/commercial_proposal_executive.md)
+> [📁 Local domaiNN](use-cases/consulting-sales/) · [📊 View Deliverable](use-cases/consulting-sales/artifacts/commercial_proposal_executive.md)
 
 ### The Reality & Pain
 A 25-person consulting department submits dozens of bids per quarter. Rate cards, past case studies, and compliance certifications are scattered in SharePoint and Google Drive:
@@ -57,7 +57,7 @@ A 25-person consulting department submits dozens of bids per quarter. Rate cards
 ## 3. 🎨 The Freelance Web Designer & Solopreneur
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/freelance-designer/) · [🧠 Open kNNowledge in App](https://cognnitive.com/innfo/app/?model=https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use-cases/freelance-designer/models/Client_Website_V_1-0-0_site_spec_NN.md) · [🌐 Open Knowledge Base App](https://cognnitive.com/innfo/app/?workspace=freelance-designer) · [📊 View Deliverable](use-cases/freelance-designer/artifacts/interactive_spec_dashboard.html)
+> [📁 Local domaiNN](use-cases/freelance-designer/) · [📊 View Deliverable](use-cases/freelance-designer/artifacts/interactive_spec_dashboard.html)
 
 ### The Reality & Pain
 Clients send unstructured briefs across WhatsApp voice notes, email threads, and casual Zoom calls. Mid-project, expectations collide:
@@ -79,7 +79,7 @@ Clients send unstructured briefs across WhatsApp voice notes, email threads, and
 ## 4. 🎬 The YouTube Video & Technical Content Creator
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/youtube-creator/) · [🧠 Open kNNowledge in App](https://cognnitive.com/innfo/app/?model=https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use-cases/youtube-creator/models/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md) · [🌐 Open Knowledge Base App](https://cognnitive.com/innfo/app/?workspace=youtube-creator) · [📊 View Deliverable](use-cases/youtube-creator/artifacts/production_teleprompter_cue_sheet.md)
+> [📁 Local domaiNN](use-cases/youtube-creator/) · [📊 View Deliverable](use-cases/youtube-creator/artifacts/production_teleprompter_cue_sheet.md)
 
 ### The Reality & Pain
 Producing a deep-dive 20-minute educational or tech video requires reading 15+ papers, reviewing benchmark datasets, and analyzing competitor videos:

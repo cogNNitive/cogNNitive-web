@@ -1,7 +1,6 @@
 - [Home](README)
 
 - **Components**
-  - [innfo-editor](innfo-editor)
   - [innfo-core](innfo-core)
   - [innfo-mcp](innfo-mcp)
   - [OpenCode Agent](opencode-innfo-agent)
@@ -33,4 +32,3 @@
   - [Console Needs & Visuals](console-needs-and-visuals)
   - [Console UI Kit](console-ui-kit)
   - [Validator Behavior](validator-behavior)
-  - [Live Model Preview](live-preview)

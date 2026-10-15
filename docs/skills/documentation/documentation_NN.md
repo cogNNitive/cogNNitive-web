@@ -8,7 +8,7 @@ title: "Agent Skills Documentation Model"
 ---
 
 > [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
+> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
 
 # NN index
 
@@ -177,9 +177,9 @@ url:: /skills/documentation/
 order:: 3
 parent:: [[Agent Skills Documentation]]
 
-## NN NavbarItem: iNNfo Modeler App
-label:: 🛠️ **iNNfo Modeler App**: Open App
-url:: /innfo/app/
+## NN NavbarItem: Domain Console
+label:: 🖥️ **Domain Console**: Read the docs
+url:: /innfo/documentation/#/offline-consoles
 order:: 4
 parent:: [[Agent Skills Documentation]]
 

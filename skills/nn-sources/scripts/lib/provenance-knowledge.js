@@ -12,8 +12,8 @@ const {
 
 const DOC_NOTICE =
   '> [!NOTE]\n> This is an **iNNfo document** — a plain-text Markdown file. ' +
-  'Open it with any text editor or view and edit it with ' +
-  '[cogNNitive](https://cognnitive.com/innfo/app/).';
+  'Open it with any text editor; ' +
+  '[cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.';
 
 /**
  * Recursively collect files with a given extension test under a directory,

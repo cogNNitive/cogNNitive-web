@@ -1,14 +1,13 @@
 # iNNfo Technical Documentation
-> Specifications, core engine packages, visual modeler, and agent MCP integration.
+> Specifications, core engine packages, the domain console, and agent MCP integration.
 
 ## Documentation Index
 
 - [Home](README): Documentation entry point and overview.
-- [innfo-editor](innfo-editor): Interactive browser-based graphical editor for iNNfo models.
 - [innfo-core](innfo-core): Core parser, resolver, validator, and AST engine.
 - [innfo-mcp](innfo-mcp): Model Context Protocol server exposing iNNfo capabilities to AI agents.
 - [OpenCode Agent](opencode-innfo-agent): Integration guide for OpenCode and Antigravity agent workflows.
-- [Ecosystem](ecosystem): Holistic view of cogNNitive ecosystem layers (iNNfo engine, modeler app, agent skills).
+- [Ecosystem](ecosystem): Holistic view of cogNNitive ecosystem layers (iNNfo engine, domain console, agent skills).
 - [Specifications](specifications): Formal specification of the iNNfo format and meta-template layers.
 - [OKF Compatibility](ecosystem?id=open-knowledge-format-compatibility): Alignment and compatibility with the Open Knowledge Format standard.
 - [Discipline Overlaps](discipline-overlaps): How cogNNitive overlaps with established disciplines — Model-Driven Engineering, Knowledge Management, Enterprise Architecture, Ontology Engineering, Docs as Code, and Personal Knowledge Management.
@@ -28,4 +27,3 @@
 - [Console Needs & Visuals](console-needs-and-visuals): Capability needs and app-driven concept color/icon in generated consoles.
 - [Console UI Kit](console-ui-kit): Design tokens and presentational components (InnfoUI) shared by generated consoles.
 - [Validator Behavior](validator-behavior): Deterministic validation, differential baseline_path output, version inference, and workspace-first resolution.
-- [Live Model Preview](live-preview): The opt-in MCP loopback server and SSE change stream that turns the editor tab into a read-only live mirror of the agent's mutations.

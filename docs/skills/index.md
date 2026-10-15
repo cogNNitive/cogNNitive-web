@@ -7,7 +7,7 @@ description: "Modular agent skills that give AI agents specialized capabilities:
 
 Teach your AI agent domain capabilities: iNNfo model authoring, document transformation, site generation, design presets, and skills lifecycle governance.
 
-- [Open iNNfo Modeler App](https://cognnitive.com/innfo/app/)
+- [Read the docs](https://cognnitive.com/innfo/documentation/)
 - [Explore Skills Documentation](https://cognnitive.com/skills/documentation/)
 
 ---
@@ -38,12 +38,12 @@ flowchart TD
     end
 
     subgraph Step3["Step 3: Delivery & Access"]
-        MCP <--> Modeler["🛠️ iNNfo Modeler App (Web Editor)"]
+        MCP <--> Console["🖥️ Domain Console (domaiNN_console.html)"]
         MCP <--> AgentChat["💬 OpenCode Conversational Queries"]
     end
 
     subgraph Step4["Step 4: Artifact Generation"]
-        Modeler & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
+        Console & AgentChat --> Artifacts["📊 Final Deliverables\n(Visual Dashboards, Exec Summaries, Scripts)"]
     end
 ```
 

@@ -10,7 +10,7 @@ ecosystem:
   - name: cogNNitive
     role: monorepo
     url: "https://github.com/cogNNitive/cogNNitive"
-    description: "iNNfo specification engine (parser, validator, MCP server), agent skills, and the iNNfo Modeler app"
+    description: "iNNfo specification engine (parser, validator, MCP server), agent skills, and the domain console"
 pages:
   - url: "https://cognnitive.com/"
     content: "Landing page — gateway, ecosystem overview, bootstrap instructions"

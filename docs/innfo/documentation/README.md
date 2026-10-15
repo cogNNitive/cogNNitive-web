@@ -8,17 +8,15 @@ Welcome to the iNNfo documentation. iNNfo is the monorepo (`@cognnitive/innfo`) 
 # Install dependencies
 npm install
 
-# Build innfo-core first (required by the editor)
+# Build innfo-core and the MCP server
 npm run build -w @cognnitive/innfo-core
-
-# Start the innfo-editor dev server
-npm run dev -w @cognnitive/innfo-editor
+npm run build -w @cognnitive/innfo-mcp
 ```
 
 ## Sections
 
-### [innfo-editor](innfo-editor)
-**iNNfo Modeler** — the unified Vue 3 workspace editor. Opens any folder via the File System Access API, runs a single recursive parse into one normalized node graph, validates automatically, and lets you edit, export, and import iNNfo models.
+### [Offline consoles](offline-consoles)
+The **domain console** — one self-contained `domaiNN_console.html` per domaiNN, generated locally. It shows the domain's kNNowledge and reviews it through changesets.
 
 ### [innfo-core](innfo-core)
 `@cognnitive/innfo-core` is the framework-agnostic TypeScript library shared across the ecosystem: parser, model types, validator, IO drivers, and the spec-chain resolver.

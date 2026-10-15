@@ -8,7 +8,7 @@ title: "iNNfo Technical Documentation Model"
 ---
 
 > [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).
+> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
 
 # NN index
 
@@ -21,7 +21,7 @@ title: "iNNfo Technical Documentation Model"
 
 ## NN DocSite: iNNfo Documentation
 site_title:: iNNfo Technical Documentation
-site_description:: Specifications, core engine packages, visual modeler, and agent MCP integration.
+site_description:: Specifications, core engine packages, the domain console, and agent MCP integration.
 base_path:: docs/innfo/documentation/
 site_logo:: favicon.svg
 repo_url:: https://github.com/cogNNitive/cogNNitive
@@ -59,14 +59,6 @@ order:: 1
 parent:: [[iNNfo Documentation]]
 description:: Documentation entry point and overview.
 
-## NN Page: innfo-editor
-title:: innfo-editor
-source:: innfo-editor.md
-route:: innfo-editor
-order:: 10
-parent:: [[Components]]
-description:: Interactive browser-based graphical editor for iNNfo models.
-
 ## NN Page: innfo-core
 title:: innfo-core
 source:: innfo-core.md
@@ -97,7 +89,7 @@ source:: ecosystem.md
 route:: ecosystem
 order:: 10
 parent:: [[Architecture]]
-description:: Holistic view of cogNNitive ecosystem layers (iNNfo engine, modeler app, agent skills).
+description:: Holistic view of cogNNitive ecosystem layers (iNNfo engine, domain console, agent skills).
 
 ## NN Page: Specifications
 title:: Specifications
@@ -251,14 +243,6 @@ order:: 30
 parent:: [[Runtime & Internals]]
 description:: Deterministic validation, differential baseline_path output, version inference, and workspace-first resolution.
 
-## NN Page: Live Model Preview
-title:: Live Model Preview
-source:: live-preview.md
-route:: live-preview
-order:: 40
-parent:: [[Runtime & Internals]]
-description:: The opt-in MCP loopback server and SSE change stream that turns the editor tab into a read-only live mirror of the agent's mutations.
-
 # NN NavbarItem
 
 ## NN NavbarItem: Ecosistema
@@ -279,9 +263,9 @@ url:: /skills/documentation/
 order:: 3
 parent:: [[iNNfo Documentation]]
 
-## NN NavbarItem: iNNfo Modeler App
-label:: 🛠️ **iNNfo Modeler App**: Abrir App
-url:: /innfo/app/
+## NN NavbarItem: Domain Console
+label:: 🖥️ **Domain Console**: Read the docs
+url:: /innfo/documentation/#/offline-consoles
 order:: 4
 parent:: [[iNNfo Documentation]]
 
