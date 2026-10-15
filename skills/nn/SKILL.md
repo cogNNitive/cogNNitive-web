@@ -2,7 +2,7 @@
 name: nn
 description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
 disable-model-invocation: false
-version: "V_3-4-2"
+version: "V_3-4-3"
 last_updated: 2026-10-09
 license: MIT
 compatibility: opencode, claude-code, cursor, any agent supporting skills
@@ -31,7 +31,6 @@ node skills/nn-preflight/scripts/domain-probe.js --workspace-dir . --json
 ```
 
 The probe deterministically returns:
-- **Layout**: `current` (canonical `kNNowledge/`), `legacy` (`models/`), or `mixed`. If legacy/mixed, offers migration via `nn-upgrade`.
 - **Preflight status**: Checks node version, MCP server availability, and workspace integrity. Exit code 1 indicates non-blocking actionable warnings (surfaced to user without halting the session).
 - **Domain state counts**:
   - `sources.pending_count`: unnormalized raw files in `sources/import/`

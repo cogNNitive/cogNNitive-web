@@ -2050,7 +2050,7 @@ agent-bootstrap:
     }
   }
 
-  // Legacy layout message names the new-domain recipe, never an in-place migration (S4)
+  // A retired layout folder is no longer reported: preflight carries no layout verdict
   {
     const emptyManifest = `---
 agent-bootstrap:
@@ -2060,7 +2060,7 @@ agent-bootstrap:
 ---
 `;
     const server = await serveRoutes({ '/manifest.md': emptyManifest });
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-cli-legacy-msg-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-cli-no-layout-'));
     try {
       fs.mkdirSync(path.join(tmpDir, 'sources', 'nn'), { recursive: true });
       fs.writeFileSync(path.join(tmpDir, 'sources', 'nn', 'raw_NN.md'), '# raw\n', 'utf8');
@@ -2071,12 +2071,13 @@ agent-bootstrap:
         '--manifest-url', `${server.url}/manifest.md`,
       ]);
       const parsedRes = JSON.parse(res.stdout);
-      const item = parsedRes.items.find((i) => i.type === 'workspace-layout');
-      assert.ok(item, `legacy layout must be reported, got: ${res.stdout}`);
-      assert.ok(item.detail.includes('--import-as-source'), item.detail);
-      assert.ok(/new domain/i.test(item.detail), item.detail);
-      assert.ok(!/to migrate to canonical/i.test(item.detail), 'must not promise an in-place migration');
-      console.log('✔ legacy layout message points at the new-domain import recipe');
+      assert.ok(
+        !parsedRes.items.some((i) => i.type === 'workspace-layout'),
+        `no layout item may be reported, got: ${res.stdout}`,
+      );
+      assert.ok(!('layout' in parsedRes), 'no layout verdict in the report');
+      assert.ok(!('legacy_signals' in parsedRes), 'no legacy_signals in the report');
+      console.log('✔ a retired layout folder yields no layout verdict or item');
     } finally {
       await server.close();
       fs.rmSync(tmpDir, { recursive: true, force: true });

@@ -26,9 +26,8 @@ Before running specialized workflows, `nn` executes the fast local domain probe 
 node skills/nn-preflight/scripts/domain-probe.js --workspace-dir . --json
 ```
 
-1. **Layout**: Identifies layout (`current`, `legacy`, `mixed`).
-2. **Preflight**: Verifies Node.js runtime, MCP tools, and workspace integrity.
-3. **Domain State Counts**: Inspects pending sources in `sources/import/`, active models in `kNNowledge/`, and available procedures.
+1. **Preflight**: Verifies Node.js runtime, MCP tools, and workspace integrity.
+2. **Domain State Counts**: Inspects pending sources in `sources/import/`, active models in `kNNowledge/`, and available procedures.
 
 ---
 

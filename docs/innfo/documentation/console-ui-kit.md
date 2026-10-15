@@ -188,8 +188,7 @@ every discovered console shell.
 ## Frozen copies
 
 The export/sample console bundles under `metrics/samples/`,
-`procedures/**/export/**`, and the test fixtures (`simulacro-refactorizacion`,
-`legacy-domain`) are **permanent history**. They keep their own inlined CSS, are
+`procedures/**/export/**`, and the test fixtures (`simulacro-refactorizacion`) are **permanent history**. They keep their own inlined CSS, are
 never migrated to tokens, and are excluded from the shell guard (it skips
 `/samples/` and `/export/`).
 

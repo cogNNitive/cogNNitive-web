@@ -1,7 +1,7 @@
 ---
 name: nn-sources
 description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and keep the domaiNN lineage record in sync. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
-version: "V_3-5-3"
+version: "V_3-5-4"
 last_updated: 2026-10-09
 empty_sections_mode: "ask-per-section"
 license: MIT
@@ -495,7 +495,7 @@ When a user requests to remove, delete, or unlink a source completely from the w
 
 #### 2i. Replacing a Domain Created with the Retired Layout
 
-Domains created before cognitivize-in-place used a mirrored normalized tree and a snapshot archive under `sources/`, plus separate `original` and `export` folders (and a root `export/` folder for deliverables). The runtime of this skill never reads or writes those folders; `nn-preflight` reports such a domain as `legacy-layout`. Such a domain is not migrated in place. Create a new domain and import the old one as a Source with `nn-upgrade`:
+Domains created before cognitivize-in-place used a mirrored normalized tree and a snapshot archive under `sources/`, plus separate `original` and `export` folders (and a root `export/` folder for deliverables). The runtime of this skill never reads or writes those folders. Such a domain is not migrated in place. Create a new domain and import the old one as a Source with `nn-upgrade`:
 
 ```bash
 node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "<old-domain>" --import-as-source --new-domain-dir "<new-domain>"

@@ -104,17 +104,7 @@ async function runAsync() {
     check(fs.existsSync(result.provModelPath), 'provenance model initialized');
     check(fs.existsSync(path.join(destParent, 'Proj', 'domaiNN_NN.md')), 'domaiNN_NN.md entrypoint created');
 
-    const { detectLegacy } = require('../../../nn-preflight/scripts/lib/legacy-detect.generated.cjs');
     const projDir = path.join(destParent, 'Proj');
-    const fsReader = {
-      list: async (rel) => {
-        const full = path.join(projDir, rel);
-        return fs.existsSync(full) ? fs.readdirSync(full) : [];
-      },
-      read: async (rel) => fs.readFileSync(path.join(projDir, rel), 'utf8'),
-    };
-    const layoutDetection = await detectLegacy(fsReader);
-    check(layoutDetection.kind === 'current', `bootstrapped project detected as current (got ${layoutDetection.kind})`);
 
     // Text policy: bootstrap writes `* -text` so raw-byte hashes survive checkout.
     const gitattributesPath = path.join(projDir, '.gitattributes');

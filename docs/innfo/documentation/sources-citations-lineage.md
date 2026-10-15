@@ -95,7 +95,7 @@ sources:: [sources/import/interview.md@## Key Clients, sources/import/notes/kick
 - **File-level citation (bare path)**: `kNNowledge/Client_business_NN.md`
 - **Binary source**: cite the sidecar body, `sources/import/report.pdf_sidecar_NN.md@## Findings`.
 - **Path resolution**: every citation path is **workspace-relative with no implicit prefix**. `report.md@## Overview` resolves only if `report.md` exists at the workspace root; there is no default under a retired folder.
-- **Retired-prefix paths** (`sources/nn/`, `sources/original/`, `sources/export/`, `export/`, `models/`) have no special handling: they simply do not exist and dangle (`KU_DANGLING_FILE`). The legacy layout detector, not the resolver, explains why. An existing file under `sources/archive/` is a plain path and still resolves.
+- **Retired-prefix paths** (`sources/nn/`, `sources/original/`, `sources/export/`, `export/`, `models/`) have no special handling: they simply do not exist and dangle (`KU_DANGLING_FILE`). An existing file under `sources/archive/` is a plain path and still resolves.
 - **Legacy `#slug` read path**: Legacy `#slug` citations (`sources/import/report.md#overview`) remain readable for frozen historical specs with a deprecation warning (`KU_DEPRECATED_HASH`). All active producers write `@` citations.
 
 Line numbers (`#L10-L20`) and `src-NNN` wrappers are strictly forbidden.

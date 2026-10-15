@@ -34,7 +34,6 @@ const crypto = require('crypto');
 const { parseFocusedYaml, parseFrontmatter } = require('./lib/yaml-lite');
 const { discoverModels, scanWorkspaceUpgrades } = require('./upgrade-check');
 const { isProjectableName, classifyProjection, hashTree } = require('./lib/projection');
-const { detectLegacy } = require('./lib/legacy-detect.generated.cjs');
 const { SPEC_FILENAME, ensureNNFilename, isSidecarName, rawPathOfSidecar, sidecarPathOf } = require('./lib/naming-contract.generated.cjs');
 
 const DEFAULT_MANIFEST_URL = process.env.SM_MANIFEST_URL ||
@@ -964,36 +963,6 @@ async function runCheck(options = {}) {
   // before the manifest fetch so the manifest-offline early return below can
   // still fold staleness or unnormalized sources into ACTION_REQUIRED / exit 1.
   if (workspaceDir) {
-    // 1a. Domain layout check
-    const wsReader = {
-      list: async (subDir) => {
-        const p = path.join(workspaceDir, subDir);
-        if (!fs.existsSync(p)) return [];
-        try { return fs.readdirSync(p); } catch { return []; }
-      },
-      read: async (rel) => {
-        const p = path.join(workspaceDir, rel);
-        if (!fs.existsSync(p)) return null;
-        try { return fs.readFileSync(p, 'utf8'); } catch { return null; }
-      }
-    };
-    try {
-      const layoutVerdict = await detectLegacy(wsReader);
-      results.layout = layoutVerdict.kind;
-      results.legacy_signals = layoutVerdict.signals || [];
-      if (layoutVerdict.kind !== 'current') {
-        results.items.push({
-          type: 'workspace-layout',
-          name: 'Workspace Layout',
-          status: 'warning',
-          detail: `Domain layout is '${layoutVerdict.kind}'. This domain is not migrated in place: create a new domain and import it as a Source (nn-upgrade --import-as-source).`,
-          signals: layoutVerdict.signals
-        });
-      }
-    } catch {
-      results.layout = 'unknown';
-    }
-
     const specResults = await scanWorkspaceSpecs(workspaceDir);
     results.summary.specsStale = specResults.stale;
     results.summary.specsFresh = specResults.fresh;

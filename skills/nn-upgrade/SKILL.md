@@ -1,7 +1,7 @@
 ---
 name: nn-upgrade
 description: Guided, consent-gated upgrade of user domaiNN workspaces. Upgrades bluepriNNt versions for adopted templates (Flow B), freezes unfrozen element slugs (--freeze-slugs), and points an old or broken domain at the new-domain recipe (create a new domain and import the old one as a Source). There is no in-place migration of an old domain. Triggers: template upgrade, upgrade templates, workspace upgrade, domain migration, migrate domain, migrar workspace, migrar dominio, actualizar plantillas.
-version: "V_0-4-0"
+version: "V_0-4-1"
 last_updated: 2026-10-14
 metadata:
   source_type: original
@@ -35,7 +35,7 @@ byte-identical under `sources/` and nothing in it is rewritten or deleted.
 The skill ships two things:
 1. **Flow B — bluepriNNt Version Upgrade** (`upgrade-available` detected): upgrades bluepriNNt
    versions for adopted models within a current domaiNN.
-2. **The new-domain pointer** (`legacy-layout` or a broken domain): the recipe below.
+2. **The new-domain pointer** (an old or broken domain): the recipe below.
 
 It also exposes one maintenance option, `--freeze-slugs`, the remedy named by the console's
 `UNFROZEN_MODEL` error.
@@ -92,7 +92,7 @@ The dry run lists the models and slugs it would freeze. `--apply` writes them in
 
 ## Old or broken domain: create a new domain
 
-When `nn-preflight` reports `legacy-layout`, or a domain cannot be upgraded, do not migrate it in place. Create a new domain and import the old one as a Source:
+When a domain is on the retired layout or cannot be upgraded, do not migrate it in place. Create a new domain and import the old one as a Source:
 ```bash
 node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>
 ```

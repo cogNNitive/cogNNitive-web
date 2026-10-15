@@ -23,13 +23,11 @@ const fm = parseFrontmatter(content)
 const result = validateModel(model, template, formatSpec)
 ```
 
-## Quarantine Module & Legacy Boundary
+## Legacy Ledger
 
-All temporary legacy compatibility code is strictly quarantined in `src/legacy/` and tracked 1:1 in `legacy-ledger.yaml`:
-- **Subpath Export**: `@cognnitive/innfo-core/legacy` exposes `detectLegacy` and `DomainReader`.
-- **Browser Safety**: The `./legacy` browser export is detect-only and free of Node built-ins.
-- **Ledger & Markers**: Every quarantined file carries a marker formatted as `legacy:<namespace>/<id>`.
-- **Enforcement**: Vitest and CI guards ensure no external module outside the authorized quarantine boundary imports legacy migration code.
+The package has no legacy detection and no `./legacy` subpath export: a domain on a retired layout is replaced by a new domain that imports the old one as a Source. Remaining temporary compatibility code is tracked 1:1 in `legacy-ledger.yaml`:
+- **Ledger & Markers**: Every ledgered file carries a marker formatted as `legacy:<namespace>/<id>`.
+- **Enforcement**: CI guards (`legacy-ledger-guard`, `legacy-write-guard`) keep markers, ledger entries and retired tokens in step.
 
 ## Usage
 

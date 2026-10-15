@@ -81,7 +81,7 @@ async function runTests() {
       fs.writeFileSync(path.join(ws, 'specs', 'bluepriNNts', 'bp1', 'procedures', 'bp_proc.md'), '# BP Proc');
 
       const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
-      assert.strictEqual(res.layout, 'current');
+      assert.ok(!('layout' in res), 'the probe reports no layout verdict');
       assert.strictEqual(res.knowledge.count, 1);
       assert.deepStrictEqual(res.knowledge.items, ['Item_V_1-0-0_NN.md']);
       assert.strictEqual(res.sources.pending_count, 1);
@@ -102,14 +102,14 @@ async function runTests() {
       assert.strictEqual(res.procedures.blueprint_count, 3, 'Expected flat + versioned procedures to be counted');
     });
 
-    await test('detects legacy layout when models/ exists', async () => {
-      const ws = path.join(tmpDir, 'legacy-ws');
+    await test('does not classify a models/ folder as a legacy layout', async () => {
+      const ws = path.join(tmpDir, 'models-ws');
       fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
       fs.writeFileSync(path.join(ws, 'workspace_NN.md'), '---\nlevel: 3\n---\n');
       fs.writeFileSync(path.join(ws, 'models', 'Old_V_1-0-0_NN.md'), '---\nlevel: 3\n---\n');
 
       const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
-      assert.strictEqual(res.layout, 'legacy');
+      assert.ok(!('layout' in res), 'the probe reports no layout verdict');
       assert.strictEqual(res.knowledge.count, 0, 'models/ is not counted as canonical kNNowledge (P5)');
     });
 

@@ -3,7 +3,6 @@
  * Domain State Probe
  *
  * Fast, deterministic local inspection of workspace state:
- * - Layout (current, legacy, mixed)
  * - Knowledge documents count & listing in kNNowledge/
  * - Pending unnormalized sources in sources/ (sha256-verified)
  * - Attached and workspace procedures
@@ -13,7 +12,6 @@
 const fs = require('fs');
 const path = require('path');
 const { runCheck, scanWorkspaceSources } = require('./preflight-check');
-const { detectLegacy } = require('./lib/legacy-detect.generated.cjs');
 
 /**
  * Runs a deterministic probe against the target workspace directory.
@@ -27,23 +25,7 @@ async function runProbe(options = {}) {
   const workspaceDir = path.resolve(options.workspaceDir || '.');
   const isOffline = options.offline !== undefined ? options.offline : true;
 
-  // 1. Layout detection
-  const fsReader = {
-    list: async (rel) => {
-      const full = path.join(workspaceDir, rel);
-      return fs.existsSync(full) ? fs.readdirSync(full) : [];
-    },
-    read: async (rel) => fs.readFileSync(path.join(workspaceDir, rel), 'utf8'),
-  };
-  let layout = 'current';
-  try {
-    const layoutRes = await detectLegacy(fsReader);
-    layout = layoutRes.kind || 'current';
-  } catch {
-    layout = 'unknown';
-  }
-
-  // 2. Knowledge items count in canonical kNNowledge/
+  // 1. Knowledge items count in canonical kNNowledge/
   const knowledgeDir = path.join(workspaceDir, 'kNNowledge');
   let knowledgeItems = [];
   if (fs.existsSync(knowledgeDir)) {
@@ -54,7 +36,7 @@ async function runProbe(options = {}) {
     }
   }
 
-  // 3. Pending sources count (unnormalized raw files or hash mismatches)
+  // 2. Pending sources count (unnormalized raw files or hash mismatches)
   try {
     const srcAudit = scanWorkspaceSources(workspaceDir);
     pendingCount = srcAudit.unnormalized !== undefined ? srcAudit.unnormalized : 0;
@@ -67,7 +49,7 @@ async function runProbe(options = {}) {
     pendingCount = 0;
   }
 
-  // 4. Procedures count
+  // 3. Procedures count
   let domainProceduresCount = 0;
   const procDir = path.join(workspaceDir, 'procedures');
   if (fs.existsSync(procDir)) {
@@ -99,7 +81,7 @@ async function runProbe(options = {}) {
     }
   }
 
-  // 5. Preflight check
+  // 4. Preflight check
   let preflightRes = { status: 'ok', exitCode: 0, warnings: [] };
   if (!options.skipPreflight) {
     try {
@@ -139,7 +121,6 @@ async function runProbe(options = {}) {
 
   return {
     version: '1.0.0',
-    layout,
     preflight: preflightRes,
     knowledge: {
       count: knowledgeItems.length,
@@ -173,7 +154,6 @@ async function main() {
       console.log(JSON.stringify(result, null, 2));
     } else {
       console.log(`\n=== Domain State Probe ===`);
-      console.log(`Layout: ${result.layout}`);
       console.log(`Preflight: ${result.preflight.status} (exit ${result.preflight.exitCode})`);
       if (result.preflight.warnings.length > 0) {
         console.log(`Warnings (${result.preflight.warnings.length}):`);

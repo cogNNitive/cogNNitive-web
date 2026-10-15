@@ -11,7 +11,7 @@ generator: https://cognnitive.com/skills/nn-design-presets
 
 Guided domaiNN upgrade engine. Owns the **consent-gated upgrades** detected by `nn-preflight`. There is no in-place migration of an old domain: an old or broken domain is replaced by a new domain that imports the old one as a Source.
 
-> Contract split: the skill owns consent, backup, plan validation and recovery. The legacy detector and the step tables live in the procedure `upgrade_and_migrate_legacy_workspace_NN.md`, not here.
+> Contract split: the skill owns consent, backup, plan validation and recovery. The step tables live in the procedure `upgrade_and_migrate_legacy_workspace_NN.md`, not here.
 
 ---
 
