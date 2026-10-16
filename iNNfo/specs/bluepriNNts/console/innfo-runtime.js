@@ -571,7 +571,8 @@
 
   function monthAxis(meta, count) {
     var startMonth = Number(meta && meta.startMonth) || 1
-    var startYear = Number(meta && meta.startYear) || 1970
+    var fallbackYear = typeof Date !== 'undefined' ? new Date().getFullYear() : 2026
+    var startYear = Number(meta && meta.startYear) || fallbackYear
     var n = Math.max(0, Number(count) || 0)
     var labels = []
     for (var i = 0; i < n; i++) {
@@ -1822,7 +1823,7 @@
       card.style.borderLeft = '4px solid ' + hexColor
 
       var head = card.querySelector('.innfo-card-head, header')
-      if (head && element.concept) {
+      if (head && element.concept && !head.querySelector('[data-ku-kind="concept"]')) {
         var cBadge = el('span', 'innfo-card-concept-badge badge badge-outline badge-xs text-xs font-semibold')
         cBadge.setAttribute('data-concept-slot', String(cMeta.slot))
         cBadge.style.borderColor = hexColor
@@ -1836,7 +1837,7 @@
         }
         cBadge.appendChild(doc.createTextNode(element.concept))
         var elementBadge = head.querySelector('[data-ku-kind="element"]')
-        if (elementBadge) head.insertBefore(cBadge, elementBadge)
+        if (elementBadge) (elementBadge.parentNode || head).insertBefore(cBadge, elementBadge)
         else head.appendChild(cBadge)
       }
 
@@ -2427,7 +2428,22 @@
   }
 
   function normalizeKey(str) {
-    return String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+    // NFD + combining-mark strip so 'Facturación' and 'facturacion' share one key.
+    return String(str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+  }
+
+  var warnedUnresolvedOperands = {}
+  function warnUnresolvedOperand(token, formula) {
+    var key = formula + ' ' + token
+    if (warnedUnresolvedOperands[key]) return
+    warnedUnresolvedOperands[key] = true
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[innfo] Timeline formula "' + formula + '": unresolved operand "' + token + '"')
+    }
   }
 
   // Theme synchronization for embedded iframes now lives in ui-kit.js
@@ -2505,9 +2521,18 @@
       var norm = normalizeKey(token)
       var targetRow = rowMap[norm]
       if (targetRow) {
-        return evaluateFormulaTree(targetRow, m, rowMap, overrides, memo, growthState, historyCount)
+        var operandVal = evaluateFormulaTree(targetRow, m, rowMap, overrides, memo, growthState, historyCount)
+        // A '%' variable is a rate: as an operand it is the fraction (35% -> 0.35),
+        // consistent with growValue, which divides the growth factor by 100.
+        // Scope: only plain variable rows (no formula) with unit '%' are scaled.
+        // Formula rows already return a computed value (their operands were scaled
+        // on the way in), so dividing again would double-scale the result.
+        if (!targetRow.formula && String(targetRow.metricUnit || '').trim() === '%') operandVal = operandVal / 100
+        return operandVal
       }
-      return 0
+      // Unresolved: surface as NaN (rendered '-') instead of a silent 0.
+      warnUnresolvedOperand(token, formula)
+      return NaN
     }
 
     var terms = []
@@ -2535,8 +2560,9 @@
     if (!terms.length) return 0
     var res = terms[0]
     for (var j = 0; j < ops.length; j++) {
-      if (ops[j] === '+') res += terms[j + 1] || 0
-      else if (ops[j] === '-') res -= terms[j + 1] || 0
+      var term = terms[j + 1] == null ? 0 : terms[j + 1]
+      if (ops[j] === '+') res += term
+      else if (ops[j] === '-') res -= term
     }
     return res
   }
@@ -2567,9 +2593,10 @@
         g.mode + (g.factor ? ' (' + g.factor + ')' : '')
       ]
       for (var i = 0; i < totalMonths; i++) {
-        rowLine.push(vals[i] != null ? Math.round(vals[i] * 100) / 100 : '')
+        // Unresolved operands yield NaN: write an empty cell, never a literal "NaN".
+        rowLine.push(vals[i] != null && Number.isFinite(vals[i]) ? Math.round(vals[i] * 100) / 100 : '')
       }
-      rowLine.push(Math.round(sum * 100) / 100)
+      rowLine.push(Number.isFinite(sum) ? Math.round(sum * 100) / 100 : '')
       lines.push(rowLine.map(function (s) { return '"' + String(s).replace(/"/g, '""') + '"' }).join(','))
     })
 
@@ -3166,9 +3193,11 @@
           tdChartSticky.appendChild(chartLabel)
           trChart.appendChild(tdChartSticky)
 
-          var maxAbs = Math.max.apply(null, vals.map(function (v) { return Math.abs(v) })) || 1
-          var minReal = Math.min.apply(null, vals)
-          var maxReal = Math.max.apply(null, vals)
+          // Unresolved operands yield NaN months: scale and range use finite values only.
+          var finiteVals = vals.filter(function (v) { return Number.isFinite(v) })
+          var maxAbs = Math.max.apply(null, finiteVals.map(function (v) { return Math.abs(v) })) || 1
+          var minReal = finiteVals.length ? Math.min.apply(null, finiteVals) : NaN
+          var maxReal = finiteVals.length ? Math.max.apply(null, finiteVals) : NaN
 
           var tdChartRule = el('td', 'td-rule')
           tdChartRule.appendChild(el('span', 'innfo-chart-range', 'Range: ' + formatGridNumber(minReal) + ' .. ' + formatGridNumber(maxReal)))
@@ -3183,10 +3212,11 @@
             var barWrap = el('div', 'innfo-mini-bar-wrap')
             barWrap.setAttribute('title', (labels[ci] || ('M' + (ci + 1))) + ': ' + formatGridNumber(cVal) + (r.metricUnit ? ' ' + r.metricUnit : ''))
 
-            var heightPct = Math.max(4, Math.round((Math.abs(cVal) / maxAbs) * 100))
-            var bar = el('div', 'innfo-mini-bar' + (cVal < 0 ? ' negative' : ''))
+            var cResolved = Number.isFinite(cVal)
+            var heightPct = cResolved ? Math.max(4, Math.round((Math.abs(cVal) / maxAbs) * 100)) : 4
+            var bar = el('div', 'innfo-mini-bar' + (cResolved && cVal < 0 ? ' negative' : ''))
             bar.style.height = heightPct + '%'
-            bar.style.backgroundColor = getSemanticBarColor(cVal, minReal, maxReal, r)
+            bar.style.backgroundColor = cResolved ? getSemanticBarColor(cVal, minReal, maxReal, r) : '#cbd5e1'
 
             var valLabel = el('span', 'innfo-mini-bar-val', formatGridNumber(cVal))
             barWrap.appendChild(bar)
@@ -3199,7 +3229,8 @@
           var firstVal = vals[0] || 0
           var lastVal = vals[totalMonths - 1] || 0
           var deltaPct = firstVal !== 0 ? Math.round(((lastVal - firstVal) / Math.abs(firstVal)) * 100) : 0
-          tdChartTotal.appendChild(el('div', 'innfo-mini-total', (deltaPct >= 0 ? '+' : '') + deltaPct + '% trend'))
+          var trendLabel = Number.isFinite(deltaPct) ? (deltaPct >= 0 ? '+' : '') + deltaPct + '% trend' : '- trend'
+          tdChartTotal.appendChild(el('div', 'innfo-mini-total', trendLabel))
           trChart.appendChild(tdChartTotal)
 
           tbody.appendChild(trChart)
@@ -4861,9 +4892,9 @@
   }
 
   // Builds one `## NN Change` block addressed the way `apply_change` resolves it:
-  // `<file stem>@<element slug>[&field]`. The draft carries `model_id` (the model's
-  // file stem) and `element_slug`; `fallbackModel` only covers drafts saved before
-  // those fields existed.
+  // `<file stem>@<element slug>[&field]`. The draft carries `knowledge_id` (the knowledge
+  // document's file stem) and `element_slug`; `fallbackModel` only covers drafts that
+  // lack them.
   function oneLine(v) {
     return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
   }
@@ -4871,7 +4902,7 @@
   function draftToChange(draft, index, fallbackModel) {
     var d = isObject(draft) ? draft : {}
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
-    var model = oneLine(d.model_id || fallbackModel || 'model')
+    var model = oneLine(d.knowledge_id || fallbackModel || 'model')
     // The element part of a target is always the element slug: never the display
     // name or the element id (the engine resolves slugs, and every payload element
     // carries one).

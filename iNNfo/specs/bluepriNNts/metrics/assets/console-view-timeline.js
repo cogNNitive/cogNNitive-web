@@ -30,10 +30,13 @@ registerView({
         section.appendChild(heading)
       }
       ctx.container.appendChild(section)
+      var meta = { months: p.months }
+      if (p.startYear) meta.startYear = p.startYear
+      if (p.startMonth) meta.startMonth = p.startMonth
       InnfoConsole.renderTimelineGrid(
         section,
         { rows: p.rows },
-        { months: p.months },
+        meta,
         {
           onEditRow: function (elementId) {
             ctx.modal.edit({ elementId: elementId })
@@ -63,7 +66,7 @@ function deriveProjections(elements) {
   var out = []
   groups.forEach(function (g) {
     var projection = deriveProjection(g.elements)
-    if (projection) out.push({ title: g.title, rows: projection.rows, months: projection.months })
+    if (projection) out.push({ title: g.title, rows: projection.rows, months: projection.months, startYear: projection.startYear, startMonth: projection.startMonth })
   })
   return out
 }
@@ -81,10 +84,16 @@ function deriveProjection(elements) {
     if (e && e.id) byId[String(e.id).toLowerCase()] = e
   })
   var scenarioMonths = []
+  var startYear = null
+  var startMonth = null
   elements.forEach(function (e) {
     if (e && e.concept === 'Scenario') {
       var m = finiteNumber(e.fields && e.fields.scenarioMonths)
       if (m != null) scenarioMonths.push(m)
+      var sy = finiteNumber(e.fields && (e.fields.startYear || e.fields.scenarioStartYear))
+      if (sy != null && startYear == null) startYear = sy
+      var sm = finiteNumber(e.fields && (e.fields.startMonth || e.fields.scenarioStartMonth))
+      if (sm != null && startMonth == null) startMonth = sm
     }
   })
   if (scenarioMonths.length === 0) return null
@@ -136,5 +145,5 @@ function deriveProjection(elements) {
     }
   })
   if (rows.length === 0) return null
-  return { rows: rows, months: months }
+  return { rows: rows, months: months, startYear: startYear, startMonth: startMonth }
 }

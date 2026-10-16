@@ -43,6 +43,7 @@ Level 2 apps declare the concepts, markers, and relationship types available to 
 2. Generate the domain console (`domaiNN_console.html`) with `export-console.mjs` or the MCP `regenerate_console` tool and open it in a browser; see [offline consoles](offline-consoles).
 3. Validation runs on every write through [innfo-mcp](innfo-mcp) (`validate_model`).
 4. Reviewers send feedback as changesets; see the [reviewer guide](reviewer-guide).
+5. Change models through the agent or a changeset, not by hand; see [editing models by hand](manual-editing-risks).
 
 ## Generating the console
 

@@ -10966,7 +10966,7 @@ function buildConsolePayload(options) {
   const parsed = parseKnowledge(content);
   const fm = parsed.frontmatter || parseFrontmatter(content) || {};
   const title = fm.title || fm.name || (modelPath ? displayStem(modelPath.split(/[/\\]/).pop() ?? "") : "Model") || "Model";
-  const template = fm.target_blueprint || fm.target_template || fm.blueprint || fm.template || void 0;
+  const template = fm.target_blueprint || fm.blueprint || fm.template || void 0;
   const modelVersion = fm.knowledge_version || fm.version || "V_0-1-0";
   const modelId = normalizeModelId(modelPath, title);
   const rawElements = [];

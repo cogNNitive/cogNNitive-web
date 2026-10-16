@@ -47,6 +47,14 @@ Overlays are native Layer kinds, discriminated by `type::`. Text overlays carry 
 
 Ephemeral overlays (`quote`, `lower-third`, `b-roll`) are scheduled sequentially in list order, with configurable `enter_animation` / `exit_animation`.
 
+Optional per-element fields (documents that omit them behave exactly as before):
+
+| Field | On | Effect |
+|---|---|---|
+| `model::` | `presenter` Layer | Avatar / lip-sync model id for that Layer (default model when absent). It does not affect the TTS cache key. |
+| `fit::` | `b-roll` Layer | `cover` (default) fills and crops; `contain` shows the whole asset with a margin on a rounded card, with a gentle zoom-in. |
+| `music_volume::` | Scene | Volume (0-1) of the Scene's `music::` track; the engine default applies when absent. |
+
 ---
 
 ## 4. Audio & Voice Synthesis

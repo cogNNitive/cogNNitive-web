@@ -37,6 +37,9 @@ async function runProbe(options = {}) {
   }
 
   // 2. Pending sources count (unnormalized raw files or hash mismatches)
+  let pendingCount = 0;
+  /** @type {{ total: number, normalized: number, unnormalized: number } | undefined} */
+  let sourceSummary;
   try {
     const srcAudit = scanWorkspaceSources(workspaceDir);
     pendingCount = srcAudit.unnormalized !== undefined ? srcAudit.unnormalized : 0;

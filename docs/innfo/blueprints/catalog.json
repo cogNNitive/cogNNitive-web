@@ -230,10 +230,43 @@
       ]
     }
   },
-  "frozen": {},
-  "warnings": [
-    "skipped (no parseable blueprint_version): base/spec_NN.md",
-    "skipped (no parseable blueprint_version): cogNNitive/spec_NN.md",
-    "skipped (no parseable blueprint_version): workspace_spec_NN.md"
-  ]
+  "frozen": {
+    "base": {
+      "name": "base",
+      "adopted": "V_0-1-1",
+      "versions": [
+        {
+          "blueprint_version": "V_0-1-1",
+          "spec_version": "V_0-1-0",
+          "title": "Base Workspace Overview Template",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/base/spec_NN.md"
+        }
+      ]
+    },
+    "cogNNitive": {
+      "name": "cogNNitive",
+      "adopted": "V_0-4-1",
+      "versions": [
+        {
+          "blueprint_version": "V_0-4-1",
+          "spec_version": "V_0-2-1",
+          "title": "cogNNitive Template",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
+        }
+      ]
+    },
+    "workspace": {
+      "name": "workspace",
+      "adopted": "V_0-8-3",
+      "versions": [
+        {
+          "blueprint_version": "V_0-8-3",
+          "spec_version": "V_0-2-2",
+          "title": "Workspace Specification App",
+          "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
+        }
+      ]
+    }
+  },
+  "warnings": []
 }

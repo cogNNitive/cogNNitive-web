@@ -7270,41 +7270,16 @@ button.cite-icon,
 }
 
 /* 6. Card Head */
-[data-innfo-component="element-card"] .innfo-card-thumb--concept {
-  display: none !important;
-}
-.innfo-card-concept-badge {
-  display: none !important;
-}
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-ku-badge[data-ku-kind="element"],
-[data-innfo-component="element-card"] .innfo-card-head .innfo-element-pill {
+[data-innfo-component="element-card"] .innfo-card-badges {
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  background: transparent !important;
-  border: none !important;
-  border-width: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  font-size: 1.05rem !important;
-  font-weight: 400 !important;
-  color: var(--card-concept-color, var(--pill-concept-color, var(--concept-slot-fg, #0284c7))) !important;
+  zoom: 2 !important;
 }
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-ku-badge[data-ku-kind="element"] .innfo-ku-value,
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-ku-badge[data-ku-kind="element"] span {
-  font-weight: 400 !important;
-  font-size: 1.05rem !important;
-  color: inherit !important;
+[data-innfo-component="element-card"] .innfo-card-badges .innfo-ku-badge {
+  display: inline-flex !important;
 }
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-ku-badge[data-ku-kind="element"] .innfo-ku-icon {
-  color: inherit !important;
-  border: none !important;
-}
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-ku-badge[data-ku-kind="element"] .innfo-ku-icon svg {
-  width: 18px !important;
-  height: 18px !important;
-  stroke-width: 1.75px !important;
-}
+
 
 /* 7. Sin bordes no funcionales */
 .innfo-concept-pill,
@@ -7401,7 +7376,7 @@ button.cite-icon,
   box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04) !important;
 }
 .innfo-rail {
-  border-right: 1px solid #e2e8f0 !important;
+  border-right: none !important;
 }
 .innfo-navbar {
   border-bottom: 1px solid #e2e8f0 !important;

@@ -35,9 +35,9 @@ const {
   compareVersions,
   parsePinnedUrl,
   classifyAgainstCatalog,
-} = require('./lib/version-status.generated.cjs');
+} = /** @type {any} */ (require('./lib/version-status.generated.cjs'));
 // Model identity is the naming contract's (bundled from innfo-core, same drift guard).
-const { isNNName, isSidecarName } = require('./lib/naming-contract.generated.cjs');
+const { isNNName, isSidecarName } = /** @type {any} */ (require('./lib/naming-contract.generated.cjs'));
 
 const SCAN_SKIP_DIRS = new Set([
   '.git', '.backup', '.spec-cache', 'node_modules', 'dist', 'backups', 'archive',

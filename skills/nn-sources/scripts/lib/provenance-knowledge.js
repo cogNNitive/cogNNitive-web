@@ -5,10 +5,17 @@ const {
   RECORD_TEMPLATE_URL: TEMPLATE_URL,
   RECORD_INNFO_URL: INNFO_URL,
   RECORD_BLUEPRINT: TEMPLATE_NAME,
-  splitTopLevelSections,
+  splitTopLevelSections: splitTopLevelSectionsMirror,
   renderRecordFrontmatter,
   refreshExistingModel,
 } = require('./innfo-core.generated.cjs');
+
+/**
+ * The mirror bundle holds two same-named section splitters and tsc infers the wrong one,
+ * so the contract of the exported one is restated here.
+ * @type {(body: string) => { preamble: string, blocks: Array<{ heading: string, lines: string[] }> }}
+ */
+const splitTopLevelSections = /** @type {any} */ (splitTopLevelSectionsMirror);
 
 const DOC_NOTICE =
   '> [!NOTE]\n> This is an **iNNfo document** — a plain-text Markdown file. ' +

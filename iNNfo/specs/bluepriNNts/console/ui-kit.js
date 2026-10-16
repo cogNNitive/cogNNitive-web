@@ -204,14 +204,19 @@
     '.innfo-ku-badge .innfo-ku-label{color:var(--innfo-muted)}',
     '.innfo-ku-badge .innfo-ku-value{color:var(--innfo-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.innfo-ku-badge .innfo-ku-icon{display:inline-flex;color:var(--innfo-muted);flex:0 0 auto}',
-    // Field badges carry free text, so they read as full-width rows: the value
-    // wraps and is never clipped, and the badge grows to fill the line while the
-    // action cluster stays pinned beside it.
-    '.innfo-ku-badge[data-ku-kind=field]{flex:1 1 16em;min-width:0;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
+    // Field badges carry free text: under card fields they grow to fill the row,
+    // while in tables/grids they remain compact inline-flex elements.
+    '.innfo-card-fields>.innfo-ku-unit>.innfo-ku-badge[data-ku-kind=field],.innfo-card-fields>.innfo-ku-badge[data-ku-kind=field]{flex:1 1 16em;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
+    '.innfo-ku-badge[data-ku-kind=field]{min-width:0;align-items:center;line-height:1.3}',
     '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-label{flex:0 0 auto;white-space:nowrap;font-weight:600}',
     '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
     '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-icon{margin-top:.18em}',
     '.innfo-ku-badge[data-ku-changes]{border-style:dashed}',
+    '.innfo-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}',
+    '.innfo-kpi-card{background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--innfo-shadow)}',
+    '.innfo-kpi-header{display:flex;align-items:center;justify-content:space-between;gap:8px}',
+    '.innfo-kpi-value{font-size:1.4rem;font-weight:700;color:var(--innfo-text);line-height:1.2}',
+    '.innfo-kpi-hint{font-size:.78rem;color:var(--innfo-muted)}',
     '.innfo-ku-change-pip{position:absolute;top:-.5em;right:-.5em;min-width:1.2em;height:1.2em;padding:0 .25em;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;line-height:1;border-radius:999px;background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border:1px solid var(--innfo-status-pending);cursor:pointer}',
     '.innfo-ku-actions{display:inline-flex;align-items:center;gap:.1em;flex:0 0 auto}',
     '.innfo-ku-action{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);font:inherit;padding:.1em .3em;border-radius:var(--innfo-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:1.6em;min-height:1.5em;opacity:.55;transition:opacity .15s ease,color .15s ease,border-color .15s ease}',
@@ -225,6 +230,8 @@
     // markers, field count, actions, chevron) over a collapsible body.
     // Scoped to the element-card so it wins over any shell-level card styles.
     '[data-innfo-component=element-card] .innfo-card-head{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;cursor:pointer;min-width:0}',
+    '[data-innfo-component=element-card] .innfo-card-badges{display:inline-flex;align-items:center;gap:.35em;font-size:1.64rem;min-width:0}',
+    '[data-innfo-component=element-card] .innfo-card-badges .innfo-ku-badge{font-size:1.64rem}',
     '[data-innfo-component=element-card] .innfo-card-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1.5px solid var(--innfo-border);background:var(--innfo-surface-2);flex:0 0 auto;display:block}',
     '.innfo-field-image-wrap{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}',
     '[data-innfo-component=element-card] .innfo-card-thumb--empty,[data-innfo-component=element-card] .innfo-card-thumb--concept{display:inline-flex;align-items:center;justify-content:center;color:var(--card-concept-color,var(--innfo-accent));background:var(--card-concept-bg,var(--innfo-surface-2));border:1.5px solid var(--card-concept-color,var(--innfo-border))}',
@@ -1521,18 +1528,9 @@
     var conceptIconName = resolveConceptIconName(data.conceptId, conceptOpts)
 
     head.appendChild(elementThumb(doc, data, conceptIconName, 18))
-    head.appendChild(
-      KuBadge({
-        kind: 'element',
-        id: data.id,
-        label: data.name || data.id,
-        index: conceptOpts.index,
-        color: conceptOpts.color,
-        icon: conceptOpts.icon,
-      }),
-    )
+    var badgesWrap = makeEl(doc, 'div', 'innfo-card-badges')
     if (data.concept) {
-      head.appendChild(
+      badgesWrap.appendChild(
         KuBadge({
           kind: 'concept',
           id: data.concept,
@@ -1543,6 +1541,17 @@
         }),
       )
     }
+    badgesWrap.appendChild(
+      KuBadge({
+        kind: 'element',
+        id: data.id,
+        label: data.name || data.id,
+        index: conceptOpts.index,
+        color: conceptOpts.color,
+        icon: conceptOpts.icon,
+      }),
+    )
+    head.appendChild(badgesWrap)
 
     // Surface semantic status pill in header if element has a status field
     var statusField = null
@@ -2858,6 +2867,186 @@
     return cluster
   }
 
+  /**
+   * Declarative Table builder for console views.
+   * Auto-formats cells with canonical KuBadges / ElementPills.
+   *
+   * @param {{
+   *   columns: Array<string | { key: string, label?: string, kind?: 'element'|'field'|'cell'|'text', align?: 'left'|'right'|'center', format?: Function }>,
+   *   rows: Array<any>,
+   *   emptyText?: string,
+   *   compact?: boolean,
+   * }} data
+   * @param {{
+   *   doc?: Document,
+   *   onEdit?: (elementId: string, fieldKey?: string) => void,
+   *   onSelect?: (elementId: string) => void,
+   * }} [opts]
+   * @returns {HTMLElement}
+   */
+  function Table(data, opts) {
+    if (!data || !Array.isArray(data.columns)) {
+      throw new TypeError('InnfoUI.Table: data.columns must be an array')
+    }
+    var doc = (opts && opts.doc) || (typeof document !== 'undefined' ? document : null)
+    if (!doc) throw new TypeError('InnfoUI.Table: doc is required')
+    var rows = Array.isArray(data.rows) ? data.rows : []
+    var wrap = makeEl(doc, 'div', 'innfo-element-table-wrap')
+    wrap.setAttribute('data-innfo-component', 'table')
+
+    var table = makeEl(doc, 'table', 'innfo-element-table')
+    var thead = makeEl(doc, 'thead')
+    var htr = makeEl(doc, 'tr')
+
+    var cols = data.columns.map(function (c) {
+      if (typeof c === 'string') return { key: c, label: c, kind: c === 'name' || c === 'id' ? 'element' : 'field' }
+      return {
+        key: c.key || '',
+        label: c.label != null ? c.label : c.key,
+        kind: c.kind || (c.key === 'name' || c.key === 'id' ? 'element' : 'field'),
+        align: c.align || 'left',
+        format: c.format,
+      }
+    })
+
+    cols.forEach(function (c) {
+      var th = makeEl(doc, 'th', null, c.label)
+      if (c.align) th.style.textAlign = c.align
+      htr.appendChild(th)
+    })
+    if (opts && typeof opts.onEdit === 'function') {
+      var thAct = makeEl(doc, 'th', null, '')
+      thAct.style.width = '40px'
+      htr.appendChild(thAct)
+    }
+    thead.appendChild(htr)
+    table.appendChild(thead)
+
+    var tbody = makeEl(doc, 'tbody')
+    if (rows.length === 0) {
+      var emptyTr = makeEl(doc, 'tr')
+      var emptyTd = makeEl(doc, 'td', 'innfo-element-table-empty', data.emptyText || 'No items to display.')
+      emptyTd.colSpan = cols.length + (opts && opts.onEdit ? 1 : 0)
+      emptyTr.appendChild(emptyTd)
+      tbody.appendChild(emptyTr)
+    } else {
+      rows.forEach(function (row) {
+        if (!row) return
+        var tr = makeEl(doc, 'tr')
+        if (row.id) tr.setAttribute('data-element-id', row.id)
+        cols.forEach(function (c) {
+          var td = makeEl(doc, 'td')
+          if (c.align) td.style.textAlign = c.align
+          var val = row.fields && c.key in row.fields ? row.fields[c.key] : row[c.key]
+          if (c.format && typeof c.format === 'function') {
+            var formatted = c.format(val, row)
+            if (formatted && formatted.nodeType) td.appendChild(formatted)
+            else td.textContent = formatted == null ? '' : String(formatted)
+          } else if (c.kind === 'element') {
+            td.appendChild(ElementPill({ id: row.id, label: val || row.name || row.id }, { doc: doc, onSelect: opts && opts.onSelect }))
+          } else if (c.kind === 'cell') {
+            td.appendChild(KuBadge({ kind: 'cell', value: val == null ? '—' : String(val) }, { doc: doc }))
+          } else if (c.kind === 'field') {
+            td.appendChild(KuBadge({ kind: 'field', name: c.label, value: val == null ? '—' : String(val) }, { doc: doc }))
+          } else {
+            td.textContent = val == null ? '—' : String(val)
+          }
+          tr.appendChild(td)
+        })
+        if (opts && typeof opts.onEdit === 'function') {
+          var tdAct = makeEl(doc, 'td')
+          tdAct.style.textAlign = 'right'
+          var editBtn = makeEl(doc, 'button', 'innfo-review-anchor')
+          editBtn.setAttribute('type', 'button')
+          editBtn.setAttribute('title', 'Edit ' + (row.name || row.id))
+          editBtn.innerHTML = icon('pencil', 12)
+          editBtn.addEventListener('click', function (ev) {
+            if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+            opts.onEdit(row.id)
+          })
+          tdAct.appendChild(editBtn)
+          tr.appendChild(tdAct)
+        }
+        tbody.appendChild(tr)
+      })
+    }
+    table.appendChild(tbody)
+    wrap.appendChild(table)
+    return wrap
+  }
+
+  /**
+   * Declarative KPI summary grid for console views.
+   * @param {{
+   *   items: Array<{ label: string, value: string|number, concept?: string, icon?: string, hint?: string, color?: string, index?: number }>
+   * }} data
+   * @param {{ doc?: Document }} [opts]
+   * @returns {HTMLElement}
+   */
+  function KpiGrid(data, opts) {
+    if (!data || !Array.isArray(data.items)) {
+      throw new TypeError('InnfoUI.KpiGrid: data.items must be an array')
+    }
+    var doc = (opts && opts.doc) || (typeof document !== 'undefined' ? document : null)
+    if (!doc) throw new TypeError('InnfoUI.KpiGrid: doc is required')
+
+    var grid = makeEl(doc, 'div', 'innfo-kpi-grid')
+    grid.setAttribute('data-innfo-component', 'kpi-grid')
+
+    data.items.forEach(function (item) {
+      if (!item) return
+      var card = makeEl(doc, 'div', 'innfo-kpi-card')
+      var header = makeEl(doc, 'div', 'innfo-kpi-header')
+      if (item.concept) {
+        header.appendChild(ConceptPill({ id: item.concept, label: item.concept, icon: item.icon, color: item.color, index: item.index }, { doc: doc }))
+      } else {
+        header.appendChild(KuBadge({ kind: 'concept', label: item.label, icon: item.icon }, { doc: doc }))
+      }
+      card.appendChild(header)
+
+      var val = makeEl(doc, 'div', 'innfo-kpi-value', item.value != null ? String(item.value) : '0')
+      card.appendChild(val)
+
+      if (item.hint) {
+        var hint = makeEl(doc, 'div', 'innfo-kpi-hint', item.hint)
+        card.appendChild(hint)
+      }
+      grid.appendChild(card)
+    })
+    return grid
+  }
+
+  /**
+   * Registers <innfo-ku> custom element in window.customElements when available.
+   */
+  function defineCustomElements() {
+    if (typeof window === 'undefined' || !window.customElements || window.customElements.get('innfo-ku')) return
+    try {
+      function InnfoKu() {
+        return Reflect.construct(HTMLElement, [], InnfoKu)
+      }
+      Object.setPrototypeOf(InnfoKu.prototype, HTMLElement.prototype)
+      Object.setPrototypeOf(InnfoKu, HTMLElement)
+      InnfoKu.prototype.connectedCallback = function () {
+        var kind = this.getAttribute('kind') || 'field'
+        var name = this.getAttribute('name')
+        var value = this.getAttribute('value')
+        var label = this.getAttribute('label') || name
+        var id = this.getAttribute('id')
+        var badge = KuBadge({ kind: kind, id: id, name: name, value: value, label: label }, { doc: this.ownerDocument })
+        this.innerHTML = ''
+        this.appendChild(badge)
+      }
+      window.customElements.define('innfo-ku', InnfoKu)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.customElements) {
+    defineCustomElements()
+  }
+
   // Token injection at load when a document exists. The bundle loads up to 3
   // times per shell; ensureTokens is idempotent, so this is safe.
   if (typeof document !== 'undefined' && document.head) {
@@ -2924,5 +3113,8 @@
     FieldMultiSelectWidget: FieldMultiSelectWidget,
     FieldReferenceWidget: FieldReferenceWidget,
     FieldMarkdownWidget: FieldMarkdownWidget,
+    Table: Table,
+    KpiGrid: KpiGrid,
+    defineCustomElements: defineCustomElements,
   }
 })

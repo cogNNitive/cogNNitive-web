@@ -34,7 +34,10 @@ const crypto = require('crypto');
 const { parseFocusedYaml, parseFrontmatter } = require('./lib/yaml-lite');
 const { discoverModels, scanWorkspaceUpgrades } = require('./upgrade-check');
 const { isProjectableName, classifyProjection, hashTree } = require('./lib/projection');
-const { SPEC_FILENAME, ensureNNFilename, isSidecarName, rawPathOfSidecar, sidecarPathOf } = require('./lib/naming-contract.generated.cjs');
+// The bundle is a generated CJS mirror whose exports tsc cannot infer; the cast restates its contract.
+const { SPEC_FILENAME, ensureNNFilename, isSidecarName, rawPathOfSidecar, sidecarPathOf } = /** @type {any} */ (
+  require('./lib/naming-contract.generated.cjs')
+);
 
 const DEFAULT_MANIFEST_URL = process.env.SM_MANIFEST_URL ||
   'https://cognnitive.com/use/manifest.md';

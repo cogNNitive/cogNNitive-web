@@ -19,6 +19,14 @@ const {
   writeOnce,
 } = require('./innfo-core.generated.cjs');
 
+/**
+ * @typedef {{ filePath: string, slug?: string, unit?: { kind: string, slug?: string, id?: string, pointer?: string } }} ParsedCitation
+ * The unit form carries `unit`, the legacy-hash form carries `slug`; the mirror's inferred type is the union.
+ */
+
+/** @param {string} value @returns {ParsedCitation | null} */
+const parseCitationLoose = (value) => /** @type {ParsedCitation | null} */ (parseCitation(value));
+
 const toPosix = (p) => p.replace(/\\/g, '/');
 
 /**
@@ -120,7 +128,7 @@ function auditModelCitations(projectDir) {
 
   for (const diag of diagnostics) {
     const rawVal = diag.site.value;
-    const parsed = parseCitation(rawVal);
+    const parsed = parseCitationLoose(rawVal);
     const reason = CODE_TO_REASON[diag.code] || 'missing_heading';
     const sourceFile = parsed ? parsed.filePath : rawVal;
 
@@ -139,7 +147,7 @@ function auditModelCitations(projectDir) {
       headingSlug = rawVal.split('#')[1].trim();
     }
 
-    let suggestions = diag.suggestions || [];
+    let suggestions = /** @type {any} */ (diag).suggestions || [];
     if (suggestions.length === 0 && headingSlug && reason === 'missing_heading') {
       const res = resolver(parsed ? parsed.filePath : rawVal);
       if (res && res.exists && res.headings) {
@@ -299,7 +307,7 @@ function buildImpactReport(audit) {
 async function writeImpactReport(projectDir, audit) {
   const content = buildImpactReport(audit);
   const result = await writeOnce(projectDir, { dir: 'artifacts', key: 'Impact_Audit_report', ext: 'md' }, content);
-  return { reportPath: toPosix(path.join(projectDir, result.path)), content, status: result.status };
+  return { reportPath: toPosix(path.join(projectDir, result.path)), content, status: /** @type {'written' | 'deduplicated'} */ (result.status) };
 }
 
 /** Canonical (unsuffixed) name of a family: `<dir>/<key>.<ext>`. */
@@ -391,7 +399,7 @@ function detectSourceFamilyEvolution(projectDir) {
   const sites = collectCitationSites(snapshot, projection);
 
   for (const site of sites) {
-    const parsed = parseCitation(site.value);
+    const parsed = parseCitationLoose(site.value);
     if (!parsed) continue;
 
     const citedPath = toPosix(parsed.filePath);

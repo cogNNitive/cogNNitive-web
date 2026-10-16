@@ -774,7 +774,7 @@ function ensureTableSeparators(text) {
  * Extracts PDF text positionally via pdf.js (bundled with pdf-parse), so table
  * columns survive as Markdown rows. Falls back to pdf-parse's flat text.
  * @param {Buffer} buffer
- * @returns {Promise<string>}
+ * @returns {Promise<{ text: string, info: any }>}
  */
 async function extractPdfWithLayout(buffer) {
   const pdfjs = require('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js');

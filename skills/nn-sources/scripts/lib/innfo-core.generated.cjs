@@ -4,6 +4,7 @@
  * Regenerate: node scripts/build-trannsform-core-mirror.mjs
  * Drift-guarded by scripts/verify.js (build-trannsform-core-mirror --check).
  */
+// @ts-nocheck
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;

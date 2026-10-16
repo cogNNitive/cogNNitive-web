@@ -36,7 +36,7 @@
  * Importing this module has no side effect: the CLI runs only as the entry point.
  */
 
-import { readdir, readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises'
+import { readdir, readFile, writeFile, mkdir, rename, rm, stat } from 'node:fs/promises'
 import { existsSync, realpathSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -138,6 +138,9 @@ function parseConsoleCdnRef(bundleText) {
   return m ? `innfo-console-v${m[1]}` : null
 }
 
+/** @type {readonly ['table', 'kpi', 'dashboard', 'blank']} */
+const VIEW_TEMPLATES = ['table', 'kpi', 'dashboard', 'blank']
+
 function parseArgs(argv) {
   const args = {
     root: null,
@@ -149,6 +152,10 @@ function parseArgs(argv) {
     domain: false,
     view: null,
     viewMissing: false,
+    newView: null,
+    template: 'table',
+    blueprint: null,
+    title: null,
     filter: null,
     model: null,
     open: true,
@@ -170,6 +177,18 @@ function parseArgs(argv) {
       args.domain = true
     } else if (a === '--no-open') {
       args.open = false
+    } else if (a === '--new-view') {
+      i++
+      if (i < slice.length && !slice[i].startsWith('--')) args.newView = slice[i]
+    } else if (a === '--template') {
+      i++
+      if (i < slice.length && !slice[i].startsWith('--')) args.template = slice[i]
+    } else if (a === '--blueprint') {
+      i++
+      if (i < slice.length && !slice[i].startsWith('--')) args.blueprint = slice[i]
+    } else if (a === '--title') {
+      i++
+      if (i < slice.length && !slice[i].startsWith('--')) args.title = slice[i]
     } else if (a === '--view') {
       i++
       if (i < slice.length && !slice[i].startsWith('--')) args.view = slice[i]
@@ -353,6 +372,20 @@ async function inspectDomainConsole(models, rootDir) {
   if (!existsSync(file)) return 'uncompiled'
   let embedded
   try {
+    const fileStat = await stat(file)
+    try {
+      const { bundlePath, shellPath } = await ensureAssets()
+      if (existsSync(bundlePath)) {
+        const bundleStat = await stat(bundlePath)
+        if (bundleStat.mtimeMs > fileStat.mtimeMs + 2000) return 'stale'
+      }
+      if (existsSync(shellPath)) {
+        const shellStat = await stat(shellPath)
+        if (shellStat.mtimeMs > fileStat.mtimeMs + 2000) return 'stale'
+      }
+    } catch {
+      /* ignore asset stat failures */
+    }
     embedded = extractModelMetaFromHtml(await readFile(file, 'utf-8'))?.models
   } catch {
     return 'stale'
@@ -465,10 +498,22 @@ function relativeToOutDir(abs, outDirAbs) {
   return rel.startsWith('.') ? rel : './' + rel
 }
 
-// True when abs is inside the domain root (false across drives on Windows).
-function isInsideRoot(abs, rootAbs) {
+function lexicallyInside(abs, rootAbs) {
   const rel = relative(rootAbs, abs)
   return rel !== '' && !isAbsolute(rel) && !/^\.\.([\/\\]|$)/.test(rel)
+}
+
+// True when abs is inside the domain root (false across drives on Windows). An
+// existing path is also checked by real path, so a link inside the root that points
+// outside it does not count as inside.
+function isInsideRoot(abs, rootAbs) {
+  if (!lexicallyInside(abs, rootAbs)) return false
+  if (!existsSync(abs)) return true
+  try {
+    return lexicallyInside(realpathSync(abs), realpathSync(rootAbs))
+  } catch {
+    return false
+  }
 }
 
 // A declared file value that is not on disk is only rebased when it reads like a
@@ -478,16 +523,27 @@ function looksLikePath(s) {
   return /\.[A-Za-z0-9]{1,8}$/.test(s) || /^\.{1,2}[\/\\]/.test(s)
 }
 
+// Element-relative values (e.g. a visual-catalog `image`) live under
+// <modelDir>/assets/<element-slug>/; those bases are tried before the root ones.
+function elementAssetBases(el, rootAbs) {
+  const slug = el && (el.slug || (el.fields && el.fields.slug))
+  if (!slug) return []
+  const dirs = el.modelDir != null ? [String(el.modelDir)] : []
+  dirs.push('kNNowledge', 'models')
+  return dirs.map((d) => resolve(rootAbs, d, 'assets', String(slug)))
+}
+
 // `declared` is true for a field declared image/video/audio/file: any local value is
 // rebased (to the domain root when no candidate exists on disk); undeclared values
 // keep the image-shaped, must-exist rule.
-function rebaseAssetValue(value, outDirAbs, rootAbs, declared = false) {
+function rebaseAssetValue(value, outDirAbs, rootAbs, declared = false, el = null) {
   if (typeof value !== 'string') return value
   const trimmed = value.trim()
   if (!trimmed || /^(data:|blob:|https?:|file:)/i.test(trimmed)) return value
   if (declared && (trimmed.startsWith('[[') || /^[a-z][a-z0-9+.-]*:/i.test(trimmed))) return value
   if (!declared && !IMAGE_ASSET_RE.test(trimmed)) return value
-  for (const base of [rootAbs, repoRoot, process.cwd()]) {
+  const elementBases = declared ? elementAssetBases(el, rootAbs) : []
+  for (const base of [...elementBases, rootAbs, repoRoot, process.cwd()]) {
     const abs = resolve(base, trimmed)
     if (existsSync(abs) && isInsideRoot(abs, rootAbs)) return relativeToOutDir(abs, outDirAbs)
   }
@@ -540,7 +596,7 @@ function rebaseModelAssets(model, outDirAbs, rootAbs, schema) {
           const declared = declaredFile.has(
             `${String(el.concept).toLowerCase()}\u0000${k.toLowerCase()}`,
           )
-          const next = rebaseAssetValue(v, outDirAbs, rootAbs, declared)
+          const next = rebaseAssetValue(v, outDirAbs, rootAbs, declared, el)
           if (next !== v) {
             fields[k] = next
             rawFields[k] = v
@@ -889,6 +945,7 @@ export async function writeConsole(opts = {}) {
             el.modelId = mId
             el.modelTitle = mTitle
             el.modelFile = fileName
+            el.modelDir = dirname(relPath)
             const cName = el.concept || 'Element'
             const eName = el.name || el.id || ''
             const cSlug = cName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -1162,13 +1219,167 @@ export async function writeConsole(opts = {}) {
   }
 }
 
+/**
+ * Scaffolds a new console view in a domain (`consoles/views/<slug>.js`)
+ * or a blueprint (`<pkg>/assets/console-view-<slug>.js`).
+ *
+ * @param {{
+ *   rootDir: string,
+ *   slug: string,
+ *   template?: 'table' | 'kpi' | 'dashboard' | 'blank',
+ *   blueprint?: string | null,
+ *   title?: string | null,
+ * }} options
+ */
+export async function scaffoldConsoleView({ rootDir, slug, template = 'table', blueprint = null, title = null }) {
+  if (!slug || typeof slug !== 'string') {
+    throw new ConsoleExportError('View slug is required (--new-view <slug>)', 'VIEWS_INVALID')
+  }
+  const cleanSlug = slug.trim().toLowerCase()
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(cleanSlug)) {
+    throw new ConsoleExportError(
+      `Invalid view slug "${cleanSlug}": must use lowercase alphanumeric characters and hyphens only.`,
+      'VIEWS_INVALID',
+    )
+  }
+  if (['explorer', 'matrices', 'review'].includes(cleanSlug)) {
+    throw new ConsoleExportError(`View slug "${cleanSlug}" is reserved.`, 'VIEWS_INVALID')
+  }
+
+  const viewTitle =
+    title ||
+    cleanSlug
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+
+  let targetDir
+  let filename
+  if (blueprint) {
+    const isRepo = existsSync(join(rootDir, 'iNNfo', 'specs', 'bluepriNNts'))
+    targetDir = isRepo
+      ? join(rootDir, 'iNNfo', 'specs', 'bluepriNNts', blueprint, 'assets')
+      : join(rootDir, 'specs', 'bluepriNNts', blueprint, 'assets')
+    filename = `console-view-${cleanSlug}.js`
+  } else {
+    targetDir = join(rootDir, 'consoles', 'views')
+    filename = `${cleanSlug}.js`
+  }
+
+  const targetPath = join(targetDir, filename)
+  if (existsSync(targetPath)) {
+    throw new ConsoleExportError(`View file already exists at ${targetPath}`, 'VIEW_ALREADY_EXISTS')
+  }
+
+  await mkdir(targetDir, { recursive: true })
+
+  let code
+  if (template === 'kpi' || template === 'dashboard') {
+    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} dashboard
+   Declarative dashboard view using InnfoUI.KpiGrid with canonical KU badges. */
+registerView({
+  title: '${viewTitle}',
+  icon: 'dashboard',
+  order: 25,
+  kind: 'editable',
+  mount: function (ctx) {
+    var doc = ctx.container.ownerDocument
+    var elements = (ctx.payload && ctx.payload.model && ctx.payload.model.elements) || []
+
+    var grid = InnfoUI.KpiGrid(
+      {
+        items: [
+          { label: 'Total', value: elements.length, hint: 'Elementos en este dominio' },
+        ],
+      },
+      { doc: doc },
+    )
+    ctx.container.appendChild(grid)
+  },
+})
+`
+  } else if (template === 'blank') {
+    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} view */
+registerView({
+  title: '${viewTitle}',
+  icon: 'layout',
+  order: 50,
+  kind: 'editable',
+  mount: function (ctx) {
+    var doc = ctx.container.ownerDocument
+    var wrap = doc.createElement('div')
+    wrap.className = 'empty-state'
+    wrap.textContent = '${viewTitle} view content.'
+    ctx.container.appendChild(wrap)
+  },
+})
+`
+  } else {
+    // Default: 'table'
+    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} table view
+   Declarative table view using InnfoUI.Table with canonical KU badges. */
+registerView({
+  title: '${viewTitle}',
+  icon: 'layers',
+  order: 20,
+  kind: 'editable',
+  mount: function (ctx) {
+    var doc = ctx.container.ownerDocument
+    var elements = (ctx.payload && ctx.payload.model && ctx.payload.model.elements) || []
+
+    var table = InnfoUI.Table(
+      {
+        columns: [
+          { key: 'name', label: 'Nombre', kind: 'element' },
+          // Agrega aquí los campos de tu modelo que quieras mostrar en la tabla:
+          // { key: 'mi_campo', label: 'Mi Campo', kind: 'field' },
+        ],
+        rows: elements,
+        emptyText: 'No hay elementos para mostrar en esta vista.',
+      },
+      {
+        doc: doc,
+        onEdit: function (elementId) {
+          ctx.modal.edit({ elementId: elementId })
+        },
+      },
+    )
+    ctx.container.appendChild(table)
+  },
+})
+`
+  }
+
+  await writeFile(targetPath, code, 'utf8')
+  return { targetPath, slug: cleanSlug, title: viewTitle, blueprint: Boolean(blueprint) }
+}
+
 async function main() {
   const args = parseArgs(process.argv)
   if (!args.root) {
     console.error(
-      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--filter <pattern>] [--no-open] [<ModelName>]',
+      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--new-view <slug>] [--filter <pattern>] [--no-open] [<ModelName>]',
     )
     process.exit(2)
+  }
+  const root = resolve(args.root)
+
+  if (args.newView) {
+    const template = VIEW_TEMPLATES.find((t) => t === args.template)
+    if (!template) {
+      console.error(`Error: unknown --template "${args.template}" (expected ${VIEW_TEMPLATES.join(' | ')}).`)
+      process.exit(2)
+    }
+    const created = await scaffoldConsoleView({
+      rootDir: root,
+      slug: args.newView,
+      template,
+      blueprint: args.blueprint,
+      title: args.title,
+    })
+    console.log(`Created console view "${created.title}" (${created.slug}):\n  ${created.targetPath}`)
+    console.log(`To compile the console with this view, run:\n  node scripts/export-console.mjs ${relative(process.cwd(), root) || '.'} --domain`)
+    return
   }
   if (args.viewMissing) {
     console.error('Error: --view needs a view id.')
@@ -1185,7 +1396,6 @@ async function main() {
     )
     process.exit(2)
   }
-  const root = resolve(args.root)
   await ensureAssets()
   const models = await loadModels(root)
 

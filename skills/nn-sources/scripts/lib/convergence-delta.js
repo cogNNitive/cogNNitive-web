@@ -250,7 +250,9 @@ function buildProposal(options) {
   const toRecords = recordsFromContent(toContent, toExt);
   const check = validateKey(fromRecords, key).ok ? validateKey(toRecords, key) : validateKey(fromRecords, key);
   if (!check.ok) {
-    const err = new Error(`Invalid convergence key "${key}" for family "${family}".`);
+    const err = /** @type {Error & { conflicts?: unknown }} */ (
+      new Error(`Invalid convergence key "${key}" for family "${family}".`)
+    );
     err.conflicts = check.conflicts;
     throw err;
   }

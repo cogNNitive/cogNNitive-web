@@ -16,16 +16,16 @@ title: "Consulting Pod Staffing & Certification Matrix"
 ## NN Element: Marcus Vance
 title:: Principal Cloud Architect
 clearance:: Level 3 Banking Security
-sources:: [master_rate_card_2026.md#principal-architect-standard-rate, fintech_case_study.md#zero-downtime-multi-cloud-migration]
+sources:: [sources/nn/master_rate_card_2026.md@### Principal Architect Standard Rate, sources/nn/fintech_case_study.md@### Zero-Downtime Multi-Cloud Migration]
 
 ## NN Element: Elena Rostova
 title:: Lead Security Specialist
 clearance:: CISSP / ISO-27001 Lead Auditor
-sources:: [master_rate_card_2026.md#senior-cloud-security-specialist-rate, enterprise_rfp_fintech.md#compliance-security-baseline]
+sources:: [sources/nn/master_rate_card_2026.md@### Senior Cloud Security Specialist Rate, sources/nn/enterprise_rfp_fintech.md@### Compliance %26 Security Baseline]
 
 # NN Concept: AssignedRole
 
 ## NN Element: Pod Engagement Lead
 allocation:: 50%
 rate:: $220/hr
-sources:: [master_rate_card_2026.md#principal-architect-standard-rate]
+sources:: [sources/nn/master_rate_card_2026.md@### Principal Architect Standard Rate]

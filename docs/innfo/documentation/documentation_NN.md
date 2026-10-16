@@ -195,6 +195,14 @@ order:: 60
 parent:: [[Guides]]
 description:: Layered workspace safety model: user-led snapshots, out-of-tree migration backups, and the optional Git collaboration layer.
 
+## NN Page: Editing Models by Hand
+title:: Editing Models by Hand
+source:: manual-editing-risks.md
+route:: manual-editing-risks
+order:: 70
+parent:: [[Guides]]
+description:: Why hand-editing model files is unsupported for routine changes, what silently breaks (duplicate slugs, hash drift, dangling references), and the changeset-based alternatives.
+
 ## NN Page: Templates Overview
 title:: Overview
 source:: templates.md

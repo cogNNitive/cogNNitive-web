@@ -15,28 +15,28 @@ title: "SaaS Startup Business Model & Validation"
 
 ## NN Element: Living Knowledge with Zero Lock-in
 description:: Mathematical traceability and Git-governed knowledge base that keeps docs living.
-sources:: [customer_discovery.md#defensibility-value-proposition]
+sources:: [sources/nn/customer_discovery.md@### Defensibility %26 Value Proposition]
 
 ## NN Element: Multi-Tool Consolidation
 description:: Unifies fragmented Notion, Confluence, and Doc files into a single verifiable source of truth.
-sources:: [customer_discovery.md#multi-tool-fragmentation-friction]
+sources:: [sources/nn/customer_discovery.md@### Multi-Tool Fragmentation Friction]
 
 # NN Concept: CustomerSegment
 
 ## NN Element: Mid-Market Engineering Squads
 target_role:: CTO / Lead Architect
 pain:: Stale architecture specs and cross-squad documentation drift.
-sources:: [customer_discovery.md#prospect-feedback-engineering-cto]
+sources:: [sources/nn/customer_discovery.md@## Prospect Feedback: Engineering CTO]
 
 # NN Concept: RevenueStream
 
 ## NN Element: Team Subscription Tier
 price:: $49/seat/month
 approval_threshold:: Sub-$500/month departmental self-serve approval limit.
-sources:: [customer_discovery.md#enterprise-budget-cap-pricing]
+sources:: [sources/nn/customer_discovery.md@### Enterprise Budget Cap %26 Pricing]
 
 # NN Concept: KeyResource
 
 ## NN Element: Local-First Markdown Engine
 format:: Plain Markdown in Git with deterministic AI agent tooling.
-sources:: [customer_discovery.md#developer-workflow-requirements]
+sources:: [sources/nn/customer_discovery.md@### Developer Workflow Requirements]

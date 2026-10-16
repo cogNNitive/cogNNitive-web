@@ -21,6 +21,7 @@
 - [Tags & Open Taxonomy](tags-and-taxonomy): Cross-cutting categorization, centralized workspace taxonomies, and multi-dimensional view filtering.
 - [Collaboration with Git](collaboration-git): Gated workspace-to-Git review workflow with private defaults, branch-per-change PR gates, version map, and offline backup.
 - [Workspace Backup Strategies](workspace-backups): Layered workspace safety model: user-led snapshots, out-of-tree migration backups, and the optional Git collaboration layer.
+- [Editing Models by Hand](manual-editing-risks): Why hand-editing model files is unsupported for routine changes, what silently breaks (duplicate slugs, hash drift, dangling references), and the changeset-based alternatives.
 - [Overview](templates): Overview of the iNNfo Level 2 bluepriNNts (apps) that model knowledge for a domain.
 - [Video App](template-video): The video production bluepriNNt and its generated scenes and artifacts.
 - [Offline Consoles](offline-consoles): How generated consoles boot offline from file:// via static script tags and a vendored UMD bundle.

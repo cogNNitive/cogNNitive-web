@@ -22,6 +22,7 @@
   - [Tags & Open Taxonomy](tags-and-taxonomy)
   - [Collaboration with Git](collaboration-git)
   - [Workspace Backup Strategies](workspace-backups)
+  - [Editing Models by Hand](manual-editing-risks)
 
 - **Templates**
   - [Overview](templates)

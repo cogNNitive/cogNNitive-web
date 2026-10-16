@@ -34,8 +34,7 @@
         "blueprint_version",
         "get_blueprint",
         "blueprints:",
-        "blueprints-v*",
-        "SHIPPED_TEMPLATE_VERSIONS"
+        "blueprints-v*"
       ]
     },
     "kNNowledge": {

@@ -15,22 +15,22 @@ title: "Episode 42 Video Production & B-Roll Pipeline"
 
 ## NN Element: Step 1 - Teleprompter Studio Record
 responsible:: Host / Presenter
-sources:: [audience_feedback_episode_41.md#citation-transparency-demand]
+sources:: [sources/nn/audience_feedback_episode_41.md@### Citation Transparency Demand]
 
 ## NN Element: Step 2 - B-Roll Macro Filming
 responsible:: Camera Operator
-sources:: [competitor_benchmark_transcript.md#0-to-80-fast-charge-real-world-test]
+sources:: [sources/nn/competitor_benchmark_transcript.md@### 0-to-80%25 Fast Charge Real-World Test]
 
 ## NN Element: Step 3 - Motion Graphics Rendering
 responsible:: Motion Designer
-sources:: [battery_thermal_research_2026.md#active-cooling-degradation-metrics]
+sources:: [sources/nn/battery_thermal_research_2026.md@### Active Cooling Degradation Metrics]
 
 # NN Concept: AssetDeliverable
 
 ## NN Element: Teleprompter Master File
 format:: Markdown Teleprompter
-sources:: [audience_feedback_episode_41.md#800v-glycol-thermal-demand]
+sources:: [sources/nn/audience_feedback_episode_41.md@### 800V Glycol Thermal Demand]
 
 ## NN Element: Auto YouTube Description
 format:: Markdown / Text
-sources:: [battery_thermal_research_2026.md#empirical-fast-charging-benchmarks]
+sources:: [sources/nn/battery_thermal_research_2026.md@## Empirical Fast-Charging Benchmarks]

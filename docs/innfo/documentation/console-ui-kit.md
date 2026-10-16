@@ -29,6 +29,7 @@ InnfoUI = {
   ConceptPill(data, opts?), ElementPill(data, opts?), MarkerChip(data), StatusBadge(data),
   KuBadge(data, opts?), KuActions(data, opts?),
   CitationIcon(data, opts?), FieldRow(data, opts?), ElementCard(data, opts?),
+  Table(data, opts?), KpiGrid(data, opts?), defineCustomElements(doc?),
 }
 ```
 
@@ -46,6 +47,27 @@ Every component root carries `data-innfo-component="<kebab-name>"`. Invalid
 | `CitationIcon({ variant, field }, { onOpen? })` | `button` | `data-origin`, `data-field`; click stops propagation |
 | `FieldRow({ name, value, citations?, ref? }, { onRef?, onCite? })` | `ku-badge` (kind `field`) | `data-ku-kind="field"`, `data-field`; one `CitationIcon` per distinct origin in canonical order |
 | `ElementCard({ id, name, conceptId?, description?, fields, markers? }, opts)` | `article` | `data-element-id`, `data-concept-id`, `data-open` |
+| `Table({ columns, rows, emptyText? }, { doc?, onEdit?, onSelect? })` | `div.innfo-element-table-wrap` | `data-innfo-component="table"`; auto-renders `KuBadge` & `ElementPill` |
+| `KpiGrid({ items: [{ label, value, concept?, hint? }] }, { doc? })` | `div.innfo-kpi-grid` | `data-innfo-component="kpi-grid"`; responsive grid of KPI cards |
+
+### Declarative Web Components
+
+When running in browser contexts, `ui-kit.js` registers `<innfo-ku>` custom elements:
+- `<innfo-ku kind="field" name="horas" value="120"></innfo-ku>`
+- `<innfo-ku kind="cell" value="84"></innfo-ku>`
+- `<innfo-ku kind="element" id="el-1" label="Bootcamp"></innfo-ku>`
+
+### View Scaffolding CLI
+
+Use `export-console.mjs` to scaffold new views for domains or blueprints:
+```bash
+# Domain custom view (<workspaceRoot>/consoles/views/<slug>.js)
+node scripts/export-console.mjs <workspaceRoot> --new-view mi-resumen --template table --title "Mi Resumen"
+
+# Blueprint view (<blueprintDir>/assets/console-view-<slug>.js)
+node scripts/export-console.mjs <workspaceRoot> --new-view timeline --blueprint metrics --template kpi
+```
+Templates: `table` (default), `kpi`, `blank`.
 
 ### Knowledge-unit badges (`KuBadge`)
 

@@ -363,7 +363,7 @@ async function importExternalFiles(candidates, projectDir, options = {}) {
       sourcePath: item.fullPath,
       importedAs: path.basename(result.path),
       fullImportPath: path.join(projectDir, result.path),
-      status: result.status,
+      status: /** @type {'imported' | 'deduplicated'} */ (result.status),
       cognitivized: result.cognitivize.status === 'written' || result.cognitivize.status === 'refreshed' || result.cognitivize.status === 'unchanged',
     });
   }

@@ -1,26 +1,50 @@
 {
-  "generatedAt": "2026-10-15T20:04:59.663Z",
-  "head": "9c7090153fb53e0d1132447c825a860b95881c6d",
+  "generatedAt": "2026-10-16T11:18:11.634Z",
+  "head": "f82ad8f8a44abc7b1937e7e5071d37091d3fd9e3",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.22.1",
-      "pinnedTagDate": "2026-10-15T10:33:09+02:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "skills-v2.23.0",
+      "pinnedTagDate": "2026-10-15T22:01:10+02:00",
+      "commitsSincePin": 2,
       "filesTouched": [
-        "skills/nn-skills-lifecycle/SKILL.md",
-        "skills/nn-upgrade/SKILL.md",
-        "skills/nn-upgrade/scripts/lib/innfo-core.generated.cjs",
-        "skills/nn-upgrade/scripts/migrate-domain.js",
-        "skills/nn-upgrade/scripts/migrate-domain.test.js"
+        "skills/nn-preflight/scripts/domain-probe.js",
+        "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
+        "skills/nn-preflight/scripts/lib/version-status.generated.cjs",
+        "skills/nn-preflight/scripts/preflight-check.js",
+        "skills/nn-preflight/scripts/upgrade-check.js",
+        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
+        "skills/nn-sources/scripts/lib/convergence-delta.js",
+        "skills/nn-sources/scripts/lib/external-scanner.js",
+        "skills/nn-sources/scripts/lib/impact-checker.js",
+        "skills/nn-sources/scripts/lib/innfo-core.generated.cjs",
+        "skills/nn-sources/scripts/lib/provenance-knowledge.js",
+        "skills/nn-sources/scripts/lib/scanner-converters.js",
+        "skills/nn-sources/scripts/lib/watch-digest-store.js",
+        "skills/nn-sources/tests/core-mirror.test.js",
+        "skills/nn-sources/tests/impact-checker.test.js",
+        "skills/nn-sources/tests/lineage-check.test.js",
+        "skills/nn-sources/tests/provenance-knowledge.test.js",
+        "skills/nn-upgrade/scripts/lib/innfo-core.generated.cjs"
       ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 23,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/assets/people/winston_zeddemore.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/winston_zeddemore.png",
+        "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
@@ -29,15 +53,37 @@
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/winston_zeddemore.png",
+        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/winston_zeddemore.png"
       ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 10,
+      "commitsSincePin": 23,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/assets/people/winston_zeddemore.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/business/samples/assets/people/winston_zeddemore.png",
+        "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
@@ -46,30 +92,35 @@
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/innovation/samples/assets/people/winston_zeddemore.png",
+        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/egon_spengler.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/janine_melnitz.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/peter_venkman.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/raymond_stantz.png",
+        "iNNfo/specs/bluepriNNts/organization/samples/assets/people/winston_zeddemore.png"
       ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.23.0",
-      "pinnedTagDate": "2026-10-15T10:33:09+02:00",
+      "pinnedTag": "innfo-mcp-v0.24.0",
+      "pinnedTagDate": "2026-10-15T22:01:10+02:00",
       "commitsSincePin": 3,
       "filesTouched": [
-        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/package.json",
-        "iNNfo/packages/innfo-mcp/src/server.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/spec.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/spec.ts",
-        "iNNfo/packages/innfo-mcp/test/apply-change.test.ts",
-        "iNNfo/packages/innfo-mcp/test/direct-operations.test.ts"
+        "iNNfo/packages/innfo-mcp/test/console-export-roundtrip.test.ts",
+        "iNNfo/packages/innfo-mcp/vitest.config.ts"
       ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.15.1",
-      "pinnedTagDate": "2026-10-15T19:13:16+02:00",
-      "commitsSincePin": 2,
+      "pinnedTag": "innfo-console-v0.16.0",
+      "pinnedTagDate": "2026-10-15T22:01:10+02:00",
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
@@ -78,7 +129,8 @@
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "scripts/export-console.mjs"
       ]
     }
   }

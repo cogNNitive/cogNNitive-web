@@ -4,6 +4,7 @@
  * Regenerate: node scripts/build-preflight-primitives.mjs
  * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).
  */
+// @ts-nocheck
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
