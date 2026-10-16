@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-16T17:40:23.569Z",
-  "head": "b72a1c30e9336718c174745d60a9be9156f0c2b4",
+  "generatedAt": "2026-10-16T18:00:10.807Z",
+  "head": "f910ab91215e2e26614327087dea0005c6f299cb",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -38,7 +38,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 40,
+      "commitsSincePin": 41,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/assets/people/egon_spengler.png",
         "iNNfo/specs/bluepriNNts/assets/people/janine_melnitz.png",
@@ -77,7 +77,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 40,
+      "commitsSincePin": 41,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/assets/people/egon_spengler.png",
         "iNNfo/specs/bluepriNNts/assets/people/janine_melnitz.png",
@@ -116,9 +116,10 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.24.0",
       "pinnedTagDate": "2026-10-15T22:01:10+02:00",
-      "commitsSincePin": 8,
+      "commitsSincePin": 9,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/src/server.spec.ts",
         "iNNfo/packages/innfo-mcp/src/server.ts",
         "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
@@ -134,13 +135,14 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.17.0",
       "pinnedTagDate": "2026-10-16T13:14:16+02:00",
-      "commitsSincePin": 17,
+      "commitsSincePin": 18,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "scripts/console-views.mjs"
