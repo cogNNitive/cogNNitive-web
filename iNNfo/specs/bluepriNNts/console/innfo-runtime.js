@@ -242,6 +242,33 @@
     return { textTokens: textTokens, operators: operators }
   }
 
+  function getElementFieldValue(el, key) {
+    if (!el || !key) return null
+    var lkey = String(key).toLowerCase()
+    var v = null
+    if (el.fields && typeof el.fields === 'object') {
+      if (el.fields[key] !== undefined) {
+        v = el.fields[key]
+      } else {
+        var fKeys = Object.keys(el.fields)
+        for (var i = 0; i < fKeys.length; i++) {
+          if (fKeys[i].toLowerCase() === lkey) {
+            v = el.fields[fKeys[i]]
+            break
+          }
+        }
+      }
+    }
+    if ((v === null || v === '' || v === undefined) && Array.isArray(el.relations)) {
+      var relMatches = el.relations
+        .filter(function (r) { return r && String(r.field || '').toLowerCase() === lkey })
+        .map(function (r) { return r.targetLabel || r.target || '' })
+        .filter(Boolean)
+      if (relMatches.length) v = relMatches.join(', ')
+    }
+    return v
+  }
+
   function filterElements(elements, query, context) {
     var list = Array.isArray(elements) ? elements : []
     var parsed = parseFilterQuery(query)
@@ -328,39 +355,83 @@
 
       for (var j = 0; j < otherOps.length; j++) {
         var op = otherOps[j]
-        if (op.key === '!concept') {
-          var elConceptNot = String(el.concept || '').toLowerCase()
-          if (elConceptNot.indexOf(op.val) !== -1) return false
-        } else if (op.key === '!model' || op.key === '!file') {
-          var modelHaystackNot = (
+        var opVal = String(op.val == null ? '' : op.val).trim()
+        if (!opVal) continue
+        var isNeg = op.key.charAt(0) === '!' || op.key.charAt(0) === '-'
+        var key = isNeg ? op.key.slice(1) : op.key
+
+        if (key === 'concept') {
+          var elConcept = String(el.concept || '').toLowerCase()
+          var mConcept = elConcept.indexOf(opVal) !== -1
+          if (isNeg ? mConcept : !mConcept) return false
+        } else if (key === 'model' || key === 'file') {
+          var modelHaystack = (
             String(el.modelId || '') +
             ' ' +
             String(el.modelFile || '') +
             ' ' +
             String(el.modelTitle || '')
           ).toLowerCase()
-          if (modelHaystackNot.indexOf(op.val) !== -1) return false
-        } else if (op.key === 'is') {
-          if (op.val === 'draft') {
-            if (!draftsById[el.id]) return false
-          } else if (op.val === 'reviewed') {
-            if (!reviewedMap[el.id]) return false
-          } else if (op.val === 'changed') {
-            if (!reviewedMap[el.id] || reviewedMap[el.id] === el.hash) return false
+          var mModel = modelHaystack.indexOf(opVal) !== -1
+          if (isNeg ? mModel : !mModel) return false
+        } else if (key === 'tag') {
+          var elTags = Array.isArray(el.tags)
+            ? el.tags.map(function (t) { return String(t).toLowerCase() })
+            : []
+          var mTag = elTags.indexOf(opVal) !== -1
+          if (isNeg ? mTag : !mTag) return false
+        } else if (key === 'element' || key === 'id' || key === 'name') {
+          var elHaystack = (String(el.id || '') + ' ' + String(el.name || '')).toLowerCase()
+          var mEl = elHaystack.indexOf(opVal) !== -1
+          if (isNeg ? mEl : !mEl) return false
+        } else if (key === 'is') {
+          var isMatch = false
+          if (opVal === 'draft') isMatch = !!draftsById[el.id]
+          else if (opVal === 'reviewed') isMatch = !!reviewedMap[el.id]
+          else if (opVal === 'changed') isMatch = !!(reviewedMap[el.id] && reviewedMap[el.id] !== el.hash)
+          if (isNeg ? isMatch : !isMatch) return false
+        } else if (key === 'has') {
+          var hasVal = getElementFieldValue(el, opVal)
+          var exists = hasVal !== null && hasVal !== undefined && hasVal !== ''
+          if (isNeg ? exists : !exists) return false
+        } else if (key === 'field') {
+          var eqIdx = opVal.indexOf('=')
+          if (eqIdx === -1) eqIdx = opVal.indexOf(':')
+          if (eqIdx > 0) {
+            var fName = opVal.slice(0, eqIdx).trim()
+            var fVal = opVal.slice(eqIdx + 1).trim()
+            var actual = getElementFieldValue(el, fName)
+            if (actual === null || actual === undefined) {
+              if (!isNeg) return false
+            } else {
+              var actualStr = String(actual).toLowerCase()
+              var mField = actualStr.indexOf(fVal) !== -1
+              if (isNeg ? mField : !mField) return false
+            }
           }
-        } else if (op.key === '!is') {
-          if (op.val === 'draft') {
-            if (draftsById[el.id]) return false
-          } else if (op.val === 'reviewed') {
-            if (reviewedMap[el.id]) return false
-          }
-        } else if (op.key === 'has') {
-          if (!el.fields || el.fields[op.val] === undefined || el.fields[op.val] === null || el.fields[op.val] === '') {
-            return false
-          }
-        } else if (op.key === '!has') {
-          if (el.fields && el.fields[op.val] !== undefined && el.fields[op.val] !== null && el.fields[op.val] !== '') {
-            return false
+        } else {
+          var actual = getElementFieldValue(el, key)
+          if (actual === null || actual === undefined) {
+            if (!isNeg) return false
+          } else {
+            var actualStr = String(actual).toLowerCase()
+            var matched = false
+            if (opVal.length > 1 && (opVal.charAt(0) === '>' || opVal.charAt(0) === '<')) {
+              var isGte = opVal.slice(0, 2) === '>='
+              var isLte = opVal.slice(0, 2) === '<='
+              var prefixLen = (isGte || isLte) ? 2 : 1
+              var numTarget = parseFloat(opVal.slice(prefixLen))
+              var numActual = parseFloat(actualStr)
+              if (!isNaN(numTarget) && !isNaN(numActual)) {
+                if (isGte) matched = numActual >= numTarget
+                else if (isLte) matched = numActual <= numTarget
+                else if (opVal.charAt(0) === '>') matched = numActual > numTarget
+                else if (opVal.charAt(0) === '<') matched = numActual < numTarget
+              }
+            } else {
+              matched = actualStr.indexOf(opVal) !== -1
+            }
+            if (isNeg ? matched : !matched) return false
           }
         }
       }
@@ -1410,10 +1481,9 @@
     var name = concept.name || 'Concept'
     var gMeta = conceptMetaOf(schema && schema.concepts, name)
     var head = el('div', 'innfo-guide-head')
-    var badge = el('span', 'innfo-card-concept-badge badge badge-outline badge-sm')
+    var badge = el('span', 'innfo-card-concept-badge badge badge-sm')
     if (gMeta && gMeta.hexColor) {
       badge.style.setProperty('--card-concept-color', gMeta.hexColor)
-      badge.style.borderColor = gMeta.hexColor
       badge.style.color = gMeta.hexColor
     }
     if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
@@ -1824,9 +1894,8 @@
 
       var head = card.querySelector('.innfo-card-head, header')
       if (head && element.concept && !head.querySelector('[data-ku-kind="concept"]')) {
-        var cBadge = el('span', 'innfo-card-concept-badge badge badge-outline badge-xs text-xs font-semibold')
+        var cBadge = el('span', 'innfo-card-concept-badge badge badge-xs text-xs font-semibold')
         cBadge.setAttribute('data-concept-slot', String(cMeta.slot))
-        cBadge.style.borderColor = hexColor
         cBadge.style.color = hexColor
         cBadge.style.backgroundColor = 'color-mix(in srgb, ' + hexColor + ' 10%, #ffffff)'
         if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
@@ -2077,7 +2146,13 @@
       th.setAttribute('scope', 'col')
       th.setAttribute('role', 'button')
       th.setAttribute('tabindex', '0')
-      th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
+      if (col.key === 'name' || col.key === 'concept' || col.key === 'tags' || !UI || typeof UI.KuBadge !== 'function') {
+        th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
+      } else {
+        var fieldBadge = UI.KuBadge({ kind: 'field', label: col.label }, { doc: doc })
+        fieldBadge.classList.add('innfo-element-table-th-label')
+        th.appendChild(fieldBadge)
+      }
       if (sortState && sortState.key === col.key) {
         th.classList.add('sorted')
         th.setAttribute('aria-sort', sortState.dir === 'desc' ? 'descending' : 'ascending')
@@ -2438,7 +2513,7 @@
 
   var warnedUnresolvedOperands = {}
   function warnUnresolvedOperand(token, formula) {
-    var key = formula + ' ' + token
+    var key = formula + '::' + token
     if (warnedUnresolvedOperands[key]) return
     warnedUnresolvedOperands[key] = true
     if (typeof console !== 'undefined' && console.warn) {

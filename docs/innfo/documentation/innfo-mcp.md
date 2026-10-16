@@ -11,7 +11,7 @@
 ## Tools
 
 <!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
-**21** tools
+**22** tools
 
 | Tool | Description |
 |------|-------------|
@@ -36,6 +36,7 @@
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
 | `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
+| `prune_changesets` | Scan all knowledge documents in the domain for cited changesets and safely remove unreferenced changesets from changes/, then refresh index.md and the domain manifest. |
 <!-- /generated:mcp-tools -->
 
 ### `apply_change` operations

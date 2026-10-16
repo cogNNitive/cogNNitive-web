@@ -81,17 +81,22 @@ At the beginning of every interactive session in this workspace, AI coding agent
  * @param {string} projectName Project folder name.
  * @param {object} [options={}] Optional configuration options.
  * @param {boolean} [options.overwriteAgents=false] Whether to overwrite existing AGENTS.md.
+ * @param {boolean} [options.inPlace=false] Whether to initialize project in destParentDir directly.
  * @returns {{ projectDir: string, importDir: string, copiedCount: number, provModelPath: string, agentsMdPath: string }}
  */
 function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
-  const projectDir = path.join(destParentDir, projectName);
+  const inPlace = Boolean(options.inPlace);
+  const projectDir = inPlace
+    ? path.resolve(destParentDir || process.cwd())
+    : path.join(destParentDir, projectName);
+  const effectiveProjectName = projectName || path.basename(projectDir);
   const importDir = path.join(projectDir, 'sources', 'import');
   const overwriteAgents = Boolean(options.overwriteAgents);
 
   fs.mkdirSync(projectDir, { recursive: true });
   for (const d of WORKSPACE_DIRS) fs.mkdirSync(path.join(projectDir, d), { recursive: true });
 
-  if (projectName.toLowerCase() === 'trannsform') {
+  if (effectiveProjectName.toLowerCase() === 'trannsform') {
     fs.writeFileSync(path.join(projectDir, 'README.md'), TRANNSFORM_README, 'utf8');
   }
 
@@ -99,7 +104,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
 
   const agentsMdPath = path.join(projectDir, 'AGENTS.md');
   if (!fs.existsSync(agentsMdPath) || overwriteAgents) {
-    fs.writeFileSync(agentsMdPath, generateAgentsMd(projectName), 'utf8');
+    fs.writeFileSync(agentsMdPath, generateAgentsMd(effectiveProjectName), 'utf8');
   }
 
   const domainnPath = path.join(projectDir, 'domaiNN_NN.md');
@@ -111,7 +116,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `  name: "domaiNN"\n` +
       `  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\n` +
       `knowledge_version: "V_0-1-0"\n` +
-      `title: "${projectName} Workspace"\n` +
+      `title: "${effectiveProjectName} Workspace"\n` +
       `---\n\n` +
       `> [!NOTE]\n` +
       `> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.\n\n` +
@@ -122,10 +127,10 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `* [[Procedures]]\n` +
       `* [[Artifacts]]\n\n` +
       `# NN Workspace\n\n` +
-      `## NN Workspace: ${projectName} Workspace\n` +
+      `## NN Workspace: ${effectiveProjectName} Workspace\n` +
       `knowledge_dir:: kNNowledge/\n` +
       `sources_dir:: sources/\n` +
-      `Operational workspace for ${projectName}.\n`;
+      `Operational workspace for ${effectiveProjectName}.\n`;
     fs.writeFileSync(domainnPath, domainnContent, 'utf8');
   }
 
@@ -143,7 +148,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
     }
   }
 
-  const prov = provenance.buildProvenanceKnowledge(projectDir, { projectName });
+  const prov = provenance.buildProvenanceKnowledge(projectDir, { projectName: effectiveProjectName });
 
   return { projectDir, importDir, copiedCount, provModelPath: prov.modelPath, agentsMdPath };
 }

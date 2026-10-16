@@ -1,19 +1,22 @@
 {
-  "generatedAt": "2026-10-16T11:18:11.634Z",
-  "head": "f82ad8f8a44abc7b1937e7e5071d37091d3fd9e3",
+  "generatedAt": "2026-10-16T17:40:23.569Z",
+  "head": "b72a1c30e9336718c174745d60a9be9156f0c2b4",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.23.0",
       "pinnedTagDate": "2026-10-15T22:01:10+02:00",
-      "commitsSincePin": 2,
+      "commitsSincePin": 4,
       "filesTouched": [
+        "skills/nn-innfo/SKILL.md",
         "skills/nn-preflight/scripts/domain-probe.js",
         "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
         "skills/nn-preflight/scripts/lib/version-status.generated.cjs",
         "skills/nn-preflight/scripts/preflight-check.js",
         "skills/nn-preflight/scripts/upgrade-check.js",
         "skills/nn-skills-lifecycle/scripts/skills-manager.js",
+        "skills/nn-sources/scripts/index.js",
+        "skills/nn-sources/scripts/lib/bootstrap.js",
         "skills/nn-sources/scripts/lib/convergence-delta.js",
         "skills/nn-sources/scripts/lib/external-scanner.js",
         "skills/nn-sources/scripts/lib/impact-checker.js",
@@ -21,18 +24,21 @@
         "skills/nn-sources/scripts/lib/provenance-knowledge.js",
         "skills/nn-sources/scripts/lib/scanner-converters.js",
         "skills/nn-sources/scripts/lib/watch-digest-store.js",
+        "skills/nn-sources/test/run.js",
+        "skills/nn-sources/test/unit/test-bootstrap-inplace.js",
         "skills/nn-sources/tests/core-mirror.test.js",
         "skills/nn-sources/tests/impact-checker.test.js",
         "skills/nn-sources/tests/lineage-check.test.js",
         "skills/nn-sources/tests/provenance-knowledge.test.js",
-        "skills/nn-upgrade/scripts/lib/innfo-core.generated.cjs"
+        "skills/nn-upgrade/scripts/lib/innfo-core.generated.cjs",
+        "skills/nn/SKILL.md"
       ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 23,
+      "commitsSincePin": 40,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/assets/people/egon_spengler.png",
         "iNNfo/specs/bluepriNNts/assets/people/janine_melnitz.png",
@@ -71,7 +77,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.34.0",
       "pinnedTagDate": "2026-10-15T09:05:44+02:00",
-      "commitsSincePin": 23,
+      "commitsSincePin": 40,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/assets/people/egon_spengler.png",
         "iNNfo/specs/bluepriNNts/assets/people/janine_melnitz.png",
@@ -110,27 +116,34 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.24.0",
       "pinnedTagDate": "2026-10-15T22:01:10+02:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 8,
       "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/server.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/propose-changeset.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/prune-changesets.ts",
         "iNNfo/packages/innfo-mcp/test/console-export-roundtrip.test.ts",
+        "iNNfo/packages/innfo-mcp/test/e2e-greenfield-smoke.test.ts",
+        "iNNfo/packages/innfo-mcp/test/greenfield-improvements.test.ts",
         "iNNfo/packages/innfo-mcp/vitest.config.ts"
       ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.16.0",
-      "pinnedTagDate": "2026-10-15T22:01:10+02:00",
-      "commitsSincePin": 11,
+      "pinnedTag": "innfo-console-v0.17.0",
+      "pinnedTagDate": "2026-10-16T13:14:16+02:00",
+      "commitsSincePin": 17,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "scripts/export-console.mjs"
+        "scripts/console-views.mjs"
       ]
     }
   }

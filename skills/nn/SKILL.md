@@ -130,3 +130,8 @@ and does not execute steps from its own text. Do not restate the protocol here.
    - When generating visual artifacts (HTML consoles, dashboards, sites), prompt for the visual preset using `nn-design-presets`.
 6. **Session Language Coherence**:
    - Maintain the user's active conversation language across all prompts, responses, and menus throughout the session.
+7. **Business User Abstraction Guard**:
+   - Suppress internal engine plumbing (e.g. AST roles `catalog` vs `knowledge`, raw SHA-256 hashes, LF/CRLF warnings, or non-blocking lineage warnings) when interacting with business or domain users.
+   - Communicate progress in terms of domain value: number of concepts modeled, key elements extracted, matrices crossed, and links to the generated HTML console.
+8. **End-to-End Optimistic Execution**:
+   - For standard greenfield setups (e.g. "I want to use cogNNitive in this folder and model from document X"), proceed through the standard setup pipeline optimistically (bootstrap -> import -> scaffold -> model -> render console) without interrupting the user with single-letter menus at every sub-step.

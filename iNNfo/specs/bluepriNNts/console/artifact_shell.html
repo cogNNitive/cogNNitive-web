@@ -7,7 +7,7 @@
          appends the hashes to script-src when it inlines the bundle and views. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; frame-src 'self' blob: data: about:; connect-src 'self'; object-src 'none'; base-uri 'none'"
+      content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'sha256-GuDXBamO36MOzmeBoWS6W05qoSRkYpFFnI00+hFI67s=' 'sha256-zC9fVwLc2q24v4oZn4Fteg3v+oeo5flE7QnTeXYGe/0=' 'sha256-4BakFr9B7k7vTNs7WaAC3TizluFw/OU+mWJ5aKCYGuo=' 'sha256-soSXjK2mmrYGjTKfxADrnupPRdn7nsM/OFZxV6is0ww='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; frame-src 'self' blob: data: about:; connect-src 'self'; object-src 'none'; base-uri 'none'"
     />
     <title>iNNfo Console</title>
     <!--
@@ -95,6 +95,8 @@
     .innfo-scope-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
       .innfo-mode { font-size: 0.8rem; color: var(--muted); }
       .innfo-mode strong { color: var(--text); }
+      .innfo-navbar-actions { display: flex; align-items: center; margin-left: auto; order: 9999; flex-shrink: 0; }
+      [data-innfo-feedback-root] { display: contents !important; }
 
       #innfo-layout { display: flex; flex: 1 1 auto; align-items: stretch; min-height: 0; }
 
@@ -329,6 +331,7 @@
         <h1 class="innfo-domain-title" id="innfo-domain-title">iNNfo Console</h1>
       </div>
       <div class="innfo-mode" id="innfo-navbar-extra"></div>
+      <div class="innfo-navbar-actions" id="innfo-navbar-actions"></div>
     </header>
 
     <div class="innfo-action-bar innfo-action-bar--top">

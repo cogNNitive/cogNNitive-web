@@ -441,8 +441,8 @@ export function allowInlineScripts(html) {
     const typeMatch = SCRIPT_TYPE_ATTR.exec(attrs)
     const type = typeMatch ? (typeMatch[1] ?? typeMatch[2] ?? typeMatch[3]).trim().toLowerCase() : ''
     if (!EXECUTABLE_SCRIPT_TYPES.has(type)) continue
-    // The HTML parser normalizes CRLF and CR to LF before the script text is hashed.
-    const text = m[2].replace(/\r\n?/g, '\n')
+    // The HTML parser normalizes CRLF and CR to LF, and maps null bytes (\0) to \uFFFD before the script text is hashed.
+    const text = m[2].replace(/\r\n?/g, '\n').replace(/\0/g, '\uFFFD')
     hashes.add(`'sha256-${createHash('sha256').update(text, 'utf8').digest('base64')}'`)
   }
   if (hashes.size === 0) return html

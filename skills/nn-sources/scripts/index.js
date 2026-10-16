@@ -145,8 +145,22 @@ async function handleGc(projectDir, argv) {
 
 async function handleCliMode(argv) {
   let projectDir = '';
+  const isInPlace = Boolean(argv['in-place'] || argv.inPlace || argv.inplace);
 
-  if (argv.dest && argv.name) {
+  if (isInPlace) {
+    projectDir = path.resolve(argv.dest || argv.src || process.cwd());
+    const name = argv.name || path.basename(projectDir);
+    const srcDir = (argv.src && path.resolve(argv.src) !== projectDir) ? argv.src : null;
+    console.log(`Bootstrapping project "${name}" in-place at "${projectDir}"...`);
+    const bootstrap = bootstrapProject(srcDir, projectDir, name, { inPlace: true });
+    console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);
+    console.log(`Initialized cogNNitive lineage record at: ${bootstrap.provModelPath}`);
+    if (bootstrap.agentsMdPath) {
+      console.log(`Scaffolded workspace AGENTS.md entrypoint at: ${bootstrap.agentsMdPath}`);
+    }
+    console.log(`\n📌 Place your files to import into: ${bootstrap.importDir}\n`);
+    config.saveConfig({ lastProjectPath: projectDir });
+  } else if (argv.dest && argv.name) {
     projectDir = path.join(argv.dest, argv.name);
   } else if (argv.src && !argv.dest) {
     projectDir = argv.src;
@@ -154,7 +168,7 @@ async function handleCliMode(argv) {
     projectDir = getActiveProjectDir();
   }
 
-  if (argv.src && argv.dest && argv.name) {
+  if (!isInPlace && argv.src && argv.dest && argv.name) {
     console.log(`Bootstrapping project "${argv.name}" at "${projectDir}"...`);
     const bootstrap = bootstrapProject(argv.src, argv.dest, argv.name);
     console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);

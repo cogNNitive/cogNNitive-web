@@ -6301,7 +6301,8 @@ button.btn-primary:hover:not(:disabled) {
   gap: 5px;
   padding: 2px 9px;
   border-radius: 999px;
-  border: 1px solid var(--card-concept-color, var(--innfo-accent, #171717));
+  border: none !important;
+  border-width: 0 !important;
   background: color-mix(in srgb, var(--card-concept-color, var(--innfo-accent, #171717)) 10%, #ffffff);
   color: var(--card-concept-color, var(--innfo-accent, #171717));
   font-size: 0.73rem;
@@ -6477,7 +6478,7 @@ button.btn-primary:hover:not(:disabled) {
 }
 [data-innfo-component="element-card"] .innfo-card-incoming {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
 }
@@ -7182,10 +7183,10 @@ button.cite-icon,
 }
 .innfo-card-path {
   color: var(--innfo-muted, #64748b) !important;
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 4px !important;
-  padding: 2px 6px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 2px 0 !important;
   font-family: var(--innfo-mono), ui-monospace, monospace !important;
   font-size: 11px !important;
   display: inline-flex !important;
@@ -7270,14 +7271,70 @@ button.cite-icon,
 }
 
 /* 6. Card Head */
-[data-innfo-component="element-card"] .innfo-card-badges {
+/* Sheets view: ElementCard header badges scaled 1.8x */
+[data-innfo-component="element-card"] .innfo-card-badges,
+.innfo-card .innfo-card-badges {
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  zoom: 2 !important;
+  zoom: 1 !important;
 }
-[data-innfo-component="element-card"] .innfo-card-badges .innfo-ku-badge {
+[data-innfo-component="element-card"] .innfo-card-badges .innfo-ku-badge,
+.innfo-card .innfo-card-badges .innfo-ku-badge {
   display: inline-flex !important;
+}
+
+/* Cards view: ElementMini badges at natural 1x scale without overflowing */
+.innfo-mini,
+[data-innfo-component="element-mini"] {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: var(--surface, #ffffff) !important;
+  border: 1px solid var(--border, #e2e8f0) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-innfo-component="element-mini"] .innfo-card-badges,
+.innfo-mini .innfo-card-badges {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  zoom: 1 !important;
+}
+
+[data-innfo-component="element-mini"] .innfo-card-badges .innfo-ku-badge,
+.innfo-mini .innfo-card-badges .innfo-ku-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+}
+
+.innfo-mini .innfo-card-badges .innfo-ku-badge[data-ku-kind="concept"] {
+  flex-shrink: 0 !important;
+}
+
+.innfo-mini .innfo-card-badges .innfo-ku-badge[data-ku-kind="element"] {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.innfo-mini .innfo-card-badges .innfo-ku-badge .innfo-ku-label {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.innfo-mini .innfo-mini-info {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
 }
 
 
@@ -7285,6 +7342,9 @@ button.cite-icon,
 .innfo-concept-pill,
 .innfo-rail-concept-pill,
 [data-innfo-component="concept-pill"],
+.innfo-card-concept-badge,
+.innfo-ku-badge[data-ku-kind="concept"],
+[data-innfo-component="ku-badge"][data-ku-kind="concept"],
 .innfo-element-pill,
 [data-innfo-component="element-pill"],
 .innfo-card-status-pill,
@@ -7516,7 +7576,7 @@ input[type="text"], input[type="search"], textarea, select {
 }
 .innfo-element-minicards-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
   gap: 16px !important;
   padding: 24px !important;
 }
@@ -7526,17 +7586,31 @@ input[type="text"], input[type="search"], textarea, select {
   display: none !important;
 }
 
+[data-innfo-feedback-root] {
+  display: contents !important;
+}
+
+.innfo-navbar .innfo-brand {
+  margin-right: 0 !important;
+}
+
 #innfo-navbar-extra {
-  font-size: 0 !important;
+  font-size: 0.82rem !important;
+  color: var(--muted) !important;
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
+  margin-left: 16px !important;
+  margin-right: auto !important;
+}
+#innfo-navbar-actions {
+  display: flex !important;
+  align-items: center !important;
   margin-left: auto !important;
+  order: 9999 !important;
+  flex-shrink: 0 !important;
 }
-#innfo-navbar-extra > * {
-  font-size: 0.82rem !important;
-}
-
+.innfo-review-toggle,
 .innfo-navbar .innfo-review-toggle {
   background: var(--surface, #ffffff) !important;
   color: var(--text, #1e293b) !important;
@@ -7553,6 +7627,62 @@ input[type="text"], input[type="search"], textarea, select {
   background: var(--surface-2, #f1f5f9) !important;
   border-color: #cbd5e1 !important;
 }
+
+/* 14. Element pill badges: non-bold, no border, light gray background */
+.innfo-element-pill,
+[data-innfo-component="element-pill"],
+.innfo-ku-badge[data-ku-kind="element"],
+[data-innfo-component="ku-badge"][data-ku-kind="element"],
+.innfo-strip-rel {
+  font-weight: 500 !important;
+  border: none !important;
+  border-width: 0 !important;
+  background: var(--surface-2, #f1f5f9) !important;
+  color: var(--text, #1e293b) !important;
+  box-shadow: none !important;
+}
+.innfo-element-pill:hover,
+[data-innfo-component="element-pill"]:hover,
+.innfo-ku-badge[data-ku-kind="element"]:hover,
+[data-innfo-component="ku-badge"][data-ku-kind="element"]:hover,
+.innfo-strip-rel:hover {
+  background: #e2e8f0 !important;
+}
+
+/* 15. Rail concept pill: spacing between icon and name */
+.innfo-rail-concept-pill,
+#innfo-rail .menu li > a[data-concept] .innfo-rail-concept-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+/* 16. Eliminate action bar wrapper container & add top padding to view tabs */
+.innfo-action-bar,
+.innfo-action-bar--top {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  padding: 14px 20px 0 !important;
+  min-height: auto !important;
+}
+#innfo-view-tabs {
+  display: inline-flex !important;
+  width: fit-content !important;
+  margin-bottom: 8px !important;
+}
+
+/* 17. Field badge styling in element table header */
+.innfo-element-table-th .innfo-ku-badge[data-ku-kind="field"] {
+  font-size: 0.76rem !important;
+  padding: 2px 8px !important;
+  background: var(--surface-2, #f1f5f9) !important;
+  border: 1px solid var(--border, #e2e8f0) !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+  color: var(--muted, #475569) !important;
+}
 .innfo-navbar .innfo-review-toggle[aria-pressed="true"],
 .innfo-navbar .innfo-review-toggle.active {
   background: #0f172a !important;
@@ -7560,13 +7690,16 @@ input[type="text"], input[type="search"], textarea, select {
   border-color: #0f172a !important;
 }
 
-/* 14. Relaciones salientes y entrantes limpias */
+/* 14. Relaciones salientes y entrantes limpias alineadas a la izquierda */
 .innfo-card-outgoing,
-.innfo-card-incoming {
+.innfo-card-incoming,
+[data-innfo-component="element-card"] .innfo-card-incoming {
   margin-top: 10px !important;
   display: flex !important;
   flex-direction: column !important;
+  align-items: flex-start !important;
   gap: 4px !important;
+  text-align: left !important;
 }
 .innfo-card-outgoing-label,
 .innfo-card-incoming-label {
@@ -7575,6 +7708,17 @@ input[type="text"], input[type="search"], textarea, select {
   color: var(--innfo-muted, #64748b) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
+  text-align: left !important;
+  align-self: flex-start !important;
+}
+.innfo-card-incoming .innfo-rel-list {
+  align-self: flex-start !important;
+}
+
+/* 18. Eliminar bandas inferiores en sheets comprimidos */
+.innfo-card-collapsed-strip,
+[data-innfo-component="element-card"] .innfo-card-collapsed-strip {
+  display: none !important;
 }
 
 /* Export modal: generated changeset and prompt are secondary, collapsed by default. */

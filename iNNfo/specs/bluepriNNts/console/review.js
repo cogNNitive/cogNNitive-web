@@ -1530,10 +1530,11 @@
 
     function buildToggle() {
       if (!canReview(meta, elements, needs)) return null
+      var actions = doc.getElementById('innfo-navbar-actions')
       var extra = doc.getElementById('innfo-navbar-extra')
       var banner =
         doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      var host = extra || banner
+      var host = actions || extra || banner
       if (!host) return null
       var existing = doc.querySelector('[data-innfo="review-toggle"]')
       if (existing) return existing
