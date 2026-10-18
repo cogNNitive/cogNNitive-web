@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-5-0"
+blueprint_version: "V_0-5-1"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 ---
@@ -132,7 +132,7 @@ description:: Disambiguated slug assigned upon insertion.
 
 ## Philosophy
 
-Every graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are cryptographically sealed with a proposal hash, verified before application, and recorded permanently to form an immutable chain of provenance.
+Every graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, verified before application, and recorded permanently to form an immutable chain of provenance. The seal is produced at intake when a proposer omits it (see Specification).
 
 ## Objectives
 
@@ -159,6 +159,8 @@ Each change is declared as an element of concept Change:
 - Execution annotations (status, resolution, resolved_slug, replaced_sources) record the outcome of applying the change.
 
 Changeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.
+
+A changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value is rejected as tampered (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.
 
 ## Template
 

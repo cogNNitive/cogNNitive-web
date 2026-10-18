@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-18T06:36:33.583Z",
-  "head": "5002c9fa811f3fb2664b5fd0e47462f050c17a0b",
+  "generatedAt": "2026-10-18T11:35:06.434Z",
+  "head": "33010cca13385276ecb81b0db02bef88cb6e394c",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.24.0",
       "pinnedTagDate": "2026-10-16T19:56:28+02:00",
-      "commitsSincePin": 11,
+      "commitsSincePin": 12,
       "filesTouched": [
         "skills/nn-console/SKILL.md",
         "skills/nn-innfo/SKILL.md",
@@ -28,7 +28,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.35.0",
       "pinnedTagDate": "2026-10-16T19:56:28+02:00",
-      "commitsSincePin": 36,
+      "commitsSincePin": 50,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/procedures/prioritize_experiments_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/procedures/run_coherence_audit_procedures_NN.md",
@@ -109,7 +109,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.35.0",
       "pinnedTagDate": "2026-10-16T19:56:28+02:00",
-      "commitsSincePin": 36,
+      "commitsSincePin": 50,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/analysis/procedures/prioritize_experiments_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/analysis/procedures/run_coherence_audit_procedures_NN.md",
@@ -190,7 +190,7 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.25.0",
       "pinnedTagDate": "2026-10-16T19:56:28+02:00",
-      "commitsSincePin": 15,
+      "commitsSincePin": 17,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
         "iNNfo/packages/innfo-mcp/package.json",
@@ -214,25 +214,23 @@
         "iNNfo/packages/innfo-mcp/test/prune-changesets.test.ts",
         "iNNfo/packages/innfo-mcp/test/rejected-changesets.test.ts",
         "iNNfo/packages/innfo-mcp/test/validate-markers-removed-mcp.test.ts",
-        "iNNfo/packages/innfo-mcp/tsup.dist.config.ts"
+        "iNNfo/packages/innfo-mcp/tsup.dist.config.ts",
+        "iNNfo/packages/innfo-mcp/vitest.config.ts"
       ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.18.0",
-      "pinnedTagDate": "2026-10-16T19:56:28+02:00",
-      "commitsSincePin": 36,
+      "pinnedTag": "innfo-console-v0.19.0",
+      "pinnedTagDate": "2026-10-18T08:32:18+02:00",
+      "commitsSincePin": 13,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/innfo-address.generated.js",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "scripts/export-console.mjs"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     }
   }

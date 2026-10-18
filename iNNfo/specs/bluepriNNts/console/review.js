@@ -452,6 +452,25 @@
     return allHashed
   }
 
+  /**
+   * (C) The predicate is SPLIT by what each condition protects:
+   *  - `canPropose`: a draft can be RECORDED and later applied (the model is
+   *    addressable and every element carries a `base_hash` precondition). It does
+   *    NOT depend on the export surface: drafts are local, and applying them lives
+   *    outside the console (the MCP owns `propose_changeset` / `apply_change`).
+   *  - `canReview` (= canExport): additionally needs the `feedback-export` surface
+   *    that produces the `_changes_NN.md` artifact.
+   */
+  function canPropose(meta, elements) {
+    var m = isObject(meta) ? meta : {}
+    var list = Array.isArray(elements) ? elements : []
+    if (typeof m.modelId !== 'string' || !m.modelId.trim()) return false
+    if (list.length === 0) return false
+    return list.every(function (el) {
+      return el && typeof el.hash === 'string' && BASE_HASH_PATTERN.test(el.hash)
+    })
+  }
+
   // The payload groups resolved citations by field (`{ field: [citation] }`), but
   // UI.EditModal renders a flat list of `{ origin, source, quote }`. Flatten and
   // map here so the modal's "Citations" section renders.
@@ -498,7 +517,10 @@
       if (el && el.id) elementsById[el.id] = el
     })
 
-    var enabled = false
+    // No review mode: an edit only ever creates a draft, so there is nothing to
+    // "arm". Decoration and the edit affordance are always live; the changeset bar
+    // is driven by the DRAFTS (see syncChangesetBar), not by a mode switch.
+    var enabled = true
     var toggleEl = null
     var structureEl = null
     var openPopover = null
@@ -767,6 +789,19 @@
           citations: target.citations,
           history: target.history,
           isComment: !!target.isComment,
+          structure: !!target.structure,
+          reviewer: typeof options.getReviewer === 'function' ? String(options.getReviewer() || '') : '',
+          warning: (function () {
+            var targetEl = elementsById[anchorData.elementId]
+            var hasHash = !!(targetEl && typeof targetEl.hash === 'string' && BASE_HASH_PATTERN.test(targetEl.hash))
+            if (targetEl && !hasHash) {
+              return (
+                'This element has no hash, so a proposal against it cannot be applied: ' +
+                'the apply engine cannot verify the base_hash precondition.'
+              )
+            }
+            return ''
+          })(),
           commentOnly: !!target.commentOnly,
           valueCommentOnly: !!target.valueCommentOnly,
           connections: connectionsFor(elementsById[anchorData.elementId]),
@@ -832,6 +867,7 @@
       closePopover()
       lastAnchor = focused && focused !== doc.body ? focused : null
       if (anchorData.comment) target = Object.assign({}, target, { isComment: true })
+      if (anchorData.structure) target = Object.assign({}, target, { structure: true })
       openModalFor(anchorData, target)
       return true
     }
@@ -1091,7 +1127,15 @@
       if (!visible.length) return
 
       var current = doc.activeElement
-      var idx = visible.indexOf(current)
+      // Focus may sit on a control INSIDE a card (a tag anchor, a pencil, the "+"),
+      // so resolve the card by containment, not by identity.
+      var idx = -1
+      for (var vi = 0; vi < visible.length; vi++) {
+        if (visible[vi] === current || (current && visible[vi].contains && visible[vi].contains(current))) {
+          idx = vi
+          break
+        }
+      }
       if (event.key === 'j') {
         if (typeof event.preventDefault === 'function') event.preventDefault()
         var next = visible[idx < 0 ? 0 : Math.min(idx + 1, visible.length - 1)]
@@ -1284,57 +1328,44 @@
     }
 
     // Pending-change pip: a count badge on the unit it targets, visible in both
-    // review modes (it reflects stored drafts). Clicking opens the modal.
+    // review modes (it reflects stored drafts). Counts are keyed by canonical
+    // address; the DOM update itself is owned by the kit (InnfoUI.setUnitChanges).
     function decorateChangePips(root) {
       if (!store || typeof store.drafts !== 'function') return
+      if (!UI || typeof UI.setUnitChanges !== 'function') return
       var host = root || doc
       if (!host.querySelectorAll) return
       var drafts = store.drafts() || []
-      var counts = {}
+      var raw = {}
       drafts.forEach(function (d) {
         if (!d) return
         var fieldPart = d.field && d.field !== '__name' ? '&' + String(d.field) : ''
         var key = d.address || (d.element_id ? '@' + String(d.element_id) + fieldPart : '')
         if (!key) return
-        counts[key] = (counts[key] || 0) + 1
+        raw[key] = (raw[key] || 0) + 1
       })
-      function countFor(address) {
-        if (counts[address] != null) return counts[address]
-        var found = 0
-        Object.keys(counts).forEach(function (key) {
-          if (address && address.slice(-key.length) === key) found += counts[key]
-        })
-        return found
-      }
-      function applyPip(badge, n, address) {
-        if (!badge) return
-        var wrap = badge.parentNode || badge
-        var existing = wrap.querySelector
-          ? wrap.querySelector('[data-innfo-component="ku-change-pip"]')
-          : null
-        if (n > 0) {
-          badge.setAttribute('data-ku-changes', String(n))
-          if (!existing) {
-            var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(n))
-            pip.setAttribute('data-innfo-component', 'ku-change-pip')
-            pip.setAttribute('data-ku-address', String(address || ''))
-            pip.setAttribute('type', 'button')
-            pip.setAttribute('aria-label', n + ' pending change' + (n === 1 ? '' : 's') + ' on ' + address)
-            pip.addEventListener('click', function (ev) {
-              if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-              if (typeof openInfo === 'function') openInfo(anchorFromDescriptor({ address: address }))
-            })
-            wrap.appendChild(pip)
-          } else {
-            existing.textContent = String(n)
+      // Resolve legacy keys (drafts without `address`) onto each badge's
+      // canonical address through a suffix match, then let the kit paint.
+      var counts = {}
+      Array.prototype.forEach.call(
+        host.querySelectorAll('[data-innfo-component="ku-unit"][data-ku-address]'),
+        function (badge) {
+          var address = badge.getAttribute('data-ku-address') || ''
+          if (raw[address] != null) {
+            counts[address] = raw[address]
+            return
           }
-        } else {
-          badge.removeAttribute('data-ku-changes')
-          if (existing && existing.parentNode) existing.parentNode.removeChild(existing)
-        }
-      }
-      Array.prototype.forEach.call(host.querySelectorAll('[data-ku-address]'), function (badge) {
-        applyPip(badge, countFor(badge.getAttribute('data-ku-address') || ''), badge.getAttribute('data-ku-address'))
+          var found = 0
+          Object.keys(raw).forEach(function (key) {
+            if (address && address.slice(-key.length) === key) found += raw[key]
+          })
+          if (found) counts[address] = found
+        },
+      )
+      UI.setUnitChanges(host, counts, {
+        onChanges: function (address) {
+          if (typeof openInfo === 'function') openInfo(anchorFromDescriptor({ address: address }))
+        },
       })
     }
 
@@ -1430,10 +1461,28 @@
       return b
     }
 
+    // The changeset bar is STATE-driven: it appears when there is at least one draft
+    // and hides when there is none. There is no mode to enter or leave.
+    function syncChangesetBar() {
+      var dock = doc.getElementById('innfo-review-dock')
+      if (!dock) return
+      var count = store && typeof store.drafts === 'function' ? store.drafts().length : 0
+      if (count > 0) {
+        dock.style.removeProperty('display')
+        dock.setAttribute('data-visible', 'true')
+      } else {
+        dock.style.setProperty('display', 'none', 'important')
+        dock.removeAttribute('data-visible')
+      }
+    }
+
     function applyDecorations() {
       decorateBadges()
       decorateChangePips()
-      if (!enabled) return
+      syncChangesetBar()
+      // (C): the edit anchors need a PROPOSABLE domain (modelId + every element has a
+      // base_hash). The export surface is gated separately, by canReview.
+      if (!enabled || !canPropose(meta, elements)) return
       decorate(doc)
       decorateRailProgress()
       if (html() && html().getAttribute('data-innfo-filter') === 'changed') applyChangedFilter()
@@ -1477,15 +1526,19 @@
       // The runtime rebuilds the banner innerHTML on every refresh, so the
       // toggle and changed filter are re-inserted here (idempotent).
       if (canReview(meta, elements, needs)) {
-        toggleEl = buildToggle()
+        // No review mode and no Edit-structure switch: there is no mode to enter, so
+        // these controls are installed unconditionally. Adding the same listener
+        // twice is a no-op, so a re-render stays idempotent.
         buildNewElementButton()
-        if (enabled && toggleEl) buildChangedFilter()
+        buildChangedFilter()
+        if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       }
-      if (toggleEl) toggleEl.setAttribute('aria-pressed', enabled ? 'true' : 'false')
       decorateCounter()
+      // Badge decoration has always been unconditional; the CAPABILITY gate applies
+      // to the edit anchors (`decorate`), which is where a proposal starts.
       decorateBadges()
       decorateChangePips(root || doc)
-      if (enabled) {
+      if (enabled && canPropose(meta, elements)) {
         decorate(root || doc)
         decorateRailProgress()
         if (html() && html().getAttribute('data-innfo-filter') === 'changed') applyChangedFilter()
@@ -1540,7 +1593,7 @@
       enabled = true
       if (html()) html().setAttribute('data-innfo-review', 'on')
       if (toggleEl) toggleEl.setAttribute('aria-pressed', 'true')
-      structureEl = buildStructureSwitch()
+      /* no Edit-structure switch: the edit modal warns instead */
       if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       buildChangedFilter()
       applyDecorations()
@@ -1648,13 +1701,13 @@
       if (!enabled) return false
       if (descriptor.editability === 'structure') {
         if (!html() || html().getAttribute('data-innfo-structure') !== 'on') return false
-        return openEdit(Object.assign({}, anchorData, { comment: true }))
+        return openEdit(Object.assign({}, anchorData, { comment: true, structure: true }))
       }
       if (descriptor.editability === 'none') return false
       return openEdit(anchorData)
     }
 
-    toggleEl = buildToggle()
+    /* no review-mode toggle: there is no mode */
     if (doc.addEventListener) doc.addEventListener('innfo:rendered', onRendered)
     // One initial pass: covers the render that preceded the controller's creation.
     // With the model viewer retired (SCS) no second render follows boot, so the

@@ -63,10 +63,10 @@
     },
     "changes": {
       "name": "changes",
-      "adopted": "V_0-5-0",
+      "adopted": "V_0-5-1",
       "versions": [
         {
-          "blueprint_version": "V_0-5-0",
+          "blueprint_version": "V_0-5-1",
           "spec_version": "V_0-5-0",
           "title": "Changeset Blueprint",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"

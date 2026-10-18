@@ -978,6 +978,12 @@
     input.type = 'text'
     input.setAttribute('aria-label', 'Reviewer name')
     var current = getReviewerName()
+      // Nudge: the default is a SHARED pseudonym, so several reviewers would collapse
+      // into one author. Flag it until it is set.
+      if (current === DEFAULT_REVIEWER_NAME) {
+        chip.setAttribute('data-default', 'true')
+        chip.setAttribute('title', 'Set your identifier so your proposals are attributed to you')
+      }
     input.value = current === DEFAULT_REVIEWER_NAME ? '' : current
     input.placeholder = DEFAULT_REVIEWER_NAME
     input.addEventListener('change', function () {
@@ -5223,9 +5229,26 @@
               { doc: doc },
             )
           : el('span', 'innfo-ref-tag', tagText)
-      if (tag) body.appendChild(tag)
+      var card = el('article', 'innfo-cite-card')
+      if (card) card.setAttribute('data-origin', variantKey)
+      var head = el('div', 'innfo-cite-head')
+      if (head && tag) head.appendChild(tag)
+      var prov = el('span', 'innfo-cite-prov', labelText)
+      if (prov && typeof InnfoIcons !== 'undefined' && InnfoIcons && typeof InnfoIcons.getSvg === 'function') {
+        prov.insertAdjacentHTML('afterbegin', InnfoIcons.getSvg('cite-' + variantKey, { size: 13 }))
+      }
+      if (head && prov) head.appendChild(prov)
+      var status = el(
+        'span',
+        'innfo-cite-status' + (entry.error ? ' is-bad' : ''),
+        entry.error ? 'unresolved' : 'resolved',
+      )
+      if (head && status) head.appendChild(status)
+      if (card && head) card.appendChild(head)
+      // The card goes into the list first; its children are appended below.
+      if (card) body.appendChild(card)
 
-      var dl = el('dl', 'innfo-ref-fields')
+      var dl = el('dl', 'innfo-ref-fields innfo-cite-meta')
       function addField(label, value) {
         if (!dl) return
         if (value === null || value === undefined || value === '') return
@@ -5234,28 +5257,28 @@
         if (dt) dl.appendChild(dt)
         if (dd) dl.appendChild(dd)
       }
-      addField('Path', entry.path)
       addField('Anchor', entry.anchor)
       addField('Version', entry.version)
       addField('SHA-256', entry.sha256)
       addField('Error', entry.error)
-      if (dl && dl.children.length) body.appendChild(dl)
+      addField('Path', entry.path)
+      if (dl && dl.children.length && card) card.appendChild(dl)
 
-      if (entry.href && !entry.error) {
+      if (entry.href && !entry.error && card) {
         var openHref = UI && typeof UI.safeHref === 'function' ? UI.safeHref(entry.href) : safeSourceHref(entry.href)
         var openLink = openHref ? el('a', 'innfo-cite-open', 'Open original') : null
         if (openLink) {
           openLink.setAttribute('href', openHref)
           openLink.setAttribute('target', '_blank')
           openLink.setAttribute('rel', 'noopener noreferrer')
-          body.appendChild(openLink)
+          card.appendChild(openLink)
         }
       }
 
-      if (entry.excerpt) {
+      if (entry.excerpt && card) {
         var excerptText = entry.excerpt + (entry.truncated ? ' … (truncated)' : '')
         var pre = el('pre', 'innfo-cite-excerpt', excerptText)
-        if (pre) body.appendChild(pre)
+        if (pre) card.appendChild(pre)
       }
     })
 
@@ -5496,7 +5519,7 @@
 
     var dockStatus = active.createElement('div')
     dockStatus.className = 'innfo-dock-status'
-    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Review Mode</span>'
+    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Changeset</span>'
     dock.appendChild(dockStatus)
 
     var sep1 = active.createElement('span')
@@ -5543,15 +5566,9 @@
     var exitBtn = active.createElement('button')
     exitBtn.type = 'button'
     exitBtn.className = 'innfo-dock-exit'
-    exitBtn.textContent = 'Exit'
-    exitBtn.setAttribute('aria-label', 'Exit review mode')
+    exitBtn.textContent = 'Hide'
+    exitBtn.setAttribute('aria-label', 'Hide the changeset bar')
     exitBtn.addEventListener('click', function () {
-      var toggle = active.querySelector('[data-innfo="review-toggle"]')
-      if (toggle && (toggle.getAttribute('aria-pressed') === 'true' || toggle.classList.contains('active'))) {
-        toggle.click()
-      } else if (state && state.controller && typeof state.controller.disable === 'function') {
-        state.controller.disable()
-      }
       dock.style.setProperty('display', 'none', 'important')
       dock.removeAttribute('data-visible')
       dock.classList.remove('active', 'innfo-dock-blinking')
@@ -6448,7 +6465,13 @@
     // C3: the controller builds the toggle into the (now rendered) banner and
     // listens for innfo:rendered; created after the first paint so the banner
     // rebuild does not drop the toggle.
-    if (hasNeed(config, 'feedback-export')) {
+    // (C): create the controller whenever the domain is proposable OR exportable; it
+    // gates its own decorations. Without this, a proposable domain without an export
+    // surface would get no edit anchors at all.
+    if (
+      hasNeed(config, 'feedback-export') ||
+      !!(meta && typeof meta.modelId === 'string' && meta.modelId.trim() && elements.length > 0)
+    ) {
       state.controller = Review.createReviewController(active, {
         meta: meta,
         elements: elements,
@@ -6456,8 +6479,45 @@
         needs: config.needs,
         store: state.store,
         schema: schema,
+        getReviewer: getReviewerName,
         onDraftsChanged: refreshDraftCounts,
       })
+    }
+
+    // DQ6 facts for the info panel: only what the runtime actually knows. Never
+    // fabricated: if a count is not available, the row is omitted.
+    function unitFacts(desc) {
+      var facts = {}
+      if (!desc) return facts
+      var list = Array.isArray(elements) ? elements : []
+      var kind = desc.kind
+      if (kind === 'concept' || kind === 'section') {
+        var used = list.filter(function (el) {
+          return el && String(el.concept || '') === String(desc.label || '')
+        }).length
+        if (used) facts['Used by'] = used + (used === 1 ? ' element' : ' elements')
+      } else if (kind === 'field') {
+        var withField = list.filter(function (el) {
+          return el && el.fields && el.fields[desc.label] != null
+        }).length
+        if (withField) facts['Used by'] = withField + (withField === 1 ? ' element' : ' elements')
+      } else if (kind === 'document') {
+        facts['Elements'] = String(list.length)
+      } else if (kind === 'domain') {
+        var models = meta && Array.isArray(meta.models) ? meta.models.length : 0
+        if (models > 1) facts['Models'] = String(models)
+      } else if (kind === 'matrix') {
+        var defs = schema && Array.isArray(schema.matrices) ? schema.matrices : []
+        var mdef = defs.filter(function (m) {
+          return m && String(m.name || '') === String(desc.label || '')
+        })[0]
+        if (mdef) {
+          var rows = Array.isArray(mdef.rows) ? mdef.rows.length : 0
+          var cols = Array.isArray(mdef.cols) ? mdef.cols.length : 0
+          if (rows && cols) facts['Cells'] = String(rows * cols)
+        }
+      }
+      return facts
     }
 
     // Ku actions are delegated once per document, never per component.
@@ -6465,13 +6525,20 @@
       state.kuDelegation = UI.createKu({
         doc: active,
         onAction: function (action, descriptor) {
+          if (action === 'reveal') {
+            revealUnit(descriptor)
+            return
+          }
           var ctrl = state.controller
           if (ctrl && typeof ctrl.handleKuAction === 'function') {
             ctrl.handleKuAction(action === 'changes' ? 'info' : action, descriptor)
             return
           }
           if (action === 'info' || action === 'changes') {
-            var panel = UI.KuInfoPanel(descriptor)
+            var withFacts = Object.assign({}, descriptor, {
+              facts: Object.assign({}, (descriptor && descriptor.facts) || {}, unitFacts(descriptor)),
+            })
+            var panel = UI.KuInfoPanel(withFacts)
             if (active.body) active.body.appendChild(panel)
             if (panel && typeof panel.showModal === 'function') panel.showModal()
           }
@@ -6517,6 +6584,34 @@
           openExportModal(active, state)
         })
       }
+    }
+
+    // "Reveal in context": take the reviewer TO the unit instead of re-rendering it
+    // in a modal. Reuses the deep-link mechanism (`#el-<id>`) wholesale, so the
+    // filter broadening and the scroll come for free. No second renderer.
+    function revealUnit(desc) {
+      var address = String((desc && desc.address) || '')
+      var kind = (desc && desc.kind) || ''
+      var elId = kind === 'element' ? address : kind === 'value' ? address.split('&')[0] : ''
+      var known = false
+      for (var i = 0; i < elements.length; i++) {
+        if (elements[i] && String(elements[i].id || '') === elId) {
+          known = true
+          break
+        }
+      }
+      if (elId && known && active.location) {
+        var hash = '#el-' + encodeURIComponent(elId)
+        if (String(active.location.hash || '') === hash) onHash()
+        else active.location.hash = hash
+        return true
+      }
+      // No card of its own (document, section, matrix, source): narrow the view to
+      // its canonical address instead.
+      var box = active.getElementById('innfo-search')
+      if (box) box.value = address
+      refresh(address)
+      return false
     }
 
     function onHash() {

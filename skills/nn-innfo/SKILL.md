@@ -1,7 +1,7 @@
 ---
 name: nn-innfo
-version: "V_0-5-12"
-last_updated: 2026-10-13
+version: "V_0-5-13"
+last_updated: 2026-10-18
 metadata:
   source_type: "original"
   mcp: "innfo-mcp"
@@ -455,7 +455,7 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
 
 Every skill-driven `.md` write (new model, app, specialization, or full-file rewrite) MUST go through a single canonical path so files validate cleanly:
 
-1. **Preferred:** create the model with `innfo-mcp_init_knowledge` (create-only; it records an applied `add_model` changeset and infers the frontmatter version from the resolved parent, never hand-written), or propose it with `innfo-mcp_propose_changeset` (`add_model`). Then change content through a changeset: `innfo-mcp_propose_changeset` for reviewed changes, `innfo-mcp_apply_change` for direct operations. There is no other file-write path.
+1. **Preferred:** create the model with `innfo-mcp_init_knowledge` (create-only; it records an applied `add_model` changeset and infers the frontmatter version from the resolved parent, never hand-written), or propose it with `innfo-mcp_propose_changeset` (`add_model`). Then change content through a changeset: `innfo-mcp_propose_changeset` for reviewed changes, `innfo-mcp_apply_change` for direct operations. There is no other file-write path (a changeset file may also be authored by hand for large batches — see *Authoring a changeset by hand*).
 2. **Encoding:** UTF-8 without BOM, LF line endings, exactly one trailing newline.
 3. **FORBIDDEN:** shell `echo` / `printf` redirection for file writes — they mangle encodings, join lines, and drop trailing newlines.
 4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_knowledge` — no encoding or line-joining diagnostics may appear.
@@ -470,6 +470,17 @@ Every content change a user should review goes through a changeset, never a dire
 4. The user replies **OK** and you call `innfo-mcp_apply_change({ changeset })`. After an applied or partially applied changeset the console is regenerated again so it shows the result.
 
 The result of `propose_changeset`, `apply_change`, `regenerate_console` and `init_knowledge` carries `next_steps`. You MUST relay `next_steps.notice` to the user verbatim: it lists the numbered steps above, the console path when the browser could not be opened, and the OK shortcut ("simply reply OK to apply them"). The console is static HTML and cannot call the MCP, so approval always comes back through you.
+
+#### Authoring a changeset by hand (bulk or agent-generated)
+
+`propose_changeset` is for operations you derive interactively. For large, mechanical batches (for example thousands of `update_field` operations across a whole model), you MAY author the changeset file yourself under `changes/` and apply it with `innfo-mcp_apply_change({ changeset })`. This is a supported path, not a workaround:
+
+- Write `changes/<prefix>_<author>_<stamp>_changes_NN.md`: the frontmatter (`spec_version`, `level: 3`, `parent_spec` → changes, `blueprint_version`, `status: proposed`, `title`, `author`) followed by one `## NN Change: <id>` block per operation (`op::`, `target::`, `to::`, optional `from::`).
+- **Omit `proposal_sha`.** At intake the runtime seals the document itself (`proposal_sha = sha256(changes)`). Include it only if you compute the exact hash; a present but non-matching value is rejected with `PROPOSAL_TAMPERED` ("...or clear `frontmatter.proposal_sha` so it is re-sealed at intake").
+- Every operation is validated and applied in a single atomic pass; each touched model version bumps once.
+- It stays auditable: it is a normal changeset in `changes/`, cited by the mutated elements, and governed by `prune_changesets`.
+
+Prefer `propose_changeset` for interactive, review-driven changes; hand-author when the batch is large and mechanical.
 
 #### Canonical 2-Hop Traceability Contract (MANDATORY)
 
