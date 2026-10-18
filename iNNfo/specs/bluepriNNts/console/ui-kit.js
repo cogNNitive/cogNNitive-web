@@ -242,7 +242,7 @@
     '.innfo-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--innfo-muted);cursor:pointer;flex:0 0 auto}',
     '.innfo-ku-more:hover,.innfo-ku-more[aria-expanded=true]{color:var(--innfo-text);background:var(--innfo-surface-2)}',
     '.innfo-ku-more:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
-    '.innfo-ku-actions{position:absolute;top:calc(100% + 5px);left:0;z-index:40;display:none;align-items:center;gap:.1em;padding:.2em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
+    '.innfo-ku-actions{position:fixed;z-index:60;display:none;align-items:center;gap:.1em;padding:.2em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
     '.innfo-ku-wrap[data-ku-open=true]>.innfo-ku-actions{display:inline-flex}',
     '.innfo-ku-action{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);font:inherit;padding:.1em .3em;border-radius:var(--innfo-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px}',
     '.innfo-ku-action:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface-2)}',
@@ -267,6 +267,19 @@
     '.innfo-cite-meta dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:.74rem}',
     '.innfo-cite-excerpt{margin:0;padding:.5rem .6rem;background:var(--innfo-surface-2);border-radius:var(--innfo-radius-sm);font-family:ui-monospace,monospace;font-size:.74rem;line-height:1.45;white-space:pre-wrap;max-height:9em;overflow:auto}',
     '.innfo-cite-open{justify-self:start;font-size:.78rem;font-weight:600;color:var(--innfo-link)}',
+    // Filter: the AND/OR segmented control and the two-step field facet.
+    '.innfo-op-toggle{display:inline-flex;align-items:center;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden}',
+    '.innfo-op-btn{appearance:none;border:0;background:transparent;color:var(--innfo-muted);font:inherit;font-size:.68rem;font-weight:800;letter-spacing:.04em;padding:.1em .5em;cursor:pointer;text-transform:uppercase}',
+    '.innfo-op-btn:hover{background:var(--innfo-surface-2);color:var(--innfo-text)}',
+    '.innfo-op-btn.active{background:var(--innfo-accent);color:var(--innfo-surface)}',
+    '.innfo-facet-back{appearance:none;border:0;background:transparent;color:var(--innfo-muted);font:inherit;font-size:.72rem;padding:.3em .5em;cursor:pointer;text-align:left;width:100%}',
+    '.innfo-facet-back:hover{color:var(--innfo-text);background:var(--innfo-surface-2)}',
+    '.innfo-facet-input{font:inherit;font-size:.78rem;padding:.25em .4em;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);background:var(--innfo-surface);color:var(--innfo-text);width:100%}',
+    // View tabs carry a TONE by where the view comes from: the three core views are
+    // purple, a bluepriNNt view is blue, a domaiNN/user view is black.
+    '.innfo-view-tabs .innfo-view-tab.tone-core{color:#6d28d9}',
+    '.innfo-view-tabs .innfo-view-tab.tone-blueprint{color:#2563eb}',
+    '.innfo-view-tabs .innfo-view-tab.tone-custom{color:var(--innfo-text,#0a0a0a)}',
     // Structure warning inside the edit modal (the structure pencil is ungated).
     '.innfo-edit-warn{display:flex;align-items:flex-start;gap:.6rem;padding:.7rem 1.25rem;border-bottom:1px solid var(--innfo-status-pending);background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);font-size:.82rem;line-height:1.45}',
     '.innfo-edit-warn-icon{flex:0 0 auto;display:inline-flex;margin-top:.1rem}',
@@ -3092,7 +3105,7 @@
       '.innfo-ku--block{display:flex;width:100%;padding:.5em .7em}',
       '.innfo-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--innfo-muted,#64748b);cursor:pointer}',
       '.innfo-ku-more:hover,.innfo-ku-more[aria-expanded=true]{color:var(--innfo-text,#0a0a0a);background:var(--innfo-surface-2,#f1f5f9)}',
-      '.innfo-ku-actions{position:absolute;top:calc(100% + 5px);left:0;z-index:40;display:none;align-items:center;gap:.15em;padding:.2em;background:var(--innfo-surface,#fff);border:1px solid var(--innfo-border,#e5e5e5);border-radius:.4em;box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
+      '.innfo-ku-actions{position:fixed;z-index:60;display:none;align-items:center;gap:.15em;padding:.2em;background:var(--innfo-surface,#fff);border:1px solid var(--innfo-border,#e5e5e5);border-radius:.4em;box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
       '.innfo-ku-wrap[data-ku-open=true]>.innfo-ku-actions{display:inline-flex}',
       '.innfo-ku-action{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;border:0;background:transparent;cursor:pointer;color:var(--innfo-muted,#64748b)}',
       '.innfo-ku-action:hover{color:var(--innfo-text,#0a0a0a);background:var(--innfo-surface-2,#f1f5f9)}',
@@ -3248,6 +3261,19 @@
         if (owner && !wasOpen) {
           owner.setAttribute('data-ku-open', 'true')
           moreEl.setAttribute('aria-expanded', 'true')
+          // The flyout is position:fixed, so an `overflow` ancestor (a table wrapper)
+          // can no longer clip it. Anchor it to the badge, clamped to the viewport.
+          var fly = owner.querySelector('.innfo-ku-actions')
+          if (fly && owner.getBoundingClientRect) {
+            var rect = owner.getBoundingClientRect()
+            var view = doc.defaultView
+            var vw = view && view.innerWidth ? view.innerWidth : 0
+            var fw = fly.getBoundingClientRect ? fly.getBoundingClientRect().width : 0
+            var left = rect.left
+            if (vw && fw && left + fw > vw - 8) left = Math.max(8, vw - fw - 8)
+            fly.style.left = left + 'px'
+            fly.style.top = rect.bottom + 5 + 'px'
+          }
         }
         if (ev.preventDefault) ev.preventDefault()
         return

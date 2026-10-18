@@ -1269,43 +1269,70 @@
       host.appendChild(cWrap)
     }
 
-    // 3. Fields Dropdown (dynamic fields extracted from elements)
-    var fieldFacetMap = {}
+    // 3. Fields Dropdown — TWO-STEP: pick the FIELD first, then that field's VALUES.
+    // The menu never again holds every value of every field (which is what made a
+    // complex domain unusable). The value step offers the DECLARED vocabulary when the
+    // schema declares it, and the observed values (bounded) otherwise.
+    var fieldCounts = {}
+    function rawFieldValue(e, fName) {
+      if (!e) return undefined
+      var ef = e.fields
+      if (ef && typeof ef === 'object' && !Array.isArray(ef) && ef[fName] !== undefined) return ef[fName]
+      var inh = e.inherited
+      if (inh && typeof inh === 'object' && inh[fName] !== undefined) {
+        var iv = inh[fName]
+        return iv && typeof iv === 'object' && 'value' in iv ? iv.value : iv
+      }
+      return undefined
+    }
+    function declaredFieldDef(fName) {
+      var s = state && state.schema
+      var fields = s && Array.isArray(s.fields) ? s.fields : []
+      for (var i = 0; i < fields.length; i++) {
+        if (fields[i] && String(fields[i].name || '') === String(fName)) return fields[i]
+      }
+      return null
+    }
+    function observedValues(fName) {
+      var out = {}
+      var list = state && Array.isArray(state.elements) ? state.elements : []
+      list.forEach(function (e) {
+        var raw = rawFieldValue(e, fName)
+        if (raw === undefined || raw === null || raw === '') return
+        var vals = Array.isArray(raw) ? raw : [raw]
+        vals.forEach(function (v) {
+          if (v === undefined || v === null || v === '') return
+          var s = typeof v === 'object' ? JSON.stringify(v) : String(v).trim()
+          if (!s || s.length > 60) return
+          out[s] = (out[s] || 0) + 1
+        })
+      })
+      return out
+    }
     if (state && Array.isArray(state.elements)) {
       state.elements.forEach(function (e) {
         if (!e) return
-        var collect = function (fName, rawVal) {
-          if (rawVal === undefined || rawVal === null || rawVal === '') return
-          var vals = Array.isArray(rawVal) ? rawVal : [rawVal]
-          vals.forEach(function (v) {
-            if (v === undefined || v === null || v === '') return
-            var sVal = typeof v === 'object' ? JSON.stringify(v) : String(v).trim()
-            if (!sVal || sVal.length > 60) return
-            if (!fieldFacetMap[fName]) fieldFacetMap[fName] = {}
-            fieldFacetMap[fName][sVal] = (fieldFacetMap[fName][sVal] || 0) + 1
-          })
+        var seen = {}
+        var note = function (fName) {
+          if (!fName || seen[fName]) return
+          seen[fName] = true
+          fieldCounts[fName] = (fieldCounts[fName] || 0) + 1
         }
-        var ef = e.fields
-        if (ef && typeof ef === 'object' && !Array.isArray(ef)) {
-          Object.keys(ef).forEach(function (fName) {
-            collect(fName, ef[fName])
-          })
+        if (e.fields && typeof e.fields === 'object' && !Array.isArray(e.fields)) {
+          Object.keys(e.fields).forEach(note)
         }
         if (e.inherited && typeof e.inherited === 'object') {
-          Object.keys(e.inherited).forEach(function (fName) {
-            var iv = e.inherited[fName]
-            collect(fName, iv && typeof iv === 'object' && 'value' in iv ? iv.value : iv)
-          })
+          Object.keys(e.inherited).forEach(note)
         }
       })
     }
-    var fieldNames = Object.keys(fieldFacetMap).sort()
+    var fieldNames = Object.keys(fieldCounts).sort()
     if (fieldNames.length > 0) {
       // Find active field operators
       var activeFieldCount = 0
       parsed.operators.forEach(function (op) {
         var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
-        if (fieldFacetMap[normKey] || fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })) {
+        if (fieldCounts[normKey] || fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })) {
           activeFieldCount++
         }
       })
@@ -1320,45 +1347,94 @@
       var fMenu = el('div', 'innfo-facet-menu')
       fMenu.style.minWidth = '240px'
 
-      fieldNames.forEach(function (fName) {
-        var fValsObj = fieldFacetMap[fName]
-        var valKeys = Object.keys(fValsObj).sort()
-        if (valKeys.length === 0) return
-
-        var header = el('div', 'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-2 pb-1 border-b border-slate-100', fName)
-        fMenu.appendChild(header)
-
-        valKeys.forEach(function (valKey) {
+      function fieldValueRows(fName) {
+        var rows = el('div', 'innfo-facet-values')
+        var def = declaredFieldDef(fName)
+        var observed = observedValues(fName)
+        var declared = def && Array.isArray(def.options) && def.options.length ? def.options.map(String) : null
+        var isBoolean = !!(def && String(def.type || '') === 'boolean')
+        var options = isBoolean ? ['true', 'false'] : (declared || Object.keys(observed).sort())
+        var isChecked = function (valKey) {
+          return parsed.operators.some(function (op) {
+            var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
+            return normKey === fName.toLowerCase() && String(op.val).toLowerCase() === String(valKey).toLowerCase()
+          })
+        }
+        options.slice(0, 200).forEach(function (valKey) {
           var item = el('label', 'innfo-facet-item')
           var cb = el('input', 'innfo-facet-checkbox')
           cb.type = 'checkbox'
-
-          var isChecked = parsed.operators.some(function (op) {
-            var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
-            return normKey === fName.toLowerCase() && String(op.val).toLowerCase() === valKey.toLowerCase()
-          })
-          cb.checked = isChecked
-
+          cb.checked = isChecked(valKey)
           cb.addEventListener('change', function () {
             toggleFacet(fName, valKey, cb.checked)
           })
-
-          var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', valKey)
+          var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', String(valKey))
           nameSpan.title = fName + ': ' + valKey
-          var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(fValsObj[valKey]))
-
           item.appendChild(cb)
           item.appendChild(nameSpan)
-          item.appendChild(cntBadge)
+          if (observed[valKey] != null) {
+            item.appendChild(el('span', 'badge badge-xs badge-ghost font-mono', String(observed[valKey])))
+          }
+          rows.appendChild(item)
+        })
+        if (!isBoolean && !declared) {
+          // Free text covers values outside the declared vocabulary; the grammar takes
+          // `a|b` for OR inside one token.
+          var entry = el('div', 'innfo-facet-item')
+          var input = el('input', 'innfo-facet-input')
+          input.type = 'text'
+          input.placeholder = 'value  (a|b is OR)'
+          input.addEventListener('keydown', function (ev) {
+            if (ev.key !== 'Enter') return
+            ev.preventDefault()
+            var v = String(input.value || '').trim()
+            if (v) toggleFacet(fName, v, true)
+            input.value = ''
+          })
+          entry.appendChild(input)
+          rows.appendChild(entry)
+        }
+        return rows
+      }
+
+      function renderFieldStep(fName) {
+        fMenu.innerHTML = ''
+        var back = el('button', 'innfo-facet-back', '\u2190 Fields')
+        back.setAttribute('type', 'button')
+        back.addEventListener('click', function (ev) {
+          ev.stopPropagation()
+          renderFieldList()
+        })
+        fMenu.appendChild(back)
+        fMenu.appendChild(el('div', 'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1 border-b border-slate-100', fName))
+        fMenu.appendChild(fieldValueRows(fName))
+      }
+
+      function renderFieldList() {
+        fMenu.innerHTML = ''
+        fieldNames.forEach(function (fName) {
+          var item = el('button', 'innfo-facet-item')
+          item.setAttribute('type', 'button')
+          item.appendChild(el('span', 'flex-1 truncate font-medium text-slate-700', fName))
+          item.appendChild(el('span', 'badge badge-xs badge-ghost font-mono', String(fieldCounts[fName] || 0)))
+          item.addEventListener('click', function (ev) {
+            ev.stopPropagation()
+            renderFieldStep(fName)
+          })
           fMenu.appendChild(item)
         })
-      })
+      }
+
+      renderFieldList()
 
       fBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = fMenu.classList.contains('open')
         doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
-        if (!isOpen) fMenu.classList.add('open')
+        if (!isOpen) {
+          renderFieldList()
+          fMenu.classList.add('open')
+        }
       })
 
       if (activeFieldCount > 0) {
@@ -1369,7 +1445,7 @@
           e.stopPropagation()
           var newOps = parsed.operators.filter(function (op) {
             var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
-            return !fieldFacetMap[normKey] && !fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })
+            return !fieldCounts[normKey] && !fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })
           })
           var queryParts = parsed.textTokens.map(function (t) {
             return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
@@ -1390,19 +1466,7 @@
       fWrap.appendChild(fMenu)
       host.appendChild(fWrap)
     }
-
-    // Filter help: state the AND vs OR asymmetry (Fields/text AND, Model/Concept OR).
-    var filterHelp = el(
-      'span',
-      'innfo-filter-help text-xs text-slate-400',
-      'Fields and text combine with AND; within one token a|b is OR. Model and Concept combine with OR.',
-    )
-    filterHelp.setAttribute('data-innfo-filter-help', '1')
-    filterHelp.setAttribute(
-      'title',
-      'Fields and free text combine with AND. Model and Concept selections combine with OR. Inside one Field token, `a|b` matches any of the listed values.',
-    )
-    host.appendChild(filterHelp)
+    // The AND/OR explanation is NOT visible UI: it lives on the connector tooltip.
 
     // 4. Clear button if any filter is active
     if (activeQuery) {
@@ -1501,20 +1565,23 @@
       }
 
       function createConnectorSelect(currentVal, onChange) {
-        var sel = el('select', 'text-[10px] font-black uppercase tracking-wider py-0 px-1.5 h-5 min-h-0 bg-base-100 border border-slate-300 rounded cursor-pointer hover:border-primary focus:outline-none focus:border-primary shadow-xs')
-        var optAnd = el('option', null, 'AND')
-        optAnd.value = 'AND'
-        optAnd.selected = currentVal === 'AND'
-        var optOr = el('option', null, 'OR')
-        optOr.value = 'OR'
-        optOr.selected = currentVal === 'OR'
-        sel.appendChild(optAnd)
-        sel.appendChild(optOr)
-        sel.addEventListener('change', function (e) {
-          e.stopPropagation()
-          onChange(sel.value)
+        // A segmented control, matching the rest of the console (was a native <select>).
+        var group = el('span', 'innfo-op-toggle')
+        group.setAttribute('role', 'group')
+        group.setAttribute('aria-label', 'Combine with')
+        // The AND/OR explanation, on hover only.
+        group.setAttribute('title', "Fields and text combine with AND; within one token a|b is OR. Model and Concept combine with OR. Inside one Field token, a|b matches any of the listed values.")
+        ;['AND', 'OR'].forEach(function (val) {
+          var b = el('button', 'innfo-op-btn' + (val === currentVal ? ' active' : ''), val)
+          b.setAttribute('type', 'button')
+          b.setAttribute('aria-pressed', val === currentVal ? 'true' : 'false')
+          b.addEventListener('click', function (e) {
+            e.stopPropagation()
+            if (val !== currentVal) onChange(val)
+          })
+          group.appendChild(b)
         })
-        return sel
+        return group
       }
 
       displayGroups.forEach(function (clause, cIdx) {
@@ -2433,7 +2500,6 @@
           doc: doc,
           modelId: modelId || element.modelId || '',
           concept: cMeta,
-          preview: true,
           onClick: function () {
             renderRefDialog(doc, element)
           },
@@ -2565,23 +2631,32 @@
       th.setAttribute('role', 'button')
       th.setAttribute('tabindex', '0')
       var fieldDef = fieldDefOf(col.key)
-      if (col.key === 'name' || col.key === 'concept' || col.key === 'tags' || !UI || typeof UI.Ku !== 'function') {
-        th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
+      // Every header is a knowledge unit too: a `field` badge, like the cells below.
+      // The plain label stays only as the no-kit / unblessable fallback.
+      var headerBadge = null
+      if (UI && typeof UI.Ku === 'function') {
+        try {
+          var declaredBy = fieldDef && fieldDef.declaredBy ? fieldDef.declaredBy : {}
+          headerBadge = UI.Ku(
+            'field',
+            {
+              family: declaredBy.family || modelId || 'model',
+              concept: (fieldDef && fieldDef.concept) || col.key,
+              name: col.key,
+              label: col.label,
+              vtype: fieldDef && fieldDef.type,
+            },
+            { doc: doc },
+          )
+        } catch (e) {
+          headerBadge = null
+        }
+      }
+      if (headerBadge) {
+        headerBadge.classList.add('innfo-element-table-th-label')
+        th.appendChild(headerBadge)
       } else {
-        var declaredBy = fieldDef && fieldDef.declaredBy ? fieldDef.declaredBy : {}
-        var fieldBadge = UI.Ku(
-          'field',
-          {
-            family: declaredBy.family || modelId || 'model',
-            concept: (fieldDef && fieldDef.concept) || col.key,
-            name: col.key,
-            label: col.label,
-            vtype: fieldDef && fieldDef.type,
-          },
-          { doc: doc },
-        )
-        fieldBadge.classList.add('innfo-element-table-th-label')
-        th.appendChild(fieldBadge)
+        th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
       }
       if (sortState && sortState.key === col.key) {
         th.classList.add('sorted')
@@ -4053,13 +4128,13 @@
     // A standalone --view artifact mounts that view alone.
     if (consoleScopeOf(meta)) return views
     if (schema && Array.isArray(schema.concepts) && schema.concepts.length) {
-      views.push({ id: 'metamodel', title: 'Model Map', icon: 'metamodel', order: 90, panelId: 'innfo-tab-metamodel' })
+      views.push({ id: 'metamodel', title: 'domaiNN', icon: 'metamodel', order: 90, tone: 'core', panelId: 'innfo-tab-metamodel' })
     }
     if ((Array.isArray(model && model.elements) && model.elements.length > 0) || shell.explorer) {
-      views.push({ id: 'explorer', title: 'Model Explorer', icon: 'explorer', order: 100, panelId: 'innfo-tab-explorer' })
+      views.push({ id: 'explorer', title: 'kNNowledge', icon: 'explorer', order: 100, tone: 'core', panelId: 'innfo-tab-explorer' })
     }
     if (Array.isArray(model && model.matrices) && model.matrices.length > 0) {
-      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 110, panelId: 'innfo-tab-matrices' })
+      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 110, tone: 'core', panelId: 'innfo-tab-matrices' })
     }
     return views
   }
@@ -4141,7 +4216,7 @@
         // The panel belongs to the shell or a built-in tab; never mount into it.
         report(v.id, [v.source], 'view "' + v.id + '": panel #' + panelId + ' already exists and is not owned by this view')
       } else {
-        tabs.push(Object.assign({}, v, { panelId: 'innfo-tab-' + v.id, external: true }))
+        tabs.push(Object.assign({}, v, { panelId: 'innfo-tab-' + v.id, external: true, tone: /bluepriNN?ts[\\/]/.test(String(v.source || '')) ? 'blueprint' : 'custom' }))
       }
     })
     tabs.sort(function (a, b) {
@@ -4166,6 +4241,7 @@
       var btn = el('button', 'innfo-view-tab tab flex items-center gap-2')
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
+      btn.classList.add('tone-' + (t.tone || 'custom'))
       var label = el('span', null, t.title)
       btn.innerHTML = UI.icon(TAB_ICONS[t.icon] || t.icon, 15)
       btn.appendChild(label)
