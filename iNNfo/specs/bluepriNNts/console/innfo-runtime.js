@@ -823,7 +823,7 @@
   function notifyStoreError(doc, err) {
     showToast(
       doc,
-      'Your draft could not be saved (browser storage is full or blocked). It stays in this tab only: export your changes now.' +
+      'Your change could not be saved (browser storage is full or blocked). It stays in this tab only: export your changes now.' +
         (err && err.name ? ' [' + err.name + ']' : ''),
     )
   }
@@ -866,11 +866,16 @@
     var models = Array.isArray(meta.models) ? meta.models : []
     var titleEl = doc.getElementById('innfo-domain-title')
     if (titleEl) {
-      var title =
-        models.length === 1 && models[0] && models[0].title
-          ? models[0].title
-          : meta.title || meta.model || 'iNNfo Console'
-      titleEl.textContent = String(title)
+      var singleTitle = models.length === 1 && models[0] && models[0].title ? String(models[0].title) : ''
+      var title = singleTitle || String(meta.title || meta.model || 'iNNfo Console')
+      // A whole-domaiNN console titles itself "<model> Domain" (export-console).
+      // The header reads better as just "<model>"; the domain record and the
+      // changeset title keep the full "<model> Domain" elsewhere.
+      var domainModel = meta.model != null ? String(meta.model) : ''
+      if (!singleTitle && domainModel && title.toLowerCase() === (domainModel + ' domain').toLowerCase()) {
+        title = domainModel
+      }
+      titleEl.textContent = title
     }
 
     var label = meta.consoleScope && meta.consoleScope.label
@@ -1014,10 +1019,10 @@
       )
     }
     var version = el('span', 'innfo-banner-version', ' ' + domainModelVersion(meta))
-    var draftsBadge = el('span', 'innfo-banner-drafts', ' drafts: ' + (draftCount || 0))
+    var draftsBadge = el('span', 'innfo-banner-drafts', ' unsent: ' + (draftCount || 0))
     draftsBadge.setAttribute('data-innfo', 'draft-count')
     var dockDrafts = doc.querySelector('#innfo-review-dock .innfo-dock-drafts')
-    if (dockDrafts) dockDrafts.textContent = 'Drafts: ' + (draftCount || 0)
+    if (dockDrafts) dockDrafts.textContent = 'Unsent: ' + (draftCount || 0)
 
     banner.appendChild(title)
     banner.appendChild(version)
@@ -1698,7 +1703,7 @@
       if (draftCount > 0) {
         var badge = el('span', 'innfo-rail-badge', String(draftCount))
         if (badge) {
-          badge.setAttribute('title', draftCount + ' unexported draft note(s)')
+          badge.setAttribute('title', draftCount + ' unsent change(s)')
           btn.appendChild(badge)
         }
       }
@@ -2181,9 +2186,9 @@
     newDrafts.forEach(function (nd) {
       projectedElements.push({
         id: nd.element_id || ('new-' + nd.id),
-        name: nd.element || 'New Draft Element',
-        concept: nd.concept || 'Draft',
-        description: nd.comment || 'Draft element pending application',
+        name: nd.element || 'New element',
+        concept: nd.concept || 'New',
+        description: nd.comment || 'New element, not applied yet',
         fields: nd.fields && isObject(nd.fields) ? nd.fields : {},
         _draft: nd,
       })
@@ -2250,8 +2255,9 @@
     return map
   }
 
-  // Cards project live drafts: active draft edits and notes are visually badged,
-  // new draft elements are projected, and deleted elements are styled.
+  // Cards project live changes: a correction patches its field value, a new
+  // element is projected, and deleted elements are styled. The change STATE is
+  // painted by the review controller as ONE badge per row.
   function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
@@ -2380,27 +2386,9 @@
       card.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 35%, var(--innfo-border, #e5e5e5))'
       card.style.borderLeft = '4px solid ' + hexColor
 
-      if (element._draft) {
-        var d = element._draft
-        var badgeCls = 'badge badge-sm ' + (d.kind === 'correction' ? 'badge-warning' : d.kind === 'new' ? 'badge-info' : d.kind === 'delete' ? 'badge-error' : 'badge-neutral')
-        var badgeText = d.kind === 'correction' ? 'Draft Edit' : d.kind === 'new' ? 'New Draft' : d.kind === 'delete' ? 'Delete Proposed' : 'Has Comment'
-        var draftBadge = doc.createElement('span')
-        draftBadge.className = 'innfo-card-draft-badge ' + badgeCls + ' ml-2'
-        draftBadge.textContent = badgeText
-
-        var titleEl = card.querySelector('.innfo-card-title, h3, header')
-        if (titleEl) {
-          titleEl.appendChild(draftBadge)
-        }
-
-        if (d.kind === 'delete') {
-          card.classList.add('opacity-50', 'line-through')
-        } else if (d.kind === 'correction') {
-          card.classList.add('border-l-4', 'border-warning')
-        } else if (d.kind === 'new') {
-          card.classList.add('border-l-4', 'border-info')
-        }
-      }
+      // The per-card change state is NOT a separate "Draft Edit" chip any more: the
+      // review controller folds the local edit, the proposals and the applied history
+      // into ONE change-state badge per row (see review.js decorateChangeState).
 
       // Wire the image thumbnail to the media lightbox when the element has
       // image fields (parity with the editor's NodeMedia gallery).
@@ -2568,26 +2556,6 @@
     return String(value)
   }
 
-  function draftBadgeClass(kind) {
-    return kind === 'correction'
-      ? 'badge-warning'
-      : kind === 'new'
-        ? 'badge-info'
-        : kind === 'delete'
-          ? 'badge-error'
-          : 'badge-neutral'
-  }
-
-  function draftBadgeText(kind) {
-    return kind === 'correction'
-      ? 'Draft Edit'
-      : kind === 'new'
-        ? 'New Draft'
-        : kind === 'delete'
-          ? 'Delete Proposed'
-          : 'Comment'
-  }
-
   // Read-only table of the filtered elements: one row per element, one column
   // per field key, sortable by clicking a header. Mirrors the editor's
   // ConceptTableView (table view + header sort) inside the domain console.
@@ -2628,8 +2596,6 @@
       var th = el('th', 'innfo-element-table-th')
       th.setAttribute('data-sort-key', col.key)
       th.setAttribute('scope', 'col')
-      th.setAttribute('role', 'button')
-      th.setAttribute('tabindex', '0')
       var fieldDef = fieldDefOf(col.key)
       // Every header is a knowledge unit too: a `field` badge, like the cells below.
       // The plain label stays only as the no-kit / unblessable fallback.
@@ -2658,21 +2624,26 @@
       } else {
         th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
       }
-      if (sortState && sortState.key === col.key) {
+      // The sort control is the ONLY click target in the header, so the field
+      // badge's own "+" flyout opens the field options instead of re-sorting.
+      // The indicator is always shown: both triangles in a muted tone while the
+      // column is unsorted, a single dark triangle once it is sorted.
+      var isSorted = sortState && sortState.key === col.key
+      var dir = isSorted ? (sortState.dir === 'desc' ? 'desc' : 'asc') : 'none'
+      var sortBtn = el('button', 'innfo-element-table-sort')
+      sortBtn.setAttribute('type', 'button')
+      sortBtn.setAttribute('data-dir', dir)
+      sortBtn.setAttribute('aria-label', 'Sort by ' + col.label)
+      sortBtn.appendChild(el('span', 'innfo-element-table-sort-up', '\u25b2'))
+      sortBtn.appendChild(el('span', 'innfo-element-table-sort-down', '\u25bc'))
+      sortBtn.addEventListener('click', function () {
+        if (typeof onSort === 'function') onSort(col.key)
+      })
+      th.appendChild(sortBtn)
+      if (isSorted) {
         th.classList.add('sorted')
         th.setAttribute('aria-sort', sortState.dir === 'desc' ? 'descending' : 'ascending')
-        th.appendChild(el('span', 'innfo-element-table-sort', sortState.dir === 'desc' ? '▼' : '▲'))
       }
-      function trigger() {
-        if (typeof onSort === 'function') onSort(col.key)
-      }
-      th.addEventListener('click', trigger)
-      th.addEventListener('keydown', function (e) {
-        if (e && (e.key === 'Enter' || e.key === ' ')) {
-          if (e.preventDefault) e.preventDefault()
-          trigger()
-        }
-      })
       headTr.appendChild(th)
     })
     thead.appendChild(headTr)
@@ -2711,13 +2682,18 @@
           : el('span', null, element.name || element.id || '')
       nameTd.appendChild(elBadge)
       if (element._draft) {
-        nameTd.appendChild(
-          el(
-            'span',
-            'badge badge-sm ' + draftBadgeClass(element._draft.kind) + ' ml-2',
-            draftBadgeText(element._draft.kind),
-          ),
-        )
+        // The local change reads with the same word as the card badge: "Unsent".
+        if (UI && typeof UI.StatusBadge === 'function') {
+          var draftState = UI.StatusBadge({
+            status: 'local',
+            label: 'Unsent',
+            title: 'This element has a change recorded in this console that has not been exported yet.',
+          })
+          draftState.classList.add('ml-2')
+          nameTd.appendChild(draftState)
+        } else {
+          nameTd.appendChild(el('span', 'badge badge-sm badge-info ml-2', 'Unsent'))
+        }
       }
       tr.appendChild(nameTd)
 
@@ -4128,13 +4104,13 @@
     // A standalone --view artifact mounts that view alone.
     if (consoleScopeOf(meta)) return views
     if (schema && Array.isArray(schema.concepts) && schema.concepts.length) {
-      views.push({ id: 'metamodel', title: 'domaiNN', icon: 'metamodel', order: 90, tone: 'core', panelId: 'innfo-tab-metamodel' })
+      views.push({ id: 'metamodel', title: 'Domain', icon: 'metamodel', order: 10, tone: 'core', panelId: 'innfo-tab-metamodel' })
     }
     if ((Array.isArray(model && model.elements) && model.elements.length > 0) || shell.explorer) {
-      views.push({ id: 'explorer', title: 'kNNowledge', icon: 'explorer', order: 100, tone: 'core', panelId: 'innfo-tab-explorer' })
+      views.push({ id: 'explorer', title: 'Knowledge', icon: 'explorer', order: 20, tone: 'core', panelId: 'innfo-tab-explorer' })
     }
     if (Array.isArray(model && model.matrices) && model.matrices.length > 0) {
-      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 110, tone: 'core', panelId: 'innfo-tab-matrices' })
+      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 30, tone: 'core', panelId: 'innfo-tab-matrices' })
     }
     return views
   }
@@ -4216,11 +4192,26 @@
         // The panel belongs to the shell or a built-in tab; never mount into it.
         report(v.id, [v.source], 'view "' + v.id + '": panel #' + panelId + ' already exists and is not owned by this view')
       } else {
-        tabs.push(Object.assign({}, v, { panelId: 'innfo-tab-' + v.id, external: true, tone: /bluepriNN?ts[\\/]/.test(String(v.source || '')) ? 'blueprint' : 'custom' }))
+        var isBlueprint = /bluepriNN?ts[\\/]/.test(String(v.source || ''))
+        // The procedures blueprint view is promoted into the core band, right
+        // after Matrices, and reads "Procedures" in the header.
+        var isProcedure = v.id === 'procedure'
+        tabs.push(Object.assign({}, v, {
+          panelId: 'innfo-tab-' + v.id,
+          external: true,
+          tone: isProcedure ? 'core' : isBlueprint ? 'blueprint' : 'custom',
+          order: isProcedure ? 40 : v.order,
+          title: isProcedure ? 'Procedures' : v.title,
+        }))
       }
     })
+    // Band order is fixed: core (Domain · Knowledge · Matrices · Procedures) →
+    // blueprint views → domain custom views; `order` only breaks ties in a band.
+    var TONE_RANK = { core: 0, blueprint: 1, custom: 2 }
     tabs.sort(function (a, b) {
-      return a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+      var ra = TONE_RANK[a.tone] == null ? 2 : TONE_RANK[a.tone]
+      var rb = TONE_RANK[b.tone] == null ? 2 : TONE_RANK[b.tone]
+      return ra - rb || a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
     })
     tabs.push({ id: 'review', title: 'Changes', icon: 'review', panelId: 'innfo-tab-review' })
 
@@ -4669,7 +4660,7 @@
         var staleNote = el(
           'p',
           'innfo-review-stale text-sm mt-1',
-          staleCount + (staleCount === 1 ? ' draft targets' : ' drafts target') +
+          staleCount + (staleCount === 1 ? ' unsent change targets' : ' unsent changes target') +
             ' an element that changed since it was written: review before exporting.',
         )
         if (staleNote) {
@@ -4685,7 +4676,7 @@
         return exportedIds.indexOf(d.id) !== -1
       })
       if (exportedPending.length > 0 && state.store && typeof state.store.clearDrafts === 'function') {
-        var clearBtn = el('button', 'innfo-btn innfo-clear-exported btn btn-ghost btn-sm', 'Clear exported drafts (' + exportedPending.length + ')')
+        var clearBtn = el('button', 'innfo-btn innfo-clear-exported btn btn-ghost btn-sm', 'Clear exported changes (' + exportedPending.length + ')')
         if (clearBtn) {
           clearBtn.setAttribute('type', 'button')
           clearBtn.setAttribute('data-innfo', 'clear-exported')
@@ -5548,7 +5539,7 @@
     var draftsBadge = active.createElement('span')
     draftsBadge.className = 'innfo-banner-drafts'
     draftsBadge.setAttribute('data-innfo', 'draft-count')
-    draftsBadge.textContent = ' drafts: 0'
+    draftsBadge.textContent = ' unsent: 0'
     banner.appendChild(draftsBadge)
 
     root.appendChild(banner)
@@ -5568,12 +5559,12 @@
       '<div data-innfo="errors" style="display: none;"></div>' +
       '<div class="innfo-feedback-actions">' +
       '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
-      '<button data-innfo="copy-changeset-prompt" type="button">Copy changeset</button>' +
+      '<button data-innfo="copy-changeset-prompt" type="button">Copy change</button>' +
       '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
       '<details class="innfo-modal-details">' +
-      '<summary>View generated changeset &amp; prompt</summary>' +
-      '<h4>Changeset content (_changes_NN.md)</h4>' +
+      '<summary>View the generated change &amp; prompt</summary>' +
+      '<h4>Change document (_changes_NN.md)</h4>' +
       '<textarea data-innfo="changeset-preview" readonly></textarea>' +
       '<h4>Instructions</h4>' +
       '<pre data-innfo="instructions"></pre>' +
@@ -5595,7 +5586,7 @@
 
     var dockStatus = active.createElement('div')
     dockStatus.className = 'innfo-dock-status'
-    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Changeset</span>'
+    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Change</span>'
     dock.appendChild(dockStatus)
 
     var sep1 = active.createElement('span')
@@ -5628,7 +5619,7 @@
 
     var dockDraftsEl = active.createElement('span')
     dockDraftsEl.className = 'innfo-dock-drafts'
-    dockDraftsEl.textContent = 'Drafts: 0'
+    dockDraftsEl.textContent = 'Unsent: 0'
     dock.appendChild(dockDraftsEl)
 
     // Open button (Export changes)
@@ -5643,7 +5634,7 @@
     exitBtn.type = 'button'
     exitBtn.className = 'innfo-dock-exit'
     exitBtn.textContent = 'Hide'
-    exitBtn.setAttribute('aria-label', 'Hide the changeset bar')
+    exitBtn.setAttribute('aria-label', 'Hide the change bar')
     exitBtn.addEventListener('click', function () {
       dock.style.setProperty('display', 'none', 'important')
       dock.removeAttribute('data-visible')
@@ -6052,7 +6043,7 @@
       instructions.textContent =
         'Review ' +
         drafts.length +
-        ' pending draft(s), then download or copy the changeset.'
+        ' unsent change(s), then download or copy the change document.'
     }
     if (agentPrompt) {
       agentPrompt.textContent =
@@ -6353,9 +6344,9 @@
       var currentDrafts = state.store.drafts()
       var n = currentDrafts.length
       var bannerCount = active.querySelector('.innfo-banner-drafts')
-      if (bannerCount) bannerCount.textContent = ' drafts: ' + n
+      if (bannerCount) bannerCount.textContent = ' unsent: ' + n
       var dockCount = active.querySelector('#innfo-review-dock .innfo-dock-drafts')
-      if (dockCount) dockCount.textContent = 'Drafts: ' + n
+      if (dockCount) dockCount.textContent = 'Unsent: ' + n
       updateTabBadges(active, state)
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)

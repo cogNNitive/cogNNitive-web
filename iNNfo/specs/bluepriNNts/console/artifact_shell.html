@@ -67,7 +67,7 @@
       .innfo-navbar {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start;
         gap: 16px;
         flex-wrap: wrap;
         padding: 10px 20px;
@@ -206,6 +206,7 @@
       .innfo-facet-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); font-size: 0.82rem; cursor: pointer; }
       .innfo-facet-item:hover { background: var(--surface-2); }
       .innfo-view-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+      .innfo-navbar .innfo-view-tabs { flex: 1 1 auto; min-width: 0; margin-left: 6px; align-items: center; }
       .innfo-view-tab { appearance: none; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 0.83rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
       .innfo-view-tab:hover { color: var(--text); background: var(--surface-2); }
       .innfo-view-tab.active { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
@@ -232,10 +233,15 @@
       .innfo-element-table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
       .innfo-element-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
       .innfo-element-table th, .innfo-element-table td { border-bottom: 1px solid var(--border); padding: 6px 10px; text-align: left; vertical-align: top; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .innfo-element-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface-2); cursor: pointer; user-select: none; }
-      .innfo-element-table thead th:hover { color: var(--text); }
-      .innfo-element-table thead th.sorted { color: var(--primary); }
-      .innfo-element-table-sort { margin-left: 4px; font-size: 0.7rem; }
+      .innfo-element-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface-2); user-select: none; }
+      .innfo-element-table thead th.sorted { color: var(--text); }
+      /* Sort control: the only clickable part of a header. Muted double triangle when
+         unsorted; a single dark triangle once the column is sorted. */
+      .innfo-element-table-sort { appearance: none; border: none; background: transparent; margin-left: 4px; padding: 0 2px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 0.5; font-size: 0.5rem; color: var(--muted); opacity: 0.5; cursor: pointer; vertical-align: middle; }
+      .innfo-element-table-sort:hover { opacity: 0.9; }
+      .innfo-element-table-sort[data-dir="asc"], .innfo-element-table-sort[data-dir="desc"] { color: var(--text); opacity: 1; }
+      .innfo-element-table-sort[data-dir="asc"] .innfo-element-table-sort-down { visibility: hidden; }
+      .innfo-element-table-sort[data-dir="desc"] .innfo-element-table-sort-up { visibility: hidden; }
       .innfo-element-table tbody tr:hover { background: var(--surface-2); }
       .innfo-element-table-name { font-weight: 600; }
       .innfo-element-table-empty { color: var(--muted); text-align: center; padding: 30px 0; }
@@ -329,14 +335,12 @@
           </svg>
         </span>
         <h1 class="innfo-domain-title" id="innfo-domain-title">iNNfo Console</h1>
+        <div class="innfo-mode" id="innfo-navbar-extra"></div>
       </div>
-      <div class="innfo-mode" id="innfo-navbar-extra"></div>
+      <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;" aria-label="Console views"></nav>
       <div class="innfo-navbar-actions" id="innfo-navbar-actions"></div>
     </header>
 
-    <div class="innfo-action-bar innfo-action-bar--top">
-      <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;"></nav>
-    </div>
     <div id="innfo-layout">
       <aside class="innfo-rail" aria-label="Blueprint rail">
         <nav id="innfo-rail"></nav>
@@ -388,7 +392,7 @@
 
     <script src="./innfo-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.21.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.22.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   </body>

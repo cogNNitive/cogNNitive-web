@@ -21,60 +21,60 @@ iNNfo standalone consoles provide an offline, interactive environment for review
 ### 1. Setting Your Reviewer Identity
 In the top navigation banner, locate the **Reviewer** chip (e.g., `Reviewer: reviewer`). Click it to open the feedback modal focused on the **Reviewer identifier** field (required for export). This identity is stored in browser `localStorage` and automatically populates export filenames and review metadata.
 
-### 2. Turning On Review Mode
-The **Review mode** toggle appears in the banner only when the console declares `feedback-export`, carries a `meta.modelId`, and every element has a `hash`. Review mode is **off on every load** and is never persisted. When it is off, edit pencils are hidden by CSS and the delegated handler rejects the action, so the console is read-only. Info buttons remain available. Verdict badges (below) remain visible regardless of the toggle.
+### 2. One Concept: The Change
+
+The console has **no review mode and no toggle**. An edit only ever records a **change**; the console never writes the model. A change has three states:
+
+| State | What it means | How it shows |
+| --- | --- | --- |
+| **Unsent** (blue) | You edited in the console. It lives only in this browser; the agent has not seen it. | The "Change recorded" toast and the bottom counter. |
+| **Proposed** (orange) | It was submitted (or the agent proposed it). It is a change the engine can apply; the model has not changed. | The row's change-state badge. |
+| **Applied** (green) | The engine wrote it into the model. Only now did the domain change. | The row's change-state badge. |
+
+`Conflict` (red) is the terminal state of a change that could not be applied. The internal terms "draft" and "changeset" name plumbing and are never shown. A row shows **one** state badge; the counts for every state are in its tooltip.
 
 ### 3. Annotating Elements and Fields
 Every knowledge unit is rendered as a **Ku** badge (element, value, section, field
 definition, matrix, document, source) with an action cluster beside it:
 - **Info** is always present and opens the unit panel (kind, nature, lives-in,
   canonical address, location, editability and kind-specific facts).
-- **Edit** appears on content and structure units when review mode is on. A content
-  pencil opens the shared edit modal for that element or field value.
+- **Edit** is always available on content and structure units. A content pencil
+  opens the shared edit modal for that element or field value; a structure pencil
+  opens the modal in comment-only mode with the structure warning.
 - An **inherited** concept-level value is labelled `inherited from <Concept>` on
   element cards and is info-only; edit it from its concept section badge instead.
 
-Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cancel) to discard and return focus. Each saved draft records the element's current `hash` as `base_hash` and the unit's canonical address.
+Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cancel) to discard and return focus. Each saved change records the element's current `hash` as `base_hash` and the unit's canonical address. Saving shows the **Change recorded** toast: it lives only in this console until you export it, then apply it to write it into the domain.
 
-### 3b. Edit Structure Switch
-The review dock carries an **Edit structure** switch (`button[role=switch]`). It is
-off by default and resets when review mode is turned off. When on, it sets
-`html[data-innfo-structure=on]` and reveals pencils on structure units (concept,
-field and matrix definitions). Those pencils open the modal in comment-only mode,
-producing an `op: "comment"` draft — structure edits are proposals, never silent
-renames.
+### 4. Change Signals: Pips, the State Badge and the Rail
+- Units with local (unsent) changes show a **change pip** beside the badge, keyed by
+  the unit's canonical address. The count equals the unsent changes for that unit;
+  activating it opens the unit's history.
+- Each row shows **one change-state badge** (Unsent / Proposed / Applied / Conflict)
+  that folds the local edit, the proposed changesets and the applied history
+  together. The per-state counts live in its tooltip. There is no "Mark reviewed"
+  toggle: a mark was local state with no effect on the domain.
+- The concept rail shows `pending/total` per concept — the number of elements with an
+  unsent change over the concept's element count.
+- Reviewers cannot set a verdict from the console: `proposed`, `applied` and
+  `conflict` come from the domain's changesets, and `Unsent` is local until exported.
 
-### 4. Reviewed Marks, Progress and Verdict Badges
-- Units with pending drafts show a **change pip** beside the badge, keyed by the
-  unit's canonical address. The count equals the pending drafts for that unit;
-  activating it opens the unit's history. Pips work in both review modes because
-  they reflect stored drafts, not mode state.
-- Each card has a **reviewed** toggle. A mark counts as reviewed only while its recorded hash matches the element's current hash; if the element changed, the toggle shows **changed** and does not count.
-- The concept rail shows `reviewed/total` plus the pending-draft count per concept, in both console renderers.
-- Elements targeted by a changeset show a status badge: `applied` or `conflict` for changes an applied changeset performed, and `proposed` for a change in a proposed changeset. These badges come from changesets, never from local drafts, and reviewers cannot set a verdict from the console.
-
-### 5. Changed-Since-Last-Review Filter
-`changed` shows only elements whose current hash differs from the hash recorded when last marked reviewed. Never-reviewed elements are not changed.
-
-### 6. Keyboard Access
-In review mode:
+### 5. Keyboard Access
 - `j` / `k` move focus to the next / previous visible element card.
-- `c` opens the popover for the focused element (the field popover when focus is inside a field row, otherwise the card popover).
+- `c` opens the shared modal for the focused element.
 
-Shortcuts are ignored while typing in an input, textarea or select, while a popover is open, or with Ctrl/Meta/Alt held. The popover traps Tab focus, and the draft counter is announced through an `aria-live="polite"` region.
+Shortcuts are ignored while typing in an input, textarea or select, while a popover is open, or with Ctrl/Meta/Alt held. The popover traps Tab focus, and the change counter is announced through an `aria-live="polite"` region.
 
-### 7. Exporting the Changeset
-Click **Export changes** in the header banner. The modal shows a live **preview** of the changeset your drafts produce (one `## NN Change:` per draft), and disables **Download** and **Copy changeset** until a reviewer identifier is entered. Download and copy always emit the **same bytes** — the changeset document. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the preview for manual copy or `document.execCommand('copy')`, and reports the outcome.
+### 6. Exporting the Change
+Click **Export changes** in the header banner. The modal shows a live **preview** of the document your unsent changes produce (one `## NN Change:` per change), and disables **Download** and **Copy change** until a reviewer identifier is entered. Download and copy always emit the **same bytes**. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the preview for manual copy or `document.execCommand('copy')`, and reports the outcome. Exporting turns an **Unsent** change into a **Proposed** one.
 
 Files are named `<model>_<reviewer-slug>_<YYYYMMDD-HHmmss>_changes_NN.md`. Each change carries `op`, `target` (the D5 address `model@element&field`), `from`/`to` or `notes`, and `author::`; changes never carry a `status` verdict.
 
-### 8. Where Drafts Live
-Drafts are stored in `localStorage` under a single key, `innfo-console:v3:<storeKey>`, anchored by `element_id` plus `base_hash`. The `storeKey` is the console's stable store key only: the domain id for a domain console (`<folder>-<hash>`), or `<domain id>::view:<id>` for a standalone view export. The store records **no model or domain version**: staleness is **per draft**, so a draft whose element hash drifted is flagged **target changed** and remains exportable, while a model version bump never invalidates unrelated drafts.
+### 7. Where an Unsent Change Lives (margin note)
+This is plumbing and the UI never explains it. An unsent change is stored in `localStorage` under a single key, `innfo-console:v3:<storeKey>`, anchored by `element_id` plus `base_hash`. The `storeKey` is the console's stable store key only: the domain id for a domain console (`<folder>-<hash>`), or `<domain id>::view:<id>` for a standalone view export. The store records **no model or domain version**: staleness is **per change**, so one whose element hash drifted is flagged **target changed** and remains exportable, while a model version bump never invalidates unrelated changes. Legacy `reviewed` marks are ignored and dropped on the next write.
 
-Drafts saved by older consoles under an earlier store version (`innfo-console:v2:*`) or the legacy title-and-version key (`innfo-console:drafts:*`) are **not** read, migrated or deleted: a store written with an earlier `STORE_VERSION` simply reads as empty.
-
-### 9. Applying a Reviewed Changeset
-The reviewer returns the exported `_changes_NN.md` file; the agent applies it with `apply_change`, which validates and persists the changes atomically and records the outcome in the changeset. There is no separate feedback import: changesets are the only change record.
+### 8. Applying a Proposed Change
+The reviewer returns the exported `_changes_NN.md` file; the agent applies it with `apply_change`, which validates and persists the changes atomically and records the outcome. There is no separate feedback import: the change document is the only change record.
 
 ---
 

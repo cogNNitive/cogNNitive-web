@@ -1336,7 +1336,7 @@ registerView({
   } else {
     // Default: 'table'
     code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} table view
-   Declarative table view using InnfoUI.Table with canonical KU badges. */
+   Declarative table view using InnfoUI.DataTable with canonical KU badges. */
 registerView({
   title: '${viewTitle}',
   icon: 'layers',
@@ -1346,7 +1346,7 @@ registerView({
     var doc = ctx.container.ownerDocument
     var elements = (ctx.payload && ctx.payload.model && ctx.payload.model.elements) || []
 
-    var table = InnfoUI.Table(
+    var table = InnfoUI.DataTable(
       {
         columns: [
           { key: 'name', label: 'Nombre', kind: 'element' },

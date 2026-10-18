@@ -6360,13 +6360,10 @@ button.btn-primary:hover:not(:disabled) {
 [data-innfo-component="element-card"] .innfo-card-head {
   gap: 8px;
 }
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-card-count,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-card-toggle {
   margin-left: auto;
 }
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle ~ .innfo-card-count,
-[data-innfo-component="element-card"] .innfo-card-head > .innfo-reviewed-toggle ~ .innfo-card-toggle,
 [data-innfo-component="element-card"] .innfo-card-head > .innfo-card-count ~ .innfo-card-toggle {
   margin-left: 4px;
 }
@@ -7356,7 +7353,6 @@ button.cite-icon,
 .innfo-rail-count,
 .innfo-card-count,
 .innfo-card-toggle,
-.innfo-reviewed-toggle,
 .innfo-edit-toggle,
 #innfo-rail details.collapse > summary.collapse-title,
 #innfo-rail .menu li > a[data-concept],
@@ -7794,8 +7790,7 @@ input[type="text"], input[type="search"], textarea, select {
   font: inherit !important;
   font-size: 0.78rem !important;
 }
-.innfo-review-dock .innfo-new-element,
-.innfo-review-dock .innfo-changed-filter {
+.innfo-review-dock .innfo-new-element {
   appearance: none !important;
   border: 1px solid #e2e8f0 !important;
   background: #f8fafc !important;
@@ -7808,15 +7803,9 @@ input[type="text"], input[type="search"], textarea, select {
   cursor: pointer !important;
   transition: all 0.15s ease !important;
 }
-.innfo-review-dock .innfo-new-element:hover,
-.innfo-review-dock .innfo-changed-filter:hover {
+.innfo-review-dock .innfo-new-element:hover {
   background: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
-}
-.innfo-review-dock .innfo-changed-filter[aria-pressed="true"] {
-  background: #fef3c7 !important;
-  color: #92400e !important;
-  border-color: #fde68a !important;
 }
 .innfo-review-dock .innfo-feedback-open {
   appearance: none !important;

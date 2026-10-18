@@ -1,23 +1,26 @@
 {
-  "generatedAt": "2026-10-18T15:39:31.810Z",
-  "head": "7e589badc78fc65eaa3c7810ca263511b737a4d6",
+  "generatedAt": "2026-10-18T21:12:11.479Z",
+  "head": "493d8c5073e9d725e08556350a287c3925e6abaf",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.25.0",
       "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "skills/nn-upgrade/scripts/lib/innfo-core.generated.cjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.36.0",
-      "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "blueprints-v0.37.0",
+      "pinnedTagDate": "2026-10-18T17:29:17+02:00",
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
@@ -25,13 +28,14 @@
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.36.0",
-      "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "blueprints-v0.37.0",
+      "pinnedTagDate": "2026-10-18T17:29:17+02:00",
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
@@ -46,16 +50,18 @@
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.20.0",
-      "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "innfo-console-v0.21.0",
+      "pinnedTagDate": "2026-10-18T17:29:17+02:00",
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "scripts/export-console.mjs"
       ]
     }
   }

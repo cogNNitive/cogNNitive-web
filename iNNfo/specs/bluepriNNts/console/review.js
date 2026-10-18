@@ -14,7 +14,6 @@
   var STORE_PREFIX = 'innfo-console:v3:'
   var STORE_VERSION = 4
   var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
-  var REVIEW_STATES = ['none', 'reviewed', 'changed']
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
 
   function isObject(value) {
@@ -141,7 +140,6 @@
         v: STORE_VERSION,
         modelId: modelId,
         drafts: [],
-        reviewed: {},
       }
     }
 
@@ -170,17 +168,10 @@
             return normalizeDraft(d)
           })
         : []
-      var reviewed = isObject(parsed.reviewed) ? {} : {}
-      if (isObject(parsed.reviewed)) {
-        Object.keys(parsed.reviewed).forEach(function (id) {
-          reviewed[id] = String(parsed.reviewed[id])
-        })
-      }
       return {
         v: STORE_VERSION,
         modelId: modelId,
         drafts: drafts,
-        reviewed: reviewed,
       }
     }
 
@@ -228,9 +219,6 @@
       drafts: function () {
         return deepCopy(state.drafts)
       },
-      reviewed: function () {
-        return deepCopy(state.reviewed)
-      },
       addDraft: function (input) {
         var raw = isObject(input) ? input : {}
         var isMatrix = raw.matrix != null && raw.matrix !== '' && raw.row != null && raw.col != null
@@ -275,28 +263,11 @@
             : []
         })
       },
-      markReviewed: function (id, hash) {
-        mutate(function (s) {
-          s.reviewed[String(id)] = String(hash)
-        })
-      },
-      unmarkReviewed: function (id) {
-        mutate(function (s) {
-          delete s.reviewed[String(id)]
-        })
-      },
       destroy: function () {
         if (listenTarget && onStorage) listenTarget.removeEventListener('storage', onStorage)
         onStorage = null
       },
     }
-  }
-
-  function reviewState(element, reviewed) {
-    var el = isObject(element) ? element : {}
-    var map = isObject(reviewed) ? reviewed : {}
-    if (!Object.prototype.hasOwnProperty.call(map, el.id)) return 'none'
-    return map[el.id] === el.hash ? 'reviewed' : 'changed'
   }
 
   function isTargetChanged(draft, elementsById) {
@@ -336,16 +307,17 @@
     return String(current) === String(d.proposed)
   }
 
-  function progressByConcept(elements, drafts, reviewed) {
+  // How many of a concept's elements currently carry a change that lives only in
+  // this console (an unsent local draft). This is the rail's progress readout now
+  // that the reviewed marks are gone.
+  function progressByConcept(elements, drafts) {
     var list = Array.isArray(elements) ? elements : []
     var draftList = Array.isArray(drafts) ? drafts : []
-    var map = isObject(reviewed) ? reviewed : {}
     var out = {}
     list.forEach(function (el) {
       if (!el || !el.concept) return
-      if (!out[el.concept]) out[el.concept] = { reviewed: 0, total: 0, pending: 0 }
+      if (!out[el.concept]) out[el.concept] = { total: 0, pending: 0 }
       out[el.concept].total++
-      if (map[el.id] === el.hash) out[el.concept].reviewed++
     })
     draftList.forEach(function (d) {
       if (!d) return
@@ -427,16 +399,47 @@
     return out
   }
 
-  function changedIds(elements, reviewed) {
-    var list = Array.isArray(elements) ? elements : []
-    var map = isObject(reviewed) ? reviewed : {}
-    var out = []
-    list.forEach(function (el) {
-      if (!el) return
-      if (!Object.prototype.hasOwnProperty.call(map, el.id)) return
-      if (map[el.id] !== el.hash) out.push(el.id)
+  // The single per-row change state: a local (unsent) edit wins over a proposed
+  // change, which wins over applied history; a conflict always wins (it needs a
+  // decision). `counts` carries every state present so the badge tooltip can
+  // enumerate them.
+  var CHANGE_STATE_ORDER = ['conflict', 'local', 'proposed', 'applied']
+
+  function changeStateOf(counts) {
+    var c = isObject(counts) ? counts : {}
+    for (var i = 0; i < CHANGE_STATE_ORDER.length; i++) {
+      var state = CHANGE_STATE_ORDER[i]
+      if (c[state]) return state
+    }
+    return null
+  }
+
+  function changeCountsByElement(elements, changes, drafts) {
+    var badges = badgesByElement(elements, changes)
+    var counts = {}
+    Object.keys(badges).forEach(function (elId) {
+      counts[elId] = {}
+      Object.keys(badges[elId]).forEach(function (status) {
+        counts[elId][status] = badges[elId][status]
+      })
     })
-    return out
+    ;(Array.isArray(drafts) ? drafts : []).forEach(function (d) {
+      if (!d || !d.element_id) return
+      var id = String(d.element_id)
+      if (!counts[id]) counts[id] = {}
+      counts[id].local = (counts[id].local || 0) + 1
+    })
+    return counts
+  }
+
+  function changeTooltip(state, counts) {
+    var c = isObject(counts) ? counts : {}
+    var parts = []
+    if (c.local) parts.push(c.local + ' unsent')
+    if (c.proposed) parts.push(c.proposed + ' proposed')
+    if (c.applied) parts.push(c.applied + ' applied')
+    if (c.conflict) parts.push(c.conflict + ' in conflict')
+    return parts.join(', ')
   }
 
   function canReview(meta, elements, needs) {
@@ -521,10 +524,40 @@
     // "arm". Decoration and the edit affordance are always live; the changeset bar
     // is driven by the DRAFTS (see syncChangesetBar), not by a mode switch.
     var enabled = true
-    var toggleEl = null
-    var structureEl = null
     var openPopover = null
     var lastAnchor = null
+    var toastEl = null
+    var toastTimer = null
+
+    // TOAST_TIMEOUT_MS: how long the "Change recorded" toast lingers before it
+    // fades out on its own. It is dismissable at any time.
+    var TOAST_TIMEOUT_MS = 8000
+
+    function dismissToast() {
+      if (toastTimer) {
+        clearTimeout(toastTimer)
+        toastTimer = null
+      }
+      if (toastEl && toastEl.parentNode) toastEl.parentNode.removeChild(toastEl)
+      toastEl = null
+    }
+
+    // One toast at a time: a second recorded change restarts the message rather
+    // than stacking a queue. It says three things only — recorded, not applied,
+    // export to apply — and never mentions where the change is stored.
+    function showChangeToast() {
+      if (typeof UI.Toast !== 'function' || !doc.body) return
+      dismissToast()
+      toastEl = UI.Toast(
+        {
+          title: 'Change recorded',
+          body: 'It lives only in this console until you export it. Then apply it from cogNNitive to write it into the domain.',
+        },
+        { doc: doc, onClose: dismissToast },
+      )
+      doc.body.appendChild(toastEl)
+      toastTimer = setTimeout(dismissToast, TOAST_TIMEOUT_MS)
+    }
 
     function html() {
       return doc.documentElement
@@ -581,6 +614,7 @@
           matrixDraft.comment = String(payload.comment)
         }
         var savedMatrix = store.addDraft(matrixDraft)
+        showChangeToast()
         refreshCount()
         return savedMatrix
       }
@@ -609,6 +643,7 @@
       // Canonical unit address of the draft target (element, or element&field).
       draft.address = draft.field ? `${draft.element_id}&${draft.field}` : draft.element_id
       var saved = store.addDraft(draft)
+      showChangeToast()
       refreshCount()
       return saved
     }
@@ -1069,6 +1104,7 @@
             }
             if (Object.keys(res.fields).length) draft.proposed = res.fields
             store.addDraft(draft)
+            showChangeToast()
             refreshCount()
             closePopover()
           },
@@ -1112,14 +1148,10 @@
       if (target && target.isContentEditable) return
       if (openPopover) return
 
-      var changedOn = html() && html().getAttribute('data-innfo-filter') === 'changed'
       var visible = []
       Array.prototype.forEach.call(
         doc.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
         function (card) {
-          // Layout-free visibility: when the changed filter is on, only changed
-          // cards are shown; otherwise every connected card is navigable.
-          if (changedOn && !card.hasAttribute('data-innfo-changed')) return
           if (card.hidden) return
           visible.push(card)
         },
@@ -1165,33 +1197,6 @@
 
     function ensureCardFocusable(card) {
       if (!card.getAttribute('tabindex')) card.setAttribute('tabindex', '-1')
-    }
-
-    // A reviewed mark is LOCAL STATE, not a proposal: it is shown whenever a store
-    // exists, independent of the capability gate (bearer rule: "Reviewed controls are
-    // always shown"). This is the "badge/mark" half of the split.
-    function decorateReviewedToggle(card) {
-      ensureCardFocusable(card)
-      var elId = card.getAttribute('data-element-id')
-      var head = card.querySelector('.innfo-card-head') || card
-      var headRightRef =
-        head.querySelector('.innfo-card-count') || head.querySelector('.innfo-card-toggle') || null
-      if (!head.querySelector('[data-innfo-component="reviewed-toggle"]') && store) {
-        var elForRev = elementsById[elId]
-        var stateForRev = elForRev ? reviewState(elForRev, store.reviewed()) : 'none'
-        var rt = UI.ReviewedToggle({ state: stateForRev })
-        rt.setAttribute('data-innfo-review-ctl', '1')
-        rt.addEventListener('click', function () {
-          var current = store.reviewed()
-          if (Object.prototype.hasOwnProperty.call(current, elId)) {
-            store.unmarkReviewed(elId)
-          } else if (elForRev) {
-            store.markReviewed(elId, elForRev.hash)
-          }
-          applyDecorations()
-        })
-        head.insertBefore(rt, headRightRef)
-      }
     }
 
     // The proposal ANCHORS on a card (tag and relation controls) are gated by
@@ -1362,34 +1367,50 @@
       })
     }
 
-    function decorateBadges() {
-      if (!doc.querySelectorAll) return
-      var badges = badgesByElement(elements, changes)
-      if (!Object.keys(badges).length) return
+    // ONE change-state signal per row: it collapses the local (unsent) edit, the
+    // proposed changesets and the applied history into a single badge; every count
+    // lives in the badge tooltip. Decoration is capability-free (it reflects state,
+    // never a proposal), so it runs however the console boots.
+    function decorateChangeState(root) {
+      var scope = root || doc
+      if (!scope || !scope.querySelectorAll) return
+      var countsByEl = changeCountsByElement(elements, changes, store ? store.drafts() : [])
       Array.prototype.forEach.call(
-        doc.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
+        scope.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
         function (card) {
+          ensureCardFocusable(card)
           var elId = card.getAttribute('data-element-id')
-          var statuses = badges[elId]
-          if (!statuses) return
+          var elCounts = countsByEl[elId]
+          var state = elCounts ? changeStateOf(elCounts) : null
           var head = card.querySelector('.innfo-card-head') || card
-          var host = head.querySelector('[data-innfo-review-badges]')
+          var host = head.querySelector('[data-innfo-change-state]')
+          if (!state) {
+            if (host && host.parentNode) host.parentNode.removeChild(host)
+            return
+          }
           if (!host) {
             host = makeEl(doc, 'span', 'innfo-review-badges')
-            host.setAttribute('data-innfo-review-badges', '')
+            host.setAttribute('data-innfo-change-state', '')
             head.appendChild(host)
           }
           host.innerHTML = ''
-          Object.keys(statuses).forEach(function (status) {
-            host.appendChild(UI.StatusBadge({ status: status, count: statuses[status] }))
+          if (typeof UI.StatusBadge !== 'function') return
+          var badge = UI.StatusBadge({
+            status: state,
+            count: elCounts[state],
+            label: typeof UI.statusLabel === 'function' ? UI.statusLabel(state) : state,
+            title: changeTooltip(state, elCounts),
           })
+          badge.classList.add('innfo-change-state')
+          host.appendChild(badge)
         },
       )
     }
 
     function decorateRailProgress() {
       if (!doc.querySelectorAll || !store) return
-      var progress = progressByConcept(elements, store.drafts(), store.reviewed())
+      // The rail readout is the change, not a review mark: pending drafts per concept.
+      var progress = progressByConcept(elements, store.drafts())
       Array.prototype.forEach.call(
         doc.querySelectorAll('.innfo-rail-item, [data-key]'),
         function (btn) {
@@ -1399,59 +1420,12 @@
           if (existing) existing.parentNode.removeChild(existing)
           btn.appendChild(
             UI.RailProgress({
-              reviewed: progress[key].reviewed,
               total: progress[key].total,
               pending: progress[key].pending,
             }),
           )
         },
       )
-    }
-
-    function applyChangedFilter() {
-      if (!store) return
-      var changed = changedIds(elements, store.reviewed())
-      var changedSet = {}
-      changed.forEach(function (id) {
-        changedSet[id] = true
-      })
-      Array.prototype.forEach.call(
-        doc.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
-        function (card) {
-          if (changedSet[card.getAttribute('data-element-id')]) {
-            card.setAttribute('data-innfo-changed', '')
-          } else {
-            card.removeAttribute('data-innfo-changed')
-          }
-        },
-      )
-    }
-
-    function buildChangedFilter() {
-      var bar =
-        doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      if (!bar) return null
-      var existing = bar.querySelector('[data-innfo="changed-filter"]')
-      if (existing) return existing
-      var b = makeEl(doc, 'button', 'innfo-changed-filter', 'Changed')
-      b.setAttribute('data-innfo', 'changed-filter')
-      b.setAttribute('type', 'button')
-      b.setAttribute('aria-pressed', 'false')
-      b.addEventListener('click', function () {
-        var on = html() && html().getAttribute('data-innfo-filter') === 'changed'
-        if (on) {
-          html().removeAttribute('data-innfo-filter')
-          b.setAttribute('aria-pressed', 'false')
-        } else {
-          html().setAttribute('data-innfo-filter', 'changed')
-          b.setAttribute('aria-pressed', 'true')
-          applyChangedFilter()
-        }
-      })
-      var openBtn = bar.querySelector('#innfo-feedback-open')
-      if (openBtn && openBtn.parentNode) openBtn.parentNode.insertBefore(b, openBtn)
-      else bar.appendChild(b)
-      return b
     }
 
     // The changeset bar is STATE-driven: it appears when there is at least one draft
@@ -1470,16 +1444,14 @@
     }
 
     function applyDecorations() {
-      // Badge/mark decoration is capability-free: verdict badges, change pips, the
-      // reviewed marks and the rail progress reflect state, not proposals, and are
-      // always shown (there is no mode).
-      decorateBadges()
+      // State decoration is capability-free: the change-state badge, the change
+      // pips and the rail progress reflect state, not proposals, and are always
+      // shown (there is no mode).
+      decorateChangeState()
       decorateChangePips()
-      decorateMarks(doc)
       syncChangesetBar()
       if (!enabled) return
       decorateRailProgress()
-      if (html() && html().getAttribute('data-innfo-filter') === 'changed') applyChangedFilter()
       // (C): the edit ANCHORS need a PROPOSABLE domain (modelId + every element has a
       // base_hash). The export surface is gated separately, by canReview.
       if (!canPropose(meta, elements)) return
@@ -1499,16 +1471,6 @@
           }
         }
       }
-    }
-
-    // Marks (the reviewed toggle): local state, always decorated, no capability.
-    function decorateMarks(root) {
-      var host = root || doc
-      if (!host || !host.querySelectorAll) return
-      Array.prototype.forEach.call(
-        host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
-        safeDecorate(decorateReviewedToggle),
-      )
     }
 
     // Proposal anchors (tag/relation controls, matrix-cell anchors): the caller gates
@@ -1531,92 +1493,40 @@
       )
     }
 
-    // Retained public name: decorating an element covers its reviewed mark and its
-    // proposal anchors (the badge/mark + anchor halves together).
+    // Retained public name: decorating an element covers its change-state signal
+    // and its proposal anchors (the state + anchor halves together).
     function decorate(root) {
       if (!enabled) return
-      decorateMarks(root)
+      decorateChangeState(root)
       decorateAnchors(root)
     }
 
     function onRendered(event) {
       var root = event && event.detail ? event.detail.root : null
-      // The runtime rebuilds the banner innerHTML on every refresh, so the
-      // toggle and changed filter are re-inserted here (idempotent).
+      // No review mode and no Edit-structure switch: there is no mode to enter, so
+      // the export surface controls are installed unconditionally. Adding the same
+      // listener twice is a no-op, so a re-render stays idempotent.
       if (canReview(meta, elements, needs)) {
-        // No review mode and no Edit-structure switch: there is no mode to enter, so
-        // these controls are installed unconditionally. Adding the same listener
-        // twice is a no-op, so a re-render stays idempotent.
         buildNewElementButton()
-        buildChangedFilter()
         if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       }
       decorateCounter()
-      // Badge/mark decoration has always been unconditional; the CAPABILITY gate
+      // State decoration has always been unconditional; the CAPABILITY gate
       // applies to the edit anchors (where a proposal starts).
-      decorateBadges()
+      decorateChangeState()
       decorateChangePips(root || doc)
       if (enabled) {
-        decorateMarks(root || doc)
         decorateRailProgress()
-        if (html() && html().getAttribute('data-innfo-filter') === 'changed') applyChangedFilter()
       }
       if (enabled && canPropose(meta, elements)) {
         decorateAnchors(root || doc)
       }
     }
 
-    function buildToggle() {
-      if (!canReview(meta, elements, needs)) return null
-      var actions = doc.getElementById('innfo-navbar-actions')
-      var extra = doc.getElementById('innfo-navbar-extra')
-      var banner =
-        doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
-      var host = actions || extra || banner
-      if (!host) return null
-      var existing = doc.querySelector('[data-innfo="review-toggle"]')
-      if (existing) return existing
-      var b = makeEl(doc, 'button', 'innfo-review-toggle', 'Review mode')
-      b.setAttribute('data-innfo', 'review-toggle')
-      b.setAttribute('type', 'button')
-      b.setAttribute('aria-pressed', 'false')
-      b.addEventListener('click', function () {
-        if (enabled) disable()
-        else enable()
-      })
-      host.appendChild(b)
-      return b
-    }
-
-    function buildStructureSwitch() {
-      var dock = doc.getElementById('innfo-review-dock')
-      if (!dock) return null
-      var existing = dock.querySelector('[data-innfo="structure-switch"]')
-      if (existing) return existing
-      var b = makeEl(doc, 'button', 'innfo-structure-switch', 'Edit structure')
-      b.setAttribute('data-innfo', 'structure-switch')
-      b.setAttribute('type', 'button')
-      b.setAttribute('role', 'switch')
-      b.setAttribute('aria-checked', 'false')
-      b.addEventListener('click', function () {
-        var on = b.getAttribute('aria-checked') === 'true'
-        b.setAttribute('aria-checked', on ? 'false' : 'true')
-        if (html()) {
-          if (on) html().removeAttribute('data-innfo-structure')
-          else html().setAttribute('data-innfo-structure', 'on')
-        }
-      })
-      dock.appendChild(b)
-      return b
-    }
-
     function enable() {
       enabled = true
       if (html()) html().setAttribute('data-innfo-review', 'on')
-      if (toggleEl) toggleEl.setAttribute('aria-pressed', 'true')
-      /* no Edit-structure switch: the edit modal warns instead */
       if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
-      buildChangedFilter()
       applyDecorations()
       var dock = doc.getElementById('innfo-review-dock')
       if (dock) {
@@ -1634,15 +1544,12 @@
     function disable() {
       enabled = false
       closePopover()
+      dismissToast()
       if (doc.removeEventListener) doc.removeEventListener('keydown', onKeydown)
       if (html()) {
         html().removeAttribute('data-innfo-review')
         html().removeAttribute('data-innfo-structure')
-        html().removeAttribute('data-innfo-filter')
       }
-      if (toggleEl) toggleEl.setAttribute('aria-pressed', 'false')
-      if (structureEl && structureEl.parentNode) structureEl.parentNode.removeChild(structureEl)
-      structureEl = null
       var dock = doc.getElementById('innfo-review-dock')
       if (dock) {
         dock.style.setProperty('display', 'none', 'important')
@@ -1662,21 +1569,11 @@
           if (n.parentNode) n.parentNode.removeChild(n)
         },
       )
-      var filterBtn = doc.querySelector('[data-innfo="changed-filter"]')
-      if (filterBtn && filterBtn.parentNode) filterBtn.parentNode.removeChild(filterBtn)
-      Array.prototype.forEach.call(
-        doc.querySelectorAll('[data-innfo-changed]'),
-        function (n) {
-          n.removeAttribute('data-innfo-changed')
-        },
-      )
     }
 
     function destroy() {
       disable()
       if (doc.removeEventListener) doc.removeEventListener('innfo:rendered', onRendered)
-      if (toggleEl && toggleEl.parentNode) toggleEl.parentNode.removeChild(toggleEl)
-      toggleEl = null
     }
 
     // A11y: the draft counter is a polite live region (C13).
@@ -1760,12 +1657,13 @@
     createDraftStore: createDraftStore,
     createReviewController: createReviewController,
     fieldDefOf: fieldDefOf,
-    reviewState: reviewState,
     isTargetChanged: isTargetChanged,
     isAlreadyApplied: isAlreadyApplied,
     progressByConcept: progressByConcept,
     badgesByElement: badgesByElement,
-    changedIds: changedIds,
+    changeCountsByElement: changeCountsByElement,
+    changeStateOf: changeStateOf,
+    changeTooltip: changeTooltip,
     canReview: canReview,
     flattenCitations: flattenCitations,
   }

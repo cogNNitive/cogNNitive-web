@@ -8271,6 +8271,27 @@ function rawFrontmatterStillMatches(rawFrontmatter, fm) {
     return false;
   }
 }
+var CONSTRUCTED_FRONTMATTER_KEYS = /* @__PURE__ */ new Set([
+  "spec_version",
+  "spec_url",
+  "knowledge_slug",
+  "workspace_id",
+  "level",
+  "parent_spec",
+  "parent",
+  "knowledge_version",
+  "blueprint_version",
+  "blueprint_name",
+  "knowledge_dir",
+  "blueprints_dir",
+  "title",
+  "mode",
+  "template",
+  "last_saved",
+  "last_updated",
+  "matrices",
+  "concepts"
+]);
 function serializeKnowledge(model) {
   const lines = [];
   const fm = model.frontmatter;
@@ -8353,6 +8374,10 @@ function serializeKnowledge(model) {
         if (c.color) lines.push(`    color: "${c.color}"`);
         if (c.weight !== void 0) lines.push(`    weight: ${c.weight}`);
       }
+    }
+    for (const [key, value] of Object.entries(fm)) {
+      if (CONSTRUCTED_FRONTMATTER_KEYS.has(key) || value === void 0) continue;
+      lines.push((0, import_yaml3.stringify)({ [key]: value }).trim());
     }
     lines.push("---");
   }

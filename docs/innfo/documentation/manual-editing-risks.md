@@ -25,7 +25,7 @@ afterwards:
 
 1. **Ask your AI agent.** It proposes the change with `propose_changeset`, the domain console opens so
    you can review it, and on your approval it applies it with `apply_change`.
-2. **Review in the console.** Turn on review mode, annotate elements, and use **Export changes**. Hand
+2. **Review in the console.** Edit elements, then use **Export changes**. Hand
    the exported `_changes_NN.md` file to the agent, which applies it with `apply_change`. See the
    [reviewer guide](reviewer-guide).
 3. **Use the typed operations** (`update_field`, `add_element`, `remove_element`, `rename_element`,

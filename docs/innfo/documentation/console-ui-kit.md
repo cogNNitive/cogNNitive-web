@@ -27,6 +27,7 @@ InnfoUI = {
   ORIGIN_VARIANTS,       // ['error','agent','human','reviewer','document']
   CITATION_ORIGIN_LABELS,
   StatusBadge(data), CitationIcon(data, opts?),
+  Toast(data, opts?), RailProgress(data),
   describeUnit(kind, ref, index?) -> descriptor,
   Ku(kind, ref, opts?) -> span.innfo-ku-wrap,
   createKu({ doc, onAction }) -> { destroy },
@@ -34,6 +35,8 @@ InnfoUI = {
   FieldRow(data, opts?), ElementCard(data, opts?),
   DraftList(data, opts?), RelList(data, opts?),
   KpiGrid(data, opts?), defineCustomElements(doc?),
+  DataTable(data, opts?), MatrixGrid(data, opts?), Timeline(data, opts?),
+  FilterSelect(data, opts?),
 }
 ```
 
@@ -47,12 +50,67 @@ Every component root carries `data-innfo-component="<kebab-name>"`. Invalid
 | `Ku(kind, ref, { variant?, body? })` | `span.innfo-ku-wrap` > `[data-innfo-component="ku-unit"]` | `data-ku-kind`, `data-ku-nature`, `data-ku-home`, `data-ku-address`; action cluster is a sibling `.innfo-ku-actions` |
 | `describeUnit(kind, ref, index?)` | pure descriptor | `{ kind, nature, home, address, label, slot, vtype?, editability, facts }` |
 | `KuInfoPanel(descriptor)` | `dialog[data-innfo-component="ku-info-panel"]` | focus moves to the heading; Escape restores focus |
-| `StatusBadge({ status, count? })` | `span` | `data-status` (`pending`\|`applied`\|`rejected`\|`stale`) |
+| `StatusBadge({ status, count?, label?, title? })` | `span` | `data-status` (`local`\|`proposed`\|`applied`\|`conflict`); `label` sets the visible word, `title` the tooltip |
+| `Toast({ title, body }, { onClose })` | `div.innfo-change-toast` | `data-innfo-component="toast"`, `role="status"`; dismiss control calls `onClose` |
+| `RailProgress({ total, pending })` | `span.innfo-rail-progress` | `data-total`, `data-pending`; text `pending/total` |
 | `CitationIcon({ variant, field }, { onOpen? })` | `button` | `data-origin`, `data-field`; click stops propagation |
 | `FieldRow({ name, value, citations?, ref?, inherited? }, { model?, element?, onRef?, onCite? })` | `ku-unit` (kind `value`) | `data-ku-kind="value"`, `data-field`; inherited values render `inherited from <Concept>` with editability `none` |
 | `ElementCard({ id, name, conceptId?, description?, fields, inherited? }, opts)` | `article` | `data-element-id`, `data-concept-id`, `data-open`; name is an `element` unit, fields are `value` units |
 | `DraftList({ drafts, byId }, { modelId })` / `RelList({ relations, byId }, { modelId })` | `ul` | each chip is a `ku-unit` addressed by canonical address |
 | `KpiGrid({ items: [{ label, value, concept?, hint? }] }, { doc? })` | `div.innfo-kpi-grid` | `data-innfo-component="kpi-grid"`; responsive grid of KPI cards |
+| `DataTable({ columns, rows, emptyText? }, { doc, modelId?, onEdit?, onSelect? })` | `div.innfo-grid-scroll` | `data-innfo-component="data-table"`; element-oriented columns (`kind: 'element' \| 'field' \| 'text'`) |
+| `MatrixGrid({ rowHeader?, columns, rows, pinFirstColumn?, emptyText? }, { doc })` | `div.innfo-grid-scroll` | `data-innfo-component="matrix-grid"`, `data-pin-first`; rows × columns of arbitrary cells |
+| `Timeline({ rowHeader?, periods, lanes, pinFirstColumn?, emptyText? }, { doc })` | `div.innfo-grid-scroll` | `data-innfo-component="timeline"`, `data-pin-first`; a matrix whose columns are periods |
+| `FilterSelect({ label, options, selected?, quick? }, { doc, onChange? })` | `details.innfo-filter` | `data-innfo-component="filter-select"`; multi-select checkbox facet with quick actions |
+
+### FilterSelect: the reusable facet
+
+`FilterSelect` is the same control the console filter bar uses for
+Models / Concepts / Fields, packaged so any view can drop it in (state, months,
+tags) instead of hand-rolling a menu. It is a token-styled `<details>` facet:
+
+- `options`: `[{ value, label, count?, selected? }]` (a bare string is allowed
+  and becomes both value and label).
+- initial `selected` is a `{ value: true }` map or a `[value]` array; per-option
+  `selected: true` also counts.
+- the summary reads `label: todos (n)`, `label: ninguno`, `label: <one>` or
+  `label: k/n` as the selection changes.
+- `quick`: `[{ label, values }]` buttons; `values` is an array, or `'all'` /
+  omitted for "select everything".
+- `onChange(values)` fires with the next selection (an array of values) on every
+  user toggle and quick action. The element also exposes `getSelection()` and
+  `setSelection(values, silent?)` for programmatic control.
+
+
+### Data surfaces: one grid, three façades
+
+`DataTable`, `MatrixGrid` and `Timeline` are the same object at three zoom levels — a
+grid of cells addressed by `(row, column)` with a sticky header row and an
+optional sticky first column. ONE internal builder (`buildGrid`) paints all
+three; the public functions only adapt their input shape, so layout, sticky
+behaviour, empty state and cell coercion live in a single place.
+
+- **Cell values** may be a DOM node (a renderer returned one) or a primitive.
+  Strings are written with `textContent` — never `innerHTML`.
+- **Row shape**: `{ key?, header?, cell?, cells? }`. `header` may be a string,
+  a DOM node, or `(row, i) => node|string`; the cell is `cells[col.key]`, a
+  `(col, rowIndex, colIndex) => node|string` function, or nothing.
+- **`DataTable`** renders an element: `columns[].kind` is `'element'` (a canonical
+  `Ku` element badge, clickable when `onEdit`/`onSelect` is given), `'field'` /
+  `'value'` (the declared field value via `FieldValue`, falling back to its
+  text), or anything else (plain text). It is the shape the `table` scaffold
+  template already calls.
+- **`MatrixGrid`** and **`Timeline`** share the row-header + pinned-first-column
+  path; `Timeline` only relabels the columns as periods and centres them.
+- **Horizontal scroll is owned by the component** (`.innfo-grid-scroll` carries
+  `overflow:auto`, `max-width:100%`, `min-width:0`). A wide matrix never widens
+  the page — do NOT wrap these in a Tailwind `overflow-x-auto`, which the
+  bundle does not ship.
+
+Domain views and the `table` scaffold template use these instead of
+hand-rolled `<table>` markup. When a view needs a legend, a filter toolbar or a
+summary line, it renders them as siblings above the returned surface.
+
 
 ### Declarative Web Components
 

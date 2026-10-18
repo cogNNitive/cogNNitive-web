@@ -57,10 +57,12 @@
       '--innfo-status-applied': '#166534',
       '--innfo-status-rejected': '#b91c1c',
       '--innfo-status-stale': '#4b5563',
+      '--innfo-status-unsent': '#1e3a8a',
       '--innfo-status-pending-bg': '#fef3c7',
       '--innfo-status-applied-bg': '#dcfce7',
       '--innfo-status-rejected-bg': '#fee2e2',
       '--innfo-status-stale-bg': '#f3f4f6',
+      '--innfo-status-unsent-bg': '#dbeafe',
       '--innfo-origin-agent': '#7c3aed',
       '--innfo-origin-human': '#2563eb',
       '--innfo-origin-reviewer': '#b45309',
@@ -108,6 +110,9 @@
     '.innfo-status-badge[data-status=stale]{color:var(--innfo-status-stale);background:var(--innfo-status-stale-bg)}',
     '.innfo-status-badge[data-status=conflict]{color:var(--innfo-status-rejected);background:var(--innfo-status-rejected-bg)}',
     '.innfo-status-badge[data-status=proposed]{color:var(--innfo-status-pending);background:var(--innfo-status-pending-bg)}',
+    // The single per-row change-state signal: blue means a change that lives only
+    // in this console and has not been submitted yet.
+    '.innfo-status-badge[data-status=local]{color:var(--innfo-status-unsent);background:var(--innfo-status-unsent-bg)}',
     '.innfo-draft-list{list-style:none;margin:0;padding:0}',
     '.innfo-draft-row{display:flex;align-items:baseline;gap:.5em;padding:.3em 0;border-bottom:1px solid var(--innfo-border)}',
     '.innfo-draft-kind{font-weight:600;color:var(--innfo-muted)}',
@@ -117,19 +122,30 @@
     '.innfo-popover-original{color:var(--innfo-muted)}',
     '.innfo-popover-proposed{display:block;width:100%;font:inherit}',
     '.innfo-rail-progress{color:var(--innfo-muted);font-size:.75rem}',
-    '.innfo-review-toggle,.innfo-changed-filter,.innfo-new-element{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:var(--innfo-radius-sm);cursor:pointer}',
-    '.innfo-review-toggle[aria-pressed=true],.innfo-changed-filter[aria-pressed=true]{background:var(--innfo-accent);color:var(--innfo-surface)}',
+    '.innfo-new-element{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:var(--innfo-radius-sm);cursor:pointer}',
     '.innfo-review-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease}',
     '.innfo-review-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
     '[data-innfo-component=element-card]:hover .innfo-review-anchor{opacity:.85}',
     '.innfo-review-anchor:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px;opacity:1}',
-    '.innfo-reviewed-toggle{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.75rem;padding:.1em .5em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em}',
-    '.innfo-reviewed-toggle[data-state=reviewed]{color:var(--innfo-status-applied);background:var(--innfo-status-applied-bg)}',
-    '.innfo-reviewed-toggle[data-state=changed]{color:var(--innfo-status-stale);background:var(--innfo-status-stale-bg)}',
     '.innfo-review-badges{display:inline-flex;gap:.3em;align-items:center;margin-left:.4em}',
-    'html[data-innfo-filter=changed] [data-innfo-component=element-card]:not([data-innfo-changed]){display:none}',
+    // The single change-state signal collapses every per-row change signal (the
+    // local edit, the proposed changesets and the applied history) into one badge.
+    // The per-state counts live in the badge tooltip.
+    '.innfo-change-state{font-size:.76rem;font-weight:700;border-radius:999px;padding:.05em .6em}',
+    // Change toast: the feedback that a change was recorded but NOT applied. Fixed
+    // to the bottom-right, temporary, dismissable; it never blocks the page. The
+    // class is `innfo-change-toast` so it never collides with the runtime's inline
+    // error toast (`.innfo-toast`, `[data-innfo="toast"]`).
+    '.innfo-change-toast{position:fixed;right:1rem;bottom:1rem;z-index:90;display:flex;align-items:flex-start;gap:.6rem;max-width:22rem;padding:.75rem .9rem;background:var(--innfo-surface);color:var(--innfo-text);border:1px solid var(--innfo-border);border-left:3px solid var(--innfo-status-unsent);border-radius:var(--innfo-radius);box-shadow:0 10px 32px rgba(0,0,0,.18)}',
+    '.innfo-change-toast-icon{flex:0 0 auto;display:inline-flex;color:var(--innfo-status-unsent);margin-top:.1rem}',
+    '.innfo-change-toast-body{min-width:0}',
+    '.innfo-change-toast-title{display:block;font-weight:700;font-size:.85rem;margin-bottom:.15rem}',
+    '.innfo-change-toast-text{display:block;font-size:.8rem;line-height:1.4;color:var(--innfo-muted)}',
+    '.innfo-change-toast-close{flex:0 0 auto;margin-left:auto;appearance:none;border:0;background:transparent;color:var(--innfo-muted);font:inherit;font-size:1rem;line-height:1;cursor:pointer;padding:.05rem .2rem;border-radius:var(--innfo-radius-sm)}',
+    '.innfo-change-toast-close:hover{color:var(--innfo-text);background:var(--innfo-surface-2)}',
+    '@media (max-width:640px){.innfo-change-toast{left:1rem;right:1rem;max-width:none}}',
     '.innfo-popover-comment,.innfo-popover-proposed{display:block;width:100%;font:inherit;box-sizing:border-box}',
-    '@media (max-width:640px){.innfo-annotation-popover{width:100%}.innfo-review-toggle,.innfo-changed-filter,.innfo-new-element{width:100%}}',
+    '@media (max-width:640px){.innfo-annotation-popover{width:100%}.innfo-new-element{width:100%}}',
     '.innfo-edit-modal{border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-lg);padding:0;max-width:760px;width:100%;max-height:86vh;overflow:auto;background:var(--innfo-surface);color:var(--innfo-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
     '.innfo-edit-modal::backdrop{background:rgba(0,0,0,.35)}',
     '.innfo-edit-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--innfo-border)}',
@@ -236,6 +252,40 @@
     '.innfo-kpi-header{display:flex;align-items:center;justify-content:space-between;gap:8px}',
     '.innfo-kpi-value{font-size:1.4rem;font-weight:700;color:var(--innfo-text);line-height:1.2}',
     '.innfo-kpi-hint{font-size:.78rem;color:var(--innfo-muted)}',
+    // Data surfaces (Table / MatrixGrid / Timeline): one token-driven grid. The
+    // scroll wrapper is the ONLY horizontal scroll port, so a wide matrix never
+    // widens the page (the old bug: a missing Tailwind `overflow-x-auto`).
+    '.innfo-grid-scroll{max-width:100%;min-width:0;overflow:auto;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);background:var(--innfo-surface)}',
+    '.innfo-grid-scroll+.innfo-grid-scroll{margin-top:.6rem}',
+    '.innfo-grid{border-collapse:separate;border-spacing:0;width:100%;font-size:.82rem;color:var(--innfo-text)}',
+    '.innfo-grid th,.innfo-grid td{padding:.4em .65em;border-bottom:1px solid var(--innfo-border);text-align:left;vertical-align:middle}',
+    '.innfo-grid thead th{position:sticky;top:0;z-index:2;background:var(--innfo-surface-2);color:var(--innfo-muted);font-weight:600;font-size:.75rem;white-space:nowrap}',
+    '.innfo-grid tbody tr:last-child>th,.innfo-grid tbody tr:last-child>td{border-bottom:0}',
+    '.innfo-grid tbody tr:hover>td,.innfo-grid tbody tr:hover>.innfo-grid-rowhead{background:var(--innfo-surface-2)}',
+    '.innfo-grid-cell--center{text-align:center}',
+    '.innfo-grid-cell--end{text-align:right}',
+    '.innfo-grid-corner,.innfo-grid-rowhead{text-align:left;font-weight:600;color:var(--innfo-text)}',
+    '.innfo-grid-empty{padding:1em .8em;color:var(--innfo-muted);text-align:center}',
+    // Pinned first column: the corner + every row header stick to the left edge
+    // and rise above the horizontally scrolled cells.
+    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid-corner{position:sticky;left:0;z-index:3;background:var(--innfo-surface-2)}',
+    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid-rowhead{position:sticky;left:0;z-index:1;background:var(--innfo-surface)}',
+    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid tbody tr:nth-child(even)>.innfo-grid-rowhead{background:var(--innfo-surface-2)}',
+    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid tbody tr:hover>.innfo-grid-rowhead{background:var(--innfo-surface-2)}',
+    // FilterSelect: the shared multi-select facet (state, months, tags).
+    '.innfo-filter{position:relative;display:inline-block}',
+    '.innfo-filter-summary{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;font:inherit;font-size:.8rem;font-weight:600;color:var(--innfo-text);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);cursor:pointer;list-style:none}',
+    '.innfo-filter[open] .innfo-filter-summary{border-color:var(--innfo-link)}',
+    '.innfo-filter-summary::-webkit-details-marker{display:none}',
+    '.innfo-filter-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:50;min-width:220px;max-height:340px;overflow-y:auto;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);box-shadow:0 10px 25px -5px rgba(0,0,0,.15);padding:6px}',
+    '.innfo-filter-quick{display:flex;flex-wrap:wrap;gap:4px;padding:2px 4px 6px;margin-bottom:4px;border-bottom:1px solid var(--innfo-border)}',
+    '.innfo-filter-quick button{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.72rem;padding:2px 8px;border-radius:999px;cursor:pointer}',
+    '.innfo-filter-quick button:hover{border-color:var(--innfo-link);color:var(--innfo-link)}',
+    '.innfo-filter-option{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--innfo-radius-sm);font-size:.82rem;cursor:pointer}',
+    '.innfo-filter-option:hover{background:var(--innfo-surface-2)}',
+    '.innfo-filter-option input{flex:0 0 auto}',
+    '.innfo-filter-option-label{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.innfo-filter-option-count{font-family:var(--innfo-mono);font-size:.72rem;color:var(--innfo-muted)}',
     '.innfo-ku-change-pip{position:absolute;top:-.5em;right:-.5em;min-width:1.2em;height:1.2em;padding:0 .25em;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;line-height:1;border-radius:999px;background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border:1px solid var(--innfo-status-pending);cursor:pointer}',
     // ONE affordance sits beside the badge: a borderless "+". The actions float
     // BELOW it on demand, so they take no inline space and never push a neighbour.
@@ -690,7 +740,45 @@
     return btn
   }
 
-  var STATUSES = ['applied', 'conflict', 'proposed']
+  // The change has one vocabulary with four states: a local edit that lives only
+  // in the console (`local`), a submitted proposal (`proposed`), a change written
+  // into the model (`applied`) and one that could not be applied (`conflict`).
+  var STATUSES = ['applied', 'conflict', 'proposed', 'local']
+  // Plain-language help for the change badge: the badge word IS the state and the
+  // colour matches it. Surfaced on hover via `title` so a reader who has never
+  // seen the console learns what blue/orange/green/red mean.
+  var STATUS_HELP = {
+    local:
+      'recorded in this console only \u2014 not submitted yet. Blue means unsent.',
+    proposed:
+      'submitted and waiting to be applied \u2014 it has not touched the model yet. Orange means pending.',
+    applied: 'written into the model by the engine. Green means done.',
+    conflict:
+      'in conflict with the current content \u2014 it needs a decision. Red means attention.',
+  }
+
+  var STATUS_LABELS = {
+    local: 'Unsent',
+    proposed: 'Proposed',
+    applied: 'Applied',
+    conflict: 'Conflict',
+  }
+
+  function statusHelp(status, count) {
+    var base = STATUS_HELP[status] || String(status)
+    if (count == null) return base
+    var n = Number(count)
+    if (!isFinite(n)) return base
+    return n + ' ' + (n === 1 ? 'change ' : 'changes ') + base
+  }
+
+  function statusLabel(status) {
+    return STATUS_LABELS[status] || String(status)
+  }
+
+  // `label` (a human word) is optional: with it the badge reads as a state, without
+  // it the badge reads as a bare count (the legacy shape). `title` overrides the
+  // generated help so a collapsed badge can enumerate every state it stands for.
   function StatusBadge(data) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.StatusBadge: data required')
     if (STATUSES.indexOf(data.status) === -1) {
@@ -700,9 +788,18 @@
     var badge = makeEl(doc, 'span', 'innfo-status-badge')
     badge.setAttribute('data-innfo-component', 'status-badge')
     badge.setAttribute('data-status', String(data.status))
-    var text = data.count != null ? String(data.count) : String(data.status)
+    var text =
+      data.label != null
+        ? String(data.label)
+        : data.count != null
+          ? String(data.count)
+          : String(data.status)
     badge.textContent = text
-    badge.setAttribute('aria-label', data.count != null ? data.count + ' ' + data.status : data.status)
+    badge.setAttribute('aria-label', String(data.label != null ? data.label : text))
+    badge.setAttribute(
+      'title',
+      data.title != null ? String(data.title) : statusHelp(data.status, data.count),
+    )
     return badge
   }
 
@@ -2784,42 +2881,58 @@
     return wrap
   }
 
-  var REVIEW_STATES = ['none', 'reviewed', 'changed']
-  var REVIEW_LABELS = { none: 'Mark reviewed', reviewed: 'Reviewed', changed: 'Changed' }
-
-  function ReviewedToggle(data) {
-    if (!data || typeof data !== 'object') {
-      throw new TypeError('InnfoUI.ReviewedToggle: data required')
-    }
-    var state = REVIEW_STATES.indexOf(data.state) !== -1 ? data.state : 'none'
-    var doc = resolveDoc(null)
-    var b = makeEl(doc, 'button', 'innfo-reviewed-toggle', REVIEW_LABELS[state])
-    b.setAttribute('data-innfo-component', 'reviewed-toggle')
-    b.setAttribute('type', 'button')
-    b.setAttribute('data-state', String(state))
-    b.setAttribute('aria-pressed', state === 'reviewed' ? 'true' : 'false')
-    return b
-  }
-
+  // Rail progress reads the change, not a review mark: `pending` is how many of the
+  // concept's `total` elements carry a change that lives only in this console.
   function RailProgress(data) {
     if (!data || typeof data !== 'object') {
       throw new TypeError('InnfoUI.RailProgress: data required')
     }
-    var reviewed = Number(data.reviewed)
     var total = Number(data.total)
     var pending = Number(data.pending)
-    if (!isFinite(reviewed) || !isFinite(total) || !isFinite(pending)) {
-      throw new TypeError('InnfoUI.RailProgress: numeric reviewed, total and pending required')
+    if (!isFinite(total) || !isFinite(pending)) {
+      throw new TypeError('InnfoUI.RailProgress: numeric total and pending required')
     }
     var doc = resolveDoc(null)
     var span = makeEl(doc, 'span', 'innfo-rail-progress')
     span.setAttribute('data-innfo-component', 'rail-progress')
-    span.setAttribute('data-reviewed', String(reviewed))
     span.setAttribute('data-total', String(total))
     span.setAttribute('data-pending', String(pending))
-    span.appendChild(doc.createTextNode(reviewed + '/' + total))
-    span.appendChild(makeEl(doc, 'span', 'innfo-rail-progress-pending', String(pending)))
+    span.setAttribute(
+      'title',
+      pending + ' of ' + total + ' elements have unsent changes',
+    )
+    span.appendChild(doc.createTextNode(pending + '/' + total))
     return span
+  }
+
+  // Toast: explicit feedback that an edit was RECORDED, not applied. It never
+  // claims a network call or a write; it points at the step still missing (export).
+  function Toast(data, opts) {
+    if (!data || typeof data !== 'object') {
+      throw new TypeError('InnfoUI.Toast: data required')
+    }
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('InnfoUI.Toast: doc is required')
+    var toast = makeEl(doc, 'div', 'innfo-change-toast')
+    toast.setAttribute('data-innfo-component', 'toast')
+    toast.setAttribute('role', 'status')
+    toast.setAttribute('aria-live', 'polite')
+    var ico = makeEl(doc, 'span', 'innfo-change-toast-icon')
+    ico.setAttribute('aria-hidden', 'true')
+    if (typeof icon === 'function') ico.innerHTML = icon('git-commit', 16)
+    toast.appendChild(ico)
+    var body = makeEl(doc, 'div', 'innfo-change-toast-body')
+    body.appendChild(makeEl(doc, 'strong', 'innfo-change-toast-title', data.title || ''))
+    body.appendChild(makeEl(doc, 'span', 'innfo-change-toast-text', data.body || ''))
+    toast.appendChild(body)
+    var close = makeEl(doc, 'button', 'innfo-change-toast-close', '\u00d7')
+    close.setAttribute('type', 'button')
+    close.setAttribute('aria-label', 'Dismiss')
+    close.addEventListener('click', function () {
+      if (typeof opts.onClose === 'function') opts.onClose()
+    })
+    toast.appendChild(close)
+    return toast
   }
 
   /**
@@ -2858,6 +2971,338 @@
       grid.appendChild(card)
     })
     return grid
+  }
+
+  // ---- Data surfaces: Table / MatrixGrid / Timeline ----
+  //
+  // The three are the SAME object seen at three zoom levels: a grid of cells
+  // addressed by (row, column), with a sticky header row and an optional sticky
+  // first column. ONE builder paints them; the three exports only adapt their
+  // input shape, so there is a single place to fix layout, sticky behaviour,
+  // empty state or cell coercion.
+  //
+  // Why they exist: custom views used to hand-roll `<table>` markup and lean on
+  // Tailwind utility classes (`overflow-x-auto`, `flex`, ...) that the console
+  // bundle does NOT ship, so the page scrolled horizontally forever. These
+  // components own their CSS (token-driven, in COMPONENT_CSS) and never depend
+  // on a utility class being present.
+
+  function gridCellClass(align) {
+    if (align === 'center') return 'innfo-grid-cell innfo-grid-cell--center'
+    if (align === 'end' || align === 'right') return 'innfo-grid-cell innfo-grid-cell--end'
+    return 'innfo-grid-cell'
+  }
+
+  // A cell value may already be a DOM node (a renderer returned one) or a
+  // primitive. Never innerHTML: every string is text.
+  function coerceCellNode(doc, value) {
+    if (value == null) return doc.createTextNode('')
+    if (value && value.nodeType) return value
+    return doc.createTextNode(String(value))
+  }
+
+  function resolveRowHeader(row, ri) {
+    var h = row && row.header
+    return typeof h === 'function' ? h(row, ri) : h
+  }
+
+  function resolveRowCell(row, col, ri, ci) {
+    if (typeof row.cell === 'function') return row.cell(col, ri, ci)
+    if (row.cells && row.cells[col.key] != null) return row.cells[col.key]
+    return null
+  }
+
+  function buildGrid(spec) {
+    var doc = spec.doc
+    var columns = Array.isArray(spec.columns) ? spec.columns : []
+    var rows = Array.isArray(spec.rows) ? spec.rows : []
+    var hasRowHeader = spec.rowHeader != null
+
+    var scroll = makeEl(doc, 'div', 'innfo-grid-scroll')
+    scroll.setAttribute('data-innfo-component', spec.component)
+    if (spec.pinFirstColumn) scroll.setAttribute('data-pin-first', 'true')
+
+    var table = makeEl(doc, 'table', 'innfo-grid')
+    if (hasRowHeader) table.setAttribute('data-has-row-header', 'true')
+
+    var thead = doc.createElement('thead')
+    var htr = doc.createElement('tr')
+    if (hasRowHeader) {
+      var corner = makeEl(doc, 'th', 'innfo-grid-corner')
+      corner.setAttribute('scope', 'col')
+      corner.textContent = spec.rowHeader.label != null ? String(spec.rowHeader.label) : ''
+      htr.appendChild(corner)
+    }
+    columns.forEach(function (col) {
+      var th = doc.createElement('th')
+      th.setAttribute('scope', 'col')
+      if (col.key != null) th.setAttribute('data-col', String(col.key))
+      if (col.align) th.className = gridCellClass(col.align)
+      th.textContent = col.label != null ? String(col.label) : String(col.key == null ? '' : col.key)
+      htr.appendChild(th)
+    })
+    thead.appendChild(htr)
+    table.appendChild(thead)
+
+    var tbody = doc.createElement('tbody')
+    if (!rows.length) {
+      var er = doc.createElement('tr')
+      var ec = makeEl(doc, 'td', 'innfo-grid-empty')
+      ec.colSpan = Math.max(1, columns.length + (hasRowHeader ? 1 : 0))
+      ec.textContent = spec.emptyText != null ? String(spec.emptyText) : ''
+      er.appendChild(ec)
+      tbody.appendChild(er)
+    } else {
+      rows.forEach(function (row, ri) {
+        if (!row) row = {}
+        var tr = doc.createElement('tr')
+        if (row.key != null) tr.setAttribute('data-row', String(row.key))
+        var headerValue = resolveRowHeader(row, ri)
+        if (headerValue != null) {
+          var rth = makeEl(doc, 'th', 'innfo-grid-rowhead')
+          rth.setAttribute('scope', 'row')
+          rth.appendChild(coerceCellNode(doc, headerValue))
+          tr.appendChild(rth)
+        }
+        columns.forEach(function (col, ci) {
+          var td = doc.createElement('td')
+          td.className = gridCellClass(col.align)
+          if (col.key != null) td.setAttribute('data-col', String(col.key))
+          td.appendChild(coerceCellNode(doc, resolveRowCell(row, col, ri, ci)))
+          tr.appendChild(td)
+        })
+        tbody.appendChild(tr)
+      })
+    }
+    table.appendChild(tbody)
+    scroll.appendChild(table)
+    return scroll
+  }
+
+  // DataTable columns describe an element: `kind` picks the cell renderer.
+  //   'element' -> an element knowledge-unit badge (canonical KU)
+  //   'field' / 'value' -> the declared field value via FieldValue, else its text
+  //   anything else (default) -> plain text
+  function tableCellNode(doc, el, col, modelId, opts) {
+    var kind = col.kind || 'text'
+    if (kind === 'element') {
+      var badge = Ku(
+        'element',
+        {
+          model: modelId,
+          id: el && el.id,
+          label: (el && (el.name || el.id)) || '',
+          concept: el && el.concept,
+          color: el && el.color,
+          index: el && el.index,
+        },
+        { doc: doc },
+      )
+      var activate = opts && (opts.onEdit || opts.onSelect)
+      if (activate && el && el.id) {
+        badge.setAttribute('role', 'button')
+        badge.setAttribute('tabindex', '0')
+        badge.setAttribute('aria-label', 'Open ' + ((el && (el.name || el.id)) || el.id))
+        badge.addEventListener('click', function () {
+          if (opts.onEdit) opts.onEdit(el.id, el)
+          else if (opts.onSelect) opts.onSelect(el.id, el)
+        })
+      }
+      return badge
+    }
+    var value = typeof col.value === 'function' ? col.value(el, col) : fieldLookup(el, col.key)
+    if (typeof col.render === 'function') return coerceCellNode(doc, col.render(value, el, col))
+    if (kind === 'field' || kind === 'value') {
+      var typed = FieldValue(
+        { name: col.key, value: value, type: col.type },
+        { doc: doc, modelId: modelId, elementId: el && el.id },
+      )
+      if (typed) return typed
+    }
+    return coerceCellNode(doc, value)
+  }
+
+  function fieldLookup(el, key) {
+    if (!el || key == null) return null
+    var fields = el.fields
+    if (fields && typeof fields === 'object' && fields[key] != null) return fields[key]
+    return el[key]
+  }
+
+  function DataTable(data, opts) {
+    if (!data || !Array.isArray(data.columns)) throw new TypeError('InnfoUI.DataTable: data.columns must be an array')
+    if (!Array.isArray(data.rows)) throw new TypeError('InnfoUI.DataTable: data.rows must be an array')
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('InnfoUI.DataTable: doc is required')
+    var modelId = (opts && (opts.modelId || opts.model)) || data.modelId || 'model'
+    var columns = data.columns.map(function (c) {
+      return { key: c.key, label: c.label, align: c.align, kind: c.kind || 'text', type: c.type, value: c.value, render: c.render }
+    })
+    var rows = data.rows.map(function (el) {
+      return {
+        key: el && el.id,
+        cell: function (col) {
+          return tableCellNode(doc, el, col, modelId, opts)
+        },
+      }
+    })
+    return buildGrid({
+      doc: doc,
+      component: 'data-table',
+      columns: columns,
+      rows: rows,
+      emptyText: data.emptyText,
+    })
+  }
+
+  function MatrixGrid(data, opts) {
+    if (!data || !Array.isArray(data.columns)) throw new TypeError('InnfoUI.MatrixGrid: data.columns must be an array')
+    if (!Array.isArray(data.rows)) throw new TypeError('InnfoUI.MatrixGrid: data.rows must be an array')
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('InnfoUI.MatrixGrid: doc is required')
+    return buildGrid({
+      doc: doc,
+      component: 'matrix-grid',
+      columns: data.columns.map(function (c) { return { key: c.key, label: c.label, align: c.align } }),
+      rows: data.rows,
+      rowHeader: data.rowHeader || { label: '' },
+      pinFirstColumn: data.pinFirstColumn !== false,
+      emptyText: data.emptyText,
+    })
+  }
+
+  // A timeline is a matrix whose columns ARE periods; identical to MatrixGrid
+  // apart from the component name (styling) and a centre-aligned axis default.
+  function Timeline(data, opts) {
+    if (!data || !Array.isArray(data.periods)) throw new TypeError('InnfoUI.Timeline: data.periods must be an array')
+    if (!Array.isArray(data.lanes)) throw new TypeError('InnfoUI.Timeline: data.lanes must be an array')
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('InnfoUI.Timeline: doc is required')
+    return buildGrid({
+      doc: doc,
+      component: 'timeline',
+      columns: data.periods.map(function (p) { return { key: p.key, label: p.label, align: p.align || 'center' } }),
+      rows: data.lanes,
+      rowHeader: data.rowHeader || { label: data.laneLabel || '' },
+      pinFirstColumn: data.pinFirstColumn !== false,
+      emptyText: data.emptyText,
+    })
+  }
+
+  // ---- FilterSelect: the shared multi-select facet ----
+  //
+  // A token-styled dropdown of checkboxes with an optional quick-action row — the
+  // same control the console filter bar uses for Models / Concepts / Fields, now
+  // reusable from any view (state, months, tags). It owns its open + selected
+  // state; the caller subscribes with opts.onChange(values, option).
+  function normalizeFilterOptions(options) {
+    if (!Array.isArray(options)) return []
+    return options.map(function (o) {
+      if (o && typeof o === 'object') {
+        return {
+          value: o.value != null ? o.value : o.label,
+          label: o.label != null ? String(o.label) : String(o.value),
+          count: o.count,
+          selected: !!o.selected,
+        }
+      }
+      return { value: o, label: String(o) }
+    })
+  }
+
+  function filterSummary(label, options, selected) {
+    var total = options.length
+    var chosen = options.filter(function (o) { return selected[o.value] })
+    if (!total) return label
+    if (chosen.length === total) return label + ': todos (' + total + ')'
+    if (!chosen.length) return label + ': ninguno'
+    if (chosen.length === 1) return label + ': ' + chosen[0].label
+    return label + ': ' + chosen.length + '/' + total
+  }
+
+  function FilterSelect(data, opts) {
+    if (!data || !Array.isArray(data.options)) {
+      throw new TypeError('InnfoUI.FilterSelect: data.options must be an array')
+    }
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('InnfoUI.FilterSelect: doc is required')
+    var options = normalizeFilterOptions(data.options)
+    var selected = {}
+    if (data.selected && !Array.isArray(data.selected) && typeof data.selected === 'object') {
+      Object.keys(data.selected).forEach(function (k) { if (data.selected[k]) selected[k] = true })
+    } else if (Array.isArray(data.selected)) {
+      data.selected.forEach(function (v) { selected[v] = true })
+    }
+    options.forEach(function (o) { if (o.selected) selected[o.value] = true })
+    var label = data.label != null ? String(data.label) : ''
+
+    var root = makeEl(doc, 'details', 'innfo-filter')
+    root.setAttribute('data-innfo-component', 'filter-select')
+    var summary = makeEl(doc, 'summary', 'innfo-filter-summary')
+    summary.setAttribute('aria-label', label || 'Filter')
+    root.appendChild(summary)
+    var menu = makeEl(doc, 'div', 'innfo-filter-menu')
+    root.appendChild(menu)
+
+    var cbByValue = {}
+    function selectedValues() {
+      return options.filter(function (o) { return selected[o.value] }).map(function (o) { return o.value })
+    }
+    function syncSummary() { summary.textContent = filterSummary(label, options, selected) }
+    function notify() {
+      if (typeof opts.onChange === 'function') opts.onChange(selectedValues())
+    }
+    function setSelection(values, silent) {
+      var allow = null
+      if (values !== 'all') {
+        allow = {}
+        ;(Array.isArray(values) ? values : [values]).forEach(function (v) { allow[v] = true })
+      }
+      options.forEach(function (o) {
+        var on = values === 'all' ? true : !!(allow && allow[o.value])
+        selected[o.value] = on
+        if (cbByValue[o.value]) cbByValue[o.value].checked = on
+      })
+      syncSummary()
+      if (!silent) notify()
+    }
+
+    if (Array.isArray(data.quick) && data.quick.length) {
+      var quick = makeEl(doc, 'div', 'innfo-filter-quick')
+      data.quick.forEach(function (q) {
+        if (!q) return
+        var b = makeEl(doc, 'button', null, q.label != null ? String(q.label) : '')
+        b.type = 'button'
+        b.addEventListener('click', function (ev) {
+          ev.preventDefault()
+          setSelection(q.values == null ? 'all' : q.values)
+        })
+        quick.appendChild(b)
+      })
+      menu.appendChild(quick)
+    }
+
+    options.forEach(function (o) {
+      var row = makeEl(doc, 'label', 'innfo-filter-option')
+      var cb = doc.createElement('input')
+      cb.type = 'checkbox'
+      cb.checked = !!selected[o.value]
+      cb.addEventListener('change', function () {
+        selected[o.value] = cb.checked
+        syncSummary()
+        notify()
+      })
+      cbByValue[o.value] = cb
+      row.appendChild(cb)
+      row.appendChild(makeEl(doc, 'span', 'innfo-filter-option-label', o.label))
+      if (o.count != null) row.appendChild(makeEl(doc, 'span', 'innfo-filter-option-count', String(o.count)))
+      menu.appendChild(row)
+    })
+
+    syncSummary()
+    root.getSelection = selectedValues
+    root.setSelection = setSelection
+    return root
   }
 
   function defineCustomElements() {
@@ -3422,8 +3867,10 @@
     CITATION_ORIGIN_LABELS: CITATION_ORIGIN_LABELS,
     DraftList: DraftList,
     AnnotationPopover: AnnotationPopover,
-    ReviewedToggle: ReviewedToggle,
     RailProgress: RailProgress,
+    Toast: Toast,
+    STATUS_LABELS: STATUS_LABELS,
+    statusLabel: statusLabel,
     EditModal: EditModal,
     NewElementModal: NewElementModal,
     SankeyFlow: SankeyFlow,
@@ -3435,6 +3882,10 @@
     FieldReferenceWidget: FieldReferenceWidget,
     FieldMarkdownWidget: FieldMarkdownWidget,
     KpiGrid: KpiGrid,
+    DataTable: DataTable,
+    MatrixGrid: MatrixGrid,
+    Timeline: Timeline,
+    FilterSelect: FilterSelect,
     defineCustomElements: defineCustomElements,
   }
 })
