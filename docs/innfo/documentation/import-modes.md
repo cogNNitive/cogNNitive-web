@@ -154,6 +154,7 @@ manifest, how a new snapshot should converge into the model:
 strategy:: upsert
 key:: video_id
 concept:: VideoMetric
+model:: youtube
 ```
 
 - `cite-only` (default) — the family behaves exactly as before: new snapshots are
@@ -179,15 +180,18 @@ watch-digest state (`.cognnitive/watch-digest.json`), so an item the user alread
 `ignore`d is not re-proposed, and it is **idempotent**: an already-applied
 proposal yields an empty one.
 
-Adding `--plan` turns the proposal into the exact ordered `apply_change`
-operations (one `add_element` per new key, one `update_field` per changed value
-for `replace-values`, and a single final `bump_version`); it requires the family
-to declare a target `concept::`. `upsert` never overwrites a changed value — those
+Adding `--plan` turns the proposal into ONE `propose_changeset` payload
+(`operations`: one `add_element` per new key, one `update_field` per changed value
+for `replace-values`, each citing the target snapshot through `sources`, and at
+most one trailing `bump_version` whose `to` names the level); it requires the
+family to declare a target `concept::` and the `model::` slug. Inside one
+changeset the `bump_version` replaces the default patch bump, so the model is
+bumped once. `upsert` never overwrites a changed value — those
 values arrive under `review` for an explicit decision.
 
 Applying the plan is a normal reviewed mutation — a diff preview, a
-confirmation, `apply_change`, and a single version bump — the same shape as
-reviewer feedback. After applying, mark the family applied so re-running
+confirmation, and one changeset (`propose_changeset`, then `apply_change` on
+OK) that bumps the model once — the same shape as reviewer feedback. After applying, mark the family applied so re-running
 `--converge` is a no-op:
 
 ```bash

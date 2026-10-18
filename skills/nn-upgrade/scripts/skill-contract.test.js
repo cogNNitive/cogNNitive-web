@@ -21,6 +21,16 @@ function run() {
   }
   console.log('✔ SKILL.md describes Flow B, --freeze-slugs and the new-domain pointer')
 
+  assert.ok(
+    /nn-innfo/.test(SKILL) && /MARKERS_REMOVED/.test(SKILL),
+    'SKILL.md must link a marker-bearing model to the nn-innfo MARKERS_REMOVED recipe',
+  )
+  assert.ok(
+    /Do NOT ask marker mapping questions/i.test(SKILL),
+    'SKILL.md must tell the agent not to ask marker mapping questions',
+  )
+  console.log('✔ SKILL.md links the MARKERS_REMOVED recipe instead of asking marker mapping')
+
   const retiredFlows = [/Flow A/, /Flow C/, /batch-update/, /--layout-only/, /--restore/, /--migrate-references/, /Layout Migration/i]
   for (const re of retiredFlows) {
     assert.ok(!re.test(SKILL), `SKILL.md must not mention the retired ${re}`)

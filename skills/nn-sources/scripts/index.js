@@ -411,12 +411,12 @@ async function handleCliMode(argv) {
     if (argv.plan) {
       let plan;
       try {
-        plan = convergence.buildApplyPlan(proposal, declared.concept);
+        plan = convergence.buildApplyPlan(proposal, declared.concept, declared.model);
       } catch (err) {
         console.error(`Error: ${err.message}`);
         process.exit(1);
       }
-      console.log(JSON.stringify({ family, strategy: declared.strategy, concept: declared.concept, ...plan }, null, 2));
+      console.log(JSON.stringify({ family, strategy: declared.strategy, concept: declared.concept, model: declared.model, ...plan }, null, 2));
       process.exit(0);
     }
 

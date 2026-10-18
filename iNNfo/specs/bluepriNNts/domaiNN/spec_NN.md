@@ -1,13 +1,13 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 title: "DomaiNN Blueprint"
 blueprint_name: "domaiNN"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-4-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -28,7 +28,6 @@ relationship_types:
 * [[domaiNN]]
 * [[kNNowledge]]
 * [[bluepriNNts]]
-* [[Tags]]
 
 # NN Concept Definition
 
@@ -50,13 +49,13 @@ type:: model
 color:: grey
 weight:: 90
 
-## NN Concept Definition: Tags
-icon:: tag
-type:: category
-color:: grey
-weight:: 50
-
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels (e.g. verified).
 
 <!-- domaiNN fields: container conventions -->
 
@@ -110,31 +109,6 @@ concept:: bluepriNNts
 type:: string
 description:: Domain classification or strategic focus of the local bluepriNNt.
 
-<!-- Tags fields -->
-
-## NN Field Definition: color
-concept:: Tags
-type:: string
-description:: Hex color code (e.g. #10b981) or CSS token for tag badges and highlights.
-
-## NN Field Definition: icon
-concept:: Tags
-type:: string
-description:: Icon identifier (e.g. Lucide icon name) displayed with the tag badge.
-
-## NN Field Definition: description
-concept:: Tags
-type:: string
-description:: Semantic description, strategic intent, or scope of the tag.
-
-# NN Marker Definition
-
-## NN Marker Definition: verified
-applies_to:: [Element]
-symbol:: >
-icon:: shield-check
-color:: green
-
 # DomaiNN Blueprint
 
 ## A level-2 blueprint for a domaiNN root — linking kNNowledge documents, local bluepriNNts, and taxonomy tags
@@ -144,13 +118,13 @@ color:: green
 A domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge document, so a domaiNN can nest inside another domaiNN without a special case:
 * **domaiNN** sets directory conventions and the entry point (`domaiNN_NN.md`).
 * **kNNowledge** links to the Level-3 documents with metadata and blueprint binding.
-* **Tags** provides a centralized taxonomy catalog (`color`, `icon`, `description`) used across the domaiNN.
+* **bluepriNNts** catalogs local bluepriNNt packages.
 
 ## Objectives
 
 - Define the domaiNN root as an ordinary Level-3 kNNowledge document governed by this blueprint.
 - Standardize the directory layout: `kNNowledge/` for knowledge and `specs/bluepriNNts/` for local bluepriNNts.
-- Make every domaiNN resolvable offline through the parent chain (`domaiNN` → iNNfo V_0-3-0 → defiNNition).
+- Make every domaiNN resolvable offline through the parent chain (`domaiNN` → iNNfo V_0-5-0 → defiNNition).
 
 ## Specification
 
@@ -161,7 +135,21 @@ A domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge d
 | **domaiNN** | text | Prose description, entry point, and directory conventions of the container |
 | **kNNowledge** | knowledge | kNNowledge documents in the domaiNN with metadata and blueprint binding |
 | **bluepriNNts** | model | Local bluepriNNt specs the domaiNN references (path + category) |
-| **Tags** | category | Centralized taxonomy tags with color, icon, and description |
+
+### Fields
+
+| Concept | Field | Type | Purpose |
+|---|---|---|---|
+| `*` | `tags` | select (multiple) | Open vocabulary ad-hoc tags and classification labels (e.g. `verified`) |
+| domaiNN | `name` | string | Display name or title of the domaiNN |
+| domaiNN | `knowledge_dir` | string | Base relative path for kNNowledge documents |
+| domaiNN | `blueprints_dir` | string | Base relative path for local bluepriNNts |
+| kNNowledge | `path` | knowledge | domaiNN-relative path to referenced document |
+| kNNowledge | `blueprint` | string | Level-2 bluepriNNt name |
+| kNNowledge | `status` | select | draft, active, archived |
+| kNNowledge | `author` | string | Author or owner |
+| bluepriNNts | `path` | model | domaiNN-relative path to local spec |
+| bluepriNNts | `category` | string | Strategic focus of local bluepriNNt |
 
 ### Directory Conventions
 
@@ -200,15 +188,9 @@ path:: kNNowledge/core_business_NN.md
 blueprint:: business
 status:: active
 author:: Lead Architect
-
-# NN Tags
-
-## NN Tags: Strategic
-color:: #3b82f6
-icon:: target
-description:: High-level strategic knowledge.
+tags:: [verified]
 ```
 
 ## Examples
 
-A domaiNN that links one business kNNowledge document and one shared tag uses three concepts only: `domaiNN` for the container, `kNNowledge` for the linked document, and `Tags` for the taxonomy entry. No other structure is required.
+A domaiNN that links one business kNNowledge document uses two concepts: `domaiNN` for the container and `kNNowledge` for the linked document. No other structure is required.

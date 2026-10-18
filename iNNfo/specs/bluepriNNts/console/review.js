@@ -21,22 +21,15 @@
     return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
-  // The definition governing a matrix cell: the column Marker of the reserved
-  // item-markers matrix, otherwise the matrix definition of the same name.
-  // The reserved matrix is recognised like payload-builder does: by name OR by a
-  // `markers` target.
+  // The definition governing a matrix cell: the matrix definition of the same name.
   function matrixCellDef(schema, matrix, col, target) {
     if (!schema) return null
-    function byName(list, name) {
-      var want = String(name).toLowerCase()
-      return (Array.isArray(list) ? list : []).filter(function (d) {
+    var want = String(matrix).toLowerCase()
+    return (
+      (Array.isArray(schema.matrices) ? schema.matrices : []).filter(function (d) {
         return d && String(d.name).toLowerCase() === want
-      })[0]
-    }
-    var isItemMarkers =
-      String(matrix).toLowerCase() === 'item-markers matrix' || String(target || '').toLowerCase() === 'markers'
-    if (isItemMarkers) return byName(schema.markers, col) || null
-    return byName(schema.matrices, matrix) || null
+      })[0] || null
+    )
   }
 
   // Declared definition of a field, keyed by (concept, field) so two concepts that
@@ -507,6 +500,7 @@
 
     var enabled = false
     var toggleEl = null
+    var structureEl = null
     var openPopover = null
     var lastAnchor = null
 
@@ -517,6 +511,33 @@
     function closePopover() {
       if (openPopover && openPopover.parentNode) openPopover.parentNode.removeChild(openPopover)
       openPopover = null
+    }
+
+    function valueKeyOf(v) {
+      return String(v == null ? '' : v).trim().toLowerCase()
+    }
+
+    // Effective tags = own `tags` Field values plus inherited concept-level
+    // values, de-duplicated case-insensitively (mirrors the console runtime).
+    function effectiveTagsOf(el) {
+      var out = []
+      if (el && Array.isArray(el.tags)) {
+        out = out.concat(el.tags)
+      } else if (el && el.fields && el.fields.tags != null) {
+        var own = el.fields.tags
+        out = out.concat(Array.isArray(own) ? own : [own])
+      }
+      if (el && el.inherited && el.inherited.tags) {
+        var iv = el.inherited.tags.value
+        if (iv != null) out = out.concat(Array.isArray(iv) ? iv : [iv])
+      }
+      var seen = {}
+      return out.filter(function (t) {
+        var k = valueKeyOf(t)
+        if (!k || seen[k]) return false
+        seen[k] = true
+        return true
+      })
     }
 
     function saveDraft(anchorData, payload) {
@@ -563,6 +584,8 @@
       if (payload.comment !== undefined && payload.comment !== null) {
         draft.comment = String(payload.comment)
       }
+      // Canonical unit address of the draft target (element, or element&field).
+      draft.address = draft.field ? `${draft.element_id}&${draft.field}` : draft.element_id
       var saved = store.addDraft(draft)
       refreshCount()
       return saved
@@ -670,20 +693,6 @@
           value: el.description,
           draftField: 'description',
           original: el.description,
-          citations: base.citations,
-          history: base.history,
-        }
-      }
-      if (field.indexOf('marker:') === 0) {
-        var markerId = field.slice('marker:'.length)
-        var markers = el.markers || {}
-        return {
-          title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 marker ' + markerId,
-          fieldName: field,
-          type: 'string',
-          value: markers[markerId],
-          draftField: field,
-          original: markers[markerId],
           citations: base.citations,
           history: base.history,
         }
@@ -836,13 +845,19 @@
     function openFor(anchor, anchorData) {
       closePopover()
       lastAnchor = anchor
-      // Tag / relation membership has no core draft op yet: record proposals
-      // as comment drafts (never auto-applied corrections).
+      // Tag membership is a `correction` on the `tags` Field carrying the full
+      // new array (applied as `update_field`), never a comment draft.
       if (anchorData.tagRemove) {
+        var elTag = elementsById[anchorData.elementId]
+        var curTags = effectiveTagsOf(elTag)
+        var nextTags = curTags.filter(function (t) {
+          return valueKeyOf(t) !== valueKeyOf(anchorData.tagRemove)
+        })
         saveDraft(anchorData, {
-          kind: 'comment',
+          kind: 'correction',
           field: 'tags',
-          comment: 'Propose removing tag "' + anchorData.tagRemove + '"',
+          original: curTags,
+          proposed: nextTags,
         })
         return
       }
@@ -863,7 +878,7 @@
       }
 
       var kinds = anchorData.field ? ['comment', 'correction'] : ['comment', 'delete']
-      if (anchorData.tagAdd) kinds = ['comment']
+      if (anchorData.tagAdd) kinds = ['correction']
       if (anchorData.relAdd) kinds = ['comment']
       var activeKind = kinds[0]
       var data = {
@@ -886,10 +901,14 @@
           var ta = pop.querySelector('textarea')
           var text = ta ? ta.value : ''
           if (anchorData.tagAdd) {
+            var elTagAdd = elementsById[anchorData.elementId]
+            var curAdd = effectiveTagsOf(elTagAdd)
+            var nextAdd = curAdd.concat([text])
             saveDraft(anchorData, {
-              kind: 'comment',
+              kind: 'correction',
               field: 'tags',
-              comment: 'Propose tag: ' + text,
+              original: curAdd,
+              proposed: nextAdd,
             })
           } else if (anchorData.relAdd) {
             saveDraft(anchorData, {
@@ -1089,7 +1108,7 @@
           fieldRow &&
           document.activeElement &&
           document.activeElement.closest &&
-          document.activeElement.closest('[data-ku-kind="field"]')
+          document.activeElement.closest('[data-ku-kind="value"]')
         ) {
           fieldRow.dispatchEvent(new Event('click', { bubbles: true }))
         } else {
@@ -1141,19 +1160,6 @@
           ),
         )
       }
-      Array.prototype.forEach.call(
-        card.querySelectorAll('[data-marker-id]'),
-        function (chip) {
-          if (chip.querySelector('[data-innfo-ctl="marker-anchor"]')) return
-          var markerId = chip.getAttribute('data-marker-id')
-          chip.appendChild(
-            kuEditControl(
-              { elementId: elId, field: 'marker:' + markerId, ctl: 'marker-anchor' },
-              'Edit marker ' + markerId,
-            ),
-          )
-        },
-      )
       decorateTagRow(card, elId)
       decorateRelList(card, elId)
 
@@ -1277,44 +1283,6 @@
       td.appendChild(b)
     }
 
-    // Every knowledge-unit badge gets an info action, ALWAYS (review on or off).
-    // Actions sit in a ku-actions cluster OUTSIDE the badge root, never nested.
-    function decorateInfoActions(root) {
-      var host = root || doc
-      if (!host.querySelectorAll || typeof UI.KuActions !== 'function') return
-      function attach(badge, elementId, field) {
-        if (!badge || badge.getAttribute('data-ku-actions') === 'true') return
-        badge.setAttribute('data-ku-actions', 'true')
-        var actions = UI.KuActions(
-          {},
-          {
-            onInfo: function () {
-              openInfo({ elementId: elementId, field: field })
-            },
-          },
-        )
-        actions.setAttribute('data-innfo-ctl', 'ku-info-actions')
-        if (badge.getAttribute('data-ku-kind') === 'field') {
-          badge.appendChild(actions)
-        } else if (badge.parentNode) {
-          badge.parentNode.insertBefore(actions, badge.nextSibling)
-        }
-      }
-      Array.prototype.forEach.call(
-        host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
-        function (card) {
-          var elId = card.getAttribute('data-element-id')
-          attach(card.querySelector('.innfo-card-head [data-ku-kind="element"]'), elId, '__name')
-          Array.prototype.forEach.call(
-            card.querySelectorAll('[data-ku-kind="field"][data-field]'),
-            function (b) {
-              attach(b, elId, b.getAttribute('data-field'))
-            },
-          )
-        },
-      )
-    }
-
     // Pending-change pip: a count badge on the unit it targets, visible in both
     // review modes (it reflects stored drafts). Clicking opens the modal.
     function decorateChangePips(root) {
@@ -1322,32 +1290,41 @@
       var host = root || doc
       if (!host.querySelectorAll) return
       var drafts = store.drafts() || []
-      var byEl = {}
-      var byField = {}
+      var counts = {}
       drafts.forEach(function (d) {
-        if (!d || !d.element_id) return
-        var eid = String(d.element_id)
-        byEl[eid] = (byEl[eid] || 0) + 1
-        if (d.field) {
-          var k = eid + '#' + String(d.field)
-          byField[k] = (byField[k] || 0) + 1
-        }
+        if (!d) return
+        var fieldPart = d.field && d.field !== '__name' ? '&' + String(d.field) : ''
+        var key = d.address || (d.element_id ? '@' + String(d.element_id) + fieldPart : '')
+        if (!key) return
+        counts[key] = (counts[key] || 0) + 1
       })
-      function applyPip(badge, n, elementId, field) {
+      function countFor(address) {
+        if (counts[address] != null) return counts[address]
+        var found = 0
+        Object.keys(counts).forEach(function (key) {
+          if (address && address.slice(-key.length) === key) found += counts[key]
+        })
+        return found
+      }
+      function applyPip(badge, n, address) {
         if (!badge) return
-        var existing = badge.querySelector('[data-innfo-component="ku-change-pip"]')
+        var wrap = badge.parentNode || badge
+        var existing = wrap.querySelector
+          ? wrap.querySelector('[data-innfo-component="ku-change-pip"]')
+          : null
         if (n > 0) {
           badge.setAttribute('data-ku-changes', String(n))
           if (!existing) {
             var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(n))
             pip.setAttribute('data-innfo-component', 'ku-change-pip')
+            pip.setAttribute('data-ku-address', String(address || ''))
             pip.setAttribute('type', 'button')
-            pip.setAttribute('aria-label', n + ' pending change' + (n === 1 ? '' : 's'))
+            pip.setAttribute('aria-label', n + ' pending change' + (n === 1 ? '' : 's') + ' on ' + address)
             pip.addEventListener('click', function (ev) {
               if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-              openInfo({ elementId: elementId, field: field })
+              if (typeof openInfo === 'function') openInfo(anchorFromDescriptor({ address: address }))
             })
-            badge.appendChild(pip)
+            wrap.appendChild(pip)
           } else {
             existing.textContent = String(n)
           }
@@ -1356,20 +1333,9 @@
           if (existing && existing.parentNode) existing.parentNode.removeChild(existing)
         }
       }
-      Array.prototype.forEach.call(
-        host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
-        function (card) {
-          var elId = card.getAttribute('data-element-id')
-          applyPip(card.querySelector('.innfo-card-head [data-ku-kind="element"]'), byEl[elId] || 0, elId, '__name')
-          Array.prototype.forEach.call(
-            card.querySelectorAll('[data-ku-kind="field"][data-field]'),
-            function (b) {
-              var f = b.getAttribute('data-field')
-              applyPip(b, byField[elId + '#' + f] || 0, elId, f)
-            },
-          )
-        },
-      )
+      Array.prototype.forEach.call(host.querySelectorAll('[data-ku-address]'), function (badge) {
+        applyPip(badge, countFor(badge.getAttribute('data-ku-address') || ''), badge.getAttribute('data-ku-address'))
+      })
     }
 
     function decorateBadges() {
@@ -1466,7 +1432,6 @@
 
     function applyDecorations() {
       decorateBadges()
-      decorateInfoActions()
       decorateChangePips()
       if (!enabled) return
       decorate(doc)
@@ -1498,7 +1463,7 @@
         safeDecorate(decorateCard),
       )
       Array.prototype.forEach.call(
-        host.querySelectorAll('[data-ku-kind="field"][data-field]'),
+        host.querySelectorAll('[data-ku-kind="value"][data-field]'),
         safeDecorate(decorateFieldRow),
       )
       Array.prototype.forEach.call(
@@ -1519,7 +1484,6 @@
       if (toggleEl) toggleEl.setAttribute('aria-pressed', enabled ? 'true' : 'false')
       decorateCounter()
       decorateBadges()
-      decorateInfoActions(root || doc)
       decorateChangePips(root || doc)
       if (enabled) {
         decorate(root || doc)
@@ -1550,10 +1514,33 @@
       return b
     }
 
+    function buildStructureSwitch() {
+      var dock = doc.getElementById('innfo-review-dock')
+      if (!dock) return null
+      var existing = dock.querySelector('[data-innfo="structure-switch"]')
+      if (existing) return existing
+      var b = makeEl(doc, 'button', 'innfo-structure-switch', 'Edit structure')
+      b.setAttribute('data-innfo', 'structure-switch')
+      b.setAttribute('type', 'button')
+      b.setAttribute('role', 'switch')
+      b.setAttribute('aria-checked', 'false')
+      b.addEventListener('click', function () {
+        var on = b.getAttribute('aria-checked') === 'true'
+        b.setAttribute('aria-checked', on ? 'false' : 'true')
+        if (html()) {
+          if (on) html().removeAttribute('data-innfo-structure')
+          else html().setAttribute('data-innfo-structure', 'on')
+        }
+      })
+      dock.appendChild(b)
+      return b
+    }
+
     function enable() {
       enabled = true
       if (html()) html().setAttribute('data-innfo-review', 'on')
       if (toggleEl) toggleEl.setAttribute('aria-pressed', 'true')
+      structureEl = buildStructureSwitch()
       if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       buildChangedFilter()
       applyDecorations()
@@ -1576,9 +1563,12 @@
       if (doc.removeEventListener) doc.removeEventListener('keydown', onKeydown)
       if (html()) {
         html().removeAttribute('data-innfo-review')
+        html().removeAttribute('data-innfo-structure')
         html().removeAttribute('data-innfo-filter')
       }
       if (toggleEl) toggleEl.setAttribute('aria-pressed', 'false')
+      if (structureEl && structureEl.parentNode) structureEl.parentNode.removeChild(structureEl)
+      structureEl = null
       var dock = doc.getElementById('innfo-review-dock')
       if (dock) {
         dock.style.setProperty('display', 'none', 'important')
@@ -1624,6 +1614,46 @@
       }
     }
 
+    function anchorFromDescriptor(descriptor) {
+      var address = String((descriptor && descriptor.address) || '')
+      var at = address.indexOf('@')
+      var model = at === -1 ? address : address.slice(0, at)
+      var rest = at === -1 ? '' : address.slice(at + 1)
+      var segs = rest.split('&')
+      var unit = segs[0] || ''
+      var subs = segs.slice(1)
+      if (!unit) return { elementId: '', modelId: model }
+      if (unit.indexOf('concept:') === 0) {
+        return { elementId: null, modelId: model, concept: unit.slice('concept:'.length), field: subs[0] }
+      }
+      if (subs.length === 2) {
+        return { elementId: unit, modelId: model, field: '__cell', row: subs[0], col: subs[1] }
+      }
+      if (subs.length === 1) {
+        return { elementId: unit, modelId: model, field: subs[0] }
+      }
+      return { elementId: unit, modelId: model, field: '__name' }
+    }
+
+    // One descriptor-driven entry point for every Ku action. `Ku` never knows
+    // about review mode; the delegated listener forwards here and this function
+    // decides whether the action is legal right now.
+    function handleKuAction(action, descriptor) {
+      if (!descriptor) return false
+      var anchorData = anchorFromDescriptor(descriptor)
+      if (action === 'info') {
+        return openInfo(anchorData)
+      }
+      if (action !== 'edit') return false
+      if (!enabled) return false
+      if (descriptor.editability === 'structure') {
+        if (!html() || html().getAttribute('data-innfo-structure') !== 'on') return false
+        return openEdit(Object.assign({}, anchorData, { comment: true }))
+      }
+      if (descriptor.editability === 'none') return false
+      return openEdit(anchorData)
+    }
+
     toggleEl = buildToggle()
     if (doc.addEventListener) doc.addEventListener('innfo:rendered', onRendered)
     // One initial pass: covers the render that preceded the controller's creation.
@@ -1637,6 +1667,7 @@
       disable: disable,
       decorate: decorate,
       openEdit: openEdit,
+      handleKuAction: handleKuAction,
       openNew: openNew,
       propose: saveDraft,
       // Re-renders the host's count surfaces and re-applies decorations after

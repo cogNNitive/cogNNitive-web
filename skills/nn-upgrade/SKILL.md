@@ -74,6 +74,8 @@ node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>
 ### Phase B3 — Impact Analysis
 Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use.
 
+**Marker-bearing models**: a model whose documents still carry a `# NN Marker Definition` or an `item-markers matrix` is legacy. Do NOT ask marker mapping questions at upgrade time — report the `MARKERS_REMOVED` diagnostic and link to the `nn-innfo` recipe `MARKERS_REMOVED` (§8e-bis), which turns the diagnostic into a reviewable changeset.
+
 ### Phase B4 — Rehydrate & Validate
 Hydrate adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump version, and re-validate through MCP. On validation failure, restore from the backup.
 

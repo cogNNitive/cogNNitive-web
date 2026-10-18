@@ -62,16 +62,27 @@ function appendEmpty(ctx, message) {
   ctx.container.appendChild(p)
 }
 
-function editButton(doc, ctx, id, label) {
-  var button = doc.createElement('button')
-  button.className = 'innfo-edit-anchor'
-  button.type = 'button'
-  button.title = 'Propose an edit'
-  button.textContent = label || 'Edit'
-  button.addEventListener('click', function () {
-    ctx.modal.edit({ elementId: id })
-  })
-  return button
+function unitModel(ctx) {
+  var meta = (ctx && ctx.payload && ctx.payload.meta) || {}
+  return meta.modelId || meta.model || ''
+}
+
+function elementUnit(doc, ctx, record, label) {
+  if (ctx && ctx.ui && typeof ctx.ui.Ku === 'function') {
+    return ctx.ui.Ku(
+      'element',
+      {
+        model: unitModel(ctx),
+        id: record.id || record.slug || label,
+        label: String(label || record.name || record.id || ''),
+        concept: record.concept,
+      },
+      { doc: doc },
+    )
+  }
+  var fallback = doc.createElement('span')
+  fallback.textContent = String(label || record.name || record.id || '')
+  return fallback
 }
 
 function renderPosition(doc, ctx, pos, people) {
@@ -79,10 +90,7 @@ function renderPosition(doc, ctx, pos, people) {
   card.className = 'innfo-org-position'
   var head = doc.createElement('div')
   head.className = 'innfo-org-position-head'
-  var title = doc.createElement('h3')
-  title.textContent = pos.name || '(position)'
-  head.appendChild(title)
-  if (pos.id) head.appendChild(editButton(doc, ctx, pos.id, 'Edit position'))
+  head.appendChild(elementUnit(doc, ctx, pos, pos.name || '(position)'))
   card.appendChild(head)
   var list = doc.createElement('div')
   list.className = 'innfo-org-people'
@@ -95,16 +103,13 @@ function renderPosition(doc, ctx, pos, people) {
   people.forEach(function (p) {
     var row = doc.createElement('div')
     row.className = 'innfo-org-person'
-    var name = doc.createElement('strong')
-    name.textContent = (p.fields && p.fields.role) || p.name || '(person)'
-    row.appendChild(name)
+    row.appendChild(elementUnit(doc, ctx, p, (p.fields && p.fields.role) || p.name || '(person)'))
     if (p.fields && p.fields.compensation) {
       var comp = doc.createElement('span')
       comp.className = 'innfo-org-comp'
       comp.textContent = p.fields.compensation
       row.appendChild(comp)
     }
-    if (p.id) row.appendChild(editButton(doc, ctx, p.id, 'Edit'))
     list.appendChild(row)
   })
   card.appendChild(list)

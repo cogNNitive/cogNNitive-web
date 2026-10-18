@@ -37,15 +37,3 @@ status:: active
 path:: artifacts_NN.md
 blueprint:: artifacts
 status:: active
-
-# NN Tags
-
-## NN Tags: strategy
-color:: #3b82f6
-icon:: target
-description:: Business model, value propositions, and investor pitch.
-
-## NN Tags: discovery
-color:: #10b981
-icon:: user-check
-description:: Customer interviews and market validation notes.

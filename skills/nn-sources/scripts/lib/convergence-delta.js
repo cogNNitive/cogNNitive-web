@@ -35,11 +35,11 @@ function sha256(text) {
  * Parses `## NN Source Family:` blocks from a manifest's text.
  * Each block declares `strategy:: <cite-only|upsert|replace-values>` and, for a
  * non-default strategy, a required `key:: <column>`. An optional `concept::`
- * names the target Concept, which `buildApplyPlan` needs to emit `apply_change`
- * operations.
+ * names the target Concept and an optional `model::` names the target model slug;
+ * `buildApplyPlan` needs both to emit the changeset operations.
  *
  * @param {string} manifestText
- * @returns {Array<{ family: string, strategy: string, key: string | null, concept: string | null }>}
+ * @returns {Array<{ family: string, strategy: string, key: string | null, concept: string | null, model: string | null }>}
  */
 function parseSourceFamilies(manifestText) {
   const families = [];
@@ -55,11 +55,13 @@ function parseSourceFamilies(manifestText) {
     const strategyMatch = body.match(/^strategy::\s*(\S+)\s*$/im);
     const keyMatch = body.match(/^key::\s*(\S+)\s*$/im);
     const conceptMatch = body.match(/^concept::\s*(\S+)\s*$/im);
+    const modelMatch = body.match(/^model::\s*(\S+)\s*$/im);
     families.push({
       family: matches[i].family,
       strategy: strategyMatch ? strategyMatch[1].toLowerCase() : 'cite-only',
       key: keyMatch ? keyMatch[1] : null,
       concept: conceptMatch ? conceptMatch[1] : null,
+      model: modelMatch ? modelMatch[1] : null,
     });
   }
   return families;
@@ -262,41 +264,55 @@ function buildProposal(options) {
 }
 
 /**
- * Maps a proposal to the exact `innfo-mcp_apply_change` operation plan that
- * applies it through the reviewed mutation path:
+ * Maps a proposal to the ONE `innfo-mcp_propose_changeset` payload that applies
+ * it through the reviewed mutation path (same change keys: op/target/concept/
+ * name/fields/from/to/sources):
  *   - one `add_element` per new key;
  *   - one `update_field` per changed value, ONLY for `replace-values`
  *     (`upsert` leaves changed values under `review` for a human decision);
- *   - a single final `bump_version`.
- * Removed keys are never an operation (flag-only). Requires the target concept.
+ *   - at most one trailing `bump_version` (`to` names the level), which the
+ *     changeset applies once per model.
+ * Every element change cites the target snapshot through `sources`.
+ * Removed keys are never an operation (flag-only). Requires the target concept
+ * and model.
  *
  * @param {object} proposal
  * @param {string} concept
- * @returns {{ ops: Array<{ op: string, args: object }>, review: Array<object>, removed: Array<object> }}
+ * @param {string} model target model slug
+ * @returns {{ operations: Array<Record<string, unknown>>, review: Array<object>, removed: Array<object> }}
  */
-function buildApplyPlan(proposal, concept) {
+function buildApplyPlan(proposal, concept, model) {
   if (!concept) throw new Error('A target concept:: is required to build an apply plan.');
-  if (proposal.empty) return { ops: [], review: [], removed: [] };
-  const ops = [];
+  if (!model) throw new Error('A target model:: is required to build an apply plan.');
+  if (proposal.empty) return { operations: [], review: [], removed: [] };
+  const sources = proposal.to.file;
+  const operations = [];
   for (const added of proposal.added) {
-    ops.push({
+    operations.push({
       op: 'add_element',
-      args: { conceptName: concept, elementName: added.key, fields: added.fields },
+      target: `${model}@${added.key}`,
+      concept,
+      name: added.key,
+      fields: added.fields,
+      sources,
     });
   }
   const review = [];
   for (const change of proposal.changed) {
     if (proposal.strategy === 'replace-values') {
-      ops.push({
+      operations.push({
         op: 'update_field',
-        args: { conceptName: concept, elementName: change.key, fieldName: change.field, value: change.to },
+        target: `${model}@${change.key}&${change.field}`,
+        from: change.from,
+        to: change.to,
+        sources,
       });
     } else {
       review.push(change);
     }
   }
-  if (ops.length > 0) ops.push({ op: 'bump_version', args: { bump: 'patch' } });
-  return { ops, review, removed: proposal.removed };
+  if (operations.length > 0) operations.push({ op: 'bump_version', target: model, to: 'patch' });
+  return { operations, review, removed: proposal.removed };
 }
 
 module.exports = {

@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "documentation_V_0-3-3"
+  name: "documentation_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
-knowledge_version: "V_0-3-3"
+knowledge_version: "V_0-4-0"
 title: "Ghostbusters Inc. Field Operations Handbook"
 ---
 

@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-4"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Organization App"
 procedures:
   - id: "audit-skill-gaps"
@@ -78,6 +78,19 @@ weight:: 30
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
+## NN Field Definition: complexity
+concept:: *
+type:: number
+widget:: scale
+widget_config:: {"min": 0, "max": 100, "step": 5}
+description:: Relative complexity score (0-100 scale, step 5).
+
 ## NN Field Definition: scope
 concept:: Roles
 type:: select
@@ -103,14 +116,6 @@ description:: Primary contributions, role dedication, and key deliverables.
 concept:: Person
 type:: image
 description:: Visual portrait or avatar representing the person.
-
-# NN Marker Definition
-
-## NN Marker Definition: complexity
-applies_to:: [Element, Concept]
-icon:: gauge
-color:: green
-weight:: 50
 
 # NN Matrix Definition
 
@@ -170,16 +175,12 @@ This V_0-2-0 revision absorbs the human-structure concepts that were previously 
 
 | Field | Concept | Type | Purpose |
 |---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
+| `complexity` | `*` | `number` (scale 0-100, step 5) | Relative complexity score |
 | `scope` | Roles | `select` (internal / external) | Whether the role is internal or external to the organization |
 | `position_ref` | Person | `reference` → Position | The Position held by the team member |
 | `compensation` | Person | `string` | Compensation structure, salary, equity, or incentives |
 | `contributions` | Person | `string` | Primary contributions, role dedication, and key deliverables |
-
-### Markers
-
-| Marker | Purpose |
-|---|---|
-| `complexity` | Indicates the complexity of a role or position |
 
 ### Matrices
 
@@ -208,7 +209,7 @@ To create an organization model, create a level 3 FILE mode document with:
 ---
 level: 3
 parent_spec:
-  name: "organization_V_0-2-0"
+  name: "organization_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
 knowledge_version: "V_x-y-z"
 title: "<Organization Name>"
@@ -269,7 +270,7 @@ Skill description.
 ```
 
 The application will resolve the `parent` URL, download this template, and use its
-Concept Definitions, Field Definitions, Marker Definitions, and Matrix Definitions to
+Concept Definitions, Field Definitions, and Matrix Definitions to
 validate and render your model.
 
 ## Examples

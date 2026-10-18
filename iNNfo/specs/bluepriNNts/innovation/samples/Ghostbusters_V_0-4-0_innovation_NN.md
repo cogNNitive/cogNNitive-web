@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "innovation_V_0-3-4"
+  name: "innovation_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
-knowledge_version: "V_0-3-4"
+knowledge_version: "V_0-4-0"
 title: "Ghostbusters Inc. Ecto-Tech Innovation Portfolio Model"
 ---
 
@@ -90,7 +90,7 @@ opportunityPriority:: "high"
 opportunityStatus:: "prioritized"
 opportunityDateIdentified:: "2026-08-01"
 opportunityLastUpdated:: "2026-08-20"
-tags:: [opportunity, hardware, wireless, safety]
+tags:: [opportunity, hardware, wireless, safety, "!", "?"]
 Transitioning from pneumatic foot-pedal cables to encrypted RF wireless triggering mechanisms to improve field response efficiency.
 
 ## NN Opportunity: Super-Charged Particle Stream Neutralizer
@@ -106,7 +106,7 @@ opportunityPriority:: "medium"
 opportunityStatus:: "under_review"
 opportunityDateIdentified:: "2026-08-10"
 opportunityLastUpdated:: "2026-08-25"
-tags:: [opportunity, particle-physics, power-efficiency]
+tags:: [opportunity, particle-physics, power-efficiency, "?"]
 Developing a secondary frequency modulator to increase particle beam locking efficiency by 50% while reducing thermal stress.
 
 # NN Initiative
@@ -139,7 +139,7 @@ initiativeStartDate:: "2026-08-10"
 initiativeEndDate:: "2026-09-15"
 initiativeLastUpdated:: "2026-09-01"
 initiativeNotes:: "Passed internal bench testing on 2026-08-18. Field deployment authorized by Dr. Peter Venkman."
-tags:: [initiative, hardware, rf-trigger, field-tested]
+tags:: [initiative, hardware, rf-trigger, field-tested, "!", "?"]
 
 ## NN Initiative: Subterranean Grid Power Auto-Coupler
 slug:: subterranean-grid-power-auto-coupler
@@ -169,7 +169,7 @@ initiativeStartDate:: "2026-08-20"
 initiativeEndDate:: "2026-09-30"
 initiativeLastUpdated:: "2026-09-01"
 initiativeNotes:: "Hardware acquired; mounting bracket installation underway in subterranean basement chamber."
-tags:: [initiative, facility, automation, backup-power]
+tags:: [initiative, facility, automation, backup-power, "!", "?"]
 
 # NN matrices: program-initiatives matrix
 | Row \ Col | Wireless Muon Trap Foot-Pedal | Subterranean Grid Power Auto-Coupler |
@@ -197,11 +197,3 @@ tags:: [initiative, facility, automation, backup-power]
 | Dr. Raymond Stantz | Champions | Proposes |
 | Dr. Peter Venkman | Evaluates | Evaluates |
 | Winston Zeddemore | Evaluates | Evaluates |
-
-# NN matrices: item-markers matrix
-| Item \ Marker | priority | certainty |
-| :--- | :---: | :---: |
-| Automated Remote Trap Triggering | ! | ? |
-| Super-Charged Particle Stream Neutralizer | - | ? |
-| Wireless Muon Trap Foot-Pedal | ! | ? |
-| Subterranean Grid Power Auto-Coupler | ! | ? |

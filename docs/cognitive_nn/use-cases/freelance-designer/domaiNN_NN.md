@@ -37,15 +37,3 @@ status:: active
 path:: artifacts_NN.md
 blueprint:: artifacts
 status:: active
-
-# NN Tags
-
-## NN Tags: design
-color:: #8b5cf6
-icon:: palette
-description:: Visual tokens, typography, and page section layouts.
-
-## NN Tags: scope
-color:: #f59e0b
-icon:: check-circle
-description:: Scope boundaries, phase deliverables, and client sign-off.

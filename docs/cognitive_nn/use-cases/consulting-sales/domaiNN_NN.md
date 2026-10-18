@@ -43,15 +43,3 @@ status:: active
 path:: artifacts_NN.md
 blueprint:: artifacts
 status:: active
-
-# NN Tags
-
-## NN Tags: commercial
-color:: #3b82f6
-icon:: briefcases
-description:: RFP responses, pricing packages, and client proposals.
-
-## NN Tags: governance
-color:: #10b981
-icon:: shield-check
-description:: Rate card compliance and security certifications.

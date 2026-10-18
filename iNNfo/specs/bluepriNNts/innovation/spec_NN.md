@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/innovation/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-4"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Innovation App"
 procedures:
   - id: "score-innovation-pipeline"
@@ -60,6 +60,12 @@ color:: orange
 weight:: 85
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
 
 ## NN Field Definition: programName
 concept:: Program
@@ -287,20 +293,6 @@ type:: knowledge
 target_blueprint:: business
 description:: Business model for this initiative, as a submodel conforming to the business template.
 
-# NN Marker Definition
-
-## NN Marker Definition: priority
-applies_to:: [Element]
-symbol:: !
-icon:: flag
-color:: red
-
-## NN Marker Definition: certainty
-applies_to:: [Element, Concept]
-symbol:: ?
-icon:: help-circle
-color:: green
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: program-initiatives matrix
@@ -351,12 +343,11 @@ The iNNfo Innovation Template models an innovation portfolio: strategic programs
 | **Opportunity** | `list` | A potential initiative idea, evaluated and prioritized before execution |
 | **Initiative** | `list` | An active execution workstream with budget, results, decisions, and risks |
 
-### Markers
+### Fields
 
-| Marker | Purpose |
-|---|---|
-| `priority` | Strategic priority score (1–10) |
-| `certainty` | Confidence level (1–10) |
+| Field | Concept | Type | Purpose |
+|---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
 
 ### Matrices
 

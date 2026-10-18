@@ -47,6 +47,7 @@ function testConvergeProposal() {
         'strategy:: upsert',
         'key:: video_id',
         'concept:: VideoMetric',
+        'model:: youtube',
         '',
       ].join('\n'),
     );
@@ -64,16 +65,23 @@ function testConvergeProposal() {
     assert.deepStrictEqual(proposal.changed, [{ key: 'abc', field: 'views', from: '100', to: '150' }]);
     assert.deepStrictEqual(proposal.removed, [{ key: 'ghi' }]);
 
-    // Apply plan: deterministic apply_change ops (upsert keeps changes in review).
+    // Apply plan: one propose_changeset payload (upsert keeps changes in review).
     const planRun = cli(['--converge', 'youtube_monthly', '--plan', '--src', dir]);
     assert.strictEqual(planRun.status, 0, planRun.stderr);
     const plan = JSON.parse(planRun.stdout);
     assert.strictEqual(plan.concept, 'VideoMetric');
-    assert.deepStrictEqual(plan.ops[0], {
-      op: 'add_element',
-      args: { conceptName: 'VideoMetric', elementName: 'jkl', fields: { views: '400' } },
-    });
-    assert.deepStrictEqual(plan.ops[1], { op: 'bump_version', args: { bump: 'patch' } });
+    assert.strictEqual(plan.model, 'youtube');
+    assert.deepStrictEqual(plan.operations, [
+      {
+        op: 'add_element',
+        target: 'youtube@jkl',
+        concept: 'VideoMetric',
+        name: 'jkl',
+        fields: { views: '400' },
+        sources: 'sources/import/youtube_monthly_20260201T000000Z.csv',
+      },
+      { op: 'bump_version', target: 'youtube', to: 'patch' },
+    ]);
     assert.strictEqual(plan.review.length, 1);
 
     // Read-only guarantee: sources are byte-unchanged.

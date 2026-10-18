@@ -676,8 +676,8 @@ function validateBlueprintCompositions(options = {}) {
 
     const rootData = extractConceptsAndMatrices(tmplInfo.content);
     const composedConcepts = new Map();
-    // Reserved L1 pseudo-concepts are always resolvable (item-markers matrix targets Markers, etc.)
-    for (const r of ['markers', 'concepts', 'elements']) {
+    // Reserved L1 pseudo-concepts are always resolvable.
+    for (const r of ['concepts', 'elements']) {
       composedConcepts.set(r, { originalName: r, sourceFile: '<reserved>' });
     }
     for (const c of rootData.concepts) {

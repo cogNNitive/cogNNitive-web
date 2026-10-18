@@ -1,12 +1,12 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/design-presets/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 title: "Design Presets App"
-blueprint_version: "V_0-3-2"
+blueprint_version: "V_0-4-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -35,6 +35,12 @@ color:: purple
 weight:: 100
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
 
 ## NN Field Definition: name
 concept:: DesignPreset

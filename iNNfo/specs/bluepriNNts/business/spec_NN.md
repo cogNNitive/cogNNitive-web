@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-4-2"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-5-0"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -100,13 +100,13 @@ business vocabulary, kept in sync across the two halves.
 This template declares one Matrix Definition of its own and resolves the rest
 from its included templates' Definitions:
 
-| Contributed by | Concepts | Markers | Matrices |
+| Contributed by | Concepts | Fields | Matrices |
 |---|---|---|---|
-| `business-model` | Business summary, Market, Stakeholders, Segments, Profiles, Persona, Segmentation, Market trends, Market size, Competition, Problems, Value propositions, Messages, Channels, Perceptions, Emotions, Behaviors, Journey, Solutions, Offerings, Products and services, Features, Components, Roadmap, Marketing, Branding, Media plan, Communication, Pitch, Web, Storytelling, Presentations, Team, Business idea, Inspiration, Opportunity, Business objectives, Mission, Vision, Organizational values, Organizational goals, Operations, Activities, Resources, Finance, Revenue, Costs, Unit economics, Funding sources, Shareholders, Projections, Legal, Legal issues, Contracts, Challenges, Unfair advantage, Goals, Misc, Procedure | importance, completion, certainty, priority, rating | Journey map, Segmentation-Profiles, Problems-Value propositions, Value propositions-Messages, Messages-Channels, Features-Milestone, Organizational values-Organizational goals, Activities-Resources, Problems-Competition |
-| `analysis` | Analysis, Assumptions, Risks, Suggestions, SWOT, Keys, Validation, Coherence, Experiments | importance, completion, certainty, priority, rating *(identical → merged)* | Assumptions-Risks, Experiments-Assumptions |
-| `organization` (transitive) | Organization, Roles, Functions, Position, Person, Skills | complexity | positions-roles, persons-positions, Functions-Positions |
-| `projects` (transitive) | Project, Phases, Milestone, Deliverable, Task, Risk, Project roles | health | task-roles, task-deliverables, risks-milestones |
-| `metrics` | Metrics, Variables, Evolution, Scenario | is_variable, is_formula, is_derived | metrics-dependencies, metric-variables, scenario-metrics |
+| `business-model` | Business summary, Market, Stakeholders, Segments, Profiles, Persona, Segmentation, Market trends, Market size, Competition, Problems, Value propositions, Messages, Channels, Perceptions, Emotions, Behaviors, Journey, Solutions, Offerings, Products and services, Features, Components, Roadmap, Marketing, Branding, Media plan, Communication, Pitch, Web, Storytelling, Presentations, Team, Business idea, Inspiration, Opportunity, Business objectives, Mission, Vision, Organizational values, Organizational goals, Operations, Activities, Resources, Finance, Revenue, Costs, Unit economics, Funding sources, Shareholders, Projections, Legal, Legal issues, Contracts, Challenges, Unfair advantage, Goals, Misc, Procedure | `tags` (*) | Journey map, Segmentation-Profiles, Problems-Value propositions, Value propositions-Messages, Messages-Channels, Features-Milestone, Organizational values-Organizational goals, Activities-Resources, Problems-Competition |
+| `analysis` | Analysis, Assumptions, Risks, Suggestions, SWOT, Keys, Validation, Coherence, Experiments | `tags` (*) *(identical → merged)* | Assumptions-Risks, Experiments-Assumptions |
+| `organization` (transitive) | Organization, Roles, Functions, Position, Person, Skills | `tags` (*), `complexity` (*), scope, position_ref, compensation, contributions | positions-roles, persons-positions, Functions-Positions |
+| `projects` (transitive) | Project, Phases, Milestone, Deliverable, Task, Risk, Project roles | `tags` (*), `health` (*), status, priority, etc. | task-roles, task-deliverables, risks-milestones |
+| `metrics` | Metrics, Variables, Evolution, Scenario | `tags` (*), metricValue, metricFormula, etc. | metrics-dependencies, metric-variables, scenario-metrics |
 | `business` (own) | — | — | Metrics-Organizational goals |
 
 ### Relationship Types

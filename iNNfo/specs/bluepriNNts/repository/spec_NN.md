@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/repository/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-2-1"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Repository App"
 relationship_types:
   hierarchy:
@@ -56,6 +56,12 @@ color:: purple
 weight:: 60
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
 
 ## NN Field Definition: name
 concept:: Repository
@@ -120,16 +126,6 @@ concept:: Changes
 type:: string
 description:: ISO timestamp when the change landed.
 
-# NN Marker Definition
-
-## NN Marker Definition: shipped
-applies_to:: [Element]
-widget:: boolean
-symbol:: ✓
-icon:: rocket
-color:: green
-description:: Marked when the change or release reached the default branch.
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: change release relations
@@ -161,7 +157,7 @@ The Repository Template models a GitHub repository as a container (`Repository`)
 - Provide a valid Level 2 template usable as `parent_spec` for repository models.
 - Model a repository lifecycle: state, releases, and per-change history.
 - Express change-to-release and release-to-state relations as evaluable matrices.
-- Keep the body valid against the `iNNfo_V_0-3-0` meta-template.
+- Keep the body valid against the `iNNfo_V_0-5-0` meta-template.
 
 ## Specification
 
@@ -178,6 +174,7 @@ The Repository Template models a GitHub repository as a container (`Repository`)
 
 | Concept | Field | Type | Purpose |
 |---|---|---|---|
+| `*` | `tags` | select (multiple) | Open vocabulary ad-hoc tags and classification labels (e.g. `shipped`) |
 | Repository | `name` | string | `owner/repo` name |
 | Repository | `remote_url` | url | Canonical remote URL |
 | Repository | `description` | markdown_inline | Scope description |
@@ -190,12 +187,6 @@ The Repository Template models a GitHub repository as a container (`Repository`)
 | Changes | `change_type` | select | feat/fix/chore/refactor/docs/test/ci |
 | Changes | `scope` | markdown_inline | Affected area |
 | Changes | `merged_at` | string | ISO timestamp |
-
-### Markers
-
-| Marker | Applies to | Widget | Meaning |
-|---|---|---|---|
-| `shipped` | Element | boolean | The change or release reached the default branch |
 
 ### Matrices
 

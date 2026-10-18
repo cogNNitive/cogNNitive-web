@@ -13,8 +13,14 @@
       "canonical": true,
       "level": 1,
       "aliases": [],
-      "sense": "Level-1 concrete specification meta-template defining root primitives (Concept Definition, Field Definition, Matrix Definition, Marker Definition)",
+      "sense": "Level-1 concrete specification meta-template defining root primitives (Concept Definition, Field Definition, Matrix Definition)",
       "excludes": []
+    },
+    "tag": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "A value of the `tags` Field, an ordinary multi-valued select Field; there is no reserved `tags` property and no Marker primitive",
+      "excludes": ["git-tag", "release-tag", "html-tag"]
     },
     "meta-bluepriNNt": {
       "canonical": true,
@@ -129,6 +135,27 @@
     }
   },
   "retired_identifiers": [
+    {
+      "id": "Marker Definition",
+      "old": "Marker Definition",
+      "new": "`tags` Field value (flag) or a declared Field (valued)",
+      "kind": "primitive",
+      "notes": "Retired in iNNfo V_0-5-0: a flag marker becomes a value of the tags Field, a valued marker becomes a normal Field; a document that still carries one fails with MARKERS_REMOVED"
+    },
+    {
+      "id": "item-markers matrix",
+      "old": "item-markers matrix",
+      "new": "declared Fields + concept-level values",
+      "kind": "primitive",
+      "notes": "Retired in iNNfo V_0-5-0: removed with remove_matrix; cells become field values and concept rows become concept-level values"
+    },
+    {
+      "id": "set_marker",
+      "old": "set_marker",
+      "new": "update_field / update_concept_field",
+      "kind": "operation",
+      "notes": "Retired schema operation; apply_change now rejects it with UNKNOWN_OPERATION"
+    },
     {
       "id": "specs/templates/",
       "old": "specs/templates/",

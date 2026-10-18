@@ -30,6 +30,7 @@ function testParseSourceFamilies() {
     'strategy:: upsert',
     'key:: video_id',
     'concept:: VideoMetric',
+    'model:: youtube',
     '',
     '## NN Source Family: brand_prose',
     'strategy:: cite-only',
@@ -42,11 +43,12 @@ function testParseSourceFamilies() {
     strategy: 'upsert',
     key: 'video_id',
     concept: 'VideoMetric',
+    model: 'youtube',
   });
-  assert.deepStrictEqual(families[1], { family: 'brand_prose', strategy: 'cite-only', key: null, concept: null });
+  assert.deepStrictEqual(families[1], { family: 'brand_prose', strategy: 'cite-only', key: null, concept: null, model: null });
 
   const defaulted = parseSourceFamilies('## NN Source Family: x\nfoo:: bar\n');
-  assert.deepStrictEqual(defaulted[0], { family: 'x', strategy: 'cite-only', key: null, concept: null });
+  assert.deepStrictEqual(defaulted[0], { family: 'x', strategy: 'cite-only', key: null, concept: null, model: null });
   console.log('PASS: parseSourceFamilies');
 }
 
@@ -129,25 +131,36 @@ function testBuildApplyPlan() {
   const common = { family: 'fam', key: 'video_id', fromFile: 'a.csv', toFile: 'b.csv' };
 
   const replaceProposal = buildProposal({ ...common, strategy: 'replace-values', fromContent: CSV_FROM, toContent: CSV_TO });
-  const replacePlan = buildApplyPlan(replaceProposal, 'VideoMetric');
-  assert.deepStrictEqual(replacePlan.ops[0], {
-    op: 'add_element',
-    args: { conceptName: 'VideoMetric', elementName: 'jkl', fields: { views: '400', title: 'Delta' } },
-  });
-  assert.deepStrictEqual(replacePlan.ops[1], {
-    op: 'update_field',
-    args: { conceptName: 'VideoMetric', elementName: 'abc', fieldName: 'views', value: '150' },
-  });
-  assert.deepStrictEqual(replacePlan.ops[2], { op: 'bump_version', args: { bump: 'patch' } });
+  const replacePlan = buildApplyPlan(replaceProposal, 'VideoMetric', 'youtube');
+  // ONE propose_changeset payload: every op is a changeset change (target/concept/name/...),
+  // each cites the target snapshot, and exactly one bump_version closes the list.
+  assert.strictEqual(replacePlan.ops, undefined);
+  assert.deepStrictEqual(replacePlan.operations, [
+    {
+      op: 'add_element',
+      target: 'youtube@jkl',
+      concept: 'VideoMetric',
+      name: 'jkl',
+      fields: { views: '400', title: 'Delta' },
+      sources: 'b.csv',
+    },
+    { op: 'update_field', target: 'youtube@abc&views', from: '100', to: '150', sources: 'b.csv' },
+    { op: 'bump_version', target: 'youtube', to: 'patch' },
+  ]);
+  assert.strictEqual(replacePlan.operations.filter((o) => o.op === 'bump_version').length, 1);
   assert.strictEqual(replacePlan.review.length, 0);
 
   const upsertProposal = buildProposal({ ...common, strategy: 'upsert', fromContent: CSV_FROM, toContent: CSV_TO });
-  const upsertPlan = buildApplyPlan(upsertProposal, 'VideoMetric');
-  assert.strictEqual(upsertPlan.ops.filter((o) => o.op === 'update_field').length, 0);
+  const upsertPlan = buildApplyPlan(upsertProposal, 'VideoMetric', 'youtube');
+  assert.strictEqual(upsertPlan.operations.filter((o) => o.op === 'update_field').length, 0);
   assert.strictEqual(upsertPlan.review.length, 1);
   assert.deepStrictEqual(upsertPlan.removed, [{ key: 'ghi' }]);
 
-  assert.throws(() => buildApplyPlan(replaceProposal, null), /concept:: is required/);
+  assert.throws(() => buildApplyPlan(replaceProposal, null, 'youtube'), /concept:: is required/);
+  assert.throws(() => buildApplyPlan(replaceProposal, 'VideoMetric', null), /model:: is required/);
+
+  const emptyPlan = buildApplyPlan({ empty: true }, 'VideoMetric', 'youtube');
+  assert.deepStrictEqual(emptyPlan, { operations: [], review: [], removed: [] });
   console.log('PASS: buildApplyPlan');
 }
 

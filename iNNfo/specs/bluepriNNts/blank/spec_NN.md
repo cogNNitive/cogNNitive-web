@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-2"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Blank App"
 relationship_types:
   hierarchy:
@@ -36,18 +36,16 @@ weight:: 100
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
 ## NN Field Definition: summary
 concept:: Content
 type:: string
 description:: Free-form one-line summary or label for the content block.
-
-# NN Marker Definition
-
-## NN Marker Definition: importance
-applies_to:: [Element]
-symbol:: *
-icon:: plus
-color:: blue
 
 # NN Matrix Definition
 
@@ -57,9 +55,9 @@ color:: blue
 
 ## Philosophy
 
-The Blank Template is the empty canvas of the iNNfo ecosystem. Where the Business, Organization, Procedures, and Projects templates ship pre-built domain concepts, the Blank Template declares a single minimal `Content` concept and leaves every other Concept, Field, Marker, and Matrix Definition to the model author. Use it to model a domain that has no dedicated template yet, or to bootstrap a custom specialization without inheriting unrelated structure.
+The Blank Template is the empty canvas of the iNNfo ecosystem. Where the Business, Organization, Procedures, and Projects templates ship pre-built domain concepts, the Blank Template declares a single minimal `Content` concept and leaves every other Concept, Field, and Matrix Definition to the model author. Use it to model a domain that has no dedicated template yet, or to bootstrap a custom specialization without inheriting unrelated structure.
 
-By design it keeps model creation unopinionated: you add `# NN Concept Definition`, `# NN Field Definition`, `# NN Marker Definition`, and `# NN Matrix Definition` elements to this page to shape your own schema, then author Level 3 models against them.
+By design it keeps model creation unopinionated: you add `# NN Concept Definition`, `# NN Field Definition`, and `# NN Matrix Definition` elements to this page to shape your own schema, then author Level 3 models against them.
 
 ## Objectives
 
@@ -78,11 +76,12 @@ By design it keeps model creation unopinionated: you add `# NN Concept Definitio
 
 The `Content` concept exists so the template has a non-empty, resolvable `# NN index` and a place for the model author to put opening content. Additional Concepts are added by the author through `# NN Concept Definition` elements.
 
-### Markers
+### Fields
 
-| Marker | Purpose |
-|---|---|
-| `importance` | Core importance score (1–10) |
+| Field | Concept | Type | Purpose |
+|---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
+| `summary` | Content | `string` | Free-form one-line summary or label for the content block |
 
 ### Matrices
 

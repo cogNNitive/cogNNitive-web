@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-3-3"
+  name: "procedures_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-3-0"
 title: "Ingest Visual Catalog Procedure"
@@ -104,7 +104,7 @@ Find-or-create every record by its deterministic key (see the Idempotency Keys t
 ## NN Work: Wire Matrix Cells
 parent:: [[Ingest Visual Catalog Workflow]]
 step_type:: task
-next:: [[Record Markers]]
+next:: [[Record Confidence and Review]]
 condition:: Entries and Evidence are upserted
 input:: [[Updated Visual Catalog]]
 output:: [[Updated Visual Catalog]]
@@ -113,7 +113,7 @@ tool:: [[File Editor]]
 scope:: internal
 Upsert the N:M `Entry x Evidence matrix` cell keyed by the `(entry, evidence)` tuple with one of `primary`, `visible`, or `partial`. Many Entries may share one Evidence; each cell is independent.
 
-## NN Work: Record Markers
+## NN Work: Record Confidence and Review
 parent:: [[Ingest Visual Catalog Workflow]]
 step_type:: task
 next:: [[Validate Catalog]]
@@ -123,7 +123,7 @@ output:: [[Updated Visual Catalog]]
 output_status:: verified
 tool:: [[File Editor]]
 scope:: internal
-Write `confidence` (0–10, extraction certainty) and `review` (Reviewed / Pending) for each Entry via the `item-markers matrix`.
+Write `confidence` (0–10 score, extraction certainty) as an Entry field value and `tags:: [reviewed]` for each verified Entry.
 
 ## NN Work: Validate Catalog
 parent:: [[Ingest Visual Catalog Workflow]]
@@ -221,7 +221,7 @@ description:: Executes the procedure steps and updates the catalogue.
 | Resolve and Deduplicate | Accountable | Responsible |
 | Upsert Idempotently | Informed | Responsible |
 | Wire Matrix Cells | Informed | Responsible |
-| Record Markers | Informed | Responsible |
+| Record Confidence and Review | Informed | Responsible |
 | Validate Catalog | Accountable | Responsible |
 | Report Ingestion | Informed | Responsible |
 
@@ -236,7 +236,7 @@ description:: Executes the procedure steps and updates the catalogue.
 | Resolve and Deduplicate | Uses | - | - | - | - |
 | Upsert Idempotently | - | - | - | Uses | - |
 | Wire Matrix Cells | - | - | - | Uses | - |
-| Record Markers | - | - | - | Uses | - |
+| Record Confidence and Review | - | - | - | Uses | - |
 | Validate Catalog | - | - | - | - | Uses |
 | Report Ingestion | Uses | - | - | - | - |
 
@@ -251,6 +251,6 @@ description:: Executes the procedure steps and updates the catalogue.
 | Resolve and Deduplicate | - | - | Reviews | Creates | - | - | - |
 | Upsert Idempotently | - | - | - | Reviews | Modifies | - | - |
 | Wire Matrix Cells | - | - | - | - | Modifies | - | - |
-| Record Markers | - | - | - | - | Modifies | - | - |
+| Record Confidence and Review | - | - | - | - | Modifies | - | - |
 | Validate Catalog | - | - | - | - | Reviews | Creates | - |
 | Report Ingestion | - | - | - | - | - | Reviews | Creates |

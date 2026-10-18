@@ -93,7 +93,7 @@
   // never leaks into a shell. C appends the review components here.
   var COMPONENT_CSS = [
     '[data-innfo-component]{box-sizing:border-box}',
-    '.innfo-concept-pill,.innfo-element-pill,.innfo-marker-chip,.innfo-status-badge{display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2}',
+    '.innfo-status-badge{display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2}',
     '.innfo-concept-dot{width:.6em;height:.6em;border-radius:50%;background:var(--innfo-muted);flex:0 0 auto}',
     '.innfo-concept-count{color:var(--innfo-muted)}',
     '.innfo-element-origin{display:inline-flex;align-items:center;color:var(--innfo-origin-document)}',
@@ -121,7 +121,7 @@
     '.innfo-review-toggle[aria-pressed=true],.innfo-changed-filter[aria-pressed=true]{background:var(--innfo-accent);color:var(--innfo-surface)}',
     '.innfo-review-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease}',
     '.innfo-review-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
-    '[data-innfo-component=element-card]:hover .innfo-review-anchor,[data-innfo-component=field-row]:hover .innfo-review-anchor{opacity:.85}',
+    '[data-innfo-component=element-card]:hover .innfo-review-anchor{opacity:.85}',
     '.innfo-review-anchor:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px;opacity:1}',
     '.innfo-reviewed-toggle{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.75rem;padding:.1em .5em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em}',
     '.innfo-reviewed-toggle[data-state=reviewed]{color:var(--innfo-status-applied);background:var(--innfo-status-applied-bg)}',
@@ -162,7 +162,7 @@
     // .innfo-review-anchor), QKUD chip, tags, relations.
     '.innfo-edit-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease;display:inline-flex;align-items:center;justify-content:center;min-width:1.9em;min-height:1.6em}',
     '.innfo-edit-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
-    '[data-innfo-component=element-card]:hover .innfo-edit-anchor,[data-innfo-component=field-row]:hover .innfo-edit-anchor{opacity:.85}',
+    '[data-innfo-component=element-card]:hover .innfo-edit-anchor{opacity:.85}',
     '.innfo-edit-anchor:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px;opacity:1}',
     '.innfo-qud{display:inline-flex;align-items:center;gap:.35em;font-family:var(--innfo-mono);font-size:.75rem;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.15em .3em .15em .6em;max-width:100%;min-width:0}',
     // The KU-detail chip holds a long mono id; the wrapper must be able to
@@ -191,27 +191,29 @@
     '.innfo-rel-add{appearance:none;border:1px dashed var(--innfo-border);background:none;color:var(--innfo-muted);font:inherit;font-size:.78rem;border-radius:var(--innfo-radius-sm);padding:.1em .55em;cursor:pointer;align-self:flex-start}',
     '.innfo-rel-add:hover{color:var(--innfo-link);border-color:var(--innfo-link)}',
     '@media (max-width:640px){.innfo-edit-anchor,.innfo-qud-btn,.innfo-rel-act{min-width:32px;min-height:32px}.innfo-qud{font-size:.75rem}}',
-    // Knowledge-unit badge family (KuBadge) + action cluster + change pip.
+    // Knowledge-unit badge family (Ku) + action cluster + change pip.
     '.innfo-ku-unit{display:inline-flex;align-items:center;gap:.25em;max-width:100%}',
-    '.innfo-card-fields>.innfo-ku-unit,.innfo-card-fields>.innfo-ku-badge{flex:1 1 16rem;min-width:0}',
-    '.innfo-card-fields>.innfo-ku-badge[data-field-wide=true],.innfo-card-fields>.innfo-ku-unit:has([data-field-wide=true]){flex-basis:100%}',
-    '.innfo-ku-badge{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.1em .5em;background:var(--innfo-surface);color:var(--innfo-text);max-width:100%}',
-    '.innfo-ku-badge[data-ku-kind=field],.innfo-ku-badge[data-ku-kind=cell]{background:var(--innfo-surface-2)}',
+    '.innfo-card-fields>.innfo-ku-unit,.innfo-card-fields>.innfo-ku{flex:1 1 16rem;min-width:0}',
+    '.innfo-card-fields>.innfo-ku[data-field-wide=true],.innfo-card-fields>.innfo-ku-unit:has([data-field-wide=true]){flex-basis:100%}',
+    '.innfo-ku{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.1em .5em;background:var(--innfo-surface);color:var(--innfo-text);max-width:100%}',
+    '.innfo-ku[data-ku-kind=field],.innfo-ku[data-ku-kind=cell]{background:var(--innfo-surface-2)}',
     // Element + concept/document badges read as card titles: slightly larger and
     // semibold so they anchor the hierarchy above their muted field rows.
-    '.innfo-ku-badge[data-ku-kind=element],.innfo-ku-badge[data-ku-kind=concept],.innfo-ku-badge[data-ku-kind=document]{font-weight:600}',
-    '.innfo-ku-badge[data-ku-kind=element]{font-size:.9rem}',
-    '.innfo-ku-badge .innfo-ku-label{color:var(--innfo-muted)}',
-    '.innfo-ku-badge .innfo-ku-value{color:var(--innfo-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.innfo-ku-badge .innfo-ku-icon{display:inline-flex;color:var(--innfo-muted);flex:0 0 auto}',
+    '.innfo-ku[data-ku-kind=element],.innfo-ku[data-ku-kind=concept],.innfo-ku[data-ku-kind=document]{font-weight:600}',
+    '.innfo-ku[data-ku-kind=element]{font-size:.9rem}',
+    '.innfo-ku .innfo-ku-label{color:var(--innfo-muted)}',
+    '.innfo-ku .innfo-ku-value{color:var(--innfo-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.innfo-ku .innfo-ku-icon{display:inline-flex;color:var(--innfo-muted);flex:0 0 auto}',
     // Field badges carry free text: under card fields they grow to fill the row,
     // while in tables/grids they remain compact inline-flex elements.
-    '.innfo-card-fields>.innfo-ku-unit>.innfo-ku-badge[data-ku-kind=field],.innfo-card-fields>.innfo-ku-badge[data-ku-kind=field]{flex:1 1 16em;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
-    '.innfo-ku-badge[data-ku-kind=field]{min-width:0;align-items:center;line-height:1.3}',
-    '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-label{flex:0 0 auto;white-space:nowrap;font-weight:600}',
-    '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
-    '.innfo-ku-badge[data-ku-kind=field] .innfo-ku-icon{margin-top:.18em}',
-    '.innfo-ku-badge[data-ku-changes]{border-style:dashed}',
+    '.innfo-card-fields>.innfo-ku-unit>.innfo-ku[data-ku-kind=field],.innfo-card-fields>.innfo-ku[data-ku-kind=field]{flex:1 1 16em;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
+    '.innfo-ku[data-ku-kind=field]{min-width:0;align-items:center;line-height:1.3}',
+    '.innfo-ku[data-ku-kind=field] .innfo-ku-label{flex:0 0 auto;white-space:nowrap;font-weight:600}',
+    '.innfo-ku[data-ku-kind=field] .innfo-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
+    '.innfo-ku[data-ku-kind=field] .innfo-ku-icon{margin-top:.18em}',
+    '.innfo-ku .innfo-ku-values{display:inline-flex;flex-wrap:wrap;gap:.25em}',
+    '.innfo-ku .innfo-ku-value-chip{display:inline-flex;align-items:center;border:1px solid var(--innfo-border);border-radius:999px;padding:0 .5em;font-size:.85em}',
+    '.innfo-ku[data-ku-changes]{border-style:dashed}',
     '.innfo-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}',
     '.innfo-kpi-card{background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--innfo-shadow)}',
     '.innfo-kpi-header{display:flex;align-items:center;justify-content:space-between;gap:8px}',
@@ -231,7 +233,7 @@
     // Scoped to the element-card so it wins over any shell-level card styles.
     '[data-innfo-component=element-card] .innfo-card-head{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;cursor:pointer;min-width:0}',
     '[data-innfo-component=element-card] .innfo-card-badges{display:inline-flex;align-items:center;gap:.35em;min-width:0}',
-    '[data-innfo-component=element-card] .innfo-card-badges .innfo-ku-badge{display:inline-flex;align-items:center}',
+    '[data-innfo-component=element-card] .innfo-card-badges .innfo-ku{display:inline-flex;align-items:center}',
     '[data-innfo-component=element-card] .innfo-card-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1.5px solid var(--innfo-border);background:var(--innfo-surface-2);flex:0 0 auto;display:block}',
     '.innfo-field-image-wrap{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}',
     '[data-innfo-component=element-card] .innfo-card-thumb--empty,[data-innfo-component=element-card] .innfo-card-thumb--concept{display:inline-flex;align-items:center;justify-content:center;color:var(--card-concept-color,var(--innfo-accent));background:var(--card-concept-bg,var(--innfo-surface-2));border:1.5px solid var(--card-concept-color,var(--innfo-border))}',
@@ -287,7 +289,6 @@
     '.innfo-mini-text{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}',
     '.innfo-mini-name{font-size:.8rem;font-weight:600;color:var(--innfo-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.innfo-mini-meta{font-size:.68rem;color:var(--innfo-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.innfo-mini-markers{display:flex;gap:.25em;flex:0 0 auto}',
     '.innfo-mini>.innfo-card-status-pill{flex:0 0 auto}',
     // ElementPreview (generic floating detail) + the mini's info affordance.
     '.innfo-preview{position:fixed;z-index:60;width:clamp(26rem,60vw,52rem);max-width:calc(100vw - 1.5rem);max-height:calc(100vh - 1.5rem);overflow:auto;overscroll-behavior:contain;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius,10px);box-shadow:0 12px 32px rgba(0,0,0,.16);padding:.6rem .8rem}',
@@ -304,12 +305,12 @@
   for (var kslot = 1; kslot <= 12; kslot++) {
     COMPONENT_CSS.push(
       '[data-innfo-component=element-card][data-concept-slot="' + kslot + '"]{--card-concept-color:var(--innfo-concept-' + kslot + ');--card-concept-bg:var(--innfo-concept-' + kslot + '-bg);border-left:4px solid var(--innfo-concept-' + kslot + ')}',
-      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=element]{border-color:var(--innfo-concept-' + kslot + ')}',
-      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=element] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
-      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=reference]{border-color:var(--innfo-concept-' + kslot + ')}',
-      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=reference] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
-      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=concept],[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=document]{border-color:var(--innfo-concept-' + kslot + ');background:var(--innfo-concept-' + kslot + '-bg)}',
-      '[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .innfo-ku-icon,[data-innfo-component=ku-badge][data-concept-slot="' + kslot + '"][data-ku-kind=document] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=element]{border-color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=element] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=reference]{border-color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=reference] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
+      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept],[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document]{border-color:var(--innfo-concept-' + kslot + ');background:var(--innfo-concept-' + kslot + '-bg)}',
+      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .innfo-ku-icon,[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
     )
   }
   var COMPONENT_CSS_TEXT = COMPONENT_CSS.join('\n')
@@ -401,6 +402,17 @@
     return (index % 12) + 1
   }
 
+  // Tag color derivation: FNV-1a 32-bit over valueKey(name), then slot = (h >>> 0) % 12 + 1
+  function tagSlot(name) {
+    var key = String(name == null ? '' : name).trim().toLowerCase()
+    var h = 0x811c9dc5
+    for (var i = 0; i < key.length; i++) {
+      h ^= key.charCodeAt(i)
+      h = Math.imul(h, 0x01000193) >>> 0
+    }
+    return ((h >>> 0) % 12) + 1
+  }
+
   function makeEl(doc, tag, cls, text) {
     var node = doc.createElement(tag)
     if (cls) node.className = cls
@@ -482,77 +494,6 @@
 
   // ---- Components ----
 
-  function ConceptPill(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ConceptPill: data required')
-    var doc = resolveDoc(opts)
-    var interactive = !!(opts && opts.onSelect)
-    var slot = conceptSlot(data)
-    var pill = makeEl(doc, interactive ? 'button' : 'span', 'innfo-concept-pill')
-    pill.setAttribute('data-innfo-component', 'concept-pill')
-    pill.setAttribute('data-concept-id', String(data.id == null ? '' : data.id))
-    pill.setAttribute('data-concept-slot', String(slot))
-    if (interactive) {
-      pill.setAttribute('type', 'button')
-      pill.addEventListener('click', function () {
-        opts.onSelect(data)
-      })
-    }
-    var cIcon = makeEl(doc, 'span', 'innfo-concept-pill-icon')
-    cIcon.setAttribute('aria-hidden', 'true')
-    cIcon.innerHTML = icon(resolveConceptIconName(data.label || data.id, { index: slot - 1, color: data.color, icon: data.icon }), 12)
-    pill.appendChild(cIcon)
-    pill.appendChild(doc.createTextNode(String(data.label == null ? '' : data.label)))
-    if (data.count != null) pill.appendChild(makeEl(doc, 'span', 'innfo-concept-count', ' (' + data.count + ')'))
-    return pill
-  }
-
-  function ElementPill(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ElementPill: data required')
-    var doc = resolveDoc(opts)
-    var tag = opts && opts.href ? 'a' : opts && opts.onSelect ? 'button' : 'span'
-    var pill = makeEl(doc, tag, 'innfo-element-pill')
-    pill.setAttribute('data-innfo-component', 'element-pill')
-    pill.setAttribute('data-element-id', String(data.id == null ? '' : data.id))
-    if (opts && opts.href) pill.setAttribute('href', String(opts.href))
-    if (tag === 'button') {
-      pill.setAttribute('type', 'button')
-      pill.addEventListener('click', function () {
-        if (opts && opts.onSelect) opts.onSelect(data)
-      })
-    }
-    var hasConceptMeta = !!(data.concept || data.color || data.index != null || data.slot != null || data.hexColor)
-    if (hasConceptMeta) {
-      var eSlot = Number(data.slot) || conceptSlot({ index: data.index, color: data.color })
-      pill.setAttribute('data-concept-slot', String(eSlot))
-      pill.classList.add('innfo-element-pill--concept')
-      if (data.hexColor) pill.style.setProperty('--pill-concept-color', String(data.hexColor))
-      var eIcon = makeEl(doc, 'span', 'innfo-element-concept-icon')
-      eIcon.setAttribute('aria-hidden', 'true')
-      eIcon.innerHTML = icon(resolveConceptIconName(data.concept, { index: eSlot - 1, color: data.color, icon: data.icon }), 12)
-      pill.appendChild(eIcon)
-    }
-    if (data.origin) {
-      var wrap = makeEl(doc, 'span', 'innfo-element-origin')
-      wrap.setAttribute('data-origin', String(data.origin))
-      wrap.innerHTML = icon('cite-' + data.origin, 12)
-      pill.appendChild(wrap)
-    }
-    pill.appendChild(doc.createTextNode(String(data.label == null ? '' : data.label)))
-    return pill
-  }
-
-  function MarkerChip(data) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.MarkerChip: data required')
-    var doc = resolveDoc(null)
-    var chip = makeEl(doc, 'span', 'innfo-marker-chip')
-    chip.setAttribute('data-innfo-component', 'marker-chip')
-    chip.setAttribute('data-marker-id', String(data.id == null ? '' : data.id))
-    chip.setAttribute('data-kind', String(data.kind == null ? '' : data.kind))
-    chip.appendChild(doc.createTextNode(String(data.label == null ? '' : data.label)))
-    if (data.value != null) chip.appendChild(makeEl(doc, 'b', null, data.value))
-    return chip
-  }
-
   // ---- Element-card redesign: QKUD chip, tags, relations, edit toggle ----
   //
   // Rule: the QKUD (unique knowledge-unit id) is READ-ONLY — copy + info only,
@@ -591,61 +532,6 @@
     }
   }
 
-  function QudChip(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.QudChip: data required')
-    var doc = resolveDoc(opts)
-    var wrap = makeEl(doc, 'span', 'innfo-qud-wrap')
-    wrap.setAttribute('data-innfo-component', 'qud-chip')
-    wrap.setAttribute('data-qud', String(data.id == null ? '' : data.id))
-
-    var chip = makeEl(doc, 'span', 'innfo-qud')
-    var id = makeEl(doc, 'span', 'innfo-qud-id', data.id)
-    id.setAttribute('title', String(data.id == null ? '' : data.id))
-    chip.appendChild(id)
-
-    var copy = makeEl(doc, 'button', 'innfo-qud-btn')
-    copy.setAttribute('type', 'button')
-    copy.setAttribute('aria-label', 'Copy knowledge unit ID')
-    copy.setAttribute('title', 'Copy knowledge unit ID')
-    copy.innerHTML = icon('copy', 13)
-    copy.addEventListener('click', function (ev) {
-      if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-      copyText(data.id)
-    })
-    chip.appendChild(copy)
-
-    var info = makeEl(doc, 'button', 'innfo-qud-btn')
-    info.setAttribute('type', 'button')
-    info.setAttribute('aria-label', 'Knowledge unit ID details')
-    info.setAttribute('title', 'Knowledge unit ID details')
-    info.setAttribute('aria-expanded', 'false')
-    info.innerHTML = icon('info', 13)
-    info.addEventListener('click', function (ev) {
-      if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-      var host = wrap.closest
-        ? wrap.closest('[data-innfo-component="element-card"]') || wrap
-        : wrap
-      var open = host.getAttribute('data-qud-open') === 'true'
-      host.setAttribute('data-qud-open', open ? 'false' : 'true')
-      info.setAttribute('aria-expanded', open ? 'false' : 'true')
-    })
-    chip.appendChild(info)
-    wrap.appendChild(chip)
-
-    var detail = makeEl(doc, 'div', 'innfo-qud-detail')
-    var lines = []
-    if (data.id != null) lines.push(['id', String(data.id)])
-    if (data.concept != null) lines.push(['concept', String(data.concept)])
-    if (data.path != null) lines.push(['path', String(data.path)])
-    if (data.hash != null) lines.push(['hash', String(data.hash)])
-    lines.forEach(function (pair, i) {
-      if (i > 0) detail.appendChild(doc.createElement('br'))
-      detail.appendChild(doc.createTextNode(pair[0] + ': ' + pair[1]))
-    })
-    wrap.appendChild(detail)
-    return wrap
-  }
-
   function TagRow(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.TagRow: data required')
     var doc = resolveDoc(opts)
@@ -656,6 +542,7 @@
     tags.forEach(function (t) {
       var tag = makeEl(doc, 'span', 'innfo-tag')
       tag.setAttribute('data-tag', String(t))
+      tag.setAttribute('data-concept-slot', String(tagSlot(t)))
       tag.appendChild(doc.createTextNode(String(t)))
       if (onTag) {
         tag.setAttribute('role', 'button')
@@ -684,6 +571,7 @@
     var doc = resolveDoc(opts)
     var rels = Array.isArray(data.relations) ? data.relations : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
+    var relModel = data.model || (opts && (opts.modelId || opts.model)) || 'model'
     var ul = makeEl(doc, 'ul', 'innfo-rel-list')
     ul.setAttribute('data-innfo-component', 'rel-list')
     rels.forEach(function (r) {
@@ -691,23 +579,34 @@
       var li = makeEl(doc, 'li', 'innfo-rel-row')
       if (r.field) li.setAttribute('data-rel-field', String(r.field))
       if (r.target) li.setAttribute('data-rel-target', String(r.target))
-      var relFieldChip = makeEl(doc, 'span', 'innfo-rel-field innfo-ku-field-chip', (r.field || 'related') + ' \u2192')
-      li.appendChild(relFieldChip)
+      li.appendChild(
+        Ku(
+          'field',
+          {
+            family: relModel,
+            model: relModel,
+            concept: r.sourceConcept || 'relations',
+            name: r.field || 'related',
+            label: r.field || 'related',
+          },
+          { doc: doc },
+        ),
+      )
       var targetRec = r.target && byId[r.target] ? byId[r.target] : null
       var label = r.targetLabel || (targetRec && targetRec.name) || r.target || '?'
       if (r.target) {
         li.appendChild(
-          ElementPill(
+          Ku(
+            'element',
             {
+              model: relModel,
               id: r.target,
               label: label,
               concept: r.targetConcept || (targetRec && targetRec.concept),
               color: r.targetColor || (targetRec && targetRec._conceptColor),
-              hexColor: r.targetHexColor || (targetRec && targetRec._conceptHexColor),
-              slot: r.targetSlot || (targetRec && targetRec._conceptSlot),
               index: targetRec && targetRec._conceptIndex,
             },
-            { href: '#el-' + r.target, doc: doc },
+            { doc: doc },
           ),
         )
       } else {
@@ -975,14 +874,14 @@
   }
 
   // Type-aware read rendering for a field value. Returns a DOM node, or null
-  // when the value should fall back to the plain KuBadge text (string, empty
+  // when the value should fall back to the plain Ku text (string, empty
   // select, etc.), so existing output is unchanged for the common case.
   //
   // FIELD_RENDERERS is keyed by the declared field type — the L1 set
   // (iNNfo_V_0-4-0 §Field Definition: string, select, reference, markdown_inline,
   // markdown_file, image, file, video, audio, url, knowledge, citation) plus the
   // legacy aliases older payloads still emit. reference/citation have no entry:
-  // FieldRow resolves them to ElementPill / CitationIcon from data.ref and
+  // FieldRow resolves them to Ku / CitationIcon from data.ref and
   // data.citations. Value-shape renderers (boolean / list / object / url) and
   // shape heuristics (image / asset path) run regardless of the declared type,
   // matching the console's runtime-detected payloads.
@@ -1171,43 +1070,90 @@
     return null
   }
 
+  function fieldValueText(value) {
+    if (value == null) return ''
+    if (Array.isArray(value)) return value.map(String).join(', ')
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value)
+      } catch (e) {
+        return ''
+      }
+    }
+    return String(value)
+  }
+
+  // A field VALUE on an element: one `value` knowledge unit. The field's
+  // definition unit lives in the table header / concept section, never here.
   function FieldRow(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.FieldRow: data required')
     var doc = resolveDoc(opts)
     var hasRef = !!(data.ref && data.ref.id)
+    var inherited = data.inherited && data.inherited.from ? data.inherited : null
+    var model = data.model || (opts && (opts.modelId || opts.model)) || 'model'
+    var element = data.element || (opts && opts.element) || data.elementId || 'unit'
     var valueNode = hasRef ? null : FieldValue(data, opts)
-    var badge = KuBadge({
-      kind: 'field',
-      name: data.name,
-      value: hasRef ? null : data.value,
-      valueNode: valueNode,
-    })
-    var ftype = String(data.type || '').toLowerCase()
-    if (
-      ftype === 'markdown' ||
-      ftype === 'markdown_inline' ||
-      (typeof data.value === 'string' && data.value.length > 70)
-    ) {
-      badge.setAttribute('data-field-wide', 'true')
+    if (!valueNode) {
+      valueNode = makeEl(doc, 'span', 'innfo-ku-value-text', fieldValueText(data.value))
     }
     if (hasRef) {
-      badge.appendChild(
-        ElementPill(
-          {
-            id: data.ref.id,
-            label: data.ref.label || data.ref.id,
-            concept: data.ref.concept,
-            color: data.ref.color,
-            hexColor: data.ref.hexColor,
-            slot: data.ref.slot,
-            index: data.ref.index,
-          },
-          {
-            doc: doc,
-            onSelect: opts && opts.onRef ? function () { opts.onRef(data.ref.id) } : undefined,
-          },
-        ),
+      valueNode = makeEl(doc, 'span', 'innfo-ku-value-text')
+      var refUnit = Ku(
+        'element',
+        {
+          model: model,
+          id: data.ref.id,
+          label: data.ref.label || data.ref.id,
+          concept: data.ref.concept,
+          color: data.ref.color,
+          index: data.ref.index,
+        },
+        { doc: doc },
       )
+      if (opts && opts.onRef) {
+        var refBadge = refUnit.querySelector('[data-innfo-component="ku-unit"]')
+        if (refBadge) {
+          refBadge.setAttribute('role', 'button')
+          refBadge.setAttribute('tabindex', '0')
+          refBadge.addEventListener('click', function () {
+            opts.onRef(data.ref.id)
+          })
+        }
+      }
+      valueNode.appendChild(refUnit)
+    }
+    var label = inherited
+      ? 'inherited from ' + inherited.from
+      : String(data.name == null ? '' : data.name)
+    var wrap = Ku(
+      'value',
+      {
+        model: model,
+        element: element,
+        field: data.name,
+        label: label,
+        vtype: data.type,
+        inherited: !!inherited,
+        inheritedFrom: inherited ? inherited.from : undefined,
+        concept: inherited ? inherited.from : undefined,
+      },
+      { doc: doc, valueNode: valueNode },
+    )
+    var badge = wrap.querySelector('[data-innfo-component="ku-unit"]')
+    if (badge) {
+      badge.setAttribute('data-field', String(data.name == null ? '' : data.name))
+      if (inherited) {
+        badge.setAttribute('data-ku-inherited', String(inherited.from))
+        badge.setAttribute('aria-label', 'content, inherited from ' + inherited.from + ': ' + label)
+      }
+      var ftype = String(data.type || '').toLowerCase()
+      if (
+        ftype === 'markdown' ||
+        ftype === 'markdown_inline' ||
+        (typeof data.value === 'string' && data.value.length > 70)
+      ) {
+        badge.setAttribute('data-field-wide', 'true')
+      }
     }
     if (Array.isArray(data.citations) && data.citations.length) {
       var seen = {}
@@ -1216,14 +1162,14 @@
         if (seen[v]) return
         seen[v] = true
         if (variants.indexOf(v) === -1) return
-        badge.appendChild(
+        wrap.appendChild(
           CitationIcon({ variant: v, field: data.name }, {
             onOpen: opts && opts.onCite ? opts.onCite : undefined,
           }),
         )
       })
     }
-    return badge
+    return wrap
   }
 
   // ---- Element-card Selected Hybrid (V1 + V4) ----
@@ -1425,7 +1371,7 @@
 
   /* ElementMini — the collection item: identity only (concept-color accent stripe
      + small thumb + name + one optional meta line), NEVER the field grid. This is
-     the middle representation between ElementPill (inline token) and ElementCard
+     the middle representation between Ku (inline token) and ElementCard
      (detail surface); it fits narrow board columns, related lists and search hits.
      With `opts.preview` it reveals the full ElementCard on hover/focus and, via a
      small info affordance, on click. */
@@ -1457,40 +1403,32 @@
     thumb.classList.add('innfo-mini-thumb')
     mini.appendChild(thumb)
     var badgesWrap = makeEl(doc, 'div', 'innfo-card-badges')
+    var miniModel = (opts && (opts.modelId || opts.model)) || data.modelId || data.model || 'model'
     var conceptId = data.concept || data.conceptId
     if (conceptId) {
       badgesWrap.appendChild(
-        KuBadge({
-          kind: 'concept',
-          id: conceptId,
+        Ku('section', {
+          model: miniModel,
+          concept: conceptId,
           label: conceptId,
           index: conceptOpts.index,
           color: conceptOpts.color,
-          icon: conceptOpts.icon || iconName,
         }),
       )
     }
     badgesWrap.appendChild(
-      KuBadge({
-        kind: 'element',
+      Ku('element', {
+        model: miniModel,
         id: data.id,
         label: data.name || data.id,
         index: conceptOpts.index,
         color: conceptOpts.color,
-        icon: conceptOpts.icon,
       }),
     )
     mini.appendChild(badgesWrap)
     if (data.meta) {
       var metaEl = makeEl(doc, 'span', 'innfo-mini-meta', String(data.meta))
       mini.appendChild(metaEl)
-    }
-    if (Array.isArray(data.markers) && data.markers.length) {
-      var mks = makeEl(doc, 'span', 'innfo-mini-markers')
-      data.markers.forEach(function (m) {
-        if (m) mks.appendChild(MarkerChip(m))
-      })
-      mini.appendChild(mks)
     }
     if (data.status) {
       var st = makeEl(doc, 'span', 'innfo-card-status-pill')
@@ -1554,27 +1492,26 @@
 
     head.appendChild(elementThumb(doc, data, conceptIconName, 18))
     var badgesWrap = makeEl(doc, 'div', 'innfo-card-badges')
+    var unitModel = (opts && (opts.modelId || opts.model)) || data.modelId || data.model || 'model'
     var conceptId = data.concept || data.conceptId
     if (conceptId) {
       badgesWrap.appendChild(
-        KuBadge({
-          kind: 'concept',
-          id: conceptId,
+        Ku('section', {
+          model: unitModel,
+          concept: conceptId,
           label: conceptId,
           index: conceptOpts.index,
           color: conceptOpts.color,
-          icon: conceptOpts.icon || conceptIconName,
         }),
       )
     }
     badgesWrap.appendChild(
-      KuBadge({
-        kind: 'element',
+      Ku('element', {
+        model: unitModel,
         id: data.id,
         label: data.name || data.id,
         index: conceptOpts.index,
         color: conceptOpts.color,
-        icon: conceptOpts.icon,
       }),
     )
     head.appendChild(badgesWrap)
@@ -1604,24 +1541,12 @@
       head.appendChild(stPill)
     }
 
-    if (Array.isArray(data.markers)) {
-      data.markers.forEach(function (m) {
-        if (m) head.appendChild(MarkerChip(m))
-      })
-    }
-
     if (summaryField) {
       var sumPrev = makeEl(doc, 'span', 'innfo-card-summary-preview', summaryField)
       sumPrev.setAttribute('title', summaryField)
       head.appendChild(sumPrev)
     }
 
-    var qudNode = null
-    if (data.qud && (data.qud.id || data.qud === true)) {
-      var qudData = data.qud === true ? { id: data.id } : data.qud
-      if (qudData && qudData.id == null) qudData.id = data.id
-      qudNode = QudChip(qudData || { id: data.id })
-    }
     if (Array.isArray(opts && opts.head)) {
       ;(opts.head || []).forEach(function (n) {
         if (n) head.appendChild(n)
@@ -1782,14 +1707,28 @@
     if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
     if (bodyFields.length) {
       var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
+      var inherited = data.inherited && typeof data.inherited === 'object' ? data.inherited : {}
       bodyFields.forEach(function (fr) {
+        var inheritedInfo = fr && fr.inherited ? fr.inherited : inherited[fr && fr.name]
         fieldRow.appendChild(
-          FieldRow(fr, {
-            onRef: opts && opts.onRef,
-            onCite: opts && opts.onCite,
-            onKnowledge: opts && opts.onKnowledge,
-            isKnowledgeBound: opts && opts.isKnowledgeBound,
-          }),
+          FieldRow(
+            {
+              name: fr.name,
+              value: fr.value,
+              type: fr.type,
+              ref: fr.ref,
+              citations: fr.citations,
+              model: unitModel,
+              element: data.id,
+              inherited: inheritedInfo,
+            },
+            {
+              onRef: opts && opts.onRef,
+              onCite: opts && opts.onCite,
+              onKnowledge: opts && opts.onKnowledge,
+              isKnowledgeBound: opts && opts.isKnowledgeBound,
+            },
+          ),
         )
       })
       body.appendChild(fieldRow)
@@ -1807,7 +1746,7 @@
       outWrap.appendChild(
         makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
       )
-      outWrap.appendChild(RelList({ relations: relations, byId: byId }))
+      outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
       body.appendChild(outWrap)
     }
     var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
@@ -1816,14 +1755,13 @@
       incWrap.appendChild(
         makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
       )
-      incWrap.appendChild(RelList({ relations: incoming, byId: byId }))
+      incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
       body.appendChild(incWrap)
     }
     card.appendChild(body)
-    if (data.path || qudNode) {
+    if (data.path) {
       var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
       if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
-      if (qudNode) cardFooter.appendChild(qudNode)
       card.appendChild(cardFooter)
     }
     return card
@@ -1864,39 +1802,58 @@
 
       var targetLabel = el ? el.name || d.element_id : d.element || d.element_id
       var targetConcept = d.concept || (el && el.concept) || null
+      var draftModel = (opts && (opts.modelId || opts.model)) || d.model || (el && el.modelId) || 'model'
       var targetSpan = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5 font-semibold text-sm')
       if (targetConcept) {
-        var cPill = ConceptPill(
+        targetSpan.appendChild(
+          Ku(
+            'section',
+            {
+              model: draftModel,
+              concept: targetConcept,
+              label: targetConcept,
+              index: el && el._conceptIndex != null ? el._conceptIndex : 0,
+              color: el && el._conceptColor,
+            },
+            { doc: doc },
+          ),
+        )
+      }
+      var unitKind = d.field ? 'value' : 'element'
+      targetSpan.appendChild(
+        Ku(
+          unitKind,
           {
-            id: targetConcept,
-            label: targetConcept,
-            index: el && el._conceptIndex != null ? el._conceptIndex : 0,
+            address: d.address || undefined,
+            model: draftModel,
+            element: d.element_id || targetLabel,
+            field: d.field || undefined,
+            id: d.element_id || targetLabel,
+            label: targetLabel,
+            concept: targetConcept,
             color: el && el._conceptColor,
+            index: el && el._conceptIndex,
           },
           { doc: doc },
-        )
-        targetSpan.appendChild(cPill)
-      }
-      var ePill = ElementPill(
-        {
-          id: d.element_id || targetLabel,
-          label: targetLabel,
-          concept: targetConcept,
-          color: el && el._conceptColor,
-          hexColor: el && el._conceptHexColor,
-          slot: el && el._conceptSlot,
-          index: el && el._conceptIndex,
-        },
-        { doc: doc, href: d.element_id ? '#el-' + d.element_id : undefined },
+        ),
       )
-      targetSpan.appendChild(ePill)
       if (d.field) {
         var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '→')
         arrowSpan.setAttribute('aria-hidden', 'true')
         targetSpan.appendChild(arrowSpan)
-        var fBadge = makeEl(doc, 'span', 'innfo-ku-field-chip', '~ ' + d.field)
-        fBadge.setAttribute('data-ku-kind', 'field')
-        targetSpan.appendChild(fBadge)
+        targetSpan.appendChild(
+          Ku(
+            'field',
+            {
+              family: draftModel,
+              model: draftModel,
+              concept: targetConcept || 'relations',
+              name: d.field,
+              label: '~ ' + d.field,
+            },
+            { doc: doc },
+          ),
+        )
       }
       left.appendChild(targetSpan)
 
@@ -2759,260 +2716,8 @@
     return span
   }
 
-  // ---- Knowledge-unit badge family (KuBadge) ----
-  //
-  // One grammar for every knowledge unit: the badge shape encodes the unit kind,
-  // the concept color encodes the concept, the slug is the identity. Actions (info
-  // / edit) live OUTSIDE the badge in KuActions, never nested, and the pending-
-  // change pip is a count badge child. The kit holds no mode state: the edit action
-  // exists only because the caller passed onEdit.
-  var KU_KINDS = ['document', 'element', 'concept', 'field', 'cell', 'marker', 'reference']
-  var KU_KIND_ICON = {
-    document: 'cite-document',
-    concept: 'explorer',
-    marker: 'star',
-    field: 'derived',
-    cell: 'calc',
-  }
-
-  function isInfoOrEditAction(opts) {
-    return !!(
-      opts &&
-      (typeof opts.onInfo === 'function' ||
-        typeof opts.onEdit === 'function' ||
-        typeof opts.onChanges === 'function')
-    )
-  }
-
-  function KuBadge(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.KuBadge: data required')
-    var doc = resolveDoc(opts)
-    var kind = KU_KINDS.indexOf(data.kind) !== -1 ? data.kind : 'element'
-    var hasAction = isInfoOrEditAction(opts)
-    var navigable = !!((opts && opts.href) || (opts && opts.onSelect))
-    var interactive = navigable && !hasAction
-    var tag = interactive ? (opts && opts.href ? 'a' : 'button') : 'span'
-    var badge = makeEl(doc, tag, 'innfo-ku-badge')
-    badge.setAttribute('data-innfo-component', 'ku-badge')
-    badge.setAttribute('data-ku-kind', kind)
-    if (interactive && opts.href) badge.setAttribute('href', String(opts.href))
-    if (tag === 'button') {
-      badge.setAttribute('type', 'button')
-      badge.addEventListener('click', function () {
-        if (opts && typeof opts.onSelect === 'function') opts.onSelect(data)
-      })
-    }
-
-    if (kind === 'document' || kind === 'concept') {
-      if (data.id != null) badge.setAttribute('data-concept-id', String(data.id))
-      if (kind === 'concept' || data.index != null || data.color) {
-        badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
-      }
-    } else if (kind === 'element' || kind === 'reference') {
-      if (data.id != null) badge.setAttribute('data-element-id', String(data.id))
-      if (data.index != null || data.color) badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
-    } else if (kind === 'field') {
-      badge.setAttribute('data-field', String(data.name == null ? '' : data.name))
-      if (data.index != null || data.color) badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
-    } else if (kind === 'marker') {
-      badge.setAttribute('data-marker-id', String(data.id == null ? '' : data.id))
-      badge.setAttribute('data-kind', String(data.markerKind == null ? '' : data.markerKind))
-      if (data.index != null || data.color) badge.setAttribute('data-concept-slot', String(conceptSlot(data)))
-    }
-
-    var iconName = data.icon || KU_KIND_ICON[kind]
-    if (iconName) {
-      var wrapIcon = makeEl(doc, 'span', 'innfo-ku-icon')
-      wrapIcon.innerHTML = icon(iconName, 13)
-      badge.appendChild(wrapIcon)
-    }
-
-    if (kind === 'field') {
-      var fieldLabel = data.label != null ? data.label : data.name
-      if (data.value != null || data.valueNode) {
-        if (fieldLabel != null) badge.appendChild(makeEl(doc, 'span', 'innfo-ku-label', fieldLabel + ':'))
-        if (data.valueNode) badge.appendChild(data.valueNode)
-        else badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
-      } else if (fieldLabel != null) {
-        badge.appendChild(makeEl(doc, 'span', 'innfo-ku-label', String(fieldLabel)))
-      }
-    } else if (kind === 'cell') {
-      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', data.value == null ? '' : String(data.value)))
-    } else if (kind === 'marker') {
-      badge.appendChild(makeEl(doc, 'span', 'innfo-ku-value', String(data.label == null ? '' : data.label)))
-      if (data.value != null) badge.appendChild(makeEl(doc, 'b', null, data.value))
-    } else {
-      var labelText = String(data.label == null ? '' : data.label)
-      var labelEl = makeEl(doc, 'span', 'innfo-ku-value', labelText)
-      if (labelText) labelEl.setAttribute('title', labelText)
-      badge.appendChild(labelEl)
-    }
-
-    var changes = Number(data.changes) || 0
-    if (changes > 0) {
-      badge.setAttribute('data-ku-changes', String(changes))
-      var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(changes))
-      pip.setAttribute('data-innfo-component', 'ku-change-pip')
-      pip.setAttribute('type', 'button')
-      pip.setAttribute('aria-label', changes + ' pending ' + (changes === 1 ? 'change' : 'changes'))
-      pip.setAttribute('title', changes + ' pending ' + (changes === 1 ? 'change' : 'changes'))
-      pip.addEventListener('click', function (ev) {
-        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-        if (opts && typeof opts.onChanges === 'function') opts.onChanges()
-      })
-      badge.appendChild(pip)
-    }
-    return badge
-  }
-
-  function KuActions(data, opts) {
-    var doc = resolveDoc(opts)
-    var cluster = makeEl(doc, 'span', 'innfo-ku-actions')
-    cluster.setAttribute('data-innfo-component', 'ku-actions')
-    if (opts && typeof opts.onInfo === 'function') {
-      var info = makeEl(doc, 'button', 'innfo-ku-action')
-      info.setAttribute('type', 'button')
-      info.setAttribute('data-ku-action', 'info')
-      info.setAttribute('aria-label', 'Knowledge unit info')
-      info.setAttribute('title', 'Info')
-      info.innerHTML = icon('info', 14)
-      info.addEventListener('click', function (ev) {
-        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-        opts.onInfo(data)
-      })
-      cluster.appendChild(info)
-    }
-    if (opts && typeof opts.onEdit === 'function') {
-      var edit = makeEl(doc, 'button', 'innfo-ku-action')
-      edit.setAttribute('type', 'button')
-      edit.setAttribute('data-ku-action', 'edit')
-      edit.setAttribute('aria-label', 'Edit knowledge unit')
-      edit.setAttribute('title', 'Edit')
-      edit.innerHTML = icon('pencil', 14)
-      edit.addEventListener('click', function (ev) {
-        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-        opts.onEdit(data)
-      })
-      cluster.appendChild(edit)
-    }
-    return cluster
-  }
-
   /**
-   * Declarative Table builder for console views.
-   * Auto-formats cells with canonical KuBadges / ElementPills.
-   *
-   * @param {{
-   *   columns: Array<string | { key: string, label?: string, kind?: 'element'|'field'|'cell'|'text', align?: 'left'|'right'|'center', format?: Function }>,
-   *   rows: Array<any>,
-   *   emptyText?: string,
-   *   compact?: boolean,
-   * }} data
-   * @param {{
-   *   doc?: Document,
-   *   onEdit?: (elementId: string, fieldKey?: string) => void,
-   *   onSelect?: (elementId: string) => void,
-   * }} [opts]
-   * @returns {HTMLElement}
-   */
-  function Table(data, opts) {
-    if (!data || !Array.isArray(data.columns)) {
-      throw new TypeError('InnfoUI.Table: data.columns must be an array')
-    }
-    var doc = (opts && opts.doc) || (typeof document !== 'undefined' ? document : null)
-    if (!doc) throw new TypeError('InnfoUI.Table: doc is required')
-    var rows = Array.isArray(data.rows) ? data.rows : []
-    var wrap = makeEl(doc, 'div', 'innfo-element-table-wrap')
-    wrap.setAttribute('data-innfo-component', 'table')
-
-    var table = makeEl(doc, 'table', 'innfo-element-table')
-    var thead = makeEl(doc, 'thead')
-    var htr = makeEl(doc, 'tr')
-
-    var cols = data.columns.map(function (c) {
-      if (typeof c === 'string') return { key: c, label: c, kind: c === 'name' || c === 'id' ? 'element' : 'field' }
-      return {
-        key: c.key || '',
-        label: c.label != null ? c.label : c.key,
-        kind: c.kind || (c.key === 'name' || c.key === 'id' ? 'element' : 'field'),
-        align: c.align || 'left',
-        format: c.format,
-      }
-    })
-
-    cols.forEach(function (c) {
-      var th = makeEl(doc, 'th', null, c.label)
-      if (c.align) th.style.textAlign = c.align
-      htr.appendChild(th)
-    })
-    if (opts && typeof opts.onEdit === 'function') {
-      var thAct = makeEl(doc, 'th', null, '')
-      thAct.style.width = '40px'
-      htr.appendChild(thAct)
-    }
-    thead.appendChild(htr)
-    table.appendChild(thead)
-
-    var tbody = makeEl(doc, 'tbody')
-    if (rows.length === 0) {
-      var emptyTr = makeEl(doc, 'tr')
-      var emptyTd = makeEl(doc, 'td', 'innfo-element-table-empty', data.emptyText || 'No items to display.')
-      emptyTd.colSpan = cols.length + (opts && opts.onEdit ? 1 : 0)
-      emptyTr.appendChild(emptyTd)
-      tbody.appendChild(emptyTr)
-    } else {
-      rows.forEach(function (row) {
-        if (!row) return
-        var tr = makeEl(doc, 'tr')
-        if (row.id) tr.setAttribute('data-element-id', row.id)
-        cols.forEach(function (c) {
-          var td = makeEl(doc, 'td')
-          if (c.align) td.style.textAlign = c.align
-          var val = row.fields && c.key in row.fields ? row.fields[c.key] : row[c.key]
-          if (c.format && typeof c.format === 'function') {
-            var formatted = c.format(val, row)
-            if (formatted && formatted.nodeType) td.appendChild(formatted)
-            else td.textContent = formatted == null ? '' : String(formatted)
-          } else if (c.kind === 'element') {
-            td.appendChild(ElementPill({ id: row.id, label: val || row.name || row.id }, { doc: doc, onSelect: opts && opts.onSelect }))
-          } else if (c.kind === 'cell') {
-            td.appendChild(KuBadge({ kind: 'cell', value: val == null ? '—' : String(val) }, { doc: doc }))
-          } else if (c.kind === 'field') {
-            td.appendChild(KuBadge({ kind: 'field', name: c.label, value: val == null ? '—' : String(val) }, { doc: doc }))
-          } else {
-            td.textContent = val == null ? '—' : String(val)
-          }
-          tr.appendChild(td)
-        })
-        if (opts && typeof opts.onEdit === 'function') {
-          var tdAct = makeEl(doc, 'td')
-          tdAct.style.textAlign = 'right'
-          var editBtn = makeEl(doc, 'button', 'innfo-review-anchor')
-          editBtn.setAttribute('type', 'button')
-          editBtn.setAttribute('title', 'Edit ' + (row.name || row.id))
-          editBtn.innerHTML = icon('pencil', 12)
-          editBtn.addEventListener('click', function (ev) {
-            if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
-            opts.onEdit(row.id)
-          })
-          tdAct.appendChild(editBtn)
-          tr.appendChild(tdAct)
-        }
-        tbody.appendChild(tr)
-      })
-    }
-    table.appendChild(tbody)
-    wrap.appendChild(table)
-    return wrap
-  }
-
-  /**
-   * Declarative KPI summary grid for console views.
-   * @param {{
-   *   items: Array<{ label: string, value: string|number, concept?: string, icon?: string, hint?: string, color?: string, index?: number }>
-   * }} data
-   * @param {{ doc?: Document }} [opts]
-   * @returns {HTMLElement}
+   * Registers <innfo-ku> custom element in window.customElements when available.
    */
   function KpiGrid(data, opts) {
     if (!data || !Array.isArray(data.items)) {
@@ -3020,36 +2725,35 @@
     }
     var doc = (opts && opts.doc) || (typeof document !== 'undefined' ? document : null)
     if (!doc) throw new TypeError('InnfoUI.KpiGrid: doc is required')
-
     var grid = makeEl(doc, 'div', 'innfo-kpi-grid')
     grid.setAttribute('data-innfo-component', 'kpi-grid')
-
     data.items.forEach(function (item) {
       if (!item) return
       var card = makeEl(doc, 'div', 'innfo-kpi-card')
       var header = makeEl(doc, 'div', 'innfo-kpi-header')
-      if (item.concept) {
-        header.appendChild(ConceptPill({ id: item.concept, label: item.concept, icon: item.icon, color: item.color, index: item.index }, { doc: doc }))
-      } else {
-        header.appendChild(KuBadge({ kind: 'concept', label: item.label, icon: item.icon }, { doc: doc }))
-      }
+      header.appendChild(
+        Ku(
+          'element',
+          {
+            model: item.modelId || (opts && opts.modelId) || 'model',
+            id: item.id || item.label || item.concept,
+            label: item.label || item.concept || '',
+            concept: item.concept,
+            index: item.index,
+            color: item.color,
+          },
+          { doc: doc },
+        ),
+      )
       card.appendChild(header)
-
       var val = makeEl(doc, 'div', 'innfo-kpi-value', item.value != null ? String(item.value) : '0')
       card.appendChild(val)
-
-      if (item.hint) {
-        var hint = makeEl(doc, 'div', 'innfo-kpi-hint', item.hint)
-        card.appendChild(hint)
-      }
+      if (item.hint) card.appendChild(makeEl(doc, 'div', 'innfo-kpi-hint', item.hint))
       grid.appendChild(card)
     })
     return grid
   }
 
-  /**
-   * Registers <innfo-ku> custom element in window.customElements when available.
-   */
   function defineCustomElements() {
     if (typeof window === 'undefined' || !window.customElements || window.customElements.get('innfo-ku')) return
     try {
@@ -3064,7 +2768,17 @@
         var value = this.getAttribute('value')
         var label = this.getAttribute('label') || name
         var id = this.getAttribute('id')
-        var badge = KuBadge({ kind: kind, id: id, name: name, value: value, label: label }, { doc: this.ownerDocument })
+        var badge = Ku(
+          kind === 'field' ? 'value' : kind,
+          {
+            model: this.getAttribute('model') || 'model',
+            id: id,
+            element: id,
+            field: name,
+            label: label || value,
+          },
+          { doc: this.ownerDocument },
+        )
         this.innerHTML = ''
         this.appendChild(badge)
       }
@@ -3098,6 +2812,358 @@
     })
   }
 
+  // ---- Unified knowledge-unit badges (S3): describeUnit + Ku + KuInfoPanel ----
+  var KU_NATURE = {
+    domain: 'container',
+    document: 'container',
+    section: 'container',
+    concept: 'structure',
+    field: 'structure',
+    matrix: 'structure',
+    element: 'content',
+    value: 'content',
+    source: 'content',
+  }
+
+  function addrApi() {
+    return typeof window !== 'undefined' && window.InnfoAddress ? window.InnfoAddress : null
+  }
+
+  function valueBaseAddress(ref) {
+    var api = addrApi()
+    var scope = ref.scope || (ref.inherited || ref.inheritedFrom ? 'concept' : 'element')
+    if (scope === 'concept') {
+      return api && api.unitAddress
+        ? api.unitAddress.section(ref.model, ref.concept || ref.inheritedFrom || ref.name)
+        : String(ref.model || '') + '@concept:' + slug(ref.concept || ref.inheritedFrom || ref.name)
+    }
+    return api && api.unitAddress
+      ? api.unitAddress.element(ref.model, ref.element || ref.id)
+      : String(ref.model || '') + '@' + slug(ref.element || ref.id)
+  }
+
+  function unitAddressFor(kind, ref) {
+    var api = addrApi()
+    ref = ref || {}
+    if (ref.address) return String(ref.address)
+    if (kind === 'source') return ref.path || String(ref.model || 'source') + '@source'
+    if (api && api.unitAddress) {
+      try {
+        switch (kind) {
+          case 'domain':
+            return api.unitAddress.domain()
+          case 'document':
+            return api.unitAddress.document(ref.id || ref.model)
+          case 'section':
+            return api.unitAddress.section(ref.model, ref.concept || ref.name)
+          case 'element':
+            return api.unitAddress.element(ref.model, ref.id || ref.element)
+          case 'value':
+            if (ref.row && ref.col) {
+              return api.unitAddress.cell(
+                ref.model,
+                ref.matrix || ref.element,
+                ref.row,
+                ref.col,
+              )
+            }
+            return api.unitAddress.value(valueBaseAddress(ref), ref.field)
+          case 'concept':
+            return api.unitAddress.concept(ref.family || ref.model, ref.concept || ref.name)
+          case 'field':
+            return api.unitAddress.field(ref.family || ref.model, ref.concept, ref.name)
+          case 'matrix':
+            return api.unitAddress.matrix(ref.family || ref.model, ref.name)
+        }
+      } catch (e) {
+        /* fall through to the local grammar */
+      }
+    }
+    var m = ref.model || ''
+    switch (kind) {
+      case 'domain':
+        return 'domaiNN_NN.md'
+      case 'document':
+        return ref.id || m
+      case 'section':
+        return m + '@concept:' + slug(ref.concept || ref.name)
+      case 'element':
+        return m + '@' + slug(ref.id || ref.element)
+      case 'value':
+        if (ref.row && ref.col) {
+          return (
+            String(m) +
+            '@' +
+            slug(ref.matrix || ref.element) +
+            '&' +
+            slug(ref.row) +
+            '&' +
+            slug(ref.col)
+          )
+        }
+        return valueBaseAddress(ref) + '&' + (ref.field || '')
+      case 'concept':
+        return 'specs/' + (ref.family || m) + '@concept:' + slug(ref.concept || ref.name)
+      case 'field':
+        return 'specs/' + (ref.family || m) + '@concept:' + slug(ref.concept) + '&' + (ref.name || '')
+      case 'matrix':
+        return 'specs/' + (ref.family || m) + '@matrix:' + slug(ref.name)
+    }
+    return ''
+  }
+
+  function unitHomeFor(address) {
+    var api = addrApi()
+    if (api && api.unitHome) {
+      try {
+        return api.unitHome(address)
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    if (/^specs\//.test(address)) return 'blueprint'
+    return address.indexOf('@') === -1 && /\.md$/.test(address) ? 'domain' : 'knowledge'
+  }
+
+  function unitEditability(kind, ref) {
+    var nature = KU_NATURE[kind]
+    if (nature === 'container' || kind === 'source') return 'none'
+    if (kind === 'concept' || kind === 'field' || kind === 'matrix') return 'structure'
+    if (ref && ref.scope === 'concept') return 'review'
+    if (ref && (ref.inherited || ref.inheritedFrom)) return 'none'
+    return 'review'
+  }
+
+  function describeUnit(kind, ref, index) {
+    if (!KU_NATURE[kind]) throw new TypeError('describeUnit: unknown kind "' + kind + '"')
+    ref = ref || {}
+    var address = unitAddressFor(kind, ref)
+    if (!address) throw new TypeError('describeUnit: missing address for "' + kind + '"')
+    var nature = KU_NATURE[kind]
+    var label =
+      ref.label != null
+        ? ref.label
+        : ref.name != null
+          ? ref.name
+          : ref.id != null
+            ? ref.id
+            : ref.value != null
+              ? ref.value
+              : address
+    var slot =
+      kind === 'value' && ref.field === 'tags'
+        ? tagSlot(String(label))
+        : conceptSlot({ index: index, color: ref.color, id: ref.concept || ref.conceptId })
+    var desc = {
+      kind: kind,
+      nature: nature,
+      home: kind === 'source' ? 'source' : unitHomeFor(address),
+      address: address,
+      label: String(label == null ? '' : label),
+      slot: slot,
+      editability: unitEditability(kind, ref),
+      facts: ref.facts && typeof ref.facts === 'object' ? ref.facts : {},
+    }
+    if (ref.vtype) desc.vtype = String(ref.vtype)
+    if (ref.parentLabel) desc.parentLabel = String(ref.parentLabel)
+    if (ref.location) desc.location = String(ref.location)
+    return desc
+  }
+
+  var KU_CSS_INJECTED = {}
+  function ensureKuCss(doc) {
+    if (!doc || !doc.head || KU_CSS_INJECTED[doc]) return
+    KU_CSS_INJECTED[doc] = true
+    var style = doc.createElement('style')
+    style.setAttribute('data-innfo-ku-css', '1')
+    style.textContent = [
+      ':root{--innfo-source-paper:#fff7e6}',
+      '.innfo-ku-wrap{display:inline-flex;align-items:center;gap:.25em;position:relative;vertical-align:middle}',
+      '.innfo-ku{display:inline-flex;align-items:center;gap:.3em;border-radius:.4em;padding:.1em .45em;font-size:.82rem;line-height:1.4;background:var(--innfo-surface,#fff)}',
+      '.innfo-ku[data-ku-nature=container]{border:3px double var(--innfo-border,#cbd5e1)}',
+      '.innfo-ku[data-ku-nature=structure]{border:1px dashed var(--innfo-border,#94a3b8);font-family:ui-monospace,monospace}',
+      '.innfo-ku[data-ku-nature=content]{border:1px solid var(--innfo-border,#e2e8f0)}',
+      '.innfo-ku[data-ku-home=source]{background:var(--innfo-source-paper,#fff7e6)}',
+      '.innfo-ku--block{display:flex;width:100%;padding:.5em .7em}',
+      '.innfo-ku-actions{display:inline-flex;gap:.15em;min-width:2.6em}',
+      '.innfo-ku-action{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;border:0;background:transparent;cursor:pointer;opacity:0;pointer-events:none}',
+      '.innfo-ku-wrap:hover .innfo-ku-action,.innfo-ku-wrap:focus-within .innfo-ku-action,.innfo-ku-actions:hover .innfo-ku-action{opacity:1;pointer-events:auto}',
+      'html:not([data-innfo-review=on]) .innfo-ku-action[data-ku-action=edit]{display:none}',
+      'html:not([data-innfo-structure=on]) .innfo-ku-action[data-ku-action=edit][data-ku-structure=true]{display:none}',
+      '@media (hover:none){.innfo-ku-action{opacity:1;pointer-events:auto}}',
+      '.innfo-ku-change-pip{min-width:1.35em;height:1.35em;border-radius:999px;border:0;background:#b45309;color:#fff;font-size:.72rem;cursor:pointer}',
+    ].join('')
+    doc.head.appendChild(style)
+  }
+
+  function Ku(kind, ref, opts) {
+    if (!KU_NATURE[kind]) throw new TypeError('Ku: unknown kind "' + kind + '"')
+    opts = opts || {}
+    var doc = resolveDoc(opts)
+    ensureKuCss(doc)
+    var desc = describeUnit(kind, ref, opts.index)
+    var wrap = makeEl(doc, 'span', 'innfo-ku-wrap')
+    var isBlock = opts.variant === 'block'
+    var badge = makeEl(doc, isBlock ? 'div' : 'span', isBlock ? 'innfo-ku innfo-ku--block' : 'innfo-ku')
+    badge.setAttribute('data-innfo-component', 'ku-unit')
+    badge.setAttribute('data-ku-kind', desc.kind)
+    badge.setAttribute('data-ku-nature', desc.nature)
+    badge.setAttribute('data-ku-home', desc.home)
+    badge.setAttribute('data-ku-address', desc.address)
+    badge.setAttribute('data-concept-slot', String(desc.slot))
+    if (desc.vtype) badge.setAttribute('data-ku-vtype', desc.vtype)
+    if (ref && ref.field) badge.setAttribute('data-field', String(ref.field))
+    if (ref && ref.row != null) badge.setAttribute('data-row', String(ref.row))
+    if (ref && ref.col != null) badge.setAttribute('data-col', String(ref.col))
+    if (ref && ref.id != null && kind === 'element') badge.setAttribute('data-element-id', String(ref.id))
+    if (isBlock) {
+      badge.setAttribute('data-ku-variant', 'block')
+      if (opts.body) badge.appendChild(opts.body)
+    } else {
+      var labelEl = makeEl(doc, 'span', 'innfo-ku-label', desc.label)
+      labelEl.setAttribute('title', desc.label)
+      badge.appendChild(labelEl)
+      if (opts.valueNode) {
+        var valueEl = makeEl(doc, 'span', 'innfo-ku-value')
+        valueEl.appendChild(opts.valueNode)
+        badge.appendChild(valueEl)
+      }
+    }
+    badge.setAttribute('aria-label', desc.nature + ', lives in ' + desc.home + ': ' + desc.label)
+    wrap.appendChild(badge)
+
+    // Action cluster: ALWAYS outside the badge root.
+    var actions = makeEl(doc, 'span', 'innfo-ku-actions')
+    var info = makeEl(doc, 'button', 'innfo-ku-action')
+    info.setAttribute('type', 'button')
+    info.setAttribute('data-ku-action', 'info')
+    info.setAttribute('aria-label', 'Unit info')
+    info.innerHTML = icon('info', 13)
+    if (typeof opts.onInfo === 'function') {
+      info.addEventListener('click', function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation()
+        opts.onInfo(desc)
+      })
+    }
+    actions.appendChild(info)
+
+    if (desc.editability !== 'none') {
+      var edit = makeEl(doc, 'button', 'innfo-ku-action')
+      edit.setAttribute('type', 'button')
+      edit.setAttribute('data-ku-action', 'edit')
+      edit.setAttribute('aria-label', 'Edit unit')
+      if (desc.editability === 'structure') edit.setAttribute('data-ku-structure', 'true')
+      edit.innerHTML = icon('pencil', 13)
+      if (typeof opts.onEdit === 'function') {
+        edit.addEventListener('click', function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation()
+          opts.onEdit(desc)
+        })
+      }
+      actions.appendChild(edit)
+    }
+    wrap.appendChild(actions)
+
+    var changes = Number(opts.changes || (ref && ref.changes) || 0)
+    if (changes > 0) {
+      var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(changes))
+      pip.setAttribute('type', 'button')
+      pip.setAttribute('data-innfo-component', 'ku-change-pip')
+      pip.setAttribute('data-ku-address', desc.address)
+      pip.setAttribute('aria-label', changes + ' pending changes on ' + desc.label)
+      if (typeof opts.onChanges === 'function') {
+        pip.addEventListener('click', function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation()
+          opts.onChanges(desc)
+        })
+      }
+      wrap.appendChild(pip)
+    }
+    return wrap
+  }
+
+  // One delegated listener per document. Ku never owns review behaviour: it
+  // only forwards (action, descriptor) to the host's onAction.
+  function createKu(opts) {
+    opts = opts || {}
+    var doc = opts.doc || (typeof document !== 'undefined' ? document : null)
+    if (!doc || typeof doc.addEventListener !== 'function') return { destroy: function () {} }
+    function descriptorOf(node) {
+      var wrap = node && node.closest ? node.closest('.innfo-ku-wrap') : null
+      var badge = wrap ? wrap.querySelector('[data-innfo-component="ku-unit"]') : null
+      if (!badge) return null
+      var kind = badge.getAttribute('data-ku-kind') || ''
+      var labelEl = badge.querySelector('.innfo-ku-label')
+      var ref = {
+        address: badge.getAttribute('data-ku-address') || '',
+        label: labelEl ? labelEl.textContent : badge.getAttribute('aria-label') || '',
+      }
+      try {
+        return describeUnit(kind, ref)
+      } catch (e) {
+        return null
+      }
+    }
+    function onClick(ev) {
+      var t = ev && ev.target
+      if (!t || !t.closest) return
+      var actionEl = t.closest('[data-ku-action]')
+      var pipEl = t.closest('[data-innfo-component="ku-change-pip"]')
+      if (!actionEl && !pipEl) return
+      var desc = descriptorOf(actionEl || pipEl)
+      if (!desc) return
+      var action = actionEl ? actionEl.getAttribute('data-ku-action') : 'changes'
+      if (typeof opts.onAction === 'function') {
+        if (ev.preventDefault) ev.preventDefault()
+        opts.onAction(action, desc, ev)
+      }
+    }
+    doc.addEventListener('click', onClick)
+    return {
+      destroy: function () {
+        doc.removeEventListener('click', onClick)
+      },
+    }
+  }
+
+  function KuInfoPanel(descriptor) {
+    if (!descriptor || typeof descriptor !== 'object') {
+      throw new TypeError('KuInfoPanel: descriptor required')
+    }
+    var doc = resolveDoc(null)
+    var dlg = makeEl(doc, 'dialog', 'innfo-ku-info-panel')
+    dlg.setAttribute('data-innfo-component', 'ku-info-panel')
+    dlg.setAttribute('role', 'dialog')
+    var h = makeEl(doc, 'h2', 'innfo-ku-info-title', descriptor.label || descriptor.address)
+    h.setAttribute('tabindex', '-1')
+    dlg.appendChild(h)
+    dlg.appendChild(
+      makeEl(doc, 'p', 'innfo-ku-info-sub', descriptor.nature + ', lives in ' + descriptor.home),
+    )
+    var rows = [
+      ['Kind', descriptor.kind],
+      ['Nature', descriptor.nature],
+      ['Lives in', descriptor.home],
+      ['Address', descriptor.address],
+      ['Location', descriptor.location || ''],
+      ['Editability', descriptor.editability],
+    ]
+    var dl = makeEl(doc, 'dl', 'innfo-ku-info-list')
+    rows.forEach(function (pair) {
+      if (!pair[1]) return
+      dl.appendChild(makeEl(doc, 'dt', 'innfo-ku-info-term', pair[0]))
+      dl.appendChild(makeEl(doc, 'dd', 'innfo-ku-info-def', String(pair[1])))
+    })
+    dlg.appendChild(dl)
+    var facts = descriptor.facts || {}
+    Object.keys(facts).forEach(function (k) {
+      if (facts[k] == null || facts[k] === '') return
+      dl.appendChild(makeEl(doc, 'dt', 'innfo-ku-info-term', k))
+      dl.appendChild(makeEl(doc, 'dd', 'innfo-ku-info-def', String(facts[k])))
+    })
+    return dlg
+  }
+
   return {
     VERSION: UI_VERSION,
     TOKEN_VALUES: TOKEN_VALUES,
@@ -3108,14 +3174,13 @@
     icon: icon,
     slug: slug,
     conceptSlot: conceptSlot,
+    tagSlot: tagSlot,
+    describeUnit: describeUnit,
+    createKu: createKu,
+    Ku: Ku,
+    KuInfoPanel: KuInfoPanel,
     resolveConceptIconName: resolveConceptIconName,
     ORIGIN_VARIANTS: ['error', 'agent', 'human', 'reviewer', 'document'],
-    ConceptPill: ConceptPill,
-    ElementPill: ElementPill,
-    MarkerChip: MarkerChip,
-    KuBadge: KuBadge,
-    KuActions: KuActions,
-    QudChip: QudChip,
     TagRow: TagRow,
     RelList: RelList,
     EditAnchor: EditAnchor,
@@ -3144,7 +3209,6 @@
     FieldMultiSelectWidget: FieldMultiSelectWidget,
     FieldReferenceWidget: FieldReferenceWidget,
     FieldMarkdownWidget: FieldMarkdownWidget,
-    Table: Table,
     KpiGrid: KpiGrid,
     defineCustomElements: defineCustomElements,
   }

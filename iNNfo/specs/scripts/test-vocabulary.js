@@ -196,6 +196,22 @@ function run() {
       'the app alias of bluepriNNt is untouched by the UI-term retirement',
     );
 
+    // Marker primitive retirement (fields-replace-markers-and-tags, iNNfo V_0-5-0).
+    const markerEntry = findRetired('Marker Definition');
+    assertTrue(!!markerEntry, 'Marker Definition is in retired_identifiers');
+    const itemMarkersEntry = findRetired('item-markers matrix');
+    assertTrue(!!itemMarkersEntry, 'item-markers matrix is in retired_identifiers');
+    const setMarkerEntry = findRetired('set_marker');
+    assertTrue(!!setMarkerEntry, 'set_marker is in retired_identifiers');
+    assertTrue(
+      !!terms.tag && /tags/.test(terms.tag.sense),
+      'tag is a term describing a value of the tags Field',
+    );
+    assertTrue(
+      !/Marker Definition/.test(terms.iNNfo.sense),
+      'the iNNfo sense lists 3 root primitives, without Marker Definition',
+    );
+
     // Documentation-only check: assert table has documentation_only: true or runtime_consumers: []
     assertTrue(vocab.documentation_only === true || (vocab.meta && vocab.meta.documentation_only === true), 'retired table is documentation only (no runtime aliases)');
 

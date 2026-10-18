@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "metrics_V_0-4-4"
+  name: "metrics_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
-knowledge_version: "V_0-4-4"
+knowledge_version: "V_0-5-0"
 title: "Ghostbusters Containment Revenue Projection"
 ---
 
@@ -199,21 +199,3 @@ scenarioNotes:: NYC coverage plus 3-city expansion driving toward $2.8M Year 2 a
 | :--- | :---: | :---: | :---: |
 | Year 1 Baseline | Includes | Includes | - |
 | Regional Expansion | Includes | Includes | Includes |
-
-# NN matrices: item-markers matrix
-| Item \ Marker | is_variable | is_formula | is_derived |
-| :--- | :---: | :---: | :---: |
-| Monthly Incidents | X | - | - |
-| Average Fee Per Incident | X | - | - |
-| Direct Cost Per Incident | X | - | - |
-| Monthly Growth Pct | X | - | - |
-| Monthly Payroll | X | - | - |
-| Equipment Maintenance | X | - | - |
-| Facility Operations | X | - | - |
-| Monthly Insurance | X | - | - |
-| Ecto-1 Operations | X | - | - |
-| Vault Expansion Capex | X | - | - |
-| Monthly Net Result | - | X | - |
-| Monthly Containment Revenue | - | X | - |
-| Monthly Direct Costs | - | X | - |
-| Monthly Operating Subtotal | - | X | - |

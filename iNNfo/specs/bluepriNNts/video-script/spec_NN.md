@@ -1,12 +1,12 @@
 ---
-spec_version: "V_0-4-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-4-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-1-5"
+blueprint_version: "V_0-2-0"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -72,6 +72,12 @@ color:: green
 weight:: 70
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
 
 ## NN Field Definition: title
 concept:: Video

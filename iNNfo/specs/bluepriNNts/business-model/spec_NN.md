@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-2"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Business Model App"
 relationship_types:
   hierarchy:
@@ -464,6 +464,12 @@ weight:: 10
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
 ## NN Field Definition: status
 concept:: Business summary
 type:: select
@@ -550,38 +556,6 @@ concept:: Procedure
 type:: markdown_inline
 description:: Instrucciones detalladas de prompt para que el agente ejecute la generacion del artefacto.
 
-# NN Marker Definition
-
-## NN Marker Definition: importance
-applies_to:: [Element]
-symbol:: *
-icon:: plus
-color:: blue
-
-## NN Marker Definition: completion
-applies_to:: [Element]
-symbol:: >
-icon:: check
-color:: blue
-
-## NN Marker Definition: certainty
-applies_to:: [Element, Concept]
-symbol:: ?
-icon:: help-circle
-color:: green
-
-## NN Marker Definition: priority
-applies_to:: [Element]
-symbol:: !
-icon:: flag
-color:: red
-
-## NN Marker Definition: rating
-applies_to:: [Element]
-symbol:: +
-icon:: star
-color:: green
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: Journey map
@@ -665,8 +639,8 @@ The composite `business` umbrella template `includes` this template alongside
 
 ## Specification
 
-The template instantiates three of the four root primitives of the iNNfo metaschema
-directly — **Concept Definition**, **Field Definition**, **Marker Definition**, and
+The template instantiates the three root primitives of the iNNfo metaschema
+directly — **Concept Definition**, **Field Definition**, and
 **Matrix Definition**.
 
 ### Concepts
@@ -695,15 +669,11 @@ Each concept has a `type` that determines its representation:
 | `steps` | Ordered sequence of steps |
 | `sequence` | Ordered list of events |
 
-### Markers
+### Fields
 
-| Marker | Symbol | Purpose |
-|---|---|---|
-| `importance` | `*` | Core importance score (1–10) |
-| `completion` | `>` | Progress indicator |
-| `certainty` | `?` | Confidence level (1–5) |
-| `priority` | `!` | Urgency flag |
-| `rating` | `+` | Quality rating |
+| Field | Concept | Type | Purpose |
+|---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
 
 ### Matrices
 
@@ -794,7 +764,7 @@ Description and details.
 | Problem 1 | Max | High |
 ```
 
-The application will resolve the `parent` URL, download this template, and use its Concept Definitions, Field Definitions, Marker Definitions, and Matrix Definitions to validate and render your model.
+The application will resolve the `parent` URL, download this template, and use its Concept Definitions, Field Definitions, and Matrix Definitions to validate and render your model.
 
 ## Examples
 
@@ -3638,20 +3608,6 @@ Patent databases like those maintained by the U.S. Patent and Trademark Office o
 *No prompts provided.*
 
 ## Problems-Competition Matrix
-
-### Summary
-*No summary provided.*
-
-### Description
-*No description provided.*
-
-### Methodologies
-*No methodologies provided.*
-
-### Prompts
-*No prompts provided.*
-
-## item-markers matrix
 
 ### Summary
 *No summary provided.*

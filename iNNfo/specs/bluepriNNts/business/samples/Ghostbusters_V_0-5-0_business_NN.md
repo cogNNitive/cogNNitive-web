@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "business_V_0-4-2"
+  name: "business_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
-knowledge_version: "V_0-4-2"
+knowledge_version: "V_0-5-0"
 title: "Ghostbusters"
 ---
 
@@ -182,27 +182,34 @@ Manages incoming calls, prioritizes responses, routes teams based on entity clas
 
 ## NN Problems: Paranormal Infestation
 slug:: paranormal-infestation
+tags:: [">", "!", "+"]
 Unwanted spectral presence causing property damage, emotional distress, and business disruption.
 ## NN Problems: Fear and Emotional Trauma
 slug:: fear-and-emotional-trauma
+tags:: [">", "+"]
 Inhabitants experience anxiety, sleep disruption, and psychological distress from supernatural encounters.
 ## NN Problems: Property Value Impact
 slug:: property-value-impact
+tags:: [">"]
 Properties with known paranormal activity lose market value and become uninsurable.
 ## NN Problems: Lack of Alternatives
 slug:: lack-of-alternatives
+tags:: [">", "!"]
 Traditional services (police, clergy, exterminators) cannot handle paranormal threats effectively.
 
 # NN Value propositions
 
 ## NN Value propositions: Guaranteed Entity Removal
 slug:: guaranteed-entity-removal
+tags:: [">", "!", "+"]
 We solve the problem. If we can't contain it, you don't pay.
 ## NN Value propositions: Rapid Response
 slug:: rapid-response
+tags:: [">", "+"]
 Average arrival time under 30 minutes in the NYC metro area.
 ## NN Value propositions: Proprietary Technology
 slug:: proprietary-technology
+tags:: [">", "!", "+"]
 Nuclear-powered containment systems (Proton Pack, Ghost Trap, Containment Unit) that no competitor possesses.
 ## NN Value propositions: Insurance Documentation
 slug:: insurance-documentation
@@ -488,9 +495,11 @@ Operational and growing. Ghostbusters is post-revenue with a proven business mod
 
 ## NN Challenges: Regulatory Risk
 slug:: regulatory-risk
+tags:: [">", "!"]
 Operating unlicensed nuclear accelerators without clear regulatory framework. The EPA shutdown remains an existential threat.
 ## NN Challenges: Talent Pipeline
 slug:: talent-pipeline
+tags:: ["!"]
 There is no university program for paranormal containment. Every operator must be trained in-house over 6 months.
 ## NN Challenges: Public Perception
 slug:: public-perception
@@ -979,6 +988,7 @@ Hire slow, train deep. Every operator must be capable of independent decision-ma
 
 ## NN Validation: Gozer Case Study
 slug:: gozer-case-study
+tags:: [">", "+"]
 The 1984 Gozer incident validated the core business hypothesis under maximum-stakes conditions.
 
 # NN Coherence
@@ -1114,19 +1124,3 @@ Survey 50 paranormal enthusiast groups to gauge interest in a licensed operator 
 | Fear and Emotional Trauma | Low | High | Slightly High | Very Low |
 | Property Value Impact | Very Low | Very Low | Very Low | Slightly High |
 | Lack of Alternatives | Slightly Low | Slightly Low | Slightly Low | Very Low |
-
-# NN matrices: item-markers matrix
-
-| Item \ Marker | weight | completion | certainty | priority | rating |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| Paranormal Infestation | 9 | > | 5 | ! | + |
-| Fear and Emotional Trauma | 7 | > | 5 | - | + |
-| Property Value Impact | 6 | > | 4 | - | - |
-| Lack of Alternatives | 8 | > | 5 | ! | - |
-| Guaranteed Entity Removal | 10 | > | - | ! | + |
-| Rapid Response | 7 | > | - | - | + |
-| Proprietary Technology | 9 | > | - | ! | + |
-| Insurance Documentation | 5 | - | - | - | - |
-| Regulatory Risk | 8 | > | 4 | ! | - |
-| Talent Pipeline | 6 | - | 3 | ! | - |
-| Gozer Case Study | 10 | > | 5 | - | + |

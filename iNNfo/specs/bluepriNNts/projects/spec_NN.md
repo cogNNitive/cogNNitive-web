@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-4"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Projects App"
 procedures:
   - id: "calculate-critical-path"
@@ -85,6 +85,19 @@ weight:: 50
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
+## NN Field Definition: health
+concept:: *
+type:: select
+options:: [nominal, warning, critical]
+widget:: cycle
+description:: Operational execution health status.
+
 ## NN Field Definition: status
 concept:: Task
 type:: select
@@ -163,14 +176,6 @@ concept:: Project roles
 type:: select
 options:: [internal, external]
 
-# NN Marker Definition
-
-## NN Marker Definition: health
-applies_to:: [Element, Concept]
-icon:: activity
-color:: green
-weight:: 50
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: task-roles matrix
@@ -219,11 +224,12 @@ The Projects Template is designed for modeling and tracking projects following P
 | **Risk** | `list` | Identified risks with impact, probability, and mitigation plans |
 | **Project roles** | `list` | Functional project roles and stakeholders |
 
-### Markers
+### Fields
 
-| Marker | Purpose |
-|---|---|
-| `health` | Tracks execution health and status of project components |
+| Field | Concept | Type | Purpose |
+|---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
+| `health` | `*` | `select` (nominal, warning, critical; cycle) | Operational execution health status |
 
 ### Matrices
 

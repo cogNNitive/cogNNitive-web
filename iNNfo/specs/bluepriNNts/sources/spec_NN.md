@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-2-1"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-3-0"
 title: "Sources Catalog App"
 relationship_types:
   hierarchy:
@@ -36,6 +36,12 @@ weight:: 100
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
 ## NN Field Definition: type
 concept:: Source
 type:: select
@@ -62,11 +68,6 @@ description:: Workspace-relative path to the raw/binary asset in sources/import/
 concept:: Source
 type:: string
 description:: Mandatory concise semantic summary of the source contents for progressive disclosure.
-
-## NN Field Definition: tags
-concept:: Source
-type:: string
-description:: Categorization and domain tags for grouping and discovery.
 
 ## NN Field Definition: status
 concept:: Source

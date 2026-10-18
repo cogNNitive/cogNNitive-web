@@ -1,12 +1,12 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/documentation/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 title: "Documentation Specification App"
-blueprint_version: "V_0-3-3"
+blueprint_version: "V_0-4-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -68,6 +68,12 @@ weight:: 40
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
 ## NN Field Definition: title
 concept:: Page
 type:: string
@@ -98,11 +104,6 @@ concept:: Page
 type:: reference
 target_concepts:: [DocSite, Section]
 description:: Owning Section, or the DocSite itself for a top-level page.
-
-## NN Field Definition: tags
-concept:: Page
-type:: string
-description:: Freeform tags or classifications for categorization and AI routing.
 
 ## NN Field Definition: section_order
 concept:: Section

@@ -280,10 +280,15 @@
         }
         var token = match[0]
         if (/^fb-\d+$/.test(token)) {
-          var chg = document.createElement('span')
-          chg.className = 'innfo-ku-field-chip'
-          chg.textContent = token
-          hostEl.appendChild(chg)
+          var UIc = GLOBAL.InnfoUI
+          if (UIc && typeof UIc.Ku === 'function') {
+            hostEl.appendChild(UIc.Ku('element', { model: meta.modelId || '', id: token, label: token }, { doc: document }))
+          } else {
+            var chg = document.createElement('span')
+            chg.className = 'innfo-ku-field-chip'
+            chg.textContent = token
+            hostEl.appendChild(chg)
+          }
         } else if (byName[token]) {
           var rb = refButton(token, token)
           hostEl.appendChild(rb.node)
@@ -305,27 +310,31 @@
         return { node: span, ok: false }
       }
       var UI = GLOBAL.InnfoUI
-      if (UI && typeof UI.ElementPill === 'function' && target.id) {
+      if (UI && typeof UI.Ku === 'function' && target.id) {
         var cMeta = null
         concepts.forEach(function (x) {
           if (x && x.name === target.concept) cMeta = x
         })
-        var pill = UI.ElementPill(
+        var pill = UI.Ku(
+          'element',
           {
+            model: meta.modelId || '',
             id: target.id,
             label: target.name || label,
             concept: target.concept,
             color: cMeta && cMeta.color,
-            hexColor: cMeta && cMeta.hexColor,
           },
-          {
-            doc: document,
-            onClick: function (ev) {
-              if (ev && ev.preventDefault) ev.preventDefault()
-              openRef(target)
-            },
-          }
+          { doc: document },
         )
+        var pillBadge = pill.querySelector('[data-innfo-component="ku-unit"]')
+        if (pillBadge) {
+          pillBadge.setAttribute('role', 'button')
+          pillBadge.setAttribute('tabindex', '0')
+          pillBadge.addEventListener('click', function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault()
+            openRef(target)
+          })
+        }
         return { node: pill, ok: true }
       }
       var b = document.createElement('button')

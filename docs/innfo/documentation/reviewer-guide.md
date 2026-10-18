@@ -22,16 +22,33 @@ iNNfo standalone consoles provide an offline, interactive environment for review
 In the top navigation banner, locate the **Reviewer** chip (e.g., `Reviewer: reviewer`). Click it to open the feedback modal focused on the **Reviewer identifier** field (required for export). This identity is stored in browser `localStorage` and automatically populates export filenames and review metadata.
 
 ### 2. Turning On Review Mode
-The **Review mode** toggle appears in the banner only when the console declares `feedback-export`, carries a `meta.modelId`, and every element has a `hash`. Review mode is **off on every load** and is never persisted. When it is off, the console is read-only: no annotation, reviewed, or draft controls exist in the DOM. Verdict badges (below) remain visible regardless of the toggle.
+The **Review mode** toggle appears in the banner only when the console declares `feedback-export`, carries a `meta.modelId`, and every element has a `hash`. Review mode is **off on every load** and is never persisted. When it is off, edit pencils are hidden by CSS and the delegated handler rejects the action, so the console is read-only. Info buttons remain available. Verdict badges (below) remain visible regardless of the toggle.
 
 ### 3. Annotating Elements and Fields
-With review mode on, each element card and each field row exposes an annotate control that opens an inline popover:
-- **Card anchor** offers `comment` and `delete`.
-- **Field-row anchor** offers `comment` and `correction`; the original value is pre-filled from the payload, and the draft records `target.field`.
+Every knowledge unit is rendered as a **Ku** badge (element, value, section, field
+definition, matrix, document, source) with an action cluster beside it:
+- **Info** is always present and opens the unit panel (kind, nature, lives-in,
+  canonical address, location, editability and kind-specific facts).
+- **Edit** appears on content and structure units when review mode is on. A content
+  pencil opens the shared edit modal for that element or field value.
+- An **inherited** concept-level value is labelled `inherited from <Concept>` on
+  element cards and is info-only; edit it from its concept section badge instead.
 
-Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cancel) to discard and return focus to the anchor. Each saved draft records the element's current `hash` as `base_hash`.
+Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cancel) to discard and return focus. Each saved draft records the element's current `hash` as `base_hash` and the unit's canonical address.
+
+### 3b. Edit Structure Switch
+The review dock carries an **Edit structure** switch (`button[role=switch]`). It is
+off by default and resets when review mode is turned off. When on, it sets
+`html[data-innfo-structure=on]` and reveals pencils on structure units (concept,
+field and matrix definitions). Those pencils open the modal in comment-only mode,
+producing an `op: "comment"` draft — structure edits are proposals, never silent
+renames.
 
 ### 4. Reviewed Marks, Progress and Verdict Badges
+- Units with pending drafts show a **change pip** beside the badge, keyed by the
+  unit's canonical address. The count equals the pending drafts for that unit;
+  activating it opens the unit's history. Pips work in both review modes because
+  they reflect stored drafts, not mode state.
 - Each card has a **reviewed** toggle. A mark counts as reviewed only while its recorded hash matches the element's current hash; if the element changed, the toggle shows **changed** and does not count.
 - The concept rail shows `reviewed/total` plus the pending-draft count per concept, in both console renderers.
 - Elements targeted by a changeset show a status badge: `applied` or `conflict` for changes an applied changeset performed, and `proposed` for a change in a proposed changeset. These badges come from changesets, never from local drafts, and reviewers cannot set a verdict from the console.

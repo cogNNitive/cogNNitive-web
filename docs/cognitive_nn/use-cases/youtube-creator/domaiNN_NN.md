@@ -43,15 +43,3 @@ status:: active
 path:: artifacts_NN.md
 blueprint:: artifacts
 status:: active
-
-# NN Tags
-
-## NN Tags: media
-color:: #ef4444
-icon:: video
-description:: Video scripts, teleprompter cues, and B-roll shot lists.
-
-## NN Tags: research
-color:: #3b82f6
-icon:: file-text
-description:: Peer-reviewed studies, empirical datasets, and fact-checking citations.

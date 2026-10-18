@@ -47,7 +47,7 @@
     return raw || 'feedback'
   }
 
-  // D4: exports are named after the immutable model_slug, never the human
+  // D4: exports are named after the immutable knowledge_slug, never the human
   // title. An explicit slug wins; otherwise the model id (then title) is slugified.
   function modelSlugOf(state) {
     var s = isObject(state) ? state : {}
@@ -189,6 +189,29 @@
     return slugify(String(concept || '') + ' ' + String(name || ''))
   }
 
+  function getElementEffectiveTags(element) {
+    if (!element) return []
+    if (Array.isArray(element.tags)) {
+      return element.tags.map(function (t) { return String(t).toLowerCase() })
+    }
+    var tags = []
+    if (element.fields && element.fields.tags) {
+      if (Array.isArray(element.fields.tags)) tags = tags.concat(element.fields.tags)
+      else if (typeof element.fields.tags === 'string') tags = tags.concat(element.fields.tags.split(',').map(function (s) { return s.trim() }))
+    }
+    if (element.inherited && element.inherited.tags && element.inherited.tags.value) {
+      var inh = element.inherited.tags.value
+      if (Array.isArray(inh)) tags = tags.concat(inh)
+      else if (typeof inh === 'string') tags = tags.concat(inh.split(',').map(function (s) { return s.trim() }))
+    }
+    var seen = {}
+    return tags.map(function (t) { return String(t).toLowerCase() }).filter(function (t) {
+      if (!t || seen[t]) return false
+      seen[t] = true
+      return true
+    })
+  }
+
   function elementHaystack(element) {
     var parts = [
       element.concept,
@@ -197,11 +220,11 @@
       element.modelId,
       element.modelFile,
       element.modelTitle,
-      element.unitSlug,
-      element.canonicalUnit,
+      element.location,
     ]
-    if (Array.isArray(element.tags)) {
-      parts.push(element.tags.join(' '))
+    var effTags = getElementEffectiveTags(element)
+    if (effTags.length) {
+      parts.push(effTags.join(' '))
     }
     if (isObject(element.fields)) {
       parts.push(Object.keys(element.fields).join(' '))
@@ -223,23 +246,105 @@
 
   function parseFilterQuery(query) {
     var raw = String(query == null ? '' : query).trim()
-    if (!raw) return { textTokens: [], operators: [] }
-    var parts = raw.match(/(?:[^\s"]+|"[^"]*")+/g) || []
+    if (!raw) return { textTokens: [], operators: [], groups: [] }
+
+    // Tokenize: recognize '(', ')', OR / AND keywords, key:"val", and standalone text
+    var tokenRegex = /\(|\)|[^\s"':]+:(?:"[^"]*"|'[^']*'|[^\s()]+)|"[^"]*"|'[^']*'|[^\s()]+/g
+    var rawTokens = raw.match(tokenRegex) || []
+
+    function parseAtom(t) {
+      var colonIdx = t.indexOf(':')
+      if (colonIdx > 0 && t.charAt(0) !== '(' && t.charAt(0) !== ')') {
+        var key = t.slice(0, colonIdx).toLowerCase()
+        var val = t.slice(colonIdx + 1).replace(/^["']|["']$/g, '').toLowerCase()
+        return { type: 'operator', key: key, val: val, raw: t }
+      }
+      var unquoted = t.replace(/^["']|["']$/g, '')
+      return { type: 'text', val: unquoted.toLowerCase(), raw: t }
+    }
+
+    // Convert tokens to CNF-like groups: top-level elements separated by AND (implicit or explicit)
+    // Parenthesized expressions '( ... )' or sequences joined by 'OR' form disjunctive clauses
+    var groups = [] // array of clauses; clause is array of atoms (atoms within a clause are OR'ed)
+    var currentOrClause = []
     var textTokens = []
     var operators = []
 
-    parts.forEach(function (part) {
-      var unquoted = part.replace(/^"|"$/g, '')
-      var colonIdx = unquoted.indexOf(':')
-      if (colonIdx > 0) {
-        var key = unquoted.slice(0, colonIdx).toLowerCase()
-        var val = unquoted.slice(colonIdx + 1).replace(/^["']|["']$/g, '').toLowerCase()
-        operators.push({ key: key, val: val, raw: unquoted })
-      } else {
-        textTokens.push(unquoted.toLowerCase())
+    var inParen = false
+    var parenClause = []
+
+    for (var i = 0; i < rawTokens.length; i++) {
+      var tok = rawTokens[i]
+      var upper = tok.toUpperCase()
+
+      if (tok === '(') {
+        inParen = true
+        parenClause = []
+        continue
       }
-    })
-    return { textTokens: textTokens, operators: operators }
+      if (tok === ')') {
+        inParen = false
+        if (parenClause.length > 0) {
+          groups.push(parenClause)
+          parenClause = []
+        }
+        continue
+      }
+
+      if (inParen) {
+        if (upper === 'OR') continue
+        if (upper === 'AND') continue
+        var atom = parseAtom(tok)
+        if (atom.type === 'operator') operators.push(atom)
+        else textTokens.push(atom.val)
+        parenClause.push(atom)
+        continue
+      }
+
+      if (upper === 'OR') {
+        // Next atom attaches to current OR clause
+        continue
+      }
+      if (upper === 'AND') {
+        if (currentOrClause.length > 0) {
+          groups.push(currentOrClause)
+          currentOrClause = []
+        }
+        continue
+      }
+
+      var atom = parseAtom(tok)
+      if (atom.type === 'operator') operators.push(atom)
+      else textTokens.push(atom.val)
+
+      // Look back: was previous token 'OR'?
+      var prev = i > 0 ? rawTokens[i - 1].toUpperCase() : ''
+      if (prev === 'OR') {
+        currentOrClause.push(atom)
+      } else {
+        if (currentOrClause.length > 0) {
+          groups.push(currentOrClause)
+          currentOrClause = []
+        }
+        currentOrClause.push(atom)
+      }
+    }
+
+    if (currentOrClause.length > 0) {
+      groups.push(currentOrClause)
+    }
+    if (parenClause.length > 0) {
+      groups.push(parenClause)
+    }
+
+    return { textTokens: textTokens, operators: operators, groups: groups }
+  }
+
+  // valueKey: the single normalization used for multi-valued field membership
+  // (trim + lowercase), mirroring innfo-core schema/field-values.ts valueKey.
+  function valueKey(v) {
+    if (v === null || v === undefined) return ''
+    return String(v).trim().toLowerCase()
   }
 
   function getElementFieldValue(el, key) {
@@ -259,6 +364,19 @@
         }
       }
     }
+    // Inherited concept-level values are effective values: fall back to them
+    // when the element carries no own value for the field.
+    if ((v === null || v === '' || v === undefined) && el.inherited && typeof el.inherited === 'object') {
+      var iKeys = Object.keys(el.inherited)
+      for (var j = 0; j < iKeys.length; j++) {
+        if (iKeys[j].toLowerCase() === lkey) {
+          var iv = el.inherited[iKeys[j]]
+          if (iv && typeof iv === 'object' && 'value' in iv) iv = iv.value
+          if (iv !== null && iv !== undefined) v = iv
+          break
+        }
+      }
+    }
     if ((v === null || v === '' || v === undefined) && Array.isArray(el.relations)) {
       var relMatches = el.relations
         .filter(function (r) { return r && String(r.field || '').toLowerCase() === lkey })
@@ -267,6 +385,103 @@
       if (relMatches.length) v = relMatches.join(', ')
     }
     return v
+  }
+
+  function matchAtom(el, atom, draftsById, reviewedMap, selectFields) {
+    if (!atom) return true
+    if (atom.type === 'text') {
+      return elementHaystack(el).indexOf(atom.val) !== -1
+    }
+    var op = atom
+    var opVal = String(op.val == null ? '' : op.val).trim()
+    var isNeg = op.key.charAt(0) === '!' || op.key.charAt(0) === '-'
+    var key = isNeg ? op.key.slice(1) : op.key
+
+    if (key === 'concept') {
+      var elConcept = String(el.concept || '').toLowerCase()
+      var mConcept = elConcept.indexOf(opVal) !== -1
+      return isNeg ? !mConcept : mConcept
+    }
+    if (key === 'model' || key === 'file') {
+      var modelHaystack = (
+        String(el.modelId || '') +
+        ' ' +
+        String(el.modelFile || '') +
+        ' ' +
+        String(el.modelTitle || '')
+      ).toLowerCase()
+      var mModel = modelHaystack.indexOf(opVal) !== -1
+      return isNeg ? !mModel : mModel
+    }
+    if (key === 'element' || key === 'id' || key === 'name') {
+      var elHaystack = (String(el.id || '') + ' ' + String(el.name || '')).toLowerCase()
+      var mEl = elHaystack.indexOf(opVal) !== -1
+      return isNeg ? !mEl : mEl
+    }
+    if (key === 'is') {
+      var isMatch = false
+      if (opVal === 'draft') isMatch = !!draftsById[el.id]
+      else if (opVal === 'reviewed') isMatch = !!reviewedMap[el.id]
+      else if (opVal === 'changed') isMatch = !!(reviewedMap[el.id] && reviewedMap[el.id] !== el.hash)
+      return isNeg ? !isMatch : isMatch
+    }
+    if (key === 'has') {
+      var hasVal = getElementFieldValue(el, opVal)
+      var exists = hasVal !== null && hasVal !== undefined && hasVal !== ''
+      return isNeg ? !exists : exists
+    }
+    if (key === 'field') {
+      var eqIdx = opVal.indexOf('=')
+      if (eqIdx === -1) eqIdx = opVal.indexOf(':')
+      if (eqIdx > 0) {
+        var fName = opVal.slice(0, eqIdx).trim()
+        var fVal = opVal.slice(eqIdx + 1).trim()
+        var actual = getElementFieldValue(el, fName)
+        if (actual === null || actual === undefined) return isNeg
+        var actualStr = String(actual).toLowerCase()
+        var mField = actualStr.indexOf(fVal) !== -1
+        return isNeg ? !mField : mField
+      }
+      return true
+    }
+
+    var actual = getElementFieldValue(el, key)
+    if (actual === null || actual === undefined) return isNeg
+    if (!opVal) return true
+    // Any-of: `<field>:a|b` matches an element carrying at least one of the listed
+    // values (one OR group). Repeated tokens stay AND (handled by filterElements).
+    var anyTokens = opVal
+      .split('|')
+      .map(function (s) { return s.trim() })
+      .filter(function (s) { return s !== '' })
+    if (anyTokens.length === 0) return true
+    var isArrayValue = Array.isArray(actual)
+    var actualStr = String(actual).toLowerCase()
+    var matched = anyTokens.some(function (tok) {
+      if (tok.length > 1 && (tok.charAt(0) === '>' || tok.charAt(0) === '<')) {
+        var isGte = tok.slice(0, 2) === '>='
+        var isLte = tok.slice(0, 2) === '<='
+        var prefixLen = (isGte || isLte) ? 2 : 1
+        var numTarget = parseFloat(tok.slice(prefixLen))
+        var numActual = parseFloat(actualStr)
+        if (isNaN(numTarget) || isNaN(numActual)) return false
+        if (isGte) return numActual >= numTarget
+        if (isLte) return numActual <= numTarget
+        if (tok.charAt(0) === '>') return numActual > numTarget
+        return numActual < numTarget
+      }
+      if (isArrayValue) {
+        // Exact membership, case-insensitive (valueKey). Never substring.
+        var tv = valueKey(tok)
+        return actual.some(function (v) { return valueKey(v) === tv })
+      }
+      if (selectFields && selectFields[key]) {
+        // A scalar select matches by exact, case-insensitive equality.
+        return actualStr === tok.toLowerCase()
+      }
+      return actualStr.indexOf(tok.toLowerCase()) !== -1
+    })
+    return isNeg ? !matched : matched
   }
 
   function filterElements(elements, query, context) {
@@ -278,11 +493,37 @@
     var draftsById = ctx.draftsById || {}
     var reviewedMap = ctx.reviewed || {}
 
-    // Group positive facets by key so multiple selections match using OR (e.g. model:A model:B matches A or B)
+    // Type-aware matching: a scalar `select` field matches by exact equality,
+    // other scalar types by substring (arrays are always exact membership).
+    var selectFields = {}
+    if (ctx.schema && Array.isArray(ctx.schema.fields)) {
+      ctx.schema.fields.forEach(function (f) {
+        if (f && f.name && String(f.type || '').toLowerCase() === 'select') {
+          selectFields[String(f.name).toLowerCase()] = true
+        }
+      })
+    }
+
+    // Check if query used explicit boolean groups (e.g. parentheses or OR keyword)
+    var hasExplicitLogic = parsed.groups.some(function (g) { return g.length > 1 }) || query.indexOf('(') !== -1 || /\bOR\b/i.test(query)
+
+    if (hasExplicitLogic) {
+      return list.filter(function (el) {
+        if (!isObject(el)) return false
+        // Every group must match (AND across groups). Within each group, at least one atom must match (OR).
+        return parsed.groups.every(function (group) {
+          return group.some(function (atom) {
+            return matchAtom(el, atom, draftsById, reviewedMap, selectFields)
+          })
+        })
+      })
+    }
+
+    // Default facet rules: model/concept keep OR across selections; every other
+    // facet combines with AND. A Field named `tags` is an ordinary facet source
+    // (any-of is expressed with `|` inside one token, handled by matchAtom).
     var modelOps = []
     var conceptOps = []
-    var tagOps = []
-    var tagAnyOps = []
     var otherOps = []
 
     for (var k = 0; k < parsed.operators.length; k++) {
@@ -291,11 +532,6 @@
         modelOps.push(oper)
       } else if (oper.key === 'concept') {
         conceptOps.push(oper)
-      } else if (oper.key === 'tag' || oper.key === 'tag-any') {
-        // A half-typed \`tag:\` has no value yet: it constrains nothing.
-        if (String(oper.val == null ? '' : oper.val).trim() === '') continue
-        if (oper.key === 'tag') tagOps.push(oper)
-        else tagAnyOps.push(oper)
       } else {
         otherOps.push(oper)
       }
@@ -311,130 +547,26 @@
 
       // Check model facet (OR across multiple model selections)
       if (modelOps.length > 0) {
-        var modelHaystack = (
-          String(el.modelId || '') +
-          ' ' +
-          String(el.modelFile || '') +
-          ' ' +
-          String(el.modelTitle || '')
-        ).toLowerCase()
         var matchesAnyModel = modelOps.some(function (op) {
-          return modelHaystack.indexOf(op.val) !== -1
+          return matchAtom(el, op, draftsById, reviewedMap, selectFields)
         })
         if (!matchesAnyModel) return false
       }
 
       // Check concept facet (OR across multiple concept selections)
       if (conceptOps.length > 0) {
-        var elConcept = String(el.concept || '').toLowerCase()
         var matchesAnyConcept = conceptOps.some(function (op) {
-          return elConcept.indexOf(op.val) !== -1
+          return matchAtom(el, op, draftsById, reviewedMap, selectFields)
         })
         if (!matchesAnyConcept) return false
       }
 
-      // Tag facet: element.tags is the only tag source, matched exactly (case-insensitive).
-      // `tag:` tokens AND together; `tag-any:` tokens form one OR group.
-      if (tagOps.length > 0 || tagAnyOps.length > 0) {
-        var elTags = Array.isArray(el.tags)
-          ? el.tags.map(function (t) {
-              return String(t).toLowerCase()
-            })
-          : []
-        var hasAllTags = tagOps.every(function (op) {
-          return elTags.indexOf(op.val) !== -1
-        })
-        if (!hasAllTags) return false
-        if (tagAnyOps.length > 0) {
-          var hasAnyTag = tagAnyOps.some(function (op) {
-            return elTags.indexOf(op.val) !== -1
-          })
-          if (!hasAnyTag) return false
-        }
-      }
-
+      // Other fields (AND by default; a Field named `tags` is an ordinary facet,
+      // any-of lives inside one token as `tags:a|b`)
       for (var j = 0; j < otherOps.length; j++) {
-        var op = otherOps[j]
-        var opVal = String(op.val == null ? '' : op.val).trim()
-        if (!opVal) continue
-        var isNeg = op.key.charAt(0) === '!' || op.key.charAt(0) === '-'
-        var key = isNeg ? op.key.slice(1) : op.key
-
-        if (key === 'concept') {
-          var elConcept = String(el.concept || '').toLowerCase()
-          var mConcept = elConcept.indexOf(opVal) !== -1
-          if (isNeg ? mConcept : !mConcept) return false
-        } else if (key === 'model' || key === 'file') {
-          var modelHaystack = (
-            String(el.modelId || '') +
-            ' ' +
-            String(el.modelFile || '') +
-            ' ' +
-            String(el.modelTitle || '')
-          ).toLowerCase()
-          var mModel = modelHaystack.indexOf(opVal) !== -1
-          if (isNeg ? mModel : !mModel) return false
-        } else if (key === 'tag') {
-          var elTags = Array.isArray(el.tags)
-            ? el.tags.map(function (t) { return String(t).toLowerCase() })
-            : []
-          var mTag = elTags.indexOf(opVal) !== -1
-          if (isNeg ? mTag : !mTag) return false
-        } else if (key === 'element' || key === 'id' || key === 'name') {
-          var elHaystack = (String(el.id || '') + ' ' + String(el.name || '')).toLowerCase()
-          var mEl = elHaystack.indexOf(opVal) !== -1
-          if (isNeg ? mEl : !mEl) return false
-        } else if (key === 'is') {
-          var isMatch = false
-          if (opVal === 'draft') isMatch = !!draftsById[el.id]
-          else if (opVal === 'reviewed') isMatch = !!reviewedMap[el.id]
-          else if (opVal === 'changed') isMatch = !!(reviewedMap[el.id] && reviewedMap[el.id] !== el.hash)
-          if (isNeg ? isMatch : !isMatch) return false
-        } else if (key === 'has') {
-          var hasVal = getElementFieldValue(el, opVal)
-          var exists = hasVal !== null && hasVal !== undefined && hasVal !== ''
-          if (isNeg ? exists : !exists) return false
-        } else if (key === 'field') {
-          var eqIdx = opVal.indexOf('=')
-          if (eqIdx === -1) eqIdx = opVal.indexOf(':')
-          if (eqIdx > 0) {
-            var fName = opVal.slice(0, eqIdx).trim()
-            var fVal = opVal.slice(eqIdx + 1).trim()
-            var actual = getElementFieldValue(el, fName)
-            if (actual === null || actual === undefined) {
-              if (!isNeg) return false
-            } else {
-              var actualStr = String(actual).toLowerCase()
-              var mField = actualStr.indexOf(fVal) !== -1
-              if (isNeg ? mField : !mField) return false
-            }
-          }
-        } else {
-          var actual = getElementFieldValue(el, key)
-          if (actual === null || actual === undefined) {
-            if (!isNeg) return false
-          } else {
-            var actualStr = String(actual).toLowerCase()
-            var matched = false
-            if (opVal.length > 1 && (opVal.charAt(0) === '>' || opVal.charAt(0) === '<')) {
-              var isGte = opVal.slice(0, 2) === '>='
-              var isLte = opVal.slice(0, 2) === '<='
-              var prefixLen = (isGte || isLte) ? 2 : 1
-              var numTarget = parseFloat(opVal.slice(prefixLen))
-              var numActual = parseFloat(actualStr)
-              if (!isNaN(numTarget) && !isNaN(numActual)) {
-                if (isGte) matched = numActual >= numTarget
-                else if (isLte) matched = numActual <= numTarget
-                else if (opVal.charAt(0) === '>') matched = numActual > numTarget
-                else if (opVal.charAt(0) === '<') matched = numActual < numTarget
-              }
-            } else {
-              matched = actualStr.indexOf(opVal) !== -1
-            }
-            if (isNeg ? matched : !matched) return false
-          }
-        }
+        if (!matchAtom(el, otherOps[j], draftsById, reviewedMap, selectFields)) return false
       }
+
       return true
     })
   }
@@ -865,11 +997,14 @@
     var title = el('span', 'innfo-banner-title', null)
     if (title) {
       title.appendChild(
-        UI.KuBadge({
-          kind: 'document',
-          id: meta.modelId || meta.model || 'model',
-          label: String(meta.title || meta.model || 'iNNfo Console'),
-        }),
+        UI.Ku(
+          'document',
+          {
+            id: meta.modelId || meta.model || 'model',
+            label: String(meta.title || meta.model || 'iNNfo Console'),
+          },
+          { doc: doc },
+        ),
       )
     }
     var version = el('span', 'innfo-banner-version', ' ' + domainModelVersion(meta))
@@ -915,6 +1050,7 @@
     if (activeHost) activeHost.innerHTML = ''
 
     var models = state && state.meta && Array.isArray(state.meta.models) ? state.meta.models : []
+    var filterModelId = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
     var parsed = parseFilterQuery(activeQuery || '')
 
     // Extract active values for model and concept
@@ -984,15 +1120,18 @@
           toggleFacet('model', m.id || m.filePath, cb.checked)
         })
 
-        var mItemIco = el('span', 'innfo-facet-item-icon')
-        if (mItemIco) mItemIco.innerHTML = mIcon
-        var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', m.title || m.filePath)
-        nameSpan.title = m.filePath || m.title || ''
+        var mUnit =
+          UI && typeof UI.Ku === 'function'
+            ? UI.Ku(
+                'document',
+                { id: m.id || m.filePath || m.title, label: m.title || m.filePath || '' },
+                { doc: doc },
+              )
+            : el('span', 'flex-1 truncate font-medium text-slate-700', m.title || m.filePath)
         var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(m.elementCount || 0))
 
         item.appendChild(cb)
-        if (mItemIco) item.appendChild(mItemIco)
-        item.appendChild(nameSpan)
+        item.appendChild(mUnit)
         item.appendChild(cntBadge)
         mMenu.appendChild(item)
       })
@@ -1067,18 +1206,24 @@
         })
 
         var cMetaFacet = conceptMetaOf((state && state.schema && state.schema.concepts) || (state && state.concepts), c.name)
-        var cIcoFacet = el('span', 'innfo-facet-item-icon')
-        if (cIcoFacet && UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
-          cIcoFacet.style.color = cMetaFacet.hexColor
-          cIcoFacet.innerHTML = UI.icon(UI.resolveConceptIconName(c.name, cMetaFacet), 12)
-        }
-        var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', c.name)
-        if (cMetaFacet.hexColor) nameSpan.style.color = cMetaFacet.hexColor
+        var cUnit =
+          UI && typeof UI.Ku === 'function'
+            ? UI.Ku(
+                'section',
+                {
+                  model: filterModelId,
+                  concept: c.name,
+                  label: c.name,
+                  index: cMetaFacet.index,
+                  color: cMetaFacet.color,
+                },
+                { doc: doc },
+              )
+            : el('span', 'flex-1 truncate font-medium text-slate-700', c.name)
         var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(c.count))
 
         item.appendChild(cb)
-        if (cIcoFacet) item.appendChild(cIcoFacet)
-        item.appendChild(nameSpan)
+        item.appendChild(cUnit)
         item.appendChild(cntBadge)
         cMenu.appendChild(item)
       })
@@ -1118,7 +1263,142 @@
       host.appendChild(cWrap)
     }
 
-    // 3. Clear button if any filter is active
+    // 3. Fields Dropdown (dynamic fields extracted from elements)
+    var fieldFacetMap = {}
+    if (state && Array.isArray(state.elements)) {
+      state.elements.forEach(function (e) {
+        if (!e) return
+        var collect = function (fName, rawVal) {
+          if (rawVal === undefined || rawVal === null || rawVal === '') return
+          var vals = Array.isArray(rawVal) ? rawVal : [rawVal]
+          vals.forEach(function (v) {
+            if (v === undefined || v === null || v === '') return
+            var sVal = typeof v === 'object' ? JSON.stringify(v) : String(v).trim()
+            if (!sVal || sVal.length > 60) return
+            if (!fieldFacetMap[fName]) fieldFacetMap[fName] = {}
+            fieldFacetMap[fName][sVal] = (fieldFacetMap[fName][sVal] || 0) + 1
+          })
+        }
+        var ef = e.fields
+        if (ef && typeof ef === 'object' && !Array.isArray(ef)) {
+          Object.keys(ef).forEach(function (fName) {
+            collect(fName, ef[fName])
+          })
+        }
+        if (e.inherited && typeof e.inherited === 'object') {
+          Object.keys(e.inherited).forEach(function (fName) {
+            var iv = e.inherited[fName]
+            collect(fName, iv && typeof iv === 'object' && 'value' in iv ? iv.value : iv)
+          })
+        }
+      })
+    }
+    var fieldNames = Object.keys(fieldFacetMap).sort()
+    if (fieldNames.length > 0) {
+      // Find active field operators
+      var activeFieldCount = 0
+      parsed.operators.forEach(function (op) {
+        var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
+        if (fieldFacetMap[normKey] || fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })) {
+          activeFieldCount++
+        }
+      })
+
+      var fWrap = el('div', 'innfo-facet-dropdown')
+      var fBtn = el('button', 'innfo-facet-btn' + (activeFieldCount > 0 ? ' active' : ''))
+      fBtn.setAttribute('type', 'button')
+      var fIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('sliders', { size: 14 }) || InnfoIcons.getSvg('tag', { size: 14 }) : '🏷️'
+      var fLabel = activeFieldCount > 0 ? 'Fields (' + activeFieldCount + ')' : 'Fields'
+      fBtn.innerHTML = fIcon + ' <span>' + fLabel + '</span> <span style="font-size: 10px;">▼</span>'
+
+      var fMenu = el('div', 'innfo-facet-menu')
+      fMenu.style.minWidth = '240px'
+
+      fieldNames.forEach(function (fName) {
+        var fValsObj = fieldFacetMap[fName]
+        var valKeys = Object.keys(fValsObj).sort()
+        if (valKeys.length === 0) return
+
+        var header = el('div', 'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-2 pb-1 border-b border-slate-100', fName)
+        fMenu.appendChild(header)
+
+        valKeys.forEach(function (valKey) {
+          var item = el('label', 'innfo-facet-item')
+          var cb = el('input', 'innfo-facet-checkbox')
+          cb.type = 'checkbox'
+
+          var isChecked = parsed.operators.some(function (op) {
+            var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
+            return normKey === fName.toLowerCase() && String(op.val).toLowerCase() === valKey.toLowerCase()
+          })
+          cb.checked = isChecked
+
+          cb.addEventListener('change', function () {
+            toggleFacet(fName, valKey, cb.checked)
+          })
+
+          var nameSpan = el('span', 'flex-1 truncate font-medium text-slate-700', valKey)
+          nameSpan.title = fName + ': ' + valKey
+          var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(fValsObj[valKey]))
+
+          item.appendChild(cb)
+          item.appendChild(nameSpan)
+          item.appendChild(cntBadge)
+          fMenu.appendChild(item)
+        })
+      })
+
+      fBtn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        var isOpen = fMenu.classList.contains('open')
+        doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        if (!isOpen) fMenu.classList.add('open')
+      })
+
+      if (activeFieldCount > 0) {
+        var fClear = el('span', 'innfo-facet-clear', '×')
+        fClear.setAttribute('role', 'button')
+        fClear.setAttribute('title', 'Clear fields filter')
+        fClear.addEventListener('click', function (e) {
+          e.stopPropagation()
+          var newOps = parsed.operators.filter(function (op) {
+            var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
+            return !fieldFacetMap[normKey] && !fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })
+          })
+          var queryParts = parsed.textTokens.map(function (t) {
+            return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+          })
+          newOps.forEach(function (op) {
+            if (op.raw) queryParts.push(op.raw)
+            else {
+              var nq = String(op.val).indexOf(' ') !== -1
+              queryParts.push(op['key'] + ':' + (nq ? '"' + op.val + '"' : op.val))
+            }
+          })
+          if (typeof onQueryChange === 'function') onQueryChange(queryParts.join(' '))
+        })
+        fBtn.appendChild(fClear)
+      }
+
+      fWrap.appendChild(fBtn)
+      fWrap.appendChild(fMenu)
+      host.appendChild(fWrap)
+    }
+
+    // Filter help: state the AND vs OR asymmetry (Fields/text AND, Model/Concept OR).
+    var filterHelp = el(
+      'span',
+      'innfo-filter-help text-xs text-slate-400',
+      'Fields and text combine with AND; within one token a|b is OR. Model and Concept combine with OR.',
+    )
+    filterHelp.setAttribute('data-innfo-filter-help', '1')
+    filterHelp.setAttribute(
+      'title',
+      'Fields and free text combine with AND. Model and Concept selections combine with OR. Inside one Field token, `a|b` matches any of the listed values.',
+    )
+    host.appendChild(filterHelp)
+
+    // 4. Clear button if any filter is active
     if (activeQuery) {
       var clearBtn = el('button', 'btn btn-ghost btn-xs text-xs text-slate-500 hover:text-error', 'Clear filters')
       clearBtn.setAttribute('type', 'button')
@@ -1128,11 +1408,28 @@
       host.appendChild(clearBtn)
     }
 
-    // 4. Render Active Filter Pills below the bar as Semantic KU Pills
+    // 4. Render Active Filter Pills grouped by Boolean Clause (with explicit AND / OR connectors)
     if (activeHost && (parsed.operators.length > 0 || parsed.textTokens.length > 0)) {
       var schemaConcepts = (state && state.concepts && state.concepts.length ? state.concepts : (state && state.schema && state.schema.concepts)) || allConcepts.map(function (c) { return c.name })
-      parsed.operators.forEach(function (op) {
+
+      function renderAtomPill(atom) {
         var pill = el('span', 'innfo-active-filter-pill badge badge-sm badge-outline gap-1.5 text-[11px] py-2 px-2.5 bg-base-100')
+        if (atom.type === 'text') {
+          pill.classList.add('font-mono')
+          pill.appendChild(el('span', null, '"' + atom.val + '"'))
+          var removeBtn = el('button', 'innfo-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
+          removeBtn.setAttribute('type', 'button')
+          removeBtn.addEventListener('click', function (e) {
+            e.stopPropagation()
+            var nextTokens = parsed.textTokens.filter(function (t) { return t !== atom.val })
+            var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || formatFacetToken(o.key, o.val) })).join(' ')
+            if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
+          })
+          pill.appendChild(removeBtn)
+          return pill
+        }
+
+        var op = atom
         pill.setAttribute('data-filter-key', String(op.key))
         if (op.key === 'concept' || op.key === '!concept') {
           var cMeta = conceptMetaOf(schemaConcepts, op.val)
@@ -1144,29 +1441,31 @@
             pill.style.color = cMeta.hexColor
             pill.style.backgroundColor = 'color-mix(in srgb, ' + cMeta.hexColor + ' 10%, #ffffff)'
           }
-          if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
-            var cIco = el('span', 'innfo-filter-pill-icon')
-            cIco.setAttribute('aria-hidden', 'true')
-            cIco.innerHTML = UI.icon(UI.resolveConceptIconName(op.val, cMeta), 12)
-            pill.appendChild(cIco)
-          }
           var matchedConcept = conceptByName(schemaConcepts, op.val)
           var cDisplay = (matchedConcept && matchedConcept.name) || op.val
-          pill.appendChild(el('span', 'font-semibold', (op.key === '!concept' ? '!Concept: ' : 'Concept: ') + cDisplay))
+          pill.appendChild(
+            UI.Ku(
+              'section',
+              {
+                model: filterModelId,
+                concept: op.val,
+                label: (op.key === '!concept' ? '!Concept: ' : 'Concept: ') + cDisplay,
+                index: cMeta.index,
+                color: cMeta.color,
+              },
+              { doc: doc },
+            ),
+          )
         } else if (op.key === 'model' || op.key === 'file') {
           pill.classList.add('innfo-active-filter-pill--model')
-          if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-            var mIco = el('span', 'innfo-filter-pill-icon')
-            mIco.setAttribute('aria-hidden', 'true')
-            mIco.innerHTML = InnfoIcons.getSvg('file-text', { size: 12 })
-            pill.appendChild(mIco)
-          }
           var matchedModel = models.filter(function (m) {
             var mid = String(m.id || m.filePath || '').toLowerCase()
             return mid === String(op.val).toLowerCase()
           })[0]
           var mDisplay = (matchedModel && (matchedModel.title || matchedModel.id)) || op.val
-          pill.appendChild(el('span', 'font-semibold', 'Model: ' + mDisplay))
+          pill.appendChild(
+            UI.Ku('document', { id: op.val, label: 'Model: ' + mDisplay }, { doc: doc }),
+          )
         } else {
           var labelText = op.key + ':' + op.val
           pill.appendChild(el('span', 'font-mono', labelText))
@@ -1179,22 +1478,91 @@
           toggleFacet(op.key, op.val, false)
         })
         pill.appendChild(removeBtn)
-        activeHost.appendChild(pill)
-      })
+        return pill
+      }
 
-      parsed.textTokens.forEach(function (token) {
-        var pill = el('span', 'innfo-active-filter-pill badge badge-sm badge-outline gap-1 font-mono text-[11px] py-2 px-2.5 bg-base-100')
-        pill.appendChild(el('span', null, '"' + token + '"'))
-        var removeBtn = el('button', 'innfo-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
-        removeBtn.setAttribute('type', 'button')
-        removeBtn.addEventListener('click', function (e) {
+      var displayGroups = parsed.groups.length > 0
+        ? parsed.groups
+        : [parsed.operators.concat(parsed.textTokens.map(function (t) { return { type: 'text', val: t } }))]
+
+      function serializeGroups(groups) {
+        return groups.map(function (clause) {
+          var clauseStr = clause.map(function (atom) {
+            return atom.raw || (atom.type === 'operator' ? formatFacetToken(atom.key, atom.val) : '"' + atom.val + '"')
+          }).join(' OR ')
+          return clause.length > 1 ? '(' + clauseStr + ')' : clauseStr
+        }).join(' AND ')
+      }
+
+      function createConnectorSelect(currentVal, onChange) {
+        var sel = el('select', 'text-[10px] font-black uppercase tracking-wider py-0 px-1.5 h-5 min-h-0 bg-base-100 border border-slate-300 rounded cursor-pointer hover:border-primary focus:outline-none focus:border-primary shadow-xs')
+        var optAnd = el('option', null, 'AND')
+        optAnd.value = 'AND'
+        optAnd.selected = currentVal === 'AND'
+        var optOr = el('option', null, 'OR')
+        optOr.value = 'OR'
+        optOr.selected = currentVal === 'OR'
+        sel.appendChild(optAnd)
+        sel.appendChild(optOr)
+        sel.addEventListener('change', function (e) {
           e.stopPropagation()
-          var nextTokens = parsed.textTokens.filter(function (t) { return t !== token })
-          var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || formatFacetToken(o.key, o.val) })).join(' ')
-          if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
+          onChange(sel.value)
         })
-        pill.appendChild(removeBtn)
-        activeHost.appendChild(pill)
+        return sel
+      }
+
+      displayGroups.forEach(function (clause, cIdx) {
+        if (cIdx > 0) {
+          var andSelect = createConnectorSelect('AND', function (newVal) {
+            if (newVal === 'OR') {
+              // Merge clause with previous clause into an OR group
+              var newGroups = []
+              for (var i = 0; i < displayGroups.length; i++) {
+                if (i === cIdx - 1) {
+                  newGroups.push(displayGroups[cIdx - 1].concat(displayGroups[cIdx]))
+                } else if (i === cIdx) {
+                  // already merged
+                } else {
+                  newGroups.push(displayGroups[i])
+                }
+              }
+              if (typeof onQueryChange === 'function') onQueryChange(serializeGroups(newGroups))
+            }
+          })
+          activeHost.appendChild(andSelect)
+        }
+
+        var isMulti = clause.length > 1
+        var clauseContainer = isMulti
+          ? el('span', 'inline-flex items-center gap-1.5 p-1 bg-slate-50 border border-dashed border-slate-300 rounded-lg')
+          : null
+
+        clause.forEach(function (atom, aIdx) {
+          if (aIdx > 0) {
+            var orSelect = createConnectorSelect('OR', function (newVal) {
+              if (newVal === 'AND') {
+                // Split clause into two separate AND clauses
+                var newGroups = []
+                for (var i = 0; i < displayGroups.length; i++) {
+                  if (i === cIdx) {
+                    newGroups.push(clause.slice(0, aIdx))
+                    newGroups.push(clause.slice(aIdx))
+                  } else {
+                    newGroups.push(displayGroups[i])
+                  }
+                }
+                if (typeof onQueryChange === 'function') onQueryChange(serializeGroups(newGroups))
+              }
+            })
+            if (clauseContainer) clauseContainer.appendChild(orSelect)
+            else activeHost.appendChild(orSelect)
+          }
+          var atomEl = renderAtomPill(atom)
+          if (clauseContainer) clauseContainer.appendChild(atomEl)
+          else activeHost.appendChild(atomEl)
+        })
+
+        if (clauseContainer) activeHost.appendChild(clauseContainer)
       })
     }
 
@@ -1241,8 +1609,19 @@
       var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
       btn.className = 'innfo-rail-item' + (isActive ? ' active' : '')
       btn.setAttribute('data-concept', String(name))
-      var pill = UI.ConceptPill({ id: name, label: name, index: index, count: count }, { document: doc })
+      var railModel = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
+      var pill = UI.Ku(
+        'section',
+        {
+          model: railModel,
+          concept: name,
+          label: name,
+          index: index,
+        },
+        { doc: doc },
+      )
       if (pill) btn.appendChild(pill)
+      if (pill && count != null) btn.appendChild(el('span', 'innfo-rail-count', String(count)))
       if (draftCount > 0) {
         var badge = el('span', 'innfo-rail-badge', String(draftCount))
         if (badge) {
@@ -1308,11 +1687,16 @@
         var isModelActive = activeModels.indexOf(mid.toLowerCase()) !== -1
         summary.className = 'collapse-title min-h-0 py-2 pr-8' + (isModelActive ? ' active' : '')
         summary.setAttribute('data-model', mid)
-        var fileIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 14 }) : ''
-        summary.innerHTML =
-          '<span class="innfo-rail-model-pill flex items-center gap-2 min-w-0" data-ku-kind="document">' + fileIcon +
-          '<span class="truncate font-semibold">' + escapeHtml(m.title || m.filePath || 'Model') + '</span></span>' +
-          '<span class="innfo-rail-count badge badge-ghost badge-xs">' + (Number(m.elementCount) || 0) + '</span>'
+        summary.appendChild(
+          UI.Ku(
+            'document',
+            { id: m.id || m.filePath || m.title, label: m.title || m.filePath || 'Model' },
+            { doc: doc },
+          ),
+        )
+        summary.appendChild(
+          el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(m.elementCount) || 0)),
+        )
         summary.addEventListener('click', function (e) {
           // Clicking the chevron zone on the right edge toggles accordion open/close
           // without clobbering the active search filter.
@@ -1358,12 +1742,16 @@
             var color = cMeta.hexColor
             a.setAttribute('data-concept-slot', String(cMeta.slot))
             if (color) a.style.setProperty('--rail-concept-color', color)
-            var cSvg = UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function'
-              ? '<span class="innfo-rail-concept-icon" aria-hidden="true">' + UI.icon(UI.resolveConceptIconName(name, cMeta), 13) + '</span>'
-              : ''
-            a.innerHTML =
-              '<span class="innfo-rail-concept-pill flex items-center gap-1.5 min-w-0" data-ku-kind="concept">' + cSvg + '<span class="truncate">' + escapeHtml(name) + '</span></span>' +
-              '<span class="innfo-rail-count badge badge-ghost badge-xs">' + (Number(counts && counts[name]) || 0) + '</span>'
+            a.appendChild(
+              UI.Ku(
+                'section',
+                { model: mid, concept: name, label: name, index: cMeta.index, color: cMeta.color },
+                { doc: doc },
+              ),
+            )
+            a.appendChild(
+              el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
+            )
             a.addEventListener('click', function (e) {
               if (e && e.preventDefault) e.preventDefault()
               if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
@@ -1433,16 +1821,9 @@
     var all = schema && Array.isArray(schema.fields) ? schema.fields : []
     var cname = String(concept.name).toLowerCase()
     return all.filter(function (f) {
-      return f && f.concept && String(f.concept).toLowerCase() === cname
-    })
-  }
-
-  function guideMarkersFor(concept, schema) {
-    if (Array.isArray(concept.markers) && concept.markers.length) return concept.markers
-    var all = schema && Array.isArray(schema.markers) ? schema.markers : []
-    var cname = String(concept.name).toLowerCase()
-    return all.filter(function (m) {
-      return m && m.concept && String(m.concept).toLowerCase() === cname
+      if (!f || !f.concept) return false
+      var fc = String(f.concept).toLowerCase()
+      return fc === cname || fc === '*'
     })
   }
 
@@ -1462,7 +1843,7 @@
     })
   }
 
-  function renderConceptGuide(doc, concept, schema, matrices, counts) {
+  function renderConceptGuide(doc, concept, schema, matrices, counts, modelId) {
     var layout = doc.getElementById('innfo-layout')
     if (!layout) return
     var host = doc.getElementById('innfo-concept-guide')
@@ -1481,18 +1862,10 @@
     var name = concept.name || 'Concept'
     var gMeta = conceptMetaOf(schema && schema.concepts, name)
     var head = el('div', 'innfo-guide-head')
-    var badge = el('span', 'innfo-card-concept-badge badge badge-sm')
-    if (gMeta && gMeta.hexColor) {
-      badge.style.setProperty('--card-concept-color', gMeta.hexColor)
-      badge.style.color = gMeta.hexColor
-    }
-    if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
-      var gIco = el('span', 'innfo-concept-pill-icon')
-      gIco.setAttribute('aria-hidden', 'true')
-      gIco.innerHTML = UI.icon(UI.resolveConceptIconName(name, gMeta), 13)
-      badge.appendChild(gIco)
-    }
-    badge.appendChild(doc.createTextNode(name))
+    var badge =
+      UI && typeof UI.Ku === 'function'
+        ? UI.Ku('section', { model: modelId || '', concept: name, label: name, index: gMeta.index, color: gMeta.color }, { doc: doc })
+        : el('span', 'innfo-card-concept-badge badge badge-sm', name)
     head.appendChild(badge)
 
     var count = counts && counts[name] != null ? counts[name] : null
@@ -1531,18 +1904,31 @@
         var label = f.label || f.name
         if (label == null) return
         var dt = el('dt', 'innfo-guide-field-dt')
-        var fChip = el('span', 'innfo-ku-field-chip', '~ ' + String(label))
-        fChip.setAttribute('data-ku-kind', 'field')
-        dt.appendChild(fChip)
+        var declaredBy = f.declaredBy || {}
+        dt.appendChild(
+          UI.Ku(
+            'field',
+            {
+              family: declaredBy.family || modelId || '',
+              concept: f.concept || name,
+              name: f.name || label,
+              label: String(label),
+              vtype: f.type || f.widget,
+            },
+            { doc: doc },
+          ),
+        )
         var dd = el('dd', 'innfo-guide-field-dd')
         var fTypeStr = String(f.type || f.widget || 'string')
         var tBadge = el('span', 'innfo-ku-field-type', fTypeStr)
         dd.appendChild(tBadge)
+        if (f.multiple) dd.appendChild(el('span', 'innfo-ku-field-multi', 'multi'))
         var targetC = f.target || f.targetConcept || null
         if (targetC) {
           var tcMeta = conceptMetaOf(schema && schema.concepts, targetC)
-          var tcPill = UI.ConceptPill({ id: targetC, label: targetC, index: tcMeta.index, color: tcMeta.color }, { doc: doc })
-          dd.appendChild(tcPill)
+          dd.appendChild(
+            UI.Ku('section', { model: modelId || '', concept: targetC, label: targetC, index: tcMeta.index, color: tcMeta.color }, { doc: doc }),
+          )
         }
         if (f.description) dd.appendChild(el('p', 'innfo-guide-field-desc', String(f.description)))
         fdl.appendChild(dt)
@@ -1552,19 +1938,47 @@
       host.appendChild(fs)
     }
 
-    var markers = guideMarkersFor(concept, schema)
-    if (markers.length) {
-      var ms = el('section', 'innfo-guide-section')
-      ms.appendChild(el('h4', 'innfo-guide-title', 'Markers (' + markers.length + ')'))
-      var mul = el('div', 'innfo-guide-marker-row')
-      markers.forEach(function (m) {
-        if (!m) return
-        var mLabel = String(m.label || m.name || '')
-        if (!mLabel) return
-        mul.appendChild(UI.MarkerChip({ id: mLabel, label: '! ' + mLabel, kind: 'marker' }))
-      })
-      ms.appendChild(mul)
-      host.appendChild(ms)
+    var conceptVals = concept.conceptFields && typeof concept.conceptFields === 'object' ? concept.conceptFields : null
+    if (!conceptVals && schema && schema.concepts) {
+      var cMetaForVals = conceptMetaOf(schema.concepts, concept.name)
+      if (cMetaForVals && cMetaForVals.conceptFields) conceptVals = cMetaForVals.conceptFields
+    }
+    if (conceptVals) {
+      var cvKeys = Object.keys(conceptVals)
+      if (cvKeys.length) {
+        var cvs = el('section', 'innfo-guide-section')
+        cvs.appendChild(el('h4', 'innfo-guide-title', 'Concept values'))
+        var cvl = el('dl', 'innfo-guide-list innfo-guide-value-list')
+        cvKeys.forEach(function (k) {
+          var v = conceptVals[k]
+          var cvDt = el('dt', 'innfo-guide-field-dt')
+          cvDt.appendChild(
+            UI.Ku(
+              'field',
+              { family: modelId || '', concept: name, name: k, label: String(k) },
+              { doc: doc },
+            ),
+          )
+          var cvDd = el('dd', 'innfo-guide-field-dd')
+          cvDd.appendChild(
+            UI.Ku(
+              'value',
+              {
+                model: modelId || '',
+                concept: name,
+                scope: 'concept',
+                field: k,
+                label: Array.isArray(v) ? v.join(', ') : String(v),
+              },
+              { doc: doc },
+            ),
+          )
+          cvl.appendChild(cvDt)
+          cvl.appendChild(cvDd)
+        })
+        cvs.appendChild(cvl)
+        host.appendChild(cvs)
+      }
     }
 
     var matrixList = guideMatricesFor(concept, matrices, schema)
@@ -1575,15 +1989,31 @@
       matrixList.forEach(function (m) {
         if (!m) return
         var mli = el('li', 'innfo-guide-matrix-item')
-        var mTitle = el('span', 'innfo-guide-matrix-name', String(m.name || (m.source + ' \u2192 ' + m.target)))
-        mli.appendChild(mTitle)
+        var mLabel = String(m.name || (m.source + ' \u2192 ' + m.target))
+        var mDeclaredBy = m.declaredBy || {}
+        mli.appendChild(
+          UI.Ku(
+            'matrix',
+            {
+              model: modelId || '',
+              family: mDeclaredBy.family || modelId || '',
+              name: m.slug || UI.slug(m.name || mLabel),
+              label: mLabel,
+            },
+            { doc: doc },
+          ),
+        )
         if (m.source && m.target) {
           var pairWrap = el('div', 'innfo-guide-matrix-pair')
           var sMeta = conceptMetaOf(schema && schema.concepts, m.source)
           var tMeta = conceptMetaOf(schema && schema.concepts, m.target)
-          pairWrap.appendChild(UI.ConceptPill({ id: m.source, label: m.source, index: sMeta.index, color: sMeta.color }, { doc: doc }))
+          pairWrap.appendChild(
+            UI.Ku('section', { model: modelId || '', concept: m.source, label: m.source, index: sMeta.index, color: sMeta.color }, { doc: doc }),
+          )
           pairWrap.appendChild(el('span', 'innfo-guide-matrix-arrow', '⇄'))
-          pairWrap.appendChild(UI.ConceptPill({ id: m.target, label: m.target, index: tMeta.index, color: tMeta.color }, { doc: doc }))
+          pairWrap.appendChild(
+            UI.Ku('section', { model: modelId || '', concept: m.target, label: m.target, index: tMeta.index, color: tMeta.color }, { doc: doc }),
+          )
           mli.appendChild(pairWrap)
         }
         mtl.appendChild(mli)
@@ -1749,7 +2179,7 @@
 
   // Cards project live drafts: active draft edits and notes are visually badged,
   // new draft elements are projected, and deleted elements are styled.
-  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions) {
+  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -1822,21 +2252,6 @@
         })
       }
 
-      var markerList = []
-      if (isObject(element.markers)) {
-        Object.keys(element.markers).forEach(function (mkKey) {
-          var mkVal = element.markers[mkKey]
-          markerList.push({
-            id: mkKey,
-            label: mkKey,
-            kind: 'marker',
-            value: Array.isArray(mkVal) ? mkVal.join(', ') : mkVal,
-          })
-        })
-      } else if (Array.isArray(element.markers)) {
-        markerList = element.markers
-      }
-
       var card = UI.ElementCard(
         {
           id: element.id,
@@ -1844,11 +2259,10 @@
           conceptId: element.concept,
           description: element.description,
           fields: fields,
-          markers: markerList.length ? markerList : undefined,
           history: Array.isArray(element.history) && element.history.length ? element.history : undefined,
           qud: { id: element.id, concept: element.concept, hash: element.hash, path: element.canonicalUnit || element.modelFile || element.modelTitle || null },
-          path: element.canonicalUnit || element.modelFile || element.modelTitle || null,
-          tags: Array.isArray(element.tags) ? element.tags.map(String) : null,
+          path: element.location || element.modelFile || element.modelTitle || null,
+          tags: getElementEffectiveTags(element),
           relations:
             Array.isArray(element.relations) && element.relations.length ? element.relations : null,
           incomingRelations:
@@ -1858,6 +2272,7 @@
         },
         {
           domId: 'el-' + String(element.id || ''),
+          modelId: modelId || element.modelId || '',
           collapsible: true,
           open: focusId != null && String(element.id || '') === String(focusId),
           head:
@@ -1891,24 +2306,6 @@
       card.style.setProperty('--card-concept-color', hexColor)
       card.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 35%, var(--innfo-border, #e5e5e5))'
       card.style.borderLeft = '4px solid ' + hexColor
-
-      var head = card.querySelector('.innfo-card-head, header')
-      if (head && element.concept && !head.querySelector('[data-ku-kind="concept"]')) {
-        var cBadge = el('span', 'innfo-card-concept-badge badge badge-xs text-xs font-semibold')
-        cBadge.setAttribute('data-concept-slot', String(cMeta.slot))
-        cBadge.style.color = hexColor
-        cBadge.style.backgroundColor = 'color-mix(in srgb, ' + hexColor + ' 10%, #ffffff)'
-        if (UI && typeof UI.icon === 'function' && typeof UI.resolveConceptIconName === 'function') {
-          var cIcoSpan = el('span', 'innfo-concept-pill-icon')
-          cIcoSpan.setAttribute('aria-hidden', 'true')
-          cIcoSpan.innerHTML = UI.icon(UI.resolveConceptIconName(element.concept, cMeta), 12)
-          cBadge.appendChild(cIcoSpan)
-        }
-        cBadge.appendChild(doc.createTextNode(element.concept))
-        var elementBadge = head.querySelector('[data-ku-kind="element"]')
-        if (elementBadge) (elementBadge.parentNode || head).insertBefore(cBadge, elementBadge)
-        else head.appendChild(cBadge)
-      }
 
       if (element._draft) {
         var d = element._draft
@@ -1974,7 +2371,7 @@
     })
   }
 
-  function mountElementBadges(doc, elements, drafts, concepts, refs) {
+  function mountElementBadges(doc, elements, drafts, concepts, refs, modelId) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -1983,29 +2380,33 @@
     var projectedElements = projectElements(elements, drafts)
     projectedElements.forEach(function (element) {
       var cMeta = conceptMetaOf(concepts, element.concept)
-      var pill = UI.ElementPill(
+      var pill = UI.Ku(
+        'element',
         {
+          model: modelId || element.modelId || '',
           id: element.id,
           label: element.name || element.id || '',
           concept: element.concept,
           color: cMeta && cMeta.color,
-          hexColor: cMeta && cMeta.hexColor,
+          index: cMeta && cMeta.index,
         },
-        {
-          doc: doc,
-          href: '#el-' + encodeURIComponent(String(element.id || '')),
-          onClick: function (ev) {
-            if (ev && ev.preventDefault) ev.preventDefault()
-            renderRefDialog(doc, element)
-          },
-        }
+        { doc: doc },
       )
+      var pillBadge = pill.querySelector('[data-innfo-component="ku-unit"]')
+      if (pillBadge) {
+        pillBadge.setAttribute('role', 'button')
+        pillBadge.setAttribute('tabindex', '0')
+        pillBadge.addEventListener('click', function (ev) {
+          if (ev && ev.preventDefault) ev.preventDefault()
+          renderRefDialog(doc, element)
+        })
+      }
       wrap.appendChild(pill)
     })
     content.appendChild(wrap)
   }
 
-  function mountElementMiniCards(doc, elements, drafts, concepts, refs, incomingById, actions) {
+  function mountElementMiniCards(doc, elements, drafts, concepts, refs, incomingById, actions, modelId) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -2024,6 +2425,7 @@
         },
         {
           doc: doc,
+          modelId: modelId || element.modelId || '',
           concept: cMeta,
           preview: true,
           onClick: function () {
@@ -2066,7 +2468,7 @@
   function tableValueOf(element, key) {
     if (key === 'name') return element.name
     if (key === 'concept') return element.concept
-    if (key === 'tags') return Array.isArray(element.tags) ? element.tags.join(', ') : ''
+    if (key === 'tags') return getElementEffectiveTags(element).join(', ')
     return element.fields ? element.fields[key] : ''
   }
 
@@ -2117,7 +2519,7 @@
   // Read-only table of the filtered elements: one row per element, one column
   // per field key, sortable by clicking a header. Mirrors the editor's
   // ConceptTableView (table view + header sort) inside the domain console.
-  function mountElementTable(doc, elements, drafts, concepts, sortState, schema, onSort) {
+  function mountElementTable(doc, elements, drafts, concepts, sortState, schema, onSort, modelId) {
     var content = doc.getElementById('innfo-content')
     if (!content) return
     content.innerHTML = ''
@@ -2138,6 +2540,16 @@
     })
     columns.push({ key: 'tags', label: 'Tags' })
 
+    var schemaFields = schema && Array.isArray(schema.fields) ? schema.fields : []
+    function fieldDefOf(name) {
+      for (var i = 0; i < schemaFields.length; i++) {
+        if (schemaFields[i] && schemaFields[i].name === name && !schemaFields[i].inheritedFrom) {
+          return schemaFields[i]
+        }
+      }
+      return null
+    }
+
     var thead = el('thead')
     var headTr = el('tr')
     columns.forEach(function (col) {
@@ -2146,10 +2558,22 @@
       th.setAttribute('scope', 'col')
       th.setAttribute('role', 'button')
       th.setAttribute('tabindex', '0')
-      if (col.key === 'name' || col.key === 'concept' || col.key === 'tags' || !UI || typeof UI.KuBadge !== 'function') {
+      var fieldDef = fieldDefOf(col.key)
+      if (col.key === 'name' || col.key === 'concept' || col.key === 'tags' || !UI || typeof UI.Ku !== 'function') {
         th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
       } else {
-        var fieldBadge = UI.KuBadge({ kind: 'field', label: col.label }, { doc: doc })
+        var declaredBy = fieldDef && fieldDef.declaredBy ? fieldDef.declaredBy : {}
+        var fieldBadge = UI.Ku(
+          'field',
+          {
+            family: declaredBy.family || modelId || 'model',
+            concept: (fieldDef && fieldDef.concept) || col.key,
+            name: col.key,
+            label: col.label,
+            vtype: fieldDef && fieldDef.type,
+          },
+          { doc: doc },
+        )
         fieldBadge.classList.add('innfo-element-table-th-label')
         th.appendChild(fieldBadge)
       }
@@ -2188,20 +2612,23 @@
       if (element._draft) tr.classList.add('innfo-element-table-draft')
 
       var rowCMeta = conceptMetaOf(conceptList, element.concept)
+      var rowModel = modelId || element.modelId || ''
       var nameTd = el('td', 'innfo-element-table-name')
-      var elPill = UI.ElementPill(
-        {
-          id: element.id,
-          label: element.name || element.id || '',
-          concept: element.concept,
-          color: rowCMeta.color,
-          hexColor: rowCMeta.hexColor,
-          slot: rowCMeta.slot,
-          index: rowCMeta.index,
-        },
-        { doc: doc },
-      )
-      nameTd.appendChild(elPill)
+      var elBadge =
+        UI && typeof UI.Ku === 'function'
+          ? UI.Ku(
+              'element',
+              {
+                model: rowModel,
+                id: element.id,
+                label: element.name || element.id || '',
+                index: rowCMeta.index,
+                color: rowCMeta.color,
+              },
+              { doc: doc },
+            )
+          : el('span', null, element.name || element.id || '')
+      nameTd.appendChild(elBadge)
       if (element._draft) {
         nameTd.appendChild(
           el(
@@ -2214,15 +2641,20 @@
       tr.appendChild(nameTd)
 
       var conceptTd = el('td')
-      var cBadge = UI.ConceptPill(
-        {
-          id: element.concept || '',
-          label: element.concept || '',
-          index: rowCMeta.index,
-          color: rowCMeta.color,
-        },
-        { doc: doc },
-      )
+      var cBadge =
+        UI && typeof UI.Ku === 'function'
+          ? UI.Ku(
+              'section',
+              {
+                model: rowModel,
+                concept: element.concept || '',
+                label: element.concept || '',
+                index: rowCMeta.index,
+                color: rowCMeta.color,
+              },
+              { doc: doc },
+            )
+          : el('span', null, element.concept || '')
       conceptTd.appendChild(cBadge)
       tr.appendChild(conceptTd)
 
@@ -2236,7 +2668,24 @@
           if (relMatches.length) rawVal = relMatches.join(', ')
         }
         var val = displayCellText(rawVal)
-        var td = el('td', 'innfo-element-table-cell', val)
+        var td = el('td', 'innfo-element-table-cell')
+        if (val && UI && typeof UI.Ku === 'function') {
+          td.appendChild(
+            UI.Ku(
+              'value',
+              {
+                model: rowModel,
+                element: element.id,
+                field: k,
+                label: val,
+                vtype: fieldTypeOf(schema, element.concept, k),
+              },
+              { doc: doc },
+            ),
+          )
+        } else if (val) {
+          td.appendChild(doc.createTextNode(val))
+        }
         if (val) td.setAttribute('title', val)
         td.addEventListener('dblclick', function () {
           renderFieldDetailDialog(doc, {
@@ -2244,13 +2693,32 @@
             value: rawVal,
             type: fieldTypeOf(schema, element.concept, k),
             elementName: element.name || element.id || '',
+            element: element.id,
+            model: rowModel,
           })
         })
         tr.appendChild(td)
       })
 
-      var tags = Array.isArray(element.tags) ? element.tags.join(', ') : ''
-      var tagsTd = el('td', 'innfo-element-table-cell', tags)
+      var tags = getElementEffectiveTags(element).join(', ')
+      var tagsTd = el('td', 'innfo-element-table-cell')
+      if (tags && UI && typeof UI.Ku === 'function') {
+        tagsTd.appendChild(
+          UI.Ku(
+            'value',
+            {
+              model: rowModel,
+              element: element.id,
+              field: 'tags',
+              label: tags,
+              vtype: 'select',
+            },
+            { doc: doc },
+          ),
+        )
+      } else if (tags) {
+        tagsTd.appendChild(doc.createTextNode(tags))
+      }
       if (tags) tagsTd.setAttribute('title', tags)
       tr.appendChild(tagsTd)
 
@@ -2292,7 +2760,7 @@
     host.appendChild(group)
   }
 
-  function renderMatrices(doc, matrices, concepts) {
+  function renderMatrices(doc, matrices, concepts, fallbackModelId) {
     var host = doc.getElementById('innfo-matrices')
     if (!host) return
     host.innerHTML = ''
@@ -2304,31 +2772,40 @@
       }
       return { meta: null, index: 0 }
     }
-    function headerBadge(entry, key) {
+    function headerBadge(entry, key, modelId) {
       var e = entry || {}
-      if (e.kind === 'marker') {
-        return UI.KuBadge({ kind: 'marker', id: key, label: e.label || key, markerKind: 'field' })
-      }
-      var cm = conceptMeta(e.concept)
       var cMetaFull = conceptMetaOf(conceptList, e.concept)
-      var resolvedIcon = (cm.meta && cm.meta.icon) || (UI && typeof UI.resolveConceptIconName === 'function' ? UI.resolveConceptIconName(e.concept, cMetaFull) : undefined)
-      return UI.KuBadge({
-        kind: 'element',
-        id: key,
-        label: e.label || key,
-        index: cMetaFull.index,
-        color: cMetaFull.color,
-        icon: resolvedIcon,
-      })
+      return UI.Ku(
+        'element',
+        {
+          model: modelId,
+          id: e.slug || UI.slug(e.label || key || 'unit'),
+          label: e.label || key,
+          index: cMetaFull.index,
+          color: cMetaFull.color,
+        },
+        { doc: doc },
+      )
     }
     ;(Array.isArray(matrices) ? matrices : []).forEach(function (matrix) {
       if (!isObject(matrix)) return
       var section = el('section', 'innfo-matrix')
       if (!section) return
+      var matrixModel = matrix.modelId || fallbackModelId || ''
+      var matrixSlug = matrix.slug || UI.slug(matrix.name || 'matrix')
       var titleEl = el('h3', null, null)
       if (titleEl) {
         titleEl.appendChild(
-          UI.KuBadge({ kind: 'element', id: 'matrix-' + UI.slug(matrix.name || 'matrix'), label: matrix.name || 'Matrix', icon: 'matrices' }),
+          UI.Ku(
+            'matrix',
+            {
+              model: matrixModel,
+              family: matrixModel,
+              name: matrixSlug,
+              label: matrix.name || 'Matrix',
+            },
+            { doc: doc },
+          ),
         )
         section.appendChild(titleEl)
       }
@@ -2361,15 +2838,39 @@
           var sMetaM = conceptMetaOf(conceptList, srcConcept)
           var tMetaM = conceptMetaOf(conceptList, tgtConcept)
           var cornerWrap = el('div', 'innfo-matrix-corner-pills')
-          cornerWrap.appendChild(UI.ConceptPill({ id: srcConcept, label: srcConcept + ' ↓', index: sMetaM.index, color: sMetaM.color }, { doc: doc }))
+          cornerWrap.appendChild(
+            UI.Ku(
+              'section',
+              {
+                model: matrixModel,
+                concept: srcConcept,
+                label: srcConcept + ' ↓',
+                index: sMetaM.index,
+                color: sMetaM.color,
+              },
+              { doc: doc },
+            ),
+          )
           cornerWrap.appendChild(el('span', 'innfo-matrix-corner-sep', '×'))
-          cornerWrap.appendChild(UI.ConceptPill({ id: tgtConcept, label: tgtConcept + ' →', index: tMetaM.index, color: tMetaM.color }, { doc: doc }))
+          cornerWrap.appendChild(
+            UI.Ku(
+              'section',
+              {
+                model: matrixModel,
+                concept: tgtConcept,
+                label: tgtConcept + ' →',
+                index: tMetaM.index,
+                color: tMetaM.color,
+              },
+              { doc: doc },
+            ),
+          )
           cornerTh.appendChild(cornerWrap)
         }
         headTr.appendChild(cornerTh)
         cols.forEach(function (c) {
           var th = el('th', null, null)
-          if (th) th.appendChild(headerBadge(headCols[c], String(c)))
+          if (th) th.appendChild(headerBadge(headCols[c], String(c), matrixModel))
           headTr.appendChild(th)
         })
         table.appendChild(headTr)
@@ -2381,7 +2882,7 @@
         var rowLabel = isStructured ? (r.sourceLabel || r.sourceId || '') : String(r)
         var rowCells = isStructured ? (r.cells || {}) : (cells[r] || cells[String(r)] || {})
         var rowTh = el('th', null, null)
-        if (rowTh) rowTh.appendChild(headerBadge(headRows[rowKey] || headRows[rowLabel], rowLabel))
+        if (rowTh) rowTh.appendChild(headerBadge(headRows[rowKey] || headRows[rowLabel], rowLabel, matrixModel))
         tr.appendChild(rowTh)
         cols.forEach(function (c) {
           var value = rowCells[c] != null ? String(rowCells[c]) : ''
@@ -2397,8 +2898,22 @@
             // model by file stem / title, and `meta.modelId` is the domain).
             if (matrix.modelId) td.setAttribute('data-matrix-model', String(matrix.modelId))
             td.setAttribute('data-cell-raw', isEmpty ? '' : value)
-            var cellBadge = UI.KuBadge({ kind: 'cell', value: isEmpty ? '—' : value })
-            if (!isEmpty) cellBadge.setAttribute('data-cell-value', value.toLowerCase())
+            var rowEntry = headRows[rowKey] || headRows[rowLabel] || {}
+            var colEntry = headCols[c] || {}
+            var cellBadge = UI.Ku(
+              'value',
+              {
+                model: matrixModel,
+                matrix: matrixSlug,
+                row: rowEntry.slug || UI.slug(rowLabel || 'row'),
+                col: colEntry.slug || UI.slug(String(c) || 'col'),
+                label: isEmpty ? '—' : value,
+                vtype: matrix.widget,
+              },
+              { doc: doc },
+            )
+            var cellUnit = cellBadge.querySelector('[data-innfo-component="ku-unit"]')
+            if (!isEmpty && cellUnit) cellUnit.setAttribute('data-cell-value', value.toLowerCase())
             td.appendChild(cellBadge)
           }
           tr.appendChild(td)
@@ -2948,7 +3463,6 @@
 
   function renderTimelineGrid(container, model, meta, hooks) {
     if (!container) return
-    var editRow = hooks && typeof hooks.onEditRow === 'function' ? hooks.onEditRow : null
     var host = el('div', 'innfo-timeline-grid-host')
     container.appendChild(host)
     var studioHost = el('div', 'innfo-studio-host')
@@ -3163,23 +3677,23 @@
           })
           actionsSpan.appendChild(filterBtn)
         }
-        if (editRow) {
-          var editBtn = el('button', 'innfo-row-btn innfo-edit-btn')
-          editBtn.setAttribute('type', 'button')
-          editBtn.setAttribute('title', 'Propose a change to ' + (r.label || r.id))
-          editBtn.innerHTML = UI.icon('edit', 12)
-          editBtn.addEventListener('click', function (e) {
-            e.stopPropagation()
-            editRow(r.id)
-          })
-          actionsSpan.appendChild(editBtn)
-        }
         tdMetric.appendChild(actionsSpan)
 
         var markerSvg = r.variable ? UI.icon('star', 11) : r.source === 'derived' ? UI.icon('derived', 11) : UI.icon('calc', 11)
         var markerSpan = el('span', 'innfo-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'))
         markerSpan.innerHTML = markerSvg
-        var nameSpan = el('span', 'innfo-row-name', r.label || r.id)
+        var nameSpan =
+          UI && typeof UI.Ku === 'function'
+            ? UI.Ku(
+                'element',
+                {
+                  model: r.modelId || '',
+                  id: r.id || r.label,
+                  label: r.label || r.id,
+                },
+                { doc: container.ownerDocument || document },
+              )
+            : el('span', 'innfo-row-name', r.label || r.id)
         if (r.formula) nameSpan.setAttribute('title', 'Formula: ' + r.formula)
         tdMetric.appendChild(markerSpan)
         tdMetric.appendChild(nameSpan)
@@ -3781,14 +4295,6 @@
             })
           },
         },
-        modal: {
-          edit: function (a) {
-            return controller().openEdit(anchor(a))
-          },
-          comment: function (a) {
-            return controller().openEdit(Object.assign(anchor(a), { comment: true }))
-          },
-        },
         changeset: {
           count: function () {
             return opts.state.store.drafts().length
@@ -3834,6 +4340,7 @@
       var scope = editable ? doc.body || panel : panel
       guardIframes(t, scope)
       try {
+        var filterListeners = []
         var ctx = {
           id: t.id,
           container: panel,
@@ -3846,12 +4353,34 @@
             models: Array.isArray(opts.meta && opts.meta.models) ? opts.meta.models : [],
           },
         }
-        if (editable) Object.assign(ctx, editableParts(t))
-        else
+        if (editable) {
+          Object.assign(ctx, editableParts(t))
+          ctx.filter = {
+            getQuery: function () {
+              return typeof opts.getQuery === 'function' ? opts.getQuery() : ''
+            },
+            getElements: function () {
+              return typeof opts.getFilteredElements === 'function'
+                ? opts.getFilteredElements()
+                : (opts.model && opts.model.elements ? opts.model.elements : [])
+            },
+            onChange: function (fn) {
+              if (typeof fn === 'function') {
+                filterListeners.push(fn)
+                return function () {
+                  var idx = filterListeners.indexOf(fn)
+                  if (idx >= 0) filterListeners.splice(idx, 1)
+                }
+              }
+              return function () {}
+            },
+          }
+        } else {
           ctx.mountHtml = function (html) {
             return mountHtml(panel, html)
           }
-        mounted[t.id] = { api: t.mount(ctx) || {} }
+        }
+        mounted[t.id] = { api: t.mount(ctx) || {}, filterListeners: filterListeners }
       } catch (err) {
         var msg = String(err && err.message ? err.message : err)
         mounted[t.id] = { api: {}, failed: true }
@@ -3862,16 +4391,42 @@
       stripIframes(t, scope)
     }
 
-    function hook(id, name) {
+    function hook(id, name, args) {
       var m = mounted[id]
       if (m && !m.failed && typeof m.api[name] === 'function') {
         try {
-          m.api[name]()
+          m.api[name].apply(m.api, args || [])
         } catch (err) {
           report(id, [], 'view "' + id + '": ' + name + ' failed: ' + String(err && err.message ? err.message : err))
           showErrors()
         }
       }
+    }
+
+    function notifyFilter(filteredElements, query) {
+      tabs.forEach(function (t) {
+        var m = mounted[t.id]
+        if (m && !m.failed) {
+          if (m.filterListeners && m.filterListeners.length) {
+            m.filterListeners.slice().forEach(function (fn) {
+              try {
+                fn(filteredElements, query)
+              } catch (err) {
+                report(t.id, [t.source], 'view "' + t.id + '": filter listener failed: ' + String(err && err.message ? err.message : err))
+                showErrors()
+              }
+            })
+          }
+          if (m.api && typeof m.api.onFilter === 'function') {
+            try {
+              m.api.onFilter(filteredElements, query)
+            } catch (err) {
+              report(t.id, [t.source], 'view "' + t.id + '": onFilter failed: ' + String(err && err.message ? err.message : err))
+              showErrors()
+            }
+          }
+        }
+      })
     }
 
     function select(tabId, fromHash) {
@@ -3896,14 +4451,6 @@
         var railAside = doc.querySelector('aside.innfo-rail')
         if (railAside) {
           railAside.style.display = tabId === 'explorer' ? '' : 'none'
-        }
-        var toolbar = doc.querySelector('.innfo-toolbar')
-        if (toolbar) {
-          toolbar.style.display = tabId === 'explorer' ? '' : 'none'
-        }
-        var filterZone = doc.querySelector('.innfo-filter-zone')
-        if (filterZone) {
-          filterZone.style.display = tabId === 'explorer' ? '' : 'none'
         }
       }
       if (prev) hook(prev, 'onHide')
@@ -3960,6 +4507,7 @@
         return current
       },
       select: select,
+      notifyFilter: notifyFilter,
       destroy: function () {
         if (doc.defaultView) doc.defaultView.removeEventListener('hashchange', onHashChange)
         observers.forEach(function (o) {
@@ -4169,10 +4717,15 @@
     if (head && h) head.appendChild(h)
     if (head && close) head.appendChild(close)
     var body = el('div', 'innfo-ref-body')
-    var tag = UI && typeof UI.ConceptPill === 'function'
-      ? UI.ConceptPill({ id: element.concept || 'Element', label: String(element.concept || 'Element') }, { doc: doc })
-      : el('span', 'innfo-ref-tag', String(element.concept || 'Element'))
-    if (tag) tag.classList.add('innfo-ref-tag')
+    var refModel = element.modelId || ''
+    var tag =
+      UI && typeof UI.Ku === 'function'
+        ? UI.Ku(
+            'section',
+            { model: refModel, concept: element.concept || 'Element', label: String(element.concept || 'Element') },
+            { doc: doc },
+          )
+        : el('span', 'innfo-ref-tag', String(element.concept || 'Element'))
     if (body && tag) body.appendChild(tag)
     if (body && element.description) {
       var p = el('p', 'innfo-ref-desc', element.description)
@@ -4182,10 +4735,32 @@
       var dl = el('dl', 'innfo-ref-fields')
       Object.keys(element.fields).forEach(function (k) {
         if (!dl) return
-        var dt = el('dt', null, k)
-        var dd = el('dd', null, String(element.fields[k]))
-        if (dt) dl.appendChild(dt)
-        if (dd) dl.appendChild(dd)
+        var dt = el('dt', null, null)
+        if (UI && typeof UI.Ku === 'function') {
+          dt.appendChild(
+            UI.Ku(
+              'field',
+              { family: refModel, model: refModel, concept: element.concept, name: k, label: k },
+              { doc: doc },
+            ),
+          )
+        } else {
+          dt.textContent = k
+        }
+        var dd = el('dd', null, null)
+        if (UI && typeof UI.Ku === 'function') {
+          dd.appendChild(
+            UI.Ku(
+              'value',
+              { model: refModel, element: element.id, field: k, label: String(element.fields[k]) },
+              { doc: doc },
+            ),
+          )
+        } else {
+          dd.textContent = String(element.fields[k])
+        }
+        dl.appendChild(dt)
+        dl.appendChild(dd)
       })
       if (dl.children.length) body.appendChild(dl)
     }
@@ -4358,7 +4933,20 @@
       UI && typeof UI.FieldValue === 'function'
         ? UI.FieldValue({ value: field.value, type: field.type, name: field.name }, { doc: doc })
         : null
-    if (valueNode) {
+    if (UI && typeof UI.Ku === 'function' && field.model && field.element) {
+      var detailUnit = UI.Ku(
+        'value',
+        {
+          model: field.model,
+          element: field.element,
+          field: field.name,
+          label: displayCellText(field.value),
+          vtype: field.type,
+        },
+        { doc: doc, valueNode: valueNode || undefined },
+      )
+      body.appendChild(detailUnit)
+    } else if (valueNode) {
       body.appendChild(valueNode)
     } else {
       var textVal = displayCellText(field.value)
@@ -4627,7 +5215,14 @@
           : 'document'
       var labelText = CITATION_ORIGIN_LABELS[variantKey] || variantKey
       var tagText = labelText + (entry.author ? ' · ' + entry.author : '')
-      var tag = el('span', 'innfo-ref-tag', tagText)
+      var tag =
+        UI && typeof UI.Ku === 'function'
+          ? UI.Ku(
+              'source',
+              { path: entry.path || entry.href || 'citation', label: tagText },
+              { doc: doc },
+            )
+          : el('span', 'innfo-ref-tag', tagText)
       if (tag) body.appendChild(tag)
 
       var dl = el('dl', 'innfo-ref-fields')
@@ -4692,7 +5287,21 @@
       var iconSpan = el('span', 'doc-icon', null)
       if (iconSpan) iconSpan.innerHTML = svg || (isRoot ? '◆' : '·')
       h.appendChild(iconSpan)
-      h.appendChild(document.createTextNode(' ' + String(step.el.name || (isRoot ? 'Root' : 'Step'))))
+      var docModel = (opts && opts.modelId) || step.el.modelId || ''
+      if (UI && typeof UI.Ku === 'function') {
+        var docUnit = UI.Ku(
+          'element',
+          {
+            model: docModel,
+            id: step.el.slug || step.el.id,
+            label: String(step.el.name || (isRoot ? 'Root' : 'Step')),
+          },
+          { doc: doc },
+        )
+        h.appendChild(docUnit)
+      } else {
+        h.appendChild(doc.createTextNode(' ' + String(step.el.name || (isRoot ? 'Root' : 'Step'))))
+      }
       block.appendChild(h)
       if (step.el.description) {
         var p = el('p', 'desc', step.el.description)
@@ -4702,10 +5311,34 @@
         var dl = el('dl', 'doc-fields', null)
         Object.keys(step.fields).forEach(function (k) {
           if (k === 'parent' || k === 'next') return
-          var dt = el('dt', null, k)
-          var dd = el('dd', null, String(step.fields[k]))
-          if (dt) dl.appendChild(dt)
-          if (dd) dl.appendChild(dd)
+          var dt = el('dt', null, null)
+          var dd = el('dd', null, null)
+          if (UI && typeof UI.Ku === 'function') {
+            dt.appendChild(
+              UI.Ku(
+                'field',
+                { family: docModel, model: docModel, concept: step.el.concept, name: k, label: k },
+                { doc: doc },
+              ),
+            )
+            dd.appendChild(
+              UI.Ku(
+                'value',
+                {
+                  model: docModel,
+                  element: step.el.slug || step.el.id,
+                  field: k,
+                  label: String(step.fields[k]),
+                },
+                { doc: doc },
+              ),
+            )
+          } else {
+            dt.textContent = k
+            dd.textContent = String(step.fields[k])
+          }
+          dl.appendChild(dt)
+          dl.appendChild(dd)
         })
         if (dl && dl.children.length) block.appendChild(dl)
       }
@@ -4715,7 +5348,7 @@
 
   // Renders the generic document view: builds the tree from all elements,
   // picks roots that have children (procedures/trees), and renders each chain.
-  function renderDocumentView(doc, elements, concepts) {
+  function renderDocumentView(doc, elements, concepts, modelId) {
     var host = doc.getElementById('innfo-doc')
     if (!host) return
     var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
@@ -4749,6 +5382,7 @@
         colorOf: colorOf,
         iconOf: iconOf,
         append: true,
+        modelId: modelId || (elements[0] && elements[0].modelId) || '',
       })
     })
   }
@@ -5049,7 +5683,7 @@
       'level: 3',
       'parent_spec:',
       '  name: changes',
-      '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"',
+      '  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"',
       'blueprint_version: ' + JSON.stringify(String(meta.changesBlueprintVersion)),
       'status: proposed',
       'title: ' + JSON.stringify(title),
@@ -5481,8 +6115,8 @@
       artifactName: String(meta.title || 'console') + '_console.html',
       modelId: meta.modelId || meta.model || meta.title || 'model',
       modelSlug: scopedView
-        ? modelSlugOf({ modelSlug: meta.model_slug || meta.modelSlug, modelId: baseId, modelTitle: baseTitle }) + '-' + scopedView
-        : meta.model_slug || meta.modelSlug || undefined,
+        ? modelSlugOf({ modelSlug: meta.knowledge_slug || meta.modelSlug, modelId: baseId, modelTitle: baseTitle }) + '-' + scopedView
+        : meta.knowledge_slug || meta.modelSlug || undefined,
       sourceSha256:
       (Array.isArray(meta.models) && meta.models.length === 1 && meta.models[0] && meta.models[0].sha256) ||
       meta.sha256 ||
@@ -5594,7 +6228,7 @@
 
     var cardActions = {
       onTag: function (tag) {
-        addFacetToken('tag', tag)
+        addFacetToken('tags', tag)
       },
       isKnowledgeBound: function (value) {
         return !!resolveKnowledgeModel(meta, value)
@@ -5684,9 +6318,14 @@
       var filterCtx = {
         draftsById: draftsById,
         reviewed: state.store && typeof state.store.reviewed === 'function' ? state.store.reviewed() : {},
+        schema: state.schema,
       }
 
       var filteredElements = filterElements(elements, activeSearchQuery || '', filterCtx)
+      lastFilteredElements = filteredElements
+      if (tabs && typeof tabs.notifyFilter === 'function') {
+        tabs.notifyFilter(filteredElements, activeSearchQuery || '')
+      }
       if (!scopedView && elements.length) {
         renderExplorerToolbar(active, explorerView, function (mode) {
           if (mode === explorerView) return
@@ -5703,13 +6342,13 @@
             sortState.dir = 'asc'
           }
           refresh(activeSearchQuery)
-        })
+        }, (meta && (meta.modelId || meta.model)) || '')
       } else if (explorerView === 'badges') {
-        mountElementBadges(active, filteredElements, currentDrafts, concepts, refs)
+        mountElementBadges(active, filteredElements, currentDrafts, concepts, refs, (meta && (meta.modelId || meta.model)) || '')
       } else if (explorerView === 'cards') {
-        mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions)
+        mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions, (meta && (meta.modelId || meta.model)) || '')
       } else {
-        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions)
+        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions, (meta && (meta.modelId || meta.model)) || '')
         focusId = null
       }
       renderFilterBar(active, state, function (nextQuery) {
@@ -5722,19 +6361,20 @@
       }, state)
       renderRail(active, concepts, counts, draftCountsByConcept, selectRailToken, state)
       if (!scopedView) {
-        renderConceptGuide(active, activeGuideConcept(activeSearchQuery, concepts), schema, matrices, counts)
+        renderConceptGuide(
+          active,
+          activeGuideConcept(activeSearchQuery, concepts),
+          schema,
+          matrices,
+          counts,
+          (meta && (meta.modelId || meta.model)) || '',
+        )
       }
 
-      // Hide documentation overview tree when filtering elements so filtered cards are immediately visible
+      // Document overview tree remains hidden while filtering elements so filtered cards are immediately visible
       var docHost = active.getElementById('innfo-doc')
       if (docHost) {
         docHost.style.display = activeSearchQuery ? 'none' : ''
-      }
-
-      // A new query moves to Explorer; the hash is rewritten below, so this
-      // switch does not push a history entry.
-      if (activeSearchQuery && queryChanged && !keepTab && tabs && !scopedView) {
-        tabs.select('explorer', true)
       }
 
       renderReviewTab(active, state, config, function () {
@@ -5774,9 +6414,13 @@
     }
 
     // Tabs are built once, before the first refresh, and never remounted.
+    var lastFilteredElements = []
     var tabs = mountTabs(active, {
       getQuery: function () {
         return activeSearchQuery
+      },
+      getFilteredElements: function () {
+        return lastFilteredElements
       },
       registry: registry,
       getController: function () {
@@ -5816,6 +6460,25 @@
       })
     }
 
+    // Ku actions are delegated once per document, never per component.
+    if (UI && typeof UI.createKu === 'function' && !state.kuDelegation) {
+      state.kuDelegation = UI.createKu({
+        doc: active,
+        onAction: function (action, descriptor) {
+          var ctrl = state.controller
+          if (ctrl && typeof ctrl.handleKuAction === 'function') {
+            ctrl.handleKuAction(action === 'changes' ? 'info' : action, descriptor)
+            return
+          }
+          if (action === 'info' || action === 'changes') {
+            var panel = UI.KuInfoPanel(descriptor)
+            if (active.body) active.body.appendChild(panel)
+            if (panel && typeof panel.showModal === 'function') panel.showModal()
+          }
+        },
+      })
+    }
+
     // The first view mounts here, after the initial search had its say.
     if (tabs) tabs.activateInitial()
 
@@ -5834,9 +6497,9 @@
               })
             : [])
         : elements
-      renderDocumentView(active, docElements, concepts)
+      renderDocumentView(active, docElements, concepts, (meta && (meta.modelId || meta.model)) || '')
     }
-    renderMatrices(active, matrices, concepts)
+    renderMatrices(active, matrices, concepts, (meta && (meta.modelId || meta.model)) || '')
     renderMetamodelView(active, schema, matrices, elements)
 
     var searchBox = active.getElementById('innfo-search')

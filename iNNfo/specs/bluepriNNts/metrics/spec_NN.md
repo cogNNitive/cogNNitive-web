@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-4-4"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-5-0"
 title: "Metrics App"
 relationship_types:
   hierarchy:
@@ -56,6 +56,12 @@ color:: purple
 weight:: 70
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
 
 ## NN Field Definition: metricValue
 concept:: Metrics
@@ -133,26 +139,6 @@ concept:: Scenario
 type:: string
 description:: Free-form notes describing the scenario assumptions.
 
-# NN Marker Definition
-
-## NN Marker Definition: is_variable
-applies_to:: [Element]
-symbol:: *
-icon:: edit
-color:: blue
-
-## NN Marker Definition: is_formula
-applies_to:: [Element]
-symbol:: "="
-icon:: calculator
-color:: green
-
-## NN Marker Definition: is_derived
-applies_to:: [Element]
-symbol:: "~"
-icon:: sparkles
-color:: purple
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: metrics-dependencies matrix
@@ -203,13 +189,11 @@ dashboard, no per-model artifact to regenerate.
 | **Evolution** | `list` | Monthly evolution rules (fixed, compound, additive) |
 | **Scenario** | `list` | Historical or projection scenarios selecting horizon and participating rows |
 
-### Markers
+### Fields
 
-| Marker | Purpose |
-|---|---|
-| `is_variable` | Row is user-editable input |
-| `is_formula` | Row is computed from a formula |
-| `is_derived` | Row is artifact-invented help, not verbatim from the model |
+| Field | Concept | Type | Purpose |
+|---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
 
 ### Matrices
 
@@ -259,7 +243,7 @@ title: "<Metrics Model Title>"
 
 ### Canonical Sample
 
-The official sample for this template is at `iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-4-4_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, the three evaluable matrices, and the item-markers matrix.
+The official sample for this template is at `iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-5-0_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, and the three evaluable matrices.
 
 ### Parent Chain
 
@@ -466,24 +450,6 @@ Description of scenario-metrics matrix.
 ### Description
 
 Description of scenario-metrics matrix.
-
-### Methodologies
-
-*No methodologies provided.*
-
-### Prompts
-
-*No prompts provided.*
-
-## item-markers matrix
-
-### Summary
-
-Description of item-markers matrix.
-
-### Description
-
-Description of item-markers matrix.
 
 ### Methodologies
 

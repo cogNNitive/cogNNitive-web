@@ -198,7 +198,7 @@ Creating **any** model — with a canonical app, custom app, or without an app �
 #### Phase A — App Design (Level 2)
 
 **A0. Domain Language Auto-Alignment (MANDATORY):**
-If the user's conversational prompt is in language $L$ (e.g. Spanish) or the primary sources to be ingested are in language $L$, the proposed Concepts, Field names, Matrix titles, and Marker names MUST be authored in language $L$ by default. Never propose an English schema to a non-English domain without explicit prior confirmation.
+If the user's conversational prompt is in language $L$ (e.g. Spanish) or the primary sources to be ingested are in language $L$, the proposed Concepts, Field names, and Matrix titles MUST be authored in language $L$ by default. Never propose an English schema to a non-English domain without explicit prior confirmation.
 
 **A1. Base Selection:**
 - **[a] (Recommended)** Business Model 🏢
@@ -210,7 +210,7 @@ If the user's conversational prompt is in language $L$ (e.g. Spanish) or the pri
 *(Notice: You can select one option or a combination (e.g. A and B))*.
 
 **A2a. If a canonical app was selected ([a]/[b]/[c]/[d]) (Optimistic Execution with Informative Grace):**
-Resolve the app with `innfo-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, Matrices, and Markers it already defines. Then discover its procedures with `innfo-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
+Resolve the app with `innfo-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, and Matrices it already defines. Then discover its procedures with `innfo-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
 
 **Do NOT block on an intermediate customization menu.** By default, canonical apps are used as-is. Announce with Informative Grace in the user's active session language — e.g. (English): *"Using the standard {App} blueprint. Proceeding with the model's element design; tell me before I start if you'd prefer to customize the blueprint or create a specialization."*
 Proceed directly to **Phase B (Model Design)**. Only branch to customization if the user explicitly asks to customize or interrupts.
@@ -221,11 +221,7 @@ Design from scratch, in this order, consulting `innfo-mcp_get_spec` for the exac
 1. **Concepts**: which Concepts the app will have (the root categories of the model).
 2. **Fields per Concept**, with their `type::` — apply the **Type Heuristic** (below) before assigning `string` to any field.
 3. **Matrices**: which relationships between Concepts warrant a matrix — apply the **Matrix Heuristic** (below). Each Matrix Definition can declare `values::` (set of allowed cell values), `widget::` (`boolean` | `cycle` | `scale` | `set` | `text`), and `widget_config::` (JSON object: `scale`→`{min,max,step}`, `cycle`→`{order}`, `set`→`{max_selections}`, `text`→`{max_length}`). `widget:: scale` without `min`/`max` in `widget_config` is a validation ERROR.
-4. **Markers**: ask explicitly — *"Does this app need Markers (reusable tags/states, e.g. for matrix cells or cross-cutting Element classification)? If so, which ones?"* Do not assume they are not needed just because the user did not mention them. Each Marker Definition declares:
-   - `applies_to:: [Element]` (default), `[Concept]`, or `[Element, Concept]` — which entities can be scored. Scoring a row whose scope is not in `applies_to` is a validation ERROR.
-   - `values:: / widget:: / widget_config::` — same vocabulary as Matrix Definition (omit `values` for an open numeric marker bounded only by `widget_config`).
-   - `symbol / icon / color / weight` — presentational; `weight` is NOT a score.
-5. **`includes` (additive composition, optional)**: if the app should reuse Concepts/Fields/Markers/Matrices from other *peer* apps, declare them in frontmatter as `includes:` with entries `{ name, url }`. This is horizontal composition (app ∪ app), additive: NOTHING is overridden or deleted, and a name collision between two sources is an ERROR. This is a different axis from `parent_spec` (vertical chain to L1) and `specializes` (inert). See §9.
+4. **`includes` (additive composition, optional)**: if the app should reuse Concepts/Fields/Matrices from other *peer* apps, declare them in frontmatter as `includes:` with entries `{ name, url }`. This is horizontal composition (app ∪ app), additive: NOTHING is overridden or deleted, and a name collision between two sources is an ERROR. This is a different axis from `parent_spec` (vertical chain to L1) and `specializes` (inert). See §9.
 
 ##### Type Heuristic (String vs. Reference)
 
@@ -238,11 +234,11 @@ Before assigning `type:: string` to a field, ask: **does the value of this field
 
 - 1:N relationship with no cross-attributes → a `reference` field suffices.
 - N:M relationship (both sides repeat) → matrix.
-- Any relationship where each cross-point needs its own state/type/attribute (e.g. `X` / `-` / `primary`) → matrix, typically with Markers.
+- Any relationship where each cross-point needs its own state/type/attribute (e.g. `X` / `-` / `primary`) → matrix, typically with `values::`.
 - Quick test: if you can count the same Element more than once on each side of the relationship, it is a strong signal for a matrix.
 
 **A3. Consolidated App Plan (mandatory gate):**
-Before writing the app file, present EVERYTHING together in a single block — Concepts, Fields with types, Matrices, Markers — and ask if anything needs adjustment:
+Before writing the app file, present EVERYTHING together in a single block — Concepts, Fields with types, Matrices — and ask if anything needs adjustment:
 
 ```markdown
 📋 Proposed App Plan:
@@ -250,12 +246,11 @@ Before writing the app file, present EVERYTHING together in a single block — C
 - Fields:
   - Stakeholders: name (string), owner (reference), budget (string)
   - Offerings: name (string), category (reference), price (string)
-- Matrices: Stakeholders × Offerings (N:M, markers: interested/buyer/dismissed)
-- Markers: interested, buyer, dismissed
+- Matrices: Stakeholders × Offerings (N:M, values: interested/buyer/dismissed)
 
 Confirm this design, or would you like to adjust anything before creating the app?
 - [a] (Recommended) Confirm and create app
-- [b] Adjust Concepts/Fields/Matrices/Markers
+- [b] Adjust Concepts/Fields/Matrices
 - [x] Cancel
 ```
 
@@ -299,7 +294,7 @@ Validate via `innfo-mcp_validate_knowledge` and output the Visual Expectation Ch
 
 When the user selects option `[w]` (View & consult documentation):
 1. Present available iNNfo documentation categories and guides:
-   - **Level 1 Core Specification**: the iNNfo specification, fetched with `innfo-mcp_get_spec` (Primitives: Concepts, Fields, Matrices, Markers).
+   - **Level 1 Core Specification**: the iNNfo specification, fetched with `innfo-mcp_get_spec` (Primitives: Concepts, Fields, Matrices).
    - **Level 2 Canonical Templates**: Business, Procedures, Organization, Metrics, Projects, Innovation, Analysis, Documentation.
    - **Syntactic & Structural Rules**: Heading conventions (`# NN`, `## NN`), typing heuristics, WikiLink reference formatting (`[[...]]`), and source citation grammar (`sources:: [...]`).
    - **Artifact & Console Architecture**: Console shell, slot payloads, and interactive console runtimes.
@@ -329,8 +324,8 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 | Level | Role | Canonical Term | Syntax & Structure |
 |---|---|---|---|
 | **0** | Meta-specification | `defiNNition` | Defines the meta-rules for specifications. |
-| **1** | Concrete Specification | `iNNfo` / `meta-bluepriNNt` | Level 1 meta-template. Defines the 4 root primitives (`Concept Definition`, `Field Definition`, `Matrix Definition`, `Marker Definition`). |
-| **2** | Domain Schema | `bluepriNNt` | An iNNfo document with lightweight frontmatter (`level: 2`). The body instantiates the 4 root primitives as Markdown elements. **FORBIDDEN to put `concepts: []` or `fields: []` in the YAML frontmatter.** |
+| **1** | Concrete Specification | `iNNfo` / `meta-bluepriNNt` | Level 1 meta-template. Defines the 3 root primitives (`Concept Definition`, `Field Definition`, `Matrix Definition`). |
+| **2** | Domain Schema | `bluepriNNt` | An iNNfo document with lightweight frontmatter (`level: 2`). The body instantiates the 3 root primitives as Markdown elements. **FORBIDDEN to put `concepts: []` or `fields: []` in the YAML frontmatter.** |
 | **3** | Domain Data Model | `kNNowledge` | Instantiates the concepts and fields defined by its parent bluepriNNt (`parent_spec`). |
 
 ---
@@ -349,9 +344,9 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
 | `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
 | `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
-| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or legacy intent operations. After an applied or partially applied changeset the domain console is regenerated and opened in a browser tab (pass open: false to skip). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
+| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or bare intent operations. Every operation that mutates a Level-3 kNNowledge model (including freeze_slugs and bump_version) is synthesized into a sealed, recorded changeset; only generate_index and the Level-2 bluepriNNt authoring operations (add_concept, add_field, bump_version on a bluepriNNt) write directly. After an applied or partially applied changeset the domain console is regenerated and opened in a browser tab (pass open: false to skip). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
 | `regenerate_console` | Regenerate the domain console (or one model-scoped console) and open it in a browser tab. Idempotent: an up-to-date console is reported as unchanged. Also the retry path after an apply whose console regeneration failed. The result carries console and next_steps: you MUST relay next_steps.notice to the user. |
-| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, comment, add_model); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
+| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, comment, add_model, freeze_slugs, bump_version); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
 | `init_domain` | Create an empty, conformant domaiNN container in a new directory: the canonical folders (kNNowledge/, sources/import/, sources/conversations/, conversations/, artifacts/, procedures/, staging/, changes/), a .gitattributes with * -text and a domaiNN_NN.md manifest listing no models. Refuses a directory that exists and is not empty. It is not a changeset; add models afterwards with an add_model changeset (propose_changeset) or init_knowledge. Migration recipe: init_domain for a NEW domain, import the old domain as a source (migrate-domain.js --import-as-source), derive add_model/add_element changes that cite it through sources::, propose_changeset, review, apply_change. |
 | `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
 | `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
@@ -365,7 +360,7 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
 | `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
-| `prune_changesets` | Scan all knowledge documents in the domain for cited changesets and safely remove unreferenced changesets from changes/, then refresh index.md and the domain manifest. |
+| `prune_changesets` | Scan all knowledge documents in the domain for cited changesets and remove the unreferenced, finished (applied or rejected) changesets from changes/, then refresh the domain manifest. Proposed, conflict, partially applied and unreadable changesets are never removed. It does not regenerate index.md or the console. |
 <!-- /generated:mcp-tools -->
 
 **Golden Rule:** The specification/app URL always comes from `parent_spec.url` or from the user. Never hardcode or invent URLs.
@@ -426,7 +421,7 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
     sources:: [sources/import/notes.md@## Key Points]
    relationship_model:: Trial
    ```
-6. **Granularity: element-level, not individual-claim level.** `sources::` covers the set of sources backing the WHOLE element (all its fields together) — there is no per-field or per-sentence citation mechanism inside a domain model. If different fields of the same element come from different sources, list the union of them all in the element's single `sources::`. Claim-level citation (via standard `[^1]` footnotes or bibliographic formats) is a separate mechanism, used only inside artifacts generated from the model (see `nn-sources/SKILL.md` §4) — never inside a `*_NN.md`.
+6. **Granularity: element-level in `sources::`, per-field through `<field>_source`.** `sources::` covers the set of sources backing the WHOLE element (all its fields together). If different fields of the same element come from different sources, list the union of them all in the element's `sources::`. A single field can additionally carry its own citation in a companion `<field>_source` (or `<field>_sources`) field: `apply_change` writes it when an `update_field` touches the field (it cites the applied change and the previous citation moves to the change's `replaced_sources::`). There is no per-sentence citation mechanism inside a domain model. Claim-level citation (via standard `[^1]` footnotes or bibliographic formats) is a separate mechanism, used only inside artifacts generated from the model (see `nn-sources/SKILL.md` §4) — never inside a `*_NN.md`.
 7. **No duplicates or empty references.** Do not repeat the same `<ref>` twice in one list. If there is no real source to cite, omit the whole field — do not write `sources:: []` or a placeholder value.
 8. **Conversational instruction:** If the project has cognitivized sources (files under `sources/` with sidecars), the agent should suggest adding `sources::`. If it is a greenfield / creative model from scratch, the agent does NOT request or require citations. In both cases the skill's general rule applies: never invent a `<ref>` or content that is not verifiably present in the cited file.
 9. **Retrieval queries (`?`) are never a citation.** A `path?filter=value` expression (e.g. `metricas_q3.csv?segmento=Enterprise`) selects a SET of units for retrieval tools — it MUST NEVER appear inside `sources::` (the validator rejects it: run the query, then cite the resulting `@` pointers). `@` addresses one unit; `?` selects many; the two never mix in one string.
@@ -484,11 +479,11 @@ Every change is audited through an immutable changeset:
 [Element] ───sources::───► [Changeset] ───sources::───► [Primary Source]
 ```
 - `apply_change` automatically stamps the mutated element's `sources::` field with the changeset reference (`changes/<file>.md@## NN Change: <id>`).
-- To cite a primary source, declare the source inside the changeset operation: `sources: ["sources/import/<file>.md@## <Heading>"]`.
-- Never attempt to manually override an element's `sources::` field with a direct source path: the mutation engine enforces the audit trail and will overwrite it.
+- To cite a primary source, declare it on the changeset operation as `sources`, a single citation STRING (not an array): `sources: "sources/import/<file>.md@## <Heading>"`. The change's `sources` is the evidence; it is sealed with the proposal and is not copied onto the element.
+- Only `update_field` and `add_element` rewrite citations. Never attempt to manually override an element's `sources::` field with a direct source path: the mutation engine enforces the audit trail.
 
 #### Changeset Pruning & Hygiene
-Exploratory proposals that are abandoned or not cited by any active model can be pruned using `innfo-mcp_prune_changesets({ dryRun: false })`. This cleans unreferenced changesets from `changes/` and resyncs `index.md` without requiring manual filesystem deletions.
+Finished changesets (`applied` or `rejected`) that no model cites can be pruned with `innfo-mcp_prune_changesets({ dryRun: false })`. It never deletes a `proposed`, `conflict` or `partially_applied` changeset (they hold pending work) nor a file it cannot parse. After a deletion it only reconciles the domain manifest (`syncDomainManifest`); it does not regenerate `index.md` or the console.
 
 #### New domain and migration
 
@@ -496,27 +491,25 @@ Exploratory proposals that are abandoned or not cited by any active model can be
 - Add models afterwards with an `add_model` change (alone or together with `add_element` changes in the same changeset) via `propose_changeset`, or with `init_knowledge`.
 - Migration recipe: `init_domain` for a NEW domain, import the old domain as a source (`node skills/nn-upgrade/scripts/migrate-domain.js --import-as-source`), derive `add_model` / `add_element` changes that cite it through `sources::`, `propose_changeset`, review in the console, reply OK, `apply_change`.
 
-#### Atomic version bump
+#### Version bump
 
-To raise the version of a Level 3 model and its associated app (parent_spec), use the MCP's `bump_version` operation — do NOT edit the frontmatter by hand:
+To raise the version of a Level 3 model, use the MCP's `bump_version` operation — do NOT edit the frontmatter by hand. It is a changeset operation: a bare call is synthesized into a sealed, recorded, applied changeset (or put a `bump_version` change in a proposal, with the level in `to`):
 
 ```
 innfo-mcp_apply_change({
   id: "<model_id>",
   op: "bump_version",
-  args: {
-    version: "V_0-5-0",
-    parent_version: "V_0-5-0" // Optional: to re-version and rename the associated app
-  }
+  args: { bump: "minor" } // "patch" (default) | "minor" | "major"
 })
 ```
 
-- **Automated Behavior**:
-  1. Updates `knowledge_version` in the frontmatter and renames the model file atomically.
-  2. If `parent_version` is provided, physically renames the local app file, updates its `spec_version` (in frontmatter), updates `parent_spec.name`/`url` in the model frontmatter, and copies the renamed app to the `specs/` directory.
-  3. Consistently updates references in workspace `index.md`.
-  4. Everything is validated via pre-check before performing any write (if validation fails, aborts without writing).
-- **Remaining manual checklist**: If the app was remote, remember to push it to its corresponding server or repository.
+- **Behavior**:
+  1. Raises `knowledge_version` by the requested level. The model is bumped exactly once per changeset: a `bump_version` change replaces the default patch bump of `apply_change`, it never adds to it. A higher level resets the lower ones.
+  2. The model file is never renamed (`kNNowledge/<stem>_NN.md` is invariant) and no reference elsewhere is rewritten.
+  3. An explicit `version` is refused (`INVALID_BUMP_LEVEL`); so is the unversioned lineage record.
+  4. `freeze_slugs` follows the same rule: on a Level 3 model it is a changeset operation.
+- **Level 2 bluepriNNts**: `bump_version` on a bluepriNNt sets `blueprint_version` in place and writes directly (`{ bump }` or `{ version }`). `add_concept`, `add_field` and `set_marker` also stay direct on a bluepriNNt and are refused on a Level 3 model (`SCHEMA_OP_ON_LEVEL3`).
+- **Remaining manual checklist**: none; a bluepriNNt bump is traced by git, so commit it.
 
 ---
 
@@ -564,8 +557,8 @@ Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-val
 When a source family declares a convergence strategy (`## NN Source Family:` in the domaiNN manifest), a new snapshot produces a **read-only convergence proposal** via `node skills/nn-sources/scripts/index.js --converge <family>`. Apply it through this same reviewed loop — never hand-edit the source (sources are immutable citation targets):
 
 1. Present the proposal as a Change Preview with Diff: the added keys, the changed values (`key.field: from -> to`), and the flagged removed keys.
-2. Run `--converge <family> --plan` to get the exact ordered `apply_change` operation list (it requires the family to declare `concept::`). Apply the plan's `ops` with `innfo-mcp_apply_change`, then re-validate with `innfo-mcp_validate_knowledge`. `upsert` plans never overwrite a changed value — those arrive under `review` for an explicit user decision.
-3. The plan ends in **one** `bump_version` for the affected model.
+2. Run `--converge <family> --plan` to get ONE `propose_changeset` payload (it requires the family to declare `concept::` and `model::`). Submit the plan's `operations` as a single `innfo-mcp_propose_changeset`, relay `next_steps.notice`, and on the user's OK call `innfo-mcp_apply_change`, then re-validate with `innfo-mcp_validate_knowledge`. `upsert` plans never overwrite a changed value — those arrive under `review` for an explicit user decision.
+3. The plan ends in **one** `bump_version` change (`to` names the level) for the affected model; inside the single changeset it replaces the default patch bump, so the model is bumped once.
 4. Mark the family applied so re-running `--converge` is a no-op: `node skills/nn-sources/scripts/index.js --converge-mark <family> --version <model-version>`.
 
 Removed keys are flag-only: never delete or archive a model element from a convergence proposal without an explicit user decision.
@@ -621,12 +614,30 @@ There are **4 formal relationship forms** in iNNfo (`hierarchy`, `evaluable_matr
 
 ## 8e. Free-form Tag Protocol (`tags::`)
 
-1. **Ad-hoc tagging at Level 3**: Any Element or Concept in a Level 3 model may declare the `tags::` property for free-form categorization *on the fly*, without modifying the Level 2 app or predefining a `Marker Definition`.
-2. **List syntax**: Written as an inline list `tags:: [urgent, sprint-1, vip-client]` (or `tags:: urgent` for a single tag). For multiple values, the bracketed `[...]` syntax is MANDATORY.
-3. **Agent use**: When the user asks to "filter or act only on elements with tag X", the agent MUST inspect the `tags::` fields of each Element/Concept to restrict its scope to the matching entities only.
-4. **Coexistence with Markers**: `tags::` are lightweight plain-text labels. If the user needs an icon, color, weight, or participation in comparative matrices, the tag can be promoted to a formal Level 2 `Marker Definition`.
+1. **`tags` is an ordinary Field.** At Level 3 an Element may carry a `tags:: [...]` value only when the Level 2 app declares a Field named `tags` (canonically `concept:: *`, `type:: select`, `multiple:: true`, `options:: []` for an open vocabulary). There is no reserved `tags` property and no Marker Definition: `tags` is a normal Field like any other.
+2. **List syntax**: Written as an inline list `tags:: [urgent, sprint-1, vip-client]` (or `tags:: urgent` for a single value). For multiple values, the bracketed `[...]` syntax is mandatory.
+3. **Agent use**: When the user asks to "filter or act only on elements with tag X", the agent inspects the `tags` Field of each Element/Concept to restrict its scope. In the console the filter token is `tags:<x>` (exact membership; `tags:a|b` is any-of).
+4. **Concept-level tags**: a Concept row may declare `tags:: [core]`; elements without their own `tags` inherit those values.
+5. **Valued fields replace valued markers**: if a value needs a widget, bounds, or participation in a matrix, declare a normal Field (`type::`, `widget::`, `multiple::`) instead of a marker.
 
 ---
+
+## 8e-bis. Recipe: MARKERS_REMOVED
+
+An older document that still contains a `# NN Marker Definition` section or an `item-markers matrix` fails validation with the diagnostic `MARKERS_REMOVED` (its `promptHint` is *"nn-innfo recipe MARKERS_REMOVED"*). Never rewrite the offending file directly: turn the diagnostic into a reviewable changeset.
+
+1. **Run validation and read `meta`**: call `validate_knowledge` / `validate_blueprint` and read `MARKERS_REMOVED`'s message plus `meta.markers` and `meta.matrixColumns`. Both a Marker Definition and an `item-markers matrix` produce exactly ONE diagnostic per document.
+2. **Classify each marker**:
+   - **Flag markers** (symbol-only, or cells carrying `X` / `-`): become **a tag** — a value of the `tags` Field (`update_field`). Confirm the tag name mapping with the user before proposing.
+   - **Valued markers** (a score, state or type per cell): become **a declared Field** (`concept:: *` or a list, with `type`/`widget`). Each cell becomes a `field:: value` line; a Concept row becomes a **concept-level value** (`update_concept_field`).
+3. **Build ONE changeset**: `update_field` per element (own `tags` arrays and valued fields), `update_concept_field { conceptName, fieldName, value }` for concept rows, and `remove_matrix { matrixName }` for the `item-markers matrix`. **State explicitly which numeric scores were dropped**: a score whose semantics have no declared Field is dropped, not silently remapped.
+4. **Level-2 vs Level-3**: changesets target Level-3 documents only, and no operation removes a Marker Definition section. For a **shipped bluepriNNt**, upgrade it with the Flow B template upgrade. For a **custom Level-2**, propose a direct edit and wait for consent — the Level-3 documents that depend on it stay invalid until that edit lands.
+5. **Propose with `propose_changeset`**: seal the changeset and open the console so the user reviews and approves it. Do not apply it yourself before review.
+
+`nn-upgrade` links here when its impact analysis finds a marker-bearing model; it does not ask mapping questions.
+
+---
+
 
 ## 8f. Console Artifact Export & Inspection (Option D)
 
@@ -727,7 +738,7 @@ Example of dynamic checklist to generate:
 - [ ] 🌳 **Navigation tree** — `<model_id>`: hierarchical structure based on `# NN index`, with concepts and elements.
 - [ ] 📋 **Concept field panels** (e.g. <Concept>): each `key:: value` (properties, types and references) rendered per concept.
 - [ ] 🎴 **Element cards** (e.g. <Element>): one card per `## NN <Concept>: <Element>` block with its metadata and description.
-- [ ] 📊 **Comparative matrix tables**: N-to-M relationship tables and `item-markers matrix` rendered with interactive cells (`X` / `-`).
+- [ ] 📊 **Comparative matrix tables**: N-to-M relationship tables rendered with interactive cells (`X` / `-`).
 ```
 
 ---
@@ -915,7 +926,7 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 10. **Element descriptions in prose:** The description/explanation of an element in a Level 3 model must NEVER be written as a `description::` field. It must always be free-form Markdown prose below the `key:: value` field list, separated by a blank line.
 11. **Active Model Selection Gate:** Never perform editing, validation, audits, console export, or model procedure execution without a validated active model in context. Run workspace discovery first if none is set.
 12. **Dynamic Quick Actions:** Only list procedure shortcuts in next steps if the model contains declared procedures.
-13. **Free-form Tags (`tags::`)**: Any Element or Concept in a Level 3 model may declare `tags:: [tag1, tag2]` for free-form categorization without modifying the Level 2 app. Multi-tag syntax requires brackets `[...]`. Agents should use this field to filter and scope actions to tagged elements.
+13. **Free-form Tags (`tags::`)**: When the Level 2 app declares a Field named `tags`, any Element or Concept may carry `tags:: [tag1, tag2]` for free-form categorization without a Marker Definition. Multi-value syntax requires brackets `[...]`. Agents use this Field to filter and scope actions (console token `tags:<x>`).
 14. **Step 0 Schema Integrity Gate (MANDATORY)**: Always verify that `parent_spec` resolves cleanly before diagnosing or repairing child element fields, matrices, or references. If unresolved, halt and resolve schema reachability first.
 15. **Mechanical Linting & BOM Encoding Sanitization**: Always enforce UTF-8 without BOM (`\uFEFF`), detect and disambiguate heading/slug collisions, and enforce clean frontmatter.
 

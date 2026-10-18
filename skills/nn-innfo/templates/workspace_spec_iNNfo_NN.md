@@ -1,12 +1,12 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 title: "Workspace Specification App"
-template_version: "V_0-8-3"
+template_version: "V_0-9-0"
 relationship_types:
   hierarchy:
     enabled: true
@@ -33,7 +33,6 @@ relationship_types:
 * [[Artifacts]]
 * [[Skills]]
 * [[Tools]]
-* [[Tags]]
 
 # NN Concept Definition
 
@@ -91,13 +90,13 @@ type:: list
 color:: grey
 weight:: 60
 
-## NN Concept Definition: Tags
-icon:: tag
-type:: category
-color:: grey
-weight:: 50
-
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels (e.g. verified).
 
 <!-- Workspace fields: conventions & global config -->
 
@@ -237,31 +236,6 @@ type:: select
 options:: [node, python, bash, powershell]
 description:: Execution runtime required for this tool.
 
-<!-- Tags fields -->
-
-## NN Field Definition: color
-concept:: Tags
-type:: string
-description:: Hex color code (e.g. #10b981) or CSS token for tag badges and highlights.
-
-## NN Field Definition: icon
-concept:: Tags
-type:: string
-description:: Icon identifier (e.g. Lucide icon name) displayed with the tag badge.
-
-## NN Field Definition: description
-concept:: Tags
-type:: string
-description:: Semantic description, strategic intent, or scope of the tag.
-
-# NN Marker Definition
-
-## NN Marker Definition: verified
-applies_to:: [Element]
-symbol:: >
-icon:: shield-check
-color:: green
-
 # Workspace Specification Template
 
 ## A level-2 unified template for the workspace root manifest — linking domain models, specs, templates, sources, procedures, artifacts, skills, tools, and taxonomy tags
@@ -278,7 +252,6 @@ A workspace manifest is the single source of truth for workspace topology, execu
 * **Artifacts** links to `artifacts_NN.md` catalog via `type:: model`.
 * **Skills** links to agent capability definitions (`SKILL.md`) via `type:: file`.
 * **Tools** links to executable maintenance scripts via `type:: file`.
-* **Tags** provides a centralized taxonomy catalog (`color`, `icon`, `description`) used across the workspace.
 
 ## Specification
 
@@ -295,7 +268,6 @@ A workspace manifest is the single source of truth for workspace topology, execu
 | **Artifacts** | model | Entity | Link to the Artifacts catalog model |
 | **Skills** | file | Agent | Link to standard agent SKILL.md files |
 | **Tools** | file | Agent | Link to executable tool scripts and runners |
-| **Tags** | category | — | Centralized taxonomy tags with color, icon, and description |
 
 ## Workspace
 
@@ -435,20 +407,6 @@ Links to Node.js, Python, or shell automation scripts used for workspace hygiene
 ### Prompts
 - "Register maintenance scripts and runtime utilities in workspace."
 
-## Tags
-
-### Summary
-Taxonomy category definitions with visual branding and color tokens.
-
-### Description
-Declares workspace-wide taxonomy tags, hex colors, and icon identifiers used to classify and filter concepts and elements.
-
-### Methodologies
-- Semantic color assignment and icon consistency.
-
-### Prompts
-- "Define domain tags with semantic colors and icons."
-
 ## Template
 
 ### Level 3 Model Template (Lightweight)
@@ -477,6 +435,7 @@ path:: kNNowledge/business_NN.md
 template:: business
 status:: active
 author:: Lead Architect
+tags:: [verified]
 
 # NN Templates
 
@@ -487,7 +446,7 @@ category:: Strategy
 # NN Specs
 
 ## NN Specs: iNNfo Metaplantilla N1
-path:: specs/iNNfo_V_0-2-1_NN.md
+path:: specs/iNNfo_V_0-5-0_NN.md
 level:: 1
 
 # NN Sources
@@ -516,11 +475,4 @@ role:: Conversational Architecture Coach
 ## NN Tools: Integrity Checker
 path:: tools/check_integrity.mjs
 runtime:: node
-
-# NN Tags
-
-## NN Tags: Strategic
-color:: #3b82f6
-icon:: target
-description:: High-level strategic models.
 ```

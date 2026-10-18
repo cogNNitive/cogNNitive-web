@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-4-1"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-5-0"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -36,6 +36,12 @@ weight:: 100
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
 ## NN Field Definition: format
 concept:: Artifact
 type:: select
@@ -52,11 +58,6 @@ concept:: Artifact
 type:: select
 options:: [draft, verified, published, deprecated]
 description:: Lifecycle and verification state of the artifact.
-
-## NN Field Definition: tags
-concept:: Artifact
-type:: string
-description:: Categorization and domain tags for grouping and discovery.
 
 ## NN Field Definition: artifact_model
 concept:: Artifact

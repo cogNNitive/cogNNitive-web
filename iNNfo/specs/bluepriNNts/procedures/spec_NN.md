@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-3"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Procedures App"
 relationship_types:
   hierarchy:
@@ -69,6 +69,19 @@ color:: green
 weight:: 60
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
+
+## NN Field Definition: complexity
+concept:: *
+type:: number
+widget:: scale
+widget_config:: {"min": 0, "max": 100, "step": 5}
+description:: Relative complexity score (0-100 scale, step 5).
 
 ## NN Field Definition: category
 concept:: Procedure
@@ -143,14 +156,6 @@ target_concepts:: [Tools]
 concept:: Roles
 type:: select
 options:: [internal, external]
-
-# NN Marker Definition
-
-## NN Marker Definition: complexity
-applies_to:: [Element, Concept]
-icon:: gauge
-color:: green
-weight:: 50
 
 # NN Matrix Definition
 

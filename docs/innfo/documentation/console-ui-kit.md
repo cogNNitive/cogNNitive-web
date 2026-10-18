@@ -26,10 +26,14 @@ InnfoUI = {
   conceptSlot({ index, color? }) -> 1..12,
   ORIGIN_VARIANTS,       // ['error','agent','human','reviewer','document']
   CITATION_ORIGIN_LABELS,
-  ConceptPill(data, opts?), ElementPill(data, opts?), MarkerChip(data), StatusBadge(data),
-  KuBadge(data, opts?), KuActions(data, opts?),
-  CitationIcon(data, opts?), FieldRow(data, opts?), ElementCard(data, opts?),
-  Table(data, opts?), KpiGrid(data, opts?), defineCustomElements(doc?),
+  StatusBadge(data), CitationIcon(data, opts?),
+  describeUnit(kind, ref, index?) -> descriptor,
+  Ku(kind, ref, opts?) -> span.innfo-ku-wrap,
+  createKu({ doc, onAction }) -> { destroy },
+  KuInfoPanel(descriptor) -> dialog,
+  FieldRow(data, opts?), ElementCard(data, opts?),
+  DraftList(data, opts?), RelList(data, opts?),
+  KpiGrid(data, opts?), defineCustomElements(doc?),
 }
 ```
 
@@ -40,22 +44,22 @@ Every component root carries `data-innfo-component="<kebab-name>"`. Invalid
 
 | Component | Root | Key `data-*` |
 |---|---|---|
-| `ConceptPill({ id, label, index, color?, count? }, { onSelect? })` | `button` (or `span` when no `onSelect`) | `data-concept-id`, `data-concept-slot` |
-| `ElementPill({ id, label, origin? }, { href?, onSelect? })` | `a` / `button` / `span` | `data-element-id`; origin icon child `[data-origin]` |
-| `MarkerChip({ id, label, kind, value? })` | `span` | `data-marker-id`, `data-kind` |
+| `Ku(kind, ref, { variant?, body? })` | `span.innfo-ku-wrap` > `[data-innfo-component="ku-unit"]` | `data-ku-kind`, `data-ku-nature`, `data-ku-home`, `data-ku-address`; action cluster is a sibling `.innfo-ku-actions` |
+| `describeUnit(kind, ref, index?)` | pure descriptor | `{ kind, nature, home, address, label, slot, vtype?, editability, facts }` |
+| `KuInfoPanel(descriptor)` | `dialog[data-innfo-component="ku-info-panel"]` | focus moves to the heading; Escape restores focus |
 | `StatusBadge({ status, count? })` | `span` | `data-status` (`pending`\|`applied`\|`rejected`\|`stale`) |
 | `CitationIcon({ variant, field }, { onOpen? })` | `button` | `data-origin`, `data-field`; click stops propagation |
-| `FieldRow({ name, value, citations?, ref? }, { onRef?, onCite? })` | `ku-badge` (kind `field`) | `data-ku-kind="field"`, `data-field`; one `CitationIcon` per distinct origin in canonical order |
-| `ElementCard({ id, name, conceptId?, description?, fields, markers? }, opts)` | `article` | `data-element-id`, `data-concept-id`, `data-open` |
-| `Table({ columns, rows, emptyText? }, { doc?, onEdit?, onSelect? })` | `div.innfo-element-table-wrap` | `data-innfo-component="table"`; auto-renders `KuBadge` & `ElementPill` |
+| `FieldRow({ name, value, citations?, ref?, inherited? }, { model?, element?, onRef?, onCite? })` | `ku-unit` (kind `value`) | `data-ku-kind="value"`, `data-field`; inherited values render `inherited from <Concept>` with editability `none` |
+| `ElementCard({ id, name, conceptId?, description?, fields, inherited? }, opts)` | `article` | `data-element-id`, `data-concept-id`, `data-open`; name is an `element` unit, fields are `value` units |
+| `DraftList({ drafts, byId }, { modelId })` / `RelList({ relations, byId }, { modelId })` | `ul` | each chip is a `ku-unit` addressed by canonical address |
 | `KpiGrid({ items: [{ label, value, concept?, hint? }] }, { doc? })` | `div.innfo-kpi-grid` | `data-innfo-component="kpi-grid"`; responsive grid of KPI cards |
 
 ### Declarative Web Components
 
-When running in browser contexts, `ui-kit.js` registers `<innfo-ku>` custom elements:
-- `<innfo-ku kind="field" name="horas" value="120"></innfo-ku>`
-- `<innfo-ku kind="cell" value="84"></innfo-ku>`
-- `<innfo-ku kind="element" id="el-1" label="Bootcamp"></innfo-ku>`
+When running in browser contexts, `ui-kit.js` registers a legacy `<innfo-ku>`
+custom element that delegates to `Ku`:
+- `<innfo-ku kind="value" model="m" name="horas" label="120"></innfo-ku>`
+- `<innfo-ku kind="element" model="m" id="el-1" label="Bootcamp"></innfo-ku>`
 
 ### View Scaffolding CLI
 
@@ -69,27 +73,29 @@ node scripts/export-console.mjs <workspaceRoot> --new-view timeline --blueprint 
 ```
 Templates: `table` (default), `kpi`, `blank`.
 
-### Knowledge-unit badges (`KuBadge`)
+### Knowledge units (`Ku`)
 
-`KuBadge` is the single family for every knowledge unit: one grammar, one
-presentation per canonical address. `data.kind` is one of `document`, `element`,
-`concept`, `field`, `cell`, `marker`, `reference`. The badge shape encodes the kind
-(`data-ku-kind`); the concept color encodes the concept (`data-concept-slot`,
-1..12); the slug is the identity (`data-element-id` / `data-concept-id` /
-`data-field` / `data-marker-id`). A `field` badge reads `name: value`; a `cell`
-badge shows the value only; an `element` badge carries the concept-color border and
-the concept icon; a `concept`/`document` badge carries a concept-tinted fill.
+`Ku` is the single builder for every knowledge unit: one grammar, one presentation
+per canonical address. Allowed kinds: `domain`, `document`, `section`, `element`,
+`value`, `concept`, `field`, `matrix`, `source`. Every badge carries
+`data-ku-kind`, `data-ku-nature` (`container` / `structure` / `content`),
+`data-ku-home` (`domain` / `blueprint` / `knowledge` / `source`) and
+`data-ku-address` (parsed by `innfo-core`'s `parseUnitAddress`).
 
-- `KuBadge({ kind, id?, name?, value?, label?, index?, color?, icon?, markerKind?, changes? }, opts?)`.
-- `opts.onInfo` / `opts.onEdit` / `opts.onChanges` render the action cluster OUTSIDE
-  the badge root (in `KuActions`), so an action is never nested inside a navigable
-  badge; `opts.href` / `opts.onSelect` make the badge navigable when it has no action.
-- `data.changes > 0` renders a count pip child (`ku-change-pip`) and sets
-  `data-ku-changes`; the badge border reflects pending changes.
-
-`KuActions({}, { onInfo?, onEdit? })` renders `data-innfo-component="ku-actions"`
-with `[data-ku-action="info"]` and/or `[data-ku-action="edit"]`. The kit holds no
-mode state: the edit control exists only because the caller passed `onEdit`.
+- `Ku(kind, ref, { variant?, body? })`: `ref` carries the identity facts
+  (`model`, `family`, `id`, `concept`, `name`, `field`, `element`, `row`, `col`,
+  `address`). Sections and definitions are prefixed with `concept:` / `matrix:`;
+  element, value and cell addresses stay equal to changeset `target::`.
+- Visual grammar: container = double border, structure = dashed + mono, content =
+  solid, source = warm `--innfo-source-paper` fill, concept identity via slots.
+- The action cluster (`span.innfo-ku-actions`) is always OUTSIDE the badge root.
+  Info is always present; edit appears when `describeUnit(...).editability !== 'none'`.
+  CSS hides edit under `html:not([data-innfo-review=on])` and structure pencils
+  under `html:not([data-innfo-structure=on])`.
+- `createKu({ doc, onAction })` installs ONE delegated listener per document and
+  forwards `(action, descriptor)`; the kit owns no review state.
+- A pending-change pip (`button[data-innfo-component="ku-change-pip"]`) sits beside
+  the badge and is keyed by canonical address (`data-ku-changes` holds the count).
 
 `ElementCard` opts: `domId`, `collapsible`, `open`, `head[]` (into
 `.innfo-card-head`), `body[]` (into `.innfo-card-body`), `concept` (concept

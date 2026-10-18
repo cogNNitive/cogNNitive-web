@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
-blueprint_version: "V_0-3-4"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+blueprint_version: "V_0-4-0"
 title: "Analysis App"
 procedures:
   - id: "run-coherence-audit"
@@ -90,37 +90,13 @@ type:: weight
 color:: green
 weight:: 40
 
-# NN Marker Definition
+# NN Field Definition
 
-## NN Marker Definition: importance
-applies_to:: [Element]
-symbol:: *
-icon:: plus
-color:: blue
-
-## NN Marker Definition: completion
-applies_to:: [Element]
-symbol:: >
-icon:: check
-color:: blue
-
-## NN Marker Definition: certainty
-applies_to:: [Element, Concept]
-symbol:: ?
-icon:: help-circle
-color:: green
-
-## NN Marker Definition: priority
-applies_to:: [Element]
-symbol:: !
-icon:: flag
-color:: red
-
-## NN Marker Definition: rating
-applies_to:: [Element]
-symbol:: +
-icon:: star
-color:: green
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels.
 
 # NN Matrix Definition
 
@@ -182,15 +158,11 @@ business vocabulary, kept in sync across the two halves.
 | **Coherence** | `weight` | Internal-consistency checks between model components |
 | **Experiments** | `weight` | Tests that turn assumptions into evidence |
 
-### Markers
+### Fields
 
-| Marker | Symbol | Purpose |
-|---|---|---|
-| `importance` | `*` | Core importance score |
-| `completion` | `>` | Progress indicator |
-| `certainty` | `?` | Confidence level |
-| `priority` | `!` | Urgency flag |
-| `rating` | `+` | Quality rating |
+| Field | Concept | Type | Purpose |
+|---|---|---|---|
+| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |
 
 ### Matrices
 

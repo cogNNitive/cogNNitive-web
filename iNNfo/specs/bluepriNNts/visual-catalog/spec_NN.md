@@ -1,12 +1,12 @@
 ---
-spec_version: "V_0-3-0"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 title: "Visual Catalog App"
-blueprint_version: "V_0-1-2"
+blueprint_version: "V_0-2-0"
 procedures:
   - id: "ingest-visual-catalog"
     name: "Ingest Visual Catalog Procedure"
@@ -54,6 +54,12 @@ weight:: 80
 
 # NN Field Definition
 
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels (e.g. reviewed).
+
 ## NN Field Definition: name
 concept:: Entry
 type:: string
@@ -81,10 +87,12 @@ type:: select
 options:: [candidate, confirmed, rejected]
 description:: Review state of the Entry.
 
-## NN Field Definition: tags
+## NN Field Definition: confidence
 concept:: Entry
-type:: string
-description:: Categorization tags for grouping and discovery.
+type:: number
+widget:: scale
+widget_config:: {"min": 0, "max": 10}
+description:: Extraction confidence score (0-10 scale).
 
 ## NN Field Definition: source
 concept:: Entry
@@ -127,22 +135,6 @@ concept:: Evidence
 type:: markdown_inline
 description:: Optional analyst notes about the image or attribution.
 
-# NN Marker Definition
-
-## NN Marker Definition: confidence
-applies_to:: [Element]
-widget:: scale
-widget_config:: {"min": 0, "max": 10, "step": 1, "unit": "/10"}
-icon:: gauge
-color:: purple
-
-## NN Marker Definition: review
-applies_to:: [Element]
-widget:: boolean
-widget_config:: {"true_label": "Reviewed", "false_label": "Pending"}
-icon:: check-circle
-color:: green
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: Entry x Evidence matrix
@@ -152,10 +144,6 @@ values:: [primary, visible, partial]
 widget:: set
 widget_config:: {"multi": true}
 description:: Which Evidence witness(es) show each Entry, and how directly. N:M — many Entries may share one Evidence.
-
-## NN Matrix Definition: item-markers matrix
-source:: Entry
-target:: Markers
 
 # Visual Catalog App
 
@@ -188,12 +176,13 @@ Visual knowledge is captured as images long before it is structured as data. Cat
 
 | Concept | Field | Type | Purpose |
 |---|---|---|---|
+| `*` | `tags` | select (multiple) | Open vocabulary ad-hoc tags and classification labels (e.g. `reviewed`) |
 | Entry | `name` | string | STABLE domain identity — never a filename |
 | Entry | `category` | reference → Category | The Category this Entry belongs to |
 | Entry | `description` | markdown_inline | Free-text description |
 | Entry | `attributes` | string | Structured key/value or inline notes |
 | Entry | `status` | select | candidate / confirmed / rejected |
-| Entry | `tags` | string | Categorization tags |
+| Entry | `confidence` | number (scale 0-10) | Extraction confidence score |
 | Entry | `source` | citation | Optional citation to `sources/nn/...` |
 | Category | `parent` | reference → Category | Parent Category |
 | Category | `description` | markdown_inline | Scope explanation |
@@ -210,7 +199,7 @@ Visual knowledge is captured as images long before it is structured as data. Cat
 | Type | Enabled | Representation |
 |---|---|---|
 | Hierarchy | ✅ | index block (wikilinks) |
-| Evaluable matrix | ✅ | `Entry x Evidence matrix`, `item-markers matrix` |
+| Evaluable matrix | ✅ | `Entry x Evidence matrix` |
 | Graph edge | ❌ | Citations are typed onto the graph; no free graph edges |
 | Sequence | ❌ | Ingestion ordering lives in the bundled SOP |
 

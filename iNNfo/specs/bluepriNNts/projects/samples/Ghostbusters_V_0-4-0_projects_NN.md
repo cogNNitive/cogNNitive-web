@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "projects_V_0-3-4"
+  name: "projects_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
-knowledge_version: "V_0-3-4"
+knowledge_version: "V_0-4-0"
 title: "Ghostbusters Subterranean Containment Upgrade Project"
 ---
 
@@ -44,18 +44,21 @@ Conduct high-voltage load testing under simulated power outages and gain municip
 
 ## NN Milestone: Blueprint Approval Gate
 slug:: blueprint-approval-gate
+health:: nominal
 target_date:: "2026-08-20"
 milestone_status:: achieved
 tags:: [milestone, approval, design]
 
 ## NN Milestone: Auxiliary Containment Cell Installation
 slug:: auxiliary-containment-cell-installation
+health:: warning
 target_date:: "2026-09-15"
 milestone_status:: in_progress
 tags:: [milestone, facility, capacity]
 
 ## NN Milestone: Full Grid Containment Signoff
 slug:: full-grid-containment-signoff
+health:: nominal
 target_date:: "2026-10-01"
 milestone_status:: planned
 tags:: [milestone, compliance, signoff]
@@ -81,6 +84,7 @@ Automatic transfer switch coupling main city power to the auxiliary diesel gener
 
 ## NN Task: Calibrate Particle Accelerators
 slug:: calibrate-particle-accelerators
+health:: nominal
 status:: done
 priority:: high
 duration:: 4d
@@ -93,6 +97,7 @@ Calculate required megawatt load to stabilize high-density spectral entities in 
 
 ## NN Task: Install Auxiliary Laser Matrix
 slug:: install-auxiliary-laser-matrix
+health:: nominal
 status:: in_progress
 priority:: critical
 depends_on:: [[Calibrate Particle Accelerators]]
@@ -106,6 +111,7 @@ Mount high-frequency laser emitter banks inside the subterranean vault expansion
 
 ## NN Task: Couple Diesel Backup Generator
 slug:: couple-diesel-backup-generator
+health:: warning
 status:: in_progress
 priority:: high
 depends_on:: [[Install Auxiliary Laser Matrix]]
@@ -119,6 +125,7 @@ Wire the heavy auxiliary diesel generator to the containment grid automatic tran
 
 ## NN Task: Execute Full Load Grid Test
 slug:: execute-full-load-grid-test
+health:: nominal
 status:: backlog
 priority:: critical
 depends_on:: [[Couple Diesel Backup Generator]]
@@ -134,6 +141,7 @@ Simulate main city power shutdown to verify automatic switchover and laser grid 
 
 ## NN Risk: Municipal Power Grid Surge
 slug:: municipal-power-grid-surge
+health:: warning
 impact:: high
 probability:: medium
 mitigation:: Install secondary transformer dampener capacitors and automatic surge suppressors.
@@ -141,6 +149,7 @@ tags:: [risk, electrical, surge, infrastructure]
 
 ## NN Risk: Containment Grid Overfill
 slug:: containment-grid-overfill
+health:: nominal
 impact:: high
 probability:: low
 mitigation:: Purge inactive spectral class-I vapors to mobile holding units prior to peak season.
@@ -187,16 +196,3 @@ Manages budget allocation, municipal relations, and overall project schedule.
 | :--- | :---: | :---: | :---: |
 | Municipal Power Grid Surge | - | Impacts | MitigatedIn |
 | Containment Grid Overfill | - | Impacts | MitigatedIn |
-
-# NN matrices: item-markers matrix
-| Item \ Marker | health |
-| :--- | :---: |
-| Calibrate Particle Accelerators | nominal |
-| Install Auxiliary Laser Matrix | nominal |
-| Couple Diesel Backup Generator | warning |
-| Execute Full Load Grid Test | nominal |
-| Blueprint Approval Gate | nominal |
-| Auxiliary Containment Cell Installation | warning |
-| Full Grid Containment Signoff | nominal |
-| Municipal Power Grid Surge | warning |
-| Containment Grid Overfill | nominal |

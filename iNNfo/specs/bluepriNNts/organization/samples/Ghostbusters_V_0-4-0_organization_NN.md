@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "organization_V_0-3-4"
+  name: "organization_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
-knowledge_version: "V_0-3-4"
+knowledge_version: "V_0-4-0"
 title: "Ghostbusters Inc. Organization Model"
 ---
 
@@ -18,24 +18,28 @@ Ghostbusters Inc. is a private paranormal investigation and elimination firm ope
 
 ## NN Roles: Chief Science Officer
 slug:: chief-science-officer
+complexity:: 90
 scope:: internal
 tags:: [leadership, r-and-d, physics, particle-acceleration]
 Responsible for leading paranormal physics research, inventing spectral containment hardware, and ensuring safety standards for particle acceleration equipment.
 
 ## NN Roles: Field Operations Lead
 slug:: field-operations-lead
+complexity:: 85
 scope:: internal
 tags:: [leadership, frontline, commercial, emergency]
 Directs field entrapment missions, negotiates commercial client service agreements, and manages public relations for active ectoplasmic emergencies.
 
 ## NN Roles: Senior Paranormal Technician
 slug:: senior-paranormal-technician
+complexity:: 80
 scope:: internal
 tags:: [frontline, heavy-hardware, vehicle-fleet, hazard]
 Executes high-risk field entrapments, operates heavy transport vehicles (Ecto-1), and handles dangerous high-voltage proton equipment in the field.
 
 ## NN Roles: Executive Secretary & Operations Manager
 slug:: executive-secretary-operations-manager
+complexity:: 70
 scope:: internal
 tags:: [operations, dispatch, finance, administration]
 Manages office intake, dispatching emergency calls, client invoicing, containment grid status monitoring, and administrative operations.
@@ -50,26 +54,31 @@ Commercial building managers, hotel directors, municipal agencies, or private ho
 
 ## NN Functions: Spectral Research & Invention
 slug:: spectral-research-invention
+complexity:: 95
 tags:: [core-function, r-and-d, patents, hardware]
 Design, assembly, and testing of nuclear-powered proton packs, muon traps, and PKE meters.
 
 ## NN Functions: Field Entrapment & Response
 slug:: field-entrapment-response
+complexity:: 85
 tags:: [core-function, frontline, containment, rapid-response]
 Emergency dispatch, site scanning, spectral containment using particle beams, and trap deployment.
 
 ## NN Functions: Containment Grid Maintenance
 slug:: containment-grid-maintenance
+complexity:: 95
 tags:: [core-function, facility, high-voltage, safety]
 24/7 monitoring, power regulation, and hazardous waste disposal for the high-voltage subterranean containment facility.
 
 ## NN Functions: Client Dispatch & Billing
 slug:: client-dispatch-billing
+complexity:: 60
 tags:: [support-function, intake, finance, contracts]
 Answering emergency intake calls, dispatching field units, issuing invoices, and managing commercial accounts.
 
 ## NN Functions: Ecto Vehicle & Fleet Management
 slug:: ecto-vehicle-fleet-management
+complexity:: 75
 tags:: [support-function, fleet, mechanics, transit]
 Mechanical maintenance, emergency siren installation, and equipment loading for the Ecto-1 transport fleet.
 
@@ -77,27 +86,32 @@ Mechanical maintenance, emergency siren installation, and equipment loading for 
 
 ## NN Position: Chief Scientist
 slug:: chief-scientist
+complexity:: 90
 tags:: [executive, science, engineering]
 Primary seat responsible for core research and nuclear containment engineering.
 
 ## NN Position: Operations Director
 slug:: operations-director
+complexity:: 80
 tags:: [executive, business, command]
 Primary seat managing business development, client relations, and field mission command.
 
 ## NN Position: Staff Scientist & Engineer
 slug:: staff-scientist-engineer
+complexity:: 85
 tags:: [technical, research, fabrication]
 Secondary research seat focused on field testing, equipment fabrication, and PKE analysis.
 
 ## NN Position: Field Specialist
 slug:: field-specialist
+complexity:: 75
 sources:: [sources/import/nyc-paranormal-activity-report-1984.md@## Response Times&lead_agency]
 tags:: [operational, frontline, field-unit]
 Operational seat dedicated to frontline containment, heavy transport, and equipment handling.
 
 ## NN Position: Office Administrator
 slug:: office-administrator
+complexity:: 65
 tags:: [administrative, operations, dispatch]
 Administrative seat managing office intake, dispatching, and financial accounts.
 
@@ -152,21 +166,25 @@ Janine Melnitz commands headquarters administration, maintaining operational foc
 
 ## NN Skills: Quantum Ecto-Physics
 slug:: quantum-ecto-physics
+complexity:: 95
 tags:: [theoretical, physics, high-pke]
 Advanced theoretical understanding of psychokinetic energy, interdimensional portals, and particle stream physics.
 
 ## NN Skills: Proton Equipment Operation
 slug:: proton-equipment-operation
+complexity:: 85
 tags:: [applied, particle-beam, frontline]
 Mastery of particle stream target lock, beam cross-mitigation, and trap foot-pedal synchronization.
 
 ## NN Skills: Ecto-Vehicle Driving
 slug:: ecto-vehicle-driving
+complexity:: 70
 tags:: [practical, navigation, emergency-response]
 Emergency high-speed navigation of urban traffic with heavy equipment payload.
 
 ## NN Skills: Emergency Dispatching
 slug:: emergency-dispatching
+complexity:: 65
 tags:: [practical, triage, customer-relations]
 Rapid triage of incoming customer calls to distinguish class-I vapor sightings from class-V full-roaming vapors.
 
@@ -196,25 +214,3 @@ Rapid triage of incoming customer calls to distinguish class-I vapor sightings f
 | Containment Grid Maintenance | Assumes | - | Assumes | - | - |
 | Client Dispatch & Billing | - | - | - | - | Assumes |
 | Ecto Vehicle & Fleet Management | - | - | Assumes | Assumes | - |
-
-# NN matrices: item-markers matrix
-| Item \ Marker | complexity |
-| :--- | :---: |
-| Chief Science Officer | 90 |
-| Field Operations Lead | 85 |
-| Senior Paranormal Technician | 80 |
-| Executive Secretary & Operations Manager | 70 |
-| Spectral Research & Invention | 95 |
-| Field Entrapment & Response | 85 |
-| Containment Grid Maintenance | 95 |
-| Client Dispatch & Billing | 60 |
-| Ecto Vehicle & Fleet Management | 75 |
-| Chief Scientist | 90 |
-| Operations Director | 80 |
-| Staff Scientist & Engineer | 85 |
-| Field Specialist | 75 |
-| Office Administrator | 65 |
-| Quantum Ecto-Physics | 95 |
-| Proton Equipment Operation | 85 |
-| Ecto-Vehicle Driving | 70 |
-| Emergency Dispatching | 65 |

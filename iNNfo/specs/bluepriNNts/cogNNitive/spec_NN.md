@@ -1,11 +1,11 @@
 ---
-spec_version: "V_0-2-1"
+spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-2-1"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md"
-template_version: "V_0-4-1"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+template_version: "V_0-5-0"
 title: "cogNNitive Template"
 relationship_types:
   hierarchy:
@@ -56,6 +56,12 @@ color:: teal
 weight:: 60
 
 # NN Field Definition
+
+## NN Field Definition: tags
+concept:: *
+type:: select
+multiple:: true
+description:: Open vocabulary ad-hoc tags and classification labels (e.g. verified).
 
 <!-- Sources: a raw input file ingested and normalized -->
 
@@ -167,14 +173,6 @@ concept:: Procedures
 type:: string
 description:: ISO-8601 timestamp of the procedure run.
 
-# NN Marker Definition
-
-## NN Marker Definition: verified
-applies_to:: [Element]
-symbol:: >
-icon:: shield-check
-color:: green
-
 # cogNNitive Template
 
 ## A provenance and lineage template that registers the sources ingested and the artifacts and models produced by the cogNNitive pipeline, with explicit derivation citations
@@ -193,7 +191,7 @@ The cogNNitive template treats ingestion and generation as a lineage graph rathe
 
 ## Specification
 
-The template instantiates the three root primitives of the Metaplantilla Nivel 1: **Concept Definition**, **Field Definition**, and **Marker Definition**. Its schema is resolved from the body elements of this document, not from frontmatter blocks.
+The template instantiates the root primitives of the Metaplantilla Nivel 1: **Concept Definition** and **Field Definition**. Its schema is resolved from the body elements of this document, not from frontmatter blocks.
 
 ### Concepts
 
@@ -290,4 +288,4 @@ artifact_format:: document
 derived_from:: [kNNowledge/Acme_Business_Plan_V_0-1-0_business_NN.md@## Strategy]
 ```
 
-The application resolves `parent_spec` to this template and uses its Concept, Field, and Marker Definitions to validate and render the provenance model.
+The application resolves `parent_spec` to this template and uses its Concept, Field, and Matrix Definitions to validate and render the provenance model.

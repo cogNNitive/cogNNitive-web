@@ -62,16 +62,27 @@ function appendEmpty(ctx, message) {
   ctx.container.appendChild(p)
 }
 
-function editButton(doc, ctx, id, label) {
-  var button = doc.createElement('button')
-  button.className = 'innfo-edit-anchor'
-  button.type = 'button'
-  button.title = 'Propose an edit'
-  button.textContent = label || 'Edit'
-  button.addEventListener('click', function () {
-    ctx.modal.edit({ elementId: id })
-  })
-  return button
+function unitModel(ctx) {
+  var meta = (ctx && ctx.payload && ctx.payload.meta) || {}
+  return meta.modelId || meta.model || ''
+}
+
+function elementUnit(doc, ctx, record, label) {
+  if (ctx && ctx.ui && typeof ctx.ui.Ku === 'function') {
+    return ctx.ui.Ku(
+      'element',
+      {
+        model: unitModel(ctx),
+        id: record.id || record.slug || label,
+        label: String(label || record.name || record.id || ''),
+        concept: record.concept,
+      },
+      { doc: doc },
+    )
+  }
+  var fallback = doc.createElement('span')
+  fallback.textContent = String(label || record.name || record.id || '')
+  return fallback
 }
 
 function renderMilestone(doc, ctx, milestone, tasks) {
@@ -79,16 +90,13 @@ function renderMilestone(doc, ctx, milestone, tasks) {
   column.className = 'innfo-roadmap-milestone'
   var head = doc.createElement('div')
   head.className = 'innfo-roadmap-head'
-  var title = doc.createElement('h3')
-  title.textContent = milestone.name || '(milestone)'
-  head.appendChild(title)
+  head.appendChild(elementUnit(doc, ctx, milestone, milestone.name || '(milestone)'))
   if (milestone.fields && milestone.fields.target_date) {
     var date = doc.createElement('span')
     date.className = 'innfo-roadmap-date'
     date.textContent = milestone.fields.target_date
     head.appendChild(date)
   }
-  if (milestone.id) head.appendChild(editButton(doc, ctx, milestone.id, 'Edit milestone'))
   column.appendChild(head)
   var list = doc.createElement('div')
   list.className = 'innfo-roadmap-tasks'
@@ -101,15 +109,12 @@ function renderMilestone(doc, ctx, milestone, tasks) {
   tasks.forEach(function (t) {
     var row = doc.createElement('div')
     row.className = 'innfo-roadmap-task'
-    var name = doc.createElement('strong')
-    name.textContent = t.name || '(task)'
-    row.appendChild(name)
+    row.appendChild(elementUnit(doc, ctx, t, t.name || '(task)'))
     var meta = doc.createElement('span')
     meta.className = 'innfo-roadmap-meta'
     var f = t.fields || {}
     meta.textContent = [f.status, f.priority, f.duration].filter(Boolean).join(' · ')
     row.appendChild(meta)
-    if (t.id) row.appendChild(editButton(doc, ctx, t.id, 'Edit'))
     list.appendChild(row)
   })
   column.appendChild(list)

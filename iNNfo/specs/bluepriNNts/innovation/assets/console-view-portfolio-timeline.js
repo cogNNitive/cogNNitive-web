@@ -7,7 +7,7 @@
    registration date). If no initiative carries a date at all, it degrades to a
    lane per phase instead of an empty frame.
 
-   Labels reuse ctx.ui.ElementPill (so the row carries the same concept pill as
+   Labels reuse ctx.ui.Ku (so the row carries the same concept pill as
    the rest of the console). Editing is the console's generic mechanism — the
    runtime injects per-card EditToggle controls when Review mode is on — so this
    view wires no edit button. */
@@ -183,19 +183,22 @@ function renderLanes(ctx, rows) {
 
 /* ---- shared bits ---- */
 
-/* A label that reuses the console's ElementPill (concept icon + element name).
-   ElementPill reads data.label (NOT data.name) — passing name renders icon-only. */
+/* A label that reuses the console's Ku (concept icon + element name).
+   Ku reads data.label (NOT data.name) — passing name renders icon-only. */
 function labelFor(doc, ctx, element) {
   var host = doc.createElement('div')
   host.className = 'iv-tl-label'
   host.title = element.name || ''
   var ui = ctx.ui
-  if (ui && typeof ui.ElementPill === 'function') {
+  if (ui && typeof ui.Ku === 'function') {
     try {
       var meta = conceptMeta(ctx, element.concept)
+      var payloadMeta = (ctx.payload && ctx.payload.meta) || {}
       host.appendChild(
-        ui.ElementPill(
+        ui.Ku(
+          'element',
           {
+            model: element.modelId || payloadMeta.modelId || payloadMeta.model || '',
             id: element.id,
             label: element.name || element.id,
             concept: element.concept,
@@ -250,7 +253,7 @@ var CSS = [
   '.iv-tl-axis{display:flex;justify-content:space-between;color:var(--innfo-muted);font-size:.72rem;border-bottom:1px solid var(--innfo-border);padding:0 0 .35rem;margin-left:14.6rem}',
   '.iv-tl-row{display:flex;align-items:center;gap:.6rem;min-width:34rem;padding:.28rem 0}',
   '.iv-tl-label{flex:0 0 14rem;display:flex;align-items:center;min-width:0;overflow:hidden}',
-  '.iv-tl-label .innfo-element-pill{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+  '.iv-tl-label .innfo-ku{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
   '.iv-tl-track{position:relative;flex:1 1 auto;height:1.2rem;background:var(--innfo-surface-2);border-radius:6px;border:1px solid var(--innfo-border)}',
   '.iv-tl-bar{position:absolute;top:0;bottom:0;background:var(--innfo-concept-1);border-radius:6px;opacity:.85}',
   '.iv-tl-nodate{position:absolute;right:.5rem;top:0;bottom:0;display:flex;align-items:center;color:var(--innfo-muted);font-size:.7rem}',

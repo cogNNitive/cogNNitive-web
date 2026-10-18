@@ -309,6 +309,7 @@ manifest:
 strategy:: upsert
 key:: video_id
 concept:: VideoMetric
+model:: youtube
 ```
 
 - `cite-only` (default): no convergence; new snapshots are just citable.
@@ -318,6 +319,7 @@ concept:: VideoMetric
   non-empty across the snapshot. Missing/empty/duplicate key aborts with a
   non-zero exit and no proposal.
 - `concept`: optional target Concept, needed to emit an apply plan.
+- `model`: optional target model slug (the changeset `target`), needed to emit an apply plan.
 
 Produce a read-only proposal (never writes `sources/` or the model):
 
@@ -332,13 +334,18 @@ node scripts/index.js --converge <family> [--json] [--src <project-dir>]
 - **Idempotent**: an already-applied proposal (or identical snapshots) yields an
   empty proposal.
 
-Add `--plan` to emit the exact `innfo-mcp_apply_change` operation plan (requires
-`concept::`): one `add_element` per new key, one `update_field` per changed value
-**only for `replace-values`** (`upsert` returns changed values under `review`),
-and a single final `bump_version`. Removed keys are never an operation.
+Add `--plan` to emit ONE `innfo-mcp_propose_changeset` payload (requires
+`concept::` and `model::`): `operations` holds one `add_element` per new key and one
+`update_field` per changed value **only for `replace-values`** (`upsert` returns
+changed values under `review`), each citing the target snapshot through
+`sources`, plus at most one trailing `bump_version` whose `to` names the level
+(inside one changeset the `bump_version` replaces the default patch bump, so the
+model is bumped once, whereas each bare `apply_change` call is its own changeset).
+Removed keys are never an operation.
 
-Apply the proposal through the reviewed mutation path (run the plan's `ops` via
-`innfo-mcp_apply_change` + `validate_knowledge`), then mark it applied so re-running
+Apply the proposal through the reviewed mutation path (pass the plan's `operations` to a
+single `innfo-mcp_propose_changeset`, then `apply_change` on the user's OK and
+`validate_knowledge`), then mark it applied so re-running
 is a no-op:
 
 ```bash

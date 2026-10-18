@@ -33,16 +33,7 @@ registerView({
       var meta = { months: p.months }
       if (p.startYear) meta.startYear = p.startYear
       if (p.startMonth) meta.startMonth = p.startMonth
-      InnfoConsole.renderTimelineGrid(
-        section,
-        { rows: p.rows },
-        meta,
-        {
-          onEditRow: function (elementId) {
-            ctx.modal.edit({ elementId: elementId })
-          },
-        },
-      )
+      InnfoConsole.renderTimelineGrid(section, { rows: p.rows }, meta)
     })
   },
 })
