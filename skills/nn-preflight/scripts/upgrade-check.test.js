@@ -62,6 +62,8 @@ function buildWorkspace() {
   fs.writeFileSync(path.join(ws, 'models', 'index.md'), '# nope');
   fs.writeFileSync(path.join(ws, 'node_modules', 'pkg', 'X_V_0-1-0_business_NN.md'), '---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "https://x/business_V_0-1-0_NN.md"\n---\n');
   fs.writeFileSync(path.join(ws, 'sources', 'import', 'Y_V_0-1-0_business_NN.md'), '---\nlevel: 3\nparent_spec:\n  name: "x"\n  url: "https://x/business_V_0-1-0_NN.md"\n---\n');
+  fs.mkdirSync(path.join(ws, 'changes'), { recursive: true });
+  fs.writeFileSync(path.join(ws, 'changes', '20261019_change_NN.md'), '---\nlevel: 3\nparent_spec:\n  name: "changes"\n  url: "https://x/changes_spec_NN.md"\n---\n');
   return ws;
 }
 
@@ -140,6 +142,27 @@ async function runTests() {
       assert.strictEqual(byRel['models/Ahead_V_0-3-0_business_NN.md'].status, 'ahead');
       assert.strictEqual(byRel['models/Custom_V_0-1-0_my_spec_NN.md'].status, 'unlisted');
       console.log('✔ scanWorkspaceUpgrades classifies current/upgrade/ahead/unlisted');
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true });
+    }
+  }
+
+  // Test 4b: unversioned canonical blueprint URL resolves to catalog adopted version
+  {
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'upgrade-unversioned-'));
+    try {
+      fs.mkdirSync(path.join(ws, 'models'), { recursive: true });
+      fs.writeFileSync(
+        path.join(ws, 'models', 'Live_business_NN.md'),
+        '---\nlevel: 3\nparent_spec:\n  name: "business"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"\nknowledge_version: "V_0-1-0"\n---\n# NN Live\n',
+      );
+      const result = scanWorkspaceUpgrades(ws, CATALOG);
+      assert.strictEqual(result.summary.modelsScanned, 1);
+      assert.strictEqual(result.summary.current, 1);
+      assert.strictEqual(result.items[0].status, 'current');
+      assert.strictEqual(result.items[0].pinned, 'V_0-2-0');
+      assert.strictEqual(result.items[0].adopted, 'V_0-2-0');
+      console.log('OK: unversioned canonical blueprint URLs resolve to adopted version');
     } finally {
       fs.rmSync(ws, { recursive: true, force: true });
     }

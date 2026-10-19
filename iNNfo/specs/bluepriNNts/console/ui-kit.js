@@ -1723,6 +1723,7 @@
 
     function setOpen(next) {
       open = next
+      if (open) mountBody()
       card.setAttribute('data-open', open ? 'true' : 'false')
       var tg = head.querySelector('.innfo-card-toggle')
       if (tg) tg.setAttribute('aria-expanded', open ? 'true' : 'false')
@@ -1842,84 +1843,105 @@
       }
     }
 
-    var body = makeEl(doc, 'section', 'innfo-card-body')
-    var hasHistory = Array.isArray(data.history) && data.history.length > 0
-    if (hasHistory) {
-      var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
+    var lazy = opts && opts.lazy === true
+    var bodyMounted = false
+    function mountBody() {
+      if (bodyMounted) return
+      bodyMounted = true
+
+      var body = makeEl(doc, 'section', 'innfo-card-body')
+      var hasHistory = Array.isArray(data.history) && data.history.length > 0
       if (hasHistory) {
-        var firstHist = data.history[0] || {}
-        var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
-        if (firstHist.id || firstHist.author) {
-          histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
+        var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
+        if (hasHistory) {
+          var firstHist = data.history[0] || {}
+          var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
+          if (firstHist.id || firstHist.author) {
+            histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
+          }
+          var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
+          var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
+          linIco.innerHTML = icon('git-commit', 12)
+          linPill.appendChild(linIco)
+          linPill.appendChild(doc.createTextNode(histText))
+          metaStrip.appendChild(linPill)
         }
-        var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
-        var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
-        linIco.innerHTML = icon('git-commit', 12)
-        linPill.appendChild(linIco)
-        linPill.appendChild(doc.createTextNode(histText))
-        metaStrip.appendChild(linPill)
+        body.appendChild(metaStrip)
       }
-      body.appendChild(metaStrip)
-    }
-    if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
-    if (bodyFields.length) {
-      var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
-      var inherited = data.inherited && typeof data.inherited === 'object' ? data.inherited : {}
-      bodyFields.forEach(function (fr) {
-        var inheritedInfo = fr && fr.inherited ? fr.inherited : inherited[fr && fr.name]
-        fieldRow.appendChild(
-          FieldRow(
-            {
-              name: fr.name,
-              value: fr.value,
-              type: fr.type,
-              ref: fr.ref,
-              citations: fr.citations,
-              model: unitModel,
-              element: data.id,
-              inherited: inheritedInfo,
-            },
-            {
-              onRef: opts && opts.onRef,
-              onCite: opts && opts.onCite,
-              onKnowledge: opts && opts.onKnowledge,
-              isKnowledgeBound: opts && opts.isKnowledgeBound,
-            },
-          ),
+      if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
+      if (bodyFields.length) {
+        var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
+        var inherited = data.inherited && typeof data.inherited === 'object' ? data.inherited : {}
+        bodyFields.forEach(function (fr) {
+          var inheritedInfo = fr && fr.inherited ? fr.inherited : inherited[fr && fr.name]
+          fieldRow.appendChild(
+            FieldRow(
+              {
+                name: fr.name,
+                value: fr.value,
+                type: fr.type,
+                ref: fr.ref,
+                citations: fr.citations,
+                model: unitModel,
+                element: data.id,
+                inherited: inheritedInfo,
+              },
+              {
+                onRef: opts && opts.onRef,
+                onCite: opts && opts.onCite,
+                onKnowledge: opts && opts.onKnowledge,
+                isKnowledgeBound: opts && opts.isKnowledgeBound,
+              },
+            ),
+          )
+        })
+        body.appendChild(fieldRow)
+      }
+      if (Array.isArray(opts && opts.body)) {
+        ;(opts.body || []).forEach(function (n) {
+          if (n) body.appendChild(n)
+        })
+      }
+      // No tag row without tags (the review controller adds its own for "+ tag").
+      var tags = Array.isArray(data.tags) ? data.tags : []
+      if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
+      if (relations && relations.length) {
+        var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
+        outWrap.appendChild(
+          makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
         )
-      })
-      body.appendChild(fieldRow)
+        outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
+        body.appendChild(outWrap)
+      }
+      var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
+      if (incoming && incoming.length) {
+        var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
+        incWrap.appendChild(
+          makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
+        )
+        incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
+        body.appendChild(incWrap)
+      }
+      card.appendChild(body)
+      if (data.path) {
+        var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
+        if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
+        card.appendChild(cardFooter)
+      }
+      var win = doc && (doc.defaultView || (doc.ownerDocument && doc.ownerDocument.defaultView))
+      var CustomEv = (win && win.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
+      if (CustomEv && typeof doc.dispatchEvent === 'function') {
+        try {
+          doc.dispatchEvent(new CustomEv('innfo:rendered', { detail: { root: card } }))
+        } catch (_) {}
+      }
     }
-    if (Array.isArray(opts && opts.body)) {
-      ;(opts.body || []).forEach(function (n) {
-        if (n) body.appendChild(n)
-      })
-    }
-    // No tag row without tags (the review controller adds its own for "+ tag").
-    var tags = Array.isArray(data.tags) ? data.tags : []
-    if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
-    if (relations && relations.length) {
-      var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
-      outWrap.appendChild(
-        makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
-      )
-      outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
-      body.appendChild(outWrap)
-    }
-    var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
-    if (incoming && incoming.length) {
-      var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
-      incWrap.appendChild(
-        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
-      )
-      incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
-      body.appendChild(incWrap)
-    }
-    card.appendChild(body)
-    if (data.path) {
-      var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
-      if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
-      card.appendChild(cardFooter)
+
+    card.setOpen = setOpen
+    card.__mountBody = mountBody
+
+    if (open || !lazy) {
+      mountBody()
     }
     return card
   }

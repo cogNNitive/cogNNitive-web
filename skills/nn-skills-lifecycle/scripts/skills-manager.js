@@ -604,7 +604,7 @@ var require_mcp_config_adapter = __commonJS({
     function writeJsonClean(filePath, data, indent = 2) {
       saveJsonAtomic(filePath, data, indent);
     }
-    function registerMcpForOpenCode({ configFile, serverName = "innfo-mcp", bundlePath }) {
+    function registerMcpForOpenCode({ configFile, serverName = "nn-mcp", bundlePath }) {
       const dir = path2.dirname(configFile);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -628,18 +628,23 @@ var require_mcp_config_adapter = __commonJS({
       }
       const existing = config.mcp[serverName];
       const targetCommand = ["node", bundlePath];
-      if (existing && existing.type === "local" && existing.enabled === true && Array.isArray(existing.command) && existing.command.length === 2 && existing.command[0] === "node" && existing.command[1] === bundlePath) {
+      const targetCwd = path2.dirname(bundlePath);
+      if (serverName === "nn-mcp" && config.mcp["innfo-mcp"]) {
+        delete config.mcp["innfo-mcp"];
+      }
+      if (existing && existing.type === "local" && existing.enabled === true && Array.isArray(existing.command) && existing.command.length === 2 && existing.command[0] === "node" && existing.command[1] === bundlePath && existing.cwd === targetCwd) {
         return { agent: "opencode", file: configFile, updated: false };
       }
       config.mcp[serverName] = {
         type: "local",
         command: targetCommand,
+        cwd: targetCwd,
         enabled: true
       };
       writeJsonClean(configFile, config);
       return { agent: "opencode", file: configFile, updated: true };
     }
-    function registerMcpServersFormat({ agent, configFile, serverName = "innfo-mcp", bundlePath }) {
+    function registerMcpServersFormat({ agent, configFile, serverName = "nn-mcp", bundlePath }) {
       const dir = path2.dirname(configFile);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -658,13 +663,18 @@ var require_mcp_config_adapter = __commonJS({
       if (!config.mcpServers || typeof config.mcpServers !== "object" || Array.isArray(config.mcpServers)) {
         config.mcpServers = {};
       }
+      if (serverName === "nn-mcp" && config.mcpServers["innfo-mcp"]) {
+        delete config.mcpServers["innfo-mcp"];
+      }
+      const targetCwd = path2.dirname(bundlePath);
       const existing = config.mcpServers[serverName];
-      if (existing && existing.command === "node" && Array.isArray(existing.args) && existing.args.length === 1 && existing.args[0] === bundlePath) {
+      if (existing && existing.command === "node" && Array.isArray(existing.args) && existing.args.length === 1 && existing.args[0] === bundlePath && existing.cwd === targetCwd) {
         return { agent, file: configFile, updated: false };
       }
       config.mcpServers[serverName] = {
         command: "node",
-        args: [bundlePath]
+        args: [bundlePath],
+        cwd: targetCwd
       };
       writeJsonClean(configFile, config);
       return { agent, file: configFile, updated: true };
@@ -674,7 +684,7 @@ var require_mcp_config_adapter = __commonJS({
       return { agent: "claude", file: res.file, updated: res.updated };
     }
     function registerMcpForAntigravity(options) {
-      const serverName = options.serverName || "innfo-mcp";
+      const serverName = options.serverName || "nn-mcp";
       const bundlePath = options.bundlePath;
       const homedir = options.homedir || os.homedir();
       if (options.configFile) {
@@ -703,7 +713,7 @@ var require_mcp_config_adapter = __commonJS({
       }
       return results;
     }
-    function registerMcpAuto({ bundlePath, serverName = "innfo-mcp", homedir = os.homedir(), targetAgent = "auto" }) {
+    function registerMcpAuto({ bundlePath, serverName = "nn-mcp", homedir = os.homedir(), targetAgent = "auto" }) {
       const results = [];
       const normalizedAgent = (targetAgent || "auto").toLowerCase();
       const opencodeDir = path2.join(homedir, ".config", "opencode");
@@ -939,10 +949,26 @@ ${RETIRED_REPO_NOTICE}`);
         }
         const dest = path2.join(skillsDir, skill.name);
         fs.mkdirSync(skillsDir, { recursive: true });
+        const existingNodeModules = path2.join(dest, "node_modules");
+        const tempNodeModules = path2.join(tmpRoot, "saved_node_modules");
+        let hasExistingNodeModules = false;
+        if (fs.existsSync(existingNodeModules)) {
+          try {
+            fs.renameSync(existingNodeModules, tempNodeModules);
+            hasExistingNodeModules = true;
+          } catch (_) {
+          }
+        }
         if (fs.existsSync(dest)) {
           replaceDirAtomic(src, dest);
         } else {
           copyDirAtomic(src, dest);
+        }
+        if (hasExistingNodeModules && !fs.existsSync(path2.join(dest, "node_modules"))) {
+          try {
+            fs.renameSync(tempNodeModules, path2.join(dest, "node_modules"));
+          } catch (_) {
+          }
         }
         const pkgPath = path2.join(dest, "package.json");
         if (fs.existsSync(pkgPath)) {
@@ -1152,13 +1178,15 @@ ${RETIRED_REPO_NOTICE}`);
     }
     async function cmdStatus(args) {
       const manifestRaw = await fetchManifestString();
-      const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
+      const { skills, blueprints, consoleAssets, mcp } = parseManifest(manifestRaw);
       warnOnRetiredPins([...skills, ...blueprints]);
       const state = loadState(args.stateFile);
+      const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
       const rows = [];
       const outdatedSkills = [];
       const outdatedBlueprints = [];
       const outdatedConsoleAssets = [];
+      const outdatedMcp = [];
       for (const skill of skills) {
         const dirPresent = fs.existsSync(path2.join(args.skillsDir, skill.name));
         const entry = state.skills[skill.name];
@@ -1200,6 +1228,28 @@ ${RETIRED_REPO_NOTICE}`);
         });
         if (status === "outdated") outdatedBlueprints.push(template);
       }
+      for (const server of mcp || []) {
+        const bundleName = `${server.name}.bundle.js`;
+        const bundlePath = path2.join(mcpDir, bundleName);
+        const pathPresent = fs.existsSync(bundlePath);
+        const entry = state.mcp ? state.mcp[server.name] : null;
+        let status;
+        if (pathPresent) {
+          if (!entry) status = "untracked";
+          else if (entry.commit === server.commit) status = "up-to-date";
+          else status = "outdated";
+        } else {
+          status = entry ? "bundle-missing" : "missing";
+        }
+        rows.push({
+          type: "mcp",
+          name: server.name,
+          pinned: server.commit ? server.commit.slice(0, 7) : "-",
+          installed: entry ? entry.commit.slice(0, 7) : "-",
+          status
+        });
+        if (status === "outdated") outdatedMcp.push(server);
+      }
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
       for (const asset of consoleAssets || []) {
         const fileName = path2.basename(asset.file || asset.url);
@@ -1223,7 +1273,7 @@ ${RETIRED_REPO_NOTICE}`);
         if (status === "outdated") outdatedConsoleAssets.push(asset);
       }
       printStatusTable(rows);
-      if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0) {
+      if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0 || outdatedMcp.length > 0) {
         console.log("\nDiff previews for outdated items:");
         for (const skill of outdatedSkills) {
           const installed = state.skills[skill.name].commit;
@@ -1237,9 +1287,10 @@ ${RETIRED_REPO_NOTICE}`);
     }
     async function cmdInstall(args) {
       const manifestRaw = await fetchManifestString();
-      const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
+      const { skills, blueprints, consoleAssets, mcp } = parseManifest(manifestRaw);
       const state = loadState(args.stateFile);
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
+      const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
       const toInstallSkills = skills.filter((skill) => !fs.existsSync(path2.join(args.skillsDir, skill.name)));
       const toInstallBlueprints = blueprints.filter((template) => {
         const fileName = template.name.endsWith(".md") ? template.name : `${template.name}.md`;
@@ -1249,14 +1300,18 @@ ${RETIRED_REPO_NOTICE}`);
         const fileName = path2.basename(asset.file || asset.url);
         return !fs.existsSync(path2.join(consoleDir, fileName));
       });
-      if (toInstallSkills.length === 0 && toInstallBlueprints.length === 0 && toInstallConsole.length === 0) {
+      const toInstallMcp = (mcp || []).filter((server) => {
+        return !fs.existsSync(path2.join(mcpDir, `${server.name}.bundle.js`));
+      });
+      if (toInstallSkills.length === 0 && toInstallBlueprints.length === 0 && toInstallConsole.length === 0 && toInstallMcp.length === 0) {
         console.log("All skills, templates, and console assets present.");
         return;
       }
       const names = [
         ...toInstallSkills.map((s) => `skill:${s.name}`),
         ...toInstallBlueprints.map((t) => `template:${t.name}`),
-        ...toInstallConsole.map((a) => `console:${path2.basename(a.file || a.url)}`)
+        ...toInstallConsole.map((a) => `console:${path2.basename(a.file || a.url)}`),
+        ...toInstallMcp.map((m) => `mcp:${m.name}`)
       ];
       const menu = `The following items are missing:
 ` + (toInstallSkills.length > 0 ? `Skills:
@@ -1265,11 +1320,13 @@ ${RETIRED_REPO_NOTICE}`);
   - ${toInstallBlueprints.map((t) => `${t.name} (${t.version})`).join("\n  - ")}
 ` : "") + (toInstallConsole.length > 0 ? `Console assets:
   - ${toInstallConsole.map((a) => `${path2.basename(a.file || a.url)} (${a.version})`).join("\n  - ")}
+` : "") + (toInstallMcp.length > 0 ? `MCP servers:
+  - ${toInstallMcp.map((m) => `${m.name} (${m.version})`).join("\n  - ")}
 ` : "") + `
 [a] Install all missing (Recommended)
 [b] Skip
 `;
-      const proceed = await consentOrAbort("install missing skills, templates, and console assets", names, menu, args.yes);
+      const proceed = await consentOrAbort("install missing skills, templates, console assets, and MCP servers", names, menu, args.yes);
       if (!proceed) return;
       let failures = 0;
       const embeddedSkillNames = [];
@@ -1301,6 +1358,20 @@ ${RETIRED_REPO_NOTICE}`);
           console.error(`  FAIL console ${path2.basename(asset.file || asset.url)}: ${err.message}`);
         }
       }
+      for (const server of toInstallMcp) {
+        try {
+          await installMcpAtCommit(server, mcpDir, state);
+          registerMcpAuto({
+            bundlePath: path2.join(mcpDir, `${server.name}.bundle.js`),
+            serverName: server.name,
+            targetAgent: args.agent
+          });
+          console.log(`  installed MCP ${server.name} (${server.version}) @ ${server.commit.slice(0, 7)}`);
+        } catch (err) {
+          failures++;
+          console.error(`  FAIL MCP ${server.name}: ${err.message}`);
+        }
+      }
       projectSkillsToAgents({
         canonicalSkillsDir: args.skillsDir,
         targetAgent: args.agent,
@@ -1315,7 +1386,7 @@ ${failures} item(s) failed to install.`);
         process.exit(1);
       }
       console.log(`
-Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), and ${toInstallConsole.length} console asset(s).`);
+Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), ${toInstallConsole.length} console asset(s), and ${toInstallMcp.length} MCP server(s).`);
     }
     async function cmdInstallExternal(args) {
       const { name, repo, commit } = args;
@@ -1355,9 +1426,10 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
     }
     async function cmdUpdate(args) {
       const manifestRaw = await fetchManifestString();
-      const { skills, blueprints, consoleAssets } = parseManifest(manifestRaw);
+      const { skills, blueprints, consoleAssets, mcp } = parseManifest(manifestRaw);
       const state = loadState(args.stateFile);
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
+      const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
       const isOutdatedSkill = (skill) => {
         const dirPresent = fs.existsSync(path2.join(args.skillsDir, skill.name));
         const entry = state.skills[skill.name];
@@ -1368,6 +1440,13 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
         const pathPresent = fs.existsSync(path2.join(args.blueprintsDir, fileName)) || fs.existsSync(path2.join(args.blueprintsDir, template.name));
         const entry = state.blueprints[template.name];
         return pathPresent && (!entry || entry.commit !== template.commit);
+      };
+      const isOutdatedMcp = (server) => {
+        const bundleDest = path2.join(mcpDir, `${server.name}.bundle.js`);
+        const pathPresent = fs.existsSync(bundleDest);
+        const entry = state.mcp ? state.mcp[server.name] : null;
+        if (!pathPresent) return true;
+        return !entry || entry.commit !== server.commit;
       };
       const consoleSetInstalled = (consoleAssets || []).some((asset) => fs.existsSync(path2.join(consoleDir, path2.basename(asset.file || asset.url))));
       const isOutdatedConsole = (asset) => {
@@ -1380,12 +1459,14 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
       let selectedSkills = skills.filter(isOutdatedSkill);
       let selectedBlueprints = blueprints.filter(isOutdatedBlueprint);
       let selectedConsole = (consoleAssets || []).filter(isOutdatedConsole);
+      let selectedMcp = (mcp || []).filter(isOutdatedMcp);
       if (args.positional.length > 0) {
         selectedSkills = skills.filter((s) => args.positional.includes(s.name) && isOutdatedSkill(s));
         selectedBlueprints = blueprints.filter((t) => args.positional.includes(t.name) && isOutdatedBlueprint(t));
         selectedConsole = (consoleAssets || []).filter((a) => args.positional.includes(path2.basename(a.file || a.url)) && isOutdatedConsole(a));
+        selectedMcp = (mcp || []).filter((m) => (args.positional.includes(m.name) || args.positional.includes("mcp")) && isOutdatedMcp(m));
       }
-      if (selectedSkills.length === 0 && selectedBlueprints.length === 0 && selectedConsole.length === 0) {
+      if (selectedSkills.length === 0 && selectedBlueprints.length === 0 && selectedConsole.length === 0 && selectedMcp.length === 0) {
         console.log("All skills, templates, and console assets up to date.");
         projectSkillsToAgents({
           canonicalSkillsDir: args.skillsDir,
@@ -1400,12 +1481,13 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
       const names = [
         ...selectedSkills.map((s) => `skill:${s.name}`),
         ...selectedBlueprints.map((t) => `template:${t.name}`),
-        ...selectedConsole.map((a) => `console:${path2.basename(a.file || a.url)}`)
+        ...selectedConsole.map((a) => `console:${path2.basename(a.file || a.url)}`),
+        ...selectedMcp.map((m) => `mcp:${m.name}`)
       ];
       const proceed = await consentOrAbort(
-        "update skills, templates, and console assets",
+        "update skills, templates, console assets, and MCP servers",
         names,
-        `Updating ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), and ${selectedConsole.length} console asset(s).
+        `Updating ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), and ${selectedMcp.length} MCP server(s).
 
 [a] Update all listed (Recommended)
 [b] Skip
@@ -1443,6 +1525,21 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
           console.error(`  FAIL console ${path2.basename(asset.file || asset.url)}: ${err.message}`);
         }
       }
+      for (const server of selectedMcp) {
+        try {
+          await installMcpAtCommit(server, mcpDir, state);
+          const bundleDest = path2.join(mcpDir, `${server.name}.bundle.js`);
+          registerMcpAuto({
+            bundlePath: bundleDest,
+            serverName: server.name,
+            targetAgent: args.agent
+          });
+          console.log(`  updated MCP ${server.name} -> ${server.version} (${server.commit.slice(0, 7)})`);
+        } catch (err) {
+          failures++;
+          console.error(`  FAIL MCP ${server.name}: ${err.message}`);
+        }
+      }
       projectSkillsToAgents({
         canonicalSkillsDir: args.skillsDir,
         targetAgent: args.agent,
@@ -1459,7 +1556,7 @@ ${failures} item(s) failed to update.`);
         process.exit(1);
       }
       console.log(`
-Updated ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), and ${selectedConsole.length} console asset(s).`);
+Updated ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), and ${selectedMcp.length} MCP server(s).`);
     }
     async function cmdSync(args) {
       const localSkillsDir = args.localSkillsDir || path2.resolve(__dirname, "../../skills");
@@ -1903,13 +2000,13 @@ function parseArgs(argv) {
       }
       args.scope = value;
       i++;
-    } else if (arg === "--skills-dir" || arg === "--templates-dir" || arg === "--mcp-dir" || arg === "--console-dir" || arg === "--state" || arg === "--name" || arg === "--repo" || arg === "--path" || arg === "--commit" || arg === "--sha256") {
+    } else if (arg === "--skills-dir" || arg === "--blueprints-dir" || arg === "--templates-dir" || arg === "--mcp-dir" || arg === "--console-dir" || arg === "--state" || arg === "--name" || arg === "--repo" || arg === "--path" || arg === "--commit" || arg === "--sha256") {
       const value = argv[i + 1];
       if (value === void 0 || value.startsWith("--")) {
         throw new Error(`Option ${arg} requires a value`);
       }
       if (arg === "--skills-dir") args.skillsDir = value;
-      else if (arg === "--templates-dir") args.blueprintsDir = value;
+      else if (arg === "--blueprints-dir" || arg === "--templates-dir") args.blueprintsDir = value;
       else if (arg === "--mcp-dir") args.mcpDir = value;
       else if (arg === "--console-dir") args.consoleDir = value;
       else if (arg === "--state") args.state = value;
@@ -1930,30 +2027,30 @@ function parseArgs(argv) {
 function usage() {
   console.log(`Usage:
   node scripts/skills-manager.js bootstrap [--scope <global|workspace>] [--agent <auto|opencode|claude|antigravity>] [--yes]
-  node scripts/skills-manager.js status    [--skills-dir <dir>] [--templates-dir <dir>] [--state <file>]
-  node scripts/skills-manager.js install   [--skills-dir <dir>] [--templates-dir <dir>] [--state <file>] [--yes]
+  node scripts/skills-manager.js status    [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>]
+  node scripts/skills-manager.js install   [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>] [--yes]
   node scripts/skills-manager.js install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>] [--skills-dir <dir>] [--state <file>] [--yes]
-  node scripts/skills-manager.js update    [item ...] [--skills-dir <dir>] [--templates-dir <dir>] [--state <file>] [--yes]
-  node scripts/skills-manager.js sync      [--skills-dir <dir>] [--templates-dir <dir>] [--direction <local-to-global|global-to-local>] [--yes]
+  node scripts/skills-manager.js update    [item ...] [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>] [--yes]
+  node scripts/skills-manager.js sync      [--skills-dir <dir>] [--blueprints-dir <dir>] [--direction <local-to-global|global-to-local>] [--yes]
 
 Commands:
-  bootstrap Full zero-touch ecosystem setup: skills, templates, MCP bundles, and agent registration.
+  bootstrap Full zero-touch ecosystem setup: skills, blueprints, MCP bundles, and agent registration.
   status    Compare installed commits (state file) against manifest pins.
-  install   Install missing skills and templates at their pinned commit.
+  install   Install missing skills and blueprints at their pinned commit.
   install-external  Install a single referenced external skill (third-party) from its upstream repo at a pinned commit, verifying its sha256 tree digest when given.
-  update    Update outdated skills and templates at their pinned commit.
-  sync      Synchronize skill and template files between local repository and global agent directory.
+  update    Update outdated skills and blueprints at their pinned commit.
+  sync      Synchronize skill and blueprint files between local repository and global agent directory.
 
 Flags:
-  --scope <scope>        Installation scope: global (default, ~/.agents/) or workspace (./.agents/)
-  --agent <agent>        Target agent for MCP/Skills: auto (default), all, opencode, claude, antigravity
-  --skills-dir <dir>     Skills directory (default: ~/.agents/skills)
-  --templates-dir <dir>  Templates directory (default: ~/.agents/templates)
-  --mcp-dir <dir>        MCP bundle directory (default: ~/.agents/mcp)
-  --console-dir <dir>    Console bundle directory (default: ~/.agents/console)
-  --state <file>         State file (default: ~/.agents/bootstrap-state.json)
-  --direction <dir>      Sync direction: local-to-global (default) or global-to-local
-  --yes, -y              Skip the interactive consent prompt.
+  --scope <scope>         Installation scope: global (default, ~/.agents/) or workspace (./.agents/)
+  --agent <agent>         Target agent for MCP/Skills: auto (default), all, opencode, claude, antigravity
+  --skills-dir <dir>      Skills directory (default: ~/.agents/skills)
+  --blueprints-dir <dir>  Blueprints directory (default: ~/.agents/bluepriNNts; --templates-dir accepted as legacy alias)
+  --mcp-dir <dir>         MCP bundle directory (default: ~/.agents/mcp)
+  --console-dir <dir>     Console bundle directory (default: ~/.agents/console)
+  --state <file>          State file (default: ~/.agents/bootstrap-state.json)
+  --direction <dir>       Sync direction: local-to-global (default) or global-to-local
+  --yes, -y               Skip the interactive consent prompt.
 
 Consent is mandatory. Without a TTY and without --yes, the script prints
 "needs decision: ..." and exits 2 without applying anything.`);

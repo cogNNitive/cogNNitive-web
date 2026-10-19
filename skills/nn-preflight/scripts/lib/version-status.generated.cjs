@@ -31,7 +31,8 @@ __export(versionStatus_exports, {
   compareVersions: () => compareVersions,
   gapKind: () => gapKind,
   parsePinnedUrl: () => parsePinnedUrl,
-  parseSemVer: () => parseSemVer
+  parseSemVer: () => parseSemVer,
+  parseUnversionedBlueprintName: () => parseUnversionedBlueprintName
 });
 module.exports = __toCommonJS(versionStatus_exports);
 var VERSION_RE = /V_(\d+)-(\d+)-(\d+)/i;
@@ -63,12 +64,21 @@ function parsePinnedUrl(url) {
   if (pkg) return { name: pkg[1], version: `V_${pkg[2]}-${pkg[3]}-${pkg[4]}` };
   return null;
 }
+function parseUnversionedBlueprintName(url) {
+  const str = String(url);
+  const pkg = str.match(/bluepriNNts\/([^/]+)\/(?:spec_NN|[a-zA-Z0-9_-]+_spec_NN)\.md$/i);
+  if (pkg) return pkg[1];
+  const flat = str.match(/bluepriNNts\/([^/]+?)_spec_NN\.md$/i);
+  if (flat) return flat[1];
+  return null;
+}
 function classifyAgainstCatalog(parentUrl, catalog) {
   const pinned = parentUrl ? parsePinnedUrl(parentUrl) : null;
   if (catalog === null) {
+    const unversionedName = parentUrl ? parseUnversionedBlueprintName(parentUrl) : null;
     return {
       status: "unknown",
-      template: pinned?.name ?? null,
+      template: pinned?.name ?? unversionedName ?? null,
       pinned: pinned?.version ?? null,
       adopted: null,
       gap: "none",
@@ -86,6 +96,47 @@ function classifyAgainstCatalog(parentUrl, catalog) {
     };
   }
   if (!pinned) {
+    const unversionedName = parseUnversionedBlueprintName(parentUrl);
+    if (unversionedName) {
+      const matchKey = Object.keys(catalog.blueprints || {}).find(
+        (k) => k.toLowerCase() === unversionedName.toLowerCase()
+      );
+      const entry2 = matchKey ? catalog.blueprints[matchKey] : catalog.frozen?.[unversionedName];
+      if (entry2) {
+        return {
+          status: "current",
+          template: entry2.name,
+          pinned: entry2.adopted,
+          adopted: entry2.adopted,
+          gap: "same",
+          detail: "Canonical unversioned blueprint URL resolved to catalog adopted version"
+        };
+      }
+      return {
+        status: "unlisted",
+        template: unversionedName,
+        pinned: null,
+        adopted: null,
+        gap: "none",
+        detail: "Template not in catalog"
+      };
+    }
+    const allCatalogEntries = [
+      ...Object.values(catalog.blueprints || {}),
+      ...Object.values(catalog.frozen || {})
+    ];
+    for (const entry2 of allCatalogEntries) {
+      if (entry2.versions?.some((v) => v.url === parentUrl)) {
+        return {
+          status: "current",
+          template: entry2.name,
+          pinned: entry2.adopted,
+          adopted: entry2.adopted,
+          gap: "same",
+          detail: "Canonical unversioned blueprint URL resolved to catalog adopted version"
+        };
+      }
+    }
     return {
       status: "unlisted",
       template: null,
@@ -95,7 +146,10 @@ function classifyAgainstCatalog(parentUrl, catalog) {
       detail: "Not a versioned canonical template URL"
     };
   }
-  const entry = catalog.blueprints?.[pinned.name];
+  let entry = catalog.blueprints?.[pinned.name];
+  if (!entry && catalog.frozen?.[pinned.name]) {
+    entry = catalog.frozen[pinned.name];
+  }
   if (!entry) {
     return {
       status: "unlisted",

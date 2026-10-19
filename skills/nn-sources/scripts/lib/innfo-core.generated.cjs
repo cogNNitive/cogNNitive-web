@@ -7785,9 +7785,11 @@ function splitSourceFieldValue(value) {
   }
   const s = typeof value === "string" ? value.trim() : String(value ?? "").trim();
   if (!s) return [];
-  const bracketed = s.match(/^\[(.*)\]$/s);
-  if (bracketed) {
-    return parseBracketedSourceList(bracketed[1]);
+  if (s.startsWith("[")) {
+    const inner = s.endsWith("]") ? s.slice(1, -1) : s.slice(1);
+    if (s.endsWith("]") || s.includes(",")) {
+      return parseBracketedSourceList(inner);
+    }
   }
   const cleaned = cleanSourceItem(s);
   return cleaned ? [cleaned] : [];
@@ -9949,23 +9951,65 @@ function readLineageRecord(root) {
 }
 
 // iNNfo/packages/innfo-core/src/lineage/drift.ts
-function describeFirstDiff(expected, actual) {
+function formatSnippet(s) {
+  const snippet = s.slice(0, 100) + (s.length > 100 ? "\u2026" : "");
+  return `(${s.length} chars) ${JSON.stringify(snippet)}`;
+}
+function formatLineDiff(e, a) {
+  if (e === void 0) {
+    const found = a === void 0 ? "<end of section>" : a.length <= 120 ? JSON.stringify(a) : formatSnippet(a);
+    return `expected <end of section>, found ${found}`;
+  }
+  if (a === void 0) {
+    const want = e.length <= 120 ? JSON.stringify(e) : formatSnippet(e);
+    return `expected ${want}, found <end of section>`;
+  }
+  if (Math.max(e.length, a.length) <= 120) {
+    return `expected ${JSON.stringify(e)}, found ${JSON.stringify(a)}`;
+  }
+  let firstDivergence = 0;
+  const minLen = Math.min(e.length, a.length);
+  while (firstDivergence < minLen && e[firstDivergence] === a[firstDivergence]) {
+    firstDivergence++;
+  }
+  const windowStart = Math.max(0, firstDivergence - 30);
+  const expEnd = Math.min(e.length, firstDivergence + 90);
+  const actEnd = Math.min(a.length, firstDivergence + 90);
+  const expWindow = (windowStart > 0 ? "\u2026" : "") + e.slice(windowStart, expEnd) + (expEnd < e.length ? "\u2026" : "");
+  const actWindow = (windowStart > 0 ? "\u2026" : "") + a.slice(windowStart, actEnd) + (actEnd < a.length ? "\u2026" : "");
+  return `diverges at offset ${firstDivergence}: expected (${e.length} chars) ${JSON.stringify(expWindow)}, found (${a.length} chars) ${JSON.stringify(actWindow)}`;
+}
+function describeSectionDiff(expected, actual) {
   const exp = expected.split("\n");
   const act = actual.split("\n");
   const max = Math.max(exp.length, act.length);
-  let element;
+  let currentElement = "";
+  const elementMismatches = /* @__PURE__ */ new Map();
   for (let i = 0; i < max; i++) {
     const e = exp[i];
     const a = act[i];
-    if (e !== void 0 && e.startsWith("## ")) element = e;
+    if (e !== void 0 && e.startsWith("## ")) currentElement = e;
+    else if (!currentElement && a !== void 0 && a.startsWith("## ")) currentElement = a;
     if (e === a) continue;
-    if (element === void 0 && a !== void 0 && a.startsWith("## ")) element = a;
-    const where = element ? `${element}: ` : "";
-    const want = e === void 0 ? "<end of section>" : JSON.stringify(e);
-    const found = a === void 0 ? "<end of section>" : JSON.stringify(a);
-    return `${where}line ${i + 1}: expected ${want}, found ${found}`;
+    const key = currentElement || "<preamble>";
+    if (!elementMismatches.has(key)) {
+      elementMismatches.set(key, []);
+    }
+    elementMismatches.get(key).push(`line ${i + 1}: ${formatLineDiff(e, a)}`);
   }
-  return "sections differ";
+  if (elementMismatches.size === 0) return "sections differ";
+  const parts = [];
+  for (const [elem, mismatches] of elementMismatches) {
+    const where = elem !== "<preamble>" ? `${elem}: ` : "";
+    if (mismatches.length === 1) {
+      parts.push(`${where}${mismatches[0]}`);
+    } else {
+      const list = mismatches.slice(0, 10).join("; ");
+      const more = mismatches.length > 10 ? `; ... and ${mismatches.length - 10} more` : "";
+      parts.push(`${where}(${mismatches.length} mismatches: ${list}${more})`);
+    }
+  }
+  return parts.slice(0, 10).join(" | ") + (parts.length > 10 ? ` | ... and ${parts.length - 10} more elements` : "");
 }
 function checkLineageDrift(record, rendered) {
   const { blocks } = splitTopLevelSections2(splitFrontmatter(record).body);
@@ -9978,7 +10022,9 @@ function checkLineageDrift(record, rendered) {
       continue;
     }
     const actual = blockText(block.heading, block.lines);
-    if (actual !== expected) diffs.push({ section: managed.name, firstDiff: describeFirstDiff(expected, actual) });
+    if (actual !== expected) {
+      diffs.push({ section: managed.name, firstDiff: describeSectionDiff(expected, actual) });
+    }
   }
   return diffs.length === 0 ? { ok: true } : { ok: false, diffs };
 }

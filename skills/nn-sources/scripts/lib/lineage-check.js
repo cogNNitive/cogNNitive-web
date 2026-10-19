@@ -11,6 +11,8 @@ const {
   checkLineageDrift,
   createFsSourceResolver,
   validateCitations,
+  parseCitation,
+  sidecarPathOf,
 } = require('./innfo-core.generated.cjs');
 
 /** The `## NN Sources:` element names and `superseded_by::` values of a record's `# NN Sources` section. */
@@ -64,11 +66,44 @@ function checkLineage(projectDir) {
   const resolver = createFsSourceResolver(projectDir);
   const diags = validateCitations(sites, resolver);
   for (const diag of diags) {
-    errors.push(`${diag.site.referringPath}: citation "${diag.site.value}" failed validation: ${diag.message}`);
+    const isMissing =
+      diag.code === 'KU_DANGLING_FILE' ||
+      /not present in this workspace|does not exist/i.test(diag.message);
+    const target = diag.target || diag.site.value;
+    if (isMissing) {
+      errors.push(
+        `MISSING_SOURCE_FOR_DERIVED_FROM: "${target}" cited by "${diag.site.referringPath}" is missing in sources/ (${diag.message})`,
+      );
+    } else {
+      errors.push(`${diag.site.referringPath}: citation "${diag.site.value}" failed validation: ${diag.message}`);
+    }
   }
 
   for (const d of projection.diagnostics) {
     errors.push(`${d.path}: ${d.message}`);
+  }
+
+  // Coverage invariant: warn when files in sources/ are never cited by any element
+  const citedPaths = new Set();
+  for (const site of sites) {
+    const parsed = parseCitation(site.value);
+    if (parsed && parsed.filePath) {
+      const norm = parsed.filePath.replace(/\\/g, '/');
+      citedPaths.add(norm);
+      try {
+        const sidecar = sidecarPathOf(norm).replace(/\\/g, '/');
+        citedPaths.add(sidecar);
+      } catch {}
+    }
+  }
+
+  for (const source of projection.sources) {
+    const rawNorm = source.raw_filename.replace(/\\/g, '/');
+    const sidecarNorm = source.normalized_content ? source.normalized_content.replace(/\\/g, '/') : null;
+    const isCited = citedPaths.has(rawNorm) || (sidecarNorm && citedPaths.has(sidecarNorm));
+    if (!isCited) {
+      warnings.push(`UNCITED_SOURCE_IN_WORKSPACE: "${source.raw_filename}" is not cited by any model or artifact`);
+    }
   }
 
   // Family validation against the record on disk.

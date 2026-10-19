@@ -1,13 +1,25 @@
 {
-  "generatedAt": "2026-10-18T21:12:11.479Z",
-  "head": "493d8c5073e9d725e08556350a287c3925e6abaf",
+  "generatedAt": "2026-10-19T18:37:58.759Z",
+  "head": "d041d5862f75062661aea0288429551421ca61dd",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.25.0",
       "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 7,
       "filesTouched": [
+        "skills/nn-console/SKILL.md",
+        "skills/nn-domain-git/SKILL.md",
+        "skills/nn-domain-git/test/skill-contract.test.js",
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-preflight/scripts/lib/version-status.generated.cjs",
+        "skills/nn-preflight/scripts/upgrade-check.js",
+        "skills/nn-preflight/scripts/upgrade-check.test.js",
+        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
+        "skills/nn-sources/SKILL.md",
+        "skills/nn-sources/scripts/lib/innfo-core.generated.cjs",
+        "skills/nn-sources/scripts/lib/lineage-check.js",
+        "skills/nn-sources/test/unit/test-lineage-check.js",
         "skills/nn-upgrade/scripts/lib/innfo-core.generated.cjs"
       ]
     },
@@ -15,12 +27,16 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.37.0",
       "pinnedTagDate": "2026-10-18T17:29:17+02:00",
-      "commitsSincePin": 8,
+      "commitsSincePin": 16,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-icons.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
@@ -30,12 +46,16 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.37.0",
       "pinnedTagDate": "2026-10-18T17:29:17+02:00",
-      "commitsSincePin": 8,
+      "commitsSincePin": 16,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-icons.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js"
@@ -45,21 +65,36 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.26.0",
       "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 4,
+      "filesTouched": [
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
+        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/server.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/cognitivize.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/cognitivize.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/sync-lineage.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/sync-lineage.ts",
+        "iNNfo/packages/innfo-mcp/test/apply-change-rejections.test.ts",
+        "iNNfo/packages/innfo-mcp/tsup.config.ts"
+      ]
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.21.0",
-      "pinnedTagDate": "2026-10-18T17:29:17+02:00",
+      "pinnedTag": "innfo-console-v0.22.0",
+      "pinnedTagDate": "2026-10-18T23:07:46+02:00",
       "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-icons.js",
         "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "scripts/export-console.mjs"
       ]

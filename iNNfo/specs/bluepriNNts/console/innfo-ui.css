@@ -4486,6 +4486,14 @@ details.collapse summary {
     animation-duration: 15s;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .innfo-dock-blinking,
+  .innfo-highlight,
+  .innfo-card-toggle {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 @keyframes skeleton {
   from {
     background-position: 150%;
@@ -7377,6 +7385,16 @@ button.cite-icon,
   border-width: 0 !important;
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* Keyboard focus must stay visible on the interactive controls reset above. */
+.innfo-card-count:focus-visible,
+.innfo-card-toggle:focus-visible,
+.innfo-edit-toggle:focus-visible,
+#innfo-rail details.collapse > summary.collapse-title:focus-visible,
+#innfo-rail .menu li > a[data-concept]:focus-visible {
+  outline: 2px solid var(--innfo-focus, #52525b) !important;
+  outline-offset: 2px !important;
 }
 
 /* 8. Tabla de campos */

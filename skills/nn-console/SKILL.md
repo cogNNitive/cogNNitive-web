@@ -70,6 +70,7 @@ Views are discovered automatically during console compilation:
 - **NO ES Modules**: Views are classic browser scripts wrapped in an IIFE. **Never** use `import` or `export` keywords (compilation will fail AST verification).
 - **Slug Identity**: The view `id` is derived strictly from the filename slug (`/^[a-z0-9]+(-[a-z0-9]+)*$/`).
 - **Reserved IDs**: Do not use `explorer`, `matrices`, or `review`.
+- **Regeneration via MCP**: When authoring or editing custom views in an agent session, call the `regenerate_console` MCP tool (or CLI `scripts/export-console.mjs <domainRoot> --domain`) to compile views and refresh `domaiNN_console.html`.
 
 ---
 

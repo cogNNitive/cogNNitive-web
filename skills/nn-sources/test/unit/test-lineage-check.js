@@ -71,11 +71,27 @@ async function run() {
     eq(rValid.errors.length, 0, 'a synced workspace has no error');
     eq(rValid.warnings.length, 0, 'a synced workspace has no warning');
 
-    // (b) Dangling citation produces an error via validateCitations
+    // (b) Dangling citation produces an error via validateCitations (P2-1 MISSING_SOURCE_FOR_DERIVED_FROM)
     put(proj, 'kNNowledge/Plan_business_NN.md', PLAN('sources/import/nonexistent.md@## Item'));
-    ok(checkLineage(proj).errors.some((e) => /nonexistent\.md/.test(e)), '(b) dangling citation reported as error');
+    const bCheck = checkLineage(proj);
+    ok(bCheck.errors.some((e) => /nonexistent\.md/.test(e)), '(b) dangling citation reported as error');
+    ok(bCheck.errors.some((e) => e.startsWith('MISSING_SOURCE_FOR_DERIVED_FROM:')), '(b) P2-1: error carries MISSING_SOURCE_FOR_DERIVED_FROM prefix');
     put(proj, 'kNNowledge/Plan_business_NN.md', PLAN('sources/import/report.pdf_sidecar_NN.md@## Overview, sources/import/data.csv@1'));
     eq(checkLineage(proj).errors.length, 0, '(b) restoring the citation clears the error');
+
+    // (b2) P2-2: Uncited source produces UNCITED_SOURCE_IN_WORKSPACE warning
+    put(proj, 'sources/import/orphan_extra.csv', 'id,val\n1,test\n');
+    await cognitivizeAll(proj, ['sources/import/orphan_extra.csv']);
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'CheckProj' });
+    const uncitedCheck = checkLineage(proj);
+    ok(
+      uncitedCheck.warnings.some((w) => w.startsWith('UNCITED_SOURCE_IN_WORKSPACE:') && /orphan_extra\.csv/.test(w)),
+      '(b2) P2-2: uncited source in workspace produces UNCITED_SOURCE_IN_WORKSPACE warning',
+    );
+    // Cleanup uncited extra file and its sidecar
+    fs.rmSync(path.join(proj, 'sources/import/orphan_extra.csv'));
+    fs.rmSync(path.join(proj, 'sources/import/orphan_extra.csv_sidecar_NN.md'));
+    provenance.buildProvenanceKnowledge(proj, { projectName: 'CheckProj' });
 
     // (c) A family member on disk with no element in # NN Sources
     put(proj, 'sources/import/data_20261003T080000Z.csv', 'id,value\n1,100\n2,250\n');

@@ -913,7 +913,6 @@
       }
       host.textContent = ''
       if (parts.length) {
-        host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
         var infoBtn = doc.createElement('button')
         infoBtn.className = 'innfo-navbar-info-btn'
         infoBtn.type = 'button'
@@ -952,7 +951,6 @@
         }
       }
       if (meta.sourceUrl) {
-        if (parts.length) host.appendChild(doc.createTextNode(' \u00b7 '))
         var href = safeSourceHref(meta.sourceUrl)
         if (href) {
           var link = doc.createElement('a')
@@ -1679,39 +1677,6 @@
     function mk(tag) {
       return doc.createElement ? doc.createElement(tag) : el(tag)
     }
-    function conceptButton(name, index) {
-      var count = counts[name] || 0
-      var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
-      var btn = mk('button')
-      if (!btn) return null
-      var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
-      btn.className = 'innfo-rail-item' + (isActive ? ' active' : '')
-      btn.setAttribute('data-concept', String(name))
-      var railModel = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
-      var pill = UI.Ku(
-        'section',
-        {
-          model: railModel,
-          concept: name,
-          label: name,
-          index: index,
-        },
-        { doc: doc },
-      )
-      if (pill) btn.appendChild(pill)
-      if (pill && count != null) btn.appendChild(el('span', 'innfo-rail-count', String(count)))
-      if (draftCount > 0) {
-        var badge = el('span', 'innfo-rail-badge', String(draftCount))
-        if (badge) {
-          badge.setAttribute('title', draftCount + ' unsent change(s)')
-          btn.appendChild(badge)
-        }
-      }
-      btn.addEventListener('click', function () {
-        if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
-      })
-      return btn
-    }
     function conceptNamesForModel(m) {
       var mid = String(m.id || m.filePath)
       var seen = {}
@@ -1813,9 +1778,8 @@
           var a = mk('a')
           if (a) {
             a.setAttribute('data-concept', String(name))
-            if (activeConcepts.indexOf(String(name).toLowerCase()) !== -1) {
-              a.className = 'active'
-            }
+            var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
+            a.className = 'innfo-rail-item' + (isActive ? ' active' : '')
             var cMeta = conceptMetaOf(globalConcepts, name)
             var color = cMeta.hexColor
             a.setAttribute('data-concept-slot', String(cMeta.slot))
@@ -1851,11 +1815,51 @@
     var cHdr = el('div', 'innfo-rail-header')
     cHdr.innerHTML = '<span>Concepts (' + (concepts ? concepts.length : 0) + ')</span>'
     rail.appendChild(cHdr)
-    ;(Array.isArray(concepts) ? concepts : []).forEach(function (concept, index) {
+
+    var list = mk('ul')
+    if (list) list.className = 'menu menu-xs bg-base-100 p-2 w-full'
+    var globalConcepts = Array.isArray(concepts) ? concepts : []
+    var railModel = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
+
+    globalConcepts.forEach(function (concept, index) {
       var name = typeof concept === 'string' ? concept : concept.name
-      var btn = conceptButton(name, index)
-      if (btn) rail.appendChild(btn)
+      var cli = mk('li')
+      var a = mk('a')
+      if (a) {
+        var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
+        a.className = 'innfo-rail-item' + (isActive ? ' active' : '')
+        a.setAttribute('data-concept', String(name))
+        var cMeta = conceptMetaOf(globalConcepts, name)
+        var color = cMeta.hexColor
+        a.setAttribute('data-concept-slot', String(cMeta.slot))
+        if (color) a.style.setProperty('--rail-concept-color', color)
+        a.appendChild(
+          UI.Ku(
+            'section',
+            { model: railModel, concept: name, label: name, index: cMeta.index, color: cMeta.color },
+            { doc: doc },
+          ),
+        )
+        a.appendChild(
+          el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
+        )
+        var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
+        if (draftCount > 0) {
+          var badge = el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(draftCount))
+          if (badge) {
+            badge.setAttribute('title', draftCount + ' unsent change(s)')
+            a.appendChild(badge)
+          }
+        }
+        a.addEventListener('click', function (e) {
+          if (e && e.preventDefault) e.preventDefault()
+          if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
+        })
+      }
+      cli.appendChild(a)
+      list.appendChild(cli)
     })
+    rail.appendChild(list)
   }
 
   // ---- Concept guidance panel ----------------------------------------------
@@ -2354,6 +2358,7 @@
           modelId: modelId || element.modelId || '',
           collapsible: true,
           open: focusId != null && String(element.id || '') === String(focusId),
+          lazy: Array.isArray(elements) && elements.length > 20,
           head:
             UI && typeof UI.CitationIcons === 'function'
               ? UI.CitationIcons('sources', sourcesEntries, {
@@ -2417,15 +2422,16 @@
         })
       }
       if (mediaItems.length) {
-        var fieldImgs = card.querySelectorAll('.innfo-field-image')
-        for (var fii = 0; fii < fieldImgs.length; fii++) {
-          ;(function (fImg) {
-            fImg.addEventListener('click', function (ev) {
-              if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        card.addEventListener('click', function (ev) {
+          var t = ev && ev.target
+          if (t && typeof t.closest === 'function') {
+            var fImg = t.closest('.innfo-field-image')
+            if (fImg) {
+              if (ev.stopPropagation) ev.stopPropagation()
               renderMediaDialog(doc, mediaItems, 0)
-            })
-          })(fieldImgs[fii])
-        }
+            }
+          }
+        })
       }
 
       content.appendChild(card)
@@ -3963,6 +3969,22 @@
     return typeof v === 'string' && v.trim() !== ''
   }
 
+  var TAB_ICONS = {
+    chart: 'bar-chart-2',
+    'chart-bar': 'bar-chart-2',
+    matrices: 'table',
+    explorer: 'boxes',
+    review: 'edit',
+    metamodel: 'boxes',
+    timeline: 'clock',
+    layout: 'layout-dashboard',
+    network: 'workflow',
+    columns: 'split',
+    list: 'list-ordered',
+    milestone: 'tag',
+    'git-commit': 'git-branch',
+  }
+
   // Returns '' when valid, otherwise a message naming the view id and field.
   function validateViewDef(def) {
     if (!def || typeof def !== 'object') return 'view "(missing id)": definition must be an object'
@@ -3973,6 +3995,10 @@
     if (!nonEmptyString(def.title)) return at + 'title must be a non-empty string'
     if (typeof def.icon !== 'string' || !ICON_NAME_RE.test(def.icon)) {
       return at + 'icon must be a slug of lowercase alphanumerics and hyphens'
+    }
+    var iconKey = TAB_ICONS[def.icon] || def.icon
+    if (typeof InnfoIcons !== 'undefined' && InnfoIcons && InnfoIcons.ICONS && !InnfoIcons.ICONS[iconKey]) {
+      return at + 'icon "' + def.icon + '" is unknown (known icons: ' + Object.keys(InnfoIcons.ICONS).sort().join(', ') + ')'
     }
     if (typeof def.order !== 'number' || !isFinite(def.order)) return at + 'order must be a finite number'
     if (VIEW_KINDS.indexOf(def.kind) < 0) return at + 'kind must be "editable" or "readonly"'
@@ -4160,8 +4186,6 @@
     if (query) parts.push('q=' + encodeURIComponent(query))
     return parts.length ? '#' + parts.join('&') : ''
   }
-
-  var TAB_ICONS = { chart: 'bar-chart-2', matrices: 'table', explorer: 'boxes', review: 'edit', metamodel: 'boxes' }
 
   // Builds the tabs once from built-ins plus registered views. Panels are
   // created here; a registered view's mount runs on first activation only.
@@ -4710,9 +4734,9 @@
       if (drafts.length === 0) {
         var empty = el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg flex items-center gap-3')
         if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Annotate an element in review mode.</span>'
+          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Edit an element to propose one.</span>'
         } else {
-          empty.textContent = 'No proposed changes yet. Annotate an element in review mode.'
+          empty.textContent = 'No proposed changes yet. Edit an element to propose one.'
         }
         listSection.appendChild(empty)
       } else {
@@ -4752,6 +4776,9 @@
     // 2. Find card by id (cards carry the `el-` prefixed domId, matching `#el-` hrefs)
     var card = doc.getElementById('el-' + String(elementId))
     if (card) {
+      if (typeof card.setOpen === 'function' && card.getAttribute('data-open') === 'false') {
+        card.setOpen(true)
+      }
       if (typeof card.scrollIntoView === 'function') {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }

@@ -872,7 +872,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   "event": "<circle cx=\"12\" cy=\"12\" r=\"9\"></circle><circle cx=\"12\" cy=\"12\" r=\"3.5\" fill=\"currentColor\"></circle>",
   "task": "<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\" /> <path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\" />",
   "refresh": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" /> <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /> <path d=\"M8 16H3v5\" />",
-  "skip": "<polygon points=\"5 4 15 12 5 20 5 4\" /> <line x1=\"19\" x2=\"19\" y1=\"5\" y2=\"19\" />"
+  "skip": "<polygon points=\"5 4 15 12 5 20 5 4\" /> <line x1=\"19\" x2=\"19\" y1=\"5\" y2=\"19\" />",
+  "clipboard-check": "<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\" /> <path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\" /> <path d=\"m9 14 2 2 4-4\" />",
+  "receipt": "<path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z\" /> <path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\" /> <path d=\"M12 17.5v-11\" />",
+  "edit": "<path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\" /> <path d=\"m15 5 4 4\" />"
 };
 
   function getIconPaths(name) {
@@ -2640,6 +2643,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
     function setOpen(next) {
       open = next
+      if (open) mountBody()
       card.setAttribute('data-open', open ? 'true' : 'false')
       var tg = head.querySelector('.innfo-card-toggle')
       if (tg) tg.setAttribute('aria-expanded', open ? 'true' : 'false')
@@ -2759,84 +2763,105 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       }
     }
 
-    var body = makeEl(doc, 'section', 'innfo-card-body')
-    var hasHistory = Array.isArray(data.history) && data.history.length > 0
-    if (hasHistory) {
-      var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
+    var lazy = opts && opts.lazy === true
+    var bodyMounted = false
+    function mountBody() {
+      if (bodyMounted) return
+      bodyMounted = true
+
+      var body = makeEl(doc, 'section', 'innfo-card-body')
+      var hasHistory = Array.isArray(data.history) && data.history.length > 0
       if (hasHistory) {
-        var firstHist = data.history[0] || {}
-        var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
-        if (firstHist.id || firstHist.author) {
-          histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
+        var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
+        if (hasHistory) {
+          var firstHist = data.history[0] || {}
+          var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
+          if (firstHist.id || firstHist.author) {
+            histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
+          }
+          var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
+          var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
+          linIco.innerHTML = icon('git-commit', 12)
+          linPill.appendChild(linIco)
+          linPill.appendChild(doc.createTextNode(histText))
+          metaStrip.appendChild(linPill)
         }
-        var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
-        var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
-        linIco.innerHTML = icon('git-commit', 12)
-        linPill.appendChild(linIco)
-        linPill.appendChild(doc.createTextNode(histText))
-        metaStrip.appendChild(linPill)
+        body.appendChild(metaStrip)
       }
-      body.appendChild(metaStrip)
-    }
-    if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
-    if (bodyFields.length) {
-      var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
-      var inherited = data.inherited && typeof data.inherited === 'object' ? data.inherited : {}
-      bodyFields.forEach(function (fr) {
-        var inheritedInfo = fr && fr.inherited ? fr.inherited : inherited[fr && fr.name]
-        fieldRow.appendChild(
-          FieldRow(
-            {
-              name: fr.name,
-              value: fr.value,
-              type: fr.type,
-              ref: fr.ref,
-              citations: fr.citations,
-              model: unitModel,
-              element: data.id,
-              inherited: inheritedInfo,
-            },
-            {
-              onRef: opts && opts.onRef,
-              onCite: opts && opts.onCite,
-              onKnowledge: opts && opts.onKnowledge,
-              isKnowledgeBound: opts && opts.isKnowledgeBound,
-            },
-          ),
+      if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
+      if (bodyFields.length) {
+        var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
+        var inherited = data.inherited && typeof data.inherited === 'object' ? data.inherited : {}
+        bodyFields.forEach(function (fr) {
+          var inheritedInfo = fr && fr.inherited ? fr.inherited : inherited[fr && fr.name]
+          fieldRow.appendChild(
+            FieldRow(
+              {
+                name: fr.name,
+                value: fr.value,
+                type: fr.type,
+                ref: fr.ref,
+                citations: fr.citations,
+                model: unitModel,
+                element: data.id,
+                inherited: inheritedInfo,
+              },
+              {
+                onRef: opts && opts.onRef,
+                onCite: opts && opts.onCite,
+                onKnowledge: opts && opts.onKnowledge,
+                isKnowledgeBound: opts && opts.isKnowledgeBound,
+              },
+            ),
+          )
+        })
+        body.appendChild(fieldRow)
+      }
+      if (Array.isArray(opts && opts.body)) {
+        ;(opts.body || []).forEach(function (n) {
+          if (n) body.appendChild(n)
+        })
+      }
+      // No tag row without tags (the review controller adds its own for "+ tag").
+      var tags = Array.isArray(data.tags) ? data.tags : []
+      if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
+      if (relations && relations.length) {
+        var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
+        outWrap.appendChild(
+          makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
         )
-      })
-      body.appendChild(fieldRow)
+        outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
+        body.appendChild(outWrap)
+      }
+      var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
+      if (incoming && incoming.length) {
+        var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
+        incWrap.appendChild(
+          makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
+        )
+        incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
+        body.appendChild(incWrap)
+      }
+      card.appendChild(body)
+      if (data.path) {
+        var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
+        if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
+        card.appendChild(cardFooter)
+      }
+      var win = doc && (doc.defaultView || (doc.ownerDocument && doc.ownerDocument.defaultView))
+      var CustomEv = (win && win.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
+      if (CustomEv && typeof doc.dispatchEvent === 'function') {
+        try {
+          doc.dispatchEvent(new CustomEv('innfo:rendered', { detail: { root: card } }))
+        } catch (_) {}
+      }
     }
-    if (Array.isArray(opts && opts.body)) {
-      ;(opts.body || []).forEach(function (n) {
-        if (n) body.appendChild(n)
-      })
-    }
-    // No tag row without tags (the review controller adds its own for "+ tag").
-    var tags = Array.isArray(data.tags) ? data.tags : []
-    if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
-    if (relations && relations.length) {
-      var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
-      outWrap.appendChild(
-        makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
-      )
-      outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
-      body.appendChild(outWrap)
-    }
-    var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
-    if (incoming && incoming.length) {
-      var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
-      incWrap.appendChild(
-        makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
-      )
-      incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
-      body.appendChild(incWrap)
-    }
-    card.appendChild(body)
-    if (data.path) {
-      var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
-      if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
-      card.appendChild(cardFooter)
+
+    card.setOpen = setOpen
+    card.__mountBody = mountBody
+
+    if (open || !lazy) {
+      mountBody()
     }
     return card
   }
@@ -7395,7 +7420,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       }
       host.textContent = ''
       if (parts.length) {
-        host.appendChild(doc.createTextNode(parts.join(' \u00b7 ')))
         var infoBtn = doc.createElement('button')
         infoBtn.className = 'innfo-navbar-info-btn'
         infoBtn.type = 'button'
@@ -7434,7 +7458,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         }
       }
       if (meta.sourceUrl) {
-        if (parts.length) host.appendChild(doc.createTextNode(' \u00b7 '))
         var href = safeSourceHref(meta.sourceUrl)
         if (href) {
           var link = doc.createElement('a')
@@ -8161,39 +8184,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     function mk(tag) {
       return doc.createElement ? doc.createElement(tag) : el(tag)
     }
-    function conceptButton(name, index) {
-      var count = counts[name] || 0
-      var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
-      var btn = mk('button')
-      if (!btn) return null
-      var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
-      btn.className = 'innfo-rail-item' + (isActive ? ' active' : '')
-      btn.setAttribute('data-concept', String(name))
-      var railModel = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
-      var pill = UI.Ku(
-        'section',
-        {
-          model: railModel,
-          concept: name,
-          label: name,
-          index: index,
-        },
-        { doc: doc },
-      )
-      if (pill) btn.appendChild(pill)
-      if (pill && count != null) btn.appendChild(el('span', 'innfo-rail-count', String(count)))
-      if (draftCount > 0) {
-        var badge = el('span', 'innfo-rail-badge', String(draftCount))
-        if (badge) {
-          badge.setAttribute('title', draftCount + ' unsent change(s)')
-          btn.appendChild(badge)
-        }
-      }
-      btn.addEventListener('click', function () {
-        if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
-      })
-      return btn
-    }
     function conceptNamesForModel(m) {
       var mid = String(m.id || m.filePath)
       var seen = {}
@@ -8295,9 +8285,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           var a = mk('a')
           if (a) {
             a.setAttribute('data-concept', String(name))
-            if (activeConcepts.indexOf(String(name).toLowerCase()) !== -1) {
-              a.className = 'active'
-            }
+            var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
+            a.className = 'innfo-rail-item' + (isActive ? ' active' : '')
             var cMeta = conceptMetaOf(globalConcepts, name)
             var color = cMeta.hexColor
             a.setAttribute('data-concept-slot', String(cMeta.slot))
@@ -8333,11 +8322,51 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var cHdr = el('div', 'innfo-rail-header')
     cHdr.innerHTML = '<span>Concepts (' + (concepts ? concepts.length : 0) + ')</span>'
     rail.appendChild(cHdr)
-    ;(Array.isArray(concepts) ? concepts : []).forEach(function (concept, index) {
+
+    var list = mk('ul')
+    if (list) list.className = 'menu menu-xs bg-base-100 p-2 w-full'
+    var globalConcepts = Array.isArray(concepts) ? concepts : []
+    var railModel = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
+
+    globalConcepts.forEach(function (concept, index) {
       var name = typeof concept === 'string' ? concept : concept.name
-      var btn = conceptButton(name, index)
-      if (btn) rail.appendChild(btn)
+      var cli = mk('li')
+      var a = mk('a')
+      if (a) {
+        var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
+        a.className = 'innfo-rail-item' + (isActive ? ' active' : '')
+        a.setAttribute('data-concept', String(name))
+        var cMeta = conceptMetaOf(globalConcepts, name)
+        var color = cMeta.hexColor
+        a.setAttribute('data-concept-slot', String(cMeta.slot))
+        if (color) a.style.setProperty('--rail-concept-color', color)
+        a.appendChild(
+          UI.Ku(
+            'section',
+            { model: railModel, concept: name, label: name, index: cMeta.index, color: cMeta.color },
+            { doc: doc },
+          ),
+        )
+        a.appendChild(
+          el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
+        )
+        var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
+        if (draftCount > 0) {
+          var badge = el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(draftCount))
+          if (badge) {
+            badge.setAttribute('title', draftCount + ' unsent change(s)')
+            a.appendChild(badge)
+          }
+        }
+        a.addEventListener('click', function (e) {
+          if (e && e.preventDefault) e.preventDefault()
+          if (typeof onSelect === 'function') onSelect(formatFacetToken('concept', name))
+        })
+      }
+      cli.appendChild(a)
+      list.appendChild(cli)
     })
+    rail.appendChild(list)
   }
 
   // ---- Concept guidance panel ----------------------------------------------
@@ -8836,6 +8865,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           modelId: modelId || element.modelId || '',
           collapsible: true,
           open: focusId != null && String(element.id || '') === String(focusId),
+          lazy: Array.isArray(elements) && elements.length > 20,
           head:
             UI && typeof UI.CitationIcons === 'function'
               ? UI.CitationIcons('sources', sourcesEntries, {
@@ -8899,15 +8929,16 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         })
       }
       if (mediaItems.length) {
-        var fieldImgs = card.querySelectorAll('.innfo-field-image')
-        for (var fii = 0; fii < fieldImgs.length; fii++) {
-          ;(function (fImg) {
-            fImg.addEventListener('click', function (ev) {
-              if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
+        card.addEventListener('click', function (ev) {
+          var t = ev && ev.target
+          if (t && typeof t.closest === 'function') {
+            var fImg = t.closest('.innfo-field-image')
+            if (fImg) {
+              if (ev.stopPropagation) ev.stopPropagation()
               renderMediaDialog(doc, mediaItems, 0)
-            })
-          })(fieldImgs[fii])
-        }
+            }
+          }
+        })
       }
 
       content.appendChild(card)
@@ -10445,6 +10476,22 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return typeof v === 'string' && v.trim() !== ''
   }
 
+  var TAB_ICONS = {
+    chart: 'bar-chart-2',
+    'chart-bar': 'bar-chart-2',
+    matrices: 'table',
+    explorer: 'boxes',
+    review: 'edit',
+    metamodel: 'boxes',
+    timeline: 'clock',
+    layout: 'layout-dashboard',
+    network: 'workflow',
+    columns: 'split',
+    list: 'list-ordered',
+    milestone: 'tag',
+    'git-commit': 'git-branch',
+  }
+
   // Returns '' when valid, otherwise a message naming the view id and field.
   function validateViewDef(def) {
     if (!def || typeof def !== 'object') return 'view "(missing id)": definition must be an object'
@@ -10455,6 +10502,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     if (!nonEmptyString(def.title)) return at + 'title must be a non-empty string'
     if (typeof def.icon !== 'string' || !ICON_NAME_RE.test(def.icon)) {
       return at + 'icon must be a slug of lowercase alphanumerics and hyphens'
+    }
+    var iconKey = TAB_ICONS[def.icon] || def.icon
+    if (typeof InnfoIcons !== 'undefined' && InnfoIcons && InnfoIcons.ICONS && !InnfoIcons.ICONS[iconKey]) {
+      return at + 'icon "' + def.icon + '" is unknown (known icons: ' + Object.keys(InnfoIcons.ICONS).sort().join(', ') + ')'
     }
     if (typeof def.order !== 'number' || !isFinite(def.order)) return at + 'order must be a finite number'
     if (VIEW_KINDS.indexOf(def.kind) < 0) return at + 'kind must be "editable" or "readonly"'
@@ -10642,8 +10693,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     if (query) parts.push('q=' + encodeURIComponent(query))
     return parts.length ? '#' + parts.join('&') : ''
   }
-
-  var TAB_ICONS = { chart: 'bar-chart-2', matrices: 'table', explorer: 'boxes', review: 'edit', metamodel: 'boxes' }
 
   // Builds the tabs once from built-ins plus registered views. Panels are
   // created here; a registered view's mount runs on first activation only.
@@ -11192,9 +11241,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       if (drafts.length === 0) {
         var empty = el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg flex items-center gap-3')
         if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Annotate an element in review mode.</span>'
+          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Edit an element to propose one.</span>'
         } else {
-          empty.textContent = 'No proposed changes yet. Annotate an element in review mode.'
+          empty.textContent = 'No proposed changes yet. Edit an element to propose one.'
         }
         listSection.appendChild(empty)
       } else {
@@ -11234,6 +11283,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     // 2. Find card by id (cards carry the `el-` prefixed domId, matching `#el-` hrefs)
     var card = doc.getElementById('el-' + String(elementId))
     if (card) {
+      if (typeof card.setOpen === 'function' && card.getAttribute('data-open') === 'false') {
+        card.setOpen(true)
+      }
       if (typeof card.scrollIntoView === 'function') {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }

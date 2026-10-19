@@ -114,7 +114,9 @@ function loadPayloadHelper(consoleDir) {
 async function ensureAssets() {
   const consoleDir = resolveConsoleDir()
   const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
-  const bundlePath = join(consoleDir, 'innfo-console.bundle.js')
+  const bundlePath = existsSync(join(consoleDir, 'nn-console.bundle.js'))
+    ? join(consoleDir, 'nn-console.bundle.js')
+    : join(consoleDir, 'innfo-console.bundle.js')
   if (!existsSync(shellPath)) {
     throw new ConsoleExportError(
       `Console assets not found: ${shellPath}\n` +
@@ -793,7 +795,9 @@ export async function writeConsole(opts = {}) {
   const packagesDir =
     process.env.INNFO_BLUEPRINTS_DIR ||
     (consoleDir === repoConsoleDir ? dirname(consoleDir) : join(homedir(), '.agents', 'bluepriNNts'))
-  const uiCssPath = join(consoleDir, 'innfo-ui.css')
+  const uiCssPath = existsSync(join(consoleDir, 'nn-ui.css'))
+    ? join(consoleDir, 'nn-ui.css')
+    : join(consoleDir, 'innfo-ui.css')
   if (!existsSync(uiCssPath)) {
     throw new ConsoleExportError(
       `${uiCssPath} not found; the console inlines its CSS.`,

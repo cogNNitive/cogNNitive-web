@@ -8171,9 +8171,11 @@ function splitSourceFieldValue(value) {
   }
   const s = typeof value === "string" ? value.trim() : String(value ?? "").trim();
   if (!s) return [];
-  const bracketed = s.match(/^\[(.*)\]$/s);
-  if (bracketed) {
-    return parseBracketedSourceList(bracketed[1]);
+  if (s.startsWith("[")) {
+    const inner = s.endsWith("]") ? s.slice(1, -1) : s.slice(1);
+    if (s.endsWith("]") || s.includes(",")) {
+      return parseBracketedSourceList(inner);
+    }
   }
   const cleaned = cleanSourceItem(s);
   return cleaned ? [cleaned] : [];

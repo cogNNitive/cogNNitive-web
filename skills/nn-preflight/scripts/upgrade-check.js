@@ -41,7 +41,7 @@ const { isNNName, isSidecarName } = /** @type {any} */ (require('./lib/naming-co
 
 const SCAN_SKIP_DIRS = new Set([
   '.git', '.backup', '.spec-cache', 'node_modules', 'dist', 'backups', 'archive',
-  'sources', 'conversations', 'artifacts', 'procedures', 'specs', 'templates',
+  'sources', 'conversations', 'artifacts', 'procedures', 'specs', 'templates', 'changes',
 ]);
 
 /** Recursive walk for `_NN.md` documents (sidecars excluded), skipping noise/staging dirs. */

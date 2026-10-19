@@ -239,7 +239,7 @@ When an existing source file is modified in `sources/import/`, its SHA-256 hash 
    ```bash
    node scripts/index.js --normalize-file "<source-path>" --src "<project-dir>"
    ```
-   - Cognitivizes just that file in place (the same operation as `--scan` and `--cognitivize`), audits downstream citations for `[IMPACT WARNING]`, and updates the workspace lineage record.
+   - Cognitivizes just that file in place (the same operation as `--scan` and `--cognitivize`), audits downstream citations for `[IMPACT WARNING]`, and refreshes the workspace lineage record (`<project>_cogNNitive_NN.md`) with the updated source entry.
    - There are no layout flags: sidecars are always co-located with their raw file.
 3. **On-Demand Audit Command**:
    ```bash
