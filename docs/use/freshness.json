@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-20T13:20:27.685Z",
-  "head": "c6ecb08d0aea07acd0a7f241db08beb0b5cda744",
+  "generatedAt": "2026-10-20T13:34:13.196Z",
+  "head": "2a40e20cbb1a905a8b87bc021fa00dd25943944d",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -22,28 +22,20 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.39.0",
-      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "blueprints-v0.40.0",
+      "pinnedTagDate": "2026-10-20T15:17:56+02:00",
+      "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/render-formats.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/render-formats.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/catalog.json"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.39.0",
-      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "blueprints-v0.40.0",
+      "pinnedTagDate": "2026-10-20T15:17:56+02:00",
+      "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/render-formats.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/render-formats.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/catalog.json"
       ]
     },
     "innfo-mcp": {
