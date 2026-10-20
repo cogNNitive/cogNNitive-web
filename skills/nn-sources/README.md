@@ -43,7 +43,7 @@ nn-sources/
     scanner.js              Format detection and the scan / cognitivize loop (txt, md, csv, json, html, docx, pdf, xlsx)
     extract.js              Quick text extraction (no ingestion) — prints a single file's plain text to stdout
     webImport.js            Downloads a URL straight into sources/import/ + HTML metadata extraction
-    provenance.js           Builds/refreshes the lineage record + semantic index.md
+    provenance.js           Builds/refreshes the lineage record (no root index.md)
     lib/conversations.js    Conversation session reservation, discard filtering, and promotion helpers
     config.js               Persistent config (last project path, default directories)
   examples/

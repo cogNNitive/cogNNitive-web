@@ -917,6 +917,50 @@ ${RETIRED_REPO_NOTICE}`);
       }
       return path2.join(extractDir, dirs[0]);
     }
+    var tarballCacheDir = null;
+    var tarballCache = /* @__PURE__ */ new Map();
+    function getTarballCacheDir() {
+      if (!tarballCacheDir) {
+        tarballCacheDir = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-tarballs-"));
+        const dir = tarballCacheDir;
+        process.once("exit", () => {
+          try {
+            fs.rmSync(dir, { recursive: true, force: true });
+          } catch (_) {
+          }
+        });
+      }
+      return tarballCacheDir;
+    }
+    function resetTarballCache() {
+      tarballCache.clear();
+      if (tarballCacheDir) {
+        try {
+          fs.rmSync(tarballCacheDir, { recursive: true, force: true });
+        } catch (_) {
+        }
+        tarballCacheDir = null;
+      }
+    }
+    async function fetchRepoCommitTarball(item) {
+      const key = `${item.repo}@${item.commit}`;
+      if (tarballCache.has(key)) return tarballCache.get(key);
+      const promise = (async () => {
+        const dir = getTarballCacheDir();
+        const safe = key.replace(/[^a-zA-Z0-9@._-]/g, "_");
+        const tarball = path2.join(dir, `${safe}.tar.gz`);
+        const url = `https://codeload.github.com/${item.repo}/tar.gz/${item.commit}`;
+        try {
+          await downloadFile(url, tarball);
+        } catch (err) {
+          throw withRetiredHint(item, err);
+        }
+        return tarball;
+      })();
+      tarballCache.set(key, promise);
+      promise.catch(() => tarballCache.delete(key));
+      return promise;
+    }
     async function fetchCompareSummary(item, installedCommit) {
       if (!installedCommit) return "(no installed commit recorded)";
       try {
@@ -935,13 +979,7 @@ ${RETIRED_REPO_NOTICE}`);
     async function installSkillAtCommit(skill, skillsDir, state) {
       const tmpRoot = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-skills-"));
       try {
-        const tarball = path2.join(tmpRoot, "skill.tar.gz");
-        const url = `https://codeload.github.com/${skill.repo}/tar.gz/${skill.commit}`;
-        try {
-          await downloadFile(url, tarball);
-        } catch (err) {
-          throw withRetiredHint(skill, err);
-        }
+        const tarball = await fetchRepoCommitTarball(skill);
         const extractDir = path2.join(tmpRoot, "x");
         extractTarball(tarball, extractDir);
         const repoRoot = findRepoRoot(extractDir);
@@ -1050,13 +1088,7 @@ ${RETIRED_REPO_NOTICE}`);
       const pkgExistedBefore = fs.existsSync(pkgDestPath);
       const tmpRoot = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-blueprints-"));
       try {
-        const tarball = path2.join(tmpRoot, "tmpl.tar.gz");
-        const url = `https://codeload.github.com/${template.repo}/tar.gz/${template.commit}`;
-        try {
-          await downloadFile(url, tarball);
-        } catch (err) {
-          throw withRetiredHint(template, err);
-        }
+        const tarball = await fetchRepoCommitTarball(template);
         const extractDir = path2.join(tmpRoot, "x");
         extractTarball(tarball, extractDir);
         const repoRoot = findRepoRoot(extractDir);
@@ -1433,6 +1465,83 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
       });
       saveState(args.stateFile, state);
       console.log(`installed referenced external skill ${name} @ ${String(commit).slice(0, 7)}`);
+    }
+    var DEFAULT_BLUEPRINT_REPO = "cogNNitive/cogNNitive-web";
+    var DEFAULT_CATALOG_PATH = path2.join(__dirname, "..", "..", "iNNfo", "specs", "bluepriNNts", "catalog.json");
+    function loadBlueprintCatalog(override) {
+      const candidate = override || process.env.COGNNITIVE_CATALOG || process.env.SM_CATALOG || DEFAULT_CATALOG_PATH;
+      try {
+        return JSON.parse(fs.readFileSync(candidate, "utf-8"));
+      } catch (_) {
+        return null;
+      }
+    }
+    function findCatalogEntry(catalog, name) {
+      if (!catalog) return null;
+      const wanted = String(name).toLowerCase();
+      for (const group of [catalog.blueprints || {}, catalog.frozen || {}]) {
+        for (const [key, entry] of Object.entries(group)) {
+          if (key.toLowerCase() === wanted) return entry;
+          if (entry && entry.name && String(entry.name).toLowerCase() === wanted) return entry;
+        }
+      }
+      return null;
+    }
+    async function cmdInstallBlueprint(args) {
+      const name = args.blueprint;
+      if (!name) throw new Error("install --blueprint requires a blueprint name");
+      const catalogPath = args.catalogPath;
+      const catalog = loadBlueprintCatalog(catalogPath);
+      const entry = findCatalogEntry(catalog, name);
+      if (!entry) {
+        throw new Error(
+          `blueprint '${name}' is not in the catalog (${catalogPath || DEFAULT_CATALOG_PATH}); check the name or refresh catalog.json`
+        );
+      }
+      const blueprintsDir = args.blueprintsDir || DEFAULT_BLUEPRINTS_DIR;
+      const skillsDir = args.skillsDir || DEFAULT_SKILLS_DIR;
+      const repo = args.repo || DEFAULT_BLUEPRINT_REPO;
+      const ref = entry.release_tag;
+      const version = entry.adopted;
+      const entryName = entry.name || name;
+      const embedded = Array.isArray(entry.embedded_skills) ? entry.embedded_skills : [];
+      const template = {
+        name: entryName,
+        repo,
+        path: `iNNfo/specs/bluepriNNts/${entryName}/spec_NN.md`,
+        version,
+        ref,
+        commit: ref
+      };
+      const menu = `Optional catalog blueprint (on demand):
+  - ${entryName} (${version}) from ${repo} @ ${ref}
+  tier: ${entry.tier || "free"} \xB7 access: ${entry.access || "public"}
+` + (embedded.length ? `  embedded skills: ${embedded.join(", ")}
+` : "") + `
+[a] Install
+[b] Skip
+`;
+      const proceed = await consentOrAbort(`install catalog blueprint ${entryName}`, [`blueprint:${entryName}`], menu, args.yes);
+      if (!proceed) return;
+      const state = loadState(args.stateFile);
+      let projected = [];
+      try {
+        projected = await installBlueprintAtCommit(template, blueprintsDir, state, skillsDir);
+      } catch (err) {
+        if (err.projectedSkills) projected = err.projectedSkills;
+        throw err;
+      }
+      projectSkillsToAgents({
+        canonicalSkillsDir: skillsDir,
+        targetAgent: args.agent,
+        scope: args.scope,
+        state,
+        skillNames: projected.length > 0 ? projected : void 0
+      });
+      saveState(args.stateFile, state);
+      console.log(
+        `installed catalog blueprint ${entryName} (${version}) @ ${ref}` + (projected.length ? ` and projected ${projected.length} skill(s): ${projected.join(", ")}` : "")
+      );
     }
     async function cmdUpdate(args) {
       const manifestRaw = await fetchManifestString();
@@ -1930,6 +2039,8 @@ Projected skills to agent directories:`);
       replaceDirAtomic,
       copyDirRecursive,
       fetchCompareSummary,
+      fetchRepoCommitTarball,
+      resetTarballCache,
       installSkillAtCommit,
       installBlueprintAtCommit,
       installEmbeddedSkills,
@@ -1943,6 +2054,11 @@ Projected skills to agent directories:`);
       cmdStatus,
       cmdInstall,
       cmdInstallExternal,
+      cmdInstallBlueprint,
+      loadBlueprintCatalog,
+      findCatalogEntry,
+      DEFAULT_BLUEPRINT_REPO,
+      DEFAULT_CATALOG_PATH,
       cmdUpdate,
       cmdSync,
       cmdBootstrap,
@@ -1975,48 +2091,37 @@ function parseArgs(argv) {
     repo: null,
     path: null,
     commit: null,
-    sha256: null
+    sha256: null,
+    // on-demand catalog install flag
+    blueprint: null
+  };
+  const valueFlags = {
+    "--direction": "direction",
+    "--agent": "agent",
+    "--scope": "scope",
+    "--skills-dir": "skillsDir",
+    "--blueprints-dir": "blueprintsDir",
+    "--templates-dir": "blueprintsDir",
+    "--mcp-dir": "mcpDir",
+    "--console-dir": "consoleDir",
+    "--state": "state",
+    "--name": "name",
+    "--repo": "repo",
+    "--path": "path",
+    "--commit": "commit",
+    "--sha256": "sha256",
+    "--blueprint": "blueprint"
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--yes" || arg === "-y") {
       args.yes = true;
-    } else if (arg === "--direction") {
+    } else if (valueFlags[arg]) {
       const value = argv[i + 1];
       if (value === void 0 || value.startsWith("--")) {
         throw new Error(`Option ${arg} requires a value`);
       }
-      args.direction = value;
-      i++;
-    } else if (arg === "--agent") {
-      const value = argv[i + 1];
-      if (value === void 0 || value.startsWith("--")) {
-        throw new Error(`Option ${arg} requires a value`);
-      }
-      args.agent = value;
-      i++;
-    } else if (arg === "--scope") {
-      const value = argv[i + 1];
-      if (value === void 0 || value.startsWith("--")) {
-        throw new Error(`Option ${arg} requires a value`);
-      }
-      args.scope = value;
-      i++;
-    } else if (arg === "--skills-dir" || arg === "--blueprints-dir" || arg === "--templates-dir" || arg === "--mcp-dir" || arg === "--console-dir" || arg === "--state" || arg === "--name" || arg === "--repo" || arg === "--path" || arg === "--commit" || arg === "--sha256") {
-      const value = argv[i + 1];
-      if (value === void 0 || value.startsWith("--")) {
-        throw new Error(`Option ${arg} requires a value`);
-      }
-      if (arg === "--skills-dir") args.skillsDir = value;
-      else if (arg === "--blueprints-dir" || arg === "--templates-dir") args.blueprintsDir = value;
-      else if (arg === "--mcp-dir") args.mcpDir = value;
-      else if (arg === "--console-dir") args.consoleDir = value;
-      else if (arg === "--state") args.state = value;
-      else if (arg === "--name") args.name = value;
-      else if (arg === "--repo") args.repo = value;
-      else if (arg === "--path") args.path = value;
-      else if (arg === "--commit") args.commit = value;
-      else args.sha256 = value;
+      args[valueFlags[arg]] = value;
       i++;
     } else if (arg.startsWith("--")) {
       throw new Error(`Unknown option: ${arg}`);
@@ -2030,7 +2135,7 @@ function usage() {
   console.log(`Usage:
   node scripts/skills-manager.js bootstrap [--scope <global|workspace>] [--agent <auto|opencode|claude|antigravity>] [--yes]
   node scripts/skills-manager.js status    [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>]
-  node scripts/skills-manager.js install   [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>] [--yes]
+  node scripts/skills-manager.js install   [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>] [--blueprint <name>] [--yes]
   node scripts/skills-manager.js install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>] [--skills-dir <dir>] [--state <file>] [--yes]
   node scripts/skills-manager.js update    [item ...] [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>] [--yes]
   node scripts/skills-manager.js sync      [--skills-dir <dir>] [--blueprints-dir <dir>] [--direction <local-to-global|global-to-local>] [--yes]
@@ -2038,7 +2143,7 @@ function usage() {
 Commands:
   bootstrap Full zero-touch ecosystem setup: skills, blueprints, MCP bundles, and agent registration.
   status    Compare installed commits (state file) against manifest pins.
-  install   Install missing skills and blueprints at their pinned commit.
+  install   Install missing skills and blueprints at their pinned commit. \`--blueprint <name>\` installs one optional catalog blueprint on demand.
   install-external  Install a single referenced external skill (third-party) from its upstream repo at a pinned commit, verifying its sha256 tree digest when given.
   update    Update outdated skills and blueprints at their pinned commit.
   sync      Synchronize skill and blueprint files between local repository and global agent directory.
@@ -2091,11 +2196,13 @@ async function main() {
     repo: args.repo,
     path: args.path,
     commit: args.commit,
-    sha256: args.sha256
+    sha256: args.sha256,
+    blueprint: args.blueprint
   };
   try {
     if (command === "bootstrap") await commands.cmdBootstrap(resolvedArgs);
     else if (command === "status") await commands.cmdStatus(resolvedArgs);
+    else if (command === "install" && resolvedArgs.blueprint) await commands.cmdInstallBlueprint(resolvedArgs);
     else if (command === "install") await commands.cmdInstall(resolvedArgs);
     else if (command === "install-external") await commands.cmdInstallExternal(resolvedArgs);
     else if (command === "update") await commands.cmdUpdate(resolvedArgs);

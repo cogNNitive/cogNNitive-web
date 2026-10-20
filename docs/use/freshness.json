@@ -1,50 +1,65 @@
 {
-  "generatedAt": "2026-10-20T10:25:48.010Z",
-  "head": "9577a78c03e5575bbd4e3e89c34693933bab50e6",
+  "generatedAt": "2026-10-20T13:20:27.685Z",
+  "head": "c6ecb08d0aea07acd0a7f241db08beb0b5cda744",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.27.0",
       "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "skills/nn-preflight/scripts/preflight-check.test.js",
+        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
+        "skills/nn-sources/README.md",
+        "skills/nn-sources/SKILL.md",
+        "skills/nn-sources/TESTING.md",
+        "skills/nn-sources/scripts/lib/workspace-index.js",
+        "skills/nn-sources/scripts/provenance.js",
+        "skills/nn-sources/test/test.ps1",
+        "skills/nn-sources/test/unit/test-provenance.js",
+        "skills/nn-sources/tests/producers-write-once.test.js"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.39.0",
       "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/render-formats.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/render-formats.test.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.39.0",
       "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/render-formats.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/render-formats.test.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
+      ]
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.27.0",
-      "pinnedTagDate": "2026-10-20T07:39:06+02:00",
-      "commitsSincePin": 8,
+      "pinnedTag": "innfo-mcp-v0.28.0",
+      "pinnedTagDate": "2026-10-20T12:11:34+02:00",
+      "commitsSincePin": 3,
       "filesTouched": [
-        "iNNfo/packages/innfo-mcp/README.md",
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
         "iNNfo/packages/innfo-mcp/bin/nn-mcp.bundle.js",
         "iNNfo/packages/innfo-mcp/package.json",
-        "iNNfo/packages/innfo-mcp/src/server.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/server.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/init-domain.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/init-knowledge.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/init-knowledge.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/model-id.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/propose-changeset.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/propose-changeset.ts",
-        "iNNfo/packages/innfo-mcp/test/apply-change-models.test.ts",
-        "iNNfo/packages/innfo-mcp/test/console-export-roundtrip.test.ts",
-        "iNNfo/packages/innfo-mcp/test/includes-and-scaffold.test.ts"
+        "iNNfo/packages/innfo-mcp/src/tools/resolver-node.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/resolver-node.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/spec.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/spec.ts",
+        "iNNfo/packages/innfo-mcp/test/validate-workspace-sources.test.ts"
       ]
     },
     "innfo-console": {

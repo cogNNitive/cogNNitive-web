@@ -77,7 +77,11 @@ function buildProvenanceKnowledge(projectDir, options = {}) {
     : modelLib.refreshExistingModel(fs.readFileSync(modelPath, 'utf8'), sections);
 
   fs.writeFileSync(modelPath, content, 'utf8');
-  indexLib.writeWorkspaceIndex(projectDir);
+  // No root `index.md` is generated. The parser does not read it as an
+  // entrypoint (recursiveParser/workspace.ts scans `*_NN.md` instead) and the
+  // canonical index is the `# NN kNNowledge` block inside `domaiNN_NN.md`, so
+  // the file was a dead artifact that also indexed `changes/` as knowledge.
+  // Retired in #225.
 
   return {
     modelPath,
@@ -107,7 +111,6 @@ function appendProcedureRun(projectDir, run) {
 module.exports = {
   buildProvenanceKnowledge,
   appendProcedureRun,
-  writeWorkspaceIndex: indexLib.writeWorkspaceIndex,
   listWorkspaceModels: indexLib.listWorkspaceModels,
 };
 

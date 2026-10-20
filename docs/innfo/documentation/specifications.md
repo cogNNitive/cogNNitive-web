@@ -136,13 +136,13 @@ iNNfo is **compatible** with [OKF v0.1](https://github.com/GoogleCloudPlatform/k
 |---|---|
 | Parseable YAML frontmatter on every non-reserved `.md` file | âœ… Satisfied — every `_NN.md` has required frontmatter |
 | Non-empty `type` field in every frontmatter block | âœ… Satisfied — `level` + app name provides type semantics |
-| Reserved filenames follow OKF conventions | âœ… Satisfied — `index.md` follows progressive-disclosure pattern |
+| Reserved filenames follow OKF conventions | âœ… Satisfied — no literal `index.md`; the `# NN kNNowledge` block in `domaiNN_NN.md` is the directory listing |
 
 **Why the compatibility holds:**
 
 1. **Same substrate**: Both use Markdown + YAML frontmatter. OKF's "if you can `cat` a file, you can read OKF" applies to iNNfo verbatim.
 2. **OKF tolerates extensions**: OKF explicitly allows unknown frontmatter keys and unknown `type` values. iNNfo's additional fields (`spec_version`, `level`, `parent`, `concepts`, `markers`, `matrices`) are fully tolerated.
-3. **A directory of `_NN.md` documents = an OKF knowledge bundle**: a workspace of iNNfo models produces the exact directory-of-Markdown-files structure OKF defines as a knowledge bundle (Â§3). Each `_NN.md` is an OKF concept document (Â§4), with `index.md` as the directory listing (Â§6).
+3. **A directory of `_NN.md` documents = an OKF knowledge bundle**: a workspace of iNNfo models produces the exact directory-of-Markdown-files structure OKF defines as a knowledge bundle (Â§3). Each `_NN.md` is an OKF concept document (Â§4), with the `# NN kNNowledge` block in `domaiNN_NN.md` as the directory listing (Â§6).
 4. **Cross-linking**: OKF uses standard Markdown links; iNNfo supports wikilinks (`[[target]]`) and standard links — both work for cross-referencing concepts.
 
 See the [Ecosystem page](ecosystem) for the full compatibility mapping.

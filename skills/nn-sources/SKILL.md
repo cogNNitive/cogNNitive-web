@@ -125,15 +125,14 @@ Every project workspace MUST adhere to the following structure:
 ├── assets/               # Binary / media attachments referenced by model elements
 │                         # (image/file/video/audio fields). Not a copy of sources/.
 ├── kNNowledge/               # Structured semantic iNNfo Level 3 models (*_NN.md)
-├── procedures/           # Reusable transformation procedure specs (*_procedures_NN.md)
-└── index.md              # Semantic workspace index (# NN index)
+└── procedures/           # Reusable transformation procedure specs (*_procedures_NN.md)
 ```
 
 > [!NOTE]
 > **Workspace AGENTS.md Scaffolding**: During workspace initialization (`bootstrapProject`), an `AGENTS.md` file is automatically scaffolded at the workspace root if not already present. It directs AI coding agents (Cursor, Claude Code, OpenCode, Codex, Antigravity) to immediately invoke `nn` at session start. Pre-existing `AGENTS.md` files are preserved intact without destructive overwrite.
 
 > [!NOTE]
-> **Workspace index.md Format**: The workspace `index.md` file (in the project root) uses standard Markdown links (`* [label](target.md)`), unlike the internal `# NN index` block of Level 3 models which uses WikiLinks (`* [[Concept]]`). When regenerated, the tool preserves existing custom/unknown lines, filters out duplicate or dangling links, and keeps the highest version if multiple versions of the same model base exist.
+> **No root `index.md`**: the workspace root index was retired (#225). The parser never read it as an entrypoint, and the canonical index is the `# NN kNNowledge` block inside `domaiNN_NN.md`. `nn-sources` no longer writes a root `index.md`.
 
 
 **Cognitivize in place.** Folders are write destinations; a file's role comes from its name. There is no mirror tree: the scanner (`--scan`) walks `sources/import/` and `sources/conversations/` recursively, and for every raw file without an up-to-date sidecar it writes a co-located `<file>.<ext>_sidecar_NN.md` through the one core operation `cognitivize` (the same one behind `--cognitivize <file|dir>` and the MCP `cognitivize` tool). The raw file is never moved, renamed or rewritten. Change detection uses the sha256 of the raw bytes recorded in the sidecar: when the bytes change, `--scan` refreshes the sidecar in place (no snapshot is taken), and the downstream `[IMPACT WARNING]` audit runs. Imports (`--import-url`, `--scan-external`) and conversation promotion are write-once: they never overwrite, a changed external file lands as a new UTC-suffixed family member (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`) and identical bytes are deduplicated. Files you drop into `sources/import/` by hand keep their names (unsuffixed family members). Retired layouts (the old normalized mirror, archive, export and original folders) are never read or written by the runtime; an old domaiNN is upgraded with `nn-upgrade` (see §2i). When a raw file disappears from disk, its sidecar is reported as an orphan warning and preserved; nothing is deleted without explicit user consent (`--unlink`, `--gc`), and a non-interactive `--scan` never mutates anything (Zero Unilateral Mutation).
@@ -498,7 +497,7 @@ When a user requests to remove, delete, or unlink a source completely from the w
 3. **Automated Cascade Cleanup**:
    - Removes the matching raw source file(s) under `sources/` together with each file's co-located sidecar, so no orphaned sidecar is left behind.
    - Removes matching assets in `assets/` (by stem or slug).
-   - Re-scans, re-syncs the workspace `index.md`, and re-generates the lineage record in idempotent replace mode, eliminating all dangling references.
+   - Re-scans and re-generates the lineage record in idempotent replace mode, eliminating all dangling references.
 
 #### 2i. Replacing a Domain Created with the Retired Layout
 

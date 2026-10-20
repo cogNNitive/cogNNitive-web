@@ -83,6 +83,11 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    node scripts/assemble-video.mjs <clip1> <clip2> ... --out renders/{ref}/master.mp4
    ```
    *Final-assembly layer: joins already-produced clips into one master with the FFmpeg concat demuxer in stream-copy mode (`-f concat -c copy`, +faststart). Assembly only — no re-encode and NO scene effects. Clips MUST share codec/resolution/fps; an ffprobe precheck refuses a mismatched set with a named error before ffmpeg can emit a glitched file. `--dry-run` prints the ffmpeg command. FFmpeg scene effects (zoompan, burned-in `.ass` captions) are prohibited and out of scope.*
+6c. **Derive Format Variants (optional, from a square master)** — when the deliverable set is square/vertical/horizontal and crop-fill would lose the square composition:
+   ```bash
+   node scripts/render-formats.mjs --master renders/{ref}/master_1080x1080.mp4 [--out-dir renders/{ref}] [--formats square,vertical,horizontal]
+   ```
+   *Post-process over the square master (NOT a re-render): emits `<slug>_1080x1080.mp4` (stream copy), `<slug>_1080x1920.mp4` and `<slug>_1920x1080.mp4`, each showing the square WHOLE, centered, over a Gaussian-blurred fill, audio copied and `+faststart` applied. `--dry-run` prints the ffmpeg filter graphs. If the master is already named `<slug>_1080x1080.mp4`, the square copy is skipped (never overwrites its own input).*
 7. **Compose Video Thumbnail**:
    ```bash
    node scripts/render-thumbnail.mjs --base <path> --title <title> --out <out>
@@ -114,6 +119,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/asset-cost-estimator.mjs` | Pre-generation provider options catalog, per-scene character/layer calculator, and production cost estimator. |
 | `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`), headless rendering (`render`), and local web preview (`preview`). `compile` enforces the approval gate; `--dry-run` previews spend. `--format 16:9\|9:16\|1:1` presets width/height. |
 | `scripts/render-vertical.mjs` | Cheap ffmpeg 16:9 → 9:16 reframe fallback (blur bg + header + title). Prefer native `--format 9:16`. |
+| `scripts/render-formats.mjs` | Format-variant post-process: square master → `_1080x1080` (copy) / `_1080x1920` / `_1920x1080` with the square whole over a Gaussian-blurred fill (`+faststart`). |
 | `scripts/assemble-video.mjs` | Final-assembly layer: joins already-produced clips into one master via the FFmpeg concat demuxer (`-f concat -c copy`, +faststart) with an ffprobe consistency precheck. Assembly only — no scene effects. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast typography over clean 16:9 base images. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |

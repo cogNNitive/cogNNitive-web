@@ -2084,6 +2084,62 @@ agent-bootstrap:
     }
   }
 
+  // Test 38: baseline readiness requires only Core manifest blueprints; optional
+  // catalog verticals absent from ~/.agents/bluepriNNts are not reported.
+  {
+    const coreNames = ['domaiNN', 'changes', 'sidecar', 'sources', 'artifacts', 'procedures', 'blank'];
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints:
+${coreNames.map((n) => `    - name: ${n}\n      commit: "core-${n}"\n      version: "V_0-4-0"`).join('\n')}
+---
+`;
+    const server = await serveManifest(manifestContent);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-core-only-'));
+    try {
+      const blueprintsDir = path.join(tmpDir, 'blueprints');
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      fs.mkdirSync(blueprintsDir, { recursive: true });
+      const blueprintsState = {};
+      for (const name of coreNames) {
+        fs.writeFileSync(path.join(blueprintsDir, `${name}.md`), '# core blueprint');
+        blueprintsState[name] = { commit: `core-${name}`, version: 'V_0-4-0' };
+      }
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: server.url,
+        skills: {},
+        blueprints: blueprintsState,
+      }));
+
+      const res = await runScriptAsync([
+        '--json',
+        '--blueprints-dir', blueprintsDir,
+        '--state-file', stateFile,
+        '--manifest-url', server.url,
+      ]);
+
+      assert.strictEqual(res.status, 0, `Core-only baseline must exit 0. Got: ${res.stdout} ${res.stderr}`);
+      const parsedRes = JSON.parse(res.stdout);
+      assert.strictEqual(parsedRes.status, 'OK');
+      assert.strictEqual(parsedRes.exitCode, 0);
+      assert.strictEqual(parsedRes.summary.templatesTotal, coreNames.length);
+      assert.strictEqual(parsedRes.summary.templatesMissing, 0);
+      const verticals = ['business', 'analysis', 'organization', 'projects', 'metrics', 'workspace', 'cogNNitive'];
+      for (const vertical of verticals) {
+        assert.ok(
+          !parsedRes.items.some((i) => i.type === 'template' && i.name === vertical),
+          `uninstalled optional blueprint '${vertical}' must not be reported`,
+        );
+      }
+      console.log('✔ baseline readiness audits only Core manifest blueprints; optional verticals are ignored');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
   console.log('All preflight-check unit tests passed successfully!\n');
 }
 

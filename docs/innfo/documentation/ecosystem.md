@@ -36,7 +36,7 @@ OKF v0.1 defines three conformance requirements (§9). Here is the exact mapping
 |---|---|
 | **§9.1** Every non-reserved `.md` file contains a parseable YAML frontmatter block | iNNfo requires YAML frontmatter on every `_NN.md` document. The `---` delimited block is mandatory — unparseable frontmatter is a validation error. |
 | **§9.2** Every frontmatter block contains a non-empty `type` field | iNNfo's `level` field (0–3) and app system provide equivalent type semantics. A model document's `parent` app name serves as its conceptual type. OKF's permissive consumption model tolerates any `type` value — iNNfo's structured approach exceeds what OKF requires. |
-| **§9.3** Reserved filenames (`index.md`, `log.md`) follow OKF conventions | iNNfo's `index.md` follows the exact same progressive-disclosure convention as OKF §6. iNNfo does not prescribe `log.md` usage, which is optional in OKF as well. No conflicts. |
+| **§9.3** Reserved filenames (`index.md`, `log.md`) follow OKF conventions | iNNfo has **no** literal `index.md`: the index is the `# NN kNNowledge` block inside `domaiNN_NN.md`, which fills OKF §6's progressive-disclosure role. iNNfo does not prescribe `log.md` usage, which is optional in OKF as well. No conflicts. |
 
 ### OKF's permissive consumption model
 

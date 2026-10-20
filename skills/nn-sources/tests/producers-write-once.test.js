@@ -7,7 +7,6 @@ const { createHash } = require('crypto');
 
 const core = require('../scripts/lib/innfo-core.generated.cjs');
 const { writeImpactReport } = require('../scripts/lib/impact-checker');
-const { writeWorkspaceIndex } = require('../scripts/lib/workspace-index');
 const { curateCsvFile } = require('../scripts/lib/curate-csv');
 const scanner = require('../scripts/scanner');
 
@@ -103,20 +102,6 @@ test('curated CSV: a write-once artifact whose sidecar declares the raw file as 
   const before = listing(root);
   await curateCsvFile(raw, { key: 'id', projectDir: root });
   assert.deepEqual(listing(root), before);
-});
-
-test('workspace index: rerunning on an unchanged workspace rewrites nothing', async (t) => {
-  const root = workspace(t);
-  put(root, 'kNNowledge/Offer_business_NN.md', '---\nlevel: 3\n---\n# NN Offer\n');
-  writeWorkspaceIndex(root);
-  const indexPath = path.join(root, 'index.md');
-  const old = new Date('2020-01-01T00:00:00Z');
-  fs.utimesSync(indexPath, old, old);
-  const before = fs.readFileSync(indexPath, 'utf8');
-
-  writeWorkspaceIndex(root);
-  assert.equal(fs.readFileSync(indexPath, 'utf8'), before);
-  assert.equal(fs.statSync(indexPath).mtimeMs, old.getTime(), 'unchanged input does not touch the file');
 });
 
 test('scanner: running twice on unchanged input writes no new file', async (t) => {

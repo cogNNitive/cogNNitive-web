@@ -85,7 +85,7 @@ Luis,28,Technician
 **Expected result:**
 - ✅ OpenCode executes `node scripts/index.js --scan --src test-docs`
 - ✅ Summary appears: "Discovered: X, Processed: Y, Skipped: Z"
-- ✅ `test-docs/index.md` (semantic `# NN index`) is created
+- ✅ No `test-docs/index.md` is created (the root index was retired in #225)
 - ✅ `test-docs/<name>_cogNNitive_NN.md` (provenance model) is created with the Sources populated
 - ✅ `test-docs/sources/import/report.txt_sidecar_NN.md` is created next to `report.txt` with the normalized text as its body and flat frontmatter (`source_file`, `sha256`, `size_bytes`, `source_format`, `normalized_at`, `normalized_by`)
 - ✅ `test-docs/sources/import/data.csv_sidecar_NN.md` is created next to `data.csv` with the same frontmatter and no body (the CSV itself is the citation target)

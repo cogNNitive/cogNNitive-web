@@ -127,7 +127,7 @@ Push-Location $SKILL_DIR
 try {
   node scripts/index.js --scan --src "$TEST_DIR\test-project" 2>&1 | Out-Null
   Assert-True (Test-Path "$TEST_DIR\test-project\sources\import\hello.txt_sidecar_NN.md") "co-located sidecar created next to hello.txt"
-  Assert-True (Test-Path "$TEST_DIR\test-project\index.md") "semantic workspace index.md created"
+  Assert-True (-not (Test-Path "$TEST_DIR\test-project\index.md")) "no root index.md is generated (#225)"
   Assert-True (-not (Test-Path "$TEST_DIR\test-project\sources\nn")) "no mirror folder written by the scan"
 
   $provModel = Get-ChildItem "$TEST_DIR\test-project" -Filter "*_NN.md" -Recurse -ErrorAction SilentlyContinue
