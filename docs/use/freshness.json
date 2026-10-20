@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-20T05:21:12.589Z",
-  "head": "28f40a54904cf8075e86eefc3719bdda983a6484",
+  "generatedAt": "2026-10-20T05:40:31.567Z",
+  "head": "bb8eca790de1330ff57de731f23ea29d1b8717ec",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -27,7 +27,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.37.0",
       "pinnedTagDate": "2026-10-18T17:29:17+02:00",
-      "commitsSincePin": 17,
+      "commitsSincePin": 18,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/changes/assets/console-view-changes.js",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
@@ -47,7 +47,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.37.0",
       "pinnedTagDate": "2026-10-18T17:29:17+02:00",
-      "commitsSincePin": 17,
+      "commitsSincePin": 18,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/changes/assets/console-view-changes.js",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
@@ -67,7 +67,7 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.26.0",
       "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 5,
+      "commitsSincePin": 6,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
         "iNNfo/packages/innfo-mcp/bin/nn-mcp.bundle.js",
@@ -95,7 +95,7 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.22.0",
       "pinnedTagDate": "2026-10-18T23:07:46+02:00",
-      "commitsSincePin": 9,
+      "commitsSincePin": 10,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
@@ -105,6 +105,7 @@
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "scripts/export-console.mjs"
