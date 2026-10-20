@@ -1,24 +1,13 @@
 {
-  "generatedAt": "2026-10-20T13:34:13.196Z",
-  "head": "2a40e20cbb1a905a8b87bc021fa00dd25943944d",
+  "generatedAt": "2026-10-20T14:10:36.747Z",
+  "head": "0af6687db61b67f04f711134f2e64640b5b3e6b3",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.27.0",
-      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "skills/nn-preflight/scripts/preflight-check.test.js",
-        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
-        "skills/nn-sources/README.md",
-        "skills/nn-sources/SKILL.md",
-        "skills/nn-sources/TESTING.md",
-        "skills/nn-sources/scripts/lib/workspace-index.js",
-        "skills/nn-sources/scripts/provenance.js",
-        "skills/nn-sources/test/test.ps1",
-        "skills/nn-sources/test/unit/test-provenance.js",
-        "skills/nn-sources/tests/producers-write-once.test.js"
-      ]
+      "pinnedTag": "skills-v2.28.0",
+      "pinnedTagDate": "2026-10-20T15:26:43+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
@@ -40,19 +29,10 @@
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.28.0",
-      "pinnedTagDate": "2026-10-20T12:11:34+02:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/bin/nn-mcp.bundle.js",
-        "iNNfo/packages/innfo-mcp/package.json",
-        "iNNfo/packages/innfo-mcp/src/tools/resolver-node.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/resolver-node.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/spec.spec.ts",
-        "iNNfo/packages/innfo-mcp/src/tools/spec.ts",
-        "iNNfo/packages/innfo-mcp/test/validate-workspace-sources.test.ts"
-      ]
+      "pinnedTag": "innfo-mcp-v0.29.0",
+      "pinnedTagDate": "2026-10-20T15:26:43+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "innfo-console": {
       "subsystem": "innfo-console",
