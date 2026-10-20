@@ -293,8 +293,9 @@
 
   // A stale draft whose proposed value already equals the element's current
   // value has nothing to review: the change was applied out-of-band (e.g. an
-  // engine-side changeset). It reads 'already applied' and is excluded from
-  // export, instead of the misleading 'target changed'.
+  // engine-side changeset). An empty proposed value on a field the element no
+  // longer has is the applied clear. Such drafts are removed from the store when
+  // the console loads, instead of the misleading 'target changed'.
   function isAlreadyApplied(draft, elementsById) {
     var d = isObject(draft) ? draft : {}
     if (d.proposed === undefined || d.proposed === null) return false
@@ -303,6 +304,7 @@
     if (!el) return false
     if (!isTargetChanged(d, byId)) return false
     var current = currentFieldValue(el, d.field)
+    if (String(d.proposed) === '') return current === undefined || current === null
     if (current === undefined || current === null) return false
     return String(current) === String(d.proposed)
   }
@@ -328,118 +330,17 @@
     return out
   }
 
-  function normalizeAddressKey(value) {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '')
-  }
-
-  // Badges derive only from changesets: `applied` / `conflict` from each element's
-  // changeset `history`, `proposed` from the domain payload's proposed changesets.
-  // Local drafts and reviewer verdicts never produce a badge; entries whose element
-  // no longer exists are dropped.
-  function badgesByElement(elements, changes) {
-    var list = Array.isArray(elements) ? elements : []
-    var changesets = Array.isArray(changes) ? changes : []
-    var out = {}
-    function bump(elId, status) {
-      if (!elId || !status) return
-      if (!out[elId]) out[elId] = {}
-      out[elId][status] = (out[elId][status] || 0) + 1
-    }
-    list.forEach(function (el) {
-      if (!el || !el.id) return
-      var history = Array.isArray(el.history) ? el.history : []
-      history.forEach(function (h) {
-        if (!isObject(h)) return
-        if (h.status === 'applied' || h.status === 'conflict') bump(el.id, h.status)
-      })
-    })
-    function keysOf(el) {
-      var keys = {}
-      if (el && el.id) {
-        var id = String(el.id)
-        keys[normalizeAddressKey(id)] = true
-        var at = id.indexOf('@')
-        if (at !== -1) keys[normalizeAddressKey(id.slice(at + 1))] = true
-      }
-      if (el && el.name) keys[normalizeAddressKey(el.name)] = true
-      return keys
-    }
-    changesets.forEach(function (cs) {
-      if (!isObject(cs) || cs.status !== 'proposed') return
-      var items = Array.isArray(cs.changes) ? cs.changes : []
-      items.forEach(function (c) {
-        if (!isObject(c)) return
-        var target = String(c.target || '')
-        var at = target.indexOf('@')
-        if (at === -1) return
-        var modelPart = target.slice(0, at)
-        var elementPart = target.slice(at + 1).split('&')[0].trim()
-        if (!elementPart) return
-        var forms = [normalizeAddressKey(elementPart), normalizeAddressKey(modelPart + elementPart)]
-        for (var i = 0; i < list.length; i++) {
-          var el = list[i]
-          if (!el || !el.id) continue
-          var keys = keysOf(el)
-          var hit = false
-          for (var f = 0; f < forms.length; f++) {
-            if (forms[f] && keys[forms[f]]) {
-              hit = true
-              break
-            }
-          }
-          if (hit) {
-            bump(el.id, 'proposed')
-            break
-          }
-        }
-      })
-    })
-    return out
-  }
-
-  // The single per-row change state: a local (unsent) edit wins over a proposed
-  // change, which wins over applied history; a conflict always wins (it needs a
-  // decision). `counts` carries every state present so the badge tooltip can
-  // enumerate them.
-  var CHANGE_STATE_ORDER = ['conflict', 'local', 'proposed', 'applied']
-
-  function changeStateOf(counts) {
-    var c = isObject(counts) ? counts : {}
-    for (var i = 0; i < CHANGE_STATE_ORDER.length; i++) {
-      var state = CHANGE_STATE_ORDER[i]
-      if (c[state]) return state
-    }
-    return null
-  }
-
-  function changeCountsByElement(elements, changes, drafts) {
-    var badges = badgesByElement(elements, changes)
+  // Unsent counts per element, read ONLY from the browser draft store. Applied,
+  // proposed and conflict changes never decorate a model view: they live in the
+  // Changes tab.
+  function unsentCountsByElement(drafts) {
     var counts = {}
-    Object.keys(badges).forEach(function (elId) {
-      counts[elId] = {}
-      Object.keys(badges[elId]).forEach(function (status) {
-        counts[elId][status] = badges[elId][status]
-      })
-    })
     ;(Array.isArray(drafts) ? drafts : []).forEach(function (d) {
       if (!d || !d.element_id) return
       var id = String(d.element_id)
-      if (!counts[id]) counts[id] = {}
-      counts[id].local = (counts[id].local || 0) + 1
+      counts[id] = (counts[id] || 0) + 1
     })
     return counts
-  }
-
-  function changeTooltip(state, counts) {
-    var c = isObject(counts) ? counts : {}
-    var parts = []
-    if (c.local) parts.push(c.local + ' unsent')
-    if (c.proposed) parts.push(c.proposed + ' proposed')
-    if (c.applied) parts.push(c.applied + ' applied')
-    if (c.conflict) parts.push(c.conflict + ' in conflict')
-    return parts.join(', ')
   }
 
   function canReview(meta, elements, needs) {
@@ -512,7 +413,6 @@
     var options = isObject(opts) ? opts : {}
     var meta = isObject(options.meta) ? options.meta : {}
     var elements = Array.isArray(options.elements) ? options.elements : []
-    var changes = Array.isArray(options.changes) ? options.changes : []
     var needs = Array.isArray(options.needs) ? options.needs : []
     var store = options.store
     var elementsById = {}
@@ -550,8 +450,8 @@
       dismissToast()
       toastEl = UI.Toast(
         {
-          title: 'Change recorded',
-          body: 'It lives only in this console until you export it. Then apply it from cogNNitive to write it into the domain.',
+          title: UI.COPY.toastTitle,
+          body: UI.COPY.toastBody,
         },
         { doc: doc, onClose: dismissToast },
       )
@@ -1367,24 +1267,23 @@
       })
     }
 
-    // ONE change-state signal per row: it collapses the local (unsent) edit, the
-    // proposed changesets and the applied history into a single badge; every count
-    // lives in the badge tooltip. Decoration is capability-free (it reflects state,
-    // never a proposal), so it runs however the console boots.
+    // ONE change signal per row: the Unsent marker, read ONLY from the browser
+    // draft store. Applied, proposed and conflict changes never decorate a model
+    // view. Decoration is capability-free (it reflects state, never a proposal),
+    // so it runs however the console boots.
     function decorateChangeState(root) {
       var scope = root || doc
       if (!scope || !scope.querySelectorAll) return
-      var countsByEl = changeCountsByElement(elements, changes, store ? store.drafts() : [])
+      var countsByEl = unsentCountsByElement(store ? store.drafts() : [])
       Array.prototype.forEach.call(
         scope.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
         function (card) {
           ensureCardFocusable(card)
           var elId = card.getAttribute('data-element-id')
-          var elCounts = countsByEl[elId]
-          var state = elCounts ? changeStateOf(elCounts) : null
+          var count = countsByEl[elId] || 0
           var head = card.querySelector('.innfo-card-head') || card
           var host = head.querySelector('[data-innfo-change-state]')
-          if (!state) {
+          if (!count) {
             if (host && host.parentNode) host.parentNode.removeChild(host)
             return
           }
@@ -1396,10 +1295,10 @@
           host.innerHTML = ''
           if (typeof UI.StatusBadge !== 'function') return
           var badge = UI.StatusBadge({
-            status: state,
-            count: elCounts[state],
-            label: typeof UI.statusLabel === 'function' ? UI.statusLabel(state) : state,
-            title: changeTooltip(state, elCounts),
+            status: 'local',
+            count: count,
+            label: typeof UI.statusLabel === 'function' ? UI.statusLabel('local') : 'Unsent',
+            title: count + ' unsent',
           })
           badge.classList.add('innfo-change-state')
           host.appendChild(badge)
@@ -1625,6 +1524,27 @@
       return openEdit(anchorData)
     }
 
+    // On load, drop the drafts the console can already see were applied: a field
+    // draft whose value now equals the element's current value, or an empty
+    // proposed value on a field the element no longer has. Every other draft stays
+    // Unsent until the reviewer discards it.
+    function purgeAppliedDrafts() {
+      if (!store || typeof store.drafts !== 'function' || typeof store.clearDrafts !== 'function') {
+        return
+      }
+      var ids = store
+        .drafts()
+        .filter(function (d) {
+          return isAlreadyApplied(d, elementsById)
+        })
+        .map(function (d) {
+          return d && d.id
+        })
+        .filter(Boolean)
+      if (ids.length) store.clearDrafts(ids)
+    }
+    purgeAppliedDrafts()
+
     /* no review-mode toggle: there is no mode */
     if (doc.addEventListener) doc.addEventListener('innfo:rendered', onRendered)
     // One initial pass: covers the render that preceded the controller's creation.
@@ -1660,10 +1580,6 @@
     isTargetChanged: isTargetChanged,
     isAlreadyApplied: isAlreadyApplied,
     progressByConcept: progressByConcept,
-    badgesByElement: badgesByElement,
-    changeCountsByElement: changeCountsByElement,
-    changeStateOf: changeStateOf,
-    changeTooltip: changeTooltip,
     canReview: canReview,
     flattenCitations: flattenCitations,
   }

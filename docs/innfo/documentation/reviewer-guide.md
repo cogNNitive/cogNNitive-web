@@ -23,15 +23,15 @@ In the top navigation banner, locate the **Reviewer** chip (e.g., `Reviewer: rev
 
 ### 2. One Concept: The Change
 
-The console has **no review mode and no toggle**. An edit only ever records a **change**; the console never writes the model. A change has three states:
+The console has **no review mode and no toggle**. An edit only ever records a **change**; the console never writes the model. A change is **Unsent** until the file is exported; the only signal on the model views is the **Unsent** marker.
 
 | State | What it means | How it shows |
 | --- | --- | --- |
-| **Unsent** (blue) | You edited in the console. It lives only in this browser; the agent has not seen it. | The "Change recorded" toast and the bottom counter. |
-| **Proposed** (orange) | It was submitted (or the agent proposed it). It is a change the engine can apply; the model has not changed. | The row's change-state badge. |
-| **Applied** (green) | The engine wrote it into the model. Only now did the domain change. | The row's change-state badge. |
+| **Unsent** (blue) | You edited in the console. It lives only in this browser; the agent has not seen it. | The **Unsent** marker on the row and rail, the "Change recorded" toast, and the bottom counter. |
+| **Applied** | The engine wrote it into the model; every console generated from this domain now carries it. | A card in the **Changes** tab. |
+| **Not applied** | The engine could not apply it and reported the reason. | A muted **Not applied** card in the **Changes** tab. |
 
-`Conflict` (red) is the terminal state of a change that could not be applied. The internal terms "draft" and "changeset" name plumbing and are never shown. A row shows **one** state badge; the counts for every state are in its tooltip.
+Unsent changes are the only change signal on cards, tables, pips and the rail. Applied and Not applied changes appear only inside the **Changes** tab; they are card states, not badges. The internal terms "draft" and "changeset" name plumbing and are never shown.
 
 ### 3. Annotating Elements and Fields
 Every knowledge unit is rendered as a **Ku** badge (element, value, section, field
@@ -46,18 +46,18 @@ definition, matrix, document, source) with an action cluster beside it:
 
 Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cancel) to discard and return focus. Each saved change records the element's current `hash` as `base_hash` and the unit's canonical address. Saving shows the **Change recorded** toast: it lives only in this console until you export it, then apply it to write it into the domain.
 
-### 4. Change Signals: Pips, the State Badge and the Rail
-- Units with local (unsent) changes show a **change pip** beside the badge, keyed by
+### 4. Change Signals: the Unsent Marker and the Rail
+- Units with local (unsent) changes show a **change pip** beside the marker, keyed by
   the unit's canonical address. The count equals the unsent changes for that unit;
   activating it opens the unit's history.
-- Each row shows **one change-state badge** (Unsent / Proposed / Applied / Conflict)
-  that folds the local edit, the proposed changesets and the applied history
-  together. The per-state counts live in its tooltip. There is no "Mark reviewed"
-  toggle: a mark was local state with no effect on the domain.
+- Each row shows **one change signal**: an **Unsent** marker read from the browser's
+  unsent store. Applied and Not applied changes never decorate a model view; they
+  live in the **Changes** tab. There is no "Mark reviewed" toggle: a mark was local
+  state with no effect on the domain.
 - The concept rail shows `pending/total` per concept — the number of elements with an
   unsent change over the concept's element count.
-- Reviewers cannot set a verdict from the console: `proposed`, `applied` and
-  `conflict` come from the domain's changesets, and `Unsent` is local until exported.
+- Reviewers cannot set a verdict from the console: Applied and Not applied come
+  from the domain's changesets, and Unsent is local until exported.
 
 ### 5. Keyboard Access
 - `j` / `k` move focus to the next / previous visible element card.
@@ -66,15 +66,17 @@ Press **Enter** to save, **Shift+Enter** for a newline, and **Escape** (or Cance
 Shortcuts are ignored while typing in an input, textarea or select, while a popover is open, or with Ctrl/Meta/Alt held. The popover traps Tab focus, and the change counter is announced through an `aria-live="polite"` region.
 
 ### 6. Exporting the Change
-Click **Export changes** in the header banner. The modal shows a live **preview** of the document your unsent changes produce (one `## NN Change:` per change), and disables **Download** and **Copy change** until a reviewer identifier is entered. Download and copy always emit the **same bytes**. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the preview for manual copy or `document.execCommand('copy')`, and reports the outcome. Exporting turns an **Unsent** change into a **Proposed** one.
+Click **Export changes** in the header banner. The modal shows a live **preview** of the document your unsent changes produce (one `## NN Change:` per change), and disables **Download** and **Copy change** until a reviewer identifier is entered. Download and copy always emit the **same bytes**. When the clipboard API is unavailable (e.g. a double-clicked `file://` page), copy falls back to selecting the preview for manual copy or `document.execCommand('copy')`, and reports the outcome.
+
+Give the exported file to the agent. The agent applies what it can and reports every change it could not apply, with the reason. To retry, export a new file containing only the skipped changes; the console regenerates automatically after an apply.
 
 Files are named `<model>_<reviewer-slug>_<YYYYMMDD-HHmmss>_changes_NN.md`. Each change carries `op`, `target` (the D5 address `model@element&field`), `from`/`to` or `notes`, and `author::`; changes never carry a `status` verdict.
 
 ### 7. Where an Unsent Change Lives (margin note)
 This is plumbing and the UI never explains it. An unsent change is stored in `localStorage` under a single key, `innfo-console:v3:<storeKey>`, anchored by `element_id` plus `base_hash`. The `storeKey` is the console's stable store key only: the domain id for a domain console (`<folder>-<hash>`), or `<domain id>::view:<id>` for a standalone view export. The store records **no model or domain version**: staleness is **per change**, so one whose element hash drifted is flagged **target changed** and remains exportable, while a model version bump never invalidates unrelated changes. Legacy `reviewed` marks are ignored and dropped on the next write.
 
-### 8. Applying a Proposed Change
-The reviewer returns the exported `_changes_NN.md` file; the agent applies it with `apply_change`, which validates and persists the changes atomically and records the outcome. There is no separate feedback import: the change document is the only change record.
+### 8. Applying an Exported Change
+The reviewer gives the exported `_changes_NN.md` file to the agent; the agent applies it with `apply_change`, which validates and persists what it can and reports each skipped change with its reason. There is no separate feedback import: the change document is the only change record. A skipped change is retried by exporting a new file with only that change.
 
 ---
 
@@ -84,18 +86,18 @@ The interaction pattern described above — an artifact leaves the chat, opens i
 
 | Aspect | This console | Typical agent review |
 | --- | --- | --- |
-| Feedback consumer | The apply engine, through a sealed changeset | The agent that regenerates, in-session |
+| Feedback consumer | The apply engine, through a changeset | The agent that regenerates, in-session |
 | Identity | Declared `Reviewer` identifier, required before export | Usually anonymous |
 | Persistence | A changeset under `changes/` — the only change record | Usually none |
-| Lifecycle | `proposed` → `applied` / `partially_applied` / `conflict` / `rejected` | Converges on "good enough" |
+| Lifecycle | Unsent → Applied, or Not applied with a reason | Converges on "good enough" |
 | Verdict | Recorded by the apply engine, never set from the console | Implied by the next generation |
 | Staleness | Per-draft `base_hash`; a drifted draft reads `target changed` | Typically unnoticed |
 
 Three properties follow that make this governance rather than annotation:
 
 1. **Attribution.** Every draft is exported under a declared reviewer identity, which names the file (`<model>_<reviewer-slug>_<stamp>_changes_NN.md`) and is recorded on each change as `author::`. The review has a signer.
-2. **Provenance and sealing.** The proposal is sealed with `proposal_sha`, a SHA-256 over the proposed change elements. The apply engine verifies it before mutating: a tampered proposal aborts with `PROPOSAL_TAMPERED`. The changeset — with its `author`, `notes` and `sources` — is the only change record; no parallel ledger, change-log or reviewer JSON exists.
-3. **Propose / decide separation.** The console can only *propose*. The verdict (`applied`, `partially_applied`, `conflict`, `rejected`) and the model version transition (`base_version` → `result_version`) are recorded on apply, by the engine. A reviewer cannot approve their own proposal from the UI.
+2. **Provenance.** Each change carries its `author`, `notes` and `sources`, and is recorded as a changeset under `changes/`. The changeset is the only change record; no parallel ledger, change-log or reviewer JSON exists.
+3. **Propose / decide separation.** The console can only *propose*. The outcome (Applied, or Not applied with the engine's reason) and the model version transition are recorded on apply, by the engine. A reviewer cannot approve their own proposal from the UI.
 
 An agent-review comment steers a regeneration and is spent in the process; it leaves no approver and no base. A console review produces a durable, attributable and verifiable decision that the agent then executes. That is the difference that lets the same interface serve governance.
 

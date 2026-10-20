@@ -1660,36 +1660,40 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return btn
   }
 
-  // The change has one vocabulary with four states: a local edit that lives only
-  // in the console (`local`), a submitted proposal (`proposed`), a change written
-  // into the model (`applied`) and one that could not be applied (`conflict`).
-  var STATUSES = ['applied', 'conflict', 'proposed', 'local']
-  // Plain-language help for the change badge: the badge word IS the state and the
-  // colour matches it. Surfaced on hover via `title` so a reader who has never
-  // seen the console learns what blue/orange/green/red mean.
-  var STATUS_HELP = {
-    local:
-      'recorded in this console only \u2014 not submitted yet. Blue means unsent.',
-    proposed:
-      'submitted and waiting to be applied \u2014 it has not touched the model yet. Orange means pending.',
-    applied: 'written into the model by the engine. Green means done.',
-    conflict:
-      'in conflict with the current content \u2014 it needs a decision. Red means attention.',
-  }
-
-  var STATUS_LABELS = {
-    local: 'Unsent',
-    proposed: 'Proposed',
+  // Provisional user-facing copy ([P] at plan time): ONE table so the provisional
+  // terminology can be renamed in a single place. Internal identifiers, storage
+  // keys and payload shapes are never renamed here.
+  var COPY = {
+    unsent: 'Unsent',
     applied: 'Applied',
-    conflict: 'Conflict',
+    notApplied: 'Not applied',
+    changes: 'Changes',
+    discard: 'Discard',
+    revert: 'Revert',
+    goToElement: 'Go to element',
+    unsentHelp: 'Only in your browser. Export it and give it to the agent.',
+    appliedHelp: 'Recorded in the domain.',
+    toastTitle: 'Change recorded',
+    toastBody:
+      'It lives only in this console until you export it and give it to the agent to apply.',
+    exportFlow:
+      'Export the file and give it to the agent. The agent applies what it can and reports every skipped change and its reason. To retry, export a new file with only the skipped changes.',
+    agentPromptSkipped:
+      'Apply the attached changeset and report every change you skipped and the reason it was skipped.',
+    banner:
+      'Applied changes become part of every console generated from this domain. Do not include private data or content that is not meant for everyone.',
+    bannerShort: 'Applied changes become part of every console generated from this domain.',
   }
 
-  function statusHelp(status, count) {
-    var base = STATUS_HELP[status] || String(status)
-    if (count == null) return base
-    var n = Number(count)
-    if (!isFinite(n)) return base
-    return n + ' ' + (n === 1 ? 'change ' : 'changes ') + base
+  // Model views show ONE change state: `local` (Unsent), read from the browser's
+  // unsent store. Applied and Not applied are card text inside the Changes tab,
+  // never a badge.
+  var STATUSES = ['local']
+  var STATUS_HELP = { local: COPY.unsentHelp }
+  var STATUS_LABELS = { local: COPY.unsent }
+
+  function statusHelp(status) {
+    return STATUS_HELP[status] || String(status)
   }
 
   function statusLabel(status) {
@@ -1718,7 +1722,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     badge.setAttribute('aria-label', String(data.label != null ? data.label : text))
     badge.setAttribute(
       'title',
-      data.title != null ? String(data.title) : statusHelp(data.status, data.count),
+      data.title != null ? String(data.title) : COPY.unsentHelp,
     )
     return badge
   }
@@ -2770,24 +2774,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       bodyMounted = true
 
       var body = makeEl(doc, 'section', 'innfo-card-body')
-      var hasHistory = Array.isArray(data.history) && data.history.length > 0
-      if (hasHistory) {
-        var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
-        if (hasHistory) {
-          var firstHist = data.history[0] || {}
-          var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
-          if (firstHist.id || firstHist.author) {
-            histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
-          }
-          var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
-          var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
-          linIco.innerHTML = icon('git-commit', 12)
-          linPill.appendChild(linIco)
-          linPill.appendChild(doc.createTextNode(histText))
-          metaStrip.appendChild(linPill)
-        }
-        body.appendChild(metaStrip)
-      }
+      // Model views show no change signal except the Unsent marker (added by the
+      // review controller from the draft store). The applied history stays in the
+      // card's Lineage tab, never as a meta-strip pill.
       if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
       if (bodyFields.length) {
         var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
@@ -2866,12 +2855,155 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return card
   }
 
+  // ---- Change cards (one anatomy for unsent and applied history) ----
+
+  /** Splits a D5 address `model@element&field` into its element and field parts. */
+  function cardTargetParts(target) {
+    var t = String(target || '')
+    var at = t.indexOf('@')
+    var rest = at === -1 ? t : t.slice(at + 1)
+    var segs = rest.split('&')
+    return { element: (segs[0] || '').trim(), field: (segs[1] || '').trim() }
+  }
+
+  /** Human-language title for a change op (provisional copy, [P]). */
+  function cardTitle(op, entry) {
+    var e = entry || {}
+    var parts = cardTargetParts(e.target)
+    var element = e.element || parts.element
+    var field = e.field || parts.field
+    switch (op) {
+      case 'update_field':
+        return 'Edit `' + (field || 'field') + '` of `' + (element || 'element') + '`'
+      case 'update_matrix_cell':
+        return 'Edit cell `' + (e.row || '') + '` \u00d7 `' + (e.col || '') + '`'
+      case 'add_element':
+        return 'Add element `' + (e.name || element || '') + '`'
+      case 'remove_element':
+        return 'Delete `' + (element || e.name || '') + '`'
+      case 'rename_element':
+        return 'Rename `' + (element || '') + '`'
+      case 'rename_concept':
+        return 'Rename concept `' + (e.concept || '') + '`'
+      case 'comment':
+        return 'Comment on `' + (element || '') + '`'
+      default:
+        return String(op || 'Change')
+    }
+  }
+
+  /** The `previous -> new` line; add shows the fields, delete the element name. */
+  function cardDiff(op, entry) {
+    var e = entry || {}
+    if (op === 'add_element') {
+      var fields = e.fields && typeof e.fields === 'object' ? e.fields : e.proposed
+      if (fields && typeof fields === 'object') {
+        return Object.keys(fields)
+          .map(function (k) {
+            return k + ': ' + String(fields[k])
+          })
+          .join(', ')
+      }
+      return e.element || e.name || ''
+    }
+    if (op === 'remove_element' || op === 'rename_element' || op === 'rename_concept') {
+      return String(e.from != null ? e.from : e.element || e.name || '')
+    }
+    if (op === 'comment') return ''
+    var from = e.from != null ? e.from : e.original
+    var to = e.to != null ? e.to : e.proposed
+    if (from == null && to == null) return ''
+    return String(from == null ? '' : from) + ' \u2192 ' + String(to == null ? '' : to)
+  }
+
+  function changeCard(state, opts) {
+    var doc = (opts && opts.doc) || resolveDoc(opts)
+    var s = state || {}
+    var li = makeEl(doc, 'li', 'innfo-change-card card bg-base-100 border border-base-200 shadow-xs')
+    li.setAttribute('data-innfo-component', 'change-card')
+    li.setAttribute('data-change-state', s.stateKind || 'unsent')
+    if (s.draftId) li.setAttribute('data-draft-id', String(s.draftId))
+    if (s.targetChanged) li.setAttribute('data-target-changed', 'true')
+
+    var body = makeEl(doc, 'div', 'innfo-change-card-body card-body p-4 flex flex-col gap-2')
+
+    var head = makeEl(doc, 'div', 'innfo-change-card-head flex items-center justify-between gap-3')
+    head.appendChild(makeEl(doc, 'span', 'innfo-change-card-title font-semibold text-sm', s.title || ''))
+    if (s.stateKind === 'unsent' && typeof StatusBadge === 'function') {
+      var badge = StatusBadge({ status: 'local', label: COPY.unsent })
+      badge.classList.add('innfo-change-card-badge')
+      head.appendChild(badge)
+    } else {
+      head.appendChild(makeEl(doc, 'span', 'innfo-change-card-state text-xs font-semibold', s.stateText || ''))
+    }
+    body.appendChild(head)
+
+    if (s.targetNode) {
+      var targetWrap = makeEl(doc, 'div', 'innfo-change-card-target inline-flex items-center gap-1.5 flex-wrap text-sm')
+      targetWrap.appendChild(s.targetNode)
+      body.appendChild(targetWrap)
+    }
+
+    if (s.diff) body.appendChild(makeEl(doc, 'div', 'innfo-change-card-diff text-sm', s.diff))
+
+    var context = [s.author, s.date].filter(Boolean).join(' \u00b7 ')
+    body.appendChild(makeEl(doc, 'div', 'innfo-change-card-context text-xs opacity-70', context))
+
+    if (s.note) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-note text-sm', s.note))
+    if (s.resolution) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-resolution text-xs', s.resolution))
+    if (s.sources) body.appendChild(makeEl(doc, 'span', 'innfo-change-card-source text-xs', String(s.sources)))
+
+    if (s.targetChanged) {
+      body.appendChild(makeEl(doc, 'span', 'innfo-change-card-stale text-xs', 'target changed'))
+    }
+
+    var actions = makeEl(doc, 'div', 'innfo-change-card-actions flex items-center gap-2')
+    if (s.elementId && opts && typeof opts.onGoTo === 'function') {
+      var go = makeEl(doc, 'button', 'innfo-change-goto btn btn-sm btn-ghost', COPY.goToElement)
+      go.setAttribute('type', 'button')
+      go.addEventListener('click', function () {
+        opts.onGoTo(s.elementId)
+      })
+      actions.appendChild(go)
+    }
+    if (s.revertable && opts && typeof opts.onRevert === 'function') {
+      var rev = makeEl(doc, 'button', 'innfo-change-revert btn btn-sm btn-ghost', COPY.revert)
+      rev.setAttribute('type', 'button')
+      rev.addEventListener('click', function () {
+        opts.onRevert(s.entry)
+      })
+      actions.appendChild(rev)
+    }
+    if (s.draftId && opts && typeof opts.onDiscard === 'function') {
+      var dis = makeEl(doc, 'button', 'innfo-change-discard btn btn-sm btn-ghost text-error', COPY.discard)
+      dis.setAttribute('type', 'button')
+      dis.addEventListener('click', function () {
+        opts.onDiscard(s.draftId)
+      })
+      actions.appendChild(dis)
+    }
+    if (actions.children.length) body.appendChild(actions)
+
+    li.appendChild(body)
+    return li
+  }
+
+  function draftOp(d) {
+    if (d.matrix != null && d.matrix !== '') return 'update_matrix_cell'
+    var canUpdate = !!d.field && d.proposed !== undefined
+    if (canUpdate && String(d.field).toLowerCase() === 'name') return 'rename_element'
+    if (d.kind === 'delete') return 'remove_element'
+    if (d.kind === 'new') return d.concept && d.element ? 'add_element' : 'comment'
+    if (d.kind === 'comment' || !canUpdate) return 'comment'
+    return 'update_field'
+  }
+
   function DraftList(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.DraftList: data required')
     var doc = resolveDoc(opts)
     var drafts = Array.isArray(data.drafts) ? data.drafts : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
-    var ul = makeEl(doc, 'ul', 'innfo-draft-list flex flex-col gap-3 list-none p-0 m-0')
+    var ul = makeEl(doc, 'ul', 'innfo-draft-list innfo-change-list flex flex-col gap-3 list-none p-0 m-0')
     ul.setAttribute('data-innfo-component', 'draft-list')
     drafts.forEach(function (d) {
       if (!d || typeof d !== 'object') return
@@ -2881,30 +3013,15 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         opts && typeof opts.isTargetChanged === 'function'
           ? opts.isTargetChanged(d, byId)
           : !el || el.hash !== d.base_hash
-      // A stale draft whose proposed value already equals the current value was
-      // applied out-of-band: 'already applied', not 'target changed'.
-      var applied =
-        changed && opts && typeof opts.isAlreadyApplied === 'function'
-          ? opts.isAlreadyApplied(d, byId)
-          : false
-      var li = makeEl(doc, 'li', 'innfo-draft-row card bg-base-100 border border-base-200 shadow-xs')
-      li.setAttribute('data-draft-id', String(d.id))
-      if (changed && !applied) li.setAttribute('data-target-changed', 'true')
-      if (applied) li.setAttribute('data-already-applied', 'true')
-
-      var cardBody = makeEl(doc, 'div', 'card-body p-4 flex flex-row items-center justify-between gap-4')
-
-      var left = makeEl(doc, 'div', 'flex items-center gap-3 flex-wrap')
-      var badgeCls = d.kind === 'correction' ? 'badge badge-primary' : d.kind === 'comment' ? 'badge badge-neutral' : 'badge badge-ghost'
-      var kindBadge = makeEl(doc, 'span', 'innfo-draft-kind ' + badgeCls, d.kind)
-      left.appendChild(kindBadge)
-
-      var targetLabel = el ? el.name || d.element_id : d.element || d.element_id
+      var op = draftOp(d)
+      var elementName = (el && el.name) || d.element || d.element_id || ''
+      // Target chips are knowledge units built by Ku, keyed by canonical address
+      // (the published console-ui-kit contract, kept).
       var targetConcept = d.concept || (el && el.concept) || null
       var draftModel = (opts && (opts.modelId || opts.model)) || d.model || (el && el.modelId) || 'model'
-      var targetSpan = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5 font-semibold text-sm')
+      var targetNode = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5')
       if (targetConcept) {
-        targetSpan.appendChild(
+        targetNode.appendChild(
           Ku(
             'section',
             {
@@ -2919,16 +3036,16 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         )
       }
       var unitKind = d.field ? 'value' : 'element'
-      targetSpan.appendChild(
+      targetNode.appendChild(
         Ku(
           unitKind,
           {
             address: d.address || undefined,
             model: draftModel,
-            element: d.element_id || targetLabel,
+            element: d.element_id || elementName,
             field: d.field || undefined,
-            id: d.element_id || targetLabel,
-            label: targetLabel,
+            id: d.element_id || elementName,
+            label: elementName,
             concept: targetConcept,
             color: el && el._conceptColor,
             index: el && el._conceptIndex,
@@ -2937,10 +3054,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         ),
       )
       if (d.field) {
-        var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '→')
+        var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '\u2192')
         arrowSpan.setAttribute('aria-hidden', 'true')
-        targetSpan.appendChild(arrowSpan)
-        targetSpan.appendChild(
+        targetNode.appendChild(arrowSpan)
+        targetNode.appendChild(
           Ku(
             'field',
             {
@@ -2954,35 +3071,85 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           ),
         )
       }
-      left.appendChild(targetSpan)
+      ul.appendChild(
+        changeCard(
+          {
+            draftId: d.id,
+            op: op,
+            title: cardTitle(op, d),
+            diff: cardDiff(op, d),
+            targetNode: targetNode,
+            author: d.author,
+            date: d.created_at,
+            stateKind: 'unsent',
+            stateText: COPY.unsent,
+            note: d.comment != null ? d.comment : '',
+            sources: d.sources,
+            elementId: d.element_id || elementName,
+            targetChanged: changed,
+          },
+          {
+            doc: doc,
+            onDiscard:
+              opts && typeof opts.onDelete === 'function'
+                ? function (id) {
+                    opts.onDelete(id)
+                  }
+                : null,
+            onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+          },
+        ),
+      )
+    })
+    return ul
+  }
 
-      var text = d.comment != null ? d.comment : d.proposed != null ? d.proposed : ''
-      var textSpan = makeEl(doc, 'span', 'innfo-draft-text text-sm opacity-80', text)
-      left.appendChild(textSpan)
-      cardBody.appendChild(left)
-
-      var right = makeEl(doc, 'div', 'flex items-center gap-2 shrink-0')
-      if (applied) {
-        var appliedBadge = makeEl(doc, 'span', 'innfo-draft-already-applied badge badge-neutral badge-sm', 'already applied')
-        right.appendChild(appliedBadge)
-      } else if (changed) {
-        var warnBadge = makeEl(doc, 'span', 'innfo-draft-target-changed badge badge-error badge-sm', 'target changed')
-        right.appendChild(warnBadge)
-      }
-
-      var del = makeEl(doc, 'button', 'innfo-draft-delete btn btn-sm btn-ghost text-error', 'Delete')
-      del.setAttribute('type', 'button')
-      if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-        del.innerHTML = InnfoIcons.getSvg('trash-2', { size: 14 }) + '<span>Delete</span>'
-      }
-      del.addEventListener('click', function () {
-        if (opts && typeof opts.onDelete === 'function') opts.onDelete(d.id)
+  // Renders the payload `changes` collection: one card per applied block (with
+  // Revert for an `update_field`) and one muted card per not-applied block, with
+  // the engine's reason. Holds no state, reads no storage.
+  function ChangeHistory(data, opts) {
+    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ChangeHistory: data required')
+    var doc = resolveDoc(opts)
+    var changesets = Array.isArray(data.changes) ? data.changes : []
+    var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
+    var ul = makeEl(doc, 'ul', 'innfo-change-history flex flex-col gap-3 list-none p-0 m-0')
+    ul.setAttribute('data-innfo-component', 'change-history')
+    changesets.forEach(function (cs) {
+      var items = Array.isArray(cs && cs.changes) ? cs.changes : []
+      items.forEach(function (c) {
+        if (!c || typeof c !== 'object') return
+        var status = c.status || (cs && cs.status)
+        if (status !== 'applied' && status !== 'conflict' && status !== 'rejected') return
+        var applied = status === 'applied'
+        var op = c.op
+        var parts = cardTargetParts(c.target)
+        var elementName = parts.element
+        var el = byId[elementName] || byId[c.element_id]
+        ul.appendChild(
+          changeCard(
+            {
+              op: op,
+              entry: c,
+              title: cardTitle(op, c),
+              diff: cardDiff(op, c),
+              author: c.author || (cs && cs.author),
+              date: cs && cs.appliedAt,
+              stateKind: applied ? 'applied' : 'not-applied',
+              stateText: applied ? COPY.applied : COPY.notApplied,
+              note: c.notes,
+              resolution: applied ? '' : c.resolution || (cs && cs.resolution),
+              sources: c.sources,
+              elementId: elementName || (el && el.id),
+              revertable: applied && op === 'update_field',
+            },
+            {
+              doc: doc,
+              onRevert: opts && typeof opts.onRevert === 'function' ? opts.onRevert : null,
+              onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+            },
+          ),
+        )
       })
-      right.appendChild(del)
-      cardBody.appendChild(right)
-
-      li.appendChild(cardBody)
-      ul.appendChild(li)
     })
     return ul
   }
@@ -4777,6 +4944,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
   return {
     VERSION: UI_VERSION,
+    COPY: COPY,
     TOKEN_VALUES: TOKEN_VALUES,
     TOKENS: TOKENS,
     generateTokenCss: generateTokenCss,
@@ -4808,6 +4976,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     ElementPreview: ElementPreview,
     CITATION_ORIGIN_LABELS: CITATION_ORIGIN_LABELS,
     DraftList: DraftList,
+    ChangeHistory: ChangeHistory,
     AnnotationPopover: AnnotationPopover,
     RailProgress: RailProgress,
     Toast: Toast,
@@ -5128,8 +5297,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
   // A stale draft whose proposed value already equals the element's current
   // value has nothing to review: the change was applied out-of-band (e.g. an
-  // engine-side changeset). It reads 'already applied' and is excluded from
-  // export, instead of the misleading 'target changed'.
+  // engine-side changeset). An empty proposed value on a field the element no
+  // longer has is the applied clear. Such drafts are removed from the store when
+  // the console loads, instead of the misleading 'target changed'.
   function isAlreadyApplied(draft, elementsById) {
     var d = isObject(draft) ? draft : {}
     if (d.proposed === undefined || d.proposed === null) return false
@@ -5138,6 +5308,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     if (!el) return false
     if (!isTargetChanged(d, byId)) return false
     var current = currentFieldValue(el, d.field)
+    if (String(d.proposed) === '') return current === undefined || current === null
     if (current === undefined || current === null) return false
     return String(current) === String(d.proposed)
   }
@@ -5163,118 +5334,17 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return out
   }
 
-  function normalizeAddressKey(value) {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '')
-  }
-
-  // Badges derive only from changesets: `applied` / `conflict` from each element's
-  // changeset `history`, `proposed` from the domain payload's proposed changesets.
-  // Local drafts and reviewer verdicts never produce a badge; entries whose element
-  // no longer exists are dropped.
-  function badgesByElement(elements, changes) {
-    var list = Array.isArray(elements) ? elements : []
-    var changesets = Array.isArray(changes) ? changes : []
-    var out = {}
-    function bump(elId, status) {
-      if (!elId || !status) return
-      if (!out[elId]) out[elId] = {}
-      out[elId][status] = (out[elId][status] || 0) + 1
-    }
-    list.forEach(function (el) {
-      if (!el || !el.id) return
-      var history = Array.isArray(el.history) ? el.history : []
-      history.forEach(function (h) {
-        if (!isObject(h)) return
-        if (h.status === 'applied' || h.status === 'conflict') bump(el.id, h.status)
-      })
-    })
-    function keysOf(el) {
-      var keys = {}
-      if (el && el.id) {
-        var id = String(el.id)
-        keys[normalizeAddressKey(id)] = true
-        var at = id.indexOf('@')
-        if (at !== -1) keys[normalizeAddressKey(id.slice(at + 1))] = true
-      }
-      if (el && el.name) keys[normalizeAddressKey(el.name)] = true
-      return keys
-    }
-    changesets.forEach(function (cs) {
-      if (!isObject(cs) || cs.status !== 'proposed') return
-      var items = Array.isArray(cs.changes) ? cs.changes : []
-      items.forEach(function (c) {
-        if (!isObject(c)) return
-        var target = String(c.target || '')
-        var at = target.indexOf('@')
-        if (at === -1) return
-        var modelPart = target.slice(0, at)
-        var elementPart = target.slice(at + 1).split('&')[0].trim()
-        if (!elementPart) return
-        var forms = [normalizeAddressKey(elementPart), normalizeAddressKey(modelPart + elementPart)]
-        for (var i = 0; i < list.length; i++) {
-          var el = list[i]
-          if (!el || !el.id) continue
-          var keys = keysOf(el)
-          var hit = false
-          for (var f = 0; f < forms.length; f++) {
-            if (forms[f] && keys[forms[f]]) {
-              hit = true
-              break
-            }
-          }
-          if (hit) {
-            bump(el.id, 'proposed')
-            break
-          }
-        }
-      })
-    })
-    return out
-  }
-
-  // The single per-row change state: a local (unsent) edit wins over a proposed
-  // change, which wins over applied history; a conflict always wins (it needs a
-  // decision). `counts` carries every state present so the badge tooltip can
-  // enumerate them.
-  var CHANGE_STATE_ORDER = ['conflict', 'local', 'proposed', 'applied']
-
-  function changeStateOf(counts) {
-    var c = isObject(counts) ? counts : {}
-    for (var i = 0; i < CHANGE_STATE_ORDER.length; i++) {
-      var state = CHANGE_STATE_ORDER[i]
-      if (c[state]) return state
-    }
-    return null
-  }
-
-  function changeCountsByElement(elements, changes, drafts) {
-    var badges = badgesByElement(elements, changes)
+  // Unsent counts per element, read ONLY from the browser draft store. Applied,
+  // proposed and conflict changes never decorate a model view: they live in the
+  // Changes tab.
+  function unsentCountsByElement(drafts) {
     var counts = {}
-    Object.keys(badges).forEach(function (elId) {
-      counts[elId] = {}
-      Object.keys(badges[elId]).forEach(function (status) {
-        counts[elId][status] = badges[elId][status]
-      })
-    })
     ;(Array.isArray(drafts) ? drafts : []).forEach(function (d) {
       if (!d || !d.element_id) return
       var id = String(d.element_id)
-      if (!counts[id]) counts[id] = {}
-      counts[id].local = (counts[id].local || 0) + 1
+      counts[id] = (counts[id] || 0) + 1
     })
     return counts
-  }
-
-  function changeTooltip(state, counts) {
-    var c = isObject(counts) ? counts : {}
-    var parts = []
-    if (c.local) parts.push(c.local + ' unsent')
-    if (c.proposed) parts.push(c.proposed + ' proposed')
-    if (c.applied) parts.push(c.applied + ' applied')
-    if (c.conflict) parts.push(c.conflict + ' in conflict')
-    return parts.join(', ')
   }
 
   function canReview(meta, elements, needs) {
@@ -5347,7 +5417,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var options = isObject(opts) ? opts : {}
     var meta = isObject(options.meta) ? options.meta : {}
     var elements = Array.isArray(options.elements) ? options.elements : []
-    var changes = Array.isArray(options.changes) ? options.changes : []
     var needs = Array.isArray(options.needs) ? options.needs : []
     var store = options.store
     var elementsById = {}
@@ -5385,8 +5454,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       dismissToast()
       toastEl = UI.Toast(
         {
-          title: 'Change recorded',
-          body: 'It lives only in this console until you export it. Then apply it from cogNNitive to write it into the domain.',
+          title: UI.COPY.toastTitle,
+          body: UI.COPY.toastBody,
         },
         { doc: doc, onClose: dismissToast },
       )
@@ -6202,24 +6271,23 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       })
     }
 
-    // ONE change-state signal per row: it collapses the local (unsent) edit, the
-    // proposed changesets and the applied history into a single badge; every count
-    // lives in the badge tooltip. Decoration is capability-free (it reflects state,
-    // never a proposal), so it runs however the console boots.
+    // ONE change signal per row: the Unsent marker, read ONLY from the browser
+    // draft store. Applied, proposed and conflict changes never decorate a model
+    // view. Decoration is capability-free (it reflects state, never a proposal),
+    // so it runs however the console boots.
     function decorateChangeState(root) {
       var scope = root || doc
       if (!scope || !scope.querySelectorAll) return
-      var countsByEl = changeCountsByElement(elements, changes, store ? store.drafts() : [])
+      var countsByEl = unsentCountsByElement(store ? store.drafts() : [])
       Array.prototype.forEach.call(
         scope.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
         function (card) {
           ensureCardFocusable(card)
           var elId = card.getAttribute('data-element-id')
-          var elCounts = countsByEl[elId]
-          var state = elCounts ? changeStateOf(elCounts) : null
+          var count = countsByEl[elId] || 0
           var head = card.querySelector('.innfo-card-head') || card
           var host = head.querySelector('[data-innfo-change-state]')
-          if (!state) {
+          if (!count) {
             if (host && host.parentNode) host.parentNode.removeChild(host)
             return
           }
@@ -6231,10 +6299,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           host.innerHTML = ''
           if (typeof UI.StatusBadge !== 'function') return
           var badge = UI.StatusBadge({
-            status: state,
-            count: elCounts[state],
-            label: typeof UI.statusLabel === 'function' ? UI.statusLabel(state) : state,
-            title: changeTooltip(state, elCounts),
+            status: 'local',
+            count: count,
+            label: typeof UI.statusLabel === 'function' ? UI.statusLabel('local') : 'Unsent',
+            title: count + ' unsent',
           })
           badge.classList.add('innfo-change-state')
           host.appendChild(badge)
@@ -6460,6 +6528,27 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       return openEdit(anchorData)
     }
 
+    // On load, drop the drafts the console can already see were applied: a field
+    // draft whose value now equals the element's current value, or an empty
+    // proposed value on a field the element no longer has. Every other draft stays
+    // Unsent until the reviewer discards it.
+    function purgeAppliedDrafts() {
+      if (!store || typeof store.drafts !== 'function' || typeof store.clearDrafts !== 'function') {
+        return
+      }
+      var ids = store
+        .drafts()
+        .filter(function (d) {
+          return isAlreadyApplied(d, elementsById)
+        })
+        .map(function (d) {
+          return d && d.id
+        })
+        .filter(Boolean)
+      if (ids.length) store.clearDrafts(ids)
+    }
+    purgeAppliedDrafts()
+
     /* no review-mode toggle: there is no mode */
     if (doc.addEventListener) doc.addEventListener('innfo:rendered', onRendered)
     // One initial pass: covers the render that preceded the controller's creation.
@@ -6495,10 +6584,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     isTargetChanged: isTargetChanged,
     isAlreadyApplied: isAlreadyApplied,
     progressByConcept: progressByConcept,
-    badgesByElement: badgesByElement,
-    changeCountsByElement: changeCountsByElement,
-    changeStateOf: changeStateOf,
-    changeTooltip: changeTooltip,
     canReview: canReview,
     flattenCitations: flattenCitations,
   }
@@ -11163,29 +11248,61 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return byId
   }
 
-  // C11: the review tab renders through the kit DraftList from the v2 store.
+  // Case/separator-insensitive match of a change target's element part against an
+  // element's id, name or slug.
+  function findElementForTarget(elements, target) {
+    var t = String(target || '')
+    var at = t.indexOf('@')
+    var part = at === -1 ? t : t.slice(at + 1).split('&')[0]
+    function key(v) {
+      return String(v || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '')
+    }
+    var want = key(part)
+    if (!want) return null
+    var list = Array.isArray(elements) ? elements : []
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i]
+      if (!e) continue
+      if (key(e.id) === want || key(e.name) === want || key(e.slug) === want) return e
+    }
+    return null
+  }
+
+  function targetFieldOf(target) {
+    var t = String(target || '')
+    var at = t.indexOf('@')
+    var rest = at === -1 ? t : t.slice(at + 1)
+    var segs = rest.split('&')
+    return segs.length > 1 ? segs[1].trim() : ''
+  }
+
+  // One Changes tab: Unsent on top (the only change signal a model view carries),
+  // the applied history below. The history reads the payload `changes` collection.
   function renderReviewTab(doc, state, config, onRefresh) {
     var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-tab-review') : null
     if (!host) return
     host.innerHTML = ''
 
     var drafts = state && state.store ? state.store.drafts() : []
+    var changes = state && Array.isArray(state.changes) ? state.changes : []
+    var byId = elementsByIdOf(state)
     var root = el('div', 'innfo-review-tab-content p-6 max-w-5xl mx-auto')
     if (!root) return
 
     var head = el('section', 'innfo-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
     if (head) {
       var titleWrap = el('div')
-      titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', 'Proposed Changes'))
+      titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
       var count = el(
         'p',
         'innfo-review-count text-sm opacity-70 mt-1',
         drafts.length + (drafts.length === 1 ? ' pending change' : ' pending changes'),
       )
       if (count) titleWrap.appendChild(count)
-      var byIdForStale = elementsByIdOf(state)
       var staleCount = drafts.filter(function (d) {
-        return Review.isTargetChanged(d, byIdForStale) && !Review.isAlreadyApplied(d, byIdForStale)
+        return Review.isTargetChanged(d, byId) && !Review.isAlreadyApplied(d, byId)
       }).length
       if (staleCount > 0) {
         var staleNote = el(
@@ -11201,24 +11318,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         }
       }
       head.appendChild(titleWrap)
-
-      var exportedIds = state && Array.isArray(state.exportedDraftIds) ? state.exportedDraftIds : []
-      var exportedPending = drafts.filter(function (d) {
-        return exportedIds.indexOf(d.id) !== -1
-      })
-      if (exportedPending.length > 0 && state.store && typeof state.store.clearDrafts === 'function') {
-        var clearBtn = el('button', 'innfo-btn innfo-clear-exported btn btn-ghost btn-sm', 'Clear exported changes (' + exportedPending.length + ')')
-        if (clearBtn) {
-          clearBtn.setAttribute('type', 'button')
-          clearBtn.setAttribute('data-innfo', 'clear-exported')
-          clearBtn.addEventListener('click', function () {
-            state.store.clearDrafts(exportedPending.map(function (d) { return d.id }))
-            state.exportedDraftIds = []
-            if (typeof onRefresh === 'function') onRefresh()
-          })
-          head.appendChild(clearBtn)
-        }
-      }
 
       if (drafts.length > 0) {
         var exportBtn = el('button', 'innfo-btn innfo-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
@@ -11236,30 +11335,79 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       root.appendChild(head)
     }
 
-    var listSection = el('section', 'innfo-review-list-section')
-    if (listSection) {
-      if (drafts.length === 0) {
-        var empty = el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg flex items-center gap-3')
-        if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Edit an element to propose one.</span>'
-        } else {
-          empty.textContent = 'No proposed changes yet. Edit an element to propose one.'
+    function goTo(rawElementId) {
+      var elRec = findElementForTarget(state && state.elements, rawElementId)
+      focusElementCard(doc, elRec ? elRec.id : rawElementId)
+    }
+
+    // Revert an applied update_field: one unsent change on the same element and
+    // field, from the current value back to the change's `from` (or a clear).
+    function revertChange(entry) {
+      if (!state || !state.store || !entry) return
+      var elRec = findElementForTarget(state.elements, entry.target)
+      var field = entry.field || targetFieldOf(entry.target)
+      if (!elRec || !field) return
+      var current = elRec.fields ? elRec.fields[field] : undefined
+      state.store.addDraft({
+        element_id: elRec.id,
+        concept: elRec.concept,
+        element: elRec.name,
+        kind: 'correction',
+        field: field,
+        original: current,
+        proposed: entry.from != null ? entry.from : '',
+        base_hash: elRec.hash,
+      })
+      if (typeof onRefresh === 'function') onRefresh()
+    }
+
+    var unsent = el('section', 'innfo-changes-unsent mb-8')
+    if (unsent) {
+      unsent.appendChild(el('h3', 'text-lg font-semibold mb-2', UI.COPY.unsent))
+      if (drafts.length > 0) {
+        var banner = el('div', 'innfo-changes-banner alert alert-info text-sm mb-3', UI.COPY.banner)
+        if (banner) {
+          banner.setAttribute('data-innfo', 'publication-banner')
+          unsent.appendChild(banner)
         }
-        listSection.appendChild(empty)
-      } else {
-        listSection.appendChild(
-          UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, {
-            doc: doc,
-            isTargetChanged: Review.isTargetChanged,
-            isAlreadyApplied: Review.isAlreadyApplied,
-            onDelete: function (id) {
-              if (state && state.store) state.store.removeDraft(id)
-              if (typeof onRefresh === 'function') onRefresh()
+        unsent.appendChild(
+          UI.DraftList(
+            { drafts: drafts, byId: byId },
+            {
+              doc: doc,
+              isTargetChanged: Review.isTargetChanged,
+              onDelete: function (id) {
+                if (state && state.store) state.store.removeDraft(id)
+                if (typeof onRefresh === 'function') onRefresh()
+              },
+              onGoTo: goTo,
             },
-          }),
+          ),
+        )
+      } else {
+        var note = el('p', 'innfo-changes-banner-note text-sm opacity-70 mb-3', UI.COPY.bannerShort)
+        if (note) note.setAttribute('data-innfo', 'publication-note')
+        unsent.appendChild(note)
+        unsent.appendChild(
+          el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg', 'No unsent changes. Edit an element to record one.'),
         )
       }
-      root.appendChild(listSection)
+      root.appendChild(unsent)
+    }
+
+    var applied = el('section', 'innfo-changes-applied')
+    if (applied) {
+      applied.appendChild(el('h3', 'text-lg font-semibold mb-2', UI.COPY.applied))
+      var history = UI.ChangeHistory(
+        { changes: changes, byId: byId },
+        { doc: doc, onGoTo: goTo, onRevert: revertChange },
+      )
+      if (history && history.children.length > 0) {
+        applied.appendChild(history)
+      } else {
+        applied.appendChild(el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg', 'No applied changes yet.'))
+      }
+      root.appendChild(applied)
     }
 
     host.appendChild(root)
@@ -12085,7 +12233,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     modal.innerHTML =
       '<div class="innfo-feedback-head"><h2>Export proposed changes</h2>' +
       '<button data-innfo="close" type="button" aria-label="Close">×</button></div>' +
-      '<p class="innfo-feedback-seal">Sealed proposal: do not edit the file after download — any edit invalidates proposal_sha (PROPOSAL_TAMPERED). To retry, export a new file.</p>' +
+      '<p class="innfo-feedback-flow">' + UI.COPY.exportFlow + '</p>' +
       '<div data-innfo="preview"></div>' +
       '<label>Author / Reviewer identifier (required)' +
       '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
@@ -12226,7 +12374,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
   }
 
-  function draftToChange(draft, index, fallbackModel) {
+  function draftToChange(draft, index, fallbackModel, author) {
     var d = isObject(draft) ? draft : {}
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
     var model = oneLine(d.knowledge_id || fallbackModel || 'model')
@@ -12284,6 +12432,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       lines.push('name:: ' + formatChangesetValue(d.element))
       if (isObject(d.proposed)) lines.push('fields:: ' + JSON.stringify(d.proposed))
     }
+    // Every exported block names its author so a field citing the applied change
+    // resolves to a human author. `oneLine` folds CR/LF/U+2028 so a name cannot
+    // inject a second `key:: value` line.
+    lines.push('author:: ' + oneLine(author || 'reviewer'))
     if (d.comment) {
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
@@ -12320,7 +12472,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     ]
     var modelName = fallbackModel || meta.source_knowledge || 'model'
     var blocks = drafts.map(function (d, i) {
-      return draftToChange(d, i, modelName)
+      return draftToChange(d, i, modelName, author)
     })
     lines.push(blocks.join('\n\n'))
     lines.push('')
@@ -12361,12 +12513,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   function composeExport(state, identifier) {
     var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
     var drafts = state && state.store ? state.store.drafts() : []
-    // Already-applied drafts (stale hash, proposed == current value) carry no
-    // change: exclude them from the export instead of shipping redundancies.
-    var byId = elementsByIdOf(state)
-    drafts = drafts.filter(function (d) {
-      return !Review.isAlreadyApplied(d, byId)
-    })
     var model = state && state.modelTitle ? state.modelTitle : 'Model'
     var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
 
@@ -12448,18 +12594,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     setTimeout(function () {
       URL.revokeObjectURL(url)
     }, 1000)
-    markDraftsExported(state)
     return { ok: true, filename: composed.changesetFilename, items: composed.items }
-  }
-
-  // Remembers which drafts just left in an export so the Review tab can offer to
-  // clear them; drafts are never removed automatically (the file may be lost).
-  function markDraftsExported(state) {
-    if (!state || !state.store) return
-    state.exportedDraftIds = state.store.drafts().map(function (d) {
-      return d.id
-    })
-    if (typeof state.refreshUi === 'function') state.refreshUi()
   }
 
   function copyChangesetPrompt(doc, state) {
@@ -12486,7 +12621,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         navigator.clipboard.writeText(changesetText).then(
           function () {
             announce('Copied changeset to clipboard.')
-            markDraftsExported(state)
           },
           function () {
             announce(fallbackCopy(doc, textarea, changesetText))
@@ -12512,7 +12646,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     if (preview) {
       preview.innerHTML = ''
       preview.appendChild(
-        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged, isAlreadyApplied: Review.isAlreadyApplied }),
+        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged }),
       )
     }
 
@@ -12585,7 +12719,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         (state ? state.modelTitle : 'Model') +
         ' (' +
         (state ? state.modelVersion : '') +
-        ').'
+        '). ' +
+        UI.COPY.agentPromptSkipped
     }
 
     updateExportPreview(doc, state)
@@ -12742,6 +12877,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       // The changeset title comes from meta.title; a scoped export names its view there.
       meta: scopedView ? Object.assign({}, meta, { title: baseTitle + ' - ' + (scopedDef ? scopedDef.title : scopedView) }) : meta,
       elements: elements,
+      // The domain's changesets, newest first (export-console sorts them): the
+      // Changes tab's applied history.
+      changes: Array.isArray(model.changes) ? model.changes : [],
       schema: schema,
       concepts: concepts,
       store: Review.createDraftStore(
@@ -13076,7 +13214,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       state.controller = Review.createReviewController(active, {
         meta: meta,
         elements: elements,
-        changes: Array.isArray(model.changes) ? model.changes : [],
         needs: config.needs,
         store: state.store,
         schema: schema,

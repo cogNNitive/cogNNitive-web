@@ -10550,6 +10550,7 @@ async function loadChangesetRecords(rootDir) {
       status: fm.status,
       author: fm.author,
       appliedAt: fm.applied_at,
+      resolution: fm.resolution,
       changes: doc.changes.map((c) => ({
         id: c.id,
         op: c.op,
@@ -10558,7 +10559,13 @@ async function loadChangesetRecords(rootDir) {
         notes: c.notes,
         status: c.status,
         sources: c.sources,
-        replaced_sources: c.replaced_sources
+        replaced_sources: c.replaced_sources,
+        from: c.from,
+        to: c.to,
+        concept: c.concept,
+        name: c.name,
+        fields: c.fields,
+        resolution: c.resolution
       }))
     });
   }

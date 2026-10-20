@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-19T18:37:58.759Z",
-  "head": "d041d5862f75062661aea0288429551421ca61dd",
+  "generatedAt": "2026-10-20T05:21:12.589Z",
+  "head": "28f40a54904cf8075e86eefc3719bdda983a6484",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.25.0",
       "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
         "skills/nn-console/SKILL.md",
         "skills/nn-domain-git/SKILL.md",
@@ -27,8 +27,9 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.37.0",
       "pinnedTagDate": "2026-10-18T17:29:17+02:00",
-      "commitsSincePin": 16,
+      "commitsSincePin": 17,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/changes/assets/console-view-changes.js",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
@@ -46,8 +47,9 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.37.0",
       "pinnedTagDate": "2026-10-18T17:29:17+02:00",
-      "commitsSincePin": 16,
+      "commitsSincePin": 17,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/changes/assets/console-view-changes.js",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
@@ -65,7 +67,7 @@
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.26.0",
       "pinnedTagDate": "2026-10-18T13:31:07+02:00",
-      "commitsSincePin": 4,
+      "commitsSincePin": 5,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
         "iNNfo/packages/innfo-mcp/bin/nn-mcp.bundle.js",
@@ -75,9 +77,17 @@
         "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/innfo-mcp/src/tools/cognitivize.spec.ts",
         "iNNfo/packages/innfo-mcp/src/tools/cognitivize.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/propose-changeset.spec.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/propose-changeset.ts",
+        "iNNfo/packages/innfo-mcp/src/tools/prune-changesets.ts",
         "iNNfo/packages/innfo-mcp/src/tools/sync-lineage.spec.ts",
         "iNNfo/packages/innfo-mcp/src/tools/sync-lineage.ts",
         "iNNfo/packages/innfo-mcp/test/apply-change-rejections.test.ts",
+        "iNNfo/packages/innfo-mcp/test/apply-change.test.ts",
+        "iNNfo/packages/innfo-mcp/test/console-export-roundtrip.test.ts",
+        "iNNfo/packages/innfo-mcp/test/e2e-greenfield-smoke.test.ts",
+        "iNNfo/packages/innfo-mcp/test/greenfield-improvements.test.ts",
+        "iNNfo/packages/innfo-mcp/test/prune-changesets.test.ts",
         "iNNfo/packages/innfo-mcp/tsup.config.ts"
       ]
     },
@@ -85,7 +95,7 @@
       "subsystem": "innfo-console",
       "pinnedTag": "innfo-console-v0.22.0",
       "pinnedTagDate": "2026-10-18T23:07:46+02:00",
-      "commitsSincePin": 8,
+      "commitsSincePin": 9,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
@@ -95,6 +105,7 @@
         "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "scripts/export-console.mjs"
       ]

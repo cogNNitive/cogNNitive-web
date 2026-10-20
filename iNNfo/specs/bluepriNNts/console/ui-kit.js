@@ -740,36 +740,40 @@
     return btn
   }
 
-  // The change has one vocabulary with four states: a local edit that lives only
-  // in the console (`local`), a submitted proposal (`proposed`), a change written
-  // into the model (`applied`) and one that could not be applied (`conflict`).
-  var STATUSES = ['applied', 'conflict', 'proposed', 'local']
-  // Plain-language help for the change badge: the badge word IS the state and the
-  // colour matches it. Surfaced on hover via `title` so a reader who has never
-  // seen the console learns what blue/orange/green/red mean.
-  var STATUS_HELP = {
-    local:
-      'recorded in this console only \u2014 not submitted yet. Blue means unsent.',
-    proposed:
-      'submitted and waiting to be applied \u2014 it has not touched the model yet. Orange means pending.',
-    applied: 'written into the model by the engine. Green means done.',
-    conflict:
-      'in conflict with the current content \u2014 it needs a decision. Red means attention.',
-  }
-
-  var STATUS_LABELS = {
-    local: 'Unsent',
-    proposed: 'Proposed',
+  // Provisional user-facing copy ([P] at plan time): ONE table so the provisional
+  // terminology can be renamed in a single place. Internal identifiers, storage
+  // keys and payload shapes are never renamed here.
+  var COPY = {
+    unsent: 'Unsent',
     applied: 'Applied',
-    conflict: 'Conflict',
+    notApplied: 'Not applied',
+    changes: 'Changes',
+    discard: 'Discard',
+    revert: 'Revert',
+    goToElement: 'Go to element',
+    unsentHelp: 'Only in your browser. Export it and give it to the agent.',
+    appliedHelp: 'Recorded in the domain.',
+    toastTitle: 'Change recorded',
+    toastBody:
+      'It lives only in this console until you export it and give it to the agent to apply.',
+    exportFlow:
+      'Export the file and give it to the agent. The agent applies what it can and reports every skipped change and its reason. To retry, export a new file with only the skipped changes.',
+    agentPromptSkipped:
+      'Apply the attached changeset and report every change you skipped and the reason it was skipped.',
+    banner:
+      'Applied changes become part of every console generated from this domain. Do not include private data or content that is not meant for everyone.',
+    bannerShort: 'Applied changes become part of every console generated from this domain.',
   }
 
-  function statusHelp(status, count) {
-    var base = STATUS_HELP[status] || String(status)
-    if (count == null) return base
-    var n = Number(count)
-    if (!isFinite(n)) return base
-    return n + ' ' + (n === 1 ? 'change ' : 'changes ') + base
+  // Model views show ONE change state: `local` (Unsent), read from the browser's
+  // unsent store. Applied and Not applied are card text inside the Changes tab,
+  // never a badge.
+  var STATUSES = ['local']
+  var STATUS_HELP = { local: COPY.unsentHelp }
+  var STATUS_LABELS = { local: COPY.unsent }
+
+  function statusHelp(status) {
+    return STATUS_HELP[status] || String(status)
   }
 
   function statusLabel(status) {
@@ -798,7 +802,7 @@
     badge.setAttribute('aria-label', String(data.label != null ? data.label : text))
     badge.setAttribute(
       'title',
-      data.title != null ? String(data.title) : statusHelp(data.status, data.count),
+      data.title != null ? String(data.title) : COPY.unsentHelp,
     )
     return badge
   }
@@ -1850,24 +1854,9 @@
       bodyMounted = true
 
       var body = makeEl(doc, 'section', 'innfo-card-body')
-      var hasHistory = Array.isArray(data.history) && data.history.length > 0
-      if (hasHistory) {
-        var metaStrip = makeEl(doc, 'div', 'innfo-card-meta-strip')
-        if (hasHistory) {
-          var firstHist = data.history[0] || {}
-          var histText = data.history.length + (data.history.length === 1 ? ' applied change' : ' applied changes')
-          if (firstHist.id || firstHist.author) {
-            histText += ' (' + [firstHist.id, firstHist.author ? 'by ' + firstHist.author : null].filter(Boolean).join(' ') + ')'
-          }
-          var linPill = makeEl(doc, 'span', 'innfo-lineage-pill')
-          var linIco = makeEl(doc, 'span', 'innfo-lineage-icon')
-          linIco.innerHTML = icon('git-commit', 12)
-          linPill.appendChild(linIco)
-          linPill.appendChild(doc.createTextNode(histText))
-          metaStrip.appendChild(linPill)
-        }
-        body.appendChild(metaStrip)
-      }
+      // Model views show no change signal except the Unsent marker (added by the
+      // review controller from the draft store). The applied history stays in the
+      // card's Lineage tab, never as a meta-strip pill.
       if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
       if (bodyFields.length) {
         var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
@@ -1946,12 +1935,155 @@
     return card
   }
 
+  // ---- Change cards (one anatomy for unsent and applied history) ----
+
+  /** Splits a D5 address `model@element&field` into its element and field parts. */
+  function cardTargetParts(target) {
+    var t = String(target || '')
+    var at = t.indexOf('@')
+    var rest = at === -1 ? t : t.slice(at + 1)
+    var segs = rest.split('&')
+    return { element: (segs[0] || '').trim(), field: (segs[1] || '').trim() }
+  }
+
+  /** Human-language title for a change op (provisional copy, [P]). */
+  function cardTitle(op, entry) {
+    var e = entry || {}
+    var parts = cardTargetParts(e.target)
+    var element = e.element || parts.element
+    var field = e.field || parts.field
+    switch (op) {
+      case 'update_field':
+        return 'Edit `' + (field || 'field') + '` of `' + (element || 'element') + '`'
+      case 'update_matrix_cell':
+        return 'Edit cell `' + (e.row || '') + '` \u00d7 `' + (e.col || '') + '`'
+      case 'add_element':
+        return 'Add element `' + (e.name || element || '') + '`'
+      case 'remove_element':
+        return 'Delete `' + (element || e.name || '') + '`'
+      case 'rename_element':
+        return 'Rename `' + (element || '') + '`'
+      case 'rename_concept':
+        return 'Rename concept `' + (e.concept || '') + '`'
+      case 'comment':
+        return 'Comment on `' + (element || '') + '`'
+      default:
+        return String(op || 'Change')
+    }
+  }
+
+  /** The `previous -> new` line; add shows the fields, delete the element name. */
+  function cardDiff(op, entry) {
+    var e = entry || {}
+    if (op === 'add_element') {
+      var fields = e.fields && typeof e.fields === 'object' ? e.fields : e.proposed
+      if (fields && typeof fields === 'object') {
+        return Object.keys(fields)
+          .map(function (k) {
+            return k + ': ' + String(fields[k])
+          })
+          .join(', ')
+      }
+      return e.element || e.name || ''
+    }
+    if (op === 'remove_element' || op === 'rename_element' || op === 'rename_concept') {
+      return String(e.from != null ? e.from : e.element || e.name || '')
+    }
+    if (op === 'comment') return ''
+    var from = e.from != null ? e.from : e.original
+    var to = e.to != null ? e.to : e.proposed
+    if (from == null && to == null) return ''
+    return String(from == null ? '' : from) + ' \u2192 ' + String(to == null ? '' : to)
+  }
+
+  function changeCard(state, opts) {
+    var doc = (opts && opts.doc) || resolveDoc(opts)
+    var s = state || {}
+    var li = makeEl(doc, 'li', 'innfo-change-card card bg-base-100 border border-base-200 shadow-xs')
+    li.setAttribute('data-innfo-component', 'change-card')
+    li.setAttribute('data-change-state', s.stateKind || 'unsent')
+    if (s.draftId) li.setAttribute('data-draft-id', String(s.draftId))
+    if (s.targetChanged) li.setAttribute('data-target-changed', 'true')
+
+    var body = makeEl(doc, 'div', 'innfo-change-card-body card-body p-4 flex flex-col gap-2')
+
+    var head = makeEl(doc, 'div', 'innfo-change-card-head flex items-center justify-between gap-3')
+    head.appendChild(makeEl(doc, 'span', 'innfo-change-card-title font-semibold text-sm', s.title || ''))
+    if (s.stateKind === 'unsent' && typeof StatusBadge === 'function') {
+      var badge = StatusBadge({ status: 'local', label: COPY.unsent })
+      badge.classList.add('innfo-change-card-badge')
+      head.appendChild(badge)
+    } else {
+      head.appendChild(makeEl(doc, 'span', 'innfo-change-card-state text-xs font-semibold', s.stateText || ''))
+    }
+    body.appendChild(head)
+
+    if (s.targetNode) {
+      var targetWrap = makeEl(doc, 'div', 'innfo-change-card-target inline-flex items-center gap-1.5 flex-wrap text-sm')
+      targetWrap.appendChild(s.targetNode)
+      body.appendChild(targetWrap)
+    }
+
+    if (s.diff) body.appendChild(makeEl(doc, 'div', 'innfo-change-card-diff text-sm', s.diff))
+
+    var context = [s.author, s.date].filter(Boolean).join(' \u00b7 ')
+    body.appendChild(makeEl(doc, 'div', 'innfo-change-card-context text-xs opacity-70', context))
+
+    if (s.note) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-note text-sm', s.note))
+    if (s.resolution) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-resolution text-xs', s.resolution))
+    if (s.sources) body.appendChild(makeEl(doc, 'span', 'innfo-change-card-source text-xs', String(s.sources)))
+
+    if (s.targetChanged) {
+      body.appendChild(makeEl(doc, 'span', 'innfo-change-card-stale text-xs', 'target changed'))
+    }
+
+    var actions = makeEl(doc, 'div', 'innfo-change-card-actions flex items-center gap-2')
+    if (s.elementId && opts && typeof opts.onGoTo === 'function') {
+      var go = makeEl(doc, 'button', 'innfo-change-goto btn btn-sm btn-ghost', COPY.goToElement)
+      go.setAttribute('type', 'button')
+      go.addEventListener('click', function () {
+        opts.onGoTo(s.elementId)
+      })
+      actions.appendChild(go)
+    }
+    if (s.revertable && opts && typeof opts.onRevert === 'function') {
+      var rev = makeEl(doc, 'button', 'innfo-change-revert btn btn-sm btn-ghost', COPY.revert)
+      rev.setAttribute('type', 'button')
+      rev.addEventListener('click', function () {
+        opts.onRevert(s.entry)
+      })
+      actions.appendChild(rev)
+    }
+    if (s.draftId && opts && typeof opts.onDiscard === 'function') {
+      var dis = makeEl(doc, 'button', 'innfo-change-discard btn btn-sm btn-ghost text-error', COPY.discard)
+      dis.setAttribute('type', 'button')
+      dis.addEventListener('click', function () {
+        opts.onDiscard(s.draftId)
+      })
+      actions.appendChild(dis)
+    }
+    if (actions.children.length) body.appendChild(actions)
+
+    li.appendChild(body)
+    return li
+  }
+
+  function draftOp(d) {
+    if (d.matrix != null && d.matrix !== '') return 'update_matrix_cell'
+    var canUpdate = !!d.field && d.proposed !== undefined
+    if (canUpdate && String(d.field).toLowerCase() === 'name') return 'rename_element'
+    if (d.kind === 'delete') return 'remove_element'
+    if (d.kind === 'new') return d.concept && d.element ? 'add_element' : 'comment'
+    if (d.kind === 'comment' || !canUpdate) return 'comment'
+    return 'update_field'
+  }
+
   function DraftList(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.DraftList: data required')
     var doc = resolveDoc(opts)
     var drafts = Array.isArray(data.drafts) ? data.drafts : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
-    var ul = makeEl(doc, 'ul', 'innfo-draft-list flex flex-col gap-3 list-none p-0 m-0')
+    var ul = makeEl(doc, 'ul', 'innfo-draft-list innfo-change-list flex flex-col gap-3 list-none p-0 m-0')
     ul.setAttribute('data-innfo-component', 'draft-list')
     drafts.forEach(function (d) {
       if (!d || typeof d !== 'object') return
@@ -1961,30 +2093,15 @@
         opts && typeof opts.isTargetChanged === 'function'
           ? opts.isTargetChanged(d, byId)
           : !el || el.hash !== d.base_hash
-      // A stale draft whose proposed value already equals the current value was
-      // applied out-of-band: 'already applied', not 'target changed'.
-      var applied =
-        changed && opts && typeof opts.isAlreadyApplied === 'function'
-          ? opts.isAlreadyApplied(d, byId)
-          : false
-      var li = makeEl(doc, 'li', 'innfo-draft-row card bg-base-100 border border-base-200 shadow-xs')
-      li.setAttribute('data-draft-id', String(d.id))
-      if (changed && !applied) li.setAttribute('data-target-changed', 'true')
-      if (applied) li.setAttribute('data-already-applied', 'true')
-
-      var cardBody = makeEl(doc, 'div', 'card-body p-4 flex flex-row items-center justify-between gap-4')
-
-      var left = makeEl(doc, 'div', 'flex items-center gap-3 flex-wrap')
-      var badgeCls = d.kind === 'correction' ? 'badge badge-primary' : d.kind === 'comment' ? 'badge badge-neutral' : 'badge badge-ghost'
-      var kindBadge = makeEl(doc, 'span', 'innfo-draft-kind ' + badgeCls, d.kind)
-      left.appendChild(kindBadge)
-
-      var targetLabel = el ? el.name || d.element_id : d.element || d.element_id
+      var op = draftOp(d)
+      var elementName = (el && el.name) || d.element || d.element_id || ''
+      // Target chips are knowledge units built by Ku, keyed by canonical address
+      // (the published console-ui-kit contract, kept).
       var targetConcept = d.concept || (el && el.concept) || null
       var draftModel = (opts && (opts.modelId || opts.model)) || d.model || (el && el.modelId) || 'model'
-      var targetSpan = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5 font-semibold text-sm')
+      var targetNode = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5')
       if (targetConcept) {
-        targetSpan.appendChild(
+        targetNode.appendChild(
           Ku(
             'section',
             {
@@ -1999,16 +2116,16 @@
         )
       }
       var unitKind = d.field ? 'value' : 'element'
-      targetSpan.appendChild(
+      targetNode.appendChild(
         Ku(
           unitKind,
           {
             address: d.address || undefined,
             model: draftModel,
-            element: d.element_id || targetLabel,
+            element: d.element_id || elementName,
             field: d.field || undefined,
-            id: d.element_id || targetLabel,
-            label: targetLabel,
+            id: d.element_id || elementName,
+            label: elementName,
             concept: targetConcept,
             color: el && el._conceptColor,
             index: el && el._conceptIndex,
@@ -2017,10 +2134,10 @@
         ),
       )
       if (d.field) {
-        var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '→')
+        var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '\u2192')
         arrowSpan.setAttribute('aria-hidden', 'true')
-        targetSpan.appendChild(arrowSpan)
-        targetSpan.appendChild(
+        targetNode.appendChild(arrowSpan)
+        targetNode.appendChild(
           Ku(
             'field',
             {
@@ -2034,35 +2151,85 @@
           ),
         )
       }
-      left.appendChild(targetSpan)
+      ul.appendChild(
+        changeCard(
+          {
+            draftId: d.id,
+            op: op,
+            title: cardTitle(op, d),
+            diff: cardDiff(op, d),
+            targetNode: targetNode,
+            author: d.author,
+            date: d.created_at,
+            stateKind: 'unsent',
+            stateText: COPY.unsent,
+            note: d.comment != null ? d.comment : '',
+            sources: d.sources,
+            elementId: d.element_id || elementName,
+            targetChanged: changed,
+          },
+          {
+            doc: doc,
+            onDiscard:
+              opts && typeof opts.onDelete === 'function'
+                ? function (id) {
+                    opts.onDelete(id)
+                  }
+                : null,
+            onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+          },
+        ),
+      )
+    })
+    return ul
+  }
 
-      var text = d.comment != null ? d.comment : d.proposed != null ? d.proposed : ''
-      var textSpan = makeEl(doc, 'span', 'innfo-draft-text text-sm opacity-80', text)
-      left.appendChild(textSpan)
-      cardBody.appendChild(left)
-
-      var right = makeEl(doc, 'div', 'flex items-center gap-2 shrink-0')
-      if (applied) {
-        var appliedBadge = makeEl(doc, 'span', 'innfo-draft-already-applied badge badge-neutral badge-sm', 'already applied')
-        right.appendChild(appliedBadge)
-      } else if (changed) {
-        var warnBadge = makeEl(doc, 'span', 'innfo-draft-target-changed badge badge-error badge-sm', 'target changed')
-        right.appendChild(warnBadge)
-      }
-
-      var del = makeEl(doc, 'button', 'innfo-draft-delete btn btn-sm btn-ghost text-error', 'Delete')
-      del.setAttribute('type', 'button')
-      if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-        del.innerHTML = InnfoIcons.getSvg('trash-2', { size: 14 }) + '<span>Delete</span>'
-      }
-      del.addEventListener('click', function () {
-        if (opts && typeof opts.onDelete === 'function') opts.onDelete(d.id)
+  // Renders the payload `changes` collection: one card per applied block (with
+  // Revert for an `update_field`) and one muted card per not-applied block, with
+  // the engine's reason. Holds no state, reads no storage.
+  function ChangeHistory(data, opts) {
+    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ChangeHistory: data required')
+    var doc = resolveDoc(opts)
+    var changesets = Array.isArray(data.changes) ? data.changes : []
+    var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
+    var ul = makeEl(doc, 'ul', 'innfo-change-history flex flex-col gap-3 list-none p-0 m-0')
+    ul.setAttribute('data-innfo-component', 'change-history')
+    changesets.forEach(function (cs) {
+      var items = Array.isArray(cs && cs.changes) ? cs.changes : []
+      items.forEach(function (c) {
+        if (!c || typeof c !== 'object') return
+        var status = c.status || (cs && cs.status)
+        if (status !== 'applied' && status !== 'conflict' && status !== 'rejected') return
+        var applied = status === 'applied'
+        var op = c.op
+        var parts = cardTargetParts(c.target)
+        var elementName = parts.element
+        var el = byId[elementName] || byId[c.element_id]
+        ul.appendChild(
+          changeCard(
+            {
+              op: op,
+              entry: c,
+              title: cardTitle(op, c),
+              diff: cardDiff(op, c),
+              author: c.author || (cs && cs.author),
+              date: cs && cs.appliedAt,
+              stateKind: applied ? 'applied' : 'not-applied',
+              stateText: applied ? COPY.applied : COPY.notApplied,
+              note: c.notes,
+              resolution: applied ? '' : c.resolution || (cs && cs.resolution),
+              sources: c.sources,
+              elementId: elementName || (el && el.id),
+              revertable: applied && op === 'update_field',
+            },
+            {
+              doc: doc,
+              onRevert: opts && typeof opts.onRevert === 'function' ? opts.onRevert : null,
+              onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+            },
+          ),
+        )
       })
-      right.appendChild(del)
-      cardBody.appendChild(right)
-
-      li.appendChild(cardBody)
-      ul.appendChild(li)
     })
     return ul
   }
@@ -3857,6 +4024,7 @@
 
   return {
     VERSION: UI_VERSION,
+    COPY: COPY,
     TOKEN_VALUES: TOKEN_VALUES,
     TOKENS: TOKENS,
     generateTokenCss: generateTokenCss,
@@ -3888,6 +4056,7 @@
     ElementPreview: ElementPreview,
     CITATION_ORIGIN_LABELS: CITATION_ORIGIN_LABELS,
     DraftList: DraftList,
+    ChangeHistory: ChangeHistory,
     AnnotationPopover: AnnotationPopover,
     RailProgress: RailProgress,
     Toast: Toast,

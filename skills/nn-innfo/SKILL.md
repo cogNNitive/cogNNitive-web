@@ -335,7 +335,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/innfo-core`.
 
 <!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
-**23** tools
+**22** tools
 
 | Tool | Description |
 |------|-------------|
@@ -361,7 +361,6 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
 | `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
-| `prune_changesets` | Scan all knowledge documents in the domain for cited changesets and remove the unreferenced, finished (applied or rejected) changesets from changes/, then refresh the domain manifest. Proposed, conflict, partially applied and unreadable changesets are never removed. It does not regenerate index.md or the console. |
 <!-- /generated:mcp-tools -->
 
 **Golden Rule:** The specification/app URL always comes from `parent_spec.url` or from the user. Never hardcode or invent URLs.
@@ -479,7 +478,7 @@ The result of `propose_changeset`, `apply_change`, `regenerate_console` and `ini
 - Write `changes/<prefix>_<author>_<stamp>_changes_NN.md`: the frontmatter (`spec_version`, `level: 3`, `parent_spec` → changes, `blueprint_version`, `status: proposed`, `title`, `author`) followed by one `## NN Change: <id>` block per operation (`op::`, `target::`, `to::`, optional `from::`).
 - **Omit `proposal_sha`.** At intake the runtime seals the document itself (`proposal_sha = sha256(changes)`). Include it only if you compute the exact hash; a present but non-matching value is rejected with `PROPOSAL_TAMPERED` ("...or clear `frontmatter.proposal_sha` so it is re-sealed at intake").
 - Every operation is validated and applied in a single atomic pass; each touched model version bumps once.
-- It stays auditable: it is a normal changeset in `changes/`, cited by the mutated elements, and governed by `prune_changesets`.
+- It stays auditable: it is a normal changeset in `changes/`, cited by the mutated elements, and kept as part of the audit trail.
 
 Prefer `propose_changeset` for interactive, review-driven changes; hand-author when the batch is large and mechanical.
 
@@ -493,9 +492,6 @@ Every change is audited through an immutable changeset:
 - `apply_change` automatically stamps the mutated element's `sources::` field with the changeset reference (`changes/<file>.md@## NN Change: <id>`).
 - To cite a primary source, declare it on the changeset operation as `sources`, a single citation STRING (not an array): `sources: "sources/import/<file>.md@## <Heading>"`. The change's `sources` is the evidence; it is sealed with the proposal and is not copied onto the element.
 - Only `update_field` and `add_element` rewrite citations. Never attempt to manually override an element's `sources::` field with a direct source path: the mutation engine enforces the audit trail.
-
-#### Changeset Pruning & Hygiene
-Finished changesets (`applied` or `rejected`) that no model cites can be pruned with `innfo-mcp_prune_changesets({ dryRun: false })`. It never deletes a `proposed`, `conflict` or `partially_applied` changeset (they hold pending work) nor a file it cannot parse. After a deletion it only reconciles the domain manifest (`syncDomainManifest`); it does not regenerate `index.md` or the console.
 
 #### New domain and migration
 

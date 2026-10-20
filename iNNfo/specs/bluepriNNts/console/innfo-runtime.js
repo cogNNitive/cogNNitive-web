@@ -4656,29 +4656,61 @@
     return byId
   }
 
-  // C11: the review tab renders through the kit DraftList from the v2 store.
+  // Case/separator-insensitive match of a change target's element part against an
+  // element's id, name or slug.
+  function findElementForTarget(elements, target) {
+    var t = String(target || '')
+    var at = t.indexOf('@')
+    var part = at === -1 ? t : t.slice(at + 1).split('&')[0]
+    function key(v) {
+      return String(v || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '')
+    }
+    var want = key(part)
+    if (!want) return null
+    var list = Array.isArray(elements) ? elements : []
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i]
+      if (!e) continue
+      if (key(e.id) === want || key(e.name) === want || key(e.slug) === want) return e
+    }
+    return null
+  }
+
+  function targetFieldOf(target) {
+    var t = String(target || '')
+    var at = t.indexOf('@')
+    var rest = at === -1 ? t : t.slice(at + 1)
+    var segs = rest.split('&')
+    return segs.length > 1 ? segs[1].trim() : ''
+  }
+
+  // One Changes tab: Unsent on top (the only change signal a model view carries),
+  // the applied history below. The history reads the payload `changes` collection.
   function renderReviewTab(doc, state, config, onRefresh) {
     var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-tab-review') : null
     if (!host) return
     host.innerHTML = ''
 
     var drafts = state && state.store ? state.store.drafts() : []
+    var changes = state && Array.isArray(state.changes) ? state.changes : []
+    var byId = elementsByIdOf(state)
     var root = el('div', 'innfo-review-tab-content p-6 max-w-5xl mx-auto')
     if (!root) return
 
     var head = el('section', 'innfo-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
     if (head) {
       var titleWrap = el('div')
-      titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', 'Proposed Changes'))
+      titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
       var count = el(
         'p',
         'innfo-review-count text-sm opacity-70 mt-1',
         drafts.length + (drafts.length === 1 ? ' pending change' : ' pending changes'),
       )
       if (count) titleWrap.appendChild(count)
-      var byIdForStale = elementsByIdOf(state)
       var staleCount = drafts.filter(function (d) {
-        return Review.isTargetChanged(d, byIdForStale) && !Review.isAlreadyApplied(d, byIdForStale)
+        return Review.isTargetChanged(d, byId) && !Review.isAlreadyApplied(d, byId)
       }).length
       if (staleCount > 0) {
         var staleNote = el(
@@ -4694,24 +4726,6 @@
         }
       }
       head.appendChild(titleWrap)
-
-      var exportedIds = state && Array.isArray(state.exportedDraftIds) ? state.exportedDraftIds : []
-      var exportedPending = drafts.filter(function (d) {
-        return exportedIds.indexOf(d.id) !== -1
-      })
-      if (exportedPending.length > 0 && state.store && typeof state.store.clearDrafts === 'function') {
-        var clearBtn = el('button', 'innfo-btn innfo-clear-exported btn btn-ghost btn-sm', 'Clear exported changes (' + exportedPending.length + ')')
-        if (clearBtn) {
-          clearBtn.setAttribute('type', 'button')
-          clearBtn.setAttribute('data-innfo', 'clear-exported')
-          clearBtn.addEventListener('click', function () {
-            state.store.clearDrafts(exportedPending.map(function (d) { return d.id }))
-            state.exportedDraftIds = []
-            if (typeof onRefresh === 'function') onRefresh()
-          })
-          head.appendChild(clearBtn)
-        }
-      }
 
       if (drafts.length > 0) {
         var exportBtn = el('button', 'innfo-btn innfo-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
@@ -4729,30 +4743,79 @@
       root.appendChild(head)
     }
 
-    var listSection = el('section', 'innfo-review-list-section')
-    if (listSection) {
-      if (drafts.length === 0) {
-        var empty = el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg flex items-center gap-3')
-        if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-          empty.innerHTML = InnfoIcons.getSvg('info', { size: 18 }) + '<span>No proposed changes yet. Edit an element to propose one.</span>'
-        } else {
-          empty.textContent = 'No proposed changes yet. Edit an element to propose one.'
+    function goTo(rawElementId) {
+      var elRec = findElementForTarget(state && state.elements, rawElementId)
+      focusElementCard(doc, elRec ? elRec.id : rawElementId)
+    }
+
+    // Revert an applied update_field: one unsent change on the same element and
+    // field, from the current value back to the change's `from` (or a clear).
+    function revertChange(entry) {
+      if (!state || !state.store || !entry) return
+      var elRec = findElementForTarget(state.elements, entry.target)
+      var field = entry.field || targetFieldOf(entry.target)
+      if (!elRec || !field) return
+      var current = elRec.fields ? elRec.fields[field] : undefined
+      state.store.addDraft({
+        element_id: elRec.id,
+        concept: elRec.concept,
+        element: elRec.name,
+        kind: 'correction',
+        field: field,
+        original: current,
+        proposed: entry.from != null ? entry.from : '',
+        base_hash: elRec.hash,
+      })
+      if (typeof onRefresh === 'function') onRefresh()
+    }
+
+    var unsent = el('section', 'innfo-changes-unsent mb-8')
+    if (unsent) {
+      unsent.appendChild(el('h3', 'text-lg font-semibold mb-2', UI.COPY.unsent))
+      if (drafts.length > 0) {
+        var banner = el('div', 'innfo-changes-banner alert alert-info text-sm mb-3', UI.COPY.banner)
+        if (banner) {
+          banner.setAttribute('data-innfo', 'publication-banner')
+          unsent.appendChild(banner)
         }
-        listSection.appendChild(empty)
-      } else {
-        listSection.appendChild(
-          UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, {
-            doc: doc,
-            isTargetChanged: Review.isTargetChanged,
-            isAlreadyApplied: Review.isAlreadyApplied,
-            onDelete: function (id) {
-              if (state && state.store) state.store.removeDraft(id)
-              if (typeof onRefresh === 'function') onRefresh()
+        unsent.appendChild(
+          UI.DraftList(
+            { drafts: drafts, byId: byId },
+            {
+              doc: doc,
+              isTargetChanged: Review.isTargetChanged,
+              onDelete: function (id) {
+                if (state && state.store) state.store.removeDraft(id)
+                if (typeof onRefresh === 'function') onRefresh()
+              },
+              onGoTo: goTo,
             },
-          }),
+          ),
+        )
+      } else {
+        var note = el('p', 'innfo-changes-banner-note text-sm opacity-70 mb-3', UI.COPY.bannerShort)
+        if (note) note.setAttribute('data-innfo', 'publication-note')
+        unsent.appendChild(note)
+        unsent.appendChild(
+          el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg', 'No unsent changes. Edit an element to record one.'),
         )
       }
-      root.appendChild(listSection)
+      root.appendChild(unsent)
+    }
+
+    var applied = el('section', 'innfo-changes-applied')
+    if (applied) {
+      applied.appendChild(el('h3', 'text-lg font-semibold mb-2', UI.COPY.applied))
+      var history = UI.ChangeHistory(
+        { changes: changes, byId: byId },
+        { doc: doc, onGoTo: goTo, onRevert: revertChange },
+      )
+      if (history && history.children.length > 0) {
+        applied.appendChild(history)
+      } else {
+        applied.appendChild(el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg', 'No applied changes yet.'))
+      }
+      root.appendChild(applied)
     }
 
     host.appendChild(root)
@@ -5578,7 +5641,7 @@
     modal.innerHTML =
       '<div class="innfo-feedback-head"><h2>Export proposed changes</h2>' +
       '<button data-innfo="close" type="button" aria-label="Close">×</button></div>' +
-      '<p class="innfo-feedback-seal">Sealed proposal: do not edit the file after download — any edit invalidates proposal_sha (PROPOSAL_TAMPERED). To retry, export a new file.</p>' +
+      '<p class="innfo-feedback-flow">' + UI.COPY.exportFlow + '</p>' +
       '<div data-innfo="preview"></div>' +
       '<label>Author / Reviewer identifier (required)' +
       '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
@@ -5719,7 +5782,7 @@
     return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
   }
 
-  function draftToChange(draft, index, fallbackModel) {
+  function draftToChange(draft, index, fallbackModel, author) {
     var d = isObject(draft) ? draft : {}
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
     var model = oneLine(d.knowledge_id || fallbackModel || 'model')
@@ -5777,6 +5840,10 @@
       lines.push('name:: ' + formatChangesetValue(d.element))
       if (isObject(d.proposed)) lines.push('fields:: ' + JSON.stringify(d.proposed))
     }
+    // Every exported block names its author so a field citing the applied change
+    // resolves to a human author. `oneLine` folds CR/LF/U+2028 so a name cannot
+    // inject a second `key:: value` line.
+    lines.push('author:: ' + oneLine(author || 'reviewer'))
     if (d.comment) {
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
@@ -5813,7 +5880,7 @@
     ]
     var modelName = fallbackModel || meta.source_knowledge || 'model'
     var blocks = drafts.map(function (d, i) {
-      return draftToChange(d, i, modelName)
+      return draftToChange(d, i, modelName, author)
     })
     lines.push(blocks.join('\n\n'))
     lines.push('')
@@ -5854,12 +5921,6 @@
   function composeExport(state, identifier) {
     var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
     var drafts = state && state.store ? state.store.drafts() : []
-    // Already-applied drafts (stale hash, proposed == current value) carry no
-    // change: exclude them from the export instead of shipping redundancies.
-    var byId = elementsByIdOf(state)
-    drafts = drafts.filter(function (d) {
-      return !Review.isAlreadyApplied(d, byId)
-    })
     var model = state && state.modelTitle ? state.modelTitle : 'Model'
     var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
 
@@ -5941,18 +6002,7 @@
     setTimeout(function () {
       URL.revokeObjectURL(url)
     }, 1000)
-    markDraftsExported(state)
     return { ok: true, filename: composed.changesetFilename, items: composed.items }
-  }
-
-  // Remembers which drafts just left in an export so the Review tab can offer to
-  // clear them; drafts are never removed automatically (the file may be lost).
-  function markDraftsExported(state) {
-    if (!state || !state.store) return
-    state.exportedDraftIds = state.store.drafts().map(function (d) {
-      return d.id
-    })
-    if (typeof state.refreshUi === 'function') state.refreshUi()
   }
 
   function copyChangesetPrompt(doc, state) {
@@ -5979,7 +6029,6 @@
         navigator.clipboard.writeText(changesetText).then(
           function () {
             announce('Copied changeset to clipboard.')
-            markDraftsExported(state)
           },
           function () {
             announce(fallbackCopy(doc, textarea, changesetText))
@@ -6005,7 +6054,7 @@
     if (preview) {
       preview.innerHTML = ''
       preview.appendChild(
-        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged, isAlreadyApplied: Review.isAlreadyApplied }),
+        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, { doc: doc, isTargetChanged: Review.isTargetChanged }),
       )
     }
 
@@ -6078,7 +6127,8 @@
         (state ? state.modelTitle : 'Model') +
         ' (' +
         (state ? state.modelVersion : '') +
-        ').'
+        '). ' +
+        UI.COPY.agentPromptSkipped
     }
 
     updateExportPreview(doc, state)
@@ -6235,6 +6285,9 @@
       // The changeset title comes from meta.title; a scoped export names its view there.
       meta: scopedView ? Object.assign({}, meta, { title: baseTitle + ' - ' + (scopedDef ? scopedDef.title : scopedView) }) : meta,
       elements: elements,
+      // The domain's changesets, newest first (export-console sorts them): the
+      // Changes tab's applied history.
+      changes: Array.isArray(model.changes) ? model.changes : [],
       schema: schema,
       concepts: concepts,
       store: Review.createDraftStore(
@@ -6569,7 +6622,6 @@
       state.controller = Review.createReviewController(active, {
         meta: meta,
         elements: elements,
-        changes: Array.isArray(model.changes) ? model.changes : [],
         needs: config.needs,
         store: state.store,
         schema: schema,
