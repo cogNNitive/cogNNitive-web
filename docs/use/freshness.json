@@ -1,61 +1,38 @@
 {
-  "generatedAt": "2026-10-20T09:03:42.497Z",
-  "head": "8c37c51aeb269903aa33fd7cfcb3aa3dd38d7b30",
+  "generatedAt": "2026-10-20T10:25:48.010Z",
+  "head": "9577a78c03e5575bbd4e3e89c34693933bab50e6",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.26.0",
-      "pinnedTagDate": "2026-10-20T07:39:06+02:00",
-      "commitsSincePin": 4,
-      "filesTouched": [
-        "skills/nn-innfo/SKILL.md",
-        "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
-        "skills/nn-skills-lifecycle/SKILL.md",
-        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
-        "skills/nn-sources/scripts/lib/innfo-core.generated.cjs"
-      ]
+      "pinnedTag": "skills-v2.27.0",
+      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.38.0",
-      "pinnedTagDate": "2026-10-20T07:39:06+02:00",
-      "commitsSincePin": 6,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/video-engine-cli.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.39.0",
+      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.38.0",
-      "pinnedTagDate": "2026-10-20T07:39:06+02:00",
-      "commitsSincePin": 6,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/video-engine-cli.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.39.0",
+      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "innfo-mcp": {
       "subsystem": "innfo-mcp",
       "pinnedTag": "innfo-mcp-v0.27.0",
       "pinnedTagDate": "2026-10-20T07:39:06+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/packages/innfo-mcp/README.md",
+        "iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/innfo-mcp/package.json",
         "iNNfo/packages/innfo-mcp/src/server.spec.ts",
         "iNNfo/packages/innfo-mcp/src/server.ts",
         "iNNfo/packages/innfo-mcp/src/tools/apply-change.ts",
@@ -72,18 +49,10 @@
     },
     "innfo-console": {
       "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.23.0",
-      "pinnedTagDate": "2026-10-20T07:39:06+02:00",
-      "commitsSincePin": 6,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/innfo-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "scripts/export-console.mjs"
-      ]
+      "pinnedTag": "innfo-console-v0.24.0",
+      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }
