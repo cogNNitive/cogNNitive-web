@@ -1377,13 +1377,22 @@ registerView({
   return { targetPath, slug: cleanSlug, title: viewTitle, blueprint: Boolean(blueprint) }
 }
 
-async function main() {
-  const args = parseArgs(process.argv)
+/**
+ * The CLI/worker body, without any `process.exit`. Resolves to
+ * `{ exitCode, writtenFiles }`; throws `ConsoleExportError` for asset/model failures.
+ * `argv` is the argument list after the script name (design D4 / console-export-cli spec).
+ * @param {string[]} argv
+ * @param {{ open?: boolean, launcher?: Function }} [options]
+ */
+async function runMain(argv, options = {}) {
+  const args = parseArgs(['node', 'export-console.mjs', ...argv])
+  if (options.launcher !== undefined) args.launcher = options.launcher
+  if (typeof options.open === 'boolean') args.open = options.open
   if (!args.root) {
     console.error(
       'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--new-view <slug>] [--filter <pattern>] [--no-open] [<ModelName>]',
     )
-    process.exit(2)
+    return { exitCode: 2, writtenFiles: [] }
   }
   const root = resolve(args.root)
 
@@ -1391,7 +1400,7 @@ async function main() {
     const template = VIEW_TEMPLATES.find((t) => t === args.template)
     if (!template) {
       console.error(`Error: unknown --template "${args.template}" (expected ${VIEW_TEMPLATES.join(' | ')}).`)
-      process.exit(2)
+      return { exitCode: 2, writtenFiles: [] }
     }
     const created = await scaffoldConsoleView({
       rootDir: root,
@@ -1402,22 +1411,22 @@ async function main() {
     })
     console.log(`Created console view "${created.title}" (${created.slug}):\n  ${created.targetPath}`)
     console.log(`To compile the console with this view, run:\n  node scripts/export-console.mjs ${relative(process.cwd(), root) || '.'} --domain`)
-    return
+    return { exitCode: 0, writtenFiles: [created.targetPath] }
   }
   if (args.viewMissing) {
     console.error('Error: --view needs a view id.')
-    process.exit(2)
+    return { exitCode: 2, writtenFiles: [] }
   }
   if (args.view && args.domain) {
     console.error('Error: --view and --domain are mutually exclusive.')
-    process.exit(2)
+    return { exitCode: 2, writtenFiles: [] }
   }
   const hasSelection = Boolean(args.all || args.stale || args.filter || args.model)
   if (args.domain && hasSelection) {
     console.error(
       'Error: --domain exports the whole domaiNN and cannot select models; drop the model name, --filter, --all or --stale.',
     )
-    process.exit(2)
+    return { exitCode: 2, writtenFiles: [] }
   }
   await ensureAssets()
   const models = await loadModels(root)
@@ -1432,19 +1441,19 @@ async function main() {
       console.log(`  ${rel} [${info.status}]`)
     }
     console.log(`Domain console: ${payloadHelper.consoleOutputPath('domain')} [${await inspectDomainConsole(models, root)}]`)
-    return
+    return { exitCode: 0, writtenFiles: [] }
   }
 
   if (args.tree) {
     await renderTree(models, root, consoles)
-    return
+    return { exitCode: 0, writtenFiles: [] }
   }
 
   if (args.list) {
     console.log('Models:')
     for (const m of models) console.log(`  ${relative(root, m.filePath).replace(/\\/g, '/')}`)
     console.log(`(${models.length} models)`)
-    return
+    return { exitCode: 0, writtenFiles: [] }
   }
 
   let candidateModels = models
@@ -1478,7 +1487,7 @@ async function main() {
       }
       if (selected.length === 0) {
         console.log('All models are fresh. Nothing to export.')
-        return
+        return { exitCode: 0, writtenFiles: [] }
       }
     } else {
       selected = candidateModels
@@ -1489,7 +1498,7 @@ async function main() {
     console.error(
       'No models selected. Use --all, --stale, --domain, --filter <pattern>, or pass a model name/id substring.',
     )
-    process.exit(1)
+    return { exitCode: 1, writtenFiles: [] }
   }
 
   const result = await writeConsole({
@@ -1497,6 +1506,7 @@ async function main() {
     scope: wholeDomain ? 'domain' : { selected },
     view: args.view,
     open: args.open,
+    launcher: args.launcher,
     models,
     log: (line) => console.log(line),
   })
@@ -1508,6 +1518,55 @@ async function main() {
   console.log(
     `Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`,
   )
+  return { exitCode: 0, writtenFiles: result.status === 'written' ? [result.path] : [] }
+}
+
+/**
+ * Programmatic, in-process console export entry point: runs the CLI body while
+ * capturing stdout/stderr, without ever calling `process.exit` or mutating globals.
+ * @param {string[]} [argv] - args after the script name, e.g. `[root, '--no-open']`.
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, open?: boolean, launcher?: Function }} [options]
+ * @returns {Promise<{ exitCode: number, code: number, stdout: string, stderr: string, writtenFiles: string[] }>}
+ */
+export async function runExportConsole(argv = [], options = {}) {
+  let stdout = ''
+  let stderr = ''
+  const origLog = console.log
+  const origError = console.error
+  const origWarn = console.warn
+  const origStdoutWrite = process.stdout.write
+  const origStderrWrite = process.stderr.write
+  const capture = (sink) => (chunk, enc, cb) => {
+    sink(typeof chunk === 'string' ? chunk : chunk.toString())
+    if (typeof enc === 'function') enc()
+    else if (typeof cb === 'function') cb()
+    return true
+  }
+  console.log = (...a) => {
+    stdout += a.map(String).join(' ') + '\n'
+  }
+  console.error = (...a) => {
+    stderr += a.map(String).join(' ') + '\n'
+  }
+  console.warn = (...a) => {
+    stderr += a.map(String).join(' ') + '\n'
+  }
+  process.stdout.write = capture((s) => (stdout += s))
+  process.stderr.write = capture((s) => (stderr += s))
+  try {
+    const result = await runMain(argv, options)
+    return { exitCode: result.exitCode, code: result.exitCode, stdout, stderr, writtenFiles: result.writtenFiles }
+  } catch (err) {
+    if (err instanceof ConsoleExportError) stderr += `Error: ${err.message}\n`
+    else stderr += `${err && err.stack ? err.stack : err}\n`
+    return { exitCode: 1, code: 1, stdout, stderr, writtenFiles: [] }
+  } finally {
+    console.log = origLog
+    console.error = origError
+    console.warn = origWarn
+    process.stdout.write = origStdoutWrite
+    process.stderr.write = origStderrWrite
+  }
 }
 
 /** True when this module is the process entry point, so importing it never runs the CLI. */
@@ -1521,9 +1580,12 @@ function isEntryPoint() {
 }
 
 if (isEntryPoint()) {
-  main().catch((err) => {
-    if (err instanceof ConsoleExportError) console.error(`Error: ${err.message}`)
-    else console.error(err)
-    process.exit(1)
-  })
+  runMain(process.argv.slice(2)).then(
+    ({ exitCode }) => process.exit(exitCode),
+    (err) => {
+      if (err instanceof ConsoleExportError) console.error(`Error: ${err.message}`)
+      else console.error(err)
+      process.exit(1)
+    },
+  )
 }

@@ -1,12 +1,12 @@
 ---
 spec_version: "V_0-5-0"
-spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
+spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
 level: 2
 parent_spec:
   name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-2-0"
+blueprint_version: "V_0-2-1"
 title: "Video Script App"
 relationship_types:
   hierarchy:

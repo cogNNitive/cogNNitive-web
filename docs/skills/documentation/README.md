@@ -25,7 +25,7 @@ The cogNNitive ecosystem provides the following specialized, autonomous agent sk
 | [`nn-upgrade`](skills/nn-upgrade.md) | `V_0-4-2` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
 | [`nn-site-generator`](skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
 | [`nn-design-presets`](skills/nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
-| [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-3-0` | Audit, update, and maintain cogNNitive skills. |
+| [`nn-skills-lifecycle`](skills/nn-skills-lifecycle.md) | `V_1-3-1` | Audit, update, and maintain cogNNitive skills. |
 <!-- /generated:skills-catalog -->
 
 ## Installation

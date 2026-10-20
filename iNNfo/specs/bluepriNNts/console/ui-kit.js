@@ -104,12 +104,6 @@
     '.innfo-element-origin[data-origin=human]{color:var(--innfo-origin-human)}',
     '.innfo-element-origin[data-origin=reviewer]{color:var(--innfo-origin-reviewer)}',
     '.innfo-status-badge{border-radius:var(--innfo-radius-sm);padding:.05em .5em;font-weight:600}',
-    '.innfo-status-badge[data-status=pending]{color:var(--innfo-status-pending);background:var(--innfo-status-pending-bg)}',
-    '.innfo-status-badge[data-status=applied]{color:var(--innfo-status-applied);background:var(--innfo-status-applied-bg)}',
-    '.innfo-status-badge[data-status=rejected]{color:var(--innfo-status-rejected);background:var(--innfo-status-rejected-bg)}',
-    '.innfo-status-badge[data-status=stale]{color:var(--innfo-status-stale);background:var(--innfo-status-stale-bg)}',
-    '.innfo-status-badge[data-status=conflict]{color:var(--innfo-status-rejected);background:var(--innfo-status-rejected-bg)}',
-    '.innfo-status-badge[data-status=proposed]{color:var(--innfo-status-pending);background:var(--innfo-status-pending-bg)}',
     // The single per-row change-state signal: blue means a change that lives only
     // in this console and has not been submitted yet.
     '.innfo-status-badge[data-status=local]{color:var(--innfo-status-unsent);background:var(--innfo-status-unsent-bg)}',
@@ -2014,7 +2008,9 @@
       badge.classList.add('innfo-change-card-badge')
       head.appendChild(badge)
     } else {
-      head.appendChild(makeEl(doc, 'span', 'innfo-change-card-state text-xs font-semibold', s.stateText || ''))
+      var stateEl = makeEl(doc, 'span', 'innfo-change-card-state text-xs font-semibold', s.stateText || '')
+      if (s.stateKind === 'applied') stateEl.setAttribute('title', COPY.appliedHelp)
+      head.appendChild(stateEl)
     }
     body.appendChild(head)
 
@@ -2026,12 +2022,34 @@
 
     if (s.diff) body.appendChild(makeEl(doc, 'div', 'innfo-change-card-diff text-sm', s.diff))
 
-    var context = [s.author, s.date].filter(Boolean).join(' \u00b7 ')
+    var context = [s.author, s.date, s.stateText].filter(Boolean).join(' \u00b7 ')
     body.appendChild(makeEl(doc, 'div', 'innfo-change-card-context text-xs opacity-70', context))
 
     if (s.note) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-note text-sm', s.note))
     if (s.resolution) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-resolution text-xs', s.resolution))
-    if (s.sources) body.appendChild(makeEl(doc, 'span', 'innfo-change-card-source text-xs', String(s.sources)))
+    if (s.sources) {
+      var sourceList = Array.isArray(s.sources) ? s.sources : [s.sources]
+      sourceList.forEach(function (src) {
+        if (src == null || src === '') return
+        var srcText = String(src)
+        var srcEl = makeEl(doc, 'span', 'innfo-change-card-source text-xs inline-flex items-center gap-1', srcText)
+        // A citation icon only exists when the host can open it: never a dead control.
+        if (opts && typeof opts.onCitation === 'function') {
+          srcEl.appendChild(
+            CitationIcon(
+              { variant: 'document', field: srcText },
+              {
+                doc: doc,
+                onOpen: function () {
+                  opts.onCitation(srcText)
+                },
+              },
+            ),
+          )
+        }
+        body.appendChild(srcEl)
+      })
+    }
 
     if (s.targetChanged) {
       body.appendChild(makeEl(doc, 'span', 'innfo-change-card-stale text-xs', 'target changed'))
@@ -2177,6 +2195,7 @@
                   }
                 : null,
             onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+            onCitation: opts && typeof opts.onCitation === 'function' ? opts.onCitation : null,
           },
         ),
       )
@@ -2210,7 +2229,7 @@
             {
               op: op,
               entry: c,
-              title: cardTitle(op, c),
+              title: cardTitle(op, el && el.name ? Object.assign({}, c, { element: el.name }) : c),
               diff: cardDiff(op, c),
               author: c.author || (cs && cs.author),
               date: cs && cs.appliedAt,
@@ -2226,6 +2245,7 @@
               doc: doc,
               onRevert: opts && typeof opts.onRevert === 'function' ? opts.onRevert : null,
               onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+              onCitation: opts && typeof opts.onCitation === 'function' ? opts.onCitation : null,
             },
           ),
         )

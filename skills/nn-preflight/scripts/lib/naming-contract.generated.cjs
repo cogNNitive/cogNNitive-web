@@ -32,6 +32,7 @@ __export(index_exports, {
   SIDECAR_BLUEPRINT: () => SIDECAR_BLUEPRINT,
   SPEC_FILENAME: () => SPEC_FILENAME,
   blueprintNameOf: () => blueprintNameOf,
+  canonicalModelId: () => canonicalModelId,
   checkNameInvariant: () => checkNameInvariant,
   checkPathBudget: () => checkPathBudget,
   compareMembers: () => compareMembers,
@@ -224,6 +225,13 @@ function checkNameInvariant(path, bp) {
   const b = blueprint.toLowerCase();
   const conforms = !hasVersion && (s === b || s.endsWith(`_${b}`));
   return conforms ? null : { expected: formatNNName(stem, blueprint) };
+}
+function canonicalModelId(id, blueprint) {
+  const bp = blueprintNameOf(blueprint);
+  const probe = `${id.trim()}_NN.md`;
+  const verdict = checkNameInvariant(probe, bp);
+  if (!verdict) return id.trim();
+  return verdict.expected.replace(/_NN\.md$/i, "");
 }
 function isNNName(nameOrPath) {
   return NN_SUFFIX_RE.test(baseOf(nameOrPath));

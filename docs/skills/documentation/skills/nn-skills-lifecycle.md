@@ -23,6 +23,7 @@ Executes the canonical activation gate defined in [`nn-preflight`](skills/nn-pre
 
 - **Desired State (Source of Truth)**: The bootstrap manifest at `docs/use/manifest.md` (or fetched from GitHub). Frontmatter declares the canonical list of skills with pinned 40-character commit SHAs.
 - **Installed State (Local Record)**: `~/.agents/skills-state.json`, recording `{ commit, version, updated_at }` for each locally installed skill.
+- **MCP Servers**: each server is declared nested inside the skill that owns it (`agent-bootstrap.skills[].mcp[]`), not as a separate top-level list. `parseManifest()` hoists every nested `mcp[]` into one merged, name-deduplicated list, so `status`, `install`, and `update` treat MCP servers exactly like skills and templates. A top-level `agent-bootstrap.mcp` is still honored for backward compatibility.
 
 ---
 

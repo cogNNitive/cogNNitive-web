@@ -566,7 +566,17 @@ var require_yaml_parser = __commonJS({
       }
       const blueprints = Array.isArray(bootstrap.blueprints) ? bootstrap.blueprints : [];
       const workflows = Array.isArray(bootstrap.workflows) ? bootstrap.workflows : [];
-      const mcp = Array.isArray(bootstrap.mcp) ? bootstrap.mcp : [];
+      const mcp = [];
+      if (Array.isArray(bootstrap.mcp)) mcp.push(...bootstrap.mcp);
+      for (const skill of bootstrap.skills) {
+        if (Array.isArray(skill.mcp)) mcp.push(...skill.mcp);
+      }
+      const seenMcpNames = /* @__PURE__ */ new Set();
+      const dedupedMcp = mcp.filter((server) => {
+        if (!server || !server.name || seenMcpNames.has(server.name)) return false;
+        seenMcpNames.add(server.name);
+        return true;
+      });
       const consoleAssets = Array.isArray(bootstrap["console-assets"]) ? bootstrap["console-assets"] : [];
       return {
         version: bootstrap.version,
@@ -574,7 +584,7 @@ var require_yaml_parser = __commonJS({
         skills: bootstrap.skills,
         blueprints,
         workflows,
-        mcp,
+        mcp: dedupedMcp,
         consoleAssets
       };
     }
@@ -1652,15 +1662,7 @@ Installing/verifying ${manifest.blueprints.length} template(s)...`);
           console.log(`  \u2713 template ${tmpl.name} (${tmpl.version}) up-to-date`);
         }
       }
-      const mcpList = [];
-      for (const skill of manifest.skills) {
-        if (Array.isArray(skill.mcp)) {
-          mcpList.push(...skill.mcp);
-        }
-      }
-      if (Array.isArray(manifest.mcp)) {
-        mcpList.push(...manifest.mcp);
-      }
+      const mcpList = manifest.mcp || [];
       if (mcpList.length > 0) {
         console.log(`
 Installing/verifying ${mcpList.length} MCP server(s)...`);
