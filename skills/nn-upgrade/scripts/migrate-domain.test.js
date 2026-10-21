@@ -20,7 +20,7 @@ const { freezeDomainSlugs } = require('./migrate-domain.js')
 
 async function loadCore() {
   const { pathToFileURL } = require('node:url')
-  return import(pathToFileURL(path.resolve(__dirname, '../../../iNNfo/packages/innfo-core/dist/index.js')).href)
+  return import(pathToFileURL(path.resolve(__dirname, '../../../iNNfo/packages/nn-core/dist/index.js')).href)
 }
 
 function runCli(args) {

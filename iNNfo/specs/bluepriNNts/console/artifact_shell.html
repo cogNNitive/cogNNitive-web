@@ -11,7 +11,7 @@
     />
     <title>iNNfo Console</title>
     <!--
-    artifact_shell.html — thin console shell for innfo-console artifacts.
+    artifact_shell.html — thin console shell for nn-console artifacts.
 
     Layout: a top navbar, a left blueprint rail whose slate filter zone holds the
     search + facets (Tags / Changes) and the blueprint cards (`#innfo-rail`), and
@@ -21,11 +21,11 @@
       1. Declare capabilities in the innfo-config needs[] list below.
       2. Paste the Schema JSON Contract into #innfo-schema.
       3. Paste the Model JSON Contract into #innfo-model.
-    The shared runtime (innfo-runtime.js, window.InnfoConsole) renders the rail
+    The shared runtime (nn-runtime.js, window.InnfoConsole) renders the rail
     cards, search, facets, cards, matrices, drafts and export modal.
     Do NOT inline runtime code here.
   -->
-    <link rel="stylesheet" href="./innfo-ui.css" />
+    <link rel="stylesheet" href="./nn-ui.css" />
     <style>
       :root,
       [data-theme] {
@@ -391,10 +391,10 @@
       {}
     </script>
 
-    <script src="./innfo-console.bundle.js"></script>
+    <script src="./nn-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@innfo-console-v0.24.0/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
-    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@nn-console-v0.25.0/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   </body>
 </html>

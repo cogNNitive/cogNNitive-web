@@ -13,7 +13,7 @@ const {
   validateCitations,
   parseCitation,
   sidecarPathOf,
-} = require('./innfo-core.generated.cjs');
+} = require('./nn-core.generated.cjs');
 
 /** The `## NN Sources:` element names and `superseded_by::` values of a record's `# NN Sources` section. */
 function readRecordSources(recordText) {

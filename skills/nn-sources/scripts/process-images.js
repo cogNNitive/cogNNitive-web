@@ -8,7 +8,7 @@
  *
  *  - `inputDir` (default `sources/import/photos`, relative to `projectDir`) holds
  *    the raw images. They are never moved or rewritten: each one gets a
- *    co-located sidecar through innfo-core `cognitivize`, with a normalizer
+ *    co-located sidecar through nn-core `cognitivize`, with a normalizer
  *    that records the image format and size and keeps the image citable;
  *  - the optimized copy of each image is a new suffixed member of its family
  *    under `artifacts/photos/` (write-once; identical bytes dedupe).
@@ -17,7 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { cognitivize, writeOnce, parseName } = require('./lib/innfo-core.generated.cjs');
+const { cognitivize, writeOnce, parseName } = require('./lib/nn-core.generated.cjs');
 const { TRANNNSFORM_VERSION } = require('./lib/normalizer');
 
 const IMAGE_FILE = /\.(jpg|jpeg|png|webp|gif)$/i;

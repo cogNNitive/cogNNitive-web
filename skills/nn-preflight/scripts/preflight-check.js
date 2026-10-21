@@ -535,7 +535,7 @@ function validateBlueprintCompositions(options = {}) {
             fm = parseFocusedYaml(parseFrontmatter(content)) || {};
           } catch {}
           // Note: fm.level here is always a string — this file parses with
-          // ./lib/yaml-lite, a separate parser from innfo-core's
+          // ./lib/yaml-lite, a separate parser from nn-core's
           // parseFrontmatter, whose parseScalar never coerces to a number
           // (design ADR-007). The numeric comparisons removed here were dead.
           if (fm.level === '1') continue;
@@ -1088,7 +1088,7 @@ async function runCheck(options = {}) {
     const SUBSYSTEM_PATH_LABELS = {
       skills: 'skills/',
       templates: 'iNNfo/specs/bluepriNNts/',
-      'innfo-mcp': 'iNNfo/packages/innfo-mcp/',
+      'innfo-mcp': 'iNNfo/packages/nn-mcp/',
       'innfo-console': 'iNNfo/specs/bluepriNNts/console/',
     };
     const MAX_FILES_SHOWN = 3;

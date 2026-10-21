@@ -12,13 +12,13 @@
  * validator enforces (`KU_EMPTY_KEY` / `KU_DUPLICATE_KEY`).
  *
  * Zero runtime dependencies (Node builtins, the skill's own CSV parser, and the
- * innfo-core mirror).
+ * nn-core mirror).
  */
 
 const fs = require('fs');
 const path = require('path');
 const { parseCsv } = require('./scanner-converters');
-const { cognitivize, parseName, writeOnce } = require('./innfo-core.generated.cjs');
+const { cognitivize, parseName, writeOnce } = require('./nn-core.generated.cjs');
 
 /**
  * Quote a CSV cell only when RFC-4180 requires it.

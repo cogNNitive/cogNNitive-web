@@ -1,6 +1,6 @@
 /**
  * GENERATED FILE — DO NOT EDIT.
- * Source: iNNfo/packages/innfo-core/src/workspace/integrity/versionStatus.ts
+ * Source: iNNfo/packages/nn-core/src/workspace/integrity/versionStatus.ts
  * Regenerate: node scripts/build-preflight-primitives.mjs
  * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).
  */
@@ -24,7 +24,7 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// iNNfo/packages/innfo-core/src/workspace/integrity/versionStatus.ts
+// iNNfo/packages/nn-core/src/workspace/integrity/versionStatus.ts
 var versionStatus_exports = {};
 __export(versionStatus_exports, {
   classifyAgainstCatalog: () => classifyAgainstCatalog,

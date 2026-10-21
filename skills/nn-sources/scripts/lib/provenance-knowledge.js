@@ -8,7 +8,7 @@ const {
   splitTopLevelSections: splitTopLevelSectionsMirror,
   renderRecordFrontmatter,
   refreshExistingModel,
-} = require('./innfo-core.generated.cjs');
+} = require('./nn-core.generated.cjs');
 
 /**
  * The mirror bundle holds two same-named section splitters and tsc infers the wrong one,

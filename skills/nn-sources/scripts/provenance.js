@@ -8,7 +8,7 @@
  * re-synced from the filesystem on every run; `# NN Procedures` is an
  * append-only run log.
  *
- * Lineage projection and rendering are delegated to `@cognnitive/innfo-core`
+ * Lineage projection and rendering are delegated to `@cognnitive/nn-core`
  * via the committed mirror.
  */
 
@@ -21,7 +21,7 @@ const {
   readLineageSnapshot,
   projectLineage,
   renderLineageSections,
-} = require('./lib/innfo-core.generated.cjs');
+} = require('./lib/nn-core.generated.cjs');
 
 /** Suffix of the pre-rename lineage record, migrated in place to `_cogNNitive_NN.md`. */
 const LEGACY_RECORD_SUFFIX = '_workspace_NN.md';

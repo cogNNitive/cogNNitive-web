@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { isSidecarName, rawPathOfSidecar } = require('./innfo-core.generated.cjs');
+const { isSidecarName, rawPathOfSidecar } = require('./nn-core.generated.cjs');
 
 // Supported extensions by category
 const EXT_OK = ['.txt', '.md', '.csv', '.json', '.html', '.htm', '.srt', '.vtt'];

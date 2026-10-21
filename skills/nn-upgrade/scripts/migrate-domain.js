@@ -20,7 +20,7 @@ const path = require('node:path')
 // Bundled core primitives (scripts/build-preflight-primitives.mjs), so the skill runs
 // from an installed ~/.agents/skills/nn-upgrade without the iNNfo/ source tree.
 async function loadInnfoCore() {
-  return require('./lib/innfo-core.generated.cjs')
+  return require('./lib/nn-core.generated.cjs')
 }
 
 function getArg(flag) {

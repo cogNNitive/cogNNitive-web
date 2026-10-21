@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { parseName, writeOnce, cognitivize } = require("./innfo-core.generated.cjs");
+const { parseName, writeOnce, cognitivize } = require("./nn-core.generated.cjs");
 
 /**
  * Format a Date or timestamp string into YYYY-MM-DD_HHmmss.

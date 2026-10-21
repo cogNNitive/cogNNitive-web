@@ -105,7 +105,7 @@ Activates when the user invokes `/nn-innfo`, mentions domain keywords `innfo`, `
 
 This skill guides LLMs and agents in authoring, creating from scratch (wizard), editing, auditing, and validating **iNNfo-compliant files** (Meta-template specification with unified `NN` syntax: `# NN`, `## NN`, and `key:: value`).
 
-**Resolution, validation, and mutation are delegated to the `innfo-mcp` server** — a deterministic engine wrapping `@cognnitive/innfo-core`. The agent does NOT hand-resolve spec chains, hand-validate models, or guess syntax when the MCP is available. See §1 (MCP Operating Model) and §7 (Delegation Contract).
+**Resolution, validation, and mutation are delegated to the `innfo-mcp` server** — a deterministic engine wrapping `@cognnitive/nn-core`. The agent does NOT hand-resolve spec chains, hand-validate models, or guess syntax when the MCP is available. See §1 (MCP Operating Model) and §7 (Delegation Contract).
 
 > 🛡️ **Single Source of Truth & Zero Workspace Pollution**:
 > 1. The `iNNfo` repository is the **Single Source of Truth** for all apps and specs. Do NOT duplicate app files across repositories.
@@ -120,7 +120,7 @@ This skill guides LLMs and agents in authoring, creating from scratch (wizard), 
 To minimize token usage and unnecessary file I/O operations across large workspaces, all agent interactions MUST adhere to the 3-Tier Progressive Disclosure Protocol:
 
 - **Tier 1 (Root Discovery)**:
-  Read `domaiNN_NN.md` (or query `innfo-core` DAG topology) to discover workspace dimensions, directory conventions, and top-level catalog references (`models`, `sources`, `procedures`, `artifacts`).
+  Read `domaiNN_NN.md` (or query `nn-core` DAG topology) to discover workspace dimensions, directory conventions, and top-level catalog references (`models`, `sources`, `procedures`, `artifacts`).
 - **Tier 2 (Catalog Query)**:
   Read `sources_NN.md`, `procedures_NN.md`, or `artifacts_NN.md` to scan `summary`, `format`, `status`, `category`, and `tags` of all registered entities with zero additional file I/O. Make routing, indexing, and citation decisions based entirely on these indexed catalog summaries.
 - **Tier 3 (Targeted Inspection)**:
@@ -332,7 +332,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 
 ## 1. MCP Operating Model
 
-The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/innfo-core`.
+The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/nn-core`.
 
 <!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
 **22** tools
@@ -346,7 +346,7 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/in
 | `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
 | `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or bare intent operations. Every operation that mutates a Level-3 kNNowledge model (including freeze_slugs and bump_version) is synthesized into a sealed, recorded changeset; only generate_index and the Level-2 bluepriNNt authoring operations (add_concept, add_field, bump_version on a bluepriNNt) write directly. After an applied or partially applied changeset the domain console is regenerated and opened in a browser tab (pass open: false to skip). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
 | `regenerate_console` | Regenerate the domain console (or one model-scoped console) and open it in a browser tab. Idempotent: an up-to-date console is reported as unchanged. Also the retry path after an apply whose console regeneration failed. The result carries console and next_steps: you MUST relay next_steps.notice to the user. |
-| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, comment, add_model, freeze_slugs, bump_version); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
+| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
 | `init_domain` | Create an empty, conformant domaiNN container in a new directory: the canonical folders (kNNowledge/, sources/import/, sources/conversations/, conversations/, artifacts/, procedures/, staging/, changes/), a .gitattributes with * -text and a domaiNN_NN.md manifest listing no models. Refuses a directory that exists and is not empty. It is not a changeset; add models afterwards with an add_model changeset (propose_changeset) or init_knowledge. Migration recipe: init_domain for a NEW domain, import the old domain as a source (migrate-domain.js --import-as-source), derive add_model/add_element changes that cite it through sources::, propose_changeset, review, apply_change. |
 | `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
 | `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |

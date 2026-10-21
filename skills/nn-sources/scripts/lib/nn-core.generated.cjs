@@ -1,6 +1,6 @@
 /**
  * GENERATED FILE — DO NOT EDIT.
- * Source: iNNfo/packages/innfo-core/src/trannsformPrimitives.ts
+ * Source: iNNfo/packages/nn-core/src/trannsformPrimitives.ts
  * Regenerate: node scripts/build-trannsform-core-mirror.mjs
  * Drift-guarded by scripts/verify.js (build-trannsform-core-mirror --check).
  */
@@ -7367,7 +7367,7 @@ var require_dist = __commonJS({
   }
 });
 
-// iNNfo/packages/innfo-core/src/trannsformPrimitives.ts
+// iNNfo/packages/nn-core/src/trannsformPrimitives.ts
 var trannsformPrimitives_exports = {};
 __export(trannsformPrimitives_exports, {
   ENTRYPOINT_FILENAME: () => ENTRYPOINT_FILENAME,
@@ -7439,7 +7439,7 @@ __export(trannsformPrimitives_exports, {
 });
 module.exports = __toCommonJS(trannsformPrimitives_exports);
 
-// iNNfo/packages/innfo-core/src/parser/slug.ts
+// iNNfo/packages/nn-core/src/parser/slug.ts
 function nfc(text) {
   return text.normalize("NFC");
 }
@@ -7450,12 +7450,12 @@ function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-// iNNfo/packages/innfo-core/src/assertNever.ts
+// iNNfo/packages/nn-core/src/assertNever.ts
 function assertNever(value, context = "value") {
   throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
 }
 
-// iNNfo/packages/innfo-core/src/jsonPointer.ts
+// iNNfo/packages/nn-core/src/jsonPointer.ts
 var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
 var ARRAY_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 function isJsonPointer(pointer) {
@@ -7487,7 +7487,7 @@ function resolveJsonPointer(content, pointer) {
   return { ok: true, value: current };
 }
 
-// iNNfo/packages/innfo-core/src/naming/contract.ts
+// iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
 var SIDECAR_BLUEPRINT = "sidecar";
@@ -7674,7 +7674,7 @@ function ensureNNFilename(name) {
   return /_NN$/i.test(name) ? `${name}.md` : `${name}_NN.md`;
 }
 
-// iNNfo/packages/innfo-core/src/sourceRef.ts
+// iNNfo/packages/nn-core/src/sourceRef.ts
 var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
 var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
@@ -8054,7 +8054,7 @@ function serializeKnowledgeUnitRef(filePath, unit, subunits = []) {
   return tail.length > 0 ? `${filePath}@${head}&${tail.join("&")}` : `${filePath}@${head}`;
 }
 
-// iNNfo/packages/innfo-core/src/console/fs-source-resolver.ts
+// iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
 function createFsSourceResolver(rootDir) {
@@ -8132,7 +8132,7 @@ function createFsSourceResolver(rootDir) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/csvTable.ts
+// iNNfo/packages/nn-core/src/csvTable.ts
 function parseCsvTable(content, options = {}) {
   const delimiter = options.delimiter ?? ",";
   const records = [];
@@ -8192,7 +8192,7 @@ function parseCsvTable(content, options = {}) {
   return { headers: headerRow.map((h) => normalizeName(h)), rows: body, malformed: false };
 }
 
-// iNNfo/packages/innfo-core/src/unitResolve.ts
+// iNNfo/packages/nn-core/src/unitResolve.ts
 var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
 function resolveElementUnit(content, unit, subunits) {
   const headings = extractHeadings(content);
@@ -8390,7 +8390,7 @@ function sectionOwnLines(content, slug) {
   return owned;
 }
 
-// iNNfo/packages/innfo-core/src/queryUnits.ts
+// iNNfo/packages/nn-core/src/queryUnits.ts
 function parseKnowledgeQuery(input) {
   if (!input || typeof input !== "string") return null;
   const clean = input.trim();
@@ -8433,10 +8433,10 @@ function parseKnowledgeQuery(input) {
   return { path: resolved.filePath, filters, projection };
 }
 
-// iNNfo/packages/innfo-core/src/parser/yaml.ts
+// iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/parser/markdown.ts
+// iNNfo/packages/nn-core/src/parser/markdown.ts
 var YAML_BLOCK_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 var BOM_CHAR = String.fromCharCode(65279);
 function normalizeSource(text) {
@@ -8467,7 +8467,7 @@ function parseTableRow(line) {
   return parts.slice(start, end).map((c) => c.trim());
 }
 
-// iNNfo/packages/innfo-core/src/parser/yaml.ts
+// iNNfo/packages/nn-core/src/parser/yaml.ts
 function parseYaml(yamlStr, onError) {
   const sanitized = yamlStr.charCodeAt(0) === 65279 ? yamlStr.replace(/^\uFEFF+/, "") : yamlStr;
   try {
@@ -8603,7 +8603,7 @@ function parseFrontmatter(content, onError) {
   return fm;
 }
 
-// iNNfo/packages/innfo-core/src/parser/taxonomy.ts
+// iNNfo/packages/nn-core/src/parser/taxonomy.ts
 function parseIndexBlock(content) {
   const edges = [];
   const lines = normalizeSource(content).split("\n");
@@ -8628,7 +8628,7 @@ function parseIndexBlock(content) {
   return edges;
 }
 
-// iNNfo/packages/innfo-core/src/parser/sections.ts
+// iNNfo/packages/nn-core/src/parser/sections.ts
 var UNIFIED_ELEMENT_RE = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
 var PROPERTY_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
 var SECTION_RE = /^NN\s+(?:(matrices):\s*(.*)|(.*))/;
@@ -8852,10 +8852,10 @@ function getSectionType(rawTitle) {
   return "other";
 }
 
-// iNNfo/packages/innfo-core/src/parser/serializer.ts
+// iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/types/parser.ts
+// iNNfo/packages/nn-core/src/types/parser.ts
 var ElementsMap = class {
   _map = /* @__PURE__ */ new Map();
   set(key, nodes) {
@@ -8897,7 +8897,7 @@ var ElementsMap = class {
   }
 };
 
-// iNNfo/packages/innfo-core/src/parser/core.ts
+// iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {
   const usedSlugs = /* @__PURE__ */ new Map();
   const colliding = /* @__PURE__ */ new Map();
@@ -8999,6 +8999,7 @@ function parseKnowledge(content) {
   const body = normalizedContent.replace(YAML_BLOCK_RE, "").trim();
   const sections = splitTopLevelSections(body);
   const rawSections = {};
+  const rawOtherSections = {};
   const sectionOrder = [];
   const sectionBlankLine = {};
   for (const section of sections) {
@@ -9015,6 +9016,9 @@ function parseKnowledge(content) {
       sectionKey = name;
     } else if (type === "matrix") {
       sectionKey = `matrices: ${name}`;
+    } else {
+      sectionKey = rawTitle;
+      rawOtherSections[rawTitle] = section.trim();
     }
     if (sectionKey !== void 0) {
       sectionOrder.push(sectionKey);
@@ -9079,6 +9083,7 @@ function parseKnowledge(content) {
     conceptFields: Object.keys(conceptFields).length > 0 ? conceptFields : void 0,
     rawConceptFields: Object.keys(rawConceptFields).length > 0 ? rawConceptFields : void 0,
     rawSections: Object.keys(rawSections).length > 0 ? rawSections : void 0,
+    rawOtherSections: Object.keys(rawOtherSections).length > 0 ? rawOtherSections : void 0,
     rawContent: content,
     sectionOrder: sectionOrder.length > 0 ? sectionOrder : void 0,
     sectionBlankLine: Object.keys(sectionBlankLine).length > 0 ? sectionBlankLine : void 0,
@@ -9087,19 +9092,19 @@ function parseKnowledge(content) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/schema/extract.ts
+// iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
 var MATRIX_DEFINITION = "Matrix Definition";
 
-// iNNfo/packages/innfo-core/src/schema/metaschema.ts
+// iNNfo/packages/nn-core/src/schema/metaschema.ts
 var REQUIRED_BY_PRIMITIVE = {
   [CONCEPT_DEFINITION]: ["type"],
   [FIELD_DEFINITION]: ["concept", "type"],
   [MATRIX_DEFINITION]: ["source", "target"]
 };
 
-// iNNfo/packages/innfo-core/src/lineage/project.ts
+// iNNfo/packages/nn-core/src/lineage/project.ts
 var SOURCE_FORMAT_OPTIONS = /* @__PURE__ */ new Set(["txt", "md", "csv", "json", "docx", "pdf", "xlsx"]);
 var ARTIFACT_EXTENSIONS = /* @__PURE__ */ new Set(["md", "html", "htm", "csv", "json"]);
 function mapSourceFormat(ext) {
@@ -9343,7 +9348,7 @@ function projectLineage(files) {
   return { sources, knowledge, artifacts, changesets, diagnostics };
 }
 
-// iNNfo/packages/innfo-core/src/validator/workspaceSources.ts
+// iNNfo/packages/nn-core/src/validator/workspaceSources.ts
 function validateCitations(sites, resolver) {
   const diagnostics = [];
   const checkedCsvKeys = /* @__PURE__ */ new Set();
@@ -9725,7 +9730,7 @@ function listSectionFieldsFor(content, heading) {
   return fields ?? void 0;
 }
 
-// iNNfo/packages/innfo-core/src/lineage/render.ts
+// iNNfo/packages/nn-core/src/lineage/render.ts
 var SOURCES_GUIDANCE = "No sources ingested yet. Place files in sources/import and run a scan.";
 var MODELS_GUIDANCE = "Auto-synced from kNNowledge/ on every --scan/--import-url/--lineage. One ModelRecords element per Level 3 model.";
 var ARTIFACTS_GUIDANCE = "Auto-synced from artifacts/ on every --scan/--import-url/--lineage. One element per generated deliverable.";
@@ -9824,11 +9829,11 @@ function renderLineageSections(p) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/lineage/fs-snapshot.ts
+// iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var fs = __toESM(require("node:fs"), 1);
 var path = __toESM(require("node:path"), 1);
 
-// iNNfo/packages/innfo-core/src/lineage/record.ts
+// iNNfo/packages/nn-core/src/lineage/record.ts
 var RECORD_BLUEPRINT = "cogNNitive";
 var RECORD_TEMPLATE_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md";
 var RECORD_INNFO_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md";
@@ -9914,7 +9919,7 @@ function findLineageRecord(files) {
   return null;
 }
 
-// iNNfo/packages/innfo-core/src/lineage/fs-snapshot.ts
+// iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([".md", ".csv", ".json", ".html", ".htm"]);
 function walkDir(dir, baseDir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -9958,7 +9963,7 @@ function readLineageRecord(root) {
   return findLineageRecord(candidates);
 }
 
-// iNNfo/packages/innfo-core/src/lineage/drift.ts
+// iNNfo/packages/nn-core/src/lineage/drift.ts
 function formatSnippet(s) {
   const snippet = s.slice(0, 100) + (s.length > 100 ? "\u2026" : "");
   return `(${s.length} chars) ${JSON.stringify(snippet)}`;
@@ -10037,7 +10042,7 @@ function checkLineageDrift(record, rendered) {
   return diffs.length === 0 ? { ok: true } : { ok: false, diffs };
 }
 
-// iNNfo/packages/innfo-core/src/writeOnce/plan.ts
+// iNNfo/packages/nn-core/src/writeOnce/plan.ts
 function latestOfFamily(members) {
   let latest;
   for (const member of members) {
@@ -10064,12 +10069,12 @@ function planGc(i) {
   return { candidates: candidates.sort() };
 }
 
-// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+// iNNfo/packages/nn-core/src/writeOnce/fs.ts
 var import_node_fs2 = require("node:fs");
 var path2 = __toESM(require("node:path"), 1);
 var import_node_crypto = require("node:crypto");
 
-// iNNfo/packages/innfo-core/src/cognitivize/sidecar.ts
+// iNNfo/packages/nn-core/src/cognitivize/sidecar.ts
 var import_yaml7 = __toESM(require_dist(), 1);
 var TEXT_NATIVE_FORMATS = /* @__PURE__ */ new Set(["md", "csv", "json"]);
 var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
@@ -10124,7 +10129,7 @@ ${body}
 ` : head;
 }
 
-// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+// iNNfo/packages/nn-core/src/writeOnce/fs.ts
 var WriteOnceError = class extends Error {
   code;
   /** The offending workspace-relative path (the stale input, or the over-long target). */
@@ -10273,7 +10278,7 @@ async function applyGc(root, confirmed, o) {
   return { deleted: deleted.sort() };
 }
 
-// iNNfo/packages/innfo-core/src/cognitivize/cognitivize.ts
+// iNNfo/packages/nn-core/src/cognitivize/cognitivize.ts
 var import_node_fs3 = require("node:fs");
 var path3 = __toESM(require("node:path"), 1);
 var toPosix2 = (p) => p.replace(/\\/g, "/");

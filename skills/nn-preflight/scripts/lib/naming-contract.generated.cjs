@@ -1,6 +1,6 @@
 /**
  * GENERATED FILE — DO NOT EDIT.
- * Source: iNNfo/packages/innfo-core/src/naming/index.ts
+ * Source: iNNfo/packages/nn-core/src/naming/index.ts
  * Regenerate: node scripts/build-preflight-primitives.mjs
  * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).
  */
@@ -24,7 +24,7 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// iNNfo/packages/innfo-core/src/naming/index.ts
+// iNNfo/packages/nn-core/src/naming/index.ts
 var index_exports = {};
 __export(index_exports, {
   ENTRYPOINT_FILENAME: () => ENTRYPOINT_FILENAME,
@@ -57,7 +57,7 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
-// iNNfo/packages/innfo-core/src/naming/contract.ts
+// iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
 var SIDECAR_BLUEPRINT = "sidecar";

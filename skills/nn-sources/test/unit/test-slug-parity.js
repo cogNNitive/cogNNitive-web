@@ -2,7 +2,7 @@ const { slugifyHeading, normalizeName, slugifyUnitHeading } = require('../../scr
 
 /**
  * `markdown-utils` slug functions MUST produce byte-identical output to
- * `@cognnitive/innfo-core` (`src/sourceRef.ts`). The expected column below mirrors
+ * `@cognnitive/nn-core` (`src/sourceRef.ts`). The expected column below mirrors
  * that package's `sourceRef.spec.ts` + `sourceRef.unit.spec.ts` — keep all three
  * in sync when either side changes.
  */

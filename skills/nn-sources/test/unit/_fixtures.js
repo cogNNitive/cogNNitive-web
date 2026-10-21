@@ -4,7 +4,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { cognitivize } = require('../../scripts/lib/innfo-core.generated.cjs');
+const { cognitivize } = require('../../scripts/lib/nn-core.generated.cjs');
 
 /** Stub normalizer: binary subjects get a small citable body. */
 const stubNormalizer = async ({ path: rel }) => ({

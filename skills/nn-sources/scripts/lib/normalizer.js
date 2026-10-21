@@ -1,5 +1,5 @@
 /**
- * normalizer.js: the converter adapter nn-sources injects into innfo-core's
+ * normalizer.js: the converter adapter nn-sources injects into nn-core's
  * `cognitivize`. Core never imports a converter; this module turns a raw file
  * into the `{ body, normalizedBy, metadata }` shape the sidecar writer expects.
  *
@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const converters = require('./scanner-converters');
 const { parseFrontmatterFields } = require('./scanner-core');
-const { TEXT_NATIVE_FORMATS } = require('./innfo-core.generated.cjs');
+const { TEXT_NATIVE_FORMATS } = require('./nn-core.generated.cjs');
 
 const TRANNNSFORM_VERSION = (() => {
   try {
@@ -81,7 +81,14 @@ function createNormalizer({ projectDir, webImportMeta = {}, notes = new Map() })
       return { body: result.body, normalizedBy, metadata };
     }
 
-    return { body: converters.convertOkFormat(dotExt, abs, baseName), normalizedBy, metadata };
+    const body = converters.convertOkFormat(dotExt, abs, baseName);
+    // The HTML branch returns a bare string (D1), so the incomplete-extraction signal is
+    // derived here, next to the `notes` map the PDF branch already writes to.
+    if (dotExt === '.html' || dotExt === '.htm') {
+      const reason = converters.looksPartial(body);
+      if (reason) notes.set(rel, { partial: true, note: reason });
+    }
+    return { body, normalizedBy, metadata };
   };
 }
 

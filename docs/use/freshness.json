@@ -1,45 +1,116 @@
 {
-  "generatedAt": "2026-10-20T14:10:36.747Z",
-  "head": "0af6687db61b67f04f711134f2e64640b5b3e6b3",
+  "generatedAt": "2026-10-21T13:40:36.689Z",
+  "head": "6a2db25cb93997743fcc28b3763c809095c5670a",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.28.0",
       "pinnedTagDate": "2026-10-20T15:26:43+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 7,
+      "filesTouched": [
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
+        "skills/nn-preflight/scripts/lib/version-status.generated.cjs",
+        "skills/nn-preflight/scripts/preflight-check.js",
+        "skills/nn-preflight/scripts/preflight-check.test.js",
+        "skills/nn-preflight/scripts/upgrade-check.js",
+        "skills/nn-sources/SKILL.md",
+        "skills/nn-sources/scripts/index.js",
+        "skills/nn-sources/scripts/lib/convergence-delta.js",
+        "skills/nn-sources/scripts/lib/conversations.js",
+        "skills/nn-sources/scripts/lib/curate-csv.js",
+        "skills/nn-sources/scripts/lib/duplicate-guards.js",
+        "skills/nn-sources/scripts/lib/external-scanner.js",
+        "skills/nn-sources/scripts/lib/gc.js",
+        "skills/nn-sources/scripts/lib/impact-checker.js",
+        "skills/nn-sources/scripts/lib/lineage-check.js",
+        "skills/nn-sources/scripts/lib/nn-core.generated.cjs",
+        "skills/nn-sources/scripts/lib/normalizer.js",
+        "skills/nn-sources/scripts/lib/provenance-knowledge.js",
+        "skills/nn-sources/scripts/lib/scanner-converters.js",
+        "skills/nn-sources/scripts/lib/scanner-core.js",
+        "skills/nn-sources/scripts/lib/workspace-index.js",
+        "skills/nn-sources/scripts/markdown-utils.js",
+        "skills/nn-sources/scripts/process-images.js",
+        "skills/nn-sources/scripts/provenance.js",
+        "skills/nn-sources/scripts/scanner.js",
+        "skills/nn-sources/scripts/webImport.js",
+        "skills/nn-sources/test/fixtures/html/37032388-15-year-subthalamic-deep-brain-stimulation-outcome-in-a-parkinsons-disease-patient-with-parkin-gene-mutation-a-case-report_20261017T181041Z.html",
+        "skills/nn-sources/test/fixtures/html/920_20261017T190632Z.html",
+        "skills/nn-sources/test/fixtures/html/FT_55866_20261017T165551Z.html",
+        "skills/nn-sources/test/fixtures/html/NBK1478_20261017T174010Z.html",
+        "skills/nn-sources/test/fixtures/html/PMC9547138_20261017T173000Z.html",
+        "skills/nn-sources/test/fixtures/html/README.md",
+        "skills/nn-sources/test/fixtures/html/s10072-023-06789-7_20261017T181030Z.html",
+        "skills/nn-sources/test/unit/_fixtures.js",
+        "skills/nn-sources/test/unit/test-core-mirror.js",
+        "skills/nn-sources/test/unit/test-provenance-knowledge.js",
+        "skills/nn-sources/test/unit/test-slug-parity.js",
+        "skills/nn-sources/test/unit/test-web-import.js",
+        "skills/nn-sources/tests/gc.test.js",
+        "skills/nn-sources/tests/producers-write-once.test.js",
+        "skills/nn-upgrade/scripts/lib/nn-core.generated.cjs",
+        "skills/nn-upgrade/scripts/migrate-domain.js",
+        "skills/nn-upgrade/scripts/migrate-domain.test.js"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.40.0",
       "pinnedTagDate": "2026-10-20T15:17:56+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 6,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/nn-address.generated.js",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
+        "iNNfo/specs/bluepriNNts/console/nn-preact-init.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.40.0",
       "pinnedTagDate": "2026-10-20T15:17:56+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 6,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/innfo-ui.css",
+        "iNNfo/specs/bluepriNNts/console/nn-address.generated.js",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
+        "iNNfo/specs/bluepriNNts/console/nn-preact-init.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     },
-    "innfo-mcp": {
-      "subsystem": "innfo-mcp",
-      "pinnedTag": "innfo-mcp-v0.29.0",
-      "pinnedTagDate": "2026-10-20T15:26:43+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+    "nn-mcp": {
+      "subsystem": "nn-mcp",
+      "pinnedTag": null,
+      "commitsSincePin": null,
+      "unresolved": "no tag found for this subsystem in local git"
     },
-    "innfo-console": {
-      "subsystem": "innfo-console",
-      "pinnedTag": "innfo-console-v0.24.0",
-      "pinnedTagDate": "2026-10-20T10:57:39+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+    "nn-console": {
+      "subsystem": "nn-console",
+      "pinnedTag": null,
+      "commitsSincePin": null,
+      "unresolved": "no tag found for this subsystem in local git"
     }
   }
 }

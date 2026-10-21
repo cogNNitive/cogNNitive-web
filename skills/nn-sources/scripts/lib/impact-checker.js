@@ -17,7 +17,7 @@ const {
   sidecarPathOf,
   parseSidecarFrontmatter,
   writeOnce,
-} = require('./innfo-core.generated.cjs');
+} = require('./nn-core.generated.cjs');
 
 /**
  * @typedef {{ filePath: string, slug?: string, unit?: { kind: string, slug?: string, id?: string, pointer?: string } }} ParsedCitation

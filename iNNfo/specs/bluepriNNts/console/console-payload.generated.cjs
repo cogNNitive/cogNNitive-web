@@ -7361,7 +7361,7 @@ var require_dist = __commonJS({
   }
 });
 
-// iNNfo/packages/innfo-core/src/console/index.ts
+// iNNfo/packages/nn-core/src/console/index.ts
 var index_exports = {};
 __export(index_exports, {
   CHANGE_CONCEPT: () => CHANGE_CONCEPT,
@@ -7412,7 +7412,7 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
-// iNNfo/packages/innfo-core/src/types/parser.ts
+// iNNfo/packages/nn-core/src/types/parser.ts
 var ElementsMap = class {
   _map = /* @__PURE__ */ new Map();
   set(key, nodes) {
@@ -7454,7 +7454,7 @@ var ElementsMap = class {
   }
 };
 
-// iNNfo/packages/innfo-core/src/parser/slug.ts
+// iNNfo/packages/nn-core/src/parser/slug.ts
 function nfc(text) {
   return text.normalize("NFC");
 }
@@ -7465,10 +7465,10 @@ function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-// iNNfo/packages/innfo-core/src/parser/yaml.ts
+// iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/parser/markdown.ts
+// iNNfo/packages/nn-core/src/parser/markdown.ts
 var YAML_BLOCK_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 var BOM_CHAR = String.fromCharCode(65279);
 function normalizeSource(text) {
@@ -7499,7 +7499,7 @@ function parseTableRow(line) {
   return parts.slice(start, end).map((c) => c.trim());
 }
 
-// iNNfo/packages/innfo-core/src/parser/yaml.ts
+// iNNfo/packages/nn-core/src/parser/yaml.ts
 function parseYaml(yamlStr, onError) {
   const sanitized = yamlStr.charCodeAt(0) === 65279 ? yamlStr.replace(/^\uFEFF+/, "") : yamlStr;
   try {
@@ -7635,7 +7635,7 @@ function parseFrontmatter(content, onError) {
   return fm;
 }
 
-// iNNfo/packages/innfo-core/src/parser/taxonomy.ts
+// iNNfo/packages/nn-core/src/parser/taxonomy.ts
 function parseIndexBlock(content) {
   const edges = [];
   const lines = normalizeSource(content).split("\n");
@@ -7660,7 +7660,7 @@ function parseIndexBlock(content) {
   return edges;
 }
 
-// iNNfo/packages/innfo-core/src/parser/sections.ts
+// iNNfo/packages/nn-core/src/parser/sections.ts
 var UNIFIED_ELEMENT_RE = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
 var PROPERTY_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
 var SECTION_RE = /^NN\s+(?:(matrices):\s*(.*)|(.*))/;
@@ -7884,15 +7884,15 @@ function getSectionType(rawTitle) {
   return "other";
 }
 
-// iNNfo/packages/innfo-core/src/parser/serializer.ts
+// iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/assertNever.ts
+// iNNfo/packages/nn-core/src/assertNever.ts
 function assertNever(value, context = "value") {
   throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
 }
 
-// iNNfo/packages/innfo-core/src/jsonPointer.ts
+// iNNfo/packages/nn-core/src/jsonPointer.ts
 var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
 var ARRAY_INDEX_RE = /^(?:0|[1-9]\d*)$/;
 function isJsonPointer(pointer) {
@@ -7924,7 +7924,7 @@ function resolveJsonPointer(content, pointer) {
   return { ok: true, value: current };
 }
 
-// iNNfo/packages/innfo-core/src/naming/contract.ts
+// iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
 var SIDECAR_BLUEPRINT = "sidecar";
@@ -8052,7 +8052,7 @@ function isSidecarName(nameOrPath) {
   return SIDECAR_PATH_RE.test(nameOrPath);
 }
 
-// iNNfo/packages/innfo-core/src/sourceRef.ts
+// iNNfo/packages/nn-core/src/sourceRef.ts
 var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
 var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
@@ -8404,7 +8404,7 @@ function parseKnowledgeUnitRef(input) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/parser/core.ts
+// iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {
   const usedSlugs = /* @__PURE__ */ new Map();
   const colliding = /* @__PURE__ */ new Map();
@@ -8506,6 +8506,7 @@ function parseKnowledge(content) {
   const body = normalizedContent.replace(YAML_BLOCK_RE, "").trim();
   const sections = splitTopLevelSections(body);
   const rawSections = {};
+  const rawOtherSections = {};
   const sectionOrder = [];
   const sectionBlankLine = {};
   for (const section of sections) {
@@ -8522,6 +8523,9 @@ function parseKnowledge(content) {
       sectionKey = name;
     } else if (type === "matrix") {
       sectionKey = `matrices: ${name}`;
+    } else {
+      sectionKey = rawTitle;
+      rawOtherSections[rawTitle] = section.trim();
     }
     if (sectionKey !== void 0) {
       sectionOrder.push(sectionKey);
@@ -8586,6 +8590,7 @@ function parseKnowledge(content) {
     conceptFields: Object.keys(conceptFields).length > 0 ? conceptFields : void 0,
     rawConceptFields: Object.keys(rawConceptFields).length > 0 ? rawConceptFields : void 0,
     rawSections: Object.keys(rawSections).length > 0 ? rawSections : void 0,
+    rawOtherSections: Object.keys(rawOtherSections).length > 0 ? rawOtherSections : void 0,
     rawContent: content,
     sectionOrder: sectionOrder.length > 0 ? sectionOrder : void 0,
     sectionBlankLine: Object.keys(sectionBlankLine).length > 0 ? sectionBlankLine : void 0,
@@ -8594,7 +8599,7 @@ function parseKnowledge(content) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/schema/extract.ts
+// iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
 var MATRIX_DEFINITION = "Matrix Definition";
@@ -8741,7 +8746,7 @@ function extractBlueprintSchema(parsed) {
   return result;
 }
 
-// iNNfo/packages/innfo-core/src/schema/compose.ts
+// iNNfo/packages/nn-core/src/schema/compose.ts
 var SET_LIKE_KEYS = /* @__PURE__ */ new Set(["applies_to", "options", "target_concepts"]);
 function canonicalValue(v, key) {
   if (Array.isArray(v)) {
@@ -9076,7 +9081,7 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
   return { schema: base, errors };
 }
 
-// iNNfo/packages/innfo-core/src/schema/field-values.ts
+// iNNfo/packages/nn-core/src/schema/field-values.ts
 function valueKey(v) {
   if (v === null || v === void 0) return "";
   return String(v).trim().toLowerCase();
@@ -9106,7 +9111,7 @@ function inheritConceptValues(own, conceptValues, defs, concept) {
   return result;
 }
 
-// iNNfo/packages/innfo-core/src/schema/metaschema.ts
+// iNNfo/packages/nn-core/src/schema/metaschema.ts
 var REQUIRED_BY_PRIMITIVE = {
   [CONCEPT_DEFINITION]: ["type"],
   [FIELD_DEFINITION]: ["concept", "type"],
@@ -9115,10 +9120,10 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-5-1", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-5-2", aliases: [], specContent: "" } : null;
 }
 
-// iNNfo/packages/innfo-core/src/resolver.ts
+// iNNfo/packages/nn-core/src/resolver.ts
 var PACKAGE_NON_VERSION_DIRS = /* @__PURE__ */ new Set([
   "procedures",
   "samples",
@@ -9485,7 +9490,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   return null;
 }
 
-// iNNfo/packages/innfo-core/src/validator/crypto.ts
+// iNNfo/packages/nn-core/src/validator/crypto.ts
 function computeSha256(content) {
   const utf8 = new TextEncoder().encode(content);
   function rotr(n, x) {
@@ -9616,7 +9621,7 @@ function computeSha256(content) {
   return H.map((x) => (x >>> 0).toString(16).padStart(8, "0")).join("");
 }
 
-// iNNfo/packages/innfo-core/src/csvTable.ts
+// iNNfo/packages/nn-core/src/csvTable.ts
 function parseCsvTable(content, options = {}) {
   const delimiter = options.delimiter ?? ",";
   const records = [];
@@ -9676,7 +9681,7 @@ function parseCsvTable(content, options = {}) {
   return { headers: headerRow.map((h) => normalizeName(h)), rows: body, malformed: false };
 }
 
-// iNNfo/packages/innfo-core/src/unitResolve.ts
+// iNNfo/packages/nn-core/src/unitResolve.ts
 var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
 function resolveElementUnit(content, unit, subunits) {
   const headings = extractHeadings(content);
@@ -9863,7 +9868,7 @@ function sectionOwnLines(content, slug) {
   return owned;
 }
 
-// iNNfo/packages/innfo-core/src/writeOnce/plan.ts
+// iNNfo/packages/nn-core/src/writeOnce/plan.ts
 function latestOfFamily(members) {
   let latest;
   for (const member of members) {
@@ -9872,12 +9877,12 @@ function latestOfFamily(members) {
   return latest;
 }
 
-// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+// iNNfo/packages/nn-core/src/writeOnce/fs.ts
 var import_node_fs = require("node:fs");
 var path = __toESM(require("node:path"), 1);
 var import_node_crypto = require("node:crypto");
 
-// iNNfo/packages/innfo-core/src/cognitivize/sidecar.ts
+// iNNfo/packages/nn-core/src/cognitivize/sidecar.ts
 var import_yaml7 = __toESM(require_dist(), 1);
 var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
 var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
@@ -9892,7 +9897,7 @@ function parseSidecarFrontmatter(text) {
   }
 }
 
-// iNNfo/packages/innfo-core/src/writeOnce/fs.ts
+// iNNfo/packages/nn-core/src/writeOnce/fs.ts
 var WriteOnceError = class extends Error {
   code;
   /** The offending workspace-relative path (the stale input, or the over-long target). */
@@ -10005,7 +10010,7 @@ async function writeOnce(root, t, bytes, o = {}) {
   }
 }
 
-// iNNfo/packages/innfo-core/src/changeset/types.ts
+// iNNfo/packages/nn-core/src/changeset/types.ts
 var CHANGE_OPS = [
   "update_field",
   "add_element",
@@ -10016,6 +10021,7 @@ var CHANGE_OPS = [
   "update_concept_text",
   "update_concept_field",
   "remove_matrix",
+  "add_matrix",
   "comment",
   "add_model",
   "freeze_slugs",
@@ -10048,7 +10054,7 @@ function addModelProblems(change) {
   return problems;
 }
 
-// iNNfo/packages/innfo-core/src/changeset/parser.ts
+// iNNfo/packages/nn-core/src/changeset/parser.ts
 var import_yaml8 = __toESM(require_dist(), 1);
 function stripQuotes(str2) {
   const trimmed = str2.trim();
@@ -10238,10 +10244,10 @@ function parseChangeset(rawContent) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/changeset/serializer.ts
+// iNNfo/packages/nn-core/src/changeset/serializer.ts
 var import_yaml9 = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/console/element-hash.ts
+// iNNfo/packages/nn-core/src/console/element-hash.ts
 function canonicalJsonStringify(value) {
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value);
@@ -10282,7 +10288,7 @@ function hashParsedElement(concept, node) {
   });
 }
 
-// iNNfo/packages/innfo-core/src/console/citations.ts
+// iNNfo/packages/nn-core/src/console/citations.ts
 var EXCERPT_CHAR_CAP = 500;
 var CHANGE_CONCEPT = "NN Change";
 var KNOWN_AGENT_TOOL_IDS = ["agent", "ClaudeCode", "OpenCode", "Antigravity"];
@@ -10495,7 +10501,7 @@ function citationFieldsFor(conceptName, fields, schema) {
   return Array.from(result);
 }
 
-// iNNfo/packages/innfo-core/src/console/element-history.ts
+// iNNfo/packages/nn-core/src/console/element-history.ts
 var import_promises = require("node:fs/promises");
 var import_node_path = require("node:path");
 function isChangesetFile(name) {
@@ -10597,7 +10603,7 @@ function attachChangesetHistory(elements, changesets) {
   }
 }
 
-// iNNfo/packages/innfo-core/src/console/fs-source-resolver.ts
+// iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs2 = require("node:fs");
 var import_node_path2 = require("node:path");
 function createFsSourceResolver(rootDir) {
@@ -10675,7 +10681,7 @@ function createFsSourceResolver(rootDir) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/console/output-path.ts
+// iNNfo/packages/nn-core/src/console/output-path.ts
 var DOMAIN_CONSOLE_FILENAME = "domaiNN_console.html";
 function consoleOutputPath(scope) {
   if (scope === "domain") return DOMAIN_CONSOLE_FILENAME;
@@ -10686,7 +10692,7 @@ function consoleOutputPath(scope) {
   return `artifacts/${key}_console/${key}_console.html`;
 }
 
-// iNNfo/packages/innfo-core/src/console/slot.ts
+// iNNfo/packages/nn-core/src/console/slot.ts
 function serializeConsoleSlot(value) {
   return JSON.stringify(value, null, 2).replace(/</g, "\\u003c");
 }
@@ -10740,7 +10746,7 @@ function buildConsoleSchemaSlot(schema, elements, procedures, modelConceptFields
   };
 }
 
-// iNNfo/packages/innfo-core/src/console/payload-builder.ts
+// iNNfo/packages/nn-core/src/console/payload-builder.ts
 var WIKILINK_TARGET_RE = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g;
 function extractWikilinksFromValue(val) {
   if (typeof val === "string") {
@@ -10947,7 +10953,7 @@ function buildConsolePayload(options) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/console/schema-resolution.ts
+// iNNfo/packages/nn-core/src/console/schema-resolution.ts
 var import_node_path3 = require("node:path");
 var import_node_fs3 = require("node:fs");
 var import_promises2 = require("node:fs/promises");
@@ -11056,7 +11062,7 @@ async function resolveConsoleSchema(opts) {
   }
 }
 
-// iNNfo/packages/innfo-core/src/console/unit-address.ts
+// iNNfo/packages/nn-core/src/console/unit-address.ts
 function assertIdentifier(value, name) {
   const trimmed = (value ?? "").trim();
   if (!trimmed) {

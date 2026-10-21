@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { parseCsv } = require('./scanner-converters');
-const { parseName, compareMembers, isNNName, isSidecarName, isExcludedPath } = require('./innfo-core.generated.cjs');
+const { parseName, compareMembers, isNNName, isSidecarName, isExcludedPath } = require('./nn-core.generated.cjs');
 
 const STRATEGIES = ['cite-only', 'upsert', 'replace-values'];
 const SNAPSHOT_EXTS = ['.csv', '.json'];

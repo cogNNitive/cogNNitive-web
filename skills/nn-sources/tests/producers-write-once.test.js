@@ -5,7 +5,7 @@ const path = require('path');
 const os = require('os');
 const { createHash } = require('crypto');
 
-const core = require('../scripts/lib/innfo-core.generated.cjs');
+const core = require('../scripts/lib/nn-core.generated.cjs');
 const { writeImpactReport } = require('../scripts/lib/impact-checker');
 const { curateCsvFile } = require('../scripts/lib/curate-csv');
 const scanner = require('../scripts/scanner');

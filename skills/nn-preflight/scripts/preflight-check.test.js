@@ -1538,9 +1538,9 @@ agent-bootstrap:
           ref: "innfo-mcp-v0.9.0"
   blueprints: []
   console-assets:
-    - file: "iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js"
+    - file: "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"
       version: "0.2.0"
-      ref: "innfo-console-v0.2.0"
+      ref: "nn-console-v0.2.0"
 ---
 `;
     const freshnessContent = {
@@ -1559,14 +1559,14 @@ agent-bootstrap:
           pinnedTag: 'innfo-mcp-v0.9.0',
           pinnedTagDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
           commitsSincePin: 7,
-          filesTouched: ['iNNfo/packages/innfo-mcp/src/path-containment.ts'],
+          filesTouched: ['iNNfo/packages/nn-mcp/src/path-containment.ts'],
         },
         'innfo-console': {
           subsystem: 'innfo-console',
-          pinnedTag: 'innfo-console-v0.2.0',
+          pinnedTag: 'nn-console-v0.2.0',
           pinnedTagDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           commitsSincePin: 1,
-          filesTouched: ['iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js'],
+          filesTouched: ['iNNfo/specs/bluepriNNts/console/nn-console.bundle.js'],
         },
       },
     };
@@ -1609,8 +1609,8 @@ agent-bootstrap:
         `innfo-mcp drift must be reported, not silently dropped. Got:\n${res.stdout}`
       );
       assert.ok(
-        res.stdout.includes('Channel freshness: innfo-console pinned to innfo-console-v0.2.0'),
-        `innfo-console drift must be reported, not silently dropped. Got:\n${res.stdout}`
+        res.stdout.includes('Channel freshness: innfo-console pinned to nn-console-v0.2.0'),
+        `nn-console drift must be reported, not silently dropped. Got:\n${res.stdout}`
       );
       assert.ok(
         res.stdout.includes('Channel freshness: skills pinned to skills-v2.0.0'),

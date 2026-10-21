@@ -5,7 +5,7 @@ const path = require('path');
 const os = require('os');
 const { spawnSync } = require('child_process');
 
-const core = require('../scripts/lib/innfo-core.generated.cjs');
+const core = require('../scripts/lib/nn-core.generated.cjs');
 const { planProjectGc } = require('../scripts/lib/gc');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'index.js');

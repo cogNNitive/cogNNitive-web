@@ -15,15 +15,15 @@ function run() {
     }
   };
 
-  const mirrorPath = path.join(__dirname, '../../scripts/lib/innfo-core.generated.cjs');
+  const mirrorPath = path.join(__dirname, '../../scripts/lib/nn-core.generated.cjs');
 
-  ok(fs.existsSync(mirrorPath), 'innfo-core.generated.cjs exists');
+  ok(fs.existsSync(mirrorPath), 'nn-core.generated.cjs exists');
 
   let mirror = {};
   try {
     mirror = require(mirrorPath);
   } catch (err) {
-    console.log(`  FAIL: require(innfo-core.generated.cjs) threw: ${err.message}`);
+    console.log(`  FAIL: require(nn-core.generated.cjs) threw: ${err.message}`);
     failed++;
   }
 

@@ -9,7 +9,7 @@ const {
   isSidecarName,
   importRaw,
   TEXT_NATIVE_FORMATS,
-} = require('./innfo-core.generated.cjs');
+} = require('./nn-core.generated.cjs');
 
 /**
  * Filename tokens that identify the workspace lineage / entrypoint record — the

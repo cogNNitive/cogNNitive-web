@@ -32,7 +32,7 @@
       return globalThis.InnfoSlug
     if (typeof require === 'function') {
       try {
-        var mod = require('./innfo-slug.generated.js')
+        var mod = require('./nn-slug.generated.js')
         if (mod && mod.slugify) return mod
       } catch {
         /* ignore */

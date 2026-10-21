@@ -20,7 +20,7 @@ import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { Script } from 'node:vm'
 
-// Mirrors innfo-runtime.js (VIEW_ID_RE, RESERVED_VIEW_IDS); a test keeps them in step.
+// Mirrors nn-runtime.js (VIEW_ID_RE, RESERVED_VIEW_IDS); a test keeps them in step.
 export const VIEW_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 export const RESERVED_VIEW_IDS = ['explorer', 'matrices', 'review']
 
@@ -362,13 +362,13 @@ export function viewsHeader(views) {
   return `<!-- innfo-views (trusted code, full page access)\n${lines.join('\n')}\n-->`
 }
 
-const CSS_LINK = /<link rel="stylesheet" href="\.\/innfo-ui\.css" ?\/>/
+const CSS_LINK = /<link rel="stylesheet" href="\.\/nn-ui\.css" ?\/>/
 const VIEWPORT = /<meta name="viewport"[^>]*>/
 // The local bundle tag plus the generated CDN/mirror block that follows it.
 const BUNDLE_TAGS =
-  /<script src="\.\/innfo-console\.bundle\.js"><\/script>\s*<!-- nn:console-shell:start -->[\s\S]*?<!-- nn:console-shell:end -->/
+  /<script src="\.\/nn-console\.bundle\.js"><\/script>\s*<!-- nn:console-shell:start -->[\s\S]*?<!-- nn:console-shell:end -->/
 
-const STRAY_BUNDLE_TAG = /<script[^>]*\ssrc="[^"]*innfo-console\.bundle[^"]*"/
+const STRAY_BUNDLE_TAG = /<script[^>]*\ssrc="[^"]*nn-console\.bundle[^"]*"/
 
 const PREPARED = Symbol('prepared console assets')
 

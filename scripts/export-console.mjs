@@ -8,7 +8,7 @@
  * console (bundle, CSS, views and JSON slots inlined) against the canonical
  * console shell (`iNNfo/specs/bluepriNNts/console/artifact_shell.html`), filling
  * the `innfo-config` / `innfo-schema` / `innfo-model` slots from a direct model
- * scan (no runtime dependency on innfo-core, whose raw `dist/` barrel is not
+ * scan (no runtime dependency on nn-core, whose raw `dist/` barrel is not
  * ESM-importable). There is no per-model console: every console is the domain
  * console, optionally scoped to a model subset or a single view.
  *
@@ -77,7 +77,7 @@ function resolveConsoleDir() {
   )
 }
 
-/** The console payload mirror (single innfo-core build shared by every producer). */
+/** The console payload mirror (single nn-core build shared by every producer). */
 let payloadHelper = null
 
 function loadPayloadHelper(consoleDir) {
@@ -114,14 +114,14 @@ function loadPayloadHelper(consoleDir) {
 async function ensureAssets() {
   const consoleDir = resolveConsoleDir()
   const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
-  const bundlePath = existsSync(join(consoleDir, 'nn-console.bundle.js'))
-    ? join(consoleDir, 'nn-console.bundle.js')
-    : join(consoleDir, 'innfo-console.bundle.js')
+  const bundlePath = ['nn-console.bundle.js', 'innfo-console.bundle.js']
+    .map((name) => join(consoleDir, name))
+    .find((p) => existsSync(p)) || join(consoleDir, 'nn-console.bundle.js')
   if (!existsSync(shellPath)) {
     throw new ConsoleExportError(
       `Console assets not found: ${shellPath}\n` +
         'Install the console assets (skills-manager install) or set INNFO_CONSOLE_DIR to ' +
-        'the folder holding artifact_shell.html and innfo-console.bundle.js.',
+        'the folder holding artifact_shell.html and nn-console.bundle.js.',
       'CONSOLE_ASSETS_NOT_FOUND',
     )
   }
@@ -137,7 +137,7 @@ function computeSha256(content) {
 
 function parseConsoleCdnRef(bundleText) {
   const m = bundleText && bundleText.match(/\bVersion (\d+\.\d+\.\d+)\./)
-  return m ? `innfo-console-v${m[1]}` : null
+  return m ? `nn-console-v${m[1]}` : null
 }
 
 /** @type {readonly ['table', 'kpi', 'dashboard', 'blank']} */
@@ -617,7 +617,7 @@ function rebaseModelAssets(model, outDirAbs, rootAbs, schema) {
 
 /** Console HTML for one model: the bundle name is injected so each console loads its own pinned bundle. */
 function renderConsole(shell, bundleName, config, payload, outDirAbs, rootAbs) {
-  const pinned = bundleName ? shell.replace('./innfo-console.bundle.js', `./${bundleName}`) : shell
+  const pinned = bundleName ? shell.replace(/\.\/(?:nn|innfo)-console\.bundle\.js/, `./${bundleName}`) : shell
   const model =
     outDirAbs && rootAbs
       ? rebaseModelAssets(payload.model, outDirAbs, rootAbs, payload.schema)
@@ -767,11 +767,11 @@ export async function writeConsole(opts = {}) {
     )
   }
 
-  // The shell ships a release-pinned CDN ref (e.g. @innfo-console-v0.1.0) in its
+  // The shell ships a release-pinned CDN ref (e.g. @nn-console-v0.1.0) in its
   // default config and static <script> tags. Those tags are not injectSlots targets, so
   // normalize every occurrence to the ref derived from the vendored bundle banner —
   // otherwise a generated console loads a stale bundle version first (#95).
-  const resolvedShell = shell.replace(/@innfo-console-v\d+\.\d+\.\d+/g, `@${consoleCdnRef}`)
+  const resolvedShell = shell.replace(/@(?:nn|innfo)-console-v\d+\.\d+\.\d+/g, `@${consoleCdnRef}`)
 
   // The single shell inlines its bundle, CSS and views, so every export — scoped or
   // whole-domaiNN — needs the sibling view lib and the CSS. A bad view or a missing
@@ -795,9 +795,9 @@ export async function writeConsole(opts = {}) {
   const packagesDir =
     process.env.INNFO_BLUEPRINTS_DIR ||
     (consoleDir === repoConsoleDir ? dirname(consoleDir) : join(homedir(), '.agents', 'bluepriNNts'))
-  const uiCssPath = existsSync(join(consoleDir, 'nn-ui.css'))
-    ? join(consoleDir, 'nn-ui.css')
-    : join(consoleDir, 'innfo-ui.css')
+  const uiCssPath = ['nn-ui.css', 'innfo-ui.css']
+    .map((name) => join(consoleDir, name))
+    .find((p) => existsSync(p)) || join(consoleDir, 'nn-ui.css')
   if (!existsSync(uiCssPath)) {
     throw new ConsoleExportError(
       `${uiCssPath} not found; the console inlines its CSS.`,
@@ -858,9 +858,9 @@ export async function writeConsole(opts = {}) {
       'feedback-export',
     ],
     runtime: {
-      cdn: `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@${consoleCdnRef}/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js`,
+      cdn: `https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@${consoleCdnRef}/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js`,
       fallback:
-        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js',
+        'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js',
     },
   }
 
@@ -868,7 +868,7 @@ export async function writeConsole(opts = {}) {
     ? payloadHelper.createFsSourceResolver(root)
     : undefined
 
-  // Single shared schema path (innfo-core) — the same helper the console payload
+  // Single shared schema path (nn-core) — the same helper the console payload
   // mirror uses, so every producer emits byte-identical slots.
   const resolveModelSchema = async (content) => {
     const fm = frontmatterOf(content)
@@ -1190,7 +1190,7 @@ export async function writeConsole(opts = {}) {
     }
     if (wholeDomain) {
       // Earlier exports wrote these beside the page; it inlines both now. Nothing is deleted.
-      const leftovers = ['innfo-console.bundle.js', 'innfo-ui.css'].filter((name) => existsSync(join(root, name)))
+      const leftovers = ['nn-console.bundle.js', 'nn-ui.css'].filter((name) => existsSync(join(root, name)))
       if (leftovers.length > 0) {
         process.stderr.write(
           `WARNING: [export-console] ${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.\n`,

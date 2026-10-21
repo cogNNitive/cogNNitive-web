@@ -210,11 +210,13 @@ cited_works:
    ```
    Sidecars maintain SSOT physical and cryptographic metadata (`sha256`, `source_file`, `normalized_at`, `normalized_by`), while semantic metadata and summaries reside in `sources_NN.md` to support Tier 2 zero-I/O querying.
 
+> **⚠️ Partial Extraction Rule (`status:: error`)**: a conversion can produce a body that is not the document's content — an anti-bot / JavaScript wall (`Checking your browser…`, `Client Challenge`, `Enable JavaScript`, `disable any ad blockers`), a body that is empty, or one too short to be the document. The scan reports it as `✅ Processed (Partial)` together with the reason, the sidecar is still written (so the source stays citable), and its catalog entry uses the **existing** `status:: error` value together with the console's `(Partial)` note. There is deliberately **no** `partial` status value: the signal is advisory, never a blocker, and re-ingesting the page normally clears it. A **zero-byte** subject is different: it is refused outright as `⚠️ Skipped` with a `zero-byte subject` reason, and no sidecar is written for it.
+
 > **⚠️ Staging Buffer Rule (`staging/`)**: Intermediate dumps from extraction tools (Whisper SRTs, raw OCR text) live temporarily in a `staging/` folder. Any `staging` path segment is strictly ignored by scanners, `--cognitivize` on a directory, the lineage projection and models, and write-once rules do not apply to it. `staging/` is **NEVER a valid citation target** (a citation into it reports `KU_EXCLUDED_PATH`: scratch, not missing).
 
 > **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system and **no implicit path prefix**: a citation path is domaiNN-relative, written in full. Downstream Level 3 models reference sources directly by path and `@` anchor via `sources:: sources/import/<file>.md@## <Heading>` (CSV row/col: `sources/import/<file>.csv@RowID&col`; JSON Pointer: `sources/import/<file>.json@/items/0/name`, RFC 6901, starting with `/`, a literal `&` written `%26`; or file-level citation `kNNowledge/<model>_NN.md`; multiple values use list syntax: `sources:: [sources/import/a.md@## Intro, sources/import/b_20261001T101500Z.pdf_sidecar_NN.md@## Summary]`). Binary raw files cannot be cited directly: cite the binary's sidecar (citing `x.pdf@...` reports `KU_BINARY_TARGET` and suggests `x.pdf_sidecar_NN.md@...`). Line numbers are prohibited; heading text anchors, CSV row keys or JSON Pointers are mandatory.
 
-> **Heading anchors use the human-readable heading text** (`@## Visión`) — the same rule the iNNfo editor and `@cognnitive/innfo-core` use.
+> **Heading anchors use the human-readable heading text** (`@## Visión`) — the same rule the iNNfo editor and `@cognnitive/nn-core` use.
 
 #### 2a-1b. Cognitivize a File or a Folder (`--cognitivize`)
 

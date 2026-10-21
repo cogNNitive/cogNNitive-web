@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-5-1"
+blueprint_version: "V_0-5-2"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 ---
@@ -37,7 +37,7 @@ description:: Open vocabulary ad-hoc tags and classification labels.
 ## NN Field Definition: op
 concept:: Change
 type:: select
-options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, comment, add_model, freeze_slugs, bump_version]
+options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version]
 description:: Mutation or review operation.
 
 ## NN Field Definition: target
@@ -53,7 +53,7 @@ description:: Precondition check value prior to mutation.
 ## NN Field Definition: to
 concept:: Change
 type:: string
-description:: Proposed target value. For bump_version, the version level to bump: patch, minor or major.
+description:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept.
 
 ## NN Field Definition: base_hash
 concept:: Change
@@ -63,12 +63,12 @@ description:: Content hash of the target element when the change was written (th
 ## NN Field Definition: concept
 concept:: Change
 type:: string
-description:: Target concept for add_element operations.
+description:: Target concept for add_element operations, and the row-axis concept for add_matrix.
 
 ## NN Field Definition: name
 concept:: Change
 type:: string
-description:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id).
+description:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id); the matrix name for add_matrix.
 
 ## NN Field Definition: slug
 concept:: Change
@@ -147,13 +147,14 @@ Every graph mutation in cogNNitive is represented as a structured changeset docu
 A changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.
 
 Each change is declared as an element of concept Change:
-- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, comment, add_model, freeze_slugs, bump_version.
+- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version.
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.
 - to: Proposed value.
 - add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset.
 - freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.
 - bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.
+- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. Optional fields.columns and fields.rows (comma-separated) seed the grid; when omitted they default to the axis concepts' own elements. Every seeded cell starts empty, ready for update_matrix_cell. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.
 - base_hash: Optional precondition on the target element content; a mismatch is a conflict.
 - sources: Evidence the change derives from (a citation); written by the proposer and sealed with the proposal.
 - Execution annotations (status, resolution, resolved_slug, replaced_sources) record the outcome of applying the change.

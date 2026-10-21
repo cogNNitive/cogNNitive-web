@@ -529,7 +529,7 @@
   }
 
   // SVG bodies (everything after viewBox="0 0 24 24", before </svg>). Moved out
-  // of innfo-runtime.js's former svgIcon.
+  // of nn-runtime.js's former svgIcon.
   var ICON_PATHS = {
     pencil: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path>',
     pin: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>',
@@ -3728,8 +3728,10 @@
     if (ref.parentLabel) desc.parentLabel = String(ref.parentLabel)
     if (ref.location) desc.location = String(ref.location)
     // Content badges carry the ICON of the concept the unit belongs to (tinted by
-    // that concept's colour through --c in CSS).
-    if (nature === 'content') {
+    // that concept's colour through --c in CSS). Section badges (a rail concept
+    // entry, a facet, a guide reference) are concept-addressed too, so they carry
+    // the same concept icon when the reference names a concept.
+    if (nature === 'content' || (kind === 'section' && (ref.concept || ref.conceptId))) {
       desc.icon = resolveConceptIconName(ref.concept || ref.conceptId, {
         index: index,
         color: ref.color,

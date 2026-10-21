@@ -1,5 +1,5 @@
 /*!
- * innfo-ui.css — DaisyUI component styles mapped to iNNfo semantic design tokens.
+ * nn-ui.css — DaisyUI component styles mapped to iNNfo semantic design tokens.
  * Offline-first, standalone component classes: .table, .card, .modal, .tabs, .drawer, .badge, .steps, .stats
  */
 
@@ -4486,6 +4486,14 @@ details.collapse summary {
     animation-duration: 15s;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .innfo-dock-blinking,
+  .innfo-highlight,
+  .innfo-card-toggle {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 @keyframes skeleton {
   from {
     background-position: 150%;
@@ -6798,7 +6806,7 @@ button.btn-primary:hover:not(:disabled) {
   border: 1px solid transparent;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
-#innfo-rail .menu li > a[data-concept] .innfo-rail-concept-pill {
+#innfo-rail .menu li > a[data-concept] .innfo-ku {
   color: var(--rail-concept-color, var(--concept-slot-fg, #0a0a0a));
   font-weight: 700;
   font-size: 0.78rem;
@@ -6806,6 +6814,13 @@ button.btn-primary:hover:not(:disabled) {
   border: 1px solid color-mix(in srgb, var(--rail-concept-color, var(--concept-slot-fg, #3b82f6)) 36%, #e5e5e5);
   padding: 2px 9px;
   border-radius: 999px;
+}
+#innfo-rail .menu li > a[data-concept] .innfo-ku > .innfo-ku-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--rail-concept-color, var(--concept-slot-fg, #3b82f6));
 }
 #innfo-rail .menu li > a[data-concept].active,
 #innfo-rail .menu li > a.active {
@@ -7337,7 +7352,6 @@ button.cite-icon,
 
 /* 7. Sin bordes no funcionales */
 .innfo-concept-pill,
-.innfo-rail-concept-pill,
 [data-innfo-component="concept-pill"],
 .innfo-card-concept-badge,
 .innfo-ku-badge[data-ku-kind="concept"],
@@ -7377,6 +7391,16 @@ button.cite-icon,
   border-width: 0 !important;
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* Keyboard focus must stay visible on the interactive controls reset above. */
+.innfo-card-count:focus-visible,
+.innfo-card-toggle:focus-visible,
+.innfo-edit-toggle:focus-visible,
+#innfo-rail details.collapse > summary.collapse-title:focus-visible,
+#innfo-rail .menu li > a[data-concept]:focus-visible {
+  outline: 2px solid var(--innfo-focus, #52525b) !important;
+  outline-offset: 2px !important;
 }
 
 /* 8. Tabla de campos */
@@ -7645,9 +7669,8 @@ input[type="text"], input[type="search"], textarea, select {
   background: #e2e8f0 !important;
 }
 
-/* 15. Rail concept pill: spacing between icon and name */
-.innfo-rail-concept-pill,
-#innfo-rail .menu li > a[data-concept] .innfo-rail-concept-pill {
+/* 15. Rail concept badge: spacing between icon and name */
+#innfo-rail .menu li > a[data-concept] .innfo-ku {
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;

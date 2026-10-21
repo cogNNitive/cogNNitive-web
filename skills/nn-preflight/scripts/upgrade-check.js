@@ -27,7 +27,7 @@ const fs = require('fs');
 const path = require('path');
 const { parseFrontmatter, parseFocusedYaml } = require('./lib/yaml-lite');
 // Single classifier for the whole ecosystem: the primitives are bundled from
-// innfo-core (AD-2) by scripts/build-preflight-primitives.mjs and drift-guarded
+// nn-core (AD-2) by scripts/build-preflight-primitives.mjs and drift-guarded
 // by scripts/verify.js step 11. No private copy may live here.
 const {
   parseSemVer,
@@ -36,7 +36,7 @@ const {
   parsePinnedUrl,
   classifyAgainstCatalog,
 } = /** @type {any} */ (require('./lib/version-status.generated.cjs'));
-// Model identity is the naming contract's (bundled from innfo-core, same drift guard).
+// Model identity is the naming contract's (bundled from nn-core, same drift guard).
 const { isNNName, isSidecarName } = /** @type {any} */ (require('./lib/naming-contract.generated.cjs'));
 
 const SCAN_SKIP_DIRS = new Set([
@@ -96,7 +96,7 @@ function discoverModels(workspaceDir) {
  * `catalog` shape: { blueprints: { <name>: { name, adopted, versions: [{blueprint_version}] } } }
  *
  * Classification delegates to the shared `classifyAgainstCatalog` primitive
- * (bundled from innfo-core) so the CLI, `innfo-mcp` check_workspace, and the
+ * (bundled from nn-core) so the CLI, `innfo-mcp` check_workspace, and the
  * editor all agree on one model's status. The `kind` field (bump gap) is
  * surfaced only for `upgrade-available` items, matching the pre-delegation
  * item shape.

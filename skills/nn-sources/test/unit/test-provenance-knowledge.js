@@ -10,7 +10,7 @@ const {
   readLineageSnapshot,
   projectLineage,
   renderLineageSections,
-} = require('../../scripts/lib/innfo-core.generated.cjs');
+} = require('../../scripts/lib/nn-core.generated.cjs');
 
 async function run() {
   let passed = 0;

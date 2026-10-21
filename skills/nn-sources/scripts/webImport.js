@@ -1,5 +1,5 @@
 const path = require('path');
-const { parseName, writeOnce } = require('./lib/innfo-core.generated.cjs');
+const { parseName, writeOnce } = require('./lib/nn-core.generated.cjs');
 
 const IMPORT_DIR = 'sources/import';
 

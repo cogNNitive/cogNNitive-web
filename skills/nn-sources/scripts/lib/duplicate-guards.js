@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { parseCitation, isNNName, isSidecarName, isExcludedPath, rawPathOfSidecar } = require('./innfo-core.generated.cjs');
+const { parseCitation, isNNName, isSidecarName, isExcludedPath, rawPathOfSidecar } = require('./nn-core.generated.cjs');
 
 /** Canonicalize whitespace + ordering for structural comparison. */
 function canonicalize(text) {

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { displayStem, isNNName, isSidecarName } = require('./innfo-core.generated.cjs');
+const { displayStem, isNNName, isSidecarName } = require('./nn-core.generated.cjs');
 
 // Directories that never hold workspace knowledge and must not be walked when
 // listing workspace models.

@@ -18,7 +18,7 @@ const watchDigestStore = require('./lib/watch-digest-store');
 const curateCsv = require('./lib/curate-csv');
 const gc = require('./lib/gc');
 const convergence = require('./lib/convergence-delta');
-const { sidecarPathOf } = require('./lib/innfo-core.generated.cjs');
+const { sidecarPathOf } = require('./lib/nn-core.generated.cjs');
 
 async function main() {
   const argv = minimist(process.argv.slice(2));

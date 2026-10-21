@@ -15,6 +15,120 @@ function stripFrontmatter(content) {
   return content;
 }
 
+/** Elements whose text is page furniture rather than document content. */
+const FURNITURE_TAGS = ['nav', 'header', 'footer', 'aside', 'form', 'noscript', 'svg', 'iframe', 'button'];
+
+/**
+ * Latin-1 + typographic named entities, the set a non-English document actually
+ * uses. `amp` is deliberately absent: decoding it here would turn the literal
+ * `&amp;#243;` into `ó` instead of the `&#243;` the source spells out.
+ */
+const NAMED_ENTITIES = Object.freeze({
+  nbsp: ' ', iexcl: '¡', cent: '¢', pound: '£', curren: '¤', yen: '¥', brvbar: '¦', sect: '§',
+  uml: '¨', copy: '©', ordf: 'ª', laquo: '«', not: '¬', shy: '', reg: '®', macr: '¯',
+  deg: '°', plusmn: '±', sup2: '²', sup3: '³', acute: '´', micro: 'µ', para: '¶', middot: '·',
+  cedil: '¸', sup1: '¹', ordm: 'º', raquo: '»', frac14: '¼', frac12: '½', frac34: '¾', iquest: '¿',
+  Agrave: 'À', Aacute: 'Á', Acirc: 'Â', Atilde: 'Ã', Auml: 'Ä', Aring: 'Å', AElig: 'Æ', Ccedil: 'Ç',
+  Egrave: 'È', Eacute: 'É', Ecirc: 'Ê', Euml: 'Ë', Igrave: 'Ì', Iacute: 'Í', Icirc: 'Î', Iuml: 'Ï',
+  ETH: 'Ð', Ntilde: 'Ñ', Ograve: 'Ò', Oacute: 'Ó', Ocirc: 'Ô', Otilde: 'Õ', Ouml: 'Ö', times: '×',
+  Oslash: 'Ø', Ugrave: 'Ù', Uacute: 'Ú', Ucirc: 'Û', Uuml: 'Ü', Yacute: 'Ý', THORN: 'Þ', szlig: 'ß',
+  agrave: 'à', aacute: 'á', acirc: 'â', atilde: 'ã', auml: 'ä', aring: 'å', aelig: 'æ', ccedil: 'ç',
+  egrave: 'è', eacute: 'é', ecirc: 'ê', euml: 'ë', igrave: 'ì', iacute: 'í', icirc: 'î', iuml: 'ï',
+  eth: 'ð', ntilde: 'ñ', ograve: 'ò', oacute: 'ó', ocirc: 'ô', otilde: 'õ', ouml: 'ö', divide: '÷',
+  oslash: 'ø', ugrave: 'ù', uacute: 'ú', ucirc: 'û', uuml: 'ü', yacute: 'ý', thorn: 'þ', yuml: 'ÿ',
+  OElig: 'Œ', oelig: 'œ', Scaron: 'Š', scaron: 'š', Yuml: 'Ÿ', fnof: 'ƒ', circ: 'ˆ', tilde: '˜',
+  ensp: ' ', emsp: ' ', thinsp: ' ', zwnj: '', zwj: '', lrm: '', rlm: '',
+  ndash: '–', mdash: '—', lsquo: '‘', rsquo: '’', sbquo: '‚', ldquo: '“', rdquo: '”', bdquo: '„',
+  dagger: '†', Dagger: '‡', bull: '•', hellip: '…', permil: '‰', prime: '′', Prime: '″',
+  lsaquo: '‹', rsaquo: '›', oline: '‾', frasl: '⁄', euro: '€', trade: '™',
+  larr: '←', uarr: '↑', rarr: '→', darr: '↓', harr: '↔', minus: '−', lowast: '∗',
+  radic: '√', infin: '∞', ne: '≠', le: '≤', ge: '≥', loz: '◊',
+  spades: '♠', clubs: '♣', hearts: '♥', diams: '♦', lt: '<', gt: '>', quot: '"', apos: "'",
+});
+
+/** Decodes one numeric entity (`&#233;` / `&#xE9;`); an invalid code point stays verbatim. */
+function decodeNumericEntity(match, body) {
+  const code = body[0] === 'x' || body[0] === 'X' ? parseInt(body.slice(1), 16) : parseInt(body, 10);
+  if (!Number.isFinite(code) || code < 1 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return match;
+  return String.fromCodePoint(code);
+}
+
+/** Decodes one named entity from the table; an unknown name stays verbatim. */
+function decodeNamedEntity(match, name) {
+  return NAMED_ENTITIES[name] !== undefined ? NAMED_ENTITIES[name] : match;
+}
+
+/**
+ * Removes each furniture element together with its content. A lone self-closing
+ * form is dropped too; an unclosed element keeps its text (its tags are stripped
+ * later), which is the safe direction.
+ * @param {string} html
+ * @returns {string}
+ */
+function stripFurniture(html) {
+  let out = html;
+  for (const tag of FURNITURE_TAGS) {
+    out = out.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?</${tag}\\s*>`, 'gi'), '');
+    out = out.replace(new RegExp(`<${tag}\\b[^>]*/>`, 'gi'), '');
+  }
+  return out;
+}
+
+/**
+ * The document's semantic content region: `<main>` if present, else `<article>`,
+ * else the document unchanged (furniture already stripped by the caller).
+ * @param {string} html
+ * @returns {string}
+ */
+function contentRegion(html) {
+  const region =
+    /<main\b[^>]*>([\s\S]*?)<\/main\s*>/i.exec(html) ||
+    /<article\b[^>]*>([\s\S]*?)<\/article\s*>/i.exec(html);
+  return region ? region[1] : html;
+}
+
+/** Text patterns of an anti-bot / JavaScript-wall interstitial served instead of the document. */
+const WALL_SIGNATURES = [
+  /checking your browser/i,
+  /client challenge/i,
+  /javascript is disabled/i,
+  /(?:enable|turn on) (?:js|javascript)\b[^.]{0,80}\b(?:ad ?blocker|adblock)/i,
+  /disable (?:any |your )?ad ?blockers?/i,
+  /please (?:enable|turn on) javascript/i,
+  /a required part of this site could ?n.t load/i,
+  /cf-browser-verification|cf_chl_|__cf_chl/i,
+  /just a moment\.\.\./i,
+  /attention required/i,
+  /recaptcha/i,
+  /verify (?:that )?you are (?:a )?human|are you a robot/i,
+];
+
+/** A body shorter than this cannot be the document's content. */
+const MIN_CONTENT_CHARS = 200;
+/** A wall replaces the document, so it is short: above this length a signature is prose, not a wall. */
+const WALL_MAX_CHARS = 4000;
+/** A wall leads with its message; a signature this deep is a mention, not the page. */
+const WALL_HEAD_CHARS = 600;
+
+/**
+ * Reports an HTML extraction that is not the document's content, reusing the
+ * per-file `partial`/`note` channel the PDF branch already uses. Advisory only:
+ * the caller still cognitivizes the source and its citations still resolve.
+ *
+ * @param {string} body
+ * @returns {null | 'anti-bot-wall' | 'empty' | 'trivial'}
+ */
+function looksPartial(body) {
+  const text = typeof body === 'string' ? body : '';
+  if (text.trim() === '') return 'empty';
+  const nonWhitespace = text.replace(/\s+/g, '').length;
+  if (nonWhitespace < WALL_MAX_CHARS && WALL_SIGNATURES.some((re) => re.test(text.slice(0, WALL_HEAD_CHARS)))) {
+    return 'anti-bot-wall';
+  }
+  if (nonWhitespace < MIN_CONTENT_CHARS) return 'trivial';
+  return null;
+}
+
 /**
  * Zero-dependency HTML-to-Markdown conversion.
  * Preserves headings, bold/italics, links, lists, code, and tables.
@@ -23,11 +137,15 @@ function stripFrontmatter(content) {
  */
 function htmlToPlainText(html) {
   if (!html || typeof html !== 'string') return '';
-  return html
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<head[\s\S]*?<\/head>/gi, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
+  return contentRegion(stripFurniture(
+    html
+      // CRLF / lone CR first: every whitespace rule below assumes LF.
+      .replace(/\r\n?/g, '\n')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<head[\s\S]*?<\/head>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+  ))
     // Headings
     .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n\n# $1\n\n')
     .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n\n## $1\n\n')
@@ -48,16 +166,13 @@ function htmlToPlainText(html) {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|section|article|tr|blockquote)>/gi, '\n\n')
     .replace(/<[^>]+>/g, '')
-    // Entities
-    .replace(/&nbsp;/gi, ' ')
+    // Entities: numeric first, named next, `&amp;` last so a literal `&amp;#243;`
+    // stays `&#243;` instead of double-decoding into `ó`.
+    .replace(/&#([xX][0-9a-fA-F]{1,6}|\d{1,7});/g, decodeNumericEntity)
+    .replace(/&([A-Za-z][A-Za-z0-9]{1,31});/g, decodeNamedEntity)
     .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/&mdash;/gi, '—')
-    .replace(/&ndash;/gi, '–')
-    // Cleanup whitespace
+    // Cleanup whitespace. `&nbsp;`/`&#160;` decode to NBSP: a space, never a line break.
+    .replace(/\u00A0/g, ' ')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n[ \t]+/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
@@ -69,8 +184,8 @@ function htmlToPlainText(html) {
  * quoting with `""` escape, CRLF/LF row breaks, and newlines preserved verbatim
  * inside quoted fields. CR-only is data; a trailing newline yields no extra row.
  *
- * Mirrors the canonical `parseCsvTable` (iNNfo/packages/innfo-core/src/csvTable.ts).
- * Kept inline because the distributed skill ships zero innfo-core dependency.
+ * Mirrors the canonical `parseCsvTable` (iNNfo/packages/nn-core/src/csvTable.ts).
+ * Kept inline because the distributed skill ships zero nn-core dependency.
  *
  * @param {string} content
  * @returns {{ rows: string[][], malformed: boolean }} malformed=true on unbalanced quotes.
@@ -926,6 +1041,7 @@ module.exports = {
   parseCsv,
   stripFrontmatter,
   htmlToPlainText,
+  looksPartial,
   reflowExtractedText,
   layoutItemsToText,
   convertJson,

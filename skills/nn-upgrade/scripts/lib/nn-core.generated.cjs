@@ -1,6 +1,6 @@
 /**
  * GENERATED FILE — DO NOT EDIT.
- * Source: iNNfo/packages/innfo-core (planDomainScaffold, parseKnowledge, serializeKnowledge, freeze_slugs)
+ * Source: iNNfo/packages/nn-core (planDomainScaffold, parseKnowledge, serializeKnowledge, freeze_slugs)
  * Regenerate: node scripts/build-preflight-primitives.mjs
  * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).
  */
@@ -7376,7 +7376,7 @@ __export(stdin_exports, {
 });
 module.exports = __toCommonJS(stdin_exports);
 
-// iNNfo/packages/innfo-core/src/parser/slug.ts
+// iNNfo/packages/nn-core/src/parser/slug.ts
 function nfc(text) {
   return text.normalize("NFC");
 }
@@ -7387,7 +7387,7 @@ function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-// iNNfo/packages/innfo-core/src/scaffold/domain.ts
+// iNNfo/packages/nn-core/src/scaffold/domain.ts
 var DOMAIN_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md";
 var DOMAIN_DIRS = [
   "kNNowledge",
@@ -7442,10 +7442,10 @@ function planDomainScaffold(input) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/parser/yaml.ts
+// iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/parser/markdown.ts
+// iNNfo/packages/nn-core/src/parser/markdown.ts
 var YAML_BLOCK_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 var BOM_CHAR = String.fromCharCode(65279);
 function normalizeSource(text) {
@@ -7476,7 +7476,7 @@ function parseTableRow(line) {
   return parts.slice(start, end).map((c) => c.trim());
 }
 
-// iNNfo/packages/innfo-core/src/parser/yaml.ts
+// iNNfo/packages/nn-core/src/parser/yaml.ts
 function parseYaml(yamlStr, onError) {
   const sanitized = yamlStr.charCodeAt(0) === 65279 ? yamlStr.replace(/^\uFEFF+/, "") : yamlStr;
   try {
@@ -7612,7 +7612,7 @@ function parseFrontmatter(content, onError) {
   return fm;
 }
 
-// iNNfo/packages/innfo-core/src/parser/taxonomy.ts
+// iNNfo/packages/nn-core/src/parser/taxonomy.ts
 function parseIndexBlock(content) {
   const edges = [];
   const lines = normalizeSource(content).split("\n");
@@ -7649,7 +7649,7 @@ function printTaxonomyNode(name, allEdges, lines, depth, ancestors = /* @__PURE_
   }
 }
 
-// iNNfo/packages/innfo-core/src/parser/sections.ts
+// iNNfo/packages/nn-core/src/parser/sections.ts
 var UNIFIED_ELEMENT_RE = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
 var PROPERTY_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
 var SECTION_RE = /^NN\s+(?:(matrices):\s*(.*)|(.*))/;
@@ -7873,21 +7873,21 @@ function getSectionType(rawTitle) {
   return "other";
 }
 
-// iNNfo/packages/innfo-core/src/parser/serializer.ts
+// iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
 
-// iNNfo/packages/innfo-core/src/assertNever.ts
+// iNNfo/packages/nn-core/src/assertNever.ts
 function assertNever(value, context = "value") {
   throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
 }
 
-// iNNfo/packages/innfo-core/src/jsonPointer.ts
+// iNNfo/packages/nn-core/src/jsonPointer.ts
 var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
 function isJsonPointer(pointer) {
   return POINTER_RE.test(pointer);
 }
 
-// iNNfo/packages/innfo-core/src/naming/contract.ts
+// iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
 var NN_SUFFIX_RE = /_NN\.md$/i;
@@ -7945,7 +7945,7 @@ function roleOf(i) {
   }
 }
 
-// iNNfo/packages/innfo-core/src/sourceRef.ts
+// iNNfo/packages/nn-core/src/sourceRef.ts
 var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
 var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
@@ -8194,7 +8194,7 @@ function serializeKnowledgeUnitRef(filePath, unit, subunits = []) {
   return tail.length > 0 ? `${filePath}@${head}&${tail.join("&")}` : `${filePath}@${head}`;
 }
 
-// iNNfo/packages/innfo-core/src/parser/serializer.ts
+// iNNfo/packages/nn-core/src/parser/serializer.ts
 function serializePropertyValue(value, rawText) {
   if (rawText !== void 0 && rawTextStillMatches(rawText, value)) {
     return rawText;
@@ -8517,9 +8517,20 @@ function serializeKnowledge(model) {
     const matrix = model.matrices.find((m) => m.name.toLowerCase() === key);
     if (matrix) emitMatrixTable(matrix);
   };
+  const emittedOpaque = /* @__PURE__ */ new Set();
+  const emitOpaqueSection = (title) => {
+    if (emittedOpaque.has(title)) return;
+    emittedOpaque.add(title);
+    const text = model.rawOtherSections?.[title];
+    if (!text || !text.trim()) return;
+    for (const line of text.split("\n")) lines.push(line);
+    lines.push("");
+  };
+  const isOpaque = (entry) => model.rawOtherSections !== void 0 && Object.prototype.hasOwnProperty.call(model.rawOtherSections, entry);
   for (const entry of model.sectionOrder ?? []) {
     if (entry === "index") emitIndex();
     else if (entry.startsWith("matrices: ")) emitMatrixSection(entry.slice("matrices: ".length));
+    else if (isOpaque(entry)) emitOpaqueSection(entry);
     else emitConceptSection(entry);
   }
   emitIndex();
@@ -8531,10 +8542,13 @@ function serializeKnowledge(model) {
     for (const conceptName of Object.keys(model.rawSections)) emitConceptSection(conceptName);
   }
   for (const matrix of model.matrices) emitMatrixSection(matrix.name);
+  if (model.rawOtherSections) {
+    for (const title of Object.keys(model.rawOtherSections)) emitOpaqueSection(title);
+  }
   return lines.join("\n");
 }
 
-// iNNfo/packages/innfo-core/src/types/parser.ts
+// iNNfo/packages/nn-core/src/types/parser.ts
 var ElementsMap = class {
   _map = /* @__PURE__ */ new Map();
   set(key, nodes) {
@@ -8576,7 +8590,7 @@ var ElementsMap = class {
   }
 };
 
-// iNNfo/packages/innfo-core/src/parser/core.ts
+// iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {
   const usedSlugs = /* @__PURE__ */ new Map();
   const colliding = /* @__PURE__ */ new Map();
@@ -8678,6 +8692,7 @@ function parseKnowledge(content) {
   const body = normalizedContent.replace(YAML_BLOCK_RE, "").trim();
   const sections = splitTopLevelSections(body);
   const rawSections = {};
+  const rawOtherSections = {};
   const sectionOrder = [];
   const sectionBlankLine = {};
   for (const section of sections) {
@@ -8694,6 +8709,9 @@ function parseKnowledge(content) {
       sectionKey = name;
     } else if (type === "matrix") {
       sectionKey = `matrices: ${name}`;
+    } else {
+      sectionKey = rawTitle;
+      rawOtherSections[rawTitle] = section.trim();
     }
     if (sectionKey !== void 0) {
       sectionOrder.push(sectionKey);
@@ -8758,6 +8776,7 @@ function parseKnowledge(content) {
     conceptFields: Object.keys(conceptFields).length > 0 ? conceptFields : void 0,
     rawConceptFields: Object.keys(rawConceptFields).length > 0 ? rawConceptFields : void 0,
     rawSections: Object.keys(rawSections).length > 0 ? rawSections : void 0,
+    rawOtherSections: Object.keys(rawOtherSections).length > 0 ? rawOtherSections : void 0,
     rawContent: content,
     sectionOrder: sectionOrder.length > 0 ? sectionOrder : void 0,
     sectionBlankLine: Object.keys(sectionBlankLine).length > 0 ? sectionBlankLine : void 0,
@@ -8766,19 +8785,19 @@ function parseKnowledge(content) {
   };
 }
 
-// iNNfo/packages/innfo-core/src/schema/extract.ts
+// iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
 var MATRIX_DEFINITION = "Matrix Definition";
 
-// iNNfo/packages/innfo-core/src/schema/metaschema.ts
+// iNNfo/packages/nn-core/src/schema/metaschema.ts
 var REQUIRED_BY_PRIMITIVE = {
   [CONCEPT_DEFINITION]: ["type"],
   [FIELD_DEFINITION]: ["concept", "type"],
   [MATRIX_DEFINITION]: ["source", "target"]
 };
 
-// iNNfo/packages/innfo-core/src/mutate.ts
+// iNNfo/packages/nn-core/src/mutate.ts
 function freeze_slugs(model) {
   const existingSlugs = /* @__PURE__ */ new Set();
   for (const [, elements] of model.elements.entries()) {

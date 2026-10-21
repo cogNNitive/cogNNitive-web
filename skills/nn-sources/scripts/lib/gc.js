@@ -5,7 +5,7 @@ const {
   planGc,
   projectLineage,
   readLineageSnapshot,
-} = require('./innfo-core.generated.cjs');
+} = require('./nn-core.generated.cjs');
 const { collectCitationSites } = require('./impact-checker');
 
 const toPosix = (p) => p.replace(/\\/g, '/').replace(/^\.\//, '');
