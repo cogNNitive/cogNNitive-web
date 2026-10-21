@@ -30,13 +30,13 @@ agent-bootstrap:
       description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
       blueprints: [domaiNN]
       mcp:
-        - name: innfo-mcp
+        - name: nn-mcp
           repo: cogNNitive/cogNNitive-web
-          path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
-          version: "0.29.0"
-          ref: "innfo-mcp-v0.29.0"
-          commit: "635f587246e40a7d4c91d77bce7db59b03459d6f"
-          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/635f587246e40a7d4c91d77bce7db59b03459d6f/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
+          path: iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
+          version: "0.30.0"
+          ref: "nn-mcp-v0.30.0"
+          commit: "ecefa6ef3bc619707c79e33433b4eafda846c8af"
+          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ecefa6ef3bc619707c79e33433b4eafda846c8af/iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
     - name: nn-preflight
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-preflight
