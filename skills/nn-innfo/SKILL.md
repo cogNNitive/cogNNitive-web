@@ -801,6 +801,8 @@ This is the headless / CLI-equivalent path for actioNN — there is no separate 
 
 ## 15. External Watch Roots & Pre-Authoring Scanner Integration
 
+The session-start surfacing of watch roots — the contextual `[s] Sources` sub-option, the `[h] Help` capability entry, and the read-only `--watch-digest` — is owned by `nn` (see the `router-governance` and `external-watch-roots` capabilities). This section covers only the pre-authoring check that runs when a model citing dynamic sources is about to be written.
+
 When authoring or auditing models that rely on external data drops (e.g. client spreadsheets, RFPs, audio transcripts):
 1. **Detect Declarative Watch Roots**: Check if the workspace Lineage record (`domaiNN_NN.md` or `<Project>_cogNNitive_NN.md`) defines a `## NN External Watch Roots:` section.
 2. **Pre-Authoring Scan Check**: Before updating or creating a model citing dynamic sources, offer to scan external roots:

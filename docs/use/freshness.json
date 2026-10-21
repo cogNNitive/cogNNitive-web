@@ -1,15 +1,19 @@
 {
-  "generatedAt": "2026-10-21T17:35:07.274Z",
-  "head": "7db76390142d4841506e06e1ab0bd8f1b3f16455",
+  "generatedAt": "2026-10-21T17:52:33.058Z",
+  "head": "f72b451a01d079ea5ea0053098c8e3691c73ce8e",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.29.0",
       "pinnedTagDate": "2026-10-21T18:16:23+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 2,
       "filesTouched": [
         "skills/nn-console/SKILL.md",
-        "skills/nn-innfo/SKILL.md"
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-preflight/scripts/domain-probe.js",
+        "skills/nn-preflight/scripts/domain-probe.test.js",
+        "skills/nn/SKILL.md",
+        "skills/nn/skill-menu.test.js"
       ]
     },
     "blueprints": {

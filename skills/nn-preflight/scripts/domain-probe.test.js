@@ -125,6 +125,63 @@ async function runTests() {
       assert.ok(unnorm, 'Expected unnormalized source integrity warning in preflight.warnings');
     });
 
+    await test('reports watch_roots.declared for a record with two roots', async () => {
+      const ws = path.join(tmpDir, 'watch-roots-ws');
+      fs.mkdirSync(ws, { recursive: true });
+      fs.writeFileSync(
+        path.join(ws, 'domaiNN_NN.md'),
+        [
+          '---',
+          'level: 3',
+          '---',
+          '# NN domaiNN',
+          '## NN External Watch Roots:',
+          '- Root: "D:/Drops/A"',
+          '  Cadence: "dynamic"',
+          '- Root: "Z:/Vault/B"',
+          '  Cadence: "static"',
+          '## NN Next Section',
+          '',
+        ].join('\n'),
+      );
+      const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
+      assert.strictEqual(res.watch_roots.declared, 2);
+    });
+
+    await test('reports watch_roots.declared = 0 without a block', async () => {
+      const ws = path.join(tmpDir, 'no-roots-ws');
+      fs.mkdirSync(ws, { recursive: true });
+      fs.writeFileSync(path.join(ws, 'domaiNN_NN.md'), '---\nlevel: 3\n---\n# NN domaiNN\n');
+      const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
+      assert.strictEqual(res.watch_roots.declared, 0);
+    });
+
+    await test('reports watch_roots.declared = 0 with no lineage record', async () => {
+      const ws = path.join(tmpDir, 'no-record-ws');
+      fs.mkdirSync(ws, { recursive: true });
+      const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
+      assert.strictEqual(res.watch_roots.declared, 0);
+    });
+
+    await test('counts watch roots with CRLF line endings and quoted paths', async () => {
+      const ws = path.join(tmpDir, 'crlf-roots-ws');
+      fs.mkdirSync(ws, { recursive: true });
+      fs.writeFileSync(
+        path.join(ws, 'domaiNN_NN.md'),
+        '---\r\nlevel: 3\r\n---\r\n## NN External Watch Roots:\r\n- Root: "D:/Drops/One"\r\n  Cadence: "dynamic"\r\n- Root: Z:/Plain/Two\r\n\r\n## NN Other\r\n',
+      );
+      const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
+      assert.strictEqual(res.watch_roots.declared, 2);
+    });
+
+    await test('finds the lineage record under kNNowledge/', async () => {
+      const ws = path.join(tmpDir, 'kn-roots-ws');
+      fs.mkdirSync(path.join(ws, 'kNNowledge'), { recursive: true });
+      fs.writeFileSync(path.join(ws, 'kNNowledge', 'Acme_cogNNitive_NN.md'), '## NN External Watch Roots:\n- Root: "D:/X"\n');
+      const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
+      assert.strictEqual(res.watch_roots.declared, 1);
+    });
+
     console.log(`\nAll domain-probe tests finished: ${passed} passed, ${failed} failed.`);
     if (failed > 0) process.exit(1);
   } finally {

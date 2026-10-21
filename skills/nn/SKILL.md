@@ -59,9 +59,28 @@ The `(Recommended)` tag is dynamically assigned to the first actionable stage ba
 [m] Model — Create, author, validate, or audit kNNowledge models (<N> models)
 [r] Review & Deliverables — Generate/preview dashboards, sites, consoles, reports
 [p] Procedures — Discover and execute domain & blueprint SOP procedures (<N> available)
-[h] Help & Documentation — Explore blueprints catalog, specs, guides
+[h] Help & Documentation — Explore blueprints catalog, specs, guides, and the capabilities catalog
 [x] Cancel / Exit
 ```
+
+### Contextual Sources Sub-option (External Watch Roots)
+The `[s] Sources` stage surfaces the external watch-roots capability **contextually**, driven by `watch_roots.declared` from the domain probe. This MUST NOT add a new top-level menu letter: the `[s][m][r][p][h][x]` shape and the `(Recommended)` selection are fixed.
+
+- When `watch_roots.declared > 0`, `[s] Sources` offers **Scan external watch roots** — runs the on-demand scan and the session-start digest (`node skills/nn-sources/scripts/index.js --scan-external`).
+- When `watch_roots.declared === 0`, `[s] Sources` offers **Declare a watch root** — a declarative `## NN External Watch Roots:` block in the lineage record (folders are read-only; no daemon or background process).
+- A probe that omits `watch_roots` (older preflight) is treated as `0` and the menu is presented unchanged.
+
+### Session-Start Watch Digest
+After the activation gate, when `watch_roots.declared > 0`, `nn` runs the read-only digest and presents pending items for a per-item decision:
+
+```bash
+node skills/nn-sources/scripts/index.js --watch-digest
+```
+
+Present each item with `ignore` / `postpone` / `import` (applied via `--digest-decide "<key>" --status <...>`). The digest never writes to `sources/`. If it fails or is unavailable, swallow the error and proceed to the menu — it MUST NOT block the session. When `watch_roots.declared === 0`, the digest is not invoked.
+
+### Help Capabilities Catalog
+`[h] Help` lists the platform capabilities, including **Watched folders** — ingest new or evolved files from external directories without daemons (declarative roots, on-demand scan, session-start digest).
 
 ---
 

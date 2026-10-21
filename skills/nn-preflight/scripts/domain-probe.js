@@ -12,6 +12,62 @@
 const fs = require('fs');
 const path = require('path');
 const { runCheck, scanWorkspaceSources } = require('./preflight-check');
+const { isNNName, isSidecarName } = /** @type {any} */ (require('./lib/naming-contract.generated.cjs'));
+
+/**
+ * Filename tokens that identify the workspace lineage / entrypoint record — the
+ * document that may declare `## NN External Watch Roots:`. Mirrors the discovery
+ * used by `nn-sources` (`domaiNN` canonical, `cogNNitive` lineage, `workspace`
+ * legacy) without depending on that skill.
+ */
+const RECORD_TOKENS = ['cogNNitive', 'domaiNN', 'workspace'];
+
+/**
+ * Finds the lineage / entrypoint record that may declare watch roots: first a
+ * `*_NN.md` file under `kNNowledge/`, then one at the workspace root.
+ * @param {string} workspaceDir
+ * @returns {string | null} absolute path to the record, or null
+ */
+function findLineageRecord(workspaceDir) {
+  const candidates = [];
+  const push = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    try {
+      for (const f of fs.readdirSync(dir)) {
+        if (isNNName(f) && !isSidecarName(f)) candidates.push(path.join(dir, f));
+      }
+    } catch {
+      /* ignore unreadable dirs */
+    }
+  };
+  push(path.join(workspaceDir, 'kNNowledge'));
+  push(workspaceDir);
+  return candidates.find((p) => RECORD_TOKENS.some((t) => path.basename(p).includes(t))) || null;
+}
+
+/**
+ * Counts the roots declared in the record's `## NN External Watch Roots:` block.
+ * Cheap, offline, and tolerant of CRLF and quoted paths. Never walks the roots.
+ * @param {string} workspaceDir
+ * @returns {number}
+ */
+function countWatchRoots(workspaceDir) {
+  const recordPath = findLineageRecord(workspaceDir);
+  if (!recordPath) return 0;
+  let content;
+  try {
+    content = fs.readFileSync(recordPath, 'utf8');
+  } catch {
+    return 0;
+  }
+  const sectionMatch = content.match(/## NN External Watch Roots:\s*([\s\S]*?)(?=\n## NN |\n# NN |$)/i);
+  if (!sectionMatch) return 0;
+  let count = 0;
+  for (const rawLine of sectionMatch[1].split(/\r?\n/)) {
+    if (/^\s*-\s*Root:\s*"?[^"\r\n]+"?/i.test(rawLine)) count++;
+  }
+  return count;
+}
 
 /**
  * Runs a deterministic probe against the target workspace directory.
@@ -137,6 +193,9 @@ async function runProbe(options = {}) {
       domain_count: domainProceduresCount,
       blueprint_count: blueprintProceduresCount,
     },
+    watch_roots: {
+      declared: countWatchRoots(workspaceDir),
+    },
   };
 }
 
@@ -167,6 +226,7 @@ async function main() {
       console.log(`Knowledge count: ${result.knowledge.count}`);
       console.log(`Pending sources: ${result.sources.pending_count}`);
       console.log(`Procedures (domain/blueprint): ${result.procedures.domain_count}/${result.procedures.blueprint_count}`);
+      console.log(`Watch roots: ${result.watch_roots.declared}`);
     }
     process.exit(result.preflight.exitCode === 0 ? 0 : 1);
   } catch (err) {

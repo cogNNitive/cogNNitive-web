@@ -85,6 +85,14 @@ offered again while an unchanged, ignored one is not. The digest is read-only:
 producing it never touches `sources/`, and it does nothing at all when a domaiNN
 declares no watch roots — so it can never delay or block a session.
 
+### Finding the feature
+
+Watching is discoverable from the session itself, not only from these docs: the
+`nn` entry menu surfaces it **contextually** under `[s] Sources` — *Scan external
+watch roots* when the workspace declares roots, or *Declare a watch root* when it
+does not — and `[h] Help` lists it as the **Watched folders** capability. There is
+no daemon and no background process to enable.
+
 ## 3. Ingestion strategies
 
 | Strategy | Behaviour | Available today |

@@ -38,5 +38,7 @@ Organizes workspace operations into a continuous loop:
 - `[m] Model` — Create, author, validate, or audit kNNowledge models
 - `[r] Review & Deliverables` — Generate/preview dashboards, sites, consoles, reports
 - `[p] Procedures` — Discover and execute domain & blueprint SOP procedures
-- `[h] Help & Documentation` — Explore blueprints catalog, specs, guides
+- `[h] Help & Documentation` — Explore blueprints catalog, specs, guides, and the capabilities catalog
 - `[x] Cancel / Exit`
+
+The `[s] Sources` stage surfaces **external watch roots** contextually, driven by `watch_roots.declared` from the domain probe — no new top-level letter. With roots declared it offers *Scan external watch roots*; with none it offers *Declare a watch root*. After the activation gate, `nn` runs the read-only `--watch-digest` when roots are declared and presents pending items for an `ignore` / `postpone` / `import` decision. `[h] Help` lists the **Watched folders** capability (external folders ingested without daemons).
