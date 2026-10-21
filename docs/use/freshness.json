@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-21T13:40:36.689Z",
-  "head": "6a2db25cb93997743fcc28b3763c809095c5670a",
+  "generatedAt": "2026-10-21T13:54:57.525Z",
+  "head": "61f8231154ed17883c3a4c53cdefd9b935c5f9c9",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -58,7 +58,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.40.0",
       "pinnedTagDate": "2026-10-20T15:17:56+02:00",
-      "commitsSincePin": 6,
+      "commitsSincePin": 7,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
@@ -81,7 +81,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.40.0",
       "pinnedTagDate": "2026-10-20T15:17:56+02:00",
-      "commitsSincePin": 6,
+      "commitsSincePin": 7,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
@@ -108,9 +108,14 @@
     },
     "nn-console": {
       "subsystem": "nn-console",
-      "pinnedTag": null,
-      "commitsSincePin": null,
-      "unresolved": "no tag found for this subsystem in local git"
+      "pinnedTag": "nn-console-v0.25.0",
+      "pinnedTagDate": "2026-10-21T15:37:52+02:00",
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     }
   }
 }
