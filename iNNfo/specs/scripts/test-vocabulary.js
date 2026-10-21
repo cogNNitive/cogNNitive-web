@@ -215,6 +215,30 @@ function run() {
     // Documentation-only check: assert table has documentation_only: true or runtime_consumers: []
     assertTrue(vocab.documentation_only === true || (vocab.meta && vocab.meta.documentation_only === true), 'retired table is documentation only (no runtime aliases)');
 
+    // Rename-scope exclusions (nn-prefix-rename): these identifiers stay canonical
+    // and live; recording any of them as retired is an error.
+    const RENAME_SCOPE_EXCLUDED = new Set([
+      'iNNfo',
+      'nn-innfo',
+      'docs/innfo/',
+      'InnfoConsole',
+      'InnfoSlug',
+      '--innfo-',
+      'innfo-config',
+      'innfo-model',
+      'innfo-schema',
+      'innfo-console:v3:',
+      '__INNFO_MCP_VERSION__',
+    ]);
+    const excludedIntroduced = retiredList.filter(
+      (e) => RENAME_SCOPE_EXCLUDED.has(e.old) || RENAME_SCOPE_EXCLUDED.has(e.id),
+    );
+    assertEqual(
+      excludedIntroduced.length,
+      0,
+      `rename-scope identifiers must not be recorded as retired (found: ${excludedIntroduced.map((e) => e.old || e.id).join(', ') || 'none'})`,
+    );
+
     console.log(`\n  Vocabulary tests: ${passed} passed, ${failed} failed`);
   } catch (e) {
     console.error(`  ERROR: ${e.message}`);

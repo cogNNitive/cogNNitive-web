@@ -337,6 +337,83 @@
       "new": "console",
       "kind": "ui_term",
       "notes": "Retired user-facing UI term for the hosted web application; the domain console replaces it. Distinct from the \"app\" alias of bluepriNNt, which keeps its entry and is untouched."
+    },
+    {
+      "id": "innfo-mcp (release key and tag family)",
+      "old": "innfo-mcp",
+      "new": "nn-mcp",
+      "kind": "release_key",
+      "notes": "Distribution prefix rename. Existing `innfo-mcp-v*` git tags, published CDN files and stamped exports remain valid and are not renamed; only new releases use `nn-mcp-v*`."
+    },
+    {
+      "id": "innfo-console (release key and tag family)",
+      "old": "innfo-console",
+      "new": "nn-console",
+      "kind": "release_key",
+      "notes": "Distribution prefix rename. Existing `innfo-console-v*` git tags, published CDN files and stamped exports remain valid and are not renamed; only new releases use `nn-console-v*`."
+    },
+    {
+      "id": "@cognnitive/innfo-core",
+      "old": "@cognnitive/innfo-core",
+      "new": "@cognnitive/nn-core",
+      "kind": "package",
+      "notes": "npm workspace package renamed to the nn- prefix; workspace-only, never published to the npm registry."
+    },
+    {
+      "id": "@cognnitive/innfo-mcp",
+      "old": "@cognnitive/innfo-mcp",
+      "new": "@cognnitive/nn-mcp",
+      "kind": "package",
+      "notes": "npm workspace package renamed to the nn- prefix."
+    },
+    {
+      "id": "@cognnitive/innfo-console",
+      "old": "@cognnitive/innfo-console",
+      "new": "@cognnitive/nn-console",
+      "kind": "package",
+      "notes": "npm workspace package renamed to the nn- prefix."
+    },
+    {
+      "id": "iNNfo/packages/innfo-core",
+      "old": "iNNfo/packages/innfo-core",
+      "new": "iNNfo/packages/nn-core",
+      "kind": "path",
+      "notes": "Package directory renamed to the nn- prefix."
+    },
+    {
+      "id": "iNNfo/packages/innfo-mcp",
+      "old": "iNNfo/packages/innfo-mcp",
+      "new": "iNNfo/packages/nn-mcp",
+      "kind": "path",
+      "notes": "Package directory renamed to the nn- prefix."
+    },
+    {
+      "id": "innfo-mcp (MCP bin and server name)",
+      "old": "innfo-mcp",
+      "new": "nn-mcp",
+      "kind": "mcp_server",
+      "notes": "The MCP `bin` name and the `Server({name})` identity. The old bundle `bin/innfo-mcp.bundle.js` is deleted; existing `innfo-mcp-v*` CDN files and stamped exports remain valid and resolvable."
+    },
+    {
+      "id": "innfo-mcp_ (MCP tool prefix)",
+      "old": "innfo-mcp_",
+      "new": "nn-mcp_",
+      "kind": "tool_prefix",
+      "notes": "The MCP tool prefix in skills and documentation. The client builds the prefix from the registered server name; tool names after the prefix are unchanged."
+    },
+    {
+      "id": "@innfo-console-v (console shell pin)",
+      "old": "@innfo-console-v",
+      "new": "@nn-console-v",
+      "kind": "console_pin",
+      "notes": "The console shell pin. Readers still accept `@innfo-console-v*` so already-stamped exports keep resolving; nothing emits it."
+    },
+    {
+      "id": "innfo- (console asset and generated file prefix)",
+      "old": "innfo-",
+      "new": "nn-",
+      "kind": "prefix",
+      "notes": "Console assets, generated mirrors and wrapper scripts renamed to the nn- prefix. Existing published files under the old name are never moved or deleted, so old stamps and CDN URLs keep resolving."
     }
   ]
 }

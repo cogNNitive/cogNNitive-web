@@ -46,7 +46,7 @@ Whenever displaying, citing, or referencing a **Knowledge Unit** (element, conce
 
 ### 2b. Custom UI & Styling (DaisyUI First)
 When custom UI elements, panels, cards, filters, or layout controls are needed:
-1. **Use DaisyUI**: Style elements using the **DaisyUI** component classes and Tailwind utility classes already embedded in `innfo-ui.css`:
+1. **Use DaisyUI**: Style elements using the **DaisyUI** component classes and Tailwind utility classes already embedded in `nn-ui.css`:
    - **Buttons**: `btn`, `btn-primary`, `btn-sm`, `btn-outline`, `btn-ghost`.
    - **Containers & Cards**: `card`, `card-body`, `card-title`, `bg-base-100`, `bg-base-200`, `shadow-sm`, `rounded-lg`.
    - **Badges & Tags**: `badge`, `badge-primary`, `badge-outline`.
