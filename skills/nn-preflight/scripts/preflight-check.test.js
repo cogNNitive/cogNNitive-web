@@ -100,7 +100,7 @@ agent-bootstrap:
       commit: "a55a709cfd4482979547fda2b8633e6b8541a813"
       version: "V_0-1-0"
       mcp:
-        - name: innfo-mcp
+        - name: nn-mcp
           version: "0.2.4"
   blueprints:
     - name: workspace_spec_NN
@@ -113,7 +113,7 @@ agent-bootstrap:
     assert.strictEqual(parsed.version, '2.0');
     assert.strictEqual(parsed.skills.length, 1);
     assert.strictEqual(parsed.skills[0].name, 'nn-innfo');
-    assert.strictEqual(parsed.skills[0].mcp[0].name, 'innfo-mcp');
+    assert.strictEqual(parsed.skills[0].mcp[0].name, 'nn-mcp');
     assert.strictEqual(parsed.blueprints.length, 1);
     console.log('✔ parseManifest extracts skills, mcp, and templates correctly');
   }
@@ -128,7 +128,7 @@ agent-bootstrap:
       commit: "1111111111111111111111111111111111111111"
       version: "V_0-1-0"
       mcp:
-        - name: innfo-mcp
+        - name: nn-mcp
           version: "0.2.4"
   blueprints:
     - name: workspace_spec_NN
@@ -148,7 +148,7 @@ agent-bootstrap:
       fs.mkdirSync(blueprintsDir, { recursive: true });
       fs.writeFileSync(path.join(blueprintsDir, 'workspace_spec_NN.md'), '# template');
       fs.mkdirSync(mcpDir, { recursive: true });
-      fs.writeFileSync(path.join(mcpDir, 'innfo-mcp.bundle.js'), '// bundle');
+      fs.writeFileSync(path.join(mcpDir, 'nn-mcp.bundle.js'), '// bundle');
 
       const stateContent = {
         manifest: server.url,
@@ -159,7 +159,7 @@ agent-bootstrap:
           workspace_spec_NN: { commit: '2222222222222222222222222222222222222222', version: 'V_0-2-0' },
         },
         mcp: {
-          'innfo-mcp': { version: '0.2.4' },
+          'nn-mcp': { version: '0.2.4' },
         },
       };
       fs.writeFileSync(stateFile, JSON.stringify(stateContent));
@@ -1520,7 +1520,7 @@ agent-bootstrap:
   }
 
   // Test 30: (g) All four published subsystems are reported (skills, templates,
-  // innfo-mcp, innfo-console), not just the first two; a long filesTouched list
+  // nn-mcp, nn-console), not just the first two; a long filesTouched list
   // is truncated for readability instead of being joined in full.
   {
     const manyFiles = Array.from({ length: 23 }, (_, i) => `skills/nn-router/file-${i}.md`);
@@ -1533,9 +1533,9 @@ agent-bootstrap:
       version: "V_0-1-0"
       ref: "skills-v2.0.0"
       mcp:
-        - name: innfo-mcp
+        - name: nn-mcp
           version: "0.9.0"
-          ref: "innfo-mcp-v0.9.0"
+          ref: "nn-mcp-v0.9.0"
   blueprints: []
   console-assets:
     - file: "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"
@@ -1554,15 +1554,15 @@ agent-bootstrap:
           commitsSincePin: 23,
           filesTouched: manyFiles,
         },
-        'innfo-mcp': {
-          subsystem: 'innfo-mcp',
-          pinnedTag: 'innfo-mcp-v0.9.0',
+        'nn-mcp': {
+          subsystem: 'nn-mcp',
+          pinnedTag: 'nn-mcp-v0.9.0',
           pinnedTagDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
           commitsSincePin: 7,
           filesTouched: ['iNNfo/packages/nn-mcp/src/path-containment.ts'],
         },
-        'innfo-console': {
-          subsystem: 'innfo-console',
+        'nn-console': {
+          subsystem: 'nn-console',
           pinnedTag: 'nn-console-v0.2.0',
           pinnedTagDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           commitsSincePin: 1,
@@ -1587,7 +1587,7 @@ agent-bootstrap:
       // and 1 on CI. Isolate it inside tmpDir to keep the fixture hermetic.
       const mcpDir = path.join(tmpDir, 'mcp');
       fs.mkdirSync(mcpDir, { recursive: true });
-      fs.writeFileSync(path.join(mcpDir, 'innfo-mcp.bundle.js'), '// fixture bundle\n');
+      fs.writeFileSync(path.join(mcpDir, 'nn-mcp.bundle.js'), '// fixture bundle\n');
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: `${server.url}/manifest.md`,
         skills: {
@@ -1605,11 +1605,11 @@ agent-bootstrap:
 
       assert.strictEqual(res.status, 0);
       assert.ok(
-        res.stdout.includes('Channel freshness: innfo-mcp pinned to innfo-mcp-v0.9.0'),
-        `innfo-mcp drift must be reported, not silently dropped. Got:\n${res.stdout}`
+        res.stdout.includes('Channel freshness: nn-mcp pinned to nn-mcp-v0.9.0'),
+        `nn-mcp drift must be reported, not silently dropped. Got:\n${res.stdout}`
       );
       assert.ok(
-        res.stdout.includes('Channel freshness: innfo-console pinned to nn-console-v0.2.0'),
+        res.stdout.includes('Channel freshness: nn-console pinned to nn-console-v0.2.0'),
         `nn-console drift must be reported, not silently dropped. Got:\n${res.stdout}`
       );
       assert.ok(

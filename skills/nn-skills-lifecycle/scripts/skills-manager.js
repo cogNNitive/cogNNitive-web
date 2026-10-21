@@ -848,12 +848,38 @@ var require_skills_commands = __commonJS({
     function emptyState() {
       return { manifest: getManifestUrl(), skills: {}, blueprints: {}, mcp: {}, console: {}, projections: {} };
     }
+    function migrateLegacyMcpState(state, mcpDir) {
+      let changed = false;
+      if (state && state.mcp && state.mcp["innfo-mcp"]) {
+        if (!state.mcp["nn-mcp"]) {
+          state.mcp["nn-mcp"] = state.mcp["innfo-mcp"];
+        }
+        delete state.mcp["innfo-mcp"];
+        changed = true;
+      }
+      if (mcpDir) {
+        const legacyBundle = path2.join(mcpDir, "innfo-mcp.bundle.js");
+        const newBundle = path2.join(mcpDir, "nn-mcp.bundle.js");
+        if (fs.existsSync(legacyBundle)) {
+          try {
+            if (!fs.existsSync(newBundle)) {
+              fs.renameSync(legacyBundle, newBundle);
+            } else {
+              fs.rmSync(legacyBundle, { force: true });
+            }
+            changed = true;
+          } catch (_) {
+          }
+        }
+      }
+      return changed;
+    }
     function loadState(file) {
       if (fs.existsSync(file)) {
         try {
           const raw = fs.readFileSync(file, "utf-8").replace(/^\uFEFF/, "");
           const data = JSON.parse(raw);
-          return {
+          const state = {
             manifest: data.manifest || getManifestUrl(),
             skills: data.skills || {},
             blueprints: data.blueprints || {},
@@ -861,6 +887,8 @@ var require_skills_commands = __commonJS({
             console: data.console || {},
             projections: data.projections || {}
           };
+          migrateLegacyMcpState(state);
+          return state;
         } catch (err) {
           return emptyState();
         }
@@ -1333,6 +1361,7 @@ ${RETIRED_REPO_NOTICE}`);
       const state = loadState(args.stateFile);
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
       const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
+      migrateLegacyMcpState(state, mcpDir);
       const toInstallSkills = skills.filter((skill) => !fs.existsSync(path2.join(args.skillsDir, skill.name)));
       const toInstallBlueprints = blueprints.filter((template) => {
         const fileName = template.name.endsWith(".md") ? template.name : `${template.name}.md`;
@@ -1549,6 +1578,7 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
       const state = loadState(args.stateFile);
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
       const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
+      migrateLegacyMcpState(state, mcpDir);
       const isOutdatedSkill = (skill) => {
         const dirPresent = fs.existsSync(path2.join(args.skillsDir, skill.name));
         const entry = state.skills[skill.name];
@@ -1726,6 +1756,7 @@ ${skillsToSync.map((s) => `  - ${s}`).join("\n")}
       const state = loadState(args.stateFile);
       const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
+      migrateLegacyMcpState(state, mcpDir);
       fs.mkdirSync(args.skillsDir, { recursive: true });
       fs.mkdirSync(args.blueprintsDir, { recursive: true });
       fs.mkdirSync(mcpDir, { recursive: true });
@@ -2032,6 +2063,7 @@ Projected skills to agent directories:`);
       emptyState,
       loadState,
       saveState,
+      migrateLegacyMcpState,
       runTar,
       extractTarball,
       findRepoRoot,

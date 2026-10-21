@@ -59,26 +59,26 @@ order:: 1
 parent:: [[iNNfo Documentation]]
 description:: Documentation entry point and overview.
 
-## NN Page: innfo-core
-title:: innfo-core
-source:: innfo-core.md
-route:: innfo-core
+## NN Page: nn-core
+title:: nn-core
+source:: nn-core.md
+route:: nn-core
 order:: 20
 parent:: [[Components]]
 description:: Core parser, resolver, validator, and AST engine.
 
-## NN Page: innfo-mcp
-title:: innfo-mcp
-source:: innfo-mcp.md
-route:: innfo-mcp
+## NN Page: nn-mcp
+title:: nn-mcp
+source:: nn-mcp.md
+route:: nn-mcp
 order:: 30
 parent:: [[Components]]
 description:: Model Context Protocol server exposing iNNfo capabilities to AI agents.
 
 ## NN Page: OpenCode Agent
 title:: OpenCode Agent
-source:: opencode-innfo-agent.md
-route:: opencode-innfo-agent
+source:: opencode-nn-agent.md
+route:: opencode-nn-agent
 order:: 40
 parent:: [[Components]]
 description:: Integration guide for OpenCode and Antigravity agent workflows.

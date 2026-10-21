@@ -1,6 +1,6 @@
 ---
 name: nn-preflight
-description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, innfo-mcp availability, workspace layout, source integrity audit across sources/import/ and sources/conversations/ against their co-located sidecars) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. Triggers: preflight, readiness, environment check, "run Tier 1".
+description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, nn-mcp availability, workspace layout, source integrity audit across sources/import/ and sources/conversations/ against their co-located sidecars) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. Triggers: preflight, readiness, environment check, "run Tier 1".
 version: "V_0-2-5"
 last_updated: 2026-10-04
 metadata:
@@ -74,7 +74,7 @@ Environment readiness gate for cogNNitive workflows. Runs deterministic checks a
 
 1. **Preflight & Integrity Runner**: run `node scripts/preflight-check.js` (or `node ~/.agents/skills/nn-preflight/scripts/preflight-check.js`). When `--workspace-dir <dir>` is passed, audits workspace spec freshness and executes the Universal Source Integrity Audit across `sources/import/` and `sources/conversations/`, checking every raw file against its co-located `<file>_sidecar_NN.md`. Verifies Node.js >= 18, manifest reachability, installed skills vs pinned commits, MCP bundle availability, skill dependencies (`node_modules`), and templates. If exit code is `1`, report outdated/missing components or unnormalized/dangling sources and prompt for confirmation per the Canonical Activation Gate protocol.
 2. **Node.js**: require >= 18.
-3. **innfo-mcp availability**: call `innfo-mcp_list_knowledge`; if the MCP tool is unavailable, fall back to checking that the bundle exists at `~/.agents/mcp/innfo-mcp.bundle.js` or `.cogNNitive/mcp-bundle.js`.
+3. **nn-mcp availability**: call `nn-mcp_list_knowledge`; if the MCP tool is unavailable, fall back to checking that the bundle exists at `~/.agents/mcp/nn-mcp.bundle.js` or `.cogNNitive/mcp-bundle.js`.
 4. **Skill Dependencies Integrity**: verify installed skills containing `package.json` have `node_modules` present and resolvable.
 5. **Workspace layout**: verify the expected directories exist — `sources/` (`sources/import/`, `sources/conversations/`), `conversations/`, `artifacts/`, `kNNowledge/`, `procedures/`, `index.md`. There are no fallbacks to retired folders (the old normalized mirror, snapshot archive and export folders): preflight does not classify or report a domain's layout. A domain still on the retired layout is replaced by a new domain that imports the old one as a Source (`nn-upgrade`).
 

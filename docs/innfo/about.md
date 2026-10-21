@@ -53,7 +53,7 @@ A Model Context Protocol server (stdio) wrapping innfo-core. It exposes a focuse
 of semantic tools so any MCP-capable AI agent can read, validate, and
 safely mutate iNNfo models. Spec and template resolution follow the model's parent
 chain, with no hardcoded URLs. See the
-[full tool reference](/innfo/documentation/#/innfo-mcp) for the current list.
+[full tool reference](/innfo/documentation/#/nn-mcp) for the current list.
 
 ## Specifications
 

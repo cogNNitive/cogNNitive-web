@@ -1,19 +1,23 @@
 {
-  "generatedAt": "2026-10-21T13:54:57.525Z",
-  "head": "61f8231154ed17883c3a4c53cdefd9b935c5f9c9",
+  "generatedAt": "2026-10-21T16:35:07.090Z",
+  "head": "5317e782981547a9bc25ce3b55c28eabd97ff824",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.28.0",
       "pinnedTagDate": "2026-10-20T15:26:43+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
+        "skills/nn-console/SKILL.md",
         "skills/nn-innfo/SKILL.md",
+        "skills/nn-preflight/SKILL.md",
+        "skills/nn-preflight/reference/skill-locations.md",
         "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
         "skills/nn-preflight/scripts/lib/version-status.generated.cjs",
         "skills/nn-preflight/scripts/preflight-check.js",
         "skills/nn-preflight/scripts/preflight-check.test.js",
         "skills/nn-preflight/scripts/upgrade-check.js",
+        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
         "skills/nn-sources/SKILL.md",
         "skills/nn-sources/scripts/index.js",
         "skills/nn-sources/scripts/lib/convergence-delta.js",
@@ -58,8 +62,12 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.40.0",
       "pinnedTagDate": "2026-10-20T15:17:56+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/analysis/procedures/prioritize_experiments_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/analysis/procedures/run_coherence_audit_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/analysis/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/business/procedures/usage_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
@@ -74,15 +82,42 @@
         "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/documentation/procedures/generate_docsify_suite_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/documentation/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/procedures/score_innovation_pipeline_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/procedures/audit_skill_gaps_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/procedures/export_team_directory_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/procedures/document_sop_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-5-0_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/procedures/calculate_critical_path_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/procedures/generate_status_report_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/procedures/ingest_visual_catalog_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_process_multimodal_video_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_structure_tabular_data_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_transcribe_audio_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/reconcile_artifact_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/upgrade_and_migrate_legacy_workspace_NN.md"
       ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.40.0",
       "pinnedTagDate": "2026-10-20T15:17:56+02:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/analysis/procedures/prioritize_experiments_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/analysis/procedures/run_coherence_audit_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/analysis/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/business/procedures/usage_procedures_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
@@ -97,7 +132,30 @@
         "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
         "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "iNNfo/specs/bluepriNNts/documentation/procedures/generate_docsify_suite_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/documentation/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/procedures/score_innovation_pipeline_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/innovation/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/procedures/audit_skill_gaps_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/procedures/export_team_directory_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/organization/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/procedures/document_sop_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/samples/Ghostbusters_V_0-5-0_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/procedures/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/procedures/calculate_critical_path_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/procedures/generate_status_report_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/projects/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/procedures/ingest_visual_catalog_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_process_multimodal_video_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_structure_tabular_data_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/import_and_transcribe_audio_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/reconcile_artifact_feedback_NN.md",
+        "iNNfo/specs/bluepriNNts/workspace/procedures/upgrade_and_migrate_legacy_workspace_NN.md"
       ]
     },
     "nn-mcp": {
@@ -108,14 +166,10 @@
     },
     "nn-console": {
       "subsystem": "nn-console",
-      "pinnedTag": "nn-console-v0.25.0",
-      "pinnedTagDate": "2026-10-21T15:37:52+02:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "nn-console-v0.26.0",
+      "pinnedTagDate": "2026-10-21T15:54:26+02:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }

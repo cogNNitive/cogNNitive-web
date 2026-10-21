@@ -11,7 +11,7 @@ metadata:
   installed_at: "2026-08-02"
   depends_on:
     skills: ["nn-innfo"]
-    mcp_servers: ["innfo-mcp"]
+    mcp_servers: ["nn-mcp"]
     cli_tools: ["scripts/index.js"]
 bundled_blueprints: []
 ---
@@ -229,7 +229,7 @@ node scripts/index.js --cognitivize "<file-or-dir>" --src "<project-dir>"
 - Accepts a path inside the domaiNN (a file, or a directory processed recursively). Sidecars, other `_NN.md` documents, `staging/` and dot entries are skipped; a path outside the project is rejected.
 - Injects the skill's converters (`lib/normalizer.js`) as the normalizer, so binaries (PDF, DOCX, XLSX) get a normalized body in their sidecar. `--scan` runs the same per-file operation over `sources/import/` and `sources/conversations/`, so the two always produce the same sidecar.
 - Re-running on unchanged bytes writes nothing; changed bytes refresh the sidecar in place. The raw file is never modified.
-- The innfo-mcp server exposes the same operation as the `cognitivize` tool for `md`, `csv` and `json` files only; for a binary it returns the non-throwing status `requires-cli` and writes nothing, so run the CLI for those.
+- The nn-mcp server exposes the same operation as the `cognitivize` tool for `md`, `csv` and `json` files only; for a binary it returns the non-throwing status `requires-cli` and writes nothing, so run the CLI for those.
 
 #### 2a-2. Dynamic Sources & Impact Checking (`--check-impact` / `--normalize-file`)
 
@@ -335,7 +335,7 @@ node scripts/index.js --converge <family> [--json] [--src <project-dir>]
 - **Idempotent**: an already-applied proposal (or identical snapshots) yields an
   empty proposal.
 
-Add `--plan` to emit ONE `innfo-mcp_propose_changeset` payload (requires
+Add `--plan` to emit ONE `nn-mcp_propose_changeset` payload (requires
 `concept::` and `model::`): `operations` holds one `add_element` per new key and one
 `update_field` per changed value **only for `replace-values`** (`upsert` returns
 changed values under `review`), each citing the target snapshot through
@@ -345,7 +345,7 @@ model is bumped once, whereas each bare `apply_change` call is its own changeset
 Removed keys are never an operation.
 
 Apply the proposal through the reviewed mutation path (pass the plan's `operations` to a
-single `innfo-mcp_propose_changeset`, then `apply_change` on the user's OK and
+single `nn-mcp_propose_changeset`, then `apply_change` on the user's OK and
 `validate_knowledge`), then mark it applied so re-running
 is a no-op:
 

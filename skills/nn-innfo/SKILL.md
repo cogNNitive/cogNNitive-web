@@ -4,7 +4,7 @@ version: "V_0-5-13"
 last_updated: 2026-10-18
 metadata:
   source_type: "original"
-  mcp: "innfo-mcp"
+  mcp: "nn-mcp"
 license: MIT
 bundled_blueprints:
   - name: workspace_spec_iNNfo_NN
@@ -105,7 +105,7 @@ Activates when the user invokes `/nn-innfo`, mentions domain keywords `innfo`, `
 
 This skill guides LLMs and agents in authoring, creating from scratch (wizard), editing, auditing, and validating **iNNfo-compliant files** (Meta-template specification with unified `NN` syntax: `# NN`, `## NN`, and `key:: value`).
 
-**Resolution, validation, and mutation are delegated to the `innfo-mcp` server** — a deterministic engine wrapping `@cognnitive/nn-core`. The agent does NOT hand-resolve spec chains, hand-validate models, or guess syntax when the MCP is available. See §1 (MCP Operating Model) and §7 (Delegation Contract).
+**Resolution, validation, and mutation are delegated to the `nn-mcp` server** — a deterministic engine wrapping `@cognnitive/nn-core`. The agent does NOT hand-resolve spec chains, hand-validate models, or guess syntax when the MCP is available. See §1 (MCP Operating Model) and §7 (Delegation Contract).
 
 > 🛡️ **Single Source of Truth & Zero Workspace Pollution**:
 > 1. The `iNNfo` repository is the **Single Source of Truth** for all apps and specs. Do NOT duplicate app files across repositories.
@@ -156,7 +156,7 @@ When the user invokes the skill without an explicit intent (e.g., bare `/nn-innf
 Before executing options **[b]**, **[c]**, **[d]**, or **[x]**, the agent MUST ensure there is an active model in context (`active_model_path`).
 
 1. **Verify Session Context:** Check if a model is currently being edited/active in the session.
-2. **Dynamic Discovery:** If no model is active, call `innfo-mcp_list_knowledge` to scan the workspace:
+2. **Dynamic Discovery:** If no model is active, call `nn-mcp_list_knowledge` to scan the workspace:
    - **If 0 models found:** Inform the user that no models exist in `kNNowledge/` and suggest creating one (redirecting to option **[a]**).
    - **If 1 model found (Auto-Bind with Informative Grace):** Bind it automatically as the active model (`active_model_path`) without asking. Announce it in the user's active session language — e.g. (English) *"Binding `kNNowledge/{ModelName}_NN.md` (the only model detected in the workspace). Proceeding with this model; tell me if you want to use another or create a new one before I start."* Proceed immediately.
    - **If multiple models found:** Present a numbered list of all models found and ask the user to select one: *"Multiple models detected. Please select which one you want to work with:"*. Set the selected file as `active_model_path` and proceed.
@@ -166,13 +166,13 @@ Before executing options **[b]**, **[c]**, **[d]**, or **[x]**, the agent MUST e
 
 Before attempting to diagnose or repair child reference warnings, matrix mismatches, or element field inconsistencies in a Level 3 model, the agent MUST verify that the model's `parent_spec` resolves cleanly to a valid Level 2 template.
 
-1. **Gate Verification**: Inspect the output of `innfo-mcp_validate_knowledge` (or `innfo-mcp_get_blueprint`) for `PARENT_RESOLUTION_FAILED` or `CRITICAL_BLOCKER` diagnostics.
+1. **Gate Verification**: Inspect the output of `nn-mcp_validate_knowledge` (or `nn-mcp_get_blueprint`) for `PARENT_RESOLUTION_FAILED` or `CRITICAL_BLOCKER` diagnostics.
 2. **Fail-Fast Policy**: If `parent_spec` cannot be resolved:
    - **HALT**: The agent MUST halt all downstream field, matrix, or reference remediation immediately.
    - **NO MUTATION**: The agent MUST NOT attempt to edit child elements or add missing fields while the parent schema is unreachable.
    - **Report to User**: Report the unresolved parent template to the user, displaying the searched paths `(searched: ...)` and offering concrete remediation options:
      - Correct `parent_spec.url` to a valid stable HTTP/HTTPS URL or workspace-relative path (`specs/...`).
-     - Rehydrate the template into `specs/` using `innfo-mcp_hydrate_blueprint` or canonical registry fallback.
+     - Rehydrate the template into `specs/` using `nn-mcp_hydrate_blueprint` or canonical registry fallback.
      - Check the MCP root configuration (`INNFO_MODELS_DIR`).
 3. **Execution Condition**: Only after the schema resolution gate passes (`parent_spec` successfully resolved) SHALL the agent proceed to Phase 3/4 content, matrix, and reference remediation.
 
@@ -210,13 +210,13 @@ If the user's conversational prompt is in language $L$ (e.g. Spanish) or the pri
 *(Notice: You can select one option or a combination (e.g. A and B))*.
 
 **A2a. If a canonical app was selected ([a]/[b]/[c]/[d]) (Optimistic Execution with Informative Grace):**
-Resolve the app with `innfo-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, and Matrices it already defines. Then discover its procedures with `innfo-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
+Resolve the app with `nn-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, and Matrices it already defines. Then discover its procedures with `nn-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
 
 **Do NOT block on an intermediate customization menu.** By default, canonical apps are used as-is. Announce with Informative Grace in the user's active session language — e.g. (English): *"Using the standard {App} blueprint. Proceeding with the model's element design; tell me before I start if you'd prefer to customize the blueprint or create a specialization."*
 Proceed directly to **Phase B (Model Design)**. Only branch to customization if the user explicitly asks to customize or interrupts.
 
 **A2b. If [e] Blank was selected, or the user confirmed customization in A2a [b]:**
-Design from scratch, in this order, consulting `innfo-mcp_get_spec` for the exact grammar of each primitive (never invent it):
+Design from scratch, in this order, consulting `nn-mcp_get_spec` for the exact grammar of each primitive (never invent it):
 
 1. **Concepts**: which Concepts the app will have (the root categories of the model).
 2. **Fields per Concept**, with their `type::` — apply the **Type Heuristic** (below) before assigning `string` to any field.
@@ -286,7 +286,7 @@ With structure approved, offer the drafting mode:
 Prompt for `{ModelName}` and create `{ModelName}_{Template}_NN.md` (the stem ends with the bluepriNNt name; the version lives in the `knowledge_version` frontmatter key, not in the file name) with workspace structure (`kNNowledge/`, `sources/import/`, `procedures/`, `artifacts/`, `index.md`). When creating a new workspace, emit `workspace_id: "<folder-slug>"` in the entrypoint's frontmatter (a stable slug derived from the workspace folder name, so the workspace keeps a correlatable identity across renames/moves). This field is optional and unvalidated — omit it for existing workspaces rather than retrofitting one.
 
 **B4. Validation & Visual Checklist**:
-Validate via `innfo-mcp_validate_knowledge` and output the Visual Expectation Checklist (§12).
+Validate via `nn-mcp_validate_knowledge` and output the Visual Expectation Checklist (§12).
 
 ---
 
@@ -294,7 +294,7 @@ Validate via `innfo-mcp_validate_knowledge` and output the Visual Expectation Ch
 
 When the user selects option `[w]` (View & consult documentation):
 1. Present available iNNfo documentation categories and guides:
-   - **Level 1 Core Specification**: the iNNfo specification, fetched with `innfo-mcp_get_spec` (Primitives: Concepts, Fields, Matrices).
+   - **Level 1 Core Specification**: the iNNfo specification, fetched with `nn-mcp_get_spec` (Primitives: Concepts, Fields, Matrices).
    - **Level 2 Canonical Templates**: Business, Procedures, Organization, Metrics, Projects, Innovation, Analysis, Documentation.
    - **Syntactic & Structural Rules**: Heading conventions (`# NN`, `## NN`), typing heuristics, WikiLink reference formatting (`[[...]]`), and source citation grammar (`sources:: [...]`).
    - **Artifact & Console Architecture**: Console shell, slot payloads, and interactive console runtimes.
@@ -317,7 +317,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 ## Core Concepts & Single Source of Truth
 
 > [!NOTE]
-> **The MCP server (`innfo-mcp`) and the canonical specifications are the ONLY source of truth (SSOT) for syntax and data types.** The agent does NOT reproduce grammar rules from memory; it queries them dynamically via MCP (`innfo-mcp_get_spec` / `innfo-mcp_get_blueprint`).
+> **The MCP server (`nn-mcp`) and the canonical specifications are the ONLY source of truth (SSOT) for syntax and data types.** The agent does NOT reproduce grammar rules from memory; it queries them dynamically via MCP (`nn-mcp_get_spec` / `nn-mcp_get_blueprint`).
 
 ### iNNfo Level Summary
 
@@ -332,9 +332,9 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 
 ## 1. MCP Operating Model
 
-The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/nn-core`.
+The `nn-mcp` server exposes a deterministic tool set built on `@cognnitive/nn-core`.
 
-<!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
+<!-- generated:mcp-tools (source: nn-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
 **22** tools
 
 | Tool | Description |
@@ -371,13 +371,13 @@ The `innfo-mcp` server exposes a deterministic tool set built on `@cognnitive/nn
 
 Do NOT hardcode specification URLs or versions in this skill: spec file names and versions change between releases. Resolve specs at runtime:
 
-- **iNNfo (Level 1) and any Level 2 blueprint:** `innfo-mcp_get_spec` / `innfo-mcp_get_blueprint` (list available ones with `innfo-mcp_list_blueprints`).
+- **iNNfo (Level 1) and any Level 2 blueprint:** `nn-mcp_get_spec` / `nn-mcp_get_blueprint` (list available ones with `nn-mcp_list_blueprints`).
 - **A model's own parent:** the `parent_spec.url` declared in its frontmatter.
 
 ### The `parent_spec.url` Rule for Level 3 Models
 
 1. A Level 3 model's `parent_spec.url` must be a **STABLE (http/https)** URL pointing at the Level 2 app, or a **workspace-relative path** (e.g. `specs/MyBlueprint_spec_NN.md`). The version lives in that file's `spec_version` frontmatter key, not in the path.
-2. **FORBIDDEN: absolute Windows paths** (e.g. `C:/Users/.../MyTemplate_spec_NN.md`): they break resolution in the Modeler (fetch over a local path) and in the MCP. The `innfo-mcp` resolver (`resolver-node.ts`) looks for the app only under the workspace's `specs/` (recursively); the canonical form is the stable http URL.
+2. **FORBIDDEN: absolute Windows paths** (e.g. `C:/Users/.../MyTemplate_spec_NN.md`): they break resolution in the Modeler (fetch over a local path) and in the MCP. The `nn-mcp` resolver (`resolver-node.ts`) looks for the app only under the workspace's `specs/` (recursively); the canonical form is the stable http URL.
 3. After setting `parent_spec.url`, ALWAYS verify resolution (see §5, parent-chain pre-check) before declaring the model done.
 4. **Relative paths resolve against the MCP server's root** (the `INNFO_MODELS_DIR` environment variable, or the process cwd when the server starts), NOT against the model file's own folder. Therefore, to validate a workspace with relative paths, the MCP root MUST be the workspace root; `root:` overrides only apply where the tool accepts them (`validate_knowledge` with `root`, `get_spec`/`get_blueprint` with `url`).
 5. **The resolver AUTO-CACHES every resolved parent** (local or remote) into `<workspace>/specs/`, under the document's own canonical versioned file name (write-once: if a file with that name already exists, it is never overwritten). There is no separate cache directory — `specs/` is the only local lookup, recursive, relative to the MCP server's `root`. (Note: `.spec-cache/` and `.specs/` are scanned only by the in-browser editor, as an extra heuristic for a version notice — they are not part of the MCP's real resolution; do not copy files there expecting the MCP to use them.) If a resolution fails, check that the MCP `root` points at the workspace root so relative paths resolve correctly. NEVER copy files into `specs/` by hand — let the resolver sync them.
@@ -411,7 +411,7 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
     - Markdown units keep their header level (`@#`, `@##`, `@###`) and slugify GitHub-style, except the `Concept: Element` boundary which stays visible as `--` (e.g. `@## NN Person: Dr. Egon Spengler` → slug `nn-person--dr-egon-spengler`).
     - Numeric line ranges (`#L1-L10`) and legacy `#slug` fragments are **deprecated** (the latter still validates with a warning during transition) — ranges are fragile under reformatting, bare slugs are level-blind.
     - Every unit must resolve in the cited document; queries (`?filter=…`) are NEVER valid inside `sources::` — they belong to retrieval tools, not citations.
-5. **`sources::` is ALWAYS a bracketed list `[...]`, even for a single source.** The L1 spec requires `sources:: [sources/import/<filename>@<unit>, ...]` — it MUST always be formatted as a list enclosed in brackets `[...]`, even when referencing a single source document. There is no scalar syntax and no bracket omission for a single value (see the iNNfo specification via `innfo-mcp_get_spec`). In `type:: reference` fields, the WikiLink syntax `[[...]]` is separately mandatory (see §8d and Core Rule 12):
+5. **`sources::` is ALWAYS a bracketed list `[...]`, even for a single source.** The L1 spec requires `sources:: [sources/import/<filename>@<unit>, ...]` — it MUST always be formatted as a list enclosed in brackets `[...]`, even when referencing a single source document. There is no scalar syntax and no bracket omission for a single value (see the iNNfo specification via `nn-mcp_get_spec`). In `type:: reference` fields, the WikiLink syntax `[[...]]` is separately mandatory (see §8d and Core Rule 12):
    ```markdown
    ## NN Stakeholders: Enterprise Customer
     sources:: [sources/import/client_interview_transcript.md@## Key Feedback, sources/import/notes.md@## Key Points]
@@ -440,11 +440,11 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
 
 ## 5. Operating Instructions & MCP Flow
 
-1. Get the app with `innfo-mcp_get_blueprint({ url })`.
+1. Get the app with `nn-mcp_get_blueprint({ url })`.
 2. Present concepts to the user using the format with `[a] (Recommended)`.
 3. Draft the body using the unified syntax `# NN <Concept>`, `## NN <Concept>: <Element>`, `key:: value`.
-4. Validate the model with `innfo-mcp_validate_knowledge({ content })`.
-5. **Parent-chain pre-check (MANDATORY before reporting done):** resolve the parent chain with `innfo-mcp_get_blueprint({ model_id })` (or `{ url }`) BEFORE declaring the model done. If the app does NOT resolve (`Template could not be resolved` / `PARENT_RESOLUTION_FAILED`):
+4. Validate the model with `nn-mcp_validate_knowledge({ content })`.
+5. **Parent-chain pre-check (MANDATORY before reporting done):** resolve the parent chain with `nn-mcp_get_blueprint({ model_id })` (or `{ url }`) BEFORE declaring the model done. If the app does NOT resolve (`Template could not be resolved` / `PARENT_RESOLUTION_FAILED`):
    - Do NOT report the model as done.
    - Warn that the app is unresolved, showing the problematic `parent_spec.url`.
    - Read the new actionable `(searched: ...)` diagnostic returned by `validate_knowledge` / `get_blueprint`: it lists the directories the resolver searched for the parent. If the searched directories look wrong (e.g. they don't point at the workspace root), the problem is the **MCP root** (`INNFO_MODELS_DIR` or the server cwd), not the model: fix the root/URL and re-validate (see §2, rule 4).
@@ -455,25 +455,25 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
 
 Every skill-driven `.md` write (new model, app, specialization, or full-file rewrite) MUST go through a single canonical path so files validate cleanly:
 
-1. **Preferred:** create the model with `innfo-mcp_init_knowledge` (create-only; it records an applied `add_model` changeset and infers the frontmatter version from the resolved parent, never hand-written), or propose it with `innfo-mcp_propose_changeset` (`add_model`). Then change content through a changeset: `innfo-mcp_propose_changeset` for reviewed changes, `innfo-mcp_apply_change` for direct operations. There is no other file-write path (a changeset file may also be authored by hand for large batches — see *Authoring a changeset by hand*).
+1. **Preferred:** create the model with `nn-mcp_init_knowledge` (create-only; it records an applied `add_model` changeset and infers the frontmatter version from the resolved parent, never hand-written), or propose it with `nn-mcp_propose_changeset` (`add_model`). Then change content through a changeset: `nn-mcp_propose_changeset` for reviewed changes, `nn-mcp_apply_change` for direct operations. There is no other file-write path (a changeset file may also be authored by hand for large batches — see *Authoring a changeset by hand*).
 2. **Encoding:** UTF-8 without BOM, LF line endings, exactly one trailing newline.
 3. **FORBIDDEN:** shell `echo` / `printf` redirection for file writes — they mangle encodings, join lines, and drop trailing newlines.
-4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `innfo-mcp_validate_knowledge` — no encoding or line-joining diagnostics may appear.
+4. **Verify:** accented characters MUST round-trip byte-identical; re-validate with `nn-mcp_validate_knowledge` — no encoding or line-joining diagnostics may appear.
 
 #### Review-and-approve flow (changesets)
 
 Every content change a user should review goes through a changeset, never a direct file edit:
 
-1. `innfo-mcp_propose_changeset({ operations })` writes a sealed changeset with `status: proposed` under `changes/`. You derive the operations (`update_field`, `add_element`, `remove_element`, `rename_element`, `rename_concept`, `update_matrix_cell`, `comment`, `add_model`); the tool does not interpret conversations. It validates before writing and never applies.
-2. The tool regenerates the domain console (`artifacts/<stem>_console/<stem>_console.html`, a stable file overwritten in place) and opens it in a browser tab. `innfo-mcp_regenerate_console` does the same on demand and is the retry path when a regeneration failed.
+1. `nn-mcp_propose_changeset({ operations })` writes a sealed changeset with `status: proposed` under `changes/`. You derive the operations (`update_field`, `add_element`, `remove_element`, `rename_element`, `rename_concept`, `update_matrix_cell`, `comment`, `add_model`); the tool does not interpret conversations. It validates before writing and never applies.
+2. The tool regenerates the domain console (`artifacts/<stem>_console/<stem>_console.html`, a stable file overwritten in place) and opens it in a browser tab. `nn-mcp_regenerate_console` does the same on demand and is the retry path when a regeneration failed.
 3. The user reviews the proposal in the console, can add drafts there (edit a field, comment, or **New element**), and exports a changeset file from it.
-4. The user replies **OK** and you call `innfo-mcp_apply_change({ changeset })`. After an applied or partially applied changeset the console is regenerated again so it shows the result.
+4. The user replies **OK** and you call `nn-mcp_apply_change({ changeset })`. After an applied or partially applied changeset the console is regenerated again so it shows the result.
 
 The result of `propose_changeset`, `apply_change`, `regenerate_console` and `init_knowledge` carries `next_steps`. You MUST relay `next_steps.notice` to the user verbatim: it lists the numbered steps above, the console path when the browser could not be opened, and the OK shortcut ("simply reply OK to apply them"). The console is static HTML and cannot call the MCP, so approval always comes back through you.
 
 #### Authoring a changeset by hand (bulk or agent-generated)
 
-`propose_changeset` is for operations you derive interactively. For large, mechanical batches (for example thousands of `update_field` operations across a whole model), you MAY author the changeset file yourself under `changes/` and apply it with `innfo-mcp_apply_change({ changeset })`. This is a supported path, not a workaround:
+`propose_changeset` is for operations you derive interactively. For large, mechanical batches (for example thousands of `update_field` operations across a whole model), you MAY author the changeset file yourself under `changes/` and apply it with `nn-mcp_apply_change({ changeset })`. This is a supported path, not a workaround:
 
 - Write `changes/<prefix>_<author>_<stamp>_changes_NN.md`: the frontmatter (`spec_version`, `level: 3`, `parent_spec` → changes, `blueprint_version`, `status: proposed`, `title`, `author`) followed by one `## NN Change: <id>` block per operation (`op::`, `target::`, `to::`, optional `from::`).
 - **Omit `proposal_sha`.** At intake the runtime seals the document itself (`proposal_sha = sha256(changes)`). Include it only if you compute the exact hash; a present but non-matching value is rejected with `PROPOSAL_TAMPERED` ("...or clear `frontmatter.proposal_sha` so it is re-sealed at intake").
@@ -495,7 +495,7 @@ Every change is audited through an immutable changeset:
 
 #### New domain and migration
 
-- `innfo-mcp_init_domain({ dir, name })` creates an empty, conformant domaiNN in a new directory (canonical folders, `changes/`, `.gitattributes` with `* -text`, a manifest listing no models). It refuses a non-empty directory and is not a changeset.
+- `nn-mcp_init_domain({ dir, name })` creates an empty, conformant domaiNN in a new directory (canonical folders, `changes/`, `.gitattributes` with `* -text`, a manifest listing no models). It refuses a non-empty directory and is not a changeset.
 - Add models afterwards with an `add_model` change (alone or together with `add_element` changes in the same changeset) via `propose_changeset`, or with `init_knowledge`.
 - Migration recipe: `init_domain` for a NEW domain, import the old domain as a source (`node skills/nn-upgrade/scripts/migrate-domain.js --import-as-source`), derive `add_model` / `add_element` changes that cite it through `sources::`, `propose_changeset`, review in the console, reply OK, `apply_change`.
 
@@ -504,7 +504,7 @@ Every change is audited through an immutable changeset:
 To raise the version of a Level 3 model, use the MCP's `bump_version` operation — do NOT edit the frontmatter by hand. It is a changeset operation: a bare call is synthesized into a sealed, recorded, applied changeset (or put a `bump_version` change in a proposal, with the level in `to`):
 
 ```
-innfo-mcp_apply_change({
+nn-mcp_apply_change({
   id: "<model_id>",
   op: "bump_version",
   args: { bump: "minor" } // "patch" (default) | "minor" | "major"
@@ -524,13 +524,13 @@ innfo-mcp_apply_change({
 ## 6. Rename Safety & Referential Integrity
 
 When a Concept or Element must be renamed:
-* **Delegate to the MCP:** The agent does NOT perform blind manual find-and-replace. It uses `innfo-mcp_apply_change` with the matching rename operation (`rename_concept` or `rename_element`) to guarantee deterministic updates of `[[Concept]]` WikiLinks, matrices, and cross-references.
+* **Delegate to the MCP:** The agent does NOT perform blind manual find-and-replace. It uses `nn-mcp_apply_change` with the matching rename operation (`rename_concept` or `rename_element`) to guarantee deterministic updates of `[[Concept]]` WikiLinks, matrices, and cross-references.
 
 ---
 
 ## 7. Delegation & Fallback Contract
 
-* **With MCP available:** NEVER resolve specifications by hand or validate manually. Delegate to `innfo-mcp_get_spec`, `innfo-mcp_validate_knowledge`, and `innfo-mcp_apply_change`.
+* **With MCP available:** NEVER resolve specifications by hand or validate manually. Delegate to `nn-mcp_get_spec`, `nn-mcp_validate_knowledge`, and `nn-mcp_apply_change`.
 * **Fallback mode (no MCP):** Inspect local files on disk and check that the `# NN`, `## NN`, `key:: value` syntax and the lightweight Level 3 YAML frontmatter are respected.
 
 ---
@@ -558,14 +558,14 @@ Shall we proceed with this modification?
 - [x] Cancel
 ```
 
-Once the user confirms, run the mutation via `innfo-mcp_apply_change` and re-validate with `innfo-mcp_validate_knowledge`.
+Once the user confirms, run the mutation via `nn-mcp_apply_change` and re-validate with `nn-mcp_validate_knowledge`.
 
 #### Applying a Source-Convergence Proposal
 
 When a source family declares a convergence strategy (`## NN Source Family:` in the domaiNN manifest), a new snapshot produces a **read-only convergence proposal** via `node skills/nn-sources/scripts/index.js --converge <family>`. Apply it through this same reviewed loop — never hand-edit the source (sources are immutable citation targets):
 
 1. Present the proposal as a Change Preview with Diff: the added keys, the changed values (`key.field: from -> to`), and the flagged removed keys.
-2. Run `--converge <family> --plan` to get ONE `propose_changeset` payload (it requires the family to declare `concept::` and `model::`). Submit the plan's `operations` as a single `innfo-mcp_propose_changeset`, relay `next_steps.notice`, and on the user's OK call `innfo-mcp_apply_change`, then re-validate with `innfo-mcp_validate_knowledge`. `upsert` plans never overwrite a changed value — those arrive under `review` for an explicit user decision.
+2. Run `--converge <family> --plan` to get ONE `propose_changeset` payload (it requires the family to declare `concept::` and `model::`). Submit the plan's `operations` as a single `nn-mcp_propose_changeset`, relay `next_steps.notice`, and on the user's OK call `nn-mcp_apply_change`, then re-validate with `nn-mcp_validate_knowledge`. `upsert` plans never overwrite a changed value — those arrive under `review` for an explicit user decision.
 3. The plan ends in **one** `bump_version` change (`to` names the level) for the affected model; inside the single changeset it replaces the default patch bump, so the model is bumped once.
 4. Mark the family applied so re-running `--converge` is a no-op: `node skills/nn-sources/scripts/index.js --converge-mark <family> --version <model-version>`.
 
@@ -583,10 +583,10 @@ Removed keys are flag-only: never delete or archive a model element from a conve
 
 ## 8c. Audit, Validation & Architecture Assistant Mode (Option C)
 
-When the user picks option `[c]` (Audit & validate model), the agent executes deterministic syntactic validation (`innfo-mcp_validate_knowledge`) and takes the role of **Architecture Assistant**:
+When the user picks option `[c]` (Audit & validate model), the agent executes deterministic syntactic validation (`nn-mcp_validate_knowledge`) and takes the role of **Architecture Assistant**:
 
 1. Load the model (`read_knowledge`) and its app (`get_blueprint`).
-2. Run MCP syntactic validation (`innfo-mcp_validate_knowledge`) and report any formal grammar or schema errors.
+2. Run MCP syntactic validation (`nn-mcp_validate_knowledge`) and report any formal grammar or schema errors.
 3. Evaluate the 4 architectural layers: **Formal Correctness**, **Logical Coherence**, **Semantic Coherence**, and **Solidity/Robustness**.
 4. **Presentation with Functional Impact (Assistant Mode):**
    Do not just list technical errors; explain the **business/functional risk** and offer the **1-click fix**:
@@ -690,7 +690,7 @@ A **composite** app (the one that declares `includes`) is the one the model name
 ## 10. Post-Edit Validation & Versioning
 
 After editing a model:
-1. Run `innfo-mcp_validate_knowledge()`.
+1. Run `nn-mcp_validate_knowledge()`.
 2. Present result and version menu:
    - **[a] (Recommended)** Bump Patch (`V_x-y-z+1`)
    - **[b]** Keep current version (`V_x-y-z`)
@@ -790,12 +790,12 @@ The workspace manifest (`domaiNN_NN.md`, section `# NN kNNowledge`) can drift ou
 3. Only after the user's explicit confirmation, call again with `dry_run: false` to persist the changes to disk.
 
 ```typescript
-innfo-mcp_sync_domain_manifest({ dry_run: true })
+nn-mcp_sync_domain_manifest({ dry_run: true })
 // review result.changes / result.diff with the user before continuing
-innfo-mcp_sync_domain_manifest({ dry_run: false }) // only after explicit confirmation
+nn-mcp_sync_domain_manifest({ dry_run: false }) // only after explicit confirmation
 ```
 
-This is the headless / CLI-equivalent path for actioNN — there is no separate `nn` binary; synchronization always goes through the existing MCP bridge (`innfo-mcp`), like every other tool in this skill.
+This is the headless / CLI-equivalent path for actioNN — there is no separate `nn` binary; synchronization always goes through the existing MCP bridge (`nn-mcp`), like every other tool in this skill.
 
 ---
 
@@ -928,7 +928,7 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 4. **Change Preview with Diff:** Show a natural-language summary before applying any MCP mutation.
 5. **Architecture Assistant Mode:** In the `[c]` audit, explain business/functional risks and offer 1-click fixes.
 6. **Contextual Shortcuts:** End every response by offering 2-3 suggested next actions (Quick Actions).
-7. **Full MCP Delegation:** Query types, schemas, and validation from the `innfo-mcp` server; do not guess or duplicate the grammar.
+7. **Full MCP Delegation:** Query types, schemas, and validation from the `nn-mcp` server; do not guess or duplicate the grammar.
 8. **Index Block Scope (`# NN index`):** The `# NN index` is reserved exclusively for workspace manifest documents (`domaiNN_NN.md` / `index.md`) and Level 2 templates (defining the taxonomy hierarchy of Concepts). Level 3 domain data models (`kNNowledge/*_NN.md`) MUST NOT contain a root `# NN index` block; navigation in Level 3 models is derived dynamically from Concept and Element headings.
 9. **Mandatory WikiLink syntax in references:** In every reference field (`type:: reference`), the value MUST be formatted using WikiLink syntax (`key:: [[Element]]`). Plain text without WikiLink brackets is forbidden.
 10. **Element descriptions in prose:** The description/explanation of an element in a Level 3 model must NEVER be written as a `description::` field. It must always be free-form Markdown prose below the `key:: value` field list, separated by a blank line.
@@ -952,7 +952,7 @@ Deterministic instructions for identifying and mechanically repairing legacy syn
    - When linting or refactoring Level 3 models, remove any root `# NN index` navigation blocks. Navigation in Level 3 models is derived dynamically from Concept headings (`# NN <Concept>`) and Element headings (`## NN <Concept>: <Element>`).
 3. **Heading and Slug Collision Detection**:
    - Detect duplicate `## NN <Concept>: <Element>` headings within a model file that yield identical slugs (e.g. `## NN Person: Alice` and another `## NN Person: Alice`).
-   - Prompt the user for disambiguation or rename duplicate elements deterministically using `innfo-mcp_apply_change` (`rename_element`).
+   - Prompt the user for disambiguation or rename duplicate elements deterministically using `nn-mcp_apply_change` (`rename_element`).
 4. **Frontmatter Standardization**:
    - Ensure Level 3 frontmatter contains only valid metadata: `knowledge_version`, `parent_spec: { name, url }`, `title`, and optional workspace/lineage tags.
    - Remove forbidden legacy frontmatter structures such as `concepts: []` or `fields: []` embedded in YAML frontmatter.

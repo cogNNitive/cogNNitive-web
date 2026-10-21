@@ -264,7 +264,7 @@ function buildProposal(options) {
 }
 
 /**
- * Maps a proposal to the ONE `innfo-mcp_propose_changeset` payload that applies
+ * Maps a proposal to the ONE `nn-mcp_propose_changeset` payload that applies
  * it through the reviewed mutation path (same change keys: op/target/concept/
  * name/fields/from/to/sources):
  *   - one `add_element` per new key;

@@ -155,7 +155,7 @@ function parseManifest(text) {
     skills: Array.isArray(bootstrap.skills) ? bootstrap.skills : [],
     blueprints: Array.isArray(bootstrap.blueprints) ? bootstrap.blueprints : [],
     // Exposes the published `console-assets` block so its resolved `ref` can be
-    // compared against the freshness JSON's `innfo-console` pin, the same way
+    // compared against the freshness JSON's `nn-console` pin, the same way
     // `skills`/`templates` already are (Defect 1 fix).
     consoleAssets: Array.isArray(bootstrap['console-assets']) ? bootstrap['console-assets'] : [],
   };
@@ -1079,25 +1079,25 @@ async function runCheck(options = {}) {
   }
 
   if (freshnessData && freshnessData.subsystems && typeof freshnessData.subsystems === 'object') {
-    const innfoMcpSkill = manifest.skills.find(s => Array.isArray(s.mcp) && s.mcp.some(m => m && m.name === 'innfo-mcp'));
-    const innfoMcpEntry = innfoMcpSkill ? innfoMcpSkill.mcp.find(m => m && m.name === 'innfo-mcp') : null;
-    const innfoConsoleEntry = manifest.consoleAssets.find(a => a && a.ref);
+    const nnMcpSkill = manifest.skills.find(s => Array.isArray(s.mcp) && s.mcp.some(m => m && m.name === 'nn-mcp'));
+    const nnMcpEntry = nnMcpSkill ? nnMcpSkill.mcp.find(m => m && m.name === 'nn-mcp') : null;
+    const nnConsoleEntry = manifest.consoleAssets.find(a => a && a.ref);
 
     // Fallback path label shown only when a subsystem reports no touched files
     // (e.g. zero drift), per the published tracked-subsystem prefixes.
     const SUBSYSTEM_PATH_LABELS = {
       skills: 'skills/',
       templates: 'iNNfo/specs/bluepriNNts/',
-      'innfo-mcp': 'iNNfo/packages/nn-mcp/',
-      'innfo-console': 'iNNfo/specs/bluepriNNts/console/',
+      'nn-mcp': 'iNNfo/packages/nn-mcp/',
+      'nn-console': 'iNNfo/specs/bluepriNNts/console/',
     };
     const MAX_FILES_SHOWN = 3;
 
     const targets = [
       { key: 'skills', manifestRef: (manifest.skills.find(s => s && s.ref) || {}).ref },
       { key: 'templates', manifestRef: (manifest.blueprints.find(t => t && t.ref) || {}).ref },
-      { key: 'innfo-mcp', manifestRef: innfoMcpEntry ? innfoMcpEntry.ref : undefined },
-      { key: 'innfo-console', manifestRef: innfoConsoleEntry ? innfoConsoleEntry.ref : undefined },
+      { key: 'nn-mcp', manifestRef: nnMcpEntry ? nnMcpEntry.ref : undefined },
+      { key: 'nn-console', manifestRef: nnConsoleEntry ? nnConsoleEntry.ref : undefined },
     ];
     for (const { key, manifestRef } of targets) {
       const entry = freshnessData.subsystems[key];

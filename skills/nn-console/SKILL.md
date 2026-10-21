@@ -11,7 +11,7 @@ metadata:
   installed_at: "2026-10-17"
   depends_on:
     skills: ["nn-innfo"]
-    mcp_servers: ["innfo-mcp"]
+    mcp_servers: ["nn-mcp"]
     cli_tools: ["scripts/export-console.mjs", "scripts/console-views.mjs"]
 bundled_blueprints: []
 ---
@@ -147,7 +147,7 @@ Drafts appear immediately in the **Changes** tab of the console and are exported
 Whenever a view file is created or updated:
 
 1. **Via MCP Tool (Recommended)**:
-   Call `innfo-mcp.regenerate_console` with `{ domain: "<domainRoot>", open: true }`.
+   Call `nn-mcp.regenerate_console` with `{ domain: "<domainRoot>", open: true }`.
 2. **Via CLI**:
    Run `node scripts/export-console.mjs <domainRoot> --domain`.
 3. **Verify Integrity**:

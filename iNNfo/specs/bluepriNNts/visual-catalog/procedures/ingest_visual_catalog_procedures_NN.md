@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-4-0"
+  name: "procedures_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-3-0"
 title: "Ingest Visual Catalog Procedure"
@@ -133,9 +133,9 @@ condition:: The catalogue document is written
 input:: [[Updated Visual Catalog]]
 output:: [[Validated Visual Catalog]]
 output_status:: verified
-tool:: [[innfo-mcp]]
+tool:: [[nn-mcp]]
 scope:: internal
-Run innfo-mcp `validate_knowledge` on the catalogue to confirm zero schema or reference errors, then run `resolve_sources` on every Evidence `source` to confirm the citation resolves and to read back the `sha256` / `media_sha256` provenance. Verify the hash-pair discipline: when both hashes are present on the cited normalized source, the on-disk original must match `sha256`. Any failure stops the procedure before the report.
+Run nn-mcp `validate_knowledge` on the catalogue to confirm zero schema or reference errors, then run `resolve_sources` on every Evidence `source` to confirm the citation resolves and to read back the `sha256` / `media_sha256` provenance. Verify the hash-pair discipline: when both hashes are present on the cited normalized source, the on-disk original must match `sha256`. Any failure stops the procedure before the report.
 
 ## NN Work: Report Ingestion
 parent:: [[Ingest Visual Catalog Workflow]]
@@ -164,9 +164,9 @@ description:: External multimodal Vision LLM / OCR engine extracting candidate E
 
 ## NN Tools: File Editor
 type:: automated
-description:: Writes derived media, catalogue elements, matrix cells, and markers, and updates the catalogue document (innfo-mcp).
+description:: Writes derived media, catalogue elements, matrix cells, and markers, and updates the catalogue document (nn-mcp).
 
-## NN Tools: innfo-mcp
+## NN Tools: nn-mcp
 type:: automated
 description:: Deterministic validation of the catalogue (`validate_knowledge`) and citation/hash resolution (`resolve_sources`).
 
@@ -227,7 +227,7 @@ description:: Executes the procedure steps and updates the catalogue.
 
 # NN matrices: work-tools matrix
 
-| Work \ Tools | AI Agent | nn-trannsform Scanner | Vision Analysis Engine | File Editor | innfo-mcp |
+| Work \ Tools | AI Agent | nn-trannsform Scanner | Vision Analysis Engine | File Editor | nn-mcp |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | Ingest Visual Catalog | Uses | - | - | - | - |
 | Normalize Source | - | Uses | - | - | - |

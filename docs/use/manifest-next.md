@@ -9,47 +9,47 @@ agent-bootstrap:
     - name: nn
       repo: cogNNitive/cogNNitive-web
       path: skills/nn
-      version: "V_3-4-0"
+      version: "V_3-4-3"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
     - name: nn-sources
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-sources
-      version: "V_3-4-2"
+      version: "V_3-5-4"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       requires: [nn-innfo, nn-preflight]
-      description: Ingest documents (PDF, DOCX, XLSX), transform using blueprints, and execute multi-step procedures (procedures_V_0-1-0_NN.md).
+      description: Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync.
     - name: nn-innfo
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-innfo
-      version: "V_0-5-5"
+      version: "V_0-5-13"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
       blueprints: [domaiNN]
       mcp:
-        - name: innfo-mcp
+        - name: nn-mcp
           repo: cogNNitive/cogNNitive-web
-          path: iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
-          version: "0.12.0"
+          path: iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
+          version: "0.30.0"
           ref: "main"
-          commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b/iNNfo/packages/innfo-mcp/bin/innfo-mcp.bundle.js
+          commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
     - name: nn-preflight
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-preflight
-      version: "V_0-2-1"
+      version: "V_0-2-5"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
     - name: nn-upgrade
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-upgrade
-      version: "V_0-2-0"
+      version: "V_0-4-2"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       requires: [nn-preflight]
       description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
     - name: nn-site-generator
@@ -57,136 +57,97 @@ agent-bootstrap:
       path: skills/nn-site-generator
       version: "V_0-2-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       description: Create or edit websites, add analytics, add contact forms.
     - name: nn-design-presets
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-design-presets
       version: "V_1-4-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       description: cogNNitive visual design presets — palettes, typography, spacing.
     - name: nn-skills-lifecycle
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-skills-lifecycle
-      version: "V_1-2-0"
+      version: "V_1-3-1"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
       requires: [nn-preflight]
       description: Audit, update, and maintain cogNNitive skills.
   blueprints:
     - name: domaiNN
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
-      version: "V_0-3-0"
+      version: "V_0-5-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: projects
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+    - name: changes
       repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/projects/spec_NN.md
-      version: "V_0-3-0"
+      path: iNNfo/specs/bluepriNNts/changes/spec_NN.md
+      version: "V_0-5-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: procedures
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+    - name: sidecar
       repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+      path: iNNfo/specs/bluepriNNts/sidecar/spec_NN.md
       version: "V_0-3-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: organization
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/organization/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: business
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/business/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: business-model
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/business-model/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: analysis
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/analysis/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: innovation
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/innovation/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: blank
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: documentation
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/documentation/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: metrics
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/metrics/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: repository
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/repository/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: video
-      repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/video/spec_NN.md
-      version: "V_0-3-0"
-      ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
     - name: sources
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
-      version: "V_0-3-0"
+      version: "V_0-5-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
     - name: artifacts
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
-      version: "V_0-3-0"
+      version: "V_0-5-0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-    - name: design-presets
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+    - name: procedures
       repo: cogNNitive/cogNNitive-web
-      path: iNNfo/specs/bluepriNNts/design-presets/spec_NN.md
-      version: "V_0-3-0"
+      path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
+      version: "V_0-3-2"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+    - name: blank
+      repo: cogNNitive/cogNNitive-web
+      path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
+      version: "V_0-5-0"
+      ref: "main"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
   console-assets:
-    - file: iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
-      version: "0.6.0"
+    - file: iNNfo/specs/bluepriNNts/console/nn-console.bundle.js
+      version: "0.26.0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b/iNNfo/specs/bluepriNNts/console/innfo-console.bundle.js
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js
     - file: iNNfo/specs/bluepriNNts/console/artifact_shell.html
-      version: "0.6.0"
+      version: "0.26.0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b/iNNfo/specs/bluepriNNts/console/artifact_shell.html
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/iNNfo/specs/bluepriNNts/console/artifact_shell.html
     - file: scripts/export-console.mjs
-      version: "0.6.0"
+      version: "0.26.0"
       ref: "main"
-      commit: "3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b"
-      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/3c751a17ebb9ce67e72df6ab5a282fcc647b4c7b/scripts/export-console.mjs
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/scripts/export-console.mjs
+    - file: scripts/console-views.mjs
+      version: "0.26.0"
+      ref: "main"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/scripts/console-views.mjs
+    - file: iNNfo/specs/bluepriNNts/console/nn-ui.css
+      version: "0.26.0"
+      ref: "main"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/iNNfo/specs/bluepriNNts/console/nn-ui.css
+    - file: iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs
+      version: "0.26.0"
+      ref: "main"
+      commit: "ab7f23dfce36e90b72f87287c4eac4d928d384c0"
+      url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ab7f23dfce36e90b72f87287c4eac4d928d384c0/iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs
   workflows:
     - id: model
       label: Create an iNNfo model
@@ -222,7 +183,7 @@ on a machine is recorded per-machine in `~/.agents/bootstrap-state.json` (like l
 1. Fetch the manifest — each skill carries a pinned `commit` and `version`.
 2. Ask the user for the target installation scope, recommending their User Profile by default:
    - **Global User Profile (Default/Recommended)**: `~/.agents/skills/`, `~/.agents/templates/`, and `~/.agents/mcp/` (on Windows: `%USERPROFILE%\.agents\`, on Linux/macOS: `$HOME/.agents/`).
-   - **Local Workspace**: `./.agents/skills/`, `./specs/templates/`, and `./.agents/mcp/`.
+   - **Local Workspace**: `./.agents/skills/`, `./specs/bluepriNNts/`, and `./.agents/mcp/`.
 3. Run the check: `node scripts/skills-manager.js status` from a cogNNitive checkout
    (or ask the agent to run it) to compare installed commits (recorded in
    `~/.agents/bootstrap-state.json`) against the pins.
@@ -232,13 +193,13 @@ on a machine is recorded per-machine in `~/.agents/bootstrap-state.json` (like l
    `node scripts/skills-manager.js update`. Never silently update, and never report
    "installed and up to date" without having run the check.
 6. For each skill that declares `mcp[]`, download the bundle `url` into `{target}/mcp/{name}.bundle.js` (default: `~/.agents/mcp/{name}.bundle.js`) and register it in your agent MCP config (e.g. `opencode.jsonc`, `antigravity.json`, or workspace config).
-7. For each template declared in `templates:`, `innfo-mcp` resolves and hydrates versioned packages using 4-tier lookup:
-   - Workspace Package Directory: `./specs/templates/<name>/<version>/`
+7. For each template declared in `templates:`, `nn-mcp` resolves and hydrates versioned packages using 4-tier lookup:
+   - Workspace Package Directory: `./specs/bluepriNNts/<name>/<version>/`
    - Workspace Flat Fallback: `./templates/<name>_V_<version>_NN.md` or `./specs/`
    - Global User Cache: `~/.agents/templates/<name>/<version>/`
    - Installed Skills Directory: `~/.agents/skills/*/templates/<name>/<version>/`
-   Hydration into workspace `./specs/templates/<name>/<version>/` is atomic and write-once immutable.
-8. Attached SOP procedures (`procedures/`) and agent skills (`skills/`) declared in template frontmatter are dynamically discovered up to depth 10 via `list_blueprint_procedures` and `list_blueprint_skills`.
+   Hydration into workspace `./specs/bluepriNNts/<name>/<version>/` is atomic and write-once immutable.
+8. Attached SOP procedures (`procedures/`) and agent skills (`skills/`) declared in template frontmatter are dynamically discovered up to depth 10 via `list_blueprint_procedures` and `list_blueprint_skills`. Skills embedded in a package (`skills/<name>/SKILL.md`) are listed with `embedded: true` and a resolved `path`.
 9. Present the `workflows[]` as a menu and hand over to the chosen skill.
 
 ## For an agent that already has `agent-web-bootstrap`

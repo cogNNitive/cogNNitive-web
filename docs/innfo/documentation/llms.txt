@@ -4,9 +4,9 @@
 ## Documentation Index
 
 - [Home](README): Documentation entry point and overview.
-- [innfo-core](innfo-core): Core parser, resolver, validator, and AST engine.
-- [innfo-mcp](innfo-mcp): Model Context Protocol server exposing iNNfo capabilities to AI agents.
-- [OpenCode Agent](opencode-innfo-agent): Integration guide for OpenCode and Antigravity agent workflows.
+- [nn-core](nn-core): Core parser, resolver, validator, and AST engine.
+- [nn-mcp](nn-mcp): Model Context Protocol server exposing iNNfo capabilities to AI agents.
+- [OpenCode Agent](opencode-nn-agent): Integration guide for OpenCode and Antigravity agent workflows.
 - [Ecosystem](ecosystem): Holistic view of cogNNitive ecosystem layers (iNNfo engine, domain console, agent skills).
 - [Specifications](specifications): Formal specification of the iNNfo format and meta-template layers.
 - [OKF Compatibility](ecosystem?id=open-knowledge-format-compatibility): Alignment and compatibility with the Open Knowledge Format standard.

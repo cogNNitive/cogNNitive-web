@@ -29,7 +29,7 @@ afterwards:
    the exported `_changes_NN.md` file to the agent, which applies it with `apply_change`. See the
    [reviewer guide](reviewer-guide).
 3. **Use the typed operations** (`update_field`, `add_element`, `remove_element`, `rename_element`,
-   `rename_concept`, `update_matrix_cell`) rather than copying sections. See [innfo-mcp](innfo-mcp).
+   `rename_concept`, `update_matrix_cell`) rather than copying sections. See [nn-mcp](nn-mcp).
 
 If you do edit by hand:
 

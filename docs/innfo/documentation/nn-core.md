@@ -1,6 +1,6 @@
-# @cognnitive/innfo-core
+# @cognnitive/nn-core
 
-Framework-agnostic TypeScript library shared across the cogNNitive ecosystem. Used by `innfo-mcp` and the domain console tooling.
+Framework-agnostic TypeScript library shared across the cogNNitive ecosystem. Used by `nn-mcp` and the domain console tooling.
 
 ## Features
 
@@ -13,7 +13,7 @@ Framework-agnostic TypeScript library shared across the cogNNitive ecosystem. Us
 ## API
 
 ```typescript
-import { parseFrontmatter, validateModel } from '@cognnitive/innfo-core'
+import { parseFrontmatter, validateModel } from '@cognnitive/nn-core'
 
 // Parse YAML frontmatter from an iNNfo document
 const fm = parseFrontmatter(content)
@@ -27,9 +27,9 @@ const result = validateModel(model, template, formatSpec)
 
 ```bash
 # Build the library
-npm run build -w @cognnitive/innfo-core
+npm run build -w @cognnitive/nn-core
 
 # Run tests
-npm run test -w @cognnitive/innfo-core
+npm run test -w @cognnitive/nn-core
 ```
 

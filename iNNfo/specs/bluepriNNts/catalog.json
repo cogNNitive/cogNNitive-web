@@ -207,7 +207,7 @@
     },
     "procedures": {
       "name": "procedures",
-      "adopted": "V_0-4-0",
+      "adopted": "V_0-5-0",
       "tier": "core",
       "access": "public",
       "when_to_use": null,
@@ -215,7 +215,7 @@
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-4-0",
+          "blueprint_version": "V_0-5-0",
           "spec_version": "V_0-5-0",
           "title": "Procedures App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
@@ -311,7 +311,7 @@
     },
     "visual-catalog": {
       "name": "visual-catalog",
-      "adopted": "V_0-2-0",
+      "adopted": "V_0-3-0",
       "tier": "free",
       "access": "public",
       "when_to_use": null,
@@ -319,7 +319,7 @@
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-2-0",
+          "blueprint_version": "V_0-3-0",
           "spec_version": "V_0-5-0",
           "title": "Visual Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md"

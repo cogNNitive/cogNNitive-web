@@ -96,7 +96,7 @@ function discoverModels(workspaceDir) {
  * `catalog` shape: { blueprints: { <name>: { name, adopted, versions: [{blueprint_version}] } } }
  *
  * Classification delegates to the shared `classifyAgainstCatalog` primitive
- * (bundled from nn-core) so the CLI, `innfo-mcp` check_workspace, and the
+ * (bundled from nn-core) so the CLI, `nn-mcp` check_workspace, and the
  * editor all agree on one model's status. The `kind` field (bump gap) is
  * surfaced only for `upgrade-available` items, matching the pre-delegation
  * item shape.

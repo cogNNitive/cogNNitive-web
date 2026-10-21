@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-4-0"
+  name: "procedures_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
@@ -87,11 +87,11 @@ condition:: RACI matrix complete and reviewed
 input:: [[RACI Accountability Matrix]]
 output:: [[Validated iNNfo Level 3 Model]]
 output_status:: verified
-tool:: [[innfo-mcp Server]]
+tool:: [[nn-mcp Server]]
 scope:: internal
 tags:: [procedure, verification, mcp-audit, syntax-gate]
 
-Execute automated syntactic verification, WikiLink integrity checks, and field exhaustiveness gates via innfo-mcp tools.
+Execute automated syntactic verification, WikiLink integrity checks, and field exhaustiveness gates via nn-mcp tools.
 
 # NN Artifact
 
@@ -124,7 +124,7 @@ Visualizer for finite state machine flows, sequential step progressions, and con
 ## NN Tools: iNNfo Matrix Editor
 Tabular visual interface for evaluating and assigning relational matrices and RACI governance.
 
-## NN Tools: innfo-mcp Server
+## NN Tools: nn-mcp Server
 Model Context Protocol daemon providing validation, hydration, queries, and integrity checks.
 
 # NN Roles
@@ -155,7 +155,7 @@ Runs automated verification gates, validates MCP compliance, and approves model 
 | Integrity & Syntax Verification | Informed | Consulted | Informed | Responsible |
 
 # NN matrices: work-tools matrix
-| Work \ Tools | cogNNitive Modeler | iNNfo FSM Stepper View | iNNfo Matrix Editor | innfo-mcp Server |
+| Work \ Tools | cogNNitive Modeler | iNNfo FSM Stepper View | iNNfo Matrix Editor | nn-mcp Server |
 | :--- | :---: | :---: | :---: | :---: |
 | Scope & Trigger Identification | Uses | - | - | - |
 | Workflow Step Decomposition | - | Uses | - | - |

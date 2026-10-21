@@ -10,7 +10,7 @@ this file and MUST NOT hardcode paths.
 | `~/.agents/skills/{name}/` | Installed skills (user-level), managed by `scripts/skills-manager.js` — manifest-pinned tarball `install`/`update`, or a plain `sync` copy |
 | `~/.config/opencode/skills/{name}/` | opencode user skills (global) |
 | `.opencode/skills/` | opencode project skills (repo-scoped) |
-| `.cogNNitive/mcp-bundle.js` (repo root) | Downloaded `innfo-mcp` bundle, written by `scripts/update-mcp.js` (see `openspec/specs/mcp-bridge`) |
+| `.cogNNitive/mcp-bundle.js` (repo root) | Downloaded `nn-mcp` bundle, written by `scripts/update-mcp.js` (see `openspec/specs/mcp-bridge`) |
 
 `scripts/skills-manager.js` installs and updates by downloading a commit-pinned
 GitHub tarball (`https://codeload.github.com/{repo}/tar.gz/{commit}`) and

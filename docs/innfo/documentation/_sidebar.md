@@ -1,9 +1,9 @@
 - [Home](README)
 
 - **Components**
-  - [innfo-core](innfo-core)
-  - [innfo-mcp](innfo-mcp)
-  - [OpenCode Agent](opencode-innfo-agent)
+  - [nn-core](nn-core)
+  - [nn-mcp](nn-mcp)
+  - [OpenCode Agent](opencode-nn-agent)
 
 - **Architecture**
   - [Ecosystem](ecosystem)

@@ -1,16 +1,16 @@
-﻿# innfo-mcp
+﻿# nn-mcp
 
-`@cognnitive/innfo-mcp` is an MCP (Model Context Protocol) server that wraps `@cognnitive/innfo-core` and exposes iNNfo models over the stdio transport, so AI coding agents — Claude Code, OpenCode, and others — can read, validate, and edit iNNfo models through structured tool calls instead of freeform file edits.
+`@cognnitive/nn-mcp` is an MCP (Model Context Protocol) server that wraps `@cognnitive/nn-core` and exposes iNNfo models over the stdio transport, so AI coding agents — Claude Code, OpenCode, and others — can read, validate, and edit iNNfo models through structured tool calls instead of freeform file edits.
 
 ## Why an MCP server
 
-- Validation stays **deterministic** — the `innfo-core` validator decides validity, not the calling LLM.
+- Validation stays **deterministic** — the `nn-core` validator decides validity, not the calling LLM.
 - Specification and template content is never duplicated into agent rules or config — it is always resolved live via `get_spec` / `get_template`.
 - Spec and template resolution follows the model's `parent_spec` chain or an explicit URL — no hardcoded spec URLs.
 
 ## Tools
 
-<!-- generated:mcp-tools (source: innfo-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
+<!-- generated:mcp-tools (source: nn-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
 **22** tools
 
 | Tool | Description |
@@ -59,7 +59,7 @@ Each call re-validates the model and returns either the updated model or the val
 ### Canonical unit addresses
 
 Console badges, draft pips and review actions share one address grammar, built and
-parsed by `innfo-core`'s `unitAddress` / `parseUnitAddress`:
+parsed by `nn-core`'s `unitAddress` / `parseUnitAddress`:
 
 - `<modelId>@<element-slug>` — element
 - `<modelId>@<element-slug>&<field>` — element value
@@ -75,7 +75,7 @@ so `update_matrix_cell` still resolves cells by row/column slug. Citation parsin
 ## Architecture
 
 ```
-AI coding agent (Claude Code, OpenCode, ...) → innfo-mcp (MCP server, stdio) → @cognnitive/innfo-core
+AI coding agent (Claude Code, OpenCode, ...) → nn-mcp (MCP server, stdio) → @cognnitive/nn-core
                                                         ↓
                                     Public iNNfo spec/template URLs (single source of truth)
 ```
@@ -84,11 +84,11 @@ AI coding agent (Claude Code, OpenCode, ...) → innfo-mcp (MCP server, stdio) �
 
 ```bash
 # Build the server
-npm run build -w @cognnitive/innfo-mcp
+npm run build -w @cognnitive/nn-mcp
 
 # The server communicates over stdio — register it with your MCP-compatible agent/client
 ```
 
 By default the server scans models under the current working directory; override with the `INNFO_MODELS_DIR` environment variable.
 
-See [OpenCode iNNfo Agent](opencode-innfo-agent) for a full walkthrough of connecting innfo-mcp to OpenCode Desktop.
+See [OpenCode iNNfo Agent](opencode-nn-agent) for a full walkthrough of connecting nn-mcp to OpenCode Desktop.

@@ -1,10 +1,10 @@
-# MCP Setup — innfo-mcp
+# MCP Setup — nn-mcp
 
 > Investigated: 2026-07-12
 
 ## What is this
 
-innfo-mcp is an MCP server that provides semantic iNNfo tools (validate, list, read, apply changes). It's built as a single-file ESM bundle and served from `docs/cdn/` via GitHub Pages at `https://cognnitive.com/innfo/cdn/`.
+nn-mcp is an MCP server that provides semantic iNNfo tools (validate, list, read, apply changes). It's built as a single-file ESM bundle and served from `docs/cdn/` via GitHub Pages at `https://cognnitive.com/innfo/cdn/`.
 
 ## Recommended: automated bootstrap
 
@@ -31,24 +31,24 @@ No need to clone the repo. Use the bootstrap script, which downloads and caches 
 
 Pick your platform and create the file:
 
-**Windows** — copy `scripts/innfo-mcp.cmd` and `scripts/innfo-mcp.ps1` to a location in your PATH (or use the script below as `%USERPROFILE%\.cache\innfo-mcp\innfo-mcp.cmd`):
+**Windows** — copy `scripts/nn-mcp.cmd` and `scripts/nn-mcp.ps1` to a location in your PATH (or use the script below as `%USERPROFILE%\.cache\nn-mcp\nn-mcp.cmd`):
 
 ```batch
 @echo off
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0innfo-mcp.ps1" %*
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0nn-mcp.ps1" %*
 ```
 
 The `.ps1` script handles all the logic (download, cache, version check):
 
-**macOS / Linux** — save as `~/.cache/innfo-mcp/bootstrap.sh` and `chmod +x`:
+**macOS / Linux** — save as `~/.cache/nn-mcp/bootstrap.sh` and `chmod +x`:
 
 ```sh
 #!/bin/sh
 set -e
 
-CACHE_DIR="${HOME}/.cache/innfo-mcp"
+CACHE_DIR="${HOME}/.cache/nn-mcp"
 VERSION_FILE="${CACHE_DIR}/current-version.txt"
-BUNDLE_FILE="${CACHE_DIR}/innfo-mcp.bundle.js"
+BUNDLE_FILE="${CACHE_DIR}/nn-mcp.bundle.js"
 MANIFEST_URL="https://cognnitive.com/innfo/cdn/manifest.json"
 
 mkdir -p "${CACHE_DIR}"
@@ -66,7 +66,7 @@ if [ -n "${LATEST}" ]; then
         CACHED=$(cat "${VERSION_FILE}")
     fi
     if [ "${LATEST}" != "${CACHED}" ]; then
-        echo "Downloading innfo-mcp ${LATEST}..."
+        echo "Downloading nn-mcp ${LATEST}..."
         BUNDLE_URL="https://cognnitive.com/innfo/cdn/nn-mcp-v${LATEST}.bundle.js"
         if command -v curl >/dev/null 2>&1; then
             curl -sL "${BUNDLE_URL}" -o "${BUNDLE_FILE}"
@@ -97,9 +97,9 @@ Point your AI client to the bootstrap script.
 ```json
 {
   "mcp": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "type": "local",
-      "command": ["C:\\Users\\<you>\\.cache\\innfo-mcp\\innfo-mcp.cmd"],
+      "command": ["C:\\Users\\<you>\\.cache\\nn-mcp\\nn-mcp.cmd"],
       "enabled": true
     }
   }
@@ -111,9 +111,9 @@ Or point directly to the script in this repo (if cloned):
 ```json
 {
   "mcp": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "type": "local",
-      "command": ["node", "packages/innfo-mcp/bin/innfo-mcp.bundle.js"],
+      "command": ["node", "packages/nn-mcp/bin/nn-mcp.bundle.js"],
       "enabled": true
     }
   }
@@ -125,9 +125,9 @@ Or point directly to the script in this repo (if cloned):
 ```json
 {
   "mcp": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "type": "local",
-      "command": ["/home/<you>/.cache/innfo-mcp/bootstrap.sh"],
+      "command": ["/home/<you>/.cache/nn-mcp/bootstrap.sh"],
       "enabled": true
     }
   }
@@ -141,8 +141,8 @@ Or point directly to the script in this repo (if cloned):
 ```json
 {
   "mcpServers": {
-    "innfo-mcp": {
-      "command": "/home/<you>/.cache/innfo-mcp/bootstrap.sh"
+    "nn-mcp": {
+      "command": "/home/<you>/.cache/nn-mcp/bootstrap.sh"
     }
   }
 }
@@ -155,8 +155,8 @@ Or point directly to the script in this repo (if cloned):
 ```json
 {
   "mcpServers": {
-    "innfo-mcp": {
-      "command": "/home/<you>/.cache/innfo-mcp/bootstrap.sh"
+    "nn-mcp": {
+      "command": "/home/<you>/.cache/nn-mcp/bootstrap.sh"
     }
   }
 }
@@ -167,11 +167,11 @@ Or point directly to the script in this repo (if cloned):
 If you already have the repo cloned:
 
 ```bash
-cd packages/innfo-mcp
+cd packages/nn-mcp
 npm install && npm run build
 ```
 
-Then point your agent to `packages/innfo-mcp/dist/server.js` directly (see version below).
+Then point your agent to `packages/nn-mcp/dist/server.js` directly (see version below).
 
 ## Shared config format (clone-based)
 
@@ -180,9 +180,9 @@ All clients use the same JSON structure:
 ```json
 {
   "mcpServers": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "command": "node",
-      "args": ["path/to/iNNfo/packages/innfo-mcp/dist/server.js"]
+      "args": ["path/to/iNNfo/packages/nn-mcp/dist/server.js"]
     }
   }
 }
@@ -193,9 +193,9 @@ All clients use the same JSON structure:
 ```json
 {
   "mcp": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "type": "local",
-      "command": ["node", "packages/innfo-mcp/dist/server.js"],
+      "command": ["node", "packages/nn-mcp/dist/server.js"],
       "enabled": true
     }
   }
@@ -209,9 +209,9 @@ All clients use the same JSON structure:
 ```json
 {
   "mcpServers": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "command": "node",
-      "args": ["packages/innfo-mcp/dist/server.js"]
+      "args": ["packages/nn-mcp/dist/server.js"]
     }
   }
 }
@@ -224,9 +224,9 @@ All clients use the same JSON structure:
 ```json
 {
   "mcpServers": {
-    "innfo-mcp": {
+    "nn-mcp": {
       "command": "node",
-      "args": ["packages/innfo-mcp/dist/server.js"]
+      "args": ["packages/nn-mcp/dist/server.js"]
     }
   }
 }
@@ -236,14 +236,14 @@ All clients use the same JSON structure:
 
 Before editing a model, the agent should verify MCP is available:
 
-1. Check if innfo-mcp tools are listed in the current session's tool list
+1. Check if nn-mcp tools are listed in the current session's tool list
 2. If not, check the config files above exist
 3. If configured but not loading → the client may need a reload
 4. If not configured → create the workspace-level config file, then ask the user to reload
 
 ## Updating the bundle
 
-The bundle is built from `packages/innfo-mcp/src/server.ts` and staged to `docs/innfo/cdn/`
+The bundle is built from `packages/nn-mcp/src/server.ts` and staged to `docs/innfo/cdn/`
 for CDN serving by the docs build (the same command CI runs):
 
 ```bash
@@ -251,11 +251,11 @@ npm run build:docs
 ```
 
 This builds the bundle and copies it to
-`docs/innfo/cdn/innfo-mcp-<version>.bundle.js`, updating `docs/innfo/cdn/manifest.json`.
+`docs/innfo/cdn/nn-mcp-<version>.bundle.js`, updating `docs/innfo/cdn/manifest.json`.
 
 ## Related
 
-- `packages/innfo-mcp/` — server source code
-- `docs/cdn/innfo-mcp-v0.2.4.bundle.js` — current published bundle
-- `scripts/innfo-mcp.cmd` — Windows bootstrap script (in repo)
-- `scripts/innfo-mcp.sh` — Unix bootstrap script (in repo)
+- `packages/nn-mcp/` — server source code
+- `docs/cdn/nn-mcp-v0.2.4.bundle.js` — current published bundle
+- `scripts/nn-mcp.cmd` — Windows bootstrap script (in repo)
+- `scripts/nn-mcp.sh` — Unix bootstrap script (in repo)
