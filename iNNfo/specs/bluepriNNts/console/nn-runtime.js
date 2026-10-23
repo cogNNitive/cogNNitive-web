@@ -2259,6 +2259,35 @@
     return map
   }
 
+  // Progressive render window shared by every element view: render RENDER_PAGE
+  // items, then append the rest on demand, so a broad query never builds the
+  // whole (100k-node) DOM in one synchronous pass.
+  // ponytail: cap + "show more", not full virtualization (no row-height math);
+  // upgrade to windowing only if this measurably falls short.
+  var RENDER_PAGE = 100
+  function chunked(host, items, renderSlice, page, buttonHost) {
+    page = page || RENDER_PAGE
+    buttonHost = buttonHost || host
+    var shown = 0
+    var btn = null
+    function more() {
+      if (btn && btn.parentNode) btn.parentNode.removeChild(btn)
+      btn = null
+      var end = Math.min(items.length, shown + page)
+      var frag = renderSlice(items.slice(shown, end), shown)
+      if (frag) host.appendChild(frag)
+      shown = end
+      if (shown < items.length) {
+        btn = el('button', 'btn btn-ghost btn-sm innfo-load-more')
+        btn.setAttribute('type', 'button')
+        btn.textContent = '\u25be Show more (' + shown + ' of ' + items.length + ')'
+        btn.addEventListener('click', more)
+        buttonHost.appendChild(btn)
+      }
+    }
+    more()
+  }
+
   // Cards project live changes: a correction patches its field value, a new
   // element is projected, and deleted elements are styled. The change STATE is
   // painted by the review controller as ONE badge per row.
@@ -2283,7 +2312,7 @@
       })
     }
 
-    projectedElements.forEach(function (element) {
+    var buildElementCard = function (element) {
       var fields = []
       var elCitations = element && isObject(element.citations) ? element.citations : {}
       var sourcesEntries = []
@@ -2434,8 +2463,21 @@
         })
       }
 
-      content.appendChild(card)
-    })
+      return card
+    }
+
+    chunked(
+      content,
+      projectedElements,
+      function (pageElements) {
+        var frag = doc.createDocumentFragment()
+        pageElements.forEach(function (element) {
+          frag.appendChild(buildElementCard(element))
+        })
+        return frag
+      },
+      focusId != null ? projectedElements.length : RENDER_PAGE,
+    )
   }
 
   function mountElementBadges(doc, elements, drafts, concepts, refs, modelId) {
@@ -2445,30 +2487,34 @@
     var wrap = el('div', 'innfo-element-badges-wrap')
     wrap.setAttribute('data-innfo-component', 'element-badges-view')
     var projectedElements = projectElements(elements, drafts)
-    projectedElements.forEach(function (element) {
-      var cMeta = conceptMetaOf(concepts, element.concept)
-      var pill = UI.Ku(
-        'element',
-        {
-          model: modelId || element.modelId || '',
-          id: element.id,
-          label: element.name || element.id || '',
-          concept: element.concept,
-          color: cMeta && cMeta.color,
-          index: cMeta && cMeta.index,
-        },
-        { doc: doc },
-      )
-      var pillBadge = pill.querySelector('[data-innfo-component="ku-unit"]')
-      if (pillBadge) {
-        pillBadge.setAttribute('role', 'button')
-        pillBadge.setAttribute('tabindex', '0')
-        pillBadge.addEventListener('click', function (ev) {
-          if (ev && ev.preventDefault) ev.preventDefault()
-          renderRefDialog(doc, element)
-        })
-      }
-      wrap.appendChild(pill)
+    chunked(wrap, projectedElements, function (pageElements) {
+      var frag = doc.createDocumentFragment()
+      pageElements.forEach(function (element) {
+        var cMeta = conceptMetaOf(concepts, element.concept)
+        var pill = UI.Ku(
+          'element',
+          {
+            model: modelId || element.modelId || '',
+            id: element.id,
+            label: element.name || element.id || '',
+            concept: element.concept,
+            color: cMeta && cMeta.color,
+            index: cMeta && cMeta.index,
+          },
+          { doc: doc },
+        )
+        var pillBadge = pill.querySelector('[data-innfo-component="ku-unit"]')
+        if (pillBadge) {
+          pillBadge.setAttribute('role', 'button')
+          pillBadge.setAttribute('tabindex', '0')
+          pillBadge.addEventListener('click', function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault()
+            renderRefDialog(doc, element)
+          })
+        }
+        frag.appendChild(pill)
+      })
+      return frag
     })
     content.appendChild(wrap)
   }
@@ -2480,26 +2526,30 @@
     var grid = el('div', 'innfo-element-minicards-grid')
     grid.setAttribute('data-innfo-component', 'element-minicards-view')
     var projectedElements = projectElements(elements, drafts)
-    projectedElements.forEach(function (element) {
-      var cMeta = conceptMetaOf(concepts, element.concept)
-      var mini = UI.ElementMini(
-        {
-          id: element.id,
-          name: element.name || element.id || '',
-          conceptId: element.concept,
-          description: element.description,
-          fields: element.fields,
-        },
-        {
-          doc: doc,
-          modelId: modelId || element.modelId || '',
-          concept: cMeta,
-          onClick: function () {
-            renderRefDialog(doc, element)
+    chunked(grid, projectedElements, function (pageElements) {
+      var frag = doc.createDocumentFragment()
+      pageElements.forEach(function (element) {
+        var cMeta = conceptMetaOf(concepts, element.concept)
+        var mini = UI.ElementMini(
+          {
+            id: element.id,
+            name: element.name || element.id || '',
+            conceptId: element.concept,
+            description: element.description,
+            fields: element.fields,
           },
-        }
-      )
-      grid.appendChild(mini)
+          {
+            doc: doc,
+            modelId: modelId || element.modelId || '',
+            concept: cMeta,
+            onClick: function () {
+              renderRefDialog(doc, element)
+            },
+          }
+        )
+        frag.appendChild(mini)
+      })
+      return frag
     })
     content.appendChild(grid)
   }
@@ -2664,7 +2714,7 @@
       emptyTr.appendChild(emptyTd)
       tbody.appendChild(emptyTr)
     }
-    sorted.forEach(function (element) {
+    var buildRow = function (element) {
       var tr = el('tr')
       tr.setAttribute('data-element-id', String(element.id || ''))
       if (element._draft) tr.classList.add('innfo-element-table-draft')
@@ -2785,13 +2835,27 @@
       if (tags) tagsTd.setAttribute('title', tags)
       tr.appendChild(tagsTd)
 
-      tbody.appendChild(tr)
-    })
+      return tr
+    }
     table.appendChild(tbody)
 
     var wrap = el('div', 'innfo-element-table-wrap')
     wrap.appendChild(table)
     content.appendChild(wrap)
+
+    chunked(
+      tbody,
+      sorted,
+      function (pageElements) {
+        var frag = doc.createDocumentFragment()
+        pageElements.forEach(function (element) {
+          frag.appendChild(buildRow(element))
+        })
+        return frag
+      },
+      RENDER_PAGE,
+      wrap,
+    )
   }
 
   // Cards/Table toggle for the Model Explorer. Created once inside the explorer

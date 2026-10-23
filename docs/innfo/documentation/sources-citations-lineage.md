@@ -7,7 +7,7 @@ one meaning each:
 | :--- | :--- |
 | **Source** | A raw citable file with a co-located sidecar `<file>.<ext>_sidecar_NN.md` next to it. The sidecar carries the **origin metadata** (`source_file`, `sha256`, `size_bytes`, `source_format`, `normalized_at`, `normalized_by`, and, for web imports, `source_url` / `downloaded_at`). One Source per cognitivized file; the raw file is never moved or renamed. |
 | **Citation** | A pointer from a consumer to a Source or knowledge unit. Two altitudes: a **model citation** uses the unified `@` grammar (e.g. `sources:: sources/import/<path>.md@## Heading`, `sources/import/<path>.csv@RowID&col`, or `sources/import/<path>.json@/items/0`) or a file-level citation (e.g. `kNNowledge/<Doc>_NN.md`); an **artifact citation** is `[^1]` / APA / IEEE / … inside a generated deliverable. |
-| **Lineage** | The single living record `<Project>_cogNNitive_NN.md` consisting of **projected view sections** (`# NN Sources`, `# NN ModelRecords`, `# NN Artifacts`) and an **append-only journal** (`# NN Procedures`). The version lives in the `knowledge_version` frontmatter, never in the name. |
+| **Lineage** | The single living record `<Project>_cogNNitive_NN.md` consisting of **projected view sections** (`# NN Sources`, `# NN ModelRecords`, `# NN Artifacts`) and an **append-only journal** (`# NN Procedures`). It is a single living file and carries **no version key** of its own; `knowledge_version` lives on each ModelRecord, never in the name. |
 
 ```
 sources/import/        ──►   co-located sidecar    ──►   kNNowledge/*_NN.md  ──►   artifacts/
@@ -33,8 +33,9 @@ The sidecar carries a flat, deterministic YAML frontmatter:
   write-once family members themselves (see §5).
 - `source_file`, `sha256`, `size_bytes`, `source_format`, `normalized_at`,
   `normalized_by`.
-- `source_type:` — set on promoted transcripts under `sources/conversations/`
-  (`conversation_transcript`) and on feedback JSON (`feedback`).
+- `source_type:` — set to `conversation_transcript` on promoted transcripts under
+  `sources/conversations/`. (The former `feedback` value is retired: no sidecar
+  records a reviewer-feedback source type.)
 - `sources` — the upstream citations of the subject, used for binary subjects
   that cannot declare their own.
 - `canonical:` — this document's own bibliographic identity (title, author,
@@ -58,13 +59,18 @@ stay citable.
 
 | Format | Extension | Converter | Output |
 | :--- | :--- | :--- | :--- |
-| Subtitles / transcripts | `.srt`, `.vtt` | `convertSubtitles` | Timestamp-chunked paragraphs under `#`/`## NN` headings |
+| Subtitles / transcripts | `.srt`, `.vtt` | `convertSubtitles` | A `# <base name>` title with timestamp-chunked paragraphs under `## NN Section: [<hh:mm:ss>]` headings |
 | Tabular data | `.csv` | `convertCsv` | `# NN Dataset Schema` + `## NN Summary Statistics`, then rows |
 | Data / structured records | `.json` | `convertJson` | `# NN Dataset Schema` profile for arrays of objects; fenced json block for general objects |
 | Word | `.docx` | `convertDocx` (mammoth) | Markdown, heading hierarchy + tables preserved |
 | Spreadsheets | `.xlsx`, `.xls` | `convertXlsx` (xlsx) | One Markdown table per sheet |
 | PDF | `.pdf` | `convertPdf` (pdf-parse) | Extracted text |
-| Text / Markdown | `.txt`, `.md`, `.html` | direct | Content preserved, third-party frontmatter stripped |
+| Text / Markdown | `.txt`, `.md`, `.html`, `.htm` | direct | Content preserved, third-party frontmatter stripped |
+
+A legacy binary format with no converter (e.g. `.doc`) is not ingested silently:
+the scanner flags it and asks whether to register a minimal `## NN Sources:` entry
+(file name, format, and a note that content was not extracted) so nothing becomes
+untraceable.
 
 Raw imports (external files, watch roots, URL fetches) copy bytes verbatim into
 `sources/import/` — the only canonical raw-import location — through the
@@ -95,16 +101,16 @@ sources:: [sources/import/interview.md@## Key Clients, sources/import/notes/kick
 - **File-level citation (bare path)**: `kNNowledge/Client_business_NN.md`
 - **Binary source**: cite the sidecar body, `sources/import/report.pdf_sidecar_NN.md@## Findings`.
 - **Path resolution**: every citation path is **workspace-relative with no implicit prefix**. `report.md@## Overview` resolves only if `report.md` exists at the workspace root; there is no default under a retired folder.
-- **Retired-prefix paths** (`sources/nn/`, `sources/original/`, `sources/export/`, `export/`, `models/`) have no special handling: they simply do not exist and dangle (`KU_DANGLING_FILE`). An existing file under `sources/archive/` is a plain path and still resolves.
+- **Retired-prefix paths** (`sources/nn/`, `sources/original/`, `sources/export/`, `export/`, `models/`) have no special handling: they simply do not exist and dangle (`KU_DANGLING_FILE`). An existing file under `sources/archive/` resolves for citation validation as a plain path, but `archive/` is excluded from lineage projection, so it never becomes a lineage node.
 - **Legacy `#slug` read path**: Legacy `#slug` citations (`sources/import/report.md#overview`) remain readable for frozen historical specs with a deprecation warning (`KU_DEPRECATED_HASH`). All active producers write `@` citations.
 
-Line numbers (`#L10-L20`) and `src-NNN` wrappers are strictly forbidden.
+Line numbers (`#L10-L20`) and `src-NNN` wrappers are strictly forbidden; a citation carrying either is rejected as `KU_MALFORMED`.
 
 ---
 
 ## 3. The Lineage Record: View + Journal
 
-The workspace Lineage record (`<Project>_cogNNitive_NN.md`) is maintained by pure projection in `@cognnitive/innfo-core`:
+The workspace Lineage record (`<Project>_cogNNitive_NN.md`) is maintained by pure projection in `@cognnitive/nn-core`:
 
 ```
 Record = Projected View Sections + Append-Only Journal
@@ -121,7 +127,7 @@ the record itself, and `staging/` never appear as nodes.
 
 | Section | Synced from | Rendered fields |
 | :--- | :--- | :--- |
-| `# NN Sources` | Every raw file with a co-located sidecar | `raw_hash, size, source_format, normalized_at, normalized_by, version, superseded_by, derived_from` |
+| `# NN Sources` | Every raw file with a co-located sidecar | `raw_filename, raw_hash, size, source_format, normalized_content, normalized_at, normalized_by, version, superseded_by, derived_from` |
 | `# NN ModelRecords` | `kNNowledge/*_NN.md` | `model_ref, knowledge_version, model_template, derived_from` |
 | `# NN Artifacts` | `artifacts/**/*.{md,html,csv,json}` | `artifact_ref, artifact_format, derived_from` |
 
@@ -149,13 +155,13 @@ The persisted record is only trustworthy if its managed view sections equal a
 fresh projection. The drift gate recomputes the projection and compares the
 on-disk text of `# NN Sources`, `# NN ModelRecords`, and `# NN Artifacts` byte by
 byte. It runs in three sites — `nn-sources --lineage --check`,
-`node scripts/verify.js`, and the MCP `check_workspace` tool — and never compares
+`node scripts/verify.js`, and the MCP `check_domain` tool — and never compares
 the `# NN Procedures` journal, hand-authored blocks, or frontmatter. Fixing drift
-is the job of `--lineage` (regeneration), never of the gate.
+is the job of `--lineage` (regeneration; the MCP `sync_lineage` tool does the same), never of the gate.
 
 ### Append-Only Journal
 
-- **`# NN Procedures`** is an **append-only run log**. Each pipeline execution (`--scan`, `--import-url`) appends one `## NN Procedures:` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). Existing procedure entries are never rewritten or lost on resync.
+- **`# NN Procedures`** is an **append-only run log**. Each pipeline execution appends one `## NN Procedures: <command> @ <run_at>` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). A standalone `--import-url` that does not also scan appends nothing. Existing procedure entries are never rewritten or lost on resync.
 
 ---
 
@@ -185,7 +191,7 @@ Supported deliverable citation styles:
 
 cogNNitive uses **two complementary versioning systems**:
 
-1. **Git / GitHub**: Whole-repository history, branches, diffs, and release tags (`blueprints-v*`, `skills-v*`, `innfo-mcp-v*`).
+1. **Git / GitHub**: Whole-repository history, branches, diffs, and release tags (`blueprints-v*`, `skills-v*`, `nn-mcp-v*`, `nn-console-v*`).
 2. **Write-once families & content hashing**: Each source version is an immutable family member named with a UTC suffix (`_YYYYMMDDTHHmmssZ`), and every raw file is fingerprinted with SHA-256 (`sha256` in its sidecar and `meta.sha256` in consoles). The `_V_` filename form is retired for kNNowledge; the version lives in frontmatter.
 
 ### The Staleness Principle

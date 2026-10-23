@@ -7601,6 +7601,26 @@ input[type="text"], input[type="search"], textarea, select {
   padding: 24px !important;
 }
 
+/* Large-result rendering: off-screen items skip layout/paint. Pairs with the
+   progressive window (RENDER_PAGE) in nn-runtime.js. */
+.innfo-element-table tbody tr,
+[data-innfo-component="element-card"].innfo-card,
+.innfo-element-minicards-grid > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 64px;
+}
+
+.innfo-load-more {
+  margin: 16px 24px;
+}
+.innfo-element-minicards-grid > .innfo-load-more {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.innfo-element-badges-wrap > .innfo-load-more {
+  flex-basis: 100%;
+}
+
 /* 13. Top Navbar Review Mode & Clean Header */
 #innfo-feedback-banner {
   display: none !important;

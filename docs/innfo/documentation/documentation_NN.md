@@ -147,6 +147,14 @@ order:: 20
 parent:: [[Guides]]
 description:: Graph relationships, bidirectional edges, and matrices in iNNfo.
 
+## NN Page: Knowledge Lifecycle
+title:: The Knowledge Lifecycle
+source:: knowledge-lifecycle.md
+route:: knowledge-lifecycle
+order:: 25
+parent:: [[Guides]]
+description:: How knowledge enters, is modelled, exported, changed and traced, end to end — the explanatory companion to Sources, Citations & Lineage.
+
 ## NN Page: Sources, Citations & Lineage
 title:: Sources, Citations & Lineage
 source:: sources-citations-lineage.md
@@ -162,6 +170,14 @@ route:: import-modes
 order:: 32
 parent:: [[Guides]]
 description:: How new files enter the base — one-off, snapshot series, watched folders, reviewer feedback — and how the impact check keeps living sources from silently breaking citations.
+
+## NN Page: Building a Domain from Scratch
+title:: Building a Domain from Scratch
+source:: domain-from-scratch.md
+route:: domain-from-scratch
+order:: 34
+parent:: [[Guides]]
+description:: A hands-on worked example: scaffold an empty domaiNN, ingest sources, model with citations, export an artifact, apply a change, and read the lineage record.
 
 ## NN Page: Lifecycle Walkthrough
 title:: Lifecycle Walkthrough (Case Study)

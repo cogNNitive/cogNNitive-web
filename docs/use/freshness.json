@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-21T17:52:33.058Z",
-  "head": "f72b451a01d079ea5ea0053098c8e3691c73ce8e",
+  "generatedAt": "2026-10-23T07:58:06.806Z",
+  "head": "29f437e991699344ba27b200d2639c3e22e374f0",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -20,21 +20,33 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.41.0",
       "pinnedTagDate": "2026-10-21T18:16:23+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.41.0",
       "pinnedTagDate": "2026-10-21T18:16:23+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.30.0",
       "pinnedTagDate": "2026-10-21T18:16:23+02:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/src/server.spec.ts",
         "iNNfo/packages/nn-mcp/src/tools/repo-root.spec.ts"
@@ -44,8 +56,14 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.26.0",
       "pinnedTagDate": "2026-10-21T15:54:26+02:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     }
   }
 }

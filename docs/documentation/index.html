@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>cogNNitive Documentation</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="cogNNitive Documentation powered by Docsify and DomaiNN metadata">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <style>
+    :root {
+      --theme-color: #4D0E4E;
+      --base-background: #FFFFFF;
+      --textColor: #111112;
+      --sidebar-background: #FAFAFC;
+      --sidebar-border-color: #F2F2F7;
+      --code-background: #F6EEF6;
+      --code-color: #4D0E4E;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .app-name-link {
+      font-weight: 800;
+      color: var(--theme-color) !important;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+    }
+    .sidebar {
+      border-right: 1px solid var(--sidebar-border-color);
+      background-color: var(--sidebar-background);
+    }
+    .sidebar ul li a {
+      color: #636366;
+      font-size: 14px;
+    }
+    .sidebar ul li.active > a {
+      color: var(--theme-color);
+      font-weight: 700;
+      border-right: 2px solid var(--theme-color);
+    }
+    .app-nav {
+      position: fixed;
+      top: 0;
+      right: 25px;
+      padding: 10px 0;
+      z-index: 10;
+    }
+    .app-nav li {
+      display: inline-block;
+      margin: 0 12px;
+    }
+    .app-nav a {
+      color: #111112;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .app-nav a:hover {
+      color: var(--theme-color);
+    }
+    .markdown-section table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1.5rem 0;
+    }
+    .markdown-section th, .markdown-section td {
+      border: 1px solid #E5E5EA;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    .markdown-section th {
+      background-color: #FAFAFC;
+      font-weight: 600;
+    }
+    .markdown-section pre {
+      background: #FAFAFC;
+      border: 1px solid #F2F2F7;
+      border-radius: 8px;
+    }
+    .markdown-section blockquote {
+      border-left: 4px solid var(--theme-color);
+      background: #FAF5FA;
+      padding: 12px 18px;
+      border-radius: 0 8px 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">Loading documentation...</div>
+
+  <script>
+    window.$docsify = {
+      name: 'cogNNitive',
+      repo: 'https://github.com/cogNNitive/cogNNitive',
+      loadSidebar: true,
+      loadNavbar: true,
+      auto2top: true,
+      homepage: 'README.md',
+      subMaxLevel: 2,
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: 'Search documentation...',
+        noData: 'No results found',
+        depth: 3
+      },
+      markdown: {
+        renderer: {
+          code: function (code, lang) {
+            if (lang === 'mermaid') {
+              return '<div class="mermaid">' + code + '</div>';
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      },
+      plugins: [
+        function (hook, vm) {
+          hook.doneEach(function () {
+            if (typeof mermaid !== 'undefined') {
+              const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
+              if (elements.length > 0) {
+                mermaid.run({ nodes: elements });
+              }
+            }
+          });
+        }
+      ]
+    };
+  </script>
+
+  <!-- Scripts -->
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+</body>
+</html>
