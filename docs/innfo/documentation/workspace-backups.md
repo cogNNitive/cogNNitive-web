@@ -53,7 +53,7 @@ For automated, potentially breaking schema migrations (such as upgrading models 
 For technicians and engineering teams, the `/nn-domain-git` skill provides a gated review workflow:
 
 - **SSOT Boundary**: iNNfo models remain the single source of truth; Git serves solely as a review and branch/PR gating mechanism.
-- **Gated PRs**: Pull requests must pass `innfo-mcp_validate_model` and workspace integrity checks before merging.
+- **Gated PRs**: Pull requests must pass `nn-mcp_validate_knowledge` and workspace integrity checks before merging.
 - **Offline Backup Fallback**: Step 3d in `nn-domain-git` triggers an out-of-tree backup before deep modifications.
 
 ---
