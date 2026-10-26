@@ -3,10 +3,12 @@
 /**
  * nn-video-script/test/video-engine-cli.test.mjs
  *
- * Integration tests for video-engine-cli:
- * - CLI compilation of script to manifest
- * - CLI rendering to MP4 with execution metrics
+ * Integration tests for video-engine-cli (HyperFrames renderer):
+ * - CLI compilation of a script to a manifest
+ * - Programmatic render through the HyperFrames driver seam
+ * - CLI render with --allow-mock (CI placeholder)
  * - CLI preview command
+ * - No Remotion dependency remains
  */
 
 import assert from 'node:assert';
@@ -15,13 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import {
-  compileVideo,
-  renderVideo,
-  previewVideo,
-  resolveRemotionEntryPoint,
-  tryRemotionRender,
-} from '../scripts/video-engine-cli.mjs';
+import { compileVideo, renderVideo, previewVideo } from '../scripts/video-engine-cli.mjs';
 
 // Hermetic: a maintainer machine may export real provider keys. Tests must never reach a paid provider.
 for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'ELEVENLABS_API_KEY', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
@@ -30,6 +26,7 @@ for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'ELEVENLABS_API_KEY
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliPath = path.join(__dirname, '..', 'scripts', 'video-engine-cli.mjs');
+const CLI_SRC = fs.readFileSync(cliPath, 'utf8');
 
 function makeTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'video-engine-cli-test-'));
@@ -97,31 +94,39 @@ async function runTests() {
     console.log('✔ Programmatic compilation generates valid manifest and synthesizes audio tracks');
   }
 
-  // Test 2: Programmatic render
+  // Test 2: Programmatic render through the HyperFrames driver seam
   {
     const tmpDir = makeTempDir();
     const scriptPath = path.join(tmpDir, 'script.md');
     const videoPath = path.join(tmpDir, 'output.mp4');
     fs.writeFileSync(scriptPath, sampleScript, 'utf8');
 
+    let ran = null;
     const result = await renderVideo({
       scriptPath,
       outputVideoPath: videoPath,
       cacheDir: path.join(tmpDir, 'cache'),
       synthesizeAssets: false,
-      loadModule: async () => null,
-      allowMock: true,
+      hyperframesRun: async (cmd, args) => {
+        ran = { cmd, args };
+        fs.writeFileSync(videoPath, 'fake-mp4-bytes');
+        return { status: 0 };
+      },
     });
 
+    assert.ok(ran, 'the HyperFrames runner must be invoked');
+    assert.strictEqual(ran.cmd, 'npx');
+    assert.ok(ran.args.some((a) => String(a).startsWith('hyperframes@')), 'the pinned HyperFrames CLI is used');
+    assert.match(ran.args.join(' '), /render/);
     assert.ok(fs.existsSync(videoPath));
     assert.strictEqual(result.outputVideoPath, videoPath);
     assert.strictEqual(result.totalFrames, 204);
     assert.strictEqual(result.totalDurationSeconds, 6.8);
     assert.ok(result.renderTimeMs >= 0);
-    console.log('✔ Programmatic render produces master video and summary metrics');
+    console.log('✔ Programmatic render emits the project and renders via HyperFrames');
   }
 
-  // Test 3: CLI execution via child_process spawn
+  // Test 3: CLI execution via child_process spawn (--allow-mock, renderer disabled)
   {
     const tmpDir = makeTempDir();
     const scriptPath = path.join(tmpDir, 'script.md');
@@ -129,26 +134,19 @@ async function runTests() {
     const videoPath = path.join(tmpDir, 'rendered.mp4');
     fs.writeFileSync(scriptPath, sampleScript, 'utf8');
 
-    // CLI compile
-    const compRes = spawnSync('node', [cliPath, 'compile', scriptPath, '--output', manifestPath], {
-      encoding: 'utf8',
-    });
+    const compRes = spawnSync('node', [cliPath, 'compile', scriptPath, '--output', manifestPath], { encoding: 'utf8' });
     assert.strictEqual(compRes.status, 0, `compile CLI failed: ${compRes.stderr}`);
     assert.ok(fs.existsSync(manifestPath));
     assert.ok(/Compiled manifest/.test(compRes.stdout));
 
-    // CLI render (Remotion unavailable in CI → explicit --allow-mock)
     const renderRes = spawnSync('node', [cliPath, 'render', manifestPath, '--output', videoPath, '--allow-mock'], {
       encoding: 'utf8',
+      env: { ...process.env, NN_HYPERFRAMES_DISABLE: '1' },
     });
     assert.strictEqual(renderRes.status, 0, `render CLI failed: ${renderRes.stderr}`);
     assert.ok(fs.existsSync(videoPath));
     assert.ok(/Rendered/.test(renderRes.stdout));
-    assert.ok(
-      /mock/i.test(renderRes.stderr),
-      `Expected a mock notice in stderr under --allow-mock, got: ${renderRes.stderr}`
-    );
-
+    assert.ok(/mock/i.test(renderRes.stderr), `Expected a mock notice in stderr under --allow-mock, got: ${renderRes.stderr}`);
     console.log('✔ CLI commands "compile" and "render" execute headlessly with --allow-mock');
   }
 
@@ -160,162 +158,15 @@ async function runTests() {
     console.log('✔ CLI preview returns active preview configuration');
   }
 
-  // Test 5: Entry-point resolution and missing modules seam
+  // Test 5: No Remotion dependency remains
   {
-    const defaultEntry = resolveRemotionEntryPoint();
-    assert.ok(typeof defaultEntry === 'string');
-    assert.ok(defaultEntry.endsWith('remotion-entry.tsx'));
-
-    const unavailableRes = await tryRemotionRender(
-      { manifest: {}, outputPath: 'out.mp4' },
-      { loadModule: async () => null }
-    );
-    assert.strictEqual(unavailableRes.rendered, false);
-    assert.strictEqual(unavailableRes.reason, 'modules-unavailable');
-    console.log('✔ Entry-point resolution does not throw and unavailable modules report correctly');
+    assert.ok(!/@remotion/.test(CLI_SRC), 'no @remotion reference may remain in the CLI');
+    assert.ok(!/tryRemotionRender/.test(CLI_SRC), 'the Remotion render seam must be gone');
+    assert.ok(/tryHyperframesRender|hyperframes-render/.test(CLI_SRC), 'the CLI must use the HyperFrames driver');
+    console.log('✔ the CLI has no Remotion dependency and uses the HyperFrames driver');
   }
 
-  // Test 6: Successful Remotion render seam — selectComposition then renderMedia.
-  {
-    const tmpDir = makeTempDir();
-    const fakeEntry = path.join(tmpDir, 'remotion-entry.tsx');
-    fs.writeFileSync(fakeEntry, '// fake remotion entry', 'utf8');
-
-    let bundledWith = null;
-    let selectedArgs = null;
-    let renderedMediaArgs = null;
-    const callOrder = [];
-
-    const fakeBundler = {
-      bundle: async (options) => {
-        bundledWith = options.entryPoint;
-        return 'serve://bundle';
-      },
-    };
-
-    const fakeRenderer = {
-      selectComposition: async (options) => {
-        callOrder.push('selectComposition');
-        selectedArgs = options;
-        return { id: options.id, fps: 30, width: 1920, height: 1080, durationInFrames: 90 };
-      },
-      renderMedia: async (options) => {
-        callOrder.push('renderMedia');
-        renderedMediaArgs = options;
-      },
-    };
-
-    const loadModule = async (id) => {
-      if (id === '@remotion/bundler') return fakeBundler;
-      if (id === '@remotion/renderer') return fakeRenderer;
-      return null;
-    };
-
-    const mockManifest = {
-      compositionId: 'comp-1',
-      fps: 30,
-      totalDurationInFrames: 90,
-      width: 1920,
-      height: 1080,
-    };
-
-    const res = await tryRemotionRender(
-      { manifest: mockManifest, outputPath: path.join(tmpDir, 'out.mp4'), concurrency: 2 },
-      { loadModule, scriptsDir: tmpDir }
-    );
-
-    assert.strictEqual(res.rendered, true);
-    assert.strictEqual(bundledWith, fakeEntry);
-    assert.deepStrictEqual(callOrder, ['selectComposition', 'renderMedia'], 'renderer must selectComposition before renderMedia');
-    assert.ok(selectedArgs, 'selectComposition must be called');
-    assert.strictEqual(selectedArgs.serveUrl, 'serve://bundle');
-    assert.strictEqual(selectedArgs.inputProps, mockManifest);
-    assert.ok(renderedMediaArgs, 'renderMedia must be called');
-    assert.strictEqual(renderedMediaArgs.serveUrl, 'serve://bundle');
-    assert.strictEqual(renderedMediaArgs.codec, 'h264');
-    assert.strictEqual(renderedMediaArgs.concurrency, 2);
-    assert.strictEqual(renderedMediaArgs.composition.id, selectedArgs.id, 'renderMedia must use the composition returned by selectComposition');
-    console.log('✔ Remotion render seam selects the composition then renders it');
-  }
-
-  // Test 7: Remotion bundler/renderer error seam
-  {
-    const tmpDir = makeTempDir();
-    const fakeEntry = path.join(tmpDir, 'remotion-entry.tsx');
-    fs.writeFileSync(fakeEntry, '// fake remotion entry', 'utf8');
-
-    const fakeBundler = {
-      bundle: async () => {
-        throw new Error('Simulated bundler failure');
-      },
-    };
-    const fakeRenderer = {
-      selectComposition: async () => ({}),
-      renderMedia: async () => {},
-    };
-
-    const loadModule = async (id) => {
-      if (id === '@remotion/bundler') return fakeBundler;
-      if (id === '@remotion/renderer') return fakeRenderer;
-      return null;
-    };
-
-    const res = await tryRemotionRender(
-      { manifest: { compositionId: 'comp-2' }, outputPath: path.join(tmpDir, 'out.mp4') },
-      { loadModule, scriptsDir: tmpDir }
-    );
-
-    assert.strictEqual(res.rendered, false);
-    assert.ok(
-      /^error: Simulated bundler failure/.test(res.reason),
-      `Expected error reason, got: ${res.reason}`
-    );
-    console.log('✔ Remotion render seam captures unexpected errors into reason string without throwing');
-  }
-
-  // Test 8: renderVideo throws a named VideoRenderError when Remotion is unavailable,
-  // and emits no mock unless --allow-mock is passed.
-  {
-    const tmpDir = makeTempDir();
-    const scriptPath = path.join(tmpDir, 'script.md');
-    const videoPath = path.join(tmpDir, 'strict.mp4');
-    fs.writeFileSync(scriptPath, sampleScript, 'utf8');
-
-    await assert.rejects(
-      () =>
-        renderVideo({
-          scriptPath,
-          outputVideoPath: videoPath,
-          cacheDir: path.join(tmpDir, 'cache'),
-          loadModule: async () => null,
-        }),
-      (err) => err.name === 'VideoRenderError',
-      'renderVideo must throw a named VideoRenderError when Remotion is unavailable'
-    );
-    assert.ok(!fs.existsSync(videoPath), 'no mock may be written without --allow-mock');
-    console.log('✔ renderVideo hard-fails with a named error and writes no mock');
-  }
-
-  // Test 9: renderVideo writes a mock only behind allowMock, and exits non-zero otherwise.
-  {
-    const tmpDir = makeTempDir();
-    const scriptPath = path.join(tmpDir, 'script.md');
-    const videoPath = path.join(tmpDir, 'mock.mp4');
-    fs.writeFileSync(scriptPath, sampleScript, 'utf8');
-
-    const result = await renderVideo({
-      scriptPath,
-      outputVideoPath: videoPath,
-      cacheDir: path.join(tmpDir, 'cache'),
-      loadModule: async () => null,
-      allowMock: true,
-    });
-    assert.ok(fs.existsSync(videoPath), 'allowMock must write a mock file');
-    assert.strictEqual(result.mocked, true, 'the summary must flag the mock');
-    console.log('✔ renderVideo writes a mock only behind allowMock');
-  }
-
-  console.log('\nAll video engine CLI integration tests passed! ✨');
+  console.log('\nAll Video Engine CLI integration tests passed! 🎉');
 }
 
 runTests().catch((err) => {

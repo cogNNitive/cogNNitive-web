@@ -21,6 +21,8 @@
   var DEFAULT_REVIEWER_NAME = 'reviewer'
   var MODEL_VERSION_PATTERN = /^V_\d+-\d+-\d+$/
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
+  // Values the `is:` filter operator understands (see matchAtom).
+  var KNOWN_IS_VALUES = ['draft', 'reviewed', 'changed']
 
   function isObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -1494,7 +1496,9 @@
           removeBtn.setAttribute('type', 'button')
           removeBtn.addEventListener('click', function (e) {
             e.stopPropagation()
-            var nextTokens = parsed.textTokens.filter(function (t) { return t !== atom.val })
+            var nextTokens = parsed.textTokens
+              .filter(function (t) { return t !== atom.val })
+              .map(function (t) { return t.indexOf(' ') !== -1 ? '"' + t + '"' : t })
             var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || formatFacetToken(o.key, o.val) })).join(' ')
             if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
           })
@@ -1542,6 +1546,10 @@
         } else {
           var labelText = op.key + ':' + op.val
           pill.appendChild(el('span', 'font-mono', labelText))
+          if (String(op.key).replace(/^[!-]/, '').toLowerCase() === 'is' && KNOWN_IS_VALUES.indexOf(String(op.val).toLowerCase()) === -1) {
+            pill.setAttribute('data-filter-invalid', 'true')
+            pill.setAttribute('title', 'Unknown is: value "' + op.val + '" matches nothing (known: ' + KNOWN_IS_VALUES.join(', ') + ')')
+          }
         }
         var removeBtn = el('button', 'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
         removeBtn.setAttribute('type', 'button')
@@ -2291,12 +2299,22 @@
   // Cards project live changes: a correction patches its field value, a new
   // element is projected, and deleted elements are styled. The change STATE is
   // painted by the review controller as ONE badge per row.
+  var EMPTY_FILTER_MESSAGE = 'No elements match the current filter.'
+
+  // Shared empty state for the non-table explorer views (the table renders its own row).
+  function mountEmptyFilterState(content) {
+    var empty = el('div', 'nn-element-empty', EMPTY_FILTER_MESSAGE)
+    empty.setAttribute('data-nn-component', 'element-empty')
+    content.appendChild(empty)
+  }
+
   function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId) {
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
 
     var projectedElements = projectElements(elements, drafts)
+    if (!projectedElements.length) return mountEmptyFilterState(content)
 
     var visuals = typeof self !== 'undefined' && self.nnVisuals ? self.nnVisuals : null
     if (refs && isObject(refs)) {
@@ -2488,6 +2506,7 @@
     var wrap = el('div', 'nn-element-badges-wrap')
     wrap.setAttribute('data-nn-component', 'element-badges-view')
     var projectedElements = projectElements(elements, drafts)
+    if (!projectedElements.length) return mountEmptyFilterState(content)
     chunked(wrap, projectedElements, function (pageElements) {
       var frag = doc.createDocumentFragment()
       pageElements.forEach(function (element) {
@@ -2527,6 +2546,7 @@
     var grid = el('div', 'nn-element-minicards-grid')
     grid.setAttribute('data-nn-component', 'element-minicards-view')
     var projectedElements = projectElements(elements, drafts)
+    if (!projectedElements.length) return mountEmptyFilterState(content)
     chunked(grid, projectedElements, function (pageElements) {
       var frag = doc.createDocumentFragment()
       pageElements.forEach(function (element) {
@@ -2710,7 +2730,7 @@
     var sorted = sortTableElements(projected, sortState)
     if (!sorted.length) {
       var emptyTr = el('tr')
-      var emptyTd = el('td', 'nn-element-table-empty', 'No elements match the current filter.')
+      var emptyTd = el('td', 'nn-element-table-empty', EMPTY_FILTER_MESSAGE)
       emptyTd.setAttribute('colspan', String(columns.length))
       emptyTr.appendChild(emptyTd)
       tbody.appendChild(emptyTr)

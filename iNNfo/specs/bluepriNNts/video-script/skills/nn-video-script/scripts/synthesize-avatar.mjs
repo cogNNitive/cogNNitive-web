@@ -96,7 +96,7 @@ function buildResumeCommand(o, sceneIds, taskId) {
  * @param {string} [o.cacheDir]
  * @param {{ image?: string, tts?: string, avatar?: string }} [o.models] Same flags as the estimator (part of plan_hash).
  * @param {number} [o.pollWindowMs] Bounded polling window (default 20 min).
- * @param {object} [o.probeDeps] Test seams for the real duration probe (parseMedia, nodeReader, loadModules).
+ * @param {object} [o.probeDeps] Test seams for the real duration probe (run, providerSeconds).
  * @param {Function} [o.onPreflightPassed] Test seam: awaited after pre-flight, before the first submit.
  * @param {Record<string, string | undefined>} [o.env] Test seams: env, fetch, sleep, now, measureDuration, ffmpegRun, warn.
  */

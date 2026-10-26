@@ -1,13 +1,13 @@
 ---
 name: nn-video-script
 description: |
-  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Supports Remotion scene compilation, deterministic SHA-256 asset caching, headless MP4 rendering, clip assembly, and thumbnail composition. Triggers: video script, cognnitive video, remotion video, series script, nn-video-script, video-script blueprint, finalize video, render video script, assemble video, concat clips.
-version: "V_0-4-1"
-last_updated: 2026-10-11
+  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Lowers the structured model into a deterministic Composition Manifest, emits a HyperFrames project from it, measures duration with ffprobe, and renders headlessly via the pinned HyperFrames CLI; also supports clip assembly and thumbnail composition. Triggers: video script, cognnitive video, hyperframes, series script, nn-video-script, video-script blueprint, finalize video, render video script, assemble video, concat clips.
+version: "V_0-5-0"
+last_updated: 2026-10-26
 license: MIT
 engine:
-  package: "@remotion/renderer"
-  version: "4.0.0"
+  package: "hyperframes"
+  version: "0.8.192"
 depends_on:
   providers:
     - name: wavespeed
@@ -16,11 +16,13 @@ depends_on:
     - name: replicate
       env: REPLICATE_API_TOKEN
       purpose: Fallback media synthesis
+    - name: hyperframes
+      purpose: HTML to MP4 renderer (pinned CLI)
   optional_mcp:
     - wavespeed
 metadata:
   engine: "cogNNitive Video Engine"
-  renderer: "Remotion Headless CLI"
+  renderer: "HyperFrames Headless CLI"
 ---
 
 # cogNNitive Video Script Engine Skill
@@ -31,15 +33,18 @@ Provides end-to-end video script authoring, deterministic TTS/media asset synthe
 
 Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check), same as every other cogNNitive skill.
 
-## 1. Engine Architecture & Remotion Compilation
+## 1. Engine Architecture & HyperFrames Pipeline
 
 The video engine operates headlessly through programmatic modules:
-- **Scene Compiler (`scripts/remotion-scene-compiler.mjs`)**: Compiles the structured iNNfo video-script model (a Level-3 kNNowledge document adopting the `video-script` blueprint) into frame-accurate Remotion Composition Manifests with sequence tracks, transitions, lower-thirds (`lowerThird`), and kinetic titles (`kineticTitle`). It reads the model structurally and never re-parses markdown.
-  - `kineticTitle` optional big-text controls (defaults unchanged when absent): `heading_size` / `subheading_size` (px; setting either adds a text shadow and wraps long titles) and `anchor` (`top` | `center` | `bottom`).
+- **Scene Compiler (`scripts/remotion-scene-compiler.mjs`)**: lowers the structured iNNfo video-script model (a Level-3 kNNowledge document adopting the `video-script` blueprint) into a deterministic, tool-agnostic Composition Manifest with sequence tracks, transitions, lower-thirds (`lowerThird`), and kinetic titles (`kineticTitle`). It reads the model structurally and never re-parses markdown.
+- **Project Emitter (`scripts/scene-project.mjs`)**: lowers the manifest into a deterministic HyperFrames project (root `index.html` + one Sub-composition per Scene + `hyperframes.json`), with all audio at the root and a stable overlay-host anchor per scene.
+- **Scene Transitions (`scripts/scene-transition.mjs`)**: resolves `transition::` into a GSAP tween on the scene wrapper (`#root`).
+- **Media Duration (`scripts/lib/media-duration.mjs`)**: ffprobe duration with a provider-reported fallback.
 - **Deterministic Asset Cache (`scripts/cache-manager.mjs`)**: Content-addressed SHA-256 cache under `.cognnitive/cache/video/` with isolated subdirectories (`tts/`, `images/`, `temp/`).
-- **Asset Synthesizer (`scripts/asset-synthesizer.mjs` / `scripts/tts-generator.mjs`)**: Synthesizes TTS voiceover tracks and image/motion assets, measuring audio durations via `@remotion/media-parser` (no FFmpeg-from-PATH).
-- **Engine Installer (`scripts/ensure-engine.mjs`)**: Idempotent, consent-gated install of the Remotion renderer runtime with a size + first-render browser notice.
-- **Video Engine CLI (`scripts/video-engine-cli.mjs`)**: Headless CLI providing `compile`, `render`, and `preview` commands; Remotion is the only renderer.
+- **Asset Synthesizer (`scripts/asset-synthesizer.mjs` / `scripts/tts-generator.mjs`)**: Synthesizes TTS voiceover tracks and image/motion assets.
+- **Runtime Provisioner (`scripts/ensure-hyperframes.mjs`)**: Idempotent, consent-gated verification of the pinned HyperFrames CLI (`0.8.192`) and its agent skills.
+- **Render Driver (`scripts/hyperframes-render.mjs`)**: emits the project and renders it via the pinned CLI; HyperFrames is the only renderer.
+- **Video Engine CLI (`scripts/video-engine-cli.mjs`)**: Headless CLI providing `compile`, `render`, and `preview` commands.
 
 ## 2. Scope of This Skill in the Authoring Workflow
 
@@ -52,12 +57,11 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    node scripts/asset-cost-estimator.mjs <script_NN.md> --out assets/{video-slug}/asset_plan.md [--image-model <id>] [--tts-model <id>] [--avatar-model <id>]
    ```
    *Present provider options (WaveSpeed AI, Replicate, ElevenLabs, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user for explicit approval before proceeding. The plan is stamped with a `plan_hash`. Approval is a HUMAN act, confirmed by the plan hash, done IN CHAT: ask the user to reply with the exact phrase `approve the plan <plan-hash-8>`; when they send it, relay it with `node scripts/approve-plan.mjs assets/{video-slug}/asset_plan.md --delegated "<their exact phrase>"`, which writes `asset_plan.approved.json`. The phrase is recorded verbatim for audit. A workspace may instead require an interactive TTY (`video-guard.json: allowDelegatedApproval: false`). NEVER self-approve: never invent the phrase, never run `approve-plan.mjs` without the human's actual reply, and never hand-write the approval file. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap, approval and ledger. Preview uncached billable work with `compile --dry-run`. Budget, the 24h cap, model allow/block lists and the ledger live in `video-guard.json` - see `references/cost-guardrails.md`.*
-4. **Ensure the Render Engine (consent-gated, idempotent)**:
+4. **Ensure the Render Runtime (consent-gated, idempotent)**:
    ```bash
-   node scripts/ensure-engine.mjs
+   node scripts/ensure-hyperframes.mjs
    ```
-   *Remotion is the only renderer. The renderer runtime is installed on demand; the scene compiler reads the iNNfo model directly. Before installing, state the approximate total size AND that a headless browser downloads on the first render. Re-running is a no-op once installed. Also verifies provider credentials (WaveSpeed/Replicate) with consent.*
-   *Remotion is a third-party, source-available product the user installs on their own account — cogNNitive does not distribute it. It is free for individuals and organizations of up to 3 people (automation included); larger organizations need a Company License. Surface the install notice's licence link (`https://www.remotion.dev/docs/license`) to the user.*
+   *HyperFrames is the only renderer. The scene compiler reads the iNNfo model directly and the project emitter writes a HyperFrames project; the pinned CLI (`npx hyperframes@0.8.192`) installs on demand when a render runs. Re-running is a no-op once installed. Also verifies provider credentials (WaveSpeed/Replicate) with consent.*
 5. **Compile Composition & Synthesize Assets**:
    ```bash
    node scripts/video-engine-cli.mjs compile <script_NN.md> --output renders/{ref}/manifest.json [--dry-run] [--approval <approved.json>] [--allow-model <name>]... [--image-model <id>] [--tts-model <id>] [--avatar-model <id>] [--cache-dir <dir>]
@@ -77,7 +81,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    node scripts/video-engine-cli.mjs render renders/{ref}-vertical/manifest.json --output renders/{ref}-vertical/master_vertical.mp4
    # cheap fallback only (burned-in captions may crop): node scripts/render-vertical.mjs --source renders/{ref}/master.mp4 --out renders/{ref}/master_vertical.mp4
    ```
-   *A Remotion failure is a loud, non-zero error — there is no FFmpeg fallback. Pass `--allow-mock` only for CI placeholders. `--format 16:9|9:16|1:1` sets width/height (explicit flags win); `render` from a manifest refuses size flags — re-compile. Overlays scale with `width/1920` via `useVideoConfig`, so the vertical master keeps captions in frame. The second compile reuses cached TTS/images: zero extra provider cost.*
+   *A HyperFrames failure is a loud, non-zero error — there is no FFmpeg fallback. Pass `--allow-mock` only for CI placeholders. `--format 16:9|9:16|1:1` sets width/height (explicit flags win); `render` from a manifest refuses size flags — re-compile. Overlays scale with `width/1920` via `useVideoConfig`, so the vertical master keeps captions in frame. The second compile reuses cached TTS/images: zero extra provider cost.*
 6b. **Assemble Master from Clips (optional)** — when some segments are pass-through or produced outside Remotion:
    ```bash
    node scripts/assemble-video.mjs <clip1> <clip2> ... --out renders/{ref}/master.mp4
@@ -104,10 +108,14 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 
 | Script | Purpose |
 |---|---|
-| `scripts/remotion-scene-compiler.mjs` | Compiles video scripts into Remotion composition manifests with calculated frame timings and overlay configs. |
-| `scripts/ensure-engine.mjs` | Idempotent, consent-gated Remotion runtime install with a size + first-render browser notice. |
+| `scripts/remotion-scene-compiler.mjs` | Lowers video scripts into tool-agnostic composition manifests with calculated frame timings and overlay configs. |
+| `scripts/scene-project.mjs` | Emits a deterministic HyperFrames project from the manifest (root + Sub-compositions + `hyperframes.json`). |
+| `scripts/scene-transition.mjs` | Resolves `transition::` into a GSAP tween on the scene wrapper. |
+| `scripts/hyperframes-render.mjs` | Emits the project and renders it via the pinned HyperFrames CLI. |
+| `scripts/lib/media-duration.mjs` | ffprobe duration probe with a provider-reported fallback. |
+| `scripts/ensure-hyperframes.mjs` | Idempotent, consent-gated verification of the pinned HyperFrames CLI and its skills. |
 | `scripts/cache-manager.mjs` | Deterministic SHA-256 asset cache manager under `.cognnitive/cache/video/`. |
-| `scripts/asset-synthesizer.mjs` | Multi-provider TTS and media synthesis with `@remotion/media-parser` duration measurement and cache support. |
+| `scripts/asset-synthesizer.mjs` | Multi-provider TTS and media synthesis with ffprobe duration measurement and cache support. |
 | `scripts/lib/video-guard.mjs` | Spend guard: validated `video-guard.json`, model allow/block lists, per-run and rolling 24h caps, append-only ledger, avatar limiter. |
 | `scripts/lib/plan-approval.mjs` | `plan_hash`, plan stamp parsing and approval-file checks. |
 | `scripts/lib/file-lock.mjs` | Cross-process lock files (ledger, voice registry, avatar slots). |
@@ -123,6 +131,9 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/assemble-video.mjs` | Final-assembly layer: joins already-produced clips into one master via the FFmpeg concat demuxer (`-f concat -c copy`, +faststart) with an ffprobe consistency precheck. Assembly only — no scene effects. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor (SVG + Sharp) rendering high-contrast typography over clean 16:9 base images. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
+| `scripts/build-script-from-draft.mjs` | Generates the L3 `video-script` document from a reviewed draft JSON, parameterized by a series config (`video.series.json`). |
+| `scripts/build-draft-html.mjs` | Generates the self-contained review HTML from a draft JSON (base64 thumbnails; series title from config). |
+| `scripts/thumbnail-v1.mjs` | Series-parameterized thumbnail V1 compositor (SVG + Sharp). |
 
 Run any script with no arguments (or a bad one) to see its usage banner.
 See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines.

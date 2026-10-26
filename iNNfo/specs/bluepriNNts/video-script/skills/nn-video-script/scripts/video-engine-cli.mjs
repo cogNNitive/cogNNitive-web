@@ -27,18 +27,17 @@ import { AssetSynthesizer } from './asset-synthesizer.mjs';
 import { SpendGuard, loadGuard, resolveDefaultCacheDir, normalizeModelId } from './lib/video-guard.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
 import { DEFAULT_MODELS, resolveModelId } from './asset-cost-estimator.mjs';
+import { resolveEngineModel } from './lib/model-cascade.mjs';
 import { applyCachedAvatars } from './lib/avatar-jobs.mjs';
 import { refreshFaststart } from './lib/faststart.mjs';
 import { buildTtsVoiceOptions } from './lib/tts-options.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
+import { tryHyperframesRender } from './hyperframes-render.mjs';
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 
-/** Id registered by scripts/ScriptRoot.tsx; must match what selectComposition resolves. */
-export const COMPOSITION_ID = 'script-composition';
-
 /**
- * Named error raised when Remotion cannot render and no mock was requested. Callers
+ * Named error raised when the renderer cannot render and no mock was requested. Callers
  * branch on `.name` so a missing engine is never mistaken for a successful render.
  */
 export class VideoRenderError extends Error {
@@ -47,16 +46,6 @@ export class VideoRenderError extends Error {
     this.name = 'VideoRenderError';
     if (cause) this.cause = cause;
   }
-}
-
-/**
- * Resolves the Remotion entry point path relative to the scripts directory.
- * Does not check if the file exists.
- * @param {string} [scriptsDir]
- * @returns {string}
- */
-export function resolveRemotionEntryPoint(scriptsDir = SCRIPTS_DIR) {
-  return path.resolve(scriptsDir, 'remotion-entry.tsx');
 }
 
 /** True when `target` is `root` or lives under it. */
@@ -171,71 +160,6 @@ export function resolveMediaLayers(manifest, opts) {
 }
 
 /**
- * Attempts to render video using Remotion programmatic renderer.
- * Never throws; returns { rendered: true } or { rendered: false, reason: string }.
- * @param {{ manifest: object, outputPath: string, concurrency?: number }} input
- * @param {{ loadModule?: (id: string) => Promise<object|null>, scriptsDir?: string }} [deps]
- * @returns {Promise<{ rendered: true } | { rendered: false, reason: string }>}
- */
-export async function tryRemotionRender(input, deps = {}) {
-  const { manifest, outputPath, concurrency = 4 } = input;
-  const loadModule = deps.loadModule || ((id) => import(id).catch(() => null));
-  const scriptsDir = deps.scriptsDir || SCRIPTS_DIR;
-  const onProgress = deps.onProgress || input.onProgress || (() => {});
-
-  try {
-    onProgress({ phase: 'bundle-start' });
-    const remotionBundler = await loadModule('@remotion/bundler');
-    const remotionRenderer = await loadModule('@remotion/renderer');
-
-    if (!remotionBundler || !remotionRenderer) {
-      return { rendered: false, reason: 'modules-unavailable' };
-    }
-
-    const entryPoint = resolveRemotionEntryPoint(scriptsDir);
-    if (!fs.existsSync(entryPoint)) {
-      return { rendered: false, reason: `entry-point-missing: ${entryPoint}` };
-    }
-
-    // Serve the staged media so `staticFile()` in the composition resolves both
-    // in-dir and out-of-dir assets. Read from the manifest so a render from a
-    // persisted manifest (no in-process compile) still finds the media.
-    const publicDir = manifest?.metadata?.publicDir;
-    if (typeof publicDir === 'string' && !fs.existsSync(publicDir)) {
-      return { rendered: false, reason: `public-dir-missing: ${publicDir}` };
-    }
-
-    const serveUrl = await remotionBundler.bundle({
-      entryPoint,
-      webpackOverride: (config) => config,
-      ...(typeof publicDir === 'string' ? { publicDir } : {}),
-    });
-    onProgress({ phase: 'bundle-done' });
-
-    // The official contract: resolve the composition from the bundle, then render it.
-    const composition = await remotionRenderer.selectComposition({
-      serveUrl,
-      id: COMPOSITION_ID,
-      inputProps: manifest,
-    });
-    onProgress({ phase: 'render-start', frames: composition?.durationInFrames });
-
-    await remotionRenderer.renderMedia({
-      composition,
-      serveUrl,
-      codec: 'h264',
-      outputLocation: outputPath,
-      inputProps: manifest,
-      concurrency,
-    });
-
-    return { rendered: true };
-  } catch (err) {
-    return { rendered: false, reason: `error: ${err?.message || String(err)}` };
-  }
-}
-
-/**
  * @typedef {Object} VideoCompileOptions
  * @property {string} scriptPath
  * @property {string} [outputPath]
@@ -320,7 +244,7 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
     // 1. TTS synthesis
     if (sc.narration && sc.narration.trim().length > 0) {
       const voiceOptions = buildTtsVoiceOptions(sc, models);
-      const ttsModel = resolveModelId(sc.properties?.scene_tts_model, models.tts || DEFAULT_MODELS.tts);
+      const ttsModel = resolveModelId(resolveEngineModel('tts', { cliModel: models.tts, sceneModel: sc.properties?.scene_tts_model, defaultModel: DEFAULT_MODELS.tts }), DEFAULT_MODELS.tts);
       onProgress({ phase: 'tts-start', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel });
       const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, { ref: sc.id, model: ttsModel });
       if (!ttsRes.dryRun) {
@@ -352,7 +276,7 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
         accentColor: '#ef4444',
       };
       if (models.image) mediaOptions.modelOverride = models.image;
-      const imageModel = normalizeModelId(models.image || DEFAULT_MODELS.image);
+      const imageModel = normalizeModelId(resolveEngineModel('image', { cliModel: models.image, defaultModel: DEFAULT_MODELS.image }));
       const ref = `${sc.id}/${layer.name}`;
       onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
       const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref, model: imageModel });
@@ -486,7 +410,7 @@ export async function compileVideo(options) {
     parsed,
     scriptDir,
     cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
-    resolveModel: (prop) => resolveModelId(prop, models.avatar || DEFAULT_MODELS.avatar),
+    resolveModel: (prop) => resolveModelId(resolveEngineModel('avatar', { cliModel: models.avatar, layerModel: prop, defaultModel: DEFAULT_MODELS.avatar }), DEFAULT_MODELS.avatar),
     audioFor: (sc) => audioAssets[sc.id]?.assetPath,
   });
   // A clip kept raw because ffmpeg was missing or failed is retried here once ffmpeg is available.
@@ -586,28 +510,31 @@ export async function renderVideo(options) {
   const outputPath = path.resolve(options.outputVideoPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  // Remotion is the ONLY renderer. A failure is a loud, named, non-zero error —
-  // never a silent FFmpeg fallback or a mock MP4 masquerading as a render.
-  const renderDeps = options.loadModule ? { loadModule: options.loadModule } : {};
-  renderDeps.onProgress = onProgress;
-  const remotionResult = await tryRemotionRender(
+  // HyperFrames is the renderer: emit the project from the manifest, then render
+  // it headlessly. A failure is a loud, named, non-zero error — never a silent
+  // FFmpeg fallback or a mock MP4 masquerading as a render (only `--allow-mock`).
+  const projectDir = path.join(path.dirname(outputPath), 'hyperframes');
+  const renderDeps = { onProgress };
+  if (options.hyperframesRun) renderDeps.run = options.hyperframesRun;
+  const hfResult = await tryHyperframesRender(
     {
       manifest,
       outputPath,
       concurrency: options.concurrency || 4,
+      projectDir,
     },
     renderDeps,
   );
 
   let mocked = false;
-  if (!remotionResult.rendered) {
+  if (!hfResult.rendered) {
     if (!options.allowMock) {
       throw new VideoRenderError(
-        `Remotion render failed (${remotionResult.reason}). Install the engine via ensure-engine.mjs, ` +
+        `HyperFrames render failed (${hfResult.reason}). Install the CLI via ensure-hyperframes.mjs, ` +
           `or pass --allow-mock for a CI placeholder MP4.`,
       );
     }
-    console.warn(`[video-engine-cli] Remotion unavailable (${remotionResult.reason}); writing mock MP4 (--allow-mock).`);
+    console.warn(`[video-engine-cli] HyperFrames unavailable (${hfResult.reason}); writing mock MP4 (--allow-mock).`);
     writeMockMp4(outputPath);
     mocked = true;
   }
@@ -653,7 +580,7 @@ function writeMockMp4(outputPath) {
  */
 export async function previewVideo(options) {
   const port = options.port || 3000;
-  console.log(`🎬 [video-engine-cli] Starting Remotion preview on port ${port}...`);
+  console.log(`🎬 [video-engine-cli] Starting HyperFrames Studio preview on port ${port}...`);
   return {
     previewUrl: `http://localhost:${port}`,
     port,

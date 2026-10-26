@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-2-2"
+blueprint_version: "V_0-3-5"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -83,6 +83,12 @@ description:: Open vocabulary ad-hoc tags and classification labels.
 concept:: Video
 type:: string
 description:: Human title of the video. The engine derives the manifest compositionId from it.
+
+## NN Field Definition: template
+concept:: Video
+type:: reference
+target_concepts:: [Template]
+description:: Optional default Template instance for the whole Video. Every Scene inherits it unless the Scene (or, for avatars, a Layer) declares its own. See the Model Selection Cascade (cli > layer > scene > video > series > workspace > blueprint).
 
 ## NN Field Definition: template
 concept:: Scene

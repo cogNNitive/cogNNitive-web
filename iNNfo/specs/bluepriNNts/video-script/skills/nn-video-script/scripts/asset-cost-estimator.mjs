@@ -17,6 +17,7 @@ import { loadKnowledgeModel, loadTemplateModels, parseKnowledgeDocument } from '
 import { fileURLToPath } from 'node:url';
 import { computePlanHash, formatStamp } from './lib/plan-approval.mjs';
 import { normalizeModelId } from './lib/video-guard.mjs';
+import { resolveEngineModel } from './lib/model-cascade.mjs';
 import { isAvatarLayer } from './lib/avatar-jobs.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
@@ -273,9 +274,11 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
   const templates = isPath ? loadTemplateModels(path.dirname(scriptContentOrPath)) : {};
   const parsed = compiler.lowerKnowledgeModel(model, { templates });
-  const defaultImageModel = options.defaultImageModel || DEFAULT_MODELS.image;
-  const defaultTtsModel = options.defaultTtsModel || DEFAULT_MODELS.tts;
-  const defaultAvatarModel = options.defaultAvatarModel || DEFAULT_MODELS.avatar;
+  // Model selection goes through the single cascade resolver (cli > layer > scene > video > series > workspace > blueprint).
+  const cliModels = { image: options.defaultImageModel, tts: options.defaultTtsModel, avatar: options.defaultAvatarModel };
+  const defaultImageModel = resolveModelId(resolveEngineModel('image', { cliModel: cliModels.image, defaultModel: DEFAULT_MODELS.image }), DEFAULT_MODELS.image);
+  const defaultTtsModel = resolveModelId(resolveEngineModel('tts', { cliModel: cliModels.tts, defaultModel: DEFAULT_MODELS.tts }), DEFAULT_MODELS.tts);
+  const defaultAvatarModel = resolveModelId(resolveEngineModel('avatar', { cliModel: cliModels.avatar, defaultModel: DEFAULT_MODELS.avatar }), DEFAULT_MODELS.avatar);
   const planModels = new Set();
   const noteModel = (model) => {
     if (model && !model.startsWith('local/')) planModels.add(model);
@@ -322,7 +325,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     const imagePricing = findCatalogEntry('image', imageModelKey) || { modelName: imageModelKey, provider: 'Unlisted (fallback rate)' };
 
     // 2. TTS
-    const ttsModelKey = resolveModelId(scene.properties?.scene_tts_model, defaultTtsModel);
+    const ttsModelKey = resolveModelId(resolveEngineModel('tts', { cliModel: cliModels.tts, sceneModel: scene.properties?.scene_tts_model, defaultModel: DEFAULT_MODELS.tts }), DEFAULT_MODELS.tts);
     const ttsPricing = findCatalogEntry('tts', ttsModelKey) || { modelName: ttsModelKey, provider: 'Unlisted (fallback rate)' };
     const sceneTtsCost = estimateCallUsd('tts', ttsModelKey, { chars: charCount });
     if (charCount > 0) noteModel(ttsModelKey);
@@ -331,7 +334,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     let sceneAvatarCost = 0;
     let avatarModelKey = defaultAvatarModel;
     avatarLayers.forEach((l, idx) => {
-      const m = resolveModelId(l.properties?.layer_avatar_model, defaultAvatarModel);
+      const m = resolveModelId(resolveEngineModel('avatar', { cliModel: cliModels.avatar, layerModel: l.properties?.layer_avatar_model, defaultModel: DEFAULT_MODELS.avatar }), DEFAULT_MODELS.avatar);
       if (idx === 0) avatarModelKey = m;
       sceneAvatarCost += estimateCallUsd('avatar', m, { seconds: estimatedDurationSec });
       noteModel(m);
@@ -549,7 +552,7 @@ async function main() {
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url))) {
   main().catch(err => {
     console.error('Error executing cost estimator:', err);
     process.exit(1);

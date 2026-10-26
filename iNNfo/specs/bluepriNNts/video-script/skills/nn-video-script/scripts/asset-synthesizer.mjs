@@ -5,7 +5,7 @@
  *
  * Deterministic TTS and media asset synthesis with content-addressed caching.
  * Adapts ElevenLabs, Edge-TTS, and Replicate media providers with graceful local fallbacks.
- * Measures audio duration without FFmpeg (via @remotion/media-parser).
+ * Measures audio duration via ffprobe (with a provider-reported duration fallback).
  *
  * Zero external mandatory runtime dependencies. ESM module.
  */
@@ -19,6 +19,7 @@ import { resolveRegisteredVoice } from './lib/tts-options.mjs';
 import { buildAvatarRequest } from './lib/avatar-request.mjs';
 import { markNeedsFaststart } from './lib/faststart.mjs';
 import { estimateCallUsd, resolveModelId, DEFAULT_MODELS } from './asset-cost-estimator.mjs';
+import { probeDuration } from './lib/media-duration.mjs';
 
 const require = createRequire(import.meta.url);
 let sharp;
@@ -26,27 +27,6 @@ try {
   sharp = require('sharp');
 } catch {
   sharp = null;
-}
-
-/** @type {{ parseMedia: Function, nodeReader: unknown } | null | undefined} */
-let cachedMediaParser;
-
-/**
- * Lazily resolves @remotion/media-parser AND its node reader (installed with the Remotion
- * engine). A LOCAL path needs `reader: nodeReader`; the default web reader only accepts URLs.
- * Returns null only when the module is truly unavailable.
- * @returns {Promise<{ parseMedia: Function, nodeReader: unknown } | null>}
- */
-async function loadMediaParser() {
-  if (cachedMediaParser !== undefined) return cachedMediaParser;
-  try {
-    const mod = await import('@remotion/media-parser');
-    const node = await import('@remotion/media-parser/node');
-    cachedMediaParser = { parseMedia: mod.parseMedia, nodeReader: node.nodeReader };
-  } catch {
-    cachedMediaParser = null;
-  }
-  return cachedMediaParser;
 }
 
 /**
@@ -59,43 +39,16 @@ async function loadMediaParser() {
  */
 
 /**
- * Measures audio duration in seconds without FFmpeg-from-PATH, using the
- * `@remotion/media-parser` bundled with the Remotion engine and its NODE reader. Never throws:
- * `seconds` is 0 when the duration is unknown, and `error` says why (missing file, parser not
- * installed, parser failure, no duration reported).
+ * Measures audio duration in seconds with `ffprobe`, falling back to a provider-reported
+ * duration. Never throws: `seconds` is 0 when the duration is unknown, and `error` says why
+ * (missing file, no ffprobe, unmeasurable).
  * @param {string} filePath
- * @param {{ parseMedia?: Function, nodeReader?: unknown, loadModules?: () => Promise<any> }} [deps] Injectable seams for tests.
+ * @param {{ run?: Function, providerSeconds?: number, onError?: (message: string) => void }} [deps] Injectable seams for tests.
  * @returns {Promise<{ seconds: number, error?: string }>}
  */
 export async function probeAudioDurationDetailed(filePath, deps = {}) {
-  if (!fs.existsSync(filePath)) {
-    return { seconds: 0, error: 'audio file not found: ' + filePath };
-  }
-  let parseMedia = deps.parseMedia;
-  let nodeReader = deps.nodeReader;
-  if (!parseMedia) {
-    const mods = await (deps.loadModules || loadMediaParser)();
-    if (!mods) {
-      return { seconds: 0, error: '@remotion/media-parser is not installed (run scripts/ensure-engine.mjs), so audio durations cannot be measured' };
-    }
-    parseMedia = mods.parseMedia;
-    nodeReader = nodeReader || mods.nodeReader;
-  }
-  try {
-    const result = await parseMedia({
-      src: filePath,
-      reader: nodeReader,
-      fields: { durationInSeconds: true },
-      acknowledgeRemotionLicense: true,
-    });
-    const duration = result?.durationInSeconds;
-    if (typeof duration === 'number' && duration > 0) {
-      return { seconds: Math.round(duration * 1000) / 1000 };
-    }
-    return { seconds: 0, error: 'media-parser reported no duration for ' + filePath };
-  } catch (err) {
-    return { seconds: 0, error: 'media-parser failed: ' + (err?.message || String(err)) };
-  }
+  const { seconds, error } = await probeDuration(filePath, deps);
+  return error ? { seconds, error } : { seconds };
 }
 
 /**

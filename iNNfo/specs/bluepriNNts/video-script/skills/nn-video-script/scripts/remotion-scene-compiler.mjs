@@ -281,13 +281,17 @@ export class RemotionSceneCompiler {
     const layerElements = elements.Layer || [];
     const templates = options.templates || {};
     const buckets = assignLayersToScenes(sceneElements, layerElements);
+    const videoEl = videos[0] || {};
+    const videoRefName = templateRefName(videoEl.fields?.template);
+    const videoTemplate = videoRefName && templates[videoRefName] ? { name: videoRefName, ...templates[videoRefName] } : null;
 
     const scenes = sceneElements.map((sc, i) => {
       const slug = sc.slug || slugify(sc.name);
       const sceneId = `scene_${slug}`;
       const fields = sc.fields || {};
       const refName = templateRefName(fields.template);
-      const resolvedTemplate = refName && templates[refName] ? { name: refName, ...templates[refName] } : null;
+      const resolvedTemplate =
+        (refName && templates[refName] ? { name: refName, ...templates[refName] } : null) || videoTemplate;
       const properties = {};
       if (fields.music) properties.scene_background_audio = fields.music;
       if (fields.music_volume !== undefined && String(fields.music_volume).trim() !== '') {
@@ -316,12 +320,12 @@ export class RemotionSceneCompiler {
       };
     });
 
-    const videoEl = videos[0] || {};
     return {
       title: videoEl.fields?.title || videoEl.name || model?.frontmatter?.title || 'video',
       fps: options.fps || this.fps,
       width: options.width || this.width,
       height: options.height || this.height,
+      videoTemplate,
       videoProps: {},
       scenes,
     };

@@ -1,0 +1,262 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Draft â€” Borrador de escenas ({{SERIES}})</title>
+    <style>
+      :root {
+        --bg: #0d0f14; --card: #161a22; --card2: #1d222c; --ink: #eef2f8;
+        --muted: #98a3b3; --line: #2a3140; --violet: #7c3aed; --cyan: #22d3ee;
+        --green: #35d07f; --amber: #f5b23a; --red: #ff5b5b;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: var(--bg); color: var(--ink); font-family: "Inter", system-ui, sans-serif; padding: 32px clamp(16px,4vw,64px) 120px; }
+      h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+      .sub { color: var(--muted); font-size: 14px; margin-top: 6px; max-width: 940px; line-height: 1.5; }
+      .bar { position: sticky; top: 0; z-index: 50; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+        padding: 14px 16px; margin: 18px -16px 24px; background: rgba(13,15,20,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+      .btn { border: 1px solid var(--line); background: var(--card2); color: var(--ink); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+      .btn:hover { border-color: var(--violet); }
+      .btn.primary { background: var(--violet); border-color: var(--violet); }
+      .btn.ghost { background: transparent; }
+      .count { color: var(--muted); font-size: 14px; margin-left: auto; }
+      .count b { color: var(--green); }
+      section.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 22px; }
+      .scene-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+      .scene-head h2 { font-size: 19px; font-weight: 700; }
+      .tag { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 2px 8px; border-radius: 999px; }
+      .narration { margin: 14px 0 6px; font-size: 15px; line-height: 1.6; color: #cdd6e3; border-left: 3px solid var(--violet); padding-left: 14px; }
+      textarea.narr, textarea.vartext, input.txt, select.pos { width: 100%; background: #0b0e14; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; }
+      textarea.narr { min-height: 90px; line-height: 1.6; resize: vertical; font-size: 15px; }
+      textarea:focus, input.txt:focus, select.pos:focus { outline: none; border-color: var(--cyan); }
+      .group { margin-top: 18px; }
+      .group h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin-bottom: 10px; }
+      .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+      .opt { position: relative; display: flex; gap: 12px; align-items: center; background: var(--card2); border: 2px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; }
+      .opt:hover { border-color: #3b4761; }
+      .opt.sel { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,.14); }
+      .opt .thumb { width: 84px; height: 56px; object-fit: cover; border-radius: 8px; background: #0a0c10; flex: 0 0 auto; }
+      .opt .ico { width: 84px; height: 56px; border-radius: 8px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 26px; background: linear-gradient(135deg,#241b3f,#102a33); }
+      .opt .txt { min-width: 0; }
+      .opt .lbl { font-size: 14px; font-weight: 600; }
+      .opt .det { font-size: 12px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 270px; }
+      .badge { position: absolute; top: -9px; right: 10px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #062018; background: var(--green); padding: 2px 7px; border-radius: 999px; }
+      table.grid { width: 100%; border-collapse: collapse; font-size: 14px; }
+      table.grid th { text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+      table.grid td { padding: 7px 10px; border-bottom: 1px solid #202634; vertical-align: middle; }
+      table.grid input.txt.over, table.grid select.over { border-color: var(--amber); }
+      .src { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+      .src.domain { background: #2b2338; color: #c9b6ff; }
+      .src.series { background: #12303a; color: #8fe6f5; }
+      .src.video { background: #2c2a16; color: #f5d98a; }
+      .src.scene { background: #16311f; color: #8fe0ad; }
+      .vcard { background: var(--card2); border: 2px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; cursor: pointer; }
+      .vcard.sel { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,.14); }
+      .vhead { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .vhead .radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex: 0 0 auto; }
+      .vcard.sel .vhead .radio { border-color: var(--cyan); background: radial-gradient(circle, var(--cyan) 45%, transparent 46%); }
+      .vhead .vlbl { font-size: 14px; font-weight: 700; }
+      .hint { color: var(--muted); font-size: 13px; margin-top: 12px; }
+      .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--card2); border: 1px solid var(--cyan); padding: 12px 18px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+      .toast.on { opacity: 1; }
+      code { background: #0b0e14; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+      .pill { display: inline-block; font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1 id="ptitle">Draft â€” Borrador de escenas</h1>
+    <div class="sub" id="psub"></div>
+
+    <div class="bar">
+      <button class="btn primary" id="save">Guardar revisiÃ³n (JSON)</button>
+      <button class="btn" id="export">Exportar / copiar</button>
+      <button class="btn ghost" id="reset">Reiniciar</button>
+      <span class="count" id="count"></span>
+    </div>
+
+    <section class="card">
+      <div class="scene-head"><h2>ConfiguraciÃ³n del vÃ­deo</h2><span class="tag">scene â†’ video â†’ series â†’ domain</span></div>
+      <p class="hint">Valores por defecto cargados del dominio y la serie. Editar aquÃ­ fija un <b>override de vÃ­deo</b>.</p>
+      <table class="grid" id="cfg"></table>
+    </section>
+
+    <section class="card">
+      <div class="scene-head"><h2>Overlays (nivel vÃ­deo)</h2><span class="tag">catÃ¡logo Â· heredable a las escenas</span></div>
+      <p class="hint">Definiciones reutilizables. <b>default</b> = se aplica a todas las escenas salvo que la escena no lo instancie. Cada escena puede instanciarlas por <code>ref</code> y sobrescribir texto/posiciÃ³n.</p>
+      <table class="grid" id="ovl"></table>
+    </section>
+
+    <div id="scenes"></div>
+    <div class="toast" id="toast"></div>
+
+    <script id="draft-data" type="application/json">/*__DRAFT_JSON__*/</script>
+    <script id="thumbs-data" type="application/json">/*__THUMBS_JSON__*/</script>
+
+    <script>
+      const DRAFT = JSON.parse(document.getElementById("draft-data").textContent);
+      const THUMBS = JSON.parse(document.getElementById("thumbs-data").textContent);
+      const KEY = "draft:" + DRAFT.slug + ":" + DRAFT.version;
+      const POSITIONS = ["top", "center", "bottom", "bottom-left", "bottom-right"];
+      const TYPES = ["title", "lower-third", "caption", "quote", "watermark", "brand"];
+
+      let state = load();
+      function defaults() {
+        const s = { config: {}, overlays: {}, sceneOverlays: {}, variants: {}, selectedVariant: {}, narrations: {}, choices: {} };
+        DRAFT.config.forEach((c) => (s.config[c.key] = c.value));
+        (DRAFT.overlays || []).forEach((o) => (s.overlays[o.id] = { text: o.text, position: o.position }));
+        DRAFT.scenes.forEach((sc) => {
+          if (sc.kind !== "fixed") { s.narrations[sc.slug] = sc.narration; s.choices[sc.slug] = sc.recommended; }
+          s.sceneOverlays[sc.slug] = {};
+          (sc.overlays || []).forEach((o) => { s.sceneOverlays[sc.slug][o.id] = { text: o.text !== undefined ? o.text : "", position: o.position || "" }; });
+          if (sc.variants) {
+            s.variants[sc.slug] = {};
+            sc.variants.forEach((v) => (s.variants[sc.slug][v.id] = v.text));
+            s.selectedVariant[sc.slug] = sc.selectedVariant;
+          }
+        });
+        return s;
+      }
+      function load() { try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {} return defaults(); }
+      function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const posSel = (scene, id, value) => '<select class="pos" data-scope="' + scene + '" data-ovl="' + id + '">' +
+        POSITIONS.map((p) => '<option ' + (p === value ? "selected" : "") + ">" + p + "</option>").join("") + "</select>";
+
+      function sceneNarration(sc) {
+        if (sc.variants) { const vid = state.selectedVariant[sc.slug]; return state.variants[sc.slug][vid]; }
+        return state.narrations[sc.slug];
+      }
+
+      function overlaysFor(sc) {
+        const cat = Object.fromEntries((DRAFT.overlays || []).map((o) => [o.id, o]));
+        const own = (sc.overlays || []).map((o) => {
+          const base = o.ref ? cat[o.ref] : null;
+          const st = state.sceneOverlays[sc.slug][o.id] || {};
+          return { id: o.id, ref: o.ref || null, type: o.type || (base && base.type) || "caption", text: st.text || (base ? base.text : ""), position: st.position || o.position || (base ? base.position : "bottom-right") };
+        });
+        const defaultsOvl = (DRAFT.overlays || []).filter((o) => o.default || o.appliesToAll).map((o) => ({ id: o.id, ref: o.id, type: o.type, text: (state.overlays[o.id] || {}).text || o.text, position: (state.overlays[o.id] || {}).position || o.position })).filter((d) => !own.some((o) => o.ref === d.id));
+        return { own, defaults: defaultsOvl };
+      }
+
+      function optHtml(o, scene) {
+        const sel = state.choices[scene.slug] === o.id;
+        const thumb = o.thumb ? '<img class="thumb" alt="" src="' + o.thumb + '">' : '<div class="ico">' + (o.type === "avatar" ? "\uD83D\uDDE3\uFE0F" : "\u2728") + "</div>";
+        const rec = scene.recommended === o.id;
+        return '<div class="opt ' + (sel ? "sel" : "") + '" data-scene="' + scene.slug + '" data-id="' + o.id + '">' +
+          (rec ? '<span class="badge">recomendado</span>' : "") + thumb +
+          '<div class="txt"><div class="lbl">' + esc(o.lbl) + '</div><div class="det">' + esc(o.det) + "</div></div></div>";
+      }
+      function optionsFor(sc) {
+        const avatars = DRAFT.avatars.map((a) => ({ id: a.id, type: "avatar", lbl: "Talking avatar Â· " + a.quality, det: a.model + " Â· " + a.resolution }));
+        const media = DRAFT.media.map((m) => ({ id: m.id, type: "media", lbl: m.id, det: m.path, thumb: THUMBS[m.id] }));
+        const anims = (sc.animations || []).map((a) => ({ id: a.id, type: "animation", lbl: "AnimaciÃ³n Â· " + a.label, det: a.asset ? ("ya generada: " + a.asset) : a.prompt }));
+        return { avatars, media, anims };
+      }
+
+      function render() {
+        document.getElementById("ptitle").textContent = "Draft â€” " + DRAFT.title;
+        document.getElementById("psub").innerHTML = "Borrador de <b>" + DRAFT.slug + "</b> (" + DRAFT.version + "). EditÃ¡ la narraciÃ³n y los overlays de cada escena, elegÃ­ el visual y guardÃ¡: se exporta <code>" + DRAFT.slug + "_reviewed.json</code>.";
+
+        document.getElementById("cfg").innerHTML = "<tr><th>ParÃ¡metro</th><th>Valor efectivo</th><th>Origen</th></tr>" +
+          DRAFT.config.map((c) => '<tr><td>' + c.key + '</td><td><input class="txt" data-key="' + c.key + '" value="' + esc(state.config[c.key]) + '"' + (state.config[c.key] !== c.value ? ' data-over="1"' : "") + '></td><td><span class="src ' + c.origin + '">' + c.origin + "</span></td></tr>").join("");
+
+        document.getElementById("ovl").innerHTML = "<tr><th>Overlay</th><th>Tipo</th><th>Texto</th><th>PosiciÃ³n</th><th>Origen</th></tr>" +
+          (DRAFT.overlays || []).map((o) => {
+            const st = state.overlays[o.id] || {};
+            return "<tr><td>" + o.label + " <code>" + o.id + "</code>" + (o.default ? '<span class="pill">default</span>' : "") + "</td><td>" + o.type + '</td><td><input class="txt" data-ovl="' + o.id + '" value="' + esc(st.text) + '"></td><td>' + posSel("__video__", o.id, st.position) + '</td><td><span class="src ' + o.origin + '">' + o.origin + "</span></td></tr>";
+          }).join("");
+
+        document.getElementById("scenes").innerHTML = DRAFT.scenes.map((sc) => {
+          if (sc.kind === "fixed") {
+            return '<section class="card"><div class="scene-head"><h2>' + sc.name + '</h2><span class="tag">fijo Â· sin narraciÃ³n</span></div><p class="hint">' + esc(sc.narration) + "</p></section>";
+          }
+          let narrBlock = '<div class="group"><h3>NarraciÃ³n (texto â†’ TTS)</h3><textarea class="narr" data-scene="' + sc.slug + '">' + esc(state.narrations[sc.slug]) + "</textarea></div>";
+          if (sc.variants) {
+            narrBlock = '<div class="group"><h3>Opciones de gancho (5) Â· elegÃ­ y editÃ¡</h3>' + sc.variants.map((v) =>
+              '<div class="vcard ' + (state.selectedVariant[sc.slug] === v.id ? "sel" : "") + '" data-vscene="' + sc.slug + '" data-vid="' + v.id + '">' +
+              '<div class="vhead"><span class="radio"></span><span class="vlbl">' + esc(v.label) + "</span></div>" +
+              '<textarea class="vartext" data-vscene="' + sc.slug + '" data-vid="' + v.id + '">' + esc(state.variants[sc.slug][v.id]) + "</textarea></div>").join("") + "</div>";
+          }
+          const { own, defaults } = overlaysFor(sc);
+          const ovlRows = own.map((o) =>
+            '<tr><td>' + esc(o.type) + (o.ref ? '<span class="pill">ref ' + o.ref + "</span>" : "") + '</td><td><input class="txt" data-sovl="' + sc.slug + '" data-ovid="' + o.id + '" value="' + esc(o.text) + '"></td><td>' + posSel(sc.slug, o.id, o.position) + "</td></tr>").join("") +
+            defaults.map((d) =>
+              '<tr><td>' + esc(d.type) + '<span class="pill">heredado vÃ­deo</span></td><td><input class="txt" data-sovl="' + sc.slug + '" data-ovid="' + d.id + '" value="' + esc(d.text) + '"></td><td>' + posSel(sc.slug, d.id, d.position) + "</td></tr>").join("");
+          const { avatars, media, anims } = optionsFor(sc);
+          return '<section class="card"><div class="scene-head"><h2>' + sc.name + '</h2></div>' + narrBlock +
+            '<div class="group"><h3>Overlays de la escena</h3><table class="grid"><tr><th>Tipo</th><th>Texto</th><th>PosiciÃ³n</th></tr>' + (ovlRows || '<tr><td colspan="3" class="hint">sin overlays</td></tr>') + "</table></div>" +
+            '<div class="group"><h3>Talking avatar (calidad)</h3><div class="opts">' + avatars.map((o) => optHtml(o, sc)).join("") + "</div></div>" +
+            '<div class="group"><h3>Material de media/</h3><div class="opts">' + media.map((o) => optHtml(o, sc)).join("") + "</div></div>" +
+            '<div class="group"><h3>AnimaciÃ³n HyperFrames</h3><div class="opts">' + anims.map((o) => optHtml(o, sc)).join("") + "</div></div></section>";
+        }).join("");
+
+        document.querySelectorAll(".opt").forEach((el) => el.addEventListener("click", () => { state.choices[el.dataset.scene] = el.dataset.id; save(); render(); }));
+        document.querySelectorAll(".vcard").forEach((el) => el.addEventListener("click", (e) => { if (e.target.tagName === "TEXTAREA") return; state.selectedVariant[el.dataset.vscene] = el.dataset.vid; save(); render(); }));
+        document.querySelectorAll("textarea.vartext").forEach((el) => el.addEventListener("input", () => { state.variants[el.dataset.vscene][el.dataset.vid] = el.value; save(); }));
+        document.querySelectorAll("textarea.narr").forEach((el) => el.addEventListener("input", () => { state.narrations[el.dataset.scene] = el.value; save(); }));
+        document.querySelectorAll("input.txt").forEach((el) => el.addEventListener("input", () => {
+          if (el.dataset.key) state.config[el.dataset.key] = el.value;
+          else if (el.dataset.ovid) state.sceneOverlays[el.dataset.sovl][el.dataset.ovid].text = el.value;
+          else if (el.dataset.ovl) state.overlays[el.dataset.ovl].text = el.value;
+          save();
+        }));
+        document.querySelectorAll("select.pos").forEach((el) => el.addEventListener("change", () => {
+          const scope = el.dataset.scope, id = el.dataset.ovl;
+          if (scope === "__video__") state.overlays[id].position = el.value;
+          else state.sceneOverlays[scope][id].position = el.value;
+          save();
+        }));
+        updateCount();
+      }
+      function updateCount() {
+        const dec = DRAFT.scenes.filter((s) => s.kind !== "fixed");
+        const done = dec.filter((s) => state.choices[s.slug]).length;
+        document.getElementById("count").innerHTML = "<b>" + done + "</b> / " + dec.length + " escenas decididas";
+      }
+
+      function buildReviewed() {
+        const overrides = {};
+        DRAFT.config.forEach((c) => { if (state.config[c.key] !== c.value) overrides[c.key] = state.config[c.key]; });
+        return {
+          schema: "video-script.draft.reviewed.v1", slug: DRAFT.slug, version: DRAFT.version, title: DRAFT.title,
+          reviewedAt: new Date().toISOString(), sources: DRAFT.sources,
+          config: { effective: Object.assign({}, state.config), overrides },
+          overlays: (DRAFT.overlays || []).map((o) => Object.assign({}, o, state.overlays[o.id])),
+          scenes: DRAFT.scenes.filter((s) => s.kind !== "fixed").map((sc) => {
+            const id = state.choices[sc.slug];
+            const av = DRAFT.avatars.find((a) => a.id === id);
+            const md = DRAFT.media.find((m) => m.id === id);
+            const an = (sc.animations || []).find((a) => a.id === id);
+            let choice = null;
+            if (av) choice = { type: "avatar", id, quality: av.quality, model: av.model, resolution: av.resolution };
+            else if (md) choice = { type: "media", id, kind: md.kind, asset: md.path };
+            else if (an) choice = { type: "animation", id, description: an.label, prompt: an.prompt };
+            const overlays = (sc.overlays || []).map((o) => Object.assign({}, o, state.sceneOverlays[sc.slug][o.id]));
+            return { slug: sc.slug, name: sc.name, narration: sceneNarration(sc), choice, overlays };
+          }),
+        };
+      }
+
+      function download(name, text) { const b = new Blob([text], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
+      function toast(m) { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2400); }
+
+      document.getElementById("save").addEventListener("click", async () => {
+        const text = JSON.stringify(buildReviewed(), null, 2);
+        const name = DRAFT.slug + "_reviewed.json";
+        if (window.showSaveFilePicker) {
+          try { const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: "JSON", accept: { "application/json": [".json"] } }] }); const w = await h.createWritable(); await w.write(text); await w.close(); toast("Guardado " + name); return; }
+          catch (e) { if (e && e.name === "AbortError") return; }
+        }
+        download(name, text); toast("Descargado " + name);
+      });
+      document.getElementById("export").addEventListener("click", async () => {
+        const text = JSON.stringify(buildReviewed(), null, 2);
+        try { await navigator.clipboard.writeText(text); toast("RevisiÃ³n copiada al portapapeles"); } catch (e) { download(DRAFT.slug + "_reviewed.json", text); toast("Descargado"); }
+      });
+      document.getElementById("reset").addEventListener("click", () => { state = defaults(); save(); render(); toast("Reiniciado a los valores por defecto"); });
+
+      render();
+    </script>
+  </body>
+</html>
