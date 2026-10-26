@@ -1,57 +1,39 @@
 {
-  "generatedAt": "2026-10-26T18:38:42.242Z",
-  "head": "da01f15af71a15a6418cc53b6fc515347e5f31d4",
+  "generatedAt": "2026-10-26T21:33:43.670Z",
+  "head": "9b7c839288b5fd395fc17e694a76f246442d2c20",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v2.30.0",
-      "pinnedTagDate": "2026-10-23T09:55:37+02:00",
-      "commitsSincePin": 20,
-      "filesTouched": [
-        "skills/nn-preflight/scripts/lib/naming-contract.generated.cjs",
-        "skills/nn-skills-lifecycle/SKILL.md",
-        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
-        "skills/nn-sources/package-lock.json",
-        "skills/nn-sources/package.json",
-        "skills/nn-sources/scripts/lib/nn-core.generated.cjs",
-        "skills/nn-upgrade/scripts/lib/nn-core.generated.cjs"
-      ]
+      "pinnedTag": "skills-v2.31.0",
+      "pinnedTagDate": "2026-10-26T19:30:52+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.43.0",
-      "pinnedTagDate": "2026-10-26T14:16:55+01:00",
-      "commitsSincePin": 6,
+      "pinnedTag": "blueprints-v0.44.0",
+      "pinnedTagDate": "2026-10-26T19:30:52+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/asset-synthesizer.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/hyperframes-render.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/lib/avatar-jobs.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/lib/avatar-request.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/remotion-scene-compiler.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/avatar-resolution.test.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/overlay-blocks.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/scene-project.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/overlay-render.test.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/scene-project-mount.test.mjs",
         "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.43.0",
-      "pinnedTagDate": "2026-10-26T14:16:55+01:00",
-      "commitsSincePin": 6,
+      "pinnedTag": "blueprints-v0.44.0",
+      "pinnedTagDate": "2026-10-26T19:30:52+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/asset-synthesizer.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/hyperframes-render.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/lib/avatar-jobs.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/lib/avatar-request.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/remotion-scene-compiler.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/avatar-resolution.test.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/overlay-blocks.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/scene-project.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/overlay-render.test.mjs",
+        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/scene-project-mount.test.mjs",
         "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
       ]
     },

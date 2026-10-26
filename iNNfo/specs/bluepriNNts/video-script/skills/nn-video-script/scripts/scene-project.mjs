@@ -21,7 +21,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { sceneTransitionFragment } from './scene-transition.mjs';
-import { overlayHostMarkup } from './overlay-blocks.mjs';
+import { renderOverlay } from './overlay-blocks.mjs';
 
 export const HYPERFRAMES_PIN = '0.8.192';
 export const OVERLAY_HOST_ANCHOR = '<!-- nn-overlay-host -->';
@@ -81,10 +81,13 @@ export function buildProject(manifest, plan = {}) {
     );
     const overlayHtml = sceneOverlays
       .map((o, i) =>
-        overlayHostMarkup(o, scene.fromFrame, fps, {
+        renderOverlay(o, scene.fromFrame, fps, {
           seriesFrame: plan.seriesFrame,
           sceneBlock: plan.sceneBlock,
           trackIndex: 10 + i,
+          width,
+          height,
+          zIndex: 200 + i,
         }),
       )
       .filter(Boolean)
@@ -96,11 +99,12 @@ export function buildProject(manifest, plan = {}) {
     #root { position: absolute; inset: 0; overflow: hidden; background: #0b0b0f; }
     .nn-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   </style>
-  <div id="root" data-width="${width}" data-height="${height}" data-duration="${dur}">
+  <div id="root" data-composition-id="${esc(slug)}" data-width="${width}" data-height="${height}" data-duration="${dur}">
       ${layerHtml}
       ${overlayHtml}
       ${OVERLAY_HOST_ANCHOR}
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
@@ -118,7 +122,7 @@ ${tween}
       const slug = sceneSlug(scene);
       const start = frameSeconds(scene.fromFrame, fps);
       const dur = frameSeconds(scene.durationInFrames, fps);
-      return `  <div id="scene-${esc(slug)}" class="clip" data-composition-id="${esc(slug)}" data-start="${start}" data-duration="${dur}" data-track-index="0" data-track-kind="graphics"></div>`;
+      return `  <div id="scene-${esc(slug)}" class="clip" data-composition-id="${esc(slug)}" data-composition-src="compositions/${esc(slug)}.html" data-start="${start}" data-duration="${dur}" data-track-index="0" data-track-kind="graphics" data-width="${width}" data-height="${height}"></div>`;
     })
     .join('\n');
 
@@ -139,12 +143,14 @@ ${tween}
   <head>
     <meta charset="utf-8" />
     <title>${esc(compositionId)}</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
   </head>
   <body>
     <div id="root" data-composition-id="${esc(compositionId)}" data-start="0" data-duration="${total}" data-width="${width}" data-height="${height}" data-fps="${fps}">
 ${sceneHosts}
 ${plan.narrationCaptions ? `  <div id="captions" class="clip" data-track-kind="captions" data-start="0" data-duration="${total}" data-track-index="900"></div>\n` : ''}${audioEls}
     </div>
+    <script>window.__timelines[${JSON.stringify(compositionId)}] = gsap.timeline({ paused: true });</script>
   </body>
 </html>
 `;
