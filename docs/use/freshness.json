@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-26T08:11:55.272Z",
-  "head": "c13cf84896e6ae20b6294891b208e68ddd75f988",
+  "generatedAt": "2026-10-26T09:43:12.152Z",
+  "head": "2e4c6bdc1778f1023f0d155ece54375354325ca5",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -19,7 +19,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.42.0",
       "pinnedTagDate": "2026-10-23T09:55:37+02:00",
-      "commitsSincePin": 25,
+      "commitsSincePin": 26,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/artifacts/spec_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
@@ -34,6 +34,7 @@
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
@@ -53,7 +54,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.42.0",
       "pinnedTagDate": "2026-10-23T09:55:37+02:00",
-      "commitsSincePin": 25,
+      "commitsSincePin": 26,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/artifacts/spec_NN.md",
         "iNNfo/specs/bluepriNNts/catalog.json",
@@ -68,6 +69,7 @@
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
@@ -87,7 +89,7 @@
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.30.0",
       "pinnedTagDate": "2026-10-21T18:16:23+02:00",
-      "commitsSincePin": 15,
+      "commitsSincePin": 16,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
         "iNNfo/packages/nn-mcp/package.json",
@@ -108,7 +110,7 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.27.0",
       "pinnedTagDate": "2026-10-23T09:55:37+02:00",
-      "commitsSincePin": 24,
+      "commitsSincePin": 25,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
@@ -120,6 +122,7 @@
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
         "iNNfo/specs/bluepriNNts/console/ui-kit.js",
