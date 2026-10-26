@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-26T09:43:12.152Z",
-  "head": "2e4c6bdc1778f1023f0d155ece54375354325ca5",
+  "generatedAt": "2026-10-26T10:43:38.373Z",
+  "head": "4f444ca1a68b10e66522ac5be4d7132ece6be022",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -87,49 +87,17 @@
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
-      "pinnedTag": "nn-mcp-v0.30.0",
-      "pinnedTagDate": "2026-10-21T18:16:23+02:00",
-      "commitsSincePin": 16,
-      "filesTouched": [
-        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
-        "iNNfo/packages/nn-mcp/package.json",
-        "iNNfo/packages/nn-mcp/src/server.spec.ts",
-        "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/nn-mcp/src/tools/propose-changeset.spec.ts",
-        "iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts",
-        "iNNfo/packages/nn-mcp/src/tools/repo-root.spec.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change-console.test.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change-models.test.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change-persist.test.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change-rejections.test.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change.test.ts",
-        "iNNfo/packages/nn-mcp/test/rejected-changesets.test.ts"
-      ]
+      "pinnedTag": "nn-mcp-v0.31.0",
+      "pinnedTagDate": "2026-10-26T10:14:56+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-console": {
       "subsystem": "nn-console",
-      "pinnedTag": "nn-console-v0.27.0",
-      "pinnedTagDate": "2026-10-23T09:55:37+02:00",
-      "commitsSincePin": 25,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/needs-registry.json",
-        "iNNfo/specs/bluepriNNts/console/nn-address.generated.js",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
-        "iNNfo/specs/bluepriNNts/console/nn-preact-init.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/nn-slug.generated.js",
-        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/render-procedure-stepper.js",
-        "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "iNNfo/specs/bluepriNNts/console/visuals.js",
-        "scripts/console-views.mjs",
-        "scripts/export-console.mjs"
-      ]
+      "pinnedTag": "nn-console-v0.28.0",
+      "pinnedTagDate": "2026-10-26T10:14:56+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }
