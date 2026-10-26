@@ -46,7 +46,7 @@ The catalog below is generated from `manifest/source.yaml`, so it lists exactly 
 <!-- /generated:skills-catalog -->
 
 A skill may also be **embedded** inside a bluepriNNt package under `skills/<name>/SKILL.md`, or
-**referenced** as an opt-in third-party skill pinned to a commit and a tree digest. Embedded and
+**referenced** as an opt-in third-party skill pinned to a commit. Embedded and
 referenced skills are discovered through the parent chain rather than installed from the manifest;
 see [nn-skills-lifecycle](nn-skills-lifecycle.md) for the difference.
 

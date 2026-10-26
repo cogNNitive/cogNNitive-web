@@ -344,6 +344,7 @@ export class RemotionSceneCompiler {
       layer_level: fields.level !== undefined ? Number(fields.level) : undefined,
       layer_position: fields.position,
       layer_avatar_model: fields.model,
+      layer_avatar_resolution: fields.avatar_resolution,
       layer_fit: fields.fit,
     };
     for (const key of Object.keys(properties)) {

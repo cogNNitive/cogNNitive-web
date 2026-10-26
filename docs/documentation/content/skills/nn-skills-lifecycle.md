@@ -54,9 +54,8 @@ recursive copy in either direction and does not touch the manifest or the state 
 ## Referenced external skills
 
 A bluepriNNt may *recommend* a third-party skill by declaring it in its frontmatter `skills:` array,
-pinned to a `commit` and a `sha256` tree digest with an SPDX `license`. Such a skill is
-**referenced**, never vendored into the repo, and carries a deliberately bounded guarantee:
-reproducible (pinned commit), unmodified since the pin (digest verified at install), and
+pinned to a `commit` with an SPDX `license`. Such a skill is **referenced**, never vendored into the
+repo, and carries a deliberately bounded guarantee: reproducible (pinned commit) and
 license-declared. cogNNitive does not vouch for its author. A referenced skill never enters the
 manifest and installs only through the explicit `install-external` subcommand.
 

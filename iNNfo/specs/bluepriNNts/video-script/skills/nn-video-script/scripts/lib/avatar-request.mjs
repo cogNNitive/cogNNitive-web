@@ -36,7 +36,7 @@ function inline(file, table, maxBytes, what) {
  * @param {{ imagePath: string, audioPath: string, resolution?: string, limits?: { imageBytes?: number, audioBytes?: number } }} o
  * @returns {{ image: string, audio: string, resolution: string }}
  */
-export function buildAvatarRequest({ imagePath, audioPath, resolution = '720p', limits = {} }) {
+export function buildAvatarRequest({ imagePath, audioPath, resolution = '480p', limits = {} }) {
   return {
     image: inline(imagePath, AVATAR_IMAGE_MIME, limits.imageBytes ?? MAX_AVATAR_IMAGE_BYTES, 'image'),
     audio: inline(audioPath, AVATAR_AUDIO_MIME, limits.audioBytes ?? MAX_AVATAR_AUDIO_BYTES, 'audio'),

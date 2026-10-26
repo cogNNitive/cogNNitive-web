@@ -24,7 +24,30 @@ import { buildTtsVoiceOptions, resolveRegisteredVoice } from './tts-options.mjs'
 
 export const AVATAR_CACHE_CATEGORY = 'temp';
 export const AVATAR_CACHE_EXT = 'mp4';
-export const DEFAULT_AVATAR_RESOLUTION = '720p';
+export const DEFAULT_AVATAR_RESOLUTION = '480p';
+
+/** Resolutions each avatar model accepts. Pruna rejects 720p; InfiniTalk accepts it. */
+export function validResolutionsFor(model) {
+  const m = normalizeModelId(model);
+  if (m.includes('pruna')) return ['480p', '768p'];
+  return ['480p', '720p', '768p'];
+}
+
+/** Model-appropriate fallback when the script declares no resolution. */
+export function defaultResolutionFor(model) {
+  const m = normalizeModelId(model);
+  return m.includes('pruna') ? '480p' : '720p';
+}
+
+/** Validates a requested resolution against the model's allowed set (fail closed). */
+export function normalizeAvatarResolution(requested, model) {
+  const allowed = validResolutionsFor(model);
+  const r = requested ? String(requested) : defaultResolutionFor(model);
+  if (!allowed.includes(r)) {
+    throw new Error('Avatar resolution "' + r + '" is not supported by ' + model + ' (allowed: ' + allowed.join(', ') + ').');
+  }
+  return r;
+}
 
 /**
  * The single avatar-layer predicate (estimator, synthesize-avatar and compile pickup). Only an
@@ -125,6 +148,7 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, resolveMode
         continue;
       }
       const model = resolveModel(layer.properties?.layer_avatar_model);
+      const resolution = normalizeAvatarResolution(layer.properties?.layer_avatar_resolution, model);
       jobs.push({
         sceneId: sc.id,
         layerName: layer.name,
@@ -132,8 +156,8 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, resolveMode
         imagePath,
         audioPath,
         model,
-        resolution: DEFAULT_AVATAR_RESOLUTION,
-        cacheKey: avatarJobKey(cacheManager, { imagePath, audioPath, model }),
+        resolution,
+        cacheKey: avatarJobKey(cacheManager, { imagePath, audioPath, model, resolution }),
       });
     }
   }

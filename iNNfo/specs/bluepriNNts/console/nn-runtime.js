@@ -246,6 +246,7 @@
       .toLowerCase()
   }
 
+  // ponytail: flat boolean model by design. Reopen if someone needs (a AND b) OR c.
   function parseFilterQuery(query) {
     var raw = String(query == null ? '' : query).trim()
     if (!raw) return { textTokens: [], operators: [], groups: [] }
@@ -1566,6 +1567,7 @@
         ? parsed.groups
         : [parsed.operators.concat(parsed.textTokens.map(function (t) { return { type: 'text', val: t } }))]
 
+      // ponytail: flat boolean model by design. Clauses join with AND, atoms with OR.
       function serializeGroups(groups) {
         return groups.map(function (clause) {
           var clauseStr = clause.map(function (atom) {

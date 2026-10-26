@@ -36,16 +36,6 @@ export function buildHyperframesProject(manifest, projectDir) {
   return built;
 }
 
-/** Cheap, offline availability probe that never installs. */
-function cliAvailable(run) {
-  try {
-    const r = run('npx', ['--no-install', 'hyperframes', '--version']);
-    return !!r && r.status === 0;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * @param {{ manifest: object, outputPath: string, projectDir?: string, concurrency?: number, pin?: string }} input
  * @param {{ run?: (cmd: string, args: string[], opts?: object) => any }} [deps]
@@ -65,11 +55,9 @@ export async function tryHyperframesRender(input, deps = {}) {
     return { rendered: false, reason: `emit-failed: ${err?.message || String(err)}` };
   }
 
-  // With an injected runner the caller owns availability; otherwise probe offline.
-  if (!deps.run && !cliAvailable(run)) {
-    return { rendered: false, reason: 'hyperframes-unavailable' };
-  }
-
+  // Attempt the render directly: `npx --yes hyperframes@<pin>` installs the pinned
+  // CLI on demand. A failure (missing network, CLI error) is returned as a reason and
+  // the caller raises a loud named error; there is no FFmpeg fallback.
   const cmd = ['npx', ['--yes', `hyperframes@${pin}`, 'render', projectDir, '--output', path.resolve(outputPath)]];
   try {
     const res = await run(cmd[0], cmd[1], { cwd: projectDir });

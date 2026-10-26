@@ -7963,6 +7963,43 @@ function parseKnowledgeUnitRef(input) {
   }
   const [unitRaw, ...subunits] = decoded;
   if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
+    if (unitRaw.startsWith("concept:")) {
+      const slug = unitRaw.slice("concept:".length);
+      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
+      const unit3 = {
+        kind: "header",
+        level: 1,
+        text: slug,
+        slug
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename(resolved.filePath),
+        slug,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    if (unitRaw.startsWith("matrix:")) {
+      const slug = unitRaw.slice("matrix:".length);
+      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: slug,
+        ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename(resolved.filePath),
+        slug,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
     if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
     if (subunits.length === 2) {
       const unit3 = {
@@ -7970,21 +8007,6 @@ function parseKnowledgeUnitRef(input) {
         matrixSlug: unitRaw,
         rowSlug: subunits[0],
         colSlug: subunits[1]
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug: unitRaw,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (subunits.length === 0 && /(?:^matrix-|-matrix$)/i.test(unitRaw)) {
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: unitRaw
       };
       return {
         filePath: resolved.filePath,
@@ -8411,10 +8433,25 @@ function sectionOwnLines(content, slug) {
 function parseKnowledgeQuery(input) {
   if (!input || typeof input !== "string") return null;
   const clean = input.trim();
-  if (clean.includes("@")) return null;
   const q = clean.indexOf("?");
   if (q === -1) return null;
-  const resolved = resolveUnitPath(clean.slice(0, q));
+  const target = clean.slice(0, q);
+  let filePathPart = target;
+  let conceptSlug;
+  if (target.includes("@")) {
+    const at = target.indexOf("@");
+    filePathPart = target.slice(0, at);
+    const unitPart = target.slice(at + 1);
+    if (!unitPart.startsWith("concept:") || unitPart.slice("concept:".length).includes("@")) {
+      return null;
+    }
+    const slug = unitPart.slice("concept:".length).trim();
+    if (!slug || !new RegExp(`^${SLUG}$`).test(slug)) {
+      return null;
+    }
+    conceptSlug = slug;
+  }
+  const resolved = resolveUnitPath(filePathPart);
   if (!resolved) return null;
   const rest = clean.slice(q + 1);
   if (!rest.trim()) return null;
@@ -8447,8 +8484,50 @@ function parseKnowledgeQuery(input) {
     filters.push({ name, value });
   }
   if (filters.length === 0) return null;
-  return { path: resolved.filePath, filters, projection };
+  return { path: resolved.filePath, ...conceptSlug ? { conceptSlug } : {}, filters, projection };
 }
+
+// iNNfo/packages/nn-core/src/types/parser.ts
+var ElementsMap = class {
+  _map = /* @__PURE__ */ new Map();
+  set(key, nodes) {
+    this._map.set(key.toLowerCase(), { key, nodes });
+  }
+  delete(key) {
+    return this._map.delete(key.toLowerCase());
+  }
+  has(key) {
+    return this._map.has(key.toLowerCase());
+  }
+  get(key) {
+    return this._map.get(key.toLowerCase())?.nodes;
+  }
+  keys() {
+    return Array.from(this._map.values()).map((e) => e.key);
+  }
+  entries() {
+    return Array.from(this._map.values()).map((e) => [e.key, e.nodes]);
+  }
+  forEach(fn) {
+    for (const { key, nodes } of this._map.values()) {
+      fn(nodes, key);
+    }
+  }
+  get size() {
+    return this._map.size;
+  }
+  [Symbol.iterator]() {
+    return this.entries()[Symbol.iterator]();
+  }
+  /** JSON serialization support — serializes as a plain record */
+  toJSON() {
+    const obj = {};
+    for (const [key, nodes] of this.entries()) {
+      obj[key] = nodes;
+    }
+    return obj;
+  }
+};
 
 // iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -8570,10 +8649,8 @@ function normalizeSkills(fm) {
       repo: str(obj.repo),
       path: str(obj.path),
       ...obj.commit ? { commit: str(obj.commit) } : {},
-      ...obj.ref ? { ref: str(obj.ref) } : {},
       ...obj.sha256 ? { sha256: str(obj.sha256) } : {},
       ...obj.license ? { license: str(obj.license) } : {},
-      ...obj.distribution ? { distribution: str(obj.distribution) } : {},
       ...obj.source_template ? { source_template: str(obj.source_template) } : {}
     };
   });
@@ -8871,48 +8948,6 @@ function getSectionType(rawTitle) {
 
 // iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
-
-// iNNfo/packages/nn-core/src/types/parser.ts
-var ElementsMap = class {
-  _map = /* @__PURE__ */ new Map();
-  set(key, nodes) {
-    this._map.set(key.toLowerCase(), { key, nodes });
-  }
-  delete(key) {
-    return this._map.delete(key.toLowerCase());
-  }
-  has(key) {
-    return this._map.has(key.toLowerCase());
-  }
-  get(key) {
-    return this._map.get(key.toLowerCase())?.nodes;
-  }
-  keys() {
-    return Array.from(this._map.values()).map((e) => e.key);
-  }
-  entries() {
-    return Array.from(this._map.values()).map((e) => [e.key, e.nodes]);
-  }
-  forEach(fn) {
-    for (const { key, nodes } of this._map.values()) {
-      fn(nodes, key);
-    }
-  }
-  get size() {
-    return this._map.size;
-  }
-  [Symbol.iterator]() {
-    return this.entries()[Symbol.iterator]();
-  }
-  /** JSON serialization support — serializes as a plain record */
-  toJSON() {
-    const obj = {};
-    for (const [key, nodes] of this.entries()) {
-      obj[key] = nodes;
-    }
-    return obj;
-  }
-};
 
 // iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {

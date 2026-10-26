@@ -41,7 +41,7 @@ procedures:
 ### `skills/`
 Contains agent skills embedded in the package, one folder per skill (`skills/<skill-name>/SKILL.md` plus its scripts, references and tests). The folder name is the skill identity. `list_blueprint_skills` discovers these folders and returns each one with `embedded: true` and a resolved absolute `path`. Installing the bluepriNNt projects each embedded skill into the user's skills directory (`~/.agents/skills/<skill-name>/`), and any change under `skills/**` requires a `blueprint_version` bump of the owning package. Embedded skills must be text-only, because remote hydration writes UTF-8.
 
-Skills that live outside the package are declared in frontmatter under `skills:`. They are **referenced**, not vendored: they are fetched at install time from their upstream repo, so each entry MUST pin a `commit` (40-hex) and declare a `license` (SPDX), and SHOULD carry a `sha256` tree digest for integrity:
+Skills that live outside the package are declared in frontmatter under `skills:`. They are **referenced**, not vendored: they are fetched at install time from their upstream repo, so each entry MUST pin a `commit` (40-hex) and declare a `license` (SPDX):
 
 ```yaml
 skills:
@@ -49,13 +49,10 @@ skills:
     repo: "owner/repo"
     path: "skills/external-thing"
     commit: "9f2c1a…40-hex…"
-    ref: "v1.2.3"
-    sha256: "…64-hex…"
     license: "MIT"
-    distribution: "referenced"
 ```
 
-**Guarantee tiers.** An `embedded` skill (vendored under `skills/`) is curated by the maintainer and guaranteed by the package version. A `referenced` external skill gets a **bounded** guarantee only: reproducible (pinned commit), unmodified since the pin (the `sha256` digest is verified at install time) and license-declared. cogNNitive does **not** vouch for a referenced skill's author. Install it with `skills-manager install-external --name … --repo … --path … --commit … --sha256 …`; the `distribution: vendored` value (permissive license required) is reserved for skills shipped inside cogNNitive.
+**Guarantee tiers.** An `embedded` skill (vendored under `skills/`) is curated by the maintainer and guaranteed by the package version. A `referenced` external skill gets a **bounded** guarantee only: reproducible (the pinned `commit`) and license-declared. cogNNitive does **not** vouch for a referenced skill's author. Install it with `skills-manager install-external --name … --repo … --path … --commit …`.
 
 ---
 

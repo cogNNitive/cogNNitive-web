@@ -73,12 +73,11 @@ either direction — it does not touch the manifest or the state file.
 
 **Referenced external skills (opt-in).** A bluepriNNt may *recommend* a
 third-party skill by declaring it in its frontmatter `skills:` array, pinned to a
-`commit` and a `sha256` tree digest with an SPDX `license`. Such a skill is
-`referenced`, never vendored into the repo, and carries a deliberately **bounded**
-guarantee — reproducible (pinned commit), unmodified since the pin (digest
-verified at install) and license-declared; cogNNitive does not vouch for its
-author. Unlike the `embedded` skills curated under `skills/`, a referenced skill
-never enters the manifest and is never fetched by `install`/`update`/`sync`: it
+`commit` with an SPDX `license`. Such a skill is `referenced`, never vendored
+into the repo, and carries a deliberately **bounded** guarantee — reproducible
+(pinned commit) and license-declared; cogNNitive does not vouch for its author.
+Unlike the `embedded` skills curated under `skills/`, a referenced skill never
+enters the manifest and is never fetched by `install`/`update`/`sync`: it
 installs only through the explicit `install-external` subcommand. See the
 guarantee tiers in [`docs/innfo/template-package-spec.md`](../../docs/innfo/template-package-spec.md).
 

@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-3-5"
+blueprint_version: "V_0-3-6"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -158,6 +158,12 @@ description:: Paint order of the Layer as a numeric string (higher renders on to
 concept:: Layer
 type:: string
 description:: Optional provider model override for a `presenter` Layer (the avatar/lip-sync model id, e.g. `wavespeed-ai/infinitetalk`). Other Layer types ignore it.
+
+## NN Field Definition: avatar_resolution
+concept:: Layer
+type:: select
+options:: [480p, 720p, 768p]
+description:: Optional output resolution for a `presenter` avatar clip. The engine validates it against the model (Pruna accepts 480p/768p; InfiniTalk also 720p) and falls back to a model-appropriate default. Ignored by other Layer types.
 
 ## NN Field Definition: fit
 concept:: Layer

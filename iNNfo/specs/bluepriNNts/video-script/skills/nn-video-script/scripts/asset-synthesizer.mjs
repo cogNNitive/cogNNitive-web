@@ -20,6 +20,7 @@ import { buildAvatarRequest } from './lib/avatar-request.mjs';
 import { markNeedsFaststart } from './lib/faststart.mjs';
 import { estimateCallUsd, resolveModelId, DEFAULT_MODELS } from './asset-cost-estimator.mjs';
 import { probeDuration } from './lib/media-duration.mjs';
+import { defaultResolutionFor } from './lib/avatar-jobs.mjs';
 
 const require = createRequire(import.meta.url);
 let sharp;
@@ -487,7 +488,7 @@ export class AssetSynthesizer {
     if (this._alreadyPlanned('avatar:' + sha256)) return this._skipped(sha256);
     const model = resolveModelId(avatarOptions.model, this.defaultModels.avatar);
     const resumeId = meta.resumeTaskId;
-    const resolution = avatarOptions.resolution || '720p';
+    const resolution = avatarOptions.resolution || defaultResolutionFor(model);
     let ticket = null;
     let estUsd = 0;
     let request = null;
