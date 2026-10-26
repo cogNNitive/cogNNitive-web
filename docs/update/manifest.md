@@ -12,7 +12,7 @@ agent-bootstrap:
       version: "V_3-4-3"
       ref: "skills-v2.30.0"
       commit: "42e4f31dfa3f2d327f525dbfeb600d10083bae5b"
-      description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
+      description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [k] kNNowledge, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
     - name: nn-sources
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-sources
@@ -27,16 +27,16 @@ agent-bootstrap:
       version: "V_0-5-13"
       ref: "skills-v2.30.0"
       commit: "42e4f31dfa3f2d327f525dbfeb600d10083bae5b"
-      description: Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard.
+      description: Author, edit, and validate iNNfo kNNowledge with built-in step-by-step kNNowledge Creation Wizard.
       blueprints: [domaiNN]
       mcp:
         - name: nn-mcp
           repo: cogNNitive/cogNNitive-web
           path: iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
-          version: "0.30.0"
-          ref: "nn-mcp-v0.30.0"
-          commit: "ecefa6ef3bc619707c79e33433b4eafda846c8af"
-          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/ecefa6ef3bc619707c79e33433b4eafda846c8af/iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
+          version: "0.31.0"
+          ref: "nn-mcp-v0.31.0"
+          commit: "45ad8c79241a094ad4f79ea50789d734c6ed4f96"
+          url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/45ad8c79241a094ad4f79ea50789d734c6ed4f96/iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js
     - name: nn-preflight
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-preflight
@@ -149,9 +149,9 @@ agent-bootstrap:
       commit: "e328bee8da8f3cf8bde86029275eb8a2488b09ff"
       url: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/e328bee8da8f3cf8bde86029275eb8a2488b09ff/iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs
   workflows:
-    - id: model
-      label: Create an iNNfo model
-      description: Turn an idea, document, or dataset into a validated structured model.
+    - id: knowledge
+      label: Create iNNfo kNNowledge
+      description: Turn an idea, document, or dataset into validated structured kNNowledge against a bluepriNNt.
       skill: nn-innfo
       blueprint: domaiNN
     - id: transform
