@@ -7,7 +7,11 @@ var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -7381,6 +7385,9 @@ __export(index_exports, {
   computeSha256: () => computeSha256,
   consoleOutputPath: () => consoleOutputPath,
   createFsSourceResolver: () => createFsSourceResolver,
+  deriveFieldOrigin: () => deriveFieldOrigin,
+  deriveValueHistory: () => deriveValueHistory,
+  detectUnrecordedEdits: () => detectUnrecordedEdits,
   displayStem: () => displayStem,
   extractExcerpt: () => extractExcerpt,
   findEnclosingChangeBlock: () => findEnclosingChangeBlock,
@@ -7404,6 +7411,7 @@ __export(index_exports, {
   readChangeAuthor: () => readChangeAuthor,
   resolveCitation: () => resolveCitation,
   resolveConsoleSchema: () => resolveConsoleSchema,
+  resolveEvidenceCitation: () => resolveEvidenceCitation,
   roleOf: () => roleOf,
   serializeConsoleSlot: () => serializeConsoleSlot,
   unitAddress: () => unitAddress,
@@ -7924,6 +7932,17 @@ function resolveJsonPointer(content, pointer) {
   return { ok: true, value: current };
 }
 
+// iNNfo/packages/nn-core/src/schema/nature.ts
+var CORE_BLUEPRINT_NATURE = {
+  sources: { structure: "catalog", ownership: "derived" },
+  artifacts: { structure: "catalog", ownership: "derived" },
+  procedures: { structure: "catalog", ownership: "derived" },
+  changes: { structure: "members", ownership: "derived" }
+};
+function natureOfBlueprint(blueprintName) {
+  return CORE_BLUEPRINT_NATURE[blueprintName];
+}
+
 // iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
@@ -7967,7 +7986,17 @@ function displayStem(basename5) {
   return basename5.replace(/\.md$/i, "");
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
-var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar|changes)(?:_|$)/i;
+var CORE_BLUEPRINT_ROLE = {
+  cognnitive: "lineage-record",
+  sidecar: "sidecar",
+  changes: "changeset",
+  workspace: "catalog",
+  sources: "catalog",
+  artifacts: "catalog"
+};
+function coreBlueprintKey(parentSpecName) {
+  return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
+}
 function segmentsOf(path2) {
   return path2.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
@@ -7979,23 +8008,11 @@ function roleOf(i) {
   const lower = base.toLowerCase();
   if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
   if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
-  const bp = NON_KNOWLEDGE_BLUEPRINT_RE.exec((i.parentSpecName ?? "").trim())?.[1].toLowerCase();
-  switch (bp) {
-    case "cognnitive":
-      return "lineage-record";
-    case "sidecar":
-      return "sidecar";
-    case "changes":
-      return "changeset";
-    case "procedures":
-      return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
-    case "workspace":
-    case "sources":
-    case "artifacts":
-      return "catalog";
-    default:
-      return "knowledge";
+  const bp = coreBlueprintKey(i.parentSpecName);
+  if (bp === "procedures") {
+    return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
   }
+  return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
 }
 function isExcludedPath(path2) {
   const segs = segmentsOf(path2);
@@ -8041,9 +8058,11 @@ function parentSpecNameOf(frontmatter) {
 }
 function isConsoleModel(f) {
   if (isExcludedPath(f.path)) return false;
-  const role = roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) });
+  const parentSpecName = parentSpecNameOf(f.frontmatter);
+  const role = roleOf({ path: f.path, parentSpecName });
   if (role === "knowledge") return true;
-  return role === "procedure" && !segmentsOf(f.path).includes("procedures");
+  if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
+  return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
 }
 function isNNName(nameOrPath) {
   return NN_SUFFIX_RE.test(baseOf(nameOrPath));
@@ -9120,7 +9139,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-5-2", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-5-5", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/resolver.ts
@@ -10199,8 +10218,8 @@ function parseChangeset(rawContent) {
       case "notes":
         currentChange.notes = stripQuotes(rawVal);
         break;
-      case "sources":
-        currentChange.sources = stripQuotes(rawVal);
+      case "evidence":
+        currentChange.evidence = stripQuotes(rawVal);
         break;
       case "blueprint_name":
         currentChange.blueprint_name = stripQuotes(rawVal);
@@ -10211,8 +10230,11 @@ function parseChangeset(rawContent) {
       case "knowledge_version":
         currentChange.knowledge_version = stripQuotes(rawVal);
         break;
-      case "replaced_sources":
-        currentChange.replaced_sources = stripQuotes(rawVal);
+      case "applied_at":
+        currentChange.applied_at = stripQuotes(rawVal);
+        break;
+      case "batch":
+        currentChange.batch = stripQuotes(rawVal);
         break;
       case "status":
         if (!isChangeStatus(rawVal)) {
@@ -10418,7 +10440,7 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
   }
   const content = resolved.content;
   if (!content) {
-    return { path: ref.filePath, anchor, exists: true, field, origin: "document" };
+    return { path: ref.filePath, href: ref.filePath, anchor, exists: true, field, origin: "document" };
   }
   const fm = parseFrontmatter(content);
   const sha256 = fm?.sha256;
@@ -10460,6 +10482,7 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
   const classified = classifyOrigin(content, fm, ref);
   return {
     path: ref.filePath,
+    href: ref.filePath,
     anchor,
     exists: true,
     field,
@@ -10470,6 +10493,16 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
     ...mediaSha256 ? { media_sha256: mediaSha256 } : {},
     ...version ? { version } : {}
   };
+}
+function resolveEvidenceCitation(evidence, resolver, basePath = "") {
+  const ev = String(evidence ?? "").trim();
+  if (ev === "decision") {
+    return { path: "decision", exists: true, field: "evidence", origin: "human" };
+  }
+  if (ev === "unknown") {
+    return { path: "unknown", exists: true, field: "evidence", origin: "document" };
+  }
+  return resolveCitation(ev, "evidence", resolver, basePath);
 }
 function groupCitationsByField(citations) {
   const grouped = {};
@@ -10564,8 +10597,9 @@ async function loadChangesetRecords(rootDir) {
         author: c.author,
         notes: c.notes,
         status: c.status,
-        sources: c.sources,
-        replaced_sources: c.replaced_sources,
+        evidence: c.evidence,
+        applied_at: c.applied_at,
+        batch: c.batch,
         from: c.from,
         to: c.to,
         concept: c.concept,
@@ -10577,7 +10611,7 @@ async function loadChangesetRecords(rootDir) {
   }
   return records;
 }
-function attachChangesetHistory(elements, changesets) {
+function attachChangesetHistory(elements, changesets, resolveEvidence) {
   if (!Array.isArray(changesets) || changesets.length === 0) return;
   for (const cs of changesets) {
     for (const change of cs.changes) {
@@ -10589,12 +10623,19 @@ function attachChangesetHistory(elements, changesets) {
         const item = {
           id: change.id,
           op: change.op,
+          target: change.target,
           author: change.author || cs.author,
-          timestamp: cs.appliedAt,
+          timestamp: change.applied_at || cs.appliedAt,
           notes: stripWrappingQuotes(change.notes),
           status: change.status || cs.status,
-          sources: change.sources,
-          replaced_sources: change.replaced_sources
+          evidence: change.evidence,
+          ...change.evidence && resolveEvidence ? { evidenceCitation: resolveEvidence(change.evidence) } : {},
+          from: change.from,
+          to: change.to,
+          concept: change.concept,
+          name: change.name,
+          fields: change.fields,
+          resolution: change.resolution
         };
         if (!el.history) el.history = [];
         el.history.push(item);
@@ -10924,10 +10965,15 @@ function buildConsolePayload(options) {
     options.procedures,
     parsed.conceptFields
   );
-  attachChangesetHistory(elements, changesets);
+  attachChangesetHistory(
+    elements,
+    changesets,
+    resolver ? (evidence) => resolveEvidenceCitation(evidence, resolver, modelPath || "") : void 0
+  );
   const genTime = generated || (/* @__PURE__ */ new Date()).toISOString();
   const normalizedSource = modelPath ? modelPath.split("\\").join("/").replace(/^models\//i, "kNNowledge/").replace(/^.*?\/(kNNowledge\/)/i, "$1") : fm.title ? `kNNowledge/${slugify(fm.title)}_NN.md` : "kNNowledge/Model_NN.md";
   const sourceFile = normalizedSource.startsWith("kNNowledge/") ? normalizedSource : `kNNowledge/${normalizedSource}`;
+  const ownership = natureOfBlueprint(coreBlueprintKey(parentSpecNameOf(fm)))?.ownership ?? "authored";
   const meta = {
     modelId,
     title,
@@ -10935,7 +10981,8 @@ function buildConsolePayload(options) {
     sha256: rawSha256,
     sources: [sourceFile],
     generated: genTime,
-    changesBlueprintVersion: findCanonicalBlueprint("changes")?.version ?? ""
+    changesBlueprintVersion: findCanonicalBlueprint("changes")?.version ?? "",
+    ownership
   };
   if (template) {
     meta.template = template;
@@ -10951,6 +10998,90 @@ function buildConsolePayload(options) {
       matrices
     }
   };
+}
+
+// iNNfo/packages/nn-core/src/console/provenance.ts
+function changeFieldPart(target) {
+  const { elementPart } = parseChangesetTarget(target);
+  const amp = String(target).indexOf("&");
+  if (amp === -1) return null;
+  const field = String(target).slice(amp + 1);
+  if (field.includes("&")) return null;
+  if (!elementPart || !field) return null;
+  return { elementPart, field };
+}
+function hopAppliedAt(change, cs) {
+  return change.applied_at || cs.appliedAt || "";
+}
+function deriveValueHistory(changes, target) {
+  const wanted = changeFieldPart(target);
+  if (!wanted) return [];
+  const key = `${normalizeAddressKey(wanted.elementPart)}\0${wanted.field.toLowerCase()}`;
+  const hops = [];
+  for (const cs of changes) {
+    for (const change of cs.changes) {
+      const part = changeFieldPart(change.target);
+      if (!part) continue;
+      if (`${normalizeAddressKey(part.elementPart)}\0${part.field.toLowerCase()}` !== key) continue;
+      hops.push({
+        changeId: change.id,
+        batch: change.batch,
+        op: change.op,
+        author: change.author || cs.author,
+        evidence: change.evidence,
+        appliedAt: hopAppliedAt(change, cs),
+        from: change.from,
+        to: change.to
+      });
+    }
+  }
+  hops.sort((a, b) => a.appliedAt < b.appliedAt ? -1 : a.appliedAt > b.appliedAt ? 1 : 0);
+  return hops;
+}
+function deriveFieldOrigin(changes, element, field) {
+  const hops = deriveValueHistory(changes, `${element}@${element}&${field}`);
+  if (hops.length === 0) return null;
+  const last = hops[hops.length - 1];
+  return {
+    changeId: last.changeId,
+    batch: last.batch,
+    author: last.author,
+    evidence: last.evidence,
+    appliedAt: last.appliedAt,
+    from: last.from,
+    to: last.to
+  };
+}
+function detectUnrecordedEdits(elements, changes) {
+  const lastTo = /* @__PURE__ */ new Map();
+  for (const cs of changes) {
+    for (const change of cs.changes) {
+      if (change.status !== "applied") continue;
+      if (change.to === void 0) continue;
+      const part = changeFieldPart(change.target);
+      if (!part) continue;
+      const key = `${normalizeAddressKey(part.elementPart)}\0${part.field.toLowerCase()}`;
+      lastTo.set(key, change.to);
+    }
+  }
+  const out = [];
+  for (const el of elements) {
+    if (!el.fields) continue;
+    for (const [field, current] of Object.entries(el.fields)) {
+      const key = `${normalizeAddressKey(el.id)}\0${field.toLowerCase()}`;
+      if (!lastTo.has(key)) continue;
+      const expected = lastTo.get(key);
+      if (String(current ?? "") !== String(expected ?? "")) {
+        out.push({
+          code: "EDITED_WITHOUT_RECORD",
+          severity: "warning",
+          path: `${el.id}&${field}`,
+          message: `field "${field}" of "${el.id}" is "${String(current ?? "")}" but the last recorded change sets it to "${expected}"; record the change or revert`
+        });
+      }
+    }
+  }
+  return out;
 }
 
 // iNNfo/packages/nn-core/src/console/schema-resolution.ts
@@ -11309,6 +11440,9 @@ function unitHome(address) {
   computeSha256,
   consoleOutputPath,
   createFsSourceResolver,
+  deriveFieldOrigin,
+  deriveValueHistory,
+  detectUnrecordedEdits,
   displayStem,
   extractExcerpt,
   findEnclosingChangeBlock,
@@ -11332,6 +11466,7 @@ function unitHome(address) {
   readChangeAuthor,
   resolveCitation,
   resolveConsoleSchema,
+  resolveEvidenceCitation,
   roleOf,
   serializeConsoleSlot,
   unitAddress,

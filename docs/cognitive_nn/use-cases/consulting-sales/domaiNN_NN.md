@@ -18,13 +18,13 @@ Governed commercial consulting workspace connecting enterprise RFP requirements,
 # NN kNNowledge
 
 ## NN kNNowledge: Fintech RFP Response Model
-path:: kNNowledge/Fintech_RFP_Response_V_1-0-0_commercial_NN.md
+path:: kNNowledge/Fintech_RFP_Response_business_NN.md
 blueprint:: business
 status:: active
 author:: Sales Director
 
 ## NN kNNowledge: Consulting Team Matrix Model
-path:: kNNowledge/Consulting_Team_Matrix_V_1-0-0_organization_NN.md
+path:: kNNowledge/Consulting_Team_Matrix_organization_NN.md
 blueprint:: organization
 status:: active
 author:: Operations Director

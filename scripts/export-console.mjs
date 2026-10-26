@@ -7,7 +7,7 @@
  * Scans a workspace for iNNfo Level-3 models and compiles ONE self-contained
  * console (bundle, CSS, views and JSON slots inlined) against the canonical
  * console shell (`iNNfo/specs/bluepriNNts/console/artifact_shell.html`), filling
- * the `innfo-config` / `innfo-schema` / `innfo-model` slots from a direct model
+ * the `nn-config` / `nn-schema` / `nn-model` slots from a direct model
  * scan (no runtime dependency on nn-core, whose raw `dist/` barrel is not
  * ESM-importable). There is no per-model console: every console is the domain
  * console, optionally scoped to a model subset or a single view.
@@ -114,7 +114,7 @@ function loadPayloadHelper(consoleDir) {
 async function ensureAssets() {
   const consoleDir = resolveConsoleDir()
   const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
-  const bundlePath = ['nn-console.bundle.js', 'innfo-console.bundle.js']
+  const bundlePath = ['nn-console.bundle.js', 'nn-console.bundle.js']
     .map((name) => join(consoleDir, name))
     .find((p) => existsSync(p)) || join(consoleDir, 'nn-console.bundle.js')
   if (!existsSync(shellPath)) {
@@ -258,10 +258,44 @@ function frontmatterOf(content) {
   return out
 }
 
-/** A console model is a `knowledge` model or a `procedures` model (never a
- * `procedures/` submodel). See `isConsoleModel` in the naming contract. */
+/**
+ * Core-blueprint catalog documents the domain console surfaces as models for the
+ * administrator: the Sources, Artifacts and Procedures catalogs. Expressed as an
+ * EXPLICIT allowlist on purpose — the core blueprint set is a stable product
+ * contract, so we do not key off the `catalog` role (which would also drag in
+ * workspace documents). Add a name here only when a new core blueprint ships.
+ *
+ * The domain entrypoint (`domaiNN_NN.md`) is deliberately NOT included: its
+ * structural elements (Workspace, Models) carry no `slug::`, and the console
+ * model pipeline requires a frozen slug on every element — the same invariant
+ * that governs every other model.
+ */
+const CONSOLE_CORE_BLUEPRINTS = new Set(['sources', 'artifacts', 'procedures'])
+
+/** Blueprint name of a `parent_spec` name: trimmed, without a trailing `_V_x-y-z`. */
+function coreBlueprintOf(parentSpecName) {
+  return String(parentSpecName || '')
+    .trim()
+    .replace(/_V_\d+-\d+-\d+$/i, '')
+    .toLowerCase()
+}
+
+/**
+ * A console model is a `knowledge` model or a `procedures` model (never a
+ * `procedures/` submodel). See `isConsoleModel` in the naming contract.
+ *
+ * On top of that, the administrator's core-blueprint catalogs are surfaced too
+ * (same console mechanism as any other model): the allowlisted `catalog`-role
+ * documents (Sources, Artifacts, Procedures). The core predicate filters these
+ * out by role, so the console opts them back in here.
+ */
 function isModelDocument(relPath, content) {
-  return payloadHelper.isConsoleModel({ path: relPath, frontmatter: frontmatterOf(content) })
+  const frontmatter = frontmatterOf(content)
+  if (payloadHelper.isConsoleModel({ path: relPath, frontmatter })) return true
+  const parentName = payloadHelper.parentSpecNameOf(frontmatter)
+  const role = payloadHelper.roleOf({ path: relPath, parentSpecName: parentName })
+  if (role === 'catalog') return CONSOLE_CORE_BLUEPRINTS.has(coreBlueprintOf(parentName))
+  return false
 }
 
 function isLevel3(content) {
@@ -271,8 +305,10 @@ function isLevel3(content) {
 }
 
 function extractModelMetaFromHtml(htmlContent) {
+  // Dual read: a console exported before the `nn-` prefix migration carries
+  // `id="innfo-model"`.
   const match = htmlContent.match(
-    /<script type="application\/json" id="innfo-model">([\s\S]*?)<\/script>/,
+    /<script type="application\/json" id="(?:innfo|nn)-model">([\s\S]*?)<\/script>/,
   )
   if (!match) return null
   try {
@@ -475,8 +511,8 @@ function injectSlots(shell, config, schema, model) {
       (_m, open, close) => `${open}\n${serialize(json)}\n${close}`,
     )
   return slot(
-    slot(slot(shell, 'innfo-config', config), 'innfo-schema', schema),
-    'innfo-model',
+    slot(slot(shell, 'nn-config', config), 'nn-schema', schema),
+    'nn-model',
     model,
   )
 }
@@ -795,7 +831,7 @@ export async function writeConsole(opts = {}) {
   const packagesDir =
     process.env.INNFO_BLUEPRINTS_DIR ||
     (consoleDir === repoConsoleDir ? dirname(consoleDir) : join(homedir(), '.agents', 'bluepriNNts'))
-  const uiCssPath = ['nn-ui.css', 'innfo-ui.css']
+  const uiCssPath = ['nn-ui.css', 'nn-ui.css']
     .map((name) => join(consoleDir, name))
     .find((p) => existsSync(p)) || join(consoleDir, 'nn-ui.css')
   if (!existsSync(uiCssPath)) {
@@ -1011,6 +1047,7 @@ export async function writeConsole(opts = {}) {
           (payload.model.meta && payload.model.meta.citationsResolvedAt) || null,
         sources: (payload.model.meta && payload.model.meta.sources) || [],
         changeCount: changeCount,
+        ownership: (payload.model.meta && payload.model.meta.ownership) || 'authored',
         conceptNames: Array.from(modelConcepts),
         elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
       })
@@ -1065,6 +1102,83 @@ export async function writeConsole(opts = {}) {
         seenProcedureIds.add(p.id)
         allProcedures.push(p)
       }
+    }
+  }
+
+  // Change B: materialize the `changes` collection (structure: members) — one unit per
+  // `Change` across every batch document, the batch being the grouping. Read-only.
+  if (Array.isArray(changesets) && changesets.length > 0) {
+    const CHANGES_MODEL_ID = 'changes'
+    const CHANGES_MODEL_TITLE = 'Changes'
+    let changeUnitCount = 0
+    for (const cs of changesets) {
+      const batch = (String(cs.path).split('/').pop() || '').replace(/\.[^/.]+$/, '')
+      for (const c of cs.changes) {
+        const id = `${batch}#${c.id}`
+        const name = `${c.op} ${c.target}`
+        const description = c.notes || ''
+        const fields = { op: c.op, target: c.target }
+        if (c.from !== undefined) fields.from = c.from
+        if (c.to !== undefined) fields.to = c.to
+        if (c.author) fields.author = c.author
+        if (c.status) fields.status = c.status
+        if (c.evidence) fields.evidence = c.evidence
+        if (c.applied_at) fields.applied_at = c.applied_at
+        const markers = {}
+        // Resolve `evidence` (a citation) so the display shows the value plus the
+        // clickable citation icon through the standard field renderer.
+        const citations = {}
+        if (c.evidence && resolver && payloadHelper.resolveEvidenceCitation) {
+          citations.evidence = [
+            payloadHelper.resolveEvidenceCitation(c.evidence, resolver, `changes/${batch}.md`),
+          ]
+        }
+        allElements.push({
+          id,
+          slug: id,
+          concept: 'Change',
+          name,
+          description,
+          fields,
+          markers,
+          ...(Object.keys(citations).length ? { citations } : {}),
+          hash: payloadHelper.computeElementHash({ concept: 'Change', name, description, fields, markers }),
+          modelId: CHANGES_MODEL_ID,
+          modelTitle: CHANGES_MODEL_TITLE,
+          modelFile: '<changes>',
+          modelDir: 'changes',
+          ownership: 'derived',
+          location: `${batch}@## NN Change: ${c.id}`,
+        })
+        changeUnitCount++
+      }
+    }
+    if (changeUnitCount > 0) {
+      modelSummaries.push({
+        id: CHANGES_MODEL_ID,
+        title: CHANGES_MODEL_TITLE,
+        filePath: '<changes>',
+        blueprint: 'changes',
+        family: 'changes',
+        version: changesBlueprintVersion || null,
+        sha256: null,
+        citationsResolvedAt: null,
+        sources: [],
+        changeCount: changeUnitCount,
+        ownership: 'derived',
+        conceptNames: ['Change'],
+        elementCount: changeUnitCount,
+      })
+      scopeModelIds.push(CHANGES_MODEL_ID)
+    }
+  }
+
+  // Change C: drift fingerprint — a field whose current value diverges from the `to` of
+  // the last recorded change is reported here. The apply engine is the guard; this is
+  // the detection of a hand/git edit made outside the change log.
+  if (Array.isArray(changesets) && changesets.length > 0 && payloadHelper.detectUnrecordedEdits) {
+    for (const d of payloadHelper.detectUnrecordedEdits(allElements, changesets)) {
+      process.stderr.write(`WARNING: [export-console] ${d.code}: ${d.message}\n`)
     }
   }
 
@@ -1299,7 +1413,7 @@ export async function scaffoldConsoleView({ rootDir, slug, template = 'table', b
   let code
   if (template === 'kpi' || template === 'dashboard') {
     code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} dashboard
-   Declarative dashboard view using InnfoUI.KpiGrid with canonical KU badges. */
+   Declarative dashboard view using nnUI.KpiGrid with canonical KU badges. */
 registerView({
   title: '${viewTitle}',
   icon: 'dashboard',
@@ -1309,7 +1423,7 @@ registerView({
     var doc = ctx.container.ownerDocument
     var elements = (ctx.payload && ctx.payload.model && ctx.payload.model.elements) || []
 
-    var grid = InnfoUI.KpiGrid(
+    var grid = nnUI.KpiGrid(
       {
         items: [
           { label: 'Total', value: elements.length, hint: 'Elementos en este dominio' },
@@ -1340,7 +1454,7 @@ registerView({
   } else {
     // Default: 'table'
     code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} table view
-   Declarative table view using InnfoUI.DataTable with canonical KU badges. */
+   Declarative table view using nnUI.DataTable with canonical KU badges. */
 registerView({
   title: '${viewTitle}',
   icon: 'layers',
@@ -1350,7 +1464,7 @@ registerView({
     var doc = ctx.container.ownerDocument
     var elements = (ctx.payload && ctx.payload.model && ctx.payload.model.elements) || []
 
-    var table = InnfoUI.DataTable(
+    var table = nnUI.DataTable(
       {
         columns: [
           { key: 'name', label: 'Nombre', kind: 'element' },

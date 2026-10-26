@@ -45,6 +45,6 @@ origin_uri:: sources/import/customer_discovery.md
 raw_path:: sources/import/customer_discovery.md
 format:: md
 summary:: Normalized customer discovery transcripts with verified heading anchors for citations.
-source_model:: sources/nn/customer_discovery.md
+source_model:: sources/import/customer_discovery.md
 tags:: [discovery, normalized, citations]
 status:: ready

@@ -7,7 +7,7 @@
       typeof htm !== 'undefined' ? htm : require('./vendor/htm.umd.js')
     )
   } else {
-    root.InnfoPreact = factory(root.preact, root.htm)
+    root.nnPreact = factory(root.preact, root.htm)
   }
 })(typeof self !== 'undefined' ? self : this, function (preactMod, htmMod) {
   'use strict'
@@ -17,7 +17,7 @@
 
   if (!p || !h) {
     if (typeof console !== 'undefined' && console.warn) {
-      console.warn('InnfoPreact: preact or htm missing from runtime')
+      console.warn('nnPreact: preact or htm missing from runtime')
     }
     return {}
   }

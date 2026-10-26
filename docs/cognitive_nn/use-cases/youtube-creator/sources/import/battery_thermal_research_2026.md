@@ -1,8 +1,9 @@
-# Academic Paper Excerpt: Solid State vs Liquid Thermal Battery Degradation
+# Battery Thermal Dynamics & Degradation Benchmark
 
-Journal of Energy Engineering (2026)
-Authors: Dr. H. Vance, Dr. R. Chen
+## Empirical Fast-Charging Benchmarks
 
-Abstract & Empirical Findings:
-Under continuous high-speed fast charging (350kW), active liquid glycol cooling reduced degradation by 43.2% compared to passive air dissipation over 1,000 cycles.
-Solid-state electrolyte pouch cells maintained 91.4% capacity retention after 1,500 stress cycles at 45°C ambient temperature.
+### Active Cooling Degradation Metrics
+Under continuous 350kW DC fast charging, active liquid glycol thermal management reduced capacity degradation by 43.2% compared to passive dissipation across 1,000 charge cycles.
+
+### Solid State Capacity Retention
+Solid-state electrolyte pouch cells demonstrated 91.4% capacity retention after 1,500 stress cycles at 45°C ambient temperature.

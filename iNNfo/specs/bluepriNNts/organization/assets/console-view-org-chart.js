@@ -31,7 +31,7 @@ registerView({
     })
     var placed = {}
     var root = doc.createElement('div')
-    root.className = 'innfo-org-chart'
+    root.className = 'nn-org-chart'
     positions.forEach(function (pos) {
       var key = String(pos.id).toLowerCase()
       placed[key] = true
@@ -87,26 +87,26 @@ function elementUnit(doc, ctx, record, label) {
 
 function renderPosition(doc, ctx, pos, people) {
   var card = doc.createElement('section')
-  card.className = 'innfo-org-position'
+  card.className = 'nn-org-position'
   var head = doc.createElement('div')
-  head.className = 'innfo-org-position-head'
+  head.className = 'nn-org-position-head'
   head.appendChild(elementUnit(doc, ctx, pos, pos.name || '(position)'))
   card.appendChild(head)
   var list = doc.createElement('div')
-  list.className = 'innfo-org-people'
+  list.className = 'nn-org-people'
   if (!people.length) {
     var none = doc.createElement('span')
-    none.className = 'innfo-org-empty'
+    none.className = 'nn-org-empty'
     none.textContent = 'No one assigned'
     list.appendChild(none)
   }
   people.forEach(function (p) {
     var row = doc.createElement('div')
-    row.className = 'innfo-org-person'
+    row.className = 'nn-org-person'
     row.appendChild(elementUnit(doc, ctx, p, (p.fields && p.fields.role) || p.name || '(person)'))
     if (p.fields && p.fields.compensation) {
       var comp = doc.createElement('span')
-      comp.className = 'innfo-org-comp'
+      comp.className = 'nn-org-comp'
       comp.textContent = p.fields.compensation
       row.appendChild(comp)
     }

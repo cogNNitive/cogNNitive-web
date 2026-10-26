@@ -1,6 +1,6 @@
 /* procedures/assets/console-view-procedure.js — the Procedures stepper registered
    as a console view (bluepriNNt convention: flat under assets/, prefix
-   console-view-). It hands the shared payload to InnfoProcedureStepper.mount,
+   console-view-). It hands the shared payload to nnProcedureStepper.mount,
    which builds its own DOM inside the container and never uses global ids. */
 registerView({
   title: 'Procedure',
@@ -9,7 +9,7 @@ registerView({
   kind: 'editable',
   mount: function (ctx) {
     var doc = ctx.container.ownerDocument
-    var stepper = typeof InnfoProcedureStepper !== 'undefined' ? InnfoProcedureStepper : null
+    var stepper = typeof nnProcedureStepper !== 'undefined' ? nnProcedureStepper : null
     if (!stepper || typeof stepper.mount !== 'function') {
       var empty = doc.createElement('p')
       empty.className = 'empty-state'

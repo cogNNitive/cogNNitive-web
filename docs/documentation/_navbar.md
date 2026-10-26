@@ -1,6 +1,3 @@
-* [Website](https://cognnitive.com)
-* [GitHub](https://github.com/cogNNitive/cogNNitive)
-* **Ecosystem**
-  * [iNNfo](https://cognnitive.com/innfo)
-  * [Skills](https://cognnitive.com/skills)
-  * [MCP](https://cognnitive.com/use)
+* 🌐 **Website**: [cognnitive.com](https://cognnitive.com)
+* 🐙 **GitHub**: [cogNNitive/cogNNitive](https://github.com/cogNNitive/cogNNitive)
+* 🚀 **Bootstrap**: [install in your agent](/use)

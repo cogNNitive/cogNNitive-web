@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory()
   } else {
-    root.InnfoProcedureStepper = factory()
+    root.nnProcedureStepper = factory()
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict'
@@ -30,7 +30,7 @@
 
   // Reuse the shared visual vocabulary when loaded (visuals.js); fall back to
   // local literals when the module is absent.
-  var V = (GLOBAL.InnfoVisuals && typeof GLOBAL.InnfoVisuals === 'object') ? GLOBAL.InnfoVisuals : null
+  var V = (GLOBAL.nnVisuals && typeof GLOBAL.nnVisuals === 'object') ? GLOBAL.nnVisuals : null
 
   function vIcon(name, size) {
     return V && typeof V.iconSvg === 'function' ? V.iconSvg(name, size || 14) : ''
@@ -115,7 +115,7 @@
     // Build the procedures view DOM inside the container (no shell, no global ids).
     container.innerHTML = ''
     var root = doc.createElement('div')
-    root.className = 'innfo-procedure-view'
+    root.className = 'nn-procedure-view'
     var header = doc.createElement('div')
     header.className = 'proc-view-header'
     header.style.display = 'none'
@@ -134,7 +134,7 @@
     var subTabsNav = doc.createElement('nav')
     subTabsNav.className = 'subtabs'
     var docTab = doc.createElement('button')
-    docTab.className = 'subtab innfo-proc-toggle-btn'
+    docTab.className = 'subtab nn-proc-toggle-btn'
     docTab.setAttribute('type', 'button')
     docTab.textContent = 'View Document'
     subTabsNav.appendChild(docTab)
@@ -172,7 +172,7 @@
       })
       var procListEl = doc.createElement('div')
       procListEl.className = 'proc-blueprint-list'
-      procListEl.setAttribute('data-innfo-procedures', 'blueprint')
+      procListEl.setAttribute('data-nn-procedures', 'blueprint')
       var procLabelEl = doc.createElement('span')
       procLabelEl.className = 'proc-blueprint-label'
       procLabelEl.textContent = 'Procedures'
@@ -236,7 +236,7 @@
 
     // ---- Reference popup (shared runtime capability) ----
     function openRef(element) {
-      var rt = GLOBAL.InnfoConsole
+      var rt = GLOBAL.nnConsole
       if (rt && typeof rt.renderRefDialog === 'function') {
         rt.renderRefDialog(document, element)
         return
@@ -244,7 +244,7 @@
       // Fallback ref dialog, scoped to this view's container (never a global id).
       if (!refDialog) {
         refDialog = doc.createElement('dialog')
-        refDialog.className = 'innfo-ref-dialog'
+        refDialog.className = 'nn-ref-dialog'
         root.appendChild(refDialog)
       }
       var dialog = refDialog
@@ -253,12 +253,12 @@
       h.textContent = element && element.name ? element.name : 'Element'
       dialog.appendChild(h)
       var tag = document.createElement('span')
-      tag.className = 'innfo-ref-tag'
+      tag.className = 'nn-ref-tag'
       tag.textContent = element && element.concept ? element.concept : 'Element'
       dialog.appendChild(tag)
       if (element && element.description) {
         var p = document.createElement('p')
-        p.className = 'innfo-ref-desc'
+        p.className = 'nn-ref-desc'
         p.textContent = element.description
         dialog.appendChild(p)
       }
@@ -280,12 +280,12 @@
         }
         var token = match[0]
         if (/^fb-\d+$/.test(token)) {
-          var UIc = GLOBAL.InnfoUI
+          var UIc = GLOBAL.nnUI
           if (UIc && typeof UIc.Ku === 'function') {
             hostEl.appendChild(UIc.Ku('element', { model: meta.modelId || '', id: token, label: token }, { doc: document }))
           } else {
             var chg = document.createElement('span')
-            chg.className = 'innfo-ku-field-chip'
+            chg.className = 'nn-ku-field-chip'
             chg.textContent = token
             hostEl.appendChild(chg)
           }
@@ -309,7 +309,7 @@
         span.textContent = label
         return { node: span, ok: false }
       }
-      var UI = GLOBAL.InnfoUI
+      var UI = GLOBAL.nnUI
       if (UI && typeof UI.Ku === 'function' && target.id) {
         var cMeta = null
         concepts.forEach(function (x) {
@@ -326,7 +326,7 @@
           },
           { doc: document },
         )
-        var pillBadge = pill.querySelector('[data-innfo-component="ku-unit"]')
+        var pillBadge = pill.querySelector('[data-nn-component="ku-unit"]')
         if (pillBadge) {
           pillBadge.setAttribute('role', 'button')
           pillBadge.setAttribute('tabindex', '0')
@@ -409,7 +409,7 @@
         var h = document.createElement(isRoot ? 'h2' : 'h3')
         var iconName = step.fields.step_type || 'task'
         var svg = vIcon(iconName, 16)
-        h.style.color = 'var(--innfo-accent, #171717)'
+        h.style.color = 'var(--nn-accent, #171717)'
         h.innerHTML =
           '<span class="step-type-icon">' +
           (svg || STEP_TYPE_ICONS[step.fields.step_type] || '•') +
@@ -467,7 +467,7 @@
     }
 
     // ---- Chain: procedure root -> steps ordered by next within same parent ----
-    var RT = GLOBAL.InnfoConsole
+    var RT = GLOBAL.nnConsole
 
     function chainOf(proc) {
       if (RT && typeof RT.chainOf === 'function') return RT.chainOf(proc, nodeById)
@@ -668,10 +668,10 @@
           '<div class="proc-progress-track"><div class="proc-progress-fill" style="width:' + pct + '%"></div></div>' +
         '</div>' +
         '<div class="proc-status-right">' +
-          '<span class="proc-timer">' + vIcon('clock', 13) + ' <span data-innfo-timer>' + formatTimer() + '</span></span>' +
+          '<span class="proc-timer">' + vIcon('clock', 13) + ' <span data-nn-timer>' + formatTimer() + '</span></span>' +
         '</div>'
       stepProgress.appendChild(barWrap)
-      timerElRef = stepProgress.querySelector('[data-innfo-timer]')
+      timerElRef = stepProgress.querySelector('[data-nn-timer]')
     }
 
     function formatTimer() {
@@ -768,8 +768,8 @@
       var cur = chain[currentStepIndex]
       var state = stepStates[cur.el.id] || 'active'
       var card = document.createElement('article')
-      card.className = 'exec-step-card innfo-card'
-      card.setAttribute('data-innfo-component', 'element-card')
+      card.className = 'exec-step-card nn-card'
+      card.setAttribute('data-nn-component', 'element-card')
 
       // Step Header
       var headerRow = document.createElement('div')
@@ -884,7 +884,7 @@
         toolHead.innerHTML = vIcon('wrench', 13) + ' Tooling & Execution: <strong>' + esc(cur.fields.tool) + '</strong>'
         toolBox.appendChild(toolHead)
 
-        var cmdSnippet = 'innfo-cli run --step "' + esc(cur.el.name) + '" --tool "' + esc(cur.fields.tool) + '"'
+        var cmdSnippet = 'nn-cli run --step "' + esc(cur.el.name) + '" --tool "' + esc(cur.fields.tool) + '"'
         var cliSnippet = document.createElement('div')
         cliSnippet.className = 'exec-cli-snippet'
         cliSnippet.innerHTML =

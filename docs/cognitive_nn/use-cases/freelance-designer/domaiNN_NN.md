@@ -18,7 +18,7 @@ Client design project workspace capturing kickoff briefs, brand style guides, de
 # NN kNNowledge
 
 ## NN kNNowledge: Client Website Specification Model
-path:: kNNowledge/Client_Website_V_1-0-0_site_spec_NN.md
+path:: kNNowledge/Client_Website_site_spec_NN.md
 blueprint:: site_spec
 status:: active
 author:: Freelance Designer

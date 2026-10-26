@@ -10,7 +10,7 @@ nn-mcp is an MCP server that provides semantic iNNfo tools (validate, list, read
 
 Don't hand-edit the config files below unless you have to. `scripts/skills-manager.js`
 already detects your installed editor (OpenCode, Claude Code, Antigravity) and writes
-its MCP config for you, alongside skills and templates, in one step:
+its MCP config for you, alongside skills and bluepriNNts, in one step:
 
 ```bash
 node scripts/skills-manager.js bootstrap --agent auto
@@ -113,7 +113,7 @@ Or point directly to the script in this repo (if cloned):
   "mcp": {
     "nn-mcp": {
       "type": "local",
-      "command": ["node", "packages/nn-mcp/bin/nn-mcp.bundle.js"],
+      "command": ["node", "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js"],
       "enabled": true
     }
   }
@@ -167,11 +167,11 @@ Or point directly to the script in this repo (if cloned):
 If you already have the repo cloned:
 
 ```bash
-cd packages/nn-mcp
+cd iNNfo/packages/nn-mcp
 npm install && npm run build
 ```
 
-Then point your agent to `packages/nn-mcp/dist/server.js` directly (see version below).
+Then point your agent to `iNNfo/packages/nn-mcp/dist/server.js` directly (see version below).
 
 ## Shared config format (clone-based)
 
@@ -195,7 +195,7 @@ All clients use the same JSON structure:
   "mcp": {
     "nn-mcp": {
       "type": "local",
-      "command": ["node", "packages/nn-mcp/dist/server.js"],
+      "command": ["node", "iNNfo/packages/nn-mcp/dist/server.js"],
       "enabled": true
     }
   }
@@ -211,7 +211,7 @@ All clients use the same JSON structure:
   "mcpServers": {
     "nn-mcp": {
       "command": "node",
-      "args": ["packages/nn-mcp/dist/server.js"]
+      "args": ["iNNfo/packages/nn-mcp/dist/server.js"]
     }
   }
 }
@@ -226,7 +226,7 @@ All clients use the same JSON structure:
   "mcpServers": {
     "nn-mcp": {
       "command": "node",
-      "args": ["packages/nn-mcp/dist/server.js"]
+      "args": ["iNNfo/packages/nn-mcp/dist/server.js"]
     }
   }
 }
@@ -234,7 +234,7 @@ All clients use the same JSON structure:
 
 ## Pre-flight check
 
-Before editing a model, the agent should verify MCP is available:
+Before editing kNNowledge, the agent should verify MCP is available:
 
 1. Check if nn-mcp tools are listed in the current session's tool list
 2. If not, check the config files above exist
@@ -243,8 +243,9 @@ Before editing a model, the agent should verify MCP is available:
 
 ## Updating the bundle
 
-The bundle is built from `packages/nn-mcp/src/server.ts` and staged to `docs/innfo/cdn/`
-for CDN serving by the docs build (the same command CI runs):
+The bundle is built from `iNNfo/packages/nn-mcp/src/server.ts`. Its staging to `docs/innfo/cdn/`
+is owned by `scripts/stage-mcp-bundle.mjs`, which runs as part of the docs build (the same
+command CI runs):
 
 ```bash
 npm run build:docs
@@ -255,7 +256,7 @@ This builds the bundle and copies it to
 
 ## Related
 
-- `packages/nn-mcp/` — server source code
-- `docs/cdn/nn-mcp-v0.2.4.bundle.js` — current published bundle
+- `iNNfo/packages/nn-mcp/` — server source code
+- `docs/innfo/cdn/nn-mcp-v0.30.0.bundle.js` — current published bundle
 - `scripts/nn-mcp.cmd` — Windows bootstrap script (in repo)
 - `scripts/nn-mcp.sh` — Unix bootstrap script (in repo)

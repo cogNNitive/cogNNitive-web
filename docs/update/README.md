@@ -8,14 +8,14 @@ This center provides real-time access to the distribution manifests, blueprint v
 
 ## How to Upgrade
 
-You can upgrade your workspace skills, MCP runtime, and blueprints using your AI coding agent or via the CLI tools.
+You can upgrade your domaiNN skills, MCP runtime, and bluepriNNts using your AI coding agent or via the CLI tools.
 
 ### Via AI Agent (Recommended)
 
 Paste the following command directly into your agent's chat (**OpenCode Desktop**, **Claude Code**, **Google Antigravity**, **Cursor**, **Codex**):
 
 ```text
-/nn:upgrade
+/nn-upgrade
 ```
 
 Or trigger an explicit update from the public CDN endpoint:
@@ -29,7 +29,7 @@ I want to upgrade https://cognnitive.com/update
 Run the skills lifecycle manager in your terminal:
 
 ```bash
-node scripts/skills-manager.js upgrade
+node scripts/skills-manager.js update
 ```
 
 To inspect installed versions versus canonical releases without writing changes:
@@ -56,13 +56,13 @@ The ecosystem distributes manifests across two live channels:
 The machine-readable manifest contains the full list of canonical skills, version pins, commit SHAs, and MCP runtime endpoints.
 
 - **Primary CDN Manifest**: [`/update/manifest.md`](/update/manifest.md) (mirrored with [`/use/manifest.md`](/use/manifest.md))
-- **Raw GitHub Mirror**: `https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/docs/use/manifest.md`
+- **Raw GitHub Mirror**: `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/use/manifest.md`
 
 ---
 
 ## Blueprint Catalog
 
-The Level-2 domain blueprint schemas are published at canonical same-origin URLs:
+The Level-2 domain bluepriNNt schemas are published at canonical same-origin URLs:
 
 - **Catalog Endpoint**: [`https://cognnitive.com/innfo/blueprints/catalog.json`](https://cognnitive.com/innfo/blueprints/catalog.json)
 - **MCP CDN Bundle**: [`https://cognnitive.com/innfo/cdn/manifest.json`](https://cognnitive.com/innfo/cdn/manifest.json)

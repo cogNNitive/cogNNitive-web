@@ -247,11 +247,11 @@ function injectStyle(doc, id, css) {
 
 var CSS = [
   '.iv-kanban{display:flex;gap:1rem;align-items:flex-start;overflow-x:auto;padding:.25rem 0 1rem}',
-  '.iv-col{flex:0 0 17rem;min-width:0;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:10px;display:flex;flex-direction:column;max-height:72vh}',
-  '.iv-col-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.6rem .75rem;border-bottom:1px solid var(--innfo-border)}',
-  '.iv-col-title{font-weight:600;color:var(--innfo-text);font-size:.85rem}',
-  '.iv-col-count{background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:999px;padding:0 .5rem;font-size:.72rem;color:var(--innfo-muted)}',
+  '.iv-col{flex:0 0 17rem;min-width:0;background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:10px;display:flex;flex-direction:column;max-height:72vh}',
+  '.iv-col-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.6rem .75rem;border-bottom:1px solid var(--nn-border)}',
+  '.iv-col-title{font-weight:600;color:var(--nn-text);font-size:.85rem}',
+  '.iv-col-count{background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:999px;padding:0 .5rem;font-size:.72rem;color:var(--nn-muted)}',
   '.iv-col-body{display:flex;flex-direction:column;gap:.4rem;padding:.6rem;overflow-y:auto;min-width:0}',
-  '.iv-col-empty{color:var(--innfo-muted);text-align:center;padding:.5rem;font-size:.8rem}',
-  '.iv-mini-fallback{background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:8px;padding:.4rem .5rem;font-size:.8rem}',
+  '.iv-col-empty{color:var(--nn-muted);text-align:center;padding:.5rem;font-size:.8rem}',
+  '.iv-mini-fallback{background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:8px;padding:.4rem .5rem;font-size:.8rem}',
 ].join('\n')

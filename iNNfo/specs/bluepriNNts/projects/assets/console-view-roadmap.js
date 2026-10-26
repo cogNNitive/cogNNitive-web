@@ -31,7 +31,7 @@ registerView({
     })
     var placed = {}
     var root = doc.createElement('div')
-    root.className = 'innfo-roadmap'
+    root.className = 'nn-roadmap'
     milestones.forEach(function (ms) {
       var key = String(ms.id).toLowerCase()
       placed[key] = true
@@ -87,31 +87,31 @@ function elementUnit(doc, ctx, record, label) {
 
 function renderMilestone(doc, ctx, milestone, tasks) {
   var column = doc.createElement('section')
-  column.className = 'innfo-roadmap-milestone'
+  column.className = 'nn-roadmap-milestone'
   var head = doc.createElement('div')
-  head.className = 'innfo-roadmap-head'
+  head.className = 'nn-roadmap-head'
   head.appendChild(elementUnit(doc, ctx, milestone, milestone.name || '(milestone)'))
   if (milestone.fields && milestone.fields.target_date) {
     var date = doc.createElement('span')
-    date.className = 'innfo-roadmap-date'
+    date.className = 'nn-roadmap-date'
     date.textContent = milestone.fields.target_date
     head.appendChild(date)
   }
   column.appendChild(head)
   var list = doc.createElement('div')
-  list.className = 'innfo-roadmap-tasks'
+  list.className = 'nn-roadmap-tasks'
   if (!tasks.length) {
     var none = doc.createElement('span')
-    none.className = 'innfo-roadmap-empty'
+    none.className = 'nn-roadmap-empty'
     none.textContent = 'No tasks'
     list.appendChild(none)
   }
   tasks.forEach(function (t) {
     var row = doc.createElement('div')
-    row.className = 'innfo-roadmap-task'
+    row.className = 'nn-roadmap-task'
     row.appendChild(elementUnit(doc, ctx, t, t.name || '(task)'))
     var meta = doc.createElement('span')
-    meta.className = 'innfo-roadmap-meta'
+    meta.className = 'nn-roadmap-meta'
     var f = t.fields || {}
     meta.textContent = [f.status, f.priority, f.duration].filter(Boolean).join(' · ')
     row.appendChild(meta)

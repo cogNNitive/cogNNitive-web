@@ -8,5 +8,3 @@
 - [Ecosystem Links](https://cognnitive.com)
   - [Home](https://cognnitive.com)
   - [Bootstrap (`/use`)](https://cognnitive.com/use)
-  - [iNNfo](https://cognnitive.com/innfo)
-  - [Skills Documentation](https://cognnitive.com/skills/documentation)

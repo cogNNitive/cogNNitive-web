@@ -23,4 +23,3 @@ Allow: /
 # General crawlers
 User-agent: *
 Allow: /
-Sitemap: https://cognnitive.com/innfo/sitemap.xml

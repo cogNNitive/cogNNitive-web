@@ -18,13 +18,13 @@ Technical video production workspace connecting research papers, benchmark datas
 # NN kNNowledge
 
 ## NN kNNowledge: Episode 42 Video Script Model
-path:: kNNowledge/Episode_42_Battery_Tech_V_1-0-0_video_script_NN.md
+path:: kNNowledge/Episode_42_Battery_Tech_video_script_NN.md
 blueprint:: video_script
 status:: active
 author:: YouTube Creator
 
 ## NN kNNowledge: Episode 42 Production Workflow
-path:: procedures/Episode_42_Production_V_1-0-0_procedures_NN.md
+path:: procedures/Episode_42_Production_procedures_NN.md
 blueprint:: procedures
 status:: active
 author:: Production Lead

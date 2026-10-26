@@ -18,7 +18,7 @@ Early-stage SaaS startup workspace capturing customer discovery, problem-solutio
 # NN kNNowledge
 
 ## NN kNNowledge: SaaS Founder Business Model
-path:: kNNowledge/SaaS_Founder_V_1-0-0_business_NN.md
+path:: kNNowledge/SaaS_Founder_business_NN.md
 blueprint:: business
 status:: active
 author:: Startup Founder

@@ -4,18 +4,18 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./ui-kit.js'), require('./review.js'))
   } else {
-    root.InnfoConsole = factory(root.InnfoUI, root.InnfoReview)
+    root.nnConsole = factory(root.nnUI, root.nnReview)
   }
 })(typeof self !== 'undefined' ? self : this, function (UI, Review) {
   'use strict'
 
   // D5: the kit is a hard dependency; fail loudly rather than degrade silently.
-  if (!UI) throw new Error('InnfoUI missing: load ui-kit.js first')
-  if (!Review) throw new Error('InnfoReview missing: load review.js first')
+  if (!UI) throw new Error('nnUI missing: load ui-kit.js first')
+  if (!Review) throw new Error('nnReview missing: load review.js first')
 
   var CONSOLE_VERSION = '0.1.0'
 
-  var REVIEWER_STORAGE_KEY = 'innfo_reviewer_name'
+  var REVIEWER_STORAGE_KEY = 'nn_reviewer_name'
   // Fallback reviewer name used when none is stored. Treated as "no identifier"
   // by the export gate so the user must enter a real one before exporting.
   var DEFAULT_REVIEWER_NAME = 'reviewer'
@@ -26,10 +26,10 @@
     return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
-  function getInnfoSlug() {
-    if (typeof InnfoSlug !== 'undefined' && InnfoSlug && InnfoSlug.slugify) return InnfoSlug
-    if (typeof globalThis !== 'undefined' && globalThis.InnfoSlug && globalThis.InnfoSlug.slugify)
-      return globalThis.InnfoSlug
+  function getnnSlug() {
+    if (typeof nnSlug !== 'undefined' && nnSlug && nnSlug.slugify) return nnSlug
+    if (typeof globalThis !== 'undefined' && globalThis.nnSlug && globalThis.nnSlug.slugify)
+      return globalThis.nnSlug
     if (typeof require === 'function') {
       try {
         var mod = require('./nn-slug.generated.js')
@@ -42,7 +42,7 @@
   }
 
   function slugify(value) {
-    var slugMod = getInnfoSlug()
+    var slugMod = getnnSlug()
     var raw = slugMod ? slugMod.slugify(String(value == null ? '' : value)) : ''
     return raw || 'feedback'
   }
@@ -51,7 +51,7 @@
   // title. An explicit slug wins; otherwise the model id (then title) is slugified.
   function modelSlugOf(state) {
     var s = isObject(state) ? state : {}
-    var slugMod = getInnfoSlug()
+    var slugMod = getnnSlug()
     var candidates = [s.modelSlug, s.modelId, s.modelTitle]
     for (var i = 0; i < candidates.length; i++) {
       var c = candidates[i]
@@ -123,7 +123,7 @@
 
   function stampFromDate(when) {
     var d = when instanceof Date ? when : new Date(when)
-    if (isNaN(d.getTime())) throw new Error('innfo-console: invalid date for filename stamp')
+    if (isNaN(d.getTime())) throw new Error('nn-console: invalid date for filename stamp')
     return (
       d.getUTCFullYear() +
       pad2(d.getUTCMonth() + 1) +
@@ -172,15 +172,15 @@
     try {
       schema = JSON.parse(String(schemaRaw || '').trim() || '{}')
     } catch {
-      throw new Error('innfo-console: innfo-schema slot holds corrupt JSON')
+      throw new Error('nn-console: nn-schema slot holds corrupt JSON')
     }
     try {
       model = JSON.parse(String(modelRaw || '').trim() || '{}')
     } catch {
-      throw new Error('innfo-console: innfo-model slot holds corrupt JSON')
+      throw new Error('nn-console: nn-model slot holds corrupt JSON')
     }
     if (!isObject(schema) || !isObject(model)) {
-      throw new Error('innfo-console: slots must decode to JSON objects')
+      throw new Error('nn-console: slots must decode to JSON objects')
     }
     return { schema: schema, model: model }
   }
@@ -341,7 +341,7 @@
   }
 
   // valueKey: the single normalization used for multi-valued field membership
-  // (trim + lowercase), mirroring innfo-core schema/field-values.ts valueKey.
+  // (trim + lowercase), mirroring nn-core schema/field-values.ts valueKey.
   function valueKey(v) {
     if (v === null || v === undefined) return ''
     return String(v).trim().toLowerCase()
@@ -696,7 +696,7 @@
 
   // ---- Charts (shared console capability) ----
   // The runtime renders charts from pure-data series only: `compileChartSeries`
-  // maps innfo-model.series{chartId:number[]} into uPlot-ready xs/ys arrays and
+  // maps nn-model.series{chartId:number[]} into uPlot-ready xs/ys arrays and
   // never executes slot JavaScript. `monthAxis` derives the x-axis month window
   // from meta.months / historyMonths / startMonth / startYear. Missing series
   // for a declared chartId degrade to a console warning (chart skipped); the
@@ -803,12 +803,12 @@
   // Replaces any previous toast instead of stacking them.
   function showToast(doc, message) {
     if (!doc || !doc.body || typeof doc.createElement !== 'function') return null
-    var old = doc.querySelector('[data-innfo="toast"]')
+    var old = doc.querySelector('[data-nn="toast"]')
     if (old && old.parentNode) old.parentNode.removeChild(old)
     var toast = doc.createElement('div')
-    toast.setAttribute('data-innfo', 'toast')
+    toast.setAttribute('data-nn', 'toast')
     toast.setAttribute('role', 'alert')
-    toast.className = 'innfo-toast'
+    toast.className = 'nn-toast'
     toast.style.cssText =
       'position:fixed;right:16px;bottom:16px;z-index:10000;max-width:360px;padding:10px 14px;' +
       'border-radius:6px;background:#7f1d1d;color:#fff;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.25);'
@@ -856,15 +856,15 @@
     return models.length === 1 && models[0] ? String(models[0].version || '') : ''
   }
 
-  // The console header (`.innfo-navbar`) carries the model identity: the title in
-  // `#innfo-domain-title` (the single model's title when scoped, else `meta.title`),
-  // an optional `.innfo-scope-label`, and an extra meta line in `#innfo-navbar-extra`
+  // The console header (`.nn-navbar`) carries the model identity: the title in
+  // `#nn-domain-title` (the single model's title when scoped, else `meta.title`),
+  // an optional `.nn-scope-label`, and an extra meta line in `#nn-navbar-extra`
   // (Template, Version, Generated). Every value is rendered as text, so a hostile
   // title stays inert; a field absent from `meta` is omitted, never a placeholder.
   function renderNavbarIdentity(doc, meta) {
     meta = meta || {}
     var models = Array.isArray(meta.models) ? meta.models : []
-    var titleEl = doc.getElementById('innfo-domain-title')
+    var titleEl = doc.getElementById('nn-domain-title')
     if (titleEl) {
       var singleTitle = models.length === 1 && models[0] && models[0].title ? String(models[0].title) : ''
       var title = singleTitle || String(meta.title || meta.model || 'iNNfo Console')
@@ -879,11 +879,11 @@
     }
 
     var label = meta.consoleScope && meta.consoleScope.label
-    var labelEl = doc.querySelector('.innfo-scope-label')
+    var labelEl = doc.querySelector('.nn-scope-label')
     if (label) {
       if (!labelEl) {
         labelEl = doc.createElement('span')
-        labelEl.className = 'innfo-scope-label'
+        labelEl.className = 'nn-scope-label'
         if (titleEl && titleEl.parentNode) {
           titleEl.parentNode.insertBefore(labelEl, titleEl.nextSibling)
         } else if (titleEl) {
@@ -895,7 +895,7 @@
       labelEl.parentNode.removeChild(labelEl)
     }
 
-    var host = doc.getElementById('innfo-navbar-extra')
+    var host = doc.getElementById('nn-navbar-extra')
     if (host) {
       var first = models[0] || null
       var parts = []
@@ -914,13 +914,13 @@
       host.textContent = ''
       if (parts.length) {
         var infoBtn = doc.createElement('button')
-        infoBtn.className = 'innfo-navbar-info-btn'
+        infoBtn.className = 'nn-navbar-info-btn'
         infoBtn.type = 'button'
         infoBtn.setAttribute('aria-label', 'Domain info')
         infoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
 
         var popover = doc.createElement('div')
-        popover.className = 'innfo-navbar-info-popover'
+        popover.className = 'nn-navbar-info-popover'
         popover.style.display = 'none'
 
         var popoverLines = []
@@ -943,8 +943,8 @@
           }
         })
 
-        var brand = doc.querySelector('.innfo-brand')
-        if (brand && !brand.querySelector('.innfo-navbar-info-btn')) {
+        var brand = doc.querySelector('.nn-brand')
+        if (brand && !brand.querySelector('.nn-navbar-info-btn')) {
           brand.style.position = 'relative'
           brand.appendChild(infoBtn)
           brand.appendChild(popover)
@@ -954,7 +954,7 @@
         var href = safeSourceHref(meta.sourceUrl)
         if (href) {
           var link = doc.createElement('a')
-          link.className = 'innfo-source-link'
+          link.className = 'nn-source-link'
           link.setAttribute('href', href)
           link.setAttribute('target', '_blank')
           link.setAttribute('rel', 'noopener')
@@ -972,12 +972,12 @@
   // editability is self-evident (no pencil emoji). Persists to localStorage.
   function buildReviewerChip(doc) {
     var chip = doc.createElement('label')
-    chip.className = 'innfo-reviewer-chip'
+    chip.className = 'nn-reviewer-chip'
     var label = doc.createElement('span')
-    label.className = 'innfo-reviewer-label'
+    label.className = 'nn-reviewer-label'
     label.textContent = 'Reviewer'
     var input = doc.createElement('input')
-    input.className = 'innfo-reviewer-name'
+    input.className = 'nn-reviewer-name'
     input.type = 'text'
     input.setAttribute('aria-label', 'Reviewer name')
     var current = getReviewerName()
@@ -999,11 +999,11 @@
   }
 
   function renderBanner(doc, meta, needs, draftCount, onReviewerChange, state) {
-    var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
+    var banner = doc.getElementById('nn-feedback-banner') || doc.getElementById('nn-banner')
     if (!banner) return
-    var existingOpen = banner.querySelector('#innfo-feedback-open') || banner.querySelector('#innfo-export-open')
+    var existingOpen = banner.querySelector('#nn-feedback-open') || banner.querySelector('#nn-export-open')
     banner.innerHTML = ''
-    var title = el('span', 'innfo-banner-title', null)
+    var title = el('span', 'nn-banner-title', null)
     if (title) {
       title.appendChild(
         UI.Ku(
@@ -1016,10 +1016,10 @@
         ),
       )
     }
-    var version = el('span', 'innfo-banner-version', ' ' + domainModelVersion(meta))
-    var draftsBadge = el('span', 'innfo-banner-drafts', ' unsent: ' + (draftCount || 0))
-    draftsBadge.setAttribute('data-innfo', 'draft-count')
-    var dockDrafts = doc.querySelector('#innfo-review-dock .innfo-dock-drafts')
+    var version = el('span', 'nn-banner-version', ' ' + domainModelVersion(meta))
+    var draftsBadge = el('span', 'nn-banner-drafts', ' unsent: ' + (draftCount || 0))
+    draftsBadge.setAttribute('data-nn', 'draft-count')
+    var dockDrafts = doc.querySelector('#nn-review-dock .nn-dock-drafts')
     if (dockDrafts) dockDrafts.textContent = 'Unsent: ' + (draftCount || 0)
 
     banner.appendChild(title)
@@ -1035,13 +1035,13 @@
 
     if (existingOpen) {
       banner.appendChild(existingOpen)
-    } else if (banner.id === 'innfo-feedback-banner') {
-      var openBtn = el('button', 'innfo-feedback-open', 'Export changes')
+    } else if (banner.id === 'nn-feedback-banner') {
+      var openBtn = el('button', 'nn-feedback-open', 'Export changes')
       if (openBtn) {
-        openBtn.id = 'innfo-feedback-open'
+        openBtn.id = 'nn-feedback-open'
         openBtn.setAttribute('type', 'button')
         if (state) {
-          openBtn.setAttribute('data-innfo-bound', '1')
+          openBtn.setAttribute('data-nn-bound', '1')
           openBtn.addEventListener('click', function () {
             openExportModal(doc, state)
           })
@@ -1052,8 +1052,8 @@
   }
 
   function renderFilterBar(doc, state, onQueryChange, activeQuery) {
-    var host = doc.getElementById('innfo-filter-facets')
-    var activeHost = doc.getElementById('innfo-active-filters')
+    var host = doc.getElementById('nn-filter-facets')
+    var activeHost = doc.getElementById('nn-active-filters')
     if (!host) return
     host.innerHTML = ''
     if (activeHost) activeHost.innerHTML = ''
@@ -1107,17 +1107,17 @@
 
     // 1. Models Dropdown
     if (models.length > 1) {
-      var mWrap = el('div', 'innfo-facet-dropdown')
-      var mBtn = el('button', 'innfo-facet-btn' + (activeModels.length > 0 ? ' active' : ''))
+      var mWrap = el('div', 'nn-facet-dropdown')
+      var mBtn = el('button', 'nn-facet-btn' + (activeModels.length > 0 ? ' active' : ''))
       mBtn.setAttribute('type', 'button')
-      var mIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('file-text', { size: 14 }) : '📄'
+      var mIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg('file-text', { size: 14 }) : '📄'
       var mLabel = activeModels.length > 0 ? 'Models (' + activeModels.length + ')' : 'Models'
       mBtn.innerHTML = mIcon + ' <span>' + mLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
-      var mMenu = el('div', 'innfo-facet-menu')
+      var mMenu = el('div', 'nn-facet-menu')
       models.forEach(function (m) {
-        var item = el('label', 'innfo-facet-item')
-        var cb = el('input', 'innfo-facet-checkbox')
+        var item = el('label', 'nn-facet-item')
+        var cb = el('input', 'nn-facet-checkbox')
         cb.type = 'checkbox'
         var mMatchKey = (m.id || m.filePath || '').toLowerCase()
         var isChecked = activeModels.some(function (am) {
@@ -1148,12 +1148,12 @@
       mBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = mMenu.classList.contains('open')
-        doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
         if (!isOpen) mMenu.classList.add('open')
       })
 
       if (activeModels.length > 0) {
-        var mClear = el('span', 'innfo-facet-clear', '×')
+        var mClear = el('span', 'nn-facet-clear', '×')
         mClear.setAttribute('role', 'button')
         mClear.setAttribute('title', 'Clear models filter')
         mClear.addEventListener('click', function (e) {
@@ -1195,17 +1195,17 @@
     }
 
     if (allConcepts.length > 0) {
-      var cWrap = el('div', 'innfo-facet-dropdown')
-      var cBtn = el('button', 'innfo-facet-btn' + (activeConcepts.length > 0 ? ' active' : ''))
+      var cWrap = el('div', 'nn-facet-dropdown')
+      var cBtn = el('button', 'nn-facet-btn' + (activeConcepts.length > 0 ? ' active' : ''))
       cBtn.setAttribute('type', 'button')
-      var cIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('layers', { size: 14 }) : '🏷️'
+      var cIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg('layers', { size: 14 }) : '🏷️'
       var cLabel = activeConcepts.length > 0 ? 'Concepts (' + activeConcepts.length + ')' : 'Concepts'
       cBtn.innerHTML = cIcon + ' <span>' + cLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
-      var cMenu = el('div', 'innfo-facet-menu')
+      var cMenu = el('div', 'nn-facet-menu')
       allConcepts.forEach(function (c) {
-        var item = el('label', 'innfo-facet-item')
-        var cb = el('input', 'innfo-facet-checkbox')
+        var item = el('label', 'nn-facet-item')
+        var cb = el('input', 'nn-facet-checkbox')
         cb.type = 'checkbox'
         var isChecked = activeConcepts.indexOf(c.name.toLowerCase()) !== -1
         cb.checked = isChecked
@@ -1240,12 +1240,12 @@
       cBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = cMenu.classList.contains('open')
-        doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
         if (!isOpen) cMenu.classList.add('open')
       })
 
       if (activeConcepts.length > 0) {
-        var cClear = el('span', 'innfo-facet-clear', '×')
+        var cClear = el('span', 'nn-facet-clear', '×')
         cClear.setAttribute('role', 'button')
         cClear.setAttribute('title', 'Clear concepts filter')
         cClear.addEventListener('click', function (e) {
@@ -1340,18 +1340,18 @@
         }
       })
 
-      var fWrap = el('div', 'innfo-facet-dropdown')
-      var fBtn = el('button', 'innfo-facet-btn' + (activeFieldCount > 0 ? ' active' : ''))
+      var fWrap = el('div', 'nn-facet-dropdown')
+      var fBtn = el('button', 'nn-facet-btn' + (activeFieldCount > 0 ? ' active' : ''))
       fBtn.setAttribute('type', 'button')
-      var fIcon = typeof InnfoIcons !== 'undefined' ? InnfoIcons.getSvg('sliders', { size: 14 }) || InnfoIcons.getSvg('tag', { size: 14 }) : '🏷️'
+      var fIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg('sliders', { size: 14 }) || nnIcons.getSvg('tag', { size: 14 }) : '🏷️'
       var fLabel = activeFieldCount > 0 ? 'Fields (' + activeFieldCount + ')' : 'Fields'
       fBtn.innerHTML = fIcon + ' <span>' + fLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
-      var fMenu = el('div', 'innfo-facet-menu')
+      var fMenu = el('div', 'nn-facet-menu')
       fMenu.style.minWidth = '240px'
 
       function fieldValueRows(fName) {
-        var rows = el('div', 'innfo-facet-values')
+        var rows = el('div', 'nn-facet-values')
         var def = declaredFieldDef(fName)
         var observed = observedValues(fName)
         var declared = def && Array.isArray(def.options) && def.options.length ? def.options.map(String) : null
@@ -1364,8 +1364,8 @@
           })
         }
         options.slice(0, 200).forEach(function (valKey) {
-          var item = el('label', 'innfo-facet-item')
-          var cb = el('input', 'innfo-facet-checkbox')
+          var item = el('label', 'nn-facet-item')
+          var cb = el('input', 'nn-facet-checkbox')
           cb.type = 'checkbox'
           cb.checked = isChecked(valKey)
           cb.addEventListener('change', function () {
@@ -1383,8 +1383,8 @@
         if (!isBoolean && !declared) {
           // Free text covers values outside the declared vocabulary; the grammar takes
           // `a|b` for OR inside one token.
-          var entry = el('div', 'innfo-facet-item')
-          var input = el('input', 'innfo-facet-input')
+          var entry = el('div', 'nn-facet-item')
+          var input = el('input', 'nn-facet-input')
           input.type = 'text'
           input.placeholder = 'value  (a|b is OR)'
           input.addEventListener('keydown', function (ev) {
@@ -1402,7 +1402,7 @@
 
       function renderFieldStep(fName) {
         fMenu.innerHTML = ''
-        var back = el('button', 'innfo-facet-back', '\u2190 Fields')
+        var back = el('button', 'nn-facet-back', '\u2190 Fields')
         back.setAttribute('type', 'button')
         back.addEventListener('click', function (ev) {
           ev.stopPropagation()
@@ -1416,7 +1416,7 @@
       function renderFieldList() {
         fMenu.innerHTML = ''
         fieldNames.forEach(function (fName) {
-          var item = el('button', 'innfo-facet-item')
+          var item = el('button', 'nn-facet-item')
           item.setAttribute('type', 'button')
           item.appendChild(el('span', 'flex-1 truncate font-medium text-slate-700', fName))
           item.appendChild(el('span', 'badge badge-xs badge-ghost font-mono', String(fieldCounts[fName] || 0)))
@@ -1433,7 +1433,7 @@
       fBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = fMenu.classList.contains('open')
-        doc.querySelectorAll('.innfo-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
         if (!isOpen) {
           renderFieldList()
           fMenu.classList.add('open')
@@ -1441,7 +1441,7 @@
       })
 
       if (activeFieldCount > 0) {
-        var fClear = el('span', 'innfo-facet-clear', '×')
+        var fClear = el('span', 'nn-facet-clear', '×')
         fClear.setAttribute('role', 'button')
         fClear.setAttribute('title', 'Clear fields filter')
         fClear.addEventListener('click', function (e) {
@@ -1486,11 +1486,11 @@
       var schemaConcepts = (state && state.concepts && state.concepts.length ? state.concepts : (state && state.schema && state.schema.concepts)) || allConcepts.map(function (c) { return c.name })
 
       function renderAtomPill(atom) {
-        var pill = el('span', 'innfo-active-filter-pill badge badge-sm badge-outline gap-1.5 text-[11px] py-2 px-2.5 bg-base-100')
+        var pill = el('span', 'nn-active-filter-pill badge badge-sm badge-outline gap-1.5 text-[11px] py-2 px-2.5 bg-base-100')
         if (atom.type === 'text') {
           pill.classList.add('font-mono')
           pill.appendChild(el('span', null, '"' + atom.val + '"'))
-          var removeBtn = el('button', 'innfo-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
+          var removeBtn = el('button', 'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
           removeBtn.setAttribute('type', 'button')
           removeBtn.addEventListener('click', function (e) {
             e.stopPropagation()
@@ -1506,7 +1506,7 @@
         pill.setAttribute('data-filter-key', String(op.key))
         if (op.key === 'concept' || op.key === '!concept') {
           var cMeta = conceptMetaOf(schemaConcepts, op.val)
-          pill.classList.add('innfo-active-filter-pill--concept')
+          pill.classList.add('nn-active-filter-pill--concept')
           pill.setAttribute('data-concept-slot', String(cMeta.slot))
           if (cMeta.hexColor) {
             pill.style.setProperty('--pill-concept-color', cMeta.hexColor)
@@ -1530,7 +1530,7 @@
             ),
           )
         } else if (op.key === 'model' || op.key === 'file') {
-          pill.classList.add('innfo-active-filter-pill--model')
+          pill.classList.add('nn-active-filter-pill--model')
           var matchedModel = models.filter(function (m) {
             var mid = String(m.id || m.filePath || '').toLowerCase()
             return mid === String(op.val).toLowerCase()
@@ -1543,7 +1543,7 @@
           var labelText = op.key + ':' + op.val
           pill.appendChild(el('span', 'font-mono', labelText))
         }
-        var removeBtn = el('button', 'innfo-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
+        var removeBtn = el('button', 'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
         removeBtn.setAttribute('type', 'button')
         removeBtn.setAttribute('aria-label', 'Remove filter ' + op.key)
         removeBtn.addEventListener('click', function (e) {
@@ -1569,13 +1569,13 @@
 
       function createConnectorSelect(currentVal, onChange) {
         // A segmented control, matching the rest of the console (was a native <select>).
-        var group = el('span', 'innfo-op-toggle')
+        var group = el('span', 'nn-op-toggle')
         group.setAttribute('role', 'group')
         group.setAttribute('aria-label', 'Combine with')
         // The AND/OR explanation, on hover only.
         group.setAttribute('title', "Fields and text combine with AND; within one token a|b is OR. Model and Concept combine with OR. Inside one Field token, a|b matches any of the listed values.")
         ;['AND', 'OR'].forEach(function (val) {
-          var b = el('button', 'innfo-op-btn' + (val === currentVal ? ' active' : ''), val)
+          var b = el('button', 'nn-op-btn' + (val === currentVal ? ' active' : ''), val)
           b.setAttribute('type', 'button')
           b.setAttribute('aria-pressed', val === currentVal ? 'true' : 'false')
           b.addEventListener('click', function (e) {
@@ -1646,7 +1646,7 @@
     if (!doc.__facetOutsideListener) {
       doc.__facetOutsideListener = true
       doc.addEventListener('click', function () {
-        doc.querySelectorAll('.innfo-facet-menu').forEach(function (m) {
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (m) {
           m.classList.remove('open')
         })
       })
@@ -1659,13 +1659,13 @@
   }
 
   function renderRail(doc, concepts, counts, draftCountsByConcept, onSelect, state, activeQuery) {
-    var rail = doc.getElementById('innfo-rail')
+    var rail = doc.getElementById('nn-rail')
     if (!rail) return
     rail.innerHTML = ''
 
     var queryStr = activeQuery !== undefined
       ? activeQuery
-      : (doc.getElementById('innfo-search') && doc.getElementById('innfo-search').value) || ''
+      : (doc.getElementById('nn-search') && doc.getElementById('nn-search').value) || ''
     var parsedRailQuery = parseFilterQuery(queryStr)
     var activeModels = []
     var activeConcepts = []
@@ -1738,7 +1738,7 @@
           ),
         )
         summary.appendChild(
-          el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(m.elementCount) || 0)),
+          el('span', 'nn-rail-count badge badge-ghost badge-xs', String(Number(m.elementCount) || 0)),
         )
         summary.addEventListener('click', function (e) {
           // Clicking the chevron zone on the right edge toggles accordion open/close
@@ -1779,7 +1779,7 @@
           if (a) {
             a.setAttribute('data-concept', String(name))
             var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
-            a.className = 'innfo-rail-item' + (isActive ? ' active' : '')
+            a.className = 'nn-rail-item' + (isActive ? ' active' : '')
             var cMeta = conceptMetaOf(globalConcepts, name)
             var color = cMeta.hexColor
             a.setAttribute('data-concept-slot', String(cMeta.slot))
@@ -1792,7 +1792,7 @@
               ),
             )
             a.appendChild(
-              el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
+              el('span', 'nn-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
             )
             a.addEventListener('click', function (e) {
               if (e && e.preventDefault) e.preventDefault()
@@ -1812,7 +1812,7 @@
     }
 
     // Flat fallback (single-model console).
-    var cHdr = el('div', 'innfo-rail-header')
+    var cHdr = el('div', 'nn-rail-header')
     cHdr.innerHTML = '<span>Concepts (' + (concepts ? concepts.length : 0) + ')</span>'
     rail.appendChild(cHdr)
 
@@ -1827,7 +1827,7 @@
       var a = mk('a')
       if (a) {
         var isActive = activeConcepts.indexOf(String(name).toLowerCase()) !== -1
-        a.className = 'innfo-rail-item' + (isActive ? ' active' : '')
+        a.className = 'nn-rail-item' + (isActive ? ' active' : '')
         a.setAttribute('data-concept', String(name))
         var cMeta = conceptMetaOf(globalConcepts, name)
         var color = cMeta.hexColor
@@ -1841,11 +1841,11 @@
           ),
         )
         a.appendChild(
-          el('span', 'innfo-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
+          el('span', 'nn-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
         )
         var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
         if (draftCount > 0) {
-          var badge = el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(draftCount))
+          var badge = el('span', 'nn-rail-badge badge badge-sm badge-neutral', String(draftCount))
           if (badge) {
             badge.setAttribute('title', draftCount + ' unsent change(s)')
             a.appendChild(badge)
@@ -1926,16 +1926,16 @@
   }
 
   function renderConceptGuide(doc, concept, schema, matrices, counts, modelId) {
-    var layout = doc.getElementById('innfo-layout')
+    var layout = doc.getElementById('nn-layout')
     if (!layout) return
-    var host = doc.getElementById('innfo-concept-guide')
+    var host = doc.getElementById('nn-concept-guide')
     if (!concept) {
       if (host && host.parentNode) host.parentNode.removeChild(host)
       return
     }
     if (!host) {
-      host = el('aside', 'innfo-guide')
-      host.id = 'innfo-concept-guide'
+      host = el('aside', 'nn-guide')
+      host.id = 'nn-concept-guide'
       host.setAttribute('aria-label', 'Concept guidance')
       layout.appendChild(host)
     }
@@ -1943,20 +1943,20 @@
 
     var name = concept.name || 'Concept'
     var gMeta = conceptMetaOf(schema && schema.concepts, name)
-    var head = el('div', 'innfo-guide-head')
+    var head = el('div', 'nn-guide-head')
     var badge =
       UI && typeof UI.Ku === 'function'
         ? UI.Ku('section', { model: modelId || '', concept: name, label: name, index: gMeta.index, color: gMeta.color }, { doc: doc })
-        : el('span', 'innfo-card-concept-badge badge badge-sm', name)
+        : el('span', 'nn-card-concept-badge badge badge-sm', name)
     head.appendChild(badge)
 
     var count = counts && counts[name] != null ? counts[name] : null
     if (count != null) {
-      head.appendChild(el('span', 'innfo-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')))
+      head.appendChild(el('span', 'nn-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')))
     }
     // Collapsible: the toggle lives in the head and survives re-renders because
     // the collapsed state is a class on the aside, not on the rebuilt children.
-    var collapseBtn = el('button', 'innfo-guide-collapse')
+    var collapseBtn = el('button', 'nn-guide-collapse')
     collapseBtn.setAttribute('type', 'button')
     var setCollapsed = function (collapsed) {
       if (collapsed) host.classList.add('is-collapsed')
@@ -1974,18 +1974,18 @@
     host.appendChild(head)
 
     var description = concept.description || concept.summary || ''
-    if (description) host.appendChild(el('p', 'innfo-guide-desc', String(description)))
+    if (description) host.appendChild(el('p', 'nn-guide-desc', String(description)))
 
     var fields = guideFieldsFor(concept, schema)
     if (fields.length) {
-      var fs = el('section', 'innfo-guide-section')
-      fs.appendChild(el('h4', 'innfo-guide-title', 'Fields (' + fields.length + ')'))
-      var fdl = el('dl', 'innfo-guide-list innfo-guide-field-list')
+      var fs = el('section', 'nn-guide-section')
+      fs.appendChild(el('h4', 'nn-guide-title', 'Fields (' + fields.length + ')'))
+      var fdl = el('dl', 'nn-guide-list nn-guide-field-list')
       fields.forEach(function (f) {
         if (!f) return
         var label = f.label || f.name
         if (label == null) return
-        var dt = el('dt', 'innfo-guide-field-dt')
+        var dt = el('dt', 'nn-guide-field-dt')
         var declaredBy = f.declaredBy || {}
         dt.appendChild(
           UI.Ku(
@@ -2000,11 +2000,11 @@
             { doc: doc },
           ),
         )
-        var dd = el('dd', 'innfo-guide-field-dd')
+        var dd = el('dd', 'nn-guide-field-dd')
         var fTypeStr = String(f.type || f.widget || 'string')
-        var tBadge = el('span', 'innfo-ku-field-type', fTypeStr)
+        var tBadge = el('span', 'nn-ku-field-type', fTypeStr)
         dd.appendChild(tBadge)
-        if (f.multiple) dd.appendChild(el('span', 'innfo-ku-field-multi', 'multi'))
+        if (f.multiple) dd.appendChild(el('span', 'nn-ku-field-multi', 'multi'))
         var targetC = f.target || f.targetConcept || null
         if (targetC) {
           var tcMeta = conceptMetaOf(schema && schema.concepts, targetC)
@@ -2012,7 +2012,7 @@
             UI.Ku('section', { model: modelId || '', concept: targetC, label: targetC, index: tcMeta.index, color: tcMeta.color }, { doc: doc }),
           )
         }
-        if (f.description) dd.appendChild(el('p', 'innfo-guide-field-desc', String(f.description)))
+        if (f.description) dd.appendChild(el('p', 'nn-guide-field-desc', String(f.description)))
         fdl.appendChild(dt)
         fdl.appendChild(dd)
       })
@@ -2028,12 +2028,12 @@
     if (conceptVals) {
       var cvKeys = Object.keys(conceptVals)
       if (cvKeys.length) {
-        var cvs = el('section', 'innfo-guide-section')
-        cvs.appendChild(el('h4', 'innfo-guide-title', 'Concept values'))
-        var cvl = el('dl', 'innfo-guide-list innfo-guide-value-list')
+        var cvs = el('section', 'nn-guide-section')
+        cvs.appendChild(el('h4', 'nn-guide-title', 'Concept values'))
+        var cvl = el('dl', 'nn-guide-list nn-guide-value-list')
         cvKeys.forEach(function (k) {
           var v = conceptVals[k]
-          var cvDt = el('dt', 'innfo-guide-field-dt')
+          var cvDt = el('dt', 'nn-guide-field-dt')
           cvDt.appendChild(
             UI.Ku(
               'field',
@@ -2041,7 +2041,7 @@
               { doc: doc },
             ),
           )
-          var cvDd = el('dd', 'innfo-guide-field-dd')
+          var cvDd = el('dd', 'nn-guide-field-dd')
           cvDd.appendChild(
             UI.Ku(
               'value',
@@ -2065,12 +2065,12 @@
 
     var matrixList = guideMatricesFor(concept, matrices, schema)
     if (matrixList.length) {
-      var mts = el('section', 'innfo-guide-section')
-      mts.appendChild(el('h4', 'innfo-guide-title', 'Matrices (' + matrixList.length + ')'))
-      var mtl = el('ul', 'innfo-guide-list innfo-guide-matrix-list')
+      var mts = el('section', 'nn-guide-section')
+      mts.appendChild(el('h4', 'nn-guide-title', 'Matrices (' + matrixList.length + ')'))
+      var mtl = el('ul', 'nn-guide-list nn-guide-matrix-list')
       matrixList.forEach(function (m) {
         if (!m) return
-        var mli = el('li', 'innfo-guide-matrix-item')
+        var mli = el('li', 'nn-guide-matrix-item')
         var mLabel = String(m.name || (m.source + ' \u2192 ' + m.target))
         var mDeclaredBy = m.declaredBy || {}
         mli.appendChild(
@@ -2086,13 +2086,13 @@
           ),
         )
         if (m.source && m.target) {
-          var pairWrap = el('div', 'innfo-guide-matrix-pair')
+          var pairWrap = el('div', 'nn-guide-matrix-pair')
           var sMeta = conceptMetaOf(schema && schema.concepts, m.source)
           var tMeta = conceptMetaOf(schema && schema.concepts, m.target)
           pairWrap.appendChild(
             UI.Ku('section', { model: modelId || '', concept: m.source, label: m.source, index: sMeta.index, color: sMeta.color }, { doc: doc }),
           )
-          pairWrap.appendChild(el('span', 'innfo-guide-matrix-arrow', '⇄'))
+          pairWrap.appendChild(el('span', 'nn-guide-matrix-arrow', '⇄'))
           pairWrap.appendChild(
             UI.Ku('section', { model: modelId || '', concept: m.target, label: m.target, index: tMeta.index, color: tMeta.color }, { doc: doc }),
           )
@@ -2278,7 +2278,7 @@
       if (frag) host.appendChild(frag)
       shown = end
       if (shown < items.length) {
-        btn = el('button', 'btn btn-ghost btn-sm innfo-load-more')
+        btn = el('button', 'btn btn-ghost btn-sm nn-load-more')
         btn.setAttribute('type', 'button')
         btn.textContent = '\u25be Show more (' + shown + ' of ' + items.length + ')'
         btn.addEventListener('click', more)
@@ -2292,13 +2292,13 @@
   // element is projected, and deleted elements are styled. The change STATE is
   // painted by the review controller as ONE badge per row.
   function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId) {
-    var content = doc.getElementById('innfo-content')
+    var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
 
     var projectedElements = projectElements(elements, drafts)
 
-    var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
+    var visuals = typeof self !== 'undefined' && self.nnVisuals ? self.nnVisuals : null
     if (refs && isObject(refs)) {
       Object.keys(refs).forEach(function (rk) {
         var rEl = refs[rk]
@@ -2408,6 +2408,7 @@
           onCite: function (citeData) {
             var fName = citeData && citeData.field
             var list = fName && Array.isArray(elCitations[fName]) ? elCitations[fName] : []
+            if (citeData && citeData.entry) list = [citeData.entry]
             renderCitationDialog(doc, fName || element.name || element.id, list)
           },
         },
@@ -2417,7 +2418,7 @@
       var cMeta = conceptMetaOf(concepts, element.concept)
       var hexColor = cMeta.hexColor
       card.style.setProperty('--card-concept-color', hexColor)
-      card.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 35%, var(--innfo-border, #e5e5e5))'
+      card.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 35%, var(--nn-border, #e5e5e5))'
       card.style.borderLeft = '4px solid ' + hexColor
 
       // The per-card change state is NOT a separate "Draft Edit" chip any more: the
@@ -2427,14 +2428,14 @@
       // Wire the image thumbnail to the media lightbox when the element has
       // image fields (parity with the editor's NodeMedia gallery).
       var mediaItems = collectMediaItems(element)
-      var thumbEl = card.querySelector('.innfo-card-thumb')
-      if (thumbEl && thumbEl.classList && thumbEl.classList.contains('innfo-card-thumb--concept')) {
+      var thumbEl = card.querySelector('.nn-card-thumb')
+      if (thumbEl && thumbEl.classList && thumbEl.classList.contains('nn-card-thumb--concept')) {
         thumbEl.style.color = hexColor
-        thumbEl.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 38%, var(--innfo-border, #e5e5e5))'
+        thumbEl.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 38%, var(--nn-border, #e5e5e5))'
         thumbEl.style.backgroundColor = 'color-mix(in srgb, ' + hexColor + ' 12%, #ffffff)'
       }
       if (mediaItems.length && thumbEl && thumbEl.tagName === 'IMG') {
-        thumbEl.classList.add('innfo-card-thumb--zoom')
+        thumbEl.classList.add('nn-card-thumb--zoom')
         thumbEl.setAttribute('role', 'button')
         thumbEl.setAttribute('tabindex', '0')
         thumbEl.setAttribute('title', 'View media preview')
@@ -2454,7 +2455,7 @@
         card.addEventListener('click', function (ev) {
           var t = ev && ev.target
           if (t && typeof t.closest === 'function') {
-            var fImg = t.closest('.innfo-field-image')
+            var fImg = t.closest('.nn-field-image')
             if (fImg) {
               if (ev.stopPropagation) ev.stopPropagation()
               renderMediaDialog(doc, mediaItems, 0)
@@ -2481,11 +2482,11 @@
   }
 
   function mountElementBadges(doc, elements, drafts, concepts, refs, modelId) {
-    var content = doc.getElementById('innfo-content')
+    var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
-    var wrap = el('div', 'innfo-element-badges-wrap')
-    wrap.setAttribute('data-innfo-component', 'element-badges-view')
+    var wrap = el('div', 'nn-element-badges-wrap')
+    wrap.setAttribute('data-nn-component', 'element-badges-view')
     var projectedElements = projectElements(elements, drafts)
     chunked(wrap, projectedElements, function (pageElements) {
       var frag = doc.createDocumentFragment()
@@ -2503,7 +2504,7 @@
           },
           { doc: doc },
         )
-        var pillBadge = pill.querySelector('[data-innfo-component="ku-unit"]')
+        var pillBadge = pill.querySelector('[data-nn-component="ku-unit"]')
         if (pillBadge) {
           pillBadge.setAttribute('role', 'button')
           pillBadge.setAttribute('tabindex', '0')
@@ -2520,11 +2521,11 @@
   }
 
   function mountElementMiniCards(doc, elements, drafts, concepts, refs, incomingById, actions, modelId) {
-    var content = doc.getElementById('innfo-content')
+    var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
-    var grid = el('div', 'innfo-element-minicards-grid')
-    grid.setAttribute('data-innfo-component', 'element-minicards-view')
+    var grid = el('div', 'nn-element-minicards-grid')
+    grid.setAttribute('data-nn-component', 'element-minicards-view')
     var projectedElements = projectElements(elements, drafts)
     chunked(grid, projectedElements, function (pageElements) {
       var frag = doc.createDocumentFragment()
@@ -2616,14 +2617,14 @@
   // per field key, sortable by clicking a header. Mirrors the editor's
   // ConceptTableView (table view + header sort) inside the domain console.
   function mountElementTable(doc, elements, drafts, concepts, sortState, schema, onSort, modelId) {
-    var content = doc.getElementById('innfo-content')
+    var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
     var projected = projectElements(elements, drafts)
-    var table = el('table', 'innfo-element-table')
+    var table = el('table', 'nn-element-table')
     if (!table) return
 
-    var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
+    var visuals = typeof self !== 'undefined' && self.nnVisuals ? self.nnVisuals : null
     var conceptList = Array.isArray(concepts) ? concepts : []
     function conceptColor(name) {
       return conceptMetaOf(conceptList, name).hexColor
@@ -2649,7 +2650,7 @@
     var thead = el('thead')
     var headTr = el('tr')
     columns.forEach(function (col) {
-      var th = el('th', 'innfo-element-table-th')
+      var th = el('th', 'nn-element-table-th')
       th.setAttribute('data-sort-key', col.key)
       th.setAttribute('scope', 'col')
       var fieldDef = fieldDefOf(col.key)
@@ -2675,10 +2676,10 @@
         }
       }
       if (headerBadge) {
-        headerBadge.classList.add('innfo-element-table-th-label')
+        headerBadge.classList.add('nn-element-table-th-label')
         th.appendChild(headerBadge)
       } else {
-        th.appendChild(el('span', 'innfo-element-table-th-label', col.label))
+        th.appendChild(el('span', 'nn-element-table-th-label', col.label))
       }
       // The sort control is the ONLY click target in the header, so the field
       // badge's own "+" flyout opens the field options instead of re-sorting.
@@ -2686,12 +2687,12 @@
       // column is unsorted, a single dark triangle once it is sorted.
       var isSorted = sortState && sortState.key === col.key
       var dir = isSorted ? (sortState.dir === 'desc' ? 'desc' : 'asc') : 'none'
-      var sortBtn = el('button', 'innfo-element-table-sort')
+      var sortBtn = el('button', 'nn-element-table-sort')
       sortBtn.setAttribute('type', 'button')
       sortBtn.setAttribute('data-dir', dir)
       sortBtn.setAttribute('aria-label', 'Sort by ' + col.label)
-      sortBtn.appendChild(el('span', 'innfo-element-table-sort-up', '\u25b2'))
-      sortBtn.appendChild(el('span', 'innfo-element-table-sort-down', '\u25bc'))
+      sortBtn.appendChild(el('span', 'nn-element-table-sort-up', '\u25b2'))
+      sortBtn.appendChild(el('span', 'nn-element-table-sort-down', '\u25bc'))
       sortBtn.addEventListener('click', function () {
         if (typeof onSort === 'function') onSort(col.key)
       })
@@ -2709,7 +2710,7 @@
     var sorted = sortTableElements(projected, sortState)
     if (!sorted.length) {
       var emptyTr = el('tr')
-      var emptyTd = el('td', 'innfo-element-table-empty', 'No elements match the current filter.')
+      var emptyTd = el('td', 'nn-element-table-empty', 'No elements match the current filter.')
       emptyTd.setAttribute('colspan', String(columns.length))
       emptyTr.appendChild(emptyTd)
       tbody.appendChild(emptyTr)
@@ -2717,11 +2718,11 @@
     var buildRow = function (element) {
       var tr = el('tr')
       tr.setAttribute('data-element-id', String(element.id || ''))
-      if (element._draft) tr.classList.add('innfo-element-table-draft')
+      if (element._draft) tr.classList.add('nn-element-table-draft')
 
       var rowCMeta = conceptMetaOf(conceptList, element.concept)
       var rowModel = modelId || element.modelId || ''
-      var nameTd = el('td', 'innfo-element-table-name')
+      var nameTd = el('td', 'nn-element-table-name')
       var elBadge =
         UI && typeof UI.Ku === 'function'
           ? UI.Ku(
@@ -2781,7 +2782,7 @@
           if (relMatches.length) rawVal = relMatches.join(', ')
         }
         var val = displayCellText(rawVal)
-        var td = el('td', 'innfo-element-table-cell')
+        var td = el('td', 'nn-element-table-cell')
         if (val && UI && typeof UI.Ku === 'function') {
           td.appendChild(
             UI.Ku(
@@ -2814,7 +2815,7 @@
       })
 
       var tags = getElementEffectiveTags(element).join(', ')
-      var tagsTd = el('td', 'innfo-element-table-cell')
+      var tagsTd = el('td', 'nn-element-table-cell')
       if (tags && UI && typeof UI.Ku === 'function') {
         tagsTd.appendChild(
           UI.Ku(
@@ -2839,7 +2840,7 @@
     }
     table.appendChild(tbody)
 
-    var wrap = el('div', 'innfo-element-table-wrap')
+    var wrap = el('div', 'nn-element-table-wrap')
     wrap.appendChild(table)
     content.appendChild(wrap)
 
@@ -2861,20 +2862,20 @@
   // Cards/Table toggle for the Model Explorer. Created once inside the explorer
   // panel and re-rendered on refresh; the active mode lives in the boot state.
   function renderExplorerToolbar(doc, mode, onChange) {
-    var content = doc.getElementById('innfo-content')
+    var content = doc.getElementById('nn-content')
     if (!content || !content.parentNode) return
-    var host = doc.getElementById('innfo-explorer-toolbar')
+    var host = doc.getElementById('nn-explorer-toolbar')
     if (!host) {
-      host = el('div', 'innfo-explorer-toolbar')
-      host.id = 'innfo-explorer-toolbar'
+      host = el('div', 'nn-explorer-toolbar')
+      host.id = 'nn-explorer-toolbar'
       content.parentNode.insertBefore(host, content)
     }
     host.innerHTML = ''
-    var group = el('div', 'innfo-viewmode')
+    var group = el('div', 'nn-viewmode')
     group.setAttribute('role', 'group')
     group.setAttribute('aria-label', 'Element view mode')
     ;[['sheets', 'Sheets'], ['cards', 'Cards'], ['badges', 'Badges'], ['table', 'Table']].forEach(function (pair) {
-      var b = el('button', 'innfo-viewmode-btn', pair[1])
+      var b = el('button', 'nn-viewmode-btn', pair[1])
       b.setAttribute('type', 'button')
       b.setAttribute('data-mode', pair[0])
       b.setAttribute('aria-pressed', pair[0] === mode ? 'true' : 'false')
@@ -2888,7 +2889,7 @@
   }
 
   function renderMatrices(doc, matrices, concepts, fallbackModelId) {
-    var host = doc.getElementById('innfo-matrices')
+    var host = doc.getElementById('nn-matrices')
     if (!host) return
     host.innerHTML = ''
     var conceptList = Array.isArray(concepts) ? concepts : []
@@ -2916,7 +2917,7 @@
     }
     ;(Array.isArray(matrices) ? matrices : []).forEach(function (matrix) {
       if (!isObject(matrix)) return
-      var section = el('section', 'innfo-matrix')
+      var section = el('section', 'nn-matrix')
       if (!section) return
       var matrixModel = matrix.modelId || fallbackModelId || ''
       var matrixSlug = matrix.slug || UI.slug(matrix.name || 'matrix')
@@ -2958,13 +2959,13 @@
 
       var headTr = el('tr', null, null)
       if (headTr) {
-        var cornerTh = el('th', 'innfo-matrix-corner', null)
+        var cornerTh = el('th', 'nn-matrix-corner', null)
         var srcConcept = matrix.source || (rows.length && headRows[isStructured ? (rows[0].sourceId || rows[0].sourceLabel) : rows[0]] && headRows[isStructured ? (rows[0].sourceId || rows[0].sourceLabel) : rows[0]].concept) || null
         var tgtConcept = matrix.target || (cols.length && headCols[cols[0]] && headCols[cols[0]].concept) || null
         if (cornerTh && srcConcept && tgtConcept) {
           var sMetaM = conceptMetaOf(conceptList, srcConcept)
           var tMetaM = conceptMetaOf(conceptList, tgtConcept)
-          var cornerWrap = el('div', 'innfo-matrix-corner-pills')
+          var cornerWrap = el('div', 'nn-matrix-corner-pills')
           cornerWrap.appendChild(
             UI.Ku(
               'section',
@@ -2978,7 +2979,7 @@
               { doc: doc },
             ),
           )
-          cornerWrap.appendChild(el('span', 'innfo-matrix-corner-sep', '×'))
+          cornerWrap.appendChild(el('span', 'nn-matrix-corner-sep', '×'))
           cornerWrap.appendChild(
             UI.Ku(
               'section',
@@ -3014,7 +3015,7 @@
         cols.forEach(function (c) {
           var value = rowCells[c] != null ? String(rowCells[c]) : ''
           var isEmpty = value === '' || value === '-'
-          var td = el('td', isEmpty ? 'innfo-matrix-cell-empty' : 'innfo-matrix-cell-filled', null)
+          var td = el('td', isEmpty ? 'nn-matrix-cell-empty' : 'nn-matrix-cell-filled', null)
           if (td) {
             td.setAttribute('data-matrix', String(matrix.name || 'matrix'))
             td.setAttribute('data-row', String(rowLabel))
@@ -3039,7 +3040,7 @@
               },
               { doc: doc },
             )
-            var cellUnit = cellBadge.querySelector('[data-innfo-component="ku-unit"]')
+            var cellUnit = cellBadge.querySelector('[data-nn-component="ku-unit"]')
             if (!isEmpty && cellUnit) cellUnit.setAttribute('data-cell-value', value.toLowerCase())
             td.appendChild(cellBadge)
           }
@@ -3055,17 +3056,17 @@
   // Renders uPlot charts from the pure-data series mapping (charts capability).
   // Called by a view with a host element; a missing/invalid series skips the
   // chart with a console warning; requires the vendored uPlot global that ships
-  // inside innfo-console.bundle.js. Never evaluates slot JavaScript.
+  // inside nn-console.bundle.js. Never evaluates slot JavaScript.
   function renderCharts(host, model, meta) {
     if (!host) return
     var compiled = compileChartSeries(isObject(model) ? model.series : {}, meta)
     compiled.missing.forEach(function (c) {
       if (typeof console !== 'undefined' && console.warn)
-        console.warn('innfo-console: chart skipped — missing series for chart "' + c.id + '"')
+        console.warn('nn-console: chart skipped — missing series for chart "' + c.id + '"')
     })
     compiled.invalid.forEach(function (c) {
       if (typeof console !== 'undefined' && console.warn)
-        console.warn('innfo-console: chart skipped — ' + c.label + ' (' + c.detail + ')')
+        console.warn('nn-console: chart skipped — ' + c.label + ' (' + c.detail + ')')
     })
     // uPlot is vendored into the single-file bundle (see build-console-bundle.mjs);
     // the runtime also tolerates standalone loads where it is absent.
@@ -3077,17 +3078,17 @@
           : null
     if (!U) {
       if (typeof console !== 'undefined' && console.warn)
-        console.warn('innfo-console: uPlot unavailable — charts need the vendored console bundle')
+        console.warn('nn-console: uPlot unavailable — charts need the vendored console bundle')
       return
     }
     var windowCount =
       (Number(meta && meta.months) || 0) + (Number(meta && meta.historyMonths) || 0)
     compiled.charts.forEach(function (chart) {
-      var section = el('section', 'innfo-chart')
+      var section = el('section', 'nn-chart')
       if (!section) return
-      var heading = el('h3', 'innfo-chart-title', chart.label)
+      var heading = el('h3', 'nn-chart-title', chart.label)
       if (heading) section.appendChild(heading)
-      var canvas = el('div', 'innfo-chart-canvas')
+      var canvas = el('div', 'nn-chart-canvas')
       if (canvas) section.appendChild(canvas)
       host.appendChild(section)
       var labels = monthAxis(meta, windowCount || chart.count)
@@ -3130,7 +3131,7 @@
         )
       } catch (err) {
         if (typeof console !== 'undefined' && console.warn)
-          console.warn('innfo-console: chart render failed for "' + chart.id + '"', err)
+          console.warn('nn-console: chart render failed for "' + chart.id + '"', err)
       }
     })
   }
@@ -3164,7 +3165,7 @@
   }
 
   // Theme synchronization for embedded iframes now lives in ui-kit.js
-  // (InnfoUI.setTheme -> html[data-theme]); the class-based mechanism is gone.
+  // (nnUI.setTheme -> html[data-theme]); the class-based mechanism is gone.
 
   function baseValueOf(row) {
     return row.base != null
@@ -3389,10 +3390,10 @@
     var rowValues = computeValues()
     studioHost.innerHTML = ''
 
-    var studioWrap = el('div', 'innfo-studio-layout')
+    var studioWrap = el('div', 'nn-studio-layout')
 
     // Top Summary KPI Cards
-    var kpisWrap = el('div', 'innfo-studio-kpis')
+    var kpisWrap = el('div', 'nn-studio-kpis')
     
     var revRow = rows.filter(function (r) { return /revenue|ingreso/i.test(r.metricType || r.id || r.label) })[0]
     var costRow = rows.filter(function (r) { return /expense|cost|gasto/i.test(r.metricType || r.id || r.label) })[0]
@@ -3413,23 +3414,23 @@
     }
 
     kpiList.forEach(function (kpi) {
-      var card = el('div', 'innfo-studio-kpi-card' + (kpi.isHighlight ? ' is-highlight' : ''))
-      card.appendChild(el('div', 'innfo-studio-kpi-label', kpi.label))
-      var valRow = el('div', 'innfo-studio-kpi-val-row')
-      valRow.appendChild(el('span', 'innfo-studio-kpi-val', kpi.val))
-      if (kpi.unit) valRow.appendChild(el('span', 'innfo-studio-kpi-unit', kpi.unit))
+      var card = el('div', 'nn-studio-kpi-card' + (kpi.isHighlight ? ' is-highlight' : ''))
+      card.appendChild(el('div', 'nn-studio-kpi-label', kpi.label))
+      var valRow = el('div', 'nn-studio-kpi-val-row')
+      valRow.appendChild(el('span', 'nn-studio-kpi-val', kpi.val))
+      if (kpi.unit) valRow.appendChild(el('span', 'nn-studio-kpi-unit', kpi.unit))
       card.appendChild(valRow)
       kpisWrap.appendChild(card)
     })
     studioWrap.appendChild(kpisWrap)
 
     // Main Studio Grid (Controls on Left, Scenario Curves on Right)
-    var mainGrid = el('div', 'innfo-studio-grid')
+    var mainGrid = el('div', 'nn-studio-grid')
 
     // Left Column: Interactive Variable Sliders
-    var leftCol = el('div', 'innfo-studio-panel innfo-studio-controls')
-    var leftHdr = el('div', 'innfo-studio-panel-hdr')
-    leftHdr.appendChild(el('h4', 'innfo-studio-panel-title', 'Scenario Parameters & Sliders'))
+    var leftCol = el('div', 'nn-studio-panel nn-studio-controls')
+    var leftHdr = el('div', 'nn-studio-panel-hdr')
+    leftHdr.appendChild(el('h4', 'nn-studio-panel-title', 'Scenario Parameters & Sliders'))
     leftCol.appendChild(leftHdr)
 
     var varRows = rows.filter(function (r) {
@@ -3440,7 +3441,7 @@
       varRows = rows.slice(0, 4)
     }
 
-    var sliderCardsWrap = el('div', 'innfo-studio-sliders-wrap')
+    var sliderCardsWrap = el('div', 'nn-studio-sliders-wrap')
 
     varRows.forEach(function (r) {
       var baseVal = r.metricValue !== undefined ? Number(r.metricValue) : (r.val !== undefined ? Number(r.val) : (r.base !== undefined ? Number(r.base) : 0))
@@ -3452,17 +3453,17 @@
       if (minVal === maxVal) { minVal = 0; maxVal = 100; }
       var step = baseVal > 1000 ? 100 : (baseVal > 100 ? 10 : (baseVal > 10 ? 1 : 0.1))
 
-      var card = el('div', 'innfo-slider-card')
-      var cardTop = el('div', 'innfo-slider-card-top')
-      cardTop.appendChild(el('span', 'innfo-slider-label', r.label || r.id))
-      var numInput = el('input', 'innfo-slider-num-input')
+      var card = el('div', 'nn-slider-card')
+      var cardTop = el('div', 'nn-slider-card-top')
+      cardTop.appendChild(el('span', 'nn-slider-label', r.label || r.id))
+      var numInput = el('input', 'nn-slider-num-input')
       numInput.setAttribute('type', 'number')
       numInput.value = String(currVal)
       cardTop.appendChild(numInput)
       card.appendChild(cardTop)
 
-      var sliderRow = el('div', 'innfo-slider-row')
-      var slider = el('input', 'innfo-slider-range')
+      var sliderRow = el('div', 'nn-slider-row')
+      var slider = el('input', 'nn-slider-range')
       slider.setAttribute('type', 'range')
       slider.setAttribute('min', String(minVal))
       slider.setAttribute('max', String(maxVal))
@@ -3488,10 +3489,10 @@
       sliderRow.appendChild(slider)
       card.appendChild(sliderRow)
 
-      var cardMeta = el('div', 'innfo-slider-meta')
-      cardMeta.appendChild(el('span', 'innfo-slider-range-hint', minVal + ' .. ' + maxVal + (r.metricUnit ? ' ' + r.metricUnit : '')))
+      var cardMeta = el('div', 'nn-slider-meta')
+      cardMeta.appendChild(el('span', 'nn-slider-range-hint', minVal + ' .. ' + maxVal + (r.metricUnit ? ' ' + r.metricUnit : '')))
       if (overrides[r.id] !== undefined && overrides[r.id] !== baseVal) {
-        var resetLink = el('button', 'innfo-slider-reset', 'reset')
+        var resetLink = el('button', 'nn-slider-reset', 'reset')
         resetLink.setAttribute('type', 'button')
         resetLink.addEventListener('click', function () {
           delete overrides[r.id]
@@ -3507,13 +3508,13 @@
     mainGrid.appendChild(leftCol)
 
     // Right Column: Interactive Scenario Visualizer
-    var rightCol = el('div', 'innfo-studio-panel innfo-studio-visualizer')
-    var rightHdr = el('div', 'innfo-studio-panel-hdr')
-    rightHdr.appendChild(el('h4', 'innfo-studio-panel-title', 'Scenario Projection Curves'))
+    var rightCol = el('div', 'nn-studio-panel nn-studio-visualizer')
+    var rightHdr = el('div', 'nn-studio-panel-hdr')
+    rightHdr.appendChild(el('h4', 'nn-studio-panel-title', 'Scenario Projection Curves'))
     rightCol.appendChild(rightHdr)
 
-    var chartBox = el('div', 'innfo-studio-chart-box')
-    var svg = el('svg', 'innfo-studio-chart-svg')
+    var chartBox = el('div', 'nn-studio-chart-box')
+    var svg = el('svg', 'nn-studio-chart-svg')
     svg.setAttribute('viewBox', '0 0 700 300')
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
 
@@ -3532,7 +3533,7 @@
     var padX = 60, padY = 30, plotW = 600, plotH = 220
 
     var zeroY = padY + plotH - ((0 - minPlot) / rangePlot) * plotH
-    var zeroLine = el('line', 'innfo-chart-axis-line')
+    var zeroLine = el('line', 'nn-chart-axis-line')
     zeroLine.setAttribute('x1', String(padX))
     zeroLine.setAttribute('y1', String(zeroY))
     zeroLine.setAttribute('x2', String(padX + plotW))
@@ -3550,20 +3551,20 @@
         var vy = padY + plotH - (((pVals[mi] || 0) - minPlot) / rangePlot) * plotH
         pts.push(vx.toFixed(1) + ',' + vy.toFixed(1))
       }
-      var poly = el('polyline', 'innfo-chart-curve')
+      var poly = el('polyline', 'nn-chart-curve')
       poly.setAttribute('points', pts.join(' '))
       poly.setAttribute('stroke', colors[pidx % colors.length])
       poly.setAttribute('fill', 'none')
       poly.setAttribute('stroke-width', '2.5')
       svg.appendChild(poly)
 
-      var legendG = el('g', 'innfo-chart-legend-item')
+      var legendG = el('g', 'nn-chart-legend-item')
       var legDot = el('circle')
       legDot.setAttribute('cx', String(padX + pidx * 160))
       legDot.setAttribute('cy', '15')
       legDot.setAttribute('r', '5')
       legDot.setAttribute('fill', colors[pidx % colors.length])
-      var legTxt = el('text', 'innfo-chart-legend-text', pr.label || pr.id)
+      var legTxt = el('text', 'nn-chart-legend-text', pr.label || pr.id)
       legTxt.setAttribute('x', String(padX + pidx * 160 + 10))
       legTxt.setAttribute('y', '19')
       legendG.appendChild(legDot)
@@ -3573,7 +3574,7 @@
 
     for (var ti = 0; ti < totalMonths; ti += Math.max(1, Math.floor(totalMonths / 6))) {
       var tx = padX + (ti / Math.max(1, totalMonths - 1)) * plotW
-      var xTxt = el('text', 'innfo-chart-axis-text', labels[ti] || ('M' + (ti + 1)))
+      var xTxt = el('text', 'nn-chart-axis-text', labels[ti] || ('M' + (ti + 1)))
       xTxt.setAttribute('x', String(tx))
       xTxt.setAttribute('y', String(padY + plotH + 20))
       xTxt.setAttribute('text-anchor', 'middle')
@@ -3590,9 +3591,9 @@
 
   function renderTimelineGrid(container, model, meta, hooks) {
     if (!container) return
-    var host = el('div', 'innfo-timeline-grid-host')
+    var host = el('div', 'nn-timeline-grid-host')
     container.appendChild(host)
-    var studioHost = el('div', 'innfo-studio-host')
+    var studioHost = el('div', 'nn-studio-host')
     container.appendChild(studioHost)
     var rows = Array.isArray(model && model.rows) ? model.rows : []
     if (!rows.length) {
@@ -3693,10 +3694,10 @@
       host.innerHTML = ''
 
       // Header + Actions (KPI cards removed)
-      var gridHeader = el('div', 'innfo-timeline-header')
-      var gridTitle = el('h3', 'innfo-timeline-title', 'Timeline & P&L Projection')
-      var gridActions = el('div', 'innfo-timeline-actions')
-      var resetBtn = el('button', 'innfo-btn-reset', 'Reset Overrides')
+      var gridHeader = el('div', 'nn-timeline-header')
+      var gridTitle = el('h3', 'nn-timeline-title', 'Timeline & P&L Projection')
+      var gridActions = el('div', 'nn-timeline-actions')
+      var resetBtn = el('button', 'nn-btn-reset', 'Reset Overrides')
       if (resetBtn) {
         resetBtn.setAttribute('type', 'button')
         resetBtn.addEventListener('click', function () {
@@ -3709,7 +3710,7 @@
         })
         gridActions.appendChild(resetBtn)
       }
-      var exportCsvBtn = el('button', 'innfo-btn-csv', 'Download CSV')
+      var exportCsvBtn = el('button', 'nn-btn-csv', 'Download CSV')
       if (exportCsvBtn) {
         exportCsvBtn.setAttribute('type', 'button')
         exportCsvBtn.addEventListener('click', function () {
@@ -3724,10 +3725,10 @@
       if (focusedDependencyRowId) {
         var focusedRow = rows.filter(function (r) { return r.id === focusedDependencyRowId })[0]
         if (focusedRow) {
-          var filterBanner = el('div', 'innfo-timeline-filter-banner')
-          var bannerText = el('span', 'innfo-filter-banner-text')
+          var filterBanner = el('div', 'nn-timeline-filter-banner')
+          var bannerText = el('span', 'nn-filter-banner-text')
           bannerText.innerHTML = UI.icon('target', 14) + ' <span>Showing dependency tree for: <strong>' + escapeHtml(focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
-          var clearBtn = el('button', 'innfo-filter-banner-clear')
+          var clearBtn = el('button', 'nn-filter-banner-clear')
           clearBtn.setAttribute('type', 'button')
           clearBtn.innerHTML = UI.icon('close', 12) + ' <span>Clear Filter</span>'
           clearBtn.addEventListener('click', function () {
@@ -3741,8 +3742,8 @@
       }
 
       // Interactive Table
-      var tableWrap = el('div', 'innfo-timeline-table-wrap')
-      var table = el('table', 'innfo-timeline-table')
+      var tableWrap = el('div', 'nn-timeline-table-wrap')
+      var table = el('table', 'nn-timeline-table')
       var thead = el('thead')
       var trHead = el('tr')
 
@@ -3762,12 +3763,12 @@
       var tbody = el('tbody')
 
       function renderRowItem(r, isPinned) {
-        var tr = el('tr', 'innfo-timeline-row' + (r.variable ? ' is-var' : '') + (isPinned ? ' is-pinned' : '') + (focusedDependencyRowId === r.id ? ' is-focus-root' : ''))
+        var tr = el('tr', 'nn-timeline-row' + (r.variable ? ' is-var' : '') + (isPinned ? ' is-pinned' : '') + (focusedDependencyRowId === r.id ? ' is-focus-root' : ''))
         var tdMetric = el('td', 'td-sticky td-metric')
 
-        var actionsSpan = el('span', 'innfo-row-actions')
+        var actionsSpan = el('span', 'nn-row-actions')
         var isPinnedThis = !!pinnedRowIds[r.id]
-        var pinBtn = el('button', 'innfo-row-btn innfo-pin-btn' + (isPinnedThis ? ' pinned' : ''))
+        var pinBtn = el('button', 'nn-row-btn nn-pin-btn' + (isPinnedThis ? ' pinned' : ''))
         pinBtn.setAttribute('type', 'button')
         pinBtn.setAttribute('title', isPinnedThis ? 'Unpin row' : 'Pin row to top')
         pinBtn.innerHTML = UI.icon('pin', 12)
@@ -3779,7 +3780,7 @@
         actionsSpan.appendChild(pinBtn)
 
         var isChartThis = !!expandedChartRowIds[r.id]
-        var chartBtn = el('button', 'innfo-row-btn innfo-chart-btn' + (isChartThis ? ' active' : ''))
+        var chartBtn = el('button', 'nn-row-btn nn-chart-btn' + (isChartThis ? ' active' : ''))
         chartBtn.setAttribute('type', 'button')
         chartBtn.setAttribute('title', isChartThis ? 'Hide inline monthly chart' : 'Show inline monthly chart')
         chartBtn.innerHTML = UI.icon('chart', 12)
@@ -3793,7 +3794,7 @@
         var directDeps = extractDirectDependencyIds(r)
         if (directDeps.length > 0 || r.formula || focusedDependencyRowId === r.id) {
           var isFocusThis = focusedDependencyRowId === r.id
-          var filterBtn = el('button', 'innfo-row-btn innfo-filter-btn' + (isFocusThis ? ' active' : ''))
+          var filterBtn = el('button', 'nn-row-btn nn-filter-btn' + (isFocusThis ? ' active' : ''))
           filterBtn.setAttribute('type', 'button')
           filterBtn.setAttribute('title', isFocusThis ? 'Clear dependency tree filter' : 'Filter grid to show only dependencies of ' + (r.label || r.id))
           filterBtn.innerHTML = UI.icon('target', 12)
@@ -3807,7 +3808,7 @@
         tdMetric.appendChild(actionsSpan)
 
         var markerSvg = r.variable ? UI.icon('star', 11) : r.source === 'derived' ? UI.icon('derived', 11) : UI.icon('calc', 11)
-        var markerSpan = el('span', 'innfo-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'))
+        var markerSpan = el('span', 'nn-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'))
         markerSpan.innerHTML = markerSvg
         var nameSpan =
           UI && typeof UI.Ku === 'function'
@@ -3820,7 +3821,7 @@
                 },
                 { doc: container.ownerDocument || document },
               )
-            : el('span', 'innfo-row-name', r.label || r.id)
+            : el('span', 'nn-row-name', r.label || r.id)
         if (r.formula) nameSpan.setAttribute('title', 'Formula: ' + r.formula)
         tdMetric.appendChild(markerSpan)
         tdMetric.appendChild(nameSpan)
@@ -3828,7 +3829,7 @@
 
         var tdRule = el('td', 'td-rule')
         var g = growthState[r.id] || { mode: 'fixed', factor: 0 }
-        var selGrow = el('select', 'innfo-grow-sel')
+        var selGrow = el('select', 'nn-grow-sel')
         var optFixed = el('option', null, 'Fixed')
         optFixed.value = 'fixed'
         if (g.mode === 'fixed') optFixed.selected = true
@@ -3848,7 +3849,7 @@
         })
         tdRule.appendChild(selGrow)
 
-        var inpFactor = el('input', 'innfo-grow-factor')
+        var inpFactor = el('input', 'nn-grow-factor')
         inpFactor.type = 'number'
         inpFactor.step = 'any'
         inpFactor.value = g.factor != null ? String(g.factor) : '0'
@@ -3872,7 +3873,7 @@
 
           if (r.variable && !isHistCell) {
             var isOverridden = overrides[r.id] && (typeof overrides[r.id] === 'number' || overrides[r.id][mi] !== undefined)
-            var inpVar = el('input', 'innfo-var-input' + (isOverridden ? ' overridden' : ''))
+            var inpVar = el('input', 'nn-var-input' + (isOverridden ? ' overridden' : ''))
             inpVar.type = 'number'
             inpVar.step = 'any'
             inpVar.value = isOverridden ? (typeof overrides[r.id] === 'number' ? String(overrides[r.id]) : String(overrides[r.id][mi])) : String(Math.round(val * 100) / 100)
@@ -3902,9 +3903,9 @@
 
         // Render inline monthly chart if toggled
         if (expandedChartRowIds[r.id]) {
-          var trChart = el('tr', 'innfo-timeline-chart-row')
+          var trChart = el('tr', 'nn-timeline-chart-row')
           var tdChartSticky = el('td', 'td-sticky')
-          var chartLabel = el('span', 'innfo-chart-row-label')
+          var chartLabel = el('span', 'nn-chart-row-label')
           chartLabel.innerHTML = UI.icon('chart', 12) + ' <span>Monthly: ' + escapeHtml(r.label || r.id) + '</span>'
           tdChartSticky.appendChild(chartLabel)
           trChart.appendChild(tdChartSticky)
@@ -3916,7 +3917,7 @@
           var maxReal = finiteVals.length ? Math.max.apply(null, finiteVals) : NaN
 
           var tdChartRule = el('td', 'td-rule')
-          tdChartRule.appendChild(el('span', 'innfo-chart-range', 'Range: ' + formatGridNumber(minReal) + ' .. ' + formatGridNumber(maxReal)))
+          tdChartRule.appendChild(el('span', 'nn-chart-range', 'Range: ' + formatGridNumber(minReal) + ' .. ' + formatGridNumber(maxReal)))
           trChart.appendChild(tdChartRule)
 
           trChart.appendChild(el('td', 'td-unit', r.metricUnit || ''))
@@ -3925,16 +3926,16 @@
             var cVal = vals[ci] != null ? vals[ci] : 0
             var isHistCol = ci < historyCount
             var tdCell = el('td', 'td-chart-cell' + (isHistCol ? ' hist-cell' : ''))
-            var barWrap = el('div', 'innfo-mini-bar-wrap')
+            var barWrap = el('div', 'nn-mini-bar-wrap')
             barWrap.setAttribute('title', (labels[ci] || ('M' + (ci + 1))) + ': ' + formatGridNumber(cVal) + (r.metricUnit ? ' ' + r.metricUnit : ''))
 
             var cResolved = Number.isFinite(cVal)
             var heightPct = cResolved ? Math.max(4, Math.round((Math.abs(cVal) / maxAbs) * 100)) : 4
-            var bar = el('div', 'innfo-mini-bar' + (cResolved && cVal < 0 ? ' negative' : ''))
+            var bar = el('div', 'nn-mini-bar' + (cResolved && cVal < 0 ? ' negative' : ''))
             bar.style.height = heightPct + '%'
             bar.style.backgroundColor = cResolved ? getSemanticBarColor(cVal, minReal, maxReal, r) : '#cbd5e1'
 
-            var valLabel = el('span', 'innfo-mini-bar-val', formatGridNumber(cVal))
+            var valLabel = el('span', 'nn-mini-bar-val', formatGridNumber(cVal))
             barWrap.appendChild(bar)
             barWrap.appendChild(valLabel)
             tdCell.appendChild(barWrap)
@@ -3946,7 +3947,7 @@
           var lastVal = vals[totalMonths - 1] || 0
           var deltaPct = firstVal !== 0 ? Math.round(((lastVal - firstVal) / Math.abs(firstVal)) * 100) : 0
           var trendLabel = Number.isFinite(deltaPct) ? (deltaPct >= 0 ? '+' : '') + deltaPct + '% trend' : '- trend'
-          tdChartTotal.appendChild(el('div', 'innfo-mini-total', trendLabel))
+          tdChartTotal.appendChild(el('div', 'nn-mini-total', trendLabel))
           trChart.appendChild(tdChartTotal)
 
           tbody.appendChild(trChart)
@@ -3960,10 +3961,10 @@
         return true
       })
       if (pinnedRows.length > 0) {
-        var trPinnedHdr = el('tr', 'innfo-timeline-grp innfo-pinned-grp')
+        var trPinnedHdr = el('tr', 'nn-timeline-grp nn-pinned-grp')
         var tdPinnedHdr = el('td')
         tdPinnedHdr.setAttribute('colspan', String(totalMonths + 4))
-        var pinnedBadge = el('span', 'innfo-grp-badge')
+        var pinnedBadge = el('span', 'nn-grp-badge')
         pinnedBadge.innerHTML = UI.icon('pin', 12) + ' <span>PINNED METRICS (' + pinnedRows.length + ')</span>'
         tdPinnedHdr.appendChild(pinnedBadge)
         trPinnedHdr.appendChild(tdPinnedHdr)
@@ -3989,10 +3990,10 @@
         })
         if (!grpRows.length) return
 
-        var trGrp = el('tr', 'innfo-timeline-grp')
+        var trGrp = el('tr', 'nn-timeline-grp')
         var tdGrp = el('td')
         tdGrp.setAttribute('colspan', String(totalMonths + 4))
-        tdGrp.appendChild(el('span', 'innfo-grp-badge', grp + (activeDepSet ? ' (filtered)' : '')))
+        tdGrp.appendChild(el('span', 'nn-grp-badge', grp + (activeDepSet ? ' (filtered)' : '')))
         trGrp.appendChild(tdGrp)
         tbody.appendChild(trGrp)
 
@@ -4018,7 +4019,7 @@
   /* View registry. A view is a classic script that calls the registerView
      bound by viewRegistrar(id, source); the id is the file slug. A rejected
      registration throws AND is recorded in registry.errors(), which boot
-     renders as the #innfo-view-errors notice (a throw inside a <script> is
+     renders as the #nn-view-errors notice (a throw inside a <script> is
      otherwise visible only in devtools). */
   var VIEW_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
   var RESERVED_VIEW_IDS = ['explorer', 'matrices', 'review']
@@ -4061,8 +4062,8 @@
       return at + 'icon must be a slug of lowercase alphanumerics and hyphens'
     }
     var iconKey = TAB_ICONS[def.icon] || def.icon
-    if (typeof InnfoIcons !== 'undefined' && InnfoIcons && InnfoIcons.ICONS && !InnfoIcons.ICONS[iconKey]) {
-      return at + 'icon "' + def.icon + '" is unknown (known icons: ' + Object.keys(InnfoIcons.ICONS).sort().join(', ') + ')'
+    if (typeof nnIcons !== 'undefined' && nnIcons && nnIcons.ICONS && !nnIcons.ICONS[iconKey]) {
+      return at + 'icon "' + def.icon + '" is unknown (known icons: ' + Object.keys(nnIcons.ICONS).sort().join(', ') + ')'
     }
     if (typeof def.order !== 'number' || !isFinite(def.order)) return at + 'order must be a finite number'
     if (VIEW_KINDS.indexOf(def.kind) < 0) return at + 'kind must be "editable" or "readonly"'
@@ -4126,23 +4127,23 @@
   // into them. Idempotent: existing nodes are reused.
   function ensureTabShell(doc, model) {
     var mainEl = doc && typeof doc.querySelector === 'function' ? doc.querySelector('main') : null
-    var tabsNav = doc.getElementById('innfo-view-tabs')
+    var tabsNav = doc.getElementById('nn-view-tabs')
     if (!tabsNav && mainEl) {
-      tabsNav = el('nav', 'innfo-view-tabs')
-      tabsNav.id = 'innfo-view-tabs'
+      tabsNav = el('nav', 'nn-view-tabs')
+      tabsNav.id = 'nn-view-tabs'
       tabsNav.style.display = 'none'
-      var toolbar = mainEl.querySelector('.innfo-toolbar')
+      var toolbar = mainEl.querySelector('.nn-toolbar')
       if (toolbar && toolbar.nextSibling) mainEl.insertBefore(tabsNav, toolbar.nextSibling)
       else if (mainEl.firstChild) mainEl.insertBefore(tabsNav, mainEl.firstChild)
       else mainEl.appendChild(tabsNav)
     }
     if (!tabsNav) return null
 
-    var explorerPanel = doc.getElementById('innfo-tab-explorer')
+    var explorerPanel = doc.getElementById('nn-tab-explorer')
     if (!explorerPanel && mainEl) {
-      explorerPanel = el('div', 'innfo-tab-panel active')
-      explorerPanel.id = 'innfo-tab-explorer'
-      var hosts = ['innfo-doc', 'innfo-content', 'innfo-matrices']
+      explorerPanel = el('div', 'nn-tab-panel active')
+      explorerPanel.id = 'nn-tab-explorer'
+      var hosts = ['nn-doc', 'nn-content', 'nn-matrices']
         .map(function (id) {
           return doc.getElementById(id)
         })
@@ -4160,22 +4161,22 @@
     // Matrices get their own panel; the host must not stay inside the
     // explorer panel, which is hidden while the Matrices tab is active.
     var hasMatrices = Array.isArray(model && model.matrices) && model.matrices.length > 0
-    if (!doc.getElementById('innfo-tab-matrices') && hasMatrices && explorerPanel && explorerPanel.parentNode) {
-      var matricesPanel = el('div', 'innfo-tab-panel')
-      matricesPanel.id = 'innfo-tab-matrices'
-      var matricesHostEl = doc.getElementById('innfo-matrices')
+    if (!doc.getElementById('nn-tab-matrices') && hasMatrices && explorerPanel && explorerPanel.parentNode) {
+      var matricesPanel = el('div', 'nn-tab-panel')
+      matricesPanel.id = 'nn-tab-matrices'
+      var matricesHostEl = doc.getElementById('nn-matrices')
       if (!matricesHostEl) {
         matricesHostEl = el('div')
-        matricesHostEl.id = 'innfo-matrices'
+        matricesHostEl.id = 'nn-matrices'
       }
       matricesPanel.appendChild(matricesHostEl)
       explorerPanel.parentNode.insertBefore(matricesPanel, explorerPanel.nextSibling)
     }
 
-    var reviewPanel = doc.getElementById('innfo-tab-review')
+    var reviewPanel = doc.getElementById('nn-tab-review')
     if (!reviewPanel && mainEl) {
-      reviewPanel = el('div', 'innfo-tab-panel')
-      reviewPanel.id = 'innfo-tab-review'
+      reviewPanel = el('div', 'nn-tab-panel')
+      reviewPanel.id = 'nn-tab-review'
       mainEl.appendChild(reviewPanel)
     }
     return { nav: tabsNav, main: mainEl, review: reviewPanel, explorer: explorerPanel }
@@ -4194,26 +4195,26 @@
     // A standalone --view artifact mounts that view alone.
     if (consoleScopeOf(meta)) return views
     if (schema && Array.isArray(schema.concepts) && schema.concepts.length) {
-      views.push({ id: 'metamodel', title: 'Domain', icon: 'metamodel', order: 10, tone: 'core', panelId: 'innfo-tab-metamodel' })
+      views.push({ id: 'metamodel', title: 'Domain', icon: 'metamodel', order: 10, tone: 'core', panelId: 'nn-tab-metamodel' })
     }
     if ((Array.isArray(model && model.elements) && model.elements.length > 0) || shell.explorer) {
-      views.push({ id: 'explorer', title: 'Knowledge', icon: 'explorer', order: 20, tone: 'core', panelId: 'innfo-tab-explorer' })
+      views.push({ id: 'explorer', title: 'Knowledge', icon: 'explorer', order: 20, tone: 'core', panelId: 'nn-tab-explorer' })
     }
     if (Array.isArray(model && model.matrices) && model.matrices.length > 0) {
-      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 30, tone: 'core', panelId: 'innfo-tab-matrices' })
+      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 30, tone: 'core', panelId: 'nn-tab-matrices' })
     }
     return views
   }
 
   function renderViewErrors(doc, errors, nav) {
-    var host = doc.getElementById('innfo-view-errors')
+    var host = doc.getElementById('nn-view-errors')
     if (!errors.length) {
       if (host && host.parentNode) host.parentNode.removeChild(host)
       return
     }
     if (!host) {
-      host = el('div', 'innfo-view-errors alert alert-error text-sm mb-3')
-      host.id = 'innfo-view-errors'
+      host = el('div', 'nn-view-errors alert alert-error text-sm mb-3')
+      host.id = 'nn-view-errors'
       host.setAttribute('role', 'alert')
       nav.parentNode.insertBefore(host, nav)
     }
@@ -4272,11 +4273,11 @@
       var clash = tabs.filter(function (t) {
         return t.id === v.id
       })[0]
-      var panelId = 'innfo-tab-' + v.id
+      var panelId = 'nn-tab-' + v.id
       var existing = doc.getElementById(panelId)
       if (clash) {
         report(v.id, [clash.id + ' (built-in)', v.source], 'view "' + v.id + '": duplicate id (a built-in tab already uses it)')
-      } else if (existing && existing.getAttribute('data-innfo-view') !== v.id) {
+      } else if (existing && existing.getAttribute('data-nn-view') !== v.id) {
         // The panel belongs to the shell or a built-in tab; never mount into it.
         report(v.id, [v.source], 'view "' + v.id + '": panel #' + panelId + ' already exists and is not owned by this view')
       } else {
@@ -4285,7 +4286,7 @@
         // after Matrices, and reads "Procedures" in the header.
         var isProcedure = v.id === 'procedure'
         tabs.push(Object.assign({}, v, {
-          panelId: 'innfo-tab-' + v.id,
+          panelId: 'nn-tab-' + v.id,
           external: true,
           tone: isProcedure ? 'core' : isBlueprint ? 'blueprint' : 'custom',
           order: isProcedure ? 40 : v.order,
@@ -4301,23 +4302,25 @@
       var rb = TONE_RANK[b.tone] == null ? 2 : TONE_RANK[b.tone]
       return ra - rb || a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
     })
-    tabs.push({ id: 'review', title: 'Changes', icon: 'review', panelId: 'innfo-tab-review' })
+    // Change B: the bespoke `Changes` tab is retired — the `changes` collection now
+    // surfaces as an ordinary model (one unit per Change). The shell's review panel
+    // still hosts the changeset bar; it is no longer a tab.
 
     tabs.forEach(function (t) {
       if (t.id === 'explorer' || t.id === 'review') return
       if (doc.getElementById(t.panelId) || !shell.main) return
-      var panel = el('div', 'innfo-tab-panel')
+      var panel = el('div', 'nn-tab-panel')
       panel.id = t.panelId
-      if (t.external) panel.setAttribute('data-innfo-view', t.id)
+      if (t.external) panel.setAttribute('data-nn-view', t.id)
       shell.main.insertBefore(panel, shell.review)
     })
 
     nav.innerHTML = ''
     nav.style.display = 'flex'
-    nav.className = 'innfo-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
+    nav.className = 'nn-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
     tabs.forEach(function (t) {
       if (t.id === 'review' || t.id === 'changes') return
-      var btn = el('button', 'innfo-view-tab tab flex items-center gap-2')
+      var btn = el('button', 'nn-view-tab tab flex items-center gap-2')
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
       btn.classList.add('tone-' + (t.tone || 'custom'))
@@ -4545,7 +4548,7 @@
       } catch (err) {
         var msg = String(err && err.message ? err.message : err)
         mounted[t.id] = { api: {}, failed: true }
-        panel.appendChild(el('div', 'innfo-view-error alert alert-error text-sm', 'View "' + t.id + '" failed to mount: ' + msg))
+        panel.appendChild(el('div', 'nn-view-error alert alert-error text-sm', 'View "' + t.id + '" failed to mount: ' + msg))
         report(t.id, [t.source], 'view "' + t.id + '": mount failed: ' + msg)
         showErrors()
       }
@@ -4598,7 +4601,7 @@
       var prev = current
       current = tabId
       tabs.forEach(function (t) {
-        var btn = nav.querySelector('.innfo-view-tab[data-tab="' + t.id + '"]')
+        var btn = nav.querySelector('.nn-view-tab[data-tab="' + t.id + '"]')
         var panel = doc.getElementById(t.panelId)
         if (btn) {
           btn.classList.toggle('active', t.id === tabId)
@@ -4606,10 +4609,10 @@
         }
         if (panel) panel.classList.toggle('active', t.id === tabId)
       })
-      var dockChangesBtn = doc.querySelector('[data-innfo="dock-changes"]')
+      var dockChangesBtn = doc.querySelector('[data-nn="dock-changes"]')
       if (dockChangesBtn) dockChangesBtn.classList.toggle('active', tabId === 'review')
       if (!scopedView && doc.querySelector) {
-        var railAside = doc.querySelector('aside.innfo-rail')
+        var railAside = doc.querySelector('aside.nn-rail')
         if (railAside) {
           railAside.style.display = tabId === 'explorer' ? '' : 'none'
         }
@@ -4642,7 +4645,7 @@
     // First tab shown on a fresh load: the model explorer is the domain
     // console's primary content, so it wins over the registry order (a
     // blueprint's `procedure` view otherwise lands first and becomes the
-    // default). A `config.defaultView` from #innfo-config overrides it.
+    // default). A `config.defaultView` from #nn-config overrides it.
     function defaultTabId() {
       var has = function (id) {
         return tabs.some(function (t) {
@@ -4653,7 +4656,7 @@
       var preferred = opts.config && opts.config.defaultView
       if (preferred && has(preferred)) return preferred
       if (has('explorer')) return 'explorer'
-      return tabs[0].id
+      return tabs.length > 0 ? tabs[0].id : ''
     }
 
     var onHashChange = function () {
@@ -4687,18 +4690,18 @@
   }
 
   function updateTabBadges(doc, state) {
-    var btn = doc.querySelector('.innfo-view-tab[data-tab="review"]')
-    var dockBtn = doc.querySelector('[data-innfo="dock-changes"]')
+    var btn = doc.querySelector('.nn-view-tab[data-tab="review"]')
+    var dockBtn = doc.querySelector('[data-nn="dock-changes"]')
     var n = state && state.store ? state.store.drafts().length : 0
     if (btn) {
-      var old = btn.querySelector('.innfo-rail-badge')
+      var old = btn.querySelector('.nn-rail-badge')
       if (old && old.parentNode) old.parentNode.removeChild(old)
-      if (n > 0) btn.appendChild(el('span', 'innfo-rail-badge badge badge-sm badge-neutral', String(n)))
+      if (n > 0) btn.appendChild(el('span', 'nn-rail-badge badge badge-sm badge-neutral', String(n)))
     }
     if (dockBtn) {
-      var oldDockBadge = dockBtn.querySelector('.innfo-dock-badge')
+      var oldDockBadge = dockBtn.querySelector('.nn-dock-badge')
       if (oldDockBadge && oldDockBadge.parentNode) oldDockBadge.parentNode.removeChild(oldDockBadge)
-      if (n > 0) dockBtn.appendChild(el('span', 'innfo-dock-badge badge badge-sm badge-neutral ml-1', String(n)))
+      if (n > 0) dockBtn.appendChild(el('span', 'nn-dock-badge badge badge-sm badge-neutral ml-1', String(n)))
     }
   }
 
@@ -4753,23 +4756,23 @@
   // One Changes tab: Unsent on top (the only change signal a model view carries),
   // the applied history below. The history reads the payload `changes` collection.
   function renderReviewTab(doc, state, config, onRefresh) {
-    var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('innfo-tab-review') : null
+    var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('nn-tab-review') : null
     if (!host) return
     host.innerHTML = ''
 
     var drafts = state && state.store ? state.store.drafts() : []
     var changes = state && Array.isArray(state.changes) ? state.changes : []
     var byId = elementsByIdOf(state)
-    var root = el('div', 'innfo-review-tab-content p-6 max-w-5xl mx-auto')
+    var root = el('div', 'nn-review-tab-content p-6 max-w-5xl mx-auto')
     if (!root) return
 
-    var head = el('section', 'innfo-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
+    var head = el('section', 'nn-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
     if (head) {
       var titleWrap = el('div')
       titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
       var count = el(
         'p',
-        'innfo-review-count text-sm opacity-70 mt-1',
+        'nn-review-count text-sm opacity-70 mt-1',
         drafts.length + (drafts.length === 1 ? ' pending change' : ' pending changes'),
       )
       if (count) titleWrap.appendChild(count)
@@ -4779,12 +4782,12 @@
       if (staleCount > 0) {
         var staleNote = el(
           'p',
-          'innfo-review-stale text-sm mt-1',
+          'nn-review-stale text-sm mt-1',
           staleCount + (staleCount === 1 ? ' unsent change targets' : ' unsent changes target') +
             ' an element that changed since it was written: review before exporting.',
         )
         if (staleNote) {
-          staleNote.setAttribute('data-innfo', 'stale-drafts')
+          staleNote.setAttribute('data-nn', 'stale-drafts')
           staleNote.style.color = '#b45309'
           titleWrap.appendChild(staleNote)
         }
@@ -4792,11 +4795,11 @@
       head.appendChild(titleWrap)
 
       if (drafts.length > 0) {
-        var exportBtn = el('button', 'innfo-btn innfo-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
+        var exportBtn = el('button', 'nn-btn nn-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
         if (exportBtn) {
           exportBtn.setAttribute('type', 'button')
-          if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-            exportBtn.innerHTML = InnfoIcons.getSvg('download', { size: 14 }) + '<span>Export changes</span>'
+          if (typeof nnIcons !== 'undefined' && typeof nnIcons.getSvg === 'function') {
+            exportBtn.innerHTML = nnIcons.getSvg('download', { size: 14 }) + '<span>Export changes</span>'
           }
           exportBtn.addEventListener('click', function () {
             openExportModal(doc, state)
@@ -4837,13 +4840,13 @@
       openSourceCitation(doc, source)
     }
 
-    var unsent = el('section', 'innfo-changes-unsent mb-8')
+    var unsent = el('section', 'nn-changes-unsent mb-8')
     if (unsent) {
       unsent.appendChild(el('h3', 'text-lg font-semibold mb-2', UI.COPY.unsent))
       if (drafts.length > 0) {
-        var banner = el('div', 'innfo-changes-banner alert alert-info text-sm mb-3', UI.COPY.banner)
+        var banner = el('div', 'nn-changes-banner alert alert-info text-sm mb-3', UI.COPY.banner)
         if (banner) {
-          banner.setAttribute('data-innfo', 'publication-banner')
+          banner.setAttribute('data-nn', 'publication-banner')
           unsent.appendChild(banner)
         }
         unsent.appendChild(
@@ -4862,17 +4865,17 @@
           ),
         )
       } else {
-        var note = el('p', 'innfo-changes-banner-note text-sm opacity-70 mb-3', UI.COPY.bannerShort)
-        if (note) note.setAttribute('data-innfo', 'publication-note')
+        var note = el('p', 'nn-changes-banner-note text-sm opacity-70 mb-3', UI.COPY.bannerShort)
+        if (note) note.setAttribute('data-nn', 'publication-note')
         unsent.appendChild(note)
         unsent.appendChild(
-          el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg', 'No unsent changes. Edit an element to record one.'),
+          el('div', 'empty-state nn-review-empty text-sm p-4 rounded-lg', 'No unsent changes. Edit an element to record one.'),
         )
       }
       root.appendChild(unsent)
     }
 
-    var applied = el('section', 'innfo-changes-applied')
+    var applied = el('section', 'nn-changes-applied')
     if (applied) {
       applied.appendChild(el('h3', 'text-lg font-semibold mb-2', UI.COPY.applied))
       var history = UI.ChangeHistory(
@@ -4882,7 +4885,7 @@
       if (history && history.children.length > 0) {
         applied.appendChild(history)
       } else {
-        applied.appendChild(el('div', 'empty-state innfo-review-empty text-sm p-4 rounded-lg', 'No applied changes yet.'))
+        applied.appendChild(el('div', 'empty-state nn-review-empty text-sm p-4 rounded-lg', 'No applied changes yet.'))
       }
       root.appendChild(applied)
     }
@@ -4893,15 +4896,15 @@
   function focusElementCard(doc, elementId) {
     if (!doc || !elementId) return
     // A scoped console has no explorer to focus a card in.
-    if (doc.documentElement && doc.documentElement.hasAttribute('data-innfo-scope')) return
+    if (doc.documentElement && doc.documentElement.hasAttribute('data-nn-scope')) return
     // 1. Switch active tab to explorer if view tabs exist
-    var tabsNav = doc.getElementById('innfo-view-tabs')
+    var tabsNav = doc.getElementById('nn-view-tabs')
     if (tabsNav) {
-      var explorerBtn = tabsNav.querySelector('.innfo-view-tab[data-tab="explorer"]')
+      var explorerBtn = tabsNav.querySelector('.nn-view-tab[data-tab="explorer"]')
       if (explorerBtn && typeof explorerBtn.click === 'function') {
         explorerBtn.click()
       } else {
-        var firstTab = tabsNav.querySelector('.innfo-view-tab')
+        var firstTab = tabsNav.querySelector('.nn-view-tab')
         if (firstTab && typeof firstTab.click === 'function') firstTab.click()
       }
     }
@@ -4914,9 +4917,9 @@
       if (typeof card.scrollIntoView === 'function') {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
-      card.classList.add('innfo-highlight')
+      card.classList.add('nn-highlight')
       setTimeout(function () {
-        card.classList.remove('innfo-highlight')
+        card.classList.remove('nn-highlight')
       }, 2500)
     }
   }
@@ -4933,12 +4936,12 @@
 
   function renderRefDialog(doc, element) {
     if (!doc || !element) return
-    var dialog = doc.getElementById('innfo-ref-dialog')
+    var dialog = doc.getElementById('nn-ref-dialog')
     if (!dialog || typeof dialog.showModal !== 'function') return
     dialog.innerHTML = ''
-    var head = el('div', 'innfo-ref-head')
+    var head = el('div', 'nn-ref-head')
     var h = el('h2', null, String(element.name || 'Element'))
-    var close = el('button', 'innfo-ref-close', '×')
+    var close = el('button', 'nn-ref-close', '×')
     if (close) {
       close.setAttribute('type', 'button')
       close.setAttribute('aria-label', 'Close')
@@ -4948,7 +4951,7 @@
     }
     if (head && h) head.appendChild(h)
     if (head && close) head.appendChild(close)
-    var body = el('div', 'innfo-ref-body')
+    var body = el('div', 'nn-ref-body')
     var refModel = element.modelId || ''
     var tag =
       UI && typeof UI.Ku === 'function'
@@ -4957,14 +4960,14 @@
             { model: refModel, concept: element.concept || 'Element', label: String(element.concept || 'Element') },
             { doc: doc },
           )
-        : el('span', 'innfo-ref-tag', String(element.concept || 'Element'))
+        : el('span', 'nn-ref-tag', String(element.concept || 'Element'))
     if (body && tag) body.appendChild(tag)
     if (body && element.description) {
-      var p = el('p', 'innfo-ref-desc', element.description)
+      var p = el('p', 'nn-ref-desc', element.description)
       if (p) body.appendChild(p)
     }
     if (body && isObject(element.fields)) {
-      var dl = el('dl', 'innfo-ref-fields')
+      var dl = el('dl', 'nn-ref-fields')
       Object.keys(element.fields).forEach(function (k) {
         if (!dl) return
         var dt = el('dt', null, null)
@@ -5031,10 +5034,10 @@
 
   function renderMediaDialog(doc, items, start) {
     if (!doc || !Array.isArray(items) || !items.length) return
-    var dialog = doc.getElementById('innfo-media-dialog')
+    var dialog = doc.getElementById('nn-media-dialog')
     if (!dialog) {
       dialog = doc.createElement('dialog')
-      dialog.id = 'innfo-media-dialog'
+      dialog.id = 'nn-media-dialog'
       dialog.setAttribute('aria-label', 'Media preview')
       if (doc.body) doc.body.appendChild(dialog)
     }
@@ -5043,9 +5046,9 @@
     function render() {
       dialog.innerHTML = ''
       var item = items[index] || { name: '', value: '' }
-      var head = el('div', 'innfo-ref-head')
+      var head = el('div', 'nn-ref-head')
       var h = el('h2', null, item.name || 'Media')
-      var close = el('button', 'innfo-ref-close', '×')
+      var close = el('button', 'nn-ref-close', '×')
       if (close) {
         close.setAttribute('type', 'button')
         close.setAttribute('aria-label', 'Close')
@@ -5056,13 +5059,13 @@
       if (head && h) head.appendChild(h)
       if (head && close) head.appendChild(close)
 
-      var body = el('div', 'innfo-media-body')
+      var body = el('div', 'nn-media-body')
       var img = doc.createElement('img')
       var rawSrc = String(item.value || '')
       var normMatch = rawSrc.replace(/\\/g, '/').match(/^.+?\/((?:sources|kNNowledge|assets|evidence)\/.+)$/)
       img.setAttribute('src', normMatch ? normMatch[1] : rawSrc)
       img.setAttribute('alt', item.name || '')
-      img.className = 'innfo-media-image'
+      img.className = 'nn-media-image'
       img.addEventListener('error', function () {
         var cur = img.getAttribute('src') || ''
         var relMatch = !img.getAttribute('data-retried') && cur.match(/^.+?(\bsources\/.+)$/)
@@ -5073,9 +5076,9 @@
       })
       if (body) body.appendChild(img)
 
-      var bar = el('div', 'innfo-media-bar')
+      var bar = el('div', 'nn-media-bar')
       if (items.length > 1 && bar) {
-        var prev = el('button', 'innfo-media-nav', '‹')
+        var prev = el('button', 'nn-media-nav', '‹')
         prev.setAttribute('type', 'button')
         prev.setAttribute('aria-label', 'Previous media')
         if (index === 0) prev.setAttribute('disabled', 'disabled')
@@ -5085,8 +5088,8 @@
             render()
           }
         })
-        var counter = el('span', 'innfo-media-count', index + 1 + ' / ' + items.length)
-        var next = el('button', 'innfo-media-nav', '›')
+        var counter = el('span', 'nn-media-count', index + 1 + ' / ' + items.length)
+        var next = el('button', 'nn-media-nav', '›')
         next.setAttribute('type', 'button')
         next.setAttribute('aria-label', 'Next media')
         if (index === items.length - 1) next.setAttribute('disabled', 'disabled')
@@ -5101,7 +5104,7 @@
         bar.appendChild(next)
       }
       var dl = doc.createElement('a')
-      dl.className = 'innfo-media-download'
+      dl.className = 'nn-media-download'
       dl.setAttribute('href', item.value)
       dl.setAttribute('download', '')
       dl.textContent = 'Open / download'
@@ -5139,17 +5142,17 @@
   // type-aware FieldValue renderer.
   function renderFieldDetailDialog(doc, field) {
     if (!doc || !field) return
-    var dialog = doc.getElementById('innfo-field-dialog')
+    var dialog = doc.getElementById('nn-field-dialog')
     if (!dialog) {
       dialog = doc.createElement('dialog')
-      dialog.id = 'innfo-field-dialog'
+      dialog.id = 'nn-field-dialog'
       dialog.setAttribute('aria-label', 'Field detail')
       if (doc.body) doc.body.appendChild(dialog)
     }
     dialog.innerHTML = ''
-    var head = el('div', 'innfo-ref-head')
+    var head = el('div', 'nn-ref-head')
     var h = el('h2', null, String(field.name || 'Field'))
-    var close = el('button', 'innfo-ref-close', '×')
+    var close = el('button', 'nn-ref-close', '×')
     if (close) {
       close.setAttribute('type', 'button')
       close.setAttribute('aria-label', 'Close')
@@ -5159,8 +5162,8 @@
     }
     if (head && h) head.appendChild(h)
     if (head && close) head.appendChild(close)
-    var body = el('div', 'innfo-field-detail-body')
-    if (field.elementName) body.appendChild(el('p', 'innfo-field-detail-meta', String(field.elementName)))
+    var body = el('div', 'nn-field-detail-body')
+    if (field.elementName) body.appendChild(el('p', 'nn-field-detail-meta', String(field.elementName)))
     var valueNode =
       UI && typeof UI.FieldValue === 'function'
         ? UI.FieldValue({ value: field.value, type: field.type, name: field.name }, { doc: doc })
@@ -5182,7 +5185,7 @@
       body.appendChild(valueNode)
     } else {
       var textVal = displayCellText(field.value)
-      body.appendChild(el('pre', 'innfo-field-detail-value', textVal !== '' ? textVal : '(empty)'))
+      body.appendChild(el('pre', 'nn-field-detail-value', textVal !== '' ? textVal : '(empty)'))
     }
     dialog.appendChild(head)
     dialog.appendChild(body)
@@ -5217,7 +5220,7 @@
   }
 
   function renderMetamodelView(doc, schema, matrices, elements) {
-    var host = doc.getElementById('innfo-tab-metamodel')
+    var host = doc.getElementById('nn-tab-metamodel')
     if (!host) return
     host.innerHTML = ''
     var nodes = metamodelConceptNames(schema, elements)
@@ -5237,13 +5240,13 @@
     })
     var svg = doc.createElementNS(NS, 'svg')
     svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size)
-    svg.setAttribute('class', 'innfo-metamodel-svg')
+    svg.setAttribute('class', 'nn-metamodel-svg')
     svg.setAttribute('role', 'img')
     svg.setAttribute('aria-label', 'Model metamodel map')
 
     var defs = doc.createElementNS(NS, 'defs')
     var marker = doc.createElementNS(NS, 'marker')
-    marker.setAttribute('id', 'innfo-metamodel-arrow')
+    marker.setAttribute('id', 'nn-metamodel-arrow')
     marker.setAttribute('viewBox', '0 0 10 10')
     marker.setAttribute('refX', '9')
     marker.setAttribute('refY', '5')
@@ -5313,12 +5316,12 @@
       line.setAttribute('y1', y1)
       line.setAttribute('x2', x2)
       line.setAttribute('y2', y2)
-      line.setAttribute('class', 'innfo-metamodel-edge')
+      line.setAttribute('class', 'nn-metamodel-edge')
       line.setAttribute('data-edge-kind', m.kind || 'matrix')
       if (m.kind === 'relation') {
         line.setAttribute('stroke-dasharray', '5,4')
       }
-      line.setAttribute('marker-end', 'url(#innfo-metamodel-arrow)')
+      line.setAttribute('marker-end', 'url(#nn-metamodel-arrow)')
       svg.appendChild(line)
       if (m.name) {
         var rawName = String(m.name)
@@ -5335,7 +5338,7 @@
       c.setAttribute('cx', pos[name].x)
       c.setAttribute('cy', pos[name].y)
       c.setAttribute('r', String(nodeR))
-      c.setAttribute('class', 'innfo-metamodel-node')
+      c.setAttribute('class', 'nn-metamodel-node')
       var nodeMeta = conceptMetaOf((schema && schema.concepts && schema.concepts.length ? schema.concepts : nodes), name)
       if (nodeMeta && nodeMeta.hexColor) {
         c.style.stroke = nodeMeta.hexColor
@@ -5347,14 +5350,14 @@
       title.textContent = String(name)
       c.appendChild(title)
       c.addEventListener('click', function () {
-        var search = doc.getElementById('innfo-search')
+        var search = doc.getElementById('nn-search')
         if (search) {
           search.value = formatFacetToken('concept', name)
           if (typeof CustomEvent === 'function') {
             search.dispatchEvent(new CustomEvent('input', { bubbles: true }))
           }
         }
-        var expBtn = doc.querySelector('.innfo-view-tab[data-tab="explorer"]')
+        var expBtn = doc.querySelector('.nn-view-tab[data-tab="explorer"]')
         if (expBtn && typeof expBtn.click === 'function') expBtn.click()
       })
       svg.appendChild(c)
@@ -5362,7 +5365,7 @@
       t.setAttribute('x', pos[name].x)
       t.setAttribute('y', pos[name].y + 4)
       t.setAttribute('text-anchor', 'middle')
-      t.setAttribute('class', 'innfo-metamodel-label')
+      t.setAttribute('class', 'nn-metamodel-label')
       t.style.pointerEvents = 'none'
       t.textContent = name.length > 18 ? name.slice(0, 17) + '\u2026' : name
       svg.appendChild(t)
@@ -5378,14 +5381,14 @@
       bg.setAttribute('width', boxW)
       bg.setAttribute('height', boxH)
       bg.setAttribute('rx', '9')
-      bg.setAttribute('class', 'innfo-metamodel-edge-bg')
+      bg.setAttribute('class', 'nn-metamodel-edge-bg')
       svg.appendChild(bg)
 
       var lt = doc.createElementNS(NS, 'text')
       lt.setAttribute('x', lbl.x)
       lt.setAttribute('y', lbl.y + 2)
       lt.setAttribute('text-anchor', 'middle')
-      lt.setAttribute('class', 'innfo-metamodel-edge-label')
+      lt.setAttribute('class', 'nn-metamodel-edge-label')
       lt.textContent = lbl.text
       if (lbl.fullText && lbl.fullText !== lbl.text) {
         var lTitle = doc.createElementNS(NS, 'title')
@@ -5395,28 +5398,28 @@
       svg.appendChild(lt)
     })
 
-    var wrap = el('div', 'innfo-metamodel')
+    var wrap = el('div', 'nn-metamodel')
     wrap.appendChild(svg)
-    var legend = el('div', 'innfo-metamodel-legend')
+    var legend = el('div', 'nn-metamodel-legend')
     legend.innerHTML =
-      '<span class="innfo-mm-legend-item"><span class="innfo-mm-line innfo-mm-line--matrix"></span> Matrix relationship</span>' +
-      '<span class="innfo-mm-legend-item"><span class="innfo-mm-line innfo-mm-line--relation"></span> Element reference (relation)</span>' +
-      '<span class="innfo-mm-legend-hint">Click any concept node to filter in Model Explorer</span>'
+      '<span class="nn-mm-legend-item"><span class="nn-mm-line nn-mm-line--matrix"></span> Matrix relationship</span>' +
+      '<span class="nn-mm-legend-item"><span class="nn-mm-line nn-mm-line--relation"></span> Element reference (relation)</span>' +
+      '<span class="nn-mm-legend-hint">Click any concept node to filter in Model Explorer</span>'
     wrap.appendChild(legend)
     host.appendChild(wrap)
   }
 
   // Citation detail dialog (Console Citation Icons / Tanda C). Reuses the
-  // innfo-ref-dialog markup/classes so no second stylesheet is needed. Unlike
-  // renderRefDialog, it creates #innfo-citation-dialog and appends it to
+  // nn-ref-dialog markup/classes so no second stylesheet is needed. Unlike
+  // renderRefDialog, it creates #nn-citation-dialog and appends it to
   // <body> when the shell does not already declare it, so old shells (built
   // before this change) still work once the runtime is updated.
   function renderCitationDialog(doc, fieldName, entries) {
     if (!doc || !Array.isArray(entries)) return
-    var dialog = doc.getElementById('innfo-citation-dialog')
+    var dialog = doc.getElementById('nn-citation-dialog')
     if (!dialog) {
       dialog = doc.createElement('dialog')
-      dialog.id = 'innfo-citation-dialog'
+      dialog.id = 'nn-citation-dialog'
       dialog.setAttribute('aria-label', 'Citation details')
       var host = doc.body
       if (host) host.appendChild(dialog)
@@ -5424,9 +5427,9 @@
     if (typeof dialog.showModal !== 'function') return
     dialog.innerHTML = ''
 
-    var head = el('div', 'innfo-ref-head')
+    var head = el('div', 'nn-ref-head')
     var h = el('h2', null, 'Citations: ' + String(fieldName || ''))
-    var close = el('button', 'innfo-ref-close', '×')
+    var close = el('button', 'nn-ref-close', '×')
     if (close) {
       close.setAttribute('type', 'button')
       close.setAttribute('aria-label', 'Close')
@@ -5437,7 +5440,7 @@
     if (head && h) head.appendChild(h)
     if (head && close) head.appendChild(close)
 
-    var body = el('div', 'innfo-ref-body')
+    var body = el('div', 'nn-ref-body')
     entries.forEach(function (entry) {
       if (!entry || !body) return
       var variantKey = entry.error
@@ -5454,14 +5457,14 @@
               { path: entry.path || entry.href || 'citation', label: tagText },
               { doc: doc },
             )
-          : el('span', 'innfo-ref-tag', tagText)
-      var card = el('article', 'innfo-cite-card')
+          : el('span', 'nn-ref-tag', tagText)
+      var card = el('article', 'nn-cite-card')
       if (card) card.setAttribute('data-origin', variantKey)
-      var head = el('div', 'innfo-cite-head')
+      var head = el('div', 'nn-cite-head')
       if (head && tag) head.appendChild(tag)
-      var prov = el('span', 'innfo-cite-prov', labelText)
-      if (prov && typeof InnfoIcons !== 'undefined' && InnfoIcons && typeof InnfoIcons.getSvg === 'function') {
-        prov.insertAdjacentHTML('afterbegin', InnfoIcons.getSvg('cite-' + variantKey, { size: 13 }))
+      var prov = el('span', 'nn-cite-prov', labelText)
+      if (prov && typeof nnIcons !== 'undefined' && nnIcons && typeof nnIcons.getSvg === 'function') {
+        prov.insertAdjacentHTML('afterbegin', nnIcons.getSvg('cite-' + variantKey, { size: 13 }))
       }
       if (head && prov) head.appendChild(prov)
       // An `unchecked` entry (a change source nothing has resolved) claims no status.
@@ -5469,7 +5472,7 @@
         ? null
         : el(
             'span',
-            'innfo-cite-status' + (entry.error ? ' is-bad' : ''),
+            'nn-cite-status' + (entry.error ? ' is-bad' : ''),
             entry.error ? 'unresolved' : 'resolved',
           )
       if (head && status) head.appendChild(status)
@@ -5477,7 +5480,7 @@
       // The card goes into the list first; its children are appended below.
       if (card) body.appendChild(card)
 
-      var dl = el('dl', 'innfo-ref-fields innfo-cite-meta')
+      var dl = el('dl', 'nn-ref-fields nn-cite-meta')
       function addField(label, value) {
         if (!dl) return
         if (value === null || value === undefined || value === '') return
@@ -5495,7 +5498,7 @@
 
       if (entry.href && !entry.error && card) {
         var openHref = UI && typeof UI.safeHref === 'function' ? UI.safeHref(entry.href) : safeSourceHref(entry.href)
-        var openLink = openHref ? el('a', 'innfo-cite-open', 'Open original') : null
+        var openLink = openHref ? el('a', 'nn-cite-open', 'Open original') : null
         if (openLink) {
           openLink.setAttribute('href', openHref)
           openLink.setAttribute('target', '_blank')
@@ -5506,7 +5509,7 @@
 
       if (entry.excerpt && card) {
         var excerptText = entry.excerpt + (entry.truncated ? ' … (truncated)' : '')
-        var pre = el('pre', 'innfo-cite-excerpt', excerptText)
+        var pre = el('pre', 'nn-cite-excerpt', excerptText)
         if (pre) card.appendChild(pre)
       }
     })
@@ -5521,7 +5524,7 @@
   // The first element is treated as the root; the rest are rendered as steps.
   function renderDocument(doc, chain, opts) {
     if (!doc || !chain) return
-    var host = doc.getElementById('innfo-doc')
+    var host = doc.getElementById('nn-doc')
     if (!host) return
     var append = opts && opts.append
     if (!append) host.innerHTML = ''
@@ -5601,9 +5604,9 @@
   // Renders the generic document view: builds the tree from all elements,
   // picks roots that have children (procedures/trees), and renders each chain.
   function renderDocumentView(doc, elements, concepts, modelId) {
-    var host = doc.getElementById('innfo-doc')
+    var host = doc.getElementById('nn-doc')
     if (!host) return
-    var visuals = typeof self !== 'undefined' && self.InnfoVisuals ? self.InnfoVisuals : null
+    var visuals = typeof self !== 'undefined' && self.nnVisuals ? self.nnVisuals : null
     var conceptColorByName = {}
     ;(Array.isArray(concepts) ? concepts : []).forEach(function (c) {
       if (c && c.name) conceptColorByName[c.name] = c.color
@@ -5642,51 +5645,51 @@
   function ensureFeedbackUi(doc, state) {
     var active = doc || (typeof document !== 'undefined' ? document : null)
     if (!active) return null
-    var config = parseConfig(slotText(active, 'innfo-config'))
+    var config = parseConfig(slotText(active, 'nn-config'))
     if (!hasNeed(config, 'feedback-export')) return null
 
-    var existing = active.querySelector('[data-innfo-feedback-root]')
+    var existing = active.querySelector('[data-nn-feedback-root]')
     if (existing) return existing
 
     var root = active.createElement('div')
-    root.setAttribute('data-innfo-feedback-root', '')
+    root.setAttribute('data-nn-feedback-root', '')
 
     // Feedback CSS
-    if (!active.querySelector('style[data-innfo-feedback]')) {
+    if (!active.querySelector('style[data-nn-feedback]')) {
       var style = active.createElement('style')
-      style.setAttribute('data-innfo-feedback', '')
+      style.setAttribute('data-nn-feedback', '')
       style.textContent =
-        '[data-innfo-feedback-root]{display:flex;align-items:center;gap:12px;margin-left:auto;position:relative;z-index:40;}' +
-        '#innfo-feedback-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:transparent;border:none;box-shadow:none;padding:0;}' +
-        '#innfo-feedback-banner strong{font-size:0.95rem;font-weight:700;letter-spacing:-0.01em;}' +
-        '#innfo-feedback-banner .innfo-banner-version,#innfo-feedback-banner .innfo-banner-needs,#innfo-feedback-banner .innfo-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
-        '#innfo-feedback-banner .innfo-banner-stale{color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;font-size:0.78rem;font-weight:600;padding:2px 8px;}' +
-        '#innfo-feedback-banner .innfo-reviewer-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted,#6b7280);}' +
-        '#innfo-feedback-banner .innfo-reviewer-name{width:9rem;padding:4px 8px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.8rem;}' +
-        '#innfo-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#innfo-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
-        '#innfo-feedback-modal{border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-lg,8px);padding:20px;max-width:560px;width:100%;background:var(--surface,#ffffff);color:var(--text,#111827);}' +
-        '#innfo-feedback-modal::backdrop{background:rgba(0,0,0,0.35);}' +
-        '#innfo-feedback-modal input{width:100%;padding:8px 12px;margin:8px 0;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);box-sizing:border-box;}' +
-        '#innfo-feedback-modal pre{background:var(--surface-2,#f3f4f6);border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:12px;white-space:pre-wrap;font-size:0.8rem;}' +
-        '[data-innfo="errors"]{color:#dc2626;font-size:0.85rem;margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;}' +
-        '#innfo-feedback-modal button[data-innfo="download-changeset"]{appearance:none;border:1px solid var(--primary,#2563eb);background:var(--primary,#2563eb);color:#ffffff;font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#innfo-feedback-modal button[data-innfo="download-changeset"]:hover{background:var(--primary-hover,#1d4ed8);}' +
-        '#innfo-feedback-modal [data-innfo="changeset-preview"]{width:100%;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.78rem;border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:10px;box-sizing:border-box;}' +
-        '#innfo-feedback-modal .innfo-feedback-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}' +
-        '#innfo-feedback-modal button[data-innfo="copy-changeset-prompt"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#innfo-feedback-modal button:disabled{opacity:0.5;cursor:not-allowed;}' +
-        '#innfo-feedback-modal [data-innfo="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}' +
-        '#innfo-feedback-modal .innfo-feedback-head{display:flex;align-items:center;gap:12px;}' +
-        '#innfo-feedback-modal .innfo-feedback-head h2{margin:0;flex:1;}' +
-        '#innfo-feedback-modal button[data-innfo="close"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:transparent;font-size:1.2rem;line-height:1;padding:2px 10px;border-radius:6px;cursor:pointer;}' +
-        '#innfo-feedback-modal .innfo-feedback-seal{font-size:0.8rem;color:var(--muted,#6b7280);margin:8px 0;}'
+        '[data-nn-feedback-root]{display:flex;align-items:center;gap:12px;margin-left:auto;position:relative;z-index:40;}' +
+        '#nn-feedback-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:transparent;border:none;box-shadow:none;padding:0;}' +
+        '#nn-feedback-banner strong{font-size:0.95rem;font-weight:700;letter-spacing:-0.01em;}' +
+        '#nn-feedback-banner .nn-banner-version,#nn-feedback-banner .nn-banner-needs,#nn-feedback-banner .nn-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
+        '#nn-feedback-banner .nn-banner-stale{color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;font-size:0.78rem;font-weight:600;padding:2px 8px;}' +
+        '#nn-feedback-banner .nn-reviewer-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted,#6b7280);}' +
+        '#nn-feedback-banner .nn-reviewer-name{width:9rem;padding:4px 8px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.8rem;}' +
+        '#nn-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#nn-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
+        '#nn-feedback-modal{border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-lg,8px);padding:20px;max-width:560px;width:100%;background:var(--surface,#ffffff);color:var(--text,#111827);}' +
+        '#nn-feedback-modal::backdrop{background:rgba(0,0,0,0.35);}' +
+        '#nn-feedback-modal input{width:100%;padding:8px 12px;margin:8px 0;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);box-sizing:border-box;}' +
+        '#nn-feedback-modal pre{background:var(--surface-2,#f3f4f6);border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:12px;white-space:pre-wrap;font-size:0.8rem;}' +
+        '[data-nn="errors"]{color:#dc2626;font-size:0.85rem;margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;}' +
+        '#nn-feedback-modal button[data-nn="download-changeset"]{appearance:none;border:1px solid var(--primary,#2563eb);background:var(--primary,#2563eb);color:#ffffff;font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#nn-feedback-modal button[data-nn="download-changeset"]:hover{background:var(--primary-hover,#1d4ed8);}' +
+        '#nn-feedback-modal [data-nn="changeset-preview"]{width:100%;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.78rem;border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:10px;box-sizing:border-box;}' +
+        '#nn-feedback-modal .nn-feedback-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}' +
+        '#nn-feedback-modal button[data-nn="copy-changeset-prompt"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
+        '#nn-feedback-modal button:disabled{opacity:0.5;cursor:not-allowed;}' +
+        '#nn-feedback-modal [data-nn="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}' +
+        '#nn-feedback-modal .nn-feedback-head{display:flex;align-items:center;gap:12px;}' +
+        '#nn-feedback-modal .nn-feedback-head h2{margin:0;flex:1;}' +
+        '#nn-feedback-modal button[data-nn="close"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:transparent;font-size:1.2rem;line-height:1;padding:2px 10px;border-radius:6px;cursor:pointer;}' +
+        '#nn-feedback-modal .nn-feedback-seal{font-size:0.8rem;color:var(--muted,#6b7280);margin:8px 0;}'
       root.appendChild(style)
     }
 
     // Banner
     var banner = active.createElement('header')
-    banner.id = 'innfo-feedback-banner'
+    banner.id = 'nn-feedback-banner'
     banner.setAttribute('aria-label', 'Console review banner')
 
     var title = active.createElement('strong')
@@ -5694,13 +5697,13 @@
     banner.appendChild(title)
 
     var version = active.createElement('span')
-    version.className = 'innfo-banner-version'
+    version.className = 'nn-banner-version'
     version.textContent = ' ' + (state ? state.modelVersion : '')
     banner.appendChild(version)
 
     var draftsBadge = active.createElement('span')
-    draftsBadge.className = 'innfo-banner-drafts'
-    draftsBadge.setAttribute('data-innfo', 'draft-count')
+    draftsBadge.className = 'nn-banner-drafts'
+    draftsBadge.setAttribute('data-nn', 'draft-count')
     draftsBadge.textContent = ' unsent: 0'
     banner.appendChild(draftsBadge)
 
@@ -5708,65 +5711,65 @@
 
     // Modal
     var modal = active.createElement('dialog')
-    modal.id = 'innfo-feedback-modal'
+    modal.id = 'nn-feedback-modal'
     modal.setAttribute('aria-label', 'Export proposed changes')
     modal.innerHTML =
-      '<div class="innfo-feedback-head"><h2>Export proposed changes</h2>' +
-      '<button data-innfo="close" type="button" aria-label="Close">×</button></div>' +
-      '<p class="innfo-feedback-flow">' + UI.COPY.exportFlow + '</p>' +
-      '<div data-innfo="preview"></div>' +
+      '<div class="nn-feedback-head"><h2>Export proposed changes</h2>' +
+      '<button data-nn="close" type="button" aria-label="Close">×</button></div>' +
+      '<p class="nn-feedback-flow">' + UI.COPY.exportFlow + '</p>' +
+      '<div data-nn="preview"></div>' +
       '<label>Author / Reviewer identifier (required)' +
-      '<input data-innfo="identifier" type="text" placeholder="e.g. round-2" />' +
+      '<input data-nn="identifier" type="text" placeholder="e.g. round-2" />' +
       '</label>' +
-      '<div data-innfo="errors" style="display: none;"></div>' +
-      '<div class="innfo-feedback-actions">' +
-      '<button data-innfo="download-changeset" type="button">Download _changes_NN.md</button>' +
-      '<button data-innfo="copy-changeset-prompt" type="button">Copy change</button>' +
-      '<span data-innfo="copy-status" role="status" aria-live="polite"></span>' +
+      '<div data-nn="errors" style="display: none;"></div>' +
+      '<div class="nn-feedback-actions">' +
+      '<button data-nn="download-changeset" type="button">Download _changes_NN.md</button>' +
+      '<button data-nn="copy-changeset-prompt" type="button">Copy change</button>' +
+      '<span data-nn="copy-status" role="status" aria-live="polite"></span>' +
       '</div>' +
-      '<details class="innfo-modal-details">' +
+      '<details class="nn-modal-details">' +
       '<summary>View the generated change &amp; prompt</summary>' +
       '<h4>Change document (_changes_NN.md)</h4>' +
-      '<textarea data-innfo="changeset-preview" readonly></textarea>' +
+      '<textarea data-nn="changeset-preview" readonly></textarea>' +
       '<h4>Instructions</h4>' +
-      '<pre data-innfo="instructions"></pre>' +
+      '<pre data-nn="instructions"></pre>' +
       '<h4>Agent prompt</h4>' +
-      '<pre data-innfo="agent-prompt"></pre>' +
+      '<pre data-nn="agent-prompt"></pre>' +
       '</details>'
 
     root.appendChild(modal)
 
     // Contextual Floating Review Dock
-    var oldDock = active.getElementById('innfo-review-dock')
+    var oldDock = active.getElementById('nn-review-dock')
     if (oldDock && oldDock.parentNode) oldDock.parentNode.removeChild(oldDock)
     var dock = active.createElement('div')
-    dock.id = 'innfo-review-dock'
-    dock.className = 'innfo-review-dock'
-    dock.setAttribute('data-innfo-component', 'review-dock')
+    dock.id = 'nn-review-dock'
+    dock.className = 'nn-review-dock'
+    dock.setAttribute('data-nn-component', 'review-dock')
     dock.setAttribute('aria-label', 'Review floating dock')
     dock.style.display = 'none'
 
     var dockStatus = active.createElement('div')
-    dockStatus.className = 'innfo-dock-status'
-    dockStatus.innerHTML = '<span class="innfo-dock-dot"></span><span>Change</span>'
+    dockStatus.className = 'nn-dock-status'
+    dockStatus.innerHTML = '<span class="nn-dock-dot"></span><span>Change</span>'
     dock.appendChild(dockStatus)
 
     var sep1 = active.createElement('span')
-    sep1.className = 'innfo-dock-sep'
+    sep1.className = 'nn-dock-sep'
     dock.appendChild(sep1)
 
     // Reviewer identity inside floating dock
     dock.appendChild(buildReviewerChip(active))
 
     var sep2 = active.createElement('span')
-    sep2.className = 'innfo-dock-sep'
+    sep2.className = 'nn-dock-sep'
     dock.appendChild(sep2)
 
     // Changes view toggle button
     var changesBtn = active.createElement('button')
     changesBtn.type = 'button'
-    changesBtn.className = 'innfo-dock-changes'
-    changesBtn.setAttribute('data-innfo', 'dock-changes')
+    changesBtn.className = 'nn-dock-changes'
+    changesBtn.setAttribute('data-nn', 'dock-changes')
     changesBtn.textContent = 'Changes'
     changesBtn.addEventListener('click', function () {
       if (state && state.tabs) {
@@ -5780,27 +5783,27 @@
     dock.appendChild(changesBtn)
 
     var dockDraftsEl = active.createElement('span')
-    dockDraftsEl.className = 'innfo-dock-drafts'
+    dockDraftsEl.className = 'nn-dock-drafts'
     dockDraftsEl.textContent = 'Unsent: 0'
     dock.appendChild(dockDraftsEl)
 
     // Open button (Export changes)
     var openBtn = active.createElement('button')
-    openBtn.id = 'innfo-dock-export-btn'
+    openBtn.id = 'nn-dock-export-btn'
     openBtn.setAttribute('type', 'button')
-    openBtn.className = 'innfo-feedback-open innfo-dock-export'
+    openBtn.className = 'nn-feedback-open nn-dock-export'
     openBtn.textContent = 'Export changes'
     dock.appendChild(openBtn)
 
     var exitBtn = active.createElement('button')
     exitBtn.type = 'button'
-    exitBtn.className = 'innfo-dock-exit'
+    exitBtn.className = 'nn-dock-exit'
     exitBtn.textContent = 'Hide'
     exitBtn.setAttribute('aria-label', 'Hide the change bar')
     exitBtn.addEventListener('click', function () {
       dock.style.setProperty('display', 'none', 'important')
       dock.removeAttribute('data-visible')
-      dock.classList.remove('active', 'innfo-dock-blinking')
+      dock.classList.remove('active', 'nn-dock-blinking')
       if (dock._blinkTimer) {
         clearTimeout(dock._blinkTimer)
         dock._blinkTimer = null
@@ -5817,15 +5820,15 @@
     // Single-header layout: the feedback controls live inside the top navbar
     // (no second application header). Fall back to the body top for shells
     // that ship no navbar.
-    var navbar = active.querySelector ? active.querySelector('.innfo-navbar') : null
+    var navbar = active.querySelector ? active.querySelector('.nn-navbar') : null
     if (navbar) {
       navbar.appendChild(root)
     } else if (active.body) {
       active.body.insertBefore(root, active.body.firstChild)
     }
 
-    if (state && !openBtn.getAttribute('data-innfo-bound')) {
-      openBtn.setAttribute('data-innfo-bound', '1')
+    if (state && !openBtn.getAttribute('data-nn-bound')) {
+      openBtn.setAttribute('data-nn-bound', '1')
       openBtn.addEventListener('click', function () {
         openExportModal(active, state)
       })
@@ -5894,6 +5897,9 @@
     lines.push('## NN Change: ' + id)
     lines.push('op:: ' + op)
     lines.push('target:: ' + target)
+    // C: every change carries mandatory evidence. A draft may name a citation; a
+    // reviewer correction that names none is an explicit `decision`.
+    lines.push('evidence:: ' + oneLine(d.evidence || d.source || 'decision'))
     // The engine rejects the change if the element's content hash moved on since the draft.
     if ((op === 'update_field' || op === 'remove_element' || op === 'rename_element') && d.base_hash) {
       lines.push('base_hash:: ' + oneLine(d.base_hash))
@@ -6011,7 +6017,7 @@
         (state && state.exportedAt) || new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
       author: reviewer,
       feedback_slug: reviewerSlug,
-      viewer: 'innfo-console@' + CONSOLE_VERSION,
+      viewer: 'nn-console@' + CONSOLE_VERSION,
     })
     if (!nonEmptyString(exportMeta.changesBlueprintVersion)) {
       return { ok: false, errors: [CHANGES_VERSION_MISSING] }
@@ -6038,7 +6044,7 @@
   }
 
   function renderErrors(doc, errors) {
-    var errorContainer = doc.querySelector('#innfo-feedback-modal [data-innfo="errors"]')
+    var errorContainer = doc.querySelector('#nn-feedback-modal [data-nn="errors"]')
     if (!errorContainer) return
     if (!errors || !errors.length) {
       errorContainer.innerHTML = ''
@@ -6055,7 +6061,7 @@
   }
 
   function downloadChangesetExport(doc, state) {
-    var identifierInput = doc.querySelector('#innfo-feedback-modal [data-innfo="identifier"]')
+    var identifierInput = doc.querySelector('#nn-feedback-modal [data-nn="identifier"]')
     var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
     var composed = composeExport(state, identifier)
     if (!composed.ok) {
@@ -6078,9 +6084,9 @@
   }
 
   function copyChangesetPrompt(doc, state) {
-    var modal = doc.getElementById('innfo-feedback-modal')
-    var status = modal && modal.querySelector('[data-innfo="copy-status"]')
-    var textarea = modal && modal.querySelector('[data-innfo="changeset-preview"]')
+    var modal = doc.getElementById('nn-feedback-modal')
+    var status = modal && modal.querySelector('[data-nn="copy-status"]')
+    var textarea = modal && modal.querySelector('[data-nn="changeset-preview"]')
     function announce(msg) {
       if (status) status.textContent = msg
     }
@@ -6126,13 +6132,13 @@
   }
 
   function updateExportPreview(doc, state) {
-    var modal = doc.getElementById('innfo-feedback-modal')
+    var modal = doc.getElementById('nn-feedback-modal')
     if (!modal) return { ok: false }
-    var identifierInput = modal.querySelector('[data-innfo="identifier"]')
+    var identifierInput = modal.querySelector('[data-nn="identifier"]')
     var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
     var drafts = state && state.store ? state.store.drafts() : []
 
-    var preview = modal.querySelector('[data-innfo="preview"]')
+    var preview = modal.querySelector('[data-nn="preview"]')
     if (preview) {
       preview.innerHTML = ''
       preview.appendChild(
@@ -6147,9 +6153,9 @@
     }
 
     var composed = composeExport(state, identifier)
-    var downloadCsBtn = modal.querySelector('[data-innfo="download-changeset"]')
-    var copyCsBtn = modal.querySelector('[data-innfo="copy-changeset-prompt"]')
-    var textarea = modal.querySelector('[data-innfo="changeset-preview"]')
+    var downloadCsBtn = modal.querySelector('[data-nn="download-changeset"]')
+    var copyCsBtn = modal.querySelector('[data-nn="copy-changeset-prompt"]')
+    var textarea = modal.querySelector('[data-nn="changeset-preview"]')
 
     if (composed.ok) {
       renderErrors(doc, [])
@@ -6166,7 +6172,7 @@
   }
 
   function _readIdentifier(modal) {
-    var input = modal && modal.querySelector('[data-innfo="identifier"]')
+    var input = modal && modal.querySelector('[data-nn="identifier"]')
     return input && input.value ? String(input.value) : ''
   }
 
@@ -6185,14 +6191,14 @@
   }
 
   function openExportModal(doc, state) {
-    var modal = doc.getElementById('innfo-feedback-modal') || doc.getElementById('innfo-export-modal')
+    var modal = doc.getElementById('nn-feedback-modal') || doc.getElementById('nn-export-modal')
     if (!modal) {
       downloadChangesetExport(doc, state)
       return
     }
-    var identifierInput = modal.querySelector('[data-innfo="identifier"]')
-    var instructions = modal.querySelector('[data-innfo="instructions"]')
-    var agentPrompt = modal.querySelector('[data-innfo="agent-prompt"]')
+    var identifierInput = modal.querySelector('[data-nn="identifier"]')
+    var instructions = modal.querySelector('[data-nn="instructions"]')
+    var agentPrompt = modal.querySelector('[data-nn="agent-prompt"]')
     var drafts = state && state.store ? state.store.drafts() : []
 
     // One held exported_at per modal opening, so download and copy emit
@@ -6238,16 +6244,16 @@
       modal.setAttribute('open', 'open')
     }
 
-    var closeBtn = modal.querySelector('[data-innfo="close"]')
-    if (closeBtn && !closeBtn.getAttribute('data-innfo-bound')) {
-      closeBtn.setAttribute('data-innfo-bound', '1')
+    var closeBtn = modal.querySelector('[data-nn="close"]')
+    if (closeBtn && !closeBtn.getAttribute('data-nn-bound')) {
+      closeBtn.setAttribute('data-nn-bound', '1')
       closeBtn.addEventListener('click', function (ev) {
         if (ev && ev.stopPropagation) ev.stopPropagation()
         closeModal()
       })
     }
-    if (!modal.getAttribute('data-innfo-dismiss-bound')) {
-      modal.setAttribute('data-innfo-dismiss-bound', '1')
+    if (!modal.getAttribute('data-nn-dismiss-bound')) {
+      modal.setAttribute('data-nn-dismiss-bound', '1')
       modal.addEventListener('click', function (ev) {
         if (ev && ev.target === modal) closeModal()
       })
@@ -6257,16 +6263,16 @@
       })
     }
 
-    if (identifierInput && !identifierInput.getAttribute('data-innfo-bound')) {
-      identifierInput.setAttribute('data-innfo-bound', '1')
+    if (identifierInput && !identifierInput.getAttribute('data-nn-bound')) {
+      identifierInput.setAttribute('data-nn-bound', '1')
       identifierInput.addEventListener('input', function () {
         updateExportPreview(doc, state)
       })
     }
 
-    var downloadCsBtn = modal.querySelector('[data-innfo="download-changeset"]')
-    if (downloadCsBtn && !downloadCsBtn.getAttribute('data-innfo-bound')) {
-      downloadCsBtn.setAttribute('data-innfo-bound', '1')
+    var downloadCsBtn = modal.querySelector('[data-nn="download-changeset"]')
+    if (downloadCsBtn && !downloadCsBtn.getAttribute('data-nn-bound')) {
+      downloadCsBtn.setAttribute('data-nn-bound', '1')
       downloadCsBtn.addEventListener('click', function () {
         var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
         if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
@@ -6279,9 +6285,9 @@
       })
     }
 
-    var copyCsBtn = modal.querySelector('[data-innfo="copy-changeset-prompt"]')
-    if (copyCsBtn && !copyCsBtn.getAttribute('data-innfo-bound')) {
-      copyCsBtn.setAttribute('data-innfo-bound', '1')
+    var copyCsBtn = modal.querySelector('[data-nn="copy-changeset-prompt"]')
+    if (copyCsBtn && !copyCsBtn.getAttribute('data-nn-bound')) {
+      copyCsBtn.setAttribute('data-nn-bound', '1')
       copyCsBtn.addEventListener('click', function () {
         var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
         if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
@@ -6315,11 +6321,25 @@
         target.removeEventListener(type, fn)
       })
     }
-    var config = parseConfig(slotText(active, 'innfo-config'))
-    var slots = parseSlots(slotText(active, 'innfo-schema'), slotText(active, 'innfo-model'))
+    var config = parseConfig(slotText(active, 'nn-config'))
+    var slots = parseSlots(slotText(active, 'nn-schema'), slotText(active, 'nn-model'))
     var schema = slots.schema
     var model = slots.model
     var meta = isObject(model.meta) ? model.meta : {}
+    // Change A: install the model-ownership resolver so a `derived` model's units
+    // offer no edit pencil (ui-kit unitEditability). Keyed by model id and title.
+    var ownershipByModel = {}
+    var modelList = Array.isArray(meta.models) ? meta.models : []
+    modelList.forEach(function (mm) {
+      if (!mm) return
+      if (mm.id != null) ownershipByModel[String(mm.id)] = mm.ownership || 'authored'
+      if (mm.title != null) ownershipByModel[String(mm.title)] = mm.ownership || 'authored'
+    })
+    if (typeof UI.setModelOwnership === 'function') {
+      UI.setModelOwnership(function (id) {
+        return ownershipByModel[String(id)]
+      })
+    }
     var elements = Array.isArray(model.elements) ? model.elements : []
     var matrices = Array.isArray(model.matrices) ? model.matrices : []
     var concepts = (Array.isArray(schema.concepts) ? schema.concepts.slice() : []).map(function (c) {
@@ -6345,13 +6365,13 @@
     if (scopedView) {
       // The search toolbar and concept rail only serve the explorer, which a
       // scoped console does not show. Removed, not hidden: their CSS would override [hidden].
-      ;['innfo-rail'].forEach(function (id) {
+      ;['nn-rail'].forEach(function (id) {
         var node = active.getElementById(id)
         if (node && node.parentNode) node.parentNode.removeChild(node)
       })
-      var scopedToolbar = active.querySelector('.innfo-toolbar')
+      var scopedToolbar = active.querySelector('.nn-toolbar')
       if (scopedToolbar && scopedToolbar.parentNode) scopedToolbar.parentNode.removeChild(scopedToolbar)
-      if (active.documentElement) active.documentElement.setAttribute('data-innfo-scope', scopedView)
+      if (active.documentElement) active.documentElement.setAttribute('data-nn-scope', scopedView)
     }
     var baseTitle = String(meta.title || meta.model || 'Model')
     var baseId = String(meta.modelId || meta.model || meta.title || 'model')
@@ -6433,7 +6453,7 @@
     // concept/model toggles it in the query instead of replacing the whole filter,
     // so activating more than one concept unions the results.
     function selectRailToken(token) {
-      var search = active.getElementById('innfo-search')
+      var search = active.getElementById('nn-search')
       var current = activeSearchQuery !== undefined ? activeSearchQuery : search ? search.value : ''
       var m = /^([!]?[a-z]+):(.*)$/.exec(String(token || ''))
       if (!m) {
@@ -6470,7 +6490,7 @@
     // Click-throughs add a facet instead of toggling it: clicking a chip or a
     // knowledge pill twice must not silently drop the filter.
     function addFacetToken(key, val) {
-      var search = active.getElementById('innfo-search')
+      var search = active.getElementById('nn-search')
       var current = activeSearchQuery !== undefined ? activeSearchQuery : search ? search.value : ''
       var present = parseFilterQuery(current).operators.some(function (op) {
         return op.key === key && String(op.val).toLowerCase() === String(val).toLowerCase()
@@ -6511,9 +6531,9 @@
     function updateDraftSurfaces() {
       var currentDrafts = state.store.drafts()
       var n = currentDrafts.length
-      var bannerCount = active.querySelector('.innfo-banner-drafts')
+      var bannerCount = active.querySelector('.nn-banner-drafts')
       if (bannerCount) bannerCount.textContent = ' unsent: ' + n
-      var dockCount = active.querySelector('#innfo-review-dock .innfo-dock-drafts')
+      var dockCount = active.querySelector('#nn-review-dock .nn-dock-drafts')
       if (dockCount) dockCount.textContent = 'Unsent: ' + n
       updateTabBadges(active, state)
       renderReviewTab(active, state, config, function () {
@@ -6604,7 +6624,7 @@
         focusId = null
       }
       renderFilterBar(active, state, function (nextQuery) {
-        var sBox = active.getElementById('innfo-search')
+        var sBox = active.getElementById('nn-search')
         if (sBox) sBox.value = nextQuery
         refresh(nextQuery)
       }, activeSearchQuery)
@@ -6624,7 +6644,7 @@
       }
 
       // Document overview tree remains hidden while filtering elements so filtered cards are immediately visible
-      var docHost = active.getElementById('innfo-doc')
+      var docHost = active.getElementById('nn-doc')
       if (docHost) {
         docHost.style.display = activeSearchQuery ? 'none' : ''
       }
@@ -6645,9 +6665,9 @@
         }
       }
 
-      var content = active.getElementById('innfo-content') || active.getElementById('content')
+      var content = active.getElementById('nn-content') || active.getElementById('content')
       if (content) {
-        active.dispatchEvent(new CustomEvent('innfo:rendered', { detail: { root: content } }))
+        active.dispatchEvent(new CustomEvent('nn:rendered', { detail: { root: content } }))
       }
     }
 
@@ -6660,7 +6680,7 @@
       initialQuery = parseViewHash(active.location.hash).q
     }
 
-    var searchBox = active.getElementById('innfo-search')
+    var searchBox = active.getElementById('nn-search')
     if (searchBox && initialQuery) {
       searchBox.value = initialQuery
     }
@@ -6698,7 +6718,7 @@
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
     // C3: the controller builds the toggle into the (now rendered) banner and
-    // listens for innfo:rendered; created after the first paint so the banner
+    // listens for nn:rendered; created after the first paint so the banner
     // rebuild does not drop the toggle.
     // (C): create the controller whenever the domain is proposable OR exportable; it
     // gates its own decorations. Without this, a proposable domain without an export
@@ -6715,6 +6735,34 @@
         schema: schema,
         getReviewer: getReviewerName,
         onDraftsChanged: refreshDraftCounts,
+        // Change C: clicking a change's evidence opens the in-domain unit it points
+        // at, or the citation dialog when it is an external file.
+        onEvidence: function (citeData) {
+          var entry = citeData && citeData.entry ? citeData.entry : null
+          var ev = String(
+            entry ? entry.path || '' : typeof citeData === 'string' ? citeData : (citeData && citeData.value) || '',
+          ).trim()
+          var at = ev.indexOf('@')
+          var target = at === -1 ? ev : ev.slice(0, at)
+          var list = Array.isArray(elements) ? elements : []
+          var match = null
+          if (target) {
+            for (var i = 0; i < list.length; i++) {
+              var cand = list[i]
+              if (cand && (cand.modelFile === target || cand.modelId === target || cand.canonicalUnit === target)) {
+                match = cand
+                break
+              }
+            }
+          }
+          if (match) {
+            focusElementCard(active, match.id)
+            return
+          }
+          renderCitationDialog(active, 'evidence', [
+            entry || { origin: 'document', path: ev, exists: true, field: 'evidence', ...(ev ? { href: ev } : {}) },
+          ])
+        },
       })
     }
 
@@ -6803,7 +6851,7 @@
     renderMatrices(active, matrices, concepts, (meta && (meta.modelId || meta.model)) || '')
     renderMetamodelView(active, schema, matrices, elements)
 
-    var searchBox = active.getElementById('innfo-search')
+    var searchBox = active.getElementById('nn-search')
     if (searchBox) {
       listen(searchBox, 'input', function (event) {
         refresh(event.target && event.target.value ? event.target.value : '')
@@ -6811,9 +6859,9 @@
     }
 
     if (hasNeed(config, 'feedback-export')) {
-      var exportBtn = active.getElementById('innfo-feedback-open') || active.getElementById('innfo-export-open')
-      if (exportBtn && !exportBtn.getAttribute('data-innfo-bound')) {
-        exportBtn.setAttribute('data-innfo-bound', '1')
+      var exportBtn = active.getElementById('nn-feedback-open') || active.getElementById('nn-export-open')
+      if (exportBtn && !exportBtn.getAttribute('data-nn-bound')) {
+        exportBtn.setAttribute('data-nn-bound', '1')
         exportBtn.addEventListener('click', function () {
           openExportModal(active, state)
         })
@@ -6842,7 +6890,7 @@
       }
       // No card of its own (document, section, matrix, source): narrow the view to
       // its canonical address instead.
-      var box = active.getElementById('innfo-search')
+      var box = active.getElementById('nn-search')
       if (box) box.value = address
       refresh(address)
       return false
@@ -6872,7 +6920,7 @@
         var visible = filterElements([targetEl], activeSearchQuery, { draftsById: {}, reviewed: {} })
         if (!visible.length) {
           query = 'concept:' + String(targetEl.concept || '')
-          var searchInput = active.getElementById('innfo-search')
+          var searchInput = active.getElementById('nn-search')
           if (searchInput) searchInput.value = query
         }
         if (tabs) tabs.select('explorer', true)
@@ -6884,7 +6932,7 @@
       var parsed = parseViewHash(active.location ? active.location.hash : '')
       if (!scopedView && parsed.q !== activeSearchQuery) {
         // Back/forward to an entry with a different query: follow it.
-        var box = active.getElementById('innfo-search')
+        var box = active.getElementById('nn-search')
         if (box) box.value = parsed.q
         refresh(parsed.q, true)
       }
@@ -6906,10 +6954,10 @@
     try {
       if (typeof globalThis !== 'undefined' && globalThis.__innfoNoAutoBoot) return
       if (typeof document === 'undefined' || !document.getElementById) return
-      if (document.documentElement && document.documentElement.getAttribute('data-innfo-console-booted') === 'true') return
-      if (!document.getElementById('innfo-config')) return
+      if (document.documentElement && document.documentElement.getAttribute('data-nn-console-booted') === 'true') return
+      if (!document.getElementById('nn-config')) return
       if (document.documentElement) {
-        document.documentElement.setAttribute('data-innfo-console-booted', 'true')
+        document.documentElement.setAttribute('data-nn-console-booted', 'true')
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
@@ -6920,7 +6968,7 @@
       }
     } catch (err) {
       if (typeof console !== 'undefined' && console.warn)
-        console.warn('innfo-console boot failed', err)
+        console.warn('nn-console boot failed', err)
     }
   }
 

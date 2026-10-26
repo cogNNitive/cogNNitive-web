@@ -250,14 +250,14 @@ function injectStyle(doc, id, css) {
 
 var CSS = [
   '.iv-tl{padding:.25rem 0 1rem;overflow-x:auto}',
-  '.iv-tl-axis{display:flex;justify-content:space-between;color:var(--innfo-muted);font-size:.72rem;border-bottom:1px solid var(--innfo-border);padding:0 0 .35rem;margin-left:14.6rem}',
+  '.iv-tl-axis{display:flex;justify-content:space-between;color:var(--nn-muted);font-size:.72rem;border-bottom:1px solid var(--nn-border);padding:0 0 .35rem;margin-left:14.6rem}',
   '.iv-tl-row{display:flex;align-items:center;gap:.6rem;min-width:34rem;padding:.28rem 0}',
   '.iv-tl-label{flex:0 0 14rem;display:flex;align-items:center;min-width:0;overflow:hidden}',
-  '.iv-tl-label .innfo-ku{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-  '.iv-tl-track{position:relative;flex:1 1 auto;height:1.2rem;background:var(--innfo-surface-2);border-radius:6px;border:1px solid var(--innfo-border)}',
-  '.iv-tl-bar{position:absolute;top:0;bottom:0;background:var(--innfo-concept-1);border-radius:6px;opacity:.85}',
-  '.iv-tl-nodate{position:absolute;right:.5rem;top:0;bottom:0;display:flex;align-items:center;color:var(--innfo-muted);font-size:.7rem}',
+  '.iv-tl-label .nn-ku{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+  '.iv-tl-track{position:relative;flex:1 1 auto;height:1.2rem;background:var(--nn-surface-2);border-radius:6px;border:1px solid var(--nn-border)}',
+  '.iv-tl-bar{position:absolute;top:0;bottom:0;background:var(--nn-concept-1);border-radius:6px;opacity:.85}',
+  '.iv-tl-nodate{position:absolute;right:.5rem;top:0;bottom:0;display:flex;align-items:center;color:var(--nn-muted);font-size:.7rem}',
   '.iv-tl-lanes{display:flex;gap:1rem;align-items:flex-start;overflow-x:auto;padding:.25rem 0 1rem}',
-  '.iv-tl-lane{flex:0 0 14rem;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:10px;padding:.6rem;display:flex;flex-direction:column;gap:.5rem}',
-  '.iv-tl-lane-head{font-weight:600;font-size:.8rem;color:var(--innfo-text)}',
+  '.iv-tl-lane{flex:0 0 14rem;background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:10px;padding:.6rem;display:flex;flex-direction:column;gap:.5rem}',
+  '.iv-tl-lane-head{font-weight:600;font-size:.8rem;color:var(--nn-text)}',
 ].join('\n')

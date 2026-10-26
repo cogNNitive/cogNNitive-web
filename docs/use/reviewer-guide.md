@@ -2,66 +2,51 @@
 
 ## Overview
 
-Deliverables produced within the **cogNNitive** ecosystem (such as Business Plans, Technical Specifications, and Operating Procedures) are compiled directly from structured **iNNfo** domain models and verified evidence sources.
+Deliverables produced within the **cogNNitive** ecosystem (such as business plans, technical specifications, and operating procedures) are compiled directly from structured **iNNfo** kNNowledge documents and their verified evidence sources.
 
-To enable bidirectional synchronization—allowing human feedback to be absorbed back into domain models without corrupting business truth or losing provenance—cogNNitive implements the **Dual-Emission and 4-Layer Reconciliation Protocol**.
-
----
-
-## 1. The Dual-Emission Deliverable Pattern
-
-When an artifact generator runs, it emits two paired files:
-
-| Artifact Type | Filename Pattern | Purpose |
-|---|---|---|
-| **Clean Published Output** | `{Stem}_V_{Version}.docx` | The final, unencumbered publication deliverable for stakeholders. |
-| **Review Scaffold** | `{Stem}_V_{Version}_reviewer_review.docx` | The review copy containing embedded guidance for the human reviewer. |
+Feedback flows back into the kNNowledge as **changesets**: reviewed proposals stored as `_changes_NN.md` documents under `changes/`. A changeset is never applied silently — it is reviewed, then applied with `apply_change`, so every mutation is recorded and traceable.
 
 ---
 
-## 2. Reviewer Instructions (3-Step Protocol)
+## 1. The Review Surface: the Domain Console
 
-When reviewing a cogNNitive deliverable:
+Deliverables and their source kNNowledge are inspected in the **domain console** (`domaiNN_console.html`, one per domaiNN). The console renders concepts, elements, matrices, and lineage; citation fields resolve to the exact source heading through the `@` grammar (`sources/import/meeting.md@## Budget`).
 
-### Step 1: Set Your Reviewer Identity in the Filename
-Replace the `reviewer` token with your name or username before starting your review:
-- **Template:** `Acme_Lean_Business_Plan_V_0-2-0_reviewer_review.docx`
-- **Your file:** `Acme_Lean_Business_Plan_V_0-2-0_architect_review.docx`
-
-### Step 2: Enable Track Changes
-Enable Word's native Track Changes (*Review → Track Changes*) for any inline textual, structural, or numerical edits.
-
-### Step 3: Use Semantic Prefixes in Comments
-When inserting Word comments (*Review → New Comment*), prepend one of the four standard semantic tags to indicate your intent:
-
-- `[DECISION]` — **Domain / Business Rule Change**: Indicates that a strategic premise, model element, or business reality has changed.
-  > *Example:* `[DECISION] We are discarding the secondary facility expansion in favor of regional partnerships.`
-- `[SCOPE]` or `[FORMAT]` — **Deliverable Scope Trimming**: Indicates that content should be omitted from this specific deliverable without invalidating the upstream model.
-  > *Example:* `[SCOPE] Move the detailed financial model tables to an external annex.`
-- `[DATA]` — **Metric or Numerical Correction**: Specific updates to numbers or figures coming from satellite data sheets.
-  > *Example:* `[DATA] Updated initial investment cap to 180,000 EUR.`
-- `[QUESTION]` — **Open Inquiry**: Questions requiring clarification from the domain modeling team.
-  > *Example:* `[QUESTION] Has the municipal operating permit timeline been confirmed?`
+There is no separate Word-based review file. The console is the single review surface, and it is self-contained: open the `.html` file in any browser, with no server and no build step.
 
 ---
 
-## 3. Automated Reconciliation Pipeline
+## 2. How Feedback Becomes a Changeset
 
-When the reviewed document is deposited into the workspace `artifacts/` folder, the AI Architect runs `reconcile_artifact_feedback_NN.md`:
+1. **Propose.** While reviewing, the reviewer (or an AI agent acting on the review) records changes. Agents derive operations and call the `propose_changeset` MCP tool, which writes a sealed changeset with status `proposed` under `changes/` and regenerates the console so the change can be inspected.
+2. **Review.** Each proposal carries its target, the intended change, the author, and its evidence citation (`sources`). An unsent change is stored locally in the console and shown with the **Unsent** badge; a proposed changeset document is the durable record.
+3. **Approve and apply.** When the user confirms, `apply_change` is called with the changeset path. It validates first, then persists atomically, records the change in `ChangeHistory`, and regenerates the console.
 
-```mermaid
-flowchart LR
-    A[Reviewed Document .docx] --> B[Forensic Extraction Pandoc + XML]
-    B --> C[4-Layer Triaging Engine]
-    C --> D{Semantic Tag Present?}
-    D -->|Yes: [DECISION]| E[Deterministic Model Mutation via MCP]
-    D -->|Yes: [SCOPE]| F[Update Generator Template]
-    D -->|No: Direct Edit| G[Interactive Human Intent Gate]
-    G --> E
-    E --> H[Sanitize Final Artifact & Register Lineage]
-```
+---
 
-1. **Forensic Extraction**: Parses the filename for `reviewer_slug`, extracts Word comments (`comments.xml`), Track Changes (`<w:ins>`, `<w:del>`), and media counts.
-2. **4-Layer Triaging**: Separates deliverable formatting from domain truth, satellite spreadsheet data, and reviewer drafting defects.
-3. **Upstream Mutation**: Updates the Level 3 iNNfo domain model via `innfo-mcp`, re-validates schemas deterministically, and updates workspace lineage records (`workspace_NN.md`).
-4. **Sanitization & Publication**: Fixes any drafting artifacts (e.g. truncated sentences), recompiles the clean published deliverable, and registers the review history.
+## 3. Changeset Operations
+
+`propose_changeset` accepts a list of operations, each with `op`, `target`, and operation-specific keys:
+
+- `update_field`, `update_concept_field`, `update_matrix_cell`, `update_concept_text`
+- `add_element`, `remove_element`, `rename_element`, `rename_concept`
+- `add_model` (with `blueprint_name`, `blueprint_url`, and optional `knowledge_version`)
+- `add_matrix`, `remove_matrix`
+- `freeze_slugs`, `bump_version`
+- `comment`
+
+`apply_change` applies either a changeset document (`changeset` / `changeset_path`) or a bare intent operation (`op` + `args`) against a knowledge `id`.
+
+---
+
+## 4. Statuses and Staleness
+
+- **Unsent** — a change recorded locally in the console, not yet written to `changes/`.
+- **Applied** / **Not applied** — the outcome recorded in the console's `ChangeHistory` after an `apply_change` run (`applied` and `partially_applied` map to **Applied**; `conflict` and `rejected` map to **Not applied**).
+- **Target changed** — the cited element hash drifted since the change was proposed. Staleness is **per change**, so a version bump elsewhere never invalidates an unrelated change; a change whose target drifted stays exportable and is flagged for re-review.
+
+---
+
+## 5. Traceability
+
+Every applied change is recorded in the kNNowledge's lineage and in the changeset file. Each element cites its exact origin with the `@` locator grammar, resolved through sidecars and the lineage record, so a reviewer can always walk from a claim back to the file and heading it came from.

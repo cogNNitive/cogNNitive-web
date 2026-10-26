@@ -178,7 +178,7 @@ function wrapperText(view) {
   return (
     ";(function (registerView) { 'use strict';\n" +
     view.code +
-    `\n})(InnfoConsole.viewRegistrar(${JSON.stringify(view.id)}, ${JSON.stringify(view.source)}));`
+    `\n})(nnConsole.viewRegistrar(${JSON.stringify(view.id)}, ${JSON.stringify(view.source)}));`
   )
 }
 
@@ -347,7 +347,7 @@ const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repla
 
 export function wrapView(view) {
   return (
-    `<script data-innfo-view="${escapeAttr(view.id)}" data-innfo-view-source="${escapeAttr(view.source)}">\n` +
+    `<script data-nn-view="${escapeAttr(view.id)}" data-nn-view-source="${escapeAttr(view.source)}">\n` +
     `${escapeChecked(wrapperText(view), view.source)}\n</script>`
   )
 }
@@ -359,7 +359,7 @@ export function viewsHeader(views) {
   const lines = views.map(
     (v) => `${clean(v.id)} ${v.origin} ${clean(v.source)} sha256:${v.sha256.slice(0, HASH_DISPLAY_LENGTH)}`,
   )
-  return `<!-- innfo-views (trusted code, full page access)\n${lines.join('\n')}\n-->`
+  return `<!-- nn-views (trusted code, full page access)\n${lines.join('\n')}\n-->`
 }
 
 const CSS_LINK = /<link rel="stylesheet" href="\.\/nn-ui\.css" ?\/>/
@@ -399,7 +399,7 @@ function assertShell(shell) {
     if (!re.test(shell)) throw new Error(`console shell has no ${name} to replace (anchor missing)`)
   }
   // Every block is replaced by a full copy of the bundle, and a second copy would replace
-  // `window.InnfoConsole`; so exactly one block, and no stray bundle tag next to it.
+  // `window.nnConsole`; so exactly one block, and no stray bundle tag next to it.
   const blocks = [...shell.matchAll(new RegExp(BUNDLE_TAGS.source, 'g'))].length
   if (blocks !== 1) throw new Error(`console shell has ${blocks} bundle script blocks; exactly 1 is expected`)
   if (STRAY_BUNDLE_TAG.test(shell.replace(BUNDLE_TAGS, ''))) {
@@ -453,7 +453,7 @@ export function allowInlineScripts(html) {
 /**
  * One self-contained page: the bundle appears once (the vendored, CDN and raw
  * mirror tags collapse into it, because each extra copy would replace
- * `window.InnfoConsole`), then the views, whose scripts run after it.
+ * `window.nnConsole`), then the views, whose scripts run after it.
  */
 export function inlineConsoleAssets(shell, assets) {
   assertShell(shell)

@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory()
   } else {
-    root.InnfoUI = factory()
+    root.nnUI = factory()
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict'
@@ -20,66 +20,66 @@
       // nn-shad-cn monochrome neutral preset: near-black #171717 primary on a
       // crisp white/zinc canvas, neutral #e5e5e5 borders, ink #0a0a0a / muted #666666.
       // Concept colors stay app-driven data; only brand + neutrals live here.
-      '--innfo-bg': '#fafafa',
-      '--innfo-surface': '#ffffff',
-      '--innfo-surface-2': '#f4f4f5',
-      '--innfo-text': '#0a0a0a',
-      '--innfo-muted': '#666666',
-      '--innfo-border': '#e5e5e5',
-      '--innfo-accent': '#171717',
-      '--innfo-link': '#171717',
-      '--innfo-focus': '#52525b',
-      '--innfo-concept-1': '#3b82f6',
-      '--innfo-concept-2': '#8b5cf6',
-      '--innfo-concept-3': '#14b8a6',
-      '--innfo-concept-4': '#f59e0b',
-      '--innfo-concept-5': '#ec4899',
-      '--innfo-concept-6': '#22c55e',
-      '--innfo-concept-7': '#f97316',
-      '--innfo-concept-8': '#6366f1',
-      '--innfo-concept-9': '#ef4444',
-      '--innfo-concept-10': '#eab308',
-      '--innfo-concept-11': '#a855f7',
-      '--innfo-concept-12': '#6b7280',
-      '--innfo-concept-1-bg': '#eff6ff',
-      '--innfo-concept-2-bg': '#f5f3ff',
-      '--innfo-concept-3-bg': '#f0fdfa',
-      '--innfo-concept-4-bg': '#fffbeb',
-      '--innfo-concept-5-bg': '#fdf2f8',
-      '--innfo-concept-6-bg': '#f0fdf4',
-      '--innfo-concept-7-bg': '#fff7ed',
-      '--innfo-concept-8-bg': '#eef2ff',
-      '--innfo-concept-9-bg': '#fef2f2',
-      '--innfo-concept-10-bg': '#fefce8',
-      '--innfo-concept-11-bg': '#faf5ff',
-      '--innfo-concept-12-bg': '#f9fafb',
-      '--innfo-status-pending': '#92400e',
-      '--innfo-status-applied': '#166534',
-      '--innfo-status-rejected': '#b91c1c',
-      '--innfo-status-stale': '#4b5563',
-      '--innfo-status-unsent': '#1e3a8a',
-      '--innfo-status-pending-bg': '#fef3c7',
-      '--innfo-status-applied-bg': '#dcfce7',
-      '--innfo-status-rejected-bg': '#fee2e2',
-      '--innfo-status-stale-bg': '#f3f4f6',
-      '--innfo-status-unsent-bg': '#dbeafe',
-      '--innfo-origin-agent': '#7c3aed',
-      '--innfo-origin-human': '#2563eb',
-      '--innfo-origin-reviewer': '#b45309',
-      '--innfo-origin-document': '#4b5563',
-      '--innfo-origin-error': '#dc2626',
-      '--innfo-radius-sm': '6px',
-      '--innfo-radius': '8px',
-      '--innfo-radius-lg': '10px',
-      '--innfo-fs-hero': '1.5rem',
-      '--innfo-fs-title': '1.25rem',
-      '--innfo-fs-body': '0.9375rem',
-      '--innfo-fs-caption': '0.8125rem',
-      '--innfo-fs-min': '0.75rem',
-      '--innfo-font':
+      '--nn-bg': '#fafafa',
+      '--nn-surface': '#ffffff',
+      '--nn-surface-2': '#f4f4f5',
+      '--nn-text': '#0a0a0a',
+      '--nn-muted': '#666666',
+      '--nn-border': '#e5e5e5',
+      '--nn-accent': '#171717',
+      '--nn-link': '#171717',
+      '--nn-focus': '#52525b',
+      '--nn-concept-1': '#3b82f6',
+      '--nn-concept-2': '#8b5cf6',
+      '--nn-concept-3': '#14b8a6',
+      '--nn-concept-4': '#f59e0b',
+      '--nn-concept-5': '#ec4899',
+      '--nn-concept-6': '#22c55e',
+      '--nn-concept-7': '#f97316',
+      '--nn-concept-8': '#6366f1',
+      '--nn-concept-9': '#ef4444',
+      '--nn-concept-10': '#eab308',
+      '--nn-concept-11': '#a855f7',
+      '--nn-concept-12': '#6b7280',
+      '--nn-concept-1-bg': '#eff6ff',
+      '--nn-concept-2-bg': '#f5f3ff',
+      '--nn-concept-3-bg': '#f0fdfa',
+      '--nn-concept-4-bg': '#fffbeb',
+      '--nn-concept-5-bg': '#fdf2f8',
+      '--nn-concept-6-bg': '#f0fdf4',
+      '--nn-concept-7-bg': '#fff7ed',
+      '--nn-concept-8-bg': '#eef2ff',
+      '--nn-concept-9-bg': '#fef2f2',
+      '--nn-concept-10-bg': '#fefce8',
+      '--nn-concept-11-bg': '#faf5ff',
+      '--nn-concept-12-bg': '#f9fafb',
+      '--nn-status-pending': '#92400e',
+      '--nn-status-applied': '#166534',
+      '--nn-status-rejected': '#b91c1c',
+      '--nn-status-stale': '#4b5563',
+      '--nn-status-unsent': '#1e3a8a',
+      '--nn-status-pending-bg': '#fef3c7',
+      '--nn-status-applied-bg': '#dcfce7',
+      '--nn-status-rejected-bg': '#fee2e2',
+      '--nn-status-stale-bg': '#f3f4f6',
+      '--nn-status-unsent-bg': '#dbeafe',
+      '--nn-origin-agent': '#7c3aed',
+      '--nn-origin-human': '#2563eb',
+      '--nn-origin-reviewer': '#b45309',
+      '--nn-origin-document': '#4b5563',
+      '--nn-origin-error': '#dc2626',
+      '--nn-radius-sm': '6px',
+      '--nn-radius': '8px',
+      '--nn-radius-lg': '10px',
+      '--nn-fs-hero': '1.5rem',
+      '--nn-fs-title': '1.25rem',
+      '--nn-fs-body': '0.9375rem',
+      '--nn-fs-caption': '0.8125rem',
+      '--nn-fs-min': '0.75rem',
+      '--nn-font':
         "Plus Jakarta Sans, Geist Sans, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-      '--innfo-mono': "Geist Mono, 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
-      '--innfo-shadow': '0 1px 2px rgba(0, 0, 0, .06)',
+      '--nn-mono': "Geist Mono, 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
+      '--nn-shadow': '0 1px 2px rgba(0, 0, 0, .06)',
     },
   }
 
@@ -91,330 +91,354 @@
     }).join('\n')
   }
 
-  // Component CSS: every rule is scoped to a [data-innfo-component] root so it
+  // Component CSS: every rule is scoped to a [data-nn-component] root so it
   // never leaks into a shell. C appends the review components here.
   var COMPONENT_CSS = [
-    '[data-innfo-component]{box-sizing:border-box}',
-    '.innfo-status-badge{display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2}',
-    '.innfo-concept-dot{width:.6em;height:.6em;border-radius:50%;background:var(--innfo-muted);flex:0 0 auto}',
-    '.innfo-concept-count{color:var(--innfo-muted)}',
-    '.innfo-element-origin{display:inline-flex;align-items:center;color:var(--innfo-origin-document)}',
-    '.innfo-element-origin[data-origin=error]{color:var(--innfo-origin-error)}',
-    '.innfo-element-origin[data-origin=agent]{color:var(--innfo-origin-agent)}',
-    '.innfo-element-origin[data-origin=human]{color:var(--innfo-origin-human)}',
-    '.innfo-element-origin[data-origin=reviewer]{color:var(--innfo-origin-reviewer)}',
-    '.innfo-status-badge{border-radius:var(--innfo-radius-sm);padding:.05em .5em;font-weight:600}',
+    '[data-nn-component]{box-sizing:border-box}',
+    '.nn-status-badge{display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2}',
+    '.nn-concept-dot{width:.6em;height:.6em;border-radius:50%;background:var(--nn-muted);flex:0 0 auto}',
+    '.nn-concept-count{color:var(--nn-muted)}',
+    '.nn-element-origin{display:inline-flex;align-items:center;color:var(--nn-origin-document)}',
+    '.nn-element-origin[data-origin=error]{color:var(--nn-origin-error)}',
+    '.nn-element-origin[data-origin=agent]{color:var(--nn-origin-agent)}',
+    '.nn-element-origin[data-origin=human]{color:var(--nn-origin-human)}',
+    '.nn-element-origin[data-origin=reviewer]{color:var(--nn-origin-reviewer)}',
+    '.nn-status-badge{border-radius:var(--nn-radius-sm);padding:.05em .5em;font-weight:600}',
     // The single per-row change-state signal: blue means a change that lives only
     // in this console and has not been submitted yet.
-    '.innfo-status-badge[data-status=local]{color:var(--innfo-status-unsent);background:var(--innfo-status-unsent-bg)}',
-    '.innfo-draft-list{list-style:none;margin:0;padding:0}',
-    '.innfo-draft-row{display:flex;align-items:baseline;gap:.5em;padding:.3em 0;border-bottom:1px solid var(--innfo-border)}',
-    '.innfo-draft-kind{font-weight:600;color:var(--innfo-muted)}',
-    '.innfo-draft-text{flex:1 1 auto}',
-    '.innfo-draft-target-changed{color:var(--innfo-status-stale);font-size:.8rem}',
-    '.innfo-annotation-popover{border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);background:var(--innfo-surface);padding:.75em;box-shadow:var(--innfo-shadow)}',
-    '.innfo-popover-original{color:var(--innfo-muted)}',
-    '.innfo-popover-proposed{display:block;width:100%;font:inherit}',
-    '.innfo-rail-progress{color:var(--innfo-muted);font-size:.75rem}',
-    '.innfo-new-element{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:var(--innfo-radius-sm);cursor:pointer}',
-    '.innfo-review-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease}',
-    '.innfo-review-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
-    '[data-innfo-component=element-card]:hover .innfo-review-anchor{opacity:.85}',
-    '.innfo-review-anchor:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px;opacity:1}',
-    '.innfo-review-badges{display:inline-flex;gap:.3em;align-items:center;margin-left:.4em}',
+    '.nn-status-badge[data-status=local]{color:var(--nn-status-unsent);background:var(--nn-status-unsent-bg)}',
+    '.nn-draft-list{list-style:none;margin:0;padding:0}',
+    '.nn-draft-row{display:flex;align-items:baseline;gap:.5em;padding:.3em 0;border-bottom:1px solid var(--nn-border)}',
+    '.nn-draft-kind{font-weight:600;color:var(--nn-muted)}',
+    '.nn-draft-text{flex:1 1 auto}',
+    '.nn-draft-target-changed{color:var(--nn-status-stale);font-size:.8rem}',
+    '.nn-annotation-popover{border:1px solid var(--nn-border);border-radius:var(--nn-radius);background:var(--nn-surface);padding:.75em;box-shadow:var(--nn-shadow)}',
+    '.nn-popover-original{color:var(--nn-muted)}',
+    '.nn-popover-proposed{display:block;width:100%;font:inherit}',
+    '.nn-rail-progress{color:var(--nn-muted);font-size:.75rem}',
+    '.nn-new-element{appearance:none;border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-text);font:inherit;font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:var(--nn-radius-sm);cursor:pointer}',
+    '.nn-review-anchor{appearance:none;border:1px solid var(--nn-border);background:var(--nn-surface-2);color:var(--nn-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--nn-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease}',
+    '.nn-review-anchor:hover{opacity:1;background:var(--nn-surface);border-color:var(--nn-focus)}',
+    '[data-nn-component=element-card]:hover .nn-review-anchor{opacity:.85}',
+    '.nn-review-anchor:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px;opacity:1}',
+    '.nn-review-badges{display:inline-flex;gap:.3em;align-items:center;margin-left:.4em}',
     // The single change-state signal collapses every per-row change signal (the
     // local edit, the proposed changesets and the applied history) into one badge.
     // The per-state counts live in the badge tooltip.
-    '.innfo-change-state{font-size:.76rem;font-weight:700;border-radius:999px;padding:.05em .6em}',
+    '.nn-change-state{font-size:.76rem;font-weight:700;border-radius:999px;padding:.05em .6em}',
     // Change toast: the feedback that a change was recorded but NOT applied. Fixed
     // to the bottom-right, temporary, dismissable; it never blocks the page. The
-    // class is `innfo-change-toast` so it never collides with the runtime's inline
-    // error toast (`.innfo-toast`, `[data-innfo="toast"]`).
-    '.innfo-change-toast{position:fixed;right:1rem;bottom:1rem;z-index:90;display:flex;align-items:flex-start;gap:.6rem;max-width:22rem;padding:.75rem .9rem;background:var(--innfo-surface);color:var(--innfo-text);border:1px solid var(--innfo-border);border-left:3px solid var(--innfo-status-unsent);border-radius:var(--innfo-radius);box-shadow:0 10px 32px rgba(0,0,0,.18)}',
-    '.innfo-change-toast-icon{flex:0 0 auto;display:inline-flex;color:var(--innfo-status-unsent);margin-top:.1rem}',
-    '.innfo-change-toast-body{min-width:0}',
-    '.innfo-change-toast-title{display:block;font-weight:700;font-size:.85rem;margin-bottom:.15rem}',
-    '.innfo-change-toast-text{display:block;font-size:.8rem;line-height:1.4;color:var(--innfo-muted)}',
-    '.innfo-change-toast-close{flex:0 0 auto;margin-left:auto;appearance:none;border:0;background:transparent;color:var(--innfo-muted);font:inherit;font-size:1rem;line-height:1;cursor:pointer;padding:.05rem .2rem;border-radius:var(--innfo-radius-sm)}',
-    '.innfo-change-toast-close:hover{color:var(--innfo-text);background:var(--innfo-surface-2)}',
-    '@media (max-width:640px){.innfo-change-toast{left:1rem;right:1rem;max-width:none}}',
-    '.innfo-popover-comment,.innfo-popover-proposed{display:block;width:100%;font:inherit;box-sizing:border-box}',
-    '@media (max-width:640px){.innfo-annotation-popover{width:100%}.innfo-new-element{width:100%}}',
-    '.innfo-edit-modal{border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-lg);padding:0;max-width:760px;width:100%;max-height:86vh;overflow:auto;background:var(--innfo-surface);color:var(--innfo-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
-    '.innfo-edit-modal::backdrop{background:rgba(0,0,0,.35)}',
-    '.innfo-edit-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--innfo-border)}',
-    '.innfo-edit-modal-head h2{margin:0;font-size:1.05rem;font-weight:700}',
-    '.innfo-edit-modal-close{border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-muted);border-radius:var(--innfo-radius-sm);width:28px;height:28px;cursor:pointer;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center}',
-    '.innfo-edit-modal-body{padding:20px}',
-    '.innfo-edit-mode-selector{display:flex;gap:8px;margin-bottom:16px}',
-    '.innfo-edit-mode-btn{padding:6px 14px;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);border-radius:var(--innfo-radius-sm);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600}',
-    '.innfo-edit-mode-btn.active{background:var(--innfo-accent);color:var(--innfo-bg);border-color:var(--innfo-accent)}',
-    '.innfo-edit-field-label{display:block;font-size:.82rem;font-weight:600;color:var(--innfo-muted);margin-bottom:6px}',
-    '.innfo-edit-input,.innfo-edit-select,.innfo-edit-textarea{width:100%;padding:8px 10px;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.88rem}',
-    '.innfo-edit-input:focus,.innfo-edit-select:focus,.innfo-edit-textarea:focus{outline:none;border-color:var(--innfo-focus);box-shadow:0 0 0 2px rgba(37,99,235,.2)}',
-    '.innfo-edit-checkbox-label{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer}',
-    '.innfo-edit-multiselect{display:flex;flex-direction:column;gap:6px}',
-    '.innfo-edit-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--innfo-border);background:var(--innfo-surface-2);border-radius:0 0 var(--innfo-radius-lg) var(--innfo-radius-lg)}',
-    '.innfo-edit-btn{padding:7px 16px;border-radius:var(--innfo-radius-sm);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
-    '.innfo-edit-btn-save{background:var(--innfo-accent);color:var(--innfo-bg);border:1px solid var(--innfo-accent)}',
-    '.innfo-edit-btn-cancel{background:var(--innfo-surface);color:var(--innfo-text);border:1px solid var(--innfo-border)}',
-    '.innfo-modal-tabs{display:flex;border-bottom:1px solid var(--innfo-border);background:var(--innfo-surface-2);padding:0 12px;gap:4px}',
-    '.innfo-modal-tab-btn{padding:8px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--innfo-muted);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
-    '.innfo-modal-tab-btn.active{color:var(--innfo-text);border-bottom-color:var(--innfo-accent);background:var(--innfo-surface)}',
-    '.innfo-modal-tab-panel{padding:20px}',
-    '.innfo-history-section{margin-bottom:16px}',
-    '.innfo-history-title{font-size:.85rem;font-weight:700;margin:0 0 8px;color:var(--innfo-text)}',
-    '.innfo-history-item{padding:8px 10px;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);background:var(--innfo-surface-2);margin-bottom:6px;font-size:.82rem}',
-    '.innfo-history-meta{color:var(--innfo-muted);font-size:.75rem;margin-bottom:3px}',
-    '.innfo-history-notes{font-weight:500;color:var(--innfo-text)}',
-    '.innfo-history-empty{color:var(--innfo-muted);font-size:.82rem;font-style:italic}',
+    // class is `nn-change-toast` so it never collides with the runtime's inline
+    // error toast (`.nn-toast`, `[data-nn="toast"]`).
+    '.nn-change-toast{position:fixed;right:1rem;bottom:1rem;z-index:90;display:flex;align-items:flex-start;gap:.6rem;max-width:22rem;padding:.75rem .9rem;background:var(--nn-surface);color:var(--nn-text);border:1px solid var(--nn-border);border-left:3px solid var(--nn-status-unsent);border-radius:var(--nn-radius);box-shadow:0 10px 32px rgba(0,0,0,.18)}',
+    '.nn-change-toast-icon{flex:0 0 auto;display:inline-flex;color:var(--nn-status-unsent);margin-top:.1rem}',
+    '.nn-change-toast-body{min-width:0}',
+    '.nn-change-toast-title{display:block;font-weight:700;font-size:.85rem;margin-bottom:.15rem}',
+    '.nn-change-toast-text{display:block;font-size:.8rem;line-height:1.4;color:var(--nn-muted)}',
+    '.nn-change-toast-close{flex:0 0 auto;margin-left:auto;appearance:none;border:0;background:transparent;color:var(--nn-muted);font:inherit;font-size:1rem;line-height:1;cursor:pointer;padding:.05rem .2rem;border-radius:var(--nn-radius-sm)}',
+    '.nn-change-toast-close:hover{color:var(--nn-text);background:var(--nn-surface-2)}',
+    '@media (max-width:640px){.nn-change-toast{left:1rem;right:1rem;max-width:none}}',
+    '.nn-popover-comment,.nn-popover-proposed{display:block;width:100%;font:inherit;box-sizing:border-box}',
+    '@media (max-width:640px){.nn-annotation-popover{width:100%}.nn-new-element{width:100%}}',
+    '.nn-edit-modal{border:1px solid var(--nn-border);border-radius:var(--nn-radius-lg);padding:0;max-width:760px;width:100%;max-height:86vh;overflow:auto;background:var(--nn-surface);color:var(--nn-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
+    '.nn-edit-modal::backdrop{background:rgba(0,0,0,.35)}',
+    '.nn-edit-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--nn-border)}',
+    '.nn-edit-modal-head h2{margin:0;font-size:1.05rem;font-weight:700}',
+    '.nn-edit-modal-close{border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-muted);border-radius:var(--nn-radius-sm);width:28px;height:28px;cursor:pointer;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center}',
+    '.nn-edit-modal-body{padding:20px}',
+    '.nn-edit-mode-selector{display:flex;gap:8px;margin-bottom:16px}',
+    '.nn-edit-mode-btn{padding:6px 14px;border:1px solid var(--nn-border);background:var(--nn-surface-2);color:var(--nn-text);border-radius:var(--nn-radius-sm);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600}',
+    '.nn-edit-mode-btn.active{background:var(--nn-accent);color:var(--nn-bg);border-color:var(--nn-accent)}',
+    '.nn-edit-field-label{display:block;font-size:.82rem;font-weight:600;color:var(--nn-muted);margin-bottom:6px}',
+    '.nn-edit-input,.nn-edit-select,.nn-edit-textarea{width:100%;padding:8px 10px;border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);background:var(--nn-surface);color:var(--nn-text);font:inherit;font-size:.88rem}',
+    '.nn-edit-input:focus,.nn-edit-select:focus,.nn-edit-textarea:focus{outline:none;border-color:var(--nn-focus);box-shadow:0 0 0 2px rgba(37,99,235,.2)}',
+    '.nn-edit-checkbox-label{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer}',
+    '.nn-edit-multiselect{display:flex;flex-direction:column;gap:6px}',
+    '.nn-edit-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--nn-border);background:var(--nn-surface-2);border-radius:0 0 var(--nn-radius-lg) var(--nn-radius-lg)}',
+    '.nn-edit-btn{padding:7px 16px;border-radius:var(--nn-radius-sm);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
+    '.nn-edit-btn-save{background:var(--nn-accent);color:var(--nn-bg);border:1px solid var(--nn-accent)}',
+    '.nn-edit-btn-cancel{background:var(--nn-surface);color:var(--nn-text);border:1px solid var(--nn-border)}',
+    '.nn-modal-tabs{display:flex;border-bottom:1px solid var(--nn-border);background:var(--nn-surface-2);padding:0 12px;gap:4px}',
+    '.nn-modal-tab-btn{padding:8px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--nn-muted);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
+    '.nn-modal-tab-btn.active{color:var(--nn-text);border-bottom-color:var(--nn-accent);background:var(--nn-surface)}',
+    '.nn-modal-tab-panel{padding:20px}',
+    '.nn-history-section{margin-bottom:16px}',
+    '.nn-history-title{font-size:.85rem;font-weight:700;margin:0 0 8px;color:var(--nn-text)}',
+    '.nn-history-item{padding:8px 10px;border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);background:var(--nn-surface-2);margin-bottom:6px;font-size:.82rem}',
+    '.nn-history-meta{color:var(--nn-muted);font-size:.75rem;margin-bottom:3px}',
+    '.nn-history-notes{font-weight:500;color:var(--nn-text)}',
+    '.nn-history-empty{color:var(--nn-muted);font-size:.82rem;font-style:italic}',
     // Element-card redesign: hover-reveal edit anchors (same pattern as
-    // .innfo-review-anchor), QKUD chip, tags, relations.
-    '.innfo-edit-anchor{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface-2);color:var(--innfo-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--innfo-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease;display:inline-flex;align-items:center;justify-content:center;min-width:1.9em;min-height:1.6em}',
-    '.innfo-edit-anchor:hover{opacity:1;background:var(--innfo-surface);border-color:var(--innfo-focus)}',
-    '[data-innfo-component=element-card]:hover .innfo-edit-anchor{opacity:.85}',
-    '.innfo-edit-anchor:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px;opacity:1}',
-    '.innfo-qud{display:inline-flex;align-items:center;gap:.35em;font-family:var(--innfo-mono);font-size:.75rem;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.15em .3em .15em .6em;max-width:100%;min-width:0}',
+    // .nn-review-anchor), QKUD chip, tags, relations.
+    '.nn-edit-anchor{appearance:none;border:1px solid var(--nn-border);background:var(--nn-surface-2);color:var(--nn-text);font:inherit;font-size:.78rem;padding:.1em .45em;border-radius:var(--nn-radius-sm);cursor:pointer;margin-left:.4em;opacity:.35;transition:opacity .15s ease, background .15s ease;display:inline-flex;align-items:center;justify-content:center;min-width:1.9em;min-height:1.6em}',
+    '.nn-edit-anchor:hover{opacity:1;background:var(--nn-surface);border-color:var(--nn-focus)}',
+    '[data-nn-component=element-card]:hover .nn-edit-anchor{opacity:.85}',
+    '.nn-edit-anchor:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px;opacity:1}',
+    '.nn-qud{display:inline-flex;align-items:center;gap:.35em;font-family:var(--nn-mono);font-size:.75rem;color:var(--nn-muted);background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);padding:.15em .3em .15em .6em;max-width:100%;min-width:0}',
     // The KU-detail chip holds a long mono id; the wrapper must be able to
     // shrink below its content so a long id never widens the page on narrow
-    // viewports (only .innfo-qud-id itself truncates with an ellipsis).
-    '.innfo-qud-wrap{display:inline-flex;min-width:0;max-width:100%}',
-    '.innfo-qud-id{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}',
-    '.innfo-qud-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);font:inherit;padding:.1em .35em;border-radius:var(--innfo-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}',
-    '.innfo-qud-btn:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
-    '.innfo-qud-detail{display:none;font-family:var(--innfo-mono);font-size:.75rem;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.5em .7em;margin:.5em 0 0;word-break:break-all}',
-    '[data-qud-open] .innfo-qud-detail{display:block}',
-    '.innfo-card-path{font-family:var(--innfo-mono);font-size:.75rem;color:var(--innfo-muted);border-top:1px solid var(--innfo-border);padding:.5em 0 0;margin:.7em 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.innfo-tag-row{display:flex;gap:.4em;flex-wrap:wrap;align-items:center;margin:.6em 0 0}',
-    '.innfo-tag{display:inline-flex;align-items:center;gap:.3em;font-size:.78rem;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);padding:.1em .3em .1em .55em}',
-    '.innfo-tag-remove{appearance:none;border:none;background:none;color:var(--innfo-muted);font:inherit;cursor:pointer;display:inline-flex;padding:.1em;border-radius:4px}',
-    '.innfo-tag-remove:hover{color:var(--innfo-status-rejected)}',
-    '.innfo-tag-add{appearance:none;border:1px dashed var(--innfo-border);background:none;color:var(--innfo-muted);font:inherit;font-size:.78rem;border-radius:var(--innfo-radius-sm);padding:.1em .55em;cursor:pointer}',
-    '.innfo-tag-add:hover{color:var(--innfo-link);border-color:var(--innfo-link)}',
-    '.innfo-rel-list{list-style:none;margin:.6em 0 0;padding:0;display:flex;flex-direction:column;gap:.35em}',
-    '.innfo-rel-row{display:flex;align-items:center;gap:.5em;font-size:.85rem}',
-    '.innfo-rel-field{color:var(--innfo-muted);font-size:.78rem;min-width:5em}',
-    '.innfo-rel-act{appearance:none;border:1px solid transparent;background:none;color:var(--innfo-muted);font:inherit;cursor:pointer;display:inline-flex;padding:.15em;border-radius:4px;opacity:.45}',
-    '.innfo-rel-row:hover .innfo-rel-act,.innfo-rel-act:focus-visible{opacity:1}',
-    '.innfo-rel-act:hover{color:var(--innfo-link);border-color:var(--innfo-border)}',
-    '.innfo-rel-act.danger:hover{color:var(--innfo-status-rejected)}',
-    '.innfo-rel-add{appearance:none;border:1px dashed var(--innfo-border);background:none;color:var(--innfo-muted);font:inherit;font-size:.78rem;border-radius:var(--innfo-radius-sm);padding:.1em .55em;cursor:pointer;align-self:flex-start}',
-    '.innfo-rel-add:hover{color:var(--innfo-link);border-color:var(--innfo-link)}',
-    '@media (max-width:640px){.innfo-edit-anchor,.innfo-qud-btn,.innfo-rel-act{min-width:32px;min-height:32px}.innfo-qud{font-size:.75rem}}',
+    // viewports (only .nn-qud-id itself truncates with an ellipsis).
+    '.nn-qud-wrap{display:inline-flex;min-width:0;max-width:100%}',
+    '.nn-qud-id{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}',
+    '.nn-qud-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--nn-muted);font:inherit;padding:.1em .35em;border-radius:var(--nn-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}',
+    '.nn-qud-btn:hover{color:var(--nn-text);border-color:var(--nn-border);background:var(--nn-surface)}',
+    '.nn-qud-detail{display:none;font-family:var(--nn-mono);font-size:.75rem;color:var(--nn-muted);background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);padding:.5em .7em;margin:.5em 0 0;word-break:break-all}',
+    '[data-qud-open] .nn-qud-detail{display:block}',
+    '.nn-card-path{font-family:var(--nn-mono);font-size:.75rem;color:var(--nn-muted);border-top:1px solid var(--nn-border);padding:.5em 0 0;margin:.7em 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.nn-tag-row{display:flex;gap:.4em;flex-wrap:wrap;align-items:center;margin:.6em 0 0}',
+    '.nn-tag{display:inline-flex;align-items:center;gap:.3em;font-size:.78rem;background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);padding:.1em .3em .1em .55em}',
+    '.nn-tag-remove{appearance:none;border:none;background:none;color:var(--nn-muted);font:inherit;cursor:pointer;display:inline-flex;padding:.1em;border-radius:4px}',
+    '.nn-tag-remove:hover{color:var(--nn-status-rejected)}',
+    '.nn-tag-add{appearance:none;border:1px dashed var(--nn-border);background:none;color:var(--nn-muted);font:inherit;font-size:.78rem;border-radius:var(--nn-radius-sm);padding:.1em .55em;cursor:pointer}',
+    '.nn-tag-add:hover{color:var(--nn-link);border-color:var(--nn-link)}',
+    '.nn-rel-list{list-style:none;margin:.6em 0 0;padding:0;display:flex;flex-direction:column;gap:.35em}',
+    '.nn-rel-row{display:flex;align-items:center;gap:.5em;font-size:.85rem}',
+    '.nn-rel-field{color:var(--nn-muted);font-size:.78rem;min-width:5em}',
+    '.nn-rel-act{appearance:none;border:1px solid transparent;background:none;color:var(--nn-muted);font:inherit;cursor:pointer;display:inline-flex;padding:.15em;border-radius:4px;opacity:.45}',
+    '.nn-rel-row:hover .nn-rel-act,.nn-rel-act:focus-visible{opacity:1}',
+    '.nn-rel-act:hover{color:var(--nn-link);border-color:var(--nn-border)}',
+    '.nn-rel-act.danger:hover{color:var(--nn-status-rejected)}',
+    '.nn-rel-add{appearance:none;border:1px dashed var(--nn-border);background:none;color:var(--nn-muted);font:inherit;font-size:.78rem;border-radius:var(--nn-radius-sm);padding:.1em .55em;cursor:pointer;align-self:flex-start}',
+    '.nn-rel-add:hover{color:var(--nn-link);border-color:var(--nn-link)}',
+    '@media (max-width:640px){.nn-edit-anchor,.nn-qud-btn,.nn-rel-act{min-width:32px;min-height:32px}.nn-qud{font-size:.75rem}}',
     // Knowledge-unit badge family (Ku) + action cluster + change pip.
-    '.innfo-ku-unit{display:inline-flex;align-items:center;gap:.25em;max-width:100%}',
-    '.innfo-card-fields>.innfo-ku-unit,.innfo-card-fields>.innfo-ku{flex:1 1 16rem;min-width:0}',
-    '.innfo-card-fields>.innfo-ku[data-field-wide=true],.innfo-card-fields>.innfo-ku-unit:has([data-field-wide=true]){flex-basis:100%}',
-    '.innfo-ku{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:0;border-radius:var(--innfo-radius-sm);padding:.12em .5em;background:var(--innfo-surface-2);color:var(--innfo-text);max-width:100%;--c:var(--innfo-concept-1);--cb:var(--innfo-concept-1-bg)}',
+    '.nn-ku-unit{display:inline-flex;align-items:center;gap:.25em;max-width:100%}',
+    '.nn-card-fields>.nn-ku-unit,.nn-card-fields>.nn-ku{flex:1 1 16rem;min-width:0}',
+    '.nn-card-fields>.nn-ku[data-field-wide=true],.nn-card-fields>.nn-ku-unit:has([data-field-wide=true]){flex-basis:100%}',
+    '.nn-ku{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:0;border-radius:var(--nn-radius-sm);padding:.12em .5em;background:var(--nn-surface-2);color:var(--nn-text);max-width:100%;--c:var(--nn-concept-1);--cb:var(--nn-concept-1-bg)}',
     // Nature grammar (approved 2026-10-18): container = ONE border at 2x the line
     // width (no double border); structure = SOLID concept-coloured border + mono
     // (no dashed); content = NO border, the concept colour rides on the label and
     // the concept icon.
-    '.innfo-ku[data-ku-nature=container]{border:2px solid var(--innfo-accent);background:var(--innfo-surface)}',
-    '.innfo-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--innfo-muted);background:var(--innfo-surface)}',
-    '.innfo-ku[data-ku-nature=content]{border:0;background:var(--innfo-surface-2)}',
-    '.innfo-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle;max-width:100%}',
-    '.innfo-ku[data-ku-kind=field],.innfo-ku[data-ku-kind=cell]{background:var(--innfo-surface-2)}',
+    '.nn-ku[data-ku-nature=container]{border:2px solid var(--nn-accent);background:var(--nn-surface)}',
+    '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface)}',
+    '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2)}',
+    '.nn-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle;max-width:100%}',
+    '.nn-ku[data-ku-kind=field],.nn-ku[data-ku-kind=cell]{background:var(--nn-surface-2)}',
     // Element + concept/document badges read as card titles: slightly larger and
     // semibold so they anchor the hierarchy above their muted field rows.
-    '.innfo-ku[data-ku-kind=element],.innfo-ku[data-ku-kind=concept],.innfo-ku[data-ku-kind=document]{font-weight:600}',
-    '.innfo-ku[data-ku-kind=element]{font-size:.9rem}',
-    '.innfo-ku .innfo-ku-label{color:var(--innfo-muted)}',
-    '.innfo-ku .innfo-ku-value{color:var(--innfo-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.innfo-ku .innfo-ku-icon{display:inline-flex;color:var(--innfo-muted);flex:0 0 auto}',
+    '.nn-ku[data-ku-kind=element],.nn-ku[data-ku-kind=concept],.nn-ku[data-ku-kind=document]{font-weight:600}',
+    '.nn-ku[data-ku-kind=element]{font-size:.9rem}',
+    '.nn-ku .nn-ku-label{color:var(--nn-muted)}',
+    '.nn-ku .nn-ku-value{color:var(--nn-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.nn-field-citation{display:inline-flex;align-items:center;gap:.3em;min-width:0}',
+    '.nn-ku .nn-ku-icon{display:inline-flex;color:var(--nn-muted);flex:0 0 auto}',
     // Content badges: NO border; the concept colour rides on the label/value and on
     // the concept icon (the icon of the concept the unit belongs to).
-    '.innfo-ku[data-ku-nature=content]>.innfo-ku-label,.innfo-ku[data-ku-nature=content]>.innfo-ku-value{color:var(--c)}',
-    '.innfo-ku[data-ku-nature=content]>.innfo-ku-icon{color:var(--c)}',
+    '.nn-ku[data-ku-nature=content]>.nn-ku-label,.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
+    '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
     // A Source is cited evidence: paper fill and neutral ink. It is never tinted by
     // the concept colour, even though it is a content unit.
-    '.innfo-ku[data-ku-home=source]>.innfo-ku-label{color:var(--innfo-muted)}',
-    '.innfo-ku[data-ku-home=source]>.innfo-ku-value{color:var(--innfo-text)}',
-    '.innfo-ku[data-ku-home=source] .innfo-ku-icon{color:var(--innfo-muted)}',
+    '.nn-ku[data-ku-home=source]>.nn-ku-label{color:var(--nn-muted)}',
+    '.nn-ku[data-ku-home=source]>.nn-ku-value{color:var(--nn-text)}',
+    '.nn-ku[data-ku-home=source] .nn-ku-icon{color:var(--nn-muted)}',
     // Field badges carry free text: under card fields they grow to fill the row,
     // while in tables/grids they remain compact inline-flex elements.
-    '.innfo-card-fields>.innfo-ku-unit>.innfo-ku[data-ku-kind=field],.innfo-card-fields>.innfo-ku[data-ku-kind=field]{flex:1 1 16em;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
-    '.innfo-ku[data-ku-kind=field]{min-width:0;align-items:center;line-height:1.3}',
-    '.innfo-ku[data-ku-kind=field] .innfo-ku-label{flex:0 0 auto;white-space:nowrap;font-weight:600}',
-    '.innfo-ku[data-ku-kind=field] .innfo-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
-    '.innfo-ku[data-ku-kind=field] .innfo-ku-icon{margin-top:.18em}',
-    '.innfo-ku .innfo-ku-values{display:inline-flex;flex-wrap:wrap;gap:.25em}',
-    '.innfo-ku .innfo-ku-value-chip{display:inline-flex;align-items:center;border:1px solid var(--innfo-border);border-radius:999px;padding:0 .5em;font-size:.85em}',
-    '.innfo-ku[data-ku-changes]{border-style:dashed}',
-    '.innfo-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}',
-    '.innfo-kpi-card{background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--innfo-shadow)}',
-    '.innfo-kpi-header{display:flex;align-items:center;justify-content:space-between;gap:8px}',
-    '.innfo-kpi-value{font-size:1.4rem;font-weight:700;color:var(--innfo-text);line-height:1.2}',
-    '.innfo-kpi-hint{font-size:.78rem;color:var(--innfo-muted)}',
+    '.nn-card-fields>.nn-ku-unit>.nn-ku[data-ku-kind=field],.nn-card-fields>.nn-ku[data-ku-kind=field]{flex:1 1 16em;align-items:flex-start;font-size:.92rem;line-height:1.5;padding:.4em .6em;gap:.45em}',
+    '.nn-ku[data-ku-kind=field]{min-width:0;align-items:center;line-height:1.3}',
+    '.nn-ku[data-ku-kind=field] .nn-ku-label{flex:0 0 auto;white-space:nowrap;font-weight:600}',
+    '.nn-ku[data-ku-kind=field] .nn-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
+    '.nn-ku[data-ku-kind=field] .nn-ku-icon{margin-top:.18em}',
+    '.nn-ku .nn-ku-values{display:inline-flex;flex-wrap:wrap;gap:.25em}',
+    '.nn-ku .nn-ku-value-chip{display:inline-flex;align-items:center;border:1px solid var(--nn-border);border-radius:999px;padding:0 .5em;font-size:.85em}',
+    // Field pairs read as TWO badges: the field NAME as its own chip and the VALUE
+    // as its own chip. Only `FieldRow` marks its unit `data-ku-pair=field`; every
+    // other `value` unit passes its text as the label and keeps the single badge.
+    // Field edits belong to the admin/agent, not the console, so the name chip
+    // carries no affordance of its own — the value badge keeps the `+` flyout.
+    // `[data-ku-kind=value]` is repeated to out-specify the nature rules that
+    // `ensureKuCss` injects in a later sheet at equal specificity.
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value]{flex:1 1 auto;background:transparent;border:0;gap:.3em;padding:0;align-items:center;min-width:0}',
+    // The name chip is a FIXED column so every value in the sheet starts on the
+    // same x. A name longer than the column ellipsizes; the chip keeps the `title`
+    // `Ku` already set, so the full name stays reachable.
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value]>.nn-ku-label{box-sizing:content-box;flex:0 0 var(--nn-field-name-w,17ch);width:var(--nn-field-name-w,17ch);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--nn-mono);font-size:.76rem;font-weight:600;color:var(--nn-muted);background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:.35em;padding:.1em .45em}',
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value]>.nn-ku-icon{display:none}',
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value]>.nn-ku-value{min-width:0;color:var(--nn-text);background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:.35em;padding:.1em .45em}',
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value][data-field-empty=true]>.nn-ku-value{display:none}',
+    // Long values (markdown / long_description) wrap instead of truncating.
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value][data-field-wide=true]{align-items:flex-start}',
+    '.nn-ku[data-ku-pair=field][data-ku-kind=value][data-field-wide=true]>.nn-ku-value{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;text-align:left}',
+    '.nn-ku[data-ku-changes]{border-style:dashed}',
+    '.nn-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px}',
+    '.nn-kpi-card{background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:var(--nn-radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--nn-shadow)}',
+    '.nn-kpi-header{display:flex;align-items:center;justify-content:space-between;gap:8px}',
+    '.nn-kpi-value{font-size:1.4rem;font-weight:700;color:var(--nn-text);line-height:1.2}',
+    '.nn-kpi-hint{font-size:.78rem;color:var(--nn-muted)}',
     // Data surfaces (Table / MatrixGrid / Timeline): one token-driven grid. The
     // scroll wrapper is the ONLY horizontal scroll port, so a wide matrix never
     // widens the page (the old bug: a missing Tailwind `overflow-x-auto`).
-    '.innfo-grid-scroll{max-width:100%;min-width:0;overflow:auto;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);background:var(--innfo-surface)}',
-    '.innfo-grid-scroll+.innfo-grid-scroll{margin-top:.6rem}',
-    '.innfo-grid{border-collapse:separate;border-spacing:0;width:100%;font-size:.82rem;color:var(--innfo-text)}',
-    '.innfo-grid th,.innfo-grid td{padding:.4em .65em;border-bottom:1px solid var(--innfo-border);text-align:left;vertical-align:middle}',
-    '.innfo-grid thead th{position:sticky;top:0;z-index:2;background:var(--innfo-surface-2);color:var(--innfo-muted);font-weight:600;font-size:.75rem;white-space:nowrap}',
-    '.innfo-grid tbody tr:last-child>th,.innfo-grid tbody tr:last-child>td{border-bottom:0}',
-    '.innfo-grid tbody tr:hover>td,.innfo-grid tbody tr:hover>.innfo-grid-rowhead{background:var(--innfo-surface-2)}',
-    '.innfo-grid-cell--center{text-align:center}',
-    '.innfo-grid-cell--end{text-align:right}',
-    '.innfo-grid-corner,.innfo-grid-rowhead{text-align:left;font-weight:600;color:var(--innfo-text)}',
-    '.innfo-grid-empty{padding:1em .8em;color:var(--innfo-muted);text-align:center}',
+    '.nn-grid-scroll{max-width:100%;min-width:0;overflow:auto;border:1px solid var(--nn-border);border-radius:var(--nn-radius);background:var(--nn-surface)}',
+    '.nn-grid-scroll+.nn-grid-scroll{margin-top:.6rem}',
+    '.nn-grid{border-collapse:separate;border-spacing:0;width:100%;font-size:.82rem;color:var(--nn-text)}',
+    '.nn-grid th,.nn-grid td{padding:.4em .65em;border-bottom:1px solid var(--nn-border);text-align:left;vertical-align:middle}',
+    '.nn-grid thead th{position:sticky;top:0;z-index:2;background:var(--nn-surface-2);color:var(--nn-muted);font-weight:600;font-size:.75rem;white-space:nowrap}',
+    '.nn-grid tbody tr:last-child>th,.nn-grid tbody tr:last-child>td{border-bottom:0}',
+    '.nn-grid tbody tr:hover>td,.nn-grid tbody tr:hover>.nn-grid-rowhead{background:var(--nn-surface-2)}',
+    '.nn-grid-cell--center{text-align:center}',
+    '.nn-grid-cell--end{text-align:right}',
+    '.nn-grid-corner,.nn-grid-rowhead{text-align:left;font-weight:600;color:var(--nn-text)}',
+    '.nn-grid-empty{padding:1em .8em;color:var(--nn-muted);text-align:center}',
     // Pinned first column: the corner + every row header stick to the left edge
     // and rise above the horizontally scrolled cells.
-    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid-corner{position:sticky;left:0;z-index:3;background:var(--innfo-surface-2)}',
-    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid-rowhead{position:sticky;left:0;z-index:1;background:var(--innfo-surface)}',
-    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid tbody tr:nth-child(even)>.innfo-grid-rowhead{background:var(--innfo-surface-2)}',
-    '.innfo-grid-scroll[data-pin-first=true] .innfo-grid tbody tr:hover>.innfo-grid-rowhead{background:var(--innfo-surface-2)}',
+    '.nn-grid-scroll[data-pin-first=true] .nn-grid-corner{position:sticky;left:0;z-index:3;background:var(--nn-surface-2)}',
+    '.nn-grid-scroll[data-pin-first=true] .nn-grid-rowhead{position:sticky;left:0;z-index:1;background:var(--nn-surface)}',
+    '.nn-grid-scroll[data-pin-first=true] .nn-grid tbody tr:nth-child(even)>.nn-grid-rowhead{background:var(--nn-surface-2)}',
+    '.nn-grid-scroll[data-pin-first=true] .nn-grid tbody tr:hover>.nn-grid-rowhead{background:var(--nn-surface-2)}',
     // FilterSelect: the shared multi-select facet (state, months, tags).
-    '.innfo-filter{position:relative;display:inline-block}',
-    '.innfo-filter-summary{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;font:inherit;font-size:.8rem;font-weight:600;color:var(--innfo-text);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);cursor:pointer;list-style:none}',
-    '.innfo-filter[open] .innfo-filter-summary{border-color:var(--innfo-link)}',
-    '.innfo-filter-summary::-webkit-details-marker{display:none}',
-    '.innfo-filter-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:50;min-width:220px;max-height:340px;overflow-y:auto;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius);box-shadow:0 10px 25px -5px rgba(0,0,0,.15);padding:6px}',
-    '.innfo-filter-quick{display:flex;flex-wrap:wrap;gap:4px;padding:2px 4px 6px;margin-bottom:4px;border-bottom:1px solid var(--innfo-border)}',
-    '.innfo-filter-quick button{appearance:none;border:1px solid var(--innfo-border);background:var(--innfo-surface);color:var(--innfo-text);font:inherit;font-size:.72rem;padding:2px 8px;border-radius:999px;cursor:pointer}',
-    '.innfo-filter-quick button:hover{border-color:var(--innfo-link);color:var(--innfo-link)}',
-    '.innfo-filter-option{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--innfo-radius-sm);font-size:.82rem;cursor:pointer}',
-    '.innfo-filter-option:hover{background:var(--innfo-surface-2)}',
-    '.innfo-filter-option input{flex:0 0 auto}',
-    '.innfo-filter-option-label{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.innfo-filter-option-count{font-family:var(--innfo-mono);font-size:.72rem;color:var(--innfo-muted)}',
-    '.innfo-ku-change-pip{position:absolute;top:-.5em;right:-.5em;min-width:1.2em;height:1.2em;padding:0 .25em;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;line-height:1;border-radius:999px;background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border:1px solid var(--innfo-status-pending);cursor:pointer}',
+    '.nn-filter{position:relative;display:inline-block}',
+    '.nn-filter-summary{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;font:inherit;font-size:.8rem;font-weight:600;color:var(--nn-text);background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);cursor:pointer;list-style:none}',
+    '.nn-filter[open] .nn-filter-summary{border-color:var(--nn-link)}',
+    '.nn-filter-summary::-webkit-details-marker{display:none}',
+    '.nn-filter-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:50;min-width:220px;max-height:340px;overflow-y:auto;background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:var(--nn-radius);box-shadow:0 10px 25px -5px rgba(0,0,0,.15);padding:6px}',
+    '.nn-filter-quick{display:flex;flex-wrap:wrap;gap:4px;padding:2px 4px 6px;margin-bottom:4px;border-bottom:1px solid var(--nn-border)}',
+    '.nn-filter-quick button{appearance:none;border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-text);font:inherit;font-size:.72rem;padding:2px 8px;border-radius:999px;cursor:pointer}',
+    '.nn-filter-quick button:hover{border-color:var(--nn-link);color:var(--nn-link)}',
+    '.nn-filter-option{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--nn-radius-sm);font-size:.82rem;cursor:pointer}',
+    '.nn-filter-option:hover{background:var(--nn-surface-2)}',
+    '.nn-filter-option input{flex:0 0 auto}',
+    '.nn-filter-option-label{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.nn-filter-option-count{font-family:var(--nn-mono);font-size:.72rem;color:var(--nn-muted)}',
+    '.nn-ku-change-pip{position:absolute;top:-.5em;right:-.5em;min-width:1.2em;height:1.2em;padding:0 .25em;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;line-height:1;border-radius:999px;background:var(--nn-status-pending-bg);color:var(--nn-status-pending);border:1px solid var(--nn-status-pending);cursor:pointer}',
     // ONE affordance sits beside the badge: a borderless "+". The actions float
     // BELOW it on demand, so they take no inline space and never push a neighbour.
-    '.innfo-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--innfo-muted);cursor:pointer;flex:0 0 auto}',
-    '.innfo-ku-more:hover,.innfo-ku-more[aria-expanded=true]{color:var(--innfo-text);background:var(--innfo-surface-2)}',
-    '.innfo-ku-more:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
-    '.innfo-ku-actions{position:fixed;z-index:60;display:none;align-items:center;gap:.1em;padding:.2em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
-    '.innfo-ku-wrap[data-ku-open=true]>.innfo-ku-actions{display:inline-flex}',
-    '.innfo-ku-action{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);font:inherit;padding:.1em .3em;border-radius:var(--innfo-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px}',
-    '.innfo-ku-action:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface-2)}',
-    '.innfo-ku-action[data-ku-action=edit]:hover{color:var(--innfo-link)}',
-    '.innfo-ku-action:focus-visible{outline:2px solid var(--innfo-focus);outline-offset:1px}',
+    '.nn-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--nn-muted);cursor:pointer;flex:0 0 auto}',
+    '.nn-ku-more:hover,.nn-ku-more[aria-expanded=true]{color:var(--nn-text);background:var(--nn-surface-2)}',
+    '.nn-ku-more:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px}',
+    '.nn-ku-actions{position:fixed;z-index:60;display:none;align-items:center;gap:.1em;padding:.2em;background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
+    '.nn-ku-wrap[data-ku-open=true]>.nn-ku-actions{display:inline-flex}',
+    '.nn-ku-action{appearance:none;border:1px solid transparent;background:transparent;color:var(--nn-muted);font:inherit;padding:.1em .3em;border-radius:var(--nn-radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px}',
+    '.nn-ku-action:hover{color:var(--nn-text);border-color:var(--nn-border);background:var(--nn-surface-2)}',
+    '.nn-ku-action[data-ku-action=edit]:hover{color:var(--nn-link)}',
+    '.nn-ku-action:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px}',
     // Citation dialog: ONE CARD per cited source (was a flat list of siblings, so
     // you could not tell where one citation ended and the next began).
-    '.innfo-cite-list{display:grid;gap:.7rem}',
-    '.innfo-cite-card+.innfo-cite-card{margin-top:.7rem}',
-    '.innfo-cite-card{border:1px solid var(--innfo-border);border-left:4px solid var(--innfo-origin-document);border-radius:var(--innfo-radius);padding:.7rem .8rem;display:grid;gap:.5rem;background:var(--innfo-surface)}',
-    '.innfo-cite-card[data-origin=agent]{border-left-color:var(--innfo-origin-agent)}',
-    '.innfo-cite-card[data-origin=human]{border-left-color:var(--innfo-origin-human)}',
-    '.innfo-cite-card[data-origin=reviewer]{border-left-color:var(--innfo-origin-reviewer)}',
-    '.innfo-cite-card[data-origin=error]{border-left-color:var(--innfo-origin-error)}',
-    '.innfo-cite-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}',
-    '.innfo-cite-prov{display:inline-flex;align-items:center;gap:.3rem;font-size:.76rem;color:var(--innfo-muted)}',
-    '.innfo-cite-prov svg{width:13px;height:13px}',
-    '.innfo-cite-status{margin-left:auto;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.15em .5em;border-radius:999px;background:var(--innfo-surface-2);color:var(--innfo-muted)}',
-    '.innfo-cite-status.is-bad{background:var(--innfo-origin-error);color:#fff}',
-    '.innfo-cite-meta{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.25rem .6rem;font-size:.78rem}',
-    '.innfo-cite-meta dt{color:var(--innfo-muted)}',
-    '.innfo-cite-meta dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:.74rem}',
-    '.innfo-cite-excerpt{margin:0;padding:.5rem .6rem;background:var(--innfo-surface-2);border-radius:var(--innfo-radius-sm);font-family:ui-monospace,monospace;font-size:.74rem;line-height:1.45;white-space:pre-wrap;max-height:9em;overflow:auto}',
-    '.innfo-cite-open{justify-self:start;font-size:.78rem;font-weight:600;color:var(--innfo-link)}',
+    '.nn-cite-list{display:grid;gap:.7rem}',
+    '.nn-cite-card+.nn-cite-card{margin-top:.7rem}',
+    '.nn-cite-card{border:1px solid var(--nn-border);border-left:4px solid var(--nn-origin-document);border-radius:var(--nn-radius);padding:.7rem .8rem;display:grid;gap:.5rem;background:var(--nn-surface)}',
+    '.nn-cite-card[data-origin=agent]{border-left-color:var(--nn-origin-agent)}',
+    '.nn-cite-card[data-origin=human]{border-left-color:var(--nn-origin-human)}',
+    '.nn-cite-card[data-origin=reviewer]{border-left-color:var(--nn-origin-reviewer)}',
+    '.nn-cite-card[data-origin=error]{border-left-color:var(--nn-origin-error)}',
+    '.nn-cite-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}',
+    '.nn-cite-prov{display:inline-flex;align-items:center;gap:.3rem;font-size:.76rem;color:var(--nn-muted)}',
+    '.nn-cite-prov svg{width:13px;height:13px}',
+    '.nn-cite-status{margin-left:auto;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.15em .5em;border-radius:999px;background:var(--nn-surface-2);color:var(--nn-muted)}',
+    '.nn-cite-status.is-bad{background:var(--nn-origin-error);color:#fff}',
+    '.nn-cite-meta{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.25rem .6rem;font-size:.78rem}',
+    '.nn-cite-meta dt{color:var(--nn-muted)}',
+    '.nn-cite-meta dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:.74rem}',
+    '.nn-cite-excerpt{margin:0;padding:.5rem .6rem;background:var(--nn-surface-2);border-radius:var(--nn-radius-sm);font-family:ui-monospace,monospace;font-size:.74rem;line-height:1.45;white-space:pre-wrap;max-height:9em;overflow:auto}',
+    '.nn-cite-open{justify-self:start;font-size:.78rem;font-weight:600;color:var(--nn-link)}',
     // Filter: the AND/OR segmented control and the two-step field facet.
-    '.innfo-op-toggle{display:inline-flex;align-items:center;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden}',
-    '.innfo-op-btn{appearance:none;border:0;background:transparent;color:var(--innfo-muted);font:inherit;font-size:.68rem;font-weight:800;letter-spacing:.04em;padding:.1em .5em;cursor:pointer;text-transform:uppercase}',
-    '.innfo-op-btn:hover{background:var(--innfo-surface-2);color:var(--innfo-text)}',
-    '.innfo-op-btn.active{background:var(--innfo-accent);color:var(--innfo-surface)}',
-    '.innfo-facet-back{appearance:none;border:0;background:transparent;color:var(--innfo-muted);font:inherit;font-size:.72rem;padding:.3em .5em;cursor:pointer;text-align:left;width:100%}',
-    '.innfo-facet-back:hover{color:var(--innfo-text);background:var(--innfo-surface-2)}',
-    '.innfo-facet-input{font:inherit;font-size:.78rem;padding:.25em .4em;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);background:var(--innfo-surface);color:var(--innfo-text);width:100%}',
+    '.nn-op-toggle{display:inline-flex;align-items:center;border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);overflow:hidden}',
+    '.nn-op-btn{appearance:none;border:0;background:transparent;color:var(--nn-muted);font:inherit;font-size:.68rem;font-weight:800;letter-spacing:.04em;padding:.1em .5em;cursor:pointer;text-transform:uppercase}',
+    '.nn-op-btn:hover{background:var(--nn-surface-2);color:var(--nn-text)}',
+    '.nn-op-btn.active{background:var(--nn-accent);color:var(--nn-surface)}',
+    '.nn-facet-back{appearance:none;border:0;background:transparent;color:var(--nn-muted);font:inherit;font-size:.72rem;padding:.3em .5em;cursor:pointer;text-align:left;width:100%}',
+    '.nn-facet-back:hover{color:var(--nn-text);background:var(--nn-surface-2)}',
+    '.nn-facet-input{font:inherit;font-size:.78rem;padding:.25em .4em;border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);background:var(--nn-surface);color:var(--nn-text);width:100%}',
     // View tabs carry a TONE by where the view comes from: the three core views are
     // purple, a bluepriNNt view is blue, a domaiNN/user view is black.
-    '.innfo-view-tabs .innfo-view-tab.tone-core{color:#6d28d9}',
-    '.innfo-view-tabs .innfo-view-tab.tone-blueprint{color:#2563eb}',
-    '.innfo-view-tabs .innfo-view-tab.tone-custom{color:var(--innfo-text,#0a0a0a)}',
+    '.nn-view-tabs .nn-view-tab.tone-core{color:#6d28d9}',
+    '.nn-view-tabs .nn-view-tab.tone-blueprint{color:#2563eb}',
+    '.nn-view-tabs .nn-view-tab.tone-custom{color:var(--nn-text,#0a0a0a)}',
     // Structure warning inside the edit modal (the structure pencil is ungated).
-    '.innfo-edit-warn{display:flex;align-items:flex-start;gap:.6rem;padding:.7rem 1.25rem;border-bottom:1px solid var(--innfo-status-pending);background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);font-size:.82rem;line-height:1.45}',
-    '.innfo-edit-warn-icon{flex:0 0 auto;display:inline-flex;margin-top:.1rem}',
-    '.innfo-edit-warn strong{display:block;margin-bottom:.15rem}',
+    '.nn-edit-warn{display:flex;align-items:flex-start;gap:.6rem;padding:.7rem 1.25rem;border-bottom:1px solid var(--nn-status-pending);background:var(--nn-status-pending-bg);color:var(--nn-status-pending);font-size:.82rem;line-height:1.45}',
+    '.nn-edit-warn-icon{flex:0 0 auto;display:inline-flex;margin-top:.1rem}',
+    '.nn-edit-warn strong{display:block;margin-bottom:.15rem}',
     // "Proposing as ..." inside the edit modal (just-in-time identity).
-    '.innfo-propose-as{padding:.45rem 1.25rem;border-bottom:1px solid var(--innfo-border);font-size:.78rem;color:var(--innfo-muted)}',
-    '.innfo-propose-as[data-default=true]{color:var(--innfo-status-pending);background:var(--innfo-status-pending-bg)}',
-    '.innfo-card-fields{display:flex;flex-direction:column;gap:.45em;align-items:stretch;margin:.6em 0 0}',
-    '.innfo-card-desc-actions{margin-left:.4em}',
+    '.nn-propose-as{padding:.45rem 1.25rem;border-bottom:1px solid var(--nn-border);font-size:.78rem;color:var(--nn-muted)}',
+    '.nn-propose-as[data-default=true]{color:var(--nn-status-pending);background:var(--nn-status-pending-bg)}',
+    '.nn-card-fields{display:flex;flex-direction:column;gap:.45em;align-items:stretch;margin:.6em 0 0}',
+    '.nn-card-desc-actions{margin-left:.4em}',
     // Element-card Dense Row (V01): a one-line bar (image chip, name, concept,
     // markers, field count, actions, chevron) over a collapsible body.
     // Scoped to the element-card so it wins over any shell-level card styles.
-    '[data-innfo-component=element-card] .innfo-card-head{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;cursor:pointer;min-width:0}',
-    '[data-innfo-component=element-card] .innfo-card-badges{display:inline-flex;align-items:center;gap:.35em;min-width:0}',
-    '[data-innfo-component=element-card] .innfo-card-badges .innfo-ku{display:inline-flex;align-items:center}',
-    '[data-innfo-component=element-card] .innfo-card-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1.5px solid var(--innfo-border);background:var(--innfo-surface-2);flex:0 0 auto;display:block}',
-    '.innfo-field-image-wrap{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}',
-    '[data-innfo-component=element-card] .innfo-card-thumb--empty,[data-innfo-component=element-card] .innfo-card-thumb--concept{display:inline-flex;align-items:center;justify-content:center;color:var(--card-concept-color,var(--innfo-accent));background:var(--card-concept-bg,var(--innfo-surface-2));border:1.5px solid var(--card-concept-color,var(--innfo-border))}',
-    '[data-innfo-component=element-card] .innfo-card-count{font-size:.75rem;font-weight:600;color:var(--innfo-muted);background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:999px;padding:1px 8px;white-space:nowrap;flex:0 0 auto}',
-    '[data-innfo-component=element-card] .innfo-card-toggle{appearance:none;border:1px solid transparent;background:transparent;color:var(--innfo-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:.15em;border-radius:var(--innfo-radius-sm);flex:0 0 auto}',
-    '[data-innfo-component=element-card] .innfo-card-toggle:hover{color:var(--innfo-text);border-color:var(--innfo-border);background:var(--innfo-surface)}',
-    '[data-innfo-component=element-card] .innfo-card-toggle .innfo-icon{transition:transform .15s ease}',
-    '[data-innfo-component=element-card][data-open=true] .innfo-card-toggle .innfo-icon{transform:rotate(180deg)}',
-    '[data-innfo-component=element-card][data-open=false] .innfo-card-body{display:none}',
-    '[data-innfo-component=element-card][data-open=false] .innfo-card-footer{display:none}',
-    '[data-innfo-component=element-card][data-open=true] .innfo-card-collapsed-strip{display:none!important}',
-    '[data-innfo-component=element-card][data-open=true] .innfo-card-summary-preview{display:none}',
-    '[data-innfo-component=element-card] .innfo-card-summary-preview{font-size:.82rem;color:var(--innfo-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch;margin-left:.25em}',
-    '[data-innfo-component=element-card] .innfo-card-status-pill{display:inline-flex;align-items:center;gap:.28em;font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--innfo-status-applied-bg);color:var(--innfo-status-applied);border:1px solid rgba(22,101,52,.22);white-space:nowrap}',
-    '[data-innfo-component=element-card] .innfo-card-status-pill[data-status=draft],[data-innfo-component=element-card] .innfo-card-status-pill[data-status=pending]{background:var(--innfo-status-pending-bg);color:var(--innfo-status-pending);border-color:rgba(180,83,9,.22)}',
-    '[data-innfo-component=element-card] .innfo-card-collapsed-strip{display:flex;align-items:center;justify-content:space-between;gap:.65em;padding:7px 12px;margin:8px -12px -10px -12px;background:var(--innfo-surface-2);border-top:1px solid var(--innfo-border);border-radius:0 0 var(--innfo-radius) var(--innfo-radius);flex-wrap:wrap}',
-    '.innfo-collapsed-strip-left,.innfo-collapsed-strip-right{display:inline-flex;align-items:center;gap:.4em;flex-wrap:wrap;min-width:0}',
-    '.innfo-strip-group{display:inline-flex;align-items:center;gap:.35em;flex-wrap:wrap}',
-    '.innfo-strip-key{font-family:var(--innfo-mono);font-size:.73rem;font-weight:600;color:var(--innfo-muted);margin-right:.15em}',
-    '.innfo-obj-chips{display:inline-flex;align-items:center;gap:.35em;flex-wrap:wrap}',
-    '.innfo-obj-chip{display:inline-flex;align-items:center;border:1px solid var(--innfo-border);border-radius:5px;overflow:hidden;font-family:var(--innfo-mono);font-size:.73rem;line-height:1.25;background:var(--innfo-surface)}',
-    '.innfo-obj-chip-k{padding:2px 6px;background:var(--innfo-surface-2);color:var(--innfo-muted);border-right:1px solid var(--innfo-border);font-weight:500}',
-    '.innfo-obj-chip-v{padding:2px 6px;color:var(--innfo-text);font-weight:600}',
-    '.innfo-obj-chip-v[data-bool=true]{color:var(--innfo-status-applied)}',
-    '.innfo-strip-rel{display:inline-flex;align-items:center;gap:.25em;font-size:.75rem;font-weight:600;color:var(--innfo-accent);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap}',
-    '.innfo-strip-rel:hover{border-color:var(--innfo-accent);background:var(--innfo-surface-2)}',
-    '.innfo-file-pill{display:inline-flex;align-items:center;gap:.35em;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px;padding:2px 8px;font-family:var(--innfo-mono);font-size:.76rem;color:var(--innfo-text)}',
-    '.innfo-file-pill-icon{display:inline-flex;color:var(--innfo-accent)}',
-    '.innfo-file-pill-path{font-family:inherit;font-size:inherit;background:transparent;padding:0;border:none}',
-    '.innfo-markdown{display:block;font-size:.88rem;line-height:1.5;color:var(--innfo-text);overflow-wrap:anywhere}',
-    '.innfo-markdown>:first-child{margin-top:0}',
-    '.innfo-markdown>:last-child{margin-bottom:0}',
-    '.innfo-markdown p{margin:.4em 0}',
-    '.innfo-markdown ul,.innfo-markdown ol{margin:.4em 0;padding-left:1.4em}',
-    '.innfo-markdown .innfo-md-heading{margin:.6em 0 .3em;font-size:1rem;font-weight:700}',
-    '.innfo-markdown code{font-family:var(--innfo-mono);font-size:.82em;background:var(--innfo-surface-2);border-radius:4px;padding:0 .3em}',
-    '.innfo-markdown a{color:var(--innfo-link);text-decoration:underline}',
-    '.innfo-markdown .innfo-md-quote{margin:.5em 0;padding:.2em .8em;border-left:1px solid var(--innfo-border);color:var(--innfo-muted)}',
-    '.innfo-markdown .innfo-md-quote[data-callout]{border-left-color:var(--innfo-accent);background:var(--innfo-surface-2)}',
-    '.innfo-markdown .innfo-md-callout-title{display:block;font-size:.72rem;letter-spacing:.04em;color:var(--innfo-accent)}',
-    '.innfo-file-pill[data-knowledge-bound=true]{cursor:pointer}',
-    '.innfo-file-pill[data-knowledge-bound=true]:hover{border-color:var(--innfo-accent)}',
-    '.innfo-tag[role=button]{cursor:pointer}',
-    '.innfo-tag[role=button]:hover{border-color:var(--innfo-link)}',
-    '.innfo-card-meta-strip{display:flex;align-items:center;justify-content:space-between;gap:.5em;flex-wrap:wrap;padding:6px 10px;margin:.55em 0;background:var(--innfo-surface-2);border:1px solid var(--innfo-border);border-radius:6px}',
-    '.innfo-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--innfo-mono);font-size:.73rem;color:var(--innfo-muted);background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:5px;padding:2px 7px}',
-    '[data-innfo-component=element-card] .innfo-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--innfo-border);border-radius:var(--innfo-radius-sm);overflow:hidden;background:var(--innfo-surface)}',
+    '[data-nn-component=element-card] .nn-card-head{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;cursor:pointer;min-width:0}',
+    '[data-nn-component=element-card] .nn-card-badges{display:inline-flex;align-items:center;gap:.35em;min-width:0}',
+    '[data-nn-component=element-card] .nn-card-badges .nn-ku{display:inline-flex;align-items:center}',
+    '[data-nn-component=element-card] .nn-card-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1.5px solid var(--nn-border);background:var(--nn-surface-2);flex:0 0 auto;display:block}',
+    '.nn-field-image-wrap{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}',
+    '[data-nn-component=element-card] .nn-card-thumb--empty,[data-nn-component=element-card] .nn-card-thumb--concept{display:inline-flex;align-items:center;justify-content:center;color:var(--card-concept-color,var(--nn-accent));background:var(--card-concept-bg,var(--nn-surface-2));border:1.5px solid var(--card-concept-color,var(--nn-border))}',
+    '[data-nn-component=element-card] .nn-card-count{font-size:.75rem;font-weight:600;color:var(--nn-muted);background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:999px;padding:1px 8px;white-space:nowrap;flex:0 0 auto}',
+    '[data-nn-component=element-card] .nn-card-toggle{appearance:none;border:1px solid transparent;background:transparent;color:var(--nn-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:.15em;border-radius:var(--nn-radius-sm);flex:0 0 auto}',
+    '[data-nn-component=element-card] .nn-card-toggle:hover{color:var(--nn-text);border-color:var(--nn-border);background:var(--nn-surface)}',
+    '[data-nn-component=element-card] .nn-card-toggle .nn-icon{transition:transform .15s ease}',
+    '[data-nn-component=element-card][data-open=true] .nn-card-toggle .nn-icon{transform:rotate(180deg)}',
+    '[data-nn-component=element-card][data-open=false] .nn-card-body{display:none}',
+    '[data-nn-component=element-card][data-open=false] .nn-card-footer{display:none}',
+    '[data-nn-component=element-card][data-open=true] .nn-card-collapsed-strip{display:none!important}',
+    '[data-nn-component=element-card][data-open=true] .nn-card-summary-preview{display:none}',
+    '[data-nn-component=element-card] .nn-card-summary-preview{font-size:.82rem;color:var(--nn-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch;margin-left:.25em}',
+    '[data-nn-component=element-card] .nn-card-status-pill{display:inline-flex;align-items:center;gap:.28em;font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--nn-status-applied-bg);color:var(--nn-status-applied);border:1px solid rgba(22,101,52,.22);white-space:nowrap}',
+    '[data-nn-component=element-card] .nn-card-status-pill[data-status=draft],[data-nn-component=element-card] .nn-card-status-pill[data-status=pending]{background:var(--nn-status-pending-bg);color:var(--nn-status-pending);border-color:rgba(180,83,9,.22)}',
+    '[data-nn-component=element-card] .nn-card-collapsed-strip{display:flex;align-items:center;justify-content:space-between;gap:.65em;padding:7px 12px;margin:8px -12px -10px -12px;background:var(--nn-surface-2);border-top:1px solid var(--nn-border);border-radius:0 0 var(--nn-radius) var(--nn-radius);flex-wrap:wrap}',
+    '.nn-collapsed-strip-left,.nn-collapsed-strip-right{display:inline-flex;align-items:center;gap:.4em;flex-wrap:wrap;min-width:0}',
+    '.nn-strip-group{display:inline-flex;align-items:center;gap:.35em;flex-wrap:wrap}',
+    '.nn-strip-key{font-family:var(--nn-mono);font-size:.73rem;font-weight:600;color:var(--nn-muted);margin-right:.15em}',
+    '.nn-obj-chips{display:inline-flex;align-items:center;gap:.35em;flex-wrap:wrap}',
+    '.nn-obj-chip{display:inline-flex;align-items:center;border:1px solid var(--nn-border);border-radius:5px;overflow:hidden;font-family:var(--nn-mono);font-size:.73rem;line-height:1.25;background:var(--nn-surface)}',
+    '.nn-obj-chip-k{padding:2px 6px;background:var(--nn-surface-2);color:var(--nn-muted);border-right:1px solid var(--nn-border);font-weight:500}',
+    '.nn-obj-chip-v{padding:2px 6px;color:var(--nn-text);font-weight:600}',
+    '.nn-obj-chip-v[data-bool=true]{color:var(--nn-status-applied)}',
+    '.nn-strip-rel{display:inline-flex;align-items:center;gap:.25em;font-size:.75rem;font-weight:600;color:var(--nn-accent);background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:6px;padding:2px 8px;text-decoration:none;white-space:nowrap}',
+    '.nn-strip-rel:hover{border-color:var(--nn-accent);background:var(--nn-surface-2)}',
+    '.nn-file-pill{display:inline-flex;align-items:center;gap:.35em;background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:6px;padding:2px 8px;font-family:var(--nn-mono);font-size:.76rem;color:var(--nn-text)}',
+    '.nn-file-pill-icon{display:inline-flex;color:var(--nn-accent)}',
+    '.nn-file-pill-path{font-family:inherit;font-size:inherit;background:transparent;padding:0;border:none}',
+    '.nn-markdown{display:block;font-size:.88rem;line-height:1.5;color:var(--nn-text);overflow-wrap:anywhere}',
+    '.nn-markdown>:first-child{margin-top:0}',
+    '.nn-markdown>:last-child{margin-bottom:0}',
+    '.nn-markdown p{margin:.4em 0}',
+    '.nn-markdown ul,.nn-markdown ol{margin:.4em 0;padding-left:1.4em}',
+    '.nn-markdown .nn-md-heading{margin:.6em 0 .3em;font-size:1rem;font-weight:700}',
+    '.nn-markdown code{font-family:var(--nn-mono);font-size:.82em;background:var(--nn-surface-2);border-radius:4px;padding:0 .3em}',
+    '.nn-markdown a{color:var(--nn-link);text-decoration:underline}',
+    '.nn-markdown .nn-md-quote{margin:.5em 0;padding:.2em .8em;border-left:1px solid var(--nn-border);color:var(--nn-muted)}',
+    '.nn-markdown .nn-md-quote[data-callout]{border-left-color:var(--nn-accent);background:var(--nn-surface-2)}',
+    '.nn-markdown .nn-md-callout-title{display:block;font-size:.72rem;letter-spacing:.04em;color:var(--nn-accent)}',
+    '.nn-file-pill[data-knowledge-bound=true]{cursor:pointer}',
+    '.nn-file-pill[data-knowledge-bound=true]:hover{border-color:var(--nn-accent)}',
+    '.nn-tag[role=button]{cursor:pointer}',
+    '.nn-tag[role=button]:hover{border-color:var(--nn-link)}',
+    '.nn-card-meta-strip{display:flex;align-items:center;justify-content:space-between;gap:.5em;flex-wrap:wrap;padding:6px 10px;margin:.55em 0;background:var(--nn-surface-2);border:1px solid var(--nn-border);border-radius:6px}',
+    '.nn-lineage-pill{display:inline-flex;align-items:center;gap:.3em;font-family:var(--nn-mono);font-size:.73rem;color:var(--nn-muted);background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:5px;padding:2px 7px}',
+    '[data-nn-component=element-card] .nn-card-fields{display:flex;flex-direction:column;gap:0;align-items:stretch;margin:.6em 0 0;border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);overflow:hidden;background:var(--nn-surface)}',
+    // One field per row: a hairline divides the rows and the padding gives the
+    // list room to breathe (the container itself carried `gap:0` since the rows
+    // used to draw their own separator, which no longer matched).
+    '[data-nn-component=element-card] .nn-card-fields>.nn-ku-wrap{display:flex;align-items:flex-start;gap:.7em;padding:.6em .9em;border-bottom:1px solid var(--nn-border)}',
+    '[data-nn-component=element-card] .nn-card-fields>.nn-ku-wrap:last-child{border-bottom:0}',
     // ElementMini (collection item): accent stripe + small thumb + name + optional meta. No fields.
-    '.innfo-mini{display:flex;align-items:center;gap:.5em;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-left:1px solid var(--innfo-border);border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
-    'button.innfo-mini,a.innfo-mini{font:inherit;color:inherit;cursor:pointer;text-decoration:none}',
-    '.innfo-mini:hover{border-color:var(--innfo-mini-accent,var(--innfo-focus))}',
-    '.innfo-mini-thumb{width:20px;height:20px;border-radius:5px;flex:0 0 auto}',
-    '.innfo-mini-text{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}',
-    '.innfo-mini-name{font-size:.8rem;font-weight:600;color:var(--innfo-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.innfo-mini-meta{font-size:.68rem;color:var(--innfo-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.innfo-mini>.innfo-card-status-pill{flex:0 0 auto}',
+    '.nn-mini{display:flex;align-items:center;gap:.5em;background:var(--nn-surface);border:1px solid var(--nn-border);border-left:1px solid var(--nn-border);border-radius:8px;padding:.32em .55em .32em .45em;min-width:0;max-width:100%;text-align:left}',
+    'button.nn-mini,a.nn-mini{font:inherit;color:inherit;cursor:pointer;text-decoration:none}',
+    '.nn-mini:hover{border-color:var(--nn-mini-accent,var(--nn-focus))}',
+    '.nn-mini-thumb{width:20px;height:20px;border-radius:5px;flex:0 0 auto}',
+    '.nn-mini-text{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}',
+    '.nn-mini-name{font-size:.8rem;font-weight:600;color:var(--nn-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.nn-mini-meta{font-size:.68rem;color:var(--nn-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.nn-mini>.nn-card-status-pill{flex:0 0 auto}',
     // ElementPreview (generic floating detail) + the mini's info affordance.
-    '.innfo-preview{position:fixed;z-index:60;width:clamp(26rem,60vw,52rem);max-width:calc(100vw - 1.5rem);max-height:calc(100vh - 1.5rem);overflow:auto;overscroll-behavior:contain;background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:var(--innfo-radius,10px);box-shadow:0 12px 32px rgba(0,0,0,.16);padding:.6rem .8rem}',
-    '.innfo-preview[hidden]{display:none}',
-    '.innfo-preview .innfo-card{border:none;box-shadow:none;margin:0}',
-    '.innfo-mini-info{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:none;background:transparent;color:var(--innfo-muted);cursor:pointer;border-radius:50%}',
-    '.innfo-mini-info:hover,.innfo-mini-info[aria-expanded=true]{color:var(--innfo-text);background:var(--innfo-surface-2)}',
+    '.nn-preview{position:fixed;z-index:60;width:clamp(26rem,60vw,52rem);max-width:calc(100vw - 1.5rem);max-height:calc(100vh - 1.5rem);overflow:auto;overscroll-behavior:contain;background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:var(--nn-radius,10px);box-shadow:0 12px 32px rgba(0,0,0,.16);padding:.6rem .8rem}',
+    '.nn-preview[hidden]{display:none}',
+    '.nn-preview .nn-card{border:none;box-shadow:none;margin:0}',
+    '.nn-mini-info{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:none;background:transparent;color:var(--nn-muted);cursor:pointer;border-radius:50%}',
+    '.nn-mini-info:hover,.nn-mini-info[aria-expanded=true]{color:var(--nn-text);background:var(--nn-surface-2)}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
-      '[data-concept-slot="' + slot + '"] .innfo-concept-dot{background:var(--innfo-concept-' + slot + ')}',
+      '[data-concept-slot="' + slot + '"] .nn-concept-dot{background:var(--nn-concept-' + slot + ')}',
     )
   }
   for (var kslot = 1; kslot <= 12; kslot++) {
     COMPONENT_CSS.push(
-      '[data-innfo-component=element-card][data-concept-slot="' + kslot + '"]{--card-concept-color:var(--innfo-concept-' + kslot + ');--card-concept-bg:var(--innfo-concept-' + kslot + '-bg);border-left:4px solid var(--innfo-concept-' + kslot + ')}',
+      '[data-nn-component=element-card][data-concept-slot="' + kslot + '"]{--card-concept-color:var(--nn-concept-' + kslot + ');--card-concept-bg:var(--nn-concept-' + kslot + '-bg);border-left:4px solid var(--nn-concept-' + kslot + ')}',
       // The concept slot drives --c/--cb on the badge: content text + icon, the
       // structure border, and the concept/document tint all read from it.
-      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"]{--c:var(--innfo-concept-' + kslot + ');--cb:var(--innfo-concept-' + kslot + '-bg)}',
-      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept],[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document]{background:var(--innfo-concept-' + kslot + '-bg);border-color:var(--innfo-concept-' + kslot + ')}',
-      '[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .innfo-ku-icon,[data-innfo-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document] .innfo-ku-icon{color:var(--innfo-concept-' + kslot + ')}',
+      '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"]{--c:var(--nn-concept-' + kslot + ');--cb:var(--nn-concept-' + kslot + '-bg)}',
+      '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept],[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document]{background:var(--nn-concept-' + kslot + '-bg);border-color:var(--nn-concept-' + kslot + ')}',
+      '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .nn-ku-icon,[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document] .nn-ku-icon{color:var(--nn-concept-' + kslot + ')}',
     )
   }
   var COMPONENT_CSS_TEXT = COMPONENT_CSS.join('\n')
@@ -433,11 +457,11 @@
     )
   }
 
-  var TOKENS_ATTR = 'data-innfo-tokens'
+  var TOKENS_ATTR = 'data-nn-tokens'
 
   function ensureTokens(doc) {
     var d = doc || (typeof document !== 'undefined' ? document : null)
-    if (!d || !d.head) throw new Error('InnfoUI.ensureTokens: no document')
+    if (!d || !d.head) throw new Error('nnUI.ensureTokens: no document')
     if (d.documentElement && !d.documentElement.getAttribute('data-theme')) {
       d.documentElement.setAttribute('data-theme', 'light')
     }
@@ -459,9 +483,9 @@
 
   function setTheme(doc, theme) {
     var d = doc || (typeof document !== 'undefined' ? document : null)
-    if (!d || !d.documentElement) throw new Error('InnfoUI.setTheme: no document')
+    if (!d || !d.documentElement) throw new Error('nnUI.setTheme: no document')
     if (theme !== 'light' && theme !== null) {
-      throw new TypeError('InnfoUI.setTheme: expected light|null')
+      throw new TypeError('nnUI.setTheme: expected light|null')
     }
     if (theme === null) d.documentElement.removeAttribute('data-theme')
     else d.documentElement.setAttribute('data-theme', 'light')
@@ -570,11 +594,11 @@
     var c = cls ? ' ' + cls : ''
     var body = ICON_PATHS[name]
     if (!body) {
-      if (typeof InnfoIcons !== 'undefined' && typeof InnfoIcons.getSvg === 'function') {
-        return InnfoIcons.getSvg(name, { size: s, class: 'innfo-icon' + c })
+      if (typeof nnIcons !== 'undefined' && typeof nnIcons.getSvg === 'function') {
+        return nnIcons.getSvg(name, { size: s, class: 'nn-icon' + c })
       }
       return (
-        '<svg class="innfo-icon' +
+        '<svg class="nn-icon' +
         c +
         '" width="' +
         s +
@@ -584,7 +608,7 @@
       )
     }
     return (
-      '<svg class="innfo-icon' +
+      '<svg class="nn-icon' +
       c +
       '" width="' +
       s +
@@ -637,14 +661,14 @@
   }
 
   function TagRow(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.TagRow: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.TagRow: data required')
     var doc = resolveDoc(opts)
     var tags = Array.isArray(data.tags) ? data.tags : []
     var onTag = opts && typeof opts.onTag === 'function' ? opts.onTag : null
-    var row = makeEl(doc, 'div', 'innfo-tag-row')
-    row.setAttribute('data-innfo-component', 'tag-row')
+    var row = makeEl(doc, 'div', 'nn-tag-row')
+    row.setAttribute('data-nn-component', 'tag-row')
     tags.forEach(function (t) {
-      var tag = makeEl(doc, 'span', 'innfo-tag')
+      var tag = makeEl(doc, 'span', 'nn-tag')
       tag.setAttribute('data-tag', String(t))
       tag.setAttribute('data-concept-slot', String(tagSlot(t)))
       tag.appendChild(doc.createTextNode(String(t)))
@@ -654,7 +678,7 @@
         tag.setAttribute('title', 'Filter by tag ' + String(t))
         tag.addEventListener('click', function (ev) {
           // The review +/x controls live inside the chip and keep their own action.
-          var inner = ev && ev.target && typeof ev.target.closest === 'function' && ev.target.closest('[data-innfo-ctl]')
+          var inner = ev && ev.target && typeof ev.target.closest === 'function' && ev.target.closest('[data-nn-ctl]')
           if (inner) return
           onTag(String(t))
         })
@@ -671,16 +695,16 @@
   }
 
   function RelList(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.RelList: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.RelList: data required')
     var doc = resolveDoc(opts)
     var rels = Array.isArray(data.relations) ? data.relations : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
     var relModel = data.model || (opts && (opts.modelId || opts.model)) || 'model'
-    var ul = makeEl(doc, 'ul', 'innfo-rel-list')
-    ul.setAttribute('data-innfo-component', 'rel-list')
+    var ul = makeEl(doc, 'ul', 'nn-rel-list')
+    ul.setAttribute('data-nn-component', 'rel-list')
     rels.forEach(function (r) {
       if (!r || typeof r !== 'object') return
-      var li = makeEl(doc, 'li', 'innfo-rel-row')
+      var li = makeEl(doc, 'li', 'nn-rel-row')
       if (r.field) li.setAttribute('data-rel-field', String(r.field))
       if (r.target) li.setAttribute('data-rel-target', String(r.target))
       li.appendChild(
@@ -723,8 +747,8 @@
 
   function EditAnchor(data, opts) {
     var doc = resolveDoc(opts)
-    var btn = makeEl(doc, 'button', 'innfo-edit-anchor')
-    btn.setAttribute('data-innfo-component', 'edit-anchor')
+    var btn = makeEl(doc, 'button', 'nn-edit-anchor')
+    btn.setAttribute('data-nn-component', 'edit-anchor')
     btn.setAttribute('type', 'button')
     var label = (data && data.label) || 'Edit'
     var iconName = (data && data.icon) || 'pencil'
@@ -778,13 +802,13 @@
   // it the badge reads as a bare count (the legacy shape). `title` overrides the
   // generated help so a collapsed badge can enumerate every state it stands for.
   function StatusBadge(data) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.StatusBadge: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.StatusBadge: data required')
     if (STATUSES.indexOf(data.status) === -1) {
-      throw new TypeError('InnfoUI.StatusBadge: unknown status "' + data.status + '"')
+      throw new TypeError('nnUI.StatusBadge: unknown status "' + data.status + '"')
     }
     var doc = resolveDoc(null)
-    var badge = makeEl(doc, 'span', 'innfo-status-badge')
-    badge.setAttribute('data-innfo-component', 'status-badge')
+    var badge = makeEl(doc, 'span', 'nn-status-badge')
+    badge.setAttribute('data-nn-component', 'status-badge')
     badge.setAttribute('data-status', String(data.status))
     var text =
       data.label != null
@@ -817,11 +841,11 @@
   }
 
   function CitationIcon(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.CitationIcon: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.CitationIcon: data required')
     var doc = resolveDoc(opts)
     var variant = data.variant || 'document'
     var btn = makeEl(doc, 'button', 'cite-icon')
-    btn.setAttribute('data-innfo-component', 'citation-icon')
+    btn.setAttribute('data-nn-component', 'citation-icon')
     btn.setAttribute('type', 'button')
     btn.setAttribute('data-origin', String(variant))
     btn.setAttribute('data-field', String(data.field == null ? '' : data.field))
@@ -838,7 +862,7 @@
 
   // Header-level citation icons: one CitationIcon per distinct origin/error
   // variant, in canonical order. Returns an array of nodes (empty when nothing to
-  // show), so `ElementCard` can append it to `.innfo-card-head` via `opts.head`.
+  // show), so `ElementCard` can append it to `.nn-card-head` via `opts.head`.
   function CitationIcons(fieldName, entries, opts) {
     var list = Array.isArray(entries) ? entries : []
     if (!list.length) return []
@@ -939,8 +963,8 @@
 
   function Markdown(text, opts) {
     var doc = resolveDoc(opts)
-    var root = makeEl(doc, 'div', 'innfo-markdown')
-    root.setAttribute('data-innfo-component', 'markdown')
+    var root = makeEl(doc, 'div', 'nn-markdown')
+    root.setAttribute('data-nn-component', 'markdown')
     var lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')
     var i = 0
     function blank(l) {
@@ -954,7 +978,7 @@
       }
       var hm = MD_HEADING.exec(line)
       if (hm) {
-        var h = makeEl(doc, 'h' + hm[1].length, 'innfo-md-heading')
+        var h = makeEl(doc, 'h' + hm[1].length, 'nn-md-heading')
         mdInline(doc, h, hm[2])
         root.appendChild(h)
         i++
@@ -980,11 +1004,11 @@
           quoted.push(qm[1])
           i++
         }
-        var bq = makeEl(doc, 'blockquote', 'innfo-md-quote')
+        var bq = makeEl(doc, 'blockquote', 'nn-md-quote')
         var co = /^\[!([A-Za-z]+)\]\s*$/.exec(quoted[0])
         if (co && MD_CALLOUTS.indexOf(co[1].toLowerCase()) !== -1) {
           bq.setAttribute('data-callout', co[1].toLowerCase())
-          bq.appendChild(makeEl(doc, 'strong', 'innfo-md-callout-title', co[1].toUpperCase()))
+          bq.appendChild(makeEl(doc, 'strong', 'nn-md-callout-title', co[1].toUpperCase()))
           quoted.shift()
         }
         var group = []
@@ -1035,11 +1059,12 @@
   // FIELD_RENDERERS is keyed by the declared field type — the L1 set
   // (iNNfo_V_0-4-0 §Field Definition: string, select, reference, markdown_inline,
   // markdown_file, image, file, video, audio, url, knowledge, citation) plus the
-  // legacy aliases older payloads still emit. reference/citation have no entry:
-  // FieldRow resolves them to Ku / CitationIcon from data.ref and
-  // data.citations. Value-shape renderers (boolean / list / object / url) and
-  // shape heuristics (image / asset path) run regardless of the declared type,
-  // matching the console's runtime-detected payloads.
+  // legacy aliases older payloads still emit. `reference` is resolved by FieldRow to
+  // a Ku from data.ref; a field carrying resolved citations (`data.citations`) is
+  // rendered by the citation value renderer (renderFieldCitation) — value plus the
+  // clickable icon, as part of the VALUE. Value-shape renderers (boolean / list /
+  // object / url) and shape heuristics (image / asset path) run regardless of the
+  // declared type, matching the console's runtime-detected payloads.
   var FIELD_RENDERERS = {
     boolean: renderFieldBoolean,
     select: renderFieldSelect,
@@ -1058,7 +1083,7 @@
   }
 
   function renderFieldBoolean(d, doc) {
-    var b = makeEl(doc, 'span', 'innfo-field-bool', d.value ? 'Yes' : 'No')
+    var b = makeEl(doc, 'span', 'nn-field-bool', d.value ? 'Yes' : 'No')
     b.setAttribute('data-value', d.value ? 'true' : 'false')
     return b
   }
@@ -1066,40 +1091,74 @@
   function renderFieldSelect(d, doc) {
     var v = d.value == null ? '' : String(d.value)
     if (!v.trim()) return null
-    var pill = makeEl(doc, 'span', 'innfo-field-select', v)
+    var pill = makeEl(doc, 'span', 'nn-field-select', v)
     pill.setAttribute('data-value', v)
     return pill
   }
 
   function renderFieldUrl(d, doc) {
-    var a = makeEl(doc, 'a', 'innfo-field-url', d.value)
+    var a = makeEl(doc, 'a', 'nn-field-url', d.value)
     a.setAttribute('href', d.value)
     a.setAttribute('target', '_blank')
     a.setAttribute('rel', 'noopener noreferrer')
     return a
   }
 
+  // A citation field's VALUE: the value text plus the clickable citation icon(s),
+  // rendered as PART OF THE VALUE (inside the badge), not bolted onto the row. The
+  // icon opens the citation through `onCite`. Driven by the resolved `citations`
+  // (the export resolves every citation-typed field, including the reserved
+  // `sources`), so it is a standard value renderer, not a per-case special.
+  function renderFieldCitation(d, doc, opts) {
+    var wrap = makeEl(doc, 'span', 'nn-field-citation')
+    var text = fieldValueText(d.value)
+    if (text) wrap.appendChild(makeEl(doc, 'span', 'nn-ku-value-text', text))
+    var citations = Array.isArray(d.citations) ? d.citations : []
+    if (citations.length) {
+      var seen = {}
+      var variants = citations.map(originVariantOf)
+      ;['error', 'agent', 'human', 'reviewer', 'document'].forEach(function (v) {
+        if (seen[v]) return
+        seen[v] = true
+        if (variants.indexOf(v) === -1) return
+        var entry = null
+        for (var i = 0; i < citations.length; i++) {
+          if (originVariantOf(citations[i]) === v) {
+            entry = citations[i]
+            break
+          }
+        }
+        wrap.appendChild(
+          CitationIcon({ variant: v, field: d.name, value: d.value, entry: entry }, {
+            onOpen: opts && opts.onCite ? opts.onCite : undefined,
+          }),
+        )
+      })
+    }
+    return wrap
+  }
+
   function renderFieldCode(d, doc) {
-    return makeEl(doc, 'code', 'innfo-field-code', d.value == null ? '' : String(d.value))
+    return makeEl(doc, 'code', 'nn-field-code', d.value == null ? '' : String(d.value))
   }
 
   function renderFieldMarkdown(d, doc) {
     var node = Markdown(d.value, { doc: doc })
-    node.className = 'innfo-markdown innfo-field-markdown'
+    node.className = 'nn-markdown nn-field-markdown'
     return node
   }
 
   function renderFieldList(d, doc) {
-    return makeEl(doc, 'span', 'innfo-ku-value innfo-field-list', d.value.map(String).join(', '))
+    return makeEl(doc, 'span', 'nn-ku-value nn-field-list', d.value.map(String).join(', '))
   }
 
   function renderFieldObject(d, doc) {
-    var chipWrap = makeEl(doc, 'span', 'innfo-ku-value innfo-obj-chips')
+    var chipWrap = makeEl(doc, 'span', 'nn-ku-value nn-obj-chips')
     Object.keys(d.value).forEach(function (k) {
-      var chip = makeEl(doc, 'span', 'innfo-obj-chip')
-      chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-k', k))
+      var chip = makeEl(doc, 'span', 'nn-obj-chip')
+      chip.appendChild(makeEl(doc, 'span', 'nn-obj-chip-k', k))
       var rawV = d.value[k]
-      var vNode = makeEl(doc, 'span', 'innfo-obj-chip-v', rawV == null ? '' : String(rawV))
+      var vNode = makeEl(doc, 'span', 'nn-obj-chip-v', rawV == null ? '' : String(rawV))
       if (rawV === true || rawV === 'true') vNode.setAttribute('data-bool', 'true')
       else if (rawV === false || rawV === 'false') vNode.setAttribute('data-bool', 'false')
       chip.appendChild(vNode)
@@ -1112,8 +1171,8 @@
     if (d.name === 'sources') return null
     if (typeof d.value !== 'string' || !looksLikeImageValue(d.value)) return null
     var normImgPath = normalizeAssetPath(d.value)
-    var imgWrap = makeEl(doc, 'span', 'innfo-ku-value innfo-field-image-wrap')
-    var img = makeEl(doc, 'img', 'innfo-field-image')
+    var imgWrap = makeEl(doc, 'span', 'nn-ku-value nn-field-image-wrap')
+    var img = makeEl(doc, 'img', 'nn-field-image')
     img.setAttribute('src', normImgPath)
     img.setAttribute('alt', String(d.name || ''))
     img.setAttribute('loading', 'lazy')
@@ -1128,7 +1187,7 @@
       if (img.parentNode) img.parentNode.removeChild(img)
     })
     imgWrap.appendChild(img)
-    imgWrap.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', normImgPath))
+    imgWrap.appendChild(makeEl(doc, 'code', 'nn-file-pill-path', normImgPath))
     return imgWrap
   }
 
@@ -1137,11 +1196,11 @@
       .replace(/^\[\[\s*/, '')
       .replace(/\s*\]\]$/, '')
     var cleanPath = normalizeAssetPath(raw)
-    var filePill = makeEl(doc, 'span', 'innfo-ku-value innfo-file-pill')
-    var fileIcon = makeEl(doc, 'span', 'innfo-file-pill-icon')
+    var filePill = makeEl(doc, 'span', 'nn-ku-value nn-file-pill')
+    var fileIcon = makeEl(doc, 'span', 'nn-file-pill-icon')
     fileIcon.innerHTML = icon('cite-document', 12)
     filePill.appendChild(fileIcon)
-    filePill.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', cleanPath))
+    filePill.appendChild(makeEl(doc, 'code', 'nn-file-pill-path', cleanPath))
     return filePill
   }
 
@@ -1152,13 +1211,13 @@
     // (javascript:, data:, ...) falls back to the plain text value.
     if (!safeHref(src)) return null
     var tag = String(d.type || '').toLowerCase() === 'audio' ? 'audio' : 'video'
-    var media = makeEl(doc, tag, 'innfo-field-media')
+    var media = makeEl(doc, tag, 'nn-field-media')
     media.setAttribute('controls', 'controls')
     media.setAttribute('src', src)
     media.setAttribute('preload', 'metadata')
-    var wrap = makeEl(doc, 'span', 'innfo-ku-value innfo-field-media-wrap')
+    var wrap = makeEl(doc, 'span', 'nn-ku-value nn-field-media-wrap')
     wrap.appendChild(media)
-    wrap.appendChild(makeEl(doc, 'code', 'innfo-file-pill-path', src))
+    wrap.appendChild(makeEl(doc, 'code', 'nn-file-pill-path', src))
     return wrap
   }
 
@@ -1210,14 +1269,20 @@
       return renderFieldUrl(d, doc)
     }
 
-    // 2. Declared-type renderer.
+    // 2. A field carrying resolved citations is a citation: the value plus the
+    // clickable citation icon(s), rendered as part of the value.
+    if (Array.isArray(d.citations) && d.citations.length) {
+      return renderFieldCitation(d, doc, opts)
+    }
+
+    // 3. Declared-type renderer.
     var byType = FIELD_RENDERERS[type]
     if (byType) {
       var typed = byType(d, doc, opts)
       if (typed) return typed
     }
 
-    // 3. Shape heuristics for values with no declared (or recognized) type.
+    // 4. Shape heuristics for values with no declared (or recognized) type.
     if (typeof value === 'string') {
       if (d.name !== 'sources' && looksLikeImageValue(value)) return renderFieldImage(d, doc)
       if (isAssetPath(value)) return renderFieldFile(d, doc)
@@ -1238,21 +1303,26 @@
     return String(value)
   }
 
-  // A field VALUE on an element: one `value` knowledge unit. The field's
+  // A field PAIR on an element: the field NAME and its VALUE, each rendered as
+  // its own badge (a name chip + the `value` knowledge unit). The field's
   // definition unit lives in the table header / concept section, never here.
+  // The unit is marked `data-ku-pair=field` so the two-badge grammar applies
+  // here only: every other `value` unit (table cells, guide/doc fields, matrix
+  // cells) passes its TEXT as `label`, so it must keep the single-badge look.
   function FieldRow(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.FieldRow: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.FieldRow: data required')
     var doc = resolveDoc(opts)
     var hasRef = !!(data.ref && data.ref.id)
     var inherited = data.inherited && data.inherited.from ? data.inherited : null
     var model = data.model || (opts && (opts.modelId || opts.model)) || 'model'
     var element = data.element || (opts && opts.element) || data.elementId || 'unit'
-    var valueNode = hasRef ? null : FieldValue(data, opts)
+    var typedValue = hasRef ? null : FieldValue(data, opts)
+    var valueNode = typedValue
     if (!valueNode) {
-      valueNode = makeEl(doc, 'span', 'innfo-ku-value-text', fieldValueText(data.value))
+      valueNode = makeEl(doc, 'span', 'nn-ku-value-text', fieldValueText(data.value))
     }
     if (hasRef) {
-      valueNode = makeEl(doc, 'span', 'innfo-ku-value-text')
+      valueNode = makeEl(doc, 'span', 'nn-ku-value-text')
       var refUnit = Ku(
         'element',
         {
@@ -1266,7 +1336,7 @@
         { doc: doc },
       )
       if (opts && opts.onRef) {
-        var refBadge = refUnit.querySelector('[data-innfo-component="ku-unit"]')
+        var refBadge = refUnit.querySelector('[data-nn-component="ku-unit"]')
         if (refBadge) {
           refBadge.setAttribute('role', 'button')
           refBadge.setAttribute('tabindex', '0')
@@ -1294,13 +1364,20 @@
       },
       { doc: doc, valueNode: valueNode },
     )
-    var badge = wrap.querySelector('[data-innfo-component="ku-unit"]')
+    var badge = wrap.querySelector('[data-nn-component="ku-unit"]')
     if (badge) {
+      badge.setAttribute('data-ku-pair', 'field')
       badge.setAttribute('data-field', String(data.name == null ? '' : data.name))
       if (inherited) {
         badge.setAttribute('data-ku-inherited', String(inherited.from))
         badge.setAttribute('aria-label', 'content, inherited from ' + inherited.from + ': ' + label)
       }
+      var hasValue =
+        hasRef ||
+        !!typedValue ||
+        (Array.isArray(data.citations) && data.citations.length > 0) ||
+        fieldValueText(data.value) !== ''
+      if (!hasValue) badge.setAttribute('data-field-empty', 'true')
       var ftype = String(data.type || '').toLowerCase()
       if (
         ftype === 'markdown' ||
@@ -1309,20 +1386,6 @@
       ) {
         badge.setAttribute('data-field-wide', 'true')
       }
-    }
-    if (Array.isArray(data.citations) && data.citations.length) {
-      var seen = {}
-      var variants = data.citations.map(originVariantOf)
-      ;['error', 'agent', 'human', 'reviewer', 'document'].forEach(function (v) {
-        if (seen[v]) return
-        seen[v] = true
-        if (variants.indexOf(v) === -1) return
-        wrap.appendChild(
-          CitationIcon({ variant: v, field: data.name }, {
-            onOpen: opts && opts.onCite ? opts.onCite : undefined,
-          }),
-        )
-      })
     }
     return wrap
   }
@@ -1402,7 +1465,7 @@
   function elementThumb(doc, data, conceptIconName, iconSize) {
     var imageField = imageFieldOf(Array.isArray(data.fields) ? data.fields : [])
     function makeConceptThumb() {
-      var ph = makeEl(doc, 'span', 'innfo-card-thumb innfo-card-thumb--concept innfo-card-thumb--empty')
+      var ph = makeEl(doc, 'span', 'nn-card-thumb nn-card-thumb--concept nn-card-thumb--empty')
       ph.setAttribute('data-concept-icon', conceptIconName)
       ph.setAttribute('title', String(data.conceptId || 'Element'))
       ph.setAttribute('aria-hidden', 'true')
@@ -1410,7 +1473,7 @@
       return ph
     }
     if (imageField) {
-      var thumb = makeEl(doc, 'img', 'innfo-card-thumb')
+      var thumb = makeEl(doc, 'img', 'nn-card-thumb')
       thumb.setAttribute('alt', String(data.name || data.id || ''))
       thumb.setAttribute('loading', 'lazy')
       thumb.setAttribute('src', normalizeAssetPath(String(imageField.value)))
@@ -1433,8 +1496,8 @@
   var _previewHost = null
   function previewHostEl(doc) {
     if (_previewHost && _previewHost.ownerDocument === doc && _previewHost.parentNode) return _previewHost
-    _previewHost = makeEl(doc, 'div', 'innfo-preview')
-    _previewHost.setAttribute('data-innfo-component', 'element-preview')
+    _previewHost = makeEl(doc, 'div', 'nn-preview')
+    _previewHost.setAttribute('data-nn-component', 'element-preview')
     _previewHost.setAttribute('role', 'dialog')
     _previewHost.hidden = true
     ;(doc.body || doc.documentElement).appendChild(_previewHost)
@@ -1531,11 +1594,11 @@
      With `opts.preview` it reveals the full ElementCard on hover/focus and, via a
      small info affordance, on click. */
   function ElementMini(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ElementMini: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.ElementMini: data required')
     var doc = resolveDoc(opts)
     var tag = opts && opts.href ? 'a' : opts && opts.onSelect ? 'button' : 'div'
-    var mini = makeEl(doc, tag, 'innfo-mini')
-    mini.setAttribute('data-innfo-component', 'element-mini')
+    var mini = makeEl(doc, tag, 'nn-mini')
+    mini.setAttribute('data-nn-component', 'element-mini')
     mini.setAttribute('data-element-id', String(data.id == null ? '' : data.id))
     if (data.conceptId) mini.setAttribute('data-concept-id', String(data.conceptId))
     var conceptOpts = (opts && opts.concept) || {}
@@ -1544,7 +1607,7 @@
       color: data.color || conceptOpts.color,
     })
     mini.setAttribute('data-concept-slot', String(slot))
-    mini.style.setProperty('--innfo-mini-accent', 'var(--innfo-concept-' + slot + ')')
+    mini.style.setProperty('--nn-mini-accent', 'var(--nn-concept-' + slot + ')')
     if (opts && opts.domId) mini.setAttribute('id', String(opts.domId))
     if (tag === 'a' && opts && opts.href) mini.setAttribute('href', String(opts.href))
     if (tag === 'button') {
@@ -1555,9 +1618,9 @@
     }
     var iconName = resolveConceptIconName(data.conceptId, conceptOpts)
     var thumb = elementThumb(doc, data, iconName, 18)
-    thumb.classList.add('innfo-mini-thumb')
+    thumb.classList.add('nn-mini-thumb')
     mini.appendChild(thumb)
-    var badgesWrap = makeEl(doc, 'div', 'innfo-card-badges')
+    var badgesWrap = makeEl(doc, 'div', 'nn-card-badges')
     var miniModel = (opts && (opts.modelId || opts.model)) || data.modelId || data.model || 'model'
     var conceptId = data.concept || data.conceptId
     if (conceptId) {
@@ -1582,11 +1645,11 @@
     )
     mini.appendChild(badgesWrap)
     if (data.meta) {
-      var metaEl = makeEl(doc, 'span', 'innfo-mini-meta', String(data.meta))
+      var metaEl = makeEl(doc, 'span', 'nn-mini-meta', String(data.meta))
       mini.appendChild(metaEl)
     }
     if (data.status) {
-      var st = makeEl(doc, 'span', 'innfo-card-status-pill')
+      var st = makeEl(doc, 'span', 'nn-card-status-pill')
       st.setAttribute('data-status', String(data.status).toLowerCase())
       st.appendChild(doc.createTextNode(String(data.status)))
       mini.appendChild(st)
@@ -1604,16 +1667,16 @@
       // Info affordance for touch/keyboard. Only on a non-interactive container:
       // nesting a button inside a link/button is invalid.
       if (previewOpts.affordance !== false && tag === 'div') {
-        var info = makeEl(doc, 'button', 'innfo-mini-info')
+        var info = makeEl(doc, 'button', 'nn-mini-info')
         info.setAttribute('type', 'button')
-        info.setAttribute('data-innfo-component', 'mini-info')
+        info.setAttribute('data-nn-component', 'mini-info')
         info.setAttribute('aria-label', 'Show details')
         info.setAttribute('aria-expanded', 'false')
         info.innerHTML = icon('info', 13)
         info.addEventListener('click', function (ev) {
           if (ev && ev.stopPropagation) ev.stopPropagation()
           if (ctl) ctl.togglePin()
-          var host = doc.querySelector('[data-innfo-component=element-preview]')
+          var host = doc.querySelector('[data-nn-component=element-preview]')
           info.setAttribute('aria-expanded', host && !host.hidden ? 'true' : 'false')
         })
         mini.appendChild(info)
@@ -1623,10 +1686,10 @@
   }
 
   function ElementCard(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ElementCard: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.ElementCard: data required')
     var doc = resolveDoc(opts)
-    var card = makeEl(doc, 'article', 'innfo-card')
-    card.setAttribute('data-innfo-component', 'element-card')
+    var card = makeEl(doc, 'article', 'nn-card')
+    card.setAttribute('data-nn-component', 'element-card')
     card.setAttribute('data-element-id', String(data.id == null ? '' : data.id))
     if (data.conceptId) card.setAttribute('data-concept-id', String(data.conceptId))
     var open = !(opts && opts.open === false)
@@ -1637,7 +1700,7 @@
     var collapsible = !(opts && opts.collapsible === false)
     var byId = (opts && opts.byId) || {}
 
-    var head = makeEl(doc, 'header', 'innfo-card-head')
+    var head = makeEl(doc, 'header', 'nn-card-head')
 
     var conceptOpts = (opts && opts.concept) || {}
     if (data.conceptId || conceptOpts.index != null || conceptOpts.color) {
@@ -1646,7 +1709,7 @@
     var conceptIconName = resolveConceptIconName(data.conceptId, conceptOpts)
 
     head.appendChild(elementThumb(doc, data, conceptIconName, 18))
-    var badgesWrap = makeEl(doc, 'div', 'innfo-card-badges')
+    var badgesWrap = makeEl(doc, 'div', 'nn-card-badges')
     var unitModel = (opts && (opts.modelId || opts.model)) || data.modelId || data.model || 'model'
     var conceptId = data.concept || data.conceptId
     if (conceptId) {
@@ -1684,11 +1747,11 @@
       }
     }
     if (statusField) {
-      var stPill = makeEl(doc, 'span', 'innfo-card-status-pill')
+      var stPill = makeEl(doc, 'span', 'nn-card-status-pill')
       var stNorm = statusField.toLowerCase()
       stPill.setAttribute('data-status', stNorm)
       if (stNorm === 'reviewed' || stNorm === 'applied' || stNorm === 'completed' || stNorm === 'verified') {
-        var chk = makeEl(doc, 'span', 'innfo-status-pill-icon')
+        var chk = makeEl(doc, 'span', 'nn-status-pill-icon')
         chk.innerHTML = icon('check', 11)
         stPill.appendChild(chk)
       }
@@ -1697,7 +1760,7 @@
     }
 
     if (summaryField) {
-      var sumPrev = makeEl(doc, 'span', 'innfo-card-summary-preview', summaryField)
+      var sumPrev = makeEl(doc, 'span', 'nn-card-summary-preview', summaryField)
       sumPrev.setAttribute('title', summaryField)
       head.appendChild(sumPrev)
     }
@@ -1713,7 +1776,7 @@
         makeEl(
           doc,
           'span',
-          'innfo-card-count',
+          'nn-card-count',
           fields.length + ' ' + (fields.length === 1 ? 'field' : 'fields'),
         ),
       )
@@ -1723,12 +1786,12 @@
       open = next
       if (open) mountBody()
       card.setAttribute('data-open', open ? 'true' : 'false')
-      var tg = head.querySelector('.innfo-card-toggle')
+      var tg = head.querySelector('.nn-card-toggle')
       if (tg) tg.setAttribute('aria-expanded', open ? 'true' : 'false')
     }
 
     if (collapsible) {
-      var toggle = makeEl(doc, 'button', 'innfo-card-toggle')
+      var toggle = makeEl(doc, 'button', 'nn-card-toggle')
       toggle.setAttribute('type', 'button')
       toggle.setAttribute('aria-label', 'Toggle details')
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false')
@@ -1757,21 +1820,21 @@
 
     // Variant 4 Bottom Inline Pill Strip for Collapsed State
     if (collapsible) {
-      var stripLeft = makeEl(doc, 'div', 'innfo-collapsed-strip-left')
-      var stripRight = makeEl(doc, 'div', 'innfo-collapsed-strip-right')
+      var stripLeft = makeEl(doc, 'div', 'nn-collapsed-strip-left')
+      var stripRight = makeEl(doc, 'div', 'nn-collapsed-strip-right')
 
       // 1. Object fields (e.g., photo_metadata) rendered as inline key-value chip groups
       var objFields = bodyFields.filter(function (fr) {
         return fr && fr.value !== null && typeof fr.value === 'object' && !Array.isArray(fr.value)
       })
       objFields.forEach(function (fr) {
-        var grp = makeEl(doc, 'span', 'innfo-strip-group')
-        grp.appendChild(makeEl(doc, 'span', 'innfo-strip-key', fr.name + ':'))
+        var grp = makeEl(doc, 'span', 'nn-strip-group')
+        grp.appendChild(makeEl(doc, 'span', 'nn-strip-key', fr.name + ':'))
         Object.keys(fr.value).forEach(function (k) {
-          var chip = makeEl(doc, 'span', 'innfo-obj-chip')
-          chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-k', k))
+          var chip = makeEl(doc, 'span', 'nn-obj-chip')
+          chip.appendChild(makeEl(doc, 'span', 'nn-obj-chip-k', k))
           var rawV = fr.value[k]
-          var vNode = makeEl(doc, 'span', 'innfo-obj-chip-v', rawV == null ? '' : String(rawV))
+          var vNode = makeEl(doc, 'span', 'nn-obj-chip-v', rawV == null ? '' : String(rawV))
           if (rawV === true || rawV === 'true') vNode.setAttribute('data-bool', 'true')
           chip.appendChild(vNode)
           grp.appendChild(chip)
@@ -1796,9 +1859,9 @@
           return true
         }).slice(0, 3)
         compactScalars.forEach(function (fr) {
-          var chip = makeEl(doc, 'span', 'innfo-obj-chip')
-          chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-k', fr.name))
-          chip.appendChild(makeEl(doc, 'span', 'innfo-obj-chip-v', normalizeAssetPath(String(fr.value))))
+          var chip = makeEl(doc, 'span', 'nn-obj-chip')
+          chip.appendChild(makeEl(doc, 'span', 'nn-obj-chip-k', fr.name))
+          chip.appendChild(makeEl(doc, 'span', 'nn-obj-chip-v', normalizeAssetPath(String(fr.value))))
           stripLeft.appendChild(chip)
         })
       }
@@ -1809,12 +1872,12 @@
           if (!r || typeof r !== 'object') return
           var tRec = r.target && byId[r.target] ? byId[r.target] : null
           var rLabel = r.targetLabel || (tRec && tRec.name) || r.target || '?'
-          var relGroup = makeEl(doc, 'span', 'innfo-strip-rel-group')
+          var relGroup = makeEl(doc, 'span', 'nn-strip-rel-group')
           if (r.field) {
-            var fChip = makeEl(doc, 'span', 'innfo-ku-field-chip innfo-strip-rel-field', '~ ' + r.field)
+            var fChip = makeEl(doc, 'span', 'nn-ku-field-chip nn-strip-rel-field', '~ ' + r.field)
             relGroup.appendChild(fChip)
           }
-          var pill = makeEl(doc, 'a', 'innfo-strip-rel')
+          var pill = makeEl(doc, 'a', 'nn-strip-rel')
           if (r.target) pill.setAttribute('href', '#el-' + r.target)
           var tConcept = r.targetConcept || (tRec && tRec.concept)
           var tSlot = r.targetSlot || (tRec && tRec._conceptSlot)
@@ -1822,7 +1885,7 @@
           if (tSlot) pill.setAttribute('data-concept-slot', String(tSlot))
           if (tHex) pill.style.setProperty('--pill-concept-color', String(tHex))
           if (tConcept || tSlot) {
-            var tIco = makeEl(doc, 'span', 'innfo-strip-rel-icon')
+            var tIco = makeEl(doc, 'span', 'nn-strip-rel-icon')
             tIco.setAttribute('aria-hidden', 'true')
             tIco.innerHTML = icon(resolveConceptIconName(tConcept, { index: (Number(tSlot) || 1) - 1 }), 11)
             pill.appendChild(tIco)
@@ -1834,7 +1897,7 @@
       }
 
       if (stripLeft.children.length || stripRight.children.length) {
-        var collapsedStrip = makeEl(doc, 'div', 'innfo-card-collapsed-strip')
+        var collapsedStrip = makeEl(doc, 'div', 'nn-card-collapsed-strip')
         collapsedStrip.appendChild(stripLeft)
         collapsedStrip.appendChild(stripRight)
         card.appendChild(collapsedStrip)
@@ -1847,13 +1910,13 @@
       if (bodyMounted) return
       bodyMounted = true
 
-      var body = makeEl(doc, 'section', 'innfo-card-body')
+      var body = makeEl(doc, 'section', 'nn-card-body')
       // Model views show no change signal except the Unsent marker (added by the
       // review controller from the draft store). The applied history stays in the
       // card's Lineage tab, never as a meta-strip pill.
-      if (data.description) body.appendChild(makeEl(doc, 'p', 'innfo-card-desc', data.description))
+      if (data.description) body.appendChild(makeEl(doc, 'p', 'nn-card-desc', data.description))
       if (bodyFields.length) {
-        var fieldRow = makeEl(doc, 'div', 'innfo-card-fields')
+        var fieldRow = makeEl(doc, 'div', 'nn-card-fields')
         var inherited = data.inherited && typeof data.inherited === 'object' ? data.inherited : {}
         bodyFields.forEach(function (fr) {
           var inheritedInfo = fr && fr.inherited ? fr.inherited : inherited[fr && fr.name]
@@ -1889,33 +1952,33 @@
       var tags = Array.isArray(data.tags) ? data.tags : []
       if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
       if (relations && relations.length) {
-        var outWrap = makeEl(doc, 'div', 'innfo-card-outgoing')
+        var outWrap = makeEl(doc, 'div', 'nn-card-outgoing')
         outWrap.appendChild(
-          makeEl(doc, 'span', 'innfo-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
+          makeEl(doc, 'span', 'nn-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
         )
         outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
         body.appendChild(outWrap)
       }
       var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
       if (incoming && incoming.length) {
-        var incWrap = makeEl(doc, 'div', 'innfo-card-incoming')
+        var incWrap = makeEl(doc, 'div', 'nn-card-incoming')
         incWrap.appendChild(
-          makeEl(doc, 'span', 'innfo-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
+          makeEl(doc, 'span', 'nn-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
         )
         incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
         body.appendChild(incWrap)
       }
       card.appendChild(body)
       if (data.path) {
-        var cardFooter = makeEl(doc, 'footer', 'innfo-card-footer')
-        if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'innfo-card-path', data.path))
+        var cardFooter = makeEl(doc, 'footer', 'nn-card-footer')
+        if (data.path) cardFooter.appendChild(makeEl(doc, 'span', 'nn-card-path', data.path))
         card.appendChild(cardFooter)
       }
       var win = doc && (doc.defaultView || (doc.ownerDocument && doc.ownerDocument.defaultView))
       var CustomEv = (win && win.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
       if (CustomEv && typeof doc.dispatchEvent === 'function') {
         try {
-          doc.dispatchEvent(new CustomEv('innfo:rendered', { detail: { root: card } }))
+          doc.dispatchEvent(new CustomEv('nn:rendered', { detail: { root: card } }))
         } catch (_) {}
       }
     }
@@ -1993,46 +2056,46 @@
   function changeCard(state, opts) {
     var doc = (opts && opts.doc) || resolveDoc(opts)
     var s = state || {}
-    var li = makeEl(doc, 'li', 'innfo-change-card card bg-base-100 border border-base-200 shadow-xs')
-    li.setAttribute('data-innfo-component', 'change-card')
+    var li = makeEl(doc, 'li', 'nn-change-card card bg-base-100 border border-base-200 shadow-xs')
+    li.setAttribute('data-nn-component', 'change-card')
     li.setAttribute('data-change-state', s.stateKind || 'unsent')
     if (s.draftId) li.setAttribute('data-draft-id', String(s.draftId))
     if (s.targetChanged) li.setAttribute('data-target-changed', 'true')
 
-    var body = makeEl(doc, 'div', 'innfo-change-card-body card-body p-4 flex flex-col gap-2')
+    var body = makeEl(doc, 'div', 'nn-change-card-body card-body p-4 flex flex-col gap-2')
 
-    var head = makeEl(doc, 'div', 'innfo-change-card-head flex items-center justify-between gap-3')
-    head.appendChild(makeEl(doc, 'span', 'innfo-change-card-title font-semibold text-sm', s.title || ''))
+    var head = makeEl(doc, 'div', 'nn-change-card-head flex items-center justify-between gap-3')
+    head.appendChild(makeEl(doc, 'span', 'nn-change-card-title font-semibold text-sm', s.title || ''))
     if (s.stateKind === 'unsent' && typeof StatusBadge === 'function') {
       var badge = StatusBadge({ status: 'local', label: COPY.unsent })
-      badge.classList.add('innfo-change-card-badge')
+      badge.classList.add('nn-change-card-badge')
       head.appendChild(badge)
     } else {
-      var stateEl = makeEl(doc, 'span', 'innfo-change-card-state text-xs font-semibold', s.stateText || '')
+      var stateEl = makeEl(doc, 'span', 'nn-change-card-state text-xs font-semibold', s.stateText || '')
       if (s.stateKind === 'applied') stateEl.setAttribute('title', COPY.appliedHelp)
       head.appendChild(stateEl)
     }
     body.appendChild(head)
 
     if (s.targetNode) {
-      var targetWrap = makeEl(doc, 'div', 'innfo-change-card-target inline-flex items-center gap-1.5 flex-wrap text-sm')
+      var targetWrap = makeEl(doc, 'div', 'nn-change-card-target inline-flex items-center gap-1.5 flex-wrap text-sm')
       targetWrap.appendChild(s.targetNode)
       body.appendChild(targetWrap)
     }
 
-    if (s.diff) body.appendChild(makeEl(doc, 'div', 'innfo-change-card-diff text-sm', s.diff))
+    if (s.diff) body.appendChild(makeEl(doc, 'div', 'nn-change-card-diff text-sm', s.diff))
 
     var context = [s.author, s.date, s.stateText].filter(Boolean).join(' \u00b7 ')
-    body.appendChild(makeEl(doc, 'div', 'innfo-change-card-context text-xs opacity-70', context))
+    body.appendChild(makeEl(doc, 'div', 'nn-change-card-context text-xs opacity-70', context))
 
-    if (s.note) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-note text-sm', s.note))
-    if (s.resolution) body.appendChild(makeEl(doc, 'p', 'innfo-change-card-resolution text-xs', s.resolution))
+    if (s.note) body.appendChild(makeEl(doc, 'p', 'nn-change-card-note text-sm', s.note))
+    if (s.resolution) body.appendChild(makeEl(doc, 'p', 'nn-change-card-resolution text-xs', s.resolution))
     if (s.sources) {
       var sourceList = Array.isArray(s.sources) ? s.sources : [s.sources]
       sourceList.forEach(function (src) {
         if (src == null || src === '') return
         var srcText = String(src)
-        var srcEl = makeEl(doc, 'span', 'innfo-change-card-source text-xs inline-flex items-center gap-1', srcText)
+        var srcEl = makeEl(doc, 'span', 'nn-change-card-source text-xs inline-flex items-center gap-1', srcText)
         // A citation icon only exists when the host can open it: never a dead control.
         if (opts && typeof opts.onCitation === 'function') {
           srcEl.appendChild(
@@ -2052,12 +2115,12 @@
     }
 
     if (s.targetChanged) {
-      body.appendChild(makeEl(doc, 'span', 'innfo-change-card-stale text-xs', 'target changed'))
+      body.appendChild(makeEl(doc, 'span', 'nn-change-card-stale text-xs', 'target changed'))
     }
 
-    var actions = makeEl(doc, 'div', 'innfo-change-card-actions flex items-center gap-2')
+    var actions = makeEl(doc, 'div', 'nn-change-card-actions flex items-center gap-2')
     if (s.elementId && opts && typeof opts.onGoTo === 'function') {
-      var go = makeEl(doc, 'button', 'innfo-change-goto btn btn-sm btn-ghost', COPY.goToElement)
+      var go = makeEl(doc, 'button', 'nn-change-goto btn btn-sm btn-ghost', COPY.goToElement)
       go.setAttribute('type', 'button')
       go.addEventListener('click', function () {
         opts.onGoTo(s.elementId)
@@ -2065,7 +2128,7 @@
       actions.appendChild(go)
     }
     if (s.revertable && opts && typeof opts.onRevert === 'function') {
-      var rev = makeEl(doc, 'button', 'innfo-change-revert btn btn-sm btn-ghost', COPY.revert)
+      var rev = makeEl(doc, 'button', 'nn-change-revert btn btn-sm btn-ghost', COPY.revert)
       rev.setAttribute('type', 'button')
       rev.addEventListener('click', function () {
         opts.onRevert(s.entry)
@@ -2073,7 +2136,7 @@
       actions.appendChild(rev)
     }
     if (s.draftId && opts && typeof opts.onDiscard === 'function') {
-      var dis = makeEl(doc, 'button', 'innfo-change-discard btn btn-sm btn-ghost text-error', COPY.discard)
+      var dis = makeEl(doc, 'button', 'nn-change-discard btn btn-sm btn-ghost text-error', COPY.discard)
       dis.setAttribute('type', 'button')
       dis.addEventListener('click', function () {
         opts.onDiscard(s.draftId)
@@ -2097,12 +2160,12 @@
   }
 
   function DraftList(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.DraftList: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.DraftList: data required')
     var doc = resolveDoc(opts)
     var drafts = Array.isArray(data.drafts) ? data.drafts : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
-    var ul = makeEl(doc, 'ul', 'innfo-draft-list innfo-change-list flex flex-col gap-3 list-none p-0 m-0')
-    ul.setAttribute('data-innfo-component', 'draft-list')
+    var ul = makeEl(doc, 'ul', 'nn-draft-list nn-change-list flex flex-col gap-3 list-none p-0 m-0')
+    ul.setAttribute('data-nn-component', 'draft-list')
     drafts.forEach(function (d) {
       if (!d || typeof d !== 'object') return
       var el = byId[String(d.element_id)]
@@ -2117,7 +2180,7 @@
       // (the published console-ui-kit contract, kept).
       var targetConcept = d.concept || (el && el.concept) || null
       var draftModel = (opts && (opts.modelId || opts.model)) || d.model || (el && el.modelId) || 'model'
-      var targetNode = makeEl(doc, 'span', 'innfo-draft-target inline-flex items-center gap-1.5')
+      var targetNode = makeEl(doc, 'span', 'nn-draft-target inline-flex items-center gap-1.5')
       if (targetConcept) {
         targetNode.appendChild(
           Ku(
@@ -2152,7 +2215,7 @@
         ),
       )
       if (d.field) {
-        var arrowSpan = makeEl(doc, 'span', 'innfo-draft-arrow text-xs opacity-60', '\u2192')
+        var arrowSpan = makeEl(doc, 'span', 'nn-draft-arrow text-xs opacity-60', '\u2192')
         arrowSpan.setAttribute('aria-hidden', 'true')
         targetNode.appendChild(arrowSpan)
         targetNode.appendChild(
@@ -2207,12 +2270,12 @@
   // Revert for an `update_field`) and one muted card per not-applied block, with
   // the engine's reason. Holds no state, reads no storage.
   function ChangeHistory(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.ChangeHistory: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.ChangeHistory: data required')
     var doc = resolveDoc(opts)
     var changesets = Array.isArray(data.changes) ? data.changes : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
-    var ul = makeEl(doc, 'ul', 'innfo-change-history flex flex-col gap-3 list-none p-0 m-0')
-    ul.setAttribute('data-innfo-component', 'change-history')
+    var ul = makeEl(doc, 'ul', 'nn-change-history flex flex-col gap-3 list-none p-0 m-0')
+    ul.setAttribute('data-nn-component', 'change-history')
     changesets.forEach(function (cs) {
       var items = Array.isArray(cs && cs.changes) ? cs.changes : []
       items.forEach(function (c) {
@@ -2258,10 +2321,10 @@
 
   function FieldInput(type, value, opts) {
     var doc = resolveDoc(opts)
-    var input = makeEl(doc, 'input', 'innfo-edit-input')
+    var input = makeEl(doc, 'input', 'nn-edit-input')
     input.setAttribute('type', type)
     if (value != null) input.value = String(value)
-    input.setAttribute('data-innfo-widget', type)
+    input.setAttribute('data-nn-widget', type)
     return input
   }
 
@@ -2271,29 +2334,29 @@
     var str = value == null ? '' : String(value)
     if (str.indexOf('\n') !== -1 || str.length > 70) {
       var doc = resolveDoc(opts)
-      var ta = makeEl(doc, 'textarea', 'innfo-edit-textarea')
-      ta.setAttribute('data-innfo-widget', 'string')
+      var ta = makeEl(doc, 'textarea', 'nn-edit-textarea')
+      ta.setAttribute('data-nn-widget', 'string')
       ta.setAttribute('rows', '4')
       ta.value = str
       return ta
     }
     var inp = FieldInput('text', value, opts)
-    inp.setAttribute('data-innfo-widget', 'string')
+    inp.setAttribute('data-nn-widget', 'string')
     return inp
   }
 
   function FieldNumberWidget(value, opts) {
     var inp = FieldInput('number', value, opts)
-    inp.setAttribute('data-innfo-widget', 'number')
+    inp.setAttribute('data-nn-widget', 'number')
     return inp
   }
 
   function FieldBooleanWidget(value, opts) {
     var doc = resolveDoc(opts)
-    var label = makeEl(doc, 'label', 'innfo-edit-checkbox-label')
-    var input = makeEl(doc, 'input', 'innfo-edit-checkbox')
+    var label = makeEl(doc, 'label', 'nn-edit-checkbox-label')
+    var input = makeEl(doc, 'input', 'nn-edit-checkbox')
     input.setAttribute('type', 'checkbox')
-    input.setAttribute('data-innfo-widget', 'boolean')
+    input.setAttribute('data-nn-widget', 'boolean')
     input.checked = Boolean(value === true || value === 'true')
     label.appendChild(input)
     label.appendChild(doc.createTextNode(input.checked ? ' true' : ' false'))
@@ -2309,8 +2372,8 @@
   // proposes the original value (Edit Modal Value Type Safety, S3b P0-2).
   function FieldSelectWidget(value, options, opts) {
     var doc = resolveDoc(opts)
-    var select = makeEl(doc, 'select', 'innfo-edit-select')
-    select.setAttribute('data-innfo-widget', 'select')
+    var select = makeEl(doc, 'select', 'nn-edit-select')
+    select.setAttribute('data-nn-widget', 'select')
     var list = Array.isArray(options) ? options : []
     var current = value == null ? '' : String(value)
     var blank = makeEl(doc, 'option', null, '')
@@ -2339,12 +2402,12 @@
 
   function FieldMultiSelectWidget(values, options, opts) {
     var doc = resolveDoc(opts)
-    var wrap = makeEl(doc, 'div', 'innfo-edit-multiselect')
-    wrap.setAttribute('data-innfo-widget', 'multiselect')
+    var wrap = makeEl(doc, 'div', 'nn-edit-multiselect')
+    wrap.setAttribute('data-nn-widget', 'multiselect')
     var current = Array.isArray(values) ? values.map(String) : []
     var list = Array.isArray(options) ? options : []
     list.forEach(function (opt) {
-      var label = makeEl(doc, 'label', 'innfo-edit-checkbox-label')
+      var label = makeEl(doc, 'label', 'nn-edit-checkbox-label')
       var input = makeEl(doc, 'input')
       input.setAttribute('type', 'checkbox')
       input.value = opt
@@ -2361,15 +2424,15 @@
   // (see refProposal), never a slug.
   function FieldReferenceWidget(value, candidates, opts) {
     var doc = resolveDoc(opts)
-    var wrap = makeEl(doc, 'div', 'innfo-edit-reference')
-    wrap.setAttribute('data-innfo-widget', 'reference')
-    var input = makeEl(doc, 'input', 'innfo-edit-input')
+    var wrap = makeEl(doc, 'div', 'nn-edit-reference')
+    wrap.setAttribute('data-nn-widget', 'reference')
+    var input = makeEl(doc, 'input', 'nn-edit-input')
     input.setAttribute('type', 'text')
     input.setAttribute('placeholder', 'Element name, e.g. [[Display Name]]')
     if (value != null) input.value = String(value)
     wrap.appendChild(input)
 
-    var datalistId = 'innfo-ref-list-' + Math.random().toString(36).slice(2, 8)
+    var datalistId = 'nn-ref-list-' + Math.random().toString(36).slice(2, 8)
     input.setAttribute('list', datalistId)
     var dl = makeEl(doc, 'datalist')
     dl.id = datalistId
@@ -2413,25 +2476,25 @@
 
   function FieldMarkdownWidget(value, opts) {
     var doc = resolveDoc(opts)
-    var ta = makeEl(doc, 'textarea', 'innfo-edit-textarea')
-    ta.setAttribute('data-innfo-widget', 'markdown')
+    var ta = makeEl(doc, 'textarea', 'nn-edit-textarea')
+    ta.setAttribute('data-nn-widget', 'markdown')
     ta.setAttribute('rows', '6')
     if (value != null) ta.value = String(value)
     return ta
   }
 
   function EditModal(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.EditModal: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.EditModal: data required')
     var doc = resolveDoc(opts)
-    var modal = makeEl(doc, 'dialog', 'innfo-edit-modal')
-    modal.setAttribute('data-innfo-component', 'edit-modal')
+    var modal = makeEl(doc, 'dialog', 'nn-edit-modal')
+    modal.setAttribute('data-nn-component', 'edit-modal')
     modal.setAttribute('role', 'dialog')
     modal.setAttribute('aria-modal', 'true')
 
-    var head = makeEl(doc, 'div', 'innfo-edit-modal-head')
+    var head = makeEl(doc, 'div', 'nn-edit-modal-head')
     var title = makeEl(doc, 'h2', null, data.title || 'Edit Component')
     head.appendChild(title)
-    var closeBtn = makeEl(doc, 'button', 'innfo-edit-modal-close', '\u00D7')
+    var closeBtn = makeEl(doc, 'button', 'nn-edit-modal-close', '\u00D7')
     closeBtn.setAttribute('type', 'button')
     closeBtn.addEventListener('click', function () {
       if (typeof modal.close === 'function') modal.close()
@@ -2445,9 +2508,9 @@
     // comment-only today). Warn HERE, at the moment of the action, instead of hiding
     // the pencil behind a switch you must remember to turn on.
     if (data.structure === true) {
-      var structureWarn = makeEl(doc, 'div', 'innfo-edit-warn')
+      var structureWarn = makeEl(doc, 'div', 'nn-edit-warn')
       structureWarn.setAttribute('role', 'alert')
-      var warnIcon = makeEl(doc, 'span', 'innfo-edit-warn-icon')
+      var warnIcon = makeEl(doc, 'span', 'nn-edit-warn-icon')
       warnIcon.setAttribute('aria-hidden', 'true')
       warnIcon.innerHTML = icon('cite-error', 16)
       structureWarn.appendChild(warnIcon)
@@ -2464,9 +2527,9 @@
     // (C) banner: a proposal that cannot be APPLIED (no base_hash precondition) warns
     // here instead of the affordance being hidden.
     if (!data.structure && data.warning) {
-      var cannotApply = makeEl(doc, 'div', 'innfo-edit-warn')
+      var cannotApply = makeEl(doc, 'div', 'nn-edit-warn')
       cannotApply.setAttribute('role', 'alert')
-      var caIcon = makeEl(doc, 'span', 'innfo-edit-warn-icon')
+      var caIcon = makeEl(doc, 'span', 'nn-edit-warn-icon')
       caIcon.setAttribute('aria-hidden', 'true')
       caIcon.innerHTML = icon('cite-error', 16)
       cannotApply.appendChild(caIcon)
@@ -2478,7 +2541,7 @@
     // export; showing it here is the just-in-time half, so several reviewers do not
     // silently collapse into the default pseudonym.
     if (data.reviewer && String(data.reviewer).trim()) {
-      var proposeAs = makeEl(doc, 'div', 'innfo-propose-as')
+      var proposeAs = makeEl(doc, 'div', 'nn-propose-as')
       proposeAs.textContent = 'Proposing as ' + String(data.reviewer)
       if (data.reviewer === 'reviewer') {
         proposeAs.textContent = 'Proposing as "reviewer" (default) - set your identifier'
@@ -2488,12 +2551,12 @@
     }
 
     // Unified Modal Navigation: Tabs (Edit vs Lineage)
-    var navTabs = makeEl(doc, 'div', 'innfo-modal-tabs')
-    var tabBtnEdit = makeEl(doc, 'button', 'innfo-modal-tab-btn active', 'Edit')
+    var navTabs = makeEl(doc, 'div', 'nn-modal-tabs')
+    var tabBtnEdit = makeEl(doc, 'button', 'nn-modal-tab-btn active', 'Edit')
     tabBtnEdit.setAttribute('type', 'button')
-    var tabBtnHistory = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'Lineage')
+    var tabBtnHistory = makeEl(doc, 'button', 'nn-modal-tab-btn', 'Changes')
     tabBtnHistory.setAttribute('type', 'button')
-    var tabBtnConnections = makeEl(doc, 'button', 'innfo-modal-tab-btn', 'Connections')
+    var tabBtnConnections = makeEl(doc, 'button', 'nn-modal-tab-btn', 'Connections')
     tabBtnConnections.setAttribute('type', 'button')
     navTabs.appendChild(tabBtnEdit)
     navTabs.appendChild(tabBtnHistory)
@@ -2501,11 +2564,11 @@
     modal.appendChild(navTabs)
 
     // Panel 1: Edit Form
-    var panelEdit = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-edit-modal-body')
+    var panelEdit = makeEl(doc, 'div', 'nn-modal-tab-panel nn-edit-modal-body')
     panelEdit.setAttribute('data-tab', 'edit')
 
     // Mode Selector: Propose Value vs Comment (D15)
-    var modeWrap = makeEl(doc, 'div', 'innfo-edit-mode-selector')
+    var modeWrap = makeEl(doc, 'div', 'nn-edit-mode-selector')
     // commentOnly: there is no value to propose, so the mode is fixed and the
     // toggle is not offered. A list/object value keeps the toggle visible but
     // disables Propose: there is no list editor, only a comment (S3b P0-2).
@@ -2513,8 +2576,8 @@
     var valueIsContainer =
       Boolean(data.valueCommentOnly) || (data.value !== null && typeof data.value === 'object')
     var isComment = commentOnly || valueIsContainer || Boolean(data.isComment)
-    var btnPropose = makeEl(doc, 'button', 'innfo-edit-mode-btn' + (!isComment ? ' active' : ''), 'Propose value')
-    var btnComment = makeEl(doc, 'button', 'innfo-edit-mode-btn' + (isComment ? ' active' : ''), 'Comment')
+    var btnPropose = makeEl(doc, 'button', 'nn-edit-mode-btn' + (!isComment ? ' active' : ''), 'Propose value')
+    var btnComment = makeEl(doc, 'button', 'nn-edit-mode-btn' + (isComment ? ' active' : ''), 'Comment')
     btnPropose.setAttribute('type', 'button')
     btnComment.setAttribute('type', 'button')
     modeWrap.appendChild(btnPropose)
@@ -2524,17 +2587,17 @@
       btnPropose.disabled = true
       btnPropose.setAttribute('aria-disabled', 'true')
       panelEdit.appendChild(
-        makeEl(doc, 'p', 'innfo-edit-note', 'List and object values are proposed as a comment.'),
+        makeEl(doc, 'p', 'nn-edit-note', 'List and object values are proposed as a comment.'),
       )
     }
 
-    var formPropose = makeEl(doc, 'div', 'innfo-edit-form-propose')
+    var formPropose = makeEl(doc, 'div', 'nn-edit-form-propose')
     formPropose.style.display = isComment ? 'none' : 'block'
 
-    var formComment = makeEl(doc, 'div', 'innfo-edit-form-comment')
+    var formComment = makeEl(doc, 'div', 'nn-edit-form-comment')
     formComment.style.display = isComment ? 'block' : 'none'
-    var commentLabel = makeEl(doc, 'label', 'innfo-edit-field-label', 'Reviewer Notes / Comment')
-    var commentTa = makeEl(doc, 'textarea', 'innfo-edit-textarea')
+    var commentLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Reviewer Notes / Comment')
+    var commentTa = makeEl(doc, 'textarea', 'nn-edit-textarea')
     commentTa.setAttribute('placeholder', 'Enter review comment or note...')
     if (data.comment != null) commentTa.value = String(data.comment)
     formComment.appendChild(commentLabel)
@@ -2543,24 +2606,24 @@
     btnPropose.addEventListener('click', function () {
       if (valueIsContainer) return
       isComment = false
-      btnPropose.className = 'innfo-edit-mode-btn active'
-      btnComment.className = 'innfo-edit-mode-btn'
+      btnPropose.className = 'nn-edit-mode-btn active'
+      btnComment.className = 'nn-edit-mode-btn'
       formPropose.style.display = 'block'
       formComment.style.display = 'none'
     })
     btnComment.addEventListener('click', function () {
       isComment = true
-      btnComment.className = 'innfo-edit-mode-btn active'
-      btnPropose.className = 'innfo-edit-mode-btn'
+      btnComment.className = 'nn-edit-mode-btn active'
+      btnPropose.className = 'nn-edit-mode-btn'
       formPropose.style.display = 'none'
       formComment.style.display = 'block'
     })
 
     // Field Editor in Propose mode
-    var fieldsContainer = makeEl(doc, 'div', 'innfo-edit-fields')
+    var fieldsContainer = makeEl(doc, 'div', 'nn-edit-fields')
     var widgetRef = null
     var fieldType = data.type || 'string'
-    var fieldLabel = makeEl(doc, 'label', 'innfo-edit-field-label', data.fieldName ? data.fieldName : 'Value')
+    var fieldLabel = makeEl(doc, 'label', 'nn-edit-field-label', data.fieldName ? data.fieldName : 'Value')
     fieldsContainer.appendChild(fieldLabel)
 
     if (valueIsContainer) {
@@ -2590,56 +2653,90 @@
     modal.appendChild(panelEdit)
 
     // Panel 2: Lineage
-    var panelHistory = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-history-modal-body')
+    var panelHistory = makeEl(doc, 'div', 'nn-modal-tab-panel nn-history-modal-body')
     panelHistory.setAttribute('data-tab', 'history')
     panelHistory.style.display = 'none'
 
-    // History section
-    var histSection = makeEl(doc, 'div', 'innfo-history-section')
-    histSection.appendChild(makeEl(doc, 'h3', 'innfo-history-title', 'History'))
-    var historyItems = Array.isArray(data.history) ? data.history : []
+    // Changes: the element's recorded change history, rendered as standard element
+    // sheets (one ElementCard per change, newest first) so the modal matches the
+    // central model view. The change's `evidence` is shown as a field.
+    var histSection = makeEl(doc, 'div', 'nn-history-section')
+    histSection.appendChild(makeEl(doc, 'h3', 'nn-history-title', 'Changes'))
+    var historyItems = Array.isArray(data.history) ? data.history.slice() : []
+    historyItems.sort(function (a, b) {
+      return String((b && b.timestamp) || '').localeCompare(String((a && a.timestamp) || ''))
+    })
     if (historyItems.length) {
       historyItems.forEach(function (h) {
-        var item = makeEl(doc, 'div', 'innfo-history-item')
-        var metaStr = (h.author ? 'Author: ' + h.author : '') + (h.timestamp ? ' \u2022 ' + h.timestamp : '')
-        item.appendChild(makeEl(doc, 'div', 'innfo-history-meta', metaStr))
-        if (h.notes) item.appendChild(makeEl(doc, 'div', 'innfo-history-notes', h.notes))
-        histSection.appendChild(item)
+        var changeFields = []
+        var pushField = function (name, value) {
+          if (value === undefined || value === null || value === '') return
+          changeFields.push({ name: name, value: String(value) })
+        }
+        pushField('op', h.op)
+        pushField('target', h.target)
+        if (h.from !== undefined) changeFields.push({ name: 'from', value: String(h.from) })
+        if (h.to !== undefined) changeFields.push({ name: 'to', value: String(h.to) })
+        pushField('concept', h.concept)
+        pushField('name', h.name)
+        pushField('author', h.author)
+        pushField('status', h.status)
+        // Evidence is a citation: render it with the standard citation value widget
+        // (value + clickable icon) so the icon opens the citation/unit.
+        if (h.evidence) {
+          changeFields.push({
+            name: 'evidence',
+            value: String(h.evidence),
+            type: 'citation',
+            citations: [
+              h.evidenceCitation || {
+                origin: 'document',
+                path: String(h.evidence),
+                exists: true,
+                field: 'evidence',
+              },
+            ],
+          })
+        }
+        pushField('applied_at', h.timestamp)
+        pushField('notes', h.notes)
+        pushField('resolution', h.resolution)
+        histSection.appendChild(
+          ElementCard(
+            {
+              id: h.id,
+              conceptId: 'Change',
+              concept: 'Change',
+              name: cardTitle(h.op, h),
+              fields: changeFields,
+            },
+            {
+              doc: doc,
+              collapsible: false,
+              onCite: opts && typeof opts.onEvidence === 'function' ? opts.onEvidence : undefined,
+            },
+          ),
+        )
       })
     } else {
-      histSection.appendChild(makeEl(doc, 'div', 'innfo-history-empty', 'No recorded prior changesets.'))
+      histSection.appendChild(
+        makeEl(doc, 'div', 'nn-history-empty', 'No recorded changes for this element.'),
+      )
     }
     panelHistory.appendChild(histSection)
-
-    // Citations section
-    var citeSection = makeEl(doc, 'div', 'innfo-history-section')
-    citeSection.appendChild(makeEl(doc, 'h3', 'innfo-history-title', 'Citations'))
-    var citeItems = Array.isArray(data.citations) ? data.citations : []
-    if (citeItems.length) {
-      citeItems.forEach(function (c) {
-        var item = makeEl(doc, 'div', 'innfo-history-item')
-        var srcStr = (c.origin ? '[' + c.origin + '] ' : '') + (c.source || '')
-        item.appendChild(makeEl(doc, 'div', 'innfo-history-meta', srcStr))
-        if (c.quote) item.appendChild(makeEl(doc, 'div', 'innfo-history-notes', '"' + c.quote + '"'))
-        citeSection.appendChild(item)
-      })
-    } else {
-      citeSection.appendChild(makeEl(doc, 'div', 'innfo-history-empty', 'No origin citations linked.'))
-    }
-    panelHistory.appendChild(citeSection)
     modal.appendChild(panelHistory)
 
     // Panel 3: Connections (Sankey-style relation flow)
-    var panelConnections = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-connections-modal-body')
+    var panelConnections = makeEl(doc, 'div', 'nn-modal-tab-panel nn-connections-modal-body')
     panelConnections.setAttribute('data-tab', 'connections')
     panelConnections.style.display = 'none'
     panelConnections.appendChild(SankeyFlow(data.connections || {}, { doc: doc }))
     modal.appendChild(panelConnections)
 
-    var actions = makeEl(doc, 'div', 'innfo-edit-modal-actions')
-    var saveBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-save', 'Save draft')
+    var actions = makeEl(doc, 'div', 'nn-edit-modal-actions')
+    var saveBtn = makeEl(doc, 'button', 'nn-edit-btn nn-edit-btn-save', 'Save draft')
     saveBtn.setAttribute('type', 'button')
-    var saveError = makeEl(doc, 'p', 'innfo-edit-error')
+    var saveError = makeEl(doc, 'p', 'nn-edit-error')
     saveError.setAttribute('role', 'alert')
     saveError.style.display = 'none'
 
@@ -2648,7 +2745,7 @@
     var tabPanels = { edit: panelEdit, history: panelHistory, connections: panelConnections }
     function showTab(name) {
       Object.keys(tabButtons).forEach(function (k) {
-        tabButtons[k].className = 'innfo-modal-tab-btn' + (k === name ? ' active' : '')
+        tabButtons[k].className = 'nn-modal-tab-btn' + (k === name ? ' active' : '')
         tabPanels[k].style.display = k === name ? 'block' : 'none'
       })
       actions.style.display = name === 'edit' ? '' : 'none'
@@ -2717,7 +2814,7 @@
       if (typeof modal.close === 'function') modal.close()
       else modal.removeAttribute('open')
     })
-    var cancelBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-cancel', 'Cancel')
+    var cancelBtn = makeEl(doc, 'button', 'nn-edit-btn nn-edit-btn-cancel', 'Cancel')
     cancelBtn.setAttribute('type', 'button')
     cancelBtn.addEventListener('click', function () {
       if (typeof modal.close === 'function') modal.close()
@@ -2737,11 +2834,11 @@
   // EditModal. onSave receives { concept, name, fields } where fields holds only
   // the filled values (a blank input is not a value).
   function NewElementModal(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('InnfoUI.NewElementModal: data required')
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.NewElementModal: data required')
     var doc = resolveDoc(opts)
     var concepts = Array.isArray(data.concepts) ? data.concepts : []
-    var modal = makeEl(doc, 'dialog', 'innfo-edit-modal')
-    modal.setAttribute('data-innfo-component', 'new-element-modal')
+    var modal = makeEl(doc, 'dialog', 'nn-edit-modal')
+    modal.setAttribute('data-nn-component', 'new-element-modal')
     modal.setAttribute('role', 'dialog')
     modal.setAttribute('aria-modal', 'true')
 
@@ -2754,19 +2851,19 @@
       if (opts && typeof opts.onCancel === 'function') opts.onCancel()
     }
 
-    var head = makeEl(doc, 'div', 'innfo-edit-modal-head')
+    var head = makeEl(doc, 'div', 'nn-edit-modal-head')
     head.appendChild(makeEl(doc, 'h2', null, data.title || 'New element'))
-    var closeBtn = makeEl(doc, 'button', 'innfo-edit-modal-close', '\u00D7')
+    var closeBtn = makeEl(doc, 'button', 'nn-edit-modal-close', '\u00D7')
     closeBtn.setAttribute('type', 'button')
     closeBtn.addEventListener('click', cancel)
     head.appendChild(closeBtn)
     modal.appendChild(head)
 
-    var body = makeEl(doc, 'div', 'innfo-modal-tab-panel innfo-edit-modal-body')
+    var body = makeEl(doc, 'div', 'nn-modal-tab-panel nn-edit-modal-body')
 
-    var conceptLabel = makeEl(doc, 'label', 'innfo-edit-field-label', 'Concept')
-    var picker = makeEl(doc, 'select', 'innfo-edit-select')
-    picker.setAttribute('data-innfo-role', 'concept')
+    var conceptLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Concept')
+    var picker = makeEl(doc, 'select', 'nn-edit-select')
+    picker.setAttribute('data-nn-role', 'concept')
     picker.appendChild(makeEl(doc, 'option', null, ''))
     picker.firstChild.value = ''
     concepts.forEach(function (c) {
@@ -2783,8 +2880,8 @@
       : []
     var modelPicker = null
     if (models.length > 1) {
-      modelPicker = makeEl(doc, 'select', 'innfo-edit-select')
-      modelPicker.setAttribute('data-innfo-role', 'model')
+      modelPicker = makeEl(doc, 'select', 'nn-edit-select')
+      modelPicker.setAttribute('data-nn-role', 'model')
       models.forEach(function (m) {
         var mo = makeEl(doc, 'option', null, m.title || m.id)
         mo.value = String(m.id)
@@ -2794,19 +2891,19 @@
         return String(m.id) === String(data.defaultModel)
       })[0]
       if (preset) modelPicker.value = String(preset.id)
-      body.appendChild(makeEl(doc, 'label', 'innfo-edit-field-label', 'Model'))
+      body.appendChild(makeEl(doc, 'label', 'nn-edit-field-label', 'Model'))
       body.appendChild(modelPicker)
     }
     body.appendChild(conceptLabel)
     body.appendChild(picker)
 
-    var nameLabel = makeEl(doc, 'label', 'innfo-edit-field-label', 'Name')
+    var nameLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Name')
     var nameInput = FieldInput('text', '', opts)
-    nameInput.setAttribute('data-innfo-role', 'name')
+    nameInput.setAttribute('data-nn-role', 'name')
     body.appendChild(nameLabel)
     body.appendChild(nameInput)
 
-    var fieldsHost = makeEl(doc, 'div', 'innfo-edit-fields')
+    var fieldsHost = makeEl(doc, 'div', 'nn-edit-fields')
     body.appendChild(fieldsHost)
     modal.appendChild(body)
 
@@ -2823,7 +2920,7 @@
       else if (type === 'reference') node = FieldReferenceWidget('', data.candidates, opts)
       else if (type === 'markdown' || type === 'markdown_inline') node = FieldMarkdownWidget('', opts)
       else node = FieldStringWidget('', opts)
-      node.setAttribute('data-innfo-field', def.name)
+      node.setAttribute('data-nn-field', def.name)
       return { name: def.name, type: type, node: node }
     }
 
@@ -2866,19 +2963,19 @@
         if (!def || !def.name) return
         var w = widgetFor(def)
         current.push(w)
-        fieldsHost.appendChild(makeEl(doc, 'label', 'innfo-edit-field-label', def.name))
+        fieldsHost.appendChild(makeEl(doc, 'label', 'nn-edit-field-label', def.name))
         fieldsHost.appendChild(w.node)
       })
     }
     picker.addEventListener('change', renderFields)
 
-    var saveError = makeEl(doc, 'p', 'innfo-edit-error')
+    var saveError = makeEl(doc, 'p', 'nn-edit-error')
     saveError.setAttribute('role', 'alert')
     saveError.style.display = 'none'
     modal.appendChild(saveError)
 
-    var actions = makeEl(doc, 'div', 'innfo-edit-modal-actions')
-    var saveBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-save', 'Save draft')
+    var actions = makeEl(doc, 'div', 'nn-edit-modal-actions')
+    var saveBtn = makeEl(doc, 'button', 'nn-edit-btn nn-edit-btn-save', 'Save draft')
     saveBtn.setAttribute('type', 'button')
     saveBtn.addEventListener('click', function () {
       var name = String(nameInput.value == null ? '' : nameInput.value).trim()
@@ -2908,7 +3005,7 @@
       }
       dismiss()
     })
-    var cancelBtn = makeEl(doc, 'button', 'innfo-edit-btn innfo-edit-btn-cancel', 'Cancel')
+    var cancelBtn = makeEl(doc, 'button', 'nn-edit-btn nn-edit-btn-cancel', 'Cancel')
     cancelBtn.setAttribute('type', 'button')
     cancelBtn.addEventListener('click', cancel)
     actions.appendChild(saveBtn)
@@ -2920,30 +3017,30 @@
 
   function AnnotationPopover(data, opts) {
     if (!data || typeof data !== 'object') {
-      throw new TypeError('InnfoUI.AnnotationPopover: data required')
+      throw new TypeError('nnUI.AnnotationPopover: data required')
     }
     var doc = resolveDoc(opts)
     var kinds = Array.isArray(data.kinds) && data.kinds.length ? data.kinds : ['comment']
     var hasCorrection = kinds.indexOf('correction') !== -1
-    var pop = makeEl(doc, 'div', 'innfo-annotation-popover')
-    pop.setAttribute('data-innfo-component', 'annotation-popover')
+    var pop = makeEl(doc, 'div', 'nn-annotation-popover')
+    pop.setAttribute('data-nn-component', 'annotation-popover')
     pop.setAttribute('role', 'dialog')
     pop.setAttribute('aria-modal', 'true')
     pop.setAttribute('tabindex', '-1')
-    pop.appendChild(makeEl(doc, 'p', 'innfo-popover-label', data.label))
+    pop.appendChild(makeEl(doc, 'p', 'nn-popover-label', data.label))
     kinds.forEach(function (k) {
-      var b = makeEl(doc, 'button', 'innfo-popover-kind', k)
+      var b = makeEl(doc, 'button', 'nn-popover-kind', k)
       b.setAttribute('type', 'button')
       b.setAttribute('data-kind', k)
       pop.appendChild(b)
     })
     if (hasCorrection) {
       if (data.original != null) {
-        pop.appendChild(makeEl(doc, 'span', 'innfo-popover-original', String(data.original)))
+        pop.appendChild(makeEl(doc, 'span', 'nn-popover-original', String(data.original)))
       }
-      pop.appendChild(makeEl(doc, 'textarea', 'innfo-popover-proposed'))
+      pop.appendChild(makeEl(doc, 'textarea', 'nn-popover-proposed'))
     }
-    var save = makeEl(doc, 'button', 'innfo-popover-save', 'Save')
+    var save = makeEl(doc, 'button', 'nn-popover-save', 'Save')
     save.setAttribute('type', 'button')
     save.addEventListener('click', function () {
       var payload = { kind: hasCorrection ? 'correction' : kinds[0] }
@@ -2953,7 +3050,7 @@
       }
       if (opts && typeof opts.onSave === 'function') opts.onSave(payload)
     })
-    var cancel = makeEl(doc, 'button', 'innfo-popover-cancel', 'Cancel')
+    var cancel = makeEl(doc, 'button', 'nn-popover-cancel', 'Cancel')
     cancel.setAttribute('type', 'button')
     cancel.addEventListener('click', function () {
       if (opts && typeof opts.onCancel === 'function') opts.onCancel()
@@ -2992,10 +3089,10 @@
     var d = data && typeof data === 'object' ? data : {}
     var incoming = Array.isArray(d.incoming) ? d.incoming : []
     var outgoing = Array.isArray(d.outgoing) ? d.outgoing : []
-    var wrap = makeEl(doc, 'div', 'innfo-sankey')
-    wrap.setAttribute('data-innfo-component', 'sankey')
+    var wrap = makeEl(doc, 'div', 'nn-sankey')
+    wrap.setAttribute('data-nn-component', 'sankey')
     if (!incoming.length && !outgoing.length) {
-      wrap.appendChild(makeEl(doc, 'p', 'innfo-sankey-empty', 'No relations recorded for this knowledge unit.'))
+      wrap.appendChild(makeEl(doc, 'p', 'nn-sankey-empty', 'No relations recorded for this knowledge unit.'))
       return wrap
     }
     var NS = 'http://www.w3.org/2000/svg'
@@ -3008,7 +3105,7 @@
     var height = pad * 2 + rows * rowH + (rows - 1) * gap
     var svg = doc.createElementNS(NS, 'svg')
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height)
-    svg.setAttribute('class', 'innfo-sankey-svg')
+    svg.setAttribute('class', 'nn-sankey-svg')
     svg.setAttribute('role', 'img')
     svg.setAttribute('aria-label', 'Knowledge unit relation flow')
     svg.setAttribute('preserveAspectRatio', 'xMidYMin meet')
@@ -3043,7 +3140,7 @@
       var p = doc.createElementNS(NS, 'path')
       var mx = (x1 + x2) / 2
       p.setAttribute('d', 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2)
-      p.setAttribute('class', 'innfo-sankey-link')
+      p.setAttribute('class', 'nn-sankey-link')
       return p
     }
 
@@ -3062,16 +3159,16 @@
     })
 
     function node(link, x, i) {
-      var r = rect(x, nodeY(i), 'innfo-sankey-node')
+      var r = rect(x, nodeY(i), 'nn-sankey-node')
       if (link && link.label) {
         var title = doc.createElementNS(NS, 'title')
         title.textContent = String(link.label) + (link.field ? ' (' + link.field + ')' : '')
         r.appendChild(title)
       }
       svg.appendChild(r)
-      svg.appendChild(label(x + 10, nodeY(i) + 21, truncate(link && link.label, 20), 'innfo-sankey-label'))
+      svg.appendChild(label(x + 10, nodeY(i) + 21, truncate(link && link.label, 20), 'nn-sankey-label'))
       if (link && link.field) {
-        svg.appendChild(label(x + colW - 8, nodeY(i) + 21, truncate(link.field, 12), 'innfo-sankey-field', 'end'))
+        svg.appendChild(label(x + colW - 8, nodeY(i) + 21, truncate(link.field, 12), 'nn-sankey-field', 'end'))
       }
     }
     incoming.forEach(function (link, i) {
@@ -3081,9 +3178,9 @@
       node(link, rightX, i)
     })
 
-    svg.appendChild(rect(centerX, centerY, 'innfo-sankey-node innfo-sankey-center'))
+    svg.appendChild(rect(centerX, centerY, 'nn-sankey-node nn-sankey-center'))
     svg.appendChild(
-      label(centerX + colW / 2, centerY + 22, truncate(d.center || 'This unit', 26), 'innfo-sankey-center-label', 'middle'),
+      label(centerX + colW / 2, centerY + 22, truncate(d.center || 'This unit', 26), 'nn-sankey-center-label', 'middle'),
     )
 
     wrap.appendChild(svg)
@@ -3094,16 +3191,16 @@
   // concept's `total` elements carry a change that lives only in this console.
   function RailProgress(data) {
     if (!data || typeof data !== 'object') {
-      throw new TypeError('InnfoUI.RailProgress: data required')
+      throw new TypeError('nnUI.RailProgress: data required')
     }
     var total = Number(data.total)
     var pending = Number(data.pending)
     if (!isFinite(total) || !isFinite(pending)) {
-      throw new TypeError('InnfoUI.RailProgress: numeric total and pending required')
+      throw new TypeError('nnUI.RailProgress: numeric total and pending required')
     }
     var doc = resolveDoc(null)
-    var span = makeEl(doc, 'span', 'innfo-rail-progress')
-    span.setAttribute('data-innfo-component', 'rail-progress')
+    var span = makeEl(doc, 'span', 'nn-rail-progress')
+    span.setAttribute('data-nn-component', 'rail-progress')
     span.setAttribute('data-total', String(total))
     span.setAttribute('data-pending', String(pending))
     span.setAttribute(
@@ -3118,23 +3215,23 @@
   // claims a network call or a write; it points at the step still missing (export).
   function Toast(data, opts) {
     if (!data || typeof data !== 'object') {
-      throw new TypeError('InnfoUI.Toast: data required')
+      throw new TypeError('nnUI.Toast: data required')
     }
     var doc = resolveDoc(opts)
-    if (!doc) throw new TypeError('InnfoUI.Toast: doc is required')
-    var toast = makeEl(doc, 'div', 'innfo-change-toast')
-    toast.setAttribute('data-innfo-component', 'toast')
+    if (!doc) throw new TypeError('nnUI.Toast: doc is required')
+    var toast = makeEl(doc, 'div', 'nn-change-toast')
+    toast.setAttribute('data-nn-component', 'toast')
     toast.setAttribute('role', 'status')
     toast.setAttribute('aria-live', 'polite')
-    var ico = makeEl(doc, 'span', 'innfo-change-toast-icon')
+    var ico = makeEl(doc, 'span', 'nn-change-toast-icon')
     ico.setAttribute('aria-hidden', 'true')
     if (typeof icon === 'function') ico.innerHTML = icon('git-commit', 16)
     toast.appendChild(ico)
-    var body = makeEl(doc, 'div', 'innfo-change-toast-body')
-    body.appendChild(makeEl(doc, 'strong', 'innfo-change-toast-title', data.title || ''))
-    body.appendChild(makeEl(doc, 'span', 'innfo-change-toast-text', data.body || ''))
+    var body = makeEl(doc, 'div', 'nn-change-toast-body')
+    body.appendChild(makeEl(doc, 'strong', 'nn-change-toast-title', data.title || ''))
+    body.appendChild(makeEl(doc, 'span', 'nn-change-toast-text', data.body || ''))
     toast.appendChild(body)
-    var close = makeEl(doc, 'button', 'innfo-change-toast-close', '\u00d7')
+    var close = makeEl(doc, 'button', 'nn-change-toast-close', '\u00d7')
     close.setAttribute('type', 'button')
     close.setAttribute('aria-label', 'Dismiss')
     close.addEventListener('click', function () {
@@ -3145,20 +3242,20 @@
   }
 
   /**
-   * Registers <innfo-ku> custom element in window.customElements when available.
+   * Registers <nn-ku> custom element in window.customElements when available.
    */
   function KpiGrid(data, opts) {
     if (!data || !Array.isArray(data.items)) {
-      throw new TypeError('InnfoUI.KpiGrid: data.items must be an array')
+      throw new TypeError('nnUI.KpiGrid: data.items must be an array')
     }
     var doc = (opts && opts.doc) || (typeof document !== 'undefined' ? document : null)
-    if (!doc) throw new TypeError('InnfoUI.KpiGrid: doc is required')
-    var grid = makeEl(doc, 'div', 'innfo-kpi-grid')
-    grid.setAttribute('data-innfo-component', 'kpi-grid')
+    if (!doc) throw new TypeError('nnUI.KpiGrid: doc is required')
+    var grid = makeEl(doc, 'div', 'nn-kpi-grid')
+    grid.setAttribute('data-nn-component', 'kpi-grid')
     data.items.forEach(function (item) {
       if (!item) return
-      var card = makeEl(doc, 'div', 'innfo-kpi-card')
-      var header = makeEl(doc, 'div', 'innfo-kpi-header')
+      var card = makeEl(doc, 'div', 'nn-kpi-card')
+      var header = makeEl(doc, 'div', 'nn-kpi-header')
       header.appendChild(
         Ku(
           'element',
@@ -3174,9 +3271,9 @@
         ),
       )
       card.appendChild(header)
-      var val = makeEl(doc, 'div', 'innfo-kpi-value', item.value != null ? String(item.value) : '0')
+      var val = makeEl(doc, 'div', 'nn-kpi-value', item.value != null ? String(item.value) : '0')
       card.appendChild(val)
-      if (item.hint) card.appendChild(makeEl(doc, 'div', 'innfo-kpi-hint', item.hint))
+      if (item.hint) card.appendChild(makeEl(doc, 'div', 'nn-kpi-hint', item.hint))
       grid.appendChild(card)
     })
     return grid
@@ -3197,9 +3294,9 @@
   // on a utility class being present.
 
   function gridCellClass(align) {
-    if (align === 'center') return 'innfo-grid-cell innfo-grid-cell--center'
-    if (align === 'end' || align === 'right') return 'innfo-grid-cell innfo-grid-cell--end'
-    return 'innfo-grid-cell'
+    if (align === 'center') return 'nn-grid-cell nn-grid-cell--center'
+    if (align === 'end' || align === 'right') return 'nn-grid-cell nn-grid-cell--end'
+    return 'nn-grid-cell'
   }
 
   // A cell value may already be a DOM node (a renderer returned one) or a
@@ -3227,17 +3324,17 @@
     var rows = Array.isArray(spec.rows) ? spec.rows : []
     var hasRowHeader = spec.rowHeader != null
 
-    var scroll = makeEl(doc, 'div', 'innfo-grid-scroll')
-    scroll.setAttribute('data-innfo-component', spec.component)
+    var scroll = makeEl(doc, 'div', 'nn-grid-scroll')
+    scroll.setAttribute('data-nn-component', spec.component)
     if (spec.pinFirstColumn) scroll.setAttribute('data-pin-first', 'true')
 
-    var table = makeEl(doc, 'table', 'innfo-grid')
+    var table = makeEl(doc, 'table', 'nn-grid')
     if (hasRowHeader) table.setAttribute('data-has-row-header', 'true')
 
     var thead = doc.createElement('thead')
     var htr = doc.createElement('tr')
     if (hasRowHeader) {
-      var corner = makeEl(doc, 'th', 'innfo-grid-corner')
+      var corner = makeEl(doc, 'th', 'nn-grid-corner')
       corner.setAttribute('scope', 'col')
       corner.textContent = spec.rowHeader.label != null ? String(spec.rowHeader.label) : ''
       htr.appendChild(corner)
@@ -3256,7 +3353,7 @@
     var tbody = doc.createElement('tbody')
     if (!rows.length) {
       var er = doc.createElement('tr')
-      var ec = makeEl(doc, 'td', 'innfo-grid-empty')
+      var ec = makeEl(doc, 'td', 'nn-grid-empty')
       ec.colSpan = Math.max(1, columns.length + (hasRowHeader ? 1 : 0))
       ec.textContent = spec.emptyText != null ? String(spec.emptyText) : ''
       er.appendChild(ec)
@@ -3268,7 +3365,7 @@
         if (row.key != null) tr.setAttribute('data-row', String(row.key))
         var headerValue = resolveRowHeader(row, ri)
         if (headerValue != null) {
-          var rth = makeEl(doc, 'th', 'innfo-grid-rowhead')
+          var rth = makeEl(doc, 'th', 'nn-grid-rowhead')
           rth.setAttribute('scope', 'row')
           rth.appendChild(coerceCellNode(doc, headerValue))
           tr.appendChild(rth)
@@ -3339,10 +3436,10 @@
   }
 
   function DataTable(data, opts) {
-    if (!data || !Array.isArray(data.columns)) throw new TypeError('InnfoUI.DataTable: data.columns must be an array')
-    if (!Array.isArray(data.rows)) throw new TypeError('InnfoUI.DataTable: data.rows must be an array')
+    if (!data || !Array.isArray(data.columns)) throw new TypeError('nnUI.DataTable: data.columns must be an array')
+    if (!Array.isArray(data.rows)) throw new TypeError('nnUI.DataTable: data.rows must be an array')
     var doc = resolveDoc(opts)
-    if (!doc) throw new TypeError('InnfoUI.DataTable: doc is required')
+    if (!doc) throw new TypeError('nnUI.DataTable: doc is required')
     var modelId = (opts && (opts.modelId || opts.model)) || data.modelId || 'model'
     var columns = data.columns.map(function (c) {
       return { key: c.key, label: c.label, align: c.align, kind: c.kind || 'text', type: c.type, value: c.value, render: c.render }
@@ -3365,10 +3462,10 @@
   }
 
   function MatrixGrid(data, opts) {
-    if (!data || !Array.isArray(data.columns)) throw new TypeError('InnfoUI.MatrixGrid: data.columns must be an array')
-    if (!Array.isArray(data.rows)) throw new TypeError('InnfoUI.MatrixGrid: data.rows must be an array')
+    if (!data || !Array.isArray(data.columns)) throw new TypeError('nnUI.MatrixGrid: data.columns must be an array')
+    if (!Array.isArray(data.rows)) throw new TypeError('nnUI.MatrixGrid: data.rows must be an array')
     var doc = resolveDoc(opts)
-    if (!doc) throw new TypeError('InnfoUI.MatrixGrid: doc is required')
+    if (!doc) throw new TypeError('nnUI.MatrixGrid: doc is required')
     return buildGrid({
       doc: doc,
       component: 'matrix-grid',
@@ -3383,10 +3480,10 @@
   // A timeline is a matrix whose columns ARE periods; identical to MatrixGrid
   // apart from the component name (styling) and a centre-aligned axis default.
   function Timeline(data, opts) {
-    if (!data || !Array.isArray(data.periods)) throw new TypeError('InnfoUI.Timeline: data.periods must be an array')
-    if (!Array.isArray(data.lanes)) throw new TypeError('InnfoUI.Timeline: data.lanes must be an array')
+    if (!data || !Array.isArray(data.periods)) throw new TypeError('nnUI.Timeline: data.periods must be an array')
+    if (!Array.isArray(data.lanes)) throw new TypeError('nnUI.Timeline: data.lanes must be an array')
     var doc = resolveDoc(opts)
-    if (!doc) throw new TypeError('InnfoUI.Timeline: doc is required')
+    if (!doc) throw new TypeError('nnUI.Timeline: doc is required')
     return buildGrid({
       doc: doc,
       component: 'timeline',
@@ -3431,10 +3528,10 @@
 
   function FilterSelect(data, opts) {
     if (!data || !Array.isArray(data.options)) {
-      throw new TypeError('InnfoUI.FilterSelect: data.options must be an array')
+      throw new TypeError('nnUI.FilterSelect: data.options must be an array')
     }
     var doc = resolveDoc(opts)
-    if (!doc) throw new TypeError('InnfoUI.FilterSelect: doc is required')
+    if (!doc) throw new TypeError('nnUI.FilterSelect: doc is required')
     var options = normalizeFilterOptions(data.options)
     var selected = {}
     if (data.selected && !Array.isArray(data.selected) && typeof data.selected === 'object') {
@@ -3445,12 +3542,12 @@
     options.forEach(function (o) { if (o.selected) selected[o.value] = true })
     var label = data.label != null ? String(data.label) : ''
 
-    var root = makeEl(doc, 'details', 'innfo-filter')
-    root.setAttribute('data-innfo-component', 'filter-select')
-    var summary = makeEl(doc, 'summary', 'innfo-filter-summary')
+    var root = makeEl(doc, 'details', 'nn-filter')
+    root.setAttribute('data-nn-component', 'filter-select')
+    var summary = makeEl(doc, 'summary', 'nn-filter-summary')
     summary.setAttribute('aria-label', label || 'Filter')
     root.appendChild(summary)
-    var menu = makeEl(doc, 'div', 'innfo-filter-menu')
+    var menu = makeEl(doc, 'div', 'nn-filter-menu')
     root.appendChild(menu)
 
     var cbByValue = {}
@@ -3477,7 +3574,7 @@
     }
 
     if (Array.isArray(data.quick) && data.quick.length) {
-      var quick = makeEl(doc, 'div', 'innfo-filter-quick')
+      var quick = makeEl(doc, 'div', 'nn-filter-quick')
       data.quick.forEach(function (q) {
         if (!q) return
         var b = makeEl(doc, 'button', null, q.label != null ? String(q.label) : '')
@@ -3492,7 +3589,7 @@
     }
 
     options.forEach(function (o) {
-      var row = makeEl(doc, 'label', 'innfo-filter-option')
+      var row = makeEl(doc, 'label', 'nn-filter-option')
       var cb = doc.createElement('input')
       cb.type = 'checkbox'
       cb.checked = !!selected[o.value]
@@ -3503,8 +3600,8 @@
       })
       cbByValue[o.value] = cb
       row.appendChild(cb)
-      row.appendChild(makeEl(doc, 'span', 'innfo-filter-option-label', o.label))
-      if (o.count != null) row.appendChild(makeEl(doc, 'span', 'innfo-filter-option-count', String(o.count)))
+      row.appendChild(makeEl(doc, 'span', 'nn-filter-option-label', o.label))
+      if (o.count != null) row.appendChild(makeEl(doc, 'span', 'nn-filter-option-count', String(o.count)))
       menu.appendChild(row)
     })
 
@@ -3515,14 +3612,14 @@
   }
 
   function defineCustomElements() {
-    if (typeof window === 'undefined' || !window.customElements || window.customElements.get('innfo-ku')) return
+    if (typeof window === 'undefined' || !window.customElements || window.customElements.get('nn-ku')) return
     try {
-      function InnfoKu() {
-        return Reflect.construct(HTMLElement, [], InnfoKu)
+      function nnKu() {
+        return Reflect.construct(HTMLElement, [], nnKu)
       }
-      Object.setPrototypeOf(InnfoKu.prototype, HTMLElement.prototype)
-      Object.setPrototypeOf(InnfoKu, HTMLElement)
-      InnfoKu.prototype.connectedCallback = function () {
+      Object.setPrototypeOf(nnKu.prototype, HTMLElement.prototype)
+      Object.setPrototypeOf(nnKu, HTMLElement)
+      nnKu.prototype.connectedCallback = function () {
         var kind = this.getAttribute('kind') || 'field'
         var name = this.getAttribute('name')
         var value = this.getAttribute('value')
@@ -3542,7 +3639,7 @@
         this.innerHTML = ''
         this.appendChild(badge)
       }
-      window.customElements.define('innfo-ku', InnfoKu)
+      window.customElements.define('nn-ku', nnKu)
     } catch {
       /* ignore */
     }
@@ -3562,11 +3659,11 @@
     }
   }
 
-  // D3: the innfo:theme-change listener lives here (killed the runtime's
+  // D3: the nn:theme-change listener lives here (killed the runtime's
   // class-toggling version). Uses setTheme -> html[data-theme].
   if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('message', function (e) {
-      if (e && e.data && e.data.type === 'innfo:theme-change') {
+      if (e && e.data && e.data.type === 'nn:theme-change') {
         setTheme(document, 'light')
       }
     })
@@ -3585,8 +3682,35 @@
     source: 'content',
   }
 
+  // Change A: a unit's edit affordance derives from its model's declared
+  // `ownership` (not a kind table). The host installs a resolver mapping a model
+  // id to `'authored' | 'derived'`; a `derived` model offers no edit pencil. The
+  // apply engine remains the final guard.
+  var modelOwnership = null
+  function setModelOwnership(fn) {
+    modelOwnership = typeof fn === 'function' ? fn : null
+  }
+  function refModelId(ref) {
+    if (!ref) return ''
+    if (ref.model) return String(ref.model)
+    var address = ref.address || ''
+    if (!address || address.indexOf('specs/') === 0) return ''
+    var at = address.indexOf('@')
+    return at === -1 ? '' : address.slice(0, at)
+  }
+  function ownershipOfRef(ref) {
+    if (!modelOwnership) return null
+    var model = refModelId(ref)
+    if (!model) return null
+    try {
+      return modelOwnership(model)
+    } catch (e) {
+      return null
+    }
+  }
+
   function addrApi() {
-    return typeof window !== 'undefined' && window.InnfoAddress ? window.InnfoAddress : null
+    return typeof window !== 'undefined' && window.nnAddress ? window.nnAddress : null
   }
 
   function valueBaseAddress(ref) {
@@ -3686,6 +3810,8 @@
   }
 
   function unitEditability(kind, ref) {
+    // A `derived` model is read-only: no edit affordance regardless of kind.
+    if (ownershipOfRef(ref) === 'derived') return 'none'
     var nature = KU_NATURE[kind]
     if (nature === 'container' || kind === 'source') return 'none'
     if (kind === 'concept' || kind === 'field' || kind === 'matrix') return 'structure'
@@ -3746,28 +3872,28 @@
     if (!doc || !doc.head || KU_CSS_INJECTED[doc]) return
     KU_CSS_INJECTED[doc] = true
     var style = doc.createElement('style')
-    style.setAttribute('data-innfo-ku-css', '1')
+    style.setAttribute('data-nn-ku-css', '1')
     style.textContent = [
-      ':root{--innfo-source-paper:#fff7e6}',
-      '.innfo-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle}',
-      '.innfo-ku{display:inline-flex;align-items:center;gap:.3em;border-radius:.4em;padding:.12em .5em;font-size:.82rem;line-height:1.4;background:var(--innfo-surface-2,#f1f5f9);--c:var(--innfo-concept-1,#3b82f6);--cb:var(--innfo-concept-1-bg,#eff6ff)}',
-      '.innfo-ku[data-ku-nature=container]{border:2px solid var(--innfo-accent,#0f172a);background:var(--innfo-surface,#fff)}',
-      '.innfo-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--innfo-muted,#64748b);background:var(--innfo-surface,#fff)}',
-      '.innfo-ku[data-ku-nature=content]{border:0;background:var(--innfo-surface-2,#f1f5f9)}',
-      '.innfo-ku[data-ku-nature=content]>.innfo-ku-label,.innfo-ku[data-ku-nature=content]>.innfo-ku-value{color:var(--c)}',
-      '.innfo-ku[data-ku-nature=content]>.innfo-ku-icon{color:var(--c)}',
-      '.innfo-ku[data-ku-home=source]{background:var(--innfo-source-paper,#fff7e6)}',
-      '.innfo-ku[data-ku-home=source]>.innfo-ku-label,.innfo-ku[data-ku-home=source] .innfo-ku-icon{color:var(--innfo-muted,#64748b)}',
-      '.innfo-ku--block{display:flex;width:100%;padding:.5em .7em}',
-      '.innfo-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--innfo-muted,#64748b);cursor:pointer}',
-      '.innfo-ku-more:hover,.innfo-ku-more[aria-expanded=true]{color:var(--innfo-text,#0a0a0a);background:var(--innfo-surface-2,#f1f5f9)}',
-      '.innfo-ku-actions{position:fixed;z-index:60;display:none;align-items:center;gap:.15em;padding:.2em;background:var(--innfo-surface,#fff);border:1px solid var(--innfo-border,#e5e5e5);border-radius:.4em;box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
-      '.innfo-ku-wrap[data-ku-open=true]>.innfo-ku-actions{display:inline-flex}',
-      '.innfo-ku-action{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;border:0;background:transparent;cursor:pointer;color:var(--innfo-muted,#64748b)}',
-      '.innfo-ku-action:hover{color:var(--innfo-text,#0a0a0a);background:var(--innfo-surface-2,#f1f5f9)}',
+      ':root{--nn-source-paper:#fff7e6}',
+      '.nn-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle}',
+      '.nn-ku{display:inline-flex;align-items:center;gap:.3em;border-radius:.4em;padding:.12em .5em;font-size:.82rem;line-height:1.4;background:var(--nn-surface-2,#f1f5f9);--c:var(--nn-concept-1,#3b82f6);--cb:var(--nn-concept-1-bg,#eff6ff)}',
+      '.nn-ku[data-ku-nature=container]{border:2px solid var(--nn-accent,#0f172a);background:var(--nn-surface,#fff)}',
+      '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted,#64748b);background:var(--nn-surface,#fff)}',
+      '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2,#f1f5f9)}',
+      '.nn-ku[data-ku-nature=content]>.nn-ku-label,.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
+      '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
+      '.nn-ku[data-ku-home=source]{background:var(--nn-source-paper,#fff7e6)}',
+      '.nn-ku[data-ku-home=source]>.nn-ku-label,.nn-ku[data-ku-home=source] .nn-ku-icon{color:var(--nn-muted,#64748b)}',
+      '.nn-ku--block{display:flex;width:100%;padding:.5em .7em}',
+      '.nn-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--nn-muted,#64748b);cursor:pointer}',
+      '.nn-ku-more:hover,.nn-ku-more[aria-expanded=true]{color:var(--nn-text,#0a0a0a);background:var(--nn-surface-2,#f1f5f9)}',
+      '.nn-ku-actions{position:fixed;z-index:60;display:none;align-items:center;gap:.15em;padding:.2em;background:var(--nn-surface,#fff);border:1px solid var(--nn-border,#e5e5e5);border-radius:.4em;box-shadow:0 8px 24px rgba(0,0,0,.18);white-space:nowrap}',
+      '.nn-ku-wrap[data-ku-open=true]>.nn-ku-actions{display:inline-flex}',
+      '.nn-ku-action{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;border:0;background:transparent;cursor:pointer;color:var(--nn-muted,#64748b)}',
+      '.nn-ku-action:hover{color:var(--nn-text,#0a0a0a);background:var(--nn-surface-2,#f1f5f9)}',
       // No mode gates: an edit only ever creates a draft, so the pencil is always
       // emitted and always live. Structure edits warn inside the modal instead.
-      '.innfo-ku-change-pip{min-width:1.35em;height:1.35em;border-radius:999px;border:0;background:#b45309;color:#fff;font-size:.72rem;cursor:pointer}',
+      '.nn-ku-change-pip{min-width:1.35em;height:1.35em;border-radius:999px;border:0;background:#b45309;color:#fff;font-size:.72rem;cursor:pointer}',
     ].join('')
     doc.head.appendChild(style)
   }
@@ -3778,10 +3904,10 @@
     var doc = resolveDoc(opts)
     ensureKuCss(doc)
     var desc = describeUnit(kind, ref, opts.index)
-    var wrap = makeEl(doc, 'span', 'innfo-ku-wrap')
+    var wrap = makeEl(doc, 'span', 'nn-ku-wrap')
     var isBlock = opts.variant === 'block'
-    var badge = makeEl(doc, isBlock ? 'div' : 'span', isBlock ? 'innfo-ku innfo-ku--block' : 'innfo-ku')
-    badge.setAttribute('data-innfo-component', 'ku-unit')
+    var badge = makeEl(doc, isBlock ? 'div' : 'span', isBlock ? 'nn-ku nn-ku--block' : 'nn-ku')
+    badge.setAttribute('data-nn-component', 'ku-unit')
     badge.setAttribute('data-ku-kind', desc.kind)
     badge.setAttribute('data-ku-nature', desc.nature)
     badge.setAttribute('data-ku-home', desc.home)
@@ -3797,16 +3923,16 @@
       if (opts.body) badge.appendChild(opts.body)
     } else {
       if (desc.icon) {
-        var conceptIconEl = makeEl(doc, 'span', 'innfo-ku-icon')
+        var conceptIconEl = makeEl(doc, 'span', 'nn-ku-icon')
         conceptIconEl.setAttribute('aria-hidden', 'true')
         conceptIconEl.innerHTML = icon(desc.icon, 13)
         badge.appendChild(conceptIconEl)
       }
-      var labelEl = makeEl(doc, 'span', 'innfo-ku-label', desc.label)
+      var labelEl = makeEl(doc, 'span', 'nn-ku-label', desc.label)
       labelEl.setAttribute('title', desc.label)
       badge.appendChild(labelEl)
       if (opts.valueNode) {
-        var valueEl = makeEl(doc, 'span', 'innfo-ku-value')
+        var valueEl = makeEl(doc, 'span', 'nn-ku-value')
         valueEl.appendChild(opts.valueNode)
         badge.appendChild(valueEl)
       }
@@ -3815,7 +3941,7 @@
     wrap.appendChild(badge)
 
     // ONE affordance sits beside the badge; everything else floats below on demand.
-    var more = makeEl(doc, 'button', 'innfo-ku-more')
+    var more = makeEl(doc, 'button', 'nn-ku-more')
     more.setAttribute('type', 'button')
     more.setAttribute('data-ku-more', 'true')
     more.setAttribute('aria-expanded', 'false')
@@ -3827,9 +3953,9 @@
 
     // Action flyout (no inline space): info, reveal, citations (when there are any),
     // edit (only when the unit is editable).
-    var actions = makeEl(doc, 'span', 'innfo-ku-actions')
+    var actions = makeEl(doc, 'span', 'nn-ku-actions')
     function actionButton(name, iconName, label, handler) {
-      var b = makeEl(doc, 'button', 'innfo-ku-action')
+      var b = makeEl(doc, 'button', 'nn-ku-action')
       b.setAttribute('type', 'button')
       b.setAttribute('data-ku-action', name)
       b.setAttribute('aria-label', label)
@@ -3859,9 +3985,9 @@
 
     var changes = Number(opts.changes || (ref && ref.changes) || 0)
     if (changes > 0) {
-      var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(changes))
+      var pip = makeEl(doc, 'button', 'nn-ku-change-pip', String(changes))
       pip.setAttribute('type', 'button')
-      pip.setAttribute('data-innfo-component', 'ku-change-pip')
+      pip.setAttribute('data-nn-component', 'ku-change-pip')
       pip.setAttribute('data-ku-address', desc.address)
       pip.setAttribute('aria-label', changes + ' pending changes on ' + desc.label)
       if (typeof opts.onChanges === 'function') {
@@ -3882,11 +4008,11 @@
     var doc = opts.doc || (typeof document !== 'undefined' ? document : null)
     if (!doc || typeof doc.addEventListener !== 'function') return { destroy: function () {} }
     function descriptorOf(node) {
-      var wrap = node && node.closest ? node.closest('.innfo-ku-wrap') : null
-      var badge = wrap ? wrap.querySelector('[data-innfo-component="ku-unit"]') : null
+      var wrap = node && node.closest ? node.closest('.nn-ku-wrap') : null
+      var badge = wrap ? wrap.querySelector('[data-nn-component="ku-unit"]') : null
       if (!badge) return null
       var kind = badge.getAttribute('data-ku-kind') || ''
-      var labelEl = badge.querySelector('.innfo-ku-label')
+      var labelEl = badge.querySelector('.nn-ku-label')
       var ref = {
         address: badge.getAttribute('data-ku-address') || '',
         label: labelEl ? labelEl.textContent : badge.getAttribute('aria-label') || '',
@@ -3898,7 +4024,7 @@
       }
     }
     function closeFlyouts() {
-      var open = doc.querySelectorAll('.innfo-ku-wrap[data-ku-open=true]')
+      var open = doc.querySelectorAll('.nn-ku-wrap[data-ku-open=true]')
       for (var i = 0; i < open.length; i++) {
         open[i].setAttribute('data-ku-open', 'false')
         var moreBtn = open[i].querySelector('[data-ku-more]')
@@ -3911,7 +4037,7 @@
       // The "+" toggles the flyout; only one is open at a time.
       var moreEl = t.closest('[data-ku-more]')
       if (moreEl) {
-        var owner = moreEl.closest('.innfo-ku-wrap')
+        var owner = moreEl.closest('.nn-ku-wrap')
         var wasOpen = !!(owner && owner.getAttribute('data-ku-open') === 'true')
         closeFlyouts()
         if (owner && !wasOpen) {
@@ -3919,7 +4045,7 @@
           moreEl.setAttribute('aria-expanded', 'true')
           // The flyout is position:fixed, so an `overflow` ancestor (a table wrapper)
           // can no longer clip it. Anchor it to the badge, clamped to the viewport.
-          var fly = owner.querySelector('.innfo-ku-actions')
+          var fly = owner.querySelector('.nn-ku-actions')
           if (fly && owner.getBoundingClientRect) {
             var rect = owner.getBoundingClientRect()
             var view = doc.defaultView
@@ -3935,7 +4061,7 @@
         return
       }
       var actionEl = t.closest('[data-ku-action]')
-      var pipEl = t.closest('[data-innfo-component="ku-change-pip"]')
+      var pipEl = t.closest('[data-nn-component="ku-change-pip"]')
       if (!actionEl && !pipEl) {
         closeFlyouts()
         return
@@ -3969,14 +4095,14 @@
     if (!host || typeof host.querySelectorAll !== 'function') return
     var counts = countsByAddress || {}
     Array.prototype.forEach.call(
-      host.querySelectorAll('[data-innfo-component="ku-unit"][data-ku-address]'),
+      host.querySelectorAll('[data-nn-component="ku-unit"][data-ku-address]'),
       function (badge) {
         var address = badge.getAttribute('data-ku-address') || ''
         var n = Number(counts[address] || 0)
         var wrap = badge.parentNode || badge
         var existing =
           typeof wrap.querySelector === 'function'
-            ? wrap.querySelector('[data-innfo-component="ku-change-pip"]')
+            ? wrap.querySelector('[data-nn-component="ku-change-pip"]')
             : null
         if (n > 0) {
           badge.setAttribute('data-ku-changes', String(n))
@@ -3984,11 +4110,11 @@
             existing.textContent = String(n)
             return
           }
-          var pip = makeEl(doc, 'button', 'innfo-ku-change-pip', String(n))
+          var pip = makeEl(doc, 'button', 'nn-ku-change-pip', String(n))
           pip.setAttribute('type', 'button')
-          pip.setAttribute('data-innfo-component', 'ku-change-pip')
+          pip.setAttribute('data-nn-component', 'ku-change-pip')
           pip.setAttribute('data-ku-address', address)
-          var labelEl = badge.querySelector('.innfo-ku-label')
+          var labelEl = badge.querySelector('.nn-ku-label')
           var label = labelEl ? labelEl.textContent : badge.getAttribute('aria-label') || address
           pip.setAttribute('aria-label', n + ' pending change' + (n === 1 ? '' : 's') + ' on ' + label)
           if (typeof opts.onChanges === 'function') {
@@ -4011,14 +4137,14 @@
       throw new TypeError('KuInfoPanel: descriptor required')
     }
     var doc = resolveDoc(null)
-    var dlg = makeEl(doc, 'dialog', 'innfo-ku-info-panel')
-    dlg.setAttribute('data-innfo-component', 'ku-info-panel')
+    var dlg = makeEl(doc, 'dialog', 'nn-ku-info-panel')
+    dlg.setAttribute('data-nn-component', 'ku-info-panel')
     dlg.setAttribute('role', 'dialog')
-    var h = makeEl(doc, 'h2', 'innfo-ku-info-title', descriptor.label || descriptor.address)
+    var h = makeEl(doc, 'h2', 'nn-ku-info-title', descriptor.label || descriptor.address)
     h.setAttribute('tabindex', '-1')
     dlg.appendChild(h)
     dlg.appendChild(
-      makeEl(doc, 'p', 'innfo-ku-info-sub', descriptor.nature + ', lives in ' + descriptor.home),
+      makeEl(doc, 'p', 'nn-ku-info-sub', descriptor.nature + ', lives in ' + descriptor.home),
     )
     var rows = [
       ['Kind', descriptor.kind],
@@ -4028,18 +4154,18 @@
       ['Location', descriptor.location || ''],
       ['Editability', descriptor.editability],
     ]
-    var dl = makeEl(doc, 'dl', 'innfo-ku-info-list')
+    var dl = makeEl(doc, 'dl', 'nn-ku-info-list')
     rows.forEach(function (pair) {
       if (!pair[1]) return
-      dl.appendChild(makeEl(doc, 'dt', 'innfo-ku-info-term', pair[0]))
-      dl.appendChild(makeEl(doc, 'dd', 'innfo-ku-info-def', String(pair[1])))
+      dl.appendChild(makeEl(doc, 'dt', 'nn-ku-info-term', pair[0]))
+      dl.appendChild(makeEl(doc, 'dd', 'nn-ku-info-def', String(pair[1])))
     })
     dlg.appendChild(dl)
     var facts = descriptor.facts || {}
     Object.keys(facts).forEach(function (k) {
       if (facts[k] == null || facts[k] === '') return
-      dl.appendChild(makeEl(doc, 'dt', 'innfo-ku-info-term', k))
-      dl.appendChild(makeEl(doc, 'dd', 'innfo-ku-info-def', String(facts[k])))
+      dl.appendChild(makeEl(doc, 'dt', 'nn-ku-info-term', k))
+      dl.appendChild(makeEl(doc, 'dd', 'nn-ku-info-def', String(facts[k])))
     })
     return dlg
   }
@@ -4059,6 +4185,7 @@
     describeUnit: describeUnit,
     createKu: createKu,
     setUnitChanges: setUnitChanges,
+    setModelOwnership: setModelOwnership,
     Ku: Ku,
     KuInfoPanel: KuInfoPanel,
     resolveConceptIconName: resolveConceptIconName,

@@ -12,7 +12,11 @@ var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -7917,7 +7921,17 @@ function parseName(basename2) {
     stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
   };
 }
-var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar|changes)(?:_|$)/i;
+var CORE_BLUEPRINT_ROLE = {
+  cognnitive: "lineage-record",
+  sidecar: "sidecar",
+  changes: "changeset",
+  workspace: "catalog",
+  sources: "catalog",
+  artifacts: "catalog"
+};
+function coreBlueprintKey(parentSpecName) {
+  return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
+}
 function roleOf(i) {
   const base = baseOf(i.path);
   const parsed = parseName(base);
@@ -7926,23 +7940,11 @@ function roleOf(i) {
   const lower = base.toLowerCase();
   if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
   if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
-  const bp = NON_KNOWLEDGE_BLUEPRINT_RE.exec((i.parentSpecName ?? "").trim())?.[1].toLowerCase();
-  switch (bp) {
-    case "cognnitive":
-      return "lineage-record";
-    case "sidecar":
-      return "sidecar";
-    case "changes":
-      return "changeset";
-    case "procedures":
-      return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
-    case "workspace":
-    case "sources":
-    case "artifacts":
-      return "catalog";
-    default:
-      return "knowledge";
+  const bp = coreBlueprintKey(i.parentSpecName);
+  if (bp === "procedures") {
+    return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
   }
+  return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
 }
 
 // iNNfo/packages/nn-core/src/sourceRef.ts

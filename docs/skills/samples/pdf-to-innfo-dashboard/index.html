@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF to iNNfo Model & Dashboard — Try it · cogNNitive</title>
-  <meta name="description" content="Transform a Wikipedia article PDF into an iNNfo model with specialization and export an interactive Charts.js dashboard. Demonstrates the full traNNsform + iNNfo pipeline.">
+  <meta name="description" content="Transform a Wikipedia article PDF into an iNNfo model with specialization and export an interactive Charts.js dashboard. Demonstrates the full nn-sources + iNNfo pipeline.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,7 +120,7 @@
   <section class="hero">
     <span class="section-label">Sample Workflow</span>
     <h1>PDF to <span class="accent">iNNfo Dashboard</span></h1>
-    <p class="subtitle">Take a Wikipedia article PDF, run it through the full cogNNitive pipeline: normalize with traNNsform, model with iNNfo, and export an interactive Charts.js dashboard.</p>
+    <p class="subtitle">Take a Wikipedia article PDF, run it through the full cogNNitive pipeline: cognitivize with nn-sources, author kNNowledge with iNNfo, and export an interactive Charts.js dashboard.</p>
     <div class="arrow">&#x1F4D1; Wikipedia PDF &rarr; &#x1F4CA; Interactive Dashboard</div>
     <div class="pipeline">
       <span class="skill-badge">nn-sources</span>
@@ -164,14 +164,14 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
     <div class="steps">
       <div class="step-card">
         <h4>Save and place the PDF</h4>
-        <p>Open the Wikipedia article and save it as PDF (File &rarr; Print &rarr; Save as PDF). Place it in <code>traNNsform/input/</code>. Alternatively, download the source text and use it directly.</p>
-        <div class="code-snip">curl -o traNNsform/input/Whats_Up_Doc_1972_film.pdf "https://en.wikipedia.org/api/rest_v1/page/pdf/What%27s_Up%2C_Doc%3F_%281972_film%29"</div>
+        <p>Open the Wikipedia article and save it as PDF (File &rarr; Print &rarr; Save as PDF). Place it in <code>sources/import/</code>. Alternatively, download the source text and use it directly.</p>
+        <div class="code-snip">curl -o sources/import/Whats_Up_Doc_1972_film.pdf "https://en.wikipedia.org/api/rest_v1/page/pdf/What%27s_Up%2C_Doc%3F_%281972_film%29"</div>
       </div>
 
       <div class="step-card">
         <h4>Run the pipeline</h4>
         <p>Tell your agent to execute the pdf-to-innfo-dashboard workflow on the PDF.</p>
-        <div class="code-snip">Run the sample workflow workflows/samples/pdf-to-innfo-dashboard.workflow.md on traNNsform/input/Whats_Up_Doc_1972_film.pdf. Read the PDF, normalize it, create an iNNfo specialization and model, then export an interactive dashboard to traNNsform/output/. Name the model WhatsUpDoc_1972_V_0-1-0_film_NN.md and the dashboard WhatsUpDoc_1972_dashboard.html.</div>
+        <div class="code-snip">Run the sample workflow workflows/samples/pdf-to-innfo-dashboard.workflow.md on sources/import/Whats_Up_Doc_1972_film.pdf. Read the PDF, normalize it, create an iNNfo bluepriNNt and kNNowledge document, then export an interactive dashboard to artifacts/. Name the kNNowledge document WhatsUpDoc_1972_film_NN.md and the dashboard WhatsUpDoc_1972_dashboard.html.</div>
       </div>
 
       <div class="step-card">
@@ -186,13 +186,13 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
 
       <div class="step-card">
         <h4>Agent authors the iNNfo model</h4>
-        <p>The agent writes the specialization (level 2) and model (level 3) files, validates them via <code>innfo-mcp validate_model</code>, and confirms the schema is correct. You get two validated <code>*_NN.md</code> files.</p>
+        <p>The agent writes the bluepriNNt (level 2) and kNNowledge (level 3) documents, validates them via <code>nn-mcp validate_knowledge</code>, and confirms the schema is correct. You get two validated <code>*_NN.md</code> files.</p>
       </div>
 
       <div class="step-card">
         <h4>Agent exports the dashboard</h4>
         <p>Using <strong>nn-sources</strong>'s export pipeline, the agent reads the model, resolves the specialization, and generates a standalone HTML dashboard with Charts.js visualizations: cast grid, budget vs. box office bar chart, awards timeline, and plot summary.</p>
-        <div class="code-snip">open traNNsform/output/WhatsUpDoc_1972_dashboard.html</div>
+        <div class="code-snip">open artifacts/WhatsUpDoc_1972_dashboard.html</div>
       </div>
     </div>
   </section>
@@ -217,7 +217,7 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
       <div class="file-card">
         <div class="file-icon">&#x1F4DD;</div>
         <div class="file-name">Stage 3: Author</div>
-        <div class="file-desc"><strong>nn-innfo</strong> &mdash; Write specialization + model, validate via innfo-mcp</div>
+        <div class="file-desc"><strong>nn-innfo</strong> &mdash; Write bluepriNNt + kNNowledge, validate via nn-mcp</div>
       </div>
       <div class="file-card">
         <div class="file-icon">&#x1F4CA;</div>
@@ -233,10 +233,10 @@ Dr. Howard Bannister, a musicologist from Iowa, travels to San Francisco to comp
     <div style="margin-top: var(--space-lg); background: #F0F4F8; border: 1px solid #B8D0E0; border-radius: var(--radius); padding: var(--space-md) var(--space-lg); font-size: 14px; color: #1A3A5C;">
       <strong>&#x1F4E6; Artifacts produced:</strong>
       <ul style="margin-top: var(--space-sm); padding-left: var(--space-lg);">
-        <li><code>traNNsform/md/Whats_Up_Doc_1972_normalized.md</code> &mdash; Normalized source</li>
+        <li><code>sources/import/Whats_Up_Doc_1972_normalized.md</code> &mdash; Normalized source</li>
         <li><code>WhatsUpDoc_1972_film_V_0-1-0_spec_NN.md</code> &mdash; Film specialization (level 2)</li>
         <li><code>WhatsUpDoc_1972_V_0-1-0_film_NN.md</code> &mdash; Film model (level 3)</li>
-        <li><code>traNNsform/output/WhatsUpDoc_1972_dashboard.html</code> &mdash; Interactive dashboard</li>
+        <li><code>artifacts/WhatsUpDoc_1972_dashboard.html</code> &mdash; Interactive dashboard</li>
       </ul>
     </div>
   </section>

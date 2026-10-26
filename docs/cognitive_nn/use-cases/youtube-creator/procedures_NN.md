@@ -18,4 +18,4 @@ summary:: Transform scientific battery research into teleprompter scripts, synch
 inputs_required:: Battery Thermal Research 2026 & Audience Feedback
 outputs_expected:: Teleprompter Cue Sheet, B-Roll Checklist & Bibliography
 executed_by:: YouTube Creator
-procedure_model:: procedures/Episode_42_Production_V_1-0-0_procedures_NN.md
+procedure_model:: procedures/Episode_42_Production_procedures_NN.md

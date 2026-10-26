@@ -1,112 +1,114 @@
 ---
 layout: default
-title: Especificaciones iNNfo y Arquitectura de Documentos
-description: Cascada de niveles (L0-L3), criterio técnico Front Matter vs. Cuerpo Markdown y lógica de composición de plantillas (includes).
+title: iNNfo Specifications and Document Architecture
+description: Level cascade (L0-L3), the front matter vs. Markdown body split, and the template composition (includes) model.
 ---
 
-# Especificaciones iNNfo y Arquitectura de Documentos
+# iNNfo Specifications and Document Architecture
 
-El ecosistema **cogNNitive** estructura el conocimiento a través del sistema de especificaciones **iNNfo**. Cada documento cumple un rol dentro de una cascada de cuatro niveles, donde la información se distribuye rigurosamente entre el **YAML Front Matter** (metadatos de infraestructura) y el **Cuerpo Markdown** (dominio y estructura).
+The **cogNNitive** ecosystem structures knowledge through the **iNNfo** specification system. Every document plays a role in a four-level cascade, where information is distributed rigorously between the **YAML front matter** (infrastructure metadata) and the **Markdown body** (domain and structure).
 
 ---
 
-## 1. Cascada de Niveles de Especificación
+## 1. Specification Level Cascade
 
-La arquitectura iNNfo define cuatro niveles jerárquicos e inmutables:
+The iNNfo architecture defines four hierarchical, immutable levels:
 
-| Nivel | Rol | Documento Principal | Propósito y Sintaxis |
+| Level | Role | Main document | Purpose and syntax |
 |---|---|---|---|
-| **Nivel 0** | Meta-especificación | `defiNNe` (`defiNNe_V_0-1-0_NN.md`) | Define las meta-reglas del ecosistema, control de versiones (SemVer) y vocabulario RFC 2119. |
-| **Nivel 1** | Especificación Concreta | `iNNfo` (`iNNfo_V_0-2-1_NN.md`) | Especificación adoptada y Metaplantilla Nivel 1. Define la sintaxis `NN` (`# NN`, `## NN`, `key:: value`) y las 4 Primitivas Raíz (`Concept Definition`, `Field Definition`, `Matrix Definition`, `Marker Definition`). |
-| **Nivel 2** | Plantillas (Templates / Especializaciones) | `business`, `procedures`, `organization`, etc. | Instancia las 4 Primitivas Raíz para dominios específicos. Declara esquemas reutilizables y dependencias de composición (`includes`). |
-| **Nivel 3** | Modelos de Datos | Archivos `*_NN.md` de dominio | Instancias concretas de datos y conceptos. Son documentos ultra livianos (*lean models*) que contienen datos y un puntero de resolución (`parent_spec`). |
+| **Level 0** | Meta-specification | `defiNNition` (`defiNNition_V_0-2-0_NN.md`) | Defines the meta-rules of the ecosystem, versioning (SemVer) and RFC 2119 vocabulary. |
+| **Level 1** | Concrete specification | `iNNfo` (`iNNfo_V_0-5-0_NN.md`) | The adopted specification and Level-1 meta-template. Defines the `NN` syntax (`# NN`, `## NN`, `key:: value`) and the three root primitives: `Concept Definition`, `Field Definition`, and `Matrix Definition`. |
+| **Level 2** | bluepriNNts (domain schemas) | `business`, `procedures`, `organization`, etc. | Instantiates the root primitives for a specific domain. Declares reusable schemas and composition dependencies (`includes`). Each carries a `blueprint_version`. |
+| **Level 3** | kNNowledge documents | domain `*_NN.md` files | Concrete data and concepts. Lightweight documents that hold data plus a resolution pointer (`parent_spec`). Each carries a `knowledge_version` in front matter; the version never appears in the filename. |
+
+The current Level-1 specification is `iNNfo_V_0-5-0`. The `Marker` primitive, the `item-markers` matrix, and the `set_marker` operation were **removed** in this revision: a document that still declares a marker is rejected with `MARKERS_REMOVED`, and `set_marker` fails with `UNKNOWN_OPERATION`. Flag markers became values of the built-in `tags` Field, valued markers became ordinary Fields, and matrix scales/cycles live directly on the `# NN Matrix Definition`.
 
 ---
 
-## 2. Criterio de Distribución: Front Matter vs. Cuerpo Markdown (`# NN`)
+## 2. Distribution Criterion: Front Matter vs. Markdown Body (`# NN`)
 
-La frontera entre el **YAML Front Matter** y el **Cuerpo Markdown (`# NN`)** responde a la pregunta de diseño: *"¿Es una propiedad para el resolver/infraestructura o es parte del modelo de conocimiento?"*.
+The boundary between the **YAML front matter** and the **Markdown body (`# NN`)** answers the design question: *"Is this a property for the resolver/infrastructure, or is it part of the knowledge model?"*.
 
-### YAML Front Matter (Metadatos de Registro e Infraestructura)
-Responde a: **"¿Qué es este archivo en el sistema y cómo se resuelve?"**
+### YAML front matter (registration and infrastructure metadata)
+Answers: **"What is this file in the system, and how is it resolved?"**
 
-Es la cabecera liviana que necesitan el resolver (`innfo-core`), el servidor MCP (`innfo-mcp`) y los indexadores antes o sin necesidad de parsear el árbol de contenido completo.
+This is the lightweight header that the resolver (`@cognnitive/nn-core`), the MCP server (`@cognnitive/nn-mcp`), and indexers need before (or without) parsing the full content tree.
 
-* **Metadatos permitidos**: `level`, `spec_version`, `template_version`, `model_version`, `status`, `title`, `author`, `parent` (apuntador vertical L1), `parent_spec` (apuntador de modelo L3 a plantilla L2), `includes` (composición L2) y `tags` (etiquetas globales de archivo).
+* **Allowed metadata**: `level`, `spec_version`, `blueprint_version` (Level 2), `knowledge_version` (Level 3), `status`, `title`, `author`, `parent_spec` (the vertical pointer from a document to its parent blueprint/spec) and `includes` (Level-2 composition).
 
-### Cuerpo Markdown (Estructura y Dominio de Conocimiento)
-Responde a: **"¿Qué esquemas, conceptos, propiedades o instancias contiene este documento?"**
+### Markdown body (structure and knowledge domain)
+Answers: **"What schemas, concepts, properties or instances does this document contain?"**
 
-Expresa todo el modelo semántico mediante la sintaxis unificada `NN`:
-* **Sección de Concepto (H1)**: `# NN <Concept>`
-* **Elemento / Instancia (H2)**: `## NN <Concept>: <Element>`
-* **Propiedades de Campo**: `key:: value`
-* **Descripciones y Referencias**: Prosa Markdown con WikiLinks `[[Elemento]]`.
-
----
-
-## 3. Evolución Arquitectónica (V_0-1-0 → V_0-2-0)
-
-En las primeras versiones de la especificación (V_0-1-0), las plantillas de Nivel 2 solían declarar las definiciones de esquemas en bloques de YAML dentro del Front Matter (`concepts: []`, `fields: []`, `matrices: []`).
-
-A partir de **iNNfo V_0-2-0**, **se eliminaron por completo los bloques de esquema del Front Matter**:
-
-1. **Principio *Self-Describing Meta-Template***: Las plantillas de Nivel 2 pasaron a ser documentos iNNfo ordinarios. Su esquema se expresa en el cuerpo instanciando las 4 Primitivas Raíz de Nivel 1 (`# NN Concept Definition`, `# NN Field Definition`, etc.).
-2. **Unificación Sintáctica**: No conviven dos gramáticas distintas (YAML para plantillas vs. Markdown/NN para modelos). Todo el ecosistema habla la misma sintaxis unificada `NN`.
-3. **Lectura Humana y Git Diffs**: El contenido del cuerpo en Markdown es inmensamente más fácil de auditar, leer y comparar en control de versiones que un bloque YAML anidado.
+It expresses the entire semantic model through the unified `NN` syntax:
+* **Concept section (H1)**: `# NN <Concept>`
+* **Element / instance (H2)**: `## NN <Concept>: <Element>`
+* **Field properties**: `key:: value`
+* **Descriptions and references**: Markdown prose with wikilinks `[[Element]]`.
 
 ---
 
-## 4. Lógica de `includes:` en el Front Matter
+## 3. Architectural Evolution (V_0-1-0 → V_0-2-0)
 
-En plantillas de Nivel 2, la composición de plantillas se realiza mediante la propiedad `includes:` en el **YAML Front Matter**:
+In the earliest specification versions (V_0-1-0), Level-2 bluepriNNts declared their schema definitions in YAML blocks inside the front matter (`concepts: []`, `fields: []`, `matrices: []`).
+
+From **iNNfo V_0-2-0** onward, **schema blocks were removed from the front matter entirely**:
+
+1. **Self-Describing Meta-Template principle**: Level-2 bluepriNNts became ordinary iNNfo documents. Their schema is expressed in the body by instantiating the Level-1 root primitives (`# NN Concept Definition`, `# NN Field Definition`, etc.).
+2. **Syntactic unification**: Two grammars no longer coexist (YAML for bluepriNNts vs. Markdown/NN for kNNowledge). The whole ecosystem speaks the same unified `NN` syntax.
+3. **Human readability and Git diffs**: Markdown body content is vastly easier to audit, read, and compare in version control than a nested YAML block.
+
+---
+
+## 4. `includes:` Logic in Front Matter
+
+In Level-2 bluepriNNts, template composition is performed through the `includes:` property in the **YAML front matter**:
 
 ```yaml
 includes:
   - name: "business-model"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/business-model_V_0-1-0_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
   - name: "analysis"
-    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/analysis_V_0-1-0_NN.md"
+    url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
 ```
 
-### ¿Por qué vive en el Front Matter?
-* **Es una declaración de dependencias de infraestructura**: `includes:` equivale a una instrucción `import` o `require` de dependencias externas (*ingredientes*).
-* **Resolución Estática del Grafo (DAG)**: Al estar en el Front Matter, el resolver puede construir el Grafo Dirigido Acíclico de dependencias y traer los archivos remotos o locales antes de iniciar el parseo AST del cuerpo del documento.
-* **Composición Aditiva Horizontal**: Es una unión aditiva (Plantilla A ∪ Plantilla B). No permite *overrides* ni colisión de nombres (un choque de nombres no idénticos genera error de validación).
+### Why it lives in front matter
+* **It is an infrastructure dependency declaration**: `includes:` is equivalent to an `import` or `require` of external dependencies (*ingredients*).
+* **Static graph resolution (DAG)**: Because it lives in front matter, the resolver can build the directed acyclic dependency graph and fetch the remote or local files before starting the AST parse of the document body.
+* **Horizontal additive composition**: It is an additive union (Blueprint A ∪ Blueprint B). It does not allow *overrides* or name collisions (a collision of non-identical names produces a validation error).
 
 ---
 
-## 5. Decisión de Arquitectura: Autocontención en Encabezados (`## NN <Concept>: <Element>`)
+## 5. Architecture Decision: Self-Contained Headings (`## NN <Concept>: <Element>`)
 
-A primera vista, repetir el nombre del concepto en el encabezado de nivel 2 (`## NN <Concept>: <Element>`) puede parecer una redundancia innecesaria frente a una convención más corta como `## NN <Element>` subordinada a un `# NN <Concept>`. 
+At first glance, repeating the concept name in the level-2 heading (`## NN <Concept>: <Element>`) may look like unnecessary redundancy against a shorter convention such as `## NN <Element>` subordinated to a `# NN <Concept>`.
 
-Sin embargo, en la arquitectura de **iNNfo** esta decisión es deliberada y responde a principios fundamentales de diseño de compiladores, grafos de conocimiento y robustez operativa:
+In the **iNNfo** architecture this decision is deliberate and responds to fundamental principles of compiler design, knowledge graphs, and operational robustness:
 
-### 1. Parsing Autocontenido (Context-Free vs. Stateful)
-En la especificación CommonMark y en Markdown estándar, los encabezados **no son contenedores sintácticos cerrados**; son marcadores de línea abierta. Depender de la jerarquía implícita obliga al parser a mantener un estado mutable (`currentConcept`) mientras recorre el documento.
-Al incluir `<Concept>: <Element>` en el H2:
-* Cada Elemento es un **nodo atómico y autónomo** que puede ser procesado sin depender del recorrido del árbol completo.
-* Facilita el procesamiento de fragmentos (chunks) en pipelines de RAG, embeddings y ASTs parciales.
-* En Git, la cabecera de contexto de los diffs (`@@ ## NN Problems: High Latency @@`) preserva inmediatamente la identidad del concepto modificado.
+### 1. Self-contained parsing (context-free vs. stateful)
+In CommonMark and standard Markdown, headings **are not closed syntactic containers**; they are open line markers. Relying on implicit hierarchy forces the parser to hold mutable state (`currentConcept`) while traversing the document.
+By including `<Concept>: <Element>` in the H2:
+* Each element is an **atomic, autonomous node** that can be processed without depending on a full-tree traversal.
+* It simplifies fragment (chunk) processing in RAG, embedding, and partial-AST pipelines.
+* In Git, the diff hunk context header (`@@ ## NN Problems: High Latency @@`) immediately preserves the identity of the modified concept.
 
-### 2. Checksum Semántico e Integridad Estructural (Fail-Fast)
-La redundancia actúa como un mecanismo de verificación de integridad (*checksum*):
-* La especificación exige formalmente que el `<Concept>` del H2 coincida con el `# NN <Concept>` de la sección contenedora.
-* Si un usuario o un agente de IA copia, pega o mueve accidentalmente un bloque de elementos debajo de un concepto equivocado, el validador (`innfo-core` / `innfo-mcp`) detecta un **Concept Mismatch** y rechaza el documento de forma inmediata.
-* Sin esta regla, el parser atribuiría silenciosamente el elemento al concepto incorrecto, corrompiendo la semántica del modelo de datos sin disparar ningún error sintáctico.
+### 2. Semantic checksum and structural integrity (fail-fast)
+The redundancy acts as an integrity-check (*checksum*) mechanism:
+* The specification formally requires the H2 `<Concept>` to match the `# NN <Concept>` of its container section.
+* If a user or AI agent accidentally copies, pastes, or moves a block of elements under the wrong concept, the validator (`@cognnitive/nn-core` / `@cognnitive/nn-mcp`) detects a **Concept Mismatch** and rejects the document immediately.
+* Without this rule, the parser would silently attribute the element to the wrong concept, corrupting the data-model semantics without raising any syntactic error.
 
-### 3. Aprendizaje de la Industria (Obsidian y Dendron)
-Esta problemática ha sido validada empíricamente en el ecosistema de herramientas de notas estructuradas:
-* **Obsidian (Dataview)**: Al tratar a los encabezados Markdown como jerarquías implícitas para adjuntar metadatos (`key:: value`), las consultas complejas sufrieron limitaciones estructurales severas debido a la falta de contención de bloque nativa en Markdown.
-* **Dendron**: Descartó explícitamente el uso de jerarquías de encabezados para definir esquemas, optando por *dot-notation* explícito (`concepto.elemento`) para garantizar que las refactorizaciones y la navegación no perdieran la relación de parentesco.
+### 3. Lessons from the industry (Obsidian and Dendron)
+This problem has been validated empirically across the structured-notes tooling ecosystem:
+* **Obsidian (Dataview)**: Treating Markdown headings as implicit hierarchies for attaching metadata (`key:: value`) caused complex queries to hit severe structural limitations, due to the lack of native block containment in Markdown.
+* **Dendron**: Explicitly discarded heading hierarchies for schema definitions, choosing explicit *dot-notation* (`concept.element`) to guarantee that refactors and navigation never lost the parent relation.
 
-### 4. Ergonomía Dual: Humanos y Agentes de IA
-* **Para humanos**: En modelos extensos (cientos de líneas), el prefijo actúa como un *breadcrumb* visual inmediato al desplazarse por el archivo, evitando tener que scrollear pantallas hacia arriba para recordar el concepto activo.
-* **Para agentes de IA**: En operaciones de edición puntual (como sustitución de bloques en ventanas de contexto restringidas), los agentes a menudo no tienen en memoria el H1 superior. El prefijo explícito previene la "alucinación de scope" y garantiza inserciones precisas en el modelo.
+### 4. Dual ergonomics: humans and AI agents
+* **For humans**: In long documents (hundreds of lines) the prefix acts as an immediate visual *breadcrumb* while scrolling, avoiding the need to scroll back up to recall the active concept.
+* **For AI agents**: In surgical edit operations (such as block replacement within constrained context windows), agents often do not hold the top-level H1 in memory. The explicit prefix prevents "scope hallucination" and guarantees precise insertions into the document.
 
 ---
 
-## Enlaces Relacionados
+## Related Links
 
-- [Documentación del Motor iNNfo](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/docs/documentation/specifications.md)
-- [Especificación iNNfo V_0-2-1](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/iNNfo_V_0-2-1_NN.md)
+- [iNNfo engine documentation](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/docs/documentation/specifications.md)
+- [iNNfo specification V_0-5-0](https://github.com/cogNNitive/cogNNitive-web/blob/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md)

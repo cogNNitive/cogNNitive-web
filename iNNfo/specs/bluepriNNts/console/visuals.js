@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory()
   } else {
-    root.InnfoVisuals = factory()
+    root.nnVisuals = factory()
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict'

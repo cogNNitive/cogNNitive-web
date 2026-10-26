@@ -13,7 +13,11 @@ var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -7370,6 +7374,7 @@ var require_dist = __commonJS({
 // iNNfo/packages/nn-core/src/trannsformPrimitives.ts
 var trannsformPrimitives_exports = {};
 __export(trannsformPrimitives_exports, {
+  CORE_BLUEPRINT_ROLE: () => CORE_BLUEPRINT_ROLE,
   ENTRYPOINT_FILENAME: () => ENTRYPOINT_FILENAME,
   IGNORED_DIRECTORIES: () => IGNORED_DIRECTORIES,
   RECORD_BLUEPRINT: () => RECORD_BLUEPRINT,
@@ -7390,6 +7395,7 @@ __export(trannsformPrimitives_exports, {
   cognitivize: () => cognitivize,
   collectFamilies: () => collectFamilies,
   compareMembers: () => compareMembers,
+  coreBlueprintKey: () => coreBlueprintKey,
   createFsSourceResolver: () => createFsSourceResolver,
   displayStem: () => displayStem,
   ensureNNFilename: () => ensureNNFilename,
@@ -7487,6 +7493,17 @@ function resolveJsonPointer(content, pointer) {
   return { ok: true, value: current };
 }
 
+// iNNfo/packages/nn-core/src/schema/nature.ts
+var CORE_BLUEPRINT_NATURE = {
+  sources: { structure: "catalog", ownership: "derived" },
+  artifacts: { structure: "catalog", ownership: "derived" },
+  procedures: { structure: "catalog", ownership: "derived" },
+  changes: { structure: "members", ownership: "derived" }
+};
+function natureOfBlueprint(blueprintName) {
+  return CORE_BLUEPRINT_NATURE[blueprintName];
+}
+
 // iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
@@ -7543,7 +7560,17 @@ function procedureIdOf(basename4) {
   return displayStem(baseOf(basename4)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
-var NON_KNOWLEDGE_BLUEPRINT_RE = /^(cognnitive|workspace|procedures|sources|artifacts|sidecar|changes)(?:_|$)/i;
+var CORE_BLUEPRINT_ROLE = {
+  cognnitive: "lineage-record",
+  sidecar: "sidecar",
+  changes: "changeset",
+  workspace: "catalog",
+  sources: "catalog",
+  artifacts: "catalog"
+};
+function coreBlueprintKey(parentSpecName) {
+  return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
+}
 function segmentsOf(path4) {
   return path4.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
@@ -7555,23 +7582,11 @@ function roleOf(i) {
   const lower = base.toLowerCase();
   if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
   if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
-  const bp = NON_KNOWLEDGE_BLUEPRINT_RE.exec((i.parentSpecName ?? "").trim())?.[1].toLowerCase();
-  switch (bp) {
-    case "cognnitive":
-      return "lineage-record";
-    case "sidecar":
-      return "sidecar";
-    case "changes":
-      return "changeset";
-    case "procedures":
-      return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
-    case "workspace":
-    case "sources":
-    case "artifacts":
-      return "catalog";
-    default:
-      return "knowledge";
+  const bp = coreBlueprintKey(i.parentSpecName);
+  if (bp === "procedures") {
+    return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
   }
+  return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
 }
 function isExcludedPath(path4) {
   const segs = segmentsOf(path4);
@@ -7631,9 +7646,11 @@ function isModelCandidate(f) {
 }
 function isConsoleModel(f) {
   if (isExcludedPath(f.path)) return false;
-  const role = roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) });
+  const parentSpecName = parentSpecNameOf(f.frontmatter);
+  const role = roleOf({ path: f.path, parentSpecName });
   if (role === "knowledge") return true;
-  return role === "procedure" && !segmentsOf(f.path).includes("procedures");
+  if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
+  return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
 }
 var VERSION_TOKEN_RE = /_V_\d+-\d+-\d+/i;
 var STRUCTURAL_STEM_RE = /^(?:iNNfo|defiNNition|defiNNe|meta-bluepriNNt)(?:_V_\d+-\d+-\d+)?$/i;
@@ -9147,7 +9164,9 @@ function extractDeclaredCitations(file) {
       for (const raw of splitSourceFieldValue(fm.sources)) push(raw, "sources");
     }
   } else if (ext === "html" || ext === "htm") {
-    const modelMatch = file.content.match(/<script[^>]+id=["']innfo-model["'][^>]*>([\s\S]*?)<\/script>/i);
+    const modelMatch = file.content.match(
+      /<script[^>]+id=["'](?:innfo|nn)-model["'][^>]*>([\s\S]*?)<\/script>/i
+    );
     if (modelMatch) {
       try {
         const parsed = JSON.parse(modelMatch[1].trim());
@@ -10367,6 +10386,7 @@ async function importRaw(root, externalAbs, o = {}) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  CORE_BLUEPRINT_ROLE,
   ENTRYPOINT_FILENAME,
   IGNORED_DIRECTORIES,
   RECORD_BLUEPRINT,
@@ -10387,6 +10407,7 @@ async function importRaw(root, externalAbs, o = {}) {
   cognitivize,
   collectFamilies,
   compareMembers,
+  coreBlueprintKey,
   createFsSourceResolver,
   displayStem,
   ensureNNFilename,

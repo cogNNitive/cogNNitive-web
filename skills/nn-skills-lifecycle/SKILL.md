@@ -82,6 +82,32 @@ never enters the manifest and is never fetched by `install`/`update`/`sync`: it
 installs only through the explicit `install-external` subcommand. See the
 guarantee tiers in [`docs/innfo/template-package-spec.md`](../../docs/innfo/template-package-spec.md).
 
+**Talking to the user before installing a third-party skill.** The consent
+prompt is the last step, not the first. When an external skill becomes relevant —
+usually because a task needs a capability the ecosystem does not cover yet —
+raise it in the conversation first, briefly and without alarm, tailored to that
+skill and that task:
+
+- One line on what the skill would do *for the user's current work* (the reason
+  it came up), not a generic description.
+- State that it is third-party: cogNNitive did not review it and does not vouch
+  for its author.
+- Recommend having a security skill check it first — routine hygiene, not a
+  warning. The install notice prints the link to
+  [Installing Third-Party Skills](https://cognnitive.com/skills/documentation/#/skills/installing-third-party-skills),
+  which carries the how and the why.
+- Offer to proceed either way, and make "not now" as easy as "yes".
+
+Never recite a list of attack types at the user, and never raise this at
+bootstrap — it belongs to the moment an external skill is actually proposed.
+
+Example (match the user's language):
+
+> I need to read that scanned PDF, and the skill that does it isn't from
+> cogNNitive (it's maintained by <author>), so we haven't reviewed it. I'd
+> suggest the security skill checks it first — quick and routine. Want me to
+> install it, or would you rather review it first? You can see it here: <link>.
+
 **Consent is mandatory** for every mutating command (`install`,
 `install-external`, `update`, `sync`): `--yes` skips the interactive prompt;
 without a TTY and without `--yes`, the script prints `needs decision: ...` and

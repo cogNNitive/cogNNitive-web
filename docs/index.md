@@ -8,9 +8,9 @@ description: Turn ideas scattered in brains and files into a living, structured 
 
 Turn ideas, insights, and data scattered through human brains and computer files into a **living knowledge base powered by AI** that continuously evolves, maintains absolute traceability, and never locks you into proprietary silos.
 
-- [Read the docs](https://cognnitive.com/innfo/documentation/)
+- [Read the docs](https://cognnitive.com/documentation/)
 - [Real-World Use Cases](use-cases.md)
-- [Explore Agent Skills](https://cognnitive.com/skills)
+- [Explore Agent Skills](https://cognnitive.com/#agent-skills)
 
 ---
 

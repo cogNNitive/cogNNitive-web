@@ -54,7 +54,7 @@ origin_uri:: sources/import/battery_thermal_research_2026.pdf
 raw_path:: sources/import/battery_thermal_research_2026.pdf
 format:: md
 summary:: Normalized battery thermal study with section anchors and cycle degradation metrics.
-source_model:: sources/nn/battery_thermal_research_2026.md
+source_model:: sources/import/battery_thermal_research_2026.md
 tags:: [battery, normalized, citations]
 status:: ready
 
@@ -64,14 +64,14 @@ origin_uri:: sources/import/audience_feedback_episode_41.md
 raw_path:: sources/import/audience_feedback_episode_41.md
 format:: md
 summary:: Normalized audience feedback and technical topic requests for Episode 42.
-source_model:: sources/nn/audience_feedback_episode_41.md
+source_model:: sources/import/audience_feedback_episode_41.md
 tags:: [feedback, normalized, requests]
 status:: ready
 
 ## NN Source: Audience Survey Data
 type:: local_file
-origin_uri:: sources/nn/audience_survey_data.csv
-raw_path:: sources/nn/audience_survey_data.csv
+origin_uri:: sources/import/audience_survey_data.csv
+raw_path:: sources/import/audience_survey_data.csv
 format:: csv
 summary:: Structured audience polling responses on EV charging habits and concerns.
 tags:: [survey, tabular, audience]
@@ -79,10 +79,10 @@ status:: ready
 
 ## NN Source: Competitor Benchmark Transcript
 type:: local_file
-origin_uri:: sources/nn/competitor_benchmark_transcript.md
-raw_path:: sources/nn/competitor_benchmark_transcript.md
+origin_uri:: sources/import/competitor_benchmark_transcript.md
+raw_path:: sources/import/competitor_benchmark_transcript.md
 format:: md
 summary:: Normalized transcript of competitor charging test with timestamped claims.
-source_model:: sources/nn/competitor_benchmark_transcript.md
+source_model:: sources/import/competitor_benchmark_transcript.md
 tags:: [competitor, transcript, benchmarks]
 status:: ready

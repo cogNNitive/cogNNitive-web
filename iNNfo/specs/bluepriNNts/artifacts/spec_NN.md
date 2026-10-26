@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-5-0"
+blueprint_version: "V_0-5-1"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -17,6 +17,9 @@ relationship_types:
     enabled: false
   sequence:
     enabled: false
+nature:
+  structure: catalog
+  ownership: derived
 ---
 
 > [!NOTE]

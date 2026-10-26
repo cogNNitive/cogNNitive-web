@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>cogNNitive — Knowledge Evolution Framework</title>
   <meta name="description" content="Leverage ideas, information and data scattered through brains and computer files into a living knowledge base powered by AI that constantly evolves.">
-  <meta name="generator" content="https://cognnitive.com/skills/nn-design-presets">
+  <meta name="generator" content="https://github.com/cogNNitive/cogNNitive/tree/main/skills/nn-design-presets">
   <link rel="alternate" type="text/markdown" href="index.md" title="cogNNitive — Markdown source">
   <link rel="icon" type="image/svg+xml" href="logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -118,6 +118,19 @@
       text-align: center;
       background: linear-gradient(180deg, var(--brand-subtle) 0%, var(--canvas) 100%);
     }
+    .hero .hero-eyebrow {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brand);
+      background: var(--brand-subtle);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 16px;
+      margin: 0 0 20px;
+    }
     .hero h1 {
       font-size: 48px;
       font-weight: 800;
@@ -166,6 +179,25 @@
     }
     .card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
     .card p { font-size: 15px; color: var(--ink-muted); line-height: 1.5; }
+
+    /* Console screenshot */
+    .console-shot {
+      margin: 0 auto 40px;
+      max-width: 980px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--canvas);
+      box-shadow: 0 24px 60px -24px rgba(77, 14, 78, 0.28);
+    }
+    .console-shot img { display: block; width: 100%; height: auto; }
+    .console-shot figcaption {
+      font-size: 12.5px;
+      color: var(--ink-muted);
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
 
     /* Diagram Card Container */
     .diagram-card {
@@ -406,184 +438,350 @@
       .heartbeat-word { animation: none; }
       .dash-flow-anim, .dash-feedback-anim { animation: none; }
     }
-    .source-wrapper {
+    .ingest-flow {
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: center;
       gap: 6px;
       width: 100%;
-      max-width: 230px;
     }
-    .source-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
-      width: 100%;
-    }
-    .source-chip {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
-      border-radius: 7px;
-      padding: 4px 3px;
+    .ingest-step {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 2px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      font-size: 9.5px;
-      font-weight: 600;
-      color: #374151;
-      transition: all 0.2s;
-    }
-    .source-chip:hover {
-      border-color: #007AFF;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(0,122,255,0.12);
-    }
-    .source-chip svg {
-      width: 16px;
-      height: 16px;
-    }
-    .import-paths-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      width: 100%;
-      justify-content: center;
-      margin-top: 4px;
-    }
-    .path-pill {
-      font-family: var(--mono);
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #F1F5F9;
-      color: #475569;
-      border: 1px solid #E2E8F0;
-    }
-    .path-pill.highlight {
-      background: #EBF3FF;
-      color: #0066CC;
-      border-color: rgba(0,102,204,0.3);
-      font-weight: 600;
-    }
-    .manage-model-card {
-      width: 100%;
-      background: #140815;
-      border: 1px solid rgba(77, 14, 78, 0.35);
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 14px rgba(77, 14, 78, 0.12);
-      text-align: left;
-    }
-    .manage-model-header {
-      background: #230F25;
-      padding: 5px 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(77,14,78,0.3);
-      font-family: var(--mono);
-      font-size: 10px;
-      color: #E2E8F0;
-    }
-    .model-tree-box {
-      width: 100%;
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-family: var(--mono);
-      font-size: 10px;
-      line-height: 1.4;
-      color: #1F2937;
-      text-align: left;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    }
-    .tree-node {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 2px 0;
-    }
-    .tree-node.root {
-      font-weight: 700;
-      color: var(--brand);
-      border-bottom: 1px dashed rgba(77,14,78,0.15);
-      padding-bottom: 4px;
-      margin-bottom: 4px;
-    }
-    .tree-branch {
-      margin-left: 12px;
-      padding-left: 8px;
-      border-left: 2px solid rgba(77,14,78,0.18);
-    }
-    .tree-leaf {
-      margin-left: 10px;
-      padding-left: 6px;
-      border-left: 1.5px dashed rgba(77,14,78,0.25);
-    }
-    .tree-tag {
-      font-size: 8.5px;
-      padding: 1px 4px;
-      border-radius: 3px;
-      background: var(--brand-subtle);
-      color: var(--brand);
-      font-weight: 600;
-    }
-    .access-modes-row {
-      display: flex;
-      gap: 4px;
-      width: 100%;
-      justify-content: center;
-      margin-top: 6px;
-      flex-wrap: wrap;
-    }
-    .access-badge {
-      font-size: 9px;
-      font-weight: 600;
-      padding: 3px 6px;
-      border-radius: 999px;
-      background: var(--brand-subtle);
-      color: var(--brand);
-      border: 1px solid rgba(77,14,78,0.18);
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .export-deliverables-card {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .deliverable-item {
       background: #FFFFFF;
       border: 1px solid #E5E7EB;
       border-radius: 8px;
-      padding: 6px 10px;
+      padding: 6px 9px;
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #374151;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      text-align: center;
+    }
+    .ingest-step .step-icon { font-size: 14px; }
+    .ingest-step.process {
+      background: #F8FAFC;
+      border-style: dashed;
+      color: #64748B;
+      font-weight: 500;
+      font-size: 9px;
+      font-style: italic;
+    }
+    .ingest-step.folder {
+      flex: 1 1 0;
+      min-width: 0;
+      align-items: stretch;
+      text-align: left;
+      padding: 7px 9px;
+    }
+    .ingest-step.folder .folder-head {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 4px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .ingest-step.folder .folder-files {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 500;
+      color: #64748B;
+    }
+    .ingest-step.folder .folder-files li {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ingest-arrow {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: #94A3B8;
+      font-size: 13px;
+      line-height: 1;
+      text-align: center;
+    }
+    .ingest-arrow .arrow-label {
+      font-family: var(--mono);
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #64748B;
+      white-space: nowrap;
+    }
+    .graph-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .graph-tabs {
+      display: flex;
+      gap: 3px;
+      margin-bottom: 10px;
+    }
+    .graph-tab {
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 6px 6px 0 0;
+      background: #EEF2F7;
+      color: #64748B;
+      border: 1px solid #E2E8F0;
+      border-bottom: none;
+    }
+    .graph-tab.active {
+      background: #FFFFFF;
+      color: var(--brand);
+      border-color: rgba(77,14,78,0.25);
+      font-weight: 700;
+    }
+    .graph-node {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+      width: 100%;
+      max-width: 176px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 5px 9px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      position: relative;
+      text-align: left;
+    }
+    .graph-node .node-kind {
+      font-family: var(--mono);
+      font-size: 7px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94A3B8;
+    }
+    .graph-node .node-name {
       font-size: 10.5px;
+      font-weight: 600;
+      color: #1F2937;
+    }
+    .graph-node.element {
+      border-color: rgba(77,14,78,0.35);
+      box-shadow: 0 3px 10px -4px rgba(77,14,78,0.25);
+    }
+    .graph-node.source {
+      background: #FAFAFC;
+      border-style: dashed;
+    }
+    .graph-node .node-agent {
+      position: absolute;
+      top: 3px;
+      right: 6px;
+      font-size: 11px;
+    }
+    .graph-edge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 2px 0;
+      color: #CBD5E1;
+    }
+    .graph-edge .edge-arrow { font-size: 12px; line-height: 1; }
+    .graph-edge .edge-label {
+      font-family: var(--mono);
+      font-size: 7px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #64748B;
+    }
+    .manage-split {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .manage-graph {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .manage-graph .graph-node { max-width: 100%; }
+    .graph-node .node-fields {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 2px;
+    }
+    .field-chip {
+      font-family: var(--mono);
+      font-size: 6.5px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #EEF2F7;
+      color: #64748B;
+    }
+    .field-chip.active {
+      background: var(--brand-subtle);
+      color: var(--brand);
+      font-weight: 700;
+      box-shadow: 0 0 0 1px rgba(77,14,78,0.3);
+    }
+    .manage-change {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 3px;
+    }
+    .change-arrow {
+      color: var(--brand);
+      font-size: 13px;
+      line-height: 1;
+    }
+    .change-doc {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      max-width: 46px;
+      background: #FFFFFF;
+      border: 1px solid rgba(77,14,78,0.25);
+      border-radius: 8px;
+      padding: 5px 5px;
+      box-shadow: 0 2px 6px rgba(77,14,78,0.08);
+      text-align: center;
+    }
+    .change-doc .doc-icon { font-size: 12px; }
+    .change-doc .doc-text {
+      font-family: var(--mono);
+      font-size: 6.5px;
+      font-weight: 700;
+      color: var(--brand);
+      line-height: 1.2;
+    }
+    .manage-chat {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .console-head {
+      font-size: 8px;
+      font-weight: 700;
+      color: #94A3B8;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #EEF2F7;
+    }
+    .console-msg {
+      font-size: 8px;
+      line-height: 1.35;
+      padding: 5px 7px;
+      border-radius: 10px;
+    }
+    .console-msg.user {
+      align-self: flex-end;
+      background: var(--brand-subtle);
+      color: var(--brand);
+      border-bottom-right-radius: 3px;
+    }
+    .console-msg.agent {
+      align-self: flex-start;
+      background: #F1F5F9;
+      color: #334155;
+      border-bottom-left-radius: 3px;
+    }
+    .artifact-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .artifact-source {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      background: #F6EEF6;
+      border: 1px solid rgba(77,14,78,0.25);
+      border-radius: 10px;
+      padding: 9px 11px;
+      text-align: center;
+    }
+    .artifact-source .as-icon { font-size: 16px; }
+    .artifact-source .as-name { font-size: 10px; font-weight: 700; color: var(--brand); }
+    .artifact-arrows {
+      flex: 0 0 auto;
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    .art-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      color: var(--brand);
+    }
+    .art-arrow .art-arrow-glyph { font-size: 13px; line-height: 1; }
+    .art-arrow .art-arrow-label {
+      font-family: var(--mono);
+      font-size: 6.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #64748B;
+      white-space: nowrap;
+    }
+    .artifact-list {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .artifact-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 9.5px;
       font-weight: 600;
       color: #1F2937;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
-    .deliverable-item .icon-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .deliverable-item .tag {
-      font-size: 9px;
-      font-family: var(--mono);
-      padding: 2px 5px;
-      border-radius: 4px;
-      background: #ECFDF5;
-      color: #059669;
-      border: 1px solid rgba(5,150,105,0.2);
-    }
+    .artifact-item .art-icon { font-size: 11px; }
     .feedback-loop-track {
       margin-top: 24px;
       padding-top: 18px;
@@ -889,8 +1087,6 @@
       <nav class="nav">
         <a href="https://cognnitive.com" class="nav-link active">cogNNitive</a>
         <a href="use-cases.html" class="nav-link">Use Cases</a>
-        <a href="https://cognnitive.com/innfo" class="nav-link">iNNfo</a>
-        <a href="https://cognnitive.com/skills" class="nav-link">Skills</a>
         <a href="https://cognnitive.com/documentation/" target="_blank" rel="noopener noreferrer" class="nav-link">Docs</a>
         <a href="contact.html" class="nav-link">Contact</a>
       </nav>
@@ -905,13 +1101,14 @@
     <!-- Hero Section with Integrated Action Rotator -->
     <section class="hero">
       <div class="container">
-        <h1>Turn <span id="hero-rotator" class="hero-rotator-inline" aria-live="polite"><span class="active">💡 ideas</span><span aria-hidden="true">📅 meetings</span><span aria-hidden="true">📄 documents</span><span aria-hidden="true">📊 data</span><span aria-hidden="true">📁 files</span><span aria-hidden="true">📽️ slides</span><span aria-hidden="true">✉️ emails</span><span aria-hidden="true">📰 articles</span><span aria-hidden="true">📕 PDFs</span><span aria-hidden="true">🚀 ANYTHING!</span></span> into Actionable Knowledge using AI</h1>
-        <p>The open Knowledge Evolution Framework that unifies your scattered inputs into structured, living kNNowledge with radical traceability.</p>
+        <p class="hero-eyebrow">AI based Information Management</p>
+        <h1>Turn <span id="hero-rotator" class="hero-rotator-inline" aria-live="polite"><span class="active">💡 ideas</span><span aria-hidden="true">📅 meetings</span><span aria-hidden="true">📄 documents</span><span aria-hidden="true">📊 data</span><span aria-hidden="true">📁 files</span><span aria-hidden="true">📽️ slides</span><span aria-hidden="true">✉️ emails</span><span aria-hidden="true">📰 articles</span><span aria-hidden="true">📕 PDFs</span><span aria-hidden="true">🚀 ANYTHING!</span></span> into Evolving Knowledge</h1>
+        <p>CogNNitive is a Knowledge Evolution Framework that turns information scattered across multiple folders and files into a structured, living kNNowledge base with radical traceability.</p>
         <div class="hero-actions">
           <a href="#how-to-use" class="btn-primary">🚀 Getting Started &rarr;</a>
           <a href="contact.html" class="btn-secondary">💬 Contact Us</a>
           <a href="https://cognnitive.com/documentation/" class="btn-secondary">Read the docs</a>
-          <a href="https://cognnitive.com/skills" class="btn-secondary">Explore Skills</a>
+          <a href="#agent-skills" class="btn-secondary">Explore Skills</a>
         </div>
 
         <!-- The Living Knowledge Pipeline (Hero Showcase) -->
@@ -925,43 +1122,36 @@
               <div class="flow-card">
                 <span class="flow-phase-tag p1">Phase 1: IMPORT</span>
                 <div class="flow-card-preview">
-                  <div class="source-wrapper">
-                    <div class="source-grid">
-                      <div class="source-chip" title="Conversational Thoughts &amp; Ideas">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-5.04z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-5.04z"></path></svg>
-                        <span>Thoughts</span>
-                      </div>
-                      <div class="source-chip" title="Portable Document Format">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/></svg>
-                        <span>PDF</span>
-                      </div>
-                      <div class="source-chip" title="Whisper Audio Transcription">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                        <span>Audio/OCR</span>
-                      </div>
-                      <div class="source-chip" title="Word Documents">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8l2 8 2-6 2 6 2-8"/></svg>
-                        <span>DOCX</span>
-                      </div>
-                      <div class="source-chip" title="Spreadsheets &amp; Data">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                        <span>CSV/XLSX</span>
-                      </div>
-                      <div class="source-chip" title="Notion, Web &amp; Wikis">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-                        <span>Notion/Web</span>
-                      </div>
+                  <div class="ingest-flow">
+                    <div class="ingest-step folder">
+                      <div class="folder-head"><span class="step-icon">📁</span><span>Local folders</span></div>
+                      <ul class="folder-files">
+                        <li>📕 report.pdf</li>
+                        <li>🎵 interview.mp3</li>
+                        <li>📄 notes.txt</li>
+                        <li>📗 budget.xlsx</li>
+                        <li>📘 brief.docx</li>
+                      </ul>
                     </div>
-                    <div class="import-paths-bar">
-                      <span class="path-pill highlight" title="Immutable Originals">sources/import/</span>
-                      <span class="path-pill" title="Intermediate Extraction Scratchpad">staging/</span>
-                      <span class="path-pill highlight" title="Normalized Markdown with #heading-slugs">sources/normalized/</span>
+                    <div class="ingest-arrow" aria-hidden="true">
+                      <span>&rarr;</span>
+                      <span class="arrow-label">Normalization</span>
+                    </div>
+                    <div class="ingest-step folder">
+                      <div class="folder-head"><span class="step-icon">🗂️</span><span>Sources</span></div>
+                      <ul class="folder-files">
+                        <li>📄 report.pdf_NN.md</li>
+                        <li>📄 interview.mp3_NN.md</li>
+                        <li>📄 notes.txt_NN.md</li>
+                        <li>📄 budget.xlsx_NN.md</li>
+                        <li>📄 brief.docx_NN.md</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
                 <div class="flow-card-body">
-                  <h3><span>1. Ingestion &amp; Lineage</span></h3>
-                  <p>Ingest files, recordings, and raw notes into immutable <code>sources/import/</code>, stage extraction buffers, and normalize into clean Markdown in <code>sources/normalized/</code>.</p>
+                  <h3><span>File ingestion</span></h3>
+                  <p>cogNNitive reads the files you already have in your local folders and keeps a verbatim copy — originals are never touched. Sources stay in plain text: Markdown, JSON or CSV. If a file isn't readable text — a PDF, a DOCX, an audio file — it's converted to plain text first. That plain text is what the AI reads and cites, and what feeds your knowledge base.</p>
                 </div>
               </div>
 
@@ -976,37 +1166,59 @@
               <div class="flow-card">
                 <span class="flow-phase-tag p2">Phase 2: MANAGE</span>
                 <div class="flow-card-preview">
-                  <div class="model-tree-box">
-                    <div class="tree-node root">
-                      <span>📦</span>
-                      <span><strong>Model:</strong> Business_NN.md</span>
+                  <div class="graph-view">
+                    <div class="graph-tabs">
+                      <span class="graph-tab">Table</span>
+                      <span class="graph-tab active">Graph</span>
+                      <span class="graph-tab">Sources</span>
                     </div>
-                    <div class="tree-branch">
-                      <div class="tree-node">
-                        <span>📑</span>
-                        <span><strong>Concept:</strong> ProductFeature</span>
+                    <div class="manage-split">
+                      <div class="manage-graph">
+                        <div class="graph-node">
+                          <span class="node-kind">Concept</span>
+                          <span class="node-name">ProductFeature</span>
+                        </div>
+                        <div class="graph-edge">
+                          <span class="edge-arrow">&#8595;</span>
+                          <span class="edge-label">has</span>
+                        </div>
+                        <div class="graph-node element">
+                          <span class="node-agent" title="Editable by your AI agent">&#129302;</span>
+                          <span class="node-kind">Element</span>
+                          <span class="node-name">RealTimeSync</span>
+                          <span class="node-fields">
+                            <span class="field-chip active">status</span>
+                            <span class="field-chip">priority</span>
+                            <span class="field-chip">owner</span>
+                          </span>
+                        </div>
+                        <div class="graph-edge">
+                          <span class="edge-arrow">&#8595;</span>
+                          <span class="edge-label">cites &#8617;</span>
+                        </div>
+                        <div class="graph-node source">
+                          <span class="node-kind">Source</span>
+                          <span class="node-name">&#128196; meeting_q3.md</span>
+                        </div>
                       </div>
-                      <div class="tree-leaf">
-                        <div class="tree-node">
-                          <span>🔹</span>
-                          <span><strong>Element:</strong> RealTimeSync <span class="tree-tag">sources::</span></span>
+                      <div class="manage-change">
+                        <span class="change-arrow" aria-hidden="true">&larr;</span>
+                        <div class="change-doc">
+                          <span class="doc-icon">&#128196;</span>
+                          <span class="doc-text">status &rarr; active</span>
                         </div>
-                        <div class="tree-node" style="color: #64748B; font-size: 9px;">
-                          <span>▫️</span>
-                          <span><strong>Fields:</strong> status, priority, owner</span>
-                        </div>
+                      </div>
+                      <div class="manage-chat">
+                        <div class="console-head">&#128172; Chat</div>
+                        <div class="console-msg user">Can you mark RealTimeSync as active?</div>
+                        <div class="console-msg agent">Sure! Status updated to active &#9989;</div>
                       </div>
                     </div>
-                  </div>
-                  <div class="access-modes-row">
-                    <span class="access-badge" title="Obsidian / VS Code / Notepad">📝 Text Editors</span>
-                    <span class="access-badge" title="Visual Graph Navigation">🛠️ Web App</span>
-                    <span class="access-badge" title="OpenCode / Antigravity / Claude Code">🤖 AI Agents</span>
                   </div>
                 </div>
                 <div class="flow-card-body">
-                  <h3><span>2. Semantic Modeling (SSOT)</span></h3>
-                  <p>Structure knowledge into predictable **kNNowledge** with fine-grained citations (<code>sources:: [doc.md#slug]</code>). Access and edit freely via text editors, web app, or AI agents.</p>
+                  <h3><span>Knowledge modeling</span></h3>
+                  <p>The single source of truth for your knowledge: plain-text sources become structured kNNowledge — concepts, elements and fields — that reads like a database and traces every record back to the exact source section. Browse and edit it in the web console, or let your AI agent do it for you.</p>
                 </div>
               </div>
 
@@ -1021,33 +1233,32 @@
               <div class="flow-card">
                 <span class="flow-phase-tag p3">Phase 3: EXPORT</span>
                 <div class="flow-card-preview">
-                  <div class="export-deliverables-card">
-                    <div class="deliverable-item">
-                      <div class="icon-badge">
-                        <span>📊</span>
-                        <span>Interactive Dashboard</span>
-                      </div>
-                      <span class="tag">export/html</span>
+                  <div class="artifact-flow">
+                    <div class="artifact-source">
+                      <span class="as-icon">&#129504;</span>
+                      <span class="as-name">kNNowledge</span>
                     </div>
-                    <div class="deliverable-item">
-                      <div class="icon-badge">
-                        <span>📑</span>
-                        <span>Exec Brief &amp; BibTeX</span>
+                    <div class="artifact-arrows">
+                      <div class="art-arrow gen">
+                        <span class="art-arrow-glyph">&#8594;</span>
+                        <span class="art-arrow-label">generates</span>
                       </div>
-                      <span class="tag">export/docx</span>
+                      <div class="art-arrow fb">
+                        <span class="art-arrow-label">feedback</span>
+                        <span class="art-arrow-glyph">&#8592;</span>
+                      </div>
                     </div>
-                    <div class="deliverable-item" style="background: #FDF4FD; border-color: rgba(77,14,78,0.2);">
-                      <div class="icon-badge">
-                        <span style="color: var(--brand);">&#x2714;</span>
-                        <span style="font-size: 9.5px; font-family: var(--mono); color: var(--brand);">derived_from: [Model_NN]</span>
-                      </div>
-                      <span class="tag" style="background: var(--brand-subtle); color: var(--brand);">Lineage</span>
+                    <div class="artifact-list">
+                      <div class="artifact-item"><span class="art-icon">&#128421;&#65039;</span><span>Domain Console</span></div>
+                      <div class="artifact-item"><span class="art-icon">&#127760;</span><span>Web Site</span></div>
+                      <div class="artifact-item"><span class="art-icon">&#128196;</span><span>Executive brief</span></div>
+                      <div class="artifact-item"><span class="art-icon">&#128209;</span><span>Specification</span></div>
                     </div>
                   </div>
                 </div>
                 <div class="flow-card-body">
-                  <h3><span>3. Artifacts &amp; Feedback</span></h3>
-                  <p>Project role-tailored **Artifacts** — dashboards, executive briefs, and specifications into <code>artifacts/</code>. Annotated stakeholder reviews re-ingest into sources to continuously evolve kNNowledge.</p>
+                  <h3><span>Artifact Generation</span></h3>
+                  <p>From your kNNowledge, cogNNitive generates the artifacts each moment needs — the domain console, a website, an executive brief, a specification — consistent and traced back to the source. Reviews on those artifacts flow back in, so the knowledge keeps evolving.</p>
                 </div>
               </div>
 
@@ -1063,7 +1274,7 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                 </svg>
-                <span>Closed Feedback Loop: Annotated artifacts &amp; revisions re-ingest into <code>sources/import/</code> to evolve the SSOT</span>
+                <span>Closed Feedback Loop: annotated artifacts and revisions flow back into your sources, so the knowledge keeps evolving.</span>
               </div>
             </div>
 
@@ -1148,12 +1359,12 @@
           <pre class="mermaid">
 flowchart LR
     subgraph P1["1. IMPORT &amp; NORMALIZE"]
-        RAW["📁 Raw Inputs\n(Audio, Docs, Sheets, Notes)"] --> NORM["📝 sources/normalized/\n(Markdown + Citations)"]
+        RAW["📁 Raw Inputs\n(Audio, Docs, Sheets, Notes)"] --> NORM["📝 sources/import/ + _sidecar_NN.md\n(Markdown + Citations)"]
     end
 
     subgraph P2["2. MANAGE (Living SSOT)"]
         NORM --> MOD["🧠 kNNowledge/*_NN.md\n(Concepts, Elements, Fields)"]
-        MOD <--> EDIT["👥 Text Editors · Web App · AI Agents"]
+        MOD <--> EDIT["👥 Text Editors · Console · AI Agents"]
     end
 
     subgraph P3["3. EXPORT &amp; FEEDBACK"]
@@ -1232,7 +1443,7 @@ flowchart LR
       <div class="container">
         <div class="section-title">
           <h2>How to Get Started</h2>
-          <p>Get started with cogNNitive in 3 simple steps inside your favorite AI agent workspace.</p>
+          <p>Get started with cogNNitive in 3 simple steps inside your domaiNN.</p>
         </div>
         <div class="steps-wrapper">
           <div class="step-card">
@@ -1256,6 +1467,81 @@ flowchart LR
               <h4>Enjoy Living Knowledge</h4>
               <p>Your agent automatically installs the skills, configures tools, and presents your interactive workflow menu.</p>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Agent Skills: Modular powers for your AI agent -->
+    <section id="agent-skills">
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">🤖 Agent Skills</span>
+          <h2>Give your AI agent specialized powers</h2>
+          <p>cogNNitive ships as modular skills that extend any AI coding agent — Claude Code, Cursor, Antigravity, Codex, or OpenCode Desktop.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">🧭</div>
+            <h3>nn</h3>
+            <p>The router. Reads your intent and hands off to the right skill or workflow.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">📚</div>
+            <h3>nn-sources</h3>
+            <p>Bootstrap, scan and cognitivize your files into citable sources with provenance.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🧠</div>
+            <h3>nn-innfo</h3>
+            <p>Author, validate and review iNNfo kNNowledge and bluepriNNts.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🛡️</div>
+            <h3>nn-preflight</h3>
+            <p>Environment readiness and integrity checks before you model.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🎨</div>
+            <h3>nn-design-presets</h3>
+            <p>Design system and presets for building sites and Docsify documentation.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔄</div>
+            <h3>nn-upgrade</h3>
+            <p>Guided upgrades for domaiNN workspaces and bluepriNNt versions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Domain Console: the interface over your kNNowledge -->
+    <section style="background: var(--canvas-inert);">
+      <div class="container">
+        <div class="section-title">
+          <span class="badge-pill">🖥️ Domain Console</span>
+          <h2>Your knowledge base, made navigable</h2>
+          <p>One self-contained HTML file per domaiNN, generated locally. It runs offline — no server, no account.</p>
+        </div>
+        <figure class="console-shot">
+          <img src="assets/domain-console.png" alt="The Domain Console showing a kNNowledge model: model tree, concepts, elements, fields and source citations." />
+          <figcaption>The Domain Console — model tree, concepts, elements and fields, with every assertion cited back to its source.</figcaption>
+        </figure>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon">🌲</div>
+            <h3>Visual Modeling</h3>
+            <p>Explore your kNNowledge as interactive graph trees, matrices and diagrams.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">✅</div>
+            <h3>Automatic Validation</h3>
+            <p>Catch broken links, missing properties and outdated specs as you edit.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🤖</div>
+            <h3>AI &amp; Web Editing</h3>
+            <p>Edit visually in the console, or ask your AI agent to create and update kNNowledge for you.</p>
           </div>
         </div>
       </div>
@@ -1305,12 +1591,6 @@ flowchart LR
       </div>
     </section>
 
-    <!-- End-to-End Traceability & Verifiable Lineage Section -->
-    <section style="background: var(--canvas-inert); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-      <div class="container">
-        <div class="section-title">
-          <span class="badge-pill">&#x2728; Mathematical Traceability &amp; OKF Standard</span>
-          <h2>Every Insight Traceable. Zero Hallucinations.</h2>
     <!-- Extreme Traceability & Verifiable Lineage Section -->
     <section style="background: var(--canvas-inert); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
       <div class="container">
@@ -1326,7 +1606,7 @@ flowchart LR
             <div class="card-icon" style="background: var(--brand-subtle); color: var(--brand);">&#x1F50E;</div>
             <h3 style="font-size: 18px; margin-bottom: 10px;">1. Multimodal Normalization</h3>
             <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6;">
-              Normalize audio transcripts (<code style="font-family: var(--mono); font-size: 12px;">.srt/.vtt</code>), spreadsheets (<code style="font-family: var(--mono); font-size: 12px;">.csv/.xlsx</code>), conversation logs, and PDFs into clean Markdown under <code style="font-family: var(--mono); font-size: 12px;">sources/normalized/</code>.
+              Normalize audio transcripts (<code style="font-family: var(--mono); font-size: 12px;">.srt/.vtt</code>), spreadsheets (<code style="font-family: var(--mono); font-size: 12px;">.csv/.xlsx</code>), conversation logs, and PDFs into a co-located <code style="font-family: var(--mono); font-size: 12px;">_sidecar_NN.md</code> beside each file in <code style="font-family: var(--mono); font-size: 12px;">sources/import/</code>.
             </p>
           </div>
 
@@ -1344,7 +1624,7 @@ flowchart LR
             <div class="card-icon" style="background: var(--brand-subtle); color: var(--brand);">&#x1F4DA;</div>
             <h3 style="font-size: 18px; margin-bottom: 10px;">3. Project Artifacts &amp; Lineage</h3>
             <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.6;">
-              Generate interactive HTML dashboards, executive briefs, and formal specifications with verified citations and automatic lineage tracking (<code style="font-family: var(--mono); font-size: 12px;">derived_from: [Model_NN]</code>).
+              Generate interactive HTML dashboards, executive briefs, and formal specifications with verified citations and automatic lineage tracking (<code style="font-family: var(--mono); font-size: 12px;">derived_from: [kNNowledge_NN]</code>).
             </p>
           </div>
         </div>
@@ -1352,7 +1632,7 @@ flowchart LR
         <div class="diagram-card" style="margin-top: 36px; padding: 24px; background: #FFFFFF; border: 1px solid var(--border); border-radius: 14px;">
           <pre class="mermaid">
 flowchart LR
-    subgraph Sources["1. SOURCES (sources/normalized/)"]
+    subgraph Sources["1. SOURCES (sources/import/)"]
         S1["🎥 Subtitles &amp; Audio Transcripts"]
         S2["📊 Spreadsheets &amp; Data Tables"]
         S3["📑 Documents, PDFs &amp; Chats"]
@@ -1412,7 +1692,7 @@ flowchart LR
           <div class="compare-card highlight">
             <div class="compare-header">
               <span class="compare-badge good">&#x2714; The cogNNitive Way</span>
-              <span style="font-size: 12px; color: var(--brand); font-family: var(--mono);">Business_V_1-0-0_business_NN.md</span>
+              <span style="font-size: 12px; color: var(--brand); font-family: var(--mono);">Business_NN.md</span>
             </div>
             <pre class="compare-code" style="background: #140815; border: 1px solid rgba(77,14,78,0.2);"><code>### 🔹 PricingTier [Element]
 - tier_name:: Growth

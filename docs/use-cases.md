@@ -13,7 +13,7 @@ How cogNNitive transforms everyday workflows from scattered chaos into living, t
 ## 1. 🚀 The Startup Founder & Early-Stage Team
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/startup-founder/) · [📊 View Deliverable](use-cases/startup-founder/artifacts/pitch_deck_summary.md)
+> [📁 Local domaiNN](cognitive_nn/use-cases/startup-founder/) · [📊 View Deliverable](cognitive_nn/use-cases/startup-founder/artifacts/pitch_deck_summary.md)
 
 ### The Reality & Pain
 Founder notes live across WhatsApp chats, Notion pages, recorded Zoom calls with prospects, and Google Slides. When the pricing kNNowledge or ICP (Ideal Customer Profile) shifts:
@@ -23,7 +23,7 @@ Founder notes live across WhatsApp chats, Notion pages, recorded Zoom calls with
 
 ### The cogNNitive Pipeline
 1. **Import**: Discovery call transcripts and investor notes land in `sources/import/` with SHA-256 integrity hashes.
-2. **Manage**: kNNowledge hypotheses, buyer personas, and unit economics in `kNNowledge/business_NN.md` citing specific customer quotes (`sources:: [interviews.md#enterprise-budget-cap]`).
+2. **Manage**: kNNowledge hypotheses, buyer personas, and unit economics in `kNNowledge/SaaS_Founder_business_NN.md` citing specific customer quotes (`sources:: [sources/import/customer_discovery.md@## Enterprise Budget Cap]`).
 3. **Export**: Generate updated investor summaries and engineering task backlogs simultaneously.
 
 ### Concrete Deliverable & ROI
@@ -35,7 +35,7 @@ Founder notes live across WhatsApp chats, Notion pages, recorded Zoom calls with
 ## 2. 💼 The Sales Director (Mid-Size Consulting Firm)
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/consulting-sales/) · [📊 View Deliverable](use-cases/consulting-sales/artifacts/commercial_proposal_executive.md)
+> [📁 Local domaiNN](cognitive_nn/use-cases/consulting-sales/) · [📊 View Deliverable](cognitive_nn/use-cases/consulting-sales/artifacts/commercial_proposal_executive.md)
 
 ### The Reality & Pain
 A 25-person consulting department submits dozens of bids per quarter. Rate cards, past case studies, and compliance certifications are scattered in SharePoint and Google Drive:
@@ -45,7 +45,7 @@ A 25-person consulting department submits dozens of bids per quarter. Rate cards
 
 ### The cogNNitive Pipeline
 1. **Import**: Master service agreements, rate sheets, and consultant CVs land verbatim in `sources/import/` and are cognitivized in place.
-2. **Manage**: Centralize consulting offerings, hourly matrices, and delivery methodologies in `kNNowledge/commercial_NN.md`.
+2. **Manage**: Centralize consulting offerings, hourly matrices, and delivery methodologies in `kNNowledge/Fintech_RFP_Response_commercial_NN.md`.
 3. **Impact Check**: When senior leadership adjusts hourly billing rates, all downstream proposal kNNowledge highlight the required updates automatically.
 
 ### Concrete Deliverable & ROI
@@ -57,7 +57,7 @@ A 25-person consulting department submits dozens of bids per quarter. Rate cards
 ## 3. 🎨 The Freelance Web Designer & Solopreneur
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/freelance-designer/) · [📊 View Deliverable](use-cases/freelance-designer/artifacts/interactive_spec_dashboard.html)
+> [📁 Local domaiNN](cognitive_nn/use-cases/freelance-designer/) · [📊 View Deliverable](cognitive_nn/use-cases/freelance-designer/artifacts/interactive_spec_dashboard.html)
 
 ### The Reality & Pain
 Clients send unstructured briefs across WhatsApp voice notes, email threads, and casual Zoom calls. Mid-project, expectations collide:
@@ -67,7 +67,7 @@ Clients send unstructured briefs across WhatsApp voice notes, email threads, and
 
 ### The cogNNitive Pipeline
 1. **Import**: Kickoff meeting audio transcripts and PDF brand guidelines are ingested into `sources/import/`.
-2. **Manage**: Structure user journeys, design tokens, and sitemaps in `kNNowledge/site_spec_NN.md` with citations to exact client statements.
+2. **Manage**: Structure user journeys, design tokens, and sitemaps in `kNNowledge/Client_Website_site_spec_NN.md` with citations to exact client statements.
 3. **Export**: Generate an interactive, self-contained HTML specification dashboard that the client can review, click, and formally sign off on.
 
 ### Concrete Deliverable & ROI
@@ -79,7 +79,7 @@ Clients send unstructured briefs across WhatsApp voice notes, email threads, and
 ## 4. 🎬 The YouTube Video & Technical Content Creator
 
 > **Quick Actions:**  
-> [📁 Local domaiNN](use-cases/youtube-creator/) · [📊 View Deliverable](use-cases/youtube-creator/artifacts/production_teleprompter_cue_sheet.md)
+> [📁 Local domaiNN](cognitive_nn/use-cases/youtube-creator/) · [📊 View Deliverable](cognitive_nn/use-cases/youtube-creator/artifacts/production_teleprompter_cue_sheet.md)
 
 ### The Reality & Pain
 Producing a deep-dive 20-minute educational or tech video requires reading 15+ papers, reviewing benchmark datasets, and analyzing competitor videos:
@@ -89,7 +89,7 @@ Producing a deep-dive 20-minute educational or tech video requires reading 15+ p
 
 ### The cogNNitive Pipeline
 1. **Import**: Research papers, CSV benchmarks, and video transcripts are saved in `sources/import/` with heading anchors.
-2. **Manage**: Write video narrative sections in `kNNowledge/episode_NN.md`, linking every factual claim to exact source headings (`sources:: [sources/import/benchmarks.csv@R12&efficiency]`).
+2. **Manage**: Write video narrative sections in `kNNowledge/Episode_42_Battery_Tech_video_script_NN.md`, linking every factual claim to exact source headings (`sources:: [sources/import/benchmark_metrics_raw.csv@R12&efficiency]`).
 3. **Export**: Produce the teleprompter script, visual B-roll cue sheet, and formatted bibliography for the YouTube description box automatically.
 
 ### Concrete Deliverable & ROI

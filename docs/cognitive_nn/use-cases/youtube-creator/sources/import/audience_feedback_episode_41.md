@@ -1,7 +1,9 @@
-# Viewer Comments & Corrections from Episode 41 (Re-Ingested Feedback)
+# Re-Ingested Viewer Feedback (Closed Loop)
 
-Comment #1 by @BatteryEngineer99 (Top Liked):
-"Great video on EV range, but please cover active glycol cooling in Episode 42! People still don't understand that 800V architectures manage heat fundamentally differently than 400V packs."
+## Audience Topic Demand for Episode 42
 
-Comment #2 by @TechDiver:
-"Can you cite the Vance & Chen 2026 paper on degradation curves? Would love to see the real data on screen."
+### 800V Glycol Thermal Demand
+Top community request from Episode 41: Explain 800V glycol loop architectures vs standard 400V packs under high ambient temperatures.
+
+### Citation Transparency Demand
+Audience specifically requested explicit on-screen data citations to Vance & Chen (2026) peer-reviewed degradation tests.

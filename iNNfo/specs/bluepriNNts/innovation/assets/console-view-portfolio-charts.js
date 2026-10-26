@@ -120,7 +120,7 @@ function renderChart(doc, spec) {
     var fill = doc.createElement('span')
     fill.className = 'iv-bar-fill'
     fill.style.width = Math.round((r.value / max) * 100) + '%'
-    fill.style.background = 'var(--innfo-concept-' + ((i % 10) + 1) + ')'
+    fill.style.background = 'var(--nn-concept-' + ((i % 10) + 1) + ')'
     track.appendChild(fill)
     line.appendChild(track)
 
@@ -151,11 +151,11 @@ function injectStyle(doc, id, css) {
 
 var CSS = [
   '.iv-charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(20rem,1fr));gap:1rem;padding:.25rem 0 1rem}',
-  '.iv-chart{background:var(--innfo-surface);border:1px solid var(--innfo-border);border-radius:10px;padding:.8rem 1rem}',
-  '.iv-chart-title{margin:0 0 .7rem;font-size:.85rem;font-weight:600;color:var(--innfo-text)}',
+  '.iv-chart{background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:10px;padding:.8rem 1rem}',
+  '.iv-chart-title{margin:0 0 .7rem;font-size:.85rem;font-weight:600;color:var(--nn-text)}',
   '.iv-bar-row{display:flex;align-items:center;gap:.6rem;padding:.18rem 0}',
-  '.iv-bar-label{flex:0 0 9rem;font-size:.76rem;color:var(--innfo-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-  '.iv-bar-track{flex:1 1 auto;height:.85rem;background:var(--innfo-surface-2);border-radius:999px;overflow:hidden}',
+  '.iv-bar-label{flex:0 0 9rem;font-size:.76rem;color:var(--nn-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+  '.iv-bar-track{flex:1 1 auto;height:.85rem;background:var(--nn-surface-2);border-radius:999px;overflow:hidden}',
   '.iv-bar-fill{display:block;height:100%;border-radius:999px;opacity:.9}',
-  '.iv-bar-value{flex:0 0 2rem;text-align:right;font-size:.76rem;color:var(--innfo-text);font-variant-numeric:tabular-nums}',
+  '.iv-bar-value{flex:0 0 2rem;text-align:right;font-size:.76rem;color:var(--nn-text);font-variant-numeric:tabular-nums}',
 ].join('\n')

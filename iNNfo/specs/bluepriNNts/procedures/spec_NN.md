@@ -23,6 +23,9 @@ viewers:
     target_concept: "Work"
     label: "Guided Procedure Execution"
     icon: "play-circle"
+nature:
+  structure: catalog
+  ownership: derived
 ---
 
 > [!NOTE]

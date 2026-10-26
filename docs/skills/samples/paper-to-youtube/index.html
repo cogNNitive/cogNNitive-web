@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Paper to YouTube Script — Try it · cogNNitive</title>
-  <meta name="description" content="Transform a scientific PDF into a ready-to-record YouTube video script using the traNNsform skill. Step-by-step sample with downloadable input.">
+  <meta name="description" content="Transform a scientific PDF into a ready-to-record YouTube video script using the nn-sources skill. Step-by-step sample with downloadable input.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,14 +138,14 @@ The paper adapts classical SIR epidemiological models to simulate a zombie outbr
     <div class="steps">
       <div class="step-card">
         <h4>Download and place the input</h4>
-        <p>Download the paper PDF and place it in <code>traNNsform/input/</code>.</p>
-        <div class="code-snip">curl -o traNNsform/input/munz2009a.pdf https://pdodds.w3.uvm.edu/files/papers/others/2009/munz2009a.pdf</div>
+        <p>Download the paper PDF and place it in <code>sources/import/</code>.</p>
+        <div class="code-snip">curl -o sources/import/munz2009a.pdf https://pdodds.w3.uvm.edu/files/papers/others/2009/munz2009a.pdf</div>
       </div>
 
       <div class="step-card">
         <h4>Run the workflow</h4>
         <p>Tell your agent to execute the paper-to-youtube workflow on the PDF.</p>
-        <div class="code-snip">Run the sample workflow paper-to-youtube on traNNsform/input/munz2009a.pdf. Read the paper, identify the central question and key findings, and produce a timestamped YouTube script with visual cues in traNNsform/output/. Name the file munz2009a_youtube_script.md.</div>
+        <div class="code-snip">Run the sample workflow paper-to-youtube on sources/import/munz2009a.pdf. Read the paper, identify the central question and key findings, and produce a timestamped YouTube script with visual cues in artifacts/. Name the file munz2009a_youtube_script.md.</div>
       </div>
 
       <div class="step-card">
@@ -165,8 +165,8 @@ The paper adapts classical SIR epidemiological models to simulate a zombie outbr
 
       <div class="step-card">
         <h4>Review your output</h4>
-        <p>Find the result at <code>traNNsform/output/munz2009a_youtube_script.md</code>. The agent will confirm and offer to adjust tone or level of detail.</p>
-        <div class="code-snip">cat traNNsform/output/munz2009a_youtube_script.md</div>
+        <p>Find the result at <code>artifacts/munz2009a_youtube_script.md</code>. The agent will confirm and offer to adjust tone or level of detail.</p>
+        <div class="code-snip">cat artifacts/munz2009a_youtube_script.md</div>
       </div>
     </div>
   </section>
@@ -224,7 +224,7 @@ for the math behind your survival plan."</div>
 
   <!-- Tip -->
   <div class="tip">
-    <strong>&#x1F4A1; Try it with any paper:</strong> Drop any scientific PDF (arxiv, researchgate, etc.) into <code>traNNsform/input/</code> and run the same workflow with your filename.
+    <strong>&#x1F4A1; Try it with any paper:</strong> Drop any scientific PDF (arxiv, researchgate, etc.) into <code>sources/import/</code> and run the same workflow with your filename.
   </div>
 
 </main>

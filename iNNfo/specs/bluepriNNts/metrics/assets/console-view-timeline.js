@@ -22,10 +22,10 @@ registerView({
     }
     projections.forEach(function (p) {
       var section = doc.createElement('section')
-      section.className = 'innfo-timeline-view'
+      section.className = 'nn-timeline-view'
       if (projections.length > 1) {
         var heading = doc.createElement('h3')
-        heading.className = 'innfo-timeline-title'
+        heading.className = 'nn-timeline-title'
         heading.textContent = p.title || ''
         section.appendChild(heading)
       }
@@ -33,7 +33,7 @@ registerView({
       var meta = { months: p.months }
       if (p.startYear) meta.startYear = p.startYear
       if (p.startMonth) meta.startMonth = p.startMonth
-      InnfoConsole.renderTimelineGrid(section, { rows: p.rows }, meta)
+      nnConsole.renderTimelineGrid(section, { rows: p.rows }, meta)
     })
   },
 })

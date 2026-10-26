@@ -14,7 +14,7 @@ title: "SaaS Startup Founder Procedures Catalog"
 
 ## NN Procedure: Customer Discovery Ingestion & Synthesis
 category:: ingestion
-summary:: Ingest raw interview transcripts and deck notes, normalize into sources/nn/, and synthesize business model hypotheses.
+summary:: Ingest raw interview transcripts and deck notes, normalize into sources/import/, and synthesize business model hypotheses.
 inputs_required:: Customer Discovery Notes
 outputs_expected:: SaaS Founder Business Model
 executed_by:: Startup Founder

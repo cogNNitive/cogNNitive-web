@@ -45,7 +45,7 @@ origin_uri:: sources/import/brand_style_guide.pdf
 raw_path:: sources/import/brand_style_guide.pdf
 format:: md
 summary:: Normalized design tokens, hex codes, and brand asset citations.
-source_model:: sources/nn/brand_style_guide.md
+source_model:: sources/import/brand_style_guide.md
 tags:: [brand, normalized, tokens]
 status:: ready
 
@@ -55,6 +55,6 @@ origin_uri:: sources/import/client_kickoff_brief.docx
 raw_path:: sources/import/client_kickoff_brief.docx
 format:: md
 summary:: Normalized kickoff brief with section heading anchors and phase exclusions.
-source_model:: sources/nn/client_kickoff_brief.md
+source_model:: sources/import/client_kickoff_brief.md
 tags:: [kickoff, normalized, scope]
 status:: ready

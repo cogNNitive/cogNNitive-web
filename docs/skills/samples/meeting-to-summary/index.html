@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meeting Notes to Executive Summary — Try it · cogNNitive</title>
-  <meta name="description" content="Transform a YouTube video transcript into a structured executive summary using the traNNsform skill. Step-by-step sample with downloadable input.">
+  <meta name="description" content="Transform a YouTube video transcript into a structured executive summary using the nn-sources skill. Step-by-step sample with downloadable input.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -156,14 +156,14 @@ Duration: 0:56
     <div class="steps">
       <div class="step-card">
         <h4>Place the input</h4>
-        <p>Copy the downloaded transcript into <code>traNNsform/input/</code> (or create it if it doesn't exist).</p>
-        <div class="code-snip">cp better-off-ted-transcript.md traNNsform/input/</div>
+        <p>Copy the downloaded transcript into <code>sources/import/</code> (or create it if it doesn't exist).</p>
+        <div class="code-snip">cp better-off-ted-transcript.md sources/import/</div>
       </div>
 
       <div class="step-card">
         <h4>Run the workflow</h4>
         <p>Tell your agent to execute the meeting-to-summary workflow on the transcript.</p>
-        <div class="code-snip">Run the sample workflow meeting-to-summary on traNNsform/input/better-off-ted-transcript.md. Read the transcript, extract decisions, action items, and blockers, and produce an executive summary in traNNsform/output/. Name the file BetterOffTed_executive_summary.md.</div>
+        <div class="code-snip">Run the sample workflow meeting-to-summary on sources/import/better-off-ted-transcript.md. Read the transcript, extract decisions, action items, and blockers, and produce an executive summary in artifacts/. Name the file BetterOffTed_executive_summary.md.</div>
       </div>
 
       <div class="step-card">
@@ -183,8 +183,8 @@ Duration: 0:56
 
       <div class="step-card">
         <h4>Review your output</h4>
-        <p>Find the result at <code>traNNsform/output/BetterOffTed_executive_summary.md</code>. The agent will confirm and offer to adjust the level of detail.</p>
-        <div class="code-snip">cat traNNsform/output/BetterOffTed_executive_summary.md</div>
+        <p>Find the result at <code>artifacts/BetterOffTed_executive_summary.md</code>. The agent will confirm and offer to adjust the level of detail.</p>
+        <div class="code-snip">cat artifacts/BetterOffTed_executive_summary.md</div>
       </div>
     </div>
   </section>
@@ -226,7 +226,7 @@ Phil presented the Viridian solar-powered oven project. While the team has made 
 
   <!-- Tip -->
   <div class="tip">
-    <strong>&#x1F4A1; Try it with your own content:</strong> Drop any meeting transcript, podcast transcript, or interview text into <code>traNNsform/input/</code> and run the same workflow with your filename.
+    <strong>&#x1F4A1; Try it with your own content:</strong> Drop any meeting transcript, podcast transcript, or interview text into <code>sources/import/</code> and run the same workflow with your filename.
   </div>
 
 </main>

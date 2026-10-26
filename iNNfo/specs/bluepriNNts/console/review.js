@@ -3,15 +3,15 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./ui-kit.js'))
   } else {
-    root.InnfoReview = factory(root.InnfoUI)
+    root.nnReview = factory(root.nnUI)
   }
 })(typeof self !== 'undefined' ? self : this, function (UI) {
   'use strict'
 
   // D5: the kit is a hard dependency; fail loudly rather than degrade silently.
-  if (!UI) throw new Error('InnfoUI missing: load ui-kit.js first')
+  if (!UI) throw new Error('nnUI missing: load ui-kit.js first')
 
-  var STORE_PREFIX = 'innfo-console:v3:'
+  var STORE_PREFIX = 'nn-console:v4:'
   var STORE_VERSION = 4
   var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
@@ -229,10 +229,10 @@
             return raw[key] == null || raw[key] === ''
           })
           if (missing.length) {
-            throw new TypeError('InnfoReview.createDraftStore: new draft requires ' + missing.join(', '))
+            throw new TypeError('nnReview.createDraftStore: new draft requires ' + missing.join(', '))
           }
         } else if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
-          throw new TypeError('InnfoReview.createDraftStore: element_id and base_hash required')
+          throw new TypeError('nnReview.createDraftStore: element_id and base_hash required')
         }
         return deepCopy(
           mutate(function (s) {
@@ -744,6 +744,8 @@
         },
         {
           doc: doc,
+          onEvidence:
+            typeof options.onEvidence === 'function' ? options.onEvidence : undefined,
           onSave: function (res) {
             if (res.isComment || target.commentOnly) {
               // Defence in depth: the kit already blocks an empty comment.
@@ -905,11 +907,11 @@
       // card we still need a comment box, and both kinds reuse the same input.
       if (!anchorData.field) {
         var ta = doc.createElement('textarea')
-        ta.className = 'innfo-popover-comment'
-        var saveBtn = pop.querySelector('.innfo-popover-save')
+        ta.className = 'nn-popover-comment'
+        var saveBtn = pop.querySelector('.nn-popover-save')
         pop.insertBefore(ta, saveBtn)
       }
-      Array.prototype.forEach.call(pop.querySelectorAll('.innfo-popover-kind'), function (b) {
+      Array.prototype.forEach.call(pop.querySelectorAll('.nn-popover-kind'), function (b) {
         b.addEventListener('click', function () {
           activeKind = b.getAttribute('data-kind')
         })
@@ -924,9 +926,9 @@
       var b =
         typeof UI.EditAnchor === 'function'
           ? UI.EditAnchor({ label: label || 'Annotate', icon: anchorData.field ? 'pencil' : 'message-square' })
-          : makeEl(doc, 'button', 'innfo-review-anchor', label || '+')
-      b.setAttribute('data-innfo-review-ctl', '1')
-      b.setAttribute('data-innfo-ctl', anchorData.field ? 'field-anchor' : 'card-anchor')
+          : makeEl(doc, 'button', 'nn-review-anchor', label || '+')
+      b.setAttribute('data-nn-review-ctl', '1')
+      b.setAttribute('data-nn-ctl', anchorData.field ? 'field-anchor' : 'card-anchor')
       if (anchorData.field) b.setAttribute('data-field', String(anchorData.field))
       b.setAttribute('type', 'button')
       b.setAttribute('aria-label', anchorData.field ? 'Annotate field' : 'Annotate element')
@@ -942,9 +944,9 @@
       var b =
         typeof UI.EditAnchor === 'function'
           ? UI.EditAnchor({ label: label })
-          : makeEl(doc, 'button', 'innfo-review-anchor', '\u270e')
-      b.setAttribute('data-innfo-review-ctl', '1')
-      b.setAttribute('data-innfo-ctl', anchorData.ctl || 'ku-anchor')
+          : makeEl(doc, 'button', 'nn-review-anchor', '\u270e')
+      b.setAttribute('data-nn-review-ctl', '1')
+      b.setAttribute('data-nn-ctl', anchorData.ctl || 'ku-anchor')
       b.setAttribute('type', 'button')
       b.setAttribute('aria-label', label)
       b.setAttribute('title', label)
@@ -1021,18 +1023,18 @@
     }
 
     function buildNewElementButton() {
-      var dock = doc.getElementById('innfo-review-dock')
-      var banner = doc.getElementById('innfo-feedback-banner') || doc.getElementById('innfo-banner')
+      var dock = doc.getElementById('nn-review-dock')
+      var banner = doc.getElementById('nn-feedback-banner') || doc.getElementById('nn-banner')
       var host = dock || banner
       if (!host || !store || !canReview(meta, elements, needs)) return null
-      var existing = doc.querySelector('[data-innfo="new-element"]')
+      var existing = doc.querySelector('[data-nn="new-element"]')
       if (existing) return existing
       if (!schemaConcepts().length) return null
-      var b = makeEl(doc, 'button', 'innfo-new-element innfo-dock-changes', '+ New element')
-      b.setAttribute('data-innfo', 'new-element')
+      var b = makeEl(doc, 'button', 'nn-new-element nn-dock-changes', '+ New element')
+      b.setAttribute('data-nn', 'new-element')
       b.setAttribute('type', 'button')
       b.addEventListener('click', openNew)
-      var exportBtn = host.querySelector('#innfo-dock-export-btn') || host.querySelector('#innfo-feedback-open')
+      var exportBtn = host.querySelector('#nn-dock-export-btn') || host.querySelector('#nn-feedback-open')
       if (exportBtn && exportBtn.parentNode) exportBtn.parentNode.insertBefore(b, exportBtn)
       else host.appendChild(b)
       return b
@@ -1050,7 +1052,7 @@
 
       var visible = []
       Array.prototype.forEach.call(
-        doc.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
+        doc.querySelectorAll('[data-nn-component="element-card"][data-element-id]'),
         function (card) {
           if (card.hidden) return
           visible.push(card)
@@ -1079,7 +1081,7 @@
       } else if (event.key === 'c') {
         if (typeof event.preventDefault === 'function') event.preventDefault()
         var focused = idx >= 0 ? visible[idx] : visible[0]
-        var fieldRow = focused.querySelector('[data-innfo-ctl="field-anchor"]')
+        var fieldRow = focused.querySelector('[data-nn-ctl="field-anchor"]')
         if (
           fieldRow &&
           document.activeElement &&
@@ -1113,24 +1115,24 @@
     // Tags are not KUs (no sub-ID, no modal): membership is proposed with
     // +/x controls that record comment drafts. Marker chips keep pencils.
     function decorateTagRow(card, elId) {
-      var row = card.querySelector('[data-innfo-component="tag-row"]')
+      var row = card.querySelector('[data-nn-component="tag-row"]')
       if (!row) {
         // The card shows no row for an untagged element; the "+ tag" control still
         // needs one, and it goes away again when review mode is disabled.
-        var cardBody = card.querySelector('.innfo-card-body')
+        var cardBody = card.querySelector('.nn-card-body')
         if (!cardBody || typeof UI.TagRow !== 'function') return
         row = UI.TagRow({ tags: [] }, { doc: doc })
-        row.setAttribute('data-innfo-review-ctl', '1')
-        var relList = cardBody.querySelector('[data-innfo-component="rel-list"]')
+        row.setAttribute('data-nn-review-ctl', '1')
+        var relList = cardBody.querySelector('[data-nn-component="rel-list"]')
         var refChild = relList && relList.parentNode === cardBody ? relList : null
         cardBody.insertBefore(row, refChild)
       }
-      Array.prototype.forEach.call(row.querySelectorAll('.innfo-tag'), function (tag) {
-        if (tag.querySelector('[data-innfo-ctl="tag-remove"]')) return
+      Array.prototype.forEach.call(row.querySelectorAll('.nn-tag'), function (tag) {
+        if (tag.querySelector('[data-nn-ctl="tag-remove"]')) return
         var name = tag.getAttribute('data-tag') || tag.textContent
-        var x = makeEl(doc, 'button', 'innfo-tag-remove', '\u00d7')
-        x.setAttribute('data-innfo-review-ctl', '1')
-        x.setAttribute('data-innfo-ctl', 'tag-remove')
+        var x = makeEl(doc, 'button', 'nn-tag-remove', '\u00d7')
+        x.setAttribute('data-nn-review-ctl', '1')
+        x.setAttribute('data-nn-ctl', 'tag-remove')
         x.setAttribute('type', 'button')
         x.setAttribute('aria-label', 'Propose removing tag ' + name)
         x.setAttribute('title', 'Propose removing tag ' + name)
@@ -1139,10 +1141,10 @@
         })
         tag.appendChild(x)
       })
-      if (!row.querySelector('[data-innfo-ctl="tag-add"]')) {
-        var add = makeEl(doc, 'button', 'innfo-tag-add', '+ tag')
-        add.setAttribute('data-innfo-review-ctl', '1')
-        add.setAttribute('data-innfo-ctl', 'tag-add')
+      if (!row.querySelector('[data-nn-ctl="tag-add"]')) {
+        var add = makeEl(doc, 'button', 'nn-tag-add', '+ tag')
+        add.setAttribute('data-nn-review-ctl', '1')
+        add.setAttribute('data-nn-ctl', 'tag-add')
         add.setAttribute('type', 'button')
         add.setAttribute('aria-label', 'Propose a new tag')
         add.addEventListener('click', function () {
@@ -1155,24 +1157,24 @@
     // Relations are reference-KUs: pencil = retarget (KU modal with a
     // reference widget), x = unlink proposal, link = navigate (kit-owned).
     function decorateRelList(card, elId) {
-      var list = card.querySelector('[data-innfo-component="rel-list"]')
+      var list = card.querySelector('[data-nn-component="rel-list"]')
       if (!list) return
       Array.prototype.forEach.call(
-        list.querySelectorAll('.innfo-rel-row'),
+        list.querySelectorAll('.nn-rel-row'),
         function (rowItem) {
           var field = rowItem.getAttribute('data-rel-field') || 'related'
           var target = rowItem.getAttribute('data-rel-target') || ''
-          if (!rowItem.querySelector('[data-innfo-ctl="rel-retarget"]')) {
+          if (!rowItem.querySelector('[data-nn-ctl="rel-retarget"]')) {
             var re = kuEditControl(
               { elementId: elId, relRetarget: true, relField: field, relTarget: target, ctl: 'rel-retarget' },
               'Retarget relation ' + field,
             )
             rowItem.appendChild(re)
           }
-          if (!rowItem.querySelector('[data-innfo-ctl="rel-unlink"]')) {
-            var un = makeEl(doc, 'button', 'innfo-rel-act danger', '\u00d7')
-            un.setAttribute('data-innfo-review-ctl', '1')
-            un.setAttribute('data-innfo-ctl', 'rel-unlink')
+          if (!rowItem.querySelector('[data-nn-ctl="rel-unlink"]')) {
+            var un = makeEl(doc, 'button', 'nn-rel-act danger', '\u00d7')
+            un.setAttribute('data-nn-review-ctl', '1')
+            un.setAttribute('data-nn-ctl', 'rel-unlink')
             un.setAttribute('type', 'button')
             un.setAttribute('aria-label', 'Propose unlinking ' + field)
             un.setAttribute('title', 'Propose unlinking ' + field)
@@ -1183,10 +1185,10 @@
           }
         },
       )
-      if (!card.querySelector('[data-innfo-ctl="rel-add"]')) {
-        var add = makeEl(doc, 'button', 'innfo-rel-add', '+ relation')
-        add.setAttribute('data-innfo-review-ctl', '1')
-        add.setAttribute('data-innfo-ctl', 'rel-add')
+      if (!card.querySelector('[data-nn-ctl="rel-add"]')) {
+        var add = makeEl(doc, 'button', 'nn-rel-add', '+ relation')
+        add.setAttribute('data-nn-review-ctl', '1')
+        add.setAttribute('data-nn-ctl', 'rel-add')
         add.setAttribute('type', 'button')
         add.setAttribute('aria-label', 'Propose a new relation')
         add.addEventListener('click', function () {
@@ -1204,7 +1206,7 @@
     // Matrix cells are not element units: each editable cell carries an anchor
     // that proposes an `update_matrix_cell` draft (row × col coordinate).
     function decorateMatrixCell(td) {
-      if (!enabled || td.querySelector('[data-innfo-ctl="matrix-cell-anchor"]')) return
+      if (!enabled || td.querySelector('[data-nn-ctl="matrix-cell-anchor"]')) return
       var anchorData = {
         matrixCell: true,
         matrix: td.getAttribute('data-matrix'),
@@ -1227,7 +1229,7 @@
 
     // Pending-change pip: a count badge on the unit it targets, visible in both
     // review modes (it reflects stored drafts). Counts are keyed by canonical
-    // address; the DOM update itself is owned by the kit (InnfoUI.setUnitChanges).
+    // address; the DOM update itself is owned by the kit (nnUI.setUnitChanges).
     function decorateChangePips(root) {
       if (!store || typeof store.drafts !== 'function') return
       if (!UI || typeof UI.setUnitChanges !== 'function') return
@@ -1246,7 +1248,7 @@
       // canonical address through a suffix match, then let the kit paint.
       var counts = {}
       Array.prototype.forEach.call(
-        host.querySelectorAll('[data-innfo-component="ku-unit"][data-ku-address]'),
+        host.querySelectorAll('[data-nn-component="ku-unit"][data-ku-address]'),
         function (badge) {
           var address = badge.getAttribute('data-ku-address') || ''
           if (raw[address] != null) {
@@ -1276,20 +1278,20 @@
       if (!scope || !scope.querySelectorAll) return
       var countsByEl = unsentCountsByElement(store ? store.drafts() : [])
       Array.prototype.forEach.call(
-        scope.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
+        scope.querySelectorAll('[data-nn-component="element-card"][data-element-id]'),
         function (card) {
           ensureCardFocusable(card)
           var elId = card.getAttribute('data-element-id')
           var count = countsByEl[elId] || 0
-          var head = card.querySelector('.innfo-card-head') || card
-          var host = head.querySelector('[data-innfo-change-state]')
+          var head = card.querySelector('.nn-card-head') || card
+          var host = head.querySelector('[data-nn-change-state]')
           if (!count) {
             if (host && host.parentNode) host.parentNode.removeChild(host)
             return
           }
           if (!host) {
-            host = makeEl(doc, 'span', 'innfo-review-badges')
-            host.setAttribute('data-innfo-change-state', '')
+            host = makeEl(doc, 'span', 'nn-review-badges')
+            host.setAttribute('data-nn-change-state', '')
             head.appendChild(host)
           }
           host.innerHTML = ''
@@ -1300,7 +1302,7 @@
             label: typeof UI.statusLabel === 'function' ? UI.statusLabel('local') : 'Unsent',
             title: count + ' unsent',
           })
-          badge.classList.add('innfo-change-state')
+          badge.classList.add('nn-change-state')
           host.appendChild(badge)
         },
       )
@@ -1311,11 +1313,11 @@
       // The rail readout is the change, not a review mark: pending drafts per concept.
       var progress = progressByConcept(elements, store.drafts())
       Array.prototype.forEach.call(
-        doc.querySelectorAll('.innfo-rail-item, [data-key]'),
+        doc.querySelectorAll('.nn-rail-item, [data-key]'),
         function (btn) {
           var key = btn.getAttribute('data-concept') || btn.getAttribute('data-key')
           if (!key || key === '__all' || !progress[key]) return
-          var existing = btn.querySelector('[data-innfo-component="rail-progress"]')
+          var existing = btn.querySelector('[data-nn-component="rail-progress"]')
           if (existing) existing.parentNode.removeChild(existing)
           btn.appendChild(
             UI.RailProgress({
@@ -1330,7 +1332,7 @@
     // The changeset bar is STATE-driven: it appears when there is at least one draft
     // and hides when there is none. There is no mode to enter or leave.
     function syncChangesetBar() {
-      var dock = doc.getElementById('innfo-review-dock')
+      var dock = doc.getElementById('nn-review-dock')
       if (!dock) return
       var count = store && typeof store.drafts === 'function' ? store.drafts().length : 0
       if (count > 0) {
@@ -1366,7 +1368,7 @@
           fn(node)
         } catch (err) {
           if (typeof console !== 'undefined' && console.warn) {
-            console.warn('innfo review: skipped decorating a node', err)
+            console.warn('nn review: skipped decorating a node', err)
           }
         }
       }
@@ -1379,7 +1381,7 @@
       var host = root || doc
       if (!host || !host.querySelectorAll) return
       Array.prototype.forEach.call(
-        host.querySelectorAll('[data-innfo-component="element-card"][data-element-id]'),
+        host.querySelectorAll('[data-nn-component="element-card"][data-element-id]'),
         safeDecorate(decorateCardAnchors),
       )
       Array.prototype.forEach.call(
@@ -1424,17 +1426,17 @@
 
     function enable() {
       enabled = true
-      if (html()) html().setAttribute('data-innfo-review', 'on')
+      if (html()) html().setAttribute('data-nn-review', 'on')
       if (doc.addEventListener) doc.addEventListener('keydown', onKeydown)
       applyDecorations()
-      var dock = doc.getElementById('innfo-review-dock')
+      var dock = doc.getElementById('nn-review-dock')
       if (dock) {
         dock.style.removeProperty('display')
         dock.setAttribute('data-visible', 'true')
-        dock.classList.add('active', 'innfo-dock-blinking')
+        dock.classList.add('active', 'nn-dock-blinking')
         if (dock._blinkTimer) clearTimeout(dock._blinkTimer)
         dock._blinkTimer = setTimeout(function () {
-          dock.classList.remove('innfo-dock-blinking')
+          dock.classList.remove('nn-dock-blinking')
           dock._blinkTimer = null
         }, 5000)
       }
@@ -1446,24 +1448,24 @@
       dismissToast()
       if (doc.removeEventListener) doc.removeEventListener('keydown', onKeydown)
       if (html()) {
-        html().removeAttribute('data-innfo-review')
-        html().removeAttribute('data-innfo-structure')
+        html().removeAttribute('data-nn-review')
+        html().removeAttribute('data-nn-structure')
       }
-      var dock = doc.getElementById('innfo-review-dock')
+      var dock = doc.getElementById('nn-review-dock')
       if (dock) {
         dock.style.setProperty('display', 'none', 'important')
         dock.removeAttribute('data-visible')
-        dock.classList.remove('active', 'innfo-dock-blinking')
+        dock.classList.remove('active', 'nn-dock-blinking')
         if (dock._blinkTimer) {
           clearTimeout(dock._blinkTimer)
           dock._blinkTimer = null
         }
       }
-      Array.prototype.forEach.call(doc.querySelectorAll('[data-innfo-review-ctl]'), function (n) {
+      Array.prototype.forEach.call(doc.querySelectorAll('[data-nn-review-ctl]'), function (n) {
         if (n.parentNode) n.parentNode.removeChild(n)
       })
       Array.prototype.forEach.call(
-        doc.querySelectorAll('[data-innfo-component="rail-progress"]'),
+        doc.querySelectorAll('[data-nn-component="rail-progress"]'),
         function (n) {
           if (n.parentNode) n.parentNode.removeChild(n)
         },
@@ -1472,12 +1474,12 @@
 
     function destroy() {
       disable()
-      if (doc.removeEventListener) doc.removeEventListener('innfo:rendered', onRendered)
+      if (doc.removeEventListener) doc.removeEventListener('nn:rendered', onRendered)
     }
 
     // A11y: the draft counter is a polite live region (C13).
     function decorateCounter() {
-      var counter = doc.querySelector('[data-innfo="draft-count"]')
+      var counter = doc.querySelector('[data-nn="draft-count"]')
       if (counter) {
         counter.setAttribute('role', 'status')
         counter.setAttribute('aria-live', 'polite')
@@ -1517,7 +1519,7 @@
       if (action !== 'edit') return false
       if (!enabled) return false
       if (descriptor.editability === 'structure') {
-        if (!html() || html().getAttribute('data-innfo-structure') !== 'on') return false
+        if (!html() || html().getAttribute('data-nn-structure') !== 'on') return false
         return openEdit(Object.assign({}, anchorData, { comment: true, structure: true }))
       }
       if (descriptor.editability === 'none') return false
@@ -1546,12 +1548,12 @@
     purgeAppliedDrafts()
 
     /* no review-mode toggle: there is no mode */
-    if (doc.addEventListener) doc.addEventListener('innfo:rendered', onRendered)
+    if (doc.addEventListener) doc.addEventListener('nn:rendered', onRendered)
     // One initial pass: covers the render that preceded the controller's creation.
     // With the model viewer retired (SCS) no second render follows boot, so the
     // initial paint must be decorated completely (badges, info actions, pips),
     // not just badges + counter.
-    onRendered({ detail: { root: doc.getElementById('innfo-content') || doc } })
+    onRendered({ detail: { root: doc.getElementById('nn-content') || doc } })
 
     return {
       enable: enable,

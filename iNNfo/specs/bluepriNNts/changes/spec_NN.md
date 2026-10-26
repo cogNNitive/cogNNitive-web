@@ -6,9 +6,12 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-5-2"
+blueprint_version: "V_0-5-5"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
+nature:
+  structure: members
+  ownership: derived
 ---
 
 > [!NOTE]
@@ -42,7 +45,7 @@ description:: Mutation or review operation.
 
 ## NN Field Definition: target
 concept:: Change
-type:: string
+type:: address
 description:: Canonical D5 target address (model@element&field or model@matrix&row&col).
 
 ## NN Field Definition: from
@@ -90,10 +93,10 @@ concept:: Change
 type:: string
 description:: Rationale, commit note, or review critique.
 
-## NN Field Definition: sources
+## NN Field Definition: evidence
 concept:: Change
 type:: citation
-description:: Evidence the change derives from, in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, or a bare path). Written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.
+description:: Evidence the change derives from — the ONLY provenance of the mutation — in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, a bare path, or the literal tokens decision / unknown). Mandatory on every change; written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.
 
 ## NN Field Definition: blueprint_name
 concept:: Change
@@ -156,8 +159,8 @@ Each change is declared as an element of concept Change:
 - bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.
 - add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. Optional fields.columns and fields.rows (comma-separated) seed the grid; when omitted they default to the axis concepts' own elements. Every seeded cell starts empty, ready for update_matrix_cell. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.
 - base_hash: Optional precondition on the target element content; a mismatch is a conflict.
-- sources: Evidence the change derives from (a citation); written by the proposer and sealed with the proposal.
-- Execution annotations (status, resolution, resolved_slug, replaced_sources) record the outcome of applying the change.
+- evidence: Mandatory. Evidence the change derives from (a citation, or the literal tokens decision / unknown); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.
+- Execution annotations (status, resolution, resolved_slug, applied_at, batch) record the outcome of applying the change. Each change carries its own applied_at (UTC), status, author and batch; the change chain, ordered by applied_at, is a field's history.
 
 Changeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.
 
@@ -195,6 +198,7 @@ op:: update_field
 target:: model@element&field
 from:: "old_value"
 to:: "new_value"
+evidence:: sources/import/<file>@## <Heading>
 ```
 
 ## Examples

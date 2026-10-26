@@ -14,14 +14,14 @@
     artifact_shell.html — thin console shell for nn-console artifacts.
 
     Layout: a top navbar, a left blueprint rail whose slate filter zone holds the
-    search + facets (Tags / Changes) and the blueprint cards (`#innfo-rail`), and
+    search + facets (Tags / Changes) and the blueprint cards (`#nn-rail`), and
     a main area with a discreet 38px action bar above the runtime-rendered content.
 
     Generating agents MUST only:
-      1. Declare capabilities in the innfo-config needs[] list below.
-      2. Paste the Schema JSON Contract into #innfo-schema.
-      3. Paste the Model JSON Contract into #innfo-model.
-    The shared runtime (nn-runtime.js, window.InnfoConsole) renders the rail
+      1. Declare capabilities in the nn-config needs[] list below.
+      2. Paste the Schema JSON Contract into #nn-schema.
+      3. Paste the Model JSON Contract into #nn-model.
+    The shared runtime (nn-runtime.js, window.nnConsole) renders the rail
     cards, search, facets, cards, matrices, drafts and export modal.
     Do NOT inline runtime code here.
   -->
@@ -30,24 +30,24 @@
       :root,
       [data-theme] {
         color-scheme: light;
-        --bg: var(--innfo-bg);
-        --surface: var(--innfo-surface);
-        --surface-2: var(--innfo-surface-2);
-        --surface-3: var(--innfo-border);
-        --text: var(--innfo-text);
-        --muted: var(--innfo-muted);
-        --faint: var(--innfo-muted);
-        --border: var(--innfo-border);
-        --primary: var(--innfo-accent);
-        --link: var(--innfo-link);
-        --radius-sm: var(--innfo-radius-sm);
-        --radius: var(--innfo-radius);
-        --radius-lg: var(--innfo-radius-lg);
-        --shadow-card: var(--innfo-shadow);
-        --font: var(--innfo-font);
-        --mono: var(--innfo-mono);
-        --filter-zone-bg: var(--innfo-surface-2);
-        --filter-box-border: var(--innfo-border);
+        --bg: var(--nn-bg);
+        --surface: var(--nn-surface);
+        --surface-2: var(--nn-surface-2);
+        --surface-3: var(--nn-border);
+        --text: var(--nn-text);
+        --muted: var(--nn-muted);
+        --faint: var(--nn-muted);
+        --border: var(--nn-border);
+        --primary: var(--nn-accent);
+        --link: var(--nn-link);
+        --radius-sm: var(--nn-radius-sm);
+        --radius: var(--nn-radius);
+        --radius-lg: var(--nn-radius-lg);
+        --shadow-card: var(--nn-shadow);
+        --font: var(--nn-font);
+        --mono: var(--nn-mono);
+        --filter-zone-bg: var(--nn-surface-2);
+        --filter-box-border: var(--nn-border);
       }
       * { box-sizing: border-box; }
       body {
@@ -64,7 +64,7 @@
       code { font-family: var(--mono); font-size: 0.85em; }
 
       /* Top navbar */
-      .innfo-navbar {
+      .nn-navbar {
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -77,10 +77,10 @@
         top: 0;
         z-index: 30;
       }
-      .innfo-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-      .innfo-brand-logo { display: inline-flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
-      .innfo-brand-logo svg { display: block; }
-      .innfo-badge-domain {
+      .nn-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .nn-brand-logo { display: inline-flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+      .nn-brand-logo svg { display: block; }
+      .nn-badge-domain {
         font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.5px;
@@ -91,17 +91,17 @@
         padding: 3px 8px;
         border-radius: var(--radius-sm);
       }
-      .innfo-domain-title { margin: 0; font-size: var(--innfo-fs-title, 1.25rem); font-weight: 800; letter-spacing: -0.02em; }
-    .innfo-scope-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
-      .innfo-mode { font-size: 0.8rem; color: var(--muted); }
-      .innfo-mode strong { color: var(--text); }
-      .innfo-navbar-actions { display: flex; align-items: center; margin-left: auto; order: 9999; flex-shrink: 0; }
-      [data-innfo-feedback-root] { display: contents !important; }
+      .nn-domain-title { margin: 0; font-size: var(--nn-fs-title, 1.25rem); font-weight: 800; letter-spacing: -0.02em; }
+    .nn-scope-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+      .nn-mode { font-size: 0.8rem; color: var(--muted); }
+      .nn-mode strong { color: var(--text); }
+      .nn-navbar-actions { display: flex; align-items: center; margin-left: auto; order: 9999; flex-shrink: 0; }
+      [data-nn-feedback-root] { display: contents !important; }
 
-      #innfo-layout { display: flex; flex: 1 1 auto; align-items: stretch; min-height: 0; }
+      #nn-layout { display: flex; flex: 1 1 auto; align-items: stretch; min-height: 0; }
 
       /* Left blueprint rail */
-      aside.innfo-rail {
+      aside.nn-rail {
         width: 340px;
         min-width: 320px;
         max-width: 360px;
@@ -115,10 +115,10 @@
         overflow: hidden;
       }
       @media (max-width: 1024px) {
-        .innfo-navbar { position: static; padding: 8px 12px; gap: 8px; }
-        .innfo-action-bar { position: static; padding: 6px 12px; }
-        #innfo-layout { flex-direction: column; }
-        aside.innfo-rail {
+        .nn-navbar { position: static; padding: 8px 12px; gap: 8px; }
+        .nn-action-bar { position: static; padding: 6px 12px; }
+        #nn-layout { flex-direction: column; }
+        aside.nn-rail {
           width: 100%;
           min-width: 0;
           max-width: 100%;
@@ -128,10 +128,10 @@
           border-right: none;
           border-bottom: 1px solid var(--border);
         }
-        .innfo-filter-zone { padding: 8px 10px; gap: 6px; }
-        #innfo-rail { padding: 6px 8px; min-height: 150px; }
+        .nn-filter-zone { padding: 8px 10px; gap: 6px; }
+        #nn-rail { padding: 6px 8px; min-height: 150px; }
       }
-      .innfo-filter-zone {
+      .nn-filter-zone {
         background: var(--filter-zone-bg);
         border-bottom: 1px solid var(--filter-box-border);
         padding: 12px 14px;
@@ -140,9 +140,9 @@
         gap: 8px;
         flex-shrink: 0;
       }
-      #innfo-search-wrap { position: relative; }
-      #innfo-search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); display: flex; }
-      #innfo-search {
+      #nn-search-wrap { position: relative; }
+      #nn-search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); display: flex; }
+      #nn-search {
         width: 100%;
         padding: 7px 12px 7px 34px;
         font: inherit;
@@ -151,12 +151,12 @@
         border: 1px solid var(--filter-box-border);
         border-radius: var(--radius-sm);
       }
-      @media (max-width: 640px) { #innfo-search { font-size: 16px; } }
-      #innfo-search:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
-      #innfo-rail { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+      @media (max-width: 640px) { #nn-search { font-size: 16px; } }
+      #nn-search:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
+      #nn-rail { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 
       /* Blueprint card (runtime renders one per model) */
-      .innfo-bp-card {
+      .nn-bp-card {
         border: 1px solid var(--border);
         border-radius: var(--radius);
         background: var(--surface);
@@ -165,20 +165,20 @@
         box-shadow: var(--shadow-card);
         transition: transform 0.12s ease, border-color 0.12s ease;
       }
-      .innfo-bp-card:hover { transform: translateY(-1px); border-color: var(--muted); }
-      .innfo-bp-card.active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--surface)); }
-      .innfo-bp-card .bp-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-      .innfo-bp-card .bp-version { color: var(--muted); font-family: var(--mono); font-weight: 500; text-transform: none; }
-      .innfo-bp-card .bp-title { font-size: 0.9rem; font-weight: 700; margin: 4px 0 3px; line-height: 1.3; }
-      .innfo-bp-card .bp-meta { display: flex; gap: 10px; font-size: 0.72rem; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 5px; margin-top: 5px; }
-      .innfo-bp-card .bp-changes { font-size: 0.66rem; font-weight: 700; color: var(--warning); background: color-mix(in srgb, var(--warning) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--surface)); padding: 1px 6px; border-radius: 999px; }
+      .nn-bp-card:hover { transform: translateY(-1px); border-color: var(--muted); }
+      .nn-bp-card.active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--surface)); }
+      .nn-bp-card .bp-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+      .nn-bp-card .bp-version { color: var(--muted); font-family: var(--mono); font-weight: 500; text-transform: none; }
+      .nn-bp-card .bp-title { font-size: 0.9rem; font-weight: 700; margin: 4px 0 3px; line-height: 1.3; }
+      .nn-bp-card .bp-meta { display: flex; gap: 10px; font-size: 0.72rem; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 5px; margin-top: 5px; }
+      .nn-bp-card .bp-changes { font-size: 0.66rem; font-weight: 700; color: var(--warning); background: color-mix(in srgb, var(--warning) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--surface)); padding: 1px 6px; border-radius: 999px; }
 
       main { flex: 1; min-width: 0; padding: 0; display: flex; flex-direction: column; }
       @media (max-width: 640px) {
         main { padding: 0; }
-        .innfo-content-scroll { padding: 12px 12px 64px; }
+        .nn-content-scroll { padding: 12px 12px 64px; }
       }
-      .innfo-action-bar {
+      .nn-action-bar {
         min-height: 40px;
         padding: 6px 30px;
         background: var(--surface);
@@ -194,184 +194,184 @@
         box-shadow: 0 1px 2px rgba(25, 23, 36, 0.03);
       }
       @media (max-width: 1024px) {
-        .innfo-action-bar { position: static; top: auto; }
+        .nn-action-bar { position: static; top: auto; }
       }
-      .innfo-content-scroll { flex: 1; overflow-y: auto; padding: 22px 30px 90px; max-width: 1200px; width: 100%; box-sizing: border-box; }
+      .nn-content-scroll { flex: 1; overflow-y: auto; padding: 22px 30px 90px; max-width: 1200px; width: 100%; box-sizing: border-box; }
 
       /* Runtime regions (kept identical to the previous shell) */
-      .innfo-facet-dropdown { position: relative; display: inline-block; }
-      .innfo-facet-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
-      .innfo-facet-btn.active { border-color: var(--primary); color: var(--primary); }
-      .innfo-facet-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 220px; max-height: 340px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); padding: 6px; display: none; }
-      .innfo-facet-menu.open { display: block; }
-      .innfo-facet-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); font-size: 0.82rem; cursor: pointer; }
-      .innfo-facet-item:hover { background: var(--surface-2); }
-      .innfo-view-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-      .innfo-navbar .innfo-view-tabs { flex: 1 1 auto; min-width: 0; margin-left: 6px; align-items: center; }
-      .innfo-view-tab { appearance: none; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 0.83rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-      .innfo-view-tab:hover { color: var(--text); background: var(--surface-2); }
-      .innfo-view-tab.active { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
-      .innfo-tab-panel { display: none; padding: 22px 30px 90px; }
-      .innfo-tab-panel.active { display: block; }
+      .nn-facet-dropdown { position: relative; display: inline-block; }
+      .nn-facet-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; }
+      .nn-facet-btn.active { border-color: var(--primary); color: var(--primary); }
+      .nn-facet-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 220px; max-height: 340px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); padding: 6px; display: none; }
+      .nn-facet-menu.open { display: block; }
+      .nn-facet-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); font-size: 0.82rem; cursor: pointer; }
+      .nn-facet-item:hover { background: var(--surface-2); }
+      .nn-view-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+      .nn-navbar .nn-view-tabs { flex: 1 1 auto; min-width: 0; margin-left: 6px; align-items: center; }
+      .nn-view-tab { appearance: none; border: 1px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 0.83rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+      .nn-view-tab:hover { color: var(--text); background: var(--surface-2); }
+      .nn-view-tab.active { color: var(--primary); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
+      .nn-tab-panel { display: none; padding: 22px 30px 90px; }
+      .nn-tab-panel.active { display: block; }
       @media (max-width: 640px) {
-        .innfo-tab-panel { padding: 12px 12px 64px; }
+        .nn-tab-panel { padding: 12px 12px 64px; }
       }
-      .innfo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow-card); }
-      .innfo-card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
-      .innfo-card-fields dt { color: var(--muted); font-weight: 600; }
-      .innfo-matrix table { border-collapse: collapse; font-size: 0.82rem; width: 100%; }
-      .innfo-matrix th, .innfo-matrix td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
-      .innfo-matrix td.innfo-matrix-cell-empty .innfo-ku-badge { opacity: 0.38; border-style: dotted; }
+      .nn-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow-card); }
+      .nn-card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
+      .nn-card-fields dt { color: var(--muted); font-weight: 600; }
+      .nn-matrix table { border-collapse: collapse; font-size: 0.82rem; width: 100%; }
+      .nn-matrix th, .nn-matrix td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+      .nn-matrix td.nn-matrix-cell-empty .nn-ku-badge { opacity: 0.38; border-style: dotted; }
       .empty-state { color: var(--muted); font-size: 0.9rem; padding: 40px 0; }
 
       /* Model Explorer cards/table toggle + element table */
-      .innfo-explorer-toolbar { display: flex; justify-content: flex-end; margin: 0 0 12px; }
-      .innfo-viewmode { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-      .innfo-viewmode-btn { appearance: none; border: none; background: var(--surface); color: var(--muted); font: inherit; font-size: 0.8rem; font-weight: 600; padding: 5px 12px; cursor: pointer; }
-      .innfo-viewmode-btn + .innfo-viewmode-btn { border-left: 1px solid var(--border); }
-      .innfo-viewmode-btn:hover { color: var(--text); background: var(--surface-2); }
-      .innfo-viewmode-btn.active { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
-      .innfo-element-table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
-      .innfo-element-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
-      .innfo-element-table th, .innfo-element-table td { border-bottom: 1px solid var(--border); padding: 6px 10px; text-align: left; vertical-align: top; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .innfo-element-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface-2); user-select: none; }
-      .innfo-element-table thead th.sorted { color: var(--text); }
+      .nn-explorer-toolbar { display: flex; justify-content: flex-end; margin: 0 0 12px; }
+      .nn-viewmode { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+      .nn-viewmode-btn { appearance: none; border: none; background: var(--surface); color: var(--muted); font: inherit; font-size: 0.8rem; font-weight: 600; padding: 5px 12px; cursor: pointer; }
+      .nn-viewmode-btn + .nn-viewmode-btn { border-left: 1px solid var(--border); }
+      .nn-viewmode-btn:hover { color: var(--text); background: var(--surface-2); }
+      .nn-viewmode-btn.active { color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface)); }
+      .nn-element-table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+      .nn-element-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+      .nn-element-table th, .nn-element-table td { border-bottom: 1px solid var(--border); padding: 6px 10px; text-align: left; vertical-align: top; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .nn-element-table thead th { position: sticky; top: 0; z-index: 5; background: var(--surface-2); user-select: none; }
+      .nn-element-table thead th.sorted { color: var(--text); }
       /* Sort control: the only clickable part of a header. Muted double triangle when
          unsorted; a single dark triangle once the column is sorted. */
-      .innfo-element-table-sort { appearance: none; border: none; background: transparent; margin-left: 4px; padding: 0 2px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 0.5; font-size: 0.5rem; color: var(--muted); opacity: 0.5; cursor: pointer; vertical-align: middle; }
-      .innfo-element-table-sort:hover { opacity: 0.9; }
-      .innfo-element-table-sort[data-dir="asc"], .innfo-element-table-sort[data-dir="desc"] { color: var(--text); opacity: 1; }
-      .innfo-element-table-sort[data-dir="asc"] .innfo-element-table-sort-down { visibility: hidden; }
-      .innfo-element-table-sort[data-dir="desc"] .innfo-element-table-sort-up { visibility: hidden; }
-      .innfo-element-table tbody tr:hover { background: var(--surface-2); }
-      .innfo-element-table-name { font-weight: 600; }
-      .innfo-element-table-empty { color: var(--muted); text-align: center; padding: 30px 0; }
+      .nn-element-table-sort { appearance: none; border: none; background: transparent; margin-left: 4px; padding: 0 2px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 0.5; font-size: 0.5rem; color: var(--muted); opacity: 0.5; cursor: pointer; vertical-align: middle; }
+      .nn-element-table-sort:hover { opacity: 0.9; }
+      .nn-element-table-sort[data-dir="asc"], .nn-element-table-sort[data-dir="desc"] { color: var(--text); opacity: 1; }
+      .nn-element-table-sort[data-dir="asc"] .nn-element-table-sort-down { visibility: hidden; }
+      .nn-element-table-sort[data-dir="desc"] .nn-element-table-sort-up { visibility: hidden; }
+      .nn-element-table tbody tr:hover { background: var(--surface-2); }
+      .nn-element-table-name { font-weight: 600; }
+      .nn-element-table-empty { color: var(--muted); text-align: center; padding: 30px 0; }
 
       /* Concept guidance sidebar (right) */
-      aside.innfo-guide { width: 320px; min-width: 280px; max-width: 340px; border-left: 1px solid var(--border); background: var(--surface); padding: 16px 18px; overflow-y: auto; height: calc(100vh - 57px); position: sticky; top: 57px; }
-      @media (max-width: 1100px) { aside.innfo-guide { display: none; } }
-      .innfo-guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-      .innfo-guide-desc { font-size: 0.84rem; color: var(--muted); margin: 0 0 14px; }
-      .innfo-guide-section { margin-bottom: 14px; }
-      .innfo-guide-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 6px; }
-      .innfo-guide-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 0.8rem; }
-      .innfo-guide-list dt { color: var(--muted); font-weight: 600; }
-      .innfo-guide-list li { font-size: 0.8rem; }
-      .innfo-guide-meta { font-size: 0.72rem; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; }
-      .innfo-guide-collapse { margin-left: auto; appearance: none; border: 1px solid var(--border); background: var(--surface-2, #f4f4f5); color: var(--muted); border-radius: 6px; padding: 3px 5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-      .innfo-guide-collapse:hover { color: var(--text); border-color: var(--focus, #a1a1aa); }
-      .innfo-guide-field-dd { flex-wrap: wrap; }
-      .innfo-guide-field-desc { flex-basis: 100%; margin: 2px 0 0; font-size: 0.74rem; line-height: 1.4; color: var(--muted); }
-      aside.innfo-guide.is-collapsed { width: 46px; min-width: 46px; max-width: 46px; padding: 12px 6px; overflow: hidden; }
-      aside.innfo-guide.is-collapsed .innfo-guide-head { justify-content: center; margin-bottom: 0; }
-      aside.innfo-guide.is-collapsed .innfo-guide-head > :not(.innfo-guide-collapse) { display: none; }
-      aside.innfo-guide.is-collapsed > :not(.innfo-guide-head) { display: none; }
+      aside.nn-guide { width: 320px; min-width: 280px; max-width: 340px; border-left: 1px solid var(--border); background: var(--surface); padding: 16px 18px; overflow-y: auto; height: calc(100vh - 57px); position: sticky; top: 57px; }
+      @media (max-width: 1100px) { aside.nn-guide { display: none; } }
+      .nn-guide-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .nn-guide-desc { font-size: 0.84rem; color: var(--muted); margin: 0 0 14px; }
+      .nn-guide-section { margin-bottom: 14px; }
+      .nn-guide-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 6px; }
+      .nn-guide-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 0.8rem; }
+      .nn-guide-list dt { color: var(--muted); font-weight: 600; }
+      .nn-guide-list li { font-size: 0.8rem; }
+      .nn-guide-meta { font-size: 0.72rem; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; }
+      .nn-guide-collapse { margin-left: auto; appearance: none; border: 1px solid var(--border); background: var(--surface-2, #f4f4f5); color: var(--muted); border-radius: 6px; padding: 3px 5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+      .nn-guide-collapse:hover { color: var(--text); border-color: var(--focus, #a1a1aa); }
+      .nn-guide-field-dd { flex-wrap: wrap; }
+      .nn-guide-field-desc { flex-basis: 100%; margin: 2px 0 0; font-size: 0.74rem; line-height: 1.4; color: var(--muted); }
+      aside.nn-guide.is-collapsed { width: 46px; min-width: 46px; max-width: 46px; padding: 12px 6px; overflow: hidden; }
+      aside.nn-guide.is-collapsed .nn-guide-head { justify-content: center; margin-bottom: 0; }
+      aside.nn-guide.is-collapsed .nn-guide-head > :not(.nn-guide-collapse) { display: none; }
+      aside.nn-guide.is-collapsed > :not(.nn-guide-head) { display: none; }
 
       /* Sankey relation flow (KU modal Connections tab) */
-      .innfo-sankey { width: 100%; overflow-x: auto; }
-      .innfo-sankey-svg { width: 100%; height: auto; min-width: 520px; }
-      .innfo-sankey-node { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
-      .innfo-sankey-center { fill: color-mix(in srgb, var(--primary) 14%, var(--surface)); stroke: var(--primary); }
-      .innfo-sankey-link { fill: none; stroke: color-mix(in srgb, var(--primary) 45%, var(--border)); stroke-width: 1.6; opacity: 0.8; }
-      .innfo-sankey-label { font-size: 12px; fill: var(--text); }
-      .innfo-sankey-field { font-size: 10px; fill: var(--muted); font-family: var(--mono); }
-      .innfo-sankey-center-label { font-size: 12px; font-weight: 700; fill: var(--primary); }
-      .innfo-sankey-empty { color: var(--muted); font-size: 0.9rem; padding: 20px 0; }
+      .nn-sankey { width: 100%; overflow-x: auto; }
+      .nn-sankey-svg { width: 100%; height: auto; min-width: 520px; }
+      .nn-sankey-node { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
+      .nn-sankey-center { fill: color-mix(in srgb, var(--primary) 14%, var(--surface)); stroke: var(--primary); }
+      .nn-sankey-link { fill: none; stroke: color-mix(in srgb, var(--primary) 45%, var(--border)); stroke-width: 1.6; opacity: 0.8; }
+      .nn-sankey-label { font-size: 12px; fill: var(--text); }
+      .nn-sankey-field { font-size: 10px; fill: var(--muted); font-family: var(--mono); }
+      .nn-sankey-center-label { font-size: 12px; font-weight: 700; fill: var(--primary); }
+      .nn-sankey-empty { color: var(--muted); font-size: 0.9rem; padding: 20px 0; }
 
       /* Media lightbox */
-      #innfo-media-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(880px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
-      #innfo-media-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
-      .innfo-media-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
-      .innfo-media-image { max-width: 100%; max-height: 70vh; object-fit: contain; align-self: center; border-radius: var(--radius); }
-      .innfo-media-bar { display: flex; align-items: center; gap: 12px; }
-      .innfo-media-nav { appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem; line-height: 1; padding: 4px 12px; cursor: pointer; }
-      .innfo-media-nav:disabled { opacity: 0.4; cursor: default; }
-      .innfo-media-count { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
-      .innfo-media-download { margin-left: auto; font-size: 0.8rem; color: var(--link); }
-      .innfo-card-thumb--zoom { cursor: zoom-in; }
+      #nn-media-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(880px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
+      #nn-media-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+      .nn-media-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+      .nn-media-image { max-width: 100%; max-height: 70vh; object-fit: contain; align-self: center; border-radius: var(--radius); }
+      .nn-media-bar { display: flex; align-items: center; gap: 12px; }
+      .nn-media-nav { appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius-sm); font-size: 1rem; line-height: 1; padding: 4px 12px; cursor: pointer; }
+      .nn-media-nav:disabled { opacity: 0.4; cursor: default; }
+      .nn-media-count { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+      .nn-media-download { margin-left: auto; font-size: 0.8rem; color: var(--link); }
+      .nn-card-thumb--zoom { cursor: zoom-in; }
 
       /* Type-aware field values */
-      .innfo-field-bool { font-weight: 600; }
-      .innfo-field-bool[data-value="true"] { color: var(--primary); }
-      .innfo-field-bool[data-value="false"] { color: var(--muted); }
-      .innfo-field-url { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
-      .innfo-field-code { font-family: var(--mono); font-size: 0.82em; background: var(--surface-2); border-radius: var(--radius-sm); padding: 0 4px; }
-      .innfo-field-markdown { white-space: pre-wrap; }
-      .innfo-field-image { max-height: 90px; border-radius: var(--radius-sm); display: block; margin-top: 2px; }
-      .innfo-field-list { color: var(--text); }
+      .nn-field-bool { font-weight: 600; }
+      .nn-field-bool[data-value="true"] { color: var(--primary); }
+      .nn-field-bool[data-value="false"] { color: var(--muted); }
+      .nn-field-url { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+      .nn-field-code { font-family: var(--mono); font-size: 0.82em; background: var(--surface-2); border-radius: var(--radius-sm); padding: 0 4px; }
+      .nn-field-markdown { white-space: pre-wrap; }
+      .nn-field-image { max-height: 90px; border-radius: var(--radius-sm); display: block; margin-top: 2px; }
+      .nn-field-list { color: var(--text); }
 
       /* Incoming relations on cards */
-      .innfo-card-incoming { margin-top: 8px; }
-      .innfo-card-incoming-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
+      .nn-card-incoming { margin-top: 8px; }
+      .nn-card-incoming-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
 
       /* Field detail dialog */
-      #innfo-field-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(720px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
-      #innfo-field-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
-      .innfo-field-detail-body { padding: 0 16px 16px; }
-      .innfo-field-detail-meta { font-size: 0.8rem; color: var(--muted); margin: 0 0 8px; }
-      .innfo-field-detail-value { white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 0.82rem; background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
+      #nn-field-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: min(720px, 92vw); width: 100%; background: var(--surface); color: var(--text); }
+      #nn-field-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+      .nn-field-detail-body { padding: 0 16px 16px; }
+      .nn-field-detail-meta { font-size: 0.8rem; color: var(--muted); margin: 0 0 8px; }
+      .nn-field-detail-value { white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 0.82rem; background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
 
       /* Metamodel map */
-      .innfo-metamodel { display: flex; justify-content: center; padding: 12px 0; }
-      .innfo-metamodel-svg { width: 100%; max-width: 620px; height: auto; }
-      .innfo-metamodel-node { fill: color-mix(in srgb, var(--primary) 12%, var(--surface)); stroke: var(--primary); stroke-width: 1.4; }
-      .innfo-metamodel-label { font-size: 12px; fill: var(--text); font-weight: 600; }
-      .innfo-metamodel-edge { stroke: color-mix(in srgb, var(--primary) 40%, var(--border)); stroke-width: 1.5; }
-      .innfo-metamodel-edge-label { font-size: 10px; fill: var(--muted); font-family: var(--mono); }
-      .innfo-reviewer-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
-      .innfo-reviewer-name { width: 9rem; padding: 4px 8px; font: inherit; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); }
-      .innfo-rail-badge, .innfo-card-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 999px; padding: 1px 6px; min-width: 16px; height: 16px; }
-      .innfo-highlight { animation: innfo-pulse-glow 2.5s ease-out; }
-      @keyframes innfo-pulse-glow { 0% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 50%, transparent); } 100% { box-shadow: var(--shadow-card); } }
-      #innfo-ref-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: 480px; width: 100%; background: var(--surface); color: var(--text); }
-      #innfo-ref-dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
+      .nn-metamodel { display: flex; justify-content: center; padding: 12px 0; }
+      .nn-metamodel-svg { width: 100%; max-width: 620px; height: auto; }
+      .nn-metamodel-node { fill: color-mix(in srgb, var(--primary) 12%, var(--surface)); stroke: var(--primary); stroke-width: 1.4; }
+      .nn-metamodel-label { font-size: 12px; fill: var(--text); font-weight: 600; }
+      .nn-metamodel-edge { stroke: color-mix(in srgb, var(--primary) 40%, var(--border)); stroke-width: 1.5; }
+      .nn-metamodel-edge-label { font-size: 10px; fill: var(--muted); font-family: var(--mono); }
+      .nn-reviewer-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+      .nn-reviewer-name { width: 9rem; padding: 4px 8px; font: inherit; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+      .nn-rail-badge, .nn-card-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 999px; padding: 1px 6px; min-width: 16px; height: 16px; }
+      .nn-highlight { animation: nn-pulse-glow 2.5s ease-out; }
+      @keyframes nn-pulse-glow { 0% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 50%, transparent); } 100% { box-shadow: var(--shadow-card); } }
+      #nn-ref-dialog { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0; max-width: 480px; width: 100%; background: var(--surface); color: var(--text); }
+      #nn-ref-dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
     </style>
   </head>
   <body>
-    <header class="innfo-navbar">
-      <div class="innfo-brand">
-        <span class="innfo-brand-logo" aria-label="iNNfo logo" title="iNNfo ecosystem">
+    <header class="nn-navbar">
+      <div class="nn-brand">
+        <span class="nn-brand-logo" aria-label="iNNfo logo" title="iNNfo ecosystem">
           <svg viewBox="0 0 800 600" width="28" height="21" fill="none" stroke="currentColor" aria-hidden="true">
             <path d="M 160 490 L 160 295 Q 160 270 180 285 L 330 475 Q 350 490 350 470 L 350 235 Q 350 210 370 225 L 530 415 Q 550 430 550 410 L 550 90 L 495 145 L 550 90 L 605 145" stroke="#4D0E4E" stroke-width="82" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </span>
-        <h1 class="innfo-domain-title" id="innfo-domain-title">iNNfo Console</h1>
-        <div class="innfo-mode" id="innfo-navbar-extra"></div>
+        <h1 class="nn-domain-title" id="nn-domain-title">iNNfo Console</h1>
+        <div class="nn-mode" id="nn-navbar-extra"></div>
       </div>
-      <nav id="innfo-view-tabs" class="innfo-view-tabs" style="display: none;" aria-label="Console views"></nav>
-      <div class="innfo-navbar-actions" id="innfo-navbar-actions"></div>
+      <nav id="nn-view-tabs" class="nn-view-tabs" style="display: none;" aria-label="Console views"></nav>
+      <div class="nn-navbar-actions" id="nn-navbar-actions"></div>
     </header>
 
-    <div id="innfo-layout">
-      <aside class="innfo-rail" aria-label="Blueprint rail">
-        <nav id="innfo-rail"></nav>
+    <div id="nn-layout">
+      <aside class="nn-rail" aria-label="Blueprint rail">
+        <nav id="nn-rail"></nav>
       </aside>
 
       <main>
-        <div class="innfo-filter-zone innfo-toolbar">
-          <div class="innfo-filter-main-row">
-            <div id="innfo-search-wrap">
+        <div class="nn-filter-zone nn-toolbar">
+          <div class="nn-filter-main-row">
+            <div id="nn-search-wrap">
               <span class="search-icon" aria-hidden="true">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </span>
-              <input id="innfo-search" type="search" placeholder="Search elements…" aria-label="Search elements" title="Filters: concept: and model: widen with OR; tag: narrows with AND (exact match); tag-any: widens with OR" />
+              <input id="nn-search" type="search" placeholder="Search elements…" aria-label="Search elements" title="Filters: concept: and model: widen with OR; tag: narrows with AND (exact match); tag-any: widens with OR" />
             </div>
-            <div id="innfo-filter-facets"></div>
+            <div id="nn-filter-facets"></div>
           </div>
-          <div id="innfo-active-filters"></div>
+          <div id="nn-active-filters"></div>
         </div>
-        <div id="innfo-tab-explorer" class="innfo-tab-panel active">
-          <div id="innfo-doc"></div>
-          <div id="innfo-content"></div>
-          <div id="innfo-matrices"></div>
+        <div id="nn-tab-explorer" class="nn-tab-panel active">
+          <div id="nn-doc"></div>
+          <div id="nn-content"></div>
+          <div id="nn-matrices"></div>
         </div>
-        <div id="innfo-tab-review" class="innfo-tab-panel"></div>
+        <div id="nn-tab-review" class="nn-tab-panel"></div>
       </main>
     </div>
 
-    <dialog id="innfo-ref-dialog" aria-label="Referenced element details"></dialog>
+    <dialog id="nn-ref-dialog" aria-label="Referenced element details"></dialog>
 
-    <script type="application/json" id="innfo-config">
+    <script type="application/json" id="nn-config">
       {
         "needs": [
           "concept-rail",
@@ -384,10 +384,10 @@
         ]
       }
     </script>
-    <script type="application/json" id="innfo-schema">
+    <script type="application/json" id="nn-schema">
       {}
     </script>
-    <script type="application/json" id="innfo-model">
+    <script type="application/json" id="nn-model">
       {}
     </script>
 

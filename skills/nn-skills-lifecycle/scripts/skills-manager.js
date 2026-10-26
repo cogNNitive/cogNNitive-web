@@ -8,7 +8,11 @@
 // @ts-nocheck
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 
 // scripts/lib/atomic-fs.js
@@ -1459,6 +1463,23 @@ ${failures} item(s) failed to install.`);
       console.log(`
 Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), ${toInstallConsole.length} console asset(s), and ${toInstallMcp.length} MCP server(s).`);
     }
+    var THIRD_PARTY_SKILL_DOC_URL = "https://cognnitive.com/skills/documentation/#/skills/installing-third-party-skills";
+    function buildExternalSkillNotice({ name, repo, path: skillPath, commit, sha256 }) {
+      const shortCommit = String(commit).slice(0, 7);
+      const integrity = sha256 ? "pinned and verified against the author's sha256" : "pinned by commit only (no sha256 to verify)";
+      return `Third-party skill \u2014 not from cogNNitive
+
+  name:      ${name}
+  source:    ${repo}/${skillPath} @ ${shortCommit}
+  integrity: ${integrity}
+
+cogNNitive has not reviewed this content. Before trusting a skill from a
+third party, it is worth having a security skill check it first \u2014 a quick,
+routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
+
+[a] Install anyway   [b] Skip
+`;
+    }
     async function cmdInstallExternal(args) {
       const { name, repo, commit } = args;
       const skillPath = args.path;
@@ -1470,14 +1491,13 @@ Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} temp
       }
       const skillsDir = args.skillsDir || DEFAULT_SKILLS_DIR;
       const state = loadState(args.stateFile);
-      const integrity = args.sha256 ? "verified via sha256" : "NOT pinned (commit only)";
-      const menu = `Referenced external skill (third-party, NOT curated by cogNNitive):
-  - ${name}  ${repo}/${skillPath} @ ${String(commit).slice(0, 7)}
-  integrity: ${integrity}
-
-[a] Install
-[b] Skip
-`;
+      const menu = buildExternalSkillNotice({
+        name,
+        repo,
+        path: skillPath,
+        commit,
+        sha256: args.sha256
+      });
       const proceed = await consentOrAbort(`install external skill ${name}`, [`external-skill:${name}`], menu, args.yes);
       if (!proceed) return;
       await installSkillAtCommit(
@@ -2086,6 +2106,8 @@ Projected skills to agent directories:`);
       cmdStatus,
       cmdInstall,
       cmdInstallExternal,
+      buildExternalSkillNotice,
+      THIRD_PARTY_SKILL_DOC_URL,
       cmdInstallBlueprint,
       loadBlueprintCatalog,
       findCatalogEntry,

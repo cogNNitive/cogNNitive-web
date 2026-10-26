@@ -151,7 +151,7 @@ Declares a typed Field of a Concept. The Element name is the Field name. Allowed
 |---|---|---|
 | `slug` | string | Explicit kebab-case slug identifier |
 | `concept` | string or array | Name of the owning Concept Definition, list of Concepts, or `*` for all non-text concepts (required) |
-| `type` | `string` \| `number` \| `boolean` \| `select` \| `reference` \| `markdown_inline` \| `markdown_file` \| `image` \| `file` \| `video` \| `audio` \| `url` \| `knowledge` \| `model` \| `citation` | Field type (required) |
+| `type` | `string` \| `number` \| `boolean` \| `select` \| `reference` \| `markdown_inline` \| `markdown_file` \| `image` \| `file` \| `video` \| `audio` \| `url` \| `knowledge` \| `model` \| `address` \| `citation` | Field type (required) |
 | `multiple` | boolean | Multi-valued field flag (allowed only on `type:: select`) |
 | `widget` | `boolean` \| `cycle` \| `scale` \| `set` \| `text` | Field interaction widget |
 | `widget_config` | object | Widget configuration parameters (JSON object) |
@@ -179,6 +179,8 @@ multiple:: true
 **Knowledge Fields (`type:: knowledge` or `type:: model`).** A Field of any Concept MAY be declared `type:: knowledge` or `type:: model`. Its value is a domain-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[kNNowledge/acme_business_NN.md]]`). When the Field declares `target_blueprint`, the referenced kNNowledge document's `parent_spec` MUST identify that bluepriNNt. Knowledge fields are followed during domaiNN traversal, so a document referenced by two parents appears once in the graph with both incoming edges — a diamond is not a cycle.
 
 **Citation Fields (`type:: citation`).** A Field declared `type:: citation` holds a pointer list to the Source documents it derives from, using the same bracketed grammar as the reserved `sources::` property (`[sources/nn/<filename>#<heading-slug>, ...]`). Unlike `reference` and `knowledge`, its values are validated by the `KU_*` integrity checks and are read into the element's source citations.
+
+**Address Fields (`type:: address`).** A Field declared `type:: address` holds one structural address `<target>@<unit>`: `<target>` is a workspace-relative path or a `knowledge_slug`; `<unit>` is `## Heading`, `RowID&col`, `/json/pointer`, `element-slug`, `element-slug&field`, or `matrix&row&col`. Its value MUST resolve to an existing unit; a dangling address is an **error**. `address` is the base of the address grammar: `citation` is an `address` that additionally asserts derivation (evidence), and `knowledge` is an `address` that is traversed. All three share the same parser.
 
 **Qualified Cross-Knowledge References.** A `reference` or `knowledge` Field MAY target an Element in another kNNowledge document in the same domaiNN using the qualified form `[[Document Title :: Element Name]]` or `[[model_slug@element-slug]]`.
 
@@ -493,7 +495,7 @@ description:: Name of the owning Concept Definition, list of concepts, or * (req
 ## NN Field Definition: type
 concept:: Field Definition
 type:: select
-options:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, citation]
+options:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, address, citation]
 description:: Field type (required).
 
 ## NN Field Definition: multiple
