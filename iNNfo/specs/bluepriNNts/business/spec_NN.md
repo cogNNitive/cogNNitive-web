@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-5-0"
+blueprint_version: "V_0-5-1"
 title: "Business App"
 includes:
   - name: "business-model"
@@ -77,8 +77,9 @@ belongs to neither ingredient alone:
 - **`metrics`** — the quantified layer: `Metrics` (typed rows with formulas and
   dependencies), `Variables`, `Evolution`, `Scenario`, with the
   metrics-dependencies, metric-variables, and scenario-metrics matrices and the
-  `is_variable` / `is_formula` / `is_derived` markers. Its `Create Projections`
-  procedure compiles any metrics model into a standalone Projections dashboard.
+  `is_variable` / `is_formula` / `is_derived` markers. It ships the registered
+  `timeline` console view, which the domaiNN console mounts to render projections
+  from the model in place — no separate dashboard or per-model artifact.
 
 `business-model` and `analysis` each declare the same five markers — `importance`,
 `completion`, `certainty`, `priority`, `rating` — with **identical bodies**. Under
@@ -160,40 +161,32 @@ Concept / Field / Marker / Matrix Definition to validate and render the model.
 ### Canonical Sample
 
 The official sample for this template is
-`specs/bluepriNNts/business/samples/Ghostbusters_V_0-4-2_business_NN.md` — the
-`V_0-2-1` Ghostbusters sample re-pointed at this version.
-`Ghostbusters_V_0-2-1_business_NN.md` is kept for consumers still pinned to
-`V_0-2-1`. `V_0-2-1` added the `Compile Strategic Master` procedure; `V_0-2-2`
-added `Compile Model Viewer` (`procedures/compile_model_viewer_NN.md`), which
-fills the template-agnostic consultation shell at `assets/model_viewer.html`
-with the resolved schema and serialized model data — a single offline,
-read-only page for browsing any model built on this template. `V_0-2-3` is a
-docs-and-sample patch that finalizes that work. `V_0-2-4` attaches the `metrics`
-template (quantified rows, variables, scenarios, `Create Projections`
-procedure) and moves the `Metrics-Organizational goals` matrix onto the
-composite, where both endpoints meet. The `V_0-2-3` Ghostbusters sample is
-kept as the canonical sample: its prose-only `Metrics` elements and its
-`metrics-organizational goals` block resolve unchanged against the new
-composition. `V_0-2-6` drops the `Compile Model Viewer` procedure
-(`procedures/compile_model_viewer_NN.md`) and its `procedures:` entry: model
-consultation has relocated to the workspace level as `Compile Model Console`
-(`workspace/procedures/compile_model_console_NN.md`), which fills the same
-consultation shell plus per-field citation icons. The `model-viewer-shell`
-asset entry (`assets/model_viewer.html`) stays declared for one transition
-cycle even though no procedure still targets it from this template.
+`specs/bluepriNNts/business/samples/Ghostbusters_V_0-5-1_business_NN.md`, the
+`V_0-5-1` Ghostbusters sample. It resolves against the composed schema —
+`business-model` plus `analysis` plus the transitive `organization`, `projects`
+and `metrics` vocabularies — with the `Metrics-Organizational goals` matrix
+declared on the composite, where both endpoints meet.
+
+Model consultation is no longer a per-template artifact. The former
+`Compile Model Viewer` / `Compile Model Console` procedures and the
+`assets/model_viewer.html` shell are retired: the workspace-level domain console
+(`artifact_shell.html`, driven by the `nnConsole` runtime) is the single
+consultation surface for every model built on this template. The `metrics`
+ingredient contributes its `timeline` view as a registered console view, so
+projections render in place rather than in a separate dashboard.
 
 ## Parent Chain
 
 ```yaml
-# From the Ghostbusters V_0-2-3 sample:
+# From the Ghostbusters V_0-5-1 sample:
 parent_spec:
-  name: "business_V_0-2-3"
+  name: "business_V_0-5-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/spec_NN.md"
 
 # This template's parent:
 parent_spec:
-  name: "iNNfo_V_0-3-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"
+  name: "iNNfo_V_0-5-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 
 # This template's includes:
 includes:

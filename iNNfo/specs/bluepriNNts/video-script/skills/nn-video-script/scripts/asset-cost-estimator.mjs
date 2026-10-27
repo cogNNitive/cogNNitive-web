@@ -12,12 +12,12 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { RemotionSceneCompiler, ScriptValidationError } from './remotion-scene-compiler.mjs';
+import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs';
 import { loadKnowledgeModel, loadTemplateModels, parseKnowledgeDocument } from './lib/knowledge-model.mjs';
 import { fileURLToPath } from 'node:url';
 import { computePlanHash, formatStamp } from './lib/plan-approval.mjs';
 import { normalizeModelId } from './lib/video-guard.mjs';
-import { resolveEngineModel } from './lib/model-cascade.mjs';
+import { loadCascadeBags, resolve } from './lib/cascade.mjs';
 import { isAvatarLayer } from './lib/avatar-jobs.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
@@ -206,16 +206,9 @@ export const PROVIDER_PRICING_CATALOG = {
   },
 };
 
-/** Default models. These are the real provider ids, identical to what the synthesizer and the spend guard use. */
-export const DEFAULT_MODELS = Object.freeze({
-  image: 'wavespeed-ai/z-image/turbo',
-  tts: 'minimax/speech-2.8-hd',
-  avatar: 'wavespeed-ai/infinitetalk-fast',
-});
-
 /**
- * Provider model ids contain a slash; anything else (a loose label such as 'elevenlabs' or
- * 'wavespeed-v1-flux') falls back. Shared by the estimator and the synthesizer so the plan
+ * Provider model ids contain a slash; anything else (a loose label such as 'wavespeed-v1-flux')
+ * falls back. Shared by the estimator and the synthesizer so the plan
  * prices exactly the models that will be called.
  * @param {unknown} prop
  * @param {string} fallback
@@ -256,9 +249,9 @@ export function estimateCallUsd(kind, model, units = {}) {
  *
  * @param {string} scriptContentOrPath Script markdown text or file path
  * @param {Object} [options]
- * @param {string} [options.defaultImageModel="wavespeed-ai/z-image/turbo"]
- * @param {string} [options.defaultTtsModel="minimax/speech-2.8-hd"]
- * @param {string} [options.defaultAvatarModel="wavespeed-ai/infinitetalk-fast"]
+ * @param {string} [options.defaultImageModel] CLI image-model override (part of plan_hash)
+ * @param {string} [options.defaultTtsModel] CLI tts-model override (part of plan_hash)
+ * @param {string} [options.defaultAvatarModel] CLI avatar-model override (part of plan_hash)
  * @returns {Object} Cost estimation report
  */
 export function estimateScriptCost(scriptContentOrPath, options = {}) {
@@ -268,17 +261,26 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     scriptContent = fs.readFileSync(scriptContentOrPath, 'utf8');
   }
 
-  const compiler = new RemotionSceneCompiler(options);
+  const compiler = new SceneCompiler(options);
   const model = isPath ? loadKnowledgeModel(scriptContentOrPath) : parseKnowledgeDocument(String(scriptContent));
   const guard = compiler.checkScript(model, options);
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
   const templates = isPath ? loadTemplateModels(path.dirname(scriptContentOrPath)) : {};
-  const parsed = compiler.lowerKnowledgeModel(model, { templates });
-  // Model selection goes through the single cascade resolver (cli > layer > scene > video > series > workspace > blueprint).
-  const cliModels = { image: options.defaultImageModel, tts: options.defaultTtsModel, avatar: options.defaultAvatarModel };
-  const defaultImageModel = resolveModelId(resolveEngineModel('image', { cliModel: cliModels.image, defaultModel: DEFAULT_MODELS.image }), DEFAULT_MODELS.image);
-  const defaultTtsModel = resolveModelId(resolveEngineModel('tts', { cliModel: cliModels.tts, defaultModel: DEFAULT_MODELS.tts }), DEFAULT_MODELS.tts);
-  const defaultAvatarModel = resolveModelId(resolveEngineModel('avatar', { cliModel: cliModels.avatar, defaultModel: DEFAULT_MODELS.avatar }), DEFAULT_MODELS.avatar);
+  // Model selection goes through the single cascade resolver
+  // (cli > layer > scene > video > series > domain > blueprint). The plan and
+  // the execution read the same bags, so they pick the SAME model id.
+  const bags = options.bags || (isPath ? loadCascadeBags(path.dirname(path.resolve(scriptContentOrPath))) : {});
+  const resolvedBags = {
+    ...bags,
+    cli: {
+      image_model: options.defaultImageModel,
+      tts_model: options.defaultTtsModel,
+      avatar_model: options.defaultAvatarModel,
+    },
+  };
+  const parsed = compiler.lowerKnowledgeModel(model, { templates, bags: resolvedBags });
+  const defaultImageModel = normalizeModelId(resolve('image_model', resolvedBags).value);
+  const defaultAvatarModel = normalizeModelId(resolve('avatar_model', resolvedBags).value);
   const planModels = new Set();
   const noteModel = (model) => {
     if (model && !model.startsWith('local/')) planModels.add(model);
@@ -325,7 +327,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     const imagePricing = findCatalogEntry('image', imageModelKey) || { modelName: imageModelKey, provider: 'Unlisted (fallback rate)' };
 
     // 2. TTS
-    const ttsModelKey = resolveModelId(resolveEngineModel('tts', { cliModel: cliModels.tts, sceneModel: scene.properties?.scene_tts_model, defaultModel: DEFAULT_MODELS.tts }), DEFAULT_MODELS.tts);
+    const ttsModelKey = normalizeModelId(scene.properties?.scene_tts_model);
     const ttsPricing = findCatalogEntry('tts', ttsModelKey) || { modelName: ttsModelKey, provider: 'Unlisted (fallback rate)' };
     const sceneTtsCost = estimateCallUsd('tts', ttsModelKey, { chars: charCount });
     if (charCount > 0) noteModel(ttsModelKey);
@@ -334,7 +336,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     let sceneAvatarCost = 0;
     let avatarModelKey = defaultAvatarModel;
     avatarLayers.forEach((l, idx) => {
-      const m = resolveModelId(resolveEngineModel('avatar', { cliModel: cliModels.avatar, layerModel: l.properties?.layer_avatar_model, defaultModel: DEFAULT_MODELS.avatar }), DEFAULT_MODELS.avatar);
+      const m = normalizeModelId(l.properties?.layer_avatar_model);
       if (idx === 0) avatarModelKey = m;
       sceneAvatarCost += estimateCallUsd('avatar', m, { seconds: estimatedDurationSec });
       noteModel(m);

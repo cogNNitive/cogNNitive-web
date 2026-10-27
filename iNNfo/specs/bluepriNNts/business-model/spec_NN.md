@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 title: "Business Model App"
 relationship_types:
   hierarchy:
@@ -544,17 +544,17 @@ description:: Payback period in months.
 ## NN Field Definition: target_artifact
 concept:: Procedure
 type:: string
-description:: Nombre del archivo o entregable final a generar (ej. model_viewer.html).
+description:: Target artifact file or deliverable the procedure generates (e.g. a console or a report).
 
 ## NN Field Definition: trigger_command
 concept:: Procedure
 type:: string
-description:: Comando o atajo de OpenCode para disparar el proceso (ej. /generate-master).
+description:: OpenCode command or shortcut that triggers the procedure (e.g. /generate-report).
 
 ## NN Field Definition: instructions
 concept:: Procedure
 type:: markdown_inline
-description:: Instrucciones detalladas de prompt para que el agente ejecute la generacion del artefacto.
+description:: Detailed prompt instructions the agent follows to generate the artifact.
 
 # NN Matrix Definition
 

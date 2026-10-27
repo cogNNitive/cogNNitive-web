@@ -1,0 +1,28 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    .nn-caption {
+      position: absolute; right: 5%; bottom: 10%; max-width: 60%;
+      text-align: right; background: rgba(0, 0, 0, 0.55);
+      border-radius: 8px; padding: 8px 14px;
+      font-family: var(--font, Inter), sans-serif;
+      font-size: 26px; color: #fff;
+    }
+  </style>
+  <div
+    id="root"
+    data-composition-id="caption"
+    data-composition-variables='[
+      {"id":"text","type":"string","label":"Text","default":""},
+      {"id":"src","type":"string","label":"Source","default":""},
+      {"id":"position","type":"string","label":"Position","default":"bottom-right"},
+      {"id":"enter","type":"string","label":"Enter","default":""},
+      {"id":"exit","type":"string","label":"Exit","default":""},
+      {"id":"font","type":"string","label":"Font","default":"Inter"},
+      {"id":"accent","type":"string","label":"Accent","default":"#7c3aed"}
+    ]'
+    data-no-timeline
+  >
+    <div id="caption-text" class="nn-caption" data-var-text="text"></div>
+  </div>
+</template>

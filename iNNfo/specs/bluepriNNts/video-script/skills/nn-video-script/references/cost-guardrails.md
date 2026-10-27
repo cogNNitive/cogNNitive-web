@@ -121,7 +121,7 @@ apply to in-chat approvals.
 uncached billable call (TTS and image layers), the estimated total against the
 per-run and 24h caps, blocked models and approval status. It spends nothing,
 writes nothing (not even cache directories) and exits 0. `--dry-run` is rejected
-on `render` and `preview`.
+on `render`.
 
 ## 4. Enforcement order (per billable call)
 
@@ -200,10 +200,9 @@ again (picks the clips up), render.
   you gave). `--resume` polls the existing task, never re-submits and never charges again. Every failure of
   a batch is collected; `--dry-run` cannot be combined with `--resume`.
 - **Clip handling**: the download must start with an MP4 `ftyp` box (an HTML 200 is never cached). The raw
-  clip is written to the cache first (tmp + rename); the ledger says `ok` only after that. Then, with ffmpeg
-  on PATH, a copy is remuxed with `-c copy -movflags +faststart` (async, 120s timeout; WaveSpeed puts the
-  moov atom at the end, which breaks the Remotion proxy). If ffmpeg is missing or fails, the raw clip is
-  kept, a warning is printed and `<clip>.needs-faststart` is left so `compile` retries once ffmpeg exists.
+  clip is written to the cache first (tmp + rename); the ledger says `ok` only after that. The clip is
+  cached exactly as delivered and served to HyperFrames unchanged (a raw `moov`-at-end clip renders fine;
+  verified against the pinned CLI).
 - **Render pickup contract**: the clip is cached at `temp/<key>.mp4`; the key hashes the image bytes, the
   audio bytes, the model and the resolution. At render time a `talking_avatar` layer is drawn as a still
   image by AvatarFrame; a following `compile` finds the clip by the same key (cache reads only) and rewrites

@@ -3,115 +3,151 @@
  * nn-video-script/scripts/build-script-from-draft.mjs
  *
  * Generates the final iNNfo Level-3 `video-script` document from a reviewed draft.
- * The reviewed JSON carries the decisions + narrations; the draft JSON carries the
- * scene structure (including fixed scenes such as the intro bumper). One Scene per
- * single visual.
+ * The reviewed JSON is the single source of truth for per-scene decisions (narration,
+ * choice, overlays); the draft JSON only supplies the scene structure (including fixed
+ * scenes such as the intro bumper). One Scene per single visual.
  *
- * Series-parameterized: every series-specific value (template names, music default,
- * filenames, avatar/intro assets) is read from a `video.series.json` config, never
- * hardcoded. Without a config it uses neutral defaults.
+ * Series-parameterized through the parameter cascade (design D10/D11): every
+ * series value (presenter/intro assets, per-scene templates) is read from the
+ * `series_NN.md` bag, the domain Video Defaults or the package Video Defaults,
+ * never from a side config. The generated document's frontmatter is copied from
+ * the series document and its filename uses the Series slug. Cascaded scene
+ * values the engine resolves itself (`music`, `music_volume`, `transition`,
+ * `fit`) are never written.
  *
  * Usage:
  *   node build-script-from-draft.mjs <slug>_reviewed.json [--draft <draft.json>]
- *     [--series <series-dir> | --config <video.series.json>] [--out <script_NN.md>]
+ *     [--series <series-dir>] [--out <script_NN.md>]
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadCascadeBags, resolve } from './lib/cascade.mjs';
+import { findSeriesRoot } from './lib/nearest.mjs';
+import { resolveWorkspace } from './lib/video-guard.mjs';
+import { parseKnowledgeDocument, slugify } from './lib/knowledge-model.mjs';
 
-export const DEFAULT_SERIES_CONFIG = {
-  series: 'series',
-  seriesSpecName: '<series>_V_0-1-0',
-  seriesSpecUrl: 'series/<series>/spec_NN.md',
-  templateFull: '[[<series> :: Full]]',
-  templateSection: '[[<series> :: Section]]',
-  defaultMusic: '../../shared/music/bed.mp3',
-  defaultMusicVolume: '0.4',
-  defaultAvatarAsset: '../../shared/avatar/avatar_default.png',
-  defaultIntroAsset: '../../shared/intro.mp4',
-  scriptFilename: '<slug>_video-script_<series>_NN.md',
-  defaultTransition: 'fade',
-  specVersion: 'V_0-4-0',
-  specUrl: 'https://raw.githubusercontent.com/cogNNitive/cogNNitive/main/iNNfo/specs/iNNfo_V_0-4-0_NN.md',
-};
-
-/** Applies the series name to the `<series>` / `<slug>` placeholders. */
-export function applySeriesTokens(config, slug) {
-  const out = {};
-  for (const [k, v] of Object.entries(config)) {
-    out[k] = typeof v === 'string' ? v.replace(/<series>/g, config.series).replace(/<slug>/g, slug) : v;
-  }
-  return out;
+/** The raw frontmatter block (between the `---` fences) of an iNNfo document. */
+export function extractFrontmatter(content) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(String(content ?? ''));
+  return match ? match[1] : '';
 }
 
-export function loadSeriesConfig(argv) {
-  const i = argv.indexOf('--config');
-  const s = argv.indexOf('--series');
-  let file = null;
-  if (i >= 0) file = argv[i + 1];
-  else if (s >= 0) file = path.join(argv[s + 1], 'video.series.json');
-  if (file && fs.existsSync(file)) {
-    return { ...DEFAULT_SERIES_CONFIG, ...JSON.parse(fs.readFileSync(file, 'utf8')) };
-  }
-  return { ...DEFAULT_SERIES_CONFIG };
+/**
+ * The output filename for a generated script: `<videoSlug>_video-script_<seriesSlug>_NN.md`.
+ * Both slugs come from documents (the reviewed JSON and the series `slug::`), never
+ * from a hardcoded series name.
+ * @param {string} seriesSlug
+ * @param {string} videoSlug
+ * @returns {string}
+ */
+export function scriptFilename(seriesSlug, videoSlug) {
+  return `${videoSlug}_video-script_${seriesSlug}_NN.md`;
 }
 
-/** Pure: build the L3 script markdown from a reviewed draft and a series config. */
-export function buildScript(reviewed, draft, config) {
-  const cfg = config;
-  const merged = applySeriesTokens(cfg, reviewed.slug);
-  const rev = { ...reviewed, config: { effective: { ...(reviewed.config?.effective || {}), ...merged } } };
-  const cfgEff = rev.config.effective;
-  const byslug = new Map(rev.scenes.map((s) => [s.slug, s]));
+/**
+ * Reads the `series_NN.md` document from a series folder.
+ * @param {string} seriesDir
+ * @returns {{ frontmatter: string, slug: string, title: string, fields: Record<string, string> }}
+ */
+export function loadSeriesDocument(seriesDir) {
+  const file = path.join(path.resolve(seriesDir), 'series_NN.md');
+  const content = fs.readFileSync(file, 'utf8');
+  const model = parseKnowledgeDocument(content);
+  const el = (model.elements.Series || [])[0] || {};
+  const fields = el.fields || {};
+  const title = fields.title || model.frontmatter.title || el.name || '';
+  return {
+    frontmatter: extractFrontmatter(content),
+    slug: el.slug || slugify(title),
+    title,
+    fields,
+  };
+}
+
+/**
+ * Locates the series document for an input folder: an explicit `--series <dir>` wins,
+ * otherwise the nearest ancestor holding a `series_NN.md` marker strictly below the
+ * workspace root.
+ * @param {string} inputDir
+ * @param {string} [seriesDirFlag]
+ * @returns {({ frontmatter: string, slug: string, title: string, fields: Record<string, string>, dir: string }) | null}
+ */
+export function loadSeriesFor(inputDir, seriesDirFlag) {
+  const dir = seriesDirFlag
+    ? path.resolve(seriesDirFlag)
+    : findSeriesRoot(inputDir, resolveWorkspace(inputDir).root);
+  if (!dir || !fs.existsSync(path.join(dir, 'series_NN.md'))) return null;
+  return { dir, ...loadSeriesDocument(dir) };
+}
+
+/** Pure: build the L3 script markdown from a reviewed draft and the cascade bags. */
+export function buildScript(reviewed, draft, options = {}) {
+  const bags = options.bags || {};
+  const frontmatter = options.frontmatter || '';
+  const byslug = new Map((reviewed.scenes || []).map((s) => [s.slug, s]));
+  const draftBySlug = new Map(((draft && draft.scenes) || []).map((s) => [s.slug, s]));
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const humanName = (s) => (s || '').replace(/-/g, ' ').replace(/^\d+ /, '').trim();
-  const templateFor = (slug) => (slug === '00-gancho' ? cfgEff.templateFull : cfgEff.templateSection);
-  const d = draft || { scenes: rev.scenes };
+  const d = draft || { scenes: reviewed.scenes };
+
+  // A scene template is a per-scene draft decision; it is the only template the
+  // tool writes. Scenes without one rely on the cascade (the engine resolves it).
+  const templateFor = (scene) => {
+    const fromDraft = draftBySlug.get(scene.slug);
+    const fromReviewed = byslug.get(scene.slug);
+    return (fromDraft && fromDraft.template) || (fromReviewed && fromReviewed.template) || '';
+  };
 
   function layersFor(scene, choice) {
     const head = '### NN Layer: ';
     if (scene.kind === 'fixed') {
-      return [
-        head + humanName(scene.name) + ' Background',
-        'slug:: ' + scene.slug + '-background',
-        'type:: background',
-        'asset:: ' + cfgEff.defaultIntroAsset,
-        'fit:: cover',
-        'position:: center',
-      ].join('\n');
+      const asset = resolve('intro_asset', bags).value;
+      const lines = [head + humanName(scene.name) + ' Background', 'slug:: ' + scene.slug + '-background', 'type:: background'];
+      if (asset) lines.push('asset:: ' + asset);
+      lines.push('position:: center');
+      return lines.join('\n');
     }
     if (choice && choice.type === 'avatar') {
-      const lines = [
-        head + humanName(scene.name) + ' Presenter',
-        'slug:: ' + scene.slug + '-presenter',
-        'type:: presenter',
-        'asset:: ' + (cfgEff.avatar_image || cfgEff.defaultAvatarAsset),
-        'model:: ' + choice.model,
-      ];
-      if (choice.quality === 'ALTA' || scene.slug === '00-gancho') {
+      const asset = resolve('presenter_asset', bags).value;
+      const lines = [head + humanName(scene.name) + ' Presenter', 'slug:: ' + scene.slug + '-presenter', 'type:: presenter'];
+      if (asset) lines.push('asset:: ' + asset);
+      lines.push('avatar_model:: ' + choice.model);
+      if (choice.quality === 'ALTA') {
         lines.push('avatar_resolution:: ' + (choice.resolution || '768p'));
       }
       return lines.join('\n');
     }
-    if (choice && (choice.type === 'media' || choice.type === 'animation')) {
-      const asset = choice.type === 'animation' ? 'media/' + scene.slug + '_animacion_1080x1080.mp4' : choice.asset;
+    if (choice && choice.type === 'media') {
       return [
         head + humanName(scene.name) + ' Visual',
         'slug:: ' + scene.slug + '-visual',
         'type:: background',
-        'asset:: ' + asset,
-        'fit:: cover',
+        'asset:: ' + choice.asset,
         'position:: center',
+      ].join('\n');
+    }
+    // An animation choice points at an authored HyperFrames project directory
+    // (design D7); the engine mounts it as a sub-composition, so no overlay text
+    // or position is written.
+    if (choice && choice.type === 'animation') {
+      const asset = choice.asset || 'media/' + scene.slug;
+      return [
+        head + humanName(scene.name) + ' Animation',
+        'slug:: ' + scene.slug + '-animation',
+        'type:: animation',
+        'asset:: ' + asset,
       ].join('\n');
     }
     return null;
   }
 
-  const CATALOG = (rev.overlays && rev.overlays.length ? rev.overlays : d.overlays) || [];
+  const CATALOG = (reviewed.overlays && reviewed.overlays.length ? reviewed.overlays : d.overlays) || [];
 
-  function sceneOverlayLayers(scene) {
+  // `assigned` = the reviewed scene's overlays (the decision); the draft scene's apply only when no reviewed scene exists.
+  function sceneOverlayLayers(scene, assigned) {
     const cat = Object.fromEntries(CATALOG.map((o) => [o.id, o]));
-    const listed = scene.overlays || [];
+    const listed = assigned ?? scene.overlays ?? [];
     const rows = [];
     const seen = new Set();
     for (const o of listed) {
@@ -142,33 +178,24 @@ export function buildScript(reviewed, draft, config) {
 
   function sceneBlock(scene) {
     const r = byslug.get(scene.slug);
-    const narration = scene.kind === 'fixed' ? '' : r ? r.narration : scene.narration;
+    const narration = scene.kind === 'fixed' ? '' : (r ? r.narration : scene.narration) || '';
     const lines = ['## NN Scene: ' + scene.name, '', 'slug:: ' + scene.slug];
-    lines.push('template:: ' + templateFor(scene.slug));
-    lines.push('music:: ' + (cfgEff.music || cfgEff.defaultMusic));
-    lines.push('music_volume:: ' + (cfgEff.music_volume || cfgEff.defaultMusicVolume));
-    lines.push('transition:: ' + (cfgEff.transition || cfgEff.defaultTransition));
+    const template = templateFor(scene);
+    if (template) lines.push('template:: ' + template);
     lines.push('', narration, '');
     const layers = layersFor(scene, r ? r.choice : null);
     if (layers) lines.push(layers);
-    const ovls = scene.kind === 'fixed' ? '' : sceneOverlayLayers(scene);
+    const ovls = scene.kind === 'fixed' ? '' : sceneOverlayLayers(scene, r ? r.overlays || [] : undefined);
     if (ovls) lines.push(ovls);
     return lines.join('\n');
   }
 
-  const ordered = d.scenes || rev.scenes;
+  const ordered = d.scenes || reviewed.scenes;
   const blocks = ordered.map(sceneBlock).join('\n\n');
 
   return [
     '---',
-    'spec_version: "' + cfgEff.specVersion + '"',
-    'spec_url: "' + cfgEff.specUrl + '"',
-    'level: 3',
-    'parent_spec:',
-    '  name: "' + cfgEff.seriesSpecName + '"',
-    '  url: "' + cfgEff.seriesSpecUrl + '"',
-    'knowledge_version: "V_0-1-0"',
-    'title: ' + JSON.stringify(rev.title),
+    frontmatter,
     '---',
     '',
     '> [!NOTE]',
@@ -176,11 +203,11 @@ export function buildScript(reviewed, draft, config) {
     '',
     '# NN Video',
     '',
-    '## NN Video: ' + rev.title,
+    '## NN Video: ' + reviewed.title,
     '',
-    'slug:: ' + rev.slug,
-    'title:: ' + rev.title,
-    'sources:: [' + (rev.sources || []).join(', ') + ']',
+    'slug:: ' + reviewed.slug,
+    'title:: ' + reviewed.title,
+    'sources:: [' + (reviewed.sources || []).join(', ') + ']',
     '',
     '# NN Scene',
     '',
@@ -192,7 +219,7 @@ export function buildScript(reviewed, draft, config) {
 function main() {
   const argv = process.argv.slice(2);
   if (!argv[0] || argv[0] === '--help') {
-    console.error('usage: node build-script-from-draft.mjs <reviewed.json> [--draft <draft.json>] [--series <dir> | --config <file>] [--out <out.md>]');
+    console.error('usage: node build-script-from-draft.mjs <reviewed.json> [--draft <draft.json>] [--series <series-dir>] [--out <out.md>]');
     process.exit(1);
   }
   const flag = (n) => {
@@ -203,10 +230,14 @@ function main() {
   const reviewed = JSON.parse(fs.readFileSync(reviewedPath, 'utf8'));
   const draftPath = flag('--draft');
   const draft = draftPath ? JSON.parse(fs.readFileSync(draftPath, 'utf8')) : null;
-  const cfg = loadSeriesConfig(argv);
-  const mergedCfg = applySeriesTokens(cfg, reviewed.slug);
-  const outPath = flag('--out') || path.join(path.dirname(reviewedPath), mergedCfg.scriptFilename);
-  const md = buildScript(reviewed, draft, cfg);
+  const inputDir = path.dirname(reviewedPath);
+  const seriesDir = flag('--series');
+  const bags = loadCascadeBags(seriesDir || inputDir);
+  const series = loadSeriesFor(inputDir, seriesDir);
+  const frontmatter = series ? series.frontmatter : '';
+  const seriesSlug = (series && series.slug) || (bags.series && bags.series.slug) || reviewed.slug;
+  const outPath = flag('--out') || path.join(inputDir, scriptFilename(seriesSlug, reviewed.slug));
+  const md = buildScript(reviewed, draft, { bags, frontmatter });
   fs.writeFileSync(outPath, md, 'utf8');
   console.log('Script written: ' + outPath + ' (' + (Buffer.byteLength(md) / 1024).toFixed(1) + ' KB)');
 }

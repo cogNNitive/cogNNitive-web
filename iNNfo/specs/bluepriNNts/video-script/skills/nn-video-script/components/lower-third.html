@@ -1,0 +1,29 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    .nn-lower-third {
+      position: absolute; left: 5%; bottom: 12%; max-width: 70%;
+      background: rgba(0, 0, 0, 0.72);
+      border-left: 8px solid var(--accent, #7c3aed);
+      padding: 14px 22px;
+      font-family: var(--font, Inter), sans-serif;
+      font-size: 40px; font-weight: 800; color: #fff;
+    }
+  </style>
+  <div
+    id="root"
+    data-composition-id="lower-third"
+    data-composition-variables='[
+      {"id":"text","type":"string","label":"Text","default":""},
+      {"id":"src","type":"string","label":"Source","default":""},
+      {"id":"position","type":"string","label":"Position","default":"bottom-left"},
+      {"id":"enter","type":"string","label":"Enter","default":""},
+      {"id":"exit","type":"string","label":"Exit","default":""},
+      {"id":"font","type":"string","label":"Font","default":"Inter"},
+      {"id":"accent","type":"string","label":"Accent","default":"#7c3aed"}
+    ]'
+    data-no-timeline
+  >
+    <div id="lower-third-text" class="nn-lower-third" data-var-text="text"></div>
+  </div>
+</template>

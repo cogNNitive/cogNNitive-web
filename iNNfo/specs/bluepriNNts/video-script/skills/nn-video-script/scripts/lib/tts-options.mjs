@@ -9,23 +9,32 @@
  * Zero external dependencies. ESM module.
  */
 
+import { resolve } from './cascade.mjs';
+
 /**
- * @param {{ properties?: Record<string, any>, resolvedTemplate?: { tool?: string, voice?: string, model?: string } }} sc Lowered scene
+ * @param {{ properties?: Record<string, any>, resolvedTemplate?: { tool?: string, voice?: string, model?: string, speed?: number, emotion?: string } }} sc Lowered scene
  * @param {{ tts?: string }} [models] Explicitly chosen models (a chosen TTS model changes the output, so it joins the key)
+ * @param {Record<string, Record<string, unknown>>} [bags] Cascade bags (`cli`/`series`/`domain`/`blueprint`) for the fallbacks
  * @returns {Record<string, unknown>}
  */
-export function buildTtsVoiceOptions(sc, models = {}) {
+export function buildTtsVoiceOptions(sc, models = {}, bags = {}) {
   // Voice/model come from the resolved `template::` instance, never from a
-  // script-declared field (a script declares no voice or model).
+  // script-declared field (a script declares no voice or model). The internal
+  // key stays `model` holding the cascaded `tts_model` (design D20).
   const tmpl = sc.resolvedTemplate || (sc.template && typeof sc.template === 'object' ? sc.template : null);
-  const model = tmpl?.model || tmpl?.tool || sc.properties?.scene_tts_model || 'elevenlabs';
-  const voiceOptions = {
-    model,
-    voice: tmpl?.voice || sc.properties?.scene_voice || 'default',
+  const sceneBag = {
+    tts_model: tmpl?.model !== undefined ? tmpl.model : sc.properties?.scene_tts_model,
+    voice: tmpl?.voice !== undefined ? tmpl.voice : sc.properties?.scene_voice,
   };
-  for (const k of Object.keys(voiceOptions)) {
-    if (voiceOptions[k] === undefined) delete voiceOptions[k];
-  }
+  const model = resolve('tts_model', { ...bags, scene: sceneBag }).value;
+  const voice = resolve('voice', { ...bags, scene: sceneBag }).value;
+  const voiceOptions = {};
+  if (model !== null && model !== undefined) voiceOptions.model = model;
+  if (voice !== null && voice !== undefined) voiceOptions.voice = voice;
+  // Delivery changes the synthesized audio, so it belongs to the cache identity.
+  // Only declared values are added: the provider defaults stay out of the key.
+  if (tmpl?.speed !== undefined && tmpl.speed !== null) voiceOptions.speed = tmpl.speed;
+  if (tmpl?.emotion) voiceOptions.emotion = tmpl.emotion;
   if (models.tts) voiceOptions.modelOverride = models.tts;
   return voiceOptions;
 }

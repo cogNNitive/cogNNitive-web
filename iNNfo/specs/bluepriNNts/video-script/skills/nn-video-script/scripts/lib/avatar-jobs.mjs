@@ -10,7 +10,7 @@
  * image. A cached clip is applied by rewriting the layer to `layer_type: video`,
  * `layer_asset_source: <cached mp4>` and `layer_muted: true` (the narration Audio track is
  * bound separately, so the clip's own audio would echo it). compile stages the mp4 into the
- * Remotion public dir like any other media layer.
+ * project public dir like any other media layer.
  *
  * Zero external dependencies. ESM module.
  */
@@ -92,10 +92,10 @@ export function sceneAudioPath(sc, scriptDir) {
  * the CURRENT TTS cache entry for that narration (it goes stale after a narration/voice edit).
  * @throws {Error} telling the user to re-run compile first
  */
-export function assertAudioFresh({ sc, audioPath, cacheManager, config, models = {} }) {
+export function assertAudioFresh({ sc, audioPath, cacheManager, config, models = {}, bags = {} }) {
   const narration = String(sc.narration || '').trim();
   if (!narration) return;
-  const options = resolveRegisteredVoice(buildTtsVoiceOptions(sc, models), config);
+  const options = resolveRegisteredVoice(buildTtsVoiceOptions(sc, models, bags), config);
   const key = cacheManager.computeHash(narration, options);
   const cached = cacheManager.getSync(key, 'mp3', 'tts');
   if (!cached || !fs.readFileSync(cached).equals(fs.readFileSync(audioPath))) {
@@ -112,12 +112,11 @@ export function assertAudioFresh({ sc, audioPath, cacheManager, config, models =
  * @param {{ scenes: any[] }} o.parsed
  * @param {string} o.scriptDir
  * @param {{ computeHash: Function }} o.cacheManager
- * @param {(model: string | undefined) => string} o.resolveModel Resolves a layer model prop to the model id.
  * @param {string[]} [o.sceneIds] Restrict to these scene ids.
  * @param {(sc: any) => string | undefined} [o.audioFor] Override the audio source (compile passes its fresh TTS output).
  * @returns {{ jobs: any[], problems: string[] }} `problems` lists missing images/audio (no job is created for them).
  */
-export function collectAvatarJobs({ parsed, scriptDir, cacheManager, resolveModel, sceneIds, audioFor }) {
+export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, audioFor }) {
   const jobs = [];
   const problems = [];
   for (const sc of parsed.scenes) {
@@ -147,7 +146,7 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, resolveMode
         problems.push('Scene ' + sc.id + ': narration audio not found (' + audioPath + '). Run compile first to generate it.');
         continue;
       }
-      const model = resolveModel(layer.properties?.layer_avatar_model);
+      const model = normalizeModelId(layer.properties?.layer_avatar_model);
       const resolution = normalizeAvatarResolution(layer.properties?.layer_avatar_resolution, model);
       jobs.push({
         sceneId: sc.id,
@@ -169,8 +168,8 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, resolveMode
  * only: it never synthesizes or spends.
  * @returns {{ applied: number, missing: number, clips: string[] }} `clips` are the cached clip paths that were applied.
  */
-export function applyCachedAvatars({ parsed, scriptDir, cacheManager, resolveModel, audioFor }) {
-  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, resolveModel, audioFor });
+export function applyCachedAvatars({ parsed, scriptDir, cacheManager, audioFor }) {
+  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, audioFor });
   let applied = 0;
   let missing = 0;
   const clips = [];

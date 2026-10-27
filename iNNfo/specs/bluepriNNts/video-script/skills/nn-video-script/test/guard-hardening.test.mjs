@@ -257,7 +257,7 @@ describe('model alias normalization', () => {
     assert.equal(normalizeModelId('replicate/wavespeed-ai/infinitetalk'), 'wavespeed-ai/infinitetalk');
     assert.equal(normalizeModelId('replicate/flux-schnell'), 'replicate/flux-schnell');
     assert.equal(normalizeModelId('minimax/speech-2.8-hd'), 'minimax/speech-2.8-hd');
-    assert.equal(normalizeModelId('elevenlabs'), 'elevenlabs');
+    assert.equal(normalizeModelId('local'), 'local');
   });
 
   it('allows the replicate-prefixed alias of an allowed model', () => {

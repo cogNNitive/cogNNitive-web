@@ -7,8 +7,7 @@
  * - CLI compilation of a script to a manifest
  * - Programmatic render through the HyperFrames driver seam
  * - CLI render with --allow-mock (CI placeholder)
- * - CLI preview command
- * - No Remotion dependency remains
+ * - The removed preview command is refused
  */
 
 import assert from 'node:assert';
@@ -17,10 +16,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { compileVideo, renderVideo, previewVideo } from '../scripts/video-engine-cli.mjs';
+import { compileVideo, renderVideo } from '../scripts/video-engine-cli.mjs';
 
 // Hermetic: a maintainer machine may export real provider keys. Tests must never reach a paid provider.
-for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'ELEVENLABS_API_KEY', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
+for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
   delete process.env[k];
 }
 
@@ -115,8 +114,8 @@ async function runTests() {
     });
 
     assert.ok(ran, 'the HyperFrames runner must be invoked');
-    assert.strictEqual(ran.cmd, 'npx');
-    assert.ok(ran.args.some((a) => String(a).startsWith('hyperframes@')), 'the pinned HyperFrames CLI is used');
+    assert.notStrictEqual(ran.cmd, 'npx', 'the render must resolve the local pinned CLI, never npx');
+    assert.ok(/hyperframes(\.cmd)?$/.test(String(ran.cmd)), 'the resolved command is the local hyperframes binary');
     assert.match(ran.args.join(' '), /render/);
     assert.ok(fs.existsSync(videoPath));
     assert.strictEqual(result.outputVideoPath, videoPath);
@@ -150,20 +149,22 @@ async function runTests() {
     console.log('✔ CLI commands "compile" and "render" execute headlessly with --allow-mock');
   }
 
-  // Test 4: Preview command
+  // Test 4: The removed `preview` command is refused with a usage that lists
+  //         only `compile` and `render`.
   {
-    const res = await previewVideo({ port: 3050 });
-    assert.strictEqual(res.port, 3050);
-    assert.strictEqual(res.previewUrl, 'http://localhost:3050');
-    console.log('✔ CLI preview returns active preview configuration');
+    const res = spawnSync('node', [cliPath, 'preview', 'script.md'], { encoding: 'utf8' });
+    assert.notStrictEqual(res.status, 0, 'an unknown command must exit non-zero');
+    const output = `${res.stdout}\n${res.stderr}`;
+    assert.match(output, /Usage: node video-engine-cli\.mjs <compile\|render>/);
+    assert.ok(!output.includes('<compile|render|preview>'), 'usage must not list a preview command');
+    assert.ok(!/^\s*preview /m.test(output), 'usage must not list a preview command line');
+    console.log('✔ the removed preview command is refused with a compile/render usage');
   }
 
-  // Test 5: No Remotion dependency remains
+  // Test 5: The CLI uses the HyperFrames driver
   {
-    assert.ok(!/@remotion/.test(CLI_SRC), 'no @remotion reference may remain in the CLI');
-    assert.ok(!/tryRemotionRender/.test(CLI_SRC), 'the Remotion render seam must be gone');
     assert.ok(/tryHyperframesRender|hyperframes-render/.test(CLI_SRC), 'the CLI must use the HyperFrames driver');
-    console.log('✔ the CLI has no Remotion dependency and uses the HyperFrames driver');
+    console.log('✔ the CLI uses the HyperFrames driver');
   }
 
   console.log('\nAll Video Engine CLI integration tests passed! 🎉');

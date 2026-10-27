@@ -1,0 +1,40 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    .nn-broll {
+      position: absolute; inset: 10%;
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .nn-broll-media {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: var(--fit, cover);
+    }
+  </style>
+  <div
+    id="root"
+    data-composition-id="b-roll"
+    data-composition-variables='[
+      {"id":"text","type":"string","label":"Text","default":""},
+      {"id":"src","type":"string","label":"Source","default":""},
+      {"id":"position","type":"string","label":"Position","default":"center"},
+      {"id":"enter","type":"string","label":"Enter","default":""},
+      {"id":"exit","type":"string","label":"Exit","default":""},
+      {"id":"font","type":"string","label":"Font","default":"Inter"},
+      {"id":"accent","type":"string","label":"Accent","default":"#7c3aed"},
+      {"id":"fit","type":"string","label":"Fit","default":"cover"}
+    ]'
+    data-no-timeline
+  >
+    <div id="b-roll-card" class="nn-broll">
+      <img
+        id="b-roll-media"
+        class="nn-broll-media"
+        alt=""
+        data-var-src="src"
+        src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+      />
+    </div>
+  </div>
+</template>

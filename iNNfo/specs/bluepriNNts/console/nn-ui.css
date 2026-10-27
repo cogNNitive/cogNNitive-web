@@ -6789,6 +6789,20 @@ button.btn-primary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
 }
+/* Blueprint accordion sections (the rail's top level): the same black bar and
+   white text the design system already uses for a selected model, so a group
+   reads as a section header instead of another model row. The chevron is drawn
+   with box-shadow in a fixed colour, so it needs its own override. */
+#nn-rail details.collapse.nn-rail-blueprint > summary.collapse-title {
+  background: var(--nn-accent, #171717);
+  color: #ffffff;
+  border-color: var(--nn-accent, #171717);
+  font-weight: 600;
+}
+#nn-rail details.collapse.nn-rail-blueprint > summary.collapse-title:after {
+  box-shadow: 1.5px 1.5px 0 0 #ffffff !important;
+}
+
 #nn-rail .menu ul {
   padding-left: 10px;
   margin-left: 8px;

@@ -223,7 +223,9 @@
           reviewedAt: new Date().toISOString(), sources: DRAFT.sources,
           config: { effective: Object.assign({}, state.config), overrides },
           overlays: (DRAFT.overlays || []).map((o) => Object.assign({}, o, state.overlays[o.id])),
-          scenes: DRAFT.scenes.filter((s) => s.kind !== "fixed").map((sc) => {
+          scenes: DRAFT.scenes.map((sc) => {
+            // Fixed scenes (e.g. the intro bumper) are kept in order with their kind; nothing to decide on them.
+            if (sc.kind === "fixed") return { slug: sc.slug, name: sc.name, kind: "fixed" };
             const id = state.choices[sc.slug];
             const av = DRAFT.avatars.find((a) => a.id === id);
             const md = DRAFT.media.find((m) => m.id === id);
@@ -233,7 +235,7 @@
             else if (md) choice = { type: "media", id, kind: md.kind, asset: md.path };
             else if (an) choice = { type: "animation", id, description: an.label, prompt: an.prompt };
             const overlays = (sc.overlays || []).map((o) => Object.assign({}, o, state.sceneOverlays[sc.slug][o.id]));
-            return { slug: sc.slug, name: sc.name, narration: sceneNarration(sc), choice, overlays };
+            return { slug: sc.slug, name: sc.name, kind: sc.kind || "scene", narration: sceneNarration(sc), choice, overlays };
           }),
         };
       }

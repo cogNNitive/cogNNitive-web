@@ -1310,19 +1310,45 @@
 
     function decorateRailProgress() {
       if (!doc.querySelectorAll || !store) return
-      // The rail readout is the change, not a review mark: pending drafts per concept.
-      var progress = progressByConcept(elements, store.drafts())
+      // The rail readout is the change, not a review mark: pending drafts per concept
+      // WITHIN the model the row belongs to. A row nested in a model's <details> must
+      // report that model's elements, never the domaiNN-wide total.
+      // ponytail: a draft addressed only by concept (no element binding) still counts
+      // in every model declaring that concept; scope by element_id when that shows.
+      var drafts = store.drafts()
+      var global = progressByConcept(elements, drafts)
+      var byModel = {}
       Array.prototype.forEach.call(
         doc.querySelectorAll('.nn-rail-item, [data-key]'),
         function (btn) {
           var key = btn.getAttribute('data-concept') || btn.getAttribute('data-key')
-          if (!key || key === '__all' || !progress[key]) return
+          if (!key || key === '__all') return
+          var entry = global[key]
+          var owner = btn.closest ? btn.closest('details') : null
+          var summary = owner ? owner.querySelector('summary[data-model]') : null
+          var mid = summary ? summary.getAttribute('data-model') : null
+          if (mid) {
+            if (!Object.prototype.hasOwnProperty.call(byModel, mid)) {
+              byModel[mid] = progressByConcept(
+                (Array.isArray(elements) ? elements : []).filter(function (el) {
+                  return el && String(el.modelId || el.modelFile || '') === mid
+                }),
+                drafts,
+              )
+            }
+            entry = byModel[mid][key]
+          }
+          if (!entry) return
           var existing = btn.querySelector('[data-nn-component="rail-progress"]')
           if (existing) existing.parentNode.removeChild(existing)
+          // The readout reports a change, not a total: with nothing pending it would
+          // only repeat the count badge beside it (`Video 1` followed by `0/1`), so it
+          // is dropped entirely while there is nothing to show.
+          if (!entry.pending) return
           btn.appendChild(
             UI.RailProgress({
-              total: progress[key].total,
-              pending: progress[key].pending,
+              total: entry.total,
+              pending: entry.pending,
             }),
           )
         },
@@ -1345,9 +1371,10 @@
     }
 
     function applyDecorations() {
-      // State decoration is capability-free: the change-state badge, the change
-      // pips and the rail progress reflect state, not proposals, and are always
-      // shown (there is no mode).
+      // State decoration is capability-free: the change-state badge and the change
+      // pips reflect state, not proposals, and are always shown (there is no mode).
+      // The rail progress readout is the exception — it only appears while a row has
+      // something pending, because it reports a change and not a total.
       decorateChangeState()
       decorateChangePips()
       syncChangesetBar()

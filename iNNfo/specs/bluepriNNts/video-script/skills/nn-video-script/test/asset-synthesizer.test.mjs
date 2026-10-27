@@ -23,7 +23,7 @@ const SYNTH_PATH = path.join(__dirname, '..', 'scripts', 'asset-synthesizer.mjs'
 async function runTests() {
   console.log('Running asset-synthesizer unit tests...');
 
-  // 1. Duration comes from ffprobe, with a provider-reported fallback. No Remotion parser.
+  // 1. Duration comes from ffprobe, with a provider-reported fallback.
   {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-dur-'));
     try {
@@ -48,9 +48,7 @@ async function runTests() {
       });
       assert.strictEqual(fallback, 2.25, 'falls back to the provider duration');
 
-      const src = fs.readFileSync(SYNTH_PATH, 'utf8');
-      assert.ok(!/@remotion\/media-parser/.test(src), 'no @remotion/media-parser reference may remain');
-      console.log('✔ probeAudioDuration uses ffprobe with a provider fallback (no Remotion parser)');
+      console.log('✔ probeAudioDuration uses ffprobe with a provider fallback');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

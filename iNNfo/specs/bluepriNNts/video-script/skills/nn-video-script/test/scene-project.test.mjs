@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { buildProject, emitHyperframesProject, OVERLAY_HOST_ANCHOR } from '../scripts/scene-project.mjs';
+import { buildProject, emitHyperframesProject } from '../scripts/scene-project.mjs';
 
 function fixture() {
   return {
@@ -72,6 +72,15 @@ test('scene layers are emitted in paint order by z-index', () => {
   assert.match(intro, /<img[^>]*src="assets\/bg_intro_abc\.jpg"/);
 });
 
+test('every media layer carries a stable id (HyperFrames Studio edit target)', () => {
+  const { compositions } = buildProject(fixture());
+  const intro = compositions.find((c) => c.slug === 'intro').html;
+  assert.match(intro, /<img id="media-intro-1"[^>]*src="assets\/bg_intro_abc\.jpg"/);
+  assert.match(intro, /<img id="media-intro-2"[^>]*src="assets\/avatar_lucas_def\.png"/);
+  const body = compositions.find((c) => c.slug === 'body').html;
+  assert.match(body, /<video id="media-body-1"/);
+});
+
 test('a declared transition is emitted on the wrapper; none emits none', () => {
   const { compositions } = buildProject(fixture());
   const intro = compositions.find((c) => c.slug === 'intro').html;
@@ -79,11 +88,6 @@ test('a declared transition is emitted on the wrapper; none emits none', () => {
   assert.match(intro, /window\.__timelines\["intro"\]/);
   assert.match(intro, /tl\.fromTo\('#root'.*opacity/s);
   assert.doesNotMatch(body, /tl\.fromTo/);
-});
-
-test('each Sub-composition leaves the overlay host anchor', () => {
-  const { compositions } = buildProject(fixture());
-  for (const c of compositions) assert.match(c.html, new RegExp(OVERLAY_HOST_ANCHOR));
 });
 
 test('emission is deterministic (same manifest, byte-identical files)', () => {

@@ -2,8 +2,7 @@
  * nn-video-script/scripts/lib/media-duration.mjs
  *
  * Measures an audio/video file's duration with `ffprobe`, falling back to a
- * duration reported by the synthesis provider. Replaces the former
- * `@remotion/media-parser` probe. Never throws: `seconds` is 0 and `error`
+ * duration reported by the synthesis provider. Never throws: `seconds` is 0 and `error`
  * explains why when the duration cannot be measured.
  */
 

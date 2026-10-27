@@ -4,7 +4,7 @@
  * nn-video-script/scripts/asset-synthesizer.mjs
  *
  * Deterministic TTS and media asset synthesis with content-addressed caching.
- * Adapts ElevenLabs, Edge-TTS, and Replicate media providers with graceful local fallbacks.
+ * Adapts the WaveSpeed and Replicate media providers with graceful local fallbacks.
  * Measures audio duration via ffprobe (with a provider-reported duration fallback).
  *
  * Zero external mandatory runtime dependencies. ESM module.
@@ -17,8 +17,8 @@ import { CacheManager } from './cache-manager.mjs';
 import { SpendGuard, loadGuard, isSystemVoice } from './lib/video-guard.mjs';
 import { resolveRegisteredVoice } from './lib/tts-options.mjs';
 import { buildAvatarRequest } from './lib/avatar-request.mjs';
-import { markNeedsFaststart } from './lib/faststart.mjs';
-import { estimateCallUsd, resolveModelId, DEFAULT_MODELS } from './asset-cost-estimator.mjs';
+import { estimateCallUsd, resolveModelId } from './asset-cost-estimator.mjs';
+import { resolve } from './lib/cascade.mjs';
 import { probeDuration } from './lib/media-duration.mjs';
 import { defaultResolutionFor } from './lib/avatar-jobs.mjs';
 
@@ -101,11 +101,11 @@ export class AssetSynthesizer {
   /**
    * @param {Object} [options]
    * @param {CacheManager} [options.cacheManager]
-   * @param {string} [options.ttsProvider="local"] "elevenlabs" | "edge-tts" | "local" | "mock"
+   * @param {string} [options.ttsProvider="local"] TTS provider hint.
    * @param {string} [options.mediaProvider="local"] "replicate" | "local" | "mock"
-   * @param {string} [options.elevenLabsApiKey]
    * @param {SpendGuard} [options.guard] Spend guard. Without one the synthesizer FAILS CLOSED: billable calls are refused.
    * @param {{ image?: string, tts?: string, avatar?: string }} [options.defaultModels] Models used when a call names no provider model.
+   * @param {Record<string, Record<string, unknown>>} [options.bags] Cascade bags supplying the fallback model ids (design D10).
    * @param {Record<string, string | undefined>} [options.env] Environment seam (defaults to process.env).
    * @param {typeof fetch} [options.fetch] HTTP seam for tests.
    * @param {(ms: number) => Promise<void>} [options.sleep] Poll-delay seam for tests.
@@ -121,9 +121,15 @@ export class AssetSynthesizer {
     this.cacheManager = options.cacheManager || new CacheManager();
     this.ttsProvider = options.ttsProvider || this.env.TTS_PROVIDER || 'local';
     this.mediaProvider = options.mediaProvider || this.env.MEDIA_PROVIDER || 'local';
-    this.elevenLabsApiKey = options.elevenLabsApiKey || this.env.ELEVENLABS_API_KEY;
     const chosen = Object.fromEntries(Object.entries(options.defaultModels || {}).filter(([, v]) => v));
-    this.defaultModels = { ...DEFAULT_MODELS, ...chosen };
+    // Fallback defaults come from the cascade (design D10), never a constant:
+    // the caller passes resolved bags, and an explicit `defaultModels` wins.
+    const bags = options.bags || {};
+    this.defaultModels = {
+      image: chosen.image || resolve('image_model', bags).value || undefined,
+      tts: chosen.tts || resolve('tts_model', bags).value || undefined,
+      avatar: chosen.avatar || resolve('avatar_model', bags).value || undefined,
+    };
     if (options.guard) {
       this.guard = options.guard;
     } else {
@@ -164,7 +170,7 @@ export class AssetSynthesizer {
   _useMiniMax() {
     return (
       this.ttsProvider.includes('minimax') ||
-      (!this.elevenLabsApiKey && Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN))
+      Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN)
     );
   }
 
@@ -463,7 +469,6 @@ export class AssetSynthesizer {
   /**
    * @param {{ ref?: string, cacheKey?: string, durationSeconds?: number, resumeTaskId?: string, windowMs?: number,
    *   intervalMs?: number, backoff?: { factor: number, maxMs: number }, warn?: (m: string) => void,
-   *   postProcess?: (b: Buffer) => Promise<{ buffer: Buffer, applied: boolean }>,
    *   pending?: { onSubmitting?: Function, onSubmitted?: Function, onResult?: Function } }} meta
    *   A `cacheKey` marks a managed job (synthesize-avatar): it is never replaced by an offline placeholder.
    * @private
@@ -536,7 +541,7 @@ export class AssetSynthesizer {
         const peek = raw.subarray(0, 120).toString('utf8').replace(/[^\x20-\x7e]+/g, ' ').trim();
         throw new BillingFailureError('Avatar task ' + track.taskId + ' returned something that is not an MP4 (no ftyp box; starts with: ' + peek + '). Nothing was cached; resume to download it again.', { taskId: track.taskId, retryable: true });
       }
-      // The raw clip is cached FIRST (tmp+rename); faststart then improves a copy of it.
+      // The raw clip is cached FIRST (tmp+rename).
       assetPath = await this.cacheManager.put(sha256, 'mp4', raw, 'temp');
     } catch (err) {
       const wrapped =
@@ -548,16 +553,6 @@ export class AssetSynthesizer {
     }
     settle('ok'); // only after the clip is safely in the cache
     meta.pending?.onResult?.('completed');
-    if (meta.postProcess) {
-      try {
-        const out = await meta.postProcess(raw);
-        if (out?.applied) await this.cacheManager.put(sha256, 'mp4', out.buffer, 'temp');
-        else markNeedsFaststart(assetPath);
-      } catch (e) {
-        markNeedsFaststart(assetPath);
-        (meta.warn || ((m) => console.warn(m)))('faststart failed (' + e.message + '); the raw clip is cached and marked .needs-faststart.');
-      }
-    }
     return { assetPath, sha256, fromCache: false, fileSizeBytes: fs.statSync(assetPath).size };
   }
 
@@ -734,13 +729,13 @@ export class AssetSynthesizer {
           ✦ SYNTHESIZED SCENE LAYER • 1920x1080 HD BITMAP • CONTENT-DERIVED CACHE ✦
         </text>
         <text x="960" y="680" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#94a3b8" text-anchor="middle">
-          Layer Asset Source: layers/ • Optimized for Remotion Compositing &amp; FFmpeg H.264
+          Layer Asset Source: layers/ • Optimized for HyperFrames Compositing &amp; FFmpeg H.264
         </text>
       </g>
 
       <!-- Bottom Watermark -->
       <text x="960" y="1000" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="500" fill="#64748b" text-anchor="middle">
-        cogNNitive Video • WaveSpeed &amp; Remotion Unified Pipeline
+        cogNNitive Video • WaveSpeed &amp; HyperFrames Unified Pipeline
       </text>
     </svg>`;
 

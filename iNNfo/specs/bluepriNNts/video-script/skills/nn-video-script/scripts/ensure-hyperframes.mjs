@@ -3,83 +3,58 @@
 /**
  * nn-video-script/scripts/ensure-hyperframes.mjs
  *
- * Idempotent, consent-gated provisioner for the pinned HyperFrames CLI. It only
- * VERIFIES the CLI resolves (offline, `--no-install`); installing the pinned CLI
- * or its agent skills is a consent-gated action. Replaces `ensure-engine.mjs`
- * (removed). No Remotion.
+ * Check-only provisioner for the pinned HyperFrames CLI. The CLI is an exact npm
+ * dependency of this skill and is installed by the skills manager
+ * (`skills-manager.js update video-script`); this script only VERIFIES that the
+ * pinned version resolves from `<skill>/node_modules`. It never installs and never
+ * shells out to a package runner.
  *
- *   node ensure-hyperframes.mjs [--check] [--yes]
+ *   node ensure-hyperframes.mjs [--check]
  *
- *   --check   report readiness only (exit 0 if ready, 1 otherwise); install nothing.
- *   --yes     skip the interactive prompt (CI / non-interactive).
+ *   --check   same behavior (readiness report only; exit 0 if ready, 1 otherwise).
  */
 
 import fs from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HYPERFRAMES_PIN } from './scene-project.mjs';
 
-/** True when the pinned CLI resolves; returns its version string or null. */
+const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Installed HyperFrames version from this skill's node_modules, or null when absent. */
 export function resolveInstalledCli(deps = {}) {
-  const run = deps.run || ((cmd, args) => spawnSync(cmd, args, { shell: true, encoding: 'utf8' }));
+  const pkgPath = path.join(SKILL_DIR, 'node_modules', 'hyperframes', 'package.json');
   try {
-    const res = run('npx', ['--no-install', 'hyperframes', '--version']);
-    if (res && res.status === 0) return String(res.stdout || '').trim() || 'unknown';
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || null;
   } catch {
-    // not installed
+    return null;
   }
-  return null;
 }
 
 /**
- * @param {{ check?: boolean, yes?: boolean, pin?: string, deps?: object }} [options]
+ * @param {{ check?: boolean, pin?: string, resolveCli?: () => string | null, print?: (line: string) => void }} [options]
  * @returns {Promise<0|1>}
  */
 export async function runEnsureHyperframes(options = {}) {
-  const deps = options.deps || {};
-  const resolveCli = deps.resolveCli || resolveInstalledCli;
-  const updateSkills =
-    deps.updateSkills ||
-    ((pin) => spawnSync('npx', ['--yes', `hyperframes@${pin}`, 'skills', 'update'], { shell: true, stdio: 'inherit' }));
-  const confirm = deps.confirm || (() => false);
-  const print = deps.print || ((line) => console.log(line));
+  const resolveCli = options.resolveCli || resolveInstalledCli;
+  const print = options.print || ((line) => console.log(line));
   const pin = options.pin || HYPERFRAMES_PIN;
 
   const installed = resolveCli();
-  if (installed) {
-    print(`✅ ensure-hyperframes: HyperFrames CLI present (${installed}); pin ${pin}.`);
+  if (installed && installed === pin) {
+    print(`✅ ensure-hyperframes: HyperFrames CLI ${installed} present (pin ${pin}).`);
     return 0;
   }
-
-  if (options.check) {
-    print(`❌ ensure-hyperframes: HyperFrames CLI missing (pin ${pin}). Run without --check to install it.`);
+  if (installed) {
+    print(`❌ ensure-hyperframes: HyperFrames ${installed} ≠ pin ${pin}. Fix: skills-manager.js update video-script`);
     return 1;
   }
-
-  print(`⚠️  ensure-hyperframes: the pinned HyperFrames CLI is not present.`);
-  print(`    Rendering installs it on demand via 'npx hyperframes@${pin}'.`);
-
-  const accepted = options.yes ? true : await confirm(`Install the HyperFrames agent skills now (npx hyperframes@${pin} skills update)?`);
-  if (!accepted) {
-    print('❌ ensure-hyperframes: install declined.');
-    return 1;
-  }
-
-  try {
-    updateSkills(pin);
-  } catch (err) {
-    print(`❌ ensure-hyperframes: ${err.message}`);
-    return 1;
-  }
-  print('✅ ensure-hyperframes: skills update requested.');
-  return 0;
+  print(`❌ ensure-hyperframes: pinned HyperFrames CLI ${pin} not found in node_modules. Fix: skills-manager.js update video-script`);
+  return 1;
 }
 
 async function main() {
-  const code = await runEnsureHyperframes({
-    check: process.argv.includes('--check'),
-    yes: process.argv.includes('--yes'),
-  });
+  const code = await runEnsureHyperframes({ check: process.argv.includes('--check') });
   process.exit(code);
 }
 

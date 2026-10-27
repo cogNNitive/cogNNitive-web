@@ -138,11 +138,11 @@ describe('billable TTS through the guard', () => {
     const ctx = setup();
     const provider = fakeProvider();
     const synth = makeSynth(ctx, provider, { defaultModels: { tts: 'minimax/speech-2.8-hd' } });
-    await synth.synthesizeTTS('linea sin modelo', { model: 'elevenlabs' });
+    await synth.synthesizeTTS('linea sin modelo', { model: 'local' });
     assert.ok(provider.state.posts[0].endsWith('/' + TTS));
     const other = setup({ allowedModels: [...DEFAULT_GUARD.allowedModels, 'custom/tts'] });
     const synth2 = makeSynth(other, provider, { defaultModels: { tts: 'custom/tts' } });
-    await synth2.synthesizeTTS('linea sin modelo', { model: 'elevenlabs' });
+    await synth2.synthesizeTTS('linea sin modelo', { model: 'local' });
     assert.ok(provider.state.posts[1].endsWith('/custom/tts'));
   });
 });

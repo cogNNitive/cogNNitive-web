@@ -7,18 +7,20 @@
  * URI, so the HTML is a single portable file (no assets folder) that works from
  * file://.
  *
- * Series-parameterized: the display series title comes from a `video.series.json`
- * config (or --series-title); the template ships neutral (`{{SERIES}}`).
+ * Series-parameterized through the parameter cascade: the display series title
+ * comes from the `series_NN.md` document found by walking from the draft JSON's
+ * folder (or an explicit `--series <dir>`); the template ships neutral
+ * (`{{SERIES}}`).
  *
  * Usage:
  *   node build-draft-html.mjs <slug>_draft_V_x-y-z.json [--out <file.html>]
- *     [--series <dir> | --config <video.series.json>] [--series-title <name>]
+ *     [--series <dir>] [--series-title <name>]
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadSeriesConfig } from './build-script-from-draft.mjs';
+import { loadSeriesFor } from './build-script-from-draft.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -54,7 +56,7 @@ export function buildDraftHtml(draft, { baseDir, templatePath, seriesTitle = 'Se
 function main() {
   const argv = process.argv.slice(2);
   if (!argv[0] || argv[0] === '--help') {
-    console.error('usage: node build-draft-html.mjs <draft.json> [--out <file.html>] [--series <dir> | --config <file>] [--series-title <name>]');
+    console.error('usage: node build-draft-html.mjs <draft.json> [--out <file.html>] [--series <dir>] [--series-title <name>]');
     process.exit(1);
   }
   const jsonPath = path.resolve(argv[0]);
@@ -66,8 +68,8 @@ function main() {
   const baseDir = path.dirname(jsonPath);
   const out = argValue(argv, 'out');
   const outPath = out ? path.resolve(out) : jsonPath.replace(/\.json$/i, '.html');
-  const cfg = loadSeriesConfig(argv);
-  const seriesTitle = argValue(argv, 'series-title') || cfg.seriesTitle || cfg.series || 'Series';
+  const series = loadSeriesFor(baseDir, argValue(argv, 'series'));
+  const seriesTitle = argValue(argv, 'series-title') || (series && series.title) || 'Series';
 
   const html = buildDraftHtml(draft, {
     baseDir,

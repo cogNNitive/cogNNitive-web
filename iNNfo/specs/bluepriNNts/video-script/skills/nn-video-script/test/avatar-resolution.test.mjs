@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { defaultResolutionFor, validResolutionsFor, normalizeAvatarResolution, collectAvatarJobs } from '../scripts/lib/avatar-jobs.mjs';
-import { RemotionSceneCompiler } from '../scripts/remotion-scene-compiler.mjs';
+import { SceneCompiler } from '../scripts/scene-compiler.mjs';
 
 const PRUNA = 'pruna-ai/p-video-2-pro/avatar';
 const INF = 'wavespeed-ai/infinitetalk-fast';
@@ -30,10 +30,10 @@ test('the compiler lowers avatar_resolution onto the layer', () => {
     elements: {
       Video: [{ type: 'Video', name: 'v', slug: 'v', fields: { title: 'v' } }],
       Scene: [{ type: 'Scene', name: 's', slug: 's', description: 'x', fields: {} }],
-      Layer: [{ type: 'Layer', name: 'p', slug: 'p', parentSlug: 's', fields: { type: 'presenter', asset: 'a.png', model: PRUNA, avatar_resolution: '768p' } }],
+      Layer: [{ type: 'Layer', name: 'p', slug: 'p', parentSlug: 's', fields: { type: 'presenter', asset: 'a.png', avatar_model: PRUNA, avatar_resolution: '768p' } }],
     },
   };
-  const lowered = new RemotionSceneCompiler().lowerKnowledgeModel(model);
+  const lowered = new SceneCompiler().lowerKnowledgeModel(model);
   assert.equal(lowered.scenes[0].layers[0].properties.layer_avatar_resolution, '768p');
 });
 
@@ -57,7 +57,7 @@ test('collectAvatarJobs honors the layer resolution and keys differ by resolutio
         },
       ],
     };
-    const { jobs } = collectAvatarJobs({ parsed, scriptDir: dir, cacheManager, resolveModel: (m) => m || PRUNA, audioFor: () => aud });
+    const { jobs } = collectAvatarJobs({ parsed, scriptDir: dir, cacheManager, audioFor: () => aud });
     assert.equal(jobs.length, 2);
     assert.equal(jobs[0].resolution, '768p');
     assert.equal(jobs[1].resolution, '480p');

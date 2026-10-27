@@ -1,160 +1,137 @@
-#!/usr/bin/env node
-
 /**
  * nn-video-script/test/render-thumbnail.test.mjs
  *
- * Unit tests for render-thumbnail.mjs: SVG generation, text escaping,
- * CLI argument parsing, and Sharp image compositing.
+ * Tests for render-thumbnail.mjs after the S4b rewrite: it emits a one-frame
+ * HyperFrames composition and renders it through the pinned CLI (no `sharp`).
+ * The CLI is stubbed via the `deps.run` seam, so no real render runs here.
  */
-
-import assert from 'node:assert';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import sharp from 'sharp';
+import { fileURLToPath } from 'node:url';
 import {
-  escapeXml,
   wrapText,
-  generateThumbnailSvg,
   parseCliArgs,
+  buildThumbnailProject,
+  resolveThumbnailText,
   renderThumbnail,
 } from '../scripts/render-thumbnail.mjs';
 
-async function runTests() {
-  console.log('Running render-thumbnail unit tests...');
+// 1x1 transparent PNG.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+  'base64',
+);
 
-  // Test 1: escapeXml escapes special XML characters
-  {
-    const raw = `Shen Kuo & <"Innovators"> '1086'`;
-    const escaped = escapeXml(raw);
-    assert.strictEqual(
-      escaped,
-      'Shen Kuo &amp; &lt;&quot;Innovators&quot;&gt; &apos;1086&apos;',
-      'XML entities should be properly escaped'
-    );
-    console.log('✔ escapeXml handles XML entities');
-  }
-
-  // Test 2: wrapText wraps words within character budget and respects newlines
-  {
-    const text = 'LA RUEDA DE HIERRO Y MADERA';
-    const lines = wrapText(text, 15);
-    assert.ok(lines.length > 1, 'Long text should wrap across multiple lines');
-    assert.strictEqual(lines[0], 'LA RUEDA DE');
-    assert.strictEqual(lines[1], 'HIERRO Y MADERA');
-
-    const explicit = 'PRIMERA LINEA\nSEGUNDA LINEA';
-    const explicitLines = wrapText(explicit, 50);
-    assert.strictEqual(explicitLines.length, 2);
-    assert.strictEqual(explicitLines[0], 'PRIMERA LINEA');
-    assert.strictEqual(explicitLines[1], 'SEGUNDA LINEA');
-    console.log('✔ wrapText splits by length and respects explicit newlines');
-  }
-
-  // Test 3: generateThumbnailSvg produces valid SVG structure with proper tags
-  {
-    const svg = generateThumbnailSvg({
-      width: 2560,
-      height: 1440,
-      title: 'LA BRÚJULA',
-      subtitle: 'Shen Kuo · 1086',
-      badge: 'iNNtrevistas',
-    });
-
-    assert.ok(svg.includes('<svg width="2560" height="1440"'), 'SVG contains correct root attributes');
-    assert.ok(svg.includes('LA BRÚJULA'), 'SVG contains main title text');
-    assert.ok(svg.includes('Shen Kuo · 1086'), 'SVG contains subtitle text');
-    assert.ok(svg.includes('iNNtrevistas'), 'SVG contains brand badge');
-    assert.ok(svg.includes('filter="url(#shadow-main)"'), 'SVG contains drop-shadow filter reference');
-    console.log('✔ generateThumbnailSvg outputs structured SVG markup');
-  }
-
-  // Test 4: parseCliArgs parses command line flags correctly
-  {
-    const argv = [
-      '--base', 'test/base.jpg',
-      '--title', 'LA IMPRENTA',
-      '--subtitle', 'Bi Sheng · 1040',
-      '--badge', 'iNNtrevistas',
-      '--out', 'test/thumb.jpg',
-      '--width', '1920',
-      '--height', '1080',
-    ];
-    const parsed = parseCliArgs(argv);
-    assert.strictEqual(parsed.basePath, 'test/base.jpg');
-    assert.strictEqual(parsed.title, 'LA IMPRENTA');
-    assert.strictEqual(parsed.subtitle, 'Bi Sheng · 1040');
-    assert.strictEqual(parsed.badge, 'iNNtrevistas');
-    assert.strictEqual(parsed.outputPath, 'test/thumb.jpg');
-    assert.strictEqual(parsed.width, 1920);
-    assert.strictEqual(parsed.height, 1080);
-    console.log('✔ parseCliArgs parses all CLI arguments accurately');
-  }
-
-  // Test 5: End-to-end rendering pipeline using sharp composite
-  {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cog-thumb-test-'));
-    const testBaseFile = path.join(tempDir, 'test-base.jpg');
-    const testOutputFile = path.join(tempDir, 'test-thumb-out.jpg');
-    const testPngOutputFile = path.join(tempDir, 'test-thumb-out.png');
-
-    try {
-      // 1. Create a synthetic 1280x720 base image
-      await sharp({
-        create: {
-          width: 1280,
-          height: 720,
-          channels: 3,
-          background: { r: 30, g: 41, b: 59 },
-        },
-      })
-        .jpeg()
-        .toFile(testBaseFile);
-
-      assert.ok(fs.existsSync(testBaseFile), 'Synthetic base image created');
-
-      // 2. Render JPEG thumbnail
-      const resultJpeg = await renderThumbnail({
-        basePath: testBaseFile,
-        title: 'LA RUEDA',
-        subtitle: 'Mesopotamia · 3500 a.C.',
-        badge: 'iNNtrevistas',
-        outputPath: testOutputFile,
-        width: 2560,
-        height: 1440,
-      });
-
-      assert.ok(fs.existsSync(testOutputFile), 'JPEG thumbnail output exists');
-      const jpegMeta = await sharp(testOutputFile).metadata();
-      assert.strictEqual(jpegMeta.width, 2560, 'Output width should match 2560');
-      assert.strictEqual(jpegMeta.height, 1440, 'Output height should match 1440');
-      assert.strictEqual(jpegMeta.format, 'jpeg', 'Format should be jpeg');
-
-      // 3. Render PNG thumbnail
-      await renderThumbnail({
-        basePath: testBaseFile,
-        title: 'LA BRÚJULA',
-        outputPath: testPngOutputFile,
-        width: 1920,
-        height: 1080,
-      });
-
-      assert.ok(fs.existsSync(testPngOutputFile), 'PNG thumbnail output exists');
-      const pngMeta = await sharp(testPngOutputFile).metadata();
-      assert.strictEqual(pngMeta.width, 1920, 'Output width should match 1920');
-      assert.strictEqual(pngMeta.height, 1080, 'Output height should match 1080');
-      assert.strictEqual(pngMeta.format, 'png', 'Format should be png');
-
-      console.log('✔ renderThumbnail completes deterministic end-to-end rendering (JPEG & PNG)');
-    } finally {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    }
-  }
-
-  console.log('\nAll render-thumbnail tests passed! ✨');
+function tmp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'nn-thumb-'));
 }
 
-runTests().catch((err) => {
-  console.error('❌ Test failure:', err);
-  process.exit(1);
+/** Resolves the snapshot output dir and writes one PNG there. */
+function stubRun(_cmd, args) {
+  const i = args.indexOf('--output');
+  const dir = args[i + 1];
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'frame-00-at-0s.png'), PNG);
+  return { status: 0, stdout: '', stderr: '' };
+}
+
+test('wrapText wraps by length and respects explicit newlines', () => {
+  const lines = wrapText('LA RUEDA DE HIERRO Y MADERA', 15);
+  assert.ok(lines.length > 1);
+  assert.equal(lines[0], 'LA RUEDA DE');
+  const explicit = wrapText('PRIMERA LINEA\nSEGUNDA LINEA', 50);
+  assert.deepEqual(explicit, ['PRIMERA LINEA', 'SEGUNDA LINEA']);
+});
+
+test('parseCliArgs parses every flag', () => {
+  const parsed = parseCliArgs(['--base', 'b.jpg', '--title', 'T', '--subtitle', 'S', '--badge', 'B', '--out', 'o.png', '--series', 's', '--width', '1920', '--height', '1080']);
+  assert.deepEqual(parsed, { basePath: 'b.jpg', title: 'T', subtitle: 'S', badge: 'B', outputPath: 'o.png', seriesDir: 's', width: 1920, height: 1080 });
+});
+
+test('resolveThumbnailText defaults subtitle/badge to the series title', () => {
+  assert.deepEqual(resolveThumbnailText({ seriesTitle: 'Other Series' }), { subtitle: 'Other Series', badge: 'Other Series' });
+  assert.deepEqual(resolveThumbnailText({ subtitle: 'S', badge: 'B', seriesTitle: 'X' }), { subtitle: 'S', badge: 'B' });
+  assert.equal(resolveThumbnailText({}).badge, 'iNNtrevistas');
+});
+
+test('buildThumbnailProject emits a one-frame composition with the text and the frame tokens', () => {
+  const { indexHtml } = buildThumbnailProject({
+    width: 2560,
+    height: 1440,
+    title: 'LA BRUJULA',
+    subtitle: 'Shen Kuo',
+    badge: 'iNNtrevistas',
+    baseFileName: 'base_abc.png',
+    frameTokens: { colors: { primary: '#1e2bfa' }, typography: { body: { fontFamily: 'Inter' } } },
+  });
+  assert.match(indexHtml, /data-composition-id="thumbnail"/);
+  assert.match(indexHtml, /data-width="2560"/);
+  assert.match(indexHtml, /data-height="1440"/);
+  assert.match(indexHtml, /src="assets\/base_abc\.png"/);
+  assert.match(indexHtml, /id="badge"[^>]*>iNNtrevistas</);
+  assert.match(indexHtml, /id="title"[^>]*>LA BRUJULA</);
+  assert.match(indexHtml, /id="subtitle"[^>]*>Shen Kuo</);
+  assert.match(indexHtml, /'Inter'/);
+  assert.match(indexHtml, /#1e2bfa/);
+  assert.doesNotMatch(indexHtml, /sharp/i);
+});
+
+test('renderThumbnail runs the CLI snapshot and copies the PNG output', async () => {
+  const dir = tmp();
+  try {
+    const base = path.join(dir, 'base.png');
+    fs.writeFileSync(base, PNG);
+    const out = path.join(dir, 'thumb.png');
+    const res = await renderThumbnail({ basePath: base, title: 'T', outputPath: out, deps: { run: stubRun, cliPath: '/fake/hyperframes' } });
+    assert.equal(res.width, 2560);
+    assert.ok(fs.existsSync(out));
+    assert.deepEqual(fs.readFileSync(out), PNG);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('renderThumbnail converts to JPEG via ffmpeg for a .jpg output', async () => {
+  const dir = tmp();
+  try {
+    const base = path.join(dir, 'base.png');
+    fs.writeFileSync(base, PNG);
+    const out = path.join(dir, 'thumb.jpg');
+    let ffmpegCalled = false;
+    const ffmpegRun = (_cmd, args) => {
+      ffmpegCalled = true;
+      fs.writeFileSync(args[args.length - 1], Buffer.from('jpeg'));
+      return { status: 0 };
+    };
+    await renderThumbnail({ basePath: base, title: 'T', outputPath: out, deps: { run: stubRun, cliPath: '/fake/hyperframes', ffmpegRun } });
+    assert.ok(ffmpegCalled, 'ffmpeg runs for a JPEG output');
+    assert.ok(fs.existsSync(out));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('renderThumbnail fails loudly when the CLI is missing or mismatched', async () => {
+  const dir = tmp();
+  try {
+    const base = path.join(dir, 'base.png');
+    fs.writeFileSync(base, PNG);
+    await assert.rejects(
+      renderThumbnail({ basePath: base, title: 'T', outputPath: path.join(dir, 'o.png'), deps: { run: stubRun, installedVersion: '0.0.1' } }),
+      /hyperframes-version-mismatch/,
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the skill declares no sharp dependency and the thumbnail renderer imports no sharp', () => {
+  const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const pkg = JSON.parse(fs.readFileSync(path.join(skillDir, 'package.json'), 'utf8'));
+  assert.ok(!pkg.dependencies || !pkg.dependencies.sharp, 'no declared sharp dependency');
+  const src = fs.readFileSync(path.join(skillDir, 'scripts', 'render-thumbnail.mjs'), 'utf8');
+  assert.doesNotMatch(src, /require\(['"]sharp['"]\)|from ['"]sharp['"]/);
 });

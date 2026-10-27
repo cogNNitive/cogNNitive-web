@@ -3,15 +3,13 @@
 /**
  * nn-video-script/scripts/video-engine-cli.mjs
  *
- * Headless CLI and programmatic engine for Remotion compilation, rendering,
- * and preview server initialization.
+ * Headless CLI and programmatic engine for video compilation and rendering.
  *
  * Commands:
  *   compile <script.md> [--output <manifest.json>] [--fps <n>] [--cache-dir <dir>]
  *           [--dry-run] [--allow-model <name>]... [--approval <approved.json>]
  *           [--image-model <m>] [--tts-model <m>] [--avatar-model <m>]
  *   render  <script.md|manifest.json> --output <master.mp4> [--fps <n>] [--concurrency <n>]
- *   preview <script.md|manifest.json> [--port <3000>]
  *
  * Zero external mandatory runtime dependencies for compilation. ESM module.
  */
@@ -20,21 +18,27 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { RemotionSceneCompiler, ScriptValidationError } from './remotion-scene-compiler.mjs';
+import { SceneCompiler, ScriptValidationError, compositionIdOf, computeSceneDurations } from './scene-compiler.mjs';
 import { loadKnowledgeModel, loadTemplateModels } from './lib/knowledge-model.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
-import { SpendGuard, loadGuard, resolveDefaultCacheDir, normalizeModelId } from './lib/video-guard.mjs';
+import { SpendGuard, loadGuard, resolveDefaultCacheDir, normalizeModelId, resolveWorkspace } from './lib/video-guard.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
-import { DEFAULT_MODELS, resolveModelId } from './asset-cost-estimator.mjs';
-import { resolveEngineModel } from './lib/model-cascade.mjs';
+import { loadCascadeBags, resolve, resolveKeyed } from './lib/cascade.mjs';
+import { findNearest, findNearestByStem, findSeriesRoot } from './lib/nearest.mjs';
 import { applyCachedAvatars } from './lib/avatar-jobs.mjs';
-import { refreshFaststart } from './lib/faststart.mjs';
 import { buildTtsVoiceOptions } from './lib/tts-options.mjs';
+import { loadFrame } from './lib/frame-tokens.mjs';
+import { probeDuration } from './lib/media-duration.mjs';
+import { checkMissingAsset } from './lib/missing-asset.mjs';
+import { resolveAnimations, assertAnimationIds } from './lib/animations.mjs';
+import { assertSlotContract, SLOT_OF } from './overlay-blocks.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 import { tryHyperframesRender } from './hyperframes-render.mjs';
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+/** The skill's own folder: the fallback anchor for the nearest-folder walker. */
+const SKILL_DIR = path.resolve(SCRIPTS_DIR, '..');
 
 /**
  * Named error raised when the renderer cannot render and no mock was requested. Callers
@@ -55,24 +59,201 @@ function isInside(root, target) {
 }
 
 /**
- * The series folder that owns a script: the nearest ancestor (inclusive) holding
- * `series_rules.md` or `script_template.md`. Undefined for scripts outside a series.
- * @param {string} startDir
- * @returns {string | undefined}
+ * Resolves the `frame` cascade value to its `frames/<name>.md` document (design
+ * D18/D21). Every distinct name the compiler resolved (video level and each
+ * scene) is walked episode > series > domain > skill; a miss follows D21 — a
+ * user-level name throws `MissingAssetError`, a blueprint-only name warns once
+ * and is skipped. The first resolved document is the primary frame.
+ * @param {{ entries: Array<{ value: unknown, source: string | null }>, scriptDir: string, workspaceRoot: string, skillDir?: string }} params
+ * @returns {{ name: string, source: string, path: string, tokens: object | null } | null}
  */
-export function findSeriesRoot(startDir) {
-  let dir = path.resolve(startDir);
-  for (;;) {
-    if (fs.existsSync(path.join(dir, 'series_rules.md')) || fs.existsSync(path.join(dir, 'script_template.md'))) return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
+export function resolveFrame({ entries, scriptDir, workspaceRoot, skillDir = SKILL_DIR }) {
+  const seen = new Set();
+  let primary = null;
+  for (const entry of entries || []) {
+    if (!entry || entry.value === null || entry.value === undefined || String(entry.value).trim() === '') continue;
+    const name = String(entry.value);
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const { path: framePath, searched } = findNearest(scriptDir, `frames/${name}.md`, {
+      stopDir: workspaceRoot,
+      fallbackDir: skillDir,
+    });
+    if (!framePath) {
+      checkMissingAsset({ kind: 'frame', name, source: entry.source, searched });
+      continue;
+    }
+    if (!primary) primary = { name, source: entry.source, ...loadFrame(framePath) };
   }
+  return primary;
 }
 
 /**
- * Resolves a media source against the script directory and stages it into a
- * Remotion-served public directory, returning the bundle-relative name. The name
+ * Resolves the slot components an overlay set mounts (design D1/D5/D21). For each
+ * slot, the `components` cascade gives a name, the nearest-folder walk finds
+ * `components/<name>.html` (episode > series > domain > skill fallback), the D21
+ * rule judges a miss, and the slot contract is asserted against the skill's
+ * fallback. A component that declares fewer variables than its slot throws
+ * `SlotContractError` before anything is spent.
+ * @param {{ slots: string[], bags: object, scriptDir: string, workspaceRoot: string, skillDir?: string }} params
+ * @returns {Record<string, { name: string, path: string, noTimeline: boolean }>}
+ */
+export function resolveComponents({ slots, bags, scriptDir, workspaceRoot, skillDir = SKILL_DIR }) {
+  const resolved = {};
+  for (const slot of slots || []) {
+    const { value: name, source } = resolveKeyed('components', slot, bags || {});
+    if (!name) continue;
+    const { path: compPath, searched } = findNearest(scriptDir, `components/${name}.html`, {
+      stopDir: workspaceRoot,
+      fallbackDir: skillDir,
+    });
+    if (!compPath) {
+      checkMissingAsset({ kind: 'component', name, source, searched });
+      continue;
+    }
+    const contractPath = path.join(skillDir, 'components', `${slot}.html`);
+    const contractHtml = fs.existsSync(contractPath) ? fs.readFileSync(contractPath, 'utf8') : '';
+    const compHtml = fs.readFileSync(compPath, 'utf8');
+    assertSlotContract(slot, { path: compPath, html: compHtml, contractHtml });
+    // A component whose root declares `data-no-timeline` is static: it never
+    // registers a sub-composition timeline, so the emitted host must say so too
+    // (otherwise HyperFrames waits its 45s readiness timeout on every render).
+    resolved[slot] = { name, path: compPath, noTimeline: /data-no-timeline/.test(compHtml) };
+  }
+  return resolved;
+}
+
+/** Overlay slots that carry enter/exit sound events (b-roll is a layer event). */
+export const SOUND_OVERLAY_SLOTS = ['title', 'lower-third', 'caption', 'quote', 'watermark'];
+/** Layer types that carry a `layer-enter` sound event. */
+export const SOUND_LAYER_TYPES = ['b-roll', 'animation', 'presenter'];
+
+/**
+ * Every sound key the engine supports (design D12): video start/end, every scene
+ * boundary after the first, each overlay slot's enter/exit, and each layer type's
+ * enter. The engine names events, never concrete sounds.
+ */
+export const SUPPORTED_SOUND_KEYS = [
+  'video-start',
+  'video-end',
+  'scene-boundary',
+  ...SOUND_OVERLAY_SLOTS.map((s) => `overlay-enter.${s}`),
+  ...SOUND_OVERLAY_SLOTS.map((s) => `overlay-exit.${s}`),
+  ...SOUND_LAYER_TYPES.map((t) => `layer-enter.${t}`),
+];
+
+/** Manifest `layer_type` -> the `layer-enter.<type>` sound key it fires. */
+const LAYER_ENTER_TYPE_OF = { animation: 'animation', talking_avatar: 'presenter' };
+
+/**
+ * Times every sound event from a manifest (design D12). Returns a map of key to
+ * the frames where it fires: `video-start` at 0, `video-end` at the video's end
+ * frame (the caller subtracts the probed sound length), `scene-boundary` at every
+ * scene after the first, overlay enter/exit at the overlay's start/end, and
+ * `layer-enter.<type>` at the layer's scene start. A key with no event is absent.
+ * @param {object} manifest
+ * @returns {Map<string, number[]>}
+ */
+export function soundEventFrames(manifest) {
+  const fps = Number(manifest?.fps) || 30;
+  const scenes = manifest?.tracks?.scenes || [];
+  const overlays = manifest?.tracks?.overlays || [];
+  const totalFrames =
+    Number(manifest?.totalDurationInFrames) ||
+    Math.round((Number(manifest?.totalDurationInSeconds) || 0) * fps);
+  /** @type {Map<string, number[]>} */
+  const frames = new Map();
+  const add = (key, frame) => {
+    if (!frames.has(key)) frames.set(key, []);
+    frames.get(key).push(frame);
+  };
+
+  add('video-start', 0);
+  add('video-end', totalFrames);
+  for (let i = 1; i < scenes.length; i++) add('scene-boundary', scenes[i].fromFrame || 0);
+  for (const overlay of overlays) {
+    const slot = SLOT_OF[overlay.type];
+    if (!slot) continue;
+    if (SOUND_OVERLAY_SLOTS.includes(slot)) {
+      add(`overlay-enter.${slot}`, overlay.fromFrame || 0);
+      add(`overlay-exit.${slot}`, (overlay.fromFrame || 0) + (overlay.durationInFrames || 0));
+    }
+    if (slot === 'b-roll') add('layer-enter.b-roll', overlay.fromFrame || 0);
+  }
+  for (const scene of scenes) {
+    for (const layer of scene?.props?.layers || []) {
+      const type = LAYER_ENTER_TYPE_OF[layer.layer_type];
+      if (type) add(`layer-enter.${type}`, scene.fromFrame || 0);
+    }
+  }
+  return frames;
+}
+
+/**
+ * Resolves every supported sound key through the cascade and the nearest-folder
+ * walk (design D2/D6/D21), before any synthesis so a user-level miss spends
+ * nothing. A name with no file follows D21: a user level throws
+ * `MissingAssetError`, the blueprint default is skipped with one warning.
+ * @param {{ bags?: object, scriptDir: string, workspaceRoot: string, skillDir?: string }} params
+ * @returns {Record<string, { name: string, source: string, path: string }>}
+ */
+export function resolveSoundFiles({ bags, scriptDir, workspaceRoot, skillDir = SKILL_DIR }) {
+  const files = {};
+  for (const key of SUPPORTED_SOUND_KEYS) {
+    const { value: name, source } = resolveKeyed('sounds', key, bags || {});
+    if (!name) continue;
+    const { path: soundPath, searched } = findNearestByStem(scriptDir, 'sounds', name, {
+      stopDir: workspaceRoot,
+      fallbackDir: skillDir,
+    });
+    if (!soundPath) {
+      checkMissingAsset({ kind: 'sound', name, source, searched });
+      continue;
+    }
+    files[key] = { name, source, path: soundPath };
+  }
+  return files;
+}
+
+/**
+ * Builds the root `kind:'sfx'` audio tracks for every resolved sound key that
+ * fires an event (design D6/D12). Each file is staged into `publicDir`; the
+ * `video-end` sound is placed at `total - probeDuration(sound)` (never negative).
+ * @param {{ manifest: object, files: Record<string, { path: string }>, scriptDir: string, publicDir: string, probe?: (file: string) => Promise<{ seconds?: number }> }} params
+ * @returns {Promise<Array<{ id: string, kind: 'sfx', assetPath: string, fromFrame: number }>>}
+ */
+export async function resolveSounds({ manifest, files, scriptDir, publicDir, probe = probeDuration }) {
+  const fps = Number(manifest?.fps) || 30;
+  const totalFrames =
+    Number(manifest?.totalDurationInFrames) ||
+    Math.round((Number(manifest?.totalDurationInSeconds) || 0) * fps);
+  const framesByKey = soundEventFrames(manifest);
+  const tracks = [];
+  let index = 0;
+
+  for (const [key, frames] of framesByKey) {
+    const file = files?.[key];
+    if (!file) continue;
+    const staged = stageAsset(file.path, scriptDir, publicDir);
+    if (!staged) continue;
+
+    let occurrences = frames;
+    if (key === 'video-end') {
+      const probed = await probe(file.path);
+      const soundFrames = Math.max(0, Math.round((Number(probed?.seconds) || 0) * fps));
+      occurrences = [Math.max(0, totalFrames - soundFrames)];
+    }
+    const idBase = key.replace(/[^a-z0-9]+/gi, '_');
+    for (const fromFrame of occurrences) {
+      tracks.push({ id: `sfx_${idBase}_${index++}`, kind: 'sfx', assetPath: staged.name, fromFrame });
+    }
+  }
+  return tracks;
+}
+
+/**
+ * Resolves a media source against the script directory and stages it into the
+ * project's public directory, returning the bundle-relative name. The name
  * is `<basename>_<sha256-prefix><ext>` so two sources that share a basename (an
  * in-dir `assets/x.mp4` and an out-of-dir `../shared/x.mp4`) never collide, and
  * the same source referenced twice stages once.
@@ -109,7 +290,7 @@ export function stageAsset(src, scriptDir, publicDir) {
  * Sources are resolved against `scriptDir` — NOT the current working directory —
  * so both in-dir (`assets/…`) and out-of-dir (`../shared/…`) paths resolve.
  * A referenced source that cannot be resolved is collected into `missing`; the
- * caller decides how to fail. Pure filesystem work: imports no Remotion module,
+ * caller decides how to fail. Pure filesystem work: imports no renderer module,
  * so it is the test seam.
  *
  * @param {object} manifest
@@ -172,7 +353,7 @@ export function resolveMediaLayers(manifest, opts) {
  * @property {string[]} [allowModels] Models explicitly unlocked past the guard blocklist/allowlist (--allow-model).
  * @property {string} [approvalPath] Approved-plan artifact (defaults to <scriptDir>/asset_plan.approved.json).
  * @property {{ image?: string, tts?: string, avatar?: string }} [models] Chosen models, as passed to the cost estimator (part of plan_hash).
- * @property {Function} [ffmpegRun] Test seam for the faststart retry on marked avatar clips.
+ * @property {(file: string) => Promise<{ seconds?: number }>} [soundProbe] Test seam for the `video-end` sound-length probe.
  * @property {Record<string, unknown>} [synthesizerOptions] Extra AssetSynthesizer options (test seam: env, fetch, sleep).
  * @property {(e: object) => void} [onProgress] Progress listener: `plan` (totals + estimated USD)
  *   first, then `tts-start`/`tts-done` and `media-start`/`media-done` with `[done/total]`,
@@ -190,12 +371,11 @@ export function resolveMediaLayers(manifest, opts) {
  * @property {number} [concurrency=4]
  * @property {number} [quality=80]
  * @property {string} [cacheDir]
- * @property {boolean} [allowMock=false] Write a mock MP4 when Remotion is unavailable.
+ * @property {boolean} [allowMock=false] Write a mock MP4 when the renderer is unavailable.
  * @property {string[]} [allowModels] See VideoCompileOptions (used when rendering from a script).
  * @property {string} [approvalPath] See VideoCompileOptions.
  * @property {{ image?: string, tts?: string, avatar?: string }} [models] See VideoCompileOptions.
- * @property {(id: string) => Promise<object|null>} [loadModule] Remotion module loader seam.
- * @property {(e: object) => void} [onProgress] See VideoCompileOptions (also covers bundle/render phases).
+ * @property {(e: object) => void} [onProgress] See VideoCompileOptions (also covers render phases).
  */
 
 /**
@@ -221,7 +401,7 @@ export function resolveMediaLayers(manifest, opts) {
  * @param {(e: object) => void} [onProgress]
  * @param {Map<string, number>} [costByRef]
  */
-async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = () => {}, costByRef = new Map()) {
+async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = () => {}, costByRef = new Map(), bags = {}) {
   const audioAssets = {};
   let cachedAssetsUsed = 0;
   let newAssetsSynthesized = 0;
@@ -243,8 +423,8 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
   for (const sc of parsed.scenes) {
     // 1. TTS synthesis
     if (sc.narration && sc.narration.trim().length > 0) {
-      const voiceOptions = buildTtsVoiceOptions(sc, models);
-      const ttsModel = resolveModelId(resolveEngineModel('tts', { cliModel: models.tts, sceneModel: sc.properties?.scene_tts_model, defaultModel: DEFAULT_MODELS.tts }), DEFAULT_MODELS.tts);
+      const voiceOptions = buildTtsVoiceOptions(sc, models, bags);
+      const ttsModel = normalizeModelId(sc.properties?.scene_tts_model);
       onProgress({ phase: 'tts-start', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel });
       const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, { ref: sc.id, model: ttsModel });
       if (!ttsRes.dryRun) {
@@ -276,7 +456,7 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
         accentColor: '#ef4444',
       };
       if (models.image) mediaOptions.modelOverride = models.image;
-      const imageModel = normalizeModelId(resolveEngineModel('image', { cliModel: models.image, defaultModel: DEFAULT_MODELS.image }));
+      const imageModel = normalizeModelId(resolve('image_model', bags).value);
       const ref = `${sc.id}/${layer.name}`;
       onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
       const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref, model: imageModel });
@@ -297,12 +477,12 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
 }
 
 /**
- * Compiles a video script into a Remotion Composition Manifest, synthesizing and caching
+ * Compiles a video script into a Composition Manifest, synthesizing and caching
  * TTS/media assets. Billable work is planned first (no spend, no writes) and the WHOLE run
  * is refused before the first charge when it is unapproved, uses a blocked model, or would
  * pass the per-run or 24h cap. With `dryRun` it only returns that plan.
  * @param {VideoCompileOptions} options
- * @returns {Promise<{ manifest: import('./remotion-scene-compiler.mjs').RemotionCompositionManifest | null, cachedAssetsUsed: number, newAssetsSynthesized: number, dryRun?: boolean, plan?: any }>}
+ * @returns {Promise<{ manifest: import('./scene-compiler.mjs').CompositionManifest | null, cachedAssetsUsed: number, newAssetsSynthesized: number, dryRun?: boolean, plan?: any }>}
  */
 export async function compileVideo(options) {
   const scriptPath = path.resolve(options.scriptPath);
@@ -319,11 +499,17 @@ export async function compileVideo(options) {
   const checkNow = () => checkApproval({ scriptContent, models, approvalPath, allowModels, allowDelegated: loaded.config.allowDelegatedApproval === true });
   // Default cache lives at the workspace root so it is shared across series and cwd-independent.
   const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir);
-  const synthOptions = { defaultModels: models, ...(options.synthesizerOptions || {}) };
+  // One cascade: the CLI model flags are the most specific level, the script's
+  // series/domain/blueprint documents the rest (design D10). No default id here.
+  const bags = {
+    ...(options.bags || loadCascadeBags(scriptDir)),
+    cli: { image_model: models.image, tts_model: models.tts, avatar_model: models.avatar },
+  };
+  const synthOptions = { defaultModels: models, bags, ...(options.synthesizerOptions || {}) };
   const makeGuard = (dryRun) =>
     new SpendGuard({ config: loaded.config, root: loaded.root, allowModels, dryRun, approval: checkNow });
 
-  const compiler = new RemotionSceneCompiler({
+  const compiler = new SceneCompiler({
     fps: options.fps,
     width: options.width,
     height: options.height,
@@ -336,7 +522,39 @@ export async function compileVideo(options) {
   const guard = compiler.checkScript(model, options);
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
   const templates = options.templates || loadTemplateModels(scriptDir);
-  const parsed = compiler.lowerKnowledgeModel(model, { templates, fps: options.fps, width: options.width, height: options.height });
+  const parsed = compiler.lowerKnowledgeModel(model, { templates, bags, fps: options.fps, width: options.width, height: options.height });
+  // Resolve the frame cascade value to its document BEFORE any synthesis or
+  // render (design D18/D21): a user-level name with no file fails here, with
+  // nothing spent; a blueprint-only name is skipped with one warning.
+  const frameInfo = resolveFrame({
+    entries: [parsed.frame, ...parsed.scenes.map((sc) => sc.frame)],
+    scriptDir,
+    workspaceRoot: loaded.root,
+  });
+  // Resolve every slot component an overlay uses BEFORE any synthesis (design
+  // D1/D21): a user-level name with no file fails here, with nothing spent, and a
+  // component that breaks its slot contract fails before the render.
+  const overlaySlots = [
+    ...new Set(
+      parsed.scenes.flatMap((sc) => (Array.isArray(sc.layers) ? sc.layers : []).filter((l) => l.kind === 'overlay').map((l) => l.type)),
+    ),
+  ];
+  const components = resolveComponents({ slots: overlaySlots, bags, scriptDir, workspaceRoot: loaded.root });
+  // Resolve every authored animation project BEFORE any synthesis (design D7/D8):
+  // a missing project fails loudly with nothing spent, and an id that would
+  // collide with a scene slug, the root composition id, a component id or another
+  // animation fails naming both.
+  const animations = resolveAnimations({ scenes: parsed.scenes, scriptDir });
+  assertAnimationIds({
+    animations,
+    sceneSlugs: parsed.scenes.map((sc) => sc.slug),
+    rootId: compositionIdOf(parsed.title),
+    componentIds: Object.entries(components).flatMap(([slot, c]) => [slot, c.name]),
+  });
+  // Resolve and D21-check every sound name BEFORE any synthesis (design D6/D21):
+  // a user-level name with no file fails here, with nothing spent; a blueprint-only
+  // name is skipped with one warning. The times are computed after the manifest.
+  const soundFiles = resolveSoundFiles({ bags, scriptDir, workspaceRoot: loaded.root });
   let audioAssets = {};
   let cachedAssetsUsed = 0;
   let newAssetsSynthesized = 0;
@@ -352,9 +570,18 @@ export async function compileVideo(options) {
       guard: planGuard,
       ...synthOptions,
     });
-    const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models);
+    const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models, () => {}, new Map(), bags);
 
     if (options.dryRun) {
+      // Each scene's target duration (design D14): `measured` when narration
+      // audio exists, `estimated` from the word count otherwise; an authored
+      // animation extends it to `max(narration, animation)`.
+      const scenes = computeSceneDurations(parsed.scenes, {
+        wordsPerSecond: compiler.wordsPerSecond,
+        defaultSceneDuration: compiler.defaultSceneDuration,
+        audioAssets,
+        animations,
+      }).map((d) => ({ slug: d.slug, seconds: d.seconds, measured: d.measured }));
       return {
         dryRun: true,
         manifest: null,
@@ -368,6 +595,8 @@ export async function compileVideo(options) {
           dailySpentUsd: planGuard.dailySpentUsd,
           withinBudget: planGuard.plannedTotalUsd <= loaded.config.budgetPerRunUsd,
           approval: checkNow(),
+          frame: frameInfo ? { name: frameInfo.name, path: frameInfo.path, source: frameInfo.source } : null,
+          scenes,
         },
       };
     }
@@ -401,7 +630,7 @@ export async function compileVideo(options) {
       guard: makeGuard(false),
       ...synthOptions,
     });
-    ({ audioAssets, cachedAssetsUsed, newAssetsSynthesized, spentUsd } = await synthesizeScriptAssets(parsed, synthesizer, models, onProgress, costByRef));
+    ({ audioAssets, cachedAssetsUsed, newAssetsSynthesized, spentUsd } = await synthesizeScriptAssets(parsed, synthesizer, models, onProgress, costByRef, bags));
   }
 
   // Avatar pickup: a lip-sync clip cached by synthesize-avatar.mjs replaces the still avatar layer
@@ -410,28 +639,48 @@ export async function compileVideo(options) {
     parsed,
     scriptDir,
     cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
-    resolveModel: (prop) => resolveModelId(resolveEngineModel('avatar', { cliModel: models.avatar, layerModel: prop, defaultModel: DEFAULT_MODELS.avatar }), DEFAULT_MODELS.avatar),
     audioFor: (sc) => audioAssets[sc.id]?.assetPath,
   });
-  // A clip kept raw because ffmpeg was missing or failed is retried here once ffmpeg is available.
-  for (const clip of avatarVideos.clips) await refreshFaststart(clip, { run: options.ffmpegRun });
 
   const manifest = compiler.compile(parsed, {
     audioAssets,
+    animations,
     fps: options.fps,
     width: options.width,
     height: options.height,
     scriptSource: scriptPath,
   });
 
-  // Stage every media reference (layers + audio) into a Remotion-served public
+  // Stage every media reference (layers + audio) into a project public
   // dir next to the script, and rewrite the manifest to bundle-relative names.
   // Sources resolve against the script dir, not the cwd, so in-dir (`assets/…`)
   // and out-of-dir (`../shared/…`) paths both work. A missing asset is a loud
   // failure — never a silently dropped layer.
   const publicDir = path.join(scriptDir, 'public');
-  const staging = resolveMediaLayers(manifest, { scriptDir, publicDir, seriesRoot: findSeriesRoot(scriptDir) });
+  const staging = resolveMediaLayers(manifest, { scriptDir, publicDir, seriesRoot: findSeriesRoot(scriptDir, resolveWorkspace(scriptDir).root) });
   manifest.metadata.publicDir = publicDir;
+
+  // The resolved frame (palette + type) becomes the manifest's frame contract so
+  // the emitter styles overlays from brand tokens instead of hardcoded values.
+  // Absent a frame, the manifest carries nothing and the emitter keeps its own
+  // defaults.
+  if (frameInfo) manifest.metadata.frame = { path: frameInfo.path, tokens: frameInfo.tokens };
+
+  // The resolved slot components ride on the manifest so the emitter mounts the
+  // right file and the render driver stages it into `<project>/components/`.
+  manifest.metadata.components = components;
+
+  // Sound effects (design D6/D12): every resolved key that fires an event becomes a
+  // root `kind:'sfx'` audio track at its event time, staged into the same public
+  // dir. Appended after `resolveMediaLayers` so its own staging is not re-walked.
+  const sfxTracks = await resolveSounds({
+    manifest,
+    files: soundFiles,
+    scriptDir,
+    publicDir,
+    probe: options.soundProbe,
+  });
+  manifest.tracks.audio.push(...sfxTracks);
 
   // Keep the human-visible local audio staging dir next to the script (developer aid).
   const localAudioDir = path.join(scriptDir, 'audio');
@@ -522,6 +771,7 @@ export async function renderVideo(options) {
       outputPath,
       concurrency: options.concurrency || 4,
       projectDir,
+      extraArgs: options.hyperframesArgs,
     },
     renderDeps,
   );
@@ -530,7 +780,7 @@ export async function renderVideo(options) {
   if (!hfResult.rendered) {
     if (!options.allowMock) {
       throw new VideoRenderError(
-        `HyperFrames render failed (${hfResult.reason}). Install the CLI via ensure-hyperframes.mjs, ` +
+        `HyperFrames render failed (${hfResult.reason})${hfResult.detail ? `:\n${hfResult.detail}\n\n` : '. '}Install the CLI via ensure-hyperframes.mjs, ` +
           `or pass --allow-mock for a CI placeholder MP4.`,
       );
     }
@@ -572,22 +822,6 @@ function writeMockMp4(outputPath) {
 }
 
 /**
- * Previews a video composition in Remotion Web Studio / preview server.
- * @param {Object} options
- * @param {string} [options.scriptPath]
- * @param {string} [options.manifestPath]
- * @param {number} [options.port=3000]
- */
-export async function previewVideo(options) {
-  const port = options.port || 3000;
-  console.log(`🎬 [video-engine-cli] Starting HyperFrames Studio preview on port ${port}...`);
-  return {
-    previewUrl: `http://localhost:${port}`,
-    port,
-  };
-}
-
-/**
  * Human progress reporter: plan totals + model + estimated cost first, then one
  * `[i/N]` line per asset with its cost and the accumulated spend.
  * @param {object} e Progress event (see `onProgress` in VideoCompileOptions).
@@ -605,12 +839,6 @@ function cliReporter(e) {
     case 'media-done':
       console.log(`🖼️ Media ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`);
       break;
-    case 'bundle-start':
-      console.log('📦 Bundleando composición Remotion...');
-      break;
-    case 'bundle-done':
-      console.log('📦 Bundle listo, resolviendo composición...');
-      break;
     case 'render-start':
       console.log(`🎬 Renderizando${e.frames ? ` ${e.frames} frames` : ''}...`);
       break;
@@ -626,6 +854,10 @@ function cliReporter(e) {
 function printDryRun(result) {
   const { plan } = result;
   console.log('Dry run: nothing was synthesized, spent or written.');
+  if (plan.frame) console.log('   frame ' + plan.frame.name + ': ' + plan.frame.path + ' (' + plan.frame.source + ')');
+  for (const scene of plan.scenes || []) {
+    console.log('   scene ' + scene.slug + ': ' + scene.seconds + 's (' + (scene.measured ? 'measured' : 'estimated') + ')');
+  }
   console.log('   Cached assets (free): ' + result.cachedAssetsUsed);
   console.log('   Uncached billable calls: ' + plan.items.length);
   for (const item of plan.items) {
@@ -640,7 +872,7 @@ function printDryRun(result) {
 const FLAG_SPEC = {
   boolean: ['dry-run', 'allow-mock'],
   value: [
-    'output', 'out', 'script', 'manifest', 'fps', 'width', 'height', 'format', 'concurrency', 'port',
+    'output', 'out', 'script', 'manifest', 'fps', 'width', 'height', 'format', 'concurrency',
     'cache-dir', 'approval', 'image-model', 'tts-model', 'avatar-model',
   ],
   repeatable: ['allow-model'],
@@ -666,13 +898,13 @@ export function resolveFormatSize(flags) {
 }
 
 const USAGE = [
-  'Usage: node video-engine-cli.mjs <compile|render|preview> [options]',
+  'Usage: node video-engine-cli.mjs <compile|render> [options]',
   '  compile <script.md> [--output manifest.json] [--fps n] [--width n] [--height n] [--format 16:9|9:16|1:1] [--cache-dir dir]',
   '          [--dry-run] [--approval approved.json] [--allow-model name]...',
   '          [--image-model id] [--tts-model id] [--avatar-model id]',
   '  render  <script.md|manifest.json> --output master.mp4 [--fps n] [--width n] [--height n] [--format 16:9|9:16|1:1] [--concurrency n] [--cache-dir dir]',
   '          [--allow-mock] [--approval approved.json] [--allow-model name]... [--image-model id] [--tts-model id] [--avatar-model id]',
-  '  preview <script.md|manifest.json> [--port n]',
+  '          [-- <hyperframes render flags>]   e.g. -- --workers 2 --low-memory-mode (forwarded verbatim)',
   '  --dry-run (compile only): list uncached billable work and the estimated total; spends and writes nothing.',
   '  --approval: approved plan (default <script dir>/asset_plan.approved.json); --allow-model unlocks a blocked',
   '  model only if a human recorded it in that approval. Values may also be given as --flag=value.',
@@ -690,9 +922,19 @@ function parseCliArgs(argv) {
   }
 }
 
+/** Splits argv at the first literal `--`: what follows is forwarded verbatim to `hyperframes render`. */
+export function splitPassthrough(argv) {
+  const i = argv.indexOf('--');
+  return i === -1 ? { argv, passthrough: [] } : { argv: argv.slice(0, i), passthrough: argv.slice(i + 1) };
+}
+
 async function main() {
-  const args = parseCliArgs(process.argv.slice(2));
+  const { argv, passthrough } = splitPassthrough(process.argv.slice(2));
+  const args = parseCliArgs(argv);
   const command = args._[0];
+  if (passthrough.length > 0 && command !== 'render') {
+    console.warn(`⚠️ [video-engine-cli] Arguments after "--" are ignored (only render forwards them): ${passthrough.join(' ')}`);
+  }
 
   if (!command) {
     console.error(USAGE);
@@ -700,7 +942,7 @@ async function main() {
   }
 
   if (args['dry-run'] && command !== 'compile') {
-    console.error(`❌ [video-engine-cli] --dry-run is only supported by compile (render and preview would execute).`);
+    console.error(`❌ [video-engine-cli] --dry-run is only supported by compile (render would execute).`);
     process.exit(1);
   }
 
@@ -760,20 +1002,13 @@ async function main() {
         approvalPath: typeof args.approval === 'string' ? args.approval : undefined,
         models: { image: args['image-model'], tts: args['tts-model'], avatar: args['avatar-model'] },
         allowMock: Boolean(args['allow-mock']),
+        hyperframesArgs: passthrough,
         onProgress: cliReporter,
       });
       console.log(`✅ [video-engine-cli] Rendered ${result.outputVideoPath}`);
       console.log(`   Duration: ${result.totalDurationSeconds}s (${result.totalFrames} frames) in ${result.renderTimeMs}ms, Spent: $${result.spentUsd.toFixed(4)}`);
-    } else if (command === 'preview') {
-      const target = args._[1];
-      const result = await previewVideo({
-        scriptPath: target?.endsWith('.md') ? target : undefined,
-        manifestPath: target?.endsWith('.json') ? target : undefined,
-        port: args.port ? Number(args.port) : 3000,
-      });
-      console.log(`✅ [video-engine-cli] Preview server ready at ${result.previewUrl}`);
     } else {
-      console.error(`Unknown command: ${command}`);
+      console.error(`Unknown command: ${command}\n${USAGE}`);
       process.exit(1);
     }
   } catch (err) {

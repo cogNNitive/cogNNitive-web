@@ -4,7 +4,7 @@
  * nn-video-script/test/media-staging.test.mjs
  *
  * Media staging: every media reference in a compiled manifest — drawable layers,
- * audio, AND overlay tracks (b-roll) — is copied into the Remotion-served public
+ * audio, AND overlay tracks (b-roll) — is copied into the project public
  * dir and rewritten to its staged, bundle-relative name.
  */
 

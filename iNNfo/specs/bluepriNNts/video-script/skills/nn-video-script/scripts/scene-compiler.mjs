@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * nn-video-script/scripts/remotion-scene-compiler.mjs
+ * nn-video-script/scripts/scene-compiler.mjs
  *
- * Lowers the structured iNNfo video-script model into a typed Remotion
+ * Lowers the structured iNNfo video-script model into a typed
  * Composition Manifest. The model comes from innfo-core `read_knowledge` (or the
  * equivalent structural reader in `lib/knowledge-model.mjs`); this module NEVER
  * parses script markdown and NEVER invokes a bespoke script parser.
@@ -19,6 +19,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { isKnowledgeModel, slugify } from './lib/knowledge-model.mjs';
+import { resolve } from './lib/cascade.mjs';
 
 /**
  * @typedef {Object} LowerThirdProps
@@ -38,23 +39,49 @@ import { isKnowledgeModel, slugify } from './lib/knowledge-model.mjs';
  * @property {Record<string, unknown>} config
  */
 
-/** Background music volume when a scene declares `music::`. */
-export const DEFAULT_BG_MUSIC_VOLUME = 0.2;
+/**
+ * @typedef {Object} SceneTrack
+ * @property {string} id
+ * @property {number} fromFrame
+ * @property {number} durationInFrames
+ * @property {object} props
+ * @property {{ type: string, durationInFrames: number }} [transition]
+ * @property {Array<object>} [animations]
+ * @property {number} [narrationDurationInFrames]
+ */
 
 /**
- * `type::` → renderer binding (design table). `kind` says whether the Layer is a
- * drawable scene layer or an ephemeral overlay; `manifest` is the emitted kind.
+ * @typedef {Object} CompositionManifest
+ * @property {string} version
+ * @property {string} compositionId
+ * @property {number} fps
+ * @property {number} width
+ * @property {number} height
+ * @property {number} totalDurationInFrames
+ * @property {number} totalDurationInSeconds
+ * @property {{ scenes: SceneTrack[], audio: Array<object>, overlays: Array<object> }} tracks
+ * @property {object} metadata
+ */
+
+/**
+ * `type::` → manifest binding. `kind` says whether the Layer is a drawable
+ * scene layer, an ephemeral overlay, or an authored animation; `manifest` is the
+ * emitted kind.
  */
 export const TYPE_RENDERERS = {
-  presenter: { kind: 'layer', renderer: 'AvatarFrame', manifest: 'talking_avatar' },
-  background: { kind: 'layer', renderer: 'layer-primitive', manifest: 'background' },
-  'b-roll': { kind: 'overlay', renderer: 'Broll', manifest: 'broll' },
-  title: { kind: 'overlay', renderer: 'KineticTitle', manifest: 'kineticTitle' },
-  'lower-third': { kind: 'overlay', renderer: 'LowerThird', manifest: 'lowerThird' },
-  caption: { kind: 'overlay', renderer: 'Captions', manifest: 'captions' },
-  brand: { kind: 'layer', renderer: 'layer-primitive', manifest: 'image' },
-  quote: { kind: 'overlay', renderer: 'Quote', manifest: 'quote' },
-  watermark: { kind: 'overlay', renderer: 'Watermark', manifest: 'watermark' },
+  presenter: { kind: 'layer', manifest: 'talking_avatar' },
+  background: { kind: 'layer', manifest: 'background' },
+  'b-roll': { kind: 'overlay', manifest: 'broll' },
+  title: { kind: 'overlay', manifest: 'kineticTitle' },
+  'lower-third': { kind: 'overlay', manifest: 'lowerThird' },
+  caption: { kind: 'overlay', manifest: 'captions' },
+  brand: { kind: 'layer', manifest: 'image' },
+  quote: { kind: 'overlay', manifest: 'quote' },
+  watermark: { kind: 'overlay', manifest: 'watermark' },
+  // An authored HyperFrames project mounted as a ROOT sub-composition (design
+  // D7): `kind: 'animation'` keeps it out of both the drawable-layer path
+  // (staged as media) and the overlay path; the pre-pass and the emitter own it.
+  animation: { kind: 'animation', manifest: 'animation' },
 };
 
 /**
@@ -73,6 +100,7 @@ export const DEFAULT_CONDITIONAL_FIELDS = {
   caption: ['text'],
   brand: ['asset'],
   watermark: ['text'],
+  animation: ['asset'],
 };
 
 /**
@@ -143,6 +171,56 @@ function internalLayerType(declared, asset) {
   }
 }
 
+/** The manifest `compositionId` derived from the Video title (one slug source). */
+export function compositionIdOf(title) {
+  return String(title || 'composition')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Computes each scene's target duration (design D7/D14). Narration is measured
+ * when its audio exists (`audioDurations`/`audioAssets`) and estimated from the
+ * word count otherwise; an authored `animation` longer than the narration extends
+ * the scene (`max`). `measured` says whether the narration length was measured.
+ * @param {Array<{ id: string, slug?: string, narration?: string }>} scenes
+ * @param {{ fps?: number, wordsPerSecond?: number, defaultSceneDuration?: number, audioDurations?: Record<string, number>, audioAssets?: Record<string, { durationSeconds?: number }>, animations?: Record<string, Array<{ durationSeconds?: number }>> }} [options]
+ * @returns {Array<{ sceneId: string, slug: string | undefined, seconds: number, narrationSeconds: number, animationSeconds: number, measured: boolean }>}
+ */
+export function computeSceneDurations(scenes, options = {}) {
+  const wordsPerSecond = options.wordsPerSecond || 2.5;
+  const defaultSceneDuration = options.defaultSceneDuration || 5;
+  const audioDurations = options.audioDurations || {};
+  const audioAssets = options.audioAssets || {};
+  const animations = options.animations || {};
+  const animFor = (id) => (animations instanceof Map ? animations.get(id) : animations?.[id]) || [];
+  return (scenes || []).map((sc) => {
+    const sceneId = sc.id;
+    let narrationSeconds = defaultSceneDuration;
+    let measured = false;
+    if (audioDurations[sceneId] !== undefined) {
+      narrationSeconds = audioDurations[sceneId];
+      measured = true;
+    } else if (audioAssets[sceneId]?.durationSeconds !== undefined) {
+      narrationSeconds = audioAssets[sceneId].durationSeconds;
+      measured = true;
+    } else if (sc.narration && sc.narration.trim().length > 0) {
+      const words = sc.narration.trim().split(/\s+/).length;
+      narrationSeconds = Math.max(3, words / wordsPerSecond);
+    }
+    const animationSeconds = animFor(sceneId).reduce((m, a) => Math.max(m, Number(a?.durationSeconds) || 0), 0);
+    return {
+      sceneId,
+      slug: sc.slug,
+      seconds: Math.max(narrationSeconds, animationSeconds),
+      narrationSeconds,
+      animationSeconds,
+      measured,
+    };
+  });
+}
+
 /**
  * Assigns Layers to Scenes. The L3 `# NN index` cannot carry element nesting
  * (the validator rejects element entries), so ownership is derived from the
@@ -186,7 +264,7 @@ export function assignLayersToScenes(sceneElements, layerElements) {
   return buckets;
 }
 
-export class RemotionSceneCompiler {
+export class SceneCompiler {
   /**
    * @param {Object} [options]
    * @param {number} [options.fps=30]
@@ -208,7 +286,7 @@ export class RemotionSceneCompiler {
   /** Records a non-fatal warning and keeps it for inspection by callers/tests. */
   warn(message) {
     this.warnings.push(message);
-    console.warn(`[remotion-scene-compiler] ${message}`);
+    console.warn(`[scene-compiler] ${message}`);
   }
 
   /**
@@ -272,7 +350,7 @@ export class RemotionSceneCompiler {
    * Lowers a structured iNNfo model into the internal
    * `{ title, fps, width, height, scenes[] }` shape.
    * @param {object} model read_knowledge-shaped model
-   * @param {{ templates?: Record<string, { tool?: string, voice?: string, model?: string }>, fps?: number, width?: number, height?: number }} [options]
+   * @param {{ templates?: Record<string, { tool?: string, voice?: string, model?: string }>, bags?: Record<string, Record<string, unknown>>, fps?: number, width?: number, height?: number }} [options]
    */
   lowerKnowledgeModel(model, options = {}) {
     const elements = model?.elements || {};
@@ -280,41 +358,65 @@ export class RemotionSceneCompiler {
     const sceneElements = elements.Scene || [];
     const layerElements = elements.Layer || [];
     const templates = options.templates || {};
+    const bags = options.bags || {};
     const buckets = assignLayersToScenes(sceneElements, layerElements);
     const videoEl = videos[0] || {};
-    const videoRefName = templateRefName(videoEl.fields?.template);
+    const videoTemplateRef = resolve('template', { ...bags, video: videoEl.fields || {} }).value;
+    const videoRefName = templateRefName(videoTemplateRef);
     const videoTemplate = videoRefName && templates[videoRefName] ? { name: videoRefName, ...templates[videoRefName] } : null;
 
     const scenes = sceneElements.map((sc, i) => {
       const slug = sc.slug || slugify(sc.name);
       const sceneId = `scene_${slug}`;
       const fields = sc.fields || {};
-      const refName = templateRefName(fields.template);
+      // The scene bag is the most specific element level; `video` is the
+      // enclosing Video element. `series`/`domain`/`blueprint` ride in `bags`.
+      const sceneBags = { ...bags, video: videoEl.fields || {}, scene: fields };
+      const refName = templateRefName(resolve('template', sceneBags).value);
       const resolvedTemplate =
         (refName && templates[refName] ? { name: refName, ...templates[refName] } : null) || videoTemplate;
+      const music = resolve('music', sceneBags).value;
+      const musicVolume = resolve('music_volume', sceneBags, {
+        accept: (v) => v !== undefined && v !== null && String(v).trim() !== '' && Number.isFinite(Number(v)),
+      }).value;
+      const transition = resolve('transition', sceneBags).value;
+      // `frame` is a cascade parameter resolved per scene (design D18); the file
+      // for the resolved name is located by the caller's nearest-folder walk.
+      const frame = resolve('frame', sceneBags);
+      // The resolved template's `tts_model`/`voice` fill the referencing
+      // element's bag (design D10/D20); the rest of the cascade supplies the
+      // value. Engine code names no model.
+      const elementBags = resolvedTemplate
+        ? {
+            ...sceneBags,
+            scene: {
+              ...fields,
+              ...(resolvedTemplate.model !== undefined ? { tts_model: resolvedTemplate.model } : {}),
+              ...(resolvedTemplate.voice !== undefined ? { voice: resolvedTemplate.voice } : {}),
+            },
+          }
+        : sceneBags;
+      const ttsModel = resolve('tts_model', elementBags).value;
+      const voice = resolve('voice', elementBags).value;
       const properties = {};
-      if (fields.music) properties.scene_background_audio = fields.music;
-      if (fields.music_volume !== undefined && String(fields.music_volume).trim() !== '') {
-        const mv = Number(fields.music_volume);
-        if (Number.isFinite(mv)) properties.scene_music_volume = mv;
+      if (music) properties.scene_background_audio = music;
+      if (musicVolume !== null) {
+        properties.scene_music_volume = Number(musicVolume);
       }
-      // Carry the resolved template's model/voice so downstream pricing + TTS
-      // agree without reading any script-declared voice/model field.
-      if (resolvedTemplate) {
-        if (resolvedTemplate.model || resolvedTemplate.tool) properties.scene_tts_model = resolvedTemplate.model || resolvedTemplate.tool;
-        if (resolvedTemplate.voice) properties.scene_voice = resolvedTemplate.voice;
-      }
+      if (ttsModel !== null && ttsModel !== undefined) properties.scene_tts_model = ttsModel;
+      if (voice !== null && voice !== undefined) properties.scene_voice = voice;
 
-      const layers = buckets[i].map((layer, j) => this.lowerLayer(layer, sceneId, j));
+      const layers = buckets[i].map((layer, j) => this.lowerLayer(layer, sceneId, j, sceneBags));
       return {
         id: sceneId,
         name: sc.name,
         slug,
         narration: String(sc.description || '').trim(),
-        template: fields.template || null,
+        template: resolve('template', sceneBags).value || null,
         resolvedTemplate,
-        transition: fields.transition || null,
-        music: fields.music || null,
+        transition: transition || null,
+        frame: { value: frame.value, source: frame.source },
+        music: music || null,
         properties,
         layers,
       };
@@ -327,15 +429,18 @@ export class RemotionSceneCompiler {
       height: options.height || this.height,
       videoTemplate,
       videoProps: {},
+      frame: resolve('frame', { ...bags, video: videoEl.fields || {} }),
       scenes,
     };
   }
 
   /** Lowers one Layer element into the internal layer shape. */
-  lowerLayer(layer, sceneId, index) {
+  lowerLayer(layer, sceneId, index, bags = {}) {
     const fields = layer.fields || {};
     const declared = fields.type;
     const binding = TYPE_RENDERERS[declared] || { kind: 'layer', manifest: declared };
+    const fit = resolve('fit', { ...bags, layer: fields }).value;
+    const avatarModel = resolve('avatar_model', { ...bags, layer: fields }).value;
     const properties = {
       layer_type: internalLayerType(declared, fields.asset),
       layer_asset_source: fields.asset,
@@ -343,9 +448,9 @@ export class RemotionSceneCompiler {
       layer_text_content: fields.text,
       layer_level: fields.level !== undefined ? Number(fields.level) : undefined,
       layer_position: fields.position,
-      layer_avatar_model: fields.model,
+      layer_avatar_model: avatarModel ?? undefined,
       layer_avatar_resolution: fields.avatar_resolution,
-      layer_fit: fields.fit,
+      layer_fit: fit,
     };
     for (const key of Object.keys(properties)) {
       if (properties[key] === undefined) delete properties[key];
@@ -376,7 +481,6 @@ export class RemotionSceneCompiler {
       exitAnimation,
       config: {
         title: props.title || '',
-        subtitle: props.subtitle || '',
         position: props.position || 'bottom-left',
       },
     };
@@ -407,8 +511,6 @@ export class RemotionSceneCompiler {
       exitAnimation,
       config: {
         heading: props.heading || '',
-        subheading: props.subheading || '',
-        theme: 'dark',
         anchor: props.position || 'center',
       },
     };
@@ -424,9 +526,6 @@ export class RemotionSceneCompiler {
       exitAnimation,
       config: {
         text: props.text || narration || '',
-        style: 'tiktok',
-        size: 80,
-        highlight: '#39E508',
       },
     };
   }
@@ -451,13 +550,13 @@ export class RemotionSceneCompiler {
       durationInFrames,
       enterAnimation,
       exitAnimation,
-      config: { assetPath: props.assetPath || '', fit: props.fit || 'cover', position: props.position || 'center' },
+      config: { assetPath: props.assetPath || '', fit: props.fit, position: props.position || 'center' },
     };
   }
 
   /**
    * Compiles a structured iNNfo model (or an already-lowered `{ scenes[] }`
-   * object) into a RemotionCompositionManifest. A raw markdown string is
+   * object) into a CompositionManifest. A raw markdown string is
    * rejected: the compiler never re-parses script markdown.
    * @param {object | string} input Structured model or lowered object
    * @param {Object} [options]
@@ -465,7 +564,7 @@ export class RemotionSceneCompiler {
     * @param {Record<string, { assetPath: string, sha256?: string, durationSeconds?: number }>} [options.audioAssets]
     * @param {Record<string, { tool?: string, voice?: string, model?: string }>} [options.templates] Resolved Template instances
    * @param {string} [options.scriptSource="script.model"]
-   * @returns {object} RemotionCompositionManifest
+   * @returns {CompositionManifest}
    */
   compile(input, options = {}) {
     const scriptSource = options.scriptSource || 'script.model';
@@ -491,11 +590,20 @@ export class RemotionSceneCompiler {
     const height = options.height || parsed.height || this.height;
     const audioDurations = options.audioDurations || {};
     const audioAssets = options.audioAssets || {};
+    const animations = options.animations || {};
+    const animFor = (id) => (animations instanceof Map ? animations.get(id) : animations?.[id]) || [];
 
-    const compositionId = (parsed.title || 'composition')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    const compositionId = compositionIdOf(parsed.title);
+
+    // Per-scene target durations (design D7/D14): narration measured/estimated,
+    // extended to `max(narration, animation)` when an authored animation is longer.
+    const durations = computeSceneDurations(parsed.scenes, {
+      wordsPerSecond: this.wordsPerSecond,
+      defaultSceneDuration: this.defaultSceneDuration,
+      audioDurations,
+      audioAssets,
+      animations,
+    });
 
     const sceneTracks = [];
     const audioTracks = [];
@@ -506,30 +614,25 @@ export class RemotionSceneCompiler {
       const sc = parsed.scenes[i];
       const sceneId = sc.id || `scene_${i + 1}`;
 
-      // 1. Duration: measured audio/media only — never declared.
-      let durationInSeconds = this.defaultSceneDuration;
-      if (audioDurations[sceneId] !== undefined) {
-        durationInSeconds = audioDurations[sceneId];
-      } else if (audioAssets[sceneId]?.durationSeconds !== undefined) {
-        durationInSeconds = audioAssets[sceneId].durationSeconds;
-      } else if (sc.narration && sc.narration.trim().length > 0) {
-        const words = sc.narration.trim().split(/\s+/).length;
-        durationInSeconds = Math.max(3, words / this.wordsPerSecond);
-      }
+      // 1. Duration: measured audio/media only — never declared. An authored
+      //    animation longer than the narration extends the scene (design D7).
+      const durationInSeconds = durations[i].seconds;
+      const narrationDurationInFrames = Math.max(1, Math.ceil(durations[i].narrationSeconds * fps));
       const durationInFrames = Math.max(1, Math.ceil(durationInSeconds * fps));
       const fromFrame = currentFrame;
+      const sceneAnimations = animFor(sceneId).map((a) => ({
+        id: a.id,
+        durationInFrames: Math.max(1, Math.ceil((Number(a.durationSeconds) || 0) * fps)),
+        sourceDir: a.sourceDir,
+      }));
 
-      // 2. Scene type from declared layer kinds (no invented scene_type field).
-      let sceneType = 'image_motion';
-      if (sc.layers.some((l) => l.type === 'title')) sceneType = 'kinetic_text';
-
-      // 3. Transition from `transition::` (fade | slide-left | slide-right | wipe | none).
+      // 2. Transition from `transition::` (fade | slide-left | slide-right | wipe | none).
       let transition;
       if (sc.transition && sc.transition !== 'none') {
-        transition = { type: sc.transition, durationInFrames: Math.round(fps * 0.5), easing: 'bezier(0.16,1,0.3,1)' };
+        transition = { type: sc.transition, durationInFrames: Math.round(fps * 0.5) };
       }
 
-      // 4. Drawable layers (scene background / avatar / brand).
+      // 3. Drawable layers (scene background / avatar / brand).
       const drawable = sc.layers
         .filter((l) => l.kind === 'layer')
         .map((l) => ({ name: l.name, ...l.properties, effects: l.effects || [] }));
@@ -543,11 +646,11 @@ export class RemotionSceneCompiler {
 
       sceneTracks.push({
         id: sceneId,
-        sceneType,
         fromFrame,
         durationInFrames,
         props: sceneProps,
         ...(transition ? { transition } : {}),
+        ...(sceneAnimations.length > 0 ? { animations: sceneAnimations, narrationDurationInFrames } : {}),
       });
 
       // 5. Narration audio binding.
@@ -569,6 +672,7 @@ export class RemotionSceneCompiler {
         if (path.isAbsolute(sc.music) || /^[A-Za-z]:[\\/]/.test(sc.music) || /^[a-z]+:\/\//i.test(sc.music)) {
           throw new Error(`Invalid music "${sc.music}" in scene "${sceneId}": use a path relative to the script, inside the series tree.`);
         }
+        const musicVolume = sc.properties?.scene_music_volume;
         audioTracks.push({
           id: `bgmusic_${sceneId}`,
           sceneId,
@@ -576,7 +680,7 @@ export class RemotionSceneCompiler {
           assetPath: sc.music,
           fromFrame,
           durationInFrames,
-          volume: Number.isFinite(sc.properties?.scene_music_volume) ? sc.properties.scene_music_volume : DEFAULT_BG_MUSIC_VOLUME,
+          ...(Number.isFinite(musicVolume) ? { volume: musicVolume } : {}),
           loop: true,
           sha256: crypto.createHash('sha256').update(`bgmusic:${sc.music}`).digest('hex'),
         });
@@ -672,7 +776,7 @@ export class RemotionSceneCompiler {
 async function main() {
   const target = process.argv[2];
   if (!target) {
-    console.error('Usage: node remotion-scene-compiler.mjs <model.json|script_NN.md> [--out <manifest.json>]');
+    console.error('Usage: node scene-compiler.mjs <model.json|script_NN.md> [--out <manifest.json>]');
     process.exit(1);
   }
   const outIdx = process.argv.indexOf('--out');
@@ -683,17 +787,17 @@ async function main() {
     const resolved = path.resolve(target);
     const model = loadKnowledgeModel(resolved);
     const templates = loadTemplateModels(path.dirname(resolved));
-    const compiler = new RemotionSceneCompiler();
+    const compiler = new SceneCompiler();
     const manifest = compiler.compile(model, { templates, scriptSource: target });
     const jsonStr = JSON.stringify(manifest, null, 2);
     if (outPath) {
       fs.writeFileSync(path.resolve(outPath), jsonStr, 'utf8');
-      console.log(`✅ [remotion-scene-compiler] Manifest written to ${outPath}`);
+      console.log(`✅ [scene-compiler] Manifest written to ${outPath}`);
     } else {
       console.log(jsonStr);
     }
   } catch (err) {
-    console.error(`❌ [remotion-scene-compiler] ${err.message}`);
+    console.error(`❌ [scene-compiler] ${err.message}`);
     process.exit(1);
   }
 }

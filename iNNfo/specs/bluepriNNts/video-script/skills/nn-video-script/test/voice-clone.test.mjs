@@ -162,7 +162,7 @@ describe('cloneVoice refusals', () => {
 
 describe('voice-clone CLI', () => {
   const env = () => {
-    const e = { ...process.env, WAVESPEED_API_KEY: '', REPLICATE_API_TOKEN: '', ELEVENLABS_API_KEY: '' };
+    const e = { ...process.env, WAVESPEED_API_KEY: '', REPLICATE_API_TOKEN: '' };
     return e;
   };
 

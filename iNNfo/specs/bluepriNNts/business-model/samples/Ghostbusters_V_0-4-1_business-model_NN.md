@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "business-model_V_0-4-0"
+  name: "business-model_V_0-4-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
-knowledge_version: "V_0-4-0"
+knowledge_version: "V_0-4-1"
 title: "Ghostbusters Inc. Core Business Model"
 ---
 

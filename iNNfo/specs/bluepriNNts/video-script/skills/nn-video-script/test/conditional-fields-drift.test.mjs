@@ -15,7 +15,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_CONDITIONAL_FIELDS } from '../scripts/remotion-scene-compiler.mjs';
+import { DEFAULT_CONDITIONAL_FIELDS } from '../scripts/scene-compiler.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 // test/ -> nn-video-script/ -> skills/ -> video-script/ (spec_NN.md)

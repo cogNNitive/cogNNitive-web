@@ -29,14 +29,14 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { AssetSynthesizer, BillingFailureError, probeAudioDurationDetailed } from './asset-synthesizer.mjs';
 import { CacheManager } from './cache-manager.mjs';
-import { DEFAULT_MODELS, estimateCallUsd, resolveModelId } from './asset-cost-estimator.mjs';
-import { RemotionSceneCompiler, ScriptValidationError } from './remotion-scene-compiler.mjs';
+import { estimateCallUsd } from './asset-cost-estimator.mjs';
+import { loadCascadeBags } from './lib/cascade.mjs';
+import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs';
 import { loadKnowledgeModel, loadTemplateModels } from './lib/knowledge-model.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
 import { LOCKS_RELATIVE_DIR, SpendGuard, loadGuard, resolveDefaultCacheDir } from './lib/video-guard.mjs';
 import { assertAudioFresh, collectAvatarJobs } from './lib/avatar-jobs.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
-import { applyFaststart } from './lib/faststart.mjs';
 import { acquireLock } from './lib/file-lock.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
@@ -98,7 +98,7 @@ function buildResumeCommand(o, sceneIds, taskId) {
  * @param {number} [o.pollWindowMs] Bounded polling window (default 20 min).
  * @param {object} [o.probeDeps] Test seams for the real duration probe (run, providerSeconds).
  * @param {Function} [o.onPreflightPassed] Test seam: awaited after pre-flight, before the first submit.
- * @param {Record<string, string | undefined>} [o.env] Test seams: env, fetch, sleep, now, measureDuration, ffmpegRun, warn.
+ * @param {Record<string, string | undefined>} [o.env] Test seams: env, fetch, sleep, now, measureDuration, warn.
  */
 export async function synthesizeAvatars(o) {
   if (o.dryRun && o.resume) throw new Error('--dry-run cannot be combined with --resume (resume performs a real poll).');
@@ -114,6 +114,10 @@ export async function synthesizeAvatars(o) {
   const windowMs = o.pollWindowMs ?? DEFAULT_POLL_WINDOW_MS;
   const scriptContent = fs.readFileSync(scriptPath, 'utf8');
   const scriptDir = path.dirname(scriptPath);
+  const bags = {
+    ...(o.bags || loadCascadeBags(scriptDir)),
+    cli: { tts_model: models.tts, image_model: models.image, avatar_model: models.avatar },
+  };
   const loaded = loadGuard(scriptDir);
   const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir);
   const approvalPath = o.approvalPath ? path.resolve(o.approvalPath) : path.join(scriptDir, APPROVAL_FILENAME);
@@ -122,11 +126,11 @@ export async function synthesizeAvatars(o) {
   const makeGuard = (dryRun) =>
     new SpendGuard({ config: loaded.config, root: loaded.root, allowModels, dryRun, approval: checkNow, avatarStaleMs });
 
-  const compiler = new RemotionSceneCompiler({});
+  const compiler = new SceneCompiler({});
   const model = o.model || loadKnowledgeModel(scriptPath, { model: o.model, modelPath: o.modelPath });
   const scriptGuard = compiler.checkScript(model, o);
   if (!scriptGuard.ok) throw new ScriptValidationError(scriptGuard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { templates: o.templates || loadTemplateModels(scriptDir) });
+  const parsed = compiler.lowerKnowledgeModel(model, { templates: o.templates || loadTemplateModels(scriptDir), bags });
   const sceneFilter = o.scenes?.length ? [...new Set(o.scenes)] : undefined;
   if (sceneFilter) {
     const unknown = sceneFilter.filter((id) => !parsed.scenes.some((s) => s.id === id));
@@ -140,13 +144,12 @@ export async function synthesizeAvatars(o) {
     scriptDir,
     cacheManager: readCache,
     sceneIds: sceneFilter,
-    resolveModel: (prop) => resolveModelId(prop, models.avatar || DEFAULT_MODELS.avatar),
   });
   if (problems.length) throw new Error(problems.join('\n'));
   if (raw.length === 0) throw new Error('No talking-avatar layers (layer_type: talking_avatar) found in ' + scriptPath + (sceneFilter ? ' for the selected scenes.' : '.'));
   for (const j of raw) {
     const sc = parsed.scenes.find((s) => s.id === j.sceneId);
-    assertAudioFresh({ sc, audioPath: j.audioPath, cacheManager: readCache, config: loaded.config, models });
+    assertAudioFresh({ sc, audioPath: j.audioPath, cacheManager: readCache, config: loaded.config, models, bags });
   }
 
   const byKey = new Map();
@@ -244,7 +247,7 @@ export async function synthesizeAvatars(o) {
     now: o.now,
     defaultModels: models,
   });
-  const postProcess = (buf) => applyFaststart(buf, { run: o.ffmpegRun, warn });
+  });
 
   function outstandingMessage(blocked) {
     return blocked
@@ -297,7 +300,6 @@ export async function synthesizeAvatars(o) {
           windowMs,
           intervalMs: 5000,
           backoff: { factor: 1.5, maxMs: 30000 },
-          postProcess,
           warn,
           pending,
         },

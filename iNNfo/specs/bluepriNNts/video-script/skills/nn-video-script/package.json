@@ -1,0 +1,8 @@
+{
+  "name": "nn-video-script",
+  "private": true,
+  "description": "cogNNitive video-script skill runtime dependencies. The pinned HyperFrames CLI and its render toolchain live here; agents resolve the CLI from this package's node_modules/.bin, never via npx.",
+  "dependencies": {
+    "hyperframes": "0.8.192"
+  }
+}

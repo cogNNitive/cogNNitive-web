@@ -3,10 +3,10 @@
 /**
  * nn-video-script/test/knowledge-model-compile.test.mjs
  *
- * Proves the re-pointed engine compiles an L3 guion to a Remotion composition
+ * Proves the re-pointed engine compiles an L3 guion to a composition
  * manifest from the STRUCTURED iNNfo model only (a generic inline fixture — the
  * repo ships no series/episode content):
- *  - one RemotionSceneTrack per Scene, in list order;
+ *  - one SceneTrack per Scene, in list order;
  *  - overlay text from the Layer `text::` field, never the layer name;
  *  - `template::` resolves from the Series L3 Template document;
  *  - quote/lower-third/b-roll overlays scheduled sequentially, no collision;
@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { RemotionSceneCompiler, ScriptValidationError } from '../scripts/remotion-scene-compiler.mjs';
+import { SceneCompiler, ScriptValidationError } from '../scripts/scene-compiler.mjs';
 import { loadKnowledgeModel, loadTemplateModels, parseKnowledgeDocument } from '../scripts/lib/knowledge-model.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -103,7 +103,7 @@ title: "Demo Series"
 slug:: presenter-full
 tool:: wavespeed
 voice:: demo-voice
-model:: minimax/speech-2.8-hd
+tts_model:: minimax/speech-2.8-hd
 `;
 
 /** Writes the generic fixture into a temp dir and returns its paths. */
@@ -125,7 +125,7 @@ async function runTests() {
     const model = loadKnowledgeModel(scriptPath);
     assert.ok(model.elements, 'reader produces a read_knowledge-shaped model');
     const templates = loadTemplateModels(dir);
-    const compiler = new RemotionSceneCompiler();
+    const compiler = new SceneCompiler();
     const manifest = compiler.compile(model, { templates });
 
     assert.strictEqual(manifest.version, '1.0.0');
@@ -172,7 +172,7 @@ async function runTests() {
         ],
       },
     };
-    const manifest = new RemotionSceneCompiler().compile(model);
+    const manifest = new SceneCompiler().compile(model);
     const seq = manifest.tracks.overlays.filter((o) => o.type === 'quote').sort((a, b) => a.fromFrame - b.fromFrame);
     assert.strictEqual(seq.length, 2);
     assert.ok(seq[1].fromFrame >= seq[0].fromFrame + seq[0].durationInFrames, 'overlays never overlap');
@@ -181,7 +181,7 @@ async function runTests() {
 
   // 3. The guard rejects invalid documents before any manifest.
   {
-    const compiler = new RemotionSceneCompiler();
+    const compiler = new SceneCompiler();
     // Two Videos.
     assert.throws(
       () => compiler.compile({ elements: { Video: [{ name: 'a' }, { name: 'b' }], Scene: [], Layer: [] } }),
@@ -229,7 +229,7 @@ async function runTests() {
 
   // 4. The engine no longer imports the VUS parser/mirror.
   {
-    const engineModules = ['remotion-scene-compiler.mjs', 'video-engine-cli.mjs', 'asset-cost-estimator.mjs', 'synthesize-avatar.mjs', 'lib/knowledge-model.mjs', 'lib/tts-options.mjs'];
+    const engineModules = ['scene-compiler.mjs', 'video-engine-cli.mjs', 'asset-cost-estimator.mjs', 'synthesize-avatar.mjs', 'lib/knowledge-model.mjs', 'lib/tts-options.mjs'];
     const offenders = [];
     for (const rel of engineModules) {
       const src = fs.readFileSync(path.join(SKILL_DIR, 'scripts', rel), 'utf8');
@@ -257,7 +257,7 @@ async function runTests() {
       }
     }
     // The compiler accepts exactly this shape and rejects raw markdown.
-    const compiler = new RemotionSceneCompiler();
+    const compiler = new SceneCompiler();
     assert.ok(compiler.compile(adapted).tracks.scenes.length > 0);
     assert.throws(() => compiler.compile(SAMPLE_DOC), (e) => e instanceof ScriptValidationError);
     console.log('✔ structural adapter stays contract-aligned with read_knowledge (drift guard)');
@@ -295,7 +295,7 @@ prompt:: Talking head
     assert.strictEqual(adapted.elements.Layer[0].parentSlug, 'first-scene');
     assert.strictEqual(adapted.elements.Layer[1].parentSlug, 'first-scene');
 
-    const compiler = new RemotionSceneCompiler();
+    const compiler = new SceneCompiler();
     const manifest = compiler.compile(adapted);
     assert.strictEqual(manifest.tracks.scenes.length, 1);
     assert.strictEqual(manifest.tracks.scenes[0].props.layers.length, 1);

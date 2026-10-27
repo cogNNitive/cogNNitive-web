@@ -8,56 +8,36 @@ import { runEnsureHyperframes, resolveInstalledCli } from '../scripts/ensure-hyp
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'ensure-hyperframes.mjs');
 
-test('--check exits 1 when the CLI is absent, without installing', async () => {
-  let installed = false;
-  const code = await runEnsureHyperframes({
-    check: true,
-    deps: {
-      resolveCli: () => null,
-      updateSkills: () => { installed = true; },
-      print: () => {},
-    },
-  });
-  assert.equal(code, 1);
-  assert.equal(installed, false, 'check must install nothing');
-});
-
-test('reports ready (0) when the CLI resolves', async () => {
+test('reports ready (0) when the pinned CLI resolves', async () => {
   const lines = [];
   const code = await runEnsureHyperframes({
-    deps: { resolveCli: () => '0.8.192', print: (l) => lines.push(l) },
+    resolveCli: () => '0.8.192',
+    print: (l) => lines.push(l),
   });
   assert.equal(code, 0);
-  assert.match(lines.join('\n'), /CLI present/);
+  assert.match(lines.join('\n'), /CLI 0\.8\.192 present/);
 });
 
-test('consent-gated install runs the skills update with the pinned CLI', async () => {
-  let calledWith = null;
-  const code = await runEnsureHyperframes({
-    yes: true,
-    deps: {
-      resolveCli: () => null,
-      updateSkills: (pin) => { calledWith = pin; },
-      print: () => {},
-    },
-  });
-  assert.equal(code, 0);
-  assert.equal(calledWith, '0.8.192');
-});
-
-test('declined install exits non-zero', async () => {
-  const code = await runEnsureHyperframes({
-    deps: { resolveCli: () => null, confirm: async () => false, print: () => {} },
-  });
+test('a missing CLI exits 1 and prints the fix (installs nothing, no npx)', async () => {
+  const lines = [];
+  const code = await runEnsureHyperframes({ resolveCli: () => null, print: (l) => lines.push(l) });
   assert.equal(code, 1);
+  assert.match(lines.join('\n'), /skills-manager\.js update video-script/);
 });
 
-test('resolveInstalledCli maps a non-zero probe to null', () => {
-  assert.equal(resolveInstalledCli({ run: () => ({ status: 1, stdout: '' }) }), null);
-  assert.equal(resolveInstalledCli({ run: () => ({ status: 0, stdout: '0.8.192\n' }) }), '0.8.192');
+test('a version different from the pin exits 1', async () => {
+  const lines = [];
+  const code = await runEnsureHyperframes({ resolveCli: () => '9.9.9', print: (l) => lines.push(l) });
+  assert.equal(code, 1);
+  assert.match(lines.join('\n'), /9\.9\.9 ≠ pin 0\.8\.192/);
 });
 
-test('no Remotion reference remains', () => {
+test('resolveInstalledCli returns null when node_modules carries no CLI', () => {
+  // The test tree has no installed node_modules, so the real probe is null.
+  assert.equal(resolveInstalledCli(), null);
+});
+
+test('the provisioner never shells out to a package runner', () => {
   const src = fs.readFileSync(SCRIPT, 'utf8');
-  assert.ok(!/@remotion/.test(src), 'the provisioner must not reference Remotion');
+  assert.ok(!/\bnpx\b/.test(src), 'the provisioner must not shell out to npx');
 });

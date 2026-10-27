@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RemotionSceneCompiler } from '../scripts/remotion-scene-compiler.mjs';
+import { SceneCompiler } from '../scripts/scene-compiler.mjs';
 
 const templates = {
   Full: { tool: 'wavespeed', voice: 'Lucas', model: 'minimax/spe128' },
@@ -19,7 +19,7 @@ function model(videoFields = {}, sceneFields = {}) {
   };
 }
 
-const compiler = new RemotionSceneCompiler();
+const compiler = new SceneCompiler();
 
 test('a video-level template:: applies to scenes without their own', () => {
   const lowered = compiler.lowerKnowledgeModel(model({ template: '[[Series :: Full]]' }), { templates });

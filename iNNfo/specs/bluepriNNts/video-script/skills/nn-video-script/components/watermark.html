@@ -1,0 +1,28 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; }
+    .nn-watermark {
+      position: absolute; left: 0; right: 0; bottom: 3%;
+      text-align: center;
+      font-family: var(--font, Inter), sans-serif;
+      font-size: 20px; color: rgba(255, 255, 255, 0.82);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    }
+  </style>
+  <div
+    id="root"
+    data-composition-id="watermark"
+    data-composition-variables='[
+      {"id":"text","type":"string","label":"Text","default":""},
+      {"id":"src","type":"string","label":"Source","default":""},
+      {"id":"position","type":"string","label":"Position","default":"bottom"},
+      {"id":"enter","type":"string","label":"Enter","default":""},
+      {"id":"exit","type":"string","label":"Exit","default":""},
+      {"id":"font","type":"string","label":"Font","default":"Inter"},
+      {"id":"accent","type":"string","label":"Accent","default":"#7c3aed"}
+    ]'
+    data-no-timeline
+  >
+    <div id="watermark-text" class="nn-watermark" data-var-text="text"></div>
+  </div>
+</template>

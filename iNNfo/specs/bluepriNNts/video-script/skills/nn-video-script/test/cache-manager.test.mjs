@@ -18,7 +18,7 @@ import { CacheManager } from '../scripts/cache-manager.mjs';
 import { AssetSynthesizer, probeAudioDuration } from '../scripts/asset-synthesizer.mjs';
 
 // Hermetic: a maintainer machine may export real provider keys. Tests must never reach a paid provider.
-for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'ELEVENLABS_API_KEY', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
+for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) {
   delete process.env[k];
 }
 
@@ -76,8 +76,8 @@ async function runTests() {
     assert.strictEqual(res1.fromCache, false, 'First request should be a cache miss');
     assert.ok(fs.existsSync(res1.assetPath));
     assert.ok(res1.fileSizeBytes > 0);
-    // Duration is measured via @remotion/media-parser; when the engine is not
-    // installed the measurement is 0 rather than an FFmpeg/size estimate.
+    // Duration is measured via ffprobe; when the probe is unavailable the
+    // measurement is 0 rather than an FFmpeg/size estimate.
     assert.ok(typeof res1.durationSeconds === 'number' && res1.durationSeconds >= 0);
 
     // Second synthesis -> Cache hit
