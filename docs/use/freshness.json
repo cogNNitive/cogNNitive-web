@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-27T19:07:33.289Z",
-  "head": "539c720a723392905ffa2c25685fdd17ec84239b",
+  "generatedAt": "2026-10-27T19:32:31.470Z",
+  "head": "c99c96f36207172a0afbd4479764e45afbc411ba",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -20,23 +20,34 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.46.0",
       "pinnedTagDate": "2026-10-27T19:05:22+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.46.0",
       "pinnedTagDate": "2026-10-27T19:05:22+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.31.0",
       "pinnedTagDate": "2026-10-26T10:14:56+01:00",
-      "commitsSincePin": 5,
+      "commitsSincePin": 7,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/package.json",
         "iNNfo/packages/nn-mcp/src/tools/spec.spec.ts",
         "iNNfo/packages/nn-mcp/src/tools/spec.ts",
         "iNNfo/packages/nn-mcp/test/validate-workspace-schema-cache.test.ts"
@@ -46,12 +57,14 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.29.0",
       "pinnedTagDate": "2026-10-26T14:16:55+01:00",
-      "commitsSincePin": 11,
+      "commitsSincePin": 12,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/console/review.js"
       ]
     }
