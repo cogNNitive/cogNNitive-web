@@ -1,49 +1,43 @@
 {
-  "generatedAt": "2026-10-26T21:33:43.670Z",
-  "head": "9b7c839288b5fd395fc17e694a76f246442d2c20",
+  "generatedAt": "2026-10-27T19:07:33.289Z",
+  "head": "539c720a723392905ffa2c25685fdd17ec84239b",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v2.31.0",
       "pinnedTagDate": "2026-10-26T19:30:52+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 9,
+      "filesTouched": [
+        "skills/nn-console/SKILL.md",
+        "skills/nn-preflight/scripts/lib/skill-content-hash.js",
+        "skills/nn-preflight/scripts/preflight-check.js",
+        "skills/nn-preflight/scripts/preflight-check.test.js",
+        "skills/nn-skills-lifecycle/scripts/skills-manager.js",
+        "skills/nn-sources/SKILL.md"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.44.0",
-      "pinnedTagDate": "2026-10-26T19:30:52+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/overlay-blocks.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/scene-project.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/overlay-render.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/scene-project-mount.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.46.0",
+      "pinnedTagDate": "2026-10-27T19:05:22+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.44.0",
-      "pinnedTagDate": "2026-10-26T19:30:52+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/overlay-blocks.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/scripts/scene-project.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/overlay-render.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/test/scene-project-mount.test.mjs",
-        "iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.46.0",
+      "pinnedTagDate": "2026-10-27T19:05:22+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.31.0",
       "pinnedTagDate": "2026-10-26T10:14:56+01:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 5,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/src/tools/spec.spec.ts",
         "iNNfo/packages/nn-mcp/src/tools/spec.ts",
         "iNNfo/packages/nn-mcp/test/validate-workspace-schema-cache.test.ts"
       ]
@@ -52,11 +46,13 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.29.0",
       "pinnedTagDate": "2026-10-26T14:16:55+01:00",
-      "commitsSincePin": 5,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js"
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/review.js"
       ]
     }
   }

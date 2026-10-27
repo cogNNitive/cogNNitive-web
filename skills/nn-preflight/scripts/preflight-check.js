@@ -32,6 +32,7 @@ const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
 const { parseFocusedYaml, parseFrontmatter } = require('./lib/yaml-lite');
+const { diffSkillDir } = require('./lib/skill-content-hash');
 const { discoverModels, scanWorkspaceUpgrades } = require('./upgrade-check');
 const { isProjectableName, classifyProjection, hashTree } = require('./lib/projection');
 // The bundle is a generated CJS mirror whose exports tsc cannot infer; the cast restates its contract.
@@ -62,6 +63,15 @@ const DEFAULT_BLUEPRINT_CATALOG_URL =
   'https://cognnitive.com/innfo/blueprints/catalog.json';
 const FALLBACK_BLUEPRINT_CATALOG_URL =
   'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/catalog.json';
+
+/**
+ * Installed-blueprint catalog (`release_tag` per optional vertical). Same
+ * resolution sources as the workspace template catalog plus the in-repo copy;
+ * used to compare installed catalog bluepriNNts against their release pin.
+ */
+const DEFAULT_CATALOG_URL = process.env.SM_CATALOG || DEFAULT_BLUEPRINT_CATALOG_URL;
+const FALLBACK_CATALOG_URL = FALLBACK_BLUEPRINT_CATALOG_URL;
+const REPO_CATALOG_PATH = path.resolve(__dirname, '..', '..', '..', 'iNNfo', 'specs', 'bluepriNNts', 'catalog.json');
 
 /**
  * Canonical channel freshness summary published by CI on every push to main.
@@ -876,6 +886,266 @@ function auditSkillProjections(state, skillsDir, homedir = os.homedir()) {
   return { total, inSync, drift, items };
 }
 
+/* ── Installed catalog blueprints + declared dependencies ─────────── */
+
+/**
+ * Loads the installed-blueprint catalog (`catalog.json`). Resolution order: an
+ * explicit path/URL, the `COGNNITIVE_CATALOG` / `SM_CATALOG` override, the
+ * in-repo copy, then the published Pages URL and its raw GitHub fallback.
+ * Returns `null` (never throws) when nothing resolves: the catalog check is
+ * informational and must not block a preflight run.
+ * @param {{ catalogUrl?: string | null }} [options]
+ * @returns {Promise<object | null>}
+ */
+async function loadPreflightCatalog(options = {}) {
+  const explicit = options.catalogUrl || process.env.COGNNITIVE_CATALOG || process.env.SM_CATALOG;
+  const sources = explicit
+    ? [explicit]
+    : [REPO_CATALOG_PATH, DEFAULT_CATALOG_URL, FALLBACK_CATALOG_URL];
+  for (const source of sources) {
+    try {
+      if (isUrl(source)) return JSON.parse(await fetchWithTimeout(source, 4000));
+      if (fs.existsSync(source)) return JSON.parse(fs.readFileSync(source, 'utf-8'));
+    } catch {
+      // try the next source
+    }
+  }
+  return null;
+}
+
+/** @param {string} value */
+function isUrl(value) {
+  return /^https?:\/\//i.test(String(value));
+}
+
+/**
+ * Finds a catalog entry by blueprint name (case-insensitive) across the
+ * `blueprints` and `frozen` partitions.
+ * @param {object | null} catalog
+ * @param {string} name
+ * @returns {object | null}
+ */
+function findCatalogEntry(catalog, name) {
+  if (!catalog) return null;
+  const wanted = String(name).toLowerCase();
+  for (const group of [catalog.blueprints || {}, catalog.frozen || {}]) {
+    for (const [key, entry] of Object.entries(group)) {
+      if (key.toLowerCase() === wanted) return entry;
+      if (entry && entry.name && String(entry.name).toLowerCase() === wanted) return entry;
+    }
+  }
+  return null;
+}
+
+/**
+ * True when an executable named `name` is resolvable on `PATH` (respecting
+ * `PATHEXT` on Windows). Pure `fs` scan: no child process, no shell.
+ * @param {string} name
+ * @returns {boolean}
+ */
+function binaryOnPath(name) {
+  const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const exts = process.platform === 'win32'
+    ? (process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)
+    : [''];
+  for (const dir of dirs) {
+    for (const ext of exts) {
+      try {
+        const candidate = path.join(dir, name + ext.toLowerCase());
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return true;
+      } catch {
+        // unreadable PATH entry: keep scanning
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * True when the running Node major is below the floor declared in a semver
+ * range such as `>=22` or `>=20.9.0`.
+ * @param {string} floor
+ * @returns {boolean}
+ */
+function nodeBelowFloor(floor) {
+  const match = String(floor).match(/(\d+)/);
+  if (!match) return false;
+  const running = parseInt(process.versions.node.split('.')[0], 10);
+  return running < parseInt(match[1], 10);
+}
+
+/**
+ * Compares installed optional catalog bluepriNNts (and their embedded skills)
+ * against the catalog `release_tag`, and evaluates the declared `depends_on` of
+ * every installed skill: the CLI version against its `package.json` pin,
+ * required binaries on `PATH`, the Node floor, and required env keys. Env
+ * misses and unknown/unreleased catalog entries never block; a wrong CLI
+ * version, a missing binary or a Node below the floor are reported with the fix.
+ * @param {Record<string, any>} state
+ * @param {string[]} manifestBlueprintNames
+ * @param {object | null} catalog
+ * @param {string} skillsDir
+ * @returns {{ items: Array<any>, catalogTotal: number, catalogOutdated: number, dependencyIssues: number, envWarnings: number }}
+ */
+function auditCatalogAndDependencies(state, manifestBlueprintNames, catalog, skillsDir) {
+  const items = [];
+  let catalogTotal = 0;
+  let catalogOutdated = 0;
+  let dependencyIssues = 0;
+  let envWarnings = 0;
+
+  const manifestNames = new Set(manifestBlueprintNames);
+
+  for (const [name, entry] of Object.entries(state.blueprints || {})) {
+    if (manifestNames.has(name)) continue;
+    catalogTotal++;
+    const catalogEntry = findCatalogEntry(catalog, name);
+    const installedTag = entry && entry.commit;
+    let status;
+    if (!catalogEntry) status = 'unknown';
+    else if (!catalogEntry.release_tag) status = 'unreleased';
+    else if (installedTag === catalogEntry.release_tag) status = 'current';
+    else status = 'outdated';
+    if (status === 'outdated') catalogOutdated++;
+    items.push({
+      type: 'catalog',
+      name,
+      status,
+      installed: installedTag || null,
+      release_tag: catalogEntry ? catalogEntry.release_tag || null : null,
+    });
+
+    if (catalogEntry && catalogEntry.release_tag) {
+      for (const [skillName, skillEntry] of Object.entries(state.skills || {})) {
+        if (!skillEntry || skillEntry.source_blueprint !== name) continue;
+        const skillStatus = skillEntry.commit === catalogEntry.release_tag ? 'current' : 'outdated';
+        if (skillStatus === 'outdated') catalogOutdated++;
+        items.push({ type: 'catalog-skill', name: skillName, blueprint: name, status: skillStatus });
+      }
+    }
+  }
+
+  for (const [skillName, skillEntry] of Object.entries(state.skills || {})) {
+    if (!skillEntry) continue;
+    const skillDir = path.join(skillsDir, skillName);
+    const skillFile = path.join(skillDir, 'SKILL.md');
+    if (!fs.existsSync(skillFile)) continue;
+
+    let deps = null;
+    try {
+      deps = parseFocusedYaml(parseFrontmatter(fs.readFileSync(skillFile, 'utf-8'))).depends_on || null;
+    } catch {
+      deps = null;
+    }
+    if (!deps || typeof deps !== 'object') continue;
+
+    /** @type {Record<string, string>} */
+    let pinned = {};
+    try {
+      pinned = JSON.parse(fs.readFileSync(path.join(skillDir, 'package.json'), 'utf-8')).dependencies || {};
+    } catch {
+      pinned = {};
+    }
+
+    for (const cli of deps.cli || []) {
+      if (!cli || !cli.name || !Object.prototype.hasOwnProperty.call(pinned, cli.name)) continue;
+      let installedVersion;
+      try {
+        installedVersion = JSON.parse(fs.readFileSync(path.join(skillDir, 'node_modules', cli.name, 'package.json'), 'utf-8')).version;
+      } catch {
+        installedVersion = undefined;
+      }
+      if (installedVersion && installedVersion !== String(pinned[cli.name])) {
+        dependencyIssues++;
+        items.push({
+          type: 'blueprint-dependency',
+          name: skillName,
+          dependency: cli.name,
+          status: 'cli-version-mismatch',
+          detail: `CLI '${cli.name}' is ${installedVersion}, expected ${pinned[cli.name]}. Run: node skills-manager.js update ${skillName}`,
+        });
+      }
+    }
+
+    for (const bin of deps.binaries || []) {
+      if (!bin) continue;
+      if (!binaryOnPath(bin)) {
+        dependencyIssues++;
+        items.push({
+          type: 'blueprint-dependency',
+          name: skillName,
+          dependency: bin,
+          status: 'binary-missing',
+          detail: `Required binary '${bin}' was not found on PATH. Install it and re-run preflight.`,
+        });
+      }
+    }
+
+    if (deps.node && nodeBelowFloor(deps.node)) {
+      dependencyIssues++;
+      items.push({
+        type: 'blueprint-dependency',
+        name: skillName,
+        dependency: 'node',
+        status: 'node-below-floor',
+        detail: `Node ${deps.node} required, detected v${process.versions.node}`,
+      });
+    }
+
+    for (const env of deps.env || []) {
+      if (!env || !env.name || env.required === false) continue;
+      if (!process.env[env.name]) {
+        envWarnings++;
+        items.push({
+          type: 'blueprint-dependency',
+          name: skillName,
+          dependency: env.name,
+          status: 'env-missing',
+          detail: `Required environment key '${env.name}' is not set${env.purpose ? ` (${env.purpose})` : ''}.`,
+        });
+      }
+    }
+  }
+
+  return { items, catalogTotal, catalogOutdated, dependencyIssues, envWarnings };
+}
+
+/**
+ * Recomputes the content hash of every installed skill with a recorded hash and
+ * reports a differing skill as `modified locally`, naming the files. Warning
+ * only: never changes the exit code. A skill with no recorded hash is unknown
+ * and is not reported.
+ * @param {Record<string, any>} state
+ * @param {string} skillsDir
+ * @returns {{ items: Array<any>, count: number }}
+ */
+function auditModifiedSkills(state, skillsDir) {
+  const items = [];
+  let count = 0;
+  for (const [skillName, entry] of Object.entries(state.skills || {})) {
+    if (!entry || !entry.files) continue;
+    const dir = path.join(skillsDir, skillName);
+    if (!fs.existsSync(dir)) continue;
+    let diff;
+    try {
+      diff = diffSkillDir(dir, entry.files);
+    } catch {
+      continue;
+    }
+    if (!diff.modified) continue;
+    count++;
+    const files = [...diff.changed, ...diff.added, ...diff.removed];
+    items.push({
+      type: 'skill-modification',
+      name: skillName,
+      status: 'modified-locally',
+      files,
+      detail: `Hand-edited file(s): ${files.join(', ')}`,
+    });
+  }
+  return { items, count };
+}
+
 async function runCheck(options = {}) {
   const isJson = options.json || process.argv.includes('--json');
   const manifestUrl = options.manifestUrl || process.env.SM_MANIFEST_URL || DEFAULT_MANIFEST_URL;
@@ -933,6 +1203,11 @@ async function runCheck(options = {}) {
       projectionsTotal: 0,
       projectionsInSync: 0,
       projectionsDrift: 0,
+      catalogTotal: 0,
+      catalogOutdated: 0,
+      blueprintDependencyIssues: 0,
+      blueprintDependencyWarnings: 0,
+      skillsModifiedLocally: 0,
     },
     sources_integrity: {
       ok: true,
@@ -1239,6 +1514,22 @@ async function runCheck(options = {}) {
     });
   }
 
+  // 4b. Installed catalog bluepriNNts (not in the manifest) vs the catalog
+  // `release_tag`, plus the declared `depends_on` of every installed skill and
+  // the `modified locally` content-hash diff. All non-fatal except a wrong CLI
+  // version, a missing binary or a Node below the floor.
+  const catalog = await loadPreflightCatalog({ catalogUrl: options.catalogUrl });
+  const catalogAudit = auditCatalogAndDependencies(state, manifest.blueprints.map((t) => t.name), catalog, skillsDir);
+  results.summary.catalogTotal = catalogAudit.catalogTotal;
+  results.summary.catalogOutdated = catalogAudit.catalogOutdated;
+  results.summary.blueprintDependencyIssues = catalogAudit.dependencyIssues;
+  results.summary.blueprintDependencyWarnings = catalogAudit.envWarnings;
+  results.items.push(...catalogAudit.items);
+
+  const modifiedAudit = auditModifiedSkills(state, skillsDir);
+  results.summary.skillsModifiedLocally = modifiedAudit.count;
+  results.items.push(...modifiedAudit.items);
+
   // 5. Template Composition Integrity Validation
   const compositionResults = validateBlueprintCompositions({
     workspaceDir,
@@ -1262,8 +1553,10 @@ async function runCheck(options = {}) {
                           results.summary.sourcesDangling > 0;
   const hasCompositionBlockers = results.summary.templatesCompositionBlockers > 0;
   const hasProjectionDrift = (results.summary.projectionsDrift || 0) > 0;
+  const hasCatalogOutdated = (results.summary.catalogOutdated || 0) > 0;
+  const hasDependencyIssues = (results.summary.blueprintDependencyIssues || 0) > 0;
 
-  if (hasOutdated || hasMissing || hasStaleSpecs || hasSourceIssues || hasCompositionBlockers || hasProjectionDrift) {
+  if (hasOutdated || hasMissing || hasStaleSpecs || hasSourceIssues || hasCompositionBlockers || hasProjectionDrift || hasCatalogOutdated || hasDependencyIssues) {
     results.status = 'ACTION_REQUIRED';
     results.exitCode = 1;
   } else {
@@ -1363,6 +1656,46 @@ function printHumanReport(results) {
     console.log('ℹ️  Template catalog offline — workspace template upgrade detection skipped (non-blocking).\n');
   }
 
+  if (results.summary.catalogOutdated > 0) {
+    console.log(`\n⚠️  Outdated catalog blueprint(s) detected (${results.summary.catalogOutdated}):`);
+    for (const item of results.items) {
+      if ((item.type === 'catalog' && item.status === 'outdated') || (item.type === 'catalog-skill' && item.status === 'outdated')) {
+        console.log(`  - [OUTDATED] ${item.name}${item.blueprint ? ` (embedded in ${item.blueprint})` : ''}`);
+      }
+    }
+    console.log('  Remediation: run `node skills-manager.js update` to sync the installed catalog copy.\n');
+  }
+
+  if (results.summary.blueprintDependencyIssues > 0) {
+    console.log(`\n⚠️  Missing or mismatched blueprint dependenc(ies) detected (${results.summary.blueprintDependencyIssues}):`);
+    for (const item of results.items) {
+      if (item.type === 'blueprint-dependency' && item.status !== 'env-missing') {
+        console.log(`  - [${item.status.toUpperCase()}] ${item.name}: ${item.detail}`);
+      }
+    }
+    console.log('');
+  }
+
+  if (results.summary.blueprintDependencyWarnings > 0) {
+    console.log(`\nℹ️  Missing environment key(s) (warning only, non-blocking):`);
+    for (const item of results.items) {
+      if (item.type === 'blueprint-dependency' && item.status === 'env-missing') {
+        console.log(`  - ${item.name}: ${item.detail}`);
+      }
+    }
+    console.log('');
+  }
+
+  if (results.summary.skillsModifiedLocally > 0) {
+    console.log(`\n⚠️  Skill(s) modified locally (hand-edited copy, version unchanged — warning only):`);
+    for (const item of results.items) {
+      if (item.type === 'skill-modification') {
+        console.log(`  - ${item.name}: ${(item.files || []).join(', ')}`);
+      }
+    }
+    console.log('  Remediation: run `node skills-manager.js update` to restore the canonical copy.\n');
+  }
+
   if (results.freshnessLines && results.freshnessLines.length > 0) {
     for (const line of results.freshnessLines) {
       console.log(line);
@@ -1403,14 +1736,19 @@ function printHumanReport(results) {
     i.status === 'unnormalized' ||
     i.status === 'dangling' ||
     i.status === 'wrong-target' ||
+    i.status === 'cli-version-mismatch' ||
+    i.status === 'binary-missing' ||
+    i.status === 'node-below-floor' ||
     (i.type === 'template-composition' && i.status === 'blocker') ||
     (i.type === 'skill-projection' && i.status !== 'in-sync')
   );
   console.log('Detected items needing attention:');
   for (const item of pending) {
     let detail;
-    if (item.type === 'source-integrity' || item.type === 'template-composition') {
+    if (item.type === 'source-integrity' || item.type === 'template-composition' || item.type === 'blueprint-dependency') {
       detail = item.detail ? `(${item.detail})` : `(${item.status})`;
+    } else if (item.type === 'catalog') {
+      detail = `(installed: ${item.installed ? String(item.installed).slice(0, 7) : 'unknown'} -> release: ${item.release_tag ? String(item.release_tag).slice(0, 7) : 'unreleased'})`;
     } else if (item.status === 'outdated') {
       detail = `(installed: ${item.installedCommit || item.installedVersion || 'unknown'} -> pinned: ${item.pinnedCommit || item.version})`;
     } else {
@@ -1439,6 +1777,7 @@ async function main() {
   const workspaceDir = getArg('--workspace-dir');
   const templateCatalogUrl = getArg('--template-catalog-url');
   const freshnessUrl = getArg('--freshness-url');
+  const catalogUrl = getArg('--catalog-url');
 
   try {
     const results = await runCheck({
@@ -1451,6 +1790,7 @@ async function main() {
       workspaceDir,
       templateCatalogUrl,
       freshnessUrl,
+      catalogUrl,
     });
     if (isJson) {
       console.log(JSON.stringify(results, null, 2));
@@ -1479,6 +1819,12 @@ module.exports = {
   loadState,
   scanWorkspaceSources,
   validateBlueprintCompositions,
+  loadPreflightCatalog,
+  auditCatalogAndDependencies,
+  auditModifiedSkills,
+  findCatalogEntry,
+  binaryOnPath,
+  nodeBelowFloor,
   FRESHNESS_URL,
   FALLBACK_MANIFEST_URL,
   formatAge,

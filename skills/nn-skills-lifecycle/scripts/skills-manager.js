@@ -305,6 +305,74 @@ var require_skill_tree_digest = __commonJS({
   }
 });
 
+// skills/nn-preflight/scripts/lib/skill-content-hash.js
+var require_skill_content_hash = __commonJS({
+  "skills/nn-preflight/scripts/lib/skill-content-hash.js"(exports2, module2) {
+    var crypto = require("crypto");
+    var fs = require("fs");
+    var path2 = require("path");
+    function isExcluded(relPosix) {
+      const parts = relPosix.split("/");
+      return parts.includes("node_modules") || parts.some((p) => p.startsWith(".bak-"));
+    }
+    function walk(dir, rel, out) {
+      let entries;
+      try {
+        entries = fs.readdirSync(path2.join(dir, rel), { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const entry of entries) {
+        const relPosix = rel ? `${rel}/${entry.name}` : entry.name;
+        if (isExcluded(relPosix)) continue;
+        if (entry.isDirectory()) walk(dir, relPosix, out);
+        else if (entry.isFile()) out.push(relPosix);
+      }
+    }
+    function hashSkillDir(dir) {
+      const files = {};
+      if (!fs.existsSync(dir)) return files;
+      const list = [];
+      walk(dir, "", list);
+      for (const rel of list.sort()) {
+        try {
+          files[rel] = crypto.createHash("sha256").update(fs.readFileSync(path2.join(dir, rel))).digest("hex");
+        } catch {
+        }
+      }
+      return files;
+    }
+    function diffSkillDir(dir, recorded) {
+      const current = hashSkillDir(dir);
+      const rec = recorded || {};
+      const changed = [];
+      const added = [];
+      const removed = [];
+      for (const [rel, hash] of Object.entries(current)) {
+        if (!(rel in rec)) added.push(rel);
+        else if (rec[rel] !== hash) changed.push(rel);
+      }
+      for (const rel of Object.keys(rec)) {
+        if (!(rel in current)) removed.push(rel);
+      }
+      return {
+        modified: changed.length + added.length + removed.length > 0,
+        changed: changed.sort(),
+        added: added.sort(),
+        removed: removed.sort()
+      };
+    }
+    module2.exports = { hashSkillDir, diffSkillDir };
+  }
+});
+
+// scripts/lib/skill-content-hash.js
+var require_skill_content_hash2 = __commonJS({
+  "scripts/lib/skill-content-hash.js"(exports2, module2) {
+    module2.exports = require_skill_content_hash();
+  }
+});
+
 // scripts/lib/github-client.js
 var require_github_client = __commonJS({
   "scripts/lib/github-client.js"(exports2, module2) {
@@ -604,6 +672,149 @@ var require_yaml_parser = __commonJS({
   }
 });
 
+// skills/nn-preflight/scripts/lib/yaml-lite.js
+var require_yaml_lite = __commonJS({
+  "skills/nn-preflight/scripts/lib/yaml-lite.js"(exports2, module2) {
+    function parseScalar(text) {
+      const t = text.trim();
+      if (t === "") return null;
+      if (t.startsWith("[") && t.endsWith("]")) {
+        return t.slice(1, -1).split(",").map((p) => p.trim()).filter((p) => p !== "").map((p) => parseScalar(p));
+      }
+      if (t === "true") return true;
+      if (t === "false") return false;
+      if (t === "null") return null;
+      if (t.startsWith('"') && t.endsWith('"') || t.startsWith("'") && t.endsWith("'")) {
+        return t.slice(1, -1);
+      }
+      return t;
+    }
+    function parseMappingItem(lines, pos, indent) {
+      const line = lines[pos];
+      const match = line.text.match(/^([A-Za-z0-9_.\-]+)\s*:\s*(.*)$/);
+      if (!match) return [null, null, pos + 1];
+      const key = match[1];
+      const rest = match[2];
+      let next = pos + 1;
+      let value;
+      if (rest === "") {
+        if (next < lines.length && lines[next].indent > indent) {
+          [value, next] = parseBlock(lines, next, lines[next].indent);
+        } else {
+          value = null;
+        }
+      } else {
+        value = parseScalar(rest);
+      }
+      return [key, value, next];
+    }
+    function parseSequence(lines, pos, indent) {
+      const arr = [];
+      while (pos < lines.length && lines[pos].indent === indent && lines[pos].text.startsWith("- ")) {
+        const rest = lines[pos].text.slice(2).trim();
+        let next = pos + 1;
+        let item;
+        if (rest === "") {
+          if (next < lines.length && lines[next].indent > indent) {
+            [item, next] = parseBlock(lines, next, lines[next].indent);
+          } else {
+            item = null;
+          }
+        } else {
+          const mapMatch = rest.match(/^([A-Za-z0-9_.\-]+)\s*:\s*(.*)$/);
+          if (mapMatch) {
+            item = {};
+            const key = mapMatch[1];
+            const value = mapMatch[2];
+            if (value === "") {
+              if (next < lines.length && lines[next].indent > indent) {
+                [item[key], next] = parseBlock(lines, next, lines[next].indent);
+              } else {
+                item[key] = null;
+              }
+            } else {
+              item[key] = parseScalar(value);
+            }
+            if (next < lines.length && lines[next].indent > indent) {
+              const itemIndent = lines[next].indent;
+              while (next < lines.length && lines[next].indent === itemIndent && !lines[next].text.startsWith("- ")) {
+                const [k, v, after] = parseMappingItem(lines, next, itemIndent);
+                if (k === null) break;
+                item[k] = v;
+                next = after;
+              }
+            }
+          } else {
+            item = parseScalar(rest);
+          }
+        }
+        arr.push(item);
+        pos = next;
+      }
+      return [arr, pos];
+    }
+    function parseBlock(lines, pos, indent) {
+      if (pos >= lines.length) return [{}, pos];
+      if (lines[pos].text.startsWith("- ")) {
+        return parseSequence(lines, pos, indent);
+      }
+      const obj = {};
+      while (pos < lines.length && lines[pos].indent === indent && !lines[pos].text.startsWith("- ")) {
+        const [key, value, next] = parseMappingItem(lines, pos, indent);
+        if (key === null) break;
+        obj[key] = value;
+        pos = next;
+      }
+      return [obj, pos];
+    }
+    function parseFocusedYaml(text) {
+      const lines = text.split(/\r?\n/).map((raw) => ({ indent: raw.match(/^[ \t]*/)[0].length, text: raw.trim() })).filter((l) => l.text !== "" && !l.text.startsWith("#"));
+      const result = {};
+      let pos = 0;
+      while (pos < lines.length) {
+        const [key, value, next] = parseMappingItem(lines, pos, 0);
+        if (key === null) {
+          pos++;
+          continue;
+        }
+        result[key] = value;
+        pos = next;
+      }
+      return result;
+    }
+    function parseFrontmatter(text) {
+      const lines = text.split(/\r?\n/);
+      const open = lines.findIndex((l) => l.trim() === "---");
+      let close = -1;
+      for (let i = open + 1; i < lines.length; i++) {
+        if (lines[i].trim() === "---") {
+          close = i;
+          break;
+        }
+      }
+      if (open === -1 || close === -1) {
+        throw new Error("no YAML frontmatter (--- delimiters) found");
+      }
+      return lines.slice(open + 1, close).join("\n");
+    }
+    module2.exports = {
+      parseScalar,
+      parseMappingItem,
+      parseSequence,
+      parseBlock,
+      parseFocusedYaml,
+      parseFrontmatter
+    };
+  }
+});
+
+// scripts/lib/yaml-lite.js
+var require_yaml_lite2 = __commonJS({
+  "scripts/lib/yaml-lite.js"(exports2, module2) {
+    module2.exports = require_yaml_lite();
+  }
+});
+
 // scripts/lib/mcp-config-adapter.js
 var require_mcp_config_adapter = __commonJS({
   "scripts/lib/mcp-config-adapter.js"(exports2, module2) {
@@ -809,6 +1020,7 @@ var require_skills_commands = __commonJS({
       hashTree
     } = require_projection();
     var { skillTreeDigest } = require_skill_tree_digest();
+    var { hashSkillDir, diffSkillDir } = require_skill_content_hash2();
     var {
       fetchString,
       fetchJson,
@@ -817,6 +1029,7 @@ var require_skills_commands = __commonJS({
     var {
       parseManifest
     } = require_yaml_parser();
+    var { parseFocusedYaml, parseFrontmatter } = require_yaml_lite2();
     var { registerMcpAuto } = require_mcp_config_adapter();
     var DEFAULT_MANIFEST_URL = "https://cognnitive.com/use/manifest.md";
     var FALLBACK_MANIFEST_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/docs/use/manifest.md";
@@ -850,7 +1063,7 @@ var require_skills_commands = __commonJS({
       return url.startsWith("https:") ? https.request : http.request;
     }
     function emptyState() {
-      return { manifest: getManifestUrl(), skills: {}, blueprints: {}, mcp: {}, console: {}, projections: {} };
+      return { manifest: getManifestUrl(), skills: {}, blueprints: {}, mcp: {}, console: {}, projections: {}, cli: {} };
     }
     function migrateLegacyMcpState(state, mcpDir) {
       let changed = false;
@@ -889,7 +1102,8 @@ var require_skills_commands = __commonJS({
             blueprints: data.blueprints || {},
             mcp: data.mcp || {},
             console: data.console || {},
-            projections: data.projections || {}
+            projections: data.projections || {},
+            cli: data.cli || {}
           };
           migrateLegacyMcpState(state);
           return state;
@@ -909,7 +1123,8 @@ var require_skills_commands = __commonJS({
             blueprints: {},
             mcp: {},
             console: {},
-            projections: {}
+            projections: {},
+            cli: {}
           };
           saveState(file, state);
           return state;
@@ -1008,6 +1223,30 @@ ${RETIRED_REPO_NOTICE}`);
         return "(diff preview unavailable)";
       }
     }
+    function ensureSkillNodeModules(skillDir) {
+      if (process.env.SM_SKIP_NPM_INSTALL === "1") return;
+      const pkgPath = path2.join(skillDir, "package.json");
+      if (!fs.existsSync(pkgPath)) return;
+      let pkg;
+      try {
+        pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+      } catch (_) {
+        return;
+      }
+      const deps = Object.keys(pkg.dependencies || {});
+      const nodeModulesDir = path2.join(skillDir, "node_modules");
+      const needsInstall = deps.length > 0 && (!fs.existsSync(nodeModulesDir) || deps.some((d) => !fs.existsSync(path2.join(nodeModulesDir, d))));
+      if (!needsInstall) return;
+      try {
+        spawnSync("npm", ["install", "--omit=dev", "--no-audit", "--no-fund"], {
+          cwd: skillDir,
+          encoding: "utf-8",
+          shell: true,
+          timeout: 6e4
+        });
+      } catch (_) {
+      }
+    }
     async function installSkillAtCommit(skill, skillsDir, state) {
       const tmpRoot = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-skills-"));
       try {
@@ -1050,34 +1289,72 @@ ${RETIRED_REPO_NOTICE}`);
           } catch (_) {
           }
         }
-        const pkgPath = path2.join(dest, "package.json");
-        if (fs.existsSync(pkgPath)) {
-          try {
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-            const deps = Object.keys(pkg.dependencies || {});
-            const nodeModulesDir = path2.join(dest, "node_modules");
-            const needsInstall = deps.length > 0 && (!fs.existsSync(nodeModulesDir) || deps.some((d) => !fs.existsSync(path2.join(nodeModulesDir, d))));
-            if (needsInstall) {
-              try {
-                spawnSync("npm", ["install", "--omit=dev", "--no-audit", "--no-fund"], {
-                  cwd: dest,
-                  encoding: "utf-8",
-                  shell: true,
-                  timeout: 6e4
-                });
-              } catch (_) {
-              }
-            }
-          } catch (_) {
-          }
-        }
+        ensureSkillNodeModules(dest);
         state.skills[skill.name] = {
           commit: skill.commit,
           version: skill.version,
-          updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          updated_at: (/* @__PURE__ */ new Date()).toISOString(),
+          files: hashSkillDir(dest)
         };
       } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
+      }
+    }
+    function readDependsOn(skillText) {
+      try {
+        const fm = parseFocusedYaml(parseFrontmatter(skillText));
+        return fm.depends_on || null;
+      } catch (_) {
+        return null;
+      }
+    }
+    var DEPENDS_ON_KEYS = /* @__PURE__ */ new Set(["cli", "env", "binaries", "node", "optional_mcp"]);
+    function validateDependsOn(dependsOn, pkg) {
+      const errors = [];
+      if (dependsOn == null) return errors;
+      if (typeof dependsOn !== "object" || Array.isArray(dependsOn)) return ["depends_on must be a mapping"];
+      for (const key of Object.keys(dependsOn)) {
+        if (!DEPENDS_ON_KEYS.has(key)) errors.push(`unknown depends_on key: ${key}`);
+      }
+      const deps = pkg && pkg.dependencies || {};
+      for (const entry of dependsOn.cli || []) {
+        if (!entry || !entry.name) {
+          errors.push("cli entry missing name");
+          continue;
+        }
+        if (Object.prototype.hasOwnProperty.call(entry, "version")) {
+          errors.push(`cli '${entry.name}': version belongs in package.json only`);
+        }
+        const pinned = deps[entry.name];
+        if (pinned === void 0) {
+          errors.push(`cli '${entry.name}' is not in package.json dependencies`);
+        } else if (!/^\d+\.\d+\.\d+([-+].*)?$/.test(String(pinned))) {
+          errors.push(`cli '${entry.name}' must be pinned exactly in package.json (got '${pinned}')`);
+        }
+      }
+      return errors;
+    }
+    function recordCliDeliveredSkills(dependsOn, skillDir, skillName, state) {
+      const cliEntries = dependsOn && dependsOn.cli || [];
+      for (const item of cliEntries) {
+        if (!item || !item.name || !item.agent_skills) continue;
+        const binPosix = path2.join(skillDir, "node_modules", ".bin", item.name);
+        const binWin = `${binPosix}.cmd`;
+        const exe = process.platform === "win32" && fs.existsSync(binWin) ? binWin : binPosix;
+        if (fs.existsSync(binPosix) || fs.existsSync(binWin)) {
+          try {
+            spawnSync(exe, ["skills", "update"], { cwd: skillDir, encoding: "utf-8", shell: true, timeout: 6e4 });
+          } catch (_) {
+          }
+        }
+        let version;
+        try {
+          version = JSON.parse(fs.readFileSync(path2.join(skillDir, "node_modules", item.name, "package.json"), "utf8")).version;
+        } catch (_) {
+          version = void 0;
+        }
+        state.cli = state.cli || {};
+        state.cli[item.name] = { version, source_skill: skillName, updated_at: (/* @__PURE__ */ new Date()).toISOString() };
       }
     }
     function installEmbeddedSkills(pkgDir, skillsDir, template, state) {
@@ -1094,13 +1371,17 @@ ${RETIRED_REPO_NOTICE}`);
           fs.mkdirSync(skillsDir, { recursive: true });
           if (fs.existsSync(dest)) replaceDirAtomic(src, dest);
           else copyDirAtomic(src, dest);
-          const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(fs.readFileSync(skillFile, "utf8"));
+          const skillText = fs.readFileSync(skillFile, "utf8");
+          const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(skillText);
           const versionMatch = frontmatter && /^version:\s*["']?([^"'\r\n]+?)["']?\s*$/m.exec(frontmatter[1]);
+          ensureSkillNodeModules(dest);
+          recordCliDeliveredSkills(readDependsOn(skillText), dest, entry.name, state);
           state.skills[entry.name] = {
             commit: template.commit,
             version: versionMatch ? versionMatch[1] : void 0,
             source_blueprint: template.name,
-            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+            updated_at: (/* @__PURE__ */ new Date()).toISOString(),
+            files: hashSkillDir(dest)
           };
           names.push(entry.name);
         }
@@ -1261,6 +1542,7 @@ ${RETIRED_REPO_NOTICE}`);
       const outdatedBlueprints = [];
       const outdatedConsoleAssets = [];
       const outdatedMcp = [];
+      const modifiedSkills = [];
       for (const skill of skills) {
         const dirPresent = fs.existsSync(path2.join(args.skillsDir, skill.name));
         const entry = state.skills[skill.name];
@@ -1272,6 +1554,15 @@ ${RETIRED_REPO_NOTICE}`);
         } else {
           status = entry ? "dir-missing" : "missing";
         }
+        let modified = false;
+        if (dirPresent && entry && entry.files) {
+          try {
+            modified = diffSkillDir(path2.join(args.skillsDir, skill.name), entry.files).modified;
+          } catch (_) {
+            modified = false;
+          }
+        }
+        if (modified && status === "up-to-date") status = "modified locally";
         rows.push({
           type: "skill",
           name: skill.name,
@@ -1280,6 +1571,7 @@ ${RETIRED_REPO_NOTICE}`);
           status
         });
         if (status === "outdated") outdatedSkills.push(skill);
+        if (modified) modifiedSkills.push(skill.name);
       }
       for (const template of blueprints) {
         const fileName = template.name.endsWith(".md") ? template.name : `${template.name}.md`;
@@ -1346,6 +1638,30 @@ ${RETIRED_REPO_NOTICE}`);
         });
         if (status === "outdated") outdatedConsoleAssets.push(asset);
       }
+      let catalog = null;
+      try {
+        catalog = await loadBlueprintCatalog(args.catalogPath);
+      } catch (_) {
+        catalog = null;
+      }
+      const manifestNames = new Set(blueprints.map((t) => t.name));
+      for (const [name, entry] of Object.entries(state.blueprints || {})) {
+        if (manifestNames.has(name)) continue;
+        const catalogEntry = findCatalogEntry(catalog, name);
+        const installedTag = entry && entry.commit;
+        let status;
+        if (!catalogEntry) status = "unknown";
+        else if (!catalogEntry.release_tag) status = "unreleased";
+        else if (installedTag === catalogEntry.release_tag) status = "up-to-date";
+        else status = "outdated";
+        rows.push({
+          type: "catalog",
+          name,
+          pinned: catalogEntry && catalogEntry.release_tag ? String(catalogEntry.release_tag).slice(0, 7) : "-",
+          installed: installedTag ? String(installedTag).slice(0, 7) : "-",
+          status
+        });
+      }
       printStatusTable(rows);
       if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0 || outdatedMcp.length > 0) {
         console.log("\nDiff previews for outdated items:");
@@ -1357,6 +1673,10 @@ ${RETIRED_REPO_NOTICE}`);
           const installed = state.blueprints[template.name].commit;
           console.log(`  template ${template.name}: ${await fetchCompareSummary(template, installed)}`);
         }
+      }
+      if (modifiedSkills.length > 0) {
+        console.log(`
+modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(", ")}`);
       }
     }
     async function cmdInstall(args) {
@@ -1517,12 +1837,27 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
     }
     var DEFAULT_BLUEPRINT_REPO = "cogNNitive/cogNNitive-web";
     var DEFAULT_CATALOG_PATH = path2.join(__dirname, "..", "..", "iNNfo", "specs", "bluepriNNts", "catalog.json");
-    function loadBlueprintCatalog(override) {
-      const candidate = override || process.env.COGNNITIVE_CATALOG || process.env.SM_CATALOG || DEFAULT_CATALOG_PATH;
+    var DEFAULT_CATALOG_URL = "https://cognnitive.com/innfo/blueprints/catalog.json";
+    var FALLBACK_CATALOG_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/catalog.json";
+    var isUrl = (value) => /^https?:\/\//i.test(String(value));
+    async function readCatalog(source) {
+      const raw = isUrl(source) ? await fetchString(source) : fs.readFileSync(source, "utf-8");
+      return JSON.parse(raw);
+    }
+    async function loadBlueprintCatalog(override) {
+      const explicit = override || process.env.COGNNITIVE_CATALOG || process.env.SM_CATALOG;
+      if (explicit) return readCatalog(explicit);
+      if (fs.existsSync(DEFAULT_CATALOG_PATH)) return readCatalog(DEFAULT_CATALOG_PATH);
       try {
-        return JSON.parse(fs.readFileSync(candidate, "utf-8"));
-      } catch (_) {
-        return null;
+        return await readCatalog(DEFAULT_CATALOG_URL);
+      } catch (primaryErr) {
+        try {
+          return await readCatalog(FALLBACK_CATALOG_URL);
+        } catch (fallbackErr) {
+          throw new Error(
+            `blueprint catalog unreachable: ${DEFAULT_CATALOG_URL} (${primaryErr.message}); fallback ${FALLBACK_CATALOG_URL} (${fallbackErr.message})`
+          );
+        }
       }
     }
     function findCatalogEntry(catalog, name) {
@@ -1536,16 +1871,57 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       }
       return null;
     }
+    async function describeBlueprintPackage(template) {
+      const tmpRoot = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-bp-menu-"));
+      try {
+        const tarball = await fetchRepoCommitTarball(template);
+        const extractDir = path2.join(tmpRoot, "x");
+        extractTarball(tarball, extractDir);
+        const repoRoot = findRepoRoot(extractDir);
+        const pkgDir = path2.join(repoRoot, path2.dirname(template.path));
+        const out = { skills: [], npmDeps: [], cli: [], env: [], binaries: [] };
+        const skillsDir = path2.join(pkgDir, "skills");
+        if (fs.existsSync(skillsDir)) {
+          for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+            if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+            const skillFile = path2.join(skillsDir, entry.name, "SKILL.md");
+            if (!fs.existsSync(skillFile)) continue;
+            out.skills.push(entry.name);
+            const dep = readDependsOn(fs.readFileSync(skillFile, "utf8"));
+            if (dep) {
+              for (const c of dep.cli || []) if (c && c.name) out.cli.push(c.name);
+              for (const e of dep.env || []) if (e && e.name) out.env.push(e.name);
+              for (const b of dep.binaries || []) out.binaries.push(b);
+              const pkgJsonPath = path2.join(skillsDir, entry.name, "package.json");
+              if (fs.existsSync(pkgJsonPath)) {
+                try {
+                  out.npmDeps.push(...Object.keys(JSON.parse(fs.readFileSync(pkgJsonPath, "utf8")).dependencies || {}));
+                } catch (_) {
+                }
+              }
+            }
+          }
+        }
+        return out;
+      } catch (_) {
+        return null;
+      } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+      }
+    }
     async function cmdInstallBlueprint(args) {
       const name = args.blueprint;
       if (!name) throw new Error("install --blueprint requires a blueprint name");
       const catalogPath = args.catalogPath;
-      const catalog = loadBlueprintCatalog(catalogPath);
+      const catalog = await loadBlueprintCatalog(catalogPath);
       const entry = findCatalogEntry(catalog, name);
       if (!entry) {
         throw new Error(
           `blueprint '${name}' is not in the catalog (${catalogPath || DEFAULT_CATALOG_PATH}); check the name or refresh catalog.json`
         );
+      }
+      if (!entry.release_tag) {
+        throw new Error(`blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`);
       }
       const blueprintsDir = args.blueprintsDir || DEFAULT_BLUEPRINTS_DIR;
       const skillsDir = args.skillsDir || DEFAULT_SKILLS_DIR;
@@ -1562,11 +1938,18 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         ref,
         commit: ref
       };
+      const summary = await describeBlueprintPackage(template);
+      const summaryMenu = summary ? (summary.skills.length ? `  embedded skills: ${summary.skills.join(", ")}
+` : "") + (summary.cli.length ? `  CLI: ${summary.cli.join(", ")} (agent skills)
+` : "") + (summary.npmDeps.length ? `  npm deps: ${summary.npmDeps.join(", ")}
+` : "") + (summary.binaries.length ? `  binaries: ${summary.binaries.join(", ")}
+` : "") + (summary.env.length ? `  env keys: ${summary.env.join(", ")}
+` : "") : embedded.length ? `  embedded skills: ${embedded.join(", ")}
+` : "";
       const menu = `Optional catalog blueprint (on demand):
   - ${entryName} (${version}) from ${repo} @ ${ref}
   tier: ${entry.tier || "free"} \xB7 access: ${entry.access || "public"}
-` + (embedded.length ? `  embedded skills: ${embedded.join(", ")}
-` : "") + `
+` + summaryMenu + `
 [a] Install
 [b] Skip
 `;
@@ -1635,7 +2018,36 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         selectedConsole = (consoleAssets || []).filter((a) => args.positional.includes(path2.basename(a.file || a.url)) && isOutdatedConsole(a));
         selectedMcp = (mcp || []).filter((m) => (args.positional.includes(m.name) || args.positional.includes("mcp")) && isOutdatedMcp(m));
       }
-      if (selectedSkills.length === 0 && selectedBlueprints.length === 0 && selectedConsole.length === 0 && selectedMcp.length === 0) {
+      let catalog = null;
+      try {
+        catalog = await loadBlueprintCatalog(args.catalogPath);
+      } catch (_) {
+        catalog = null;
+      }
+      const manifestNames = new Set(blueprints.map((t) => t.name));
+      const selectedCatalog = [];
+      for (const [name, entry] of Object.entries(state.blueprints || {})) {
+        if (manifestNames.has(name)) continue;
+        if (args.positional.length > 0 && !args.positional.includes(name)) continue;
+        const catalogEntry = findCatalogEntry(catalog, name);
+        if (!catalogEntry || !catalogEntry.release_tag) continue;
+        if (entry && entry.commit === catalogEntry.release_tag) continue;
+        selectedCatalog.push({ name, catalogEntry });
+      }
+      const modifiedSkills = selectedSkills.map((skill) => {
+        const entry = state.skills[skill.name];
+        const dir = path2.join(args.skillsDir, skill.name);
+        if (!entry || !entry.files || !fs.existsSync(dir)) return null;
+        let diff;
+        try {
+          diff = diffSkillDir(dir, entry.files);
+        } catch (_) {
+          diff = null;
+        }
+        if (!diff || !diff.modified) return null;
+        return { name: skill.name, files: [...diff.changed, ...diff.added, ...diff.removed] };
+      }).filter(Boolean);
+      if (selectedSkills.length === 0 && selectedBlueprints.length === 0 && selectedConsole.length === 0 && selectedMcp.length === 0 && selectedCatalog.length === 0) {
         console.log("All skills, templates, and console assets up to date.");
         projectSkillsToAgents({
           canonicalSkillsDir: args.skillsDir,
@@ -1651,22 +2063,44 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         ...selectedSkills.map((s) => `skill:${s.name}`),
         ...selectedBlueprints.map((t) => `template:${t.name}`),
         ...selectedConsole.map((a) => `console:${path2.basename(a.file || a.url)}`),
-        ...selectedMcp.map((m) => `mcp:${m.name}`)
+        ...selectedMcp.map((m) => `mcp:${m.name}`),
+        ...selectedCatalog.map((c) => `catalog:${c.name}`)
       ];
+      const modifiedMenu = modifiedSkills.length > 0 ? `
+Locally modified (overwritten only with consent):
+` + modifiedSkills.map((m) => `  - ${m.name}: ${m.files.join(", ")}`).join("\n") + "\n" : "";
       const proceed = await consentOrAbort(
         "update skills, templates, console assets, and MCP servers",
         names,
-        `Updating ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), and ${selectedMcp.length} MCP server(s).
-
+        `Updating ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), ${selectedMcp.length} MCP server(s), and ${selectedCatalog.length} catalog blueprint(s).
+` + modifiedMenu + `
 [a] Update all listed (Recommended)
 [b] Skip
 `,
         args.yes
       );
       if (!proceed) return;
+      const skipSkills = /* @__PURE__ */ new Set();
+      for (const m of modifiedSkills) {
+        const ok = await consentOrAbort(
+          `overwrite modified skill ${m.name}`,
+          [`skill:${m.name}`],
+          `Skill ${m.name} was edited by hand (version unchanged):
+  ${m.files.join("\n  ")}
+
+Overwrite with the catalog copy?
+
+[a] Overwrite
+[b] Keep my changes
+`,
+          args.yes
+        );
+        if (!ok) skipSkills.add(m.name);
+      }
+      const skillsToUpdate = selectedSkills.filter((s) => !skipSkills.has(s.name));
       let failures = 0;
       const embeddedSkillNames = [];
-      for (const skill of selectedSkills) {
+      for (const skill of skillsToUpdate) {
         try {
           await installSkillAtCommit(skill, args.skillsDir, state);
           console.log(`  updated skill ${skill.name} -> ${skill.version} (${skill.commit.slice(0, 7)})`);
@@ -1683,6 +2117,25 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
           failures++;
           if (err.projectedSkills) embeddedSkillNames.push(...err.projectedSkills);
           console.error(`  FAIL template ${template.name}: ${err.message}`);
+        }
+      }
+      for (const { name, catalogEntry } of selectedCatalog) {
+        const entryName = catalogEntry.name || name;
+        const template = {
+          name: entryName,
+          repo: args.repo || DEFAULT_BLUEPRINT_REPO,
+          path: `iNNfo/specs/bluepriNNts/${entryName}/spec_NN.md`,
+          version: catalogEntry.adopted,
+          ref: catalogEntry.release_tag,
+          commit: catalogEntry.release_tag
+        };
+        try {
+          embeddedSkillNames.push(...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir));
+          console.log(`  updated catalog blueprint ${name} -> ${catalogEntry.adopted} (${catalogEntry.release_tag})`);
+        } catch (err) {
+          failures++;
+          if (err.projectedSkills) embeddedSkillNames.push(...err.projectedSkills);
+          console.error(`  FAIL catalog blueprint ${name}: ${err.message}`);
         }
       }
       for (const asset of selectedConsole) {
@@ -1725,7 +2178,7 @@ ${failures} item(s) failed to update.`);
         process.exit(1);
       }
       console.log(`
-Updated ${selectedSkills.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), and ${selectedMcp.length} MCP server(s).`);
+Updated ${skillsToUpdate.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), ${selectedMcp.length} MCP server(s), and ${selectedCatalog.length} catalog blueprint(s).`);
     }
     async function cmdSync(args) {
       const localSkillsDir = args.localSkillsDir || path2.resolve(__dirname, "../../skills");
@@ -2096,6 +2549,10 @@ Projected skills to agent directories:`);
       installSkillAtCommit,
       installBlueprintAtCommit,
       installEmbeddedSkills,
+      ensureSkillNodeModules,
+      recordCliDeliveredSkills,
+      readDependsOn,
+      validateDependsOn,
       installMcpAtCommit,
       installConsoleAssetAtCommit,
       projectSkillsToAgents,

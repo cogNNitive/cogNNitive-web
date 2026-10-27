@@ -16,15 +16,15 @@ That URL serves the **bootstrap manifest**, which declares the skills, bluepriNN
 
 | Artifact | Location | Notes |
 |---|---|---|
-| Agent skills | `~/.agents/skills/<name>/` | One directory per skill, copied from the manifest pins. |
-| Install record | `~/.agents/bootstrap-state.json` | One entry per installed skill, with its pinned commit. |
+| Agent skills | `~/.agents/skills/<name>/` | One canonical copy per skill, projected into each agent's skill directory. |
+| Install record | `~/.agents/bootstrap-state.json` | One entry per installed skill, with its pinned commit and a per-file content hash. |
 | MCP server bundle | `~/.agents/mcp/nn-mcp.bundle.js` | The stdio server the agent launches. |
 | Console assets | `~/.agents/console/` | Used when regenerating the domain console outside a checkout. |
 
 The bundle also ships inside the cogNNitive repository at `iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js`; the installed copy under `~/.agents/mcp/` is what the agent runs day to day.
 
 > [!NOTE]
-> Skills install as copies, never symlinks. Updating a skill means copying a new pinned revision over the installed one, so every install, update, and sync is reproducible from the manifest.
+> The canonical skill under `~/.agents/skills/<name>/` is a real directory copied from the manifest pin. Each agent's skill directory (for example `~/.claude/skills/<name>`) is a **junction/symlink** to that canonical copy so an update is visible everywhere at once. When the OS or filesystem refuses a link — Windows without developer mode, a non-privileged user, or a filesystem that does not support links — the projection falls back to a **mirror copy**, and the install record notes the method so the next update can detect drift. Either way, every install, update, and sync is reproducible from the manifest.
 
 ## 3. Register the MCP server
 

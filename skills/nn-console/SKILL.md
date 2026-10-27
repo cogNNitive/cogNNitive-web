@@ -1,18 +1,14 @@
 ---
 name: nn-console
 description: "Author, scaffold, customize, and regenerate iNNfo domain consoles and custom views. Guides reusable InnfoUI component usage (KuBadge, Table, KpiGrid, ElementCard) for Knowledge Units, DaisyUI styling patterns, the registerView contract, shared draft store mutation, and console compilation. Triggers: console, custom view, add view, new view, domaiNN_console, regenerate console, innfo-ui, triage view"
-version: "V_1-0-0"
-last_updated: 2026-10-17
+version: "V_1-0-1"
+last_updated: 2026-10-27
 empty_sections_mode: "ask-per-section"
 license: MIT
 metadata:
   source_type: "integrated"
   source: "https://github.com/cogNNitive/cogNNitive/tree/main/skills/nn-console"
   installed_at: "2026-10-17"
-  depends_on:
-    skills: ["nn-innfo"]
-    mcp_servers: ["nn-mcp"]
-    cli_tools: ["scripts/export-console.mjs", "scripts/console-views.mjs"]
 bundled_blueprints: []
 ---
 

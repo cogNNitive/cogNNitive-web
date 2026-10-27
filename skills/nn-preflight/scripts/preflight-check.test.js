@@ -77,8 +77,14 @@ function runScriptAsync(args, env = {}) {
     if (!fs.existsSync(tmpEmpty)) fs.mkdirSync(tmpEmpty, { recursive: true });
     finalArgs.push('--blueprints-dir', tmpEmpty);
   }
+  // Hermetic home: the default state file (~/.agents/bootstrap-state.json) and
+  // default skills dir must never leak the developer machine's install into the
+  // suite. An explicit env override still wins.
+  const isolatedHome = path.join(os.tmpdir(), 'preflight-test-home');
+  if (!fs.existsSync(isolatedHome)) fs.mkdirSync(isolatedHome, { recursive: true });
+  const childEnv = { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome, ...env };
   return new Promise((resolve) => {
-    const child = spawn('node', [preflightScript, ...finalArgs], { env: { ...process.env, ...env } });
+    const child = spawn('node', [preflightScript, ...finalArgs], { env: childEnv });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => { stdout += chunk; });
@@ -2134,6 +2140,304 @@ ${coreNames.map((n) => `    - name: ${n}\n      commit: "core-${n}"\n      versi
         );
       }
       console.log('✔ baseline readiness audits only Core manifest blueprints; optional verticals are ignored');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 39: installed catalog blueprint drifted from the catalog release_tag
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const catalog = {
+      blueprints: {
+        'video-script': { name: 'video-script', release_tag: 'tag-new', adopted: 'V_0-4-0' },
+      },
+    };
+    const server = await serveRoutes({ '/manifest.md': manifestContent, '/catalog.json': catalog });
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-catalog-'));
+    try {
+      const skillsDir = path.join(tmpDir, 'skills');
+      const blueprintsDir = path.join(tmpDir, 'blueprints');
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      fs.mkdirSync(blueprintsDir, { recursive: true });
+      fs.mkdirSync(path.join(skillsDir, 'nn-video-script'), { recursive: true });
+      fs.writeFileSync(path.join(blueprintsDir, 'video-script.md'), '# bp');
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: `${server.url}/manifest.md`,
+        skills: { 'nn-video-script': { commit: 'tag-old', source_blueprint: 'video-script' } },
+        blueprints: { 'video-script': { commit: 'tag-old', version: 'V_0-3-0' } },
+      }));
+
+      const res = await runScriptAsync([
+        '--json',
+        '--skills-dir', skillsDir,
+        '--blueprints-dir', blueprintsDir,
+        '--state-file', stateFile,
+        '--manifest-url', `${server.url}/manifest.md`,
+        '--catalog-url', `${server.url}/catalog.json`,
+      ]);
+
+      assert.strictEqual(res.status, 1, `Drifted catalog blueprint must exit 1. Got: ${res.stdout} ${res.stderr}`);
+      const parsedRes = JSON.parse(res.stdout);
+      const bp = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'video-script');
+      assert.ok(bp, 'a catalog row for video-script must be reported');
+      assert.strictEqual(bp.status, 'outdated');
+      const skill = parsedRes.items.find((i) => i.type === 'catalog-skill' && i.name === 'nn-video-script');
+      assert.ok(skill, 'the embedded skill must be reported');
+      assert.strictEqual(skill.status, 'outdated');
+      console.log('✔ installed catalog blueprint + embedded skill report outdated vs release_tag');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 40: declared depends_on of an installed skill (CLI pin, binaries, Node floor, env, optional MCP)
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const server = await serveManifest(manifestContent);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-deps-'));
+    try {
+      const skillsDir = path.join(tmpDir, 'skills');
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      const skillDir = path.join(skillsDir, 'nn-video-script');
+      fs.mkdirSync(path.join(skillDir, 'node_modules', 'hyperframes'), { recursive: true });
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), [
+        '---',
+        'name: nn-video-script',
+        'version: V_0-6-0',
+        'depends_on:',
+        '  cli:',
+        '    - name: hyperframes',
+        '      agent_skills: true',
+        '  env:',
+        '    - name: PREFLIGHT_TEST_UNSET_KEY',
+        '      purpose: test',
+        '      required: true',
+        '  binaries:',
+        '    - preflight-no-such-binary-xyz',
+        '  node: ">=99"',
+        '  optional_mcp:',
+        '    - wavespeed',
+        '---',
+        'body',
+      ].join('\n'), 'utf-8');
+      fs.writeFileSync(path.join(skillDir, 'package.json'), JSON.stringify({
+        name: 'nn-video-script',
+        version: '1.0.0',
+        dependencies: { hyperframes: '0.8.192' },
+      }));
+      fs.writeFileSync(path.join(skillDir, 'node_modules', 'hyperframes', 'package.json'), JSON.stringify({
+        name: 'hyperframes',
+        version: '0.0.1',
+      }));
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: server.url,
+        skills: { 'nn-video-script': { commit: 'c1', source_blueprint: 'video-script' } },
+        blueprints: {},
+      }));
+
+      const res = await runScriptAsync([
+        '--json',
+        '--skills-dir', skillsDir,
+        '--state-file', stateFile,
+        '--manifest-url', server.url,
+      ]);
+
+      assert.strictEqual(res.status, 1, `Dependency issues must exit 1. Got: ${res.stdout} ${res.stderr}`);
+      const parsedRes = JSON.parse(res.stdout);
+      const items = parsedRes.items.filter((i) => i.type === 'blueprint-dependency');
+      const cli = items.find((i) => i.status === 'cli-version-mismatch');
+      assert.ok(cli, 'wrong CLI version must be reported');
+      assert.strictEqual(cli.dependency, 'hyperframes');
+      assert.ok(cli.detail.includes('0.8.192'), 'the fix names the pin');
+      const bin = items.find((i) => i.status === 'binary-missing');
+      assert.ok(bin, 'a missing binary must be reported');
+      assert.strictEqual(bin.dependency, 'preflight-no-such-binary-xyz');
+      const nodeItem = items.find((i) => i.status === 'node-below-floor');
+      assert.ok(nodeItem, 'a Node below the floor must be reported');
+      const envItem = items.find((i) => i.status === 'env-missing');
+      assert.ok(envItem, 'a missing required env key must be reported');
+      assert.strictEqual(envItem.dependency, 'PREFLIGHT_TEST_UNSET_KEY');
+      assert.ok(
+        !parsedRes.items.some((i) => JSON.stringify(i).includes('wavespeed')),
+        'an absent optional MCP must not be reported',
+      );
+      assert.strictEqual(parsedRes.summary.blueprintDependencyIssues, 3);
+      assert.strictEqual(parsedRes.summary.blueprintDependencyWarnings, 1);
+      console.log('✔ declared depends_on: CLI pin, binaries, Node floor, env, optional MCP handled');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 41: a missing required env key warns without changing the exit code
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const server = await serveManifest(manifestContent);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-env-'));
+    try {
+      const skillsDir = path.join(tmpDir, 'skills');
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      const skillDir = path.join(skillsDir, 'nn-sample');
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), [
+        '---',
+        'name: nn-sample',
+        'version: V_0-1-0',
+        'depends_on:',
+        '  env:',
+        '    - name: PREFLIGHT_TEST_UNSET_KEY_2',
+        '      required: true',
+        '---',
+        'body',
+      ].join('\n'), 'utf-8');
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: server.url,
+        skills: { 'nn-sample': { commit: 'c1' } },
+        blueprints: {},
+      }));
+
+      const res = await runScriptAsync([
+        '--json',
+        '--skills-dir', skillsDir,
+        '--state-file', stateFile,
+        '--manifest-url', server.url,
+      ]);
+
+      assert.strictEqual(res.status, 0, `An env warning must not change the exit code. Got: ${res.stdout} ${res.stderr}`);
+      const parsedRes = JSON.parse(res.stdout);
+      assert.strictEqual(parsedRes.status, 'OK');
+      assert.strictEqual(parsedRes.exitCode, 0);
+      assert.ok(parsedRes.items.some((i) => i.type === 'blueprint-dependency' && i.status === 'env-missing'));
+      assert.strictEqual(parsedRes.summary.blueprintDependencyIssues, 0);
+      assert.strictEqual(parsedRes.summary.blueprintDependencyWarnings, 1);
+      console.log('✔ missing env key is a warning and does not change exitCode');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 42: a hand-edited installed skill is reported `modified locally` (warning, exit unchanged)
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const server = await serveManifest(manifestContent);
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-modified-'));
+    try {
+      const skillsDir = path.join(tmpDir, 'skills');
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      const editedDir = path.join(skillsDir, 'nn-sample');
+      const recordedHash = crypto.createHash('sha256').update(Buffer.from('original')).digest('hex');
+      fs.mkdirSync(editedDir, { recursive: true });
+      fs.writeFileSync(path.join(editedDir, 'SKILL.md'), 'hand-edited', 'utf-8');
+      // A skill with no recorded hash must NOT be reported.
+      fs.mkdirSync(path.join(skillsDir, 'nn-unrecorded'), { recursive: true });
+      fs.writeFileSync(path.join(skillsDir, 'nn-unrecorded', 'SKILL.md'), 'x', 'utf-8');
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: server.url,
+        skills: {
+          'nn-sample': { commit: 'c1', files: { 'SKILL.md': recordedHash } },
+          'nn-unrecorded': { commit: 'c2' },
+        },
+        blueprints: {},
+      }));
+
+      const res = await runScriptAsync([
+        '--json',
+        '--skills-dir', skillsDir,
+        '--state-file', stateFile,
+        '--manifest-url', server.url,
+      ]);
+
+      assert.strictEqual(res.status, 0, `modified locally must not change the exit code. Got: ${res.stdout} ${res.stderr}`);
+      const parsedRes = JSON.parse(res.stdout);
+      assert.strictEqual(parsedRes.exitCode, 0);
+      const mod = parsedRes.items.find((i) => i.type === 'skill-modification' && i.name === 'nn-sample');
+      assert.ok(mod, 'the hand-edited skill must be reported');
+      assert.strictEqual(mod.status, 'modified-locally');
+      assert.ok(mod.files.includes('SKILL.md'), 'the differing file must be named');
+      assert.ok(
+        !parsedRes.items.some((i) => i.type === 'skill-modification' && i.name === 'nn-unrecorded'),
+        'a skill with no recorded hash must not be reported',
+      );
+      assert.strictEqual(parsedRes.summary.skillsModifiedLocally, 1);
+      console.log('✔ hand-edited installed skill reported modified locally without changing exitCode');
+    } finally {
+      await server.close();
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  // Test 43: current and unreleased catalog entries never block
+  {
+    const manifestContent = `---
+agent-bootstrap:
+  version: "2.0"
+  skills: []
+  blueprints: []
+---
+`;
+    const catalog = {
+      blueprints: {
+        'video-script': { name: 'video-script', release_tag: 'tag-new' },
+        'visual-catalog': { name: 'visual-catalog', release_tag: null },
+      },
+    };
+    const server = await serveRoutes({ '/manifest.md': manifestContent, '/catalog.json': catalog });
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preflight-catalog-ok-'));
+    try {
+      const stateFile = path.join(tmpDir, 'bootstrap-state.json');
+      fs.writeFileSync(stateFile, JSON.stringify({
+        manifest: `${server.url}/manifest.md`,
+        skills: {},
+        blueprints: {
+          'video-script': { commit: 'tag-new' },
+          'visual-catalog': { commit: 'some-commit' },
+        },
+      }));
+
+      const res = await runScriptAsync([
+        '--json',
+        '--state-file', stateFile,
+        '--manifest-url', `${server.url}/manifest.md`,
+        '--catalog-url', `${server.url}/catalog.json`,
+      ]);
+
+      assert.strictEqual(res.status, 0, `Current/unreleased catalog entries must not block. Got: ${res.stdout} ${res.stderr}`);
+      const parsedRes = JSON.parse(res.stdout);
+      assert.strictEqual(parsedRes.summary.catalogOutdated, 0);
+      const current = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'video-script');
+      assert.strictEqual(current.status, 'current');
+      const unreleased = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'visual-catalog');
+      assert.strictEqual(unreleased.status, 'unreleased');
+      console.log('✔ current and unreleased catalog entries are reported without blocking');
     } finally {
       await server.close();
       fs.rmSync(tmpDir, { recursive: true, force: true });
