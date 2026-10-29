@@ -35,7 +35,7 @@ Two bluepriNNts are **frozen**: they are pinned to a fixed version and no longer
 | bluepriNNt | Adopted version | Notes |
 |---|---|---|
 | `cogNNitive` | `V_0-5-0` | The root blueprint every other blueprint and kNNowledge document ultimately traces to. |
-| `workspace` | `V_0-9-0` | Frozen legacy blueprint for the domaiNN container. The container concept is now named `domaiNN`; the frozen `workspace` identifier is retained for legacy resolution only. |
+| `workspace` | `V_0-10-0` | Frozen legacy blueprint for the domaiNN container. The container concept is now named `domaiNN`; the frozen `workspace` identifier is retained for legacy resolution only. |
 
 ## See also
 

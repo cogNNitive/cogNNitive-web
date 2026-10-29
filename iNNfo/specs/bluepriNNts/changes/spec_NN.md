@@ -14,9 +14,6 @@ nature:
   ownership: derived
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Change]]
@@ -183,9 +180,6 @@ proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"
 author: "<Author>"
 ---
-
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
 
 # NN index
 

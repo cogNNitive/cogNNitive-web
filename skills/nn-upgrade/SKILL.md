@@ -109,4 +109,4 @@ This scaffolds a new domaiNN and copies the old tree byte-identically under the 
 3. **Never half-upgrade**: A failed upgrade restores cleanly from the backup.
 4. **Zero workspace pollution**: All temporary checkouts and backups stay outside the working tree.
 5. **No in-place migration**: An old domain is imported as a Source into a new domain; nothing rewrites or deletes user data.
-6. **No retired paths here**: This skill never names retired layouts or keys. Legacy detail lives in the procedure `upgrade_and_migrate_legacy_workspace_NN.md`; keep it that way.
+6. **No retired paths here**: This skill never names retired layouts or keys. Legacy detail lives in the procedure `upgrade_and_migrate_legacy_workspace_procedures_NN.md`; keep it that way.

@@ -7,7 +7,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -24,7 +24,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -41,7 +41,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -58,7 +58,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -75,7 +75,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -92,7 +92,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive.",
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -109,7 +109,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -126,7 +126,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -143,7 +143,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -160,7 +160,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -177,7 +177,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -194,7 +194,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -211,7 +211,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -228,7 +228,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -245,7 +245,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -262,7 +262,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -279,7 +279,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -292,17 +292,17 @@
     },
     "video-script": {
       "name": "video-script",
-      "adopted": "V_0-13-7",
+      "adopted": "V_0-13-8",
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [
         "nn-video-script"
       ],
       "versions": [
         {
-          "blueprint_version": "V_0-13-7",
+          "blueprint_version": "V_0-13-8",
           "spec_version": "V_0-5-0",
           "title": "Video Script App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
@@ -315,7 +315,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.46.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -342,10 +342,10 @@
     },
     "workspace": {
       "name": "workspace",
-      "adopted": "V_0-9-0",
+      "adopted": "V_0-10-0",
       "versions": [
         {
-          "blueprint_version": "V_0-9-0",
+          "blueprint_version": "V_0-10-0",
           "spec_version": "V_0-5-0",
           "title": "Workspace Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"

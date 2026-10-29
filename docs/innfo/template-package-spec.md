@@ -113,5 +113,5 @@ When resolving a bluepriNNt package by name and optional version, `nn-mcp` searc
 
 ## 5. Transitive Discovery & Collision Safety
 
-- **Transitive Discovery**: Invoking `list_blueprint_procedures` or `list_blueprint_skills` recursively traverses composite `includes` and `parent_spec` trees up to a maximum depth of 10, deduplicating procedures by `id` and skills by `name`.
+- **Transitive Discovery**: Invoking `list_blueprint_procedures` or `list_blueprint_skills` recursively traverses composite `includes` and `parent_spec` trees up to a maximum depth of 10. Skills are deduplicated by `name`. Procedures are not dropped on an `id` clash: every definition is returned with a `status`, the nearest package `selected` and each loser `shadowed` with `shadowed_by` naming the winner. With a `path` (a document or scope directory) the listing is scope-aware, ordered model > nearest scope > ... > root (including the root `procedures/`) > the bluepriNNt package, and is bound to the server domain root.
 - **Composition Collision Safety**: When composing peer bluepriNNts via `includes`, duplicate concept or field names must be explicitly renamed via frontmatter `alias` maps. Un-aliased collisions trigger a blocking `[COMPOSITION_COLLISION]` validation error.

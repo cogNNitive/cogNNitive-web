@@ -942,7 +942,8 @@ export async function writeConsole(opts = {}) {
   const seenMatrixDecls = new Set()
   const fieldIndex = new Map()
   const allProcedures = []
-  const seenProcedureIds = new Set()
+  const seenProcedureSources = new Set()
+  const procedureWinners = new Map()
   const modelSummaries = []
   const scopeModelIds = []
   // Distinct sources cited across every model in the domain (for `meta.domain.sourceCount`).
@@ -1096,11 +1097,23 @@ export async function writeConsole(opts = {}) {
       }
     }
     // Aggregate the blueprint procedure catalog (parent + includes) across the
-    // exported models, deduplicated by id; the stepper reads `usage` first.
-    for (const p of modelSchemaResolution.procedures) {
-      if (p && p.id && !seenProcedureIds.has(p.id)) {
-        seenProcedureIds.add(p.id)
-        allProcedures.push(p)
+    // exported models; the stepper reads `usage` first. A blueprint is aggregated
+    // once (models sharing a parent_spec repeat the same catalog, which is not a
+    // clash). When another blueprint (or an include) declares an id already taken,
+    // the entry is kept and marked `shadowed` naming the winner's source, never
+    // dropped (same `status` / `shadowed_by` shape as `list_blueprint_procedures`).
+    const procSource = String(frontmatterOf(m.content)?.parent_spec?.name ?? '')
+    if (!seenProcedureSources.has(procSource)) {
+      seenProcedureSources.add(procSource)
+      for (const p of modelSchemaResolution.procedures) {
+        if (!p || !p.id) continue
+        const winner = procedureWinners.get(p.id)
+        if (winner === undefined) {
+          procedureWinners.set(p.id, procSource)
+          allProcedures.push({ ...p, status: 'selected' })
+        } else {
+          allProcedures.push({ ...p, status: 'shadowed', shadowed_by: winner })
+        }
       }
     }
   }

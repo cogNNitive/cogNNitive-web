@@ -83,39 +83,66 @@
       if (el.name) byName[el.name] = el
     })
 
-    // Build Work tree: roots = procedures, children = steps.
-    var heavies = elements
-      .filter(function (el) {
-        return el && el.concept === 'Work'
-      })
-      .map(function (el) {
-        return {
-          el: el,
-          fields: isObject(el.fields) ? el.fields : {},
-          relations: Array.isArray(el.relations) ? el.relations : [],
-          children: [],
-        }
-      })
-    var nodeById = {}
-    heavies.forEach(function (n) {
-      nodeById[n.el.id] = n
-    })
-    heavies.forEach(function (n) {
-      var pid = resolveParentId(n)
-      n.parentId = pid
-      if (pid && nodeById[pid]) nodeById[pid].children.push(n)
-    })
-    var procedures = heavies.filter(function (n) {
-      return !n.parentId || !nodeById[n.parentId]
-    })
-    procedures.forEach(function (p) {
-      sortChildren(p.children)
+    var RT = GLOBAL.nnConsole
+    if (!RT || typeof RT.buildTree !== 'function' || typeof RT.chainOf !== 'function') {
+      container.innerHTML = '<div class="nn-empty-state"><p>Procedure runtime is not available.</p></div>'
+      return {
+        ok: false,
+        unmount: function () {
+          container.innerHTML = ''
+        },
+      }
+    }
+
+    var tree = RT.buildTree(elements)
+    var nodeById = tree.nodes
+    var procedures = tree.roots.filter(function (r) {
+      return r.children && r.children.length > 0
     })
 
     // Build the procedures view DOM inside the container (no shell, no global ids).
     container.innerHTML = ''
     var root = doc.createElement('div')
     root.className = 'nn-procedure-view'
+
+    // Structure summary & diagnostics strip (D8)
+    var strip = doc.createElement('div')
+    strip.className = 'proc-structure-strip'
+    var summaryEl = doc.createElement('div')
+    summaryEl.className = 'proc-structure-summary'
+    summaryEl.textContent = tree.summary && tree.summary.formatted
+      ? tree.summary.formatted
+      : (procedures.length + ' procedures \u00b7 ' + (tree.summary ? tree.summary.steps : 0) + ' steps \u00b7 ' + (tree.summary ? tree.summary.ungrouped : 0) + ' ungrouped')
+    strip.appendChild(summaryEl)
+
+    if (tree.defects && tree.defects.length > 0) {
+      var defectsEl = doc.createElement('div')
+      defectsEl.className = 'proc-structure-defects'
+      tree.defects.forEach(function (d) {
+        var item = doc.createElement('div')
+        item.className = 'proc-defect-item'
+        item.setAttribute('data-defect-kind', d.kind)
+        item.textContent = d.message || (d.kind + ': ' + d.element)
+        defectsEl.appendChild(item)
+      })
+      strip.appendChild(defectsEl)
+    }
+    root.appendChild(strip)
+
+    if (procedures.length === 0) {
+      var emptyEl = doc.createElement('div')
+      emptyEl.className = 'empty-state proc-empty-ungrouped'
+      emptyEl.textContent = 'No procedures found. ' + (tree.summary ? tree.summary.ungrouped : 0) + ' ungrouped steps detected.'
+      root.appendChild(emptyEl)
+      container.appendChild(root)
+      return {
+        ok: true,
+        unmount: function () {
+          container.innerHTML = ''
+        },
+      }
+    }
+
     var header = doc.createElement('div')
     header.className = 'proc-view-header'
     header.style.display = 'none'
@@ -163,7 +190,13 @@
 
     // Blueprint procedure catalog (parent + includes). `usage` reads first,
     // labelled "Getting started"; the rest keep their declared names.
-    var blueprintProcedures = Array.isArray(schema.procedures) ? schema.procedures.slice() : []
+    // The export carries shadowed same-id entries too (never dropped silently);
+    // the list shows only the ones that won.
+    var blueprintProcedures = Array.isArray(schema.procedures)
+      ? schema.procedures.filter(function (p) {
+          return !(p && p.status === 'shadowed')
+        })
+      : []
     if (blueprintProcedures.length > 0) {
       blueprintProcedures.sort(function (a, b) {
         if (a && a.id === 'usage') return -1
@@ -204,7 +237,7 @@
     function initRuntimeState() {
       stepStates = {}
       if (activeProcedure) {
-        var chain = chainOf(activeProcedure)
+        var chain = RT.chainOf(activeProcedure, nodeById)
         chain.forEach(function (step, i) {
           stepStates[step.el.id] = i === 0 ? 'active' : 'pending'
         })
@@ -397,7 +430,7 @@
         docBody.innerHTML = '<div class="empty-state">No procedures found.</div>'
         return
       }
-      var chain = chainOf(activeProcedure)
+      var chain = RT.chainOf(activeProcedure, nodeById)
       if (!chain.length) {
         docBody.innerHTML = '<div class="empty-state">No steps in this procedure.</div>'
         return
@@ -441,6 +474,20 @@
           if (step.fields.input) io.appendChild(ioPill('Input', step.fields.input, 'in'))
           if (step.fields.output) io.appendChild(ioPill('Output', step.fields.output, 'out'))
           if (io.childNodes.length) block.appendChild(io)
+          if (step.fields.step_type === 'decision') {
+            var branchTargets = RT.nextSteps(step, nodeById)
+            if (branchTargets.length >= 2) {
+              var branchWrap = document.createElement('div')
+              branchWrap.className = 'branch-outcomes'
+              branchTargets.forEach(function (t) {
+                var outcomeEl = document.createElement('div')
+                outcomeEl.className = 'branch-outcome'
+                outcomeEl.innerHTML = '<strong>Outcome:</strong> ' + esc(t.el.name || t.el.id) + (t.fields.condition ? ' <em>(IF: ' + esc(t.fields.condition) + ')</em>' : '')
+                branchWrap.appendChild(outcomeEl)
+              })
+              block.appendChild(branchWrap)
+            }
+          }
         }
         docBody.appendChild(block)
       })
@@ -464,92 +511,6 @@
         })
         tabsHost.appendChild(b)
       })
-    }
-
-    // ---- Chain: procedure root -> steps ordered by next within same parent ----
-    var RT = GLOBAL.nnConsole
-
-    function chainOf(proc) {
-      if (RT && typeof RT.chainOf === 'function') return RT.chainOf(proc, nodeById)
-      var out = [proc]
-      var step = firstChild(proc)
-      var visited = {}
-      visited[proc.el.id] = true
-      while (step && !visited[step.el.id]) {
-        visited[step.el.id] = true
-        out.push(step)
-        step = nextStep(step)
-      }
-      return out
-    }
-
-    function firstChild(proc) {
-      if (RT && typeof RT.firstChild === 'function') return RT.firstChild(proc)
-      return proc.children ? proc.children[0] : null
-    }
-
-    function cleanRef(raw) {
-      var s = String(raw == null ? '' : raw).trim()
-      if (s.slice(0, 2) === '[[' && s.slice(-2) === ']]') s = s.slice(2, -2).trim()
-      var pipe = s.indexOf('|')
-      if (pipe !== -1) s = s.slice(0, pipe).trim()
-      var colon = s.lastIndexOf(':')
-      if (colon !== -1) s = s.slice(colon + 1).trim()
-      return s
-    }
-
-    function nextStep(step) {
-      if (RT && typeof RT.nextStep === 'function') return RT.nextStep(step, nodeById)
-      var relation = (step.relations || []).filter(function (r) {
-        return r.field === 'next' && r.target && byId[r.target]
-      })
-      if (relation.length) {
-        var cand = nodeById[relation[0].target]
-        if (cand && cand.parentId === step.parentId) return cand
-      }
-      var label = step.fields && step.fields.next
-      if (label && label !== '-') {
-        var cleaned = cleanRef(label)
-        var target = byName[label] || byName[cleaned] || byId[label] || byId[cleaned]
-        if (target) {
-          var cand2 = nodeById[target.id]
-          if (cand2 && cand2.parentId === step.parentId) return cand2
-        }
-      }
-      return null
-    }
-
-    function sortChildren(children) {
-      if (RT && typeof RT.sortChildren === 'function') return RT.sortChildren(children, nodeById)
-      var nextOf = {}
-      children.forEach(function (c) {
-        var rel = (c.relations || []).filter(function (r) {
-          return r.field === 'next' && r.target && byId[r.target]
-        })
-        if (rel.length) nextOf[c.el.id] = rel[0].target
-      })
-      children.sort(function (a, b) {
-        if (nextOf[a.el.id] === b.el.id) return -1
-        if (nextOf[b.el.id] === a.el.id) return 1
-        return (a.el.name || '').localeCompare(b.el.name || '')
-      })
-    }
-
-    function resolveParentId(node) {
-      if (RT && typeof RT.resolveParentId === 'function') return RT.resolveParentId(node, nodeById)
-      var field = node.fields && node.fields.parent
-      if (field && field !== '-' && field !== '') {
-        var cleaned = cleanRef(field)
-        var targetEl = byName[field] || byName[cleaned] || byId[field] || byId[cleaned]
-        if (targetEl) return targetEl.id
-      }
-      var rels = node.relations || []
-      for (var i = 0; i < rels.length; i++) {
-        if (rels[i].field === 'parent' && rels[i].target && byId[rels[i].target]) {
-          return rels[i].target
-        }
-      }
-      return null
     }
 
     // ---- RACI lookup ----
@@ -592,7 +553,7 @@
         return
       }
 
-      var chain = chainOf(activeProcedure)
+      var chain = RT.chainOf(activeProcedure, nodeById)
       if (!chain.length) {
         stepBody.innerHTML = '<div class="empty-state">No steps in this procedure.</div>'
         return
@@ -711,9 +672,19 @@
         var y = startY + i * gapY
         var state = stepStates[step.el.id] || (i === currentStepIndex ? 'active' : i < currentStepIndex ? 'done' : 'pending')
         var isDecision = step.fields.step_type === 'decision'
+        var branchTargets = isDecision ? RT.nextSteps(step, nodeById) : []
+        var isBranch = branchTargets.length >= 2
 
         var g = document.createElementNS(svgNS, 'g')
-        g.setAttribute('class', 'dag-node ' + (isDecision ? 'decision ' : '') + state)
+        g.setAttribute('class', 'dag-node ' + (isDecision ? 'decision ' : '') + (isBranch ? 'branch ' : '') + state)
+        if (isBranch) {
+          branchTargets.forEach(function (t) {
+            var branchText = document.createElementNS(svgNS, 'text')
+            branchText.setAttribute('class', 'branch-outcome')
+            branchText.textContent = 'Outcome: ' + (t.el.name || t.el.id) + (t.fields.condition ? ' (IF: ' + t.fields.condition + ')' : '')
+            g.appendChild(branchText)
+          })
+        }
         g.addEventListener('click', function () {
           currentStepIndex = i
           renderExecutionWorkspace()
@@ -811,6 +782,21 @@
         pDesc.className = 'exec-step-desc'
         appendWithKuPills(pDesc, cur.el.description)
         card.appendChild(pDesc)
+      }
+
+      if (cur.fields.step_type === 'decision') {
+        var branchTargets = RT.nextSteps(cur, nodeById)
+        if (branchTargets.length >= 2) {
+          var branchWrap = document.createElement('div')
+          branchWrap.className = 'branch-outcomes'
+          branchTargets.forEach(function (t) {
+            var outcomeEl = document.createElement('div')
+            outcomeEl.className = 'branch-outcome'
+            outcomeEl.innerHTML = '<strong>Outcome:</strong> ' + esc(t.el.name || t.el.id) + (t.fields.condition ? ' <em>(IF: ' + esc(t.fields.condition) + ')</em>' : '')
+            branchWrap.appendChild(outcomeEl)
+          })
+          card.appendChild(branchWrap)
+        }
       }
 
       // RACI Governance Bar
@@ -1113,7 +1099,7 @@
     return {
       ok: true,
       procedures: procedures.length,
-      steps: activeProcedure ? chainOf(activeProcedure).length : 0,
+      steps: activeProcedure ? RT.chainOf(activeProcedure, nodeById).length : 0,
       matrices: matrices.length,
       onHide: function () {
         if (timerInterval) clearInterval(timerInterval)

@@ -7,9 +7,6 @@ knowledge_version: "V_1-0-0"
 title: "Consulting Sales Procedures Catalog"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Procedure
 
 ## NN Procedure: RFP Commercial Response Pipeline

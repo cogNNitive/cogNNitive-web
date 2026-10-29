@@ -94,7 +94,8 @@ When the user selects `[p]` or requests procedure execution, `nn` aggregates ava
 
 ### Precedence & Disambiguation
 If duplicate procedure names exist across scopes, precedence is:
-$$\text{Model Scope} > \text{Blueprint Scope} > \text{Domain Scope}$$
+$$\text{Model Scope} > \text{Domain Scope} > \text{Blueprint Scope}$$
+The bluepriNNt is the floor: the domaiNN root `procedures/` (Domain Scope) outranks it, and any nearer scope outranks the root, so the full order is model > nearest scope > ... > root > bluepriNNt. A procedure that loses a clash is shown as shadowed, never dropped (see the Procedure Execution Protocol in `nn-innfo`). `list_blueprint_procedures` returns shadowed entries too, so the picker offers only the entries whose `status` is `selected`.
 Each option displays its origin badge (e.g. `[p1] Extract Key Risks [blueprint:business]`).
 
 ### Execution Owner

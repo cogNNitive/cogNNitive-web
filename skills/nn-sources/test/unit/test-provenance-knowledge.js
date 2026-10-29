@@ -66,8 +66,8 @@ async function run() {
     const r1 = provenance.buildProvenanceKnowledge(proj, { projectName: 'TestProj' });
     const content1 = fs.readFileSync(r1.modelPath, 'utf8');
     ok(
-      content1.includes('[cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.'),
-      'provenance knowledge carries the canonical iNNfo document badge',
+      !content1.includes('This is an **iNNfo document**'),
+      'provenance knowledge carries no boilerplate document badge',
     );
 
     const expectedSections = renderLineageSections(projectLineage(readLineageSnapshot(proj)));

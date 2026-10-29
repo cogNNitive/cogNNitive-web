@@ -7,9 +7,6 @@ knowledge_version: "V_0-1-0"
 title: "Artifact Dual-Emission, Review & Feedback Reconciliation Procedure"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Procedure]]
@@ -26,7 +23,7 @@ summary:: Governs dual-emission of deliverables (published vs. reviewer_review),
 inputs_required:: [[Reviewed Deliverable Document]]
 outputs_expected:: [[Published Final Deliverable]]
 executed_by:: Senior AI Architect
-procedure_model:: procedures/reconcile_artifact_feedback_NN.md
+procedure_model:: procedures/reconcile_artifact_feedback_procedures_NN.md
 
 # NN Work
 

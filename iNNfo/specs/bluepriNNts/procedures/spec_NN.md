@@ -28,9 +28,6 @@ nature:
   ownership: derived
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Procedure]]
@@ -212,9 +209,6 @@ parent_spec:
 knowledge_version: "V_0-1-0"
 title: "<Procedures Catalog Name>"
 ---
-
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
 
 # NN index
 

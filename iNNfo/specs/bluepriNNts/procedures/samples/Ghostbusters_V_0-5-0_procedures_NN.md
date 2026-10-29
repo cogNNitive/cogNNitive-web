@@ -7,9 +7,6 @@ knowledge_version: "V_0-5-0"
 title: "Ghostbusters Inc. Standard Containment Procedure Model"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Work
 
 ## NN Work: Standard Ghost Containment Protocol

@@ -7,9 +7,6 @@ parent_spec:
 title: "SaaS Startup Business Model & Validation"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN ValueProposition
 
 ## NN ValueProposition: Living Knowledge with Zero Lock-in

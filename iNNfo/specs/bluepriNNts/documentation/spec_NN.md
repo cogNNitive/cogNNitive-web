@@ -23,9 +23,6 @@ procedures:
     path: "procedures/generate_docsify_suite_procedures_NN.md"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[DocSite]]

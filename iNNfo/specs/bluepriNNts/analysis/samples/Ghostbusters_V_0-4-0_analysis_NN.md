@@ -7,9 +7,6 @@ knowledge_version: "V_0-4-0"
 title: "Ghostbusters Inc. Spectral Risk & Business Analysis Model"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Analysis
 
 Strategic assessment of Ghostbusters Inc. market expansion into corporate commercial spectral removal in NYC high-rise properties.

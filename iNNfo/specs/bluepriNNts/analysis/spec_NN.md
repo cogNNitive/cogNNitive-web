@@ -26,9 +26,6 @@ relationship_types:
     enabled: false
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Analysis]]
@@ -195,9 +192,6 @@ parent_spec:
 knowledge_version: "V_x-y-z"
 title: "<Analysis Name>"
 ---
-
-> [!NOTE]
-> This is an **iNNfo document**...
 
 # NN Analysis
 ## NN Analysis: Strategic Assessment

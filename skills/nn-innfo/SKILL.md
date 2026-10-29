@@ -210,7 +210,7 @@ If the user's conversational prompt is in language $L$ (e.g. Spanish) or the pri
 *(Notice: You can select one option or a combination (e.g. A and B))*.
 
 **A2a. If a canonical app was selected ([a]/[b]/[c]/[d]) (Optimistic Execution with Informative Grace):**
-Resolve the app with `nn-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, and Matrices it already defines. Then discover its procedures with `nn-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable.
+Resolve the app with `nn-mcp_get_blueprint` and display an informative summary of the Concepts, Fields, and Matrices it already defines. Then discover its procedures with `nn-mcp_list_blueprint_procedures`: if the app declares an explicit empty procedures block, announce it — *"This app declares no executable procedures yet."* — instead of silently presenting an app with nothing executable. The listing also returns shadowed procedures (an `id` clash lost to a nearer definition): present only the entries whose `status` is `selected`.
 
 **Do NOT block on an intermediate customization menu.** By default, canonical apps are used as-is. Announce with Informative Grace in the user's active session language — e.g. (English): *"Using the standard {App} blueprint. Proceeding with the model's element design; tell me before I start if you'd prefer to customize the blueprint or create a specialization."*
 Proceed directly to **Phase B (Model Design)**. Only branch to customization if the user explicitly asks to customize or interrupts.
@@ -335,7 +335,7 @@ as its very first output — before any questions, analysis, or tool calls. Sess
 The `nn-mcp` server exposes a deterministic tool set built on `@cognnitive/nn-core`.
 
 <!-- generated:mcp-tools (source: nn-mcp TOOL_REGISTRY; run node scripts/generate-docs-facts.mjs) -->
-**22** tools
+**24** tools
 
 | Tool | Description |
 |------|-------------|
@@ -359,8 +359,10 @@ The `nn-mcp` server exposes a deterministic tool set built on `@cognnitive/nn-co
 | `cognitivize` | Create or refresh the sidecar (`<file>_sidecar_NN.md`) of one raw file in place, so it can be cited. Markdown, CSV, and JSON files are handled directly; binary formats (PDF, DOCX, XLSX, images) are converted when the environment has converter adapters available. Paths outside the workspace, sidecars, and NN documents are rejected. |
 | `sync_lineage` | Recompute the lineage projection from the workspace filesystem and regenerate the canonical lineage record (`<project>_cogNNitive_NN.md`) without requiring the CLI. Re-synchronizes # NN Sources, # NN ModelRecords, and # NN Artifacts sections. |
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
-| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
+| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10. A procedure that loses a name clash is returned with status shadowed (shadowed_by names the winner), never dropped. With path (a document or scope directory) the listing is scope-aware: the procedures visible from that scope, selected and shadowed (model > nearest scope > ... > root procedures/ > the bluepriNNt package), each with its source, slots, fork record and warnings; a path outside any domaiNN returns NO_DOMAIN_ROOT with the directories searched. The scoped listing is bound to the server domain root: path cannot be combined with domain or root (INVALID_ARGUMENT), and path must be a non-empty string. |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
+| `resolve_effective` | Read-only: the effective value of a key at a document (or at one scope element of it), folded over the scope chain with a merge strategy, plus the trace that explains it. Strategies: override (nearest declaration wins), union (named entries accumulate, nearer shadows farther) and none (only the target node supplies the value; ancestors and the bluepriNNt floor are reported under notInherited, never inherited). The floor is the single document under the defaults/ folder of the bluepriNNt package named by the innermost scope document. Returns {present, value, winner, trace}, or a structured error (NO_DOMAIN_ROOT, PATH_OUTSIDE_SCOPE, UNSUPPORTED_STRATEGY, UNKNOWN_ELEMENT, ...). Never writes files. |
+| `explain` | Read-only: why a key resolves the way it does at a document (or at one scope element of it). Takes the same inputs as resolve_effective and returns the same trace, plus the chain of scopes it was computed over (node ids and kinds, outermost first) and the floor supplier. Never writes files. |
 <!-- /generated:mcp-tools -->
 
 **Golden Rule:** The specification/app URL always comes from `parent_spec.url` or from the user. Never hardcode or invent URLs.
@@ -814,7 +816,7 @@ When authoring or auditing models that rely on external data drops (e.g. client 
 
 ## 16. Model Procedure & Skill Discovery
 
-Executable procedures and agent skills are content declared dynamically in models and apps (not a fixed catalog in the skill). They are discovered by calling the MCP tools `list_blueprint_procedures` and `list_blueprint_skills`, which transitively walk the `parent_spec` hierarchy and the `includes` composition tree to a depth of 10 levels, deduplicating procedures by `id` and skills by `name`. A skill shipped inside a package under `skills/<name>/SKILL.md` is discovered from disk and returned with `embedded: true` and an absolute `path`; it wins over a same-name frontmatter `skills:` entry.
+Executable procedures and agent skills are content declared dynamically in models and apps (not a fixed catalog in the skill). They are discovered by calling the MCP tools `list_blueprint_procedures` and `list_blueprint_skills`, which transitively walk the `parent_spec` hierarchy and the `includes` composition tree to a depth of 10 levels, reporting a procedure that loses an `id` clash as `shadowed` (never dropped) and deduplicating skills by `name`. With a `path` (a document or scope directory) `list_blueprint_procedures` lists what is visible from that scope: selected and shadowed procedures from the scope chain, the domaiNN root `procedures/` and the bluepriNNt package, each with its slots, fork record and warnings. A skill shipped inside a package under `skills/<name>/SKILL.md` is discovered from disk and returned with `embedded: true` and an absolute `path`; it wins over a same-name frontmatter `skills:` entry.
 
 Additionally, procedures are discovered by reading the `## NN Procedure: ...` sections of the active model and the workspace's `procedures/` folder (predicate: Level 3 documents whose `parent_spec` resolves to the procedures bluepriNNt).
 
@@ -839,7 +841,17 @@ Discover candidate procedures from every source: (a) the active model's
 MCP `list_blueprint_procedures`), and (c) `workspace/procedures/*_NN.md` files.
 Discovery does not require an executor tool. List each result with its id and
 source; if none is found, say so. When the same name appears in more than one
-source, resolve it by precedence: model > blueprint > domain > workspace.
+source, resolve it by precedence: model > nearest scope > ... > root (including
+`workspace/procedures/`) > bluepriNNt. The bluepriNNt is the floor; the domaiNN root is
+more specific. A procedure that loses a clash is reported as shadowed, naming the
+winner, never dropped silently. MCP `list_blueprint_procedures` with a `path`
+implements this order. The listing returns shadowed entries too: a picker MUST
+offer only the entries whose `status` is `selected` (show the `shadowed` ones only
+as the explanation of what was replaced).
+
+The `scope::` element field of the procedures bluepriNNt (for example `scope:: internal`)
+is unrelated to the `scope: true` frontmatter flag that marks a scope document and to
+`fork_of.scope`, the scope path of a forked original. The names coincide; the meanings do not.
 
 ### 16-bis.3 Step order (FSM)
 

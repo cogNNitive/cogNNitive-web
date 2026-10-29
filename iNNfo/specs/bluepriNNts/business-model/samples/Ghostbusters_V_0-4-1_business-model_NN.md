@@ -7,9 +7,6 @@ knowledge_version: "V_0-4-1"
 title: "Ghostbusters Inc. Core Business Model"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Business summary
 
 Ghostbusters Inc. is the premier professional paranormal investigation and entity elimination service serving the New York metropolitan area. Operating out of our Tribeca headquarters, we deploy specialized nuclear particle containment technology to provide rapid-response residential and commercial spectral neutralization.

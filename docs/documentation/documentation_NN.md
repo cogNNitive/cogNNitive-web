@@ -7,9 +7,6 @@ knowledge_version: "V_0-4-0"
 title: "cogNNitive Documentation"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[DocSite]]

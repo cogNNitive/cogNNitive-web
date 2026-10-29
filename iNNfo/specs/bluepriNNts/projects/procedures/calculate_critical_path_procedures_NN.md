@@ -7,9 +7,6 @@ knowledge_version: "V_0-1-0"
 title: "Calculate Critical Path Procedure"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Work
 
 ## NN Work: Calculate Critical Path

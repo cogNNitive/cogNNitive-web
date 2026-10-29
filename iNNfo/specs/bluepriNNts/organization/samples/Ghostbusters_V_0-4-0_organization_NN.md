@@ -7,9 +7,6 @@ knowledge_version: "V_0-4-0"
 title: "Ghostbusters Inc. Organization Model"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Organization
 
 Ghostbusters Inc. is a private paranormal investigation and elimination firm operating in New York City. The organization combines cutting-edge ecto-physics research, field operations, heavy equipment transport, and commercial client billing within a unified operational structure.

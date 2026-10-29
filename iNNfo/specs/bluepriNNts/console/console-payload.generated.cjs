@@ -8062,10 +8062,14 @@ function parentSpecNameOf(frontmatter) {
   }
   return void 0;
 }
+function isUnderRootSources(path2) {
+  return segmentsOf(path2)[0]?.toLowerCase() === "sources";
+}
 function isConsoleModel(f) {
   if (isExcludedPath(f.path)) return false;
   const parentSpecName = parentSpecNameOf(f.frontmatter);
   const role = roleOf({ path: f.path, parentSpecName });
+  if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
   if (role === "knowledge") return true;
   if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
   return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";

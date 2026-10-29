@@ -7404,8 +7404,6 @@ var DOMAIN_DIRS = [
   "changes"
 ];
 var DOMAIN_MANIFEST_FILE = "domaiNN_NN.md";
-var NOTICE = `> [!NOTE]
-> This is an **iNNfo document** \u2014 a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.`;
 function planDomainScaffold(input) {
   const name = input.name.trim();
   const workspaceId = (input.workspaceId?.trim() || slugify(name)).trim();
@@ -7421,8 +7419,6 @@ function planDomainScaffold(input) {
     `title: ${esc(name)}`,
     `workspace_id: ${esc(workspaceId)}`,
     "---",
-    "",
-    NOTICE,
     "",
     "# NN index",
     "",
@@ -8406,13 +8402,8 @@ function serializeKnowledge(model) {
   lines.push("");
   if (model.rawPreamble) {
     lines.push(...model.rawPreamble.split("\n"));
-  } else {
-    lines.push("> [!NOTE]");
-    lines.push(
-      "> This is an **iNNfo document** \u2014 a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console."
-    );
+    lines.push("");
   }
-  lines.push("");
   const headingBlankLine = (sectionKey, fallback) => model.sectionBlankLine?.[sectionKey.toLowerCase()] ?? fallback;
   let indexEmitted = false;
   const emitIndex = () => {

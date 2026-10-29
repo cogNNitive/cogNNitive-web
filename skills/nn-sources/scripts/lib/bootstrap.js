@@ -118,8 +118,6 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `knowledge_version: "V_0-1-0"\n` +
       `title: "${effectiveProjectName} Workspace"\n` +
       `---\n\n` +
-      `> [!NOTE]\n` +
-      `> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.\n\n` +
       `# NN index\n\n` +
       `* [[Workspace]]\n` +
       `* [[Models]]\n` +

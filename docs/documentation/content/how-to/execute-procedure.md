@@ -16,7 +16,7 @@ Tell your agent something like *"what procedures can I run here?"* or *"run the 
 | **Blueprint** | The `procedures:` frontmatter of the parent bluepriNNt (also listed by the `list_blueprint_procedures` tool). | `[blueprint]` |
 | **Domain** | `procedures/*_NN.md` files at the domaiNN root. | `[domain]` |
 
-When the same name appears in more than one scope, the agent resolves it by precedence: **model → blueprint → domain**. If nothing declares the procedure you named, the agent says so — it never invents one.
+When the same name appears in more than one scope, the agent resolves it by precedence: **model → nearest scope → … → domaiNN root (`procedures/`) → bluepriNNt**. The bluepriNNt is the floor, so a procedure of your domaiNN always outranks the one the bluepriNNt ships. A procedure that loses the clash is reported as shadowed, naming the winner; it is never dropped silently, and only the selected one is offered to run. If nothing declares the procedure you named, the agent says so — it never invents one.
 
 ## 2. Let the agent follow the steps
 

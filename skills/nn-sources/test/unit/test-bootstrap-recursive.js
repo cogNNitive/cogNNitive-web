@@ -84,8 +84,8 @@ async function runAsync() {
     const entrypoint = fs.readFileSync(path.join(destParent, 'Proj', 'domaiNN_NN.md'), 'utf8');
     check(/sources_dir:: sources\/\n/.test(entrypoint), 'entrypoint sources_dir:: names sources/');
     check(
-      entrypoint.includes('[cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.'),
-      'entrypoint carries the canonical iNNfo document badge',
+      !/This is an \*\*iNNfo document\*\*/.test(entrypoint) && !/> \[!NOTE\]/.test(entrypoint),
+      'entrypoint carries no boilerplate document badge',
     );
     check(
       !/sources\/nn/.test(entrypoint) && !/sources\/nn/.test(require('../../scripts/lib/bootstrap').generateAgentsMd('Proj')),

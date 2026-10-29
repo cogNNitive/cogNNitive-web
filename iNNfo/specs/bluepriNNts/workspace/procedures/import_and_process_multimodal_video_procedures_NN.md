@@ -7,8 +7,6 @@ knowledge_version: "V_0-1-0"
 title: "Multimodal Video Source Import & Processing Procedure"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
 >
 > **Experimental External Ingestion**: Audio extraction, speech-to-text transcription, and keyframe slide OCR are external helper processes assisted by the AI agent or user environment. cogNNitive natively manages the resulting normalized Markdown and provenance tracing.
 

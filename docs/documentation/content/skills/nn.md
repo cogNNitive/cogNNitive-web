@@ -70,7 +70,7 @@ unavailable it is swallowed so it can never block the session.
 3. **Domain scope** — global domaiNN procedures under `procedures/`.
 
 When the same procedure name appears in more than one scope, precedence is
-**model > blueprint > domain**, and each option displays its origin badge (for example
+**model > nearest scope > ... > domain root > blueprint** (the bluepriNNt is the floor), and each option displays its origin badge (for example
 `[p1] Extract Key Risks [blueprint:business]`).
 
 `nn` does not execute procedure steps from its own text. It routes the selected procedure to the

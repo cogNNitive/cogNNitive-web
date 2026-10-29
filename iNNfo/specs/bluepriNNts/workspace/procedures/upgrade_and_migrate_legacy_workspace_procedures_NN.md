@@ -7,9 +7,6 @@ knowledge_version: "V_0-3-0"
 title: "Upgrade a Workspace or Import a Legacy Domain Procedure"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 > There is no in-place migration of an old domain. A current domaiNN is upgraded (bluepriNNt versions); an old or broken domain is replaced by a new domain that imports the old one as a Source. The skill `nn-upgrade` owns consent, backup and recovery; THIS procedure owns the step tables and the legacy detector.
 
 # NN Work

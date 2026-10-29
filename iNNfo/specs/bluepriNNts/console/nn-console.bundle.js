@@ -7347,35 +7347,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   // a Work-style tree: roots = elements without a parent; children = elements
   // whose parent points to the root; order = `next` chain within the same parent.
 
-  function buildTree(elements) {
-    var nodes = {}
-    var roots = []
-    ;(Array.isArray(elements) ? elements : []).forEach(function (el) {
-      if (!el || !el.id) return
-      nodes[el.id] = {
-        el: el,
-        fields: isObject(el.fields) ? el.fields : {},
-        relations: Array.isArray(el.relations) ? el.relations : [],
-        children: [],
-        parentId: null,
-      }
-    })
-    Object.keys(nodes).forEach(function (id) {
-      var node = nodes[id]
-      var parentId = resolveParentId(node, nodes)
-      node.parentId = parentId
-      if (parentId && nodes[parentId]) nodes[parentId].children.push(node)
-    })
-    Object.keys(nodes).forEach(function (id) {
-      var node = nodes[id]
-      if (!node.parentId || !nodes[node.parentId]) roots.push(node)
-    })
-    roots.forEach(function (root) {
-      sortChildren(root.children, nodes)
-    })
-    return { nodes: nodes, roots: roots }
-  }
-
   function cleanRefValue(raw) {
     var s = String(raw == null ? '' : raw).trim()
     if (s.slice(0, 2) === '[[' && s.slice(-2) === ']]') s = s.slice(2, -2).trim()
@@ -7409,19 +7380,217 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return null
   }
 
-  function sortChildren(children, nodes) {
-    var nextOf = {}
-    children.forEach(function (c) {
-      var rel = (c.relations || []).filter(function (r) {
-        return r.field === 'next' && r.target && nodes[r.target]
+  function nextTargetsOf(node, nodes) {
+    if (!node || !nodes) return []
+    var targets = []
+    var seen = {}
+
+    function addTarget(targetId) {
+      if (targetId && nodes[targetId] && !seen[targetId]) {
+        seen[targetId] = true
+        targets.push(nodes[targetId])
+      }
+    }
+
+    var rels = node.relations || []
+    for (var i = 0; i < rels.length; i++) {
+      if (rels[i] && rels[i].field === 'next' && rels[i].target) {
+        addTarget(rels[i].target)
+      }
+    }
+
+    var label = node.fields && node.fields.next
+    if (label && label !== '-' && label !== '') {
+      var rawValues = Array.isArray(label) ? label : String(label).split(',')
+      for (var j = 0; j < rawValues.length; j++) {
+        var s = String(rawValues[j]).trim()
+        if (!s || s === '-') continue
+        var cleaned = cleanRefValue(s)
+        if (nodes[s]) {
+          addTarget(s)
+          continue
+        }
+        if (cleaned && nodes[cleaned]) {
+          addTarget(cleaned)
+          continue
+        }
+        for (var id in nodes) {
+          var n = nodes[id]
+          if (n && n.el && (n.el.name === s || (cleaned && n.el.name === cleaned))) {
+            addTarget(id)
+            break
+          }
+        }
+      }
+    }
+    return targets
+  }
+
+  function deriveStepChain(root, children, nodes, defects) {
+    var list = Array.isArray(children) ? children : []
+    if (list.length === 0) return []
+
+    var childById = {}
+    list.forEach(function (c) {
+      childById[c.el.id] = c
+    })
+
+    var targetedBy = {}
+    list.forEach(function (c) {
+      var targets = nextTargetsOf(c, nodes)
+      targets.forEach(function (t) {
+        if (t.parentId !== root.el.id) {
+          if (defects) {
+            defects.push({
+              kind: 'external_target',
+              element: c.el.name || c.el.id,
+              message: 'Step "' + (c.el.name || c.el.id) + '" next:: targets "' + (t.el.name || t.el.id) + '" outside parent procedure'
+            })
+          }
+        } else if (childById[t.el.id]) {
+          targetedBy[t.el.id] = targetedBy[t.el.id] || []
+          targetedBy[t.el.id].push(c)
+        }
       })
-      if (rel.length) nextOf[c.el.id] = rel[0].target
     })
-    children.sort(function (a, b) {
-      if (nextOf[a.el.id] === b.el.id) return -1
-      if (nextOf[b.el.id] === a.el.id) return 1
-      return (a.el.name || '').localeCompare(b.el.name || '')
+
+    var heads = list.filter(function (c) {
+      return !targetedBy[c.el.id] || targetedBy[c.el.id].length === 0
     })
+
+    if (heads.length === 0) {
+      if (defects) {
+        defects.push({
+          kind: 'cycle',
+          element: root.el.name || root.el.id,
+          message: 'Procedure "' + (root.el.name || root.el.id) + '" has a next:: cycle with no head step'
+        })
+      }
+      heads = list.slice().sort(function (a, b) { return a.docOrder - b.docOrder })
+    } else if (heads.length > 1) {
+      if (defects) {
+        var headNames = heads.map(function (h) { return h.el.name || h.el.id }).join(', ')
+        defects.push({
+          kind: 'fork',
+          element: headNames,
+          message: 'Procedure "' + (root.el.name || root.el.id) + '" has multiple head steps: ' + headNames
+        })
+      }
+      heads.sort(function (a, b) { return a.docOrder - b.docOrder })
+    }
+
+    var ordered = []
+    var visited = {}
+
+    heads.forEach(function (head) {
+      var cursor = head
+      while (cursor && !visited[cursor.el.id]) {
+        visited[cursor.el.id] = true
+        ordered.push(cursor)
+        var targets = nextTargetsOf(cursor, nodes).filter(function (t) {
+          return t.parentId === root.el.id
+        })
+        var next = null
+        for (var i = 0; i < targets.length; i++) {
+          if (!visited[targets[i].el.id]) {
+            next = targets[i]
+            break
+          }
+        }
+        cursor = next
+      }
+    })
+
+    var unreachable = list.filter(function (c) { return !visited[c.el.id] })
+    if (unreachable.length > 0) {
+      unreachable.sort(function (a, b) { return a.docOrder - b.docOrder })
+      unreachable.forEach(function (c) {
+        if (defects) {
+          defects.push({
+            kind: 'unreachable',
+            element: c.el.name || c.el.id,
+            message: 'Step "' + (c.el.name || c.el.id) + '" is unreachable from head'
+          })
+        }
+        visited[c.el.id] = true
+        ordered.push(c)
+      })
+    }
+
+    return ordered
+  }
+
+  function buildTree(elements) {
+    var nodes = {}
+    var roots = []
+    var rawList = Array.isArray(elements) ? elements : []
+    rawList.forEach(function (el, idx) {
+      if (!el || !el.id) return
+      nodes[el.id] = {
+        el: el,
+        docOrder: idx,
+        fields: isObject(el.fields) ? el.fields : {},
+        relations: Array.isArray(el.relations) ? el.relations : [],
+        children: [],
+        parentId: null,
+      }
+    })
+    Object.keys(nodes).forEach(function (id) {
+      var node = nodes[id]
+      var parentId = resolveParentId(node, nodes)
+      node.parentId = parentId
+      if (parentId && nodes[parentId]) nodes[parentId].children.push(node)
+    })
+    Object.keys(nodes).forEach(function (id) {
+      var node = nodes[id]
+      if (!node.parentId || !nodes[node.parentId]) roots.push(node)
+    })
+    roots.sort(function (a, b) { return a.docOrder - b.docOrder })
+    roots.forEach(function (root) {
+      root.children.sort(function (a, b) { return a.docOrder - b.docOrder })
+    })
+
+    var defects = []
+    var procedureCount = 0
+    var stepCount = 0
+    var ungroupedCount = 0
+
+    roots.forEach(function (root) {
+      if (root.children.length > 0) {
+        procedureCount++
+        stepCount += root.children.length
+        sortChildren(root.children, nodes, defects, root)
+      } else if (root.el.concept === 'Work') {
+        ungroupedCount++
+        defects.push({
+          kind: 'ungrouped',
+          element: root.el.name || root.el.id,
+          message: 'Work element "' + (root.el.name || root.el.id) + '" has no parent procedure'
+        })
+      }
+    })
+
+    return {
+      nodes: nodes,
+      roots: roots,
+      defects: defects,
+      summary: {
+        procedures: procedureCount,
+        steps: stepCount,
+        ungrouped: ungroupedCount,
+        formatted: procedureCount + ' procedures \u00b7 ' + stepCount + ' steps \u00b7 ' + ungroupedCount + ' ungrouped'
+      }
+    }
+  }
+
+  function sortChildren(children, nodes, defects, root) {
+    if (!children || !children.length) return
+    var parentNode = root || (children[0].parentId && nodes ? nodes[children[0].parentId] : null) || { el: { id: 'unknown', name: 'unknown' } }
+    var ordered = deriveStepChain(parentNode, children, nodes, defects)
+    children.length = 0
+    for (var i = 0; i < ordered.length; i++) {
+      children.push(ordered[i])
+    }
   }
 
   function firstChild(node) {
@@ -7430,39 +7599,25 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
   function nextStep(node, nodes) {
     if (!node || !nodes) return null
-    var rel = (node.relations || []).filter(function (r) {
-      return r.field === 'next' && r.target && nodes[r.target]
-    })
-    if (rel.length) {
-      var cand = nodes[rel[0].target]
-      if (cand && cand.parentId === node.parentId) return cand
-    }
-    var label = node.fields && node.fields.next
-    if (label && label !== '-' && label !== '') {
-      var cleaned = cleanRefValue(label)
-      if (nodes[label] && nodes[label].parentId === node.parentId) return nodes[label]
-      if (cleaned && nodes[cleaned] && nodes[cleaned].parentId === node.parentId) return nodes[cleaned]
-      for (var id in nodes) {
-        var n = nodes[id]
-        if (n && n.el && (n.el.name === label || (cleaned && n.el.name === cleaned)) && n.parentId === node.parentId) {
-          return n
-        }
-      }
+    var targets = nextTargetsOf(node, nodes)
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i].parentId === node.parentId) return targets[i]
     }
     return null
   }
 
+  function nextSteps(node, nodes) {
+    if (!node || !nodes) return []
+    return nextTargetsOf(node, nodes).filter(function (t) {
+      return t.parentId === node.parentId
+    })
+  }
+
   function chainOf(root, nodes) {
-    var out = [root]
-    var cursor = firstChild(root)
-    var visited = {}
-    visited[root.el.id] = true
-    while (cursor && !visited[cursor.el.id]) {
-      visited[cursor.el.id] = true
-      out.push(cursor)
-      cursor = nextStep(cursor, nodes)
-    }
-    return out
+    if (!root) return []
+    var children = root.children || []
+    var orderedSteps = deriveStepChain(root, children, nodes, null)
+    return [root].concat(orderedSteps)
   }
 
   // ---- Charts (shared console capability) ----
@@ -12830,9 +12985,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       'author: ' + JSON.stringify(author),
       '---',
       '',
-      '> [!NOTE]',
-      '> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.',
-      '',
       '# NN index',
       '',
       '* [[Change]]',
@@ -13917,6 +14069,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     sortChildren: sortChildren,
     firstChild: firstChild,
     nextStep: nextStep,
+    nextSteps: nextSteps,
     chainOf: chainOf,
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
@@ -14027,39 +14180,66 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       if (el.name) byName[el.name] = el
     })
 
-    // Build Work tree: roots = procedures, children = steps.
-    var heavies = elements
-      .filter(function (el) {
-        return el && el.concept === 'Work'
-      })
-      .map(function (el) {
-        return {
-          el: el,
-          fields: isObject(el.fields) ? el.fields : {},
-          relations: Array.isArray(el.relations) ? el.relations : [],
-          children: [],
-        }
-      })
-    var nodeById = {}
-    heavies.forEach(function (n) {
-      nodeById[n.el.id] = n
-    })
-    heavies.forEach(function (n) {
-      var pid = resolveParentId(n)
-      n.parentId = pid
-      if (pid && nodeById[pid]) nodeById[pid].children.push(n)
-    })
-    var procedures = heavies.filter(function (n) {
-      return !n.parentId || !nodeById[n.parentId]
-    })
-    procedures.forEach(function (p) {
-      sortChildren(p.children)
+    var RT = GLOBAL.nnConsole
+    if (!RT || typeof RT.buildTree !== 'function' || typeof RT.chainOf !== 'function') {
+      container.innerHTML = '<div class="nn-empty-state"><p>Procedure runtime is not available.</p></div>'
+      return {
+        ok: false,
+        unmount: function () {
+          container.innerHTML = ''
+        },
+      }
+    }
+
+    var tree = RT.buildTree(elements)
+    var nodeById = tree.nodes
+    var procedures = tree.roots.filter(function (r) {
+      return r.children && r.children.length > 0
     })
 
     // Build the procedures view DOM inside the container (no shell, no global ids).
     container.innerHTML = ''
     var root = doc.createElement('div')
     root.className = 'nn-procedure-view'
+
+    // Structure summary & diagnostics strip (D8)
+    var strip = doc.createElement('div')
+    strip.className = 'proc-structure-strip'
+    var summaryEl = doc.createElement('div')
+    summaryEl.className = 'proc-structure-summary'
+    summaryEl.textContent = tree.summary && tree.summary.formatted
+      ? tree.summary.formatted
+      : (procedures.length + ' procedures \u00b7 ' + (tree.summary ? tree.summary.steps : 0) + ' steps \u00b7 ' + (tree.summary ? tree.summary.ungrouped : 0) + ' ungrouped')
+    strip.appendChild(summaryEl)
+
+    if (tree.defects && tree.defects.length > 0) {
+      var defectsEl = doc.createElement('div')
+      defectsEl.className = 'proc-structure-defects'
+      tree.defects.forEach(function (d) {
+        var item = doc.createElement('div')
+        item.className = 'proc-defect-item'
+        item.setAttribute('data-defect-kind', d.kind)
+        item.textContent = d.message || (d.kind + ': ' + d.element)
+        defectsEl.appendChild(item)
+      })
+      strip.appendChild(defectsEl)
+    }
+    root.appendChild(strip)
+
+    if (procedures.length === 0) {
+      var emptyEl = doc.createElement('div')
+      emptyEl.className = 'empty-state proc-empty-ungrouped'
+      emptyEl.textContent = 'No procedures found. ' + (tree.summary ? tree.summary.ungrouped : 0) + ' ungrouped steps detected.'
+      root.appendChild(emptyEl)
+      container.appendChild(root)
+      return {
+        ok: true,
+        unmount: function () {
+          container.innerHTML = ''
+        },
+      }
+    }
+
     var header = doc.createElement('div')
     header.className = 'proc-view-header'
     header.style.display = 'none'
@@ -14107,7 +14287,13 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
 
     // Blueprint procedure catalog (parent + includes). `usage` reads first,
     // labelled "Getting started"; the rest keep their declared names.
-    var blueprintProcedures = Array.isArray(schema.procedures) ? schema.procedures.slice() : []
+    // The export carries shadowed same-id entries too (never dropped silently);
+    // the list shows only the ones that won.
+    var blueprintProcedures = Array.isArray(schema.procedures)
+      ? schema.procedures.filter(function (p) {
+          return !(p && p.status === 'shadowed')
+        })
+      : []
     if (blueprintProcedures.length > 0) {
       blueprintProcedures.sort(function (a, b) {
         if (a && a.id === 'usage') return -1
@@ -14148,7 +14334,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     function initRuntimeState() {
       stepStates = {}
       if (activeProcedure) {
-        var chain = chainOf(activeProcedure)
+        var chain = RT.chainOf(activeProcedure, nodeById)
         chain.forEach(function (step, i) {
           stepStates[step.el.id] = i === 0 ? 'active' : 'pending'
         })
@@ -14341,7 +14527,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         docBody.innerHTML = '<div class="empty-state">No procedures found.</div>'
         return
       }
-      var chain = chainOf(activeProcedure)
+      var chain = RT.chainOf(activeProcedure, nodeById)
       if (!chain.length) {
         docBody.innerHTML = '<div class="empty-state">No steps in this procedure.</div>'
         return
@@ -14385,6 +14571,20 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           if (step.fields.input) io.appendChild(ioPill('Input', step.fields.input, 'in'))
           if (step.fields.output) io.appendChild(ioPill('Output', step.fields.output, 'out'))
           if (io.childNodes.length) block.appendChild(io)
+          if (step.fields.step_type === 'decision') {
+            var branchTargets = RT.nextSteps(step, nodeById)
+            if (branchTargets.length >= 2) {
+              var branchWrap = document.createElement('div')
+              branchWrap.className = 'branch-outcomes'
+              branchTargets.forEach(function (t) {
+                var outcomeEl = document.createElement('div')
+                outcomeEl.className = 'branch-outcome'
+                outcomeEl.innerHTML = '<strong>Outcome:</strong> ' + esc(t.el.name || t.el.id) + (t.fields.condition ? ' <em>(IF: ' + esc(t.fields.condition) + ')</em>' : '')
+                branchWrap.appendChild(outcomeEl)
+              })
+              block.appendChild(branchWrap)
+            }
+          }
         }
         docBody.appendChild(block)
       })
@@ -14408,92 +14608,6 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         })
         tabsHost.appendChild(b)
       })
-    }
-
-    // ---- Chain: procedure root -> steps ordered by next within same parent ----
-    var RT = GLOBAL.nnConsole
-
-    function chainOf(proc) {
-      if (RT && typeof RT.chainOf === 'function') return RT.chainOf(proc, nodeById)
-      var out = [proc]
-      var step = firstChild(proc)
-      var visited = {}
-      visited[proc.el.id] = true
-      while (step && !visited[step.el.id]) {
-        visited[step.el.id] = true
-        out.push(step)
-        step = nextStep(step)
-      }
-      return out
-    }
-
-    function firstChild(proc) {
-      if (RT && typeof RT.firstChild === 'function') return RT.firstChild(proc)
-      return proc.children ? proc.children[0] : null
-    }
-
-    function cleanRef(raw) {
-      var s = String(raw == null ? '' : raw).trim()
-      if (s.slice(0, 2) === '[[' && s.slice(-2) === ']]') s = s.slice(2, -2).trim()
-      var pipe = s.indexOf('|')
-      if (pipe !== -1) s = s.slice(0, pipe).trim()
-      var colon = s.lastIndexOf(':')
-      if (colon !== -1) s = s.slice(colon + 1).trim()
-      return s
-    }
-
-    function nextStep(step) {
-      if (RT && typeof RT.nextStep === 'function') return RT.nextStep(step, nodeById)
-      var relation = (step.relations || []).filter(function (r) {
-        return r.field === 'next' && r.target && byId[r.target]
-      })
-      if (relation.length) {
-        var cand = nodeById[relation[0].target]
-        if (cand && cand.parentId === step.parentId) return cand
-      }
-      var label = step.fields && step.fields.next
-      if (label && label !== '-') {
-        var cleaned = cleanRef(label)
-        var target = byName[label] || byName[cleaned] || byId[label] || byId[cleaned]
-        if (target) {
-          var cand2 = nodeById[target.id]
-          if (cand2 && cand2.parentId === step.parentId) return cand2
-        }
-      }
-      return null
-    }
-
-    function sortChildren(children) {
-      if (RT && typeof RT.sortChildren === 'function') return RT.sortChildren(children, nodeById)
-      var nextOf = {}
-      children.forEach(function (c) {
-        var rel = (c.relations || []).filter(function (r) {
-          return r.field === 'next' && r.target && byId[r.target]
-        })
-        if (rel.length) nextOf[c.el.id] = rel[0].target
-      })
-      children.sort(function (a, b) {
-        if (nextOf[a.el.id] === b.el.id) return -1
-        if (nextOf[b.el.id] === a.el.id) return 1
-        return (a.el.name || '').localeCompare(b.el.name || '')
-      })
-    }
-
-    function resolveParentId(node) {
-      if (RT && typeof RT.resolveParentId === 'function') return RT.resolveParentId(node, nodeById)
-      var field = node.fields && node.fields.parent
-      if (field && field !== '-' && field !== '') {
-        var cleaned = cleanRef(field)
-        var targetEl = byName[field] || byName[cleaned] || byId[field] || byId[cleaned]
-        if (targetEl) return targetEl.id
-      }
-      var rels = node.relations || []
-      for (var i = 0; i < rels.length; i++) {
-        if (rels[i].field === 'parent' && rels[i].target && byId[rels[i].target]) {
-          return rels[i].target
-        }
-      }
-      return null
     }
 
     // ---- RACI lookup ----
@@ -14536,7 +14650,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         return
       }
 
-      var chain = chainOf(activeProcedure)
+      var chain = RT.chainOf(activeProcedure, nodeById)
       if (!chain.length) {
         stepBody.innerHTML = '<div class="empty-state">No steps in this procedure.</div>'
         return
@@ -14655,9 +14769,19 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         var y = startY + i * gapY
         var state = stepStates[step.el.id] || (i === currentStepIndex ? 'active' : i < currentStepIndex ? 'done' : 'pending')
         var isDecision = step.fields.step_type === 'decision'
+        var branchTargets = isDecision ? RT.nextSteps(step, nodeById) : []
+        var isBranch = branchTargets.length >= 2
 
         var g = document.createElementNS(svgNS, 'g')
-        g.setAttribute('class', 'dag-node ' + (isDecision ? 'decision ' : '') + state)
+        g.setAttribute('class', 'dag-node ' + (isDecision ? 'decision ' : '') + (isBranch ? 'branch ' : '') + state)
+        if (isBranch) {
+          branchTargets.forEach(function (t) {
+            var branchText = document.createElementNS(svgNS, 'text')
+            branchText.setAttribute('class', 'branch-outcome')
+            branchText.textContent = 'Outcome: ' + (t.el.name || t.el.id) + (t.fields.condition ? ' (IF: ' + t.fields.condition + ')' : '')
+            g.appendChild(branchText)
+          })
+        }
         g.addEventListener('click', function () {
           currentStepIndex = i
           renderExecutionWorkspace()
@@ -14755,6 +14879,21 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         pDesc.className = 'exec-step-desc'
         appendWithKuPills(pDesc, cur.el.description)
         card.appendChild(pDesc)
+      }
+
+      if (cur.fields.step_type === 'decision') {
+        var branchTargets = RT.nextSteps(cur, nodeById)
+        if (branchTargets.length >= 2) {
+          var branchWrap = document.createElement('div')
+          branchWrap.className = 'branch-outcomes'
+          branchTargets.forEach(function (t) {
+            var outcomeEl = document.createElement('div')
+            outcomeEl.className = 'branch-outcome'
+            outcomeEl.innerHTML = '<strong>Outcome:</strong> ' + esc(t.el.name || t.el.id) + (t.fields.condition ? ' <em>(IF: ' + esc(t.fields.condition) + ')</em>' : '')
+            branchWrap.appendChild(outcomeEl)
+          })
+          card.appendChild(branchWrap)
+        }
       }
 
       // RACI Governance Bar
@@ -15057,7 +15196,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return {
       ok: true,
       procedures: procedures.length,
-      steps: activeProcedure ? chainOf(activeProcedure).length : 0,
+      steps: activeProcedure ? RT.chainOf(activeProcedure, nodeById).length : 0,
       matrices: matrices.length,
       onHide: function () {
         if (timerInterval) clearInterval(timerInterval)

@@ -7,9 +7,6 @@ knowledge_version: "V_0-5-1"
 title: "Ghostbusters"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Business summary
 
 Ghostbusters is a professional paranormal investigation and elimination service based in New York City. The company provides rapid-response containment of supernatural entities — ghosts, demons, and other spectral phenomena — for residential, commercial, and governmental clients. Founded by three scientists with complementary expertise in psychology, engineering, and theoretical physics, Ghostbusters operates out of a converted firehouse in Tribeca. Revenue is generated through per-incident fees, long-term containment contracts, and government consulting.

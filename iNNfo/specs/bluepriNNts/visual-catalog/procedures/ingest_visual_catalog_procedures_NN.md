@@ -7,9 +7,6 @@ knowledge_version: "V_0-3-0"
 title: "Ingest Visual Catalog Procedure"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Procedure]]
@@ -39,7 +36,7 @@ output:: [[Updated Visual Catalog]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Orchestrate catalog-specific ingestion end to end. Normalize each raw source, derive and record the original/derivative hash pair, extract candidate Entries, Categories, and Evidence, deduplicate by stable key, upsert without duplicating, wire matrix cells and markers, validate, and report. This procedure **references and does not duplicate** `iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_NN.md`, which owns the generic normalize / hash / vision-extraction / companion-media mechanics; only the catalog-specific identity, dedupe, upsert, and double-hash verification steps are added here.
+Orchestrate catalog-specific ingestion end to end. Normalize each raw source, derive and record the original/derivative hash pair, extract candidate Entries, Categories, and Evidence, deduplicate by stable key, upsert without duplicating, wire matrix cells and markers, validate, and report. This procedure **references and does not duplicate** `iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_procedures_NN.md`, which owns the generic normalize / hash / vision-extraction / companion-media mechanics; only the catalog-specific identity, dedupe, upsert, and double-hash verification steps are added here.
 
 ## NN Work: Normalize Source
 parent:: [[Ingest Visual Catalog Workflow]]

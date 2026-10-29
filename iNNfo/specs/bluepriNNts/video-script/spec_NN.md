@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-13-7"
+blueprint_version: "V_0-13-8"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -31,9 +31,6 @@ validation:
     watermark: [text]
     animation: [asset]
 ---
-
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
 
 # NN index
 

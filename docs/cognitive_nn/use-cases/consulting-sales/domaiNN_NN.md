@@ -7,9 +7,6 @@ knowledge_version: "V_1-0-0"
 title: "Consulting Sales RFP Workspace"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN domaiNN
 knowledge_dir:: kNNowledge/
 

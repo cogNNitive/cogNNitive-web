@@ -19,9 +19,6 @@ relationship_types:
     enabled: true
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Metrics]]
@@ -227,9 +224,6 @@ parent_spec:
 knowledge_version: "V_0-1-0"
 title: "<Metrics Model Title>"
 ---
-
-> [!NOTE]
-> This is an **iNNfo document**...
 
 # NN index
 

@@ -7,9 +7,6 @@ parent_spec:
 title: "Verdant Roasters Website Specification"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN PageSection
 
 ## NN PageSection: Hero & Value Proposition

@@ -17,11 +17,6 @@ const {
  */
 const splitTopLevelSections = /** @type {any} */ (splitTopLevelSectionsMirror);
 
-const DOC_NOTICE =
-  '> [!NOTE]\n> This is an **iNNfo document** — a plain-text Markdown file. ' +
-  'Open it with any text editor; ' +
-  '[cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.';
-
 /**
  * Recursively collect files with a given extension test under a directory,
  * returning POSIX-style paths relative to that directory.
@@ -77,8 +72,6 @@ function buildFreshModel(title, sections) {
   return (
     renderRecordFrontmatter(`${title} Provenance`) +
     '\n' +
-    DOC_NOTICE.replace(/^\n+|\n+$/g, '') +
-    '\n\n' +
     blocks.join('\n') +
     '\n'
   );
@@ -119,14 +112,13 @@ function appendProcedureRun(existing, run) {
   }
 
   const notice = preamble.replace(/^\n+|\n+$/g, '');
-  return frontmatter + '\n' + notice + '\n\n' + rebuilt.join('\n') + '\n';
+  return frontmatter + '\n' + (notice ? notice + '\n\n' : '') + rebuilt.join('\n') + '\n';
 }
 
 module.exports = {
   TEMPLATE_URL,
   INNFO_URL,
   TEMPLATE_NAME,
-  DOC_NOTICE,
   walkFiles,
   emptySection,
   splitTopLevelSections,

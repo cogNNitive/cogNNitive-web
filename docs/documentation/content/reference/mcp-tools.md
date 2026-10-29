@@ -10,7 +10,7 @@
 The table below is generated from the `nn-mcp` tool registry, so it always reflects the tools the built server actually exposes.
 
 <!-- generated:mcp-tools (source: nn-mcp tool registry; run node scripts/generate-docs-facts.mjs) -->
-**22** tools
+**24** tools
 
 | Tool | Description |
 |------|-------------|
@@ -34,8 +34,10 @@ The table below is generated from the `nn-mcp` tool registry, so it always refle
 | `cognitivize` | Create or refresh the sidecar (`<file>_sidecar_NN.md`) of one raw file in place, so it can be cited. Markdown, CSV, and JSON files are handled directly; binary formats (PDF, DOCX, XLSX, images) are converted when the environment has converter adapters available. Paths outside the workspace, sidecars, and NN documents are rejected. |
 | `sync_lineage` | Recompute the lineage projection from the workspace filesystem and regenerate the canonical lineage record (`<project>_cogNNitive_NN.md`) without requiring the CLI. Re-synchronizes # NN Sources, # NN ModelRecords, and # NN Artifacts sections. |
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
-| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10 |
+| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10. A procedure that loses a name clash is returned with status shadowed (shadowed_by names the winner), never dropped. With path (a document or scope directory) the listing is scope-aware: the procedures visible from that scope, selected and shadowed (model > nearest scope > ... > root procedures/ > the bluepriNNt package), each with its source, slots, fork record and warnings; a path outside any domaiNN returns NO_DOMAIN_ROOT with the directories searched. |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
+| `resolve_effective` | Read-only: the effective value of a key at a document (or at one scope element of it), folded over the scope chain with a merge strategy, plus the trace that explains it. Strategies: override (nearest declaration wins), union (named entries accumulate, nearer shadows farther) and none (only the target node supplies the value; ancestors and the bluepriNNt floor are reported under notInherited, never inherited). The floor is the single document under the defaults/ folder of the bluepriNNt package named by the innermost scope document. Returns {present, value, winner, trace}, or a structured error (NO_DOMAIN_ROOT, PATH_OUTSIDE_SCOPE, UNSUPPORTED_STRATEGY, UNKNOWN_ELEMENT, ...). Never writes files. |
+| `explain` | Read-only: why a key resolves the way it does at a document (or at one scope element of it). Takes the same inputs as resolve_effective and returns the same trace, plus the chain of scopes it was computed over (node ids and kinds, outermost first) and the floor supplier. Never writes files. |
 <!-- /generated:mcp-tools -->
 
 The registry is the single source of truth: each tool's name, description, and JSON input schema are defined once in the server's `TOOL_REGISTRY`, and the ListTools result, the call dispatcher, and any count are all derived from that one table. Parameters are documented per tool in its input schema; several tools accept a `domain` argument with a `root` alias (see below).
@@ -44,11 +46,13 @@ The registry is the single source of truth: each tool's name, description, and J
 
 Most tools that read or write a domaiNN accept an optional `domain` argument naming the domain root directory. When omitted, the tool uses the server root (the directory the server was started in, resolved by walking up to the repository root). `root` is an exact alias for `domain` — passing either has the same effect, and passing both is not needed. A handful of tools also accept other aliases for compatibility, such as `id` / `knowledge_id` for a document id.
 
+`resolve_effective` and `explain` are the exception to that convention: they take no `domain` or `root` override, because every `path` is checked against the server's own domain root (`PATH_OUTSIDE_SCOPE`). Both return a structured error (`{ ok: false, code, detail }`) instead of failing, and both fold values over the scope chain with the same nn-core resolver the drift CLI uses.
+
 ## Read-only vs mutating tools
 
 Tools fall into two groups:
 
-- **Read-only** — scanning, reading, resolving, and validating. Examples: `list_knowledge`, `read_knowledge`, `get_spec`, `get_blueprint`, `list_blueprints`, `list_blueprint_procedures`, `list_blueprint_skills`, `validate_knowledge`, `validate_knowledge_url`, `validate_blueprint`, `check_domain`, `query_units`, `resolve_sources`. These never write to disk.
+- **Read-only** — scanning, reading, resolving, and validating. Examples: `list_knowledge`, `read_knowledge`, `get_spec`, `get_blueprint`, `list_blueprints`, `list_blueprint_procedures`, `list_blueprint_skills`, `validate_knowledge`, `validate_knowledge_url`, `validate_blueprint`, `check_domain`, `query_units`, `resolve_sources`, `resolve_effective`, `explain`. These never write to disk.
 - **Mutating** — creating or changing files. Examples: `init_domain`, `init_knowledge`, `apply_change`, `propose_changeset`, `regenerate_console`, `cognitivize`, `hydrate_blueprint`, `sync_domain_manifest`, `sync_lineage`. A mutation of a Level-3 kNNowledge model is synthesized into a sealed, recorded changeset rather than written directly.
 
 ## The `next_steps.notice` contract

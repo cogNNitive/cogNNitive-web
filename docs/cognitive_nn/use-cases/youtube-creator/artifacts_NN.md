@@ -7,9 +7,6 @@ knowledge_version: "V_1-0-0"
 title: "YouTube Content Creator Artifacts Catalog"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Artifact
 
 ## NN Artifact: Production Teleprompter Cue Sheet

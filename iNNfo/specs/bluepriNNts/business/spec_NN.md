@@ -30,9 +30,6 @@ relationship_types:
     enabled: true
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Matrix Definition
 
 ## NN Matrix Definition: Metrics-Organizational goals Matrix
@@ -134,9 +131,6 @@ parent_spec:
 knowledge_version: "V_x-y-z"
 title: "<Your Business Name>"
 ---
-
-> [!NOTE]
-> This is an **iNNfo document**...
 
 # NN Business summary
 Your business summary here.

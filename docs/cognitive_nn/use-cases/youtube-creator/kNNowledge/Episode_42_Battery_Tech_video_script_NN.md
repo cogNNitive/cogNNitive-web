@@ -7,9 +7,6 @@ parent_spec:
 title: "Episode 42: The Truth About Fast Charging Degradation"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN VideoScene
 
 ## NN VideoScene: Scene 01 - The Heat Myth

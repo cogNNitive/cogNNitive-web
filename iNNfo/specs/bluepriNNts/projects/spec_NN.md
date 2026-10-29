@@ -26,9 +26,6 @@ relationship_types:
     enabled: true
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN index
 
 * [[Project]]
@@ -263,9 +260,6 @@ parent_spec:
 knowledge_version: "V_1-0-0"
 title: "<Project Title>"
 ---
-
-> [!NOTE]
-> This is an **iNNfo document**...
 
 # NN index
 

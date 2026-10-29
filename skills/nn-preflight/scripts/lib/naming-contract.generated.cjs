@@ -48,6 +48,7 @@ __export(index_exports, {
   isExcludedPath: () => isExcludedPath,
   isModelCandidate: () => isModelCandidate,
   isNNName: () => isNNName,
+  isProcedureDocument: () => isProcedureDocument,
   isSidecarName: () => isSidecarName,
   nextStamp: () => nextStamp,
   parentSpecNameOf: () => parentSpecNameOf,
@@ -154,6 +155,10 @@ function roleOf(i) {
   }
   return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
 }
+function isProcedureDocument(nameOrPath) {
+  const parsed = parseName(baseOf(nameOrPath));
+  return parsed.kind === "nn" && parsed.sidecarOf === void 0 && /_procedures$/i.test(parsed.stem);
+}
 function isExcludedPath(path) {
   const segs = segmentsOf(path);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
@@ -203,10 +208,14 @@ function parentSpecNameOf(frontmatter) {
   }
   return void 0;
 }
+function isUnderRootSources(path) {
+  return segmentsOf(path)[0]?.toLowerCase() === "sources";
+}
 function isModelCandidate(f) {
   if (f.frontmatter["level"] !== 3) return false;
   if (!f.frontmatter["parent_spec"]) return false;
   if (isExcludedPath(f.path)) return false;
+  if (isUnderRootSources(f.path)) return false;
   if (parseName(baseOf(f.path)).kind !== "nn") return false;
   return roleOf({ path: f.path, parentSpecName: parentSpecNameOf(f.frontmatter) }) === "knowledge";
 }
@@ -214,6 +223,7 @@ function isConsoleModel(f) {
   if (isExcludedPath(f.path)) return false;
   const parentSpecName = parentSpecNameOf(f.frontmatter);
   const role = roleOf({ path: f.path, parentSpecName });
+  if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
   if (role === "knowledge") return true;
   if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
   return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";

@@ -7,9 +7,6 @@ knowledge_version: "V_0-4-0"
 title: "Ghostbusters Inc. Ecto-Tech Innovation Portfolio Model"
 ---
 
-> [!NOTE]
-> This is an **iNNfo document** — a plain-text Markdown file. Open it with any text editor; [cogNNitive](https://cognnitive.com/innfo/) shows it in the domain console.
-
 # NN Program
 ## NN Program: Ecto-Tech R&D Program
 slug:: ecto-tech-rd-program
