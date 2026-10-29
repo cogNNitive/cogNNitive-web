@@ -56,7 +56,7 @@ and `knowledge_version` — never `blueprint_version` and never a version in its
 > [!NOTE]
 > The level-3 version key is `knowledge_version`. The retired key `model_version` is not
 > read; the version also never appears in the file name. See
-> [Canonical vocabulary](vocabulary.md).
+> [Canonical vocabulary](../vocabulary.md).
 
 ## Why the URL is never hardcoded
 
@@ -87,6 +87,6 @@ for how resolution failures surface as diagnostics.
 
 - [The four levels](levels.md)
 - [Ecosystem architecture](ecosystem.md)
-- [Canonical vocabulary](vocabulary.md)
+- [Canonical vocabulary](../vocabulary.md)
 - [bluepriNNts catalog](../reference/blueprints.md)
 - [MCP tools](../reference/mcp-tools.md)

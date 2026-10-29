@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { AssetSynthesizer, BillingFailureError, probeAudioDurationDetailed } from './asset-synthesizer.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { estimateCallUsd } from './asset-cost-estimator.mjs';
-import { loadCascadeBags } from './lib/cascade.mjs';
+import { loadCascadeBags } from './lib/video-scope.mjs';
 import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs';
 import { loadKnowledgeModel, loadTemplateModels } from './lib/knowledge-model.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';

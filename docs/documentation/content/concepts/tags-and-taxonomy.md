@@ -79,7 +79,7 @@ a schema change.
 
 ## See also
 
-- [Canonical vocabulary](vocabulary.md)
+- [Canonical vocabulary](../vocabulary.md)
 - [Validator behavior](validator-behavior.md)
 - [The four levels](levels.md)
 - [MCP tools](../reference/mcp-tools.md)

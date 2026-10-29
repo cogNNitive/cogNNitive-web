@@ -74,6 +74,6 @@ The system's own container follows the same rules as the data inside it.
 
 - [Ecosystem architecture](ecosystem.md)
 - [The specification chain](specifications.md)
-- [Canonical vocabulary](vocabulary.md)
+- [Canonical vocabulary](../vocabulary.md)
 - [Create your first domaiNN](../tutorials/first-domain.md)
 - [Home](../../README.md)

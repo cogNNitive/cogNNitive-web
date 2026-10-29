@@ -9,7 +9,7 @@
  * Zero external dependencies. ESM module.
  */
 
-import { resolve } from './cascade.mjs';
+import { resolve } from './video-scope.mjs';
 
 /**
  * @param {{ properties?: Record<string, any>, resolvedTemplate?: { tool?: string, voice?: string, model?: string, speed?: number, emotion?: string } }} sc Lowered scene

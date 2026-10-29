@@ -22,8 +22,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadCascadeBags, resolve } from './lib/cascade.mjs';
-import { findSeriesRoot } from './lib/nearest.mjs';
+import { loadCascadeBags, resolve, findSeriesRoot } from './lib/video-scope.mjs';
 import { resolveWorkspace } from './lib/video-guard.mjs';
 import { parseKnowledgeDocument, slugify } from './lib/knowledge-model.mjs';
 
@@ -46,20 +45,70 @@ export function scriptFilename(seriesSlug, videoSlug) {
 }
 
 /**
- * Reads the `series_NN.md` document from a series folder.
+ * Top-level frontmatter keys that belong to a scope marker and must never be
+ * copied into an episode script: they would turn the episode into a scope with
+ * fills of its own.
+ */
+const MARKER_ONLY_KEYS = new Set(['scope', 'isolate', 'fills']);
+
+/** Drops a top-level key and its indented continuation lines from a frontmatter block. */
+export function dropFrontmatterKeys(frontmatter, keys = MARKER_ONLY_KEYS) {
+  const out = [];
+  let dropping = false;
+  for (const line of String(frontmatter ?? '').split('\n')) {
+    const m = line.match(/^([A-Za-z0-9_]+):/);
+    if (m) dropping = keys.has(m[1]);
+    if (!dropping) out.push(line);
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+}
+
+/**
+ * The series document of a folder: the legacy `series_NN.md` when present, else
+ * the unique `<series>_scope_NN.md` scope marker. Returns null when neither
+ * exists or the marker name is ambiguous.
+ * @param {string} seriesDir
+ * @returns {{ file: string, marker: boolean } | null}
+ */
+export function seriesDocumentFile(seriesDir) {
+  const dir = path.resolve(seriesDir);
+  const legacy = path.join(dir, 'series_NN.md');
+  if (fs.existsSync(legacy)) return { file: legacy, marker: false };
+  let entries;
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return null;
+  }
+  const markers = entries.filter((f) => f.endsWith('_scope_NN.md')).sort();
+  return markers.length === 1 ? { file: path.join(dir, markers[0]), marker: true } : null;
+}
+
+/**
+ * Reads the Series document from a series folder (`series_NN.md`, or its
+ * `<series>_scope_NN.md` marker). A marker's scope-only keys are dropped, and
+ * its slug comes from the filename stem because it declares no `slug::` field.
  * @param {string} seriesDir
  * @returns {{ frontmatter: string, slug: string, title: string, fields: Record<string, string> }}
  */
 export function loadSeriesDocument(seriesDir) {
-  const file = path.join(path.resolve(seriesDir), 'series_NN.md');
-  const content = fs.readFileSync(file, 'utf8');
+  const found = seriesDocumentFile(seriesDir);
+  if (!found) {
+    throw new Error(
+      `no series document in ${path.resolve(seriesDir)}: expected series_NN.md or a <series>_scope_NN.md marker`,
+    );
+  }
+  const content = fs.readFileSync(found.file, 'utf8');
   const model = parseKnowledgeDocument(content);
   const el = (model.elements.Series || [])[0] || {};
   const fields = el.fields || {};
   const title = fields.title || model.frontmatter.title || el.name || '';
+  const fromStem = path.basename(found.file).replace(/_scope_NN\.md$/, '');
   return {
-    frontmatter: extractFrontmatter(content),
-    slug: el.slug || slugify(title),
+    frontmatter: found.marker ? dropFrontmatterKeys(extractFrontmatter(content)) : extractFrontmatter(content),
+    // A marker is named after its series (unique-stem convention); its element
+    // slug is derived from the heading and is not authoritative.
+    slug: found.marker ? fromStem : el.slug || slugify(title),
     title,
     fields,
   };
@@ -73,11 +122,19 @@ export function loadSeriesDocument(seriesDir) {
  * @param {string} [seriesDirFlag]
  * @returns {({ frontmatter: string, slug: string, title: string, fields: Record<string, string>, dir: string }) | null}
  */
+/**
+ * Locates the series document for an input folder: an explicit `--series <dir>` wins,
+ * otherwise the nearest ancestor holding a series marker strictly below the
+ * workspace root. The document is `series_NN.md` or the `<series>_scope_NN.md` marker.
+ * @param {string} inputDir
+ * @param {string} [seriesDirFlag]
+ * @returns {({ frontmatter: string, slug: string, title: string, fields: Record<string, string>, dir: string }) | null}
+ */
 export function loadSeriesFor(inputDir, seriesDirFlag) {
   const dir = seriesDirFlag
     ? path.resolve(seriesDirFlag)
     : findSeriesRoot(inputDir, resolveWorkspace(inputDir).root);
-  if (!dir || !fs.existsSync(path.join(dir, 'series_NN.md'))) return null;
+  if (!dir || !seriesDocumentFile(dir)) return null;
   return { dir, ...loadSeriesDocument(dir) };
 }
 

@@ -17,7 +17,7 @@ import { loadKnowledgeModel, loadTemplateModels, parseKnowledgeDocument } from '
 import { fileURLToPath } from 'node:url';
 import { computePlanHash, formatStamp } from './lib/plan-approval.mjs';
 import { normalizeModelId } from './lib/video-guard.mjs';
-import { loadCascadeBags, resolve } from './lib/cascade.mjs';
+import { loadCascadeBags, resolve } from './lib/video-scope.mjs';
 import { isAvatarLayer } from './lib/avatar-jobs.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 

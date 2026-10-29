@@ -179,7 +179,7 @@ test('a user-level frame name with no file fails pre-compile, nothing spent', as
 
 test('compile --dry-run prints the resolved frame name, path and source', () => {
   const root = tmp('nn-frame-dry-');
-  fs.mkdirSync(path.join(root, '.git'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n');
   const series = path.join(root, 'series-a');
   const ep = path.join(series, 'ep-01');
   fs.mkdirSync(path.join(series, 'frames'), { recursive: true });

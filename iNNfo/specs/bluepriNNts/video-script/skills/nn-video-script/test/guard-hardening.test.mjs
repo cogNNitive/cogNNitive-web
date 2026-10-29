@@ -80,8 +80,9 @@ describe('config validation (fail loudly)', () => {
 });
 
 describe('single root resolver', () => {
-  it('prefers video-guard.json over a nearer .git, and ignores .cognnitive as a marker', () => {
+  it('finds domaiNN root with domaiNN_NN.md and reads video-guard.json at root', () => {
     const root = tmp();
+    fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n');
     fs.writeFileSync(path.join(root, GUARD_FILENAME), '{"version":1}');
     const series = path.join(root, 'series', 's');
     fs.mkdirSync(path.join(series, '.cognnitive'), { recursive: true });
@@ -90,13 +91,14 @@ describe('single root resolver', () => {
     assert.equal(loadGuard(series).root, root);
   });
 
-  it('falls back to the nearest .git, never to a stray .cognnitive', () => {
+  it('never falls back to .git or stray .cognnitive', () => {
     const root = tmp();
     fs.mkdirSync(path.join(root, '.git'));
     const series = path.join(root, 'series', 's');
     fs.mkdirSync(path.join(series, '.cognnitive'), { recursive: true });
-    assert.equal(findWorkspaceRoot(series), root);
-    assert.equal(loadGuard(series).root, root);
+    // Without domaiNN_NN.md, root is series itself (cwd fallback), never .git
+    assert.equal(findWorkspaceRoot(series), series);
+    assert.equal(loadGuard(series).root, series);
   });
 });
 

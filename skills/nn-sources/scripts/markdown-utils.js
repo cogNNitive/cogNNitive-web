@@ -9,7 +9,7 @@
  * The slug primitives (`slugifyHeading`, `slugifyUnitHeading`, `normalizeName`,
  * `headingSlugParts`) are NOT defined here: they are generated from
  * `@cognnitive/nn-core`'s `src/sourceRef.ts` by
- * `scripts/build-trannsform-core-mirror.mjs` and vendored as
+ * `scripts/build-core-mirrors.mjs` and vendored as
  * `./lib/nn-core.generated.cjs` (nn-core is ESM-only and absent where
  * this skill is installed, so a runtime import is impossible). That bundle IS
  * the single shared implementation — do NOT hand-edit the mirror, regenerate it.

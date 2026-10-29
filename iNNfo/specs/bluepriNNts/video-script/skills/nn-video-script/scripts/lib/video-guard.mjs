@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { acquireSlot, withFileLock } from './file-lock.mjs';
+import { findDomainRoot } from './nn-core.generated.cjs';
 
 export const GUARD_FILENAME = 'video-guard.json';
 export const LEDGER_RELATIVE_PATH = path.join('.cognnitive', 'video-ledger.jsonl');
@@ -89,26 +90,18 @@ export class ApprovalRequiredError extends Error {
 
 /**
  * The single root resolver for guard config, ledger, locks and cache.
- * A `video-guard.json` found anywhere above `startDir` wins; otherwise the
- * nearest `.git`; otherwise `startDir` itself. (`.cognnitive` is NOT a marker:
- * a stray series-level cache dir must not re-root the workspace.)
+ * Resolves root via findDomainRoot(startDir) ?? startDir.
+ * The guard file is only read at `<root>/video-guard.json`.
+ * No .git branch.
  * @param {string} [startDir]
  * @returns {{ root: string, guardFile: string | null }}
  */
 export function resolveWorkspace(startDir = process.cwd()) {
   const start = path.resolve(startDir);
-  const walk = (marker) => {
-    let dir = start;
-    for (;;) {
-      if (fs.existsSync(path.join(dir, marker))) return dir;
-      const parent = path.dirname(dir);
-      if (parent === dir) return null;
-      dir = parent;
-    }
-  };
-  const guardDir = walk(GUARD_FILENAME);
-  if (guardDir) return { root: guardDir, guardFile: path.join(guardDir, GUARD_FILENAME) };
-  return { root: walk('.git') || start, guardFile: null };
+  const root = findDomainRoot(start) ?? start;
+  const guardPath = path.join(root, GUARD_FILENAME);
+  const guardFile = fs.existsSync(guardPath) ? guardPath : null;
+  return { root, guardFile };
 }
 
 /**

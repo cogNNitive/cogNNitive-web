@@ -28,6 +28,6 @@ Short definitions of the terms used across this documentation. The canonical voc
 
 ## See also
 
-- [Canonical vocabulary](../concepts/vocabulary.md)
+- [Canonical vocabulary](../vocabulary.md)
 - [The four levels](../concepts/levels.md)
 - [Sources, citations and lineage](../concepts/sources-citations-lineage.md)

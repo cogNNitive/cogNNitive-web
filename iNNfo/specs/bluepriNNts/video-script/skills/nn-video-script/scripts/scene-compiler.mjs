@@ -19,7 +19,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { isKnowledgeModel, slugify } from './lib/knowledge-model.mjs';
-import { resolve } from './lib/cascade.mjs';
+import { resolve } from './lib/video-scope.mjs';
 
 /**
  * @typedef {Object} LowerThirdProps

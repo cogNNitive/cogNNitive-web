@@ -55,7 +55,7 @@ The ecosystem distributes manifests across two live channels:
 
 The machine-readable manifest contains the full list of canonical skills, version pins, commit SHAs, and MCP runtime endpoints.
 
-- **Primary CDN Manifest**: [`/update/manifest.md`](/update/manifest.md) (mirrored with [`/use/manifest.md`](/use/manifest.md))
+- **Primary CDN Manifest**: [`https://cognnitive.com/update/manifest.md`](https://cognnitive.com/update/manifest.md) (mirrored with [`https://cognnitive.com/use/manifest.md`](https://cognnitive.com/use/manifest.md))
 - **Raw GitHub Mirror**: `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/use/manifest.md`
 
 ---

@@ -24,8 +24,7 @@ import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
 import { SpendGuard, loadGuard, resolveDefaultCacheDir, normalizeModelId, resolveWorkspace } from './lib/video-guard.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
-import { loadCascadeBags, resolve, resolveKeyed } from './lib/cascade.mjs';
-import { findNearest, findNearestByStem, findSeriesRoot } from './lib/nearest.mjs';
+import { loadCascadeBags, resolve, resolveKeyed, findNearest, findNearestByStem, findSeriesRoot } from './lib/video-scope.mjs';
 import { applyCachedAvatars } from './lib/avatar-jobs.mjs';
 import { buildTtsVoiceOptions } from './lib/tts-options.mjs';
 import { loadFrame } from './lib/frame-tokens.mjs';
@@ -294,11 +293,11 @@ export function stageAsset(src, scriptDir, publicDir) {
  * so it is the test seam.
  *
  * @param {object} manifest
- * @param {{ scriptDir: string, publicDir: string, seriesRoot?: string }} opts
+ * @param {{ scriptDir: string, publicDir: string, seriesRoot?: string, scopeRoot?: string }} opts
  * @returns {{ staged: number, missing: string[], escaped: string[] }}
  */
 export function resolveMediaLayers(manifest, opts) {
-  const { scriptDir, publicDir, seriesRoot } = opts;
+  const { scriptDir, publicDir, seriesRoot, scopeRoot } = opts;
   const missing = [];
   const escaped = [];
   let staged = 0;
@@ -322,9 +321,10 @@ export function resolveMediaLayers(manifest, opts) {
     for (const layer of layers) stageField(layer, 'layer_asset_source');
   }
 
+  const rootBound = scopeRoot || seriesRoot;
   for (const track of manifest?.tracks?.audio || []) {
-    // Music must stay inside the series tree (no-upward-escape rule). Narration is cache-produced and exempt.
-    if (track?.kind === 'music' && seriesRoot && typeof track.assetPath === 'string' && !isInside(seriesRoot, path.resolve(scriptDir, track.assetPath))) {
+    // Music must stay inside the scope root tree (no-upward-escape rule). Narration is cache-produced and exempt.
+    if (track?.kind === 'music' && rootBound && typeof track.assetPath === 'string' && !isInside(rootBound, path.resolve(scriptDir, track.assetPath))) {
       escaped.push(track.assetPath);
       continue;
     }
@@ -657,7 +657,13 @@ export async function compileVideo(options) {
   // and out-of-dir (`../shared/…`) paths both work. A missing asset is a loud
   // failure — never a silently dropped layer.
   const publicDir = path.join(scriptDir, 'public');
-  const staging = resolveMediaLayers(manifest, { scriptDir, publicDir, seriesRoot: findSeriesRoot(scriptDir, resolveWorkspace(scriptDir).root) });
+  const scopeRoot = resolveWorkspace(scriptDir).root;
+  const staging = resolveMediaLayers(manifest, {
+    scriptDir,
+    publicDir,
+    seriesRoot: findSeriesRoot(scriptDir, scopeRoot),
+    scopeRoot,
+  });
   manifest.metadata.publicDir = publicDir;
 
   // The resolved frame (palette + type) becomes the manifest's frame contract so

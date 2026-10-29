@@ -26,7 +26,7 @@ function tmp() {
 describe('loadGuard / findWorkspaceRoot', () => {
   it('uses safe defaults when no video-guard.json exists', () => {
     const root = tmp();
-    fs.mkdirSync(path.join(root, '.git'));
+    fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n');
     const guard = loadGuard(path.join(root, 'series', 'x'));
     assert.equal(guard.config.budgetPerRunUsd, 2.0);
     assert.equal(guard.config.maxAvatarConcurrency, 1);
@@ -36,8 +36,9 @@ describe('loadGuard / findWorkspaceRoot', () => {
     assert.deepEqual(guard.config.voices, {});
   });
 
-  it('walks up from a nested dir to the directory holding video-guard.json', () => {
+  it('walks up from a nested dir to the domaiNN root holding video-guard.json', () => {
     const root = tmp();
+    fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n');
     fs.writeFileSync(
       path.join(root, GUARD_FILENAME),
       JSON.stringify({ version: 1, budgetPerRunUsd: 5, voices: { Ana: { voice_id: 'v1', series: 's' } } }),
@@ -52,6 +53,19 @@ describe('loadGuard / findWorkspaceRoot', () => {
     assert.deepEqual(guard.config.blockedModels, DEFAULT_GUARD.blockedModels);
     assert.equal(guard.config.voices.Ana.voice_id, 'v1');
     assert.equal(findWorkspaceRoot(deep), root);
+  });
+
+  it('never consults .git and does not read video-guard.json outside domaiNN root', () => {
+    const outer = tmp();
+    fs.mkdirSync(path.join(outer, '.git'));
+    fs.writeFileSync(path.join(outer, GUARD_FILENAME), JSON.stringify({ version: 1, budgetPerRunUsd: 99 }));
+    const domain = path.join(outer, 'domain');
+    fs.mkdirSync(domain);
+    fs.writeFileSync(path.join(domain, 'domaiNN_NN.md'), '# NN DomaiNN\n');
+    const guard = loadGuard(domain);
+    assert.equal(guard.root, domain);
+    assert.equal(guard.source, null); // outer video-guard.json is ignored
+    assert.equal(guard.config.budgetPerRunUsd, 2.0); // defaults
   });
 
   it('throws a clear error on malformed JSON', () => {
@@ -181,6 +195,7 @@ describe('createLimiter', () => {
 describe('default cache dir', () => {
   it('resolves to <workspaceRoot>/.cognnitive/cache/video regardless of cwd', () => {
     const root = tmp();
+    fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n');
     fs.writeFileSync(path.join(root, GUARD_FILENAME), '{"version":1}');
     const nested = path.join(root, 'series', 'a');
     fs.mkdirSync(nested, { recursive: true });
@@ -189,6 +204,7 @@ describe('default cache dir', () => {
 
   it('CacheManager uses the workspace cache for a startDir, and an explicit baseDir still wins', () => {
     const root = tmp();
+    fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n');
     fs.writeFileSync(path.join(root, GUARD_FILENAME), '{"version":1}');
     const nested = path.join(root, 'series', 'a');
     fs.mkdirSync(nested, { recursive: true });

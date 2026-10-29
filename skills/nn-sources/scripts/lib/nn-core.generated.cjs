@@ -1,8 +1,8 @@
 /**
  * GENERATED FILE — DO NOT EDIT.
  * Source: iNNfo/packages/nn-core/src/trannsformPrimitives.ts
- * Regenerate: node scripts/build-trannsform-core-mirror.mjs
- * Drift-guarded by scripts/verify.js (build-trannsform-core-mirror --check).
+ * Regenerate: node scripts/build-core-mirrors.mjs
+ * Drift-guarded by scripts/verify.js (core-mirror --check).
  */
 // @ts-nocheck
 "use strict";

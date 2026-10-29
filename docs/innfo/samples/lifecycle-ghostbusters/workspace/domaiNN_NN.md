@@ -10,7 +10,7 @@ title: "Ghostbusters Inc. domaiNN"
 # NN domaiNN
 knowledge_dir:: kNNowledge/
 
-A worked-example domaiNN used by the [Lifecycle Walkthrough](../../../documentation/lifecycle-walkthrough.md): raw sources are cognitivized in place under `sources/import/`, structured into kNNowledge, exported to a write-once artifact under `artifacts/`, and reviewed through a changeset under `changes/`.
+A worked-example domaiNN used by the [Knowledge Lifecycle](../../../../documentation/content/concepts/knowledge-lifecycle.md): raw sources are cognitivized in place under `sources/import/`, structured into kNNowledge, exported to a write-once artifact under `artifacts/`, and reviewed through a changeset under `changes/`.
 
 # NN kNNowledge
 

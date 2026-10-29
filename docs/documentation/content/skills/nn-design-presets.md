@@ -24,7 +24,7 @@ real time:
 🎨 Visual Artifact Style Selection:
 
 Before creating your interface, test and preview all 6 design styles in real time:
-👉 [Open Interactive Design Presets Showcase](./demo/index.html)
+👉 [Open Interactive Design Presets Showcase](https://cognnitive.com/skills/nn-design-presets/demo/index.html)
 
 Which visual design style would you like to apply to this artifact/component?
 ```
