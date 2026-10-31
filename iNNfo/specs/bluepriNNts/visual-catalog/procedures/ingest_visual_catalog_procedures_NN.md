@@ -19,7 +19,7 @@ title: "Ingest Visual Catalog Procedure"
 
 ## NN Procedure: Ingest Visual Catalog
 category:: ingestion
-summary:: Turn raw visual sources into a validated `visual-catalog` catalogue: normalize the source, derive and hash an optimized companion (double-hash discipline), extract Entries/Categories/Evidence, deduplicate by stable keys, upsert idempotently, wire the Entry x Evidence cells and markers, then validate and report.
+summary:: Turn raw visual sources into a validated `visual-catalog` catalogue: stage raw images in sources/import/, establish provenance via co-located sidecars and original_ref, extract Entries/Categories/Evidence, deduplicate by stable keys, upsert idempotently, wire the Entry x Evidence cells and markers, then validate and report.
 inputs_required:: Raw visual files in sources/import/, target `visual-catalog` L3 catalogue document
 outputs_expected:: [[Updated Visual Catalog]], [[Ingestion Report]]
 executed_by:: Catalog Maintainer
@@ -36,7 +36,7 @@ output:: [[Updated Visual Catalog]]
 output_status:: verified
 tool:: [[AI Agent]]
 scope:: internal
-Orchestrate catalog-specific ingestion end to end. Normalize each raw source, derive and record the original/derivative hash pair, extract candidate Entries, Categories, and Evidence, deduplicate by stable key, upsert without duplicating, wire matrix cells and markers, validate, and report. This procedure **references and does not duplicate** `iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_procedures_NN.md`, which owns the generic normalize / hash / vision-extraction / companion-media mechanics; only the catalog-specific identity, dedupe, upsert, and double-hash verification steps are added here.
+Orchestrate catalog-specific ingestion end to end. Stage raw visual sources in sources/import/, establish provenance via co-located sidecars and original_ref, extract candidate Entries, Categories, and Evidence, deduplicate by stable key, upsert without duplicating, wire matrix cells and markers, validate, and report. This procedure **references and does not duplicate** `iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_procedures_NN.md`, which owns the generic image staging, sidecar provenance, and vision-extraction mechanics; only the catalog-specific identity, dedupe, upsert, and provenance verification steps are added here.
 
 ## NN Work: Normalize Source
 parent:: [[Ingest Visual Catalog Workflow]]
@@ -46,9 +46,9 @@ condition:: A raw visual file is staged in sources/import/
 input:: [[Raw Visual Sources]]
 output:: [[Normalized Source]]
 output_status:: verified
-tool:: [[nn-trannsform Scanner]]
+tool:: [[nn-sources Ingestion Engine]]
 scope:: internal
-Run the `nn-trannsform` scanner (as specified by the `workspace` visual-import SOP) to produce `sources/nn/<stem>.md` with mandatory frontmatter `source_file` (path to the ORIGINAL), `sha256` (hash of the ORIGINAL), `size_bytes`, `normalized_at`, and `normalized_by`. Do not restate the scanner mechanics here — invoke the workspace procedure.
+Stage raw visual sources in sources/import/ and cognitivize them in place via `process-images` or `nn-sources` to generate co-located sidecars recording original sha256, dimensions, and origin metadata. Images remain raw assets without text conversion.
 
 ## NN Work: Derive and Optimize Derivative
 parent:: [[Ingest Visual Catalog Workflow]]
@@ -60,7 +60,7 @@ output:: [[Normalized Source]]
 output_status:: verified
 tool:: [[File Editor]]
 scope:: internal
-Create the optimized/derived image and record `media_file` (the companion derivative path) and `media_sha256` (the DERIVATIVE hash) on the SAME normalized-source frontmatter. The pair `sha256` (original) + `media_sha256` (derivative) is the double-hash discipline: keep it complete or explicitly absent — never a placeholder.
+Create optimized/derived images under artifacts/photos/ or the owning model's assets/ folder, keeping traceability back to original_ref and its co-located sidecar.
 
 ## NN Work: Extract Entities
 parent:: [[Ingest Visual Catalog Workflow]]
@@ -151,9 +151,9 @@ Emit an ingestion report: sources processed, Entries/Categories/Evidence created
 type:: automated
 description:: Coordinates catalog-specific extraction, resolution, upsert, and reporting.
 
-## NN Tools: nn-trannsform Scanner
+## NN Tools: nn-sources Ingestion Engine
 type:: automated
-description:: Deterministic scanner producing normalized `sources/nn/` Markdown with origin + original-hash frontmatter (referenced from the workspace visual-import SOP).
+description:: Ingestion engine providing in-place cognitivize and process-images for raw media sidecar provenance.
 
 ## NN Tools: Vision Analysis Engine
 type:: external
@@ -175,7 +175,7 @@ description:: The raw image files staged in sources/import/ (or sources/original
 
 ## NN Artifact: Normalized Source
 type:: intermediate
-description:: The `sources/nn/<stem>.md` file with original `sha256`, `size_bytes`, `normalized_at`, `normalized_by`, and the derived `media_file` + `media_sha256` companion.
+description:: The raw image in sources/import/ alongside its co-located sidecar recording sha256, size_bytes, and metadata.
 
 ## NN Artifact: Candidate Entities
 type:: intermediate
@@ -224,7 +224,7 @@ description:: Executes the procedure steps and updates the catalogue.
 
 # NN matrices: work-tools matrix
 
-| Work \ Tools | AI Agent | nn-trannsform Scanner | Vision Analysis Engine | File Editor | nn-mcp |
+| Work \ Tools | AI Agent | nn-sources Ingestion Engine | Vision Analysis Engine | File Editor | nn-mcp |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | Ingest Visual Catalog | Uses | - | - | - | - |
 | Normalize Source | - | Uses | - | - | - |

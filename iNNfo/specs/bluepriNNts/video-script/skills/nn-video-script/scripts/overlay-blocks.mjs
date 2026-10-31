@@ -107,7 +107,8 @@ export function overlayMount(overlay, opts = {}) {
   const fps = Number(opts.fps) || 30;
   const start = roundMs((overlay.fromFrame || 0) / fps);
   const duration = roundMs((overlay.durationInFrames || 0) / fps);
-  const values = JSON.stringify(overlayVariables(overlay, opts.frame))
+  const vars = overlayVariables(overlay, opts.frame);
+  const values = JSON.stringify(vars)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/'/g, '&#39;');
@@ -116,8 +117,10 @@ export function overlayMount(overlay, opts = {}) {
   // sub-composition timeline, so the host must say so too or HyperFrames waits the
   // full 45s readiness timeout on every render.
   const noTimeline = opts.noTimeline ? ' data-no-timeline' : '';
+  const pos = vars.position ? String(vars.position).toLowerCase().replace(/[^a-z0-9-]/g, '') : '';
+  const posClass = pos ? ` nn-pos-${pos}` : '';
   return (
-    `<div id="${esc(overlay.id)}" class="clip nn-overlay" data-composition-id="${esc(slot)}" ` +
+    `<div id="${esc(overlay.id)}" class="clip nn-overlay${posClass}" data-composition-id="${esc(slot)}" ` +
     `data-composition-src="components/${esc(componentName)}.html" data-start="${start}" data-duration="${duration}" ` +
     `data-track-index="${opts.trackIndex ?? 10}" data-track-kind="graphics"${noTimeline} ` +
     `data-variable-values='${values}'${z}></div>`

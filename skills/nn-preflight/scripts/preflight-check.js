@@ -576,7 +576,6 @@ function validateBlueprintCompositions(options = {}) {
     const rawName = typeof incName === 'object' && incName !== null ? (incName.name || incName.path || '') : String(incName);
     const cleanName = rawName.replace(/\\/g, '/');
     const slug = path.basename(cleanName, '.md').toLowerCase().replace(/[\s_]+/g, '-');
-    const baseName = path.basename(cleanName, '.md');
     const baseNoVersion = cleanName.replace(/_V_[\d.-]+/i, '');
     const slugNoVersion = slug.replace(/-v-[\d-]+/i, '');
     const urlStem = typeof incName === 'object' && incName?.url ? path.basename(incName.url, '.md') : '';
@@ -1147,14 +1146,12 @@ function auditModifiedSkills(state, skillsDir) {
 }
 
 async function runCheck(options = {}) {
-  const isJson = options.json || process.argv.includes('--json');
   const manifestUrl = options.manifestUrl || process.env.SM_MANIFEST_URL || DEFAULT_MANIFEST_URL;
   const skillsDir = options.skillsDir || DEFAULT_SKILLS_DIR;
   const blueprintsDir = options.blueprintsDir || DEFAULT_BLUEPRINTS_DIR;
   const mcpDir = options.mcpDir || DEFAULT_MCP_DIR;
   const stateFile = options.stateFile || DEFAULT_STATE_FILE;
   const workspaceDir = options.workspaceDir || null;
-  const templateCatalogUrl = options.templateCatalogUrl || null;
 
   const results = {
     timestamp: new Date().toISOString(),

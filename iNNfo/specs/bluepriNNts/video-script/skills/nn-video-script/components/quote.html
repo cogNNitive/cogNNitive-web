@@ -9,6 +9,13 @@
       font-family: var(--font, Inter), sans-serif;
       font-size: 44px; font-style: italic; color: #fff;
     }
+    .nn-pos-center .nn-quote { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+    .nn-pos-top .nn-quote { left: 50%; top: 10%; bottom: auto; transform: translateX(-50%); }
+    .nn-pos-bottom .nn-quote { left: 50%; bottom: 10%; top: auto; transform: translateX(-50%); }
+    .nn-pos-top-left .nn-quote { left: 5%; top: 10%; bottom: auto; right: auto; transform: none; text-align: left; }
+    .nn-pos-top-right .nn-quote { right: 5%; left: auto; top: 10%; bottom: auto; transform: none; text-align: right; }
+    .nn-pos-bottom-left .nn-quote { left: 5%; bottom: 10%; top: auto; right: auto; transform: none; text-align: left; }
+    .nn-pos-bottom-right .nn-quote { right: 5%; left: auto; bottom: 10%; top: auto; transform: none; text-align: right; }
   </style>
   <div
     id="root"

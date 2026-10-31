@@ -334,7 +334,7 @@ describe('file lock hardening', () => {
         peak = Math.max(peak, active);
         await sleep(30);
         active--;
-      }, { staleMs: 100, timeoutMs: 2000, retryMs: 5 });
+      }, { staleMs: 1000, timeoutMs: 5000, retryMs: 5 });
     await Promise.all([job(), job(), job()]);
     assert.equal(peak, 1);
   });

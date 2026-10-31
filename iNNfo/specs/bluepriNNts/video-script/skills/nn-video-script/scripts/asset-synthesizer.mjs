@@ -411,6 +411,10 @@ export class AssetSynthesizer {
     const billable = this._useMiniMax() && Boolean(this.env.WAVESPEED_API_KEY);
     if (!billable) {
       if (this.guard.dryRun) return this._skipped(sha256);
+      if (this.env.WAVESPEED_API_KEY) {
+        throw new Error('TTS synthesis failed: WAVESPEED_API_KEY is present but MiniMax provider is not configured or unsupported');
+      }
+      console.warn(`[asset-synthesizer] WARNING: WAVESPEED_API_KEY is not set. Generating silent synthetic audio placeholder for TTS (offline/test mode: zero voice content).`);
       return this._storeTts(sha256, this._generateSyntheticAudio(cleanText, options));
     }
 

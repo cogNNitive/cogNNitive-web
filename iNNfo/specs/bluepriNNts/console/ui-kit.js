@@ -425,6 +425,13 @@
     '.nn-preview .nn-card{border:none;box-shadow:none;margin:0}',
     '.nn-mini-info{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:none;background:transparent;color:var(--nn-muted);cursor:pointer;border-radius:50%}',
     '.nn-mini-info:hover,.nn-mini-info[aria-expanded=true]{color:var(--nn-text);background:var(--nn-surface-2)}',
+    '.nn-navbar-actions-group{display:inline-flex;align-items:center;gap:.5rem}',
+    '.nn-navbar-action-btn{appearance:none;border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-text);font:inherit;font-size:.8rem;font-weight:600;padding:5px 12px;border-radius:var(--nn-radius-sm);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s ease,border-color .15s ease;line-height:1.2}',
+    '.nn-navbar-action-btn:hover{background:var(--nn-surface-2);border-color:var(--nn-focus)}',
+    '.nn-navbar-action-btn:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px}',
+    '.nn-navbar-action-btn .nn-btn-icon{display:inline-flex;align-items:center;color:var(--nn-muted)}',
+    '.nn-navbar-action-btn:hover .nn-btn-icon{color:var(--nn-text)}',
+    '.nn-navbar-action-btn .nn-badge-count{margin-left:4px;font-size:.72rem;background:var(--nn-accent);color:var(--nn-bg);padding:1px 6px;border-radius:999px;font-weight:700}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
@@ -3241,6 +3248,99 @@
     return toast
   }
 
+  // TopBarActions: Global navbar actions for in-place self-saving (Quine pattern)
+  // and agent hand-off clipboard action (Copy Prompt for AI Agent).
+  function TopBarActions(data, opts) {
+    opts = opts || {}
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('nnUI.TopBarActions: doc is required')
+    var onSave = opts.onSave
+    var onCopyPrompt = opts.onCopyPrompt
+    var draftsCount = (data && data.draftsCount) || 0
+
+    var htmlTag = (typeof html !== 'undefined' && html) || (typeof window !== 'undefined' && window.html) || (typeof globalThis !== 'undefined' && globalThis.html)
+    var renderFn = (typeof render !== 'undefined' && render) || (typeof window !== 'undefined' && window.render) || (typeof globalThis !== 'undefined' && globalThis.render)
+
+    var saveSvg = (typeof icon === 'function' ? icon('download', 14) : '') ||
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
+
+    var promptSvg = (typeof icon === 'function' ? icon('sparkles', 14) : '') ||
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>'
+
+    if (htmlTag && renderFn) {
+      var container = doc.createElement('div')
+      container.className = 'nn-navbar-actions-group'
+      container.setAttribute('data-nn-component', 'navbar-actions')
+
+      var vnode = htmlTag`
+        <div class="nn-navbar-actions-inner" style="display:inline-flex;align-items:center;gap:8px;">
+          <button
+            type="button"
+            class="nn-navbar-action-btn nn-btn-save"
+            data-nn="save-snapshot"
+            data-has-drafts=${draftsCount > 0 ? 'true' : 'false'}
+            title="Save self-contained snapshot directly to file (Quine Pattern)"
+            onClick=${function (e) {
+              if (e && e.preventDefault) e.preventDefault()
+              if (typeof onSave === 'function') onSave()
+            }}
+          >
+            <span class="nn-btn-icon" dangerouslySetInnerHTML=${{ __html: saveSvg }}></span>
+            <span>Save Snapshot</span>
+            ${draftsCount > 0 ? htmlTag`<span class="nn-badge-count">${draftsCount}</span>` : ''}
+          </button>
+          <button
+            type="button"
+            class="nn-navbar-action-btn nn-btn-copy-prompt"
+            data-nn="copy-agent-prompt"
+            title="Copy structured changeset and instructions for AI assistant"
+            onClick=${function (e) {
+              if (e && e.preventDefault) e.preventDefault()
+              if (typeof onCopyPrompt === 'function') onCopyPrompt()
+            }}
+          >
+            <span class="nn-btn-icon" dangerouslySetInnerHTML=${{ __html: promptSvg }}></span>
+            <span>Copy AI Prompt</span>
+          </button>
+        </div>
+      `
+      renderFn(vnode, container)
+      return container
+    }
+
+    var wrap = makeEl(doc, 'div', 'nn-navbar-actions-group')
+    wrap.setAttribute('data-nn-component', 'navbar-actions')
+
+    var btnSave = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-save')
+    btnSave.setAttribute('type', 'button')
+    btnSave.setAttribute('data-nn', 'save-snapshot')
+    btnSave.setAttribute('data-has-drafts', draftsCount > 0 ? 'true' : 'false')
+    btnSave.setAttribute('title', 'Save self-contained snapshot directly to file (Quine Pattern)')
+    btnSave.innerHTML = '<span class="nn-btn-icon">' + saveSvg + '</span><span>Save Snapshot</span>'
+    if (draftsCount > 0) {
+      var badge = makeEl(doc, 'span', 'nn-badge-count', String(draftsCount))
+      btnSave.appendChild(badge)
+    }
+    btnSave.addEventListener('click', function (e) {
+      if (e && e.preventDefault) e.preventDefault()
+      if (typeof onSave === 'function') onSave()
+    })
+    wrap.appendChild(btnSave)
+
+    var btnCopy = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-copy-prompt')
+    btnCopy.setAttribute('type', 'button')
+    btnCopy.setAttribute('data-nn', 'copy-agent-prompt')
+    btnCopy.setAttribute('title', 'Copy structured changeset and instructions for AI assistant')
+    btnCopy.innerHTML = '<span class="nn-btn-icon">' + promptSvg + '</span><span>Copy AI Prompt</span>'
+    btnCopy.addEventListener('click', function (e) {
+      if (e && e.preventDefault) e.preventDefault()
+      if (typeof onCopyPrompt === 'function') onCopyPrompt()
+    })
+    wrap.appendChild(btnCopy)
+
+    return wrap
+  }
+
   /**
    * Registers <nn-ku> custom element in window.customElements when available.
    */
@@ -4209,6 +4309,7 @@
     AnnotationPopover: AnnotationPopover,
     RailProgress: RailProgress,
     Toast: Toast,
+    TopBarActions: TopBarActions,
     STATUS_LABELS: STATUS_LABELS,
     statusLabel: statusLabel,
     EditModal: EditModal,

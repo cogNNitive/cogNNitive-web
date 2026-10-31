@@ -254,3 +254,37 @@ test('compileVideo fails before any synthesis when a user-level component name h
   );
   fs.rmSync(root, { recursive: true, force: true });
 });
+
+test('overlayMount emits nn-pos-<position> class on the host element when position is set', () => {
+  const overlay = {
+    id: 'ov_pos',
+    type: 'lowerThird',
+    fromFrame: 0,
+    durationInFrames: 30,
+    config: { title: 'Test', position: 'top-right' },
+  };
+  const html = overlayMount(overlay, { fps: 30 });
+  assert.match(html, /class="clip nn-overlay nn-pos-top-right"/);
+
+  const noPosOverlay = {
+    id: 'ov_nopos',
+    type: 'lowerThird',
+    fromFrame: 0,
+    durationInFrames: 30,
+    config: { title: 'Test' },
+  };
+  const htmlNoPos = overlayMount(noPosOverlay, { fps: 30 });
+  assert.match(htmlNoPos, /class="clip nn-overlay"/);
+  assert.doesNotMatch(htmlNoPos, /nn-pos-/);
+});
+
+test('all neutral fallback overlay components contain CSS rules honoring position variants', () => {
+  const positions = ['nn-pos-top-left', 'nn-pos-top-right', 'nn-pos-bottom-left', 'nn-pos-bottom-right', 'nn-pos-center'];
+  for (const slot of ['title', 'lower-third', 'caption', 'quote', 'watermark', 'b-roll']) {
+    const file = path.join(SKILL_DIR, 'components', `${slot}.html`);
+    const content = fs.readFileSync(file, 'utf8');
+    for (const pos of positions) {
+      assert.ok(content.includes(`.${pos}`), `${slot}.html is missing CSS rule for ${pos}`);
+    }
+  }
+});

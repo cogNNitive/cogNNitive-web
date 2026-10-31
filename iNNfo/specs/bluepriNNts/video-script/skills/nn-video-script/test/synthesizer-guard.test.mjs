@@ -170,6 +170,20 @@ describe('billing-safe failure handling', () => {
     assert.equal(fs.readdirSync(path.join(ctx.cacheManager.baseDir, 'tts')).length, 0);
   });
 
+  it('an HTTP error from the provider throws BillingFailureError and never returns synthetic buffer', async () => {
+    const ctx = setup();
+    const provider = {
+      state: { posts: [], bodies: [], urls: [], inFlight: 0, peak: 0 },
+      fetch: async () => ({ ok: false, status: 500, text: async () => 'Internal Server Error' }),
+    };
+    const synth = makeSynth(ctx, provider);
+    await assert.rejects(
+      synth.synthesizeTTS('test fail with key', { model: TTS }),
+      BillingFailureError,
+    );
+    assert.equal(fs.readdirSync(path.join(ctx.cacheManager.baseDir, 'tts')).length, 0);
+  });
+
   it('an image timeout never falls through to a second provider or caches an SVG', async () => {
     const ctx = setup();
     const provider = fakeProvider({ never: true });

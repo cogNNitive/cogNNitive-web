@@ -2,16 +2,17 @@
 /* global uPlot */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory(require('./ui-kit.js'), require('./review.js'))
+    module.exports = factory(require('./ui-kit.js'), require('./review.js'), require('./studio.js'))
   } else {
-    root.nnConsole = factory(root.nnUI, root.nnReview)
+    root.nnConsole = factory(root.nnUI, root.nnReview, root.nnStudio)
   }
-})(typeof self !== 'undefined' ? self : this, function (UI, Review) {
+})(typeof self !== 'undefined' ? self : this, function (UI, Review, Studio) {
   'use strict'
 
   // D5: the kit is a hard dependency; fail loudly rather than degrade silently.
   if (!UI) throw new Error('nnUI missing: load ui-kit.js first')
   if (!Review) throw new Error('nnReview missing: load review.js first')
+  if (!Studio) throw new Error('nnStudio missing: load studio.js first')
 
   var CONSOLE_VERSION = '0.1.0'
 
@@ -23,6 +24,9 @@
   var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
   // Values the `is:` filter operator understands (see matchAtom).
   var KNOWN_IS_VALUES = ['draft', 'reviewed', 'changed']
+  var activeState = null
+
+  var CITATION_ORIGIN_LABELS = (UI && UI.CITATION_ORIGIN_LABELS) || {}
 
   function isObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -860,88 +864,12 @@
   // for a declared chartId degrade to a console warning (chart skipped); the
   // rest of the sheet still renders.
 
-  function isPureSeriesValue(value) {
-    return value === null || (typeof value === 'number' && Number.isFinite(value))
-  }
-
   function compileChartSeries(series, meta) {
-    var source = isObject(series) ? series : {}
-    var chartsMeta = Array.isArray(meta && meta.charts) ? meta.charts : []
-    var charts = []
-    var missing = []
-    var invalid = []
-    chartsMeta.forEach(function (c) {
-      var id = c && c.id
-      var label = String((c && c.label) || id || '')
-      var raw = source[id]
-      if (raw === undefined || raw === null) {
-        missing.push({ id: id, label: label })
-        return
-      }
-      // Scenario compare: a chartId may hold an object of variants
-      // { "<variantLabel>": number[] } for side-by-side comparison, or a flat
-      // number[] (single neutral flow). Both are pure JSON data.
-      var variants = []
-      if (Array.isArray(raw)) {
-        variants.push({ label: label, values: raw })
-      } else if (isObject(raw)) {
-        var keys = Object.keys(raw)
-        if (keys.length === 0) {
-          missing.push({ id: id, label: label })
-          return
-        }
-        for (var k = 0; k < keys.length; k++) {
-          var vLabel = String(keys[k])
-          var v = raw[keys[k]]
-          if (!Array.isArray(v)) {
-            invalid.push({ id: id, label: label, detail: 'variant "' + vLabel + '" is not an array' })
-            return
-          }
-          variants.push({ label: vLabel, values: v })
-        }
-      } else {
-        invalid.push({ id: id, label: label, detail: 'series must be an array or a variants map' })
-        return
-      }
-      for (var vi = 0; vi < variants.length; vi++) {
-        var values = variants[vi].values
-        for (var i = 0; i < values.length; i++) {
-          if (!isPureSeriesValue(values[i])) {
-            invalid.push({
-              id: id,
-              label: label,
-              detail: 'non-pure series value at index ' + i + ' in variant "' + variants[vi].label + '"',
-            })
-            return
-          }
-        }
-      }
-      var n = Math.max.apply(null, variants.map(function (v) { return v.values.length }))
-      var xs = []
-      for (var xi = 0; xi < (Number.isFinite(n) ? n : 0); xi++) xs.push(xi)
-      charts.push({
-        id: id,
-        label: label,
-        xs: xs,
-        variants: variants,
-        count: Number.isFinite(n) ? n : 0,
-      })
-    })
-    return { ok: missing.length === 0 && invalid.length === 0, charts: charts, missing: missing, invalid: invalid }
+    return Studio.compileChartSeries(series, meta)
   }
 
   function monthAxis(meta, count) {
-    var startMonth = Number(meta && meta.startMonth) || 1
-    var fallbackYear = typeof Date !== 'undefined' ? new Date().getFullYear() : 2026
-    var startYear = Number(meta && meta.startYear) || fallbackYear
-    var n = Math.max(0, Number(count) || 0)
-    var labels = []
-    for (var i = 0; i < n; i++) {
-      var m = ((startMonth - 1 + i) % 12) + 1
-      var y = startYear + Math.floor((startMonth - 1 + i) / 12)
-      labels.push(String(y) + '-' + pad2(m))
-    }
-    return labels
+    return Studio.monthAxis(meta, count)
   }
 
   /* Browser console: banner, rail, search, cards, matrices, drafts, export modal.
@@ -957,24 +885,27 @@
       .replace(/'/g, '&#39;')
   }
 
-  // Transient message for failures the reviewer must see (e.g. drafts not saved).
+  // Transient message for feedback and notifications.
   // Replaces any previous toast instead of stacking them.
-  function showToast(doc, message) {
+  function showToast(doc, message, tone) {
     if (!doc || !doc.body || typeof doc.createElement !== 'function') return null
     var old = doc.querySelector('[data-nn="toast"]')
     if (old && old.parentNode) old.parentNode.removeChild(old)
     var toast = doc.createElement('div')
     toast.setAttribute('data-nn', 'toast')
-    toast.setAttribute('role', 'alert')
+    toast.setAttribute('role', tone === 'error' ? 'alert' : 'status')
     toast.className = 'nn-toast'
+    var bg = tone === 'error' ? '#7f1d1d' : '#171717'
     toast.style.cssText =
-      'position:fixed;right:16px;bottom:16px;z-index:10000;max-width:360px;padding:10px 14px;' +
-      'border-radius:6px;background:#7f1d1d;color:#fff;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.25);'
+      'position:fixed;right:16px;bottom:16px;z-index:10000;max-width:380px;padding:10px 16px;' +
+      'border-radius:6px;background:' + bg + ';color:#ffffff;font-size:13px;font-weight:500;' +
+      'box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px;' +
+      'font-family:var(--nn-font, sans-serif);line-height:1.4;'
     toast.textContent = String(message)
     doc.body.appendChild(toast)
     setTimeout(function () {
       if (toast.parentNode) toast.parentNode.removeChild(toast)
-    }, 8000)
+    }, 4500)
     return toast
   }
 
@@ -3325,966 +3256,14 @@
   }
 
   // Renders uPlot charts from the pure-data series mapping (charts capability).
-  // Called by a view with a host element; a missing/invalid series skips the
-  // chart with a console warning; requires the vendored uPlot global that ships
-  // inside nn-console.bundle.js. Never evaluates slot JavaScript.
+  // Delegates to Studio (studio.js).
   function renderCharts(host, model, meta) {
-    if (!host) return
-    var compiled = compileChartSeries(isObject(model) ? model.series : {}, meta)
-    compiled.missing.forEach(function (c) {
-      if (typeof console !== 'undefined' && console.warn)
-        console.warn('nn-console: chart skipped — missing series for chart "' + c.id + '"')
-    })
-    compiled.invalid.forEach(function (c) {
-      if (typeof console !== 'undefined' && console.warn)
-        console.warn('nn-console: chart skipped — ' + c.label + ' (' + c.detail + ')')
-    })
-    // uPlot is vendored into the single-file bundle (see build-console-bundle.mjs);
-    // the runtime also tolerates standalone loads where it is absent.
-    var U =
-      typeof uPlot !== 'undefined'
-        ? uPlot
-        : typeof self !== 'undefined' && self.uPlot
-          ? self.uPlot
-          : null
-    if (!U) {
-      if (typeof console !== 'undefined' && console.warn)
-        console.warn('nn-console: uPlot unavailable — charts need the vendored console bundle')
-      return
-    }
-    var windowCount =
-      (Number(meta && meta.months) || 0) + (Number(meta && meta.historyMonths) || 0)
-    compiled.charts.forEach(function (chart) {
-      var section = el('section', 'nn-chart')
-      if (!section) return
-      var heading = el('h3', 'nn-chart-title', chart.label)
-      if (heading) section.appendChild(heading)
-      var canvas = el('div', 'nn-chart-canvas')
-      if (canvas) section.appendChild(canvas)
-      host.appendChild(section)
-      var labels = monthAxis(meta, windowCount || chart.count)
-      // Scenario compare: one uPlot series per variant (single-variant charts
-      // keep the neutral label); distinct colors come from a fixed palette.
-      var palette = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']
-      var seriesDefs = [{ label: 'Month' }]
-      var dataSeries = []
-      for (var v = 0; v < chart.variants.length; v++) {
-        var variant = chart.variants[v]
-        seriesDefs.push({
-          label: variant.label,
-          stroke: palette[v % palette.length],
-          width: 2,
-          nullGaps: true,
-        })
-        dataSeries.push(variant.values)
-      }
-      try {
-        new U(
-          {
-            width: Math.max(320, host.clientWidth || 640),
-            height: 240,
-            legend: { show: true },
-            scales: { x: { time: false } },
-            series: seriesDefs,
-            axes: [
-              {
-                values: function (_self, ticks) {
-                  return ticks.map(function (t) {
-                    return labels[Number(t)] != null ? labels[Number(t)] : String(t)
-                  })
-                },
-              },
-              {},
-            ],
-          },
-          [chart.xs].concat(dataSeries),
-          canvas,
-        )
-      } catch (err) {
-        if (typeof console !== 'undefined' && console.warn)
-          console.warn('nn-console: chart render failed for "' + chart.id + '"', err)
-      }
-    })
+    return Studio.renderCharts(host, model, meta)
   }
 
-  function formatGridNumber(v) {
-    if (v == null || isNaN(v)) return '-'
-    var abs = Math.abs(v)
-    if (abs >= 1000000) return (v / 1000000).toFixed(1) + 'M'
-    if (abs >= 10000) return Math.round(v).toLocaleString()
-    if (abs >= 100) return (Math.round(v * 10) / 10).toLocaleString()
-    return (Math.round(v * 100) / 100).toString()
-  }
-
-  function normalizeKey(str) {
-    // NFD + combining-mark strip so 'Facturación' and 'facturacion' share one key.
-    return String(str || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-  }
-
-  var warnedUnresolvedOperands = {}
-  function warnUnresolvedOperand(token, formula) {
-    var key = formula + '::' + token
-    if (warnedUnresolvedOperands[key]) return
-    warnedUnresolvedOperands[key] = true
-    if (typeof console !== 'undefined' && console.warn) {
-      console.warn('[innfo] Timeline formula "' + formula + '": unresolved operand "' + token + '"')
-    }
-  }
-
-  // Theme synchronization for embedded iframes now lives in ui-kit.js
-  // (nnUI.setTheme -> html[data-theme]); the class-based mechanism is gone.
-
-  function baseValueOf(row) {
-    return row.base != null
-      ? Number(row.base)
-      : row.metricValue != null
-        ? Number(row.metricValue)
-        : row.val != null
-          ? Number(row.val)
-          : 0
-  }
-
-  function growValue(base, growth, m) {
-    var factor = Number(growth.factor) || 0
-    if (growth.mode === 'compound' && factor) return base * Math.pow(1 + factor / 100, m)
-    if (growth.mode === 'additive' && factor) return base + factor * m
-    return base
-  }
-
-  function evaluateFormulaTree(row, m, rowMap, overrides, memo, growthState, historyCount) {
-    var memoKey = row.id + '|' + m
-    if (memo[memoKey] !== undefined) return memo[memoKey]
-    if (memo[memoKey] === null) return 0 // cycle guard
-    memo[memoKey] = null
-
-    var val = 0
-    var isVar = row.variable || (!row.formula && (row.base != null || row.metricValue != null || row.val != null))
-
-    if (isVar) {
-      var growth = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-      if (overrides[row.id] !== undefined) {
-        if (typeof overrides[row.id] === 'number') {
-          val = growValue(Number(overrides[row.id]) || 0, growth, m)
-        } else if (overrides[row.id] && overrides[row.id][m] !== undefined) {
-          val = Number(overrides[row.id][m]) || 0
-        } else {
-          val = growValue(baseValueOf(row), growth, m)
-        }
-      } else {
-        val = growValue(baseValueOf(row), growth, m)
-      }
-    } else if (Array.isArray(row.history) && m < row.history.length && row.history[m] !== null) {
-      val = Number(row.history[m]) || 0
-    } else if (row.formula) {
-      val = parseAndEvalFormula(String(row.formula).trim(), m, rowMap, overrides, memo, growthState, historyCount)
-      var gRow = growthState[row.id] || row.growth || { mode: 'fixed', factor: 0 }
-      var factorRow = Number(gRow.factor) || 0
-      if (gRow.mode === 'compound' && factorRow) {
-        val = val * Math.pow(1 + factorRow / 100, m)
-      } else if (gRow.mode === 'additive' && factorRow) {
-        val = val + factorRow * m
-      }
-    } else if (row.base != null) {
-      val = Number(row.base)
-    } else if (row.metricValue != null) {
-      val = Number(row.metricValue)
-    }
-
-    memo[memoKey] = val
-    return val
-  }
-
-  function parseAndEvalFormula(formula, m, rowMap, overrides, memo, growthState, historyCount) {
-    if (!formula || /^<.*>$/.test(formula)) return 0
-    var cleaned = formula.replace(/\s+[xX]\s+/g, ' * ')
-    var tokens = cleaned.split(/(\s*[+\-*/]\s*)/).map(function (s) { return s.trim() }).filter(Boolean)
-    if (!tokens.length) return 0
-
-    function resolveOperand(token) {
-      var num = Number(token)
-      if (!isNaN(num)) return num
-      var norm = normalizeKey(token)
-      var targetRow = rowMap[norm]
-      if (targetRow) {
-        var operandVal = evaluateFormulaTree(targetRow, m, rowMap, overrides, memo, growthState, historyCount)
-        // A '%' variable is a rate: as an operand it is the fraction (35% -> 0.35),
-        // consistent with growValue, which divides the growth factor by 100.
-        // Scope: only plain variable rows (no formula) with unit '%' are scaled.
-        // Formula rows already return a computed value (their operands were scaled
-        // on the way in), so dividing again would double-scale the result.
-        if (!targetRow.formula && String(targetRow.metricUnit || '').trim() === '%') operandVal = operandVal / 100
-        return operandVal
-      }
-      // Unresolved: surface as NaN (rendered '-') instead of a silent 0.
-      warnUnresolvedOperand(token, formula)
-      return NaN
-    }
-
-    var terms = []
-    var ops = []
-    var i = 0
-    while (i < tokens.length) {
-      var tok = tokens[i]
-      if (tok === '+' || tok === '-') {
-        ops.push(tok)
-        i++
-      } else {
-        var currentVal = resolveOperand(tok)
-        while (i + 1 < tokens.length && (tokens[i + 1] === '*' || tokens[i + 1] === '/')) {
-          var op = tokens[i + 1]
-          var nextOperand = resolveOperand(tokens[i + 2])
-          if (op === '*') currentVal = currentVal * nextOperand
-          else if (op === '/') currentVal = nextOperand !== 0 ? currentVal / nextOperand : 0
-          i += 2
-        }
-        terms.push(currentVal)
-        i++
-      }
-    }
-
-    if (!terms.length) return 0
-    var res = terms[0]
-    for (var j = 0; j < ops.length; j++) {
-      var term = terms[j + 1] == null ? 0 : terms[j + 1]
-      if (ops[j] === '+') res += term
-      else if (ops[j] === '-') res -= term
-    }
-    return res
-  }
-
-  function exportTimelineCsv(meta, rows, totalMonths, labels, rowValues) {
-    var lines = []
-    lines.push('# Timeline & P&L Projection Export')
-    lines.push('# Model: ' + (meta.model || ''))
-    lines.push('# Version: ' + domainModelVersion(meta))
-    lines.push('# Generated: ' + (meta.generated_at || meta.generated || ''))
-    lines.push('')
-    var header = ['Group', 'Metric', 'Type', 'Unit', 'Growth Rule']
-    for (var m = 0; m < totalMonths; m++) {
-      header.push(labels[m] != null ? labels[m] : 'Month ' + (m + 1))
-    }
-    header.push('Total')
-    lines.push(header.map(function (s) { return '"' + String(s).replace(/"/g, '""') + '"' }).join(','))
-
-    rows.forEach(function (r) {
-      var g = r.growth || { mode: 'fixed', factor: 0 }
-      var vals = rowValues[r.id] || []
-      var sum = vals.reduce(function (a, b) { return a + b }, 0)
-      var rowLine = [
-        r.grp || '',
-        r.label || r.id,
-        r.metricType || '',
-        r.metricUnit || '',
-        g.mode + (g.factor ? ' (' + g.factor + ')' : '')
-      ]
-      for (var i = 0; i < totalMonths; i++) {
-        // Unresolved operands yield NaN: write an empty cell, never a literal "NaN".
-        rowLine.push(vals[i] != null && Number.isFinite(vals[i]) ? Math.round(vals[i] * 100) / 100 : '')
-      }
-      rowLine.push(Number.isFinite(sum) ? Math.round(sum * 100) / 100 : '')
-      lines.push(rowLine.map(function (s) { return '"' + String(s).replace(/"/g, '""') + '"' }).join(','))
-    })
-
-    if (typeof Blob !== 'undefined' && typeof URL !== 'undefined') {
-      var blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
-      var url = URL.createObjectURL(blob)
-      var a = document.createElement('a')
-      a.href = url
-      a.download = (meta.slug || 'timeline') + '_projection.csv'
-      a.click()
-      setTimeout(function () { URL.revokeObjectURL(url) }, 1000)
-    }
-  }
-
-  // Labels live in the kit now (single source of truth).
-  var CITATION_ORIGIN_LABELS = UI.CITATION_ORIGIN_LABELS
-
-  function getSemanticBarColor(val, minVal, maxVal, row) {
-    if (row && row.colors && row.colors.gradient) {
-      var grad = row.colors.gradient
-      if (val <= minVal && grad.low) return grad.low
-      if (val >= maxVal && grad.high) return grad.high
-      if (grad.mid) return grad.mid
-    }
-    if (row && row.colors && row.colors.base) {
-      return row.colors.base
-    }
-
-    if (val < 0) {
-      return '#ef4444' // red for negative numbers
-    }
-
-    var metricType = (row && (row.metricType || row.type)) || ''
-    var isCost = metricType === 'cost' || metricType === 'expense' || /cost|churn|cpa|cac|expense|churn/i.test((row && (row.id || row.label)) || '')
-
-    var effectiveMin = Math.min(0, minVal)
-    var effectiveMax = Math.max(0.0001, maxVal)
-    var range = effectiveMax - effectiveMin
-    var ratio = range > 0 ? (val - effectiveMin) / range : 1
-    ratio = Math.max(0, Math.min(1, ratio))
-
-    if (isCost) {
-      // Cost metric: low is good (#86efac), mid is amber (#f59e0b), high is bad (#ef4444)
-      if (ratio < 0.35) return '#86efac'
-      if (ratio < 0.7) return '#f59e0b'
-      return '#ef4444'
-    } else {
-      // Revenue / Profit / general: 0 is light neutral/gray (#cbd5e1), mid is mint (#6ee7b7), high is rich green (#059669)
-      if (ratio < 0.25) return '#cbd5e1'
-      if (ratio < 0.55) return '#6ee7b7'
-      if (ratio < 0.85) return '#10b981'
-      return '#059669'
-    }
-  }
-
-  function renderStudioView(host, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange) {
-    var studioHost = host
-    if (!studioHost) return
-
-    function computeValues() {
-      var memo = {}
-      var computed = {}
-      rows.forEach(function (r) {
-        var arr = []
-        for (var m = 0; m < totalMonths; m++) {
-          arr.push(evaluateFormulaTree(r, m, rowMap, overrides, memo, growthState, historyCount))
-        }
-        computed[r.id] = arr
-      })
-      return computed
-    }
-
-    var rowValues = computeValues()
-    studioHost.innerHTML = ''
-
-    var studioWrap = el('div', 'nn-studio-layout')
-
-    // Top Summary KPI Cards
-    var kpisWrap = el('div', 'nn-studio-kpis')
-    
-    var revRow = rows.filter(function (r) { return /revenue|ingreso/i.test(r.metricType || r.id || r.label) })[0]
-    var costRow = rows.filter(function (r) { return /expense|cost|gasto/i.test(r.metricType || r.id || r.label) })[0]
-    var netRow = rows.filter(function (r) { return /result|net|ebit|beneficio/i.test(r.metricType || r.id || r.label) })[0] || rows[0]
-
-    var kpiList = []
-    if (netRow && rowValues[netRow.id]) {
-      var netSum = rowValues[netRow.id].reduce(function (a, b) { return a + b }, 0)
-      kpiList.push({ label: 'Net Result (Year 1)', val: formatGridNumber(netSum), unit: netRow.metricUnit || 'USD', isHighlight: true })
-    }
-    if (revRow && rowValues[revRow.id]) {
-      var revSum = rowValues[revRow.id].reduce(function (a, b) { return a + b }, 0)
-      kpiList.push({ label: 'Total Revenue', val: formatGridNumber(revSum), unit: revRow.metricUnit || 'USD' })
-    }
-    if (costRow && rowValues[costRow.id]) {
-      var costSum = rowValues[costRow.id].reduce(function (a, b) { return a + b }, 0)
-      kpiList.push({ label: 'Total Expenses', val: formatGridNumber(costSum), unit: costRow.metricUnit || 'USD' })
-    }
-
-    kpiList.forEach(function (kpi) {
-      var card = el('div', 'nn-studio-kpi-card' + (kpi.isHighlight ? ' is-highlight' : ''))
-      card.appendChild(el('div', 'nn-studio-kpi-label', kpi.label))
-      var valRow = el('div', 'nn-studio-kpi-val-row')
-      valRow.appendChild(el('span', 'nn-studio-kpi-val', kpi.val))
-      if (kpi.unit) valRow.appendChild(el('span', 'nn-studio-kpi-unit', kpi.unit))
-      card.appendChild(valRow)
-      kpisWrap.appendChild(card)
-    })
-    studioWrap.appendChild(kpisWrap)
-
-    // Main Studio Grid (Controls on Left, Scenario Curves on Right)
-    var mainGrid = el('div', 'nn-studio-grid')
-
-    // Left Column: Interactive Variable Sliders
-    var leftCol = el('div', 'nn-studio-panel nn-studio-controls')
-    var leftHdr = el('div', 'nn-studio-panel-hdr')
-    leftHdr.appendChild(el('h4', 'nn-studio-panel-title', 'Scenario Parameters & Sliders'))
-    leftCol.appendChild(leftHdr)
-
-    var varRows = rows.filter(function (r) {
-      return r.variable || (!r.formula && (r.metricValue != null || r.val != null || r.base != null))
-    })
-
-    if (!varRows.length) {
-      varRows = rows.slice(0, 4)
-    }
-
-    var sliderCardsWrap = el('div', 'nn-studio-sliders-wrap')
-
-    varRows.forEach(function (r) {
-      var baseVal = r.metricValue !== undefined ? Number(r.metricValue) : (r.val !== undefined ? Number(r.val) : (r.base !== undefined ? Number(r.base) : 0))
-      var currVal = overrides[r.id] !== undefined ? (typeof overrides[r.id] === 'number' ? overrides[r.id] : overrides[r.id][0]) : baseVal
-      if (currVal === undefined || isNaN(currVal)) currVal = baseVal
-
-      var minVal = baseVal > 0 ? Math.floor(baseVal * 0.2) : (baseVal < 0 ? Math.floor(baseVal * 2.5) : 0)
-      var maxVal = baseVal > 0 ? Math.ceil(baseVal * 2.5) : (baseVal < 0 ? Math.ceil(baseVal * 0.2) : 100)
-      if (minVal === maxVal) { minVal = 0; maxVal = 100; }
-      var step = baseVal > 1000 ? 100 : (baseVal > 100 ? 10 : (baseVal > 10 ? 1 : 0.1))
-
-      var card = el('div', 'nn-slider-card')
-      var cardTop = el('div', 'nn-slider-card-top')
-      cardTop.appendChild(el('span', 'nn-slider-label', r.label || r.id))
-      var numInput = el('input', 'nn-slider-num-input')
-      numInput.setAttribute('type', 'number')
-      numInput.value = String(currVal)
-      cardTop.appendChild(numInput)
-      card.appendChild(cardTop)
-
-      var sliderRow = el('div', 'nn-slider-row')
-      var slider = el('input', 'nn-slider-range')
-      slider.setAttribute('type', 'range')
-      slider.setAttribute('min', String(minVal))
-      slider.setAttribute('max', String(maxVal))
-      slider.setAttribute('step', String(step))
-      slider.value = String(currVal)
-
-      function handleValChange(newVal) {
-        var num = Number(newVal)
-        if (isNaN(num)) return
-        slider.value = String(num)
-        numInput.value = String(num)
-        overrides[r.id] = num
-        onStateChange()
-      }
-
-      slider.addEventListener('input', function (e) {
-        handleValChange(e.target.value)
-      })
-      numInput.addEventListener('change', function (e) {
-        handleValChange(e.target.value)
-      })
-
-      sliderRow.appendChild(slider)
-      card.appendChild(sliderRow)
-
-      var cardMeta = el('div', 'nn-slider-meta')
-      cardMeta.appendChild(el('span', 'nn-slider-range-hint', minVal + ' .. ' + maxVal + (r.metricUnit ? ' ' + r.metricUnit : '')))
-      if (overrides[r.id] !== undefined && overrides[r.id] !== baseVal) {
-        var resetLink = el('button', 'nn-slider-reset', 'reset')
-        resetLink.setAttribute('type', 'button')
-        resetLink.addEventListener('click', function () {
-          delete overrides[r.id]
-          onStateChange()
-        })
-        cardMeta.appendChild(resetLink)
-      }
-      card.appendChild(cardMeta)
-      sliderCardsWrap.appendChild(card)
-    })
-
-    leftCol.appendChild(sliderCardsWrap)
-    mainGrid.appendChild(leftCol)
-
-    // Right Column: Interactive Scenario Visualizer
-    var rightCol = el('div', 'nn-studio-panel nn-studio-visualizer')
-    var rightHdr = el('div', 'nn-studio-panel-hdr')
-    rightHdr.appendChild(el('h4', 'nn-studio-panel-title', 'Scenario Projection Curves'))
-    rightCol.appendChild(rightHdr)
-
-    var chartBox = el('div', 'nn-studio-chart-box')
-    var svg = el('svg', 'nn-studio-chart-svg')
-    svg.setAttribute('viewBox', '0 0 700 300')
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
-
-    var plotRows = [revRow, costRow, netRow].filter(Boolean)
-    if (!plotRows.length) plotRows = rows.slice(0, 3)
-
-    var allVals = []
-    plotRows.forEach(function (pr) {
-      if (rowValues[pr.id]) allVals = allVals.concat(rowValues[pr.id])
-    })
-    var minPlot = Math.min.apply(null, allVals) || 0
-    var maxPlot = Math.max.apply(null, allVals) || 1
-    if (minPlot > 0) minPlot = 0
-    var rangePlot = (maxPlot - minPlot) || 1
-
-    var padX = 60, padY = 30, plotW = 600, plotH = 220
-
-    var zeroY = padY + plotH - ((0 - minPlot) / rangePlot) * plotH
-    var zeroLine = el('line', 'nn-chart-axis-line')
-    zeroLine.setAttribute('x1', String(padX))
-    zeroLine.setAttribute('y1', String(zeroY))
-    zeroLine.setAttribute('x2', String(padX + plotW))
-    zeroLine.setAttribute('y2', String(zeroY))
-    svg.appendChild(zeroLine)
-
-    var colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6']
-
-    plotRows.forEach(function (pr, pidx) {
-      var pVals = rowValues[pr.id] || []
-      if (!pVals.length) return
-      var pts = []
-      for (var mi = 0; mi < totalMonths; mi++) {
-        var vx = padX + (mi / Math.max(1, totalMonths - 1)) * plotW
-        var vy = padY + plotH - (((pVals[mi] || 0) - minPlot) / rangePlot) * plotH
-        pts.push(vx.toFixed(1) + ',' + vy.toFixed(1))
-      }
-      var poly = el('polyline', 'nn-chart-curve')
-      poly.setAttribute('points', pts.join(' '))
-      poly.setAttribute('stroke', colors[pidx % colors.length])
-      poly.setAttribute('fill', 'none')
-      poly.setAttribute('stroke-width', '2.5')
-      svg.appendChild(poly)
-
-      var legendG = el('g', 'nn-chart-legend-item')
-      var legDot = el('circle')
-      legDot.setAttribute('cx', String(padX + pidx * 160))
-      legDot.setAttribute('cy', '15')
-      legDot.setAttribute('r', '5')
-      legDot.setAttribute('fill', colors[pidx % colors.length])
-      var legTxt = el('text', 'nn-chart-legend-text', pr.label || pr.id)
-      legTxt.setAttribute('x', String(padX + pidx * 160 + 10))
-      legTxt.setAttribute('y', '19')
-      legendG.appendChild(legDot)
-      legendG.appendChild(legTxt)
-      svg.appendChild(legendG)
-    })
-
-    for (var ti = 0; ti < totalMonths; ti += Math.max(1, Math.floor(totalMonths / 6))) {
-      var tx = padX + (ti / Math.max(1, totalMonths - 1)) * plotW
-      var xTxt = el('text', 'nn-chart-axis-text', labels[ti] || ('M' + (ti + 1)))
-      xTxt.setAttribute('x', String(tx))
-      xTxt.setAttribute('y', String(padY + plotH + 20))
-      xTxt.setAttribute('text-anchor', 'middle')
-      svg.appendChild(xTxt)
-    }
-
-    chartBox.appendChild(svg)
-    rightCol.appendChild(chartBox)
-    mainGrid.appendChild(rightCol)
-
-    studioWrap.appendChild(mainGrid)
-    studioHost.appendChild(studioWrap)
-  }
-
+  // Delegates timeline grid and studio view to Studio (studio.js).
   function renderTimelineGrid(container, model, meta, hooks) {
-    if (!container) return
-    var host = el('div', 'nn-timeline-grid-host')
-    container.appendChild(host)
-    var studioHost = el('div', 'nn-studio-host')
-    container.appendChild(studioHost)
-    var rows = Array.isArray(model && model.rows) ? model.rows : []
-    if (!rows.length) {
-      host.innerHTML = ''
-      return
-    }
-
-    var monthsCount = Number(meta && meta.months) || 12
-    var historyCount = Number(meta && meta.historyMonths) || 0
-    var totalMonths = monthsCount + historyCount
-    var labels = monthAxis(meta, totalMonths)
-
-    var rowMap = {}
-    rows.forEach(function (r) {
-      if (r) {
-        if (r.id) rowMap[normalizeKey(r.id)] = r
-        if (r.label) rowMap[normalizeKey(r.label)] = r
-        if (r.name) rowMap[normalizeKey(r.name)] = r
-      }
-    })
-
-    var growthState = {}
-    rows.forEach(function (r) {
-      var g = r.growth || { mode: 'fixed', factor: 0 }
-      growthState[r.id] = { mode: g.mode || 'fixed', factor: g.factor != null ? g.factor : 0 }
-    })
-    var overrides = {}
-    var pinnedRowIds = {}
-    var expandedChartRowIds = {}
-    var focusedDependencyRowId = null
-
-    function extractDirectDependencyIds(r) {
-      var depIds = []
-      if (Array.isArray(r.dependencies)) {
-        r.dependencies.forEach(function (d) {
-          var norm = normalizeKey(d)
-          if (rowMap[norm] && depIds.indexOf(rowMap[norm].id) === -1) {
-            depIds.push(rowMap[norm].id)
-          }
-        })
-      }
-      if (r.formula) {
-        var cleaned = String(r.formula).replace(/\s+[xX]\s+/g, ' * ')
-        var tokens = cleaned.split(/(\s*[+\-*/]\s*)/).map(function (s) { return s.trim() }).filter(Boolean)
-        tokens.forEach(function (tok) {
-          if (!tok || !isNaN(Number(tok)) || tok === '+' || tok === '-' || tok === '*' || tok === '/') return
-          var norm = normalizeKey(tok)
-          var targetRow = rowMap[norm]
-          if (targetRow && depIds.indexOf(targetRow.id) === -1) {
-            depIds.push(targetRow.id)
-          }
-        })
-      }
-      return depIds
-    }
-
-    function getTransitiveDependencySet(startRowId) {
-      var result = {}
-      result[startRowId] = true
-      var queue = [startRowId]
-      var visited = {}
-      var byId = {}
-      rows.forEach(function (r) { if (r && r.id) byId[r.id] = r })
-
-      while (queue.length > 0) {
-        var currId = queue.shift()
-        if (visited[currId]) continue
-        visited[currId] = true
-        var currRow = byId[currId]
-        if (!currRow) continue
-        var directDeps = extractDirectDependencyIds(currRow)
-        directDeps.forEach(function (depId) {
-          result[depId] = true
-          if (!visited[depId]) {
-            queue.push(depId)
-          }
-        })
-      }
-      return result
-    }
-
-    function recalculate() {
-      var memo = {}
-      var computedValues = {}
-      rows.forEach(function (r) {
-        var arr = []
-        for (var m = 0; m < totalMonths; m++) {
-          arr.push(evaluateFormulaTree(r, m, rowMap, overrides, memo, growthState, historyCount))
-        }
-        computedValues[r.id] = arr
-      })
-      return computedValues
-    }
-
-    function renderView() {
-      var rowValues = recalculate()
-      var activeDepSet = focusedDependencyRowId ? getTransitiveDependencySet(focusedDependencyRowId) : null
-      host.innerHTML = ''
-
-      // Header + Actions (KPI cards removed)
-      var gridHeader = el('div', 'nn-timeline-header')
-      var gridTitle = el('h3', 'nn-timeline-title', 'Timeline & P&L Projection')
-      var gridActions = el('div', 'nn-timeline-actions')
-      var resetBtn = el('button', 'nn-btn-reset', 'Reset Overrides')
-      if (resetBtn) {
-        resetBtn.setAttribute('type', 'button')
-        resetBtn.addEventListener('click', function () {
-          Object.keys(overrides).forEach(function (k) { delete overrides[k] })
-          rows.forEach(function (r) {
-            var g = r.growth || { mode: 'fixed', factor: 0 }
-            growthState[r.id] = { mode: g.mode || 'fixed', factor: g.factor != null ? g.factor : 0 }
-          })
-          renderView()
-        })
-        gridActions.appendChild(resetBtn)
-      }
-      var exportCsvBtn = el('button', 'nn-btn-csv', 'Download CSV')
-      if (exportCsvBtn) {
-        exportCsvBtn.setAttribute('type', 'button')
-        exportCsvBtn.addEventListener('click', function () {
-          exportTimelineCsv(meta, rows, totalMonths, labels, rowValues)
-        })
-        gridActions.appendChild(exportCsvBtn)
-      }
-      if (gridHeader && gridTitle) gridHeader.appendChild(gridTitle)
-      if (gridHeader && gridActions) gridHeader.appendChild(gridActions)
-      if (gridHeader) host.appendChild(gridHeader)
-
-      if (focusedDependencyRowId) {
-        var focusedRow = rows.filter(function (r) { return r.id === focusedDependencyRowId })[0]
-        if (focusedRow) {
-          var filterBanner = el('div', 'nn-timeline-filter-banner')
-          var bannerText = el('span', 'nn-filter-banner-text')
-          bannerText.innerHTML = UI.icon('target', 14) + ' <span>Showing dependency tree for: <strong>' + escapeHtml(focusedRow.label || focusedRow.id) + '</strong> (' + Object.keys(activeDepSet).length + ' items)</span>'
-          var clearBtn = el('button', 'nn-filter-banner-clear')
-          clearBtn.setAttribute('type', 'button')
-          clearBtn.innerHTML = UI.icon('close', 12) + ' <span>Clear Filter</span>'
-          clearBtn.addEventListener('click', function () {
-            focusedDependencyRowId = null
-            renderView()
-          })
-          filterBanner.appendChild(bannerText)
-          filterBanner.appendChild(clearBtn)
-          host.appendChild(filterBanner)
-        }
-      }
-
-      // Interactive Table
-      var tableWrap = el('div', 'nn-timeline-table-wrap')
-      var table = el('table', 'nn-timeline-table')
-      var thead = el('thead')
-      var trHead = el('tr')
-
-      trHead.appendChild(el('th', 'th-sticky th-metric', 'Metric'))
-      trHead.appendChild(el('th', 'th-rule', 'Growth Rule'))
-      trHead.appendChild(el('th', 'th-unit', 'Unit'))
-      for (var m = 0; m < totalMonths; m++) {
-        var isHist = m < historyCount
-        var thM = el('th', 'th-month' + (isHist ? ' hist-col' : ''), labels[m] != null ? labels[m] : 'M' + (m + 1))
-        if (isHist) thM.setAttribute('title', 'Historical / Measured month')
-        trHead.appendChild(thM)
-      }
-      trHead.appendChild(el('th', 'th-total', 'Total'))
-      if (thead && trHead) thead.appendChild(trHead)
-      if (table && thead) table.appendChild(thead)
-
-      var tbody = el('tbody')
-
-      function renderRowItem(r, isPinned) {
-        var tr = el('tr', 'nn-timeline-row' + (r.variable ? ' is-var' : '') + (isPinned ? ' is-pinned' : '') + (focusedDependencyRowId === r.id ? ' is-focus-root' : ''))
-        var tdMetric = el('td', 'td-sticky td-metric')
-
-        var actionsSpan = el('span', 'nn-row-actions')
-        var isPinnedThis = !!pinnedRowIds[r.id]
-        var pinBtn = el('button', 'nn-row-btn nn-pin-btn' + (isPinnedThis ? ' pinned' : ''))
-        pinBtn.setAttribute('type', 'button')
-        pinBtn.setAttribute('title', isPinnedThis ? 'Unpin row' : 'Pin row to top')
-        pinBtn.innerHTML = UI.icon('pin', 12)
-        pinBtn.addEventListener('click', function (e) {
-          e.stopPropagation()
-          pinnedRowIds[r.id] = !pinnedRowIds[r.id]
-          renderView()
-        })
-        actionsSpan.appendChild(pinBtn)
-
-        var isChartThis = !!expandedChartRowIds[r.id]
-        var chartBtn = el('button', 'nn-row-btn nn-chart-btn' + (isChartThis ? ' active' : ''))
-        chartBtn.setAttribute('type', 'button')
-        chartBtn.setAttribute('title', isChartThis ? 'Hide inline monthly chart' : 'Show inline monthly chart')
-        chartBtn.innerHTML = UI.icon('chart', 12)
-        chartBtn.addEventListener('click', function (e) {
-          e.stopPropagation()
-          expandedChartRowIds[r.id] = !expandedChartRowIds[r.id]
-          renderView()
-        })
-        actionsSpan.appendChild(chartBtn)
-
-        var directDeps = extractDirectDependencyIds(r)
-        if (directDeps.length > 0 || r.formula || focusedDependencyRowId === r.id) {
-          var isFocusThis = focusedDependencyRowId === r.id
-          var filterBtn = el('button', 'nn-row-btn nn-filter-btn' + (isFocusThis ? ' active' : ''))
-          filterBtn.setAttribute('type', 'button')
-          filterBtn.setAttribute('title', isFocusThis ? 'Clear dependency tree filter' : 'Filter grid to show only dependencies of ' + (r.label || r.id))
-          filterBtn.innerHTML = UI.icon('target', 12)
-          filterBtn.addEventListener('click', function (e) {
-            e.stopPropagation()
-            focusedDependencyRowId = (focusedDependencyRowId === r.id ? null : r.id)
-            renderView()
-          })
-          actionsSpan.appendChild(filterBtn)
-        }
-        tdMetric.appendChild(actionsSpan)
-
-        var markerSvg = r.variable ? UI.icon('star', 11) : r.source === 'derived' ? UI.icon('derived', 11) : UI.icon('calc', 11)
-        var markerSpan = el('span', 'nn-row-marker marker-' + (r.variable ? 'var' : r.source === 'derived' ? 'der' : 'calc'))
-        markerSpan.innerHTML = markerSvg
-        var nameSpan =
-          UI && typeof UI.Ku === 'function'
-            ? UI.Ku(
-                'element',
-                {
-                  model: r.modelId || '',
-                  id: r.id || r.label,
-                  label: r.label || r.id,
-                },
-                { doc: container.ownerDocument || document },
-              )
-            : el('span', 'nn-row-name', r.label || r.id)
-        if (r.formula) nameSpan.setAttribute('title', 'Formula: ' + r.formula)
-        tdMetric.appendChild(markerSpan)
-        tdMetric.appendChild(nameSpan)
-        tr.appendChild(tdMetric)
-
-        var tdRule = el('td', 'td-rule')
-        var g = growthState[r.id] || { mode: 'fixed', factor: 0 }
-        var selGrow = el('select', 'nn-grow-sel')
-        var optFixed = el('option', null, 'Fixed')
-        optFixed.value = 'fixed'
-        if (g.mode === 'fixed') optFixed.selected = true
-        var optComp = el('option', null, '% comp.')
-        optComp.value = 'compound'
-        if (g.mode === 'compound') optComp.selected = true
-        var optAdd = el('option', null, '+delta')
-        optAdd.value = 'additive'
-        if (g.mode === 'additive') optAdd.selected = true
-        selGrow.appendChild(optFixed)
-        selGrow.appendChild(optComp)
-        selGrow.appendChild(optAdd)
-        selGrow.addEventListener('change', function (e) {
-          growthState[r.id].mode = e.target.value
-          if (inpFactor) inpFactor.disabled = (e.target.value === 'fixed')
-          onStateChange()
-        })
-        tdRule.appendChild(selGrow)
-
-        var inpFactor = el('input', 'nn-grow-factor')
-        inpFactor.type = 'number'
-        inpFactor.step = 'any'
-        inpFactor.value = g.factor != null ? String(g.factor) : '0'
-        if (g.mode === 'fixed') inpFactor.disabled = true
-        inpFactor.addEventListener('change', function (e) {
-          growthState[r.id].factor = parseFloat(e.target.value) || 0
-          onStateChange()
-        })
-        tdRule.appendChild(inpFactor)
-        tr.appendChild(tdRule)
-
-        tr.appendChild(el('td', 'td-unit', r.metricUnit || ''))
-
-        var vals = rowValues[r.id] || []
-        var sum = 0
-        for (var mi = 0; mi < totalMonths; mi++) {
-          var val = vals[mi] != null ? vals[mi] : 0
-          sum += val
-          var isHistCell = mi < historyCount
-          var tdVal = el('td', 'td-num' + (isHistCell ? ' hist-cell' : ''))
-
-          if (r.variable && !isHistCell) {
-            var isOverridden = overrides[r.id] && (typeof overrides[r.id] === 'number' || overrides[r.id][mi] !== undefined)
-            var inpVar = el('input', 'nn-var-input' + (isOverridden ? ' overridden' : ''))
-            inpVar.type = 'number'
-            inpVar.step = 'any'
-            inpVar.value = isOverridden ? (typeof overrides[r.id] === 'number' ? String(overrides[r.id]) : String(overrides[r.id][mi])) : String(Math.round(val * 100) / 100)
-            inpVar.dataset.row = r.id
-            inpVar.dataset.m = String(mi)
-            inpVar.addEventListener('change', function (e) {
-              var rowId = e.target.dataset.row
-              var monthIdx = Number(e.target.dataset.m)
-              if (!overrides[rowId] || typeof overrides[rowId] === 'number') overrides[rowId] = {}
-              overrides[rowId][monthIdx] = parseFloat(e.target.value) || 0
-              onStateChange()
-            })
-            tdVal.appendChild(inpVar)
-          } else {
-            tdVal.textContent = formatGridNumber(val)
-          }
-          tr.appendChild(tdVal)
-        }
-
-        var isResultOrRev = r.metricType === 'result' || r.metricType === 'revenue'
-        var totalFormatted = r.growth && r.growth.mode === 'fixed' && !isResultOrRev && r.variable
-          ? formatGridNumber(vals[0]) + ' (avg)'
-          : formatGridNumber(sum)
-        tr.appendChild(el('td', 'td-num td-total', totalFormatted))
-
-        tbody.appendChild(tr)
-
-        // Render inline monthly chart if toggled
-        if (expandedChartRowIds[r.id]) {
-          var trChart = el('tr', 'nn-timeline-chart-row')
-          var tdChartSticky = el('td', 'td-sticky')
-          var chartLabel = el('span', 'nn-chart-row-label')
-          chartLabel.innerHTML = UI.icon('chart', 12) + ' <span>Monthly: ' + escapeHtml(r.label || r.id) + '</span>'
-          tdChartSticky.appendChild(chartLabel)
-          trChart.appendChild(tdChartSticky)
-
-          // Unresolved operands yield NaN months: scale and range use finite values only.
-          var finiteVals = vals.filter(function (v) { return Number.isFinite(v) })
-          var maxAbs = Math.max.apply(null, finiteVals.map(function (v) { return Math.abs(v) })) || 1
-          var minReal = finiteVals.length ? Math.min.apply(null, finiteVals) : NaN
-          var maxReal = finiteVals.length ? Math.max.apply(null, finiteVals) : NaN
-
-          var tdChartRule = el('td', 'td-rule')
-          tdChartRule.appendChild(el('span', 'nn-chart-range', 'Range: ' + formatGridNumber(minReal) + ' .. ' + formatGridNumber(maxReal)))
-          trChart.appendChild(tdChartRule)
-
-          trChart.appendChild(el('td', 'td-unit', r.metricUnit || ''))
-
-          for (var ci = 0; ci < totalMonths; ci++) {
-            var cVal = vals[ci] != null ? vals[ci] : 0
-            var isHistCol = ci < historyCount
-            var tdCell = el('td', 'td-chart-cell' + (isHistCol ? ' hist-cell' : ''))
-            var barWrap = el('div', 'nn-mini-bar-wrap')
-            barWrap.setAttribute('title', (labels[ci] || ('M' + (ci + 1))) + ': ' + formatGridNumber(cVal) + (r.metricUnit ? ' ' + r.metricUnit : ''))
-
-            var cResolved = Number.isFinite(cVal)
-            var heightPct = cResolved ? Math.max(4, Math.round((Math.abs(cVal) / maxAbs) * 100)) : 4
-            var bar = el('div', 'nn-mini-bar' + (cResolved && cVal < 0 ? ' negative' : ''))
-            bar.style.height = heightPct + '%'
-            bar.style.backgroundColor = cResolved ? getSemanticBarColor(cVal, minReal, maxReal, r) : '#cbd5e1'
-
-            var valLabel = el('span', 'nn-mini-bar-val', formatGridNumber(cVal))
-            barWrap.appendChild(bar)
-            barWrap.appendChild(valLabel)
-            tdCell.appendChild(barWrap)
-            trChart.appendChild(tdCell)
-          }
-
-          var tdChartTotal = el('td', 'td-total td-chart-total')
-          var firstVal = vals[0] || 0
-          var lastVal = vals[totalMonths - 1] || 0
-          var deltaPct = firstVal !== 0 ? Math.round(((lastVal - firstVal) / Math.abs(firstVal)) * 100) : 0
-          var trendLabel = Number.isFinite(deltaPct) ? (deltaPct >= 0 ? '+' : '') + deltaPct + '% trend' : '- trend'
-          tdChartTotal.appendChild(el('div', 'nn-mini-total', trendLabel))
-          trChart.appendChild(tdChartTotal)
-
-          tbody.appendChild(trChart)
-        }
-      }
-
-      // 1. Render pinned section if any
-      var pinnedRows = rows.filter(function (r) {
-        if (!pinnedRowIds[r.id]) return false
-        if (activeDepSet && !activeDepSet[r.id]) return false
-        return true
-      })
-      if (pinnedRows.length > 0) {
-        var trPinnedHdr = el('tr', 'nn-timeline-grp nn-pinned-grp')
-        var tdPinnedHdr = el('td')
-        tdPinnedHdr.setAttribute('colspan', String(totalMonths + 4))
-        var pinnedBadge = el('span', 'nn-grp-badge')
-        pinnedBadge.innerHTML = UI.icon('pin', 12) + ' <span>PINNED METRICS (' + pinnedRows.length + ')</span>'
-        tdPinnedHdr.appendChild(pinnedBadge)
-        trPinnedHdr.appendChild(tdPinnedHdr)
-        tbody.appendChild(trPinnedHdr)
-
-        pinnedRows.forEach(function (r) {
-          renderRowItem(r, true)
-        })
-      }
-
-      // 2. Render normal groups
-      var groups = []
-      rows.forEach(function (r) {
-        var grp = r.grp || 'GENERAL'
-        if (groups.indexOf(grp) === -1) groups.push(grp)
-      })
-
-      groups.forEach(function (grp) {
-        var grpRows = rows.filter(function (r) {
-          if ((r.grp || 'GENERAL') !== grp) return false
-          if (activeDepSet && !activeDepSet[r.id]) return false
-          return true
-        })
-        if (!grpRows.length) return
-
-        var trGrp = el('tr', 'nn-timeline-grp')
-        var tdGrp = el('td')
-        tdGrp.setAttribute('colspan', String(totalMonths + 4))
-        tdGrp.appendChild(el('span', 'nn-grp-badge', grp + (activeDepSet ? ' (filtered)' : '')))
-        trGrp.appendChild(tdGrp)
-        tbody.appendChild(trGrp)
-
-        grpRows.forEach(function (r) {
-          renderRowItem(r, false)
-        })
-      })
-
-      if (table && tbody) table.appendChild(tbody)
-      if (tableWrap && table) tableWrap.appendChild(table)
-      if (host && tableWrap) host.appendChild(tableWrap)
-    }
-
-    function onStateChange() {
-      renderView()
-      renderStudioView(studioHost, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
-    }
-
-    renderView()
-    renderStudioView(studioHost, model, meta, rows, totalMonths, labels, rowMap, overrides, growthState, historyCount, onStateChange)
+    return Studio.renderTimelineGrid(container, model, meta, hooks)
   }
 
   /* View registry. A view is a classic script that calls the registerView
@@ -6170,7 +5149,9 @@
     lines.push('target:: ' + target)
     // C: every change carries mandatory evidence. A draft may name a citation; a
     // reviewer correction that names none is an explicit `decision`.
-    lines.push('evidence:: ' + oneLine(d.evidence || d.source || 'decision'))
+    var ev = d.evidence || d.sources || d.source || 'decision'
+    if (Array.isArray(ev)) ev = ev.join(', ')
+    lines.push('evidence:: ' + oneLine(ev))
     // The engine rejects the change if the element's content hash moved on since the draft.
     if ((op === 'update_field' || op === 'remove_element' || op === 'rename_element') && d.base_hash) {
       lines.push('base_hash:: ' + oneLine(d.base_hash))
@@ -6389,6 +5370,297 @@
     return composed
   }
 
+  function copyTextToClipboard(doc, text) {
+    var win = (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
+    var nav = win && win.navigator ? win.navigator : (typeof navigator !== 'undefined' ? navigator : null)
+    if (nav && nav.clipboard && typeof nav.clipboard.writeText === 'function') {
+      return nav.clipboard.writeText(text).catch(function () {
+        return execCopyFallback(doc, text)
+      })
+    }
+    return Promise.resolve(execCopyFallback(doc, text))
+  }
+
+  function execCopyFallback(doc, text) {
+    if (!doc || !doc.body) return false
+    var ta = doc.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.left = '-9999px'
+    ta.style.top = '0'
+    doc.body.appendChild(ta)
+    ta.focus()
+    ta.select()
+    var ok = false
+    try {
+      ok = typeof doc.execCommand === 'function' ? doc.execCommand('copy') : false
+    } catch {
+      ok = false
+    }
+    ta.remove()
+    return ok
+  }
+
+  function composeAgentPrompt(state) {
+    state = state || (typeof document !== 'undefined' && document.__nnConsoleState) || activeState || {}
+    var drafts = state && state.store ? state.store.drafts() : []
+    var domainOrModel = (state && state.modelTitle) || 'Domain Model'
+    var version = (state && state.modelVersion) || 'V_1-0-0'
+    var slugOrId = (state && (state.modelSlug || state.modelId)) || 'model'
+    var domainId = (state && state.meta && (state.meta.domainId || state.meta.modelId)) || slugOrId
+
+    var targetAddresses = []
+    drafts.forEach(function (d) {
+      var addr = d.address || ((d.knowledge_id || slugOrId) + '@' + (d.element_slug || d.element || d.element_id || 'unit') + (d.field ? '&' + d.field : ''))
+      if (targetAddresses.indexOf(addr) === -1) {
+        targetAddresses.push(addr)
+      }
+    })
+
+    var lines = []
+    lines.push('# AI Agent Instructions: Apply Domain Console Changeset')
+    lines.push('')
+    lines.push('## Target Domain & Entity')
+    lines.push('- **Domain / Model**: ' + domainOrModel)
+    lines.push('- **Version**: ' + version)
+    lines.push('- **Domain Identifier**: `' + domainId + '`')
+    lines.push('- **Target Model / Entity Slug**: `' + slugOrId + '`')
+    if (targetAddresses.length > 0) {
+      lines.push('- **Target Canonical Addresses**:')
+      targetAddresses.forEach(function (addr) {
+        lines.push('  - `' + addr + '`')
+      })
+    }
+    lines.push('')
+
+    lines.push('## Changeset Summary (' + drafts.length + ' modification' + (drafts.length === 1 ? '' : 's') + ')')
+    if (drafts.length === 0) {
+      lines.push('No pending modifications recorded in the console snapshot. Domain state is current.')
+    } else {
+      lines.push('| Kind | Target Address | Field | Proposed / Details | Notes |')
+      lines.push('| :--- | :--- | :--- | :--- | :--- |')
+      drafts.forEach(function (d) {
+        var addr = d.address || ((d.knowledge_id || slugOrId) + '@' + (d.element_slug || d.element || d.element_id || 'unit'))
+        var field = d.field || '-'
+        var proposed = d.proposed !== undefined ? formatChangesetValue(d.proposed) : (d.comment || '-')
+        var note = d.comment && d.proposed !== undefined ? String(d.comment).replace(/\n/g, ' ') : '-'
+        lines.push('| `' + d.kind + '` | `' + addr + '` | `' + field + '` | ' + proposed + ' | ' + note + ' |')
+      })
+    }
+    lines.push('')
+
+    var reviewer = getReviewerName()
+    var exportMeta = {
+      source_knowledge: domainOrModel,
+      title: 'Review Changes: ' + domainOrModel,
+      author: reviewer || 'reviewer',
+      changesBlueprintVersion: (state && state.meta && state.meta.changesBlueprintVersion) || 'V_0-1-0',
+    }
+    try {
+      var changesetDoc = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
+      if (changesetDoc && drafts.length > 0) {
+        lines.push('### Normative Changeset Document (`_changes_NN.md`)')
+        lines.push('```markdown')
+        lines.push(changesetDoc.trim())
+        lines.push('```')
+        lines.push('')
+      }
+    } catch {
+      /* ignore if markdown generation fails */
+    }
+
+    lines.push('## Actionable Instructions for AI Assistant')
+    lines.push('1. Inspect and validate the requested modifications against the target domain blueprints and schemas.')
+    lines.push('2. Apply each change to the authoritative knowledge files under `models/`:')
+    lines.push('   - Use the `nn-mcp` tool `apply_change` when connected, or directly update the Level 3 Markdown units.')
+    lines.push('   - Ensure element frontmatter hashes and canonical addresses match.')
+    lines.push('3. Verify integrity across the workspace and regenerate the console:')
+    lines.push('   ```bash')
+    lines.push('   npm run build:console')
+    lines.push('   npm run check:console-bundle')
+    lines.push('   node scripts/export-console.mjs <domain-path> --domain --no-open')
+    lines.push('   ```')
+
+    return lines.join('\n')
+  }
+
+  function copyAgentPrompt(doc, state) {
+    var active = doc || (typeof document !== 'undefined' ? document : null)
+    state = state || (active && active.__nnConsoleState) || activeState || {}
+    var promptText = composeAgentPrompt(state)
+    var draftsCount = state && state.store ? state.store.drafts().length : 0
+
+    return copyTextToClipboard(active, promptText).then(function () {
+      showToast(active, 'Copied! Prompt for AI agent is ready in clipboard.', 'success')
+      return { ok: true, prompt: promptText, items: draftsCount }
+    })
+  }
+
+  function downloadFallback(doc, htmlContent, filename, draftsCount) {
+    if (doc && doc.createElement && typeof Blob !== 'undefined') {
+      var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+      var url = typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(blob) : ''
+      if (url) {
+        var anchor = doc.createElement('a')
+        anchor.href = url
+        anchor.download = filename
+        if (doc.body) doc.body.appendChild(anchor)
+        anchor.click()
+        anchor.remove()
+        setTimeout(function () {
+          URL.revokeObjectURL(url)
+        }, 1000)
+      }
+    }
+    showToast(doc, 'Snapshot downloaded: ' + filename, 'success')
+    return {
+      ok: true,
+      method: 'download',
+      filename: filename,
+      html: htmlContent,
+      draftsCount: draftsCount,
+    }
+  }
+
+  function saveSnapshot(doc, state, options) {
+    var opts = options || {}
+    var active = doc || (typeof document !== 'undefined' ? document : null)
+    if (!active) return Promise.resolve({ ok: false, error: 'Document unavailable' })
+    state = state || (active && active.__nnConsoleState) || activeState || {}
+
+    // 1. Synchronize State to DOM into <script id="nn-model">
+    var modelSlot = active.getElementById('nn-model')
+    if (!modelSlot) {
+      return Promise.resolve({ ok: false, error: 'Element #nn-model not found' })
+    }
+
+    var currentModel = {}
+    try {
+      currentModel = JSON.parse(modelSlot.textContent || '{}')
+    } catch {
+      currentModel = {}
+    }
+
+    var drafts = state && state.store ? state.store.drafts() : (currentModel.drafts || [])
+    currentModel.meta = Object.assign({}, currentModel.meta || {}, (state && state.meta) || {})
+    if (state && Array.isArray(state.elements)) currentModel.elements = state.elements
+    if (state && Array.isArray(state.matrices)) currentModel.matrices = state.matrices
+    if (state && Array.isArray(state.changes)) currentModel.changes = state.changes
+    currentModel.drafts = drafts
+
+    var searchEl = active.getElementById('nn-search')
+    var currentQuery = searchEl ? searchEl.value : (state && state.activeSearchQuery) || ''
+    currentModel.uiState = {
+      activeTab: (state && state.tabs && typeof state.tabs.current === 'function')
+        ? state.tabs.current()
+        : (currentModel.uiState && currentModel.uiState.activeTab) || 'explorer',
+      searchQuery: currentQuery,
+      reviewer: getReviewerName(),
+      selectedElementId: (state && state.focusedElementId) || null,
+      savedAt: new Date().toISOString(),
+    }
+
+    modelSlot.textContent = '\n' + JSON.stringify(currentModel, null, 2) + '\n    '
+
+    // 2. Serializes Complete Document
+    var rootEl = active.documentElement
+    var hadBooted = rootEl ? rootEl.getAttribute('data-nn-console-booted') : null
+    if (rootEl && hadBooted !== null) {
+      rootEl.removeAttribute('data-nn-console-booted')
+    }
+
+    var htmlContent = '<!DOCTYPE html>\n' + (rootEl ? rootEl.outerHTML : '')
+
+    if (rootEl && hadBooted !== null) {
+      rootEl.setAttribute('data-nn-console-booted', hadBooted)
+    }
+
+    // 3. In-Place File Overwrite via File System Access API with download fallback
+    var suggestedName = (opts && opts.suggestedName) ||
+      (state && state.artifactName) ||
+      (state && state.meta && state.meta.domainId ? state.meta.domainId + '_console.html' : '') ||
+      (active.title ? slugify(active.title) + '.html' : '') ||
+      'domaiNN_console.html'
+
+    if (!suggestedName.endsWith('.html') && !suggestedName.endsWith('.htm')) {
+      suggestedName += '.html'
+    }
+
+    var win = (active && active.defaultView) || (typeof window !== 'undefined' ? window : null)
+    var canUsePicker = win && typeof win.showSaveFilePicker === 'function' && opts.forceDownload !== true
+
+    if (canUsePicker) {
+      return win.showSaveFilePicker({
+        suggestedName: suggestedName,
+        types: [
+          {
+            description: 'HTML Document',
+            accept: { 'text/html': ['.html', '.htm'] },
+          },
+        ],
+      }).then(
+        function (handle) {
+          return handle.createWritable().then(function (writable) {
+            return writable.write(htmlContent).then(function () {
+              return writable.close().then(function () {
+                showToast(active, 'Snapshot saved in-place to ' + (handle.name || suggestedName), 'success')
+                return {
+                  ok: true,
+                  method: 'file-system-access',
+                  filename: handle.name || suggestedName,
+                  html: htmlContent,
+                  draftsCount: drafts.length,
+                }
+              })
+            })
+          })
+        },
+        function (err) {
+          if (err && (err.name === 'AbortError' || err.code === 20)) {
+            return { ok: false, aborted: true }
+          }
+          return downloadFallback(active, htmlContent, suggestedName, drafts.length)
+        },
+      )
+    }
+
+    return Promise.resolve(downloadFallback(active, htmlContent, suggestedName, drafts.length))
+  }
+
+  function mountNavbarActions(doc, state) {
+    var active = doc || (typeof document !== 'undefined' ? document : null)
+    if (!active) return null
+    var target = active.getElementById('nn-navbar-actions')
+    if (!target) {
+      var navbar = active.querySelector ? active.querySelector('.nn-navbar') : null
+      if (navbar) {
+        target = active.createElement('div')
+        target.id = 'nn-navbar-actions'
+        target.className = 'nn-navbar-actions'
+        navbar.appendChild(target)
+      }
+    }
+    if (!target || !UI || typeof UI.TopBarActions !== 'function') return null
+    target.innerHTML = ''
+    var draftsCount = state && state.store ? state.store.drafts().length : 0
+    var actionsEl = UI.TopBarActions(
+      { draftsCount: draftsCount },
+      {
+        doc: active,
+        onSave: function () {
+          saveSnapshot(active, state)
+        },
+        onCopyPrompt: function () {
+          copyAgentPrompt(active, state)
+        },
+      },
+    )
+    if (actionsEl) {
+      target.appendChild(actionsEl)
+    }
+    return target
+  }
+
   // A change `sources` value is a path plus an optional `#anchor`. Nothing resolves it
   // here, so the entry is marked `unchecked` and the dialog claims no status for it.
   function openSourceCitation(doc, source) {
@@ -6572,6 +5844,9 @@
     var registry = (opts && opts.registry) || defaultViewRegistry
     var active = doc || (typeof document !== 'undefined' ? document : null)
     if (!active) return { ok: false, reason: 'no-document' }
+    if (active.documentElement) {
+      active.documentElement.setAttribute('data-nn-console-booted', 'true')
+    }
     var cleanups = []
     if (bootTeardowns) {
       var previous = bootTeardowns.get(active)
@@ -6671,6 +5946,7 @@
         // A domain console keys its drafts by the stable domain id, never by content.
         String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : ''),
         {
+          initialDrafts: Array.isArray(model.drafts) ? model.drafts : [],
           onError: function (err) {
             notifyStoreError(active, err)
           },
@@ -6702,6 +5978,17 @@
     // Deep-link focus: the element id a `#el-<id>` hash asked to open, consumed
     // once by the next card render and then cleared.
     var focusId = null
+    if (model.uiState) {
+      if (model.uiState.reviewer) {
+        setReviewerName(model.uiState.reviewer)
+      }
+      if (model.uiState.searchQuery) {
+        activeSearchQuery = String(model.uiState.searchQuery)
+      }
+      if (model.uiState.selectedElementId) {
+        focusId = String(model.uiState.selectedElementId)
+      }
+    }
     // Model Explorer view mode ('cards' | 'table') and the table sort state.
     var explorerView = 'sheets'
     var sortState = { key: '', dir: 'asc' }
@@ -6823,6 +6110,7 @@
       var dockCount = active.querySelector('#nn-review-dock .nn-dock-drafts')
       if (dockCount) dockCount.textContent = 'Unsent: ' + n
       updateTabBadges(active, state)
+      mountNavbarActions(active, state)
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)
       })
@@ -6954,7 +6242,10 @@
 
       var content = active.getElementById('nn-content') || active.getElementById('content')
       if (content) {
-        active.dispatchEvent(new CustomEvent('nn:rendered', { detail: { root: content } }))
+        var Evt = (active.defaultView && active.defaultView.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
+        if (Evt) {
+          active.dispatchEvent(new Evt('nn:rendered', { detail: { root: content } }))
+        }
       }
     }
 
@@ -6963,8 +6254,11 @@
     }
 
     var initialQuery = ''
-    if (!scopedView && typeof active.location !== 'undefined' && active.location.hash) {
+    if (!scopedView && typeof active.location !== 'undefined' && active.location && active.location.hash) {
       initialQuery = parseViewHash(active.location.hash).q
+    }
+    if (!initialQuery && model.uiState && model.uiState.searchQuery) {
+      initialQuery = String(model.uiState.searchQuery)
     }
 
     var searchBox = active.getElementById('nn-search')
@@ -7002,7 +6296,17 @@
       cleanups.push(tabs.destroy)
     }
     renderNavbarIdentity(active, meta)
+    mountNavbarActions(active, state)
+    active.__nnConsoleState = state
+    activeState = state
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
+
+    if (model.uiState && model.uiState.activeTab && tabs) {
+      var hasHashTab = (typeof active.location !== 'undefined' && active.location && active.location.hash) ? parseViewHash(active.location.hash).tab : ''
+      if (!hasHashTab && typeof tabs.select === 'function') {
+        tabs.select(model.uiState.activeTab)
+      }
+    }
 
     // C3: the controller builds the toggle into the (now rendered) banner and
     // listens for nn:rendered; created after the first paint so the banner
@@ -7234,7 +6538,7 @@
     }
     onHash()
 
-    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry }
+    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry, state: state }
   }
 
   function autoBoot() {
@@ -7319,6 +6623,10 @@
     composeChangesetExport: composeChangesetExport,
     downloadChangesetExport: downloadChangesetExport,
     copyChangesetPrompt: copyChangesetPrompt,
+    saveSnapshot: saveSnapshot,
+    copyAgentPrompt: copyAgentPrompt,
+    composeAgentPrompt: composeAgentPrompt,
+    mountNavbarActions: mountNavbarActions,
     boot: boot,
     fieldDefOf: fieldDefOf,
   }

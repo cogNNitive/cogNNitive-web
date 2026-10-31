@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 title: "Visual Catalog App"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-3-2"
 procedures:
   - id: "ingest-visual-catalog"
     name: "Ingest Visual Catalog Procedure"
@@ -125,7 +125,7 @@ description:: Workspace-relative path to the ORIGINAL binary asset in sources/im
 ## NN Field Definition: source
 concept:: Evidence
 type:: citation
-description:: Citation to the normalized source under sources/nn/ that carries sha256 (original) and media_sha256 (derivative).
+description:: Optional citation to a textual source or sidecar establishing provenance (omitted for raw-only images whose provenance is captured in original_ref).
 
 ## NN Field Definition: notes
 concept:: Evidence
@@ -285,21 +285,20 @@ A hierarchical taxonomy grouping Entries.
 
 ### Summary
 
-A witness image plus a citation to the normalized source that carries its original and derivative hashes.
+A witness image plus provenance pointing to the raw image in sources/import/ and its cognitivized sidecar.
 
 ### Description
 
-An `Evidence` is one `## NN Evidence: <label>` element. Its `image` field is the FIRST declared `type:: image` field in this blueprint, so it resolves as the main image and its value is stored under the owning model's `assets/{element-slug}/` folder. `original_ref` points at the ORIGINAL binary asset in `sources/import/` or `sources/original/`; `source` cites the normalized `sources/nn/...` file whose frontmatter carries `sha256` (original) and, when a derivative exists, `media_file` + `media_sha256`. The `Entry x Evidence matrix` records which Entries each Evidence witnesses and how directly (`primary`, `visible`, `partial`).
+An `Evidence` is one `## NN Evidence: <label>` element. Its `image` field is the FIRST declared `type:: image` field in this blueprint, so it resolves as the main image and its value is stored under the owning model's `assets/{element-slug}/` folder. `original_ref` points at the ORIGINAL binary asset in `sources/import/` or `sources/original/`. Images are raw-only assets whose provenance is established via `original_ref` and co-located sidecars (`<file>_sidecar_NN.md` created by `process-images.js` / `cognitivize`), without requiring an intermediate text-conversion file. When a companion text description exists, `source` cites it; otherwise `source` is omitted. The `Entry x Evidence matrix` records which Entries each Evidence witnesses and how directly (`primary`, `visible`, `partial`).
 
 ### Methodologies
 
-- **Double-hash discipline**: the normalized source frontmatter records `sha256` of the ORIGINAL and `media_sha256` of the DERIVATIVE; the ingestion SOP writes both and re-checks the pair.
-- **Deduplicate by hash**: collapse duplicate Evidence by image path (preferred) or normalized-source `sha256` before upserting.
+- **Raw-only image provenance**: images in `sources/import/` remain raw bytes without text conversion; origin metadata and SHA-256 are recorded in co-located sidecars and `original_ref`.
+- **Deduplicate by hash**: collapse duplicate Evidence by image path (preferred) or raw asset `sha256` from the sidecar before upserting.
 - **One main image**: keep exactly one `image` field per Evidence; put any additional imagery in the element's own assets folder.
 
 ### Prompts
 
 - "Create an `Evidence` named `<label>` with image `<file>`."
-- "Cite the normalized source for `<evidence>`."
 - "Mark `<entry>` as `primary` in `<evidence>`."
-- "Re-check the original and derivative hashes for `<evidence>`."
+- "Re-check the original hash and sidecar provenance for `<evidence>`."

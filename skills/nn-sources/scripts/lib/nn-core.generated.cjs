@@ -10346,14 +10346,6 @@ async function applyGc(root, confirmed, o) {
 var import_node_fs3 = require("node:fs");
 var path3 = __toESM(require("node:path"), 1);
 var toPosix2 = (p) => p.replace(/\\/g, "/");
-async function readOrNull2(file) {
-  try {
-    return await import_node_fs3.promises.readFile(file);
-  } catch (e) {
-    if (e.code === "ENOENT") return null;
-    throw e;
-  }
-}
 var isoSeconds = (at) => at.toISOString().replace(/\.\d{3}Z$/, "Z");
 async function cognitivize(root, rel, o = {}) {
   const rootAbs = path3.resolve(root);
@@ -10378,7 +10370,7 @@ async function cognitivize(root, rel, o = {}) {
   const bytes = await import_node_fs3.promises.readFile(abs);
   const sha256 = sha256Hex(bytes);
   const sidecarAbs = path3.join(rootAbs, sidecarRel);
-  const existing = await readOrNull2(sidecarAbs);
+  const existing = await readOrNull(sidecarAbs);
   const previous = existing ? parseSidecarFrontmatter(existing.toString("utf8")) : null;
   const sourcesCurrent = o.sources === void 0 || JSON.stringify(previous?.["sources"]) === JSON.stringify(o.sources);
   if (previous && String(previous["sha256"] ?? "").toLowerCase() === sha256 && sourcesCurrent) {
@@ -10413,7 +10405,7 @@ async function importRaw(root, externalAbs, o = {}) {
   });
   if (isSidecarName(base)) return rejected("sidecar");
   if (isNNName(base)) return rejected("nn-document");
-  const bytes = await readOrNull2(externalAbs).catch(() => null);
+  const bytes = await readOrNull(externalAbs).catch(() => null);
   const parsed = parseName(base);
   if (bytes === null || parsed.kind !== "file") return rejected("not-found");
   const written = await writeOnce(

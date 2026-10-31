@@ -116,19 +116,13 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `  name: "domaiNN"\n` +
       `  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\n` +
       `knowledge_version: "V_0-1-0"\n` +
-      `title: "${effectiveProjectName} Workspace"\n` +
+      `title: "${effectiveProjectName} domaiNN"\n` +
       `---\n\n` +
-      `# NN index\n\n` +
-      `* [[Workspace]]\n` +
-      `* [[Models]]\n` +
-      `* [[Sources]]\n` +
-      `* [[Procedures]]\n` +
-      `* [[Artifacts]]\n\n` +
-      `# NN Workspace\n\n` +
-      `## NN Workspace: ${effectiveProjectName} Workspace\n` +
+      `# NN domaiNN\n\n` +
+      `Operational domaiNN container for ${effectiveProjectName}.\n` +
       `knowledge_dir:: kNNowledge/\n` +
-      `sources_dir:: sources/\n` +
-      `Operational workspace for ${effectiveProjectName}.\n`;
+      `sources_dir:: sources/\n\n` +
+      `# NN kNNowledge\n`;
     fs.writeFileSync(domainnPath, domainnContent, 'utf8');
   }
 

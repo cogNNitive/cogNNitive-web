@@ -7463,28 +7463,8 @@ function findDomainRoot(path) {
   }
 }
 
-// iNNfo/packages/nn-core/src/scope/stem-collision.ts
-function stemOf(path) {
-  const base = path.slice(path.lastIndexOf("/") + 1);
-  return base.replace(/\.md$/i, "");
-}
-function findStemCollisions(modelPaths) {
-  const byStem = /* @__PURE__ */ new Map();
-  for (const raw of modelPaths) {
-    const path = raw.replace(/\\/g, "/");
-    const id = stemOf(path);
-    const paths = byStem.get(id) ?? /* @__PURE__ */ new Set();
-    paths.add(path);
-    byStem.set(id, paths);
-  }
-  return [...byStem.entries()].filter(([, paths]) => paths.size > 1).map(([id, paths]) => ({ id, paths: [...paths].sort() })).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-}
-function stemCollisionMessage(collision) {
-  return `Model id "${collision.id}" is carried by ${collision.paths.length} documents: ${collision.paths.join(", ")}. Model ids are filename stems and must be unique within a domaiNN.`;
-}
-
 // iNNfo/packages/nn-core/src/scope/model-index.ts
-function stemOf2(path) {
+function stemOf(path) {
   const base = path.slice(path.lastIndexOf("/") + 1);
   return base.replace(/\.md$/i, "");
 }
@@ -7515,7 +7495,7 @@ function buildModelIndex(relativePaths) {
   const byPath = /* @__PURE__ */ new Map();
   for (const raw of relativePaths) {
     const path = raw.replace(/\\/g, "/");
-    const stem = stemOf2(path);
+    const stem = stemOf(path);
     const cleanStem = cleanStemOf(stem);
     const entry = { path, stem, cleanStem };
     entries.push(entry);
@@ -7589,6 +7569,22 @@ function resolveModelId(index, arg) {
     return { ok: false, code: "AMBIGUOUS_MODEL_ID", candidates };
   }
   return { ok: false, code: "MODEL_NOT_FOUND" };
+}
+
+// iNNfo/packages/nn-core/src/scope/stem-collision.ts
+function findStemCollisions(modelPaths) {
+  const byStem = /* @__PURE__ */ new Map();
+  for (const raw of modelPaths) {
+    const path = raw.replace(/\\/g, "/");
+    const id = stemOf(path);
+    const paths = byStem.get(id) ?? /* @__PURE__ */ new Set();
+    paths.add(path);
+    byStem.set(id, paths);
+  }
+  return [...byStem.entries()].filter(([, paths]) => paths.size > 1).map(([id, paths]) => ({ id, paths: [...paths].sort() })).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+}
+function stemCollisionMessage(collision) {
+  return `Model id "${collision.id}" is carried by ${collision.paths.length} documents: ${collision.paths.join(", ")}. Model ids are filename stems and must be unique within a domaiNN.`;
 }
 
 // iNNfo/packages/nn-core/src/scope/chain.ts

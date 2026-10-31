@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-5-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-13-9"
+blueprint_version: "V_0-13-10"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -120,7 +120,7 @@ description:: The episode's script document, resolved under the owning model's d
 ## NN Field Definition: master
 concept:: Video
 type:: video
-description:: The episode's rendered master, resolved under the owning model's directory. The vertical and horizontal variants are derived from it by the render-formats naming convention and MUST NOT be modelled as fields.
+description:: The episode's rendered master, resolved under the owning model's directory. For multi-platform delivery, the video engine compiles native dual masters (16:9 1920x1080 and 9:16 1080x1920) via HyperFrames with shared cached assets ($0 extra spend) and safe-zone-aware presenter headroom, avoiding lossy blur-fills.
 
 ## NN Field Definition: thumbnail
 concept:: Video
@@ -206,7 +206,7 @@ description:: Inline text for a Layer. Required for title, lower-third, quote, a
 concept:: Layer
 type:: select
 options:: [top, center, bottom, bottom-left, bottom-right]
-description:: Anchor position of the Layer. Optional.
+description:: Anchor position of the Layer. Optional. When rendering in horizontal widescreen (16:9), presenter and avatar layers without an explicit position automatically anchor at `center 12%` (cinematic headroom) to prevent facial clipping, while vertical (9:16) maintains full-body framing.
 
 ## NN Field Definition: enter_animation
 concept:: Layer

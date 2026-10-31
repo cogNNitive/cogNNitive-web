@@ -9790,7 +9790,7 @@ function resolveMatrixUnit(content, unit, subunits) {
   const row = unit.rowSlug ?? subunits[0];
   const col = unit.colSlug ?? subunits[1];
   if (row && col) {
-    const table = parseMarkdownTable3(lines.slice(section.startLine, section.endLine));
+    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
     if (!table) return null;
     const wantedRow = normalizeName(row);
     const wantedCol = normalizeName(col);
@@ -9828,7 +9828,7 @@ function resolveHeaderUnit(content, unit, subunits) {
     return found.length > 0 ? { kind: "field", lines: found } : null;
   }
   if (subunits.length === 2) {
-    const table = parseMarkdownTable3(lines.slice(section.startLine, section.endLine));
+    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
     if (!table) return null;
     const wantedRow = normalizeName(subunits[0]);
     const wantedCol = normalizeName(subunits[1]);
@@ -9845,7 +9845,7 @@ function resolveHeaderUnit(content, unit, subunits) {
 function splitTableCells(line) {
   return line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
 }
-function parseMarkdownTable3(lines) {
+function parseMarkdownTable2(lines) {
   const tableLines = lines.filter((l) => l.trim().startsWith("|"));
   if (tableLines.length < 2) return null;
   const headers = splitTableCells(tableLines[0]);

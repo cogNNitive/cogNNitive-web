@@ -545,6 +545,116 @@
     }
 
     // ---- Enhanced Execution Workspace (DAG + Stepper + Audit) ----
+    function getProcedureMetadata(p) {
+      if (!p || !p.el) return null
+      var fields = p.el.fields || {}
+      var m = {
+        summary: fields.summary || '',
+        category: fields.category || '',
+        executed_by: fields.executed_by || '',
+        inputs_required: fields.inputs_required || '',
+        outputs_expected: fields.outputs_expected || '',
+      }
+
+      // Check linked Procedure elements
+      for (var i = 0; i < elements.length; i++) {
+        var el = elements[i]
+        if (el && el.concept === 'Procedure') {
+          var matches = false
+          if (el.fields && (el.fields.procedure_model === p.el.name || el.fields.procedure_model === p.el.id)) {
+            matches = true
+          }
+          if (Array.isArray(el.relations)) {
+            for (var r = 0; r < el.relations.length; r++) {
+              var rel = el.relations[r]
+              if (rel && (rel.name === 'procedure_model' || rel.label === 'procedure_model') && (rel.target === p.el.id || rel.target === p.el.name)) {
+                matches = true
+                break
+              }
+            }
+          }
+          if (matches && el.fields) {
+            m.summary = m.summary || el.fields.summary || ''
+            m.category = m.category || el.fields.category || ''
+            m.executed_by = m.executed_by || el.fields.executed_by || ''
+            m.inputs_required = m.inputs_required || el.fields.inputs_required || ''
+            m.outputs_expected = m.outputs_expected || el.fields.outputs_expected || ''
+          }
+        }
+      }
+
+      // Check schema.procedures catalog entries
+      if (Array.isArray(schema.procedures)) {
+        for (var j = 0; j < schema.procedures.length; j++) {
+          var sp = schema.procedures[j]
+          if (sp && (sp.id === p.el.id || sp.name === p.el.name || sp.id === p.el.name)) {
+            m.summary = m.summary || sp.summary || ''
+            m.category = m.category || sp.category || ''
+            m.executed_by = m.executed_by || sp.executed_by || ''
+            m.inputs_required = m.inputs_required || sp.inputs_required || ''
+            m.outputs_expected = m.outputs_expected || sp.outputs_expected || ''
+          }
+        }
+      }
+
+      var hasAny = Boolean(m.summary || m.category || m.executed_by || m.inputs_required || m.outputs_expected)
+      return hasAny ? m : null
+    }
+
+    function renderFichaHeader(p) {
+      var ficha = doc.createElement('div')
+      ficha.className = 'proc-ficha'
+      var m = getProcedureMetadata(p)
+      if (!m) {
+        var note = doc.createElement('div')
+        note.className = 'proc-no-catalog-note'
+        note.textContent = 'No catalog entry linked.'
+        ficha.appendChild(note)
+        return ficha
+      }
+
+      if (m.summary) {
+        var s = doc.createElement('div')
+        s.className = 'proc-ficha-summary'
+        s.textContent = m.summary
+        ficha.appendChild(s)
+      }
+
+      var tags = doc.createElement('div')
+      tags.className = 'proc-ficha-tags'
+      if (m.category) {
+        var c = doc.createElement('span')
+        c.className = 'proc-ficha-category'
+        c.innerHTML = '<strong>Category:</strong> ' + esc(m.category)
+        tags.appendChild(c)
+      }
+      if (m.executed_by) {
+        var ex = doc.createElement('span')
+        ex.className = 'proc-ficha-executed-by'
+        ex.innerHTML = '<strong>Executed by:</strong> ' + esc(m.executed_by)
+        tags.appendChild(ex)
+      }
+      if (tags.childNodes.length > 0) ficha.appendChild(tags)
+
+      var io = doc.createElement('div')
+      io.className = 'proc-ficha-io'
+      if (m.inputs_required) {
+        var inp = doc.createElement('div')
+        inp.className = 'proc-ficha-inputs'
+        inp.innerHTML = '<strong>Inputs required:</strong> ' + esc(m.inputs_required)
+        io.appendChild(inp)
+      }
+      if (m.outputs_expected) {
+        var out = doc.createElement('div')
+        out.className = 'proc-ficha-outputs'
+        out.innerHTML = '<strong>Outputs expected:</strong> ' + esc(m.outputs_expected)
+        io.appendChild(out)
+      }
+      if (io.childNodes.length > 0) ficha.appendChild(io)
+
+      return ficha
+    }
+
     function renderExecutionWorkspace() {
       if (!stepBody) return
       stepBody.innerHTML = ''
@@ -559,6 +669,9 @@
         return
       }
       if (currentStepIndex >= chain.length) currentStepIndex = chain.length - 1
+
+      var ficha = renderFichaHeader(activeProcedure)
+      stepBody.appendChild(ficha)
 
       // Workspace 3-pane layout
       var ws = document.createElement('div')

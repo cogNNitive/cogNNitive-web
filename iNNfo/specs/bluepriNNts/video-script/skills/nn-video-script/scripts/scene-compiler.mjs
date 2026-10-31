@@ -440,7 +440,10 @@ export class SceneCompiler {
     const declared = fields.type;
     const binding = TYPE_RENDERERS[declared] || { kind: 'layer', manifest: declared };
     const fit = resolve('fit', { ...bags, layer: fields }).value;
-    const avatarModel = resolve('avatar_model', { ...bags, layer: fields }).value;
+    const avatarModel = resolve('avatar_model', {
+      ...bags,
+      layer: { ...fields, avatar_model: fields.avatar_model || fields.model },
+    }).value;
     const properties = {
       layer_type: internalLayerType(declared, fields.asset),
       layer_asset_source: fields.asset,

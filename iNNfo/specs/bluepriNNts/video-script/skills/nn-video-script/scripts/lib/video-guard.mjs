@@ -28,6 +28,7 @@ export const DEFAULT_GUARD = Object.freeze({
   maxAvatarSeconds: 300,
   allowedModels: [
     'minimax/speech-2.8-hd',
+    'minimax/speech-2.8-turbo',
     'wavespeed-ai/infinitetalk-fast',
     'wavespeed-ai/z-image/turbo',
     'black-forest-labs/flux-schnell',

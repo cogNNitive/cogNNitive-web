@@ -105,3 +105,12 @@ test('emitHyperframesProject writes the tree and is idempotent', () => {
   assert.ok(fs.existsSync(path.join(dir, 'hyperframes.json')));
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('presenter layer anchors object-position at center 12% in widescreen (16:9) to preserve headroom', () => {
+  const f = fixture();
+  f.width = 1920;
+  f.height = 1080;
+  const { compositions } = buildProject(f);
+  const intro = compositions.find((c) => c.slug === 'intro').html;
+  assert.match(intro, /object-position:\s*center 12%/);
+});

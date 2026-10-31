@@ -126,7 +126,26 @@ export const PROVIDER_PRICING_CATALOG = {
       quality: 'Cinematic High-Definition',
       languages: 'Spanish, English, Multilingual',
       description: 'Default TTS model (guard model id). Price is an estimate.',
-    },    'wavespeed/minimax/speech-2.5-hd-preview': {
+    },
+    'minimax/speech-2.8-turbo': {
+      provider: 'WaveSpeed AI / MiniMax',
+      modelName: 'MiniMax Speech 2.8 Turbo',
+      unitPricePer1kChars: 0.015,
+      priceNote: 'estimated: not verified against an invoice',
+      quality: 'Fast High-Definition',
+      languages: 'Spanish, English, Multilingual',
+      description: 'Low-latency voice synthesis with emotional prosody',
+    },
+    'wavespeed/minimax/speech-2.8-hd': {
+      provider: 'WaveSpeed AI / MiniMax',
+      modelName: 'MiniMax Speech 2.8 HD',
+      unitPricePer1kChars: 0.02,
+      priceNote: 'estimated: not verified against an invoice',
+      quality: 'Cinematic High-Definition',
+      languages: 'Spanish, English, Multilingual',
+      description: 'WaveSpeed route for MiniMax Speech 2.8 HD',
+    },
+    'wavespeed/minimax/speech-2.5-hd-preview': {
       provider: 'WaveSpeed AI / MiniMax',
       modelName: 'MiniMax Speech 2.5 HD',
       unitPricePer1kChars: 0.015,

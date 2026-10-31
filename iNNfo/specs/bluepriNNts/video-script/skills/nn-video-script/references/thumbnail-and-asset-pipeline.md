@@ -60,7 +60,20 @@ node ~/.agents/skills/nn-video-script/scripts/render-thumbnail.mjs \
 
 ---
 
-## 4. Canonical Asset Naming Convention
+## 4. Multi-Platform Geometry & Safe Zone (Open Gate Protocol)
+
+To produce single-source assets reusable across horizontal (16:9), vertical (9:16), and square (1:1) formats without lossy blur-fills or microscopic text:
+
+### Geometric Invariants
+- **Common Safe Area (1080×1080)**: All critical narrative focus (speaker's face, key data visualization, web snapshot core) MUST sit inside the central 1080×1080 square. The peripheral 420 px margins serve as context bleed that crops safely according to the delivery aspect ratio.
+- **Presenter Headroom Anchoring**: Human avatar portrait assets (768×1024 / 896×1200) naturally place the face in the upper third. The video engine automatically anchors presenter layers at `object-position: center 12%` in horizontal widescreen (16:9) to maintain cinematic headroom without facial decapitation, while vertical viewports (9:16) cover full-body framing.
+- **Decoupled Overlays**: Never bake text, kinetic titles, or captions into raw media assets. Overlays remain responsive HTML/CSS layers rendered natively by HyperFrames per target resolution.
+- **AI Media Generation Directive**: All prompts for background or subject generation should specify: `"aspect ratio 1:1, subject centered within 55% safe area, generous background padding for multi-aspect framing"`.
+
+
+---
+
+## 5. Canonical Asset Naming Convention
 
 | File Name Pattern | Purpose |
 |---|---|
