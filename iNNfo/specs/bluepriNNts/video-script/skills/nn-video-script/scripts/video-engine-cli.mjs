@@ -201,10 +201,21 @@ export function resolveSoundFiles({ bags, scriptDir, workspaceRoot, skillDir = S
   for (const key of SUPPORTED_SOUND_KEYS) {
     const { value: name, source } = resolveKeyed('sounds', key, bags || {});
     if (!name) continue;
-    const { path: soundPath, searched } = findNearestByStem(scriptDir, 'sounds', name, {
+    let { path: soundPath, searched } = findNearestByStem(scriptDir, 'sounds', name, {
       stopDir: workspaceRoot,
       fallbackDir: skillDir,
     });
+    if (!soundPath) {
+      const fallback = findNearestByStem(scriptDir, 'shared/audio', name, {
+        stopDir: workspaceRoot,
+        fallbackDir: skillDir,
+      });
+      if (fallback.path) {
+        soundPath = fallback.path;
+      } else {
+        searched = searched.concat(fallback.searched);
+      }
+    }
     if (!soundPath) {
       checkMissingAsset({ kind: 'sound', name, source, searched });
       continue;

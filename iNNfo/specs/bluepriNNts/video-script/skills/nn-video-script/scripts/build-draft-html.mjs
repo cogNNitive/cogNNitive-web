@@ -2,10 +2,9 @@
 /**
  * nn-video-script/scripts/build-draft-html.mjs
  *
- * Generates the self-contained draft HTML VIEW from a draft JSON artifact: the
- * JSON is embedded inline and every media thumbnail is inlined as a base64 data
- * URI, so the HTML is a single portable file (no assets folder) that works from
- * file://.
+ * Generates the self-contained interactive Review Console HTML artifact from a draft JSON artifact:
+ * the JSON is embedded inline and every media thumbnail is inlined as a base64 data
+ * URI, so the HTML is a single portable file (no assets folder) that works from file://.
  *
  * Series-parameterized through the parameter cascade: the display series title
  * comes from the `series_NN.md` document found by walking from the draft JSON's
@@ -29,7 +28,7 @@ function argValue(argv, name) {
   return i >= 0 ? argv[i + 1] : undefined;
 }
 
-export function buildDraftHtml(draft, { baseDir, templatePath, seriesTitle = 'Series' } = {}) {
+export function buildDraftHtml(draft, { baseDir, templatePath, seriesTitle = 'Series', title, description, reviewed } = {}) {
   const mimeFor = (p) => {
     const e = path.extname(p).toLowerCase();
     if (e === '.png') return 'image/png';
@@ -46,11 +45,37 @@ export function buildDraftHtml(draft, { baseDir, templatePath, seriesTitle = 'Se
       console.warn('thumb not found (skipped): ' + tp);
     }
   }
+
+  // Probe draft_thumbs/ directory if present
+  if (baseDir) {
+    const draftThumbsDir = path.join(baseDir, 'draft_thumbs');
+    if (fs.existsSync(draftThumbsDir) && fs.statSync(draftThumbsDir).isDirectory()) {
+      try {
+        const files = fs.readdirSync(draftThumbsDir);
+        for (const f of files) {
+          const full = path.join(draftThumbsDir, f);
+          try {
+            if (fs.statSync(full).isFile()) {
+              thumbs[f] = 'data:' + mimeFor(full) + ';base64,' + fs.readFileSync(full).toString('base64');
+            }
+          } catch {}
+        }
+      } catch {}
+    }
+  }
+
+  const effectiveTitle = title || draft.title || draft.slug || 'Video Script Review';
+  const effectiveDescription = description || draft.description || 'Self-contained review artifact (HTML Quine). You can adjust editorial choices and cascade parameters, then click <b>Save & Package HTML</b> to save all decisions directly inside this same file to send it back via email.';
+  const reviewedJson = reviewed ? JSON.stringify(reviewed, null, 2) : '';
+
   const tpl = fs.readFileSync(templatePath, 'utf8');
   return tpl
     .replace(/\{\{SERIES\}\}/g, seriesTitle)
+    .replace(/\{\{TITLE\}\}/g, effectiveTitle)
+    .replace(/\{\{DESCRIPTION\}\}/g, effectiveDescription)
     .replace('/*__DRAFT_JSON__*/', JSON.stringify(draft))
-    .replace('/*__THUMBS_JSON__*/', JSON.stringify(thumbs));
+    .replace('/*__THUMBS_JSON__*/', JSON.stringify(thumbs))
+    .replace('/*__REVIEWED_JSON__*/', reviewedJson);
 }
 
 function main() {
@@ -66,19 +91,41 @@ function main() {
   }
   const draft = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const baseDir = path.dirname(jsonPath);
+  const slug = draft.slug || path.basename(jsonPath).replace(/_draft.*\.json$/, '').replace(/\.json$/, '');
+  const version = draft.version || 'v1';
+
+  const reviewedPath = path.join(baseDir, `${slug}_reviewed.json`);
+  let reviewed = null;
+  if (fs.existsSync(reviewedPath)) {
+    try {
+      reviewed = JSON.parse(fs.readFileSync(reviewedPath, 'utf8'));
+    } catch {}
+  }
+
   const out = argValue(argv, 'out');
-  const outPath = out ? path.resolve(out) : jsonPath.replace(/\.json$/i, '.html');
+  const reviewConsolePath = out ? path.resolve(out) : path.join(baseDir, `${slug}_review_console.html`);
+  const legacyDraftPath = path.join(baseDir, `${slug}_draft_${version}.html`);
+
   const series = loadSeriesFor(baseDir, argValue(argv, 'series'));
-  const seriesTitle = argValue(argv, 'series-title') || (series && series.title) || 'Series';
+  const seriesTitle = argValue(argv, 'series-title') || (series && series.title) || (draft.series || 'Series');
 
   const html = buildDraftHtml(draft, {
     baseDir,
     templatePath: path.join(__dirname, 'draft-template.html'),
     seriesTitle,
+    reviewed,
   });
-  fs.writeFileSync(outPath, html, 'utf8');
+
+  fs.writeFileSync(reviewConsolePath, html, 'utf8');
+  if (!out) {
+    fs.writeFileSync(legacyDraftPath, html, 'utf8');
+  }
+
   const embedded = (html.match(/data:[^"]+;base64,/g) || []).length;
-  console.log('Draft HTML written: ' + outPath + ' (' + (Buffer.byteLength(html) / 1024).toFixed(0) + ' KB, ' + embedded + ' thumbnails embedded)');
+  console.log('Review console HTML written: ' + reviewConsolePath + ' (' + (Buffer.byteLength(html) / 1024).toFixed(0) + ' KB, ' + embedded + ' thumbnails embedded)');
+  if (!out) {
+    console.log('Legacy draft alias written: ' + legacyDraftPath);
+  }
 }
 
 const isMain =

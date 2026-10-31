@@ -67,3 +67,40 @@ test('the reviewed export keeps fixed scenes in order and builds without --draft
   assert.match(md, /text:: edited/);
   assert.doesNotMatch(md, /text:: proposed/);
 });
+
+test('scenes with empty variants array do not corrupt narration or throw', () => {
+  const html = fs.readFileSync(TEMPLATE, 'utf8');
+  assert.match(html, /sc\.variants && sc\.variants\.length > 0/);
+});
+
+test('modern review console UI markers and script hooks are present', () => {
+  const html = fs.readFileSync(TEMPLATE, 'utf8');
+  assert.match(html, /id="video-params-sheet"/, 'must have video-params-sheet');
+  assert.match(html, /id="video-overlays-sheet"/, 'must have video-overlays-sheet');
+  assert.match(html, /id="modal-lightbox"/, 'must have modal-lightbox');
+  assert.match(html, /id="lightbox-motion-stage"/, 'must have lightbox-motion-stage');
+  assert.match(html, /id="lightbox-storyboard"/, 'must have lightbox-storyboard');
+  assert.match(html, /id="btn-save-html"/, 'must have btn-save-html');
+  assert.match(html, /id="btn-save-json"/, 'must have btn-save-json');
+  assert.match(html, /id="btn-copy-prompt"/, 'must have btn-copy-prompt');
+  assert.match(html, /btn-agent-btn/, 'must have btn-agent-btn class');
+  assert.match(html, /id="btn-preview-l3"/, 'must have btn-preview-l3');
+  assert.match(html, /function generateL3Markdown\(\)/, 'must have generateL3Markdown function');
+  assert.match(html, /async function saveSelfHtml\(\)/, 'must have saveSelfHtml function');
+  assert.match(html, /raw-draft-data/, 'must have raw-draft-data script tag');
+  assert.match(html, /raw-thumbs-data/, 'must have raw-thumbs-data script tag');
+  assert.match(html, /raw-reviewed-data/, 'must have raw-reviewed-data script tag');
+});
+
+test('buildDraftHtml inlines draft_thumbs directory if present', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'draft-html-thumbs-'));
+  const thumbsDir = path.join(dir, 'draft_thumbs');
+  fs.mkdirSync(thumbsDir, { recursive: true });
+  fs.writeFileSync(path.join(thumbsDir, 'extra.jpg'), Buffer.from('extra-fake-jpg'));
+  const draft = { schema: 'video-script.draft.v1', slug: 'demo-thumbs', title: 'Demo Thumbs', media: [], scenes: [] };
+  const html = buildDraftHtml(draft, { baseDir: dir, templatePath: TEMPLATE, seriesTitle: 'Serie Thumbs' });
+  assert.match(html, /extra\.jpg/);
+  assert.match(html, /data:image\/jpeg;base64,/);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+

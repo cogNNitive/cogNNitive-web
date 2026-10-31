@@ -2,8 +2,8 @@
 name: nn-video-script
 description: |
   iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Lowers the structured model into a deterministic Composition Manifest, emits a HyperFrames project from it, measures duration with ffprobe, and renders headlessly via the pinned HyperFrames CLI; also supports thumbnail composition. Triggers: video script, cognnitive video, hyperframes, series script, nn-video-script, video-script blueprint, finalize video, render video script.
-version: "V_0-15-6"
-last_updated: 2026-10-27
+version: "V_0-15-7"
+last_updated: 2026-10-31
 license: MIT
 depends_on:
   cli:
@@ -67,6 +67,19 @@ simply skipped and the package defaults apply.
 This skill owns **authoring, validating, compiling, rendering, and finalizing** one video's script inside a Series folder:
 
 1. **Author** the video's Level-3 kNNowledge document (adopting the `video-script` blueprint, following the Series' `includes` blueprint and its L3 Template-data document; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `video-script` blueprint at run time — never restated as prose.
+1b. **Interactive Review Console & Human Review Gate** (`<slug>_review_console.html`):
+   Before executing billable synthesis or committing the final L3 script, generate the interactive self-contained Review Console:
+   ```bash
+   node scripts/build-draft-html.mjs <draft.json>
+   ```
+   This emits `<slug>_review_console.html` (and backwards-compatible `<slug>_draft_<version>.html`). The console provides:
+   - Parameter cascade inspection and overrides (`#video-params-sheet`): speed, fps, music volume, transition.
+   - Global video overlay templates (`#video-overlays-sheet`).
+   - Editorial hook variant selection and narration editing.
+   - Visual option selection with 3-tier motion styling (ALTA, MEDIA, RÁPIDA) and storyboard lightbox inspection (`#modal-lightbox`).
+   - **Quine Self-Saving Pattern**: Clicking *Save & Package HTML* (`#btn-save-html`) packages all editorial decisions into `<script id="raw-reviewed-data">` directly inside the standalone HTML file, making it self-contained and portable.
+   - Exporting `<slug>_reviewed.json` (`#btn-save-json`) or copying compiled Level-3 markdown prompt for the agent (`#btn-copy-prompt`).
+   The human reviewer opens the console in any browser, completes the review, and either exports `<slug>_reviewed.json` or uses the Quine file to build the script with `scripts/build-script-from-draft.mjs`.
 2. **Validate**: the document is validated against the `video-script` blueprint (innfo-core `validate_knowledge` / the engine pre-compile guard); the engine refuses an invalid document with a named, non-zero error before any manifest.
 3. **Plan, Estimate & Consult Providers (Pre-Generation Gate)**:
    ```bash
@@ -141,7 +154,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor: renders a one-frame HyperFrames composition (base image + typography + brand pill) through the pinned CLI. `--series <dir>` (or the cascade from `--out`) fills subtitle/badge from the Series `title`; font/accent come from the resolved `frame` tokens. |
 | `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
 | `scripts/build-script-from-draft.mjs` | Generates the L3 `video-script` document from a reviewed draft JSON, reading series values through the parameter cascade (`series_NN.md` → domain Video Defaults → package Video Defaults). The reviewed JSON (all scenes, fixed ones included, each with its `kind`) is the single source of truth for per-scene decisions (narration, choice, overlays) and works on its own; `--draft` only supplies scene structure. The script frontmatter is copied from the series document and the filename uses the Series slug. |
-| `scripts/build-draft-html.mjs` | Generates the self-contained review HTML from a draft JSON (base64 thumbnails; series title from the `series_NN.md` document). |
+| `scripts/build-draft-html.mjs` | Generates the self-contained interactive Review Console (`<slug>_review_console.html`) from a draft JSON with inlined base64 thumbnails, parameter cascade overrides, hook variant selector, live L3 preview, and Quine self-saving pattern. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.
 See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines.

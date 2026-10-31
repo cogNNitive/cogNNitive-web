@@ -332,3 +332,24 @@ test('no concrete sound name lives in the engine scripts', () => {
   const offenders = files.filter((f) => /whoosh/.test(fs.readFileSync(f, 'utf8')));
   assert.deepEqual(offenders, [], 'the blueprint default sound name must not appear in engine code');
 });
+
+test('resolveSoundFiles falls back to shared/audio when sound is not in sounds/', () => {
+  const root = tmp('nn-sound-fallback-');
+  const sharedAudioDir = path.join(root, 'shared', 'audio');
+  fs.mkdirSync(sharedAudioDir, { recursive: true });
+  fs.writeFileSync(path.join(sharedAudioDir, 'custom-start.mp3'), 'audio-data', 'utf8');
+
+  const bags = {
+    series: { sounds: '[video-start=custom-start]' },
+  };
+  const files = resolveSoundFiles({
+    bags,
+    scriptDir: root,
+    workspaceRoot: root,
+    skillDir: SKILL_DIR,
+  });
+
+  assert.ok(files['video-start']);
+  assert.match(files['video-start'].path, /shared[/\\]audio[/\\]custom-start\.mp3/);
+  fs.rmSync(root, { recursive: true, force: true });
+});

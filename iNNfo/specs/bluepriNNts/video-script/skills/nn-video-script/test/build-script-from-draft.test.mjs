@@ -216,3 +216,23 @@ test('no side config or hardcoded series leaks into the engine scripts', () => {
   assert.deepEqual(offenders, [], `draft tools must read the cascade, not a config: ${offenders.join(', ')}`);
 });
 
+test('a fixed scene falls back to visual.asset or asset when cascade has no intro_asset', () => {
+  const rev = {
+    slug: 'demo-fixed',
+    scenes: [
+      { slug: '01-intro', name: '01 Intro', kind: 'fixed', asset: 'media/direct-fallback.mp4' },
+    ],
+  };
+  const md = buildScript(rev, null, { bags: {}, frontmatter: '' });
+  assert.match(md, /asset:: media\/direct-fallback\.mp4/);
+
+  const revDraftVisual = {
+    slug: 'demo-fixed-2',
+    scenes: [
+      { slug: '01-intro', name: '01 Intro', kind: 'fixed', visual: { asset: 'media/visual-fallback.mp4' } },
+    ],
+  };
+  const md2 = buildScript(revDraftVisual, null, { bags: {}, frontmatter: '' });
+  assert.match(md2, /asset:: media\/visual-fallback\.mp4/);
+});
+

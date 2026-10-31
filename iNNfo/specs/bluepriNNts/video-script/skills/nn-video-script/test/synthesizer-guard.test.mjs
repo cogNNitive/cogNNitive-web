@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { AssetSynthesizer, BillingFailureError } from '../scripts/asset-synthesizer.mjs';
+import { synthesizeAvatars } from '../scripts/synthesize-avatar.mjs';
 import { CacheManager } from '../scripts/cache-manager.mjs';
 import { TTSGenerator } from '../scripts/tts-generator.mjs';
 import {
@@ -479,5 +480,9 @@ describe('model aliases in the synthesizer', () => {
     const opts = { model: 'replicate/wavespeed-ai/infinitetalk', durationSeconds: 5 };
     await assert.rejects(makeSynth(ctx, provider).resolveTalkingAvatar(P('img.png'), P('a.mp3'), opts), ModelBlockedError);
     assert.equal(provider.state.posts.length, 0);
+  });
+
+  it('synthesizeAvatars export is defined and callable without syntax error', () => {
+    assert.equal(typeof synthesizeAvatars, 'function');
   });
 });

@@ -159,7 +159,9 @@ export function buildScript(reviewed, draft, options = {}) {
   function layersFor(scene, choice) {
     const head = '### NN Layer: ';
     if (scene.kind === 'fixed') {
-      const asset = resolve('intro_asset', bags).value;
+      const fromDraft = draftBySlug.get(scene.slug);
+      const fromRev = byslug.get(scene.slug);
+      const asset = resolve('intro_asset', bags).value || (fromDraft && fromDraft.visual && fromDraft.visual.asset) || (fromDraft && fromDraft.asset) || (fromRev && fromRev.visual && fromRev.visual.asset) || (fromRev && fromRev.asset) || (scene.visual && scene.visual.asset) || scene.asset;
       const lines = [head + humanName(scene.name) + ' Background', 'slug:: ' + scene.slug + '-background', 'type:: background'];
       if (asset) lines.push('asset:: ' + asset);
       lines.push('position:: center');

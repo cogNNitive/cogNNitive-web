@@ -247,7 +247,6 @@ export async function synthesizeAvatars(o) {
     now: o.now,
     defaultModels: models,
   });
-  });
 
   function outstandingMessage(blocked) {
     return blocked
