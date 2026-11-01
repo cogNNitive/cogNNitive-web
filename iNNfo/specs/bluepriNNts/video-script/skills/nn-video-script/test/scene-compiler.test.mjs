@@ -37,7 +37,7 @@ function layer(name, slug, fields = {}) {
 
 async function runTests() {
   console.log('Running Scene Compiler unit tests...');
-  const compiler = new SceneCompiler({ fps: 30, width: 1920, height: 1080 });
+  const compiler = new SceneCompiler({ fps: 30, width: 1920, height: 1920 });
 
   // Test 1: compile into a typed manifest.
   {
@@ -70,7 +70,7 @@ async function runTests() {
         scene('Three', 'three', 'a b c'),
       ],
     });
-    const manifest = new SceneCompiler({ fps: 30, wordsPerSecond: 5 }).compile(m);
+    const manifest = new SceneCompiler({ fps: 30, wordsPerSecond: 5, width: 1920, height: 1920 }).compile(m);
     const [s1, s2, s3] = manifest.tracks.scenes;
     // 10 words / 5 wps = 2s -> max(3,2)=3s -> 90 frames.
     assert.strictEqual(s1.fromFrame, 0);
@@ -147,12 +147,12 @@ async function runTests() {
     console.log('✔ transition:: is carried into the scene track');
   }
 
-  // Test 6: scene `music::` emits a looping background-music track; an absolute
+  // Test 6: scene `background_audio::` emits a looping track; an absolute
   //         path is rejected.
   {
     const m = model({
       title: 'Music',
-      scenes: [scene('One', 'one', 'hello world', { music: '../../shared/music/loop.m4a' })],
+      scenes: [scene('One', 'one', 'hello world', { background_audio: '../../shared/music/loop.m4a' })],
     });
     const manifest = compiler.compile(m);
     const music = manifest.tracks.audio.filter((a) => a.id.startsWith('bgmusic_'));
@@ -165,8 +165,8 @@ async function runTests() {
     assert.strictEqual(music[0].loop, true);
     assert.strictEqual(music[0].assetPath, '../../shared/music/loop.m4a');
 
-    const abs = model({ title: 'Bad', scenes: [scene('One', 'one', 'hi', { music: 'C:/x.m4a' })] });
-    assert.throws(() => compiler.compile(abs), /Invalid music/i);
+    const abs = model({ title: 'Bad', scenes: [scene('One', 'one', 'hi', { background_audio: 'C:/x.m4a' })] });
+    assert.throws(() => compiler.compile(abs), /Invalid background audio/i);
     console.log('✔ scene music:: emits a looping bgmusic track; absolute paths are rejected');
   }
 

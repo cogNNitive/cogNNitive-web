@@ -27,7 +27,7 @@ function model({ scenes = [], layers = [] } = {}) {
 
 async function runTests() {
   console.log('Running scene-transition ease tests...');
-  const compiler = new SceneCompiler({ fps: 30 });
+  const compiler = new SceneCompiler({ fps: 30, width: 1920, height: 1920 });
 
   const manifest = compiler.compile(model({
     scenes: [{ type: 'Scene', name: 'Fade', slug: 'fade', description: 'hello world', fields: { transition: 'fade' } }],

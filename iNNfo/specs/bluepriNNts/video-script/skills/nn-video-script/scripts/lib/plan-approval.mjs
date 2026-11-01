@@ -116,7 +116,8 @@ export function delegatedPhraseIsValid(phrase, planHash) {
  *   | { ok: false, reason: 'missing' | 'invalid' | 'mismatch' | 'unapproved-model' | 'delegated-not-allowed', message: string }}
  */
 export function checkApproval({ scriptContent, models = {}, approvalPath, allowModels = [], allowDelegated = false }) {
-  const hint = 'Review the plan, then have a human approve it: reply in chat with "approve the plan <hash>" and run: node scripts/approve-plan.mjs <asset_plan.md> --delegated "<that phrase>".';
+  const phrase = 'approve the plan ' + computePlanHash(scriptContent, models).slice(0, 8);
+  const hint = 'Review the plan, then have a human approve it: reply in chat with "' + phrase + '" and run: node scripts/approve-plan.mjs <asset_plan.md> --delegated "' + phrase + '".';
   if (!fs.existsSync(approvalPath)) {
     return { ok: false, reason: 'missing', message: 'No approved plan found at ' + approvalPath + '. ' + hint };
   }

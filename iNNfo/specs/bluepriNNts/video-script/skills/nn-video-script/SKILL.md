@@ -58,7 +58,7 @@ package's `defaults/video-defaults_NN.md` there unchanged:
 cp <bluepriNNt package>/defaults/video-defaults_NN.md <domain root>/video-defaults_NN.md
 ```
 
-Domain tuning is an EDIT of that copy (voice, models, `music_volume`, `transition`, `fit`,
+Domain tuning is an EDIT of that copy (voice, models, `background_audio_volume`, `transition`, `fit`,
 `frame`, `components`, `sounds`). No script creates it; when it is absent the `domain` level is
 simply skipped and the package defaults apply.
 
@@ -66,26 +66,29 @@ simply skipped and the package defaults apply.
 
 This skill owns **authoring, validating, compiling, rendering, and finalizing** one video's script inside a Series folder:
 
-1. **Author** the video's Level-3 kNNowledge document (adopting the `video-script` blueprint, following the Series' `includes` blueprint and its L3 Template-data document; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `video-script` blueprint at run time — never restated as prose.
-1b. **Interactive Review Console & Human Review Gate** (`<slug>_review_console.html`):
+1. **Author** the video's Level-3 kNNowledge document (adopting the `video-script` blueprint, following the Series' `includes` blueprint and its scope document plus its `Preset` elements; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `video-script` blueprint at run time — never restated as prose.
+1b. **Interactive Review Console & Human Review Gate** (`review_console.html`):
    Before executing billable synthesis or committing the final L3 script, generate the interactive self-contained Review Console:
    ```bash
    node scripts/build-draft-html.mjs <draft.json>
    ```
-   This emits `<slug>_review_console.html` (and backwards-compatible `<slug>_draft_<version>.html`). The console provides:
-   - Parameter cascade inspection and overrides (`#video-params-sheet`): speed, fps, music volume, transition.
+   The script refuses to build the console (exit 1, no HTML written) while any media or thumbnail file referenced by the draft is missing under `assets/<slug>/media/`; produce the screenshots and HyperFrames clips first.
+   The draft, the review and the console use fixed names (`draft.json`, `reviewed.json`, `review_console.html`) in the episode folder. A draft or reviewed JSON carrying a retired key (`template`, `speed`, `emotion`, `tts_model`, `music`, `music_volume`, `presenter_asset`, `intro_asset`) is rejected with `legacy-draft-keys`, which names the key and its replacement (list: `scripts/lib/legacy-draft-keys.mjs`); re-draft it, it is never converted.
+   This emits `review_console.html`. The console provides:
+   - Parameter cascade inspection and overrides (`#video-params-sheet`): voice speed, fps, background audio volume, transition, and one Preset selector (video and scene level) that lists the Presets visible from the Series chain and the domain Video Defaults, and exports the choice as an ordered `presets` list.
    - Global video overlay templates (`#video-overlays-sheet`).
    - Editorial hook variant selection and narration editing.
    - Visual option selection with 3-tier motion styling (ALTA, MEDIA, RÁPIDA) and storyboard lightbox inspection (`#modal-lightbox`).
+     The builder (`normalizeAnimationTiers`) guarantees every animated scene exactly 3 HyperFrames options, ALTA (violet/magenta), MEDIA (blue/cyan) and RÁPIDA (emerald), each with a structured `storyboard` (`camera[]`, `choreography[]`, `timeline{duration_s, ease, fps}`) shown in the lightbox. Authored options are kept; missing tiers are derived. Procedural options never carry a raster thumbnail.
    - **Quine Self-Saving Pattern**: Clicking *Save & Package HTML* (`#btn-save-html`) packages all editorial decisions into `<script id="raw-reviewed-data">` directly inside the standalone HTML file, making it self-contained and portable.
-   - Exporting `<slug>_reviewed.json` (`#btn-save-json`) or copying compiled Level-3 markdown prompt for the agent (`#btn-copy-prompt`).
-   The human reviewer opens the console in any browser, completes the review, and either exports `<slug>_reviewed.json` or uses the Quine file to build the script with `scripts/build-script-from-draft.mjs`.
+   - Exporting `reviewed.json` (`#btn-save-json`) or copying compiled Level-3 markdown prompt for the agent (`#btn-copy-prompt`).
+   The human reviewer opens the console in any browser, completes the review, and either exports `reviewed.json` or uses the Quine file to build the script with `scripts/build-script-from-draft.mjs`.
 2. **Validate**: the document is validated against the `video-script` blueprint (innfo-core `validate_knowledge` / the engine pre-compile guard); the engine refuses an invalid document with a named, non-zero error before any manifest.
 3. **Plan, Estimate & Consult Providers (Pre-Generation Gate)**:
    ```bash
    node scripts/asset-cost-estimator.mjs <script_NN.md> --out assets/{video-slug}/asset_plan.md [--image-model <id>] [--tts-model <id>] [--avatar-model <id>]
    ```
-   *Present provider options (WaveSpeed AI, Replicate, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user for explicit approval before proceeding. The plan is stamped with a `plan_hash`. Approval is a HUMAN act, confirmed by the plan hash, done IN CHAT: ask the user to reply with the exact phrase `approve the plan <plan-hash-8>`; when they send it, relay it with `node scripts/approve-plan.mjs assets/{video-slug}/asset_plan.md --delegated "<their exact phrase>"`, which writes `asset_plan.approved.json`. The phrase is recorded verbatim for audit. A workspace may instead require an interactive TTY (`video-guard.json: allowDelegatedApproval: false`). NEVER self-approve: never invent the phrase, never run `approve-plan.mjs` without the human's actual reply, and never hand-write the approval file. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap, approval and ledger. Preview uncached billable work with `compile --dry-run`. Budget, the 24h cap, model allow/block lists and the ledger live in `video-guard.json` - see `references/cost-guardrails.md`.*
+   *Present provider options (WaveSpeed AI, Replicate, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user for explicit approval before proceeding. Items already in the cache are priced $0 (marked `cached`), so the total is what the run will charge. The plan is stamped with a `plan_hash`. Approval is a HUMAN act, confirmed by the plan hash, done IN CHAT: ask the user to reply with the exact phrase `approve the plan <plan-hash-8>`; when they send it, relay it with `node scripts/approve-plan.mjs assets/{video-slug}/asset_plan.md --delegated "<their exact phrase>"`, which writes `asset_plan.approved.json`. The phrase is recorded verbatim for audit. A workspace may instead require an interactive TTY (`video-guard.json: allowDelegatedApproval: false`). NEVER self-approve: never invent the phrase, never run `approve-plan.mjs` without the human's actual reply, and never hand-write the approval file. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap, approval and ledger. Preview uncached billable work with `compile --dry-run`. Budget, the 24h cap, model allow/block lists and the ledger live in `video-guard.json` - see `references/cost-guardrails.md`.*
 4. **Ensure the Render Runtime (consent-gated, idempotent)**:
    ```bash
    node scripts/ensure-hyperframes.mjs
@@ -93,28 +96,21 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    *HyperFrames is the only renderer. The scene compiler reads the iNNfo model directly and the project emitter writes a HyperFrames project; the pinned CLI (`npx hyperframes@0.8.192`) installs on demand when a render runs. Re-running is a no-op once installed. Also verifies provider credentials (WaveSpeed/Replicate) with consent.*
 5. **Compile Composition & Synthesize Assets**:
    ```bash
-   node scripts/video-engine-cli.mjs compile <script_NN.md> --output renders/{ref}/manifest.json [--dry-run] [--approval <approved.json>] [--allow-model <name>]... [--image-model <id>] [--tts-model <id>] [--avatar-model <id>] [--cache-dir <dir>]
+   node scripts/video-engine-cli.mjs compile <script_NN.md> [--dry-run] [--approval <approved.json>] [--allow-model <name>]... [--image-model <id>] [--tts-model <id>] [--avatar-model <id>] [--cache-dir <dir>]
    ```
    *Compile plans first and refuses the whole run before the first charge unless `asset_plan.approved.json` matches the current script (cache hits stay free), every model is allowed and covered by the approval, and the total fits `min(budgetPerRunUsd, 1.25 x approved total)` and the rolling `dailyCapUsd`. Pass the same `--image-model/--tts-model/--avatar-model` as the estimator. `--allow-model` only works for models a human recorded in the approval. Avatar jobs are serialized across processes and every billable call is appended to `.cognnitive/video-ledger.jsonl`. A `replicate/<vendor>/<model>` name in a script is normalized to the WaveSpeed id for the guard, pricing, URL, ledger and plan_hash. Voices are cloned once with `node scripts/voice-clone.mjs <name> <sample>`; `scene_voice` resolves by registered name or `voice_id`, or is a provider system voice listed in `systemVoices`; anything else fails before spend.*
 5b. **Synthesize Talking Avatars (guarded, after the first compile)**:
    ```bash
    node scripts/synthesize-avatar.mjs <script_NN.md> [--scene <id>]... [--dry-run] [--resume <task-id>] [--force-resubmit] [--poll-window <min>] [--allow-model <name>] [--approval <file>] [--cache-dir <dir>]
-   node scripts/video-engine-cli.mjs compile <script_NN.md> --output renders/{ref}/manifest.json   # picks the clips up, zero extra spend
+   node scripts/video-engine-cli.mjs compile <script_NN.md>   # picks the clips up, zero extra spend
    ```
-   *Needs the narration audio that the first `compile` staged (`audio/<sceneId>_voiceover.mp3`), `WAVESPEED_API_KEY` and the human-approved plan. The price is per second of that audio (measured first; unmeasurable audio is refused), the default and only allowed model is `wavespeed-ai/infinitetalk-fast`, and the whole batch is refused before the first charge. A job takes minutes: the task id is journaled in `.cognnitive/pending-predictions.jsonl` before polling, and a re-run is REFUSED while the journal shows an outstanding job for the same scene (use the printed `--resume` command; `--force-resubmit` costs money). On a timeout or recoverable failure the script exits 3 with one complete resume command per task (resume never re-submits). Avatar images must be real files (prompt-only avatar layers need the image generated first by compile); stale staged audio is refused (re-run compile). Billing is ceil(seconds), capped by `maxAvatarSeconds`. The second `compile` rewrites each cached avatar layer to a muted `video` layer.*
+   *Needs the narration audio the first `compile` cached (it reads `<domain>/.cognnitive/cache/video/tts` directly: there is no `audio/` copy), `WAVESPEED_API_KEY` and the human-approved plan. The price is per second of that audio (measured first; unmeasurable audio is refused), the default and only allowed model is `wavespeed-ai/infinitetalk-fast`, and the whole batch is refused before the first charge. A job takes minutes: the task id is journaled in `.cognnitive/pending-predictions.jsonl` before polling, and a re-run is REFUSED while the journal shows an outstanding job for the same scene (use the printed `--resume` command; `--force-resubmit` costs money). On a timeout or recoverable failure the script exits 3 with one complete resume command per task (resume never re-submits). Avatar images must be real files (prompt-only avatar layers need the image generated first by compile); a scene whose narration, voice or model changed has no cache entry and is refused (re-run compile first). Billing is ceil(seconds), capped by `maxAvatarSeconds`. The second `compile` rewrites each cached avatar layer to a muted `video` layer.*
 
-6. **Render Master Video (dual-master: horizontal + vertical)**:
+6. **Render the Master (one 1920x1920 file)**:
    ```bash
-   node scripts/video-engine-cli.mjs render renders/{ref}/manifest.json --output renders/{ref}/master.mp4
-   node scripts/video-engine-cli.mjs compile <script_NN.md> --output renders/{ref}-vertical/manifest.json --format 9:16
-   node scripts/video-engine-cli.mjs render renders/{ref}-vertical/manifest.json --output renders/{ref}-vertical/master_vertical.mp4
+   node scripts/video-engine-cli.mjs render <script_NN.md>
    ```
-   *A HyperFrames failure is a loud, non-zero error that includes the tail of the CLI's stderr (stdout if empty) — there is no FFmpeg fallback. Everything after a literal `--` is forwarded verbatim to `hyperframes render` (e.g. `render <manifest> --output <mp4> -- --workers 2 --low-memory-mode`); environment variables are inherited by the CLI. Pass `--allow-mock` only for CI placeholders. `--format 16:9|9:16|1:1` sets width/height (explicit flags win); `render` from a manifest refuses size flags — re-compile. Presenter avatar layers automatically anchor at `object-position: center 12%` in horizontal widescreen (16:9) to preserve cinematic headroom, while vertical (9:16) preserves full-body framing. The second compile reuses cached TTS/images/avatars: zero extra provider cost.*
-6c. **Derive Format Variants (optional, from a square master)** — when the deliverable set is square/vertical/horizontal and crop-fill would lose the square composition:
-   ```bash
-   node scripts/render-formats.mjs --master renders/{ref}/master_1080x1080.mp4 [--out-dir renders/{ref}] [--formats square,vertical,horizontal]
-   ```
-   *Post-process over the square master (NOT a re-render): emits `<slug>_1080x1080.mp4` (stream copy), `<slug>_1080x1920.mp4` and `<slug>_1920x1080.mp4`, each showing the square WHOLE, centered, over a Gaussian-blurred fill, audio copied and `+faststart` applied. `--dry-run` prints the ffmpeg filter graphs. If the master is already named `<slug>_1080x1080.mp4`, the square copy is skipped (never overwrites its own input).*
+   *`render` takes the SCRIPT (a manifest argument is a usage error) and compiles first, so a stale manifest can never be rendered. It has no output option: the master is always `<episode-dir>/<slug>_1920x1920.mp4`, and `compile` has no `--output`/`--out` either (the manifest is always `build/manifest.json`). The master size comes from the declared `master_resolution` in the domain Video Defaults; there is no `--format`, `--width` or `--height` and no 9:16 recompile. The master is written in place through a temp file in `build/`, so the path holds either the previous complete master or the new one. A HyperFrames failure is a loud, non-zero error that includes the tail of the CLI's stderr — there is no FFmpeg fallback. Everything after a literal `--` is forwarded verbatim to `hyperframes render`; `--allow-mock` is only for CI placeholders. A presenter Layer with no cached avatar clip stops the render before it starts.*
 7. **Compose Video Thumbnail**:
    ```bash
    node scripts/render-thumbnail.mjs --base <path> --title <title> --out <out> [--series <series-dir>]
@@ -122,9 +118,9 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
    *`render-thumbnail.mjs` is the only Phase B thumbnail tool. When `--series <dir>` is passed (or a series is found by walking from `--out`), the subtitle and badge default to the Series `title`; explicit `--subtitle`/`--badge` win.*
 8. **Finalize**:
    ```bash
-   node scripts/finalize-video.mjs --video-dir <video-dir> [--ref <r>] [--force-thumbnail]
+   node scripts/finalize-video.mjs <episode-dir> [--formats vertical,horizontal,square] [--fill crop|blur] [--force] [--dry-run]
    ```
-   *Promotes `master.mp4` + `master_vertical.mp4` (when present) + thumbnail/voiceover. Set `master::` and `master_vertical::` on the Element.*
+   *Derives the delivery files from `<slug>_1920x1920.mp4` — `<slug>_1080x1920.mp4`, `<slug>_1920x1080.mp4` and `<slug>_1080x1080.mp4` — then prints the chapters of `description.md` and the two Field values `master::` and `thumbnail::`. It never writes the model and copies nothing: render already wrote the master in place. Write `description.md` yourself from the printed chapters, and set `master::` on the Video element.*
 9. **Closing Retrospective & Improvement Analysis**:
    After completing the script elaboration or rendering session, proactively prompt the user asking if they want to analyze the session's conversation to suggest concrete refinements for future episodes.
 
@@ -149,14 +145,15 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/lib/avatar-jobs.mjs` | Avatar job definition shared by synthesize-avatar and compile: layer predicate, audio source, content-addressed cache key, cached-clip pickup. |
 | `scripts/voice-clone.mjs` | Clone a voice once (pending reservation under a lock, atomic registry write, ledgered); refuses re-cloning without `--force`. |
 | `scripts/asset-cost-estimator.mjs` | Pre-generation provider options catalog, per-scene character/layer calculator, and production cost estimator. |
-| `scripts/video-engine-cli.mjs` | Headless CLI for video compilation (`compile`) and headless rendering (`render`). `compile` enforces the approval gate; `--dry-run` previews spend. `--format 16:9\|9:16\|1:1` presets width/height. |
-| `scripts/render-formats.mjs` | Format-variant post-process: square master → `_1080x1080` (copy) / `_1080x1920` / `_1920x1080` with the square whole over a Gaussian-blurred fill (`+faststart`). |
+| `scripts/video-engine-cli.mjs` | Headless CLI for `compile` and `render`. `compile` enforces the approval gate, writes `build/manifest.json` and `--dry-run` previews spend; `render` takes the script and writes the master in place. The size comes from the declared `master_resolution`. |
+| `scripts/render-formats.mjs` | The one derivation from the 1920x1920 master: `_1080x1920` and `_1920x1080` are the central 1080 crops, `_1080x1080` is a lanczos scale, and `--fill blur` is an opt-in with a `_blur` suffix. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor: renders a one-frame HyperFrames composition (base image + typography + brand pill) through the pinned CLI. `--series <dir>` (or the cascade from `--out`) fills subtitle/badge from the Series `title`; font/accent come from the resolved `frame` tokens. |
-| `scripts/finalize-video.mjs` | Promotes rendered `master`/`thumbnail`/`voiceover` out of `renders/<ref>/` into the video's own folder. |
-| `scripts/build-script-from-draft.mjs` | Generates the L3 `video-script` document from a reviewed draft JSON, reading series values through the parameter cascade (`series_NN.md` → domain Video Defaults → package Video Defaults). The reviewed JSON (all scenes, fixed ones included, each with its `kind`) is the single source of truth for per-scene decisions (narration, choice, overlays) and works on its own; `--draft` only supplies scene structure. The script frontmatter is copied from the series document and the filename uses the Series slug. |
-| `scripts/build-draft-html.mjs` | Generates the self-contained interactive Review Console (`<slug>_review_console.html`) from a draft JSON with inlined base64 thumbnails, parameter cascade overrides, hook variant selector, live L3 preview, and Quine self-saving pattern. |
+| `scripts/finalize-video.mjs` | Derives the delivery formats from the master in place, prints the `description.md` chapters and the `master::`/`thumbnail::` values. Never writes the model. |
+| `scripts/build-script-from-draft.mjs` | Generates the L3 `video-script` document from a reviewed draft JSON, reading series values through the parameter cascade (series scope document → domain Video Defaults → package Video Defaults). The reviewed JSON (all scenes, fixed ones included, each with its `kind`) is the single source of truth for per-scene decisions (narration, choice, overlays) and works on its own; `--draft` only supplies scene structure. The script frontmatter is copied from the series document and the filename uses the Series slug. |
+| `scripts/build-draft-html.mjs` | Generates the self-contained interactive Review Console (`review_console.html`) from a draft JSON with inlined base64 thumbnails, parameter cascade overrides, hook variant selector, live L3 preview, and Quine self-saving pattern. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.
 See `references/thumbnail-and-asset-pipeline.md` for visual preproduction guidelines.
 See `references/overlay-slots.md` for the overlay slot contract (variables, components, sound keys).
 See `references/cost-guardrails.md` for the spend gate (approval, budget, allowlist, ledger, dry run).
+See `references/parameters.md` for every Field by scope (Defaults, Series, Preset, Video, Scene, Layer) with its type and values. It is generated from the blueprint; never edit it by hand.

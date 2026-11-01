@@ -50,31 +50,24 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const sceneSlug = (scene) => String(scene.slug || scene.id || 'scene').replace(/^scene_/, '') || 'scene';
 const isVideoName = (name) => /\.(mp4|webm|mov|mkv|m4v)$/i.test(String(name || ''));
 
-/** Drawable media layers (have a staged asset) sorted by paint order (`layer_level`). */
+/** Drawable media layers (have a staged asset) sorted by paint order (`layer_z_index`). */
 function drawableLayers(scene) {
   const layers = (scene?.props?.layers) || [];
   return layers
     .filter((l) => String(l.layer_asset_source || '').length > 0)
     .slice()
-    .sort((a, b) => Number(a.layer_level ?? 0) - Number(b.layer_level ?? 0));
+    .sort((a, b) => Number(a.layer_z_index ?? 0) - Number(b.layer_z_index ?? 0));
 }
 
-function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, isHorizontal = false) {
+function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug) {
   const name = String(layer.layer_asset_source);
   const dur = frameSeconds(sceneDurationFrames, fps);
-  const z = Number(layer.layer_level ?? 0);
+  const z = Number(layer.layer_z_index ?? 0);
   const tag = isVideoName(name) ? 'video' : 'img';
   const mediaAttrs =
     tag === 'video'
       ? `muted playsinline data-has-audio="false"`
       : '';
-  const isPresenter = Boolean(
-    layer.layer_avatar_model ||
-    layer.layer_type === 'presenter' ||
-    layer.layer_type === 'talking_avatar' ||
-    layer.layer_type === 'avatar' ||
-    /presenter|avatar/i.test(layer.name || '')
-  );
   let objectPos = 'center center';
   if (layer.layer_position) {
     const p = String(layer.layer_position).toLowerCase();
@@ -82,11 +75,9 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, isHo
     else if (p === 'bottom') objectPos = 'center bottom';
     else if (p === 'center') objectPos = 'center center';
     else objectPos = layer.layer_position;
-  } else if (isPresenter && isHorizontal) {
-    // Open Gate headroom preservation: in widescreen horizontal ratios (16:9),
-    // presenter faces reside in the upper third; anchor at 12% to prevent facial cropping.
-    objectPos = 'center 12%';
   }
+  // The master is square, so there is no widescreen headroom to compensate: the
+  // retired `center 12%` offset is gone (design D5).
   // A stable per-layer `id` gives HyperFrames Studio a target for its timeline and
   // canvas controls (an id-less clip triggers a lint warning).
   const id = `media-${esc(sceneSlug || 'scene')}-${trackBase}`;
@@ -100,9 +91,15 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, isHo
 /** Pure: build the project text without touching the filesystem. */
 export function buildProject(manifest, plan = {}) {
   const fps = Number(manifest.fps) || 30;
-  const width = Number(manifest.width) || 1920;
-  const height = Number(manifest.height) || 1080;
-  const isHorizontal = width > height;
+  // Width and height are required: the master size is declared data, so the
+  // projector never invents 1920x1080 (design D3).
+  const width = Number(manifest.width);
+  const height = Number(manifest.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error(
+      'scene-project: the manifest carries no width/height; compile with a master_resolution declaration',
+    );
+  }
   const total = roundMs(Number(manifest.totalDurationInSeconds) || 0);
   const compositionId = String(manifest.compositionId || 'composition');
   const scenes = manifest?.tracks?.scenes || [];
@@ -117,7 +114,7 @@ export function buildProject(manifest, plan = {}) {
     const dur = frameSeconds(scene.durationInFrames, fps);
     const layers = drawableLayers(scene);
     layers.forEach((l) => assets.push(String(l.layer_asset_source)));
-    const layerHtml = layers.map((l, i) => layerMarkup(l, scene.durationInFrames, fps, i + 1, slug, isHorizontal)).join('\n      ');
+    const layerHtml = layers.map((l, i) => layerMarkup(l, scene.durationInFrames, fps, i + 1, slug)).join('\n      ');
     const transition = sceneTransitionFragment(scene.transition, fps);
     const tween = transition ? `      ${transition.js}` : '';
     const html = `<template>

@@ -1,6 +1,9 @@
 <template>
   <style>
-    #root { position: absolute; inset: 0; overflow: hidden; }
+        /* Open Gate safe square: only the central 1080x1080 of the 1920x1920 master
+       survives every crop, so the component lays out inside that square and its
+       percentages are relative to it. */
+    #root { position: absolute; inset: 21.875%; overflow: visible; }
     .nn-quote {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
       max-width: 80%; text-align: center;

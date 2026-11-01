@@ -1,6 +1,9 @@
 <template>
   <style>
-    #root { position: absolute; inset: 0; overflow: hidden; }
+        /* Open Gate safe square: only the central 1080x1080 of the 1920x1920 master
+       survives every crop, so the component lays out inside that square and its
+       percentages are relative to it. */
+    #root { position: absolute; inset: 21.875%; overflow: visible; }
     .nn-lower-third {
       position: absolute; left: 5%; bottom: 12%; max-width: 70%;
       background: rgba(0, 0, 0, 0.72);

@@ -127,7 +127,7 @@ export class AssetSynthesizer {
     const bags = options.bags || {};
     this.defaultModels = {
       image: chosen.image || resolve('image_model', bags).value || undefined,
-      tts: chosen.tts || resolve('tts_model', bags).value || undefined,
+      tts: chosen.tts || resolve('voice_model', bags).value || undefined,
       avatar: chosen.avatar || resolve('avatar_model', bags).value || undefined,
     };
     if (options.guard) {
@@ -399,7 +399,11 @@ export class AssetSynthesizer {
     }
     const options = this._withResolvedVoice(voiceOptions);
     const sha256 = this.cacheManager.computeHash(cleanText, options);
-    const cachedPath = await this.cacheManager.get(sha256, 'mp3', 'tts');
+    // A keyless run keeps its silence under `<key>-offline`, mirroring avatars: the
+    // real key can never be poisoned, and an offline re-run is still a cache hit.
+    const billable = this._useMiniMax() && Boolean(this.env.WAVESPEED_API_KEY);
+    const cacheKey = billable ? sha256 : sha256 + '-offline';
+    const cachedPath = await this.cacheManager.get(cacheKey, 'mp3', 'tts');
 
     if (cachedPath) {
       this.guard.recordCacheHit({ kind: 'tts', ref: meta.ref });
@@ -407,15 +411,16 @@ export class AssetSynthesizer {
       const durationSeconds = await probeAudioDuration(cachedPath, this.probeDeps);
       return { assetPath: cachedPath, sha256, fromCache: true, durationSeconds, fileSizeBytes: stats.size };
     }
-
-    const billable = this._useMiniMax() && Boolean(this.env.WAVESPEED_API_KEY);
     if (!billable) {
       if (this.guard.dryRun) return this._skipped(sha256);
       if (this.env.WAVESPEED_API_KEY) {
         throw new Error('TTS synthesis failed: WAVESPEED_API_KEY is present but MiniMax provider is not configured or unsupported');
       }
       console.warn(`[asset-synthesizer] WARNING: WAVESPEED_API_KEY is not set. Generating silent synthetic audio placeholder for TTS (offline/test mode: zero voice content).`);
-      return this._storeTts(sha256, this._generateSyntheticAudio(cleanText, options));
+      // Stored under its own key, so a later keyed run never gets a hit on silence.
+      // The logical hash stays the real one: callers key other artifacts by it.
+      const stored = await this._storeTts(cacheKey, this._generateSyntheticAudio(cleanText, options));
+      return { ...stored, sha256 };
     }
 
     return this._singleFlight('tts:' + sha256, async () => {
@@ -570,20 +575,22 @@ export class AssetSynthesizer {
   async resolveMedia(prompt, options = {}, meta = {}) {
     const cleanPrompt = (prompt || '').trim();
     const sha256 = this.cacheManager.computeHash(cleanPrompt, options);
-    const cachedPath = await this.cacheManager.get(sha256, 'png', 'images');
+    const billable = Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN);
+    const cacheKey = billable ? sha256 : sha256 + '-offline';
+    const cachedPath = await this.cacheManager.get(cacheKey, 'png', 'images');
     if (cachedPath) {
       this.guard.recordCacheHit({ kind: 'image', ref: meta.ref });
       return { assetPath: cachedPath, sha256, fromCache: true, fileSizeBytes: fs.statSync(cachedPath).size };
     }
-
-    const billable = Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN);
     if (!billable && this.guard.dryRun) return this._skipped(sha256);
 
     return this._singleFlight('img:' + sha256, async () => {
       if (billable && this._alreadyPlanned('img:' + sha256)) return this._skipped(sha256);
       const imageBuffer = await this._generateMediaFromPrompt(cleanPrompt, options, meta);
       if (imageBuffer === null) return this._skipped(sha256);
-      const assetPath = await this.cacheManager.put(sha256, 'png', imageBuffer, 'images');
+      // A keyless run stores its local placeholder under its own key, so the real
+      // image key can never be poisoned by a placeholder (design D10).
+      const assetPath = await this.cacheManager.put(cacheKey, 'png', imageBuffer, 'images');
       return { assetPath, sha256, fromCache: false, fileSizeBytes: fs.statSync(assetPath).size };
     });
   }
@@ -675,7 +682,7 @@ export class AssetSynthesizer {
     const themeHighlight = is60s ? '#38bdf8' : is70s ? '#ec4899' : is80s ? '#f59e0b' : accent;
 
     const svg = `
-    <svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+    <svg width="1920" height="1920" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="${gradStart}"/>

@@ -9,14 +9,14 @@
  *
  * Series-parameterized through the parameter cascade (design D10/D11): every
  * series value (presenter/intro assets, per-scene templates) is read from the
- * `series_NN.md` bag, the domain Video Defaults or the package Video Defaults,
+ * Series scope document bag, the domain Video Defaults or the package Video Defaults,
  * never from a side config. The generated document's frontmatter is copied from
  * the series document and its filename uses the Series slug. Cascaded scene
- * values the engine resolves itself (`music`, `music_volume`, `transition`,
+ * values the engine resolves itself (`background_audio`, `background_audio_volume`, `transition`,
  * `fit`) are never written.
  *
  * Usage:
- *   node build-script-from-draft.mjs <slug>_reviewed.json [--draft <draft.json>]
+ *   node build-script-from-draft.mjs reviewed.json [--draft <draft.json>]
  *     [--series <series-dir>] [--out <script_NN.md>]
  */
 
@@ -25,6 +25,7 @@ import path from 'node:path';
 import { loadCascadeBags, resolve, findSeriesRoot } from './lib/video-scope.mjs';
 import { resolveWorkspace } from './lib/video-guard.mjs';
 import { parseKnowledgeDocument, slugify } from './lib/knowledge-model.mjs';
+import { assertNoLegacyKeys } from './lib/legacy-draft-keys.mjs';
 
 /** The raw frontmatter block (between the `---` fences) of an iNNfo document. */
 export function extractFrontmatter(content) {
@@ -64,16 +65,14 @@ export function dropFrontmatterKeys(frontmatter, keys = MARKER_ONLY_KEYS) {
 }
 
 /**
- * The series document of a folder: the legacy `series_NN.md` when present, else
- * the unique `<series>_scope_NN.md` scope marker. Returns null when neither
- * exists or the marker name is ambiguous.
+ * The series document of a folder: its unique `<series>_scope_NN.md` scope
+ * document. Returns null when there is none or the name is ambiguous. The legacy
+ * `series_NN.md` is not a series document any more.
  * @param {string} seriesDir
  * @returns {{ file: string, marker: boolean } | null}
  */
 export function seriesDocumentFile(seriesDir) {
   const dir = path.resolve(seriesDir);
-  const legacy = path.join(dir, 'series_NN.md');
-  if (fs.existsSync(legacy)) return { file: legacy, marker: false };
   let entries;
   try {
     entries = fs.readdirSync(dir);
@@ -85,9 +84,9 @@ export function seriesDocumentFile(seriesDir) {
 }
 
 /**
- * Reads the Series document from a series folder (`series_NN.md`, or its
- * `<series>_scope_NN.md` marker). A marker's scope-only keys are dropped, and
- * its slug comes from the filename stem because it declares no `slug::` field.
+ * Reads the Series document from a series folder (its `<series>_scope_NN.md`
+ * scope document). Scope-only keys are dropped, and its slug comes from the
+ * filename stem because a scope document declares no `slug::` field.
  * @param {string} seriesDir
  * @returns {{ frontmatter: string, slug: string, title: string, fields: Record<string, string> }}
  */
@@ -95,7 +94,7 @@ export function loadSeriesDocument(seriesDir) {
   const found = seriesDocumentFile(seriesDir);
   if (!found) {
     throw new Error(
-      `no series document in ${path.resolve(seriesDir)}: expected series_NN.md or a <series>_scope_NN.md marker`,
+      `no series document in ${path.resolve(seriesDir)}: expected a <series>_scope_NN.md scope document`,
     );
   }
   const content = fs.readFileSync(found.file, 'utf8');
@@ -116,30 +115,21 @@ export function loadSeriesDocument(seriesDir) {
 
 /**
  * Locates the series document for an input folder: an explicit `--series <dir>` wins,
- * otherwise the nearest ancestor holding a `series_NN.md` marker strictly below the
- * workspace root.
- * @param {string} inputDir
- * @param {string} [seriesDirFlag]
- * @returns {({ frontmatter: string, slug: string, title: string, fields: Record<string, string>, dir: string }) | null}
- */
-/**
- * Locates the series document for an input folder: an explicit `--series <dir>` wins,
- * otherwise the nearest ancestor holding a series marker strictly below the
- * workspace root. The document is `series_NN.md` or the `<series>_scope_NN.md` marker.
+ * otherwise the series root the scope chain resolves (see `findSeriesRoot`).
  * @param {string} inputDir
  * @param {string} [seriesDirFlag]
  * @returns {({ frontmatter: string, slug: string, title: string, fields: Record<string, string>, dir: string }) | null}
  */
 export function loadSeriesFor(inputDir, seriesDirFlag) {
-  const dir = seriesDirFlag
-    ? path.resolve(seriesDirFlag)
-    : findSeriesRoot(inputDir, resolveWorkspace(inputDir).root);
+  const dir = seriesDirFlag ? path.resolve(seriesDirFlag) : findSeriesRoot(inputDir);
   if (!dir || !seriesDocumentFile(dir)) return null;
   return { dir, ...loadSeriesDocument(dir) };
 }
 
 /** Pure: build the L3 script markdown from a reviewed draft and the cascade bags. */
 export function buildScript(reviewed, draft, options = {}) {
+  assertNoLegacyKeys(reviewed, 'reviewed.json');
+  if (draft) assertNoLegacyKeys(draft, 'draft.json');
   const bags = options.bags || {};
   const frontmatter = options.frontmatter || '';
   const byslug = new Map((reviewed.scenes || []).map((s) => [s.slug, s]));
@@ -148,32 +138,40 @@ export function buildScript(reviewed, draft, options = {}) {
   const humanName = (s) => (s || '').replace(/-/g, ' ').replace(/^\d+ /, '').trim();
   const d = draft || { scenes: reviewed.scenes };
 
-  // A scene template is a per-scene draft decision; it is the only template the
-  // tool writes. Scenes without one rely on the cascade (the engine resolves it).
-  const templateFor = (scene) => {
-    const fromDraft = draftBySlug.get(scene.slug);
-    const fromReviewed = byslug.get(scene.slug);
-    return (fromDraft && fromDraft.template) || (fromReviewed && fromReviewed.template) || '';
+  // The Preset list is an ordered author decision made in the console's one
+  // selector, read only from the reviewed JSON (the draft never proposes Presets),
+  // at video and scene level. Absent or empty relies on the cascade (the engine
+  // resolves it); anything but a list fails.
+  const presetList = (value, where) => {
+    if (value === undefined || value === null) return [];
+    if (!Array.isArray(value) || value.some((name) => typeof name !== 'string' || name.trim() === '')) {
+      throw new Error(`presets in ${where} must be a list of Preset names, got ${JSON.stringify(value)}`);
+    }
+    return value.map((name) => name.trim());
   };
+  const presetsLine = (names) => (names.length ? 'presets:: [' + names.join(', ') + ']' : '');
+  const presetsFor = (scene) => presetList(byslug.get(scene.slug)?.sceneOverrides?.presets, `reviewed scene ${scene.slug}`);
 
   function layersFor(scene, choice) {
     const head = '### NN Layer: ';
     if (scene.kind === 'fixed') {
       const fromDraft = draftBySlug.get(scene.slug);
       const fromRev = byslug.get(scene.slug);
-      const asset = resolve('intro_asset', bags).value || (fromDraft && fromDraft.visual && fromDraft.visual.asset) || (fromDraft && fromDraft.asset) || (fromRev && fromRev.visual && fromRev.visual.asset) || (fromRev && fromRev.asset) || (scene.visual && scene.visual.asset) || scene.asset;
+      const asset = resolve('intro', bags).value || (fromDraft && fromDraft.visual && fromDraft.visual.asset) || (fromDraft && fromDraft.asset) || (fromRev && fromRev.visual && fromRev.visual.asset) || (fromRev && fromRev.asset) || (scene.visual && scene.visual.asset) || scene.asset;
       const lines = [head + humanName(scene.name) + ' Background', 'slug:: ' + scene.slug + '-background', 'type:: background'];
       if (asset) lines.push('asset:: ' + asset);
       lines.push('position:: center');
       return lines.join('\n');
     }
     if (choice && choice.type === 'avatar') {
-      const asset = resolve('presenter_asset', bags).value;
+      // The presenter takes its image from the cascaded `avatar`, so the tool
+      // writes no literal `asset::` (design D7). The chosen resolution is a
+      // per-Layer decision and is written whatever the draft's quality label
+      // was: dropping it silently changed what was billed (design D8).
       const lines = [head + humanName(scene.name) + ' Presenter', 'slug:: ' + scene.slug + '-presenter', 'type:: presenter'];
-      if (asset) lines.push('asset:: ' + asset);
       lines.push('avatar_model:: ' + choice.model);
-      if (choice.quality === 'ALTA') {
-        lines.push('avatar_resolution:: ' + (choice.resolution || '768p'));
+      if (choice.resolution) {
+        lines.push('avatar_resolution:: ' + choice.resolution);
       }
       return lines.join('\n');
     }
@@ -239,8 +237,8 @@ export function buildScript(reviewed, draft, options = {}) {
     const r = byslug.get(scene.slug);
     const narration = scene.kind === 'fixed' ? '' : (r ? r.narration : scene.narration) || '';
     const lines = ['## NN Scene: ' + scene.name, '', 'slug:: ' + scene.slug];
-    const template = templateFor(scene);
-    if (template) lines.push('template:: ' + template);
+    const presets = presetsLine(presetsFor(scene));
+    if (presets) lines.push(presets);
     lines.push('', narration, '');
     const layers = layersFor(scene, r ? r.choice : null);
     if (layers) lines.push(layers);
@@ -251,6 +249,7 @@ export function buildScript(reviewed, draft, options = {}) {
 
   const ordered = d.scenes || reviewed.scenes;
   const blocks = ordered.map(sceneBlock).join('\n\n');
+  const videoPresets = presetsLine(presetList(reviewed.videoOverrides?.presets, 'reviewed videoOverrides'));
 
   return [
     '---',
@@ -264,6 +263,7 @@ export function buildScript(reviewed, draft, options = {}) {
     'slug:: ' + reviewed.slug,
     'title:: ' + reviewed.title,
     'sources:: [' + (reviewed.sources || []).join(', ') + ']',
+    ...(videoPresets ? [videoPresets] : []),
     '',
     '# NN Scene',
     '',
@@ -293,7 +293,16 @@ function main() {
   const frontmatter = series ? series.frontmatter : '';
   const seriesSlug = (series && series.slug) || (bags.series && bags.series.slug) || reviewed.slug;
   const outPath = flag('--out') || path.join(inputDir, scriptFilename(seriesSlug, reviewed.slug));
-  const md = buildScript(reviewed, draft, { bags, frontmatter });
+  let md;
+  try {
+    assertNoLegacyKeys(reviewed, reviewedPath);
+    if (draft) assertNoLegacyKeys(draft, draftPath);
+    md = buildScript(reviewed, draft, { bags, frontmatter });
+  } catch (e) {
+    if (e.code !== 'legacy-draft-keys') throw e;
+    console.error('build-script-from-draft: ' + e.message);
+    process.exit(1);
+  }
   fs.writeFileSync(outPath, md, 'utf8');
   console.log('Script written: ' + outPath + ' (' + (Buffer.byteLength(md) / 1024).toFixed(1) + ' KB)');
 }

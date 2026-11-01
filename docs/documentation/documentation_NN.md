@@ -191,6 +191,17 @@ tags:: [docs, how-to, procedures, execution]
 
 Ask your agent to run a declared procedure and review its outputs.
 
+## NN Page: The mental model
+slug:: mental-model
+title:: The mental model: from raw source to audited knowledge
+source:: content/concepts/mental-model.md
+route:: content/concepts/mental-model.md
+order:: 5
+parent:: [[Architecture & Concepts]]
+tags:: [docs, concept, mental-model, provenance, sidecar, changesets]
+
+How cogNNitive works under the hood: immutable raw sources, clean knowledge units, changesets as the sole provenance, and the human-AI loop.
+
 ## NN Page: The four levels
 slug:: levels
 title:: The four levels
@@ -463,6 +474,6 @@ parent:: [[cogNNitive Documentation]]
 ## NN NavbarItem: Bootstrap
 slug:: bootstrap
 label:: 🚀 **Bootstrap**: install in your agent
-url:: /use
+url:: https://cognnitive.com/use/
 order:: 3
 parent:: [[cogNNitive Documentation]]

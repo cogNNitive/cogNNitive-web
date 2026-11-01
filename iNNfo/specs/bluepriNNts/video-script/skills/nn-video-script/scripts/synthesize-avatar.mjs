@@ -7,8 +7,10 @@
  * Avatars must be produced with this script, never with ad-hoc API/MCP calls.
  *
  * One avatar job = one scene's narration audio + the avatar still image. The audio is the
- * `audio/<sceneId>_voiceover.mp3` that `compile` stages (run compile first; stale audio is
- * refused). Cost is ceil(seconds) of that audio, measured before any spend. The finished clip
+ * scene's TTS cache entry that `compile` populates (run compile first; an entry for an older
+ * narration/voice/model is never served). Scenes without narration use their explicit
+ * `audio_asset_source` / `voiceover` file. Cost is ceil(seconds) of that audio, measured
+ * before any spend. The finished clip
  * is cached under the content-addressed key `compile` looks up, so a following compile + render
  * uses it for free.
  *
@@ -32,10 +34,11 @@ import { CacheManager } from './cache-manager.mjs';
 import { estimateCallUsd } from './asset-cost-estimator.mjs';
 import { loadCascadeBags } from './lib/video-scope.mjs';
 import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs';
-import { loadKnowledgeModel, loadTemplateModels } from './lib/knowledge-model.mjs';
+import { loadKnowledgeModel } from './lib/knowledge-model.mjs';
+import { withScriptPresets } from './lib/video-scope.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
 import { LOCKS_RELATIVE_DIR, SpendGuard, loadGuard, resolveDefaultCacheDir } from './lib/video-guard.mjs';
-import { assertAudioFresh, collectAvatarJobs } from './lib/avatar-jobs.mjs';
+import { collectAvatarJobs } from './lib/avatar-jobs.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
 import { acquireLock } from './lib/file-lock.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
@@ -116,7 +119,7 @@ export async function synthesizeAvatars(o) {
   const scriptDir = path.dirname(scriptPath);
   const bags = {
     ...(o.bags || loadCascadeBags(scriptDir)),
-    cli: { tts_model: models.tts, image_model: models.image, avatar_model: models.avatar },
+    cli: { voice_model: models.tts, image_model: models.image, avatar_model: models.avatar },
   };
   const loaded = loadGuard(scriptDir);
   const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir);
@@ -128,9 +131,11 @@ export async function synthesizeAvatars(o) {
 
   const compiler = new SceneCompiler({});
   const model = o.model || loadKnowledgeModel(scriptPath, { model: o.model, modelPath: o.modelPath });
-  const scriptGuard = compiler.checkScript(model, o);
+  // The script's own Presets shadow Series and domain ones (design D3).
+  const chainBags = withScriptPresets(bags, model, scriptPath);
+  const scriptGuard = compiler.checkScript(model, { ...o, bags: chainBags });
   if (!scriptGuard.ok) throw new ScriptValidationError(scriptGuard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { templates: o.templates || loadTemplateModels(scriptDir), bags });
+  const parsed = compiler.lowerKnowledgeModel(model, { bags: chainBags });
   const sceneFilter = o.scenes?.length ? [...new Set(o.scenes)] : undefined;
   if (sceneFilter) {
     const unknown = sceneFilter.filter((id) => !parsed.scenes.some((s) => s.id === id));
@@ -144,13 +149,12 @@ export async function synthesizeAvatars(o) {
     scriptDir,
     cacheManager: readCache,
     sceneIds: sceneFilter,
+    config: loaded.config,
+    models,
+    bags,
   });
   if (problems.length) throw new Error(problems.join('\n'));
   if (raw.length === 0) throw new Error('No talking-avatar layers (layer_type: talking_avatar) found in ' + scriptPath + (sceneFilter ? ' for the selected scenes.' : '.'));
-  for (const j of raw) {
-    const sc = parsed.scenes.find((s) => s.id === j.sceneId);
-    assertAudioFresh({ sc, audioPath: j.audioPath, cacheManager: readCache, config: loaded.config, models, bags });
-  }
 
   const byKey = new Map();
   for (const j of raw) {
@@ -344,7 +348,7 @@ export const USAGE = [
   '  --approval <file>        approved plan (default <script dir>/asset_plan.approved.json)',
   '  --cache-dir <dir>        cache dir (default <workspace>/.cognnitive/cache/video)',
   '  --avatar-model <id> / --tts-model <id> / --image-model <id>   same values as given to the estimator (part of plan_hash)',
-  'Run compile first (it stages audio/<sceneId>_voiceover.mp3; stale audio is refused). Needs WAVESPEED_API_KEY and a',
+  'Run compile first (it populates the TTS cache this reads; no staged audio file; an entry for older narration is not served). Needs WAVESPEED_API_KEY and a',
   'human-approved plan. Billed seconds = ceil(measured audio seconds); audio over maxAvatarSeconds is refused.',
   'Exit codes: 0 ok, 1 refused or failed, 3 resumable (timeout or recoverable failure; the exact command is printed).',
 ].join('\n');

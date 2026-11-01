@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "video-script_V_0-13-6"
+  name: "video-script_V_0-14-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Video Defaults"
@@ -16,11 +16,12 @@ title: "Video Defaults"
 ## NN Video Defaults: Defaults
 
 slug:: defaults
+master_resolution:: 1920x1920
 voice:: default
-tts_model:: minimax/speech-2.8-hd
+voice_model:: minimax/speech-2.8-hd
 image_model:: wavespeed-ai/z-image/turbo
 avatar_model:: wavespeed-ai/infinitetalk-fast
-music_volume:: 0.2
+background_audio_volume:: 0.2
 transition:: none
 fit:: cover
 frame:: neutral

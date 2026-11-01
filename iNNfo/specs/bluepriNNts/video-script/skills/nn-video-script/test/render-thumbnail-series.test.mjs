@@ -3,7 +3,7 @@
  *
  * Slice S4a (one thumbnail tool): `render-thumbnail.mjs` is the only Phase B
  * tool, and `--series <dir>` makes the subtitle and badge default to the Series
- * `title` read from `series_NN.md` (the behavior folded in from `thumbnail-v1.mjs`).
+ * `title` read from the series scope document (folded in from `thumbnail-v1.mjs`).
  *
  * Covers the two-phase-thumbnail "Series title fills subtitle and badge" scenario
  * and the video-script-skill "One thumbnail tool" scenario.
@@ -40,7 +40,7 @@ title:: Other Series
 
 function withSeries(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-thumb-series-'));
-  fs.writeFileSync(path.join(dir, 'series_NN.md'), SERIES_CONTENT, 'utf8');
+  fs.writeFileSync(path.join(dir, 'other-series_scope_NN.md'), SERIES_CONTENT, 'utf8');
   try {
     fn(dir);
   } finally {

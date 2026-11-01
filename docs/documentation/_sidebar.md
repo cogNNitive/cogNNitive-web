@@ -17,6 +17,7 @@
   - [Execute a procedure](content/how-to/execute-procedure.md)
 
 - **💡 Architecture & Concepts**
+  - [The mental model: from raw source to audited knowledge](content/concepts/mental-model.md)
   - [The four levels](content/concepts/levels.md)
   - [Ecosystem architecture](content/concepts/ecosystem.md)
   - [The specification chain](content/concepts/specifications.md)

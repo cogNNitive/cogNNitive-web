@@ -292,17 +292,17 @@
     },
     "video-script": {
       "name": "video-script",
-      "adopted": "V_0-13-11",
+      "adopted": "V_0-14-1",
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.51.0",
+      "release_tag": null,
       "embedded_skills": [
         "nn-video-script"
       ],
       "versions": [
         {
-          "blueprint_version": "V_0-13-11",
+          "blueprint_version": "V_0-14-1",
           "spec_version": "V_0-5-0",
           "title": "Video Script App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
@@ -338,8 +338,7 @@
           "title": "cogNNitive Template",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md"
         }
-      ],
-      "release_tag": "blueprints-v0.51.0"
+      ]
     },
     "workspace": {
       "name": "workspace",
@@ -351,8 +350,7 @@
           "title": "Workspace Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
         }
-      ],
-      "release_tag": "blueprints-v0.51.0"
+      ]
     }
   },
   "warnings": []

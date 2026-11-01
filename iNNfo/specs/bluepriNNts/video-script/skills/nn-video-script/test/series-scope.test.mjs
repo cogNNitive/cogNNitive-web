@@ -98,11 +98,10 @@ test('a deeper folder scope overrides the series marker', () => {
   });
 });
 
-test('without scope markers the legacy series_NN.md document still supplies the bag', () => {
+test('a legacy series_NN.md supplies nothing: only a scope document defines the series level', () => {
   withDomain({ marker: false, legacy: true }, (script) => {
     const bags = loadCascadeBags(script);
-    assert.equal(bags.series.voice_id, 'VoiceA');
-    assert.equal(Number(bags.series.music_volume), 0.4);
+    assert.equal(bags.series, undefined);
   });
 });
 
@@ -126,10 +125,10 @@ test('the generator reads the series document from the marker and drops scope-on
   });
 });
 
-test('loadSeriesFor finds the series through the marker, and series_NN.md wins when both exist', () => {
+test('loadSeriesFor finds the series through its scope document, ignoring a stale series_NN.md', () => {
   withDomain({ legacy: true }, (script) => {
     const both = loadSeriesFor(script);
-    assert.equal(both.slug, 'legacy-series');
+    assert.equal(both.slug, 'demo-series');
     assert.equal(both.title, 'Demo series');
   });
   withDomain({}, (script) => {

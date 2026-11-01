@@ -50,7 +50,8 @@ export function buildHyperframesProject(manifest, projectDir) {
   const publicDir = manifest?.metadata?.publicDir;
   const assetsDir = path.join(projectDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
-  if (publicDir && fs.existsSync(publicDir)) {
+  // When the staging layer IS the asset dir there is nothing to copy (design D2).
+  if (publicDir && path.resolve(publicDir) !== path.resolve(assetsDir) && fs.existsSync(publicDir)) {
     for (const entry of fs.readdirSync(publicDir)) {
       const src = path.join(publicDir, entry);
       if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(assetsDir, entry));
@@ -122,7 +123,8 @@ function stageComponents(manifest, projectDir) {
 export async function tryHyperframesRender(input, deps = {}) {
   const { manifest, outputPath } = input;
   const pin = input.pin || HYPERFRAMES_PIN;
-  const projectDir = path.resolve(input.projectDir || path.join(path.dirname(outputPath), 'hyperframes'));
+  if (!input.projectDir) throw new Error('tryHyperframesRender: projectDir is required (compile sets manifest.metadata.buildDir)');
+  const projectDir = path.resolve(input.projectDir);
   const run = deps.run || defaultRun;
 
   if (process.env.NN_HYPERFRAMES_DISABLE === '1') return { rendered: false, reason: 'disabled' };

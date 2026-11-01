@@ -4,7 +4,9 @@
  * One avatar job = one scene's audio + the avatar still image. This module is the single
  * definition of (a) which layers are avatar layers, (b) where a scene's audio comes from and
  * (c) the cache key of the finished lip-sync video, shared by synthesize-avatar.mjs (which
- * writes the cache) and compile (which picks the cached clip up at zero cost).
+ * writes the cache) and compile (which picks the cached clip up at zero cost). A narrated
+ * scene's audio is read straight from its TTS cache entry (`ttsCachePathFor`); no staged
+ * audio file exists.
  *
  * Render contract: at render time a `talking_avatar` layer is drawn by AvatarFrame as a STILL
  * image. A cached clip is applied by rewriting the layer to `layer_type: video`,
@@ -75,35 +77,16 @@ export function avatarJobKey(cacheManager, { imagePath, audioPath, model, resolu
 }
 
 /**
- * Where a scene's narration audio is read from, in ONE order shared with compile and the
- * compiler: the staged TTS (`audio/<sceneId>_voiceover.mp3`) when the scene has narration,
- * otherwise an explicit `audio_asset_source` / `voiceover` property.
- * @returns {string} Absolute path (may not exist)
+ * The TTS cache entry for a scene's CURRENT narration, voice and model (the same key compile
+ * writes). A narration/voice edit changes the key, so a stale entry is never served.
+ * @returns {string | undefined} Absolute cache file path, or undefined on a miss
  */
-export function sceneAudioPath(sc, scriptDir) {
-  const staged = path.resolve(scriptDir, 'audio', sc.id + '_voiceover.mp3');
-  if (String(sc.narration || '').trim().length > 0) return staged;
-  const explicit = sc.properties?.audio_asset_source || sc.properties?.voiceover;
-  return explicit ? path.resolve(scriptDir, explicit) : staged;
-}
-
-/**
- * Refuses stale audio: when the scene has narration, the staged audio must be byte-identical to
- * the CURRENT TTS cache entry for that narration (it goes stale after a narration/voice edit).
- * @throws {Error} telling the user to re-run compile first
- */
-export function assertAudioFresh({ sc, audioPath, cacheManager, config, models = {}, bags = {} }) {
+export function ttsCachePathFor(sc, { cacheManager, config, models = {}, bags = {} }) {
   const narration = String(sc.narration || '').trim();
-  if (!narration) return;
+  if (!narration) return undefined;
   const options = resolveRegisteredVoice(buildTtsVoiceOptions(sc, models, bags), config);
   const key = cacheManager.computeHash(narration, options);
-  const cached = cacheManager.getSync(key, 'mp3', 'tts');
-  if (!cached || !fs.readFileSync(cached).equals(fs.readFileSync(audioPath))) {
-    throw new Error(
-      'Scene ' + sc.id + ': the staged audio ' + audioPath + ' does not match the current TTS output for its narration ' +
-        '(the narration, voice or model changed, or compile has not run). Re-run compile first.',
-    );
-  }
+  return cacheManager.getSync(key, 'mp3', 'tts') || undefined;
 }
 
 /**
@@ -113,10 +96,12 @@ export function assertAudioFresh({ sc, audioPath, cacheManager, config, models =
  * @param {string} o.scriptDir
  * @param {{ computeHash: Function }} o.cacheManager
  * @param {string[]} [o.sceneIds] Restrict to these scene ids.
- * @param {(sc: any) => string | undefined} [o.audioFor] Override the audio source (compile passes its fresh TTS output).
+ * @param {{ voices?: object }} o.config Guard config (registered voices are part of the TTS key).
+ * @param {{ tts?: string }} [o.models]
+ * @param {object} [o.bags]
  * @returns {{ jobs: any[], problems: string[] }} `problems` lists missing images/audio (no job is created for them).
  */
-export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, audioFor }) {
+export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, config, models = {}, bags = {} }) {
   const jobs = [];
   const problems = [];
   for (const sc of parsed.scenes) {
@@ -124,7 +109,11 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, a
     for (const layer of (sc.layers || []).filter(isAvatarLayer)) {
       const src = layer.properties?.layer_asset_source;
       const imagePath = src ? path.resolve(scriptDir, src) : null;
-      const audioPath = audioFor?.(sc) || sceneAudioPath(sc, scriptDir);
+      const narrated = String(sc.narration || '').trim().length > 0;
+      const explicit = sc.properties?.audio_asset_source || sc.properties?.voiceover;
+      const audioPath = narrated
+        ? ttsCachePathFor(sc, { cacheManager, config, models, bags })
+        : explicit ? path.resolve(scriptDir, explicit) : undefined;
       if (!imagePath) {
         const prompted = layer.properties?.layer_prompt || layer.properties?.prompt;
         problems.push(
@@ -143,7 +132,11 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, a
         continue;
       }
       if (!audioPath || !fs.existsSync(audioPath)) {
-        problems.push('Scene ' + sc.id + ': narration audio not found (' + audioPath + '). Run compile first to generate it.');
+        problems.push(
+          'Scene ' + sc.id + ': ' + (narrated
+            ? 'no TTS cache entry for its current narration, voice and model. Run compile first to populate the TTS cache.'
+            : 'no narration and no audio_asset_source/voiceover file (' + (audioPath || 'none declared') + '). Declare one, or add narration and run compile first.'),
+        );
         continue;
       }
       const model = normalizeModelId(layer.properties?.layer_avatar_model);
@@ -168,8 +161,8 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, a
  * only: it never synthesizes or spends.
  * @returns {{ applied: number, missing: number, clips: string[] }} `clips` are the cached clip paths that were applied.
  */
-export function applyCachedAvatars({ parsed, scriptDir, cacheManager, audioFor }) {
-  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, audioFor });
+export function applyCachedAvatars({ parsed, scriptDir, cacheManager, config, models, bags }) {
+  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, config, models, bags });
   let applied = 0;
   let missing = 0;
   const clips = [];

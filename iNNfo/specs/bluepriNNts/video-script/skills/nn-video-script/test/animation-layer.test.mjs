@@ -62,7 +62,7 @@ const scene = (name, slug, narration = '') => ({ type: 'Scene', name, slug, desc
 const layer = (name, slug, fields) => ({ type: 'Layer', name, slug, fields });
 
 test('a type:: animation Layer is valid with an asset', () => {
-  const compiler = new SceneCompiler();
+  const compiler = new SceneCompiler({ width: 1920, height: 1920 });
   const guard = compiler.checkScript(
     model({
       scenes: [scene('S', 's', 'hello')],
@@ -73,7 +73,7 @@ test('a type:: animation Layer is valid with an asset', () => {
 });
 
 test('a type:: animation Layer without an asset is rejected', () => {
-  const compiler = new SceneCompiler();
+  const compiler = new SceneCompiler({ width: 1920, height: 1920 });
   const guard = compiler.checkScript(
     model({
       scenes: [scene('S', 's', 'hello')],
@@ -85,7 +85,7 @@ test('a type:: animation Layer without an asset is rejected', () => {
 });
 
 test('an unknown layer type is rejected', () => {
-  const compiler = new SceneCompiler();
+  const compiler = new SceneCompiler({ width: 1920, height: 1920 });
   const guard = compiler.checkScript(
     model({
       scenes: [scene('S', 's', 'hello')],
@@ -163,7 +163,7 @@ test('an authored id colliding with a scene slug, root id, component id or anoth
 // --- Scene duration = max(narration, animation) -------------------------------
 
 test('a scene lasts max(narration, animation)', () => {
-  const compiler = new SceneCompiler({ fps: 30, wordsPerSecond: 5 });
+  const compiler = new SceneCompiler({ fps: 30, wordsPerSecond: 5, width: 1920, height: 1920 });
   // 5 words / 5 wps = 1s -> max(3,1) = 3s narration; a 6s animation extends it.
   const long = compiler.compile(
     model({ scenes: [scene('S', 's', 'one two three four five')] }),

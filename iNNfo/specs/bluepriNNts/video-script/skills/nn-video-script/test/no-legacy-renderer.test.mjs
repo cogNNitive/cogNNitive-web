@@ -60,7 +60,7 @@ async function runTests() {
 
   // 2. Manifest carries no dead fields.
   {
-    const compiler = new SceneCompiler({ fps: 30 });
+    const compiler = new SceneCompiler({ fps: 30, width: 1920, height: 1920 });
     const manifest = compiler.compile(model({
       scenes: [{ type: 'Scene', name: 'Scene', slug: 'scene', description: 'narration', fields: {} }],
       layers: [

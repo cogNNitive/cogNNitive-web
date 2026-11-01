@@ -73,17 +73,17 @@ async function runTests() {
   {
     const tmpDir = makeTempDir();
     const scriptPath = path.join(tmpDir, 'script.md');
-    const manifestPath = path.join(tmpDir, 'manifest.json');
+    // The manifest is a build artifact: compile always writes build/manifest.json.
+    const manifestPath = path.join(tmpDir, 'build', 'manifest.json');
     fs.writeFileSync(scriptPath, sampleScript, 'utf8');
 
     const result = await compileVideo({
       scriptPath,
-      outputPath: manifestPath,
       cacheDir: path.join(tmpDir, 'cache'),
       synthesizeAssets: false,
     });
 
-    assert.ok(fs.existsSync(manifestPath));
+    assert.ok(fs.existsSync(manifestPath), 'compile writes build/manifest.json');
     const saved = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     assert.strictEqual(saved.version, '1.0.0');
     assert.strictEqual(saved.compositionId, 'neural-network-demo');
@@ -97,18 +97,17 @@ async function runTests() {
   {
     const tmpDir = makeTempDir();
     const scriptPath = path.join(tmpDir, 'script.md');
-    const videoPath = path.join(tmpDir, 'output.mp4');
+    const videoPath = path.join(tmpDir, 'neural-network-demo_1920x1920.mp4');
     fs.writeFileSync(scriptPath, sampleScript, 'utf8');
 
     let ran = null;
     const result = await renderVideo({
       scriptPath,
-      outputVideoPath: videoPath,
       cacheDir: path.join(tmpDir, 'cache'),
       synthesizeAssets: false,
       hyperframesRun: async (cmd, args) => {
         ran = { cmd, args };
-        fs.writeFileSync(videoPath, 'fake-mp4-bytes');
+        fs.writeFileSync(args[args.indexOf('--output') + 1], 'fake-mp4-bytes');
         return { status: 0 };
       },
     });
@@ -129,16 +128,22 @@ async function runTests() {
   {
     const tmpDir = makeTempDir();
     const scriptPath = path.join(tmpDir, 'script.md');
-    const manifestPath = path.join(tmpDir, 'manifest.json');
-    const videoPath = path.join(tmpDir, 'rendered.mp4');
+    const manifestPath = path.join(tmpDir, 'build', 'manifest.json');
+    const videoPath = path.join(tmpDir, 'neural-network-demo_1920x1920.mp4');
     fs.writeFileSync(scriptPath, sampleScript, 'utf8');
 
-    const compRes = spawnSync('node', [cliPath, 'compile', scriptPath, '--output', manifestPath], { encoding: 'utf8' });
+    const compRes = spawnSync('node', [cliPath, 'compile', scriptPath], { encoding: 'utf8' });
     assert.strictEqual(compRes.status, 0, `compile CLI failed: ${compRes.stderr}`);
-    assert.ok(fs.existsSync(manifestPath));
+    assert.ok(fs.existsSync(manifestPath), 'compile writes build/manifest.json');
     assert.ok(/Compiled manifest/.test(compRes.stdout));
 
-    const renderRes = spawnSync('node', [cliPath, 'render', manifestPath, '--output', videoPath, '--allow-mock'], {
+    const manifestArgRes = spawnSync('node', [cliPath, 'render', manifestPath, '--allow-mock'], {
+      encoding: 'utf8',
+      env: { ...process.env, NN_HYPERFRAMES_DISABLE: '1' },
+    });
+    assert.notStrictEqual(manifestArgRes.status, 0, 'rendering a manifest is refused');
+
+    const renderRes = spawnSync('node', [cliPath, 'render', scriptPath, '--allow-mock'], {
       encoding: 'utf8',
       env: { ...process.env, NN_HYPERFRAMES_DISABLE: '1' },
     });

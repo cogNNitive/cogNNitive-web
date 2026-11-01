@@ -21,7 +21,7 @@
  *   --subtitle <str>     Secondary title, creator, or year (default: the Series title)
  *   --badge <str>        Brand pill text (default: the Series title, else 'iNNtrevistas')
  *   --out <path>         Output image destination path (required)
- *   --series <dir>       Series folder whose `series_NN.md` supplies the default
+ *   --series <dir>       Series folder whose scope document supplies the default
  *                        subtitle/badge; otherwise the cascade walks from --out's folder
  *   --width <number>     Target width in pixels (default: 2560)
  *   --height <number>    Target height in pixels (default: 1440)
@@ -356,7 +356,7 @@ Options:
   --subtitle <str>     Secondary line / subtitle / year (default: the Series title)
   --badge <str>        Brand pill text (default: the Series title, else 'iNNtrevistas')
   --out <path>         Output image destination path (required)
-  --series <dir>       Series folder supplying the default subtitle/badge from series_NN.md
+  --series <dir>       Series folder supplying the default subtitle/badge from its scope document
   --width <num>        Width in pixels (default: 2560)
   --height <num>       Height in pixels (default: 1440)
 `);

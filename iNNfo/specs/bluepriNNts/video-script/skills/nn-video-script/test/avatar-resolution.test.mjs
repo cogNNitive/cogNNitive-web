@@ -33,7 +33,7 @@ test('the compiler lowers avatar_resolution onto the layer', () => {
       Layer: [{ type: 'Layer', name: 'p', slug: 'p', parentSlug: 's', fields: { type: 'presenter', asset: 'a.png', avatar_model: PRUNA, avatar_resolution: '768p' } }],
     },
   };
-  const lowered = new SceneCompiler().lowerKnowledgeModel(model);
+  const lowered = new SceneCompiler({ width: 1920, height: 1920 }).lowerKnowledgeModel(model);
   assert.equal(lowered.scenes[0].layers[0].properties.layer_avatar_resolution, '768p');
 });
 
@@ -44,7 +44,8 @@ test('collectAvatarJobs honors the layer resolution and keys differ by resolutio
     fs.writeFileSync(img, Buffer.from('img'));
     const aud = path.join(dir, 'a.mp3');
     fs.writeFileSync(aud, Buffer.from('aud'));
-    const cacheManager = { computeHash: (c, o) => JSON.stringify([c, o]) };
+    // The TTS cache entry for the narration is `aud`; every other lookup misses.
+    const cacheManager = { computeHash: (c, o) => JSON.stringify([c, o]), getSync: (k, ext, cat) => (cat === 'tts' ? aud : undefined) };
     const parsed = {
       scenes: [
         {
@@ -57,7 +58,7 @@ test('collectAvatarJobs honors the layer resolution and keys differ by resolutio
         },
       ],
     };
-    const { jobs } = collectAvatarJobs({ parsed, scriptDir: dir, cacheManager, audioFor: () => aud });
+    const { jobs } = collectAvatarJobs({ parsed, scriptDir: dir, cacheManager, config: {}, models: {}, bags: {} });
     assert.equal(jobs.length, 2);
     assert.equal(jobs[0].resolution, '768p');
     assert.equal(jobs[1].resolution, '480p');

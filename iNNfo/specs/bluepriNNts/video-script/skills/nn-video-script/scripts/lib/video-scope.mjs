@@ -18,10 +18,13 @@ import {
 } from './nn-core.generated.cjs';
 import { resolveWorkspace } from './video-guard.mjs';
 import { parseKnowledgeDocument } from './knowledge-model.mjs';
+import { loadPresetIndex, lookupPreset, parsePresetList, presetSourceFromFile } from './presets.mjs';
 
 export const SCOPE_ORDER = ['cli', 'layer', 'scene', 'video', 'series', 'domain', 'blueprint'];
-export const SERIES_MARKERS = ['series_NN.md', 'series_rules.md', 'script_template.md'];
 export const PROCEDURES_DIR = 'procedures';
+
+/** Levels whose `presets` list expands. `layer` and `cli` carry explicit fields only. */
+export const PRESET_LEVELS = new Set(['domain', 'series', 'video', 'scene']);
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -42,6 +45,11 @@ function usable(v) {
 /**
  * Turns legacy cascade bags { cli, layer, scene, video, series, domain, blueprint }
  * into a LoadedChain structure for nn-core's resolve fold.
+ *
+ * Each level that may carry `presets` expands its list into extra scope nodes
+ * placed immediately before that level's own node, in list order: the last
+ * Preset of a list wins, the level's explicit fields beat its own Presets, and
+ * a nearer level still beats every outer one (design D4).
  */
 export function bagsToChain(bags = {}) {
   const floor = bags.blueprint
@@ -50,9 +58,16 @@ export function bagsToChain(bags = {}) {
   const levels = ['domain', 'series', 'video', 'scene', 'layer', 'cli'];
   const nodes = [];
   for (const level of levels) {
-    if (bags[level]) {
-      nodes.push({ id: level, kind: 'scope', doc: null, isolate: false, values: bags[level] });
+    const bag = bags[level];
+    if (!bag) continue;
+    if (PRESET_LEVELS.has(level)) {
+      for (const name of parsePresetList(bag.presets)) {
+        const def = lookupPreset(bags.presetIndex, name);
+        nodes.push({ id: `${level}:preset:${def.name}`, kind: 'scope', doc: def.doc, isolate: false, values: def.values });
+      }
     }
+    const { presets: _presets, ...explicit } = bag;
+    nodes.push({ id: level, kind: 'scope', doc: null, isolate: false, values: explicit });
   }
   return { floor, nodes };
 }
@@ -119,25 +134,43 @@ export function findBlueprintPackage(skillDir = SKILL_DIR) {
   throw new BlueprintPackageNotFoundError(candidates);
 }
 
-export function findSeriesRoot(startDir, domainRoot) {
-  const stop = domainRoot ? path.resolve(domainRoot) : null;
-  let dir = path.resolve(startDir);
-  for (;;) {
-    if (stop && dir === stop) return undefined;
-    if (SERIES_MARKERS.some((m) => fs.existsSync(path.join(dir, m)))) return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
+/**
+ * The series root: the outermost folder scope link below the domain root, as the
+ * nn-core scope chain resolves it. A scope document is recognised by its
+ * frontmatter `scope: true`, never by filename, and a chain that is not `ok`
+ * (for example DUPLICATE_SCOPE_MARKER) is surfaced instead of swallowed.
+ *
+ * @param {string} startDir
+ * @returns {string|undefined} Absolute path of the series folder, or undefined.
+ */
+export function findSeriesRoot(startDir) {
+  const found = findScopeChain(startDir);
+  if (!found.ok) {
+    // An episode with no domaiNN root above it simply has no series; a broken
+    // chain (a duplicate scope marker) is a real error and is surfaced.
+    if (found.code === 'NO_DOMAIN_ROOT') return undefined;
+    const detail = found.detail ? `: ${found.detail}` : '';
+    throw new Error(`Cannot resolve the series root: ${found.code || 'unreadable scope chain'}${detail}`);
   }
+  const loaded = loadChain(found.chain);
+  if (!loaded.ok) {
+    const detail = loaded.detail ? `: ${loaded.detail}` : '';
+    throw new Error(`Cannot load the scope chain: ${loaded.code || 'unreadable scope chain'}${detail}`);
+  }
+  const scope = (loaded.loaded.nodes || []).find((node) => node.kind === 'scope');
+  if (!scope) return undefined;
+  return path.resolve(found.chain.root, scope.id);
 }
 
 /**
  * Series values read from the scope chain of the script (the context resolution
  * layer): every folder scope between the domaiNN root and the document, merged
  * outermost first so a deeper folder wins. The root's own values are NOT a
- * series level and are skipped. Returns null when the script sits in no chain or
- * the chain holds no folder scope below the root, so the caller can fall back to
- * the legacy `series_NN.md` document.
+ * series level and are skipped. `presets` is the one list that is additive
+ * across folders: the lists are concatenated outer to inner (design D3).
+ * Returns null when the script sits in no chain or the chain holds no folder
+ * scope below the root, so the caller can fall back to the legacy `series_NN.md`
+ * document.
  */
 function seriesValuesFromScopeChain(scriptDir) {
   const found = findScopeChain(scriptDir);
@@ -146,27 +179,55 @@ function seriesValuesFromScopeChain(scriptDir) {
   if (!loaded.ok) return null;
   const nodes = loaded.loaded.nodes.slice(1);
   if (nodes.length === 0) return null;
-  return Object.assign({}, ...nodes.map((node) => node.values || {}));
+  const merged = Object.assign({}, ...nodes.map((node) => node.values || {}));
+  const lists = nodes.flatMap((node) => parsePresetList((node.values || {}).presets));
+  if (lists.length > 0) merged.presets = lists;
+  else delete merged.presets;
+  return merged;
+}
+
+/**
+ * Preset definitions along the same chain, nearest first (innermost folder,
+ * then its parents), so the index can shadow outer definitions (design D3).
+ */
+function presetSourcesFromScopeChain(scriptDir) {
+  const found = findScopeChain(scriptDir);
+  if (!found.ok) return [];
+  const links = (found.chain.links || []).slice(1);
+  const files = links
+    .map((link) => link.valuesDoc)
+    .filter((rel) => typeof rel === 'string' && rel !== '')
+    .map((rel) => path.join(found.chain.root, rel));
+  return files.reverse().map((file) => presetSourceFromFile(file));
 }
 
 export function loadCascadeBags(scriptDir, options = {}) {
   const bags = {};
   const domainRoot = resolveWorkspace(scriptDir).root;
+  const domainFile = path.join(domainRoot, 'video-defaults_NN.md');
+  // The series level comes only from the scope chain: the legacy markers
+  // (`series_NN.md`, `series_rules.md`, `script_template.md`) anchor nothing.
   const fromChain = seriesValuesFromScopeChain(scriptDir);
-  if (fromChain) {
-    bags.series = fromChain;
-  } else {
-    const seriesRoot = findSeriesRoot(scriptDir, domainRoot);
-    if (seriesRoot) {
-      const series = documentFields(path.join(seriesRoot, 'series_NN.md'), 'Series');
-      if (series) bags.series = series;
-    }
-  }
-  const domain = documentFields(path.join(domainRoot, 'video-defaults_NN.md'), 'Video Defaults');
+  if (fromChain) bags.series = fromChain;
+  const domain = documentFields(domainFile, 'Video Defaults');
   if (domain) bags.domain = domain;
   const pkg = findBlueprintPackage(options.skillDir || SKILL_DIR);
   bags.blueprint = documentFields(path.join(pkg, 'defaults', 'video-defaults_NN.md'), 'Video Defaults') || {};
+  // One lookup order for every reference: script (prepended by withScriptPresets),
+  // then the Series chain innermost to outermost, then the domain defaults.
+  bags.presetIndex = loadPresetIndex([...presetSourcesFromScopeChain(scriptDir), presetSourceFromFile(domainFile)]);
   return bags;
+}
+
+/**
+ * Prepends the script's own Preset definitions to the index, so a Video-local
+ * Preset shadows a Series or domain Preset of the same name (design D3).
+ */
+export function withScriptPresets(bags = {}, model = null, scriptPath = null) {
+  const elements = model?.elements || {};
+  const sources = [{ doc: scriptPath || null, elements }];
+  for (const source of (bags.presetIndex?.sources || [])) sources.push(source);
+  return { ...bags, presetIndex: loadPresetIndex(sources) };
 }
 
 export function findNearest(startDir, relPath, opts = {}) {

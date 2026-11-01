@@ -292,7 +292,7 @@ test('compileVideo warns once and succeeds for a blueprint-only sound name with 
     const res = await compileVideo({
       scriptPath,
       synthesizeAssets: false,
-      bags: { blueprint: { sounds: '[scene-boundary=whoosh]' } },
+      bags: { blueprint: { sounds: '[scene-boundary=whoosh]', master_resolution: '1920x1920' } },
     });
     assert.ok(res.manifest, 'the render still succeeds');
     assert.equal(warnings.filter((w) => /whoosh/.test(w)).length, 1);
@@ -333,8 +333,8 @@ test('no concrete sound name lives in the engine scripts', () => {
   assert.deepEqual(offenders, [], 'the blueprint default sound name must not appear in engine code');
 });
 
-test('resolveSoundFiles falls back to shared/audio when sound is not in sounds/', () => {
-  const root = tmp('nn-sound-fallback-');
+test('resolveSoundFiles does not search shared/audio: only sounds/ counts', () => {
+  const root = tmp('nn-sound-no-shared-');
   const sharedAudioDir = path.join(root, 'shared', 'audio');
   fs.mkdirSync(sharedAudioDir, { recursive: true });
   fs.writeFileSync(path.join(sharedAudioDir, 'custom-start.mp3'), 'audio-data', 'utf8');
@@ -342,14 +342,23 @@ test('resolveSoundFiles falls back to shared/audio when sound is not in sounds/'
   const bags = {
     series: { sounds: '[video-start=custom-start]' },
   };
-  const files = resolveSoundFiles({
-    bags,
-    scriptDir: root,
-    workspaceRoot: root,
-    skillDir: SKILL_DIR,
-  });
 
+  // The error names the folders it searched and never reaches shared/audio.
+  assert.throws(
+    () => resolveSoundFiles({ bags, scriptDir: root, workspaceRoot: root, skillDir: SKILL_DIR }),
+    (err) => {
+      assert.match(err.message, /custom-start/);
+      assert.doesNotMatch(err.message, /shared[\\/]audio/);
+      return true;
+    },
+  );
+
+  // The same sound under sounds/ is found.
+  const soundsDir = path.join(root, 'sounds');
+  fs.mkdirSync(soundsDir, { recursive: true });
+  fs.writeFileSync(path.join(soundsDir, 'custom-start.mp3'), 'audio-data', 'utf8');
+  const files = resolveSoundFiles({ bags, scriptDir: root, workspaceRoot: root, skillDir: SKILL_DIR });
   assert.ok(files['video-start']);
-  assert.match(files['video-start'].path, /shared[/\\]audio[/\\]custom-start\.mp3/);
+  assert.match(files['video-start'].path, /sounds[/\\]custom-start\.mp3/);
   fs.rmSync(root, { recursive: true, force: true });
 });

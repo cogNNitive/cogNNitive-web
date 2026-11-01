@@ -33,8 +33,8 @@ title: "Other Series"
 ## NN Series: Other Series
 slug:: other-series
 title:: Other Series
-presenter_asset:: media/presenter.png
-intro_asset:: media/intro.mp4
+avatar:: media/presenter.png
+intro:: media/intro.mp4
 `;
 
 // The cascade bags: the series document supplies the values the tool reads.
@@ -42,13 +42,13 @@ const bags = {
   series: {
     slug: 'other-series',
     title: 'Other Series',
-    presenter_asset: 'media/presenter.png',
-    intro_asset: 'media/intro.mp4',
+    avatar: 'media/presenter.png',
+    intro: 'media/intro.mp4',
     transition: 'fade',
-    music: 'series-music.mp3',
-    music_volume: '0.4',
+    background_audio: 'series-music.mp3',
+    background_audio_volume: '0.4',
   },
-  blueprint: { music_volume: '0.2', transition: 'none', template: '[[Blueprint :: Section]]' },
+  blueprint: { background_audio_volume: '0.2', transition: 'none' },
 };
 
 const reviewed = {
@@ -57,14 +57,14 @@ const reviewed = {
   sources: ['src_a'],
   overlays: [{ id: 'watermark', type: 'watermark', text: 'generated with AI', position: 'bottom', default: true }],
   scenes: [
-    { slug: '00-gancho', name: '00 Gancho', narration: 'Hook words here', choice: { type: 'avatar', model: 'pruna-ai/p-video-2-pro/avatar', quality: 'ALTA' } },
+    { slug: '00-gancho', name: '00 Gancho', narration: 'Hook words here', choice: { type: 'avatar', model: 'pruna-ai/p-video-2-pro/avatar', quality: 'ALTA', resolution: '768p' } },
     { slug: '01-intro', name: '01 Intro', kind: 'fixed' },
     { slug: '02-noticia', name: '02 Noticia', narration: 'Body words here', choice: { type: 'animation', asset: 'media/anim-demo' } },
   ],
 };
 const draft = {
   scenes: [
-    { slug: '00-gancho', name: '00 Gancho', template: '[[Other Series :: Full]]' },
+    { slug: '00-gancho', name: '00 Gancho', presets: ['Lucas', 'Full'] },
     { slug: '01-intro', name: '01 Intro', kind: 'fixed' },
     { slug: '02-noticia', name: '02 Noticia' },
   ],
@@ -74,10 +74,13 @@ function build(rev = reviewed, dr = draft) {
   return buildScript(rev, dr, { bags, frontmatter: extractFrontmatter(SERIES_CONTENT) });
 }
 
-test('the presenter and intro assets come from the cascade', () => {
+test('the intro asset comes from the cascade and the presenter carries no literal asset', () => {
   const md = build();
-  assert.match(md, /asset:: media\/presenter\.png/);
   assert.match(md, /asset:: media\/intro\.mp4/);
+  // A presenter Layer takes its image from the cascaded `avatar` (design D7),
+  // so the tool never writes a literal presenter asset.
+  const hook = md.split('## NN Scene: 00 Gancho')[1].split('## NN Scene: 01 Intro')[0];
+  assert.doesNotMatch(hook, /asset:: media\/presenter\.png/);
 });
 
 test('the script filename uses the Series slug', () => {
@@ -93,8 +96,8 @@ test('the frontmatter is copied from the series document', () => {
 
 test('no cascaded scene line is written', () => {
   const md = build();
-  assert.doesNotMatch(md, /^music:: /m);
-  assert.doesNotMatch(md, /^music_volume:: /m);
+  assert.doesNotMatch(md, /^background_audio:: /m);
+  assert.doesNotMatch(md, /^background_audio_volume:: /m);
   assert.doesNotMatch(md, /^transition:: /m);
   assert.doesNotMatch(md, /^fit:: /m);
   // The series/blueprint values must never leak into the script.
@@ -102,17 +105,47 @@ test('no cascaded scene line is written', () => {
   assert.doesNotMatch(md, /\[\[Blueprint :: Section\]\]/);
 });
 
-test('the hook template comes from the draft scene', () => {
+test('a presets list that exists only on the draft scene is not written: the console selector is the only source', () => {
   const md = build();
+  assert.doesNotMatch(md, /presets::/);
+});
+
+test('the reviewed scene presets list is written in the author order', () => {
+  const rev = structuredClone(reviewed);
+  rev.scenes[0].sceneOverrides = { presets: ['Studio Warm', 'Lucas'] };
+  const md = build(rev);
   const hook = md.split('## NN Scene: 00 Gancho')[1].split('## NN Scene: 01 Intro')[0];
-  assert.match(hook, /template:: \[\[Other Series :: Full\]\]/);
+  assert.match(hook, /presets:: \[Studio Warm, Lucas\]/);
   const body = md.split('## NN Scene: 02 Noticia')[1];
-  assert.doesNotMatch(body, /template::/);
+  assert.doesNotMatch(body, /presets::/);
+});
+
+test('the reviewed video-level presets list is written on the video, absent means no line', () => {
+  const rev = structuredClone(reviewed);
+  rev.videoOverrides = { presets: ['Lucas', 'Studio Warm'] };
+  const md = build(rev);
+  const video = md.split('# NN Scene')[0];
+  assert.match(video, /^presets:: \[Lucas, Studio Warm\]$/m);
+  assert.doesNotMatch(build().split('# NN Scene')[0], /presets::/);
+  rev.videoOverrides = { presets: [] };
+  assert.doesNotMatch(build(rev).split('# NN Scene')[0], /presets::/);
+});
+
+test('a presets value that is not a list fails loudly, at video and scene level', () => {
+  const sceneBad = structuredClone(reviewed);
+  sceneBad.scenes[0].sceneOverrides = { presets: 'Lucas' };
+  assert.throws(() => build(sceneBad), /presets/);
+  const videoBad = structuredClone(reviewed);
+  videoBad.videoOverrides = { presets: '[[Doc :: Lucas]]' };
+  assert.throws(() => build(videoBad), /presets/);
 });
 
 test('the avatar layer uses the renamed avatar_model field', () => {
   const md = build();
   assert.match(md, /avatar_model:: pruna-ai\/p-video-2-pro\/avatar/);
+  // The chosen resolution is written whatever the draft's quality label was: it
+  // used to be dropped for anything but ALTA, silently changing what was billed.
+  assert.match(md, /avatar_resolution:: 768p/);
   assert.doesNotMatch(md, /(?:^|\n)model:: /);
 });
 
@@ -188,14 +221,14 @@ test('a reviewed scene without an overlays key yields no overlays, with or witho
   assert.equal(md, build(rev, null));
 });
 
-test('loadSeriesDocument reads the slug, title and frontmatter from series_NN.md', () => {
+test('loadSeriesDocument reads the slug, title and frontmatter from the scope document', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-series-'));
-  fs.writeFileSync(path.join(dir, 'series_NN.md'), SERIES_CONTENT, 'utf8');
+  fs.writeFileSync(path.join(dir, 'other-series_scope_NN.md'), SERIES_CONTENT, 'utf8');
   const series = loadSeriesDocument(dir);
   assert.equal(series.slug, 'other-series');
   assert.equal(series.title, 'Other Series');
   assert.equal(series.frontmatter, extractFrontmatter(SERIES_CONTENT));
-  assert.equal(series.fields.presenter_asset, 'media/presenter.png');
+  assert.equal(series.fields.avatar, 'media/presenter.png');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -236,3 +269,16 @@ test('a fixed scene falls back to visual.asset or asset when cascade has no intr
   assert.match(md2, /asset:: media\/visual-fallback\.mp4/);
 });
 
+
+test('an episode with reviewed.json and no draft.json builds its script', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reviewed-only-'));
+  fs.writeFileSync(path.join(dir, 'reviewed.json'), JSON.stringify(reviewed));
+  const cli = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'build-script-from-draft.mjs');
+  const r = spawnSync(process.execPath, [cli, path.join(dir, 'reviewed.json')], { encoding: 'utf8' });
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.md'));
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(files.length, 1);
+  assert.match(files[0], /^demo_video-script_.+_NN\.md$/);
+});

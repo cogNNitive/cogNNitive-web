@@ -39,7 +39,7 @@ test('a non-zero exit carries the stderr tail as detail', async () => {
   const dir = tmp();
   const stderr = 'noise\n'.repeat(1000) + 'Error: chrome crashed';
   const res = await tryHyperframesRender(
-    { manifest, outputPath: path.join(dir, 'out.mp4') },
+    { projectDir: '/tmp/nn-build/hyperframes',  manifest, outputPath: path.join(dir, 'out.mp4') },
     { run: async () => ({ status: 3, stdout: 'stdout text', stderr }) },
   );
   assert.equal(res.rendered, false);
@@ -52,7 +52,7 @@ test('a non-zero exit carries the stderr tail as detail', async () => {
 test('detail falls back to stdout when stderr is empty', async () => {
   const dir = tmp();
   const res = await tryHyperframesRender(
-    { manifest, outputPath: path.join(dir, 'out.mp4') },
+    { projectDir: '/tmp/nn-build/hyperframes',  manifest, outputPath: path.join(dir, 'out.mp4') },
     { run: async () => ({ status: 1, stdout: 'only stdout', stderr: '  ' }) },
   );
   assert.equal(res.detail, 'only stdout');
@@ -64,7 +64,7 @@ test('extraArgs are appended verbatim to the hyperframes render command', async 
   const out = path.join(dir, 'out.mp4');
   let seen;
   const res = await tryHyperframesRender(
-    { manifest, outputPath: out, extraArgs: ['--workers', '2', '--low-memory-mode'] },
+    { projectDir: '/tmp/nn-build/hyperframes',  manifest, outputPath: out, extraArgs: ['--workers', '2', '--low-memory-mode'] },
     {
       run: async (cmd, args) => {
         seen = args;
@@ -82,12 +82,11 @@ test('extraArgs are appended verbatim to the hyperframes render command', async 
 test('renderVideo surfaces the captured detail in the named error and forwards hyperframesArgs', async () => {
   const dir = tmp();
   const manifestPath = path.join(dir, 'manifest.json');
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+  fs.writeFileSync(manifestPath, JSON.stringify({ ...manifest, metadata: { buildDir: path.join(dir, 'build'), videoSlug: 'demo-video' } }));
   let seen;
   await assert.rejects(
     renderVideo({
       manifestPath,
-      outputVideoPath: path.join(dir, 'out.mp4'),
       hyperframesArgs: ['--workers', '2'],
       hyperframesRun: async (cmd, args) => {
         seen = args;
@@ -111,7 +110,7 @@ test('splitPassthrough separates everything after a literal --', () => {
 test('a spawn error (status null) is reported as error: <msg> with the output tail', async () => {
   const dir = tmp();
   const res = await tryHyperframesRender(
-    { manifest, outputPath: path.join(dir, 'out.mp4') },
+    { projectDir: '/tmp/nn-build/hyperframes',  manifest, outputPath: path.join(dir, 'out.mp4') },
     { run: async () => ({ status: null, error: new Error('ENOBUFS'), stderr: 'x' }) },
   );
   assert.equal(res.rendered, false);
@@ -133,7 +132,7 @@ test('quoteArg keeps spaces and shell metacharacters inside a single literal arg
 
 test('a missing pinned CLI is a named reason, never an npx install', async () => {
   const dir = tmp();
-  const res = await tryHyperframesRender({ manifest, outputPath: path.join(dir, 'out.mp4') });
+  const res = await tryHyperframesRender({ projectDir: '/tmp/nn-build/hyperframes',  manifest, outputPath: path.join(dir, 'out.mp4') });
   assert.equal(res.rendered, false);
   assert.equal(res.reason, 'hyperframes-missing');
   fs.rmSync(dir, { recursive: true, force: true });
@@ -142,7 +141,7 @@ test('a missing pinned CLI is a named reason, never an npx install', async () =>
 test('a version different from the pin is a named reason', async () => {
   const dir = tmp();
   const res = await tryHyperframesRender(
-    { manifest, outputPath: path.join(dir, 'out.mp4') },
+    { projectDir: '/tmp/nn-build/hyperframes',  manifest, outputPath: path.join(dir, 'out.mp4') },
     { cliPath: '/fake/hyperframes', installedPin: '9.9.9' },
   );
   assert.equal(res.rendered, false);

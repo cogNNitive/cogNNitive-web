@@ -6,10 +6,10 @@
  * Headless CLI and programmatic engine for video compilation and rendering.
  *
  * Commands:
- *   compile <script.md> [--output <manifest.json>] [--fps <n>] [--cache-dir <dir>]
+ *   compile <script.md> [--fps <n>] [--cache-dir <dir>]
  *           [--dry-run] [--allow-model <name>]... [--approval <approved.json>]
  *           [--image-model <m>] [--tts-model <m>] [--avatar-model <m>]
- *   render  <script.md|manifest.json> --output <master.mp4> [--fps <n>] [--concurrency <n>]
+ *   render  <script.md> [--fps <n>] [--concurrency <n>]   (writes <slug>_1920x1920.mp4 next to the script)
  *
  * Zero external mandatory runtime dependencies for compilation. ESM module.
  */
@@ -19,14 +19,15 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { SceneCompiler, ScriptValidationError, compositionIdOf, computeSceneDurations } from './scene-compiler.mjs';
-import { loadKnowledgeModel, loadTemplateModels } from './lib/knowledge-model.mjs';
+import { loadKnowledgeModel } from './lib/knowledge-model.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { AssetSynthesizer } from './asset-synthesizer.mjs';
 import { SpendGuard, loadGuard, resolveDefaultCacheDir, normalizeModelId, resolveWorkspace } from './lib/video-guard.mjs';
 import { APPROVAL_FILENAME, checkApproval } from './lib/plan-approval.mjs';
-import { loadCascadeBags, resolve, resolveKeyed, findNearest, findNearestByStem, findSeriesRoot } from './lib/video-scope.mjs';
+import { loadCascadeBags, resolve, resolveKeyed, findNearest, findNearestByStem, findSeriesRoot, withScriptPresets } from './lib/video-scope.mjs';
 import { applyCachedAvatars } from './lib/avatar-jobs.mjs';
 import { buildTtsVoiceOptions } from './lib/tts-options.mjs';
+import { buildImageOptions } from './lib/image-options.mjs';
 import { loadFrame } from './lib/frame-tokens.mjs';
 import { probeDuration } from './lib/media-duration.mjs';
 import { checkMissingAsset } from './lib/missing-asset.mjs';
@@ -206,17 +207,6 @@ export function resolveSoundFiles({ bags, scriptDir, workspaceRoot, skillDir = S
       fallbackDir: skillDir,
     });
     if (!soundPath) {
-      const fallback = findNearestByStem(scriptDir, 'shared/audio', name, {
-        stopDir: workspaceRoot,
-        fallbackDir: skillDir,
-      });
-      if (fallback.path) {
-        soundPath = fallback.path;
-      } else {
-        searched = searched.concat(fallback.searched);
-      }
-    }
-    if (!soundPath) {
       checkMissingAsset({ kind: 'sound', name, source, searched });
       continue;
     }
@@ -354,7 +344,6 @@ export function resolveMediaLayers(manifest, opts) {
 /**
  * @typedef {Object} VideoCompileOptions
  * @property {string} scriptPath
- * @property {string} [outputPath]
  * @property {number} [fps]
  * @property {number} [width]
  * @property {number} [height]
@@ -375,7 +364,6 @@ export function resolveMediaLayers(manifest, opts) {
  * @typedef {Object} VideoRenderOptions
  * @property {string} [scriptPath]
  * @property {string} [manifestPath]
- * @property {string} outputVideoPath
  * @property {number} [fps]
  * @property {number} [width]
  * @property {number} [height]
@@ -435,7 +423,7 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
     // 1. TTS synthesis
     if (sc.narration && sc.narration.trim().length > 0) {
       const voiceOptions = buildTtsVoiceOptions(sc, models, bags);
-      const ttsModel = normalizeModelId(sc.properties?.scene_tts_model);
+      const ttsModel = normalizeModelId(sc.properties?.scene_voice_model);
       onProgress({ phase: 'tts-start', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel });
       const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, { ref: sc.id, model: ttsModel });
       if (!ttsRes.dryRun) {
@@ -460,13 +448,7 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
     for (const layer of Array.isArray(sc.layers) ? sc.layers : []) {
       const prompt = layer.properties?.layer_prompt || layer.properties?.prompt;
       if (!prompt) continue;
-      const mediaOptions = {
-        provider: 'wavespeed',
-        model: 'wavespeed-v1-flux',
-        title: `${sc.name} — ${layer.name}`,
-        accentColor: '#ef4444',
-      };
-      if (models.image) mediaOptions.modelOverride = models.image;
+      const mediaOptions = buildImageOptions(sc, layer, models);
       const imageModel = normalizeModelId(resolve('image_model', bags).value);
       const ref = `${sc.id}/${layer.name}`;
       onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
@@ -514,7 +496,7 @@ export async function compileVideo(options) {
   // series/domain/blueprint documents the rest (design D10). No default id here.
   const bags = {
     ...(options.bags || loadCascadeBags(scriptDir)),
-    cli: { image_model: models.image, tts_model: models.tts, avatar_model: models.avatar },
+    cli: { image_model: models.image, voice_model: models.tts, avatar_model: models.avatar },
   };
   const synthOptions = { defaultModels: models, bags, ...(options.synthesizerOptions || {}) };
   const makeGuard = (dryRun) =>
@@ -530,10 +512,10 @@ export async function compileVideo(options) {
   // never a re-parse of the script markdown. The pre-compile guard runs before
   // any synthesis so an invalid document never spends a cent.
   const model = options.model || loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath });
-  const guard = compiler.checkScript(model, options);
+  const scriptBags = withScriptPresets(bags, model, scriptPath);
+  const guard = compiler.checkScript(model, { ...options, bags: scriptBags });
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
-  const templates = options.templates || loadTemplateModels(scriptDir);
-  const parsed = compiler.lowerKnowledgeModel(model, { templates, bags, fps: options.fps, width: options.width, height: options.height });
+  const parsed = compiler.lowerKnowledgeModel(model, { bags: scriptBags, fps: options.fps, width: options.width, height: options.height });
   // Resolve the frame cascade value to its document BEFORE any synthesis or
   // render (design D18/D21): a user-level name with no file fails here, with
   // nothing spent; a blueprint-only name is skipped with one warning.
@@ -650,7 +632,9 @@ export async function compileVideo(options) {
     parsed,
     scriptDir,
     cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
-    audioFor: (sc) => audioAssets[sc.id]?.assetPath,
+    config: loaded.config,
+    models,
+    bags,
   });
 
   const manifest = compiler.compile(parsed, {
@@ -667,12 +651,22 @@ export async function compileVideo(options) {
   // Sources resolve against the script dir, not the cwd, so in-dir (`assets/…`)
   // and out-of-dir (`../shared/…`) paths both work. A missing asset is a loud
   // failure — never a silently dropped layer.
-  const publicDir = path.join(scriptDir, 'public');
+  // Every engine-generated file goes under one gitignored folder. The staging
+  // layer IS the renderer's asset dir, so nothing is copied twice (design D2).
+  const buildDir = path.join(scriptDir, 'build');
+  const publicDir = path.join(buildDir, 'hyperframes', 'assets');
+  fs.mkdirSync(publicDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(buildDir, '.nn-build'),
+    JSON.stringify({ schema: 'nn-build@1', script: path.basename(scriptPath) }, null, 2) + '\n',
+    'utf8',
+  );
+  manifest.metadata.buildDir = buildDir;
   const scopeRoot = resolveWorkspace(scriptDir).root;
   const staging = resolveMediaLayers(manifest, {
     scriptDir,
     publicDir,
-    seriesRoot: findSeriesRoot(scriptDir, scopeRoot),
+    seriesRoot: findSeriesRoot(scriptDir),
     scopeRoot,
   });
   manifest.metadata.publicDir = publicDir;
@@ -699,16 +693,8 @@ export async function compileVideo(options) {
   });
   manifest.tracks.audio.push(...sfxTracks);
 
-  // Keep the human-visible local audio staging dir next to the script (developer aid).
-  const localAudioDir = path.join(scriptDir, 'audio');
-  fs.mkdirSync(localAudioDir, { recursive: true });
-
-  for (const [scId, audioInfo] of Object.entries(audioAssets)) {
-    if (audioInfo?.assetPath && fs.existsSync(audioInfo.assetPath)) {
-      const destAudio = path.join(localAudioDir, `${scId}_voiceover.mp3`);
-      fs.copyFileSync(audioInfo.assetPath, destAudio);
-    }
-  }
+  // No audio/ handoff: the narration stays in the TTS cache, and avatar
+  // synthesis reads it from there (design D7).
 
   if (staging.escaped.length > 0) {
     throw new VideoRenderError(
@@ -723,11 +709,12 @@ export async function compileVideo(options) {
     );
   }
 
-  if (options.outputPath) {
-    const outResolved = path.resolve(options.outputPath);
-    fs.mkdirSync(path.dirname(outResolved), { recursive: true });
-    fs.writeFileSync(outResolved, JSON.stringify(manifest, null, 2), 'utf8');
-  }
+  // The manifest always lands at build/manifest.json: it is a build artifact, not
+  // a user-chosen output (design D2).
+  const manifestPath = path.join(buildDir, 'manifest.json');
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
+  manifest.metadata.manifestPath = manifestPath;
 
   return { manifest, cachedAssetsUsed, newAssetsSynthesized, avatarVideos, spentUsd, plannedTotalUsd };
 }
@@ -758,7 +745,6 @@ export async function renderVideo(options) {
       synthesizeAssets: options.synthesizeAssets,
       model: options.model,
       modelPath: options.modelPath,
-      templates: options.templates,
       allowModels: options.allowModels,
       approvalPath: options.approvalPath,
       models: options.models,
@@ -773,19 +759,28 @@ export async function renderVideo(options) {
     throw new Error('Either scriptPath or manifestPath must be provided for rendering');
   }
 
-  const outputPath = path.resolve(options.outputVideoPath);
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  // The master is written in place: render to build/render.tmp.mp4, then rename it
+  // over E/<slug>_1920x1920.mp4 (same volume), so a failed render never touches a
+  // previous master and no partial file is ever visible under the master name.
+  const buildDir = manifest.metadata?.buildDir;
+  if (!buildDir) throw new Error('The manifest has no metadata.buildDir; render takes the script, which compile stamps');
+  const slug = manifest.metadata?.videoSlug;
+  if (!slug) throw new Error('The manifest has no metadata.videoSlug (the Video slug); recompile the script');
+  const tmpPath = path.join(buildDir, 'render.tmp.mp4');
+  const outputPath = path.join(path.dirname(buildDir), `${slug}_1920x1920.mp4`);
+  fs.mkdirSync(buildDir, { recursive: true });
+  fs.rmSync(tmpPath, { force: true });
 
   // HyperFrames is the renderer: emit the project from the manifest, then render
   // it headlessly. A failure is a loud, named, non-zero error — never a silent
   // FFmpeg fallback or a mock MP4 masquerading as a render (only `--allow-mock`).
-  const projectDir = path.join(path.dirname(outputPath), 'hyperframes');
+  const projectDir = path.join(buildDir, 'hyperframes');
   const renderDeps = { onProgress };
   if (options.hyperframesRun) renderDeps.run = options.hyperframesRun;
   const hfResult = await tryHyperframesRender(
     {
       manifest,
-      outputPath,
+      outputPath: tmpPath,
       concurrency: options.concurrency || 4,
       projectDir,
       extraArgs: options.hyperframesArgs,
@@ -795,6 +790,7 @@ export async function renderVideo(options) {
 
   let mocked = false;
   if (!hfResult.rendered) {
+    fs.rmSync(tmpPath, { force: true });
     if (!options.allowMock) {
       throw new VideoRenderError(
         `HyperFrames render failed (${hfResult.reason})${hfResult.detail ? `:\n${hfResult.detail}\n\n` : '. '}Install the CLI via ensure-hyperframes.mjs, ` +
@@ -802,8 +798,21 @@ export async function renderVideo(options) {
       );
     }
     console.warn(`[video-engine-cli] HyperFrames unavailable (${hfResult.reason}); writing mock MP4 (--allow-mock).`);
-    writeMockMp4(outputPath);
+    writeMockMp4(tmpPath);
     mocked = true;
+  }
+
+  try {
+    fs.renameSync(tmpPath, outputPath);
+  } catch (err) {
+    fs.rmSync(tmpPath, { force: true });
+    const open = err?.code === 'EBUSY' || err?.code === 'EPERM' || err?.code === 'EACCES';
+    throw new VideoRenderError(
+      open
+        ? `Cannot replace ${outputPath}: the file is open in another program (a player or editor). Close it and render again; the previous master was left untouched.`
+        : `Cannot move the render into place at ${outputPath}: ${err?.message || err}`,
+      { cause: err },
+    );
   }
 
   const renderTimeMs = Date.now() - startTime;
@@ -889,37 +898,18 @@ function printDryRun(result) {
 const FLAG_SPEC = {
   boolean: ['dry-run', 'allow-mock'],
   value: [
-    'output', 'out', 'script', 'manifest', 'fps', 'width', 'height', 'format', 'concurrency',
+    'script', 'manifest', 'fps', 'concurrency',
     'cache-dir', 'approval', 'image-model', 'tts-model', 'avatar-model',
   ],
   repeatable: ['allow-model'],
 };
 
-/** Named aspect presets: --format resolves to width/height unless explicit flags win. */
-export const FORMAT_PRESETS = {
-  '16:9': { width: 1920, height: 1080 },
-  '9:16': { width: 1080, height: 1920 },
-  '1:1': { width: 1080, height: 1080 },
-};
-
-/** @param {{ format?: string, width?: string, height?: string }} flags */
-export function resolveFormatSize(flags) {
-  const preset = flags.format ? FORMAT_PRESETS[flags.format] : null;
-  if (flags.format && !preset) {
-    throw new Error(`Unknown --format "${flags.format}" (expected 16:9, 9:16 or 1:1).`);
-  }
-  return {
-    width: flags.width ? Number(flags.width) : preset?.width,
-    height: flags.height ? Number(flags.height) : preset?.height,
-  };
-}
-
 const USAGE = [
   'Usage: node video-engine-cli.mjs <compile|render> [options]',
-  '  compile <script.md> [--output manifest.json] [--fps n] [--width n] [--height n] [--format 16:9|9:16|1:1] [--cache-dir dir]',
+  '  compile <script.md> [--fps n] [--cache-dir dir]',
   '          [--dry-run] [--approval approved.json] [--allow-model name]...',
   '          [--image-model id] [--tts-model id] [--avatar-model id]',
-  '  render  <script.md|manifest.json> --output master.mp4 [--fps n] [--width n] [--height n] [--format 16:9|9:16|1:1] [--concurrency n] [--cache-dir dir]',
+  '  render  <script.md> [--fps n] [--concurrency n] [--cache-dir dir]',
   '          [--allow-mock] [--approval approved.json] [--allow-model name]... [--image-model id] [--tts-model id] [--avatar-model id]',
   '          [-- <hyperframes render flags>]   e.g. -- --workers 2 --low-memory-mode (forwarded verbatim)',
   '  --dry-run (compile only): list uncached billable work and the estimated total; spends and writes nothing.',
@@ -970,13 +960,9 @@ async function main() {
         console.error(USAGE);
         process.exit(1);
       }
-      const size = resolveFormatSize(args);
       const result = await compileVideo({
         scriptPath,
-        outputPath: args.output || args.out,
         fps: args.fps ? Number(args.fps) : undefined,
-        width: size.width,
-        height: size.height,
         cacheDir: args['cache-dir'],
         dryRun: Boolean(args['dry-run']),
         allowModels: args.allowModels,
@@ -995,24 +981,23 @@ async function main() {
       }
     } else if (command === 'render') {
       const target = args._[1] || args.script || args.manifest;
-      const output = args.output || args.out;
-      if (!target || !output) {
+      if (!target) {
         console.error(USAGE);
         process.exit(1);
       }
       const isManifest = target.endsWith('.json');
-      const renderSize = resolveFormatSize(args);
-      if (isManifest && (renderSize.width || renderSize.height)) {
-        console.error(`❌ [video-engine-cli] --width/--height/--format only apply when rendering from a script; re-compile the manifest instead.`);
+      if (isManifest) {
+        console.error(
+          `${'\u274C'} [video-engine-cli] render takes the script, not a manifest: it recompiles every run. Re-run: render <script.md>`,
+        );
         process.exit(1);
       }
+      // The master size comes from the declared `master_resolution`, never from a
+      // flag; a manifest is rendered as it was compiled.
       const result = await renderVideo({
         scriptPath: isManifest ? undefined : target,
         manifestPath: isManifest ? target : undefined,
-        outputVideoPath: output,
         fps: args.fps ? Number(args.fps) : undefined,
-        width: renderSize.width,
-        height: renderSize.height,
         concurrency: args.concurrency ? Number(args.concurrency) : undefined,
         cacheDir: args['cache-dir'],
         allowModels: args.allowModels,
