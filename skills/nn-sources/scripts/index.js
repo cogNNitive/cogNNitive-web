@@ -7,10 +7,8 @@ const prompts = require('prompts');
 
 const config = require('./config');
 const scanner = require('./scanner');
-const provenance = require('./provenance');
 const webImport = require('./webImport');
 const { bootstrapProject } = require('./lib/bootstrap');
-const { checkLineage } = require('./lib/lineage-check');
 const { auditModelCitations, checkScanImpact, writeImpactReport, detectSourceFamilyEvolution } = require('./lib/impact-checker');
 const { promoteConversation, PROMOTION_OPTIONS } = require('./lib/conversations');
 const externalScanner = require('./lib/external-scanner');
@@ -18,6 +16,7 @@ const watchDigestStore = require('./lib/watch-digest-store');
 const curateCsv = require('./lib/curate-csv');
 const gc = require('./lib/gc');
 const convergence = require('./lib/convergence-delta');
+const producerPayload = require('./lib/producer-payload');
 const { sidecarPathOf } = require('./lib/nn-core.generated.cjs');
 
 async function main() {
@@ -32,9 +31,6 @@ async function main() {
     argv.external ||
     argv['watch-digest'] ||
     argv['digest-decide'] ||
-    argv.provenance ||
-    argv.lineage ||
-    argv.check ||
     argv['check-impact'] ||
     argv.impact ||
     argv['impact-check'] ||
@@ -56,6 +52,23 @@ async function main() {
   if (hasArgs) {
     await handleCliMode(argv);
   } else {
+    // An option nobody recognises is an error, not a silent fall into the menu.
+    // The record flags (`--lineage`, `--provenance`, `--check`) are retired.
+    const KNOWN_OPTIONS = new Set([
+      'apply', 'check-impact', 'cognitivize', 'converge', 'converge-mark', 'curate-csv',
+      'dedup', 'dest', 'digest-decide', 'external', 'file', 'format', 'formats', 'gc',
+      'impact', 'impact-check', 'import-url', 'in-place', 'inPlace', 'inplace', 'json',
+      'key', 'name', 'normalize-file', 'note', 'paths', 'plan', 'promote-conv',
+      'promote-conversation', 'purge', 'remove-source', 'report', 'scan',
+      'scan-external', 'slice', 'slug', 'src', 'status', 'unlink', 'version',
+      'watch-digest', 'y', 'yes',
+    ]);
+    const unknown = Object.keys(argv).filter((key) => key !== '_' && !KNOWN_OPTIONS.has(key));
+    if (unknown.length > 0) {
+      console.error(`Error: unknown option(s): ${unknown.map((k) => `--${k}`).join(', ')}`);
+      console.error('Lineage records were removed; use `read_lineage` (MCP) or the console for lineage.');
+      process.exit(1);
+    }
     await handleInteractiveMode();
   }
 }
@@ -154,7 +167,6 @@ async function handleCliMode(argv) {
     console.log(`Bootstrapping project "${name}" in-place at "${projectDir}"...`);
     const bootstrap = bootstrapProject(srcDir, projectDir, name, { inPlace: true });
     console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);
-    console.log(`Initialized cogNNitive lineage record at: ${bootstrap.provModelPath}`);
     if (bootstrap.agentsMdPath) {
       console.log(`Scaffolded workspace AGENTS.md entrypoint at: ${bootstrap.agentsMdPath}`);
     }
@@ -172,7 +184,6 @@ async function handleCliMode(argv) {
     console.log(`Bootstrapping project "${argv.name}" at "${projectDir}"...`);
     const bootstrap = bootstrapProject(argv.src, argv.dest, argv.name);
     console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);
-    console.log(`Initialized cogNNitive lineage record at: ${bootstrap.provModelPath}`);
     if (bootstrap.agentsMdPath) {
       console.log(`Scaffolded workspace AGENTS.md entrypoint at: ${bootstrap.agentsMdPath}`);
     }
@@ -187,16 +198,6 @@ async function handleCliMode(argv) {
 
   if (argv.gc) {
     await handleGc(projectDir, argv);
-  }
-
-  if (argv.check) {
-    const { errors, warnings } = checkLineage(projectDir);
-    for (const w of warnings) console.log(`⚠️  ${w}`);
-    for (const e of errors) console.error(`❌ ${e}`);
-    if (errors.length === 0 && warnings.length === 0) {
-      console.log('✅ Lineage record is in sync with the workspace filesystem.');
-    }
-    process.exit(errors.length > 0 ? 1 : 0);
   }
 
   if (argv['check-impact'] || argv.impact || argv['impact-check'] || argv.report) {
@@ -424,6 +425,14 @@ async function handleCliMode(argv) {
       console.log(JSON.stringify(proposal, null, 2));
     } else {
       printConvergenceProposal(proposal);
+      // The converged source is an artifact of this run: print the ready record.
+      producerPayload.printProduceArtifactPayload(
+        producerPayload.buildProduceArtifactPayload({
+          artifactPath: to.relPath,
+          evidence: from.relPath,
+          author: 'converge',
+        }),
+      );
     }
     process.exit(0);
   }
@@ -464,18 +473,6 @@ async function handleCliMode(argv) {
 
     reportScanImpact(projectDir);
 
-    const prov = provenance.buildProvenanceKnowledge(projectDir);
-    console.log(
-      `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
-        `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
-    );
-    provenance.appendProcedureRun(projectDir, {
-      command: 'normalize-file',
-      flags: `--file "${targetFile}"`,
-      inputs: [targetFile],
-      outputs: ['sources/import/*_sidecar_NN.md', 'sources/conversations/*_sidecar_NN.md'],
-    });
-
     process.exit(result.processedCount > 0 ? 0 : 1);
   }
 
@@ -499,18 +496,6 @@ async function handleCliMode(argv) {
       console.log(`  ${entry.status} ${entry.name}: ${entry.action}`);
     }
     console.log(`Cognitivize completed! Discovered: ${result.totalDiscovered}, Processed: ${result.processedCount}, Skipped: ${result.skippedCount}`);
-
-    const prov = provenance.buildProvenanceKnowledge(projectDir);
-    console.log(
-      `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
-        `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
-    );
-    provenance.appendProcedureRun(projectDir, {
-      command: 'cognitivize',
-      flags: `--cognitivize "${target}"`,
-      inputs: [target],
-      outputs: ['*_sidecar_NN.md'],
-    });
 
     process.exit(result.totalDiscovered > 0 ? 0 : 1);
   }
@@ -541,18 +526,6 @@ async function handleCliMode(argv) {
     console.log(`Scan completed! Discovered: ${result.totalDiscovered}, Processed: ${result.processedCount}, Skipped: ${result.skippedCount}`);
 
     reportScanImpact(projectDir);
-
-    const prov = provenance.buildProvenanceKnowledge(projectDir);
-    console.log(
-      `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
-        `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
-    );
-    provenance.appendProcedureRun(projectDir, {
-      command: importResult ? 'import-url + scan' : 'scan',
-      flags: argv.formats ? `--formats ${argv.formats}` : undefined,
-      inputs: importResult ? [`sources/import/${importResult.relPath}`] : ['sources/import/'],
-      outputs: ['sources/import/*_sidecar_NN.md', 'sources/conversations/*_sidecar_NN.md'],
-    });
   }
 
   if (argv['curate-csv']) {
@@ -570,24 +543,18 @@ async function handleCliMode(argv) {
           (result.droppedEmptyKey ? ` · ${result.droppedEmptyKey} empty-key row(s) dropped` : ''),
       );
       console.log(`  cite a row as: sources:: [${result.citationExample}]`);
-      provenance.appendProcedureRun(projectDir, {
-        command: 'curate-csv',
-        flags: `--curate-csv "${target}"${argv.key ? ` --key "${argv.key}"` : ''}${argv.dedup ? ' --dedup' : ''}`,
-        inputs: [target],
-        outputs: [result.relOutput],
-      });
+      const relInput = path.relative(projectDir, path.resolve(target)).replace(/\\/g, '/');
+      producerPayload.printProduceArtifactPayload(
+        producerPayload.buildProduceArtifactPayload({
+          artifactPath: result.relOutput,
+          evidence: relInput && !relInput.startsWith('..') ? relInput : result.relOutput,
+          author: 'curate-csv',
+        }),
+      );
     } catch (err) {
       console.error(`Error curating CSV: ${err.message}`);
       process.exit(1);
     }
-  }
-
-  if ((argv.provenance || argv.lineage) && !argv.scan) {
-    const prov = provenance.buildProvenanceKnowledge(projectDir);
-    console.log(
-      `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
-        `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}`,
-    );
   }
 
   if (argv['promote-conv'] || argv['promote-conversation']) {
@@ -622,12 +589,6 @@ async function handleCliMode(argv) {
       for (const d of deleted) {
         console.log(`  - ${path.relative(projectDir, d).replace(/\\/g, '/')}`);
       }
-      // Regenerate lineage & index
-      const scanRes = await scanner.scanAndProcess(projectDir, {});
-      const prov = provenance.buildProvenanceKnowledge(projectDir);
-      console.log(
-        `Workspace lineage refreshed: ${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s).`
-      );
     }
   }
 }
@@ -820,7 +781,6 @@ async function runBootstrapperFlow() {
   const projectDir = path.join(targetDest, answers.name);
   const bootstrap = bootstrapProject(answers.src, targetDest, answers.name);
   console.log(`Copied ${bootstrap.copiedCount} file(s) to sources/import (subfolders preserved).`);
-  console.log(`Initialized cogNNitive lineage record at: ${bootstrap.provModelPath}`);
 
   config.saveConfig({ lastProjectPath: projectDir });
 
@@ -860,17 +820,6 @@ async function runProjectMenu(projectDir) {
     console.log(`Processed: ${result.processedCount} files successfully.`);
     console.log(`Skipped/Needs Review: ${result.skippedCount} files.`);
     if (result.orphans.length > 0) console.log(`Orphaned sidecars (raw file missing, preserved): ${result.orphans.length}.`);
-
-    const prov = provenance.buildProvenanceKnowledge(projectDir);
-    console.log(
-      `cogNNitive lineage record ${prov.created ? 'created' : 'refreshed'}: ` +
-        `${prov.sourceCount} source(s), ${prov.modelCount} model(s), ${prov.artifactCount} artifact(s) — ${prov.modelPath}\n`,
-    );
-    provenance.appendProcedureRun(projectDir, {
-      command: 'scan',
-      inputs: ['sources/import/', 'sources/conversations/'],
-      outputs: ['sources/import/*_sidecar_NN.md', 'sources/conversations/*_sidecar_NN.md'],
-    });
 
     return runProjectMenu(projectDir);
   }

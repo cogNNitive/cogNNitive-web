@@ -106,7 +106,7 @@ In cogNNitive:
    * `from → to`: Previous value and new value.
    * `author`: Agent or human identifier.
    * `applied_at`: ISO UTC timestamp.
-   * `evidence`: Mandatory source citations backing the change (`sources:: [prices.csv@SKU-101&price_usd]`).
+   * `evidence`: Mandatory source citation backing the change (`evidence:: sources/import/prices.csv@SKU-101&price_usd`).
 3. **Audit on demand:** When viewing a field in the domain console or via CLI, the system derives its entire timeline by querying the chronological chain of changes pointing to that KU target.
 
 ---

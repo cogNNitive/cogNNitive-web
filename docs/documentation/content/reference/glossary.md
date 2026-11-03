@@ -8,13 +8,13 @@ Short definitions of the terms used across this documentation. The canonical voc
 | **blueprint_version** | The Level-2 frontmatter key that carries a bluepriNNt's version. It replaces the retired `template_version` key. |
 | **bluepriNNt** | A Level-2 (L2) domain schema specification file that declares the concepts, elements, fields, and matrices a kNNowledge document must conform to. The retired aliases `template` and `app` are not used. |
 | **changeset** | A sealed, recorded set of proposed graph mutations (operations) written under `changes/`. A mutating change to a kNNowledge model is synthesized into a changeset, reviewed, then applied. |
-| **citation** | A pointer from a kNNowledge element to a Source anchor, written with the pointer grammar `<path>@## <Heading>` (Markdown), `<csv>@<row>`, or `<json>@/<pointer>`. It is carried in a `type:: citation` field or the reserved `sources::` property. |
+| **citation** | The `evidence` of an applied change: a pointer to a Source anchor, written with the pointer grammar `<path>@## <Heading>` (Markdown), `<csv>@<row>`, or `<json>@/<pointer>`. It is carried by the applied change, never by a model field. |
 | **cognitivize** | The operation that creates or refreshes a raw file's co-located sidecar in place, leaving the original file untouched. It is surfaced through the `nn-sources` CLI (`--cognitivize <file\|dir>`) and the `cognitivize` MCP tool. |
 | **concept** | A top-level section of an iNNfo document, introduced by the `# NN <Concept>` heading. A concept groups the elements that belong to it. |
 | **console** | The user-facing UI that shows and reviews a domaiNN: the self-contained domain console (`domaiNN_console.html`, one per domaiNN). It replaces the retired Vue editor and hosted web app. |
 | **defiNNition** | The Level-0 (L0) meta-specification language in which specifications are written. It is the root of the abstraction chain. |
 | **domaiNN** | The container that holds a project's kNNowledge, bluepriNNts, sources, procedures, and artifacts. A domaiNN is itself a kNNowledge document. |
-| **drift** | A divergence between the managed sections of the lineage record and a fresh projection of the filesystem. The drift gate reports it as `LINEAGE_DRIFT` in `nn-sources --lineage --check`, `scripts/verify.js`, and the `check_domain` MCP tool. |
+| **drift** | A divergence between the applied changes and the files on disk: a value edited by hand after the change that set it. `check_domain.provenance` reports it as `EDITED_WITHOUT_RECORD` in `check_domain.provenance` and `validate_knowledge`. |
 | **element** | A named entry inside a concept, introduced by the `## NN <Concept>: <Element>` heading. An element carries fields and free-form prose. |
 | **field** | A `key:: value` property declared on an element, concept, or document. Fields are the atomic values a schema defines and a document populates. |
 | **iNNfo** | The Level-1 (L1) concrete specification meta-template that defines the root primitives (Concept Definition, Field Definition, Matrix Definition). It is the language every bluepriNNt and kNNowledge document is written in. |

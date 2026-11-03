@@ -68,7 +68,7 @@ Actionable findings recommend `node skills/nn-sources/scripts/index.js --scan` o
 - **iNNfo output workspace structure** — for Level-3 workflows, verify the model directory holds
   `*_NN.md` files and that the index exists with its entry point.
 - **Semantic link validation** — parse every Level-3 document and verify that each path in its
-  `sources:: [...]` metadata exists physically in the workspace; report missing or dangling
+  `evidence::` metadata exists physically in the workspace; report missing or dangling
   sources as warnings.
 
 ## Tier 3 checks (informational — workspace upgrades)

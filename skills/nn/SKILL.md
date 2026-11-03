@@ -67,7 +67,7 @@ The `(Recommended)` tag is dynamically assigned to the first actionable stage ba
 The `[s] Sources` stage surfaces the external watch-roots capability **contextually**, driven by `watch_roots.declared` from the domain probe. This MUST NOT add a new top-level menu letter: the `[s][m][r][p][h][x]` shape and the `(Recommended)` selection are fixed.
 
 - When `watch_roots.declared > 0`, `[s] Sources` offers **Scan external watch roots** — runs the on-demand scan and the session-start digest (`node skills/nn-sources/scripts/index.js --scan-external`).
-- When `watch_roots.declared === 0`, `[s] Sources` offers **Declare a watch root** — a declarative `## NN External Watch Roots:` block in the lineage record (folders are read-only; no daemon or background process).
+- When `watch_roots.declared === 0`, `[s] Sources` offers **Declare a watch root** — a declarative `## NN External Watch Roots:` block in the `domaiNN_NN.md` entrypoint (folders are read-only; no daemon or background process).
 - A probe that omits `watch_roots` (older preflight) is treated as `0` and the menu is presented unchanged.
 
 ### Session-Start Watch Digest
@@ -144,6 +144,25 @@ and does not execute steps from its own text. Do not restate the protocol here.
    it; `[none]` opts out).
 <!-- /generated:shared-rules -->
 
+### Provenance Capabilities (change-based)
+
+A unit carries no provenance of its own: its origin, history and drift are derived from the
+applied changes. Surface these capabilities when the user asks where a value came from or what
+produced an artifact:
+
+- `read_lineage` — the computed lineage view (`sources`, `models`, `artifacts`, `changes`,
+  `edges`, `diagnostics`); read-only, `focus`/`scope` narrow it.
+- `resolve_sources` — the evidence of the last applied change of a unit (field, body or cell),
+  each entry carrying its `changeId`.
+- `produce_artifact` — the change that records an artifact a producer wrote (`curate-csv` and
+  `converge` print a ready payload); without it the projection reports
+  `ARTIFACT_WITHOUT_RECORD`.
+- `update_element_text` — the only writer of an element's prose body (`from::` the current
+  prose, `to::` the new one); `update_field` on `description` is refused.
+
+Both the persisted record and the reserved source-field authoring syntax were removed
+in favour of the applied changes.
+
 ### nn-specific additions
 
 5. **Visual Design Selection (`nn-design-presets`)**:
@@ -151,7 +170,7 @@ and does not execute steps from its own text. Do not restate the protocol here.
 6. **Session Language Coherence**:
    - Maintain the user's active conversation language across all prompts, responses, and menus throughout the session.
 7. **Business User Abstraction Guard**:
-   - Suppress internal engine plumbing (e.g. AST roles `catalog` vs `knowledge`, raw SHA-256 hashes, LF/CRLF warnings, or non-blocking lineage warnings) when interacting with business or domain users.
+   - Suppress internal engine plumbing (e.g. AST roles `catalog` vs `knowledge`, raw SHA-256 hashes, LF/CRLF warnings, or non-blocking provenance warnings) when interacting with business or domain users.
    - Communicate progress in terms of domain value: number of concepts modeled, key elements extracted, matrices crossed, and links to the generated HTML console.
 8. **End-to-End Optimistic Execution**:
    - For standard greenfield setups (e.g. "I want to use cogNNitive in this folder and model from document X"), proceed through the standard setup pipeline optimistically (bootstrap -> import -> scaffold -> model -> render console) without interrupting the user with single-letter menus at every sub-step.

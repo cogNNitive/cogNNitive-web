@@ -3,9 +3,9 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-1-2"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
+blueprint_version: "V_0-1-3"
 title: "Sidecar App"
 relationship_types:
   hierarchy:
@@ -62,11 +62,6 @@ description:: ISO-8601 UTC instant at which the sidecar was written or last refr
 concept:: Sidecar
 type:: string
 description:: Optional. Name of the normalizer that produced the body for a binary subject. Absent for text-native subjects, whose sidecar has no body.
-
-## NN Field Definition: sources
-concept:: Sidecar
-type:: citation
-description:: Optional. Citations to the upstream sources the subject was produced from. This is the only upstream edge a sidecar may declare; a sidecar never declares derived_from.
 
 # Sidecar Template
 

@@ -142,10 +142,10 @@
     '@media (max-width:640px){.nn-annotation-popover{width:100%}.nn-new-element{width:100%}}',
     '.nn-edit-modal{border:1px solid var(--nn-border);border-radius:var(--nn-radius-lg);padding:0;max-width:760px;width:100%;max-height:86vh;overflow:auto;background:var(--nn-surface);color:var(--nn-text);box-shadow:0 12px 40px rgba(0,0,0,.15)}',
     '.nn-edit-modal::backdrop{background:rgba(0,0,0,.35)}',
-    '.nn-edit-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--nn-border)}',
-    '.nn-edit-modal-head h2{margin:0;font-size:1.05rem;font-weight:700}',
-    '.nn-edit-modal-close{border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-muted);border-radius:var(--nn-radius-sm);width:28px;height:28px;cursor:pointer;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center}',
-    '.nn-edit-modal-body{padding:20px}',
+    '.nn-edit-modal-head,.nn-export-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--nn-border)}',
+    '.nn-edit-modal-head h2,.nn-export-head h2{margin:0;font-size:1.05rem;font-weight:700}',
+    '.nn-edit-modal-close,.nn-export-close{border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-muted);border-radius:var(--nn-radius-sm);width:28px;height:28px;cursor:pointer;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center}',
+    '.nn-edit-modal-body,.nn-export-body{padding:20px}',
     '.nn-edit-mode-selector{display:flex;gap:8px;margin-bottom:16px}',
     '.nn-edit-mode-btn{padding:6px 14px;border:1px solid var(--nn-border);background:var(--nn-surface-2);color:var(--nn-text);border-radius:var(--nn-radius-sm);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600}',
     '.nn-edit-mode-btn.active{background:var(--nn-accent);color:var(--nn-bg);border-color:var(--nn-accent)}',
@@ -154,10 +154,10 @@
     '.nn-edit-input:focus,.nn-edit-select:focus,.nn-edit-textarea:focus{outline:none;border-color:var(--nn-focus);box-shadow:0 0 0 2px rgba(37,99,235,.2)}',
     '.nn-edit-checkbox-label{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer}',
     '.nn-edit-multiselect{display:flex;flex-direction:column;gap:6px}',
-    '.nn-edit-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--nn-border);background:var(--nn-surface-2);border-radius:0 0 var(--nn-radius-lg) var(--nn-radius-lg)}',
-    '.nn-edit-btn{padding:7px 16px;border-radius:var(--nn-radius-sm);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
-    '.nn-edit-btn-save{background:var(--nn-accent);color:var(--nn-bg);border:1px solid var(--nn-accent)}',
-    '.nn-edit-btn-cancel{background:var(--nn-surface);color:var(--nn-text);border:1px solid var(--nn-border)}',
+    '.nn-edit-modal-actions,.nn-export-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--nn-border);background:var(--nn-surface-2);border-radius:0 0 var(--nn-radius-lg) var(--nn-radius-lg)}',
+    '.nn-edit-btn,.nn-export-btn{padding:7px 16px;border-radius:var(--nn-radius-sm);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
+    '.nn-edit-btn-save,.nn-export-primary{background:var(--nn-accent);color:var(--nn-bg);border:1px solid var(--nn-accent)}',
+    '.nn-edit-btn-cancel,.nn-export-secondary{background:var(--nn-surface);color:var(--nn-text);border:1px solid var(--nn-border)}',
     '.nn-modal-tabs{display:flex;border-bottom:1px solid var(--nn-border);background:var(--nn-surface-2);padding:0 12px;gap:4px}',
     '.nn-modal-tab-btn{padding:8px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--nn-muted);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}',
     '.nn-modal-tab-btn.active{color:var(--nn-text);border-bottom-color:var(--nn-accent);background:var(--nn-surface)}',
@@ -2036,11 +2036,13 @@
     }
   }
 
-  /** The `previous -> new` line; add shows the fields, delete the element name. */
+  /** The `previous -> new` line; add shows the draft's fields, delete the element name. */
   function cardDiff(op, entry) {
     var e = entry || {}
     if (op === 'add_element') {
-      var fields = e.fields && typeof e.fields === 'object' ? e.fields : e.proposed
+      // An applied change carries no inline `fields`: the value belongs to its own
+      // update_field card. An unsent `kind: 'new'` draft still previews `proposed`.
+      var fields = e.proposed && typeof e.proposed === 'object' ? e.proposed : null
       if (fields && typeof fields === 'object') {
         return Object.keys(fields)
           .map(function (k) {
@@ -2060,100 +2062,169 @@
     return String(from == null ? '' : from) + ' \u2192 ' + String(to == null ? '' : to)
   }
 
-  function changeCard(state, opts) {
-    var doc = (opts && opts.doc) || resolveDoc(opts)
-    var s = state || {}
-    var li = makeEl(doc, 'li', 'nn-change-card card bg-base-100 border border-base-200 shadow-xs')
-    li.setAttribute('data-nn-component', 'change-card')
-    li.setAttribute('data-change-state', s.stateKind || 'unsent')
-    if (s.draftId) li.setAttribute('data-draft-id', String(s.draftId))
-    if (s.targetChanged) li.setAttribute('data-target-changed', 'true')
+  // ---- Change sheets (a change IS an element) ----
+  //
+  // One builder renders a change wherever the console lists changes: the element
+  // modal's Changes panel and the export modal's pending list. It reuses
+  // ElementCard — the same sheet the explorer renders — so a change inherits the
+  // console's real card anatomy (concept/name chips, collapsible field rows,
+  // citation widgets) instead of growing a second, unstyled card.
+  //
+  // `variant: 'draft'` reads an unsent draft (original/proposed, comment, sources);
+  // the default reads an applied change block (from/to, evidence, resolution).
+  function changeSheetFields(entry, opts) {
+    var e = entry || {}
+    opts = opts || {}
+    var variant = opts.variant || 'applied'
+    var op = opts.op || e.op || draftOp(e)
+    var fields = []
+    function push(name, value) {
+      if (value === undefined || value === null || value === '') return
+      fields.push({ name: name, value: String(value) })
+    }
 
-    var body = makeEl(doc, 'div', 'nn-change-card-body card-body p-4 flex flex-col gap-2')
+    if (variant === 'draft') {
+      // One scalar row carries the edit: `4 -> 6` reads better than two rows.
+      push('value', cardDiff(op, e))
+      push('concept', e.concept)
+    } else {
+      push('op', op)
+      push('target', e.target)
+      if (e.from !== undefined) fields.push({ name: 'from', value: String(e.from) })
+      if (e.to !== undefined) fields.push({ name: 'to', value: String(e.to) })
+      push('concept', e.concept)
+      push('name', e.name)
+    }
+    push('author', e.author)
+    // An applied block's `status` also feeds ElementCard's header status pill.
+    if (variant === 'applied') push('status', e.status)
 
-    var head = makeEl(doc, 'div', 'nn-change-card-head flex items-center justify-between gap-3')
-    head.appendChild(makeEl(doc, 'span', 'nn-change-card-title font-semibold text-sm', s.title || ''))
-    if (s.stateKind === 'unsent' && typeof StatusBadge === 'function') {
+    // Evidence / sources are citations: the standard citation value widget keeps
+    // the icon live, so the reviewer opens the source from the change sheet.
+    var rawEvidence =
+      variant === 'draft' ? e.sources || e.evidence : e.evidence || e.sources
+    var evidenceList =
+      rawEvidence == null ? [] : Array.isArray(rawEvidence) ? rawEvidence : [rawEvidence]
+    evidenceList.forEach(function (src) {
+      if (src == null || src === '') return
+      var fieldName = variant === 'draft' ? 'sources' : 'evidence'
+      fields.push({
+        name: fieldName,
+        value: String(src),
+        type: 'citation',
+        citations: [
+          (variant === 'applied' && e.evidenceCitation) || {
+            origin: 'document',
+            path: String(src),
+            exists: true,
+            field: fieldName,
+          },
+        ],
+      })
+    })
+
+    if (variant === 'draft') {
+      push('notes', e.comment)
+    } else {
+      push('applied_at', e.timestamp)
+      push('notes', e.notes)
+      push('resolution', e.resolution)
+    }
+    return fields
+  }
+
+  // A citation icon is only ever emitted when the host can open it: a sheet built
+  // without an onCite handler shows its sources as plain text, never a dead icon.
+  function withCitations(fields, onCite) {
+    if (typeof onCite === 'function') return fields
+    return fields.map(function (f) {
+      if (!f || !f.citations) return f
+      return Object.assign({}, f, { citations: undefined, type: undefined })
+    })
+  }
+
+  // data: { entry, variant, stale }. opts: { open, collapsible, modelId, title,
+  // stateKind, stateLabel, elementId, revertable, onCite, onGoTo, onRevert, onDiscard }.
+  // The unsent signal is ONE badge in the sheet head (the same StatusBadge the
+  // review tab uses), never a `status` field row duplicating it.
+  function changeSheet(data, opts) {
+    if (!data || typeof data !== 'object') throw new TypeError('nnUI.changeSheet: data required')
+    opts = opts || {}
+    var doc = resolveDoc(opts)
+    var entry = data.entry || data
+    var variant = data.variant || 'draft'
+    var stateKind =
+      opts.stateKind || (variant === 'draft' ? 'unsent' : String(entry.status || 'applied'))
+    var op = opts.op || entry.op || draftOp(entry)
+    var head = []
+
+    if (variant === 'draft' && typeof StatusBadge === 'function') {
       var badge = StatusBadge({ status: 'local', label: COPY.unsent })
       badge.classList.add('nn-change-card-badge')
-      head.appendChild(badge)
-    } else {
-      var stateEl = makeEl(doc, 'span', 'nn-change-card-state text-xs font-semibold', s.stateText || '')
-      if (s.stateKind === 'applied') stateEl.setAttribute('title', COPY.appliedHelp)
-      head.appendChild(stateEl)
+      head.push(badge)
+    } else if (opts.stateLabel) {
+      head.push(makeEl(doc, 'span', 'nn-change-sheet-state', opts.stateLabel))
     }
-    body.appendChild(head)
+    if (data.stale) head.push(makeEl(doc, 'span', 'nn-change-sheet-stale', 'target changed'))
 
-    if (s.targetNode) {
-      var targetWrap = makeEl(doc, 'div', 'nn-change-card-target inline-flex items-center gap-1.5 flex-wrap text-sm')
-      targetWrap.appendChild(s.targetNode)
-      body.appendChild(targetWrap)
+    // Row actions live in the sheet head, the only slot ElementCard leaves to a
+    // host: one flat list of ghost buttons, never a second action bar.
+    function action(label, name, handler) {
+      var btn = makeEl(doc, 'button', 'nn-change-sheet-action', label)
+      btn.setAttribute('type', 'button')
+      btn.setAttribute('data-nn', name)
+      btn.addEventListener('click', handler)
+      head.push(btn)
     }
-
-    if (s.diff) body.appendChild(makeEl(doc, 'div', 'nn-change-card-diff text-sm', s.diff))
-
-    var context = [s.author, s.date, s.stateText].filter(Boolean).join(' \u00b7 ')
-    body.appendChild(makeEl(doc, 'div', 'nn-change-card-context text-xs opacity-70', context))
-
-    if (s.note) body.appendChild(makeEl(doc, 'p', 'nn-change-card-note text-sm', s.note))
-    if (s.resolution) body.appendChild(makeEl(doc, 'p', 'nn-change-card-resolution text-xs', s.resolution))
-    if (s.sources) {
-      var sourceList = Array.isArray(s.sources) ? s.sources : [s.sources]
-      sourceList.forEach(function (src) {
-        if (src == null || src === '') return
-        var srcText = String(src)
-        var srcEl = makeEl(doc, 'span', 'nn-change-card-source text-xs inline-flex items-center gap-1', srcText)
-        // A citation icon only exists when the host can open it: never a dead control.
-        if (opts && typeof opts.onCitation === 'function') {
-          srcEl.appendChild(
-            CitationIcon(
-              { variant: 'document', field: srcText },
-              {
-                doc: doc,
-                onOpen: function () {
-                  opts.onCitation(srcText)
-                },
-              },
-            ),
-          )
-        }
-        body.appendChild(srcEl)
+    if (typeof opts.onGoTo === 'function' && opts.elementId) {
+      action(COPY.goToElement, 'go-to', function () {
+        opts.onGoTo(opts.elementId)
       })
     }
-
-    if (s.targetChanged) {
-      body.appendChild(makeEl(doc, 'span', 'nn-change-card-stale text-xs', 'target changed'))
-    }
-
-    var actions = makeEl(doc, 'div', 'nn-change-card-actions flex items-center gap-2')
-    if (s.elementId && opts && typeof opts.onGoTo === 'function') {
-      var go = makeEl(doc, 'button', 'nn-change-goto btn btn-sm btn-ghost', COPY.goToElement)
-      go.setAttribute('type', 'button')
-      go.addEventListener('click', function () {
-        opts.onGoTo(s.elementId)
+    if (typeof opts.onRevert === 'function' && opts.revertable) {
+      action(COPY.revert, 'revert', function () {
+        opts.onRevert(entry)
       })
-      actions.appendChild(go)
     }
-    if (s.revertable && opts && typeof opts.onRevert === 'function') {
-      var rev = makeEl(doc, 'button', 'nn-change-revert btn btn-sm btn-ghost', COPY.revert)
-      rev.setAttribute('type', 'button')
-      rev.addEventListener('click', function () {
-        opts.onRevert(s.entry)
+    if (typeof opts.onDiscard === 'function' && entry.id != null) {
+      var discard = makeEl(doc, 'button', 'nn-change-sheet-action nn-change-sheet-discard', COPY.discard)
+      discard.setAttribute('type', 'button')
+      discard.setAttribute('data-nn', 'discard')
+      discard.addEventListener('click', function () {
+        opts.onDiscard(entry.id)
       })
-      actions.appendChild(rev)
+      head.push(discard)
     }
-    if (s.draftId && opts && typeof opts.onDiscard === 'function') {
-      var dis = makeEl(doc, 'button', 'nn-change-discard btn btn-sm btn-ghost text-error', COPY.discard)
-      dis.setAttribute('type', 'button')
-      dis.addEventListener('click', function () {
-        opts.onDiscard(s.draftId)
-      })
-      actions.appendChild(dis)
-    }
-    if (actions.children.length) body.appendChild(actions)
 
-    li.appendChild(body)
-    return li
+    var card = ElementCard(
+      {
+        // The sheet's element identity is the TARGET unit (so its Ku chip carries a
+        // real address); the change's own identity lives in data-change-id.
+        id: opts.elementId || entry.element_id || entry.id,
+        conceptId: 'Change',
+        concept: 'Change',
+        name: opts.title || cardTitle(op, entry),
+        fields: withCitations(changeSheetFields(entry, { variant: variant, op: op }), opts.onCite),
+      },
+      {
+        doc: doc,
+        modelId: opts.modelId,
+        collapsible: opts.collapsible !== false,
+        open: opts.open === true,
+        onCite: opts.onCite,
+        head: head,
+      },
+    )
+    // Semantic hooks for the hosts: which change this sheet is and what state it
+    // is in. They describe the data, not the look. `data-nn-change-sheet` keeps
+    // these records out of the explorer's per-element decoration: a change sheet
+    // IS the signal, it never carries a second one.
+    card.setAttribute('data-nn-change-sheet', '')
+    card.setAttribute('data-change-state', stateKind)
+    if (entry.id != null) card.setAttribute('data-change-id', String(entry.id))
+    if (variant === 'draft' && entry.id != null) card.setAttribute('data-draft-id', String(entry.id))
+    if (data.stale) card.setAttribute('data-target-changed', 'true')
+    return card
   }
 
   function draftOp(d) {
@@ -2166,123 +2237,73 @@
     return 'update_field'
   }
 
+  // The field citation widget reports the resolved entry; change lists expose the
+  // source address to their host (a string), not the widget's payload.
+  function citationSource(citeData) {
+    var entry = citeData && citeData.entry
+    var source = (entry && entry.path) || (citeData && citeData.value) || ''
+    if (source && entry && entry.anchor) source = source + '#' + entry.anchor
+    return String(source)
+  }
+
+  // The pending list: change sheets, newest last, in the same container class the
+  // export modal uses. `onDelete`/`onGoTo`/`onCitation` are the review controller's
+  // names; they are forwarded to the one builder under its own vocabulary.
   function DraftList(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('nnUI.DraftList: data required')
+    opts = opts || {}
     var doc = resolveDoc(opts)
     var drafts = Array.isArray(data.drafts) ? data.drafts : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
-    var ul = makeEl(doc, 'ul', 'nn-draft-list nn-change-list flex flex-col gap-3 list-none p-0 m-0')
-    ul.setAttribute('data-nn-component', 'draft-list')
+    var host = makeEl(doc, 'div', 'nn-change-sheets')
+    host.setAttribute('data-nn-component', 'draft-list')
     drafts.forEach(function (d) {
       if (!d || typeof d !== 'object') return
       var el = byId[String(d.element_id)]
       // The host passes the review module's staleness rule; the kit has no dependency on it.
       var changed =
-        opts && typeof opts.isTargetChanged === 'function'
+        typeof opts.isTargetChanged === 'function'
           ? opts.isTargetChanged(d, byId)
           : !el || el.hash !== d.base_hash
       var op = draftOp(d)
       var elementName = (el && el.name) || d.element || d.element_id || ''
-      // Target chips are knowledge units built by Ku, keyed by canonical address
-      // (the published console-ui-kit contract, kept).
-      var targetConcept = d.concept || (el && el.concept) || null
-      var draftModel = (opts && (opts.modelId || opts.model)) || d.model || (el && el.modelId) || 'model'
-      var targetNode = makeEl(doc, 'span', 'nn-draft-target inline-flex items-center gap-1.5')
-      if (targetConcept) {
-        targetNode.appendChild(
-          Ku(
-            'section',
-            {
-              model: draftModel,
-              concept: targetConcept,
-              label: targetConcept,
-              index: el && el._conceptIndex != null ? el._conceptIndex : 0,
-              color: el && el._conceptColor,
-            },
-            { doc: doc },
-          ),
-        )
-      }
-      var unitKind = d.field ? 'value' : 'element'
-      targetNode.appendChild(
-        Ku(
-          unitKind,
-          {
-            address: d.address || undefined,
-            model: draftModel,
-            element: d.element_id || elementName,
-            field: d.field || undefined,
-            id: d.element_id || elementName,
-            label: elementName,
-            concept: targetConcept,
-            color: el && el._conceptColor,
-            index: el && el._conceptIndex,
-          },
-          { doc: doc },
-        ),
-      )
-      if (d.field) {
-        var arrowSpan = makeEl(doc, 'span', 'nn-draft-arrow text-xs opacity-60', '\u2192')
-        arrowSpan.setAttribute('aria-hidden', 'true')
-        targetNode.appendChild(arrowSpan)
-        targetNode.appendChild(
-          Ku(
-            'field',
-            {
-              family: draftModel,
-              model: draftModel,
-              concept: targetConcept || 'relations',
-              name: d.field,
-              label: '~ ' + d.field,
-            },
-            { doc: doc },
-          ),
-        )
-      }
-      ul.appendChild(
-        changeCard(
-          {
-            draftId: d.id,
-            op: op,
-            title: cardTitle(op, d),
-            diff: cardDiff(op, d),
-            targetNode: targetNode,
-            author: d.author,
-            date: d.created_at,
-            stateKind: 'unsent',
-            stateText: COPY.unsent,
-            note: d.comment != null ? d.comment : '',
-            sources: d.sources,
-            elementId: d.element_id || elementName,
-            targetChanged: changed,
-          },
+      host.appendChild(
+        changeSheet(
+          { entry: d, variant: 'draft', stale: changed },
           {
             doc: doc,
-            onDiscard:
-              opts && typeof opts.onDelete === 'function'
-                ? function (id) {
-                    opts.onDelete(id)
+            modelId: opts.modelId || opts.model || d.model || (el && el.modelId),
+            // Resolve the element's display name once, here: the title is the
+            // sheet's name and the only place the reviewer reads it.
+            title: cardTitle(op, Object.assign({}, d, { element: elementName })),
+            stateKind: 'unsent',
+            elementId: d.element_id || elementName,
+            onDiscard: typeof opts.onDelete === 'function' ? opts.onDelete : null,
+            onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+            onCite:
+              typeof opts.onCitation === 'function'
+                ? function (citeData) {
+                    opts.onCitation(citationSource(citeData))
                   }
                 : null,
-            onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
-            onCitation: opts && typeof opts.onCitation === 'function' ? opts.onCitation : null,
           },
         ),
       )
     })
-    return ul
+    return host
   }
 
-  // Renders the payload `changes` collection: one card per applied block (with
-  // Revert for an `update_field`) and one muted card per not-applied block, with
-  // the engine's reason. Holds no state, reads no storage.
+  // Renders the payload `changes` collection: one sheet per applied block (with
+  // Revert for an `update_field`) and one per not-applied block, with the engine's
+  // reason. Holds no state, reads no storage.
   function ChangeHistory(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('nnUI.ChangeHistory: data required')
+    opts = opts || {}
     var doc = resolveDoc(opts)
     var changesets = Array.isArray(data.changes) ? data.changes : []
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
-    var ul = makeEl(doc, 'ul', 'nn-change-history flex flex-col gap-3 list-none p-0 m-0')
-    ul.setAttribute('data-nn-component', 'change-history')
+    var host = makeEl(doc, 'div', 'nn-change-sheets')
+    host.setAttribute('data-nn-component', 'change-history')
     changesets.forEach(function (cs) {
       var items = Array.isArray(cs && cs.changes) ? cs.changes : []
       items.forEach(function (c) {
@@ -2294,35 +2315,39 @@
         var parts = cardTargetParts(c.target)
         var elementName = parts.element
         var el = byId[elementName] || byId[c.element_id]
-        ul.appendChild(
-          changeCard(
-            {
-              op: op,
-              entry: c,
-              title: cardTitle(op, el && el.name ? Object.assign({}, c, { element: el.name }) : c),
-              diff: cardDiff(op, c),
-              author: c.author || (cs && cs.author),
-              date: cs && cs.appliedAt,
-              stateKind: applied ? 'applied' : 'not-applied',
-              stateText: applied ? COPY.applied : COPY.notApplied,
-              note: c.notes,
-              resolution: applied ? '' : c.resolution || (cs && cs.resolution),
-              sources: c.sources,
-              elementId: elementName || (el && el.id),
-              revertable: applied && op === 'update_field',
-            },
+        // Fold the changeset-level facts into the entry so the sheet reads the
+        // change as one record: author, applied time and why it was skipped.
+        var entry = Object.assign({}, c, {
+          author: c.author || (cs && cs.author),
+          timestamp: (cs && cs.appliedAt) || c.timestamp,
+          resolution: applied ? undefined : c.resolution || (cs && cs.resolution),
+        })
+        host.appendChild(
+          changeSheet(
+            { entry: entry, variant: 'applied' },
             {
               doc: doc,
-              onRevert: opts && typeof opts.onRevert === 'function' ? opts.onRevert : null,
-              onGoTo: opts && typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
-              onCitation: opts && typeof opts.onCitation === 'function' ? opts.onCitation : null,
+              title: cardTitle(op, el && el.name ? Object.assign({}, c, { element: el.name }) : c),
+              stateKind: applied ? 'applied' : 'not-applied',
+              stateLabel: applied ? COPY.applied : COPY.notApplied,
+              elementId: elementName || (el && el.id),
+              revertable: applied && op === 'update_field',
+              onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
+              onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+              onCite:
+                typeof opts.onCitation === 'function'
+                  ? function (citeData) {
+                      opts.onCitation(citationSource(citeData))
+                    }
+                  : null,
             },
           ),
         )
       })
     })
-    return ul
+    return host
   }
+
 
   // ---- Core Edit Widgets (D13 / S3) ----
 
@@ -2675,51 +2700,13 @@
     })
     if (historyItems.length) {
       historyItems.forEach(function (h) {
-        var changeFields = []
-        var pushField = function (name, value) {
-          if (value === undefined || value === null || value === '') return
-          changeFields.push({ name: name, value: String(value) })
-        }
-        pushField('op', h.op)
-        pushField('target', h.target)
-        if (h.from !== undefined) changeFields.push({ name: 'from', value: String(h.from) })
-        if (h.to !== undefined) changeFields.push({ name: 'to', value: String(h.to) })
-        pushField('concept', h.concept)
-        pushField('name', h.name)
-        pushField('author', h.author)
-        pushField('status', h.status)
-        // Evidence is a citation: render it with the standard citation value widget
-        // (value + clickable icon) so the icon opens the citation/unit.
-        if (h.evidence) {
-          changeFields.push({
-            name: 'evidence',
-            value: String(h.evidence),
-            type: 'citation',
-            citations: [
-              h.evidenceCitation || {
-                origin: 'document',
-                path: String(h.evidence),
-                exists: true,
-                field: 'evidence',
-              },
-            ],
-          })
-        }
-        pushField('applied_at', h.timestamp)
-        pushField('notes', h.notes)
-        pushField('resolution', h.resolution)
         histSection.appendChild(
-          ElementCard(
-            {
-              id: h.id,
-              conceptId: 'Change',
-              concept: 'Change',
-              name: cardTitle(h.op, h),
-              fields: changeFields,
-            },
+          changeSheet(
+            { entry: h, variant: 'applied' },
             {
               doc: doc,
               collapsible: false,
+              open: true,
               onCite: opts && typeof opts.onEvidence === 'function' ? opts.onEvidence : undefined,
             },
           ),
@@ -4306,6 +4293,8 @@
     CITATION_ORIGIN_LABELS: CITATION_ORIGIN_LABELS,
     DraftList: DraftList,
     ChangeHistory: ChangeHistory,
+    changeSheet: changeSheet,
+    changeSheetFields: changeSheetFields,
     AnnotationPopover: AnnotationPopover,
     RailProgress: RailProgress,
     Toast: Toast,

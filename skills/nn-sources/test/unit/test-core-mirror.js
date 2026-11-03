@@ -33,7 +33,7 @@ function run() {
     'createFsSourceResolver',
     'validateCitations',
     'projectLineage',
-    'renderLineageSections',
+    'buildChangeLog',
     'readLineageSnapshot',
     'slugifyHeading',
     'slugifyUnitHeading',

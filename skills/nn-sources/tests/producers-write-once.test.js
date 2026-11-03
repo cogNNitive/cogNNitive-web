@@ -86,18 +86,15 @@ test('impact report: declares its upstream sources and carries no date', async (
   assert.ok(!/^type: report/m.test(content));
 });
 
-test('curated CSV: a write-once artifact whose sidecar declares the raw file as upstream', async (t) => {
+test('curated CSV: a write-once artifact whose sidecar records no upstream', async (t) => {
   const root = workspace(t);
   const raw = put(root, 'sources/import/sales.csv', 'id,count\na,1\nb,2\n');
   const rawSha = sha(raw);
   const curated = await curateCsvFile(raw, { key: 'id', projectDir: root });
   assert.equal(sha(raw), rawSha, 'the raw file is untouched');
   const sidecar = fs.readFileSync(`${curated.outputPath}_sidecar_NN.md`, 'utf8');
-  assert.match(sidecar, /\nsources:\n {2}- sources\/import\/sales\.csv\n/);
-
-  const projection = core.projectLineage(core.readLineageSnapshot(root));
-  const source = projection.sources.find((s) => s.raw_filename === curated.relOutput);
-  assert.deepEqual(source.derived_from, ['sources/import/sales.csv']);
+  // Provenance is the applied change, not a sidecar key (S5a.2).
+  assert.doesNotMatch(sidecar, /^sources:/m);
 
   const before = listing(root);
   await curateCsvFile(raw, { key: 'id', projectDir: root });

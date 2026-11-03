@@ -12,12 +12,11 @@ const {
 } = require('./nn-core.generated.cjs');
 
 /**
- * Filename tokens that identify the workspace lineage / entrypoint record — the
- * document that may declare `## NN External Watch Roots:`. `domaiNN` is the
- * canonical entrypoint, `cogNNitive` is the lineage record, and `workspace` is
- * the legacy entrypoint kept readable for unmigrated workspaces.
+ * Filename tokens that identify the domaiNN entrypoint — the ONE document that
+ * declares `## NN External Watch Roots:`. The lineage record is gone (S4); the
+ * legacy `workspace` name stays readable for unmigrated workspaces.
  */
-const RECORD_TOKENS = ['cogNNitive', 'domaiNN', 'workspace'];
+const ENTRYPOINT_TOKENS = ['domaiNN', 'workspace'];
 
 /**
  * Computes a timestamped filename from an original basename.
@@ -267,7 +266,7 @@ function scanExternalDirectory(rootConfig, cache = {}) {
 }
 
 /**
- * Scans all watch roots declared in a workspace's provenance model.
+ * Scans all watch roots declared by the domaiNN entrypoint (`domaiNN_NN.md`).
  *
  * @param {string} projectDir
  * @param {Map<string, any> | Record<string, any>} [cache]
@@ -283,24 +282,23 @@ function scanExternalDirectory(rootConfig, cache = {}) {
  * }}
  */
 function scanAllWatchRoots(projectDir, cache = {}) {
-  // Find the lineage/entrypoint record that can declare watch roots. The record
-  // is `<Project>_..._cogNNitive_NN.md` (or the entrypoint `domaiNN_NN.md`), living
-  // at the workspace root or under the knowledge dir (`kNNowledge/`).
+  // The domaiNN entrypoint declares the watch roots; it lives at the workspace
+  // root or under the knowledge dir (`kNNowledge/`).
   let modelPath = null;
   for (const dirName of ['kNNowledge']) {
     if (modelPath) break;
     const dir = path.join(projectDir, dirName);
     if (!fs.existsSync(dir)) continue;
     const files = fs.readdirSync(dir);
-    const prov = files.find((f) => !isSidecarName(f) && RECORD_TOKENS.some((t) => f.includes(t)));
-    if (prov) modelPath = path.join(dir, prov);
+    const entry = files.find((f) => !isSidecarName(f) && ENTRYPOINT_TOKENS.some((t) => f.includes(t)));
+    if (entry) modelPath = path.join(dir, entry);
   }
 
-  // Also check workspace root records.
+  // Also check the workspace root.
   if (!modelPath) {
     const rootFiles = fs.readdirSync(projectDir);
-    const prov = rootFiles.find((f) => isNNName(f) && !isSidecarName(f) && RECORD_TOKENS.some((t) => f.includes(t)));
-    if (prov) modelPath = path.join(projectDir, prov);
+    const entry = rootFiles.find((f) => isNNName(f) && !isSidecarName(f) && ENTRYPOINT_TOKENS.some((t) => f.includes(t)));
+    if (entry) modelPath = path.join(projectDir, entry);
   }
 
   const rootConfigs = modelPath ? parseWatchRoots(modelPath) : [];

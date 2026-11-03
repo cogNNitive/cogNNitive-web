@@ -52,10 +52,37 @@ async function fixture(t) {
       '---',
       '# NN Offer',
       '## NN Offer: Basic',
-      `sources:: [${CITED_OLD}@a, ${PDF_OLD}_sidecar_NN.md@## Overview]`,
+      '# NN Offer',
       '',
     ].join('\n'),
   );
+  const evidence = `[${CITED_OLD}, ${PDF_OLD}_sidecar_NN.md@## Overview]`;
+  put(
+    root,
+    'changes/dom_agent_20261010T120000Z_changes_NN.md',
+    [
+      '---',
+      'spec_version: "V_0-4-0"',
+      'level: 3',
+      'parent_spec:',
+      '  name: changes',
+      '  url: https://example.com/changes.md',
+      'blueprint_version: "V_0-6-0"',
+      'status: applied',
+      'applied_at: "2026-10-10T12:00:00.000Z"',
+      '---',
+      '',
+      '# NN Change',
+      '',
+      '## NN Change: c-01',
+      'op:: update_field',
+      'target:: pricing@basic&note',
+      'to:: cited',
+      'evidence:: ' + evidence,
+      '',
+    ].join('\n'),
+  );
+
   return root;
 }
 

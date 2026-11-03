@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "organization_V_0-4-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/organization/spec_NN.md"
-knowledge_version: "V_0-4-0"
+knowledge_version: "V_0-4-1"
 title: "Ghostbusters Inc. Organization Model"
 ---
 
@@ -102,7 +102,6 @@ Secondary research seat focused on field testing, equipment fabrication, and PKE
 ## NN Position: Field Specialist
 slug:: field-specialist
 complexity:: 75
-sources:: [sources/import/nyc-paranormal-activity-report-1984.md@## Response Times&lead_agency]
 tags:: [operational, frontline, field-unit]
 Operational seat dedicated to frontline containment, heavy transport, and equipment handling.
 

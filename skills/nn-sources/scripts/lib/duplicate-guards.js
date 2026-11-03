@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { parseCitation, isNNName, isSidecarName, isExcludedPath, rawPathOfSidecar } = require('./nn-core.generated.cjs');
+const { buildChangeLog, parseCitation, readLineageSnapshot, isNNName, isSidecarName, isExcludedPath, rawPathOfSidecar } = require('./nn-core.generated.cjs');
 
 /** Canonicalize whitespace + ordering for structural comparison. */
 function canonicalize(text) {
@@ -326,6 +326,19 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
   const citedPaths = new Set();
   const modelCitations = new Map();
 
+  // Evidence of applied changes cites a source too (change-provenance: consumers
+  // read the log). All-time: a superseded citation still protects the source.
+  const evidenceCited = new Set();
+  try {
+    const snapshot = readLineageSnapshot(workspaceRoot);
+    for (const [citation] of buildChangeLog(snapshot).evidence('all-time')) {
+      const cit = parseCitation(citation);
+      evidenceCited.add(cit ? cit.filePath : String(citation).split('@')[0].trim());
+    }
+  } catch {
+    // A workspace without changes simply has no evidence citations.
+  }
+
   if (fs.existsSync(modelsDir)) {
     const modelFiles = [];
     function walkModels(dir) {
@@ -374,7 +387,7 @@ function auditUncitedSources(workspaceRoot, opts = {}) {
   const citedSources = [];
 
   for (const canon of index.canonicalSources) {
-    if (citedHashes.has(canon.sha256)) {
+    if (citedHashes.has(canon.sha256) || evidenceCited.has(canon.relativePath)) {
       citedSources.push({
         path: canon.relativePath,
         sidecarPath: canon.sidecarPath,

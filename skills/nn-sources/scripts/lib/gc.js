@@ -1,5 +1,6 @@
 const {
   applyGc,
+  buildChangeLog,
   collectFamilies,
   parseCitation,
   planGc,
@@ -28,6 +29,12 @@ function citedPaths(projectDir) {
     const parsed = parseCitation(site.value);
     cited.add(toPosix(parsed ? parsed.filePath : String(site.value).split('@')[0].trim()));
   }
+  // All-time evidence: a source cited by ANY applied change is cited, even when a
+  // later change superseded that evidence in the lineage graph.
+  for (const [citation] of buildChangeLog(snapshot).evidence('all-time')) {
+    const parsed = parseCitation(citation);
+    cited.add(toPosix(parsed ? parsed.filePath : String(citation).split('@')[0].trim()));
+  }
   return cited;
 }
 
@@ -39,7 +46,9 @@ function citedPaths(projectDir) {
  * @returns {Promise<{ candidates: string[] }>}
  */
 async function planProjectGc(projectDir) {
-  return planGc({ families: await collectFamilies(projectDir), citedPaths: citedPaths(projectDir) });
+  const plan = await planGc({ families: await collectFamilies(projectDir), citedPaths: citedPaths(projectDir) })
+  // Changesets are the lineage itself: never proposed, never deleted.
+  return { candidates: plan.candidates.filter((p) => !toPosix(p).startsWith('changes/')) };
 }
 
 /**

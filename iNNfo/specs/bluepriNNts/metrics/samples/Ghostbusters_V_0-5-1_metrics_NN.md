@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "metrics_V_0-5-0"
+  name: "metrics_V_0-5-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
-knowledge_version: "V_0-5-0"
+knowledge_version: "V_0-5-1"
 title: "Ghostbusters Containment Revenue Projection"
 ---
 
@@ -22,7 +22,6 @@ Monthly bottom line. Year 1 baseline resolves near break-even against the $1.2M 
 
 ## NN Metrics: Monthly Containment Revenue
 slug:: monthly-containment-revenue
-sources:: [sources/import/containment-incidents-1984.csv@INC-1041, sources/import/containment-incidents-1984.csv@INC-1048]
 metricValue:: <calculated>
 metricFormula:: monthly incidents x average fee per incident
 dependsOn:: [[Monthly Incidents]]

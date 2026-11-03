@@ -3,10 +3,10 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-5-5"
+blueprint_version: "V_0-6-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -37,7 +37,7 @@ description:: Open vocabulary ad-hoc tags and classification labels.
 ## NN Field Definition: op
 concept:: Change
 type:: select
-options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version]
+options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version, update_element_text, produce_artifact]
 description:: Mutation or review operation.
 
 ## NN Field Definition: target
@@ -75,10 +75,10 @@ concept:: Change
 type:: string
 description:: Proposed explicit slug.
 
-## NN Field Definition: fields
+## NN Field Definition: seed
 concept:: Change
 type:: string
-description:: Initial field key-values for added elements.
+description:: add_matrix only. Header elements the matrix is created with, as a JSON object {columns:[...],rows:[...]}. Sealed into proposal_sha. Creates empty cells and records no cell units; each non-empty cell needs its own update_matrix_cell change.
 
 ## NN Field Definition: author
 concept:: Change
@@ -126,6 +126,26 @@ concept:: Change
 type:: string
 description:: Disambiguated slug assigned upon insertion.
 
+## NN Field Definition: resolved_target
+concept:: Change
+type:: string
+description:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path). Outside the seal; never accepted from a proposal.
+
+## NN Field Definition: evidence_sha256
+concept:: Change
+type:: string
+description:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED.
+
+## NN Field Definition: applied_at
+concept:: Change
+type:: string
+description:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms).
+
+## NN Field Definition: batch
+concept:: Change
+type:: string
+description:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal.
+
 # Changeset Blueprint
 
 ## A level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive
@@ -139,25 +159,27 @@ Every graph mutation in cogNNitive is represented as a structured changeset docu
 - Standardize graph mutation operations across models, elements, fields, and matrices.
 - Provide cryptographic proposal sealing to detect tampering before execution.
 - Support atomic two-phase transactions with zero partial side-effects on validation failure.
-- Preserve explicit field-level citations pointing directly to originating changes.
-- Enable structured human and agent review feedback as comment operations.
+- The change is the only provenance: no field of a model carries a citation.- Enable structured human and agent review feedback as comment operations.
 
 ## Specification
 
 A changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.
 
 Each change is declared as an element of concept Change:
-- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version.
+- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version, update_element_text, produce_artifact.
+- update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.
+- produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.
+- add_element: Creates an element with its concept, name and optional explicit slug only. It carries no inline field values: each field is set afterwards by its own update_field change with its own evidence (no from, because the field does not exist yet). notes is rationale, never prose.
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.
 - to: Proposed value.
 - add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset.
 - freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.
 - bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.
-- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. Optional fields.columns and fields.rows (comma-separated) seed the grid; when omitted they default to the axis concepts' own elements. Every seeded cell starts empty, ready for update_matrix_cell. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.
+- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.
 - base_hash: Optional precondition on the target element content; a mismatch is a conflict.
-- evidence: Mandatory. Evidence the change derives from (a citation, or the literal tokens decision / unknown); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.
-- Execution annotations (status, resolution, resolved_slug, applied_at, batch) record the outcome of applying the change. Each change carries its own applied_at (UTC), status, author and batch; the change chain, ordered by applied_at, is a field's history.
+- evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.
+- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Each change carries its own applied_at (UTC), status, author and batch; the change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit's history.
 
 Changeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.
 
@@ -174,7 +196,7 @@ level: 3
 parent_spec:
   name: changes
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-6-0"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

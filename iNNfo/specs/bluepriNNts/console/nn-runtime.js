@@ -4904,38 +4904,9 @@
     var root = active.createElement('div')
     root.setAttribute('data-nn-feedback-root', '')
 
-    // Feedback CSS
-    if (!active.querySelector('style[data-nn-feedback]')) {
-      var style = active.createElement('style')
-      style.setAttribute('data-nn-feedback', '')
-      style.textContent =
-        '[data-nn-feedback-root]{display:flex;align-items:center;gap:12px;margin-left:auto;position:relative;z-index:40;}' +
-        '#nn-feedback-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:transparent;border:none;box-shadow:none;padding:0;}' +
-        '#nn-feedback-banner strong{font-size:0.95rem;font-weight:700;letter-spacing:-0.01em;}' +
-        '#nn-feedback-banner .nn-banner-version,#nn-feedback-banner .nn-banner-needs,#nn-feedback-banner .nn-banner-drafts{color:var(--muted,#6b7280);font-size:0.8rem;}' +
-        '#nn-feedback-banner .nn-banner-stale{color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;font-size:0.78rem;font-weight:600;padding:2px 8px;}' +
-        '#nn-feedback-banner .nn-reviewer-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--muted,#6b7280);}' +
-        '#nn-feedback-banner .nn-reviewer-name{width:9rem;padding:4px 8px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.8rem;}' +
-        '#nn-feedback-open{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.82rem;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#nn-feedback-open:hover{background:var(--surface-2,#f3f4f6);}' +
-        '#nn-feedback-modal{border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-lg,8px);padding:20px;max-width:560px;width:100%;background:var(--surface,#ffffff);color:var(--text,#111827);}' +
-        '#nn-feedback-modal::backdrop{background:rgba(0,0,0,0.35);}' +
-        '#nn-feedback-modal input{width:100%;padding:8px 12px;margin:8px 0;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm,4px);box-sizing:border-box;}' +
-        '#nn-feedback-modal pre{background:var(--surface-2,#f3f4f6);border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:12px;white-space:pre-wrap;font-size:0.8rem;}' +
-        '[data-nn="errors"]{color:#dc2626;font-size:0.85rem;margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;}' +
-        '#nn-feedback-modal button[data-nn="download-changeset"]{appearance:none;border:1px solid var(--primary,#2563eb);background:var(--primary,#2563eb);color:#ffffff;font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#nn-feedback-modal button[data-nn="download-changeset"]:hover{background:var(--primary-hover,#1d4ed8);}' +
-        '#nn-feedback-modal [data-nn="changeset-preview"]{width:100%;min-height:140px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.78rem;border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:10px;box-sizing:border-box;}' +
-        '#nn-feedback-modal .nn-feedback-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0;}' +
-        '#nn-feedback-modal button[data-nn="copy-changeset-prompt"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:var(--surface,#ffffff);color:var(--text,#111827);font:inherit;font-size:0.85rem;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm,4px);cursor:pointer;}' +
-        '#nn-feedback-modal button:disabled{opacity:0.5;cursor:not-allowed;}' +
-        '#nn-feedback-modal [data-nn="copy-status"]{font-size:0.8rem;color:var(--muted,#6b7280);}' +
-        '#nn-feedback-modal .nn-feedback-head{display:flex;align-items:center;gap:12px;}' +
-        '#nn-feedback-modal .nn-feedback-head h2{margin:0;flex:1;}' +
-        '#nn-feedback-modal button[data-nn="close"]{appearance:none;border:1px solid var(--border,#e5e7eb);background:transparent;font-size:1.2rem;line-height:1;padding:2px 10px;border-radius:6px;cursor:pointer;}' +
-        '#nn-feedback-modal .nn-feedback-seal{font-size:0.8rem;color:var(--muted,#6b7280);margin:8px 0;}'
-      root.appendChild(style)
-    }
+    // The modal shell and its list are styled by nn-ui.css (the stylesheet of
+    // record) and by the shared dialog classes in the kit: no per-render <style>
+    // and no second visual language to keep in sync.
 
     // Banner
     var banner = active.createElement('header')
@@ -4959,24 +4930,31 @@
 
     root.appendChild(banner)
 
-    // Modal
+    // Modal: shared dialog chrome (head/body/actions) + one change sheet per
+    // unsent draft inside it. The root keeps its OWN class, never .nn-edit-modal:
+    // that class identifies the element edit dialog, and the export dialog is in
+    // the DOM from boot, so sharing it would hijack every global
+    // querySelector('.nn-edit-modal').
     var modal = active.createElement('dialog')
     modal.id = 'nn-feedback-modal'
+    modal.className = 'nn-export-modal'
     modal.setAttribute('aria-label', 'Export proposed changes')
     modal.innerHTML =
-      '<div class="nn-feedback-head"><h2>Export proposed changes</h2>' +
-      '<button data-nn="close" type="button" aria-label="Close">×</button></div>' +
-      '<p class="nn-feedback-flow">' + UI.COPY.exportFlow + '</p>' +
-      '<div data-nn="preview"></div>' +
-      '<label>Author / Reviewer identifier (required)' +
-      '<input data-nn="identifier" type="text" placeholder="e.g. round-2" />' +
-      '</label>' +
-      '<div data-nn="errors" style="display: none;"></div>' +
-      '<div class="nn-feedback-actions">' +
-      '<button data-nn="download-changeset" type="button">Download _changes_NN.md</button>' +
-      '<button data-nn="copy-changeset-prompt" type="button">Copy change</button>' +
-      '<span data-nn="copy-status" role="status" aria-live="polite"></span>' +
+      '<header class="nn-export-head">' +
+      '<h2>Export proposed changes</h2>' +
+      '<span class="nn-export-count" data-nn="draft-badge"></span>' +
+      '<button class="nn-export-close" data-nn="close" type="button" aria-label="Close">\u00d7</button>' +
+      '</header>' +
+      '<div class="nn-export-body">' +
+      '<p class="nn-export-flow">' + UI.COPY.exportFlow + '</p>' +
+      '<div class="nn-export-field">' +
+      '<label class="nn-edit-field-label" for="nn-export-identifier">Author / Reviewer identifier</label>' +
+      '<input id="nn-export-identifier" class="nn-edit-input" data-nn="identifier" type="text" placeholder="e.g. round-2" />' +
       '</div>' +
+      '<div class="nn-export-list-head"><h3>Unsent changes</h3>' +
+      '<span data-nn="draft-count"></span></div>' +
+      '<div class="nn-change-sheets" data-nn="preview"></div>' +
+      '<div data-nn="errors" style="display: none;"></div>' +
       '<details class="nn-modal-details">' +
       '<summary>View the generated change &amp; prompt</summary>' +
       '<h4>Change document (_changes_NN.md)</h4>' +
@@ -4985,7 +4963,20 @@
       '<pre data-nn="instructions"></pre>' +
       '<h4>Agent prompt</h4>' +
       '<pre data-nn="agent-prompt"></pre>' +
-      '</details>'
+      '</details>' +
+      '</div>' +
+      '<footer class="nn-export-actions">' +
+      '<button class="nn-export-btn nn-export-discard" data-nn="discard-all" type="button">Discard all</button>' +
+      '<span class="nn-export-spacer"></span>' +
+      '<span data-nn="copy-status" role="status" aria-live="polite"></span>' +
+      '<button class="nn-export-btn nn-export-secondary" data-nn="copy-changeset-prompt" type="button">Copy changes</button>' +
+      '<button class="nn-export-btn nn-export-primary" data-nn="download-changeset" type="button">Download changes</button>' +
+      '<button class="nn-navbar-action-btn nn-btn-save" data-nn="save-snapshot" type="button" title="Save a self-contained snapshot of this console">' +
+      '<span class="nn-btn-icon" data-nn="save-snapshot-icon"></span><span>Save Snapshot</span>' +
+      '<span class="nn-badge-count" data-nn="save-snapshot-count"></span>' +
+      '</button>' +
+      '</footer>'
+
 
     root.appendChild(modal)
 
@@ -5099,15 +5090,17 @@
     return str
   }
 
-  // Builds one `## NN Change` block addressed the way `apply_change` resolves it:
-  // `<file stem>@<element slug>[&field]`. The draft carries `knowledge_id` (the knowledge
-  // document's file stem) and `element_slug`; `fallbackModel` only covers drafts that
-  // lack them.
+  // Builds the `## NN Change` blocks of one draft, addressed the way `apply_change`
+  // resolves them: `<file stem>@<element slug>[&field]`. The draft carries
+  // `knowledge_id` (the knowledge document's file stem) and `element_slug`;
+  // `fallbackModel` only covers drafts that lack them. A `kind: 'new'` draft with
+  // filled fields yields the `add_element` block plus one `update_field` block per
+  // field (a change carries no inline `fields`).
   function oneLine(v) {
     return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
   }
 
-  function draftToChange(draft, index, fallbackModel, author) {
+  function draftToChanges(draft, index, fallbackModel, author) {
     var d = isObject(draft) ? draft : {}
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
     var model = oneLine(d.knowledge_id || fallbackModel || 'model')
@@ -5168,7 +5161,6 @@
     } else if (op === 'add_element') {
       lines.push('concept:: ' + oneLine(d.concept))
       lines.push('name:: ' + formatChangesetValue(d.element))
-      if (isObject(d.proposed)) lines.push('fields:: ' + JSON.stringify(d.proposed))
     }
     // Every exported block names its author so a field citing the applied change
     // resolves to a human author. `oneLine` folds CR/LF/U+2028 so a name cannot
@@ -5177,7 +5169,27 @@
     if (d.comment) {
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
-    return lines.join('\n')
+    if (op !== 'add_element' || !isObject(d.proposed)) return [lines.join('\n')]
+    // A change carries no inline fields: each filled field is its own
+    // `update_field`, with its own evidence and no `from` (the field does not
+    // exist yet, so there is nothing to precondition).
+    var slug = oneLine(d.element_slug || slugify(d.element || '') || 'elem')
+    var blocks = [lines.join('\n')]
+    Object.keys(d.proposed)
+      .sort()
+      .forEach(function (field) {
+        blocks.push(
+          [
+            '## NN Change: ' + id + '-' + slugify(field),
+            'op:: update_field',
+            'target:: ' + model + '@' + slug + '&' + oneLine(field),
+            'evidence:: ' + oneLine(ev),
+            'to:: ' + formatChangesetValue(d.proposed[field]),
+            'author:: ' + oneLine(author || 'reviewer'),
+          ].join('\n'),
+        )
+      })
+    return blocks
   }
 
   function serializeChangesetMarkdown(meta, drafts, fallbackModel) {
@@ -5206,8 +5218,9 @@
       '',
     ]
     var modelName = fallbackModel || meta.source_knowledge || 'model'
-    var blocks = drafts.map(function (d, i) {
-      return draftToChange(d, i, modelName, author)
+    var blocks = []
+    drafts.forEach(function (d, i) {
+      blocks = blocks.concat(draftToChanges(d, i, modelName, author))
     })
     lines.push(blocks.join('\n\n'))
     lines.push('')
@@ -5671,25 +5684,84 @@
     renderCitationDialog(doc, 'sources', [entry])
   }
 
+  // Renders the pending changes as change sheets — one ElementCard per draft,
+  // collapsed except the newest — and refreshes the modal's counts.
+  // The field citation widget reports the resolved entry (`{ entry, field, value }`);
+  // every change list only needs its address to open the source dialog.
+  function openCitePayload(doc, citeData) {
+    var entry = citeData && citeData.entry
+    var source = (entry && entry.path) || (citeData && citeData.value)
+    if (!source) return
+    if (entry && entry.anchor) source = source + '#' + entry.anchor
+    openSourceCitation(doc, source)
+  }
+
   function updateExportPreview(doc, state) {
     var modal = doc.getElementById('nn-feedback-modal')
     if (!modal) return { ok: false }
     var identifierInput = modal.querySelector('[data-nn="identifier"]')
     var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
     var drafts = state && state.store ? state.store.drafts() : []
+    var byId = elementsByIdOf(state)
+    var modelId = (state && state.meta && (state.meta.modelId || state.meta.model)) || ''
+
+    var badge = modal.querySelector('[data-nn="draft-badge"]')
+    if (badge) {
+      badge.textContent = drafts.length + ' unsent'
+      badge.style.display = drafts.length ? '' : 'none'
+    }
+    var countLabel = modal.querySelector('[data-nn="draft-count"]')
+    if (countLabel) {
+      countLabel.textContent = drafts.length ? drafts.length + ' of ' + drafts.length + ' selected' : ''
+    }
+    var instructions = modal.querySelector('[data-nn="instructions"]')
+    if (instructions) {
+      instructions.textContent =
+        'Review ' +
+        drafts.length +
+        ' unsent change(s), then download or copy the change document.'
+    }
+    var saveCount = modal.querySelector('[data-nn="save-snapshot-count"]')
+    if (saveCount) {
+      saveCount.textContent = drafts.length ? String(drafts.length) : ''
+      saveCount.style.display = drafts.length ? '' : 'none'
+    }
 
     var preview = modal.querySelector('[data-nn="preview"]')
     if (preview) {
       preview.innerHTML = ''
-      preview.appendChild(
-        UI.DraftList({ drafts: drafts, byId: elementsByIdOf(state) }, {
-          doc: doc,
-          isTargetChanged: Review.isTargetChanged,
-          onCitation: function (source) {
-            openSourceCitation(doc, source)
-          },
-        }),
-      )
+      drafts.forEach(function (d, i) {
+        preview.appendChild(
+          UI.changeSheet(
+            {
+              entry: d,
+              variant: 'draft',
+              // Same staleness rule the review tab uses: the target moved under
+              // the draft and the draft is not already applied.
+              stale: Review.isTargetChanged(d, byId) && !Review.isAlreadyApplied(d, byId),
+            },
+            {
+              doc: doc,
+              modelId: modelId,
+              open: i === 0,
+              onCite: function (citeData) {
+                openCitePayload(doc, citeData)
+              },
+              onDiscard: function (id) {
+                if (state && state.store) state.store.removeDraft(id)
+                if (state && typeof state.refreshUi === 'function') state.refreshUi()
+                updateExportPreview(doc, state)
+              },
+            },
+          ),
+        )
+      })
+      if (!drafts.length) {
+        var empty = doc.createElement('p')
+        empty.className = 'nn-export-empty'
+        empty.textContent = 'No unsent changes. Edit an element to record one.'
+        preview.appendChild(empty)
+      }
     }
 
     var composed = composeExport(state, identifier)
@@ -5737,9 +5809,7 @@
       return
     }
     var identifierInput = modal.querySelector('[data-nn="identifier"]')
-    var instructions = modal.querySelector('[data-nn="instructions"]')
     var agentPrompt = modal.querySelector('[data-nn="agent-prompt"]')
-    var drafts = state && state.store ? state.store.drafts() : []
 
     // One held exported_at per modal opening, so download and copy emit
     // byte-identical JSON.
@@ -5748,12 +5818,6 @@
     if (identifierInput) {
       var storedName = getReviewerName()
       identifierInput.value = storedName === DEFAULT_REVIEWER_NAME ? '' : storedName
-    }
-    if (instructions) {
-      instructions.textContent =
-        'Review ' +
-        drafts.length +
-        ' unsent change(s), then download or copy the change document.'
     }
     if (agentPrompt) {
       agentPrompt.textContent =
@@ -5832,6 +5896,55 @@
         var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
         if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
         copyChangesetPrompt(doc, state)
+      })
+    }
+
+    // Discard all: the store already supports a bulk clear; the confirmation is
+    // the only new bit, because the drafts are gone for good.
+    var discardAllBtn = modal.querySelector('[data-nn="discard-all"]')
+    if (discardAllBtn && !discardAllBtn.getAttribute('data-nn-bound')) {
+      discardAllBtn.setAttribute('data-nn-bound', '1')
+      discardAllBtn.addEventListener('click', function () {
+        var pending = state && state.store ? state.store.drafts() : []
+        if (!pending.length) return
+        var win = doc.defaultView || (typeof window !== 'undefined' ? window : null)
+        if (win && typeof win.confirm === 'function') {
+          var ok = win.confirm(
+            'Discard all ' + pending.length + ' unsent change(s)? This cannot be undone.',
+          )
+          if (!ok) return
+        }
+        var ids = pending
+          .map(function (d) {
+            return d && d.id
+          })
+          .filter(Boolean)
+        if (state && state.store && typeof state.store.clearDrafts === 'function') {
+          state.store.clearDrafts(ids)
+        }
+        if (state && typeof state.refreshUi === 'function') state.refreshUi()
+        updateExportPreview(doc, state)
+      })
+    }
+
+    // Save Snapshot: the same self-contained snapshot the navbar button writes.
+    // Close first, so the saved document never bakes in the open dialog.
+    var saveSnapshotBtn = modal.querySelector('[data-nn="save-snapshot"]')
+    var saveIcon = modal.querySelector('[data-nn="save-snapshot-icon"]')
+    if (saveIcon && !saveIcon.firstChild) {
+      var iconMarkup =
+        UI && typeof UI.icon === 'function'
+          ? UI.icon('download', 14)
+          : typeof nnIcons !== 'undefined' && typeof nnIcons.getSvg === 'function'
+            ? nnIcons.getSvg('download', { size: 14 })
+            : ''
+      if (iconMarkup) saveIcon.innerHTML = iconMarkup
+    }
+    if (saveSnapshotBtn && !saveSnapshotBtn.getAttribute('data-nn-bound')) {
+      saveSnapshotBtn.setAttribute('data-nn-bound', '1')
+      saveSnapshotBtn.addEventListener('click', function () {
+        closeModal()
+        saveSnapshot(doc, state)
       })
     }
   }

@@ -48,7 +48,7 @@ If you edit a file that is already cited, its fingerprint no longer matches. The
 ## See also
 
 - [Import and cite sources](import-sources.md) — how to cite the sidecar and the raw file.
-- [Sync lineage and back up a domaiNN](sync-and-backup.md) — the sidecar feeds the lineage record.
+- [Back up a domaiNN](sync-and-backup.md) — the sidecar is the source's normalized evidence.
 
 ## Under the hood
 

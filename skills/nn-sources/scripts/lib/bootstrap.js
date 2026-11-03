@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const core = require('./scanner-core');
-const provenance = require('../provenance');
 
 /**
  * Standard workspace subdirectories created under a new project.
@@ -38,7 +37,7 @@ const TRANNSFORM_README = `# Transform
 Transform (traNNsform) is a tool to structure and process unstructured documents:
 1. Place files in \`sources/import/\`.
 2. Scan to cognitivize them in place (a co-located \`_sidecar_NN.md\` next to each file).
-3. Track lineage with \`<Project>_cogNNitive_NN.md\`.
+3. Record every artifact with a produce_artifact change (propose_changeset).
 `;
 
 /**
@@ -82,7 +81,7 @@ At the beginning of every interactive session in this workspace, AI coding agent
  * @param {object} [options={}] Optional configuration options.
  * @param {boolean} [options.overwriteAgents=false] Whether to overwrite existing AGENTS.md.
  * @param {boolean} [options.inPlace=false] Whether to initialize project in destParentDir directly.
- * @returns {{ projectDir: string, importDir: string, copiedCount: number, provModelPath: string, agentsMdPath: string }}
+ * @returns {{ projectDir: string, importDir: string, copiedCount: number, agentsMdPath: string }}
  */
 function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
   const inPlace = Boolean(options.inPlace);
@@ -122,7 +121,8 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `Operational domaiNN container for ${effectiveProjectName}.\n` +
       `knowledge_dir:: kNNowledge/\n` +
       `sources_dir:: sources/\n\n` +
-      `# NN kNNowledge\n`;
+      `# NN kNNowledge\n\n` +
+      `# NN External Watch Roots\n`;
     fs.writeFileSync(domainnPath, domainnContent, 'utf8');
   }
 
@@ -140,9 +140,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
     }
   }
 
-  const prov = provenance.buildProvenanceKnowledge(projectDir, { projectName: effectiveProjectName });
-
-  return { projectDir, importDir, copiedCount, provModelPath: prov.modelPath, agentsMdPath };
+  return { projectDir, importDir, copiedCount, agentsMdPath };
 }
 
 module.exports = { bootstrapProject, generateAgentsMd, WORKSPACE_DIRS };

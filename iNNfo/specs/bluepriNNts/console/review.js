@@ -1303,7 +1303,11 @@
       if (!scope || !scope.querySelectorAll) return
       var countsByEl = unsentCountsByElement(store ? store.drafts() : [])
       Array.prototype.forEach.call(
-        scope.querySelectorAll('[data-nn-component="element-card"][data-element-id]'),
+        // A change sheet is a change record, not a model row: it renders its own
+        // state and must never receive the per-element Unsent decoration too.
+        scope.querySelectorAll(
+          '[data-nn-component="element-card"][data-element-id]:not([data-nn-change-sheet])',
+        ),
         function (card) {
           ensureCardFocusable(card)
           var elId = card.getAttribute('data-element-id')

@@ -7873,346 +7873,6 @@ function getSectionType(rawTitle) {
 
 // iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
-
-// iNNfo/packages/nn-core/src/assertNever.ts
-function assertNever(value, context = "value") {
-  throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
-}
-
-// iNNfo/packages/nn-core/src/jsonPointer.ts
-var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
-function isJsonPointer(pointer) {
-  return POINTER_RE.test(pointer);
-}
-
-// iNNfo/packages/nn-core/src/naming/contract.ts
-var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
-var SPEC_FILENAME = "spec_NN.md";
-var NN_SUFFIX_RE = /_NN\.md$/i;
-var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
-var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
-function baseOf(path) {
-  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-  return i < 0 ? path : path.slice(i + 1);
-}
-function parseName(basename2) {
-  if (NN_SUFFIX_RE.test(basename2)) {
-    const stem2 = basename2.replace(NN_SUFFIX_RE, "");
-    const sidecar = SIDECAR_PATH_RE.exec(basename2);
-    return sidecar ? { kind: "nn", basename: basename2, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename2, stem: stem2 };
-  }
-  const dot = basename2.lastIndexOf(".");
-  const hasExt = dot > 0;
-  const stem = hasExt ? basename2.slice(0, dot) : basename2;
-  const ext = hasExt ? basename2.slice(dot + 1) : "";
-  const m = STAMP_SUFFIX_RE.exec(stem);
-  if (!m) return { kind: "file", basename: basename2, key: stem, ext };
-  return {
-    kind: "file",
-    basename: basename2,
-    key: m[1],
-    ext,
-    stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
-  };
-}
-var CORE_BLUEPRINT_ROLE = {
-  cognnitive: "lineage-record",
-  sidecar: "sidecar",
-  changes: "changeset",
-  workspace: "catalog",
-  sources: "catalog",
-  artifacts: "catalog"
-};
-function coreBlueprintKey(parentSpecName) {
-  return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
-}
-function roleOf(i) {
-  const base = baseOf(i.path);
-  const parsed = parseName(base);
-  if (parsed.kind === "file") return i.hasSidecar ? "source" : "artifact";
-  if (parsed.sidecarOf !== void 0) return "sidecar";
-  const lower = base.toLowerCase();
-  if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
-  if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
-  const bp = coreBlueprintKey(i.parentSpecName);
-  if (bp === "procedures") {
-    return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
-  }
-  return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
-}
-
-// iNNfo/packages/nn-core/src/sourceRef.ts
-var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
-var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
-var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
-function parseSourceRef(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
-  if (/^src-\d+/i.test(clean)) return null;
-  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
-  if (!legacy) return null;
-  const resolved = resolveUnitPath(legacy[1]);
-  if (!resolved) return null;
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    slug: legacy[2] || void 0,
-    kind: resolved.kind,
-    raw: clean
-  };
-}
-function parseCitation(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  if (!clean) return null;
-  if (/[#@]L\d+(-L\d+)?$/i.test(clean)) return null;
-  if (/^src-\d+/i.test(clean)) return null;
-  if (clean.includes("@")) {
-    return parseKnowledgeUnitRef(clean);
-  }
-  if (clean.includes("#")) {
-    const ref = parseSourceRef(clean);
-    if (ref && ref.slug) {
-      return { ...ref, legacyHash: true };
-    }
-    return null;
-  }
-  const resolved = resolveUnitPath(clean);
-  if (!resolved) return null;
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    kind: resolved.kind,
-    raw: clean
-  };
-}
-function basename(p) {
-  return p.split(/[/\\]/).pop() || p;
-}
-function slugifyHeading(text) {
-  const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
-  return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
-}
-function slugifyFlat(part) {
-  const transliterated = stripCombiningMarks(part);
-  const dashed = transliterated.trim().toLowerCase().replace(/\s+/g, "-");
-  const filtered = dashed.replace(/[^\p{L}\p{N}-]+/gu, "");
-  return filtered.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
-}
-function headingSlugParts(text) {
-  const clean = text.trim();
-  const boundary = clean.indexOf(":");
-  if (boundary > 0) {
-    const concept = clean.slice(0, boundary).trim();
-    const element = clean.slice(boundary + 1).trim();
-    if (concept && element) {
-      return {
-        slug: `${slugifyHeading(concept)}--${slugifyHeading(element)}`,
-        concept,
-        element
-      };
-    }
-  }
-  return { slug: slugifyHeading(clean) };
-}
-function slugifyUnitHeading(level, text) {
-  const clean = text.trim();
-  const { slug } = headingSlugParts(clean);
-  const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
-  return { level: clamped, text: clean, slug };
-}
-function normalizeName(name) {
-  return nfc(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\-\p{L}\p{N}]+/gu, "");
-}
-function resolveUnitPath(rawPath) {
-  const trimmed = rawPath.trim();
-  if (!trimmed || /^https?:\/\//i.test(trimmed)) return null;
-  const segments = trimmed.split(/[/\\]/);
-  if (segments.some((s) => s === "..")) return null;
-  const forward = segments.join("/");
-  const isMd = /\.md$/i.test(forward);
-  const isCsv = /\.csv$/i.test(forward);
-  const isJson = /\.json$/i.test(forward);
-  if (!isMd && !isCsv && !isJson) {
-    if (new RegExp(`^${MODEL_ID}$`).test(trimmed)) {
-      return { filePath: trimmed, kind: "model" };
-    }
-    return null;
-  }
-  if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-  return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
-}
-function decodeSegment(segment) {
-  try {
-    return decodeURIComponent(segment);
-  } catch (err) {
-    return null;
-  }
-}
-var HEADER_UNIT = /^(#{1,6})\s*(.+?)\s*$/;
-function parsePointerRef(resolved, rawPointer, raw) {
-  if (rawPointer.includes("&")) return null;
-  const pointer = decodeSegment(rawPointer);
-  if (pointer === null || !isJsonPointer(pointer)) return null;
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    kind: resolved.kind,
-    unit: { kind: "pointer", pointer },
-    subunits: [],
-    raw
-  };
-}
-function parseKnowledgeUnitRef(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  const at = clean.indexOf("@");
-  if (at === -1) return null;
-  const resolved = resolveUnitPath(clean.slice(0, at));
-  if (!resolved) return null;
-  if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
-  const rawSegments = clean.slice(at + 1).split("&");
-  if (rawSegments.some((s) => s.trim() === "")) return null;
-  const decoded = [];
-  for (const part of rawSegments) {
-    const text = decodeSegment(part.trim());
-    if (text === null || text.trim() === "") return null;
-    decoded.push(text.trim());
-  }
-  const [unitRaw, ...subunits] = decoded;
-  if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
-    if (unitRaw.startsWith("concept:")) {
-      const slug = unitRaw.slice("concept:".length);
-      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-      const unit3 = {
-        kind: "header",
-        level: 1,
-        text: slug,
-        slug
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (unitRaw.startsWith("matrix:")) {
-      const slug = unitRaw.slice("matrix:".length);
-      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: slug,
-        ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
-    if (subunits.length === 2) {
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: unitRaw,
-        rowSlug: subunits[0],
-        colSlug: subunits[1]
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug: unitRaw,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    const unit2 = {
-      kind: "element",
-      slug: unitRaw
-    };
-    return {
-      filePath: resolved.filePath,
-      fileName: basename(resolved.filePath),
-      slug: unitRaw,
-      kind: "model",
-      unit: unit2,
-      subunits,
-      raw: clean
-    };
-  }
-  const isCsv = /\.csv$/i.test(resolved.filePath);
-  if (isCsv) {
-    if (resolved.kind === "model") return null;
-    return {
-      filePath: resolved.filePath,
-      fileName: basename(resolved.filePath),
-      kind: "source",
-      unit: { kind: "row", id: unitRaw },
-      subunits,
-      raw: clean
-    };
-  }
-  const heading = unitRaw.match(HEADER_UNIT);
-  if (!heading) return null;
-  const headed = slugifyUnitHeading(heading[1].length, heading[2]);
-  if (!headed.text || !headed.slug) return null;
-  const unit = {
-    kind: "header",
-    level: headed.level,
-    text: headed.text,
-    slug: headed.slug
-  };
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    slug: headed.slug,
-    kind: resolved.kind,
-    unit,
-    subunits,
-    raw: clean
-  };
-}
-function serializeKnowledgeUnitRef(filePath, unit, subunits = []) {
-  let head;
-  switch (unit.kind) {
-    case "header":
-      head = `${"#".repeat(unit.level)} ${unit.text}`;
-      break;
-    case "row":
-      head = unit.id;
-      break;
-    case "pointer":
-      return `${filePath}@${unit.pointer.replace(/%/g, "%25").replace(/&/g, "%26")}`;
-    case "element":
-      head = unit.slug;
-      break;
-    case "matrix": {
-      const row = unit.rowSlug ?? subunits[0];
-      const col = unit.colSlug ?? subunits[1];
-      if (row && col) {
-        return `${filePath}@${unit.matrixSlug}&${normalizeName(row)}&${normalizeName(col)}`;
-      }
-      return `${filePath}@${unit.matrixSlug}`;
-    }
-    default:
-      return assertNever(unit, "knowledge unit kind");
-  }
-  const tail = subunits.map((s) => normalizeName(s)).filter((s) => s !== "");
-  return tail.length > 0 ? `${filePath}@${head}&${tail.join("&")}` : `${filePath}@${head}`;
-}
-
-// iNNfo/packages/nn-core/src/parser/serializer.ts
 function serializePropertyValue(value, rawText) {
   if (rawText !== void 0 && rawTextStillMatches(rawText, value)) {
     return rawText;
@@ -8261,20 +7921,6 @@ function serializeListValue(value) {
   if (value.length === 0) return "[]";
   if (!value.every(isSafeListItem)) return null;
   return `[${value.map(String).join(", ")}]`;
-}
-function dedupeCitationList(value) {
-  if (!Array.isArray(value)) return value;
-  const seen = /* @__PURE__ */ new Set();
-  const kept = [];
-  for (const item of value) {
-    const text = String(item).trim();
-    const parsed = parseCitation(text);
-    const key = parsed?.unit ? serializeKnowledgeUnitRef(parsed.filePath, parsed.unit, parsed.subunits ?? []) : parsed?.filePath ? parsed.slug ? `${parsed.filePath}#${parsed.slug}` : parsed.filePath : text.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    kept.push(item);
-  }
-  return kept.length === value.length ? value : kept;
 }
 function isSafeListItem(v) {
   if (typeof v === "number" || typeof v === "boolean") return true;
@@ -8438,7 +8084,7 @@ function serializeKnowledge(model) {
     lines.push(`${hashes} NN ${node.type}: ${node.name}`);
     if (node.slugExplicit && node.slug) lines.push(`slug:: ${node.slug}`);
     for (const [k, v] of Object.entries(node.fields)) {
-      const value = SOURCE_FIELD_NAMES.has(k.toLowerCase()) ? dedupeCitationList(v) : v;
+      const value = v;
       const raw = value === v ? node.rawFields?.[k] : void 0;
       lines.push(`${k}:: ${serializePropertyValue(value, raw)}`);
     }
@@ -8809,6 +8455,18 @@ var REQUIRED_BY_PRIMITIVE = {
   [FIELD_DEFINITION]: ["concept", "type"],
   [MATRIX_DEFINITION]: ["source", "target"]
 };
+
+// iNNfo/packages/nn-core/src/sourceRef.ts
+function slugifyHeading(text) {
+  const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
+  return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
+}
+function slugifyFlat(part) {
+  const transliterated = stripCombiningMarks(part);
+  const dashed = transliterated.trim().toLowerCase().replace(/\s+/g, "-");
+  const filtered = dashed.replace(/[^\p{L}\p{N}-]+/gu, "");
+  return filtered.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
 
 // iNNfo/packages/nn-core/src/mutate.ts
 function freeze_slugs(model) {

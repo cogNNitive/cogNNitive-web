@@ -7897,101 +7897,165 @@ input[type="text"], input[type="search"], textarea, select {
 }
 
 .nn-review-dock, .nn-review-dock * { white-space: nowrap; }
-/* Redesigned Export Changes Modal */
-#nn-feedback-modal {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 24px !important;
-  max-width: 620px !important;
-  width: 92% !important;
-  background: #ffffff !important;
-  color: #0f172a !important;
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
+/* Export modal: the review hand-off.
+   Own dialog identity (.nn-export-modal, never .nn-edit-modal) with its own
+   head/body/actions class names that SHARE the kit's dialog rules by selector
+   list (see ui-kit COMPONENT_CSS_TEXT), plus one change sheet per unsent draft.
+   No !important, no per-render <style>: tokens only. */
+.nn-export-modal[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: 1px solid var(--nn-border, var(--border, #e5e5e5));
+  border-radius: var(--nn-radius-lg, 10px);
+  padding: 0;
+  max-width: 760px;
+  width: 92%;
+  max-height: 86vh;
+  overflow: hidden;
+  background: var(--nn-surface, var(--surface, #fff));
+  color: var(--nn-text, var(--text, #0a0a0a));
+  box-shadow: var(--nn-shadow, 0 12px 40px rgba(0, 0, 0, 0.15));
 }
-#nn-feedback-modal::backdrop {
-  background: rgba(15, 23, 42, 0.45) !important;
-  backdrop-filter: blur(2px) !important;
+.nn-export-modal::backdrop {
+  background: rgba(0, 0, 0, 0.35);
 }
-.nn-feedback-head {
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  margin-bottom: 8px !important;
+.nn-export-head {
+  gap: 10px;
 }
-.nn-feedback-head h2 {
-  margin: 0 !important;
-  font-size: 1.15rem !important;
-  font-weight: 700 !important;
-  color: #0f172a !important;
+.nn-export-count {
+  margin-left: auto;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--nn-status-unsent, #1e3a8a);
+  background: var(--nn-status-unsent-bg, #dbeafe);
+  border-radius: 999px;
+  padding: 0.15em 0.6em;
 }
-#nn-feedback-modal button[data-nn="close"] {
-  appearance: none !important;
-  border: none !important;
-  background: transparent !important;
-  color: #64748b !important;
-  font-size: 1.3rem !important;
-  line-height: 1 !important;
-  padding: 2px 6px !important;
-  border-radius: 6px !important;
-  cursor: pointer !important;
+.nn-export-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
 }
-#nn-feedback-modal button[data-nn="close"]:hover {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
+.nn-export-flow {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--nn-muted, #64748b);
 }
-.nn-feedback-seal {
-  font-size: 0.78rem !important;
-  color: #64748b !important;
-  margin: 2px 0 12px 0 !important;
-  line-height: 1.4 !important;
+.nn-export-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-#nn-feedback-modal input[data-nn="identifier"] {
-  width: 100% !important;
-  padding: 8px 12px !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 6px !important;
-  font-size: 0.85rem !important;
-  margin: 4px 0 10px !important;
+.nn-export-field .nn-edit-input {
+  max-width: 22rem;
 }
-#nn-feedback-modal button[data-nn="download-changeset"] {
-  appearance: none !important;
-  border: none !important;
-  background: #2563eb !important;
-  color: #ffffff !important;
-  font: inherit !important;
-  font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  padding: 8px 18px !important;
-  border-radius: 6px !important;
-  cursor: pointer !important;
+.nn-export-list-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
-#nn-feedback-modal button[data-nn="download-changeset"]:hover {
-  background: #1d4ed8 !important;
+.nn-export-list-head h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--nn-text, #0a0a0a);
 }
-#nn-feedback-modal button[data-nn="copy-changeset-prompt"] {
-  appearance: none !important;
-  border: 1px solid #cbd5e1 !important;
-  background: #f8fafc !important;
-  color: #334155 !important;
-  font: inherit !important;
-  font-size: 0.85rem !important;
-  font-weight: 500 !important;
-  padding: 8px 16px !important;
-  border-radius: 6px !important;
-  cursor: pointer !important;
+.nn-export-list-head span {
+  font-size: 0.78rem;
+  color: var(--nn-muted, #64748b);
 }
-#nn-feedback-modal button[data-nn="copy-changeset-prompt"]:hover {
-  background: #f1f5f9 !important;
+/* One list container for every change list: the export modal's pending list and
+   the review tab's unsent/applied sections. */
+.nn-change-sheets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-#nn-feedback-modal .nn-feedback-actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  margin: 16px 0 10px !important;
-  padding-top: 14px !important;
-  border-top: 1px solid #f1f5f9 !important;
+.nn-change-sheets > * {
+  margin: 0;
 }
-
+.nn-export-empty {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 0.82rem;
+  color: var(--nn-muted, #64748b);
+}
+/* A stale draft says so in the sheet head, not as a body line. */
+.nn-change-sheet-stale {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 0.05em 0.5em;
+}
+/* Row actions (go to, revert, discard) sit in the sheet head as flat ghost
+   buttons, so a change row never grows a second action bar. */
+.nn-change-sheet-action {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--nn-muted, #64748b);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.2em 0.55em;
+  border-radius: var(--nn-radius-sm, 6px);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nn-change-sheet-action:hover {
+  color: var(--nn-text, #0a0a0a);
+  border-color: var(--nn-border, #e5e5e5);
+  background: var(--nn-surface, #fff);
+}
+.nn-change-sheet-state {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--nn-muted, #64748b);
+  white-space: nowrap;
+}
+.nn-change-sheet-discard:hover {
+  color: var(--nn-status-rejected, #b91c1c);
+  border-color: var(--nn-status-rejected, #b91c1c);
+  background: var(--nn-surface, #fff);
+}
+.nn-export-actions {
+  align-items: center;
+}
+.nn-export-spacer {
+  margin-left: auto;
+}
+.nn-export-discard {
+  background: var(--nn-surface, #fff);
+  color: var(--nn-status-rejected, #b91c1c);
+  border: 1px solid var(--nn-border, #e5e5e5);
+}
+.nn-export-discard:hover:not(:disabled) {
+  border-color: var(--nn-status-rejected, #b91c1c);
+}
+.nn-export-modal .nn-navbar-action-btn {
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+[data-nn="errors"] {
+  color: var(--nn-status-rejected, #dc2626);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--nn-radius-sm, 6px);
+}
+[data-nn="copy-status"] {
+  font-size: 0.8rem;
+  color: var(--nn-muted, #64748b);
+}
 /* Dock Changes button */
 .nn-dock-changes {
   appearance: none;

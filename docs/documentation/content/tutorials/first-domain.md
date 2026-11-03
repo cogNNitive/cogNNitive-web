@@ -87,7 +87,7 @@ You now have a domaiNN with a manifest, a citable source, and a validated kNNowl
 
 ## Next steps
 
-- [Model a domain from scratch](domain-from-scratch.md) — a longer walkthrough that adds an artifact, a change, and the lineage record.
+- [Model a domain from scratch](domain-from-scratch.md) — a longer walkthrough that adds an artifact and the change that records it.
 - [The four levels](../concepts/levels.md) — the concepts behind `defiNNition`, `iNNfo`, `bluepriNNt`, and `kNNowledge`.
 - [Import and cite sources](../how-to/import-sources.md) — the full citation grammar.
 

@@ -141,18 +141,45 @@ function testBuildApplyPlan() {
       target: 'youtube@jkl',
       concept: 'VideoMetric',
       name: 'jkl',
-      fields: { views: '400', title: 'Delta' },
-      sources: 'b.csv',
+      evidence: 'b.csv',
     },
-    { op: 'update_field', target: 'youtube@abc&views', from: '100', to: '150', sources: 'b.csv' },
+    { op: 'update_field', target: 'youtube@jkl&title', to: 'Delta', evidence: 'b.csv' },
+    { op: 'update_field', target: 'youtube@jkl&views', to: '400', evidence: 'b.csv' },
+    { op: 'update_field', target: 'youtube@abc&views', from: '100', to: '150', evidence: 'b.csv' },
     { op: 'bump_version', target: 'youtube', to: 'patch' },
   ]);
+  assert.ok(
+    replacePlan.operations.every((op) => !('sources' in op)),
+    'the plan carries evidence, never sources',
+  );
+  assert.ok(
+    replacePlan.operations.every((op) => !('fields' in op)),
+    'add_element carries no inline fields: each field is its own update_field',
+  );
+  // Creation-time field updates have no `from` precondition: the field does not
+  // exist yet. Changed-value updates keep their `from`.
+  const creationUpdates = replacePlan.operations.filter(
+    (op) => op.op === 'update_field' && op.target.startsWith('youtube@jkl&'),
+  );
+  assert.strictEqual(creationUpdates.length, 2);
+  assert.ok(creationUpdates.every((op) => !('from' in op)), 'creation updates omit from');
+  assert.ok(
+    creationUpdates.every((op) => op.evidence === 'b.csv'),
+    'every field carries its own evidence',
+  );
   assert.strictEqual(replacePlan.operations.filter((o) => o.op === 'bump_version').length, 1);
   assert.strictEqual(replacePlan.review.length, 0);
 
   const upsertProposal = buildProposal({ ...common, strategy: 'upsert', fromContent: CSV_FROM, toContent: CSV_TO });
   const upsertPlan = buildApplyPlan(upsertProposal, 'VideoMetric', 'youtube');
-  assert.strictEqual(upsertPlan.operations.filter((o) => o.op === 'update_field').length, 0);
+  // Creation still emits one update_field per field (there is no value to review
+  // for a new key); only CHANGED values wait in review under `upsert`.
+  const upsertCreates = upsertPlan.operations.filter((o) => o.op === 'update_field');
+  assert.deepStrictEqual(
+    upsertCreates.map((o) => o.target),
+    ['youtube@jkl&title', 'youtube@jkl&views'],
+  );
+  assert.ok(upsertCreates.every((o) => !('from' in o)));
   assert.strictEqual(upsertPlan.review.length, 1);
   assert.deepStrictEqual(upsertPlan.removed, [{ key: 'ghi' }]);
 

@@ -20,15 +20,15 @@ const { isNNName, isSidecarName } = /** @type {any} */ (require('./lib/naming-co
  * used by `nn-sources` (`domaiNN` canonical, `cogNNitive` lineage, `workspace`
  * legacy) without depending on that skill.
  */
-const RECORD_TOKENS = ['cogNNitive', 'domaiNN', 'workspace'];
+const ENTRYPOINT_NAME = 'domaiNN_NN.md';
 
 /**
- * Finds the lineage / entrypoint record that may declare watch roots: first a
- * `*_NN.md` file under `kNNowledge/`, then one at the workspace root.
+ * Finds the domaiNN entrypoint that may declare watch roots: first a
+ * `domaiNN_NN.md` under `kNNowledge/`, then one at the workspace root.
  * @param {string} workspaceDir
- * @returns {string | null} absolute path to the record, or null
+ * @returns {string | null} absolute path to the entrypoint, or null
  */
-function findLineageRecord(workspaceDir) {
+function findEntrypointDocument(workspaceDir) {
   const candidates = [];
   const push = (dir) => {
     if (!fs.existsSync(dir)) return;
@@ -42,21 +42,21 @@ function findLineageRecord(workspaceDir) {
   };
   push(path.join(workspaceDir, 'kNNowledge'));
   push(workspaceDir);
-  return candidates.find((p) => RECORD_TOKENS.some((t) => path.basename(p).includes(t))) || null;
+  return candidates.find((p) => path.basename(p).toLowerCase().startsWith('domainn_nn.md')) || null;
 }
 
 /**
- * Counts the roots declared in the record's `## NN External Watch Roots:` block.
+ * Counts the roots declared in the entrypoint's `## NN External Watch Roots:` block.
  * Cheap, offline, and tolerant of CRLF and quoted paths. Never walks the roots.
  * @param {string} workspaceDir
  * @returns {number}
  */
 function countWatchRoots(workspaceDir) {
-  const recordPath = findLineageRecord(workspaceDir);
-  if (!recordPath) return 0;
+  const entryPath = findEntrypointDocument(workspaceDir);
+  if (!entryPath) return 0;
   let content;
   try {
-    content = fs.readFileSync(recordPath, 'utf8');
+    content = fs.readFileSync(entryPath, 'utf8');
   } catch {
     return 0;
   }

@@ -1,6 +1,6 @@
 # Sync lineage and back up a domaiNN
 
-The lineage record is your domaiNN's map: a derived document that lists every source, every kNNowledge document, and every artifact. This guide is about keeping that map honest and protecting your domain before a risky change. In both cases you ask your agent — you do not edit the record or copy folders by hand.
+Lineage is computed, never persisted: `read_lineage` projects your domaiNN's map (sources, models, artifacts, changes and their edges) from the files and the applied changes. This guide is about backing up that workspace and keeping it in sync with its sources.
 
 ## Keep the map in sync
 

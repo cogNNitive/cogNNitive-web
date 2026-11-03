@@ -77,11 +77,20 @@ function testConvergeProposal() {
         target: 'youtube@jkl',
         concept: 'VideoMetric',
         name: 'jkl',
-        fields: { views: '400' },
-        sources: 'sources/import/youtube_monthly_20260201T000000Z.csv',
+        evidence: 'sources/import/youtube_monthly_20260201T000000Z.csv',
+      },
+      {
+        op: 'update_field',
+        target: 'youtube@jkl&views',
+        to: '400',
+        evidence: 'sources/import/youtube_monthly_20260201T000000Z.csv',
       },
       { op: 'bump_version', target: 'youtube', to: 'patch' },
     ]);
+    assert.ok(
+      plan.operations.every((op) => !('fields' in op)),
+      'the emitted plan never writes fields',
+    );
     assert.strictEqual(plan.review.length, 1);
 
     // Read-only guarantee: sources are byte-unchanged.

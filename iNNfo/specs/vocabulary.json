@@ -5,9 +5,13 @@
     "defiNNition": {
       "canonical": true,
       "level": 0,
-      "aliases": ["defiNNe"],
+      "aliases": [
+        "defiNNe"
+      ],
       "sense": "Level-0 meta-specification language (formerly defiNNe)",
-      "excludes": ["ordinary-english-definition"]
+      "excludes": [
+        "ordinary-english-definition"
+      ]
     },
     "iNNfo": {
       "canonical": true,
@@ -20,21 +24,33 @@
       "canonical": true,
       "aliases": [],
       "sense": "A value of the `tags` Field, an ordinary multi-valued select Field; there is no reserved `tags` property and no Marker primitive",
-      "excludes": ["git-tag", "release-tag", "html-tag"]
+      "excludes": [
+        "git-tag",
+        "release-tag",
+        "html-tag"
+      ]
     },
     "meta-bluepriNNt": {
       "canonical": true,
       "level": 1,
-      "aliases": ["meta-template"],
+      "aliases": [
+        "meta-template"
+      ],
       "sense": "Level-1 specification describing the structure of bluepriNNts",
       "excludes": []
     },
     "bluepriNNt": {
       "canonical": true,
       "level": 2,
-      "aliases": ["app", "template"],
+      "aliases": [
+        "app",
+        "template"
+      ],
       "sense": "Level-2 domain schema specification file (formerly Template / App; e.g. specs/bluepriNNts/business/spec_NN.md)",
-      "excludes": ["vue-sfc-template", "generic-english"],
+      "excludes": [
+        "vue-sfc-template",
+        "generic-english"
+      ],
       "stable_identifiers": [
         "specs/bluepriNNts/",
         "blueprint_version",
@@ -46,17 +62,26 @@
     "kNNowledge": {
       "canonical": true,
       "level": 3,
-      "aliases": ["model"],
+      "aliases": [
+        "model"
+      ],
       "sense": "Level-3 domain data model (formerly Model). Uncountable noun. The version lives in the `knowledge_version` frontmatter, never in the filename (`_V_` names are retired).",
       "uncountable": true,
       "plural_rule": "N kNNowledge documents",
-      "distinct_senses": ["knowledge unit"],
-      "excludes": ["llm-model", "statistical-model"]
+      "distinct_senses": [
+        "knowledge unit"
+      ],
+      "excludes": [
+        "llm-model",
+        "statistical-model"
+      ]
     },
     "domaiNN": {
       "canonical": true,
       "level": 3,
-      "aliases": ["workspace"],
+      "aliases": [
+        "workspace"
+      ],
       "sense": "Container of kNNowledge, bluepriNNts, sources, procedures and related assets (formerly Workspace). A domaiNN is itself a kNNowledge document.",
       "self_knowledge_relation": true,
       "excludes": [
@@ -69,9 +94,14 @@
     },
     "ageNNt": {
       "canonical": true,
-      "aliases": ["actioNN"],
+      "aliases": [
+        "actioNN"
+      ],
       "sense": "Skill ecosystem, execution engine, and dynamic AI persona framework for cogNNitive",
-      "excludes": ["generic-agent", "subagent-runtime"],
+      "excludes": [
+        "generic-agent",
+        "subagent-runtime"
+      ],
       "stable_identifiers": [
         "skills/",
         "scripts/skills-manager.js"
@@ -83,55 +113,101 @@
     },
     "referenced skill": {
       "canonical": true,
-      "aliases": ["external skill"],
+      "aliases": [
+        "external skill"
+      ],
       "sense": "A third-party agent skill a bluepriNNt declares in its frontmatter `skills:` array, pinned to a commit with an SPDX license, and fetched from its upstream repo at install time (never vendored, never fetched at runtime). Its guarantee is bounded to reproducible + license-declared; the maintainer does not vouch for the author. Distinct from an embedded skill, which is vendored and curated.",
-      "excludes": ["embedded skill", "vendored skill"],
-      "stable_identifiers": ["install-external"]
+      "excludes": [
+        "embedded skill",
+        "vendored skill"
+      ],
+      "stable_identifiers": [
+        "install-external"
+      ]
     },
     "sidecar": {
       "canonical": true,
       "level": 3,
       "sense": "Co-located <file>.<ext>_sidecar_NN.md document that carries a file's hash, size, metadata and, for binary files, a normalized body. A concept, not a new level: a kNNowledge-level document that is never a model and is never mirrored into a separate `sources/nn/` tree (that tree is retired).",
-      "excludes": ["motorcycle-sidecar", "sidecar-container"],
-      "stable_identifiers": ["_sidecar_NN.md", "bluepriNNts/sidecar/"]
+      "excludes": [
+        "motorcycle-sidecar",
+        "sidecar-container"
+      ],
+      "stable_identifiers": [
+        "_sidecar_NN.md",
+        "bluepriNNts/sidecar/"
+      ]
     },
     "cognitivize": {
       "canonical": true,
       "sense": "Operation that creates or refreshes a sidecar in place, leaving the original file untouched. One @cognnitive/nn-core operation (cognitivize), surfaced through the nn-sources CLI (--cognitivize <file|dir>) and the nn-mcp tool; raw imports land verbatim in sources/import/ and are cognitivized there.",
       "excludes": [],
-      "stable_identifiers": ["cognitivize", "--cognitivize"]
+      "stable_identifiers": [
+        "cognitivize",
+        "--cognitivize"
+      ]
     },
     "artifacts": {
       "canonical": true,
       "sense": "The single write destination for every producer output (consoles, reports, curated CSVs, briefs). Replaces the retired `export/` folder: one rename, no fallback. A non-_NN.md file is an artifact lineage node only if it is a timestamped write-once family member or declares upstream sources.",
-      "excludes": ["git-artifacts", "build-artifacts"],
-      "stable_identifiers": ["artifacts/"]
+      "excludes": [
+        "git-artifacts",
+        "build-artifacts"
+      ],
+      "stable_identifiers": [
+        "artifacts/"
+      ]
     },
     "write-once": {
       "canonical": true,
       "sense": "Producer rule: each output is a new family member named with a UTC suffix _YYYYMMDDTHHmmssZ (with -2, -3... same-second tie-breaks) placed before the extension; existing bytes are never overwritten, and latest-of-family is resolved by name. GC only proposes deletions and deletes only with explicit user consent.",
-      "excludes": ["write-once-memory"],
-      "stable_identifiers": ["writeOnce", "latestOfFamily", "planGc", "applyGc"]
-    },
-    "drift-gate": {
-      "canonical": true,
-      "sense": "Consistency check that the managed view sections of the persisted lineage record (*_cogNNitive_NN.md) equal a fresh core projection. Runs in nn-sources --lineage --check, scripts/verify.js, and the nn-mcp check_domain tool.",
-      "excludes": [],
-      "stable_identifiers": ["checkLineageDrift", "LINEAGE_DRIFT"]
+      "excludes": [
+        "write-once-memory"
+      ],
+      "stable_identifiers": [
+        "writeOnce",
+        "latestOfFamily",
+        "planGc",
+        "applyGc"
+      ]
     },
     "assistant": {
       "canonical": true,
-      "aliases": ["coach", "architecture coach"],
+      "aliases": [
+        "coach",
+        "architecture coach"
+      ],
       "sense": "Interactive architecture mentor and modeling guide persona in iNNfo",
-      "excludes": ["system-prompt-generic"],
+      "excludes": [
+        "system-prompt-generic"
+      ],
       "stable_identifiers": [],
       "planned_migrations": []
     },
     "console": {
       "canonical": true,
       "sense": "User-facing UI that shows and reviews a domaiNN: the domain console (`domaiNN_console.html`, one per domaiNN) whose specialized surfaces are views shown as tabs. Replaces the retired Vue \"editor\" and the retired hosted web app.",
-      "excludes": ["terminal-console", "browser-dev-console", "game-console"],
-      "stable_identifiers": ["domaiNN_console.html", "nn-console.bundle.js"]
+      "excludes": [
+        "terminal-console",
+        "browser-dev-console",
+        "game-console"
+      ],
+      "stable_identifiers": [
+        "domaiNN_console.html",
+        "nn-console.bundle.js"
+      ]
+    },
+    "lineage": {
+      "canonical": true,
+      "sense": "The computed view of a domaiNN: the inventory of sources, models, artifacts and changes, with edges derived from the applied changes (live evidence by default, all-time on request). Nothing is persisted, so there is nothing to drift.",
+      "excludes": [
+        "lineage-cache"
+      ],
+      "stable_identifiers": [
+        "read_lineage",
+        "projectLineage",
+        "checkProvenance"
+      ]
     }
   },
   "retired_identifiers": [

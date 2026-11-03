@@ -75,30 +75,19 @@ async function main() {
     totalPassed += scannerSidecarResult.passed;
     totalFailed += scannerSidecarResult.failed;
 
-    const provenanceTest = require('./unit/test-provenance');
-    const provenanceResult = await provenanceTest.run();
-    totalPassed += provenanceResult.passed;
-    totalFailed += provenanceResult.failed;
+    const s4aTest = require('./unit/test-s4a-record-removed');
+    const s4aResult = await s4aTest.run();
+    totalPassed += s4aResult.passed;
+    totalFailed += s4aResult.failed;
 
-    const provKnowledgeTest = require('./unit/test-provenance-knowledge');
-    const provKnowledgeResult = await provKnowledgeTest.run();
-    totalPassed += provKnowledgeResult.passed;
-    totalFailed += provKnowledgeResult.failed;
+    const producerPayloadTest = require('./unit/test-producer-payloads');    const producerPayloadResult = await producerPayloadTest.run();
+    totalPassed += producerPayloadResult.passed;
+    totalFailed += producerPayloadResult.failed;
 
-    const lineageCheckTest = require('./unit/test-lineage-check');
-    const lineageCheckResult = await lineageCheckTest.run();
-    totalPassed += lineageCheckResult.passed;
-    totalFailed += lineageCheckResult.failed;
-
-    const lineageSyncTest = require('./unit/test-lineage-sync');
-    const lineageSyncResult = await lineageSyncTest.run();
-    totalPassed += lineageSyncResult.passed;
-    totalFailed += lineageSyncResult.failed;
-
-    const lineageMigrationTest = require('./unit/test-lineage-migration');
-    const lineageMigrationResult = await lineageMigrationTest.run();
-    totalPassed += lineageMigrationResult.passed;
-    totalFailed += lineageMigrationResult.failed;
+    const evidenceConsumersTest = require('./unit/test-evidence-index-consumers');
+    const evidenceConsumersResult = await evidenceConsumersTest.run();
+    totalPassed += evidenceConsumersResult.passed;
+    totalFailed += evidenceConsumersResult.failed;
 
     const webImportTest = require('./unit/test-web-import');
     const webImportResult = await webImportTest.run();

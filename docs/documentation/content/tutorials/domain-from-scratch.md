@@ -1,12 +1,12 @@
 # Model a domain from scratch
 
-This is the full hands-on walkthrough, driven entirely by prompts to your local AI coding agent. You will scaffold a domaiNN, bring in a source, model an element that cites it, produce an artifact, propose a change, and read the lineage record that ties it all together.
+This is the full hands-on walkthrough, driven entirely by prompts to your local AI coding agent. You will scaffold a domaiNN, bring in a source, model an element that cites it, produce an artifact, propose a change, and read the computed lineage that ties it all together.
 
 The example is a small coffee-subscription business, **Aurora Roasters**, so every step stays easy to follow. The agent works in your language; the prompts below are shown in English.
 
 ## What you will build
 
-By the end, your domaiNN holds a manifest, a citable source, a kNNowledge document that cites it, a write-once artifact, a recorded change, and a lineage record:
+By the end, your domaiNN holds a manifest, a citable source, a kNNowledge document that cites it, a write-once artifact, the change that recorded it, and the computed lineage:
 
 ```text
 Aurora/
@@ -21,7 +21,7 @@ Aurora/
 │   └── Aurora_Monthly_Review_<stamp>.md      # a write-once deliverable
 ├── changes/
 │   └── Aurora_<stamp>_changes_NN.md  # a recorded change
-└── Aurora_cogNNitive_NN.md           # the lineage record
+└── changes/                        # the applied changes (provenance)
 ```
 
 ## Step 1 — Scaffold the domaiNN
@@ -88,11 +88,11 @@ The agent writes a sealed changeset with status *proposed* under `changes/`, reg
 
 **How you review:** inspect the change in the console and add comments if you want. When you are satisfied, reply **OK**; the agent applies the change atomically, re-validates, bumps the document's version once, and re-points the mutated element's source at the change that touched it — which in turn carries the evidence. The agent never applies anything without your approval. See [Review changesets](../how-to/review-changesets.md).
 
-## Step 6 — Read the lineage record
+## Step 6 — Read the computed lineage
 
-The lineage record (`Aurora_cogNNitive_NN.md`) ties everything together. Ask your agent:
+`read_lineage` ties everything together: the inventory from the files and the edges from the applied changes. Ask your agent:
 
-> Show me the lineage record.
+> Show me the lineage of this domain.
 
 It presents three **projected** sections — Sources, ModelRecords, and Artifacts — each derived from the files on disk, plus an append-only journal of every pipeline run. The projected sections are a pure function of the domaiNN's files: if someone edits one by hand, the drift gate reports the mismatch, and the fix is always regeneration by the agent, never a hand edit. See [Sync lineage and back up a domaiNN](../how-to/sync-and-backup.md).
 
@@ -105,7 +105,7 @@ It presents three **projected** sections — Sources, ModelRecords, and Artifact
 | `kNNowledge/*_NN.md` | Level-3 kNNowledge documents with citations. | Through a changeset. |
 | `artifacts/` | Generated and curated outputs. | Write-once (UTC-suffixed). |
 | `changes/` | The record of every proposed and applied change. | Append-only. |
-| `<Project>_cogNNitive_NN.md` | The lineage record: projected views plus a run journal. | Derived; never hand-edited. |
+| `changes/*_changes_NN.md` | The applied changes: the only provenance record. | Append-only; never edited by hand. |
 | `staging/` | Ephemeral extraction buffer. | Never citable, never projected. |
 
 ## See also

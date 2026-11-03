@@ -7,7 +7,7 @@ Reference for the command-line interfaces shipped with the ecosystem: the `nn-so
 
 ## `nn-sources` CLI
 
-The ingestion CLI lives in the `nn-sources` skill at `skills/nn-sources/scripts/index.js`. It normalizes raw documents into citable sources and keeps the lineage record in sync. Run it from the repository root, or from the skill's own directory as `node scripts/index.js`.
+The ingestion CLI lives in the `nn-sources` skill at `skills/nn-sources/scripts/index.js`. It normalizes raw documents into citable sources and audits their citations. Run it from the repository root, or from the skill's own directory as `node scripts/index.js`.
 
 ```bash
 node skills/nn-sources/scripts/index.js <flags> --src <project-dir>
@@ -16,18 +16,16 @@ node skills/nn-sources/scripts/index.js <flags> --src <project-dir>
 | Flag | Purpose |
 |---|---|
 | `--cognitivize <file\|dir>` | Create or refresh the co-located sidecar of a file, or of every file in a directory (recursive; skips sidecars, `_NN.md` documents, `staging/`, and dot entries). The raw file is never modified. |
-| `--normalize-file <file>` | Atomic single-file refresh: cognitivize one file in place, audit downstream citations, and refresh the lineage record. |
+| `--normalize-file <file>` | Atomic single-file refresh: cognitivize one file in place and audit downstream citations. |
 | `--scan` | Walk `sources/import/` and `sources/conversations/` recursively and cognitivize every raw file without an up-to-date sidecar. Non-interactive: never mutates sources. |
-| `--lineage --check` | Report drift between the lineage record and the filesystem (missing record, dangling or mismatched citations, unlisted family members, hash mismatches, `LINEAGE_DRIFT`). Exits non-zero on any error. |
-| `--lineage` | Regenerate the lineage record's managed sections (`# NN Sources`, `# NN ModelRecords`, `# NN Artifacts`) from the current filesystem. |
-| `--check-impact` | Verify every `sources::` citation in `kNNowledge/` resolves to an existing file and anchor; print `[IMPACT WARNING]` for drifted anchors. Exits non-zero on drift errors. |
+| `--check-impact` | Verify every change `evidence` in `kNNowledge/` resolves to an existing file and anchor; print `[IMPACT WARNING]` for drifted anchors. Exits non-zero on drift errors. |
 | `--import-url <url>` | Download a resource into `sources/import/` as a write-once, UTC-suffixed family member. |
-| `--scan-external` | Scan the `## NN External Watch Roots:` declared in the lineage record and classify changes (`NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, `DISCONNECTED`). |
+| `--scan-external` | Scan the `## NN External Watch Roots:` declared in the `domaiNN_NN.md` entrypoint and classify changes (`NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, `DISCONNECTED`). |
 | `--watch-digest` / `--digest-decide <key> --status <ignore\|postpone\|import>` | Render, then decide, the session-start digest of pending external changes. |
 | `--curate-csv <path> --key <column> [--dedup]` | Produce a citation-ready RFC-4180 CSV with a unique first-column key under `artifacts/curated/`. |
 | `--converge <family> [--plan]` / `--converge-mark <family> --version <V_x-y-z>` | Compare the two newest members of a timestamped source family and emit a read-only proposal, optionally as a `propose_changeset` payload; mark a proposal applied. |
 | `--gc [--json]` / `--gc --apply --yes --paths <paths>` | List superseded, uncited write-once family members (dry run), or delete the confirmed paths. |
-| `--unlink <path-or-stem>` | Remove a source, its co-located sidecar, and matching assets, then regenerate the lineage record. Consent-gated. |
+| `--unlink <path-or-stem>` | Remove a source, its co-located sidecar, and matching assets. Consent-gated. |
 | `--promote-conv <file> --format full` | Promote a session transcript into `sources/conversations/`. |
 
 The skill also ships `skills/nn-sources/scripts/extract.js` for quick text extraction without ingestion:

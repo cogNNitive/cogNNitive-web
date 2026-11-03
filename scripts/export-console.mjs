@@ -1186,14 +1186,9 @@ export async function writeConsole(opts = {}) {
     }
   }
 
-  // Change C: drift fingerprint — a field whose current value diverges from the `to` of
-  // the last recorded change is reported here. The apply engine is the guard; this is
-  // the detection of a hand/git edit made outside the change log.
-  if (Array.isArray(changesets) && changesets.length > 0 && payloadHelper.detectUnrecordedEdits) {
-    for (const d of payloadHelper.detectUnrecordedEdits(allElements, changesets)) {
-      process.stderr.write(`WARNING: [export-console] ${d.code}: ${d.message}\n`)
-    }
-  }
+  // Drift is not computed here: the change log owns it (checkProvenance in
+  // nn-core, wired into validate_knowledge and check_domain). The console export
+  // carries the data; it does not re-implement the matching.
 
   // No fabricated domain version: the domain meta carries `generated` plus the real
   // per-model `knowledge_version` / `sha256` in `models[]` (D4). The draft store key

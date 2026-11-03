@@ -34,6 +34,7 @@ __export(index_exports, {
   SPEC_FILENAME: () => SPEC_FILENAME,
   blueprintNameOf: () => blueprintNameOf,
   canonicalModelId: () => canonicalModelId,
+  changesetStampOf: () => changesetStampOf,
   checkNameInvariant: () => checkNameInvariant,
   checkPathBudget: () => checkPathBudget,
   compareMembers: () => compareMembers,
@@ -49,6 +50,7 @@ __export(index_exports, {
   isModelCandidate: () => isModelCandidate,
   isNNName: () => isNNName,
   isProcedureDocument: () => isProcedureDocument,
+  isRegenerableView: () => isRegenerableView,
   isSidecarName: () => isSidecarName,
   nextStamp: () => nextStamp,
   parentSpecNameOf: () => parentSpecNameOf,
@@ -128,7 +130,6 @@ function procedureIdOf(basename) {
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
 var CORE_BLUEPRINT_ROLE = {
-  cognnitive: "lineage-record",
   sidecar: "sidecar",
   changes: "changeset",
   workspace: "catalog",
@@ -164,12 +165,27 @@ function isExcludedPath(path) {
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
   return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
+function isRegenerableView(path) {
+  const normalized = String(path ?? "").replace(/\\/g, "/").toLowerCase();
+  if (!normalized) return false;
+  const segs = normalized.split("/").filter((seg) => seg.length > 0);
+  if (segs[0] !== "artifacts") return false;
+  if (segs.length >= 3 && segs[1].endsWith("_console")) return true;
+  return segs.length === 2 && /^impact_audit_report.*\.md$/.test(segs[1]);
+}
 function familyOf(path) {
   const normalized = path.replace(/\\/g, "/");
   const parsed = parseName(baseOf(normalized));
   if (parsed.kind !== "file") return null;
   const slash = normalized.lastIndexOf("/");
   return { dir: slash < 0 ? "" : normalized.slice(0, slash), key: parsed.key, ext: parsed.ext };
+}
+function changesetStampOf(nameOrPath) {
+  const parsed = parseName(baseOf(nameOrPath));
+  if (parsed.kind !== "nn" || parsed.sidecarOf !== void 0) return null;
+  if (!/_changes$/i.test(parsed.stem)) return null;
+  const m = STAMP_SUFFIX_RE.exec(parsed.stem.slice(0, -"_changes".length));
+  return m ? { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 } : null;
 }
 function compareMembers(a, b) {
   const pa = parseName(baseOf(a));

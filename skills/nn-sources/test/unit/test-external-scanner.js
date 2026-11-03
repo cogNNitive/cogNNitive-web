@@ -199,19 +199,24 @@ async function run() {
     }
   });
 
-  await it('scanAllWatchRoots still finds the legacy cogNNitive lineage record', () => {
+  await it('scanAllWatchRoots ignores a retired cogNNitive record and reads the entrypoint', () => {
     const tempProj = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-proj-legacy-'));
     const tempDrops = fs.mkdtempSync(path.join(os.tmpdir(), 'ext-drops-legacy-'));
     try {
       fs.writeFileSync(path.join(tempDrops, 'rates.csv'), 'a,b\n1,2\n', 'utf8');
       const rootPosix = tempDrops.replace(/\\/g, '/');
-      // Seeded with an old versioned name on purpose: existing records are found by role.
       fs.writeFileSync(
         path.join(tempProj, 'Project_V_0-2-0_cogNNitive_NN.md'),
         `# NN index\n\n## NN External Watch Roots:\n- Root: "${rootPosix}"\n  Cadence: "dynamic"\n  Filter: ["*.csv"]\n`,
         'utf8',
       );
+      assert.strictEqual(scanAllWatchRoots(tempProj).roots.length, 0, 'the record is not read');
 
+      fs.writeFileSync(
+        path.join(tempProj, 'domaiNN_NN.md'),
+        `# NN index\n\n## NN External Watch Roots:\n- Root: "${rootPosix}"\n  Cadence: "dynamic"\n  Filter: ["*.csv"]\n`,
+        'utf8',
+      );
       const res = scanAllWatchRoots(tempProj);
       assert.strictEqual(res.roots.length, 1);
       assert.strictEqual(res.classified.new.length, 1);

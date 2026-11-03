@@ -35,7 +35,7 @@ Every problem carries the same short code each time it appears, so you can searc
 | Two elements share an identity | Each element needs its own unique slug. | Ask the agent to give each element a distinct slug. |
 | A document is missing its bluepriNNt link or version | The document header is incomplete or invalid. | Ask the agent to repair the header. |
 | A document's structure does not match its bluepriNNt | Required sections or concepts are absent. | Ask the agent to realign the document with its bluepriNNt. |
-| The lineage record has drifted | A derived section of the domain's map was edited outside the normal flow. | Ask the agent to regenerate the record — never fix it by hand. |
+| A field or cell drifted | A value was edited by hand after the change that set it. | Report the change that owns the value, or revert the edit. |
 | A source companion does not match its file | The sidecar's recorded subject disagrees with its name. | Ask the agent to re-run the source's cognitivization. |
 
 > [!NOTE]

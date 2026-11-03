@@ -7374,6 +7374,7 @@ __export(index_exports, {
   KNOWN_AGENT_TOOL_IDS: () => KNOWN_AGENT_TOOL_IDS,
   NORMALIZED_KNOWN_AGENT_TOOL_IDS: () => NORMALIZED_KNOWN_AGENT_TOOL_IDS,
   attachChangesetHistory: () => attachChangesetHistory,
+  buildChangeLogFromChangesets: () => buildChangeLogFromChangesets,
   buildConsolePayload: () => buildConsolePayload,
   buildConsoleSchemaSlot: () => buildConsoleSchemaSlot,
   canonicalJsonStringify: () => canonicalJsonStringify,
@@ -7387,7 +7388,6 @@ __export(index_exports, {
   createFsSourceResolver: () => createFsSourceResolver,
   deriveFieldOrigin: () => deriveFieldOrigin,
   deriveValueHistory: () => deriveValueHistory,
-  detectUnrecordedEdits: () => detectUnrecordedEdits,
   displayStem: () => displayStem,
   extractExcerpt: () => extractExcerpt,
   findEnclosingChangeBlock: () => findEnclosingChangeBlock,
@@ -7399,7 +7399,6 @@ __export(index_exports, {
   isSidecarName: () => isSidecarName,
   latestOfFamily: () => latestOfFamily,
   loadChangesetRecords: () => loadChangesetRecords,
-  normalizeAddressKey: () => normalizeAddressKey,
   normalizeModelId: () => normalizeModelId,
   normalizeToolId: () => normalizeToolId,
   parentSpecNameOf: () => parentSpecNameOf,
@@ -7900,560 +7899,6 @@ function getSectionType(rawTitle) {
 
 // iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
-
-// iNNfo/packages/nn-core/src/assertNever.ts
-function assertNever(value, context = "value") {
-  throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
-}
-
-// iNNfo/packages/nn-core/src/jsonPointer.ts
-var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
-var ARRAY_INDEX_RE = /^(?:0|[1-9]\d*)$/;
-function isJsonPointer(pointer) {
-  return POINTER_RE.test(pointer);
-}
-var unescapeToken = (token) => token.replace(/~1/g, "/").replace(/~0/g, "~");
-function resolveJsonPointer(content, pointer) {
-  let current;
-  try {
-    current = JSON.parse(content);
-  } catch {
-    return { ok: false, reason: "invalid-json" };
-  }
-  if (!isJsonPointer(pointer)) return { ok: false, reason: "unknown-pointer" };
-  if (pointer === "") return { ok: true, value: current };
-  for (const raw of pointer.slice(1).split("/")) {
-    const token = unescapeToken(raw);
-    if (Array.isArray(current)) {
-      if (!ARRAY_INDEX_RE.test(token) || Number(token) >= current.length) {
-        return { ok: false, reason: "unknown-pointer" };
-      }
-      current = current[Number(token)];
-    } else if (current !== null && typeof current === "object" && Object.hasOwn(current, token)) {
-      current = current[token];
-    } else {
-      return { ok: false, reason: "unknown-pointer" };
-    }
-  }
-  return { ok: true, value: current };
-}
-
-// iNNfo/packages/nn-core/src/schema/nature.ts
-var CORE_BLUEPRINT_NATURE = {
-  sources: { structure: "catalog", ownership: "derived" },
-  artifacts: { structure: "catalog", ownership: "derived" },
-  procedures: { structure: "catalog", ownership: "derived" },
-  changes: { structure: "members", ownership: "derived" }
-};
-function natureOfBlueprint(blueprintName) {
-  return CORE_BLUEPRINT_NATURE[blueprintName];
-}
-
-// iNNfo/packages/nn-core/src/naming/contract.ts
-var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
-var SPEC_FILENAME = "spec_NN.md";
-var SIDECAR_BLUEPRINT = "sidecar";
-var NN_SUFFIX_RE = /_NN\.md$/i;
-var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
-var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
-function baseOf(path2) {
-  const i = Math.max(path2.lastIndexOf("/"), path2.lastIndexOf("\\"));
-  return i < 0 ? path2 : path2.slice(i + 1);
-}
-function parseName(basename5) {
-  if (NN_SUFFIX_RE.test(basename5)) {
-    const stem2 = basename5.replace(NN_SUFFIX_RE, "");
-    const sidecar = SIDECAR_PATH_RE.exec(basename5);
-    return sidecar ? { kind: "nn", basename: basename5, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename5, stem: stem2 };
-  }
-  const dot = basename5.lastIndexOf(".");
-  const hasExt = dot > 0;
-  const stem = hasExt ? basename5.slice(0, dot) : basename5;
-  const ext = hasExt ? basename5.slice(dot + 1) : "";
-  const m = STAMP_SUFFIX_RE.exec(stem);
-  if (!m) return { kind: "file", basename: basename5, key: stem, ext };
-  return {
-    kind: "file",
-    basename: basename5,
-    key: m[1],
-    ext,
-    stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
-  };
-}
-function formatMemberName(key, ext, stamp) {
-  const suffix = stamp ? `_${stamp.stamp}${stamp.seq > 1 ? `-${stamp.seq}` : ""}` : "";
-  return `${key}${suffix}${ext ? `.${ext}` : ""}`;
-}
-function sidecarPathOf(rawPath) {
-  return `${rawPath}_sidecar_NN.md`;
-}
-function displayStem(basename5) {
-  if (NN_SUFFIX_RE.test(basename5)) return basename5.replace(NN_SUFFIX_RE, "");
-  return basename5.replace(/\.md$/i, "");
-}
-var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
-var CORE_BLUEPRINT_ROLE = {
-  cognnitive: "lineage-record",
-  sidecar: "sidecar",
-  changes: "changeset",
-  workspace: "catalog",
-  sources: "catalog",
-  artifacts: "catalog"
-};
-function coreBlueprintKey(parentSpecName) {
-  return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
-}
-function segmentsOf(path2) {
-  return path2.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
-}
-function roleOf(i) {
-  const base = baseOf(i.path);
-  const parsed = parseName(base);
-  if (parsed.kind === "file") return i.hasSidecar ? "source" : "artifact";
-  if (parsed.sidecarOf !== void 0) return "sidecar";
-  const lower = base.toLowerCase();
-  if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
-  if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
-  const bp = coreBlueprintKey(i.parentSpecName);
-  if (bp === "procedures") {
-    return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
-  }
-  return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
-}
-function isExcludedPath(path2) {
-  const segs = segmentsOf(path2);
-  if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
-  return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
-}
-function compareMembers(a, b) {
-  const pa = parseName(baseOf(a));
-  const pb = parseName(baseOf(b));
-  const sa = pa.kind === "file" ? pa.stamp : void 0;
-  const sb = pb.kind === "file" ? pb.stamp : void 0;
-  if (!sa && !sb) return 0;
-  if (!sa) return -1;
-  if (!sb) return 1;
-  if (sa.stamp !== sb.stamp) return sa.stamp < sb.stamp ? -1 : 1;
-  return sa.seq - sb.seq;
-}
-var pad = (n, width = 2) => String(n).padStart(width, "0");
-function formatUtcStamp(at) {
-  return `${pad(at.getUTCFullYear(), 4)}${pad(at.getUTCMonth() + 1)}${pad(at.getUTCDate())}T${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}${pad(at.getUTCSeconds())}Z`;
-}
-function nextStamp(at, latest) {
-  const now = formatUtcStamp(at);
-  if (!latest || latest.stamp < now) return { stamp: now, seq: 1 };
-  return { stamp: latest.stamp, seq: latest.seq + 1 };
-}
-var WIN32_PATH_LIMIT = 259;
-function checkPathBudget(absPath, platform) {
-  if (platform === "win32" && absPath.length > WIN32_PATH_LIMIT) {
-    return { ok: false, limit: WIN32_PATH_LIMIT, length: absPath.length };
-  }
-  return { ok: true };
-}
-function parentSpecNameOf(frontmatter) {
-  const parentSpec = frontmatter["parent_spec"];
-  if (!parentSpec) return void 0;
-  if (typeof parentSpec === "string") return parentSpec;
-  if (typeof parentSpec === "object") {
-    const name = parentSpec.name;
-    return typeof name === "string" ? name : void 0;
-  }
-  return void 0;
-}
-function isUnderRootSources(path2) {
-  return segmentsOf(path2)[0]?.toLowerCase() === "sources";
-}
-function isConsoleModel(f) {
-  if (isExcludedPath(f.path)) return false;
-  const parentSpecName = parentSpecNameOf(f.frontmatter);
-  const role = roleOf({ path: f.path, parentSpecName });
-  if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
-  if (role === "knowledge") return true;
-  if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
-  return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
-}
-function isNNName(nameOrPath) {
-  return NN_SUFFIX_RE.test(baseOf(nameOrPath));
-}
-function isSidecarName(nameOrPath) {
-  return SIDECAR_PATH_RE.test(nameOrPath);
-}
-
-// iNNfo/packages/nn-core/src/sourceRef.ts
-var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
-var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
-var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
-function parseSourceRef(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
-  if (/^src-\d+/i.test(clean)) return null;
-  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
-  if (!legacy) return null;
-  const resolved = resolveUnitPath(legacy[1]);
-  if (!resolved) return null;
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    slug: legacy[2] || void 0,
-    kind: resolved.kind,
-    raw: clean
-  };
-}
-function parseCitation(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  if (!clean) return null;
-  if (/[#@]L\d+(-L\d+)?$/i.test(clean)) return null;
-  if (/^src-\d+/i.test(clean)) return null;
-  if (clean.includes("@")) {
-    return parseKnowledgeUnitRef(clean);
-  }
-  if (clean.includes("#")) {
-    const ref = parseSourceRef(clean);
-    if (ref && ref.slug) {
-      return { ...ref, legacyHash: true };
-    }
-    return null;
-  }
-  const resolved = resolveUnitPath(clean);
-  if (!resolved) return null;
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    kind: resolved.kind,
-    raw: clean
-  };
-}
-function basename(p) {
-  return p.split(/[/\\]/).pop() || p;
-}
-function cleanSourceItem(v) {
-  if (v === void 0 || v === null) return "";
-  let s = String(v).trim();
-  if (s.startsWith('"') && s.endsWith('"') && s.length >= 2 || s.startsWith("'") && s.endsWith("'") && s.length >= 2) {
-    s = s.slice(1, -1).trim();
-  }
-  return s.replace(/\\,/g, ",").trim();
-}
-function parseBracketedSourceList(inner) {
-  const tokens = [];
-  let cur = "";
-  let inQuote = null;
-  let escaped = false;
-  for (let i = 0; i < inner.length; i++) {
-    const ch = inner[i];
-    if (escaped) {
-      if (ch === ",") {
-        cur += ",";
-      } else if (ch === inQuote) {
-        cur += ch;
-      } else if (ch === "\\") {
-        cur += "\\";
-      } else {
-        cur += "\\" + ch;
-      }
-      escaped = false;
-      continue;
-    }
-    if (ch === "\\") {
-      escaped = true;
-      continue;
-    }
-    if (inQuote) {
-      if (ch === inQuote) {
-        inQuote = null;
-      } else {
-        cur += ch;
-      }
-      continue;
-    }
-    if (ch === '"' || ch === "'") {
-      inQuote = ch;
-      continue;
-    }
-    if (ch === ",") {
-      const cleaned2 = cleanSourceItem(cur);
-      if (cleaned2) tokens.push(cleaned2);
-      cur = "";
-      continue;
-    }
-    cur += ch;
-  }
-  if (escaped) {
-    cur += "\\";
-  }
-  const cleaned = cleanSourceItem(cur);
-  if (cleaned) tokens.push(cleaned);
-  return tokens;
-}
-function splitSourceFieldValue(value) {
-  if (Array.isArray(value)) {
-    const out = [];
-    for (const v of value) {
-      const cleaned2 = cleanSourceItem(v);
-      if (cleaned2) out.push(cleaned2);
-    }
-    return out;
-  }
-  const s = typeof value === "string" ? value.trim() : String(value ?? "").trim();
-  if (!s) return [];
-  if (s.startsWith("[")) {
-    const inner = s.endsWith("]") ? s.slice(1, -1) : s.slice(1);
-    if (s.endsWith("]") || s.includes(",")) {
-      return parseBracketedSourceList(inner);
-    }
-  }
-  const cleaned = cleanSourceItem(s);
-  return cleaned ? [cleaned] : [];
-}
-function levenshteinDistance(a, b) {
-  const an = a.length;
-  const bn = b.length;
-  if (an === 0) return bn;
-  if (bn === 0) return an;
-  const matrix = Array.from({ length: bn + 1 }, () => new Array(an + 1).fill(0));
-  for (let i = 0; i <= an; i++) matrix[0][i] = i;
-  for (let j = 0; j <= bn; j++) matrix[j][0] = j;
-  for (let j = 1; j <= bn; j++) {
-    for (let i = 1; i <= an; i++) {
-      const cost = a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1;
-      matrix[j][i] = Math.min(
-        matrix[j - 1][i] + 1,
-        matrix[j][i - 1] + 1,
-        matrix[j - 1][i - 1] + cost
-      );
-    }
-  }
-  return matrix[bn][an];
-}
-function slugifyHeading(text) {
-  const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
-  return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
-}
-function slugifyFlat(part) {
-  const transliterated = stripCombiningMarks(part);
-  const dashed = transliterated.trim().toLowerCase().replace(/\s+/g, "-");
-  const filtered = dashed.replace(/[^\p{L}\p{N}-]+/gu, "");
-  return filtered.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
-}
-function extractHeadings(markdown) {
-  const lines = markdown.split("\n");
-  const seen = /* @__PURE__ */ new Map();
-  const headings = [];
-  for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(/^(#{1,6})\s+(.+?)\s*$/);
-    if (!match) continue;
-    const level = match[1].length;
-    const text = match[2].replace(/[*_`]/g, "").trim();
-    const { concept, element, slug: baseSlug } = headingSlugParts(text);
-    const occurrence = seen.get(baseSlug) ?? 0;
-    seen.set(baseSlug, occurrence + 1);
-    const slug = occurrence === 0 ? baseSlug : `${baseSlug}-${occurrence}`;
-    headings.push({ level, text, slug, line: i, concept, element });
-  }
-  return headings;
-}
-function resolveHeadingSection(markdown, slug) {
-  const headings = extractHeadings(markdown);
-  const index = headings.findIndex((h) => h.slug === slug);
-  if (index === -1) return null;
-  const heading = headings[index];
-  const lines = markdown.split("\n");
-  let endLine = lines.length;
-  for (let j = index + 1; j < headings.length; j++) {
-    if (headings[j].level <= heading.level) {
-      endLine = headings[j].line;
-      break;
-    }
-  }
-  return { heading, startLine: heading.line, endLine };
-}
-function headingSlugParts(text) {
-  const clean = text.trim();
-  const boundary = clean.indexOf(":");
-  if (boundary > 0) {
-    const concept = clean.slice(0, boundary).trim();
-    const element = clean.slice(boundary + 1).trim();
-    if (concept && element) {
-      return {
-        slug: `${slugifyHeading(concept)}--${slugifyHeading(element)}`,
-        concept,
-        element
-      };
-    }
-  }
-  return { slug: slugifyHeading(clean) };
-}
-function slugifyUnitHeading(level, text) {
-  const clean = text.trim();
-  const { slug } = headingSlugParts(clean);
-  const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
-  return { level: clamped, text: clean, slug };
-}
-function normalizeName(name) {
-  return nfc(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\-\p{L}\p{N}]+/gu, "");
-}
-function resolveUnitPath(rawPath) {
-  const trimmed = rawPath.trim();
-  if (!trimmed || /^https?:\/\//i.test(trimmed)) return null;
-  const segments = trimmed.split(/[/\\]/);
-  if (segments.some((s) => s === "..")) return null;
-  const forward = segments.join("/");
-  const isMd = /\.md$/i.test(forward);
-  const isCsv = /\.csv$/i.test(forward);
-  const isJson = /\.json$/i.test(forward);
-  if (!isMd && !isCsv && !isJson) {
-    if (new RegExp(`^${MODEL_ID}$`).test(trimmed)) {
-      return { filePath: trimmed, kind: "model" };
-    }
-    return null;
-  }
-  if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-  return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
-}
-function decodeSegment(segment) {
-  try {
-    return decodeURIComponent(segment);
-  } catch (err) {
-    return null;
-  }
-}
-var HEADER_UNIT = /^(#{1,6})\s*(.+?)\s*$/;
-function parsePointerRef(resolved, rawPointer, raw) {
-  if (rawPointer.includes("&")) return null;
-  const pointer = decodeSegment(rawPointer);
-  if (pointer === null || !isJsonPointer(pointer)) return null;
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    kind: resolved.kind,
-    unit: { kind: "pointer", pointer },
-    subunits: [],
-    raw
-  };
-}
-function parseKnowledgeUnitRef(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  const at = clean.indexOf("@");
-  if (at === -1) return null;
-  const resolved = resolveUnitPath(clean.slice(0, at));
-  if (!resolved) return null;
-  if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
-  const rawSegments = clean.slice(at + 1).split("&");
-  if (rawSegments.some((s) => s.trim() === "")) return null;
-  const decoded = [];
-  for (const part of rawSegments) {
-    const text = decodeSegment(part.trim());
-    if (text === null || text.trim() === "") return null;
-    decoded.push(text.trim());
-  }
-  const [unitRaw, ...subunits] = decoded;
-  if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
-    if (unitRaw.startsWith("concept:")) {
-      const slug = unitRaw.slice("concept:".length);
-      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-      const unit3 = {
-        kind: "header",
-        level: 1,
-        text: slug,
-        slug
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (unitRaw.startsWith("matrix:")) {
-      const slug = unitRaw.slice("matrix:".length);
-      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: slug,
-        ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
-    if (subunits.length === 2) {
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: unitRaw,
-        rowSlug: subunits[0],
-        colSlug: subunits[1]
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug: unitRaw,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    const unit2 = {
-      kind: "element",
-      slug: unitRaw
-    };
-    return {
-      filePath: resolved.filePath,
-      fileName: basename(resolved.filePath),
-      slug: unitRaw,
-      kind: "model",
-      unit: unit2,
-      subunits,
-      raw: clean
-    };
-  }
-  const isCsv = /\.csv$/i.test(resolved.filePath);
-  if (isCsv) {
-    if (resolved.kind === "model") return null;
-    return {
-      filePath: resolved.filePath,
-      fileName: basename(resolved.filePath),
-      kind: "source",
-      unit: { kind: "row", id: unitRaw },
-      subunits,
-      raw: clean
-    };
-  }
-  const heading = unitRaw.match(HEADER_UNIT);
-  if (!heading) return null;
-  const headed = slugifyUnitHeading(heading[1].length, heading[2]);
-  if (!headed.text || !headed.slug) return null;
-  const unit = {
-    kind: "header",
-    level: headed.level,
-    text: headed.text,
-    slug: headed.slug
-  };
-  return {
-    filePath: resolved.filePath,
-    fileName: basename(resolved.filePath),
-    slug: headed.slug,
-    kind: resolved.kind,
-    unit,
-    subunits,
-    raw: clean
-  };
-}
 
 // iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {
@@ -9171,7 +8616,18 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-5-5", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-6-0", aliases: [], specContent: "" } : null;
+}
+
+// iNNfo/packages/nn-core/src/schema/nature.ts
+var CORE_BLUEPRINT_NATURE = {
+  sources: { structure: "catalog", ownership: "derived" },
+  artifacts: { structure: "catalog", ownership: "derived" },
+  procedures: { structure: "catalog", ownership: "derived" },
+  changes: { structure: "members", ownership: "derived" }
+};
+function natureOfBlueprint(blueprintName) {
+  return CORE_BLUEPRINT_NATURE[blueprintName];
 }
 
 // iNNfo/packages/nn-core/src/resolver.ts
@@ -9672,6 +9128,554 @@ function computeSha256(content) {
   return H.map((x) => (x >>> 0).toString(16).padStart(8, "0")).join("");
 }
 
+// iNNfo/packages/nn-core/src/naming/contract.ts
+var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
+var SPEC_FILENAME = "spec_NN.md";
+var SIDECAR_BLUEPRINT = "sidecar";
+var NN_SUFFIX_RE = /_NN\.md$/i;
+var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
+var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
+function baseOf(path2) {
+  const i = Math.max(path2.lastIndexOf("/"), path2.lastIndexOf("\\"));
+  return i < 0 ? path2 : path2.slice(i + 1);
+}
+function parseName(basename5) {
+  if (NN_SUFFIX_RE.test(basename5)) {
+    const stem2 = basename5.replace(NN_SUFFIX_RE, "");
+    const sidecar = SIDECAR_PATH_RE.exec(basename5);
+    return sidecar ? { kind: "nn", basename: basename5, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename5, stem: stem2 };
+  }
+  const dot = basename5.lastIndexOf(".");
+  const hasExt = dot > 0;
+  const stem = hasExt ? basename5.slice(0, dot) : basename5;
+  const ext = hasExt ? basename5.slice(dot + 1) : "";
+  const m = STAMP_SUFFIX_RE.exec(stem);
+  if (!m) return { kind: "file", basename: basename5, key: stem, ext };
+  return {
+    kind: "file",
+    basename: basename5,
+    key: m[1],
+    ext,
+    stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
+  };
+}
+function formatMemberName(key, ext, stamp) {
+  const suffix = stamp ? `_${stamp.stamp}${stamp.seq > 1 ? `-${stamp.seq}` : ""}` : "";
+  return `${key}${suffix}${ext ? `.${ext}` : ""}`;
+}
+function sidecarPathOf(rawPath) {
+  return `${rawPath}_sidecar_NN.md`;
+}
+function displayStem(basename5) {
+  if (NN_SUFFIX_RE.test(basename5)) return basename5.replace(NN_SUFFIX_RE, "");
+  return basename5.replace(/\.md$/i, "");
+}
+var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
+var CORE_BLUEPRINT_ROLE = {
+  sidecar: "sidecar",
+  changes: "changeset",
+  workspace: "catalog",
+  sources: "catalog",
+  artifacts: "catalog"
+};
+function coreBlueprintKey(parentSpecName) {
+  return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
+}
+function segmentsOf(path2) {
+  return path2.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
+}
+function roleOf(i) {
+  const base = baseOf(i.path);
+  const parsed = parseName(base);
+  if (parsed.kind === "file") return i.hasSidecar ? "source" : "artifact";
+  if (parsed.sidecarOf !== void 0) return "sidecar";
+  const lower = base.toLowerCase();
+  if (lower === ENTRYPOINT_FILENAME.toLowerCase()) return "entrypoint";
+  if (lower === SPEC_FILENAME.toLowerCase()) return "spec";
+  const bp = coreBlueprintKey(i.parentSpecName);
+  if (bp === "procedures") {
+    return parsed.stem.toLowerCase() === "procedures" ? "catalog" : "procedure";
+  }
+  return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
+}
+function isExcludedPath(path2) {
+  const segs = segmentsOf(path2);
+  if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
+  return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
+}
+function changesetStampOf(nameOrPath) {
+  const parsed = parseName(baseOf(nameOrPath));
+  if (parsed.kind !== "nn" || parsed.sidecarOf !== void 0) return null;
+  if (!/_changes$/i.test(parsed.stem)) return null;
+  const m = STAMP_SUFFIX_RE.exec(parsed.stem.slice(0, -"_changes".length));
+  return m ? { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 } : null;
+}
+function compareMembers(a, b) {
+  const pa = parseName(baseOf(a));
+  const pb = parseName(baseOf(b));
+  const sa = pa.kind === "file" ? pa.stamp : void 0;
+  const sb = pb.kind === "file" ? pb.stamp : void 0;
+  if (!sa && !sb) return 0;
+  if (!sa) return -1;
+  if (!sb) return 1;
+  if (sa.stamp !== sb.stamp) return sa.stamp < sb.stamp ? -1 : 1;
+  return sa.seq - sb.seq;
+}
+var pad = (n, width = 2) => String(n).padStart(width, "0");
+function formatUtcStamp(at) {
+  return `${pad(at.getUTCFullYear(), 4)}${pad(at.getUTCMonth() + 1)}${pad(at.getUTCDate())}T${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}${pad(at.getUTCSeconds())}Z`;
+}
+function nextStamp(at, latest) {
+  const now = formatUtcStamp(at);
+  if (!latest || latest.stamp < now) return { stamp: now, seq: 1 };
+  return { stamp: latest.stamp, seq: latest.seq + 1 };
+}
+var WIN32_PATH_LIMIT = 259;
+function checkPathBudget(absPath, platform) {
+  if (platform === "win32" && absPath.length > WIN32_PATH_LIMIT) {
+    return { ok: false, limit: WIN32_PATH_LIMIT, length: absPath.length };
+  }
+  return { ok: true };
+}
+function parentSpecNameOf(frontmatter) {
+  const parentSpec = frontmatter["parent_spec"];
+  if (!parentSpec) return void 0;
+  if (typeof parentSpec === "string") return parentSpec;
+  if (typeof parentSpec === "object") {
+    const name = parentSpec.name;
+    return typeof name === "string" ? name : void 0;
+  }
+  return void 0;
+}
+function isUnderRootSources(path2) {
+  return segmentsOf(path2)[0]?.toLowerCase() === "sources";
+}
+function isConsoleModel(f) {
+  if (isExcludedPath(f.path)) return false;
+  const parentSpecName = parentSpecNameOf(f.frontmatter);
+  const role = roleOf({ path: f.path, parentSpecName });
+  if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
+  if (role === "knowledge") return true;
+  if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
+  return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
+}
+function isNNName(nameOrPath) {
+  return NN_SUFFIX_RE.test(baseOf(nameOrPath));
+}
+function isSidecarName(nameOrPath) {
+  return SIDECAR_PATH_RE.test(nameOrPath);
+}
+
+// iNNfo/packages/nn-core/src/assertNever.ts
+function assertNever(value, context = "value") {
+  throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
+}
+
+// iNNfo/packages/nn-core/src/jsonPointer.ts
+var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
+var ARRAY_INDEX_RE = /^(?:0|[1-9]\d*)$/;
+function isJsonPointer(pointer) {
+  return POINTER_RE.test(pointer);
+}
+var unescapeToken = (token) => token.replace(/~1/g, "/").replace(/~0/g, "~");
+function resolveJsonPointer(content, pointer) {
+  let current;
+  try {
+    current = JSON.parse(content);
+  } catch {
+    return { ok: false, reason: "invalid-json" };
+  }
+  if (!isJsonPointer(pointer)) return { ok: false, reason: "unknown-pointer" };
+  if (pointer === "") return { ok: true, value: current };
+  for (const raw of pointer.slice(1).split("/")) {
+    const token = unescapeToken(raw);
+    if (Array.isArray(current)) {
+      if (!ARRAY_INDEX_RE.test(token) || Number(token) >= current.length) {
+        return { ok: false, reason: "unknown-pointer" };
+      }
+      current = current[Number(token)];
+    } else if (current !== null && typeof current === "object" && Object.hasOwn(current, token)) {
+      current = current[token];
+    } else {
+      return { ok: false, reason: "unknown-pointer" };
+    }
+  }
+  return { ok: true, value: current };
+}
+
+// iNNfo/packages/nn-core/src/sourceRef.ts
+var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
+var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+function parseSourceRef(input) {
+  if (!input || typeof input !== "string") return null;
+  const clean = input.trim();
+  if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
+  if (/^src-\d+/i.test(clean)) return null;
+  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
+  if (!legacy) return null;
+  const resolved = resolveUnitPath(legacy[1]);
+  if (!resolved) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename2(resolved.filePath),
+    slug: legacy[2] || void 0,
+    kind: resolved.kind,
+    raw: clean
+  };
+}
+function parseCitation(input) {
+  if (!input || typeof input !== "string") return null;
+  const clean = input.trim();
+  if (!clean) return null;
+  if (/[#@]L\d+(-L\d+)?$/i.test(clean)) return null;
+  if (/^src-\d+/i.test(clean)) return null;
+  if (clean.includes("@")) {
+    return parseKnowledgeUnitRef(clean);
+  }
+  if (clean.includes("#")) {
+    const ref = parseSourceRef(clean);
+    if (ref && ref.slug) {
+      return { ...ref, legacyHash: true };
+    }
+    return null;
+  }
+  const resolved = resolveUnitPath(clean);
+  if (!resolved) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename2(resolved.filePath),
+    kind: resolved.kind,
+    raw: clean
+  };
+}
+function basename2(p) {
+  return p.split(/[/\\]/).pop() || p;
+}
+function cleanSourceItem(v) {
+  if (v === void 0 || v === null) return "";
+  let s = String(v).trim();
+  if (s.startsWith('"') && s.endsWith('"') && s.length >= 2 || s.startsWith("'") && s.endsWith("'") && s.length >= 2) {
+    s = s.slice(1, -1).trim();
+  }
+  return s.replace(/\\,/g, ",").trim();
+}
+function parseBracketedSourceList(inner) {
+  const tokens = [];
+  let cur = "";
+  let inQuote = null;
+  let escaped = false;
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (escaped) {
+      if (ch === ",") {
+        cur += ",";
+      } else if (ch === inQuote) {
+        cur += ch;
+      } else if (ch === "\\") {
+        cur += "\\";
+      } else {
+        cur += "\\" + ch;
+      }
+      escaped = false;
+      continue;
+    }
+    if (ch === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (inQuote) {
+      if (ch === inQuote) {
+        inQuote = null;
+      } else {
+        cur += ch;
+      }
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      inQuote = ch;
+      continue;
+    }
+    if (ch === ",") {
+      const cleaned2 = cleanSourceItem(cur);
+      if (cleaned2) tokens.push(cleaned2);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  if (escaped) {
+    cur += "\\";
+  }
+  const cleaned = cleanSourceItem(cur);
+  if (cleaned) tokens.push(cleaned);
+  return tokens;
+}
+function splitSourceFieldValue(value) {
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const v of value) {
+      const cleaned2 = cleanSourceItem(v);
+      if (cleaned2) out.push(cleaned2);
+    }
+    return out;
+  }
+  const s = typeof value === "string" ? value.trim() : String(value ?? "").trim();
+  if (!s) return [];
+  if (s.startsWith("[")) {
+    const inner = s.endsWith("]") ? s.slice(1, -1) : s.slice(1);
+    if (s.endsWith("]") || s.includes(",")) {
+      return parseBracketedSourceList(inner);
+    }
+  }
+  const cleaned = cleanSourceItem(s);
+  return cleaned ? [cleaned] : [];
+}
+function levenshteinDistance(a, b) {
+  const an = a.length;
+  const bn = b.length;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix = Array.from({ length: bn + 1 }, () => new Array(an + 1).fill(0));
+  for (let i = 0; i <= an; i++) matrix[0][i] = i;
+  for (let j = 0; j <= bn; j++) matrix[j][0] = j;
+  for (let j = 1; j <= bn; j++) {
+    for (let i = 1; i <= an; i++) {
+      const cost = a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j - 1][i] + 1,
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i - 1] + cost
+      );
+    }
+  }
+  return matrix[bn][an];
+}
+function slugifyHeading(text) {
+  const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
+  return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
+}
+function slugifyFlat(part) {
+  const transliterated = stripCombiningMarks(part);
+  const dashed = transliterated.trim().toLowerCase().replace(/\s+/g, "-");
+  const filtered = dashed.replace(/[^\p{L}\p{N}-]+/gu, "");
+  return filtered.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+}
+function extractHeadings(markdown) {
+  const lines = markdown.split("\n");
+  const seen = /* @__PURE__ */ new Map();
+  const headings = [];
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/^(#{1,6})\s+(.+?)\s*$/);
+    if (!match) continue;
+    const level = match[1].length;
+    const text = match[2].replace(/[*_`]/g, "").trim();
+    const { concept, element, slug: baseSlug } = headingSlugParts(text);
+    const occurrence = seen.get(baseSlug) ?? 0;
+    seen.set(baseSlug, occurrence + 1);
+    const slug = occurrence === 0 ? baseSlug : `${baseSlug}-${occurrence}`;
+    headings.push({ level, text, slug, line: i, concept, element });
+  }
+  return headings;
+}
+function resolveHeadingSection(markdown, slug) {
+  const headings = extractHeadings(markdown);
+  const index = headings.findIndex((h) => h.slug === slug);
+  if (index === -1) return null;
+  const heading = headings[index];
+  const lines = markdown.split("\n");
+  let endLine = lines.length;
+  for (let j = index + 1; j < headings.length; j++) {
+    if (headings[j].level <= heading.level) {
+      endLine = headings[j].line;
+      break;
+    }
+  }
+  return { heading, startLine: heading.line, endLine };
+}
+function headingSlugParts(text) {
+  const clean = text.trim();
+  const boundary = clean.indexOf(":");
+  if (boundary > 0) {
+    const concept = clean.slice(0, boundary).trim();
+    const element = clean.slice(boundary + 1).trim();
+    if (concept && element) {
+      return {
+        slug: `${slugifyHeading(concept)}--${slugifyHeading(element)}`,
+        concept,
+        element
+      };
+    }
+  }
+  return { slug: slugifyHeading(clean) };
+}
+function slugifyUnitHeading(level, text) {
+  const clean = text.trim();
+  const { slug } = headingSlugParts(clean);
+  const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
+  return { level: clamped, text: clean, slug };
+}
+function normalizeName(name) {
+  return nfc(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\-\p{L}\p{N}]+/gu, "");
+}
+function resolveUnitPath(rawPath) {
+  const trimmed = rawPath.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed)) return null;
+  const segments = trimmed.split(/[/\\]/);
+  if (segments.some((s) => s === "..")) return null;
+  const forward = segments.join("/");
+  const isMd = /\.md$/i.test(forward);
+  const isCsv = /\.csv$/i.test(forward);
+  const isJson = /\.json$/i.test(forward);
+  if (!isMd && !isCsv && !isJson) {
+    if (new RegExp(`^${MODEL_ID}$`).test(trimmed)) {
+      return { filePath: trimmed, kind: "model" };
+    }
+    return null;
+  }
+  if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
+  return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
+}
+function decodeSegment(segment) {
+  try {
+    return decodeURIComponent(segment);
+  } catch (err) {
+    return null;
+  }
+}
+var HEADER_UNIT = /^(#{1,6})\s*(.+?)\s*$/;
+function parsePointerRef(resolved, rawPointer, raw) {
+  if (rawPointer.includes("&")) return null;
+  const pointer = decodeSegment(rawPointer);
+  if (pointer === null || !isJsonPointer(pointer)) return null;
+  return {
+    filePath: resolved.filePath,
+    fileName: basename2(resolved.filePath),
+    kind: resolved.kind,
+    unit: { kind: "pointer", pointer },
+    subunits: [],
+    raw
+  };
+}
+function parseKnowledgeUnitRef(input) {
+  if (!input || typeof input !== "string") return null;
+  const clean = input.trim();
+  const at = clean.indexOf("@");
+  if (at === -1) return null;
+  const resolved = resolveUnitPath(clean.slice(0, at));
+  if (!resolved) return null;
+  if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
+  const rawSegments = clean.slice(at + 1).split("&");
+  if (rawSegments.some((s) => s.trim() === "")) return null;
+  const decoded = [];
+  for (const part of rawSegments) {
+    const text = decodeSegment(part.trim());
+    if (text === null || text.trim() === "") return null;
+    decoded.push(text.trim());
+  }
+  const [unitRaw, ...subunits] = decoded;
+  if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
+    if (unitRaw.startsWith("concept:")) {
+      const slug = unitRaw.slice("concept:".length);
+      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
+      const unit3 = {
+        kind: "header",
+        level: 1,
+        text: slug,
+        slug
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename2(resolved.filePath),
+        slug,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    if (unitRaw.startsWith("matrix:")) {
+      const slug = unitRaw.slice("matrix:".length);
+      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: slug,
+        ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename2(resolved.filePath),
+        slug,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
+    if (subunits.length === 2) {
+      const unit3 = {
+        kind: "matrix",
+        matrixSlug: unitRaw,
+        rowSlug: subunits[0],
+        colSlug: subunits[1]
+      };
+      return {
+        filePath: resolved.filePath,
+        fileName: basename2(resolved.filePath),
+        slug: unitRaw,
+        kind: "model",
+        unit: unit3,
+        subunits,
+        raw: clean
+      };
+    }
+    const unit2 = {
+      kind: "element",
+      slug: unitRaw
+    };
+    return {
+      filePath: resolved.filePath,
+      fileName: basename2(resolved.filePath),
+      slug: unitRaw,
+      kind: "model",
+      unit: unit2,
+      subunits,
+      raw: clean
+    };
+  }
+  const isCsv = /\.csv$/i.test(resolved.filePath);
+  if (isCsv) {
+    if (resolved.kind === "model") return null;
+    return {
+      filePath: resolved.filePath,
+      fileName: basename2(resolved.filePath),
+      kind: "source",
+      unit: { kind: "row", id: unitRaw },
+      subunits,
+      raw: clean
+    };
+  }
+  const heading = unitRaw.match(HEADER_UNIT);
+  if (!heading) return null;
+  const headed = slugifyUnitHeading(heading[1].length, heading[2]);
+  if (!headed.text || !headed.slug) return null;
+  const unit = {
+    kind: "header",
+    level: headed.level,
+    text: headed.text,
+    slug: headed.slug
+  };
+  return {
+    filePath: resolved.filePath,
+    fileName: basename2(resolved.filePath),
+    slug: headed.slug,
+    kind: resolved.kind,
+    unit,
+    subunits,
+    raw: clean
+  };
+}
+
 // iNNfo/packages/nn-core/src/csvTable.ts
 function parseCsvTable(content, options = {}) {
   const delimiter = options.delimiter ?? ",";
@@ -9919,6 +9923,675 @@ function sectionOwnLines(content, slug) {
   return owned;
 }
 
+// iNNfo/packages/nn-core/src/changeset/parser.ts
+var import_yaml6 = __toESM(require_dist(), 1);
+
+// iNNfo/packages/nn-core/src/changeset/types.ts
+var CHANGE_OPS = [
+  "update_field",
+  "add_element",
+  "remove_element",
+  "rename_element",
+  "rename_concept",
+  "update_matrix_cell",
+  "update_concept_text",
+  "update_concept_field",
+  "remove_matrix",
+  "add_matrix",
+  "comment",
+  "add_model",
+  "freeze_slugs",
+  "bump_version",
+  "update_element_text",
+  "produce_artifact"
+];
+function isChangeStatus(val) {
+  return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);
+}
+function isChangeOp(val) {
+  return typeof val === "string" && CHANGE_OPS.includes(val);
+}
+function addModelProblems(change) {
+  if (change.op !== "add_model") return [];
+  const problems = [];
+  const id = change.id;
+  for (const key of ["from", "to", "base_hash"]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": add_model must not carry "${key}"`);
+    }
+  }
+  if (change.concept !== void 0 || change.fields !== void 0 || change.slug !== void 0) {
+    problems.push(`change "${id}": add_model must not carry element payload (concept, slug, fields)`);
+  }
+  if (!change.blueprint_name) problems.push(`change "${id}": add_model requires "blueprint_name"`);
+  if (!change.blueprint_url) problems.push(`change "${id}": add_model requires "blueprint_url"`);
+  const target = change.target;
+  if (!target || target.includes("@") || target.includes("&") || target.includes("..") || /^[a-zA-Z]:/.test(target) || /[\\/]/.test(target)) {
+    problems.push(`change "${id}": add_model target must be a plain model id (no "@", "&", "..", path separators, or absolute path)`);
+  }
+  return problems;
+}
+
+// iNNfo/packages/nn-core/src/changeset/parser.ts
+function stripQuotes(str2) {
+  const trimmed = str2.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "string") return parsed;
+    } catch {
+    }
+    return trimmed.slice(1, -1);
+  }
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+function parseJsonObject(str2) {
+  const trimmed = str2.trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return void 0;
+  try {
+    const parsed = JSON.parse(trimmed);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function parseStringArray(value) {
+  if (!Array.isArray(value)) return void 0;
+  return value.map((v) => String(v));
+}
+function parseFieldsValue(str2) {
+  const trimmed = str2.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null) {
+        const out = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          out[k] = String(v);
+        }
+        return out;
+      }
+    } catch {
+    }
+  }
+  return void 0;
+}
+var CHANGESET_FRONTMATTER_INVALID = "CHANGESET_FRONTMATTER_INVALID";
+function invalidFrontmatter(detail) {
+  throw new Error(`${CHANGESET_FRONTMATTER_INVALID}: ${detail}`);
+}
+function validateFrontmatter(fm) {
+  if (fm.level !== 3) {
+    invalidFrontmatter("level must be 3");
+  }
+  const parent = fm.parent_spec;
+  if (typeof parent !== "object" || parent === null || Array.isArray(parent)) {
+    invalidFrontmatter("parent_spec must be an object with name and url");
+  }
+  const parentObj = parent;
+  if (parentObj.name !== "changes") {
+    invalidFrontmatter('parent_spec.name must be "changes"');
+  }
+  if (typeof parentObj.url !== "string" || parentObj.url.length === 0) {
+    invalidFrontmatter("missing parent_spec.url");
+  }
+  if (typeof fm.spec_version !== "string" || fm.spec_version.length === 0) {
+    invalidFrontmatter("missing spec_version");
+  }
+  if (typeof fm.blueprint_version !== "string" || fm.blueprint_version.length === 0) {
+    invalidFrontmatter("missing blueprint_version");
+  }
+  if (!isChangeStatus(fm.status)) {
+    invalidFrontmatter(
+      "status must be one of proposed|applied|partially_applied|rejected|conflict"
+    );
+  }
+  return fm;
+}
+function parseChangeset(rawContent) {
+  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(rawContent.trimStart());
+  if (!frontmatterMatch) {
+    invalidFrontmatter("missing frontmatter block");
+  }
+  const yamlText = frontmatterMatch[1];
+  const body = frontmatterMatch[2];
+  let parsedYaml;
+  try {
+    parsedYaml = (0, import_yaml6.parse)(yamlText);
+  } catch {
+    invalidFrontmatter("frontmatter is not valid YAML");
+  }
+  if (typeof parsedYaml !== "object" || parsedYaml === null || Array.isArray(parsedYaml)) {
+    invalidFrontmatter("missing frontmatter block");
+  }
+  const frontmatter = validateFrontmatter(parsedYaml);
+  const changeHeadingRegex = /^##\s+NN\s+Change:\s*(.+)$/i;
+  const lines = body.split(/\r?\n/);
+  const changes = [];
+  let currentChange = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const headingMatch = changeHeadingRegex.exec(line.trim());
+    if (headingMatch) {
+      if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
+        changes.push(currentChange);
+      }
+      currentChange = {
+        id: headingMatch[1].trim()
+      };
+      continue;
+    }
+    if (!currentChange) continue;
+    const propMatch = /^([a-zA-Z0-9_-]+)::\s*(.*)$/.exec(line.trim());
+    if (!propMatch) continue;
+    const key = propMatch[1].trim();
+    const rawVal = propMatch[2].trim();
+    switch (key) {
+      case "op":
+        if (!isChangeOp(rawVal)) {
+          throw new Error(`Invalid changeset op: "${rawVal}"`);
+        }
+        currentChange.op = rawVal;
+        break;
+      case "target":
+        currentChange.target = rawVal;
+        break;
+      case "from":
+        currentChange.from = stripQuotes(rawVal);
+        break;
+      case "to":
+        currentChange.to = stripQuotes(rawVal);
+        break;
+      case "base_hash":
+        currentChange.base_hash = stripQuotes(rawVal);
+        break;
+      case "concept":
+        currentChange.concept = rawVal;
+        break;
+      case "name":
+        currentChange.name = stripQuotes(rawVal);
+        break;
+      case "slug":
+        currentChange.slug = rawVal;
+        break;
+      case "fields": {
+        const parsedObj = parseFieldsValue(rawVal);
+        if (parsedObj) {
+          currentChange.fields = parsedObj;
+        }
+        break;
+      }
+      case "author":
+        currentChange.author = stripQuotes(rawVal);
+        break;
+      case "notes":
+        currentChange.notes = stripQuotes(rawVal);
+        break;
+      case "evidence":
+        currentChange.evidence = stripQuotes(rawVal);
+        break;
+      case "blueprint_name":
+        currentChange.blueprint_name = stripQuotes(rawVal);
+        break;
+      case "blueprint_url":
+        currentChange.blueprint_url = stripQuotes(rawVal);
+        break;
+      case "knowledge_version":
+        currentChange.knowledge_version = stripQuotes(rawVal);
+        break;
+      case "applied_at":
+        currentChange.applied_at = stripQuotes(rawVal);
+        break;
+      case "batch":
+        currentChange.batch = stripQuotes(rawVal);
+        break;
+      case "status":
+        if (!isChangeStatus(rawVal)) {
+          throw new Error(`Invalid changeset status: "${rawVal}"`);
+        }
+        currentChange.status = rawVal;
+        break;
+      case "resolution":
+        currentChange.resolution = stripQuotes(rawVal);
+        break;
+      case "resolved_slug":
+        currentChange.resolved_slug = rawVal;
+        break;
+      case "resolved_target":
+        currentChange.resolved_target = rawVal;
+        break;
+      case "evidence_sha256": {
+        const shas = splitSourceFieldValue(rawVal);
+        if (shas.length > 0) currentChange.evidence_sha256 = shas;
+        break;
+      }
+      case "seed": {
+        const parsedSeed = parseJsonObject(rawVal);
+        if (parsedSeed) {
+          const seed = {};
+          const columns = parseStringArray(parsedSeed.columns);
+          const rows = parseStringArray(parsedSeed.rows);
+          if (columns) seed.columns = columns;
+          if (rows) seed.rows = rows;
+          currentChange.seed = seed;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
+    changes.push(currentChange);
+  }
+  const problems = changes.flatMap(addModelProblems);
+  if (problems.length > 0) {
+    throw new Error(`Invalid add_model change: ${problems.join("; ")}`);
+  }
+  return {
+    frontmatter,
+    changes,
+    rawContent
+  };
+}
+
+// iNNfo/packages/nn-core/src/changeset/evidence.ts
+var EVIDENCE_KEYWORDS = ["decision", "unknown"];
+function isKeyword(value) {
+  return EVIDENCE_KEYWORDS.includes(value.toLowerCase());
+}
+function evidenceKeywordInList(value) {
+  const items = splitSourceFieldValue(value);
+  if (items.length < 2) return null;
+  for (const item of items) {
+    if (isKeyword(item)) return item.toLowerCase();
+  }
+  return null;
+}
+function splitEvidence(value) {
+  const keyword = evidenceKeywordInList(value);
+  if (keyword) {
+    throw new Error(
+      `EVIDENCE_KEYWORD_IN_LIST: "${keyword}" is only valid alone in evidence; cite the document, or use the keyword by itself`
+    );
+  }
+  return splitSourceFieldValue(value).map((item) => isKeyword(item) ? item.toLowerCase() : item);
+}
+
+// iNNfo/packages/nn-core/src/changelog/order.ts
+function changeStamp(changeset) {
+  return changesetStampOf(String(changeset ?? ""))?.stamp ?? "";
+}
+function compareStrings(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function compareChanges(a, b) {
+  const byAppliedAt = compareStrings(a.appliedAt ?? "", b.appliedAt ?? "");
+  if (byAppliedAt !== 0) return byAppliedAt;
+  const byStamp = compareStrings(changeStamp(a.changeset), changeStamp(b.changeset));
+  if (byStamp !== 0) return byStamp;
+  const byFile = compareStrings(a.changeset, b.changeset);
+  if (byFile !== 0) return byFile;
+  return a.index - b.index;
+}
+
+// iNNfo/packages/nn-core/src/references.ts
+function updateReferenceString(text, oldName, newName) {
+  if (!text || typeof text !== "string") return text;
+  const oldSlug = slugify(oldName);
+  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+    if (slugify(text.trim()) === oldSlug) {
+      const leadingSpaces = text.match(/^\s*/)?.[0] || "";
+      const trailingSpaces = text.match(/\s*$/)?.[0] || "";
+      return `${leadingSpaces}${newName}${trailingSpaces}`;
+    }
+  }
+  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+    const qualifiedBracketRegex = new RegExp(`^(\\s*\\[[^\\]]+\\]\\s*)(.+)$`, "i");
+    const matchBracket = text.match(qualifiedBracketRegex);
+    if (matchBracket && slugify(matchBracket[2].trim()) === oldSlug) {
+      const trailingSpaces = matchBracket[2].match(/\s*$/)?.[0] || "";
+      return `${matchBracket[1]}${newName}${trailingSpaces}`;
+    }
+    const qualifiedColonRegex = new RegExp(`^(\\s*[^:]+::\\s*)(.+)$`, "i");
+    const matchColon = text.match(qualifiedColonRegex);
+    if (matchColon && slugify(matchColon[2].trim()) === oldSlug) {
+      const trailingSpaces = matchColon[2].match(/\s*$/)?.[0] || "";
+      return `${matchColon[1]}${newName}${trailingSpaces}`;
+    }
+  }
+  return updateWikiLinks(text, oldName, newName);
+}
+function updateWikiLinks(text, oldName, newName) {
+  if (!text || typeof text !== "string") return text;
+  const oldSlug = slugify(oldName);
+  return text.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
+    const trimmedTarget = target.trim();
+    if (slugify(trimmedTarget) === oldSlug) {
+      return `[[${newName}${alias ?? ""}]]`;
+    }
+    const qBracket = new RegExp(`^(\\[[^\\]]+\\]\\s*)(.+)$`, "i");
+    const mBracket = trimmedTarget.match(qBracket);
+    if (mBracket && slugify(mBracket[2]) === oldSlug) {
+      return `[[${mBracket[1]}${newName}${alias ?? ""}]]`;
+    }
+    const qColon = new RegExp(`^(.*::\\s*)(.+)$`, "i");
+    const mColon = trimmedTarget.match(qColon);
+    if (mColon && slugify(mColon[2]) === oldSlug) {
+      return `[[${mColon[1]}${newName}${alias ?? ""}]]`;
+    }
+    return match;
+  });
+}
+
+// iNNfo/packages/nn-core/src/changelog/fold.ts
+function canonicalValue2(raw) {
+  if (raw === void 0 || raw === null) return "";
+  const parsed = parsePropertyValue(String(raw));
+  if (parsed === null || parsed === void 0) return "";
+  if (typeof parsed === "string") return parsed;
+  if (Array.isArray(parsed)) {
+    return `[${parsed.map((v) => typeof v === "string" ? v : String(v)).join(", ")}]`;
+  }
+  if (typeof parsed === "number" || typeof parsed === "boolean") return String(parsed);
+  return JSON.stringify(parsed);
+}
+function splitUnitKey(key) {
+  const at = key.indexOf("@");
+  if (at === -1) return { model: "", parts: [] };
+  return {
+    model: key.slice(0, at),
+    parts: key.slice(at + 1).split("&").map((p) => p.trim())
+  };
+}
+function elementKeyOf(unitKey) {
+  const amp = unitKey.indexOf("&");
+  return amp === -1 ? unitKey : unitKey.slice(0, amp);
+}
+function setUnit(units, cleared, key, kind, raw, origin, order) {
+  const value = canonicalValue2(raw);
+  if (value === "") {
+    units.delete(key);
+    cleared.add(key);
+    return;
+  }
+  units.set(key, { key, kind, value, origin, setOrder: order });
+  cleared.delete(key);
+}
+function foldChanges(changes) {
+  const units = /* @__PURE__ */ new Map();
+  const cleared = /* @__PURE__ */ new Set();
+  const tombstones = [];
+  const epochs = /* @__PURE__ */ new Map();
+  const elements = /* @__PURE__ */ new Map();
+  const relinks = /* @__PURE__ */ new Map();
+  const addRelink = (model, from, to, order) => {
+    if (!from || !to) return;
+    const bucket = relinks.get(model);
+    if (bucket) bucket.push({ model, from, to, order });
+    else relinks.set(model, [{ model, from, to, order }]);
+  };
+  changes.forEach((change, order) => {
+    if (!change.applied) return;
+    const address = change.resolvedTarget ?? change.target;
+    switch (change.op) {
+      case "add_element": {
+        const { model, parts } = splitUnitKey(address);
+        const key = change.resolvedTarget ? address : model ? `${model}@${slugifyHeading(change.name ?? change.slug ?? parts[0] ?? "")}` : address;
+        epochs.set(key, order);
+        elements.set(key, change);
+        for (const unitKey of [...units.keys()]) {
+          if (unitKey.startsWith(`${key}&`)) units.delete(unitKey);
+        }
+        for (const unitKey of [...cleared]) {
+          if (unitKey.startsWith(`${key}&`)) cleared.delete(unitKey);
+        }
+        return;
+      }
+      case "update_field":
+        setUnit(units, cleared, address, "field", change.to, change, order);
+        return;
+      case "update_element_text":
+        setUnit(units, cleared, address, "body", change.to, change, order);
+        return;
+      case "update_concept_text":
+      case "update_concept_field":
+        setUnit(units, cleared, address, "concept", change.to, change, order);
+        return;
+      case "update_matrix_cell":
+        setUnit(units, cleared, address, "cell", change.to, change, order);
+        return;
+      case "rename_element": {
+        const { model, parts } = splitUnitKey(address);
+        addRelink(model, change.from ?? parts[0] ?? "", change.name ?? change.to ?? "", order);
+        return;
+      }
+      case "rename_concept": {
+        const { model, parts } = splitUnitKey(address);
+        const oldName = parts[0]?.startsWith("concept:") ? parts[0].slice("concept:".length) : change.from ?? parts[0] ?? "";
+        const newName = change.name ?? change.to ?? "";
+        if (!oldName || !newName) return;
+        const oldPrefix = `${model}@concept:${oldName}`;
+        const newPrefix = `${model}@concept:${newName}`;
+        for (const key of [...units.keys()]) {
+          if (key !== oldPrefix && !key.startsWith(`${oldPrefix}&`)) continue;
+          const unit = units.get(key);
+          units.delete(key);
+          units.set(`${newPrefix}${key.slice(oldPrefix.length)}`, { ...unit, key: `${newPrefix}${key.slice(oldPrefix.length)}` });
+        }
+        addRelink(model, oldName, newName, order);
+        return;
+      }
+      case "remove_element": {
+        const { model, parts } = splitUnitKey(address);
+        const key = elementKeyOf(address) || (parts[0] ? `${model}@${parts[0]}` : address);
+        elements.set(key, change);
+        tombstones.push(change);
+        const slug = key.slice(key.indexOf("@") + 1);
+        for (const unitKey of [...units.keys()]) {
+          if (unitKey.startsWith(`${key}&`)) {
+            units.delete(unitKey);
+            continue;
+          }
+          const cell = splitUnitKey(unitKey);
+          if (cell.parts.length >= 3 && cell.model === model && (cell.parts[1] === slug || cell.parts[2] === slug)) {
+            units.delete(unitKey);
+          }
+        }
+        return;
+      }
+      case "remove_matrix": {
+        const { model, parts } = splitUnitKey(address);
+        const raw = parts[0] ?? "";
+        const matrixSlug = raw.startsWith("matrix:") ? raw.slice("matrix:".length) : raw;
+        const key = `${model}@${matrixSlug}`;
+        tombstones.push(change);
+        for (const unitKey of [...units.keys()]) {
+          if (unitKey.startsWith(`${key}&`)) units.delete(unitKey);
+        }
+        return;
+      }
+      case "produce_artifact":
+        setUnit(units, cleared, address, "artifact", address, change, order);
+        return;
+      default:
+        return;
+    }
+  });
+  return { units, cleared, tombstones, epochs, elements, relinks };
+}
+function applyRelinks(unit, relinks) {
+  if (unit.kind === "cell" || unit.kind === "artifact") return unit.value;
+  const later = relinks.filter((r) => r.order > unit.setOrder);
+  if (later.length === 0) return unit.value;
+  let value = unit.value;
+  for (const relink of later) {
+    value = unit.kind === "field" ? updateReferenceString(value, relink.from, relink.to) : updateWikiLinks(value, relink.from, relink.to);
+  }
+  return value;
+}
+
+// iNNfo/packages/nn-core/src/changelog/units.ts
+function unitsFromFold(fold, model) {
+  const out = [];
+  for (const unit of fold.units.values()) {
+    if (model) {
+      const { model: unitModel2 } = splitUnitKey(unit.key);
+      if (unitModel2 !== model) continue;
+    }
+    const { model: unitModel } = splitUnitKey(unit.key);
+    const relinks = fold.relinks.get(unitModel) ?? [];
+    out.push({
+      key: unit.key,
+      kind: unit.kind,
+      value: applyRelinks(unit, relinks),
+      origin: unit.origin,
+      relinks
+    });
+  }
+  return out;
+}
+
+// iNNfo/packages/nn-core/src/changelog/index.ts
+function unitOf(change) {
+  return change.resolvedTarget ?? change.target;
+}
+var ChangeLogImpl = class {
+  all;
+  byUnit = /* @__PURE__ */ new Map();
+  fold;
+  constructor(changes) {
+    this.all = [...changes].sort(compareChanges);
+    for (const change of this.all) {
+      if (!change.applied) continue;
+      const unit = unitOf(change);
+      const bucket = this.byUnit.get(unit);
+      if (bucket) bucket.push(change);
+      else this.byUnit.set(unit, [change]);
+    }
+    this.fold = foldChanges(this.all);
+  }
+  /** Applied changes of a unit, cut at the latest add_element of its element. */
+  history(unit) {
+    const bucket = this.byUnit.get(unit) ?? [];
+    const epoch = this.fold.epochs.get(elementKeyOf(unit));
+    if (epoch === void 0) return bucket;
+    return bucket.filter((change) => this.orderOf(change) > epoch);
+  }
+  origin(unit) {
+    if (!this.fold.units.has(unit)) return void 0;
+    const bucket = this.history(unit);
+    return bucket.length > 0 ? bucket[bucket.length - 1] : void 0;
+  }
+  units(model) {
+    return unitsFromFold(this.fold, model);
+  }
+  evidence(scope) {
+    const index = /* @__PURE__ */ new Map();
+    const indexed = /* @__PURE__ */ new Set();
+    const addSite = (change, unit) => {
+      if (indexed.has(change)) return;
+      indexed.add(change);
+      const evidence = change.evidenceItems ?? splitEvidence(change.evidence);
+      if (evidence.length === 0) return;
+      const site = {
+        changeId: change.id,
+        unit,
+        evidence: [...evidence],
+        sha256: [...change.evidenceSha256 ?? []]
+      };
+      for (const citation of evidence) {
+        const bucket = index.get(citation);
+        if (bucket) bucket.push(site);
+        else index.set(citation, [site]);
+      }
+    };
+    if (scope === "all-time") {
+      for (const change of this.all) {
+        if (change.applied) addSite(change, unitOf(change));
+      }
+      return index;
+    }
+    for (const unit of this.fold.units.keys()) {
+      const origin = this.origin(unit);
+      if (origin) addSite(origin, unit);
+    }
+    for (const [key, change] of this.fold.elements) {
+      if (change.op === "remove_element") continue;
+      addSite(change, key);
+    }
+    return index;
+  }
+  get cleared() {
+    return this.fold.cleared;
+  }
+  get elements() {
+    return this.fold.elements;
+  }
+  elementOrigin(elementKey) {
+    return this.fold.elements.get(elementKey);
+  }
+  get tombstones() {
+    return this.fold.tombstones;
+  }
+  /** Canonical position of a change: its index in the sorted `all` list. */
+  orderOf(change) {
+    return this.orderIndex.get(change) ?? -1;
+  }
+  get orderIndex() {
+    if (!this.orderCache) {
+      this.orderCache = new Map(this.all.map((change, index) => [change, index]));
+    }
+    return this.orderCache;
+  }
+  orderCache;
+};
+function createChangeLog(changes) {
+  return new ChangeLogImpl(changes);
+}
+
+// iNNfo/packages/nn-core/src/changelog/load.ts
+function loggedChanges(cs) {
+  const changesetStatus = cs.status ?? "proposed";
+  return cs.changes.map((change, index) => {
+    const status = change.status ?? changesetStatus;
+    return {
+      id: change.id,
+      changeset: cs.path,
+      index,
+      status,
+      changesetStatus,
+      appliedAt: change.applied_at ?? cs.appliedAt,
+      batch: change.batch,
+      author: change.author ?? cs.author,
+      op: change.op,
+      target: change.target,
+      resolvedTarget: change.resolved_target,
+      evidence: change.evidence,
+      evidenceItems: splitEvidence(change.evidence),
+      evidenceSha256: change.evidence_sha256,
+      from: change.from,
+      to: change.to,
+      concept: change.concept,
+      name: change.name,
+      slug: change.slug,
+      resolvedSlug: change.resolved_slug,
+      notes: change.notes,
+      resolution: change.resolution,
+      fields: change.fields,
+      applied: status === "applied"
+    };
+  });
+}
+function buildChangeLogFromChangesets(changesets) {
+  const changes = [];
+  for (const cs of changesets) changes.push(...loggedChanges(cs));
+  return createChangeLog(changes);
+}
+
 // iNNfo/packages/nn-core/src/writeOnce/plan.ts
 function latestOfFamily(members) {
   let latest;
@@ -9934,14 +10607,14 @@ var path = __toESM(require("node:path"), 1);
 var import_node_crypto = require("node:crypto");
 
 // iNNfo/packages/nn-core/src/cognitivize/sidecar.ts
-var import_yaml7 = __toESM(require_dist(), 1);
+var import_yaml8 = __toESM(require_dist(), 1);
 var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
 var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 function parseSidecarFrontmatter(text) {
   const match = FRONTMATTER_RE.exec(text);
   if (!match) return null;
   try {
-    const value = (0, import_yaml7.parse)(match[1]);
+    const value = (0, import_yaml8.parse)(match[1]);
     return value && typeof value === "object" && !Array.isArray(value) ? value : null;
   } catch {
     return null;
@@ -10061,245 +10734,17 @@ async function writeOnce(root, t, bytes, o = {}) {
   }
 }
 
-// iNNfo/packages/nn-core/src/changeset/types.ts
-var CHANGE_OPS = [
-  "update_field",
-  "add_element",
-  "remove_element",
-  "rename_element",
-  "rename_concept",
-  "update_matrix_cell",
-  "update_concept_text",
-  "update_concept_field",
-  "remove_matrix",
-  "add_matrix",
-  "comment",
-  "add_model",
-  "freeze_slugs",
-  "bump_version"
+// iNNfo/packages/nn-core/src/changeset/hasher.ts
+var EXECUTION_FACT_KEYS = [
+  "resolved_slug",
+  "resolved_target",
+  "evidence_sha256"
 ];
-function isChangeStatus(val) {
-  return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);
-}
-function isChangeOp(val) {
-  return typeof val === "string" && CHANGE_OPS.includes(val);
-}
-function addModelProblems(change) {
-  if (change.op !== "add_model") return [];
-  const problems = [];
-  const id = change.id;
-  for (const key of ["from", "to", "base_hash"]) {
-    if (change[key] !== void 0) {
-      problems.push(`change "${id}": add_model must not carry "${key}"`);
-    }
-  }
-  if (change.concept !== void 0 || change.fields !== void 0 || change.slug !== void 0) {
-    problems.push(`change "${id}": add_model must not carry element payload (concept, slug, fields)`);
-  }
-  if (!change.blueprint_name) problems.push(`change "${id}": add_model requires "blueprint_name"`);
-  if (!change.blueprint_url) problems.push(`change "${id}": add_model requires "blueprint_url"`);
-  const target = change.target;
-  if (!target || target.includes("@") || target.includes("&") || target.includes("..") || /^[a-zA-Z]:/.test(target) || /[\\/]/.test(target)) {
-    problems.push(`change "${id}": add_model target must be a plain model id (no "@", "&", "..", path separators, or absolute path)`);
-  }
-  return problems;
-}
-
-// iNNfo/packages/nn-core/src/changeset/parser.ts
-var import_yaml8 = __toESM(require_dist(), 1);
-function stripQuotes(str2) {
-  const trimmed = str2.trim();
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (typeof parsed === "string") return parsed;
-    } catch {
-    }
-    return trimmed.slice(1, -1);
-  }
-  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
-    return trimmed.slice(1, -1);
-  }
-  return trimmed;
-}
-function parseFieldsValue(str2) {
-  const trimmed = str2.trim();
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (typeof parsed === "object" && parsed !== null) {
-        const out = {};
-        for (const [k, v] of Object.entries(parsed)) {
-          out[k] = String(v);
-        }
-        return out;
-      }
-    } catch {
-    }
-  }
-  return void 0;
-}
-var CHANGESET_FRONTMATTER_INVALID = "CHANGESET_FRONTMATTER_INVALID";
-function invalidFrontmatter(detail) {
-  throw new Error(`${CHANGESET_FRONTMATTER_INVALID}: ${detail}`);
-}
-function validateFrontmatter(fm) {
-  if (fm.level !== 3) {
-    invalidFrontmatter("level must be 3");
-  }
-  const parent = fm.parent_spec;
-  if (typeof parent !== "object" || parent === null || Array.isArray(parent)) {
-    invalidFrontmatter("parent_spec must be an object with name and url");
-  }
-  const parentObj = parent;
-  if (parentObj.name !== "changes") {
-    invalidFrontmatter('parent_spec.name must be "changes"');
-  }
-  if (typeof parentObj.url !== "string" || parentObj.url.length === 0) {
-    invalidFrontmatter("missing parent_spec.url");
-  }
-  if (typeof fm.spec_version !== "string" || fm.spec_version.length === 0) {
-    invalidFrontmatter("missing spec_version");
-  }
-  if (typeof fm.blueprint_version !== "string" || fm.blueprint_version.length === 0) {
-    invalidFrontmatter("missing blueprint_version");
-  }
-  if (!isChangeStatus(fm.status)) {
-    invalidFrontmatter(
-      "status must be one of proposed|applied|partially_applied|rejected|conflict"
-    );
-  }
-  return fm;
-}
-function parseChangeset(rawContent) {
-  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(rawContent.trimStart());
-  if (!frontmatterMatch) {
-    invalidFrontmatter("missing frontmatter block");
-  }
-  const yamlText = frontmatterMatch[1];
-  const body = frontmatterMatch[2];
-  let parsedYaml;
-  try {
-    parsedYaml = (0, import_yaml8.parse)(yamlText);
-  } catch {
-    invalidFrontmatter("frontmatter is not valid YAML");
-  }
-  if (typeof parsedYaml !== "object" || parsedYaml === null || Array.isArray(parsedYaml)) {
-    invalidFrontmatter("missing frontmatter block");
-  }
-  const frontmatter = validateFrontmatter(parsedYaml);
-  const changeHeadingRegex = /^##\s+NN\s+Change:\s*(.+)$/i;
-  const lines = body.split(/\r?\n/);
-  const changes = [];
-  let currentChange = null;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const headingMatch = changeHeadingRegex.exec(line.trim());
-    if (headingMatch) {
-      if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
-        changes.push(currentChange);
-      }
-      currentChange = {
-        id: headingMatch[1].trim()
-      };
-      continue;
-    }
-    if (!currentChange) continue;
-    const propMatch = /^([a-zA-Z0-9_-]+)::\s*(.*)$/.exec(line.trim());
-    if (!propMatch) continue;
-    const key = propMatch[1].trim();
-    const rawVal = propMatch[2].trim();
-    switch (key) {
-      case "op":
-        if (!isChangeOp(rawVal)) {
-          throw new Error(`Invalid changeset op: "${rawVal}"`);
-        }
-        currentChange.op = rawVal;
-        break;
-      case "target":
-        currentChange.target = rawVal;
-        break;
-      case "from":
-        currentChange.from = stripQuotes(rawVal);
-        break;
-      case "to":
-        currentChange.to = stripQuotes(rawVal);
-        break;
-      case "base_hash":
-        currentChange.base_hash = stripQuotes(rawVal);
-        break;
-      case "concept":
-        currentChange.concept = rawVal;
-        break;
-      case "name":
-        currentChange.name = stripQuotes(rawVal);
-        break;
-      case "slug":
-        currentChange.slug = rawVal;
-        break;
-      case "fields": {
-        const parsedObj = parseFieldsValue(rawVal);
-        if (parsedObj) {
-          currentChange.fields = parsedObj;
-        }
-        break;
-      }
-      case "author":
-        currentChange.author = stripQuotes(rawVal);
-        break;
-      case "notes":
-        currentChange.notes = stripQuotes(rawVal);
-        break;
-      case "evidence":
-        currentChange.evidence = stripQuotes(rawVal);
-        break;
-      case "blueprint_name":
-        currentChange.blueprint_name = stripQuotes(rawVal);
-        break;
-      case "blueprint_url":
-        currentChange.blueprint_url = stripQuotes(rawVal);
-        break;
-      case "knowledge_version":
-        currentChange.knowledge_version = stripQuotes(rawVal);
-        break;
-      case "applied_at":
-        currentChange.applied_at = stripQuotes(rawVal);
-        break;
-      case "batch":
-        currentChange.batch = stripQuotes(rawVal);
-        break;
-      case "status":
-        if (!isChangeStatus(rawVal)) {
-          throw new Error(`Invalid changeset status: "${rawVal}"`);
-        }
-        currentChange.status = rawVal;
-        break;
-      case "resolution":
-        currentChange.resolution = stripQuotes(rawVal);
-        break;
-      case "resolved_slug":
-        currentChange.resolved_slug = rawVal;
-        break;
-      default:
-        break;
-    }
-  }
-  if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
-    changes.push(currentChange);
-  }
-  const problems = changes.flatMap(addModelProblems);
-  if (problems.length > 0) {
-    throw new Error(`Invalid add_model change: ${problems.join("; ")}`);
-  }
-  return {
-    frontmatter,
-    changes,
-    rawContent
-  };
-}
 
 // iNNfo/packages/nn-core/src/changeset/serializer.ts
 var import_yaml9 = __toESM(require_dist(), 1);
+var ANNOTATION_KEYS = ["status", "resolution", "applied_at", "batch", ...EXECUTION_FACT_KEYS];
+var ANNOTATION_RE = new RegExp(`^(${ANNOTATION_KEYS.join("|")})::`);
 
 // iNNfo/packages/nn-core/src/console/element-hash.ts
 function canonicalJsonStringify(value) {
@@ -10551,9 +10996,8 @@ function groupCitationsByField(citations) {
 function citationFieldsFor(conceptName, fields, schema) {
   const result = /* @__PURE__ */ new Set();
   for (const fieldName of Object.keys(fields)) {
-    if (SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())) {
-      result.add(fieldName);
-    }
+    const lower = fieldName.toLowerCase();
+    if (lower === "sources" || lower === "source") result.add(fieldName);
   }
   if (schema) {
     const schemaFields = Array.isArray(schema.fields) ? schema.fields : typeof schema.fields === "object" && schema.fields !== null ? Object.values(schema.fields).flat() : [];
@@ -10569,6 +11013,27 @@ function citationFieldsFor(conceptName, fields, schema) {
 // iNNfo/packages/nn-core/src/console/element-history.ts
 var import_promises = require("node:fs/promises");
 var import_node_path = require("node:path");
+function hopOf(change) {
+  return {
+    changeId: change.id,
+    batch: change.batch,
+    op: change.op,
+    author: change.author,
+    evidence: change.evidence,
+    appliedAt: change.appliedAt,
+    from: change.from,
+    to: change.to
+  };
+}
+function deriveValueHistory(log, unit) {
+  return log.history(unit).map(hopOf);
+}
+function deriveFieldOrigin(log, unit) {
+  const change = log.origin(unit);
+  if (!change) return null;
+  const { changeId, batch, author, evidence, appliedAt, from, to } = hopOf(change);
+  return { changeId, batch, author, evidence, appliedAt, from, to };
+}
 function isChangesetFile(name) {
   if (!isNNName(name) || isSidecarName(name)) return false;
   const parsed = parseName(name);
@@ -10583,8 +11048,15 @@ function parseChangesetTarget(target) {
     elementPart: rest.split("&")[0].trim()
   };
 }
-function normalizeAddressKey(value) {
-  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+function fieldOfUnit(unit) {
+  const at = String(unit).indexOf("@");
+  if (at === -1) return void 0;
+  const rest = String(unit).slice(at + 1);
+  const amp = rest.indexOf("&");
+  if (amp === -1) return void 0;
+  const field = rest.slice(amp + 1);
+  if (!field || field.includes("&")) return void 0;
+  return field;
 }
 function stripWrappingQuotes(value) {
   if (typeof value !== "string") return value;
@@ -10632,6 +11104,8 @@ async function loadChangesetRecords(rootDir) {
         evidence: c.evidence,
         applied_at: c.applied_at,
         batch: c.batch,
+        // Stamped by apply from S1b on; the console reads a persisted changeset.
+        resolved_target: c.resolved_target,
         from: c.from,
         to: c.to,
         concept: c.concept,
@@ -10643,36 +11117,50 @@ async function loadChangesetRecords(rootDir) {
   }
   return records;
 }
-function attachChangesetHistory(elements, changesets, resolveEvidence) {
+function historyItem(change, resolveEvidence) {
+  return {
+    id: change.id,
+    op: change.op,
+    target: unitOf(change),
+    author: change.author,
+    timestamp: change.appliedAt,
+    notes: stripWrappingQuotes(change.notes),
+    status: change.status,
+    evidence: change.evidence,
+    ...change.evidence && resolveEvidence ? { evidenceCitation: resolveEvidence(change.evidence) } : {},
+    from: change.from,
+    to: change.to,
+    concept: change.concept,
+    name: change.name,
+    fields: change.fields ? { ...change.fields } : void 0,
+    resolution: change.resolution
+  };
+}
+function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltLog) {
   if (!Array.isArray(changesets) || changesets.length === 0) return;
-  for (const cs of changesets) {
-    for (const change of cs.changes) {
-      const { elementPart } = parseChangesetTarget(change.target);
-      if (!elementPart) continue;
-      const key = normalizeAddressKey(elementPart);
-      for (const el of elements) {
-        if (normalizeAddressKey(el.id) !== key && normalizeAddressKey(el.name) !== key) continue;
-        const item = {
-          id: change.id,
-          op: change.op,
-          target: change.target,
-          author: change.author || cs.author,
-          timestamp: change.applied_at || cs.appliedAt,
-          notes: stripWrappingQuotes(change.notes),
-          status: change.status || cs.status,
-          evidence: change.evidence,
-          ...change.evidence && resolveEvidence ? { evidenceCitation: resolveEvidence(change.evidence) } : {},
-          from: change.from,
-          to: change.to,
-          concept: change.concept,
-          name: change.name,
-          fields: change.fields,
-          resolution: change.resolution
-        };
-        if (!el.history) el.history = [];
-        el.history.push(item);
-      }
+  const log = prebuiltLog ?? buildChangeLogFromChangesets(changesets);
+  if (log.all.length === 0) return;
+  for (const el of elements) {
+    const keys = new Set(
+      [el.slug, el.id, el.name].filter((value) => typeof value === "string" && value.length > 0).map((value) => value.toLowerCase())
+    );
+    if (keys.size === 0) continue;
+    const provenance = {};
+    for (const change of log.all) {
+      const unit = unitOf(change);
+      const { elementPart } = parseChangesetTarget(unit);
+      if (!elementPart || !keys.has(elementPart.toLowerCase())) continue;
+      if (!el.history) el.history = [];
+      el.history.push(historyItem(change, resolveEvidence));
+      if (!change.applied) continue;
+      const field = fieldOfUnit(unit);
+      if (!field || provenance[field]) continue;
+      provenance[field] = {
+        history: deriveValueHistory(log, unit),
+        origin: deriveFieldOrigin(log, unit)
+      };
     }
+    if (Object.keys(provenance).length > 0) el.provenance = provenance;
   }
 }
 
@@ -10853,6 +11341,16 @@ function buildConsolePayload(options) {
   const template = fm.target_blueprint || fm.blueprint || fm.template || void 0;
   const modelVersion = fm.knowledge_version || fm.version || "V_0-1-0";
   const modelId = normalizeModelId(modelPath, title);
+  const changeLog = Array.isArray(changesets) && changesets.length > 0 ? buildChangeLogFromChangesets(changesets) : void 0;
+  const cellUnitBySuffix = /* @__PURE__ */ new Map();
+  if (changeLog) {
+    for (const unit of changeLog.units()) {
+      const at = unit.key.indexOf("@");
+      if (at === -1) continue;
+      const suffix = unit.key.slice(at + 1);
+      if (!cellUnitBySuffix.has(suffix)) cellUnitBySuffix.set(suffix, unit.key);
+    }
+  }
   const rawElements = [];
   const elementsByName = /* @__PURE__ */ new Map();
   const elementsById = /* @__PURE__ */ new Map();
@@ -10979,6 +11477,24 @@ function buildConsolePayload(options) {
           slug: elementsByName.get(c.toLowerCase())?.slug || slugify(c)
         };
       }
+      let cellProvenance;
+      if (changeLog) {
+        const matrixSlug = slugify(mat.name);
+        for (const cell of mat.cells ?? []) {
+          if (String(cell.value ?? "").trim() === "") continue;
+          const suffix = `${matrixSlug}&${headRows[cell.row]?.slug}&${headCols[cell.col]?.slug}`;
+          const unitKey = cellUnitBySuffix.get(suffix);
+          if (!unitKey) continue;
+          const origin = changeLog.origin(unitKey);
+          if (!origin) continue;
+          cellProvenance ??= {};
+          cellProvenance[cell.row] ??= {};
+          cellProvenance[cell.row][cell.col] = {
+            history: deriveValueHistory(changeLog, unitKey),
+            origin: deriveFieldOrigin(changeLog, unitKey)
+          };
+        }
+      }
       matrices.push({
         name: mat.name,
         slug: slugify(mat.name),
@@ -10987,7 +11503,8 @@ function buildConsolePayload(options) {
         rows,
         cols,
         head: { rows: headRows, cols: headCols },
-        cells: cellsObj
+        cells: cellsObj,
+        ...cellProvenance ? { provenance: cellProvenance } : {}
       });
     }
   }
@@ -11000,7 +11517,8 @@ function buildConsolePayload(options) {
   attachChangesetHistory(
     elements,
     changesets,
-    resolver ? (evidence) => resolveEvidenceCitation(evidence, resolver, modelPath || "") : void 0
+    resolver ? (evidence) => resolveEvidenceCitation(evidence, resolver, modelPath || "") : void 0,
+    changeLog
   );
   const genTime = generated || (/* @__PURE__ */ new Date()).toISOString();
   const normalizedSource = modelPath ? modelPath.split("\\").join("/").replace(/^models\//i, "kNNowledge/").replace(/^.*?\/(kNNowledge\/)/i, "$1") : fm.title ? `kNNowledge/${slugify(fm.title)}_NN.md` : "kNNowledge/Model_NN.md";
@@ -11030,90 +11548,6 @@ function buildConsolePayload(options) {
       matrices
     }
   };
-}
-
-// iNNfo/packages/nn-core/src/console/provenance.ts
-function changeFieldPart(target) {
-  const { elementPart } = parseChangesetTarget(target);
-  const amp = String(target).indexOf("&");
-  if (amp === -1) return null;
-  const field = String(target).slice(amp + 1);
-  if (field.includes("&")) return null;
-  if (!elementPart || !field) return null;
-  return { elementPart, field };
-}
-function hopAppliedAt(change, cs) {
-  return change.applied_at || cs.appliedAt || "";
-}
-function deriveValueHistory(changes, target) {
-  const wanted = changeFieldPart(target);
-  if (!wanted) return [];
-  const key = `${normalizeAddressKey(wanted.elementPart)}\0${wanted.field.toLowerCase()}`;
-  const hops = [];
-  for (const cs of changes) {
-    for (const change of cs.changes) {
-      const part = changeFieldPart(change.target);
-      if (!part) continue;
-      if (`${normalizeAddressKey(part.elementPart)}\0${part.field.toLowerCase()}` !== key) continue;
-      hops.push({
-        changeId: change.id,
-        batch: change.batch,
-        op: change.op,
-        author: change.author || cs.author,
-        evidence: change.evidence,
-        appliedAt: hopAppliedAt(change, cs),
-        from: change.from,
-        to: change.to
-      });
-    }
-  }
-  hops.sort((a, b) => a.appliedAt < b.appliedAt ? -1 : a.appliedAt > b.appliedAt ? 1 : 0);
-  return hops;
-}
-function deriveFieldOrigin(changes, element, field) {
-  const hops = deriveValueHistory(changes, `${element}@${element}&${field}`);
-  if (hops.length === 0) return null;
-  const last = hops[hops.length - 1];
-  return {
-    changeId: last.changeId,
-    batch: last.batch,
-    author: last.author,
-    evidence: last.evidence,
-    appliedAt: last.appliedAt,
-    from: last.from,
-    to: last.to
-  };
-}
-function detectUnrecordedEdits(elements, changes) {
-  const lastTo = /* @__PURE__ */ new Map();
-  for (const cs of changes) {
-    for (const change of cs.changes) {
-      if (change.status !== "applied") continue;
-      if (change.to === void 0) continue;
-      const part = changeFieldPart(change.target);
-      if (!part) continue;
-      const key = `${normalizeAddressKey(part.elementPart)}\0${part.field.toLowerCase()}`;
-      lastTo.set(key, change.to);
-    }
-  }
-  const out = [];
-  for (const el of elements) {
-    if (!el.fields) continue;
-    for (const [field, current] of Object.entries(el.fields)) {
-      const key = `${normalizeAddressKey(el.id)}\0${field.toLowerCase()}`;
-      if (!lastTo.has(key)) continue;
-      const expected = lastTo.get(key);
-      if (String(current ?? "") !== String(expected ?? "")) {
-        out.push({
-          code: "EDITED_WITHOUT_RECORD",
-          severity: "warning",
-          path: `${el.id}&${field}`,
-          message: `field "${field}" of "${el.id}" is "${String(current ?? "")}" but the last recorded change sets it to "${expected}"; record the change or revert`
-        });
-      }
-    }
-  }
-  return out;
 }
 
 // iNNfo/packages/nn-core/src/console/schema-resolution.ts
@@ -11461,6 +11895,7 @@ function unitHome(address) {
   KNOWN_AGENT_TOOL_IDS,
   NORMALIZED_KNOWN_AGENT_TOOL_IDS,
   attachChangesetHistory,
+  buildChangeLogFromChangesets,
   buildConsolePayload,
   buildConsoleSchemaSlot,
   canonicalJsonStringify,
@@ -11474,7 +11909,6 @@ function unitHome(address) {
   createFsSourceResolver,
   deriveFieldOrigin,
   deriveValueHistory,
-  detectUnrecordedEdits,
   displayStem,
   extractExcerpt,
   findEnclosingChangeBlock,
@@ -11486,7 +11920,6 @@ function unitHome(address) {
   isSidecarName,
   latestOfFamily,
   loadChangesetRecords,
-  normalizeAddressKey,
   normalizeModelId,
   normalizeToolId,
   parentSpecNameOf,

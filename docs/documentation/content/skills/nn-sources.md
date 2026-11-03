@@ -1,7 +1,7 @@
 # nn-sources
 
 `nn-sources` is the ingestion and provenance skill. It bootstraps projects, scans raw documents,
-normalizes them into citable **sources**, and keeps the domaiNN lineage record in sync. It is the
+normalizes them into citable **sources**, and records every artifact through a change. It is the
 owner of the `[s] Sources` stage of the [nn](nn.md) job loop.
 
 Its two non-negotiable rules:
@@ -56,7 +56,7 @@ sidecar stays the single source of truth for physical and cryptographic facts.
 
 ## Citation contract
 
-Citations use the pointer grammar `sources:: [<path>@<unit>, ...]` — always a bracketed list, with
+Citations live in the change `evidence:: <path>@<unit>` — one per change, with
 a domaiNN-relative path written in full (no implicit prefix).
 
 | Source kind | Unit | Example |
@@ -85,7 +85,7 @@ node scripts/index.js <flag> [--src "<project-dir>"]
 | `--dest <dir>` `--name <n>` | Bootstrap a new project at a destination parent folder. |
 | `--scan` | Walk `sources/import/` and `sources/conversations/`, cognitivizing every raw file that lacks an up-to-date sidecar. |
 | `--cognitivize <file\|dir>` | Cognitivize one file or a directory recursively (skips sidecars, `_NN.md`, and `staging/`). |
-| `--normalize-file "<path>"` | Atomically refresh one source file, audit downstream citations, and refresh the lineage record. |
+| `--normalize-file "<path>"` | Atomically refresh one source file and audit downstream citations. |
 | `--check-impact` | Audit every kNNowledge citation for drifted or missing anchors; exits non-zero on drift. |
 | `--import-url "<url>"` | Download a resource into `sources/import/` as a write-once, UTC-suffixed family member. |
 | `--scan-external` | Scan declared external watch roots; classify changes as `NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, or `DISCONNECTED`. |
@@ -95,7 +95,6 @@ node scripts/index.js <flag> [--src "<project-dir>"]
 | `--converge <family> [--json] [--plan]` | Produce a read-only convergence proposal for a timestamped source family. |
 | `--converge-mark <family> --version <v>` | Mark a convergence proposal applied so re-running is a no-op. |
 | `--promote-conv "<file>" --format full` | Promote a session transcript into `sources/conversations/`. |
-| `--lineage [--check]` | Regenerate the lineage record, or report drift against the filesystem. |
 | `--unlink "<path-or-stem>"` | Consent-gated purge of a source, its sidecar, and matching assets. |
 | `--gc [--apply --yes --paths <p,...>]` | Dry-run list (or consent-gated delete) of superseded, uncited family members. |
 
@@ -107,21 +106,10 @@ node scripts/extract.js "<file>"
 
 ## Lineage synchronization
 
-The lineage record (`<Project>_cogNNitive_NN.md`) keeps three sections in sync with the filesystem
-on every build or refresh, using **idempotent replace**:
-
-- `# NN Sources` — one entry per cognitivized raw file.
-- `# NN ModelRecords` — one entry per kNNowledge document.
-- `# NN Artifacts` — one entry per generated file that is a write-once family member.
-
-`# NN Procedures` is different: it is an **append-only run log**. Scripted runs append their own
-entry; the agent adds entries by hand for non-scripted research steps.
-
-```bash
-node scripts/index.js --lineage --check
-```
-
-reports drift, including hand-edited managed sections and hash mismatches.
+Lineage is **computed, never persisted**: `read_lineage` projects sources, models,
+artifacts and changes on every call, with the edges derived from the applied changes. There
+is no record to regenerate and no drift check to run; `--check-impact` audits citations and
+`check_domain` reports provenance.
 
 ## Replacing a domaiNN on the retired layout
 

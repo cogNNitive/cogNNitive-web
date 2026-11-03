@@ -42,28 +42,32 @@ uses the `@` pointer grammar:
 Rules that hold everywhere:
 
 - The path is **`domaiNN`-relative and written in full** — there is no implicit prefix.
-- Multiple citations use a bracketed list: `sources:: [a.md@## Intro, b.csv@SKU-42]`.
-- A single value may be written without brackets.
+- A change cites one source per `evidence::` line; a change that needs several evidence items
+  repeats the key (or uses a bracketed list `[a.md@## Intro, b.csv@SKU-42]`).
 - A **binary** file cannot be cited directly; cite its sidecar instead.
 - There is **no `src-NNN` identifier system and no line-number anchors** (`#L1-L10`).
   Anchors are human-readable headings, CSV row keys, or JSON Pointers.
 
-A Citation appears either as the reserved `sources::` property or as a Field declared
-`type:: citation`.
+A Citation appears as the `evidence::` of an **applied change**. A kNNowledge unit has no
+citation field of its own: the reserved property and `type:: citation` are banned on Level 3,
+and its provenance is derived from the change log.
 
 ## Lineage
 
-The **Lineage** is the record `<project>_cogNNitive_NN.md`. It is the map of the whole
-`domaiNN`, and it is found by its role — never by its file name or version. It carries:
+The **Lineage** is **computed, never persisted**. `read_lineage` projects the inventory from
+the filesystem and the edges from the applied changes:
 
-- `# NN Sources` — one entry per cognitivized raw file.
-- `# NN ModelRecords` — one entry per knowledge document.
-- `# NN Artifacts` — one entry per generated file that is a write-once family member or
-  declares upstream sources.
-- `# NN Procedures` — an append-only run log.
+- **sources** — one entry per cognitivized raw file, with its sidecar and family version.
+- **models** — one entry per knowledge document, with its `knowledge_version` and template.
+- **artifacts** — one entry per generated file that is a write-once family member or has a
+  `produce_artifact` change.
+- **changes** — the changesets, each with its changes and status.
+- **edges** — `evidence` (cited file → owner), `target` (unit → owner) and `produced`
+  (artifact → changeset), all derived from the applied changes; live evidence by default,
+  all-time on request.
 
-The first three sections are **idempotently re-synced** from the filesystem on every
-build; the procedures journal only grows.
+There is no record to refresh, so there is nothing to drift: the projection is recomputed on
+every call.
 
 ## `resolve_sources`
 
@@ -74,19 +78,11 @@ content, returning one entry per reference with fields such as `path`, `anchor`,
 produced the cited content (`agent`, `human`, or `document`), resolved from the `author::`
 of the change block the citation anchors to. It never writes files.
 
-## The drift gate
+## The drift check
 
-The **drift gate** is the consistency check that the managed view sections of the
-persisted lineage record equal a fresh projection computed from the filesystem. If a
-managed line is edited by hand, the gate reports `LINEAGE_DRIFT` naming the record and
-the section, and the record is left byte-identical (the check is read-only). Your agent
-runs it through the `nn-sources` lineage check and the domain check; the cogNNitive
-repository runs it in its own build gate. Regenerating the record restores agreement.
-
-## See also
-
-- [The knowledge lifecycle](knowledge-lifecycle.md)
-- [Validator behavior](validator-behavior.md)
-- [Import and cite sources](../how-to/import-sources.md)
-- [Sync lineage and back up a domaiNN](../how-to/sync-and-backup.md)
-- [MCP tools](../reference/mcp-tools.md)
+Drift is the difference between the applied changes and the files on disk. `check_domain`
+returns a `provenance` report: `EDITED_WITHOUT_RECORD` for a value edited by hand after the
+change that set it, `UNIT_WITHOUT_RECORD` for a unit no change accounts for,
+`EVIDENCE_UNKNOWN` for a change with no evidence, and `EVIDENCE_SOURCE_CHANGED` when the
+cited bytes moved. `strict: true` replays the changes and compares the serialized body, so a
+whitespace-only edit is drift there and not in the default fold. The check is read-only.

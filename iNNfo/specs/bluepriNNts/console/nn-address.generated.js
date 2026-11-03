@@ -72,7 +72,6 @@ var nnAddress = (() => {
     };
   }
   var CORE_BLUEPRINT_ROLE = {
-    cognnitive: "lineage-record",
     sidecar: "sidecar",
     changes: "changeset",
     workspace: "catalog",
@@ -234,6 +233,43 @@ var nnAddress = (() => {
     }
     const [unitRaw, ...subunits] = decoded;
     if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
+      if (unitRaw.startsWith("concept:")) {
+        const slug = unitRaw.slice("concept:".length);
+        if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
+        const unit3 = {
+          kind: "header",
+          level: 1,
+          text: slug,
+          slug
+        };
+        return {
+          filePath: resolved.filePath,
+          fileName: basename(resolved.filePath),
+          slug,
+          kind: "model",
+          unit: unit3,
+          subunits,
+          raw: clean
+        };
+      }
+      if (unitRaw.startsWith("matrix:")) {
+        const slug = unitRaw.slice("matrix:".length);
+        if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
+        const unit3 = {
+          kind: "matrix",
+          matrixSlug: slug,
+          ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
+        };
+        return {
+          filePath: resolved.filePath,
+          fileName: basename(resolved.filePath),
+          slug,
+          kind: "model",
+          unit: unit3,
+          subunits,
+          raw: clean
+        };
+      }
       if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
       if (subunits.length === 2) {
         const unit3 = {
@@ -241,21 +277,6 @@ var nnAddress = (() => {
           matrixSlug: unitRaw,
           rowSlug: subunits[0],
           colSlug: subunits[1]
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug: unitRaw,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      if (subunits.length === 0 && /(?:^matrix-|-matrix$)/i.test(unitRaw)) {
-        const unit3 = {
-          kind: "matrix",
-          matrixSlug: unitRaw
         };
         return {
           filePath: resolved.filePath,

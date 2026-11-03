@@ -156,7 +156,7 @@ async function runTests() {
       assert.strictEqual(res.watch_roots.declared, 0);
     });
 
-    await test('reports watch_roots.declared = 0 with no lineage record', async () => {
+    await test('reports watch_roots.declared = 0 with no entrypoint', async () => {
       const ws = path.join(tmpDir, 'no-record-ws');
       fs.mkdirSync(ws, { recursive: true });
       const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
@@ -174,10 +174,10 @@ async function runTests() {
       assert.strictEqual(res.watch_roots.declared, 2);
     });
 
-    await test('finds the lineage record under kNNowledge/', async () => {
+    await test('finds the domaiNN entrypoint under kNNowledge/', async () => {
       const ws = path.join(tmpDir, 'kn-roots-ws');
       fs.mkdirSync(path.join(ws, 'kNNowledge'), { recursive: true });
-      fs.writeFileSync(path.join(ws, 'kNNowledge', 'Acme_cogNNitive_NN.md'), '## NN External Watch Roots:\n- Root: "D:/X"\n');
+      fs.writeFileSync(path.join(ws, 'kNNowledge', 'domaiNN_NN.md'), '## NN External Watch Roots:\n- Root: "D:/X"\n');
       const res = await runProbe({ workspaceDir: ws, skipPreflight: true });
       assert.strictEqual(res.watch_roots.declared, 1);
     });

@@ -69,7 +69,7 @@ async function run() {
     assert.strictEqual(path.basename(findFamilyManifest(root)), 'Acme_cogNNitive_NN.md');
   });
 
-  it('a sidecar named like a lineage record never supplies watch roots', (root) => {
+  it('only the domaiNN entrypoint supplies watch roots', (root) => {
     const watched = path.join(root, 'watched');
     write(watched, 'drop.csv', 'a,b\n1,2\n');
     write(
@@ -78,8 +78,14 @@ async function run() {
       `## NN External Watch Roots:\n- Root: "${watched.replace(/\\/g, '/')}"\n  Cadence: "dynamic"\n  Recursive: true\n  Filter: ["*.csv"]\n`,
     );
     write(root, 'kNNowledge/Aaa_workspace.csv_sidecar_NN.md', SIDECAR);
-    const result = scanAllWatchRoots(root);
-    assert.strictEqual(result.roots.length, 1);
+    assert.strictEqual(scanAllWatchRoots(root).roots.length, 0, 'a retired record name declares nothing');
+
+    write(
+      root,
+      'domaiNN_NN.md',
+      `## NN External Watch Roots:\n- Root: "${watched.replace(/\\/g, '/')}"\n  Cadence: "dynamic"\n  Recursive: true\n  Filter: ["*.csv"]\n`,
+    );
+    assert.strictEqual(scanAllWatchRoots(root).roots.length, 1, 'the entrypoint declares the roots');
   });
 
   it('source families ignore sidecars next to stamped files', (root) => {

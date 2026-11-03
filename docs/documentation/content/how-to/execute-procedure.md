@@ -35,7 +35,7 @@ If a step delegates to another skill (for example CLI ingestion to `nn-sources`)
 
 ## 4. Keep the record
 
-Every run appends `## NN Procedures:` entries to the lineage record, so the domain keeps a trace of what ran and when. If execution had to deviate from the declared steps, the agent captures the deviation and offers to update the procedure so the spec stays true.
+Every run records `produce_artifact` changes for the artifacts it writes, so the domain keeps a trace of what ran and when. If execution had to deviate from the declared steps, the agent captures the deviation and offers to update the procedure so the spec stays true.
 
 > [!NOTE]
 > Procedures are the agent's SOPs, not a script you maintain by hand. If a procedure is missing or wrong, ask your agent to create or edit it — that change goes through a changeset like any other model change.

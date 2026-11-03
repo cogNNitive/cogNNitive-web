@@ -147,8 +147,8 @@ async function curateCsvFile(input, options = {}) {
     serializeCsv(curated.rows),
     { inputs: insideProject ? [relInput] : [] },
   );
-  // The curated CSV cannot carry frontmatter, so its upstream edge (the raw file) lives in its sidecar.
-  await cognitivize(projectDir, written.path, insideProject ? { sources: [relInput] } : {});
+  // Provenance is the applied change: the sidecar records bytes, never an upstream key.
+  await cognitivize(projectDir, written.path);
 
   const firstKey = curated.rows[1] ? curated.rows[1][0] : '<key>';
 

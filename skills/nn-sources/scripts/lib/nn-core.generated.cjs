@@ -7377,9 +7377,6 @@ __export(trannsformPrimitives_exports, {
   CORE_BLUEPRINT_ROLE: () => CORE_BLUEPRINT_ROLE,
   ENTRYPOINT_FILENAME: () => ENTRYPOINT_FILENAME,
   IGNORED_DIRECTORIES: () => IGNORED_DIRECTORIES,
-  RECORD_BLUEPRINT: () => RECORD_BLUEPRINT,
-  RECORD_INNFO_URL: () => RECORD_INNFO_URL,
-  RECORD_TEMPLATE_URL: () => RECORD_TEMPLATE_URL,
   SIDECAR_BLUEPRINT: () => SIDECAR_BLUEPRINT,
   SIDECAR_SPEC_URL: () => SIDECAR_SPEC_URL,
   SPEC_FILENAME: () => SPEC_FILENAME,
@@ -7387,9 +7384,10 @@ __export(trannsformPrimitives_exports, {
   WriteOnceError: () => WriteOnceError,
   applyGc: () => applyGc,
   blueprintNameOf: () => blueprintNameOf,
+  buildChangeLog: () => buildChangeLog,
   buildSidecar: () => buildSidecar,
   canonicalModelId: () => canonicalModelId,
-  checkLineageDrift: () => checkLineageDrift,
+  changesetStampOf: () => changesetStampOf,
   checkNameInvariant: () => checkNameInvariant,
   checkPathBudget: () => checkPathBudget,
   cognitivize: () => cognitivize,
@@ -7399,11 +7397,11 @@ __export(trannsformPrimitives_exports, {
   createFsSourceResolver: () => createFsSourceResolver,
   displayStem: () => displayStem,
   ensureNNFilename: () => ensureNNFilename,
+  evidenceCitationSites: () => evidenceCitationSites,
   extractDeclaredCitations: () => extractDeclaredCitations,
   extractFileCitations: () => extractFileCitations,
   extractHeadings: () => extractHeadings,
   familyOf: () => familyOf,
-  findLineageRecord: () => findLineageRecord,
   formatMemberName: () => formatMemberName,
   formatNNName: () => formatNNName,
   formatUtcStamp: () => formatUtcStamp,
@@ -7415,6 +7413,7 @@ __export(trannsformPrimitives_exports, {
   isModelCandidate: () => isModelCandidate,
   isNNName: () => isNNName,
   isProcedureDocument: () => isProcedureDocument,
+  isRegenerableView: () => isRegenerableView,
   isSidecarName: () => isSidecarName,
   latestOfFamily: () => latestOfFamily,
   nextStamp: () => nextStamp,
@@ -7427,12 +7426,8 @@ __export(trannsformPrimitives_exports, {
   procedureIdOf: () => procedureIdOf,
   projectLineage: () => projectLineage,
   rawPathOfSidecar: () => rawPathOfSidecar,
-  readLineageRecord: () => readLineageRecord,
   readLineageSnapshot: () => readLineageSnapshot,
   readSidecarSha256: () => readSidecarSha256,
-  refreshExistingModel: () => refreshExistingModel,
-  renderLineageSections: () => renderLineageSections,
-  renderRecordFrontmatter: () => renderRecordFrontmatter,
   resolveJsonPointer: () => resolveJsonPointer,
   roleOf: () => roleOf,
   serializeKnowledgeUnitRef: () => serializeKnowledgeUnitRef,
@@ -7440,7 +7435,6 @@ __export(trannsformPrimitives_exports, {
   sidecarPathOf: () => sidecarPathOf,
   slugifyHeading: () => slugifyHeading,
   slugifyUnitHeading: () => slugifyUnitHeading,
-  splitTopLevelSections: () => splitTopLevelSections2,
   validateCitations: () => validateCitations,
   writeOnce: () => writeOnce
 });
@@ -7562,7 +7556,6 @@ function procedureIdOf(basename4) {
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
 var CORE_BLUEPRINT_ROLE = {
-  cognnitive: "lineage-record",
   sidecar: "sidecar",
   changes: "changeset",
   workspace: "catalog",
@@ -7598,12 +7591,27 @@ function isExcludedPath(path4) {
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
   return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
+function isRegenerableView(path4) {
+  const normalized = String(path4 ?? "").replace(/\\/g, "/").toLowerCase();
+  if (!normalized) return false;
+  const segs = normalized.split("/").filter((seg) => seg.length > 0);
+  if (segs[0] !== "artifacts") return false;
+  if (segs.length >= 3 && segs[1].endsWith("_console")) return true;
+  return segs.length === 2 && /^impact_audit_report.*\.md$/.test(segs[1]);
+}
 function familyOf(path4) {
   const normalized = path4.replace(/\\/g, "/");
   const parsed = parseName(baseOf(normalized));
   if (parsed.kind !== "file") return null;
   const slash = normalized.lastIndexOf("/");
   return { dir: slash < 0 ? "" : normalized.slice(0, slash), key: parsed.key, ext: parsed.ext };
+}
+function changesetStampOf(nameOrPath) {
+  const parsed = parseName(baseOf(nameOrPath));
+  if (parsed.kind !== "nn" || parsed.sidecarOf !== void 0) return null;
+  if (!/_changes$/i.test(parsed.stem)) return null;
+  const m = STAMP_SUFFIX_RE.exec(parsed.stem.slice(0, -"_changes".length));
+  return m ? { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 } : null;
 }
 function compareMembers(a, b) {
   const pa = parseName(baseOf(a));
@@ -7704,7 +7712,6 @@ function ensureNNFilename(name) {
 // iNNfo/packages/nn-core/src/sourceRef.ts
 var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
-var SOURCE_FIELD_NAMES = /* @__PURE__ */ new Set(["sources", "source"]);
 function parseSourceRef(input) {
   if (!input || typeof input !== "string") return null;
   const clean = input.trim();
@@ -9166,6 +9173,711 @@ var REQUIRED_BY_PRIMITIVE = {
   [MATRIX_DEFINITION]: ["source", "target"]
 };
 
+// iNNfo/packages/nn-core/src/changeset/parser.ts
+var import_yaml6 = __toESM(require_dist(), 1);
+
+// iNNfo/packages/nn-core/src/changeset/types.ts
+var CHANGE_OPS = [
+  "update_field",
+  "add_element",
+  "remove_element",
+  "rename_element",
+  "rename_concept",
+  "update_matrix_cell",
+  "update_concept_text",
+  "update_concept_field",
+  "remove_matrix",
+  "add_matrix",
+  "comment",
+  "add_model",
+  "freeze_slugs",
+  "bump_version",
+  "update_element_text",
+  "produce_artifact"
+];
+function isChangeStatus(val) {
+  return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);
+}
+function isChangeOp(val) {
+  return typeof val === "string" && CHANGE_OPS.includes(val);
+}
+function addModelProblems(change) {
+  if (change.op !== "add_model") return [];
+  const problems = [];
+  const id = change.id;
+  for (const key of ["from", "to", "base_hash"]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": add_model must not carry "${key}"`);
+    }
+  }
+  if (change.concept !== void 0 || change.fields !== void 0 || change.slug !== void 0) {
+    problems.push(`change "${id}": add_model must not carry element payload (concept, slug, fields)`);
+  }
+  if (!change.blueprint_name) problems.push(`change "${id}": add_model requires "blueprint_name"`);
+  if (!change.blueprint_url) problems.push(`change "${id}": add_model requires "blueprint_url"`);
+  const target = change.target;
+  if (!target || target.includes("@") || target.includes("&") || target.includes("..") || /^[a-zA-Z]:/.test(target) || /[\\/]/.test(target)) {
+    problems.push(`change "${id}": add_model target must be a plain model id (no "@", "&", "..", path separators, or absolute path)`);
+  }
+  return problems;
+}
+
+// iNNfo/packages/nn-core/src/changeset/parser.ts
+function stripQuotes(str2) {
+  const trimmed = str2.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "string") return parsed;
+    } catch {
+    }
+    return trimmed.slice(1, -1);
+  }
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+function parseJsonObject(str2) {
+  const trimmed = str2.trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return void 0;
+  try {
+    const parsed = JSON.parse(trimmed);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function parseStringArray(value) {
+  if (!Array.isArray(value)) return void 0;
+  return value.map((v) => String(v));
+}
+function parseFieldsValue(str2) {
+  const trimmed = str2.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null) {
+        const out = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          out[k] = String(v);
+        }
+        return out;
+      }
+    } catch {
+    }
+  }
+  return void 0;
+}
+var CHANGESET_FRONTMATTER_INVALID = "CHANGESET_FRONTMATTER_INVALID";
+function invalidFrontmatter(detail) {
+  throw new Error(`${CHANGESET_FRONTMATTER_INVALID}: ${detail}`);
+}
+function validateFrontmatter(fm) {
+  if (fm.level !== 3) {
+    invalidFrontmatter("level must be 3");
+  }
+  const parent = fm.parent_spec;
+  if (typeof parent !== "object" || parent === null || Array.isArray(parent)) {
+    invalidFrontmatter("parent_spec must be an object with name and url");
+  }
+  const parentObj = parent;
+  if (parentObj.name !== "changes") {
+    invalidFrontmatter('parent_spec.name must be "changes"');
+  }
+  if (typeof parentObj.url !== "string" || parentObj.url.length === 0) {
+    invalidFrontmatter("missing parent_spec.url");
+  }
+  if (typeof fm.spec_version !== "string" || fm.spec_version.length === 0) {
+    invalidFrontmatter("missing spec_version");
+  }
+  if (typeof fm.blueprint_version !== "string" || fm.blueprint_version.length === 0) {
+    invalidFrontmatter("missing blueprint_version");
+  }
+  if (!isChangeStatus(fm.status)) {
+    invalidFrontmatter(
+      "status must be one of proposed|applied|partially_applied|rejected|conflict"
+    );
+  }
+  return fm;
+}
+function parseChangeset(rawContent) {
+  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(rawContent.trimStart());
+  if (!frontmatterMatch) {
+    invalidFrontmatter("missing frontmatter block");
+  }
+  const yamlText = frontmatterMatch[1];
+  const body = frontmatterMatch[2];
+  let parsedYaml;
+  try {
+    parsedYaml = (0, import_yaml6.parse)(yamlText);
+  } catch {
+    invalidFrontmatter("frontmatter is not valid YAML");
+  }
+  if (typeof parsedYaml !== "object" || parsedYaml === null || Array.isArray(parsedYaml)) {
+    invalidFrontmatter("missing frontmatter block");
+  }
+  const frontmatter = validateFrontmatter(parsedYaml);
+  const changeHeadingRegex = /^##\s+NN\s+Change:\s*(.+)$/i;
+  const lines = body.split(/\r?\n/);
+  const changes = [];
+  let currentChange = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const headingMatch = changeHeadingRegex.exec(line.trim());
+    if (headingMatch) {
+      if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
+        changes.push(currentChange);
+      }
+      currentChange = {
+        id: headingMatch[1].trim()
+      };
+      continue;
+    }
+    if (!currentChange) continue;
+    const propMatch = /^([a-zA-Z0-9_-]+)::\s*(.*)$/.exec(line.trim());
+    if (!propMatch) continue;
+    const key = propMatch[1].trim();
+    const rawVal = propMatch[2].trim();
+    switch (key) {
+      case "op":
+        if (!isChangeOp(rawVal)) {
+          throw new Error(`Invalid changeset op: "${rawVal}"`);
+        }
+        currentChange.op = rawVal;
+        break;
+      case "target":
+        currentChange.target = rawVal;
+        break;
+      case "from":
+        currentChange.from = stripQuotes(rawVal);
+        break;
+      case "to":
+        currentChange.to = stripQuotes(rawVal);
+        break;
+      case "base_hash":
+        currentChange.base_hash = stripQuotes(rawVal);
+        break;
+      case "concept":
+        currentChange.concept = rawVal;
+        break;
+      case "name":
+        currentChange.name = stripQuotes(rawVal);
+        break;
+      case "slug":
+        currentChange.slug = rawVal;
+        break;
+      case "fields": {
+        const parsedObj = parseFieldsValue(rawVal);
+        if (parsedObj) {
+          currentChange.fields = parsedObj;
+        }
+        break;
+      }
+      case "author":
+        currentChange.author = stripQuotes(rawVal);
+        break;
+      case "notes":
+        currentChange.notes = stripQuotes(rawVal);
+        break;
+      case "evidence":
+        currentChange.evidence = stripQuotes(rawVal);
+        break;
+      case "blueprint_name":
+        currentChange.blueprint_name = stripQuotes(rawVal);
+        break;
+      case "blueprint_url":
+        currentChange.blueprint_url = stripQuotes(rawVal);
+        break;
+      case "knowledge_version":
+        currentChange.knowledge_version = stripQuotes(rawVal);
+        break;
+      case "applied_at":
+        currentChange.applied_at = stripQuotes(rawVal);
+        break;
+      case "batch":
+        currentChange.batch = stripQuotes(rawVal);
+        break;
+      case "status":
+        if (!isChangeStatus(rawVal)) {
+          throw new Error(`Invalid changeset status: "${rawVal}"`);
+        }
+        currentChange.status = rawVal;
+        break;
+      case "resolution":
+        currentChange.resolution = stripQuotes(rawVal);
+        break;
+      case "resolved_slug":
+        currentChange.resolved_slug = rawVal;
+        break;
+      case "resolved_target":
+        currentChange.resolved_target = rawVal;
+        break;
+      case "evidence_sha256": {
+        const shas = splitSourceFieldValue(rawVal);
+        if (shas.length > 0) currentChange.evidence_sha256 = shas;
+        break;
+      }
+      case "seed": {
+        const parsedSeed = parseJsonObject(rawVal);
+        if (parsedSeed) {
+          const seed = {};
+          const columns = parseStringArray(parsedSeed.columns);
+          const rows = parseStringArray(parsedSeed.rows);
+          if (columns) seed.columns = columns;
+          if (rows) seed.rows = rows;
+          currentChange.seed = seed;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  if (currentChange && currentChange.id && currentChange.op && currentChange.target) {
+    changes.push(currentChange);
+  }
+  const problems = changes.flatMap(addModelProblems);
+  if (problems.length > 0) {
+    throw new Error(`Invalid add_model change: ${problems.join("; ")}`);
+  }
+  return {
+    frontmatter,
+    changes,
+    rawContent
+  };
+}
+
+// iNNfo/packages/nn-core/src/changeset/evidence.ts
+var EVIDENCE_KEYWORDS = ["decision", "unknown"];
+function isKeyword(value) {
+  return EVIDENCE_KEYWORDS.includes(value.toLowerCase());
+}
+function evidenceKeywordInList(value) {
+  const items = splitSourceFieldValue(value);
+  if (items.length < 2) return null;
+  for (const item of items) {
+    if (isKeyword(item)) return item.toLowerCase();
+  }
+  return null;
+}
+function splitEvidence(value) {
+  const keyword = evidenceKeywordInList(value);
+  if (keyword) {
+    throw new Error(
+      `EVIDENCE_KEYWORD_IN_LIST: "${keyword}" is only valid alone in evidence; cite the document, or use the keyword by itself`
+    );
+  }
+  return splitSourceFieldValue(value).map((item) => isKeyword(item) ? item.toLowerCase() : item);
+}
+
+// iNNfo/packages/nn-core/src/changelog/order.ts
+function changeStamp(changeset) {
+  return changesetStampOf(String(changeset ?? ""))?.stamp ?? "";
+}
+function compareStrings(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function compareChanges(a, b) {
+  const byAppliedAt = compareStrings(a.appliedAt ?? "", b.appliedAt ?? "");
+  if (byAppliedAt !== 0) return byAppliedAt;
+  const byStamp = compareStrings(changeStamp(a.changeset), changeStamp(b.changeset));
+  if (byStamp !== 0) return byStamp;
+  const byFile = compareStrings(a.changeset, b.changeset);
+  if (byFile !== 0) return byFile;
+  return a.index - b.index;
+}
+
+// iNNfo/packages/nn-core/src/references.ts
+function updateReferenceString(text, oldName, newName) {
+  if (!text || typeof text !== "string") return text;
+  const oldSlug = slugify(oldName);
+  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+    if (slugify(text.trim()) === oldSlug) {
+      const leadingSpaces = text.match(/^\s*/)?.[0] || "";
+      const trailingSpaces = text.match(/\s*$/)?.[0] || "";
+      return `${leadingSpaces}${newName}${trailingSpaces}`;
+    }
+  }
+  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+    const qualifiedBracketRegex = new RegExp(`^(\\s*\\[[^\\]]+\\]\\s*)(.+)$`, "i");
+    const matchBracket = text.match(qualifiedBracketRegex);
+    if (matchBracket && slugify(matchBracket[2].trim()) === oldSlug) {
+      const trailingSpaces = matchBracket[2].match(/\s*$/)?.[0] || "";
+      return `${matchBracket[1]}${newName}${trailingSpaces}`;
+    }
+    const qualifiedColonRegex = new RegExp(`^(\\s*[^:]+::\\s*)(.+)$`, "i");
+    const matchColon = text.match(qualifiedColonRegex);
+    if (matchColon && slugify(matchColon[2].trim()) === oldSlug) {
+      const trailingSpaces = matchColon[2].match(/\s*$/)?.[0] || "";
+      return `${matchColon[1]}${newName}${trailingSpaces}`;
+    }
+  }
+  return updateWikiLinks(text, oldName, newName);
+}
+function updateWikiLinks(text, oldName, newName) {
+  if (!text || typeof text !== "string") return text;
+  const oldSlug = slugify(oldName);
+  return text.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
+    const trimmedTarget = target.trim();
+    if (slugify(trimmedTarget) === oldSlug) {
+      return `[[${newName}${alias ?? ""}]]`;
+    }
+    const qBracket = new RegExp(`^(\\[[^\\]]+\\]\\s*)(.+)$`, "i");
+    const mBracket = trimmedTarget.match(qBracket);
+    if (mBracket && slugify(mBracket[2]) === oldSlug) {
+      return `[[${mBracket[1]}${newName}${alias ?? ""}]]`;
+    }
+    const qColon = new RegExp(`^(.*::\\s*)(.+)$`, "i");
+    const mColon = trimmedTarget.match(qColon);
+    if (mColon && slugify(mColon[2]) === oldSlug) {
+      return `[[${mColon[1]}${newName}${alias ?? ""}]]`;
+    }
+    return match;
+  });
+}
+
+// iNNfo/packages/nn-core/src/changelog/fold.ts
+function canonicalValue(raw) {
+  if (raw === void 0 || raw === null) return "";
+  const parsed = parsePropertyValue(String(raw));
+  if (parsed === null || parsed === void 0) return "";
+  if (typeof parsed === "string") return parsed;
+  if (Array.isArray(parsed)) {
+    return `[${parsed.map((v) => typeof v === "string" ? v : String(v)).join(", ")}]`;
+  }
+  if (typeof parsed === "number" || typeof parsed === "boolean") return String(parsed);
+  return JSON.stringify(parsed);
+}
+function splitUnitKey(key) {
+  const at = key.indexOf("@");
+  if (at === -1) return { model: "", parts: [] };
+  return {
+    model: key.slice(0, at),
+    parts: key.slice(at + 1).split("&").map((p) => p.trim())
+  };
+}
+function elementKeyOf(unitKey) {
+  const amp = unitKey.indexOf("&");
+  return amp === -1 ? unitKey : unitKey.slice(0, amp);
+}
+function setUnit(units, cleared, key, kind, raw, origin, order) {
+  const value = canonicalValue(raw);
+  if (value === "") {
+    units.delete(key);
+    cleared.add(key);
+    return;
+  }
+  units.set(key, { key, kind, value, origin, setOrder: order });
+  cleared.delete(key);
+}
+function foldChanges(changes) {
+  const units = /* @__PURE__ */ new Map();
+  const cleared = /* @__PURE__ */ new Set();
+  const tombstones = [];
+  const epochs = /* @__PURE__ */ new Map();
+  const elements = /* @__PURE__ */ new Map();
+  const relinks = /* @__PURE__ */ new Map();
+  const addRelink = (model, from, to, order) => {
+    if (!from || !to) return;
+    const bucket = relinks.get(model);
+    if (bucket) bucket.push({ model, from, to, order });
+    else relinks.set(model, [{ model, from, to, order }]);
+  };
+  changes.forEach((change, order) => {
+    if (!change.applied) return;
+    const address = change.resolvedTarget ?? change.target;
+    switch (change.op) {
+      case "add_element": {
+        const { model, parts } = splitUnitKey(address);
+        const key = change.resolvedTarget ? address : model ? `${model}@${slugifyHeading(change.name ?? change.slug ?? parts[0] ?? "")}` : address;
+        epochs.set(key, order);
+        elements.set(key, change);
+        for (const unitKey of [...units.keys()]) {
+          if (unitKey.startsWith(`${key}&`)) units.delete(unitKey);
+        }
+        for (const unitKey of [...cleared]) {
+          if (unitKey.startsWith(`${key}&`)) cleared.delete(unitKey);
+        }
+        return;
+      }
+      case "update_field":
+        setUnit(units, cleared, address, "field", change.to, change, order);
+        return;
+      case "update_element_text":
+        setUnit(units, cleared, address, "body", change.to, change, order);
+        return;
+      case "update_concept_text":
+      case "update_concept_field":
+        setUnit(units, cleared, address, "concept", change.to, change, order);
+        return;
+      case "update_matrix_cell":
+        setUnit(units, cleared, address, "cell", change.to, change, order);
+        return;
+      case "rename_element": {
+        const { model, parts } = splitUnitKey(address);
+        addRelink(model, change.from ?? parts[0] ?? "", change.name ?? change.to ?? "", order);
+        return;
+      }
+      case "rename_concept": {
+        const { model, parts } = splitUnitKey(address);
+        const oldName = parts[0]?.startsWith("concept:") ? parts[0].slice("concept:".length) : change.from ?? parts[0] ?? "";
+        const newName = change.name ?? change.to ?? "";
+        if (!oldName || !newName) return;
+        const oldPrefix = `${model}@concept:${oldName}`;
+        const newPrefix = `${model}@concept:${newName}`;
+        for (const key of [...units.keys()]) {
+          if (key !== oldPrefix && !key.startsWith(`${oldPrefix}&`)) continue;
+          const unit = units.get(key);
+          units.delete(key);
+          units.set(`${newPrefix}${key.slice(oldPrefix.length)}`, { ...unit, key: `${newPrefix}${key.slice(oldPrefix.length)}` });
+        }
+        addRelink(model, oldName, newName, order);
+        return;
+      }
+      case "remove_element": {
+        const { model, parts } = splitUnitKey(address);
+        const key = elementKeyOf(address) || (parts[0] ? `${model}@${parts[0]}` : address);
+        elements.set(key, change);
+        tombstones.push(change);
+        const slug = key.slice(key.indexOf("@") + 1);
+        for (const unitKey of [...units.keys()]) {
+          if (unitKey.startsWith(`${key}&`)) {
+            units.delete(unitKey);
+            continue;
+          }
+          const cell = splitUnitKey(unitKey);
+          if (cell.parts.length >= 3 && cell.model === model && (cell.parts[1] === slug || cell.parts[2] === slug)) {
+            units.delete(unitKey);
+          }
+        }
+        return;
+      }
+      case "remove_matrix": {
+        const { model, parts } = splitUnitKey(address);
+        const raw = parts[0] ?? "";
+        const matrixSlug = raw.startsWith("matrix:") ? raw.slice("matrix:".length) : raw;
+        const key = `${model}@${matrixSlug}`;
+        tombstones.push(change);
+        for (const unitKey of [...units.keys()]) {
+          if (unitKey.startsWith(`${key}&`)) units.delete(unitKey);
+        }
+        return;
+      }
+      case "produce_artifact":
+        setUnit(units, cleared, address, "artifact", address, change, order);
+        return;
+      default:
+        return;
+    }
+  });
+  return { units, cleared, tombstones, epochs, elements, relinks };
+}
+function applyRelinks(unit, relinks) {
+  if (unit.kind === "cell" || unit.kind === "artifact") return unit.value;
+  const later = relinks.filter((r) => r.order > unit.setOrder);
+  if (later.length === 0) return unit.value;
+  let value = unit.value;
+  for (const relink of later) {
+    value = unit.kind === "field" ? updateReferenceString(value, relink.from, relink.to) : updateWikiLinks(value, relink.from, relink.to);
+  }
+  return value;
+}
+
+// iNNfo/packages/nn-core/src/changelog/units.ts
+function unitsFromFold(fold, model) {
+  const out = [];
+  for (const unit of fold.units.values()) {
+    if (model) {
+      const { model: unitModel2 } = splitUnitKey(unit.key);
+      if (unitModel2 !== model) continue;
+    }
+    const { model: unitModel } = splitUnitKey(unit.key);
+    const relinks = fold.relinks.get(unitModel) ?? [];
+    out.push({
+      key: unit.key,
+      kind: unit.kind,
+      value: applyRelinks(unit, relinks),
+      origin: unit.origin,
+      relinks
+    });
+  }
+  return out;
+}
+
+// iNNfo/packages/nn-core/src/changelog/index.ts
+function unitOf(change) {
+  return change.resolvedTarget ?? change.target;
+}
+var ChangeLogImpl = class {
+  all;
+  byUnit = /* @__PURE__ */ new Map();
+  fold;
+  constructor(changes) {
+    this.all = [...changes].sort(compareChanges);
+    for (const change of this.all) {
+      if (!change.applied) continue;
+      const unit = unitOf(change);
+      const bucket = this.byUnit.get(unit);
+      if (bucket) bucket.push(change);
+      else this.byUnit.set(unit, [change]);
+    }
+    this.fold = foldChanges(this.all);
+  }
+  /** Applied changes of a unit, cut at the latest add_element of its element. */
+  history(unit) {
+    const bucket = this.byUnit.get(unit) ?? [];
+    const epoch = this.fold.epochs.get(elementKeyOf(unit));
+    if (epoch === void 0) return bucket;
+    return bucket.filter((change) => this.orderOf(change) > epoch);
+  }
+  origin(unit) {
+    if (!this.fold.units.has(unit)) return void 0;
+    const bucket = this.history(unit);
+    return bucket.length > 0 ? bucket[bucket.length - 1] : void 0;
+  }
+  units(model) {
+    return unitsFromFold(this.fold, model);
+  }
+  evidence(scope) {
+    const index = /* @__PURE__ */ new Map();
+    const indexed = /* @__PURE__ */ new Set();
+    const addSite = (change, unit) => {
+      if (indexed.has(change)) return;
+      indexed.add(change);
+      const evidence = change.evidenceItems ?? splitEvidence(change.evidence);
+      if (evidence.length === 0) return;
+      const site = {
+        changeId: change.id,
+        unit,
+        evidence: [...evidence],
+        sha256: [...change.evidenceSha256 ?? []]
+      };
+      for (const citation of evidence) {
+        const bucket = index.get(citation);
+        if (bucket) bucket.push(site);
+        else index.set(citation, [site]);
+      }
+    };
+    if (scope === "all-time") {
+      for (const change of this.all) {
+        if (change.applied) addSite(change, unitOf(change));
+      }
+      return index;
+    }
+    for (const unit of this.fold.units.keys()) {
+      const origin = this.origin(unit);
+      if (origin) addSite(origin, unit);
+    }
+    for (const [key, change] of this.fold.elements) {
+      if (change.op === "remove_element") continue;
+      addSite(change, key);
+    }
+    return index;
+  }
+  get cleared() {
+    return this.fold.cleared;
+  }
+  get elements() {
+    return this.fold.elements;
+  }
+  elementOrigin(elementKey) {
+    return this.fold.elements.get(elementKey);
+  }
+  get tombstones() {
+    return this.fold.tombstones;
+  }
+  /** Canonical position of a change: its index in the sorted `all` list. */
+  orderOf(change) {
+    return this.orderIndex.get(change) ?? -1;
+  }
+  get orderIndex() {
+    if (!this.orderCache) {
+      this.orderCache = new Map(this.all.map((change, index) => [change, index]));
+    }
+    return this.orderCache;
+  }
+  orderCache;
+};
+function createChangeLog(changes) {
+  return new ChangeLogImpl(changes);
+}
+
+// iNNfo/packages/nn-core/src/changelog/load.ts
+function isChangesetPath(path4) {
+  const name = path4.split("/").pop() ?? "";
+  if (!isNNName(name) || isSidecarName(name)) return false;
+  const parsed = parseName(name);
+  return parsed.kind === "nn" && parsed.stem.endsWith("_changes");
+}
+function parseChangesetSnapshots(files) {
+  const changesets = [];
+  for (const file of files) {
+    if (!isChangesetPath(file.path)) continue;
+    let doc;
+    try {
+      doc = parseChangeset(file.content);
+    } catch {
+      continue;
+    }
+    const fm = doc.frontmatter;
+    changesets.push({
+      path: file.path,
+      status: fm.status,
+      author: fm.author,
+      appliedAt: fm.applied_at,
+      changes: doc.changes
+    });
+  }
+  return changesets;
+}
+function loggedChanges(cs) {
+  const changesetStatus = cs.status ?? "proposed";
+  return cs.changes.map((change, index) => {
+    const status = change.status ?? changesetStatus;
+    return {
+      id: change.id,
+      changeset: cs.path,
+      index,
+      status,
+      changesetStatus,
+      appliedAt: change.applied_at ?? cs.appliedAt,
+      batch: change.batch,
+      author: change.author ?? cs.author,
+      op: change.op,
+      target: change.target,
+      resolvedTarget: change.resolved_target,
+      evidence: change.evidence,
+      evidenceItems: splitEvidence(change.evidence),
+      evidenceSha256: change.evidence_sha256,
+      from: change.from,
+      to: change.to,
+      concept: change.concept,
+      name: change.name,
+      slug: change.slug,
+      resolvedSlug: change.resolved_slug,
+      notes: change.notes,
+      resolution: change.resolution,
+      fields: change.fields,
+      applied: status === "applied"
+    };
+  });
+}
+function buildChangeLogFromChangesets(changesets) {
+  const changes = [];
+  for (const cs of changesets) changes.push(...loggedChanges(cs));
+  return createChangeLog(changes);
+}
+function buildChangeLog(files) {
+  return buildChangeLogFromChangesets(parseChangesetSnapshots(files));
+}
+
+// iNNfo/packages/nn-core/src/changeset/resolved-target.ts
+var VERSION_TOKEN_RE2 = /_V_\d+-\d+-\d+$/;
+function canonicalUnitModelId(model) {
+  return String(model ?? "").trim().replace(VERSION_TOKEN_RE2, "");
+}
+
 // iNNfo/packages/nn-core/src/lineage/project.ts
 var SOURCE_FORMAT_OPTIONS = /* @__PURE__ */ new Set(["txt", "md", "csv", "json", "docx", "pdf", "xlsx"]);
 var ARTIFACT_EXTENSIONS = /* @__PURE__ */ new Set(["md", "html", "htm", "csv", "json"]);
@@ -9190,7 +9902,7 @@ function getExtension(p) {
   const idx = base.lastIndexOf(".");
   return idx === -1 ? "" : base.slice(idx + 1).toLowerCase();
 }
-function compareStrings(a, b) {
+function compareStrings2(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 function frontmatterOf(content) {
@@ -9209,20 +9921,7 @@ function extractDeclaredCitations(file) {
       for (const raw of splitSourceFieldValue(fm.sources)) push(raw, "sources");
     }
   } else if (ext === "html" || ext === "htm") {
-    const modelMatch = file.content.match(
-      /<script[^>]+id=["'](?:innfo|nn)-model["'][^>]*>([\s\S]*?)<\/script>/i
-    );
-    if (modelMatch) {
-      try {
-        const parsed = JSON.parse(modelMatch[1].trim());
-        if (Array.isArray(parsed?.meta?.sources)) {
-          for (const raw of parsed.meta.sources) {
-            if (typeof raw === "string" && raw.trim()) push(raw.trim(), "meta.sources");
-          }
-        }
-      } catch {
-      }
-    }
+    return sites;
   } else if (ext === "csv") {
     const lines = file.content.split(/\r?\n/);
     const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
@@ -9266,8 +9965,19 @@ function familyKey(path4) {
   const family = familyOf(path4);
   return family ? `${family.dir}\0${family.key}\0${family.ext}` : null;
 }
-function projectLineage(files) {
-  const live = files.map((f) => ({ path: posixPath(f.path), content: f.content })).filter((f) => !isExcludedPath(f.path)).sort((a, b) => compareStrings(a.path, b.path));
+function evidenceCitationSites(log, scope = "live") {
+  const sites = [];
+  for (const [citation, entries] of log.evidence(scope)) {
+    const keyword = citation.toLowerCase();
+    if (keyword === "decision" || keyword === "unknown") continue;
+    for (const entry of entries) {
+      sites.push({ value: citation, referringPath: entry.unit, field: "evidence" });
+    }
+  }
+  return sites;
+}
+function projectLineage(files, log = buildChangeLog(files), options = {}) {
+  const live = files.map((f) => ({ path: posixPath(f.path), content: f.content })).filter((f) => !isExcludedPath(f.path)).sort((a, b) => compareStrings2(a.path, b.path));
   const byFilePath = new Map(live.map((f) => [f.path, f]));
   const diagnostics = [];
   const subjects = [];
@@ -9285,7 +9995,7 @@ function projectLineage(files) {
     }
     subjects.push({ subject, sidecar, fm });
   }
-  subjects.sort((a, b) => compareStrings(a.subject, b.subject));
+  subjects.sort((a, b) => compareStrings2(a.subject, b.subject));
   const families = /* @__PURE__ */ new Map();
   for (const { subject } of subjects) {
     const key = familyKey(subject);
@@ -9293,7 +10003,7 @@ function projectLineage(files) {
     families.set(key, [...families.get(key) ?? [], subject]);
   }
   for (const members of families.values()) {
-    members.sort((a, b) => compareMembers(a, b) || compareStrings(a, b));
+    members.sort((a, b) => compareMembers(a, b) || compareStrings2(a, b));
   }
   const sources = subjects.map(({ subject, sidecar, fm }) => {
     const key = familyKey(subject);
@@ -9339,10 +10049,10 @@ function projectLineage(files) {
     for (const [, elements] of parsed.elements.entries()) {
       for (const el of elements) {
         for (const [fieldName, val] of Object.entries(el.fields)) {
-          if (SOURCE_FIELD_NAMES.has(fieldName.toLowerCase())) {
-            for (const raw of splitSourceFieldValue(val)) {
-              citations.push({ value: raw, referringPath: kf.path, element: el.name, field: fieldName });
-            }
+          const lower = fieldName.toLowerCase();
+          if (lower !== "sources" && lower !== "source") continue;
+          for (const raw of splitSourceFieldValue(val)) {
+            citations.push({ value: raw, referringPath: kf.path, element: el.name, field: fieldName });
           }
         }
       }
@@ -9409,7 +10119,54 @@ function projectLineage(files) {
       citations
     });
   }
-  return { sources, knowledge, artifacts, changesets, diagnostics };
+  return { sources, knowledge, artifacts, changesets, diagnostics, edges: buildEdges() };
+  function buildEdges() {
+    const modelRefByModel = /* @__PURE__ */ new Map();
+    for (const entry of knowledge) {
+      const stem = displayStem(getBasename(entry.model_ref));
+      modelRefByModel.set(canonicalUnitModelId(stem), entry.model_ref);
+    }
+    const artifactRefs = new Set(artifacts.map((artifact) => artifact.artifact_ref));
+    const ownerOf = (unit) => {
+      if (artifactRefs.has(unit)) return unit;
+      const at = unit.indexOf("@");
+      if (at === -1) return modelRefByModel.get(canonicalUnitModelId(unit)) ?? unit;
+      return modelRefByModel.get(canonicalUnitModelId(unit.slice(0, at))) ?? unit;
+    };
+    const edges = [];
+    const seen = /* @__PURE__ */ new Set();
+    const push = (edge) => {
+      const key = `${edge.kind}\0${edge.from}\0${edge.to}\0${edge.change}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      edges.push(edge);
+    };
+    for (const [citation, sites] of log.evidence(options.scope ?? "live")) {
+      for (const site of sites) {
+        const owner = ownerOf(site.unit);
+        push({ from: citation, to: owner, kind: "evidence", change: site.changeId });
+        if (site.unit.includes("@")) push({ from: site.unit, to: owner, kind: "target", change: site.changeId });
+      }
+    }
+    for (const change of log.all) {
+      if (!change.applied || change.op !== "produce_artifact") continue;
+      const ref = change.resolvedTarget ?? change.target;
+      if ((options.scope ?? "live") === "live" && log.origin(ref)?.id !== change.id) continue;
+      push({ from: ref, to: change.changeset, kind: "produced", change: change.id });
+    }
+    const recorded = new Set(
+      log.all.filter((change) => change.applied && change.op === "produce_artifact").map((change) => change.resolvedTarget ?? change.target)
+    );
+    for (const artifact of artifacts) {
+      if (recorded.has(artifact.artifact_ref) || isRegenerableView(artifact.artifact_ref)) continue;
+      diagnostics.push({
+        code: "ARTIFACT_WITHOUT_RECORD",
+        path: artifact.artifact_ref,
+        message: `Artifact "${artifact.artifact_ref}" has no applied produce_artifact change; record how it was produced`
+      });
+    }
+    return edges.sort((a, b) => compareStrings2(a.from, b.from) || compareStrings2(a.to, b.to) || compareStrings2(a.kind, b.kind) || compareStrings2(a.change, b.change));
+  }
 }
 
 // iNNfo/packages/nn-core/src/validator/workspaceSources.ts
@@ -9794,196 +10551,9 @@ function listSectionFieldsFor(content, heading) {
   return fields ?? void 0;
 }
 
-// iNNfo/packages/nn-core/src/lineage/render.ts
-var SOURCES_GUIDANCE = "No sources ingested yet. Place files in sources/import and run a scan.";
-var MODELS_GUIDANCE = "Auto-synced from kNNowledge/ on every --scan/--import-url/--lineage. One ModelRecords element per Level 3 model.";
-var ARTIFACTS_GUIDANCE = "Auto-synced from artifacts/ on every --scan/--import-url/--lineage. One element per generated deliverable.";
-function renderSourcesSection(sources) {
-  let out = "# NN Sources\n";
-  if (sources.length === 0) {
-    out += `
-<!-- ${SOURCES_GUIDANCE} -->
-`;
-    return out;
-  }
-  for (const s of sources) {
-    out += `
-## NN Sources: ${s.name}
-`;
-    out += `raw_filename:: ${s.raw_filename}
-`;
-    if (s.raw_hash) out += `raw_hash:: ${s.raw_hash}
-`;
-    if (s.size) out += `size:: ${s.size}
-`;
-    if (s.source_format) out += `source_format:: ${s.source_format}
-`;
-    if (s.normalized_at) out += `normalized_at:: ${s.normalized_at}
-`;
-    if (s.normalized_by) out += `normalized_by:: ${s.normalized_by}
-`;
-    out += `normalized_content:: ${s.normalized_content}
-`;
-    if (s.version) out += `version:: ${s.version}
-`;
-    if (s.superseded_by) out += `superseded_by:: ${s.superseded_by}
-`;
-    if (s.derived_from && s.derived_from.length > 0) {
-      out += `derived_from:: [${s.derived_from.join(", ")}]
-`;
-    }
-  }
-  return out;
-}
-function renderModelsSection(models) {
-  if (models.length === 0) {
-    return `# NN ModelRecords
-
-<!-- ${MODELS_GUIDANCE} -->
-`;
-  }
-  let out = "# NN ModelRecords\n";
-  for (const m of models) {
-    out += `
-## NN ModelRecords: ${m.name}
-`;
-    out += `model_ref:: ${m.model_ref}
-`;
-    if (m.knowledge_version) out += `knowledge_version:: ${m.knowledge_version}
-`;
-    if (m.model_template) out += `model_template:: ${m.model_template}
-`;
-    const derived = Array.from(new Set(m.citations.map((c) => c.value)));
-    if (derived.length > 0) {
-      out += `derived_from:: [${derived.join(", ")}]
-`;
-    }
-  }
-  return out;
-}
-function renderArtifactsSection(artifacts) {
-  if (artifacts.length === 0) {
-    return `# NN Artifacts
-
-<!-- ${ARTIFACTS_GUIDANCE} -->
-`;
-  }
-  let out = "# NN Artifacts\n";
-  for (const a of artifacts) {
-    out += `
-## NN Artifacts: ${a.name}
-`;
-    out += `artifact_ref:: ${a.artifact_ref}
-`;
-    out += `artifact_format:: ${a.artifact_format}
-`;
-    const derived = Array.from(new Set(a.citations.map((c) => c.value)));
-    if (derived.length > 0) {
-      out += `derived_from:: [${derived.join(", ")}]
-`;
-    }
-  }
-  return out;
-}
-function renderLineageSections(p) {
-  return {
-    sources: renderSourcesSection(p.sources),
-    modelRecords: renderModelsSection(p.knowledge),
-    artifacts: renderArtifactsSection(p.artifacts)
-  };
-}
-
 // iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var fs = __toESM(require("node:fs"), 1);
 var path = __toESM(require("node:path"), 1);
-
-// iNNfo/packages/nn-core/src/lineage/record.ts
-var RECORD_BLUEPRINT = "cogNNitive";
-var RECORD_TEMPLATE_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/cogNNitive/spec_NN.md";
-var RECORD_INNFO_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md";
-var FRONTMATTER_RE = /^(---\r?\n[\s\S]*?\r?\n---(?:\r?\n)?)/;
-function splitFrontmatter(text) {
-  const match = FRONTMATTER_RE.exec(text);
-  const frontmatter = match ? match[1] : "";
-  return { frontmatter, body: text.slice(frontmatter.length) };
-}
-function splitTopLevelSections2(body) {
-  const blocks = [];
-  const preamble = [];
-  let current = null;
-  for (const line of body.split("\n")) {
-    if (/^# (?!#)/.test(line)) {
-      if (current) blocks.push(current);
-      current = { heading: line, lines: [] };
-    } else if (current) {
-      current.lines.push(line);
-    } else {
-      preamble.push(line);
-    }
-  }
-  if (current) blocks.push(current);
-  return { preamble: preamble.join("\n"), blocks };
-}
-function managedSections(sections) {
-  return [
-    { name: "# NN Sources", re: /^# NN Sources\b/, render: () => sections.sources },
-    { name: "# NN ModelRecords", re: /^# NN ModelRecords\b/, render: () => sections.modelRecords },
-    { name: "# NN Artifacts", re: /^# NN Artifacts\b/, render: () => sections.artifacts }
-  ];
-}
-function blockText(heading, lines) {
-  return (heading + "\n" + lines.join("\n")).replace(/\n+$/, "") + "\n";
-}
-function renderRecordFrontmatter(title) {
-  return `---
-specification_version: "V_0-3-0"
-specification_url: "${RECORD_INNFO_URL}"
-level: 3
-parent_spec:
-  name: "${RECORD_BLUEPRINT}"
-  url: "${RECORD_TEMPLATE_URL}"
-title: "${title}"
----
-`;
-}
-function refreshExistingModel(existing, sections) {
-  const { body } = splitFrontmatter(existing);
-  const titleMatch = /^title:\s*"?(.*?)"?\s*$/m.exec(existing);
-  const { preamble, blocks } = splitTopLevelSections2(body);
-  const managed = managedSections(sections);
-  const rendered = managed.map((m) => m.render().replace(/\n+$/, "") + "\n");
-  const present = new Array(managed.length).fill(false);
-  const rebuilt = blocks.map((b) => {
-    const idx = managed.findIndex((m) => m.re.test(b.heading));
-    if (idx !== -1) {
-      present[idx] = true;
-      return rendered[idx];
-    }
-    return blockText(b.heading, b.lines);
-  });
-  const anchor = rebuilt.findIndex((s) => /^# NN index\b/.test(s));
-  let insertAt = anchor >= 0 ? anchor + 1 : 0;
-  for (let i = 0; i < managed.length; i++) {
-    if (present[i]) {
-      insertAt = rebuilt.findIndex((s) => managed[i].re.test(s)) + 1;
-      continue;
-    }
-    rebuilt.splice(insertAt, 0, rendered[i]);
-    insertAt++;
-  }
-  const notice = preamble.replace(/^\n+|\n+$/g, "");
-  return renderRecordFrontmatter(titleMatch ? titleMatch[1] : "Provenance") + "\n" + (notice ? notice + "\n\n" : "") + rebuilt.join("\n") + "\n";
-}
-function findLineageRecord(files) {
-  const candidates = files.filter((f) => isNNName(f.path) && !isExcludedPath(f.path)).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
-  for (const file of candidates) {
-    const parentSpecName = parseKnowledge(file.content).frontmatter?.parent_spec?.name;
-    if (roleOf({ path: file.path, parentSpecName }) === "lineage-record") return file;
-  }
-  return null;
-}
-
-// iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([".md", ".csv", ".json", ".html", ".htm"]);
 function walkDir(dir, baseDir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -10017,93 +10587,6 @@ function readLineageSnapshot(root) {
   }
   snapshots.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   return snapshots;
-}
-function readLineageRecord(root) {
-  const rootDir = path.resolve(root);
-  if (!fs.existsSync(rootDir)) return null;
-  const rels = [];
-  walkDir(rootDir, rootDir, rels);
-  const candidates = rels.filter((rel) => isNNName(rel)).map((rel) => ({ path: rel, content: fs.readFileSync(path.join(rootDir, rel), "utf8") }));
-  return findLineageRecord(candidates);
-}
-
-// iNNfo/packages/nn-core/src/lineage/drift.ts
-function formatSnippet(s) {
-  const snippet = s.slice(0, 100) + (s.length > 100 ? "\u2026" : "");
-  return `(${s.length} chars) ${JSON.stringify(snippet)}`;
-}
-function formatLineDiff(e, a) {
-  if (e === void 0) {
-    const found = a === void 0 ? "<end of section>" : a.length <= 120 ? JSON.stringify(a) : formatSnippet(a);
-    return `expected <end of section>, found ${found}`;
-  }
-  if (a === void 0) {
-    const want = e.length <= 120 ? JSON.stringify(e) : formatSnippet(e);
-    return `expected ${want}, found <end of section>`;
-  }
-  if (Math.max(e.length, a.length) <= 120) {
-    return `expected ${JSON.stringify(e)}, found ${JSON.stringify(a)}`;
-  }
-  let firstDivergence = 0;
-  const minLen = Math.min(e.length, a.length);
-  while (firstDivergence < minLen && e[firstDivergence] === a[firstDivergence]) {
-    firstDivergence++;
-  }
-  const windowStart = Math.max(0, firstDivergence - 30);
-  const expEnd = Math.min(e.length, firstDivergence + 90);
-  const actEnd = Math.min(a.length, firstDivergence + 90);
-  const expWindow = (windowStart > 0 ? "\u2026" : "") + e.slice(windowStart, expEnd) + (expEnd < e.length ? "\u2026" : "");
-  const actWindow = (windowStart > 0 ? "\u2026" : "") + a.slice(windowStart, actEnd) + (actEnd < a.length ? "\u2026" : "");
-  return `diverges at offset ${firstDivergence}: expected (${e.length} chars) ${JSON.stringify(expWindow)}, found (${a.length} chars) ${JSON.stringify(actWindow)}`;
-}
-function describeSectionDiff(expected, actual) {
-  const exp = expected.split("\n");
-  const act = actual.split("\n");
-  const max = Math.max(exp.length, act.length);
-  let currentElement = "";
-  const elementMismatches = /* @__PURE__ */ new Map();
-  for (let i = 0; i < max; i++) {
-    const e = exp[i];
-    const a = act[i];
-    if (e !== void 0 && e.startsWith("## ")) currentElement = e;
-    else if (!currentElement && a !== void 0 && a.startsWith("## ")) currentElement = a;
-    if (e === a) continue;
-    const key = currentElement || "<preamble>";
-    if (!elementMismatches.has(key)) {
-      elementMismatches.set(key, []);
-    }
-    elementMismatches.get(key).push(`line ${i + 1}: ${formatLineDiff(e, a)}`);
-  }
-  if (elementMismatches.size === 0) return "sections differ";
-  const parts = [];
-  for (const [elem, mismatches] of elementMismatches) {
-    const where = elem !== "<preamble>" ? `${elem}: ` : "";
-    if (mismatches.length === 1) {
-      parts.push(`${where}${mismatches[0]}`);
-    } else {
-      const list = mismatches.slice(0, 10).join("; ");
-      const more = mismatches.length > 10 ? `; ... and ${mismatches.length - 10} more` : "";
-      parts.push(`${where}(${mismatches.length} mismatches: ${list}${more})`);
-    }
-  }
-  return parts.slice(0, 10).join(" | ") + (parts.length > 10 ? ` | ... and ${parts.length - 10} more elements` : "");
-}
-function checkLineageDrift(record, rendered) {
-  const { blocks } = splitTopLevelSections2(splitFrontmatter(record).body);
-  const diffs = [];
-  for (const managed of managedSections(rendered)) {
-    const expected = managed.render().replace(/\n+$/, "") + "\n";
-    const block = blocks.find((b) => managed.re.test(b.heading));
-    if (!block) {
-      diffs.push({ section: managed.name, firstDiff: `missing section ${managed.name} in the record` });
-      continue;
-    }
-    const actual = blockText(block.heading, block.lines);
-    if (actual !== expected) {
-      diffs.push({ section: managed.name, firstDiff: describeSectionDiff(expected, actual) });
-    }
-  }
-  return diffs.length === 0 ? { ok: true } : { ok: false, diffs };
 }
 
 // iNNfo/packages/nn-core/src/writeOnce/plan.ts
@@ -10139,7 +10622,7 @@ var path2 = __toESM(require("node:path"), 1);
 var import_node_crypto = require("node:crypto");
 
 // iNNfo/packages/nn-core/src/cognitivize/sidecar.ts
-var import_yaml7 = __toESM(require_dist(), 1);
+var import_yaml8 = __toESM(require_dist(), 1);
 var TEXT_NATIVE_FORMATS = /* @__PURE__ */ new Set(["md", "csv", "json"]);
 var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
 var OWNED_KEYS = /* @__PURE__ */ new Set([
@@ -10151,16 +10634,14 @@ var OWNED_KEYS = /* @__PURE__ */ new Set([
   "source_format",
   "normalized_at",
   "normalized_by",
-  "sources",
-  // A sidecar's upstream edge is `sources`; the projection derives `derived_from` itself.
   "derived_from"
 ]);
-var FRONTMATTER_RE2 = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 function parseSidecarFrontmatter(text) {
-  const match = FRONTMATTER_RE2.exec(text);
+  const match = FRONTMATTER_RE.exec(text);
   if (!match) return null;
   try {
-    const value = (0, import_yaml7.parse)(match[1]);
+    const value = (0, import_yaml8.parse)(match[1]);
     return value && typeof value === "object" && !Array.isArray(value) ? value : null;
   } catch {
     return null;
@@ -10177,15 +10658,13 @@ function buildSidecar(i) {
     normalized_at: i.normalizedAt
   };
   if (i.normalizedBy) fm["normalized_by"] = i.normalizedBy;
-  const sources = i.sources ?? i.previous?.["sources"];
-  if (sources !== void 0) fm["sources"] = sources;
   for (const extras of [i.previous ?? {}, i.metadata ?? {}]) {
     for (const [key, value] of Object.entries(extras)) {
       if (!OWNED_KEYS.has(key)) fm[key] = value;
     }
   }
   const head = `---
-${(0, import_yaml7.stringify)(fm, { lineWidth: 0 })}---
+${(0, import_yaml8.stringify)(fm, { lineWidth: 0 })}---
 `;
   const body = i.body?.trim();
   return body ? `${head}
@@ -10372,8 +10851,7 @@ async function cognitivize(root, rel, o = {}) {
   const sidecarAbs = path3.join(rootAbs, sidecarRel);
   const existing = await readOrNull(sidecarAbs);
   const previous = existing ? parseSidecarFrontmatter(existing.toString("utf8")) : null;
-  const sourcesCurrent = o.sources === void 0 || JSON.stringify(previous?.["sources"]) === JSON.stringify(o.sources);
-  if (previous && String(previous["sha256"] ?? "").toLowerCase() === sha256 && sourcesCurrent) {
+  if (previous && String(previous["sha256"] ?? "").toLowerCase() === sha256) {
     return { status: "unchanged", sidecar: sidecarRel, sha256 };
   }
   const format = parsed.ext.toLowerCase();
@@ -10389,8 +10867,7 @@ async function cognitivize(root, rel, o = {}) {
     normalizedBy: normalized?.normalizedBy,
     previous,
     metadata: normalized?.metadata,
-    body: textNative ? void 0 : normalized?.body,
-    sources: o.sources
+    body: textNative ? void 0 : normalized?.body
   });
   await import_node_fs3.promises.writeFile(sidecarAbs, text, "utf8");
   return { status: existing ? "refreshed" : "written", sidecar: sidecarRel, sha256 };
@@ -10426,9 +10903,6 @@ async function importRaw(root, externalAbs, o = {}) {
   CORE_BLUEPRINT_ROLE,
   ENTRYPOINT_FILENAME,
   IGNORED_DIRECTORIES,
-  RECORD_BLUEPRINT,
-  RECORD_INNFO_URL,
-  RECORD_TEMPLATE_URL,
   SIDECAR_BLUEPRINT,
   SIDECAR_SPEC_URL,
   SPEC_FILENAME,
@@ -10436,9 +10910,10 @@ async function importRaw(root, externalAbs, o = {}) {
   WriteOnceError,
   applyGc,
   blueprintNameOf,
+  buildChangeLog,
   buildSidecar,
   canonicalModelId,
-  checkLineageDrift,
+  changesetStampOf,
   checkNameInvariant,
   checkPathBudget,
   cognitivize,
@@ -10448,11 +10923,11 @@ async function importRaw(root, externalAbs, o = {}) {
   createFsSourceResolver,
   displayStem,
   ensureNNFilename,
+  evidenceCitationSites,
   extractDeclaredCitations,
   extractFileCitations,
   extractHeadings,
   familyOf,
-  findLineageRecord,
   formatMemberName,
   formatNNName,
   formatUtcStamp,
@@ -10464,6 +10939,7 @@ async function importRaw(root, externalAbs, o = {}) {
   isModelCandidate,
   isNNName,
   isProcedureDocument,
+  isRegenerableView,
   isSidecarName,
   latestOfFamily,
   nextStamp,
@@ -10476,12 +10952,8 @@ async function importRaw(root, externalAbs, o = {}) {
   procedureIdOf,
   projectLineage,
   rawPathOfSidecar,
-  readLineageRecord,
   readLineageSnapshot,
   readSidecarSha256,
-  refreshExistingModel,
-  renderLineageSections,
-  renderRecordFrontmatter,
   resolveJsonPointer,
   roleOf,
   serializeKnowledgeUnitRef,
@@ -10489,7 +10961,6 @@ async function importRaw(root, externalAbs, o = {}) {
   sidecarPathOf,
   slugifyHeading,
   slugifyUnitHeading,
-  splitTopLevelSections,
   validateCitations,
   writeOnce
 });

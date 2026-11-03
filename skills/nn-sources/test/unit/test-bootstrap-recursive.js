@@ -101,7 +101,7 @@ async function runAsync() {
       fs.rmSync(readmeDest, { recursive: true, force: true });
     }
     check(!fs.existsSync(path.join(destParent, 'Proj', 'sources', 'original')), 'deprecated sources/original/ not created');
-    check(fs.existsSync(result.provModelPath), 'provenance model initialized');
+    check(!fs.existsSync(path.join(destParent, 'Proj', 'Proj_cogNNitive_NN.md')), 'no lineage record is created');
     check(fs.existsSync(path.join(destParent, 'Proj', 'domaiNN_NN.md')), 'domaiNN_NN.md entrypoint created');
 
     const projDir = path.join(destParent, 'Proj');

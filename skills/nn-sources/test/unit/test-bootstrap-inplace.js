@@ -37,7 +37,10 @@ async function runAsync() {
     check(result.importDir === path.join(targetDir, 'sources', 'import'), 'importDir is targetDir/sources/import');
     check(fs.existsSync(path.join(targetDir, 'AGENTS.md')), 'AGENTS.md created at targetDir root');
     check(fs.existsSync(path.join(targetDir, 'domaiNN_NN.md')), 'domaiNN_NN.md created at targetDir root');
-    check(fs.existsSync(path.join(targetDir, 'my-existing-domain_NN_cogNNitive_NN.md')), 'lineage record created at targetDir root');
+    check(
+      !fs.existsSync(path.join(targetDir, 'my-existing-domain_NN_cogNNitive_NN.md')),
+      'no lineage record is created',
+    );
     check(fs.existsSync(path.join(targetDir, 'kNNowledge')), 'kNNowledge directory created at targetDir root');
     check(fs.existsSync(path.join(targetDir, 'sources', 'import')), 'sources/import created');
     check(fs.existsSync(path.join(targetDir, 'desktop.ini')), 'existing user file preserved');

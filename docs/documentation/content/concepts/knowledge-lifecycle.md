@@ -3,7 +3,7 @@
 Knowledge in cogNNitive does not sit in one file. It moves through a defined path: raw
 input enters as a **Source**, is cognitivized, is modelled as **kNNowledge** that cites
 its sources, is changed through reviewed **changesets**, is exported as **artifacts**,
-and is traced end to end in a **lineage record**. This page follows that path and explains what happens at each stage.
+and is traced end to end in the **computed lineage**: every value's origin is the applied change that set it. This page follows that path and explains what happens at each stage.
 
 ## The problem
 
@@ -48,7 +48,7 @@ refreshes the sidecar and flags the downstream impact. See
 ## 3. Model — kNNowledge citing sources
 
 The model step turns cognitivized sources into a `kNNowledge` document under
-`kNNowledge/`. Each element carries explicit citation pointers via `sources::`, using the
+`kNNowledge/`. Each change carries an explicit `evidence::` pointer, using the
 pointer grammar `<path>@## <Heading>`, `<csv>@<row>`, or `<json>@/<pointer>`. Because
 the citations point at stable anchors rather than line numbers, they survive edits to the
 source. See [Sources, citations and lineage](sources-citations-lineage.md).
@@ -70,7 +70,7 @@ lineage node only if it is a timestamped family member or declares upstream sour
 
 ## 6. Trace — lineage
 
-The **lineage record**, `<project>_cogNNitive_NN.md`, is the map of the whole `domaiNN`.
+The **computed lineage** (`read_lineage`) is the map of the whole `domaiNN`; nothing is persisted.
 Three of its sections — `# NN Sources`, `# NN ModelRecords`, `# NN Artifacts` — are
 re-synced from the filesystem on every build; a fourth, `# NN Procedures`, is an
 append-only run log. The record is found by its role, never by its file name. A

@@ -1,7 +1,8 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const {
+  buildChangeLog,
   readLineageSnapshot,
   projectLineage,
   extractFileCitations,
@@ -95,6 +96,13 @@ function findStaleSources(projectDir, relPaths) {
  *     headingSlug: string,
  *     reason: string,
  *     suggestions?: string[]
+ *   }>,
+ *   evidenceImpacts: Array<{
+ *     changeId: string,
+ *     unit: string,
+ *     citation: string,
+ *     expected?: string,
+ *     actual?: string
  *   }>
  * }}
  */
@@ -178,6 +186,16 @@ function auditModelCitations(projectDir) {
     warnings.push(`Cited source "${stale}" changed since it was cognitivized (hash mismatch with its sidecar sha256). Run \`--cognitivize\` on it before trusting this audit.`);
   }
 
+  // Evidence drift: the change-level sha is the one that says whether the value
+  // still derives from the bytes it claims.
+  const evidenceImpacts = findEvidenceSourceChanges(projectDir);
+  for (const impact of evidenceImpacts) {
+    warnings.push(
+      `[IMPACT WARNING] evidence of change "${impact.changeId}" (unit "${impact.unit}") cites "${impact.citation}", ` +
+      `but the source changed since it was applied; the value is no longer derived from those bytes.`,
+    );
+  }
+
   const validCitations = totalCitations - driftedCitations.length;
 
   return {
@@ -186,6 +204,7 @@ function auditModelCitations(projectDir) {
     totalCitations,
     validCitations,
     driftedCitations,
+    evidenceImpacts,
   };
 }
 
@@ -223,7 +242,7 @@ function remediationFor(reason, suggestions) {
     return 'Restore the missing source file, or update the citation to point to an existing source.';
   }
   if (reason === 'missing_heading' && suggestions && suggestions.length > 0) {
-    return `Update the citation to one of the suggested headings: ${suggestions.map((s) => `#${s}`).join(', ')} — or restore the missing heading in the source.`;
+    return `Update the citation to one of the suggested headings: ${suggestions.map((s) => `#${s}`).join(', ')} â€” or restore the missing heading in the source.`;
   }
   if (reason === 'missing_heading') {
     return 'Update the citation to an existing heading, or restore the missing heading in the source.';
@@ -448,6 +467,42 @@ function detectSourceFamilyEvolution(projectDir) {
 }
 
 /**
+ * Evidence drift (change-provenance: consumers read the log): an applied change
+ * whose stamped `evidence_sha256` no longer matches the cited file's bytes. The
+ * report names the change, the unit it set and the citation, so the reader knows
+ * WHICH value is now untrustworthy.
+ *
+ * @param {string} projectDir
+ * @returns {Array<{ changeId: string, unit: string, citation: string, expected?: string, actual?: string }>}
+ */
+function findEvidenceSourceChanges(projectDir) {
+  const snapshot = readLineageSnapshot(projectDir);
+  const log = buildChangeLog(snapshot);
+  const impacts = [];
+  for (const change of log.all) {
+    if (!change.applied || !change.evidenceSha256 || change.evidenceSha256.length === 0) continue;
+    const items = change.evidenceItems || [];
+    items.forEach((citation, index) => {
+      const keyword = String(citation).toLowerCase();
+      if (keyword === 'decision' || keyword === 'unknown') return;
+      const expected = change.evidenceSha256[index];
+      if (!expected) return;
+      const relPath = toPosix(String(citation).split('@')[0].trim());
+      const abs = path.join(projectDir, relPath);
+      let actual;
+      try {
+        actual = crypto.createHash('sha256').update(fs.readFileSync(abs)).digest('hex');
+      } catch {
+        return; // a missing file is the citation validator's report, not this one
+      }
+      if (actual === String(expected).toLowerCase()) return;
+      impacts.push({ changeId: change.id, unit: change.resolvedTarget || change.target, citation: String(citation), expected, actual });
+    });
+  }
+  return impacts;
+}
+
+/**
  * Impact of newer family members on the citations that still target older ones.
  * Superseded citations are listed; those whose cited unit no longer resolves in
  * the latest member are flagged `unresolved_in_latest` (a warning).
@@ -477,12 +532,12 @@ function checkScanImpact(projectDir, options = {}) {
 
 module.exports = {
   auditModelCitations,
-  checkScanImpact,
-  findClosestSlugs,
+  checkScanImpact,  findClosestSlugs,
   buildImpactReport,
   writeImpactReport,
   groupSourceFamilies,
   detectSourceFamilyEvolution,
   collectCitationSites,
+  findEvidenceSourceChanges,
   findStaleSources,
 };

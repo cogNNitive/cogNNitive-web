@@ -3,10 +3,10 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/visual-catalog/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 title: "Visual Catalog App"
-blueprint_version: "V_0-3-2"
+blueprint_version: "V_0-3-3"
 procedures:
   - id: "ingest-visual-catalog"
     name: "Ingest Visual Catalog Procedure"
@@ -93,7 +93,7 @@ description:: Extraction confidence score (0-10 scale).
 
 ## NN Field Definition: source
 concept:: Entry
-type:: citation
+type:: address
 description:: OPTIONAL citation to the normalized source (sources/nn/...) this Entry derives from.
 
 ## NN Field Definition: description
@@ -124,7 +124,7 @@ description:: Workspace-relative path to the ORIGINAL binary asset in sources/im
 
 ## NN Field Definition: source
 concept:: Evidence
-type:: citation
+type:: address
 description:: Optional citation to a textual source or sidecar establishing provenance (omitted for raw-only images whose provenance is captured in original_ref).
 
 ## NN Field Definition: notes

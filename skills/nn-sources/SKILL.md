@@ -1,6 +1,6 @@
 ---
 name: nn-sources
-description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and keep the domaiNN lineage record in sync. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
+description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and record every artifact through a `produce_artifact` change. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
 version: "V_3-5-5"
 last_updated: 2026-10-27
 empty_sections_mode: "ask-per-section"
@@ -67,11 +67,11 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 4. **User Input Source**: in-line interactive input (`source_file: "inline:..."`),
    exempt from physical disk file existence.
 
-Citations use the pointer grammar `sources:: [<path>@<unit>, ...]` — ALWAYS a
-bracketed list, with a domaiNN-relative path written in full (no implicit prefix).
-A `<unit>` is `@## Heading` (Markdown), `@RowID&col` (CSV), or
-`@/items/0/name` (JSON Pointer, RFC 6901). No `src-NNN` IDs, no line-number
-ranges, and never a `staging/` target.
+A unit's provenance is the `evidence` of the applied change that set it: a
+domaiNN-relative `path@unit`, written in full (no implicit prefix), or a bracketed
+list when one change cites several units. A `<unit>` is `@## Heading` (Markdown),
+`@RowID&col` (CSV), or `@/items/0/name` (JSON Pointer, RFC 6901). No `src-NNN` IDs,
+no line-number ranges, and never a `staging/` target.
 
 **Informative Grace**
 
@@ -85,7 +85,7 @@ If you'd prefer a different location or want to stop, tell me before I begin."*
 
 1. **NEVER manually calculate SHA-256 hashes**, handcraft converted markdown tables, or manually edit source frontmatter to bypass layout mismatches.
 2. When updating or refreshing a single source file, always use the atomic command: `node scripts/index.js --normalize-file "<source-path>" --src "<project-dir>"`. To cognitivize a file or a whole folder in place, use `node scripts/index.js --cognitivize "<file-or-dir>" --src "<project-dir>"` (recursive; skips sidecars and `staging/`).
-3. The canonical toolchain guarantees write-once handling (imports, promotions and generated artifacts never overwrite: changed bytes add a new UTC-suffixed family member, identical bytes are deduplicated), sidecar refresh when a raw file's bytes change, downstream `[IMPACT WARNING]` audits, and lineage-record synchronization.
+3. The canonical toolchain guarantees write-once handling (imports, promotions and generated artifacts never overwrite: changed bytes add a new UTC-suffixed family member, identical bytes are deduplicated), sidecar refresh when a raw file's bytes change, and downstream `[IMPACT WARNING]` audits.
 
 This skill enables the agent to interactively guide the user through document ingestion, normalization, and transformation.
 
@@ -210,7 +210,7 @@ cited_works:
 
 > **⚠️ Staging Buffer Rule (`staging/`)**: Intermediate dumps from extraction tools (Whisper SRTs, raw OCR text) live temporarily in a `staging/` folder. Any `staging` path segment is strictly ignored by scanners, `--cognitivize` on a directory, the lineage projection and models, and write-once rules do not apply to it. `staging/` is **NEVER a valid citation target** (a citation into it reports `KU_EXCLUDED_PATH`: scratch, not missing).
 
-> **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system and **no implicit path prefix**: a citation path is domaiNN-relative, written in full. Downstream Level 3 models reference sources directly by path and `@` anchor via `sources:: sources/import/<file>.md@## <Heading>` (CSV row/col: `sources/import/<file>.csv@RowID&col`; JSON Pointer: `sources/import/<file>.json@/items/0/name`, RFC 6901, starting with `/`, a literal `&` written `%26`; or file-level citation `kNNowledge/<model>_NN.md`; multiple values use list syntax: `sources:: [sources/import/a.md@## Intro, sources/import/b_20261001T101500Z.pdf_sidecar_NN.md@## Summary]`). Binary raw files cannot be cited directly: cite the binary's sidecar (citing `x.pdf@...` reports `KU_BINARY_TARGET` and suggests `x.pdf_sidecar_NN.md@...`). Line numbers are prohibited; heading text anchors, CSV row keys or JSON Pointers are mandatory.
+> **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system and **no implicit path prefix**: a citation path is domaiNN-relative, written in full. Downstream Level 3 models reference sources directly by path and `@` anchor via `evidence:: sources/import/<file>.md@## <Heading>` (CSV row/col: `sources/import/<file>.csv@RowID&col`; JSON Pointer: `sources/import/<file>.json@/items/0/name`, RFC 6901, starting with `/`, a literal `&` written `%26`; or file-level citation `kNNowledge/<model>_NN.md`; multiple values use list syntax: `evidence:: [sources/import/a.md@## Intro, sources/import/b_20261001T101500Z.pdf_sidecar_NN.md@## Summary]`). Binary raw files cannot be cited directly: cite the binary's sidecar (citing `x.pdf@...` reports `KU_BINARY_TARGET` and suggests `x.pdf_sidecar_NN.md@...`). Line numbers are prohibited; heading text anchors, CSV row keys or JSON Pointers are mandatory.
 
 > **Heading anchors use the human-readable heading text** (`@## Visión`) — the same rule the iNNfo editor and `@cognnitive/nn-core` use.
 
@@ -230,25 +230,25 @@ node scripts/index.js --cognitivize "<file-or-dir>" --src "<project-dir>"
 #### 2a-2. Dynamic Sources & Impact Checking (`--check-impact` / `--normalize-file`)
 
 When an existing source file is modified in `sources/import/`, its SHA-256 hash changes:
-1. **Automatic Sidecar Refresh & Scan Warning**: `--scan` finds the stale sidecar (its `sha256` no longer matches the raw bytes), refreshes it in place (no snapshot, no archive copy), and immediately audits downstream models in `kNNowledge/`. If any model citation (`sources:: [sources/import/file.md@## Heading]`) points to an altered or removed section, an `[IMPACT WARNING]` is printed to the console. Sources that arrive as a new write-once family member (a re-import) keep the earlier member's bytes and sidecar intact, so citations to it stay valid; the impact checker then advises that a newer member exists.
+1. **Automatic Sidecar Refresh & Scan Warning**: `--scan` finds the stale sidecar (its `sha256` no longer matches the raw bytes), refreshes it in place (no snapshot, no archive copy), and immediately audits downstream models in `kNNowledge/`. If any model citation (`evidence:: [sources/import/file.md@## Heading]`) points to an altered or removed section, an `[IMPACT WARNING]` is printed to the console. Sources that arrive as a new write-once family member (a re-import) keep the earlier member's bytes and sidecar intact, so citations to it stay valid; the impact checker then advises that a newer member exists.
 2. **Atomic Single-Source Refresh Command**:
    To refresh a single file without a whole-workspace scan:
    ```bash
    node scripts/index.js --normalize-file "<source-path>" --src "<project-dir>"
    ```
-   - Cognitivizes just that file in place (the same operation as `--scan` and `--cognitivize`), audits downstream citations for `[IMPACT WARNING]`, and refreshes the workspace lineage record (`<project>_cogNNitive_NN.md`) with the updated source entry.
+   - Cognitivizes just that file in place (the same operation as `--scan` and `--cognitivize`), audits downstream citations for `[IMPACT WARNING]` with the updated source entry.
    - There are no layout flags: sidecars are always co-located with their raw file.
 3. **On-Demand Audit Command**:
    ```bash
    node scripts/index.js --check-impact --src "<project-dir>"
    ```
-   Inspects every Level 3 model in `kNNowledge/`, parses all `sources::` citations, and verifies that the cited file exists (a domaiNN-relative path) AND that the cited anchor (`@## Heading`, `@RowID&col` or a JSON Pointer) is present. Reports errors for drifted or missing anchors along with fuzzy suggestions for closest matching headings. Exits non-zero if drift errors are detected.
+   Inspects every Level 3 model in `kNNowledge/`, parses the `evidence` of every applied change, and verifies that the cited file exists (a domaiNN-relative path) AND that the cited anchor (`@## Heading`, `@RowID&col` or a JSON Pointer) is present. Reports errors for drifted or missing anchors along with fuzzy suggestions for closest matching headings. Exits non-zero if drift errors are detected.
 
 #### 2a-3. External Watch Roots & Immutable Timestamped Sources (`--scan-external`)
 
 Workspaces can watch external file drops without daemons or external mutations:
 
-1. **Declarative Watch Roots in the Lineage record**:
+1. **Declarative Watch Roots in the domaiNN entrypoint**:
    ```markdown
    ## NN External Watch Roots:
    - Root: "D:/External_Drops/Client_Inputs"
@@ -284,7 +284,7 @@ A domaiNN that declares `## NN External Watch Roots:` can be checked **at sessio
 
 #### 2a-4. Curating a CSV for Row-Level Citation
 
-A raw CSV is cognitivized in place as it is (bodyless sidecar, the file itself is the citation target). Row-level citations (`sources:: [<path>.csv@<row-id>]`) require a unique, non-empty key in the CSV's **first column** (the row-id). When the raw CSV does not satisfy that, curate it:
+A raw CSV is cognitivized in place as it is (bodyless sidecar, the file itself is the citation target). Row-level evidence (`<path>.csv@<row-id>`) require a unique, non-empty key in the CSV's **first column** (the row-id). When the raw CSV does not satisfy that, curate it:
 
 ```bash
 node scripts/index.js --curate-csv "<path-to-csv>" --key "<column>" [--dedup] --src "<project-dir>"
@@ -292,8 +292,8 @@ node scripts/index.js --curate-csv "<path-to-csv>" --key "<column>" [--dedup] --
 
 - Moves the `--key` column to the first position (defaults to the first column), validates it, and writes an RFC-4180 CSV as a write-once artifact, `artifacts/curated/<stem>_<YYYYMMDDTHHmmssZ>.csv`, cognitivized in place (its sidecar declares the raw file as upstream via `sources`). The raw file is never modified, and curating unchanged input twice writes nothing new.
 - Without `--dedup` it aborts when the key has empty or duplicate values; with `--dedup` it collapses duplicate-key rows (first wins) and drops empty-key rows, reporting both counts.
-- Cite a row as `sources:: [artifacts/curated/<stem>_<YYYYMMDDTHHmmssZ>.csv@<row-id>]` (or `@<row-id>&<column>` for one cell); the command prints the exact citation to use. The iNNfo editor highlights the cited row when the source pill is clicked.
-- The curated CSV appears in the lineage record as a Source whose `derived_from::` is the raw file, so the citable file is tracked together with its upstream.
+- Cite a row as `evidence:: artifacts/curated/<stem>_<YYYYMMDDTHHmmssZ>.csv@<row-id>` (or `@<row-id>&<column>` for one cell); the command prints the exact citation to use. The iNNfo editor highlights the cited row when the source pill is clicked.
+- The curated CSV is recorded by a `produce_artifact` change whose `evidence` is the raw file, so the citable artifact is tracked together with its upstream.
 
 #### 2a-5. Source Convergence Strategies (`--converge`)
 
@@ -388,26 +388,27 @@ When the user pastes a URL in chat and wants it ingested:
 3. Confirm to the user that the file landed in `sources/import/`, then continue with the normal scan/cognitivize flow.
 4. Downloaded PDFs go through the same existing `.pdf` handling as a manually dropped PDF (pdf-parse, on-demand install); if pdf-parse's own `info.Title`/`info.Author` are available, they populate the same optional sidecar frontmatter keys.
 
-#### 2d. Lineage Record Filesystem Sync
+#### 2d. Computed Lineage (no persisted sync)
 
-The cogNNitive **lineage record** (a `*_cogNNitive_NN.md` document; a new one is created as `<Project>_cogNNitive_NN.md`, and an existing one is found by its role, never by its file name or version) keeps three of its four sections in sync with the workspace filesystem on every build/refresh (bootstrap, `--scan`, `--cognitivize`, `--import-url`, or the standalone `--lineage` flag). The projection walks the whole domaiNN (scratch such as `staging/` is skipped) and derives everything from names and sidecars, not from folders:
+Lineage is **computed**, never persisted: `read_lineage` projects the inventory (sources, models, artifacts, changesets) from the filesystem and the edges from the applied changes. There is no record to refresh, so there is nothing to drift.
 
-- **`# NN Sources`** — one entry per cognitivized raw file (the subject of each sidecar), carrying `raw_filename`, `raw_hash`, `normalized_content` (the sidecar), `version::` (its rank in its UTC-suffixed family, `V1`, `V2`...), `superseded_by::` (the next family member, when there is one) and `derived_from::` (the upstream the file declares via `sources`).
-- **`# NN ModelRecords`** — one entry per knowledge document (`kNNowledge/*_NN.md`), with `model_ref`, `knowledge_version`, `model_template`, and `derived_from::` projected from that model's `sources::` Citations.
-- **`# NN Artifacts`** — one entry per generated file that is a UTC-suffixed family member or declares upstream `sources` (e.g. everything the producers write under `artifacts/`), with `derived_from::` projected from its upstream citations. A hand-written Markdown file with neither is not an artifact node.
+- **sources** — one entry per cognitivized raw file (the subject of each sidecar), carrying
+  `raw_filename`, `raw_hash`, `normalized_content` (the sidecar) and its family version.
+- **models** — one entry per knowledge document (`kNNowledge/*_NN.md`) with its
+  `knowledge_version` and `model_template`.
+- **artifacts** — one entry per generated file that is a UTC-suffixed family member or has a
+  `produce_artifact` change.
+- **edges** — `evidence`, `target` and `produced`, all derived from the applied changes.
 
-All three use **idempotent replace**: re-running regenerates them from the current filesystem state, no duplicate entries, and removed files drop out.
+The projection is recomputed on every call; there is no persisted copy and therefore no
+idempotent-replace step, no duplicate entries and nothing to drift.
 
 - **`# NN Procedures`** is an **append-only run log**. Each scripted pipeline run (`--scan`, `--import-url`) appends one `## NN Procedures:` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). A section refresh never removes existing procedure entries. The agent should still add `## NN Procedures:` entries by hand for **non-scripted** research/analysis steps it performs itself. This is distinct from the `procedures/` directory, which holds saved, user-authored orchestration specs.
 
-Run `node scripts/index.js --lineage --check` (or `--check`) to report drift between the lineage record and the filesystem. It flags:
-1. A missing record, or any model citation that fails validation (dangling `sources::` references, missing anchors);
-2. Unlisted family members (a cognitivized file on disk with no element in `# NN Sources`) and projection diagnostics such as a sidecar whose `source_file` does not match the subject its name derives (`SIDECAR_SUBJECT_MISMATCH`);
-3. Dangling `superseded_by::` pointers that resolve to no element or file;
-4. Hash mismatches (a sidecar `sha256` that differs from the hash of its raw bytes);
-5. **Lineage drift** (`LINEAGE_DRIFT`): a managed section of the record (`# NN Sources`, `# NN ModelRecords`, `# NN Artifacts`) that differs, byte for byte, from a fresh projection. The `# NN Procedures` journal and hand-authored blocks (such as `## NN External Watch Roots`) are never compared. Regenerate with `--lineage`. The MCP `check_domain` tool reports the same drift;
-6. Orphaned sidecars (warning only: the raw file is gone, and the sidecar is preserved).
-It exits non-zero when any error is found.
+Lineage is computed, never persisted: there is no record to drift. Provenance lives in
+the applied changes, and the MCP tools report it (`read_lineage`, `check_domain` with its
+`provenance` report, `resolve_sources`). The CLI still validates citations, sidecar hashes
+and orphaned sidecars; run `nn-sources --check-impact` for the citation audit.
 
 #### 2e. Binary / Batch Sources Not Covered by Auto-Sync
 
@@ -436,7 +437,7 @@ Interaction dialogues are first-class source streams. The transcript lifecycle �
    ```
 
    A participant the user declines to name (or skips) renders the deterministic placeholder `unnamed`; promotion still completes — a missing name never blocks or aborts the promotion.
-2. **Cognitivize in Place**: Promoted transcripts link to their origin (`origin_transcript: conversations/...`) and render each turn under a `## NN Turn NN: <author-id>` heading (1-based, 2-digit zero-padded: `## NN Turn 01: Architect`, …, `## NN Turn 100: X`). The promoted file is Markdown, so its co-located sidecar (`<slug>_<stamp>.md_sidecar_NN.md`) is bodyless and records `source_type: conversation_transcript`; the transcript itself is the citation target. The sequential number makes every turn heading unique and addressable under the workspace heading rules. Downstream models cite these sources using canonical `@` pointer grammar: `sources:: [sources/conversations/<session-slug>_<YYYYMMDDTHHmmssZ>.md@## NN Turn 01: Architect]`. Turn headings carry no `author::` key.
+2. **Cognitivize in Place**: Promoted transcripts link to their origin (`origin_transcript: conversations/...`) and render each turn under a `## NN Turn NN: <author-id>` heading (1-based, 2-digit zero-padded: `## NN Turn 01: Architect`, …, `## NN Turn 100: X`). The promoted file is Markdown, so its co-located sidecar (`<slug>_<stamp>.md_sidecar_NN.md`) is bodyless and records `source_type: conversation_transcript`; the transcript itself is the citation target. The sequential number makes every turn heading unique and addressable under the workspace heading rules. Downstream models cite these sources using canonical `@` pointer grammar: `evidence:: [sources/conversations/<session-slug>_<YYYYMMDDTHHmmssZ>.md@## NN Turn 01: Architect]`. Turn headings carry no `author::` key.
 3. **CLI Promotion**:
    ```bash
    node scripts/index.js --promote-conv "conversations/YYYY-MM-DD_<slug>.md" --format full
@@ -495,7 +496,7 @@ When a user requests to remove, delete, or unlink a source completely from the w
 3. **Automated Cascade Cleanup**:
    - Removes the matching raw source file(s) under `sources/` together with each file's co-located sidecar, so no orphaned sidecar is left behind.
    - Removes matching assets in `assets/` (by stem or slug).
-   - Re-scans and re-generates the lineage record in idempotent replace mode, eliminating all dangling references.
+   - Re-scans and recomputes the projection in memory, so a dangling reference is reported, never cached.
 
 #### 2i. Replacing a Domain Created with the Retired Layout
 
@@ -517,17 +518,22 @@ node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "<old-domain>" --i
 When transforming cognitivized sources into an iNNfo Level 3 Model:
 - Frontmatter MUST use lightweight V_0-1-0 format (`level: 3`, `spec_version: "V_0-1-0"`, `parent_spec: { name, url }`).
 - Body MUST use unified NN syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, `key:: value`.
-- Every element MUST include explicit citation pointers via `sources::`. A citation path is domaiNN-relative and written in full: there is no implicit `sources/` prefix. Text-native files (`md`, `csv`, `json`) are cited directly; a binary is cited through its sidecar:
+- Every change MUST carry `evidence`: the path and unit it derives from, domaiNN-relative and
+  written in full (no implicit `sources/` prefix). Text-native files are cited directly; a
+  binary is cited through its sidecar:
 
 ```markdown
-# NN Stakeholders
-
-## NN Stakeholders: Enterprise Clients
-sources:: [sources/import/interview_transcript.md@## Key Clients, sources/import/notes_20261001T101500Z.pdf_sidecar_NN.md@## Stakeholder Priorities]
-relationship_model:: B2B Long-term
+## NN Change: c-03
+op:: update_field
+target:: stakeholders@enterprise-clients&relationship_model
+to:: B2B Long-term
+evidence:: sources/import/interview_transcript.md@## Key Clients
 ```
 
-A single value may be written without brackets: `sources:: sources/import/interview_transcript.md@## Key Clients`. There is no `src-NNN`/`source_id` system anywhere in this pipeline, and line ranges (`#L1-L10`) are strictly prohibited in favor of stable human-readable heading anchors (`@## Heading Text`), CSV row keys (`@RowID&col`) or JSON Pointers (`data.json@/items/0/name`).
+The model element itself carries no citation field: its origin and history are read from the
+applied changes (`read_lineage`, `resolve_sources`). There is no `src-NNN`/`source_id` system,
+and line ranges (`#L1-L10`) are prohibited in favor of stable heading anchors
+(`@## Heading Text`), CSV row keys (`@RowID&col`) or JSON Pointers (`data.json@/items/0/name`).
 
 #### 3b. Citation Format Selection
 
@@ -552,10 +558,10 @@ Select the citation and export format for the deliverable:
 
 #### 3c. Scored Source-to-Element Matching + Review Queue
 
-When normalized sources must be mapped to Level 3 model elements (`sources::`), score deterministically first and spend LLM attention on doubtful pairs only:
+When normalized sources must be mapped to Level 3 model elements (as the change `evidence`), score deterministically first and spend LLM attention on doubtful pairs only:
 
 1. **Score outside the hot loop**: run `scorePairs(sources, elements, { threshold })` from `scripts/lib/score-matcher.js` over every normalized source against the candidate elements. Scoring is a pure token-set similarity — zero LLM calls, zero context cost. `DEFAULT_THRESHOLD = 0.7`; change it only with measured fixture evidence showing systematic misclassification.
-2. **Link confident pairs automatically**: every pair scoring at or above threshold links immediately; record `{ sourceId, elementId, score }` alongside the element's `sources::` pointer.
+2. **Link confident pairs automatically**: every pair scoring at or above threshold links immediately; record `{ sourceId, elementId, score }` alongside the element's `evidence::` pointer.
 3. **Queue everything else — never silently exclude**: a source scoring below threshold for every element enters the review queue as `{ sourceId, candidates, reason, status: pending }` (`reason` is `below-threshold`, `no-overlap`, or `no-elements`; at most 3 top candidates). An unmatched source is queued, never dropped.
 4. **Review doubtful pairs with the user**: present queued pairs top-candidates-first and confirm or reject each one:
    - `[a] (Recommended) Confirm link` — record the link together with the decision.
@@ -571,7 +577,7 @@ When normalized sources must be mapped to Level 3 model elements (`sources::`), 
 
 Derived deliverables are generated in a single pass directly to `artifacts/[Deliverable_Name]_<YYYYMMDDTHHmmssZ>.md` (a new write-once family member: an existing file is never overwritten) without intermediate `_draft.md` files or non-standard `<!-- cite: ... -->` HTML comments:
 1. **Direct Formatting**: Apply the citation format selected in §3b directly during generation per rules in `citations.md`.
-2. **Source Traceability**: When citations are included (formats `[a]`–`[h]`), resolve claims directly from the Level 3 model's `sources::` pointers (domaiNN-relative paths such as `sources/import/<path>.md@## Heading`, or a binary's sidecar).
+2. **Source Traceability**: When citations are included (formats `[a]`–`[h]`), resolve claims directly from the applied changes' `evidence` (domaiNN-relative paths such as `sources/import/<path>.md@## Heading`, or a binary's sidecar).
 3. **Clean Presentation**: Format `[i]` (No sources) produces presentation-ready deliverables omitting all citation markers and reference lists.
 
 ---
@@ -581,7 +587,7 @@ Derived deliverables are generated in a single pass directly to `artifacts/[Deli
 | Entity Type | Target Directory | Example File Path | Notes |
 |------|------|---------|-------|
 | **Raw source + sidecar** | `sources/import/` | `sources/import/clientA/doc1_20261001T101500Z.docx` + `doc1_20261001T101500Z.docx_sidecar_NN.md` | Raw file untouched; co-located sidecar carries the origin frontmatter (and the normalized body for binaries) |
-| **Model** (`*_NN.md`) | `kNNowledge/` | `kNNowledge/Acme_business_NN.md` | iNNfo Level 3 V_0-1-0 semantic models with `sources::`; the stem ends with the bluepriNNt name and the version lives in frontmatter |
+| **Model** (`*_NN.md`) | `kNNowledge/` | `kNNowledge/Acme_business_NN.md` | iNNfo Level 3 semantic models whose units trace to applied changes; the stem ends with the bluepriNNt name and the version lives in frontmatter |
 | **Deliverable** | `artifacts/` | `artifacts/Executive_Summary_20261001T101500Z.md` | Clean deliverable in user-selected citation format; write-once, UTC-suffixed |
 | **Validation Report** | `artifacts/` | `artifacts/Impact_Audit_report_20261001T101500Z.md` | Written by `--check-impact --report`; identical findings write nothing new |
 | **Curated CSV** | `artifacts/curated/` | `artifacts/curated/prices_20261001T101500Z.csv` | Citation-ready CSV from `--curate-csv` |
@@ -595,9 +601,15 @@ This skill does not execute procedures. Procedure execution follows the canonica
 **Procedure Execution Protocol** in `nn-innfo` (§Procedure Execution Protocol);
 do not restate it here. `nn-sources` only provides the ingestion and lineage tools
 a procedure step may delegate to (e.g. `--scan`, `--cognitivize`, `--import-url`,
-`--check-impact`, `--lineage`).
+`--check-impact`).
 
 ---
+
+### 6c. Prose Bodies are Changes, Not Fields
+
+An element's prose body is written by `update_element_text` (`target:: <model>@<element>`,
+`from:: <current prose>`, `to:: <new prose>`), never by a `description::` field.
+`update_field` on `description` is rejected with `USE_UPDATE_ELEMENT_TEXT`.
 
 ### 7. Post-Transformation Closing Protocol
 
@@ -613,9 +625,9 @@ At the end of transformation:
 ## Core Rules
 
 1. **Mandatory Scanner Origin Metadata**: Every cognitivized raw file MUST have a co-located `<file>.<ext>_sidecar_NN.md` whose frontmatter records `source_file`, `sha256`, `size_bytes`, `source_format` and `normalized_at` (plus `normalized_by` when a converter ran, and optional `canonical` and `cited_works`). Only `cognitivize` writes sidecars; never handcraft one. No `source_id`/`src-NNN`.
-2. **Mandatory Model Citations**: Level 3 elements MUST include `sources:: sources/import/<path.md>@## Heading` (or a list `sources:: [sources/import/a.md@## H1, sources/import/b.pdf_sidecar_NN.md@## H2]`) with a domaiNN-relative path and no implicit prefix; binaries are cited through their sidecar — no `src-NNN` IDs, no line-number ranges.
+2. **Mandatory Evidence**: every applied change MUST carry `evidence:: sources/import/<path.md>@## Heading` (one citation per change; a change may cite one file and anchor) with a domaiNN-relative path and no implicit prefix; binaries are cited through their sidecar — no `src-NNN` IDs, no line-number ranges, no `evidence::` field.
 3. **V_0-1-0 Compliance**: Target iNNfo V_0-1-0 meta-template specification and unified NN syntax (`# NN`, `## NN`, `key:: value`).
 4. **Saved Procedure Proactive Check**: When starting `nn-sources` or `nn`, check for existing procedures in `procedures/` and offer them as runnable options to the user before starting standard ingestion.
-4a. **Lineage Record Sync**: `# NN Sources`, `# NN ModelRecords` and `# NN Artifacts` re-sync from the filesystem (sidecars, `kNNowledge/`, `artifacts/`) on every `--scan`/`--cognitivize`/`--import-url`/`--lineage` run — idempotent replace, removed files drop out. `# NN Procedures` is an append-only log: scripted runs (`--scan`, `--cognitivize`, `--import-url`) append their own entry; the agent still adds `## NN Procedures:` entries by hand for non-scripted research/analysis steps (see §2d). `node scripts/index.js --lineage --check` reports drift, including hand-edited managed sections.
+4a. **Provenance Through Changes**: every produced artifact is recorded with a `produce_artifact` change; element provenance is the applied change's `evidence`. There is no record to refresh.
 5. **Prose Description in Level 3 Models**: The description of an element in a Level 3 model must NEVER be formatted as a `description::` property field. It must always be written as free-form Markdown prose below the `key:: value` fields list, separated from them by a blank line.
 6. **Scored Matching, Never Silent Exclusion**: normalized sources map to model elements through `scorePairs` (`scripts/lib/score-matcher.js`, threshold 0.7); below-threshold pairs enter the review queue with a recorded decision, and undecided pairs stay queued across sessions.

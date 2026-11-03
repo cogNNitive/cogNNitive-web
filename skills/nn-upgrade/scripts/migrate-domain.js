@@ -33,7 +33,7 @@ function getArg(flag) {
  * MCP `init_domain` tool writes) and imports the old domain tree into
  * `sources/import/<old-domain-folder>/`, the canonical raw-import location. The old tree
  * is never touched. Migrating its content is the agent's job: `add_model` /
- * `add_element` changes whose `sources::` cite the imported files, proposed with
+ * `add_element` changes whose `evidence` cites the imported files, proposed with
  * `propose_changeset` and applied after review.
  */
 async function runImportAsSource(legacyDir, newDomainDir, options = {}) {
@@ -89,7 +89,7 @@ async function runImportAsSource(legacyDir, newDomainDir, options = {}) {
   console.log(`New Canonical domaiNN created at: ${targetDir}`)
   console.log(`Legacy domain imported into:      ${importDir}\n`)
   console.log('Your legacy files remain unchanged as an archival source.')
-  console.log('Next: derive add_model / add_element changes that cite the import through sources::,')
+  console.log('Next: derive add_model / add_element changes that cite the import through evidence,')
   console.log('propose them with propose_changeset, review the console, then apply_change.')
 }
 
