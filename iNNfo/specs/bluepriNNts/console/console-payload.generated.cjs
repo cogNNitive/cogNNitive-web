@@ -7468,6 +7468,9 @@ var ElementsMap = class {
   }
 };
 
+// iNNfo/packages/nn-core/src/layout.ts
+var CANONICAL_DOMAIN_ENTRYPOINT = "domaiNN_NN.md";
+
 // iNNfo/packages/nn-core/src/parser/slug.ts
 function nfc(text) {
   return text.normalize("NFC");
@@ -9010,6 +9013,18 @@ function isDirectSpecEntryName(filePath, base) {
   const entry = (filePath.split(/[\\/]/).pop() ?? filePath).toLowerCase();
   return entry === "spec_nn.md" || entry === `${base.toLowerCase()}_nn.md` || entry.startsWith(`${base.toLowerCase()}_v_`);
 }
+async function packageDirOf(rootDir, base) {
+  const { readdir: readdir2 } = await import("node:fs/promises");
+  const { join: join5 } = await import("node:path");
+  const direct = join5(rootDir, "specs", "bluepriNNts", base);
+  try {
+    const entries = await readdir2(join5(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
+    const match = entries.find((e) => e.isDirectory() && e.name.toLowerCase() === base);
+    return match ? join5(rootDir, "specs", "bluepriNNts", match.name) : direct;
+  } catch {
+    return direct;
+  }
+}
 async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   const { readdir: readdir2, readFile: readFile3 } = await import("node:fs/promises");
   const { join: join5 } = await import("node:path");
@@ -9019,7 +9034,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   const parsed = parseSpecName(reqName);
   const base = parsed.base;
   const targetVersion = reqVersion ? normalizeVersion(reqVersion) : parsed.version;
-  const wsPackageBaseDir = join5(rootDir, "specs", "bluepriNNts", base);
+  const wsPackageBaseDir = await packageDirOf(rootDir, base);
   const unversionedSpecFile = await findSpecInPackageDir(wsPackageBaseDir, base);
   if (unversionedSpecFile && isDirectSpecEntryName(unversionedSpecFile, base)) {
     const content = await readFile3(unversionedSpecFile, "utf-8").catch(() => "");
@@ -11354,6 +11369,69 @@ function hashParsedElement(concept, node) {
   });
 }
 
+// iNNfo/packages/nn-core/src/imports/parser.ts
+function parseDomainImports(domainContent) {
+  const parsed = parseKnowledge(domainContent);
+  const domains = [];
+  const imports = [];
+  const domainElements = parsed.elements.get("Imported Domain") ?? [];
+  for (const el of domainElements) {
+    const rawPath = String(el.fields["path"] ?? "").trim();
+    domains.push({
+      alias: el.name,
+      path: rawPath
+    });
+  }
+  const importElements = parsed.elements.get("Import") ?? [];
+  for (const el of importElements) {
+    const from = String(el.fields["from"] ?? "").trim();
+    const gt = from.indexOf(">");
+    if (gt === -1) continue;
+    const originAlias = from.slice(0, gt).trim();
+    const rest = from.slice(gt + 1).trim();
+    let model = rest;
+    let concept;
+    let filters;
+    const qMark = model.indexOf("?");
+    let queryPart = "";
+    if (qMark !== -1) {
+      queryPart = model.slice(qMark + 1);
+      model = model.slice(0, qMark);
+    }
+    const atSign = model.indexOf("@");
+    if (atSign !== -1) {
+      const sectionPart = model.slice(atSign + 1);
+      model = model.slice(0, atSign);
+      if (sectionPart.startsWith("concept:")) {
+        concept = sectionPart.slice("concept:".length);
+      } else {
+        concept = sectionPart;
+      }
+    }
+    if (queryPart) {
+      filters = {};
+      const pairs = queryPart.split("&");
+      for (const pair of pairs) {
+        const eq = pair.indexOf("=");
+        if (eq !== -1) {
+          const k = decodeURIComponent(pair.slice(0, eq).trim());
+          const v = decodeURIComponent(pair.slice(eq + 1).trim());
+          if (k) filters[k] = v;
+        }
+      }
+    }
+    imports.push({
+      name: el.name,
+      from,
+      originAlias,
+      model,
+      concept,
+      filters
+    });
+  }
+  return { domains, imports };
+}
+
 // iNNfo/packages/nn-core/src/console/citations.ts
 var EXCERPT_CHAR_CAP = 500;
 var CHANGE_CONCEPT = "NN Change";
@@ -11734,9 +11812,54 @@ function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltL
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs2 = require("node:fs");
 var import_node_path2 = require("node:path");
+function readDomainAliases(rootDir) {
+  const aliases = /* @__PURE__ */ new Map();
+  const entryPath = (0, import_node_path2.join)(rootDir, CANONICAL_DOMAIN_ENTRYPOINT);
+  let content;
+  try {
+    content = (0, import_node_fs2.readFileSync)(entryPath, "utf-8");
+  } catch {
+    return aliases;
+  }
+  for (const domain of parseDomainImports(content).domains) {
+    if (!domain.alias || !domain.path) continue;
+    if (/^[a-zA-Z]+:\/\//.test(domain.path) || (0, import_node_path2.isAbsolute)(domain.path)) continue;
+    aliases.set(domain.alias.toLowerCase(), (0, import_node_path2.resolve)(rootDir, domain.path));
+  }
+  return aliases;
+}
+function splitAliasRef(refPath) {
+  const gt = refPath.indexOf(">");
+  if (gt <= 0) return null;
+  const alias = refPath.slice(0, gt).trim();
+  const rest = refPath.slice(gt + 1).trim();
+  if (!alias || !rest) return null;
+  return { alias, rest };
+}
+function resolveInside2(dir, rest) {
+  const abs = (0, import_node_path2.resolve)(dir, rest);
+  const rel = (0, import_node_path2.relative)(dir, abs);
+  if (rel === "" || rel.startsWith("..") || (0, import_node_path2.isAbsolute)(rel)) return null;
+  try {
+    const content = (0, import_node_fs2.readFileSync)(abs, "utf-8");
+    return { exists: true, headings: extractHeadings(content).map((h) => h.slug), content };
+  } catch {
+    return { exists: false, parentExists: (0, import_node_fs2.existsSync)((0, import_node_path2.dirname)(abs)) };
+  }
+}
 function createFsSourceResolver(rootDir) {
   const rootResolved = (0, import_node_path2.resolve)(rootDir);
+  let domainAliases;
   return (refPath, referringPath) => {
+    const aliased = splitAliasRef(refPath);
+    if (aliased) {
+      domainAliases ??= readDomainAliases(rootResolved);
+      const aliasDir = domainAliases.get(aliased.alias.toLowerCase());
+      if (aliasDir) {
+        const inside = resolveInside2(aliasDir, aliased.rest);
+        if (inside) return inside;
+      }
+    }
     const candidateDirs = [];
     if (referringPath) {
       const absReferring = (0, import_node_path2.isAbsolute)(referringPath) ? referringPath : (0, import_node_path2.resolve)(rootDir, referringPath);

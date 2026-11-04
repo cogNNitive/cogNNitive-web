@@ -8366,24 +8366,26 @@ var META_PATHS = 10;
 function pinOf(m) {
   const { name, url } = parentSpecOf(m.frontmatter);
   if (!name?.trim()) return null;
-  const blueprint = blueprintNameOf(name).toLowerCase();
+  const blueprint = blueprintNameOf(name);
+  const key = blueprint.toLowerCase();
   const token = versionTokenOf(name);
-  if (!token) return { blueprint, version: "unpinned", incomparable: "unpinned" };
+  if (!token) return { blueprint, key, version: "unpinned", incomparable: "unpinned" };
   const classifiable = !url?.trim() || parsePinnedUrl(url) !== null || parseUnversionedBlueprintName(url) !== null;
-  if (!classifiable) return { blueprint, version: "unclassifiable-url", incomparable: "unclassifiable-url" };
-  return { blueprint, version: token.toUpperCase() };
+  if (!classifiable) return { blueprint, key, version: "unclassifiable-url", incomparable: "unclassifiable-url" };
+  return { blueprint, key, version: token.toUpperCase() };
 }
 function versionSkew(models) {
   const groups = /* @__PURE__ */ new Map();
   for (const m of models) {
     const pin = pinOf(m);
     if (!pin) continue;
-    const members = groups.get(pin.blueprint) ?? [];
-    members.push({ path: m.path, version: pin.version, incomparable: pin.incomparable, concepts: m.concepts ?? [] });
-    groups.set(pin.blueprint, members);
+    const group = groups.get(pin.key) ?? { blueprint: pin.blueprint, members: [] };
+    group.members.push({ path: m.path, version: pin.version, incomparable: pin.incomparable, concepts: m.concepts ?? [] });
+    groups.set(pin.key, group);
   }
   const findings = [];
-  for (const [blueprint, members] of [...groups].sort(([a], [b]) => byText(a, b))) {
+  for (const [key, { blueprint, members }] of [...groups].sort(([a], [b]) => byText(a, b))) {
+    void key;
     const byVersion = /* @__PURE__ */ new Map();
     for (const { version, path: path4 } of members) byVersion.set(version, [...byVersion.get(version) ?? [], path4]);
     if (byVersion.size < 2) continue;
@@ -8417,438 +8419,6 @@ function versionSkew(models) {
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
-function createFsSourceResolver(rootDir) {
-  const rootResolved = (0, import_node_path.resolve)(rootDir);
-  return (refPath, referringPath) => {
-    const candidateDirs = [];
-    if (referringPath) {
-      const absReferring = (0, import_node_path.isAbsolute)(referringPath) ? referringPath : (0, import_node_path.resolve)(rootDir, referringPath);
-      let cur = (0, import_node_path.dirname)(absReferring);
-      while (true) {
-        const sourcesDir = (0, import_node_path.join)(cur, "sources");
-        if ((0, import_node_fs.existsSync)(sourcesDir)) {
-          candidateDirs.push(cur);
-        }
-        if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
-          break;
-        }
-        const relToRoot = (0, import_node_path.relative)(rootResolved, cur);
-        if (relToRoot.startsWith("..")) {
-          break;
-        }
-        cur = (0, import_node_path.dirname)(cur);
-      }
-    }
-    if (!candidateDirs.includes(rootResolved)) {
-      candidateDirs.push(rootResolved);
-    }
-    for (const dir of candidateDirs) {
-      const abs = (0, import_node_path.resolve)(dir, refPath);
-      const rel = (0, import_node_path.relative)(dir, abs);
-      if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
-        continue;
-      }
-      if ((0, import_node_fs.existsSync)(abs)) {
-        try {
-          const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
-          return {
-            exists: true,
-            headings: extractHeadings(content).map((h) => h.slug),
-            content
-          };
-        } catch {
-          return { exists: false };
-        }
-      }
-    }
-    const primaryDir = candidateDirs[0] ?? rootResolved;
-    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
-    const targetParent = (0, import_node_path.dirname)(targetAbs);
-    const parentExists = (0, import_node_fs.existsSync)(targetParent);
-    if (!parentExists) {
-      return { exists: false, parentExists: false };
-    }
-    let suggestions;
-    try {
-      const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
-      const targetBase = (0, import_node_path.basename)(refPath);
-      const targetStem = targetBase.replace(/\.[^.]+$/, "");
-      const files = entries.filter((e) => e.isFile()).map((e) => e.name);
-      const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
-      const scored = files.map((name) => {
-        const candStem = name.replace(/\.[^.]+$/, "");
-        return { name, dist: levenshteinDistance(targetStem, candStem) };
-      }).filter((item) => item.dist > 0 && item.dist <= maxAllowed).sort((a, b) => a.dist - b.dist);
-      if (scored.length > 0) {
-        suggestions = scored.map((s) => s.name);
-      }
-    } catch {
-    }
-    return {
-      exists: false,
-      parentExists: true,
-      suggestions
-    };
-  };
-}
-
-// iNNfo/packages/nn-core/src/csvTable.ts
-function parseCsvTable(content, options = {}) {
-  const delimiter = options.delimiter ?? ",";
-  const records = [];
-  let record = [];
-  let field = "";
-  let inQuotes = false;
-  let hasContent = false;
-  const pushField = () => {
-    record.push(field);
-    field = "";
-  };
-  const pushRecord = () => {
-    if (record.length === 1 && record[0] === "" && !hasContent) {
-      record = [];
-      return;
-    }
-    records.push(record);
-    record = [];
-    hasContent = false;
-  };
-  for (let i = 0; i < content.length; i++) {
-    const ch = content[i];
-    hasContent = hasContent || ch !== "\r" && ch !== "\n" || inQuotes;
-    if (inQuotes) {
-      if (ch === '"') {
-        if (content[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += ch;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === delimiter) {
-      pushField();
-    } else if (ch === "\r") {
-      if (content[i + 1] !== "\n") field += ch;
-    } else if (ch === "\n") {
-      pushField();
-      pushRecord();
-    } else {
-      field += ch;
-    }
-  }
-  if (inQuotes) {
-    return { headers: [], rows: [], malformed: true };
-  }
-  pushField();
-  pushRecord();
-  if (records.length === 0) return { headers: [], rows: [], malformed: false };
-  const [headerRow, ...body] = records;
-  return { headers: headerRow.map((h) => normalizeName(h)), rows: body, malformed: false };
-}
-
-// iNNfo/packages/nn-core/src/unitResolve.ts
-var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
-function resolveElementUnit(content, unit, subunits) {
-  const headings = extractHeadings(content);
-  const lines = content.split("\n");
-  let matchedHeading;
-  for (const h of headings) {
-    if (h.level === 2) {
-      const section2 = resolveHeadingSection(content, h.slug);
-      if (section2) {
-        for (let i = section2.startLine + 1; i < section2.endLine; i++) {
-          const m = lines[i].match(/^\s*slug\s*::\s*([^\s]+)/);
-          if (m && m[1].toLowerCase() === unit.slug.toLowerCase()) {
-            matchedHeading = h;
-            break;
-          }
-          if (/^#{1,6}\s/.test(lines[i])) break;
-        }
-      }
-    }
-    if (matchedHeading) break;
-  }
-  if (!matchedHeading) {
-    matchedHeading = headings.find(
-      (h) => h.slug === unit.slug || h.element && slugifyHeading(h.element) === unit.slug || h.slug.endsWith(`--${unit.slug}`)
-    );
-  }
-  if (!matchedHeading) return null;
-  const section = resolveHeadingSection(content, matchedHeading.slug);
-  if (!section) return null;
-  if (subunits.length === 0) {
-    return { kind: "section", startLine: section.startLine, endLine: section.endLine };
-  }
-  if (subunits.length === 1) {
-    const owned = sectionOwnLines(content, matchedHeading.slug);
-    if (!owned) return null;
-    const wanted = normalizeName(subunits[0]);
-    const found = [];
-    for (const i of owned) {
-      const field = lines[i].match(FIELD_LINE);
-      if (field && normalizeName(field[1]) === wanted) found.push(i);
-    }
-    return found.length > 0 ? { kind: "field", lines: found } : null;
-  }
-  return null;
-}
-function resolveMatrixUnit(content, unit, subunits) {
-  const headings = extractHeadings(content);
-  const lines = content.split("\n");
-  const matchedHeading = headings.find(
-    (h) => h.slug === unit.matrixSlug || h.slug === `matrices--${unit.matrixSlug}` || h.text.toLowerCase().includes(unit.matrixSlug.toLowerCase())
-  );
-  if (!matchedHeading) return null;
-  const section = resolveHeadingSection(content, matchedHeading.slug);
-  if (!section) return null;
-  const row = unit.rowSlug ?? subunits[0];
-  const col = unit.colSlug ?? subunits[1];
-  if (row && col) {
-    const table = parseMarkdownTable(lines.slice(section.startLine, section.endLine));
-    if (!table) return null;
-    const wantedRow = normalizeName(row);
-    const wantedCol = normalizeName(col);
-    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
-    if (rowIdx === -1) return null;
-    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
-    if (colIdx === -1) return null;
-    const value = table.rows[rowIdx][colIdx];
-    if (value === void 0) return null;
-    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
-  }
-  return { kind: "section", startLine: section.startLine, endLine: section.endLine };
-}
-function resolveHeaderUnit(content, unit, subunits) {
-  const headings = extractHeadings(content);
-  const match = headings.find((h) => h.slug === unit.slug && h.level === unit.level);
-  if (!match) return null;
-  if (subunits.length === 0) {
-    const section2 = resolveHeadingSection(content, unit.slug);
-    if (!section2) return null;
-    return { kind: "section", startLine: section2.startLine, endLine: section2.endLine };
-  }
-  const lines = content.split("\n");
-  const section = resolveHeadingSection(content, unit.slug);
-  if (!section) return null;
-  if (subunits.length === 1) {
-    const owned = sectionOwnLines(content, unit.slug);
-    if (!owned) return null;
-    const wanted = normalizeName(subunits[0]);
-    const found = [];
-    for (const i of owned) {
-      const field = lines[i].match(FIELD_LINE);
-      if (field && normalizeName(field[1]) === wanted) found.push(i);
-    }
-    return found.length > 0 ? { kind: "field", lines: found } : null;
-  }
-  if (subunits.length === 2) {
-    const table = parseMarkdownTable(lines.slice(section.startLine, section.endLine));
-    if (!table) return null;
-    const wantedRow = normalizeName(subunits[0]);
-    const wantedCol = normalizeName(subunits[1]);
-    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
-    if (rowIdx === -1) return null;
-    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
-    if (colIdx === -1) return null;
-    const value = table.rows[rowIdx][colIdx];
-    if (value === void 0) return null;
-    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
-  }
-  return null;
-}
-function splitTableCells(line) {
-  return line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-}
-function parseMarkdownTable(lines) {
-  const tableLines = lines.filter((l) => l.trim().startsWith("|"));
-  if (tableLines.length < 2) return null;
-  const headers = splitTableCells(tableLines[0]);
-  const body = tableLines.slice(1).filter((l) => !/^[\s|:.-]+$/.test(splitTableCells(l).join(""))).map(splitTableCells);
-  if (body.length === 0) return null;
-  return { headers, rows: body };
-}
-function resolveCsvUnit(content, id, subunits) {
-  const table = parseCsvTable(content);
-  if (table.malformed || table.headers.length === 0) return null;
-  const rowIdx = table.rows.findIndex((r) => (r[0] ?? "").trim() === id.trim());
-  if (rowIdx === -1) return null;
-  if (subunits.length === 0) return { kind: "row", index: rowIdx };
-  if (subunits.length > 1) return null;
-  const colIdx = table.headers.findIndex((h) => h === normalizeName(subunits[0]));
-  if (colIdx === -1) return null;
-  const value = table.rows[rowIdx][colIdx];
-  if (value === void 0) return null;
-  return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
-}
-function resolveUnit(content, ref) {
-  const unit = ref.unit;
-  if (!unit) return null;
-  const subunits = ref.subunits ?? [];
-  switch (unit.kind) {
-    case "header":
-      return resolveHeaderUnit(content, unit, subunits);
-    case "row":
-      return resolveCsvUnit(content, unit.id, subunits);
-    case "pointer": {
-      const found = resolveJsonPointer(content, unit.pointer);
-      return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
-    }
-    case "element":
-      return resolveElementUnit(content, unit, subunits);
-    case "matrix":
-      return resolveMatrixUnit(content, unit, subunits);
-    default:
-      return assertNever(unit, "knowledge unit kind");
-  }
-}
-function listSectionFields(content, slug) {
-  const owned = sectionOwnLines(content, slug);
-  if (!owned) return null;
-  const lines = content.split("\n");
-  const names = [];
-  for (const i of owned) {
-    const field = lines[i].match(FIELD_LINE);
-    if (field) names.push(normalizeName(field[1]));
-  }
-  return names;
-}
-function sectionOwnLines(content, slug) {
-  const headings = extractHeadings(content);
-  const target = headings.find((h) => h.slug === slug);
-  if (!target) return null;
-  const lines = content.split("\n");
-  let end = lines.length;
-  for (const o of headings) {
-    if (o.line > target.line && o.level <= target.level) {
-      end = o.line;
-      break;
-    }
-  }
-  const skip = [];
-  for (const o of headings) {
-    if (o.line > target.line && o.line < end && o.level > target.level) {
-      let oEnd = lines.length;
-      for (const p of headings) {
-        if (p.line > o.line && p.level <= o.level) {
-          oEnd = p.line;
-          break;
-        }
-      }
-      skip.push([o.line, Math.min(oEnd, end)]);
-    }
-  }
-  const owned = [];
-  for (let i = target.line + 1; i < end; i++) {
-    if (!skip.some(([a, b]) => i >= a && i < b)) owned.push(i);
-  }
-  return owned;
-}
-
-// iNNfo/packages/nn-core/src/queryUnits.ts
-function parseKnowledgeQuery(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  const q = clean.indexOf("?");
-  if (q === -1) return null;
-  const target = clean.slice(0, q);
-  let filePathPart = target;
-  let conceptSlug;
-  if (target.includes("@")) {
-    const at = target.indexOf("@");
-    filePathPart = target.slice(0, at);
-    const unitPart = target.slice(at + 1);
-    if (!unitPart.startsWith("concept:") || unitPart.slice("concept:".length).includes("@")) {
-      return null;
-    }
-    const slug = unitPart.slice("concept:".length).trim();
-    if (!slug || !new RegExp(`^${SLUG2}$`).test(slug)) {
-      return null;
-    }
-    conceptSlug = slug;
-  }
-  const resolved = resolveUnitPath(filePathPart);
-  if (!resolved) return null;
-  const rest = clean.slice(q + 1);
-  if (!rest.trim()) return null;
-  const rawSegments = rest.split("&");
-  if (rawSegments.some((s) => s.trim() === "")) return null;
-  const decoded = [];
-  for (const part of rawSegments) {
-    let text;
-    try {
-      text = decodeURIComponent(part.trim());
-    } catch (err) {
-      return null;
-    }
-    if (text.trim() === "") return null;
-    decoded.push(text.trim());
-  }
-  const filters = [];
-  let projection;
-  for (let i = 0; i < decoded.length; i++) {
-    const seg = decoded[i];
-    const eq = seg.indexOf("=");
-    if (eq === -1) {
-      if (i !== decoded.length - 1 || projection !== void 0) return null;
-      projection = seg;
-      continue;
-    }
-    const name = seg.slice(0, eq).trim();
-    const value = seg.slice(eq + 1).trim();
-    if (!name || !value) return null;
-    filters.push({ name, value });
-  }
-  if (filters.length === 0) return null;
-  return { path: resolved.filePath, ...conceptSlug ? { conceptSlug } : {}, filters, projection };
-}
-
-// iNNfo/packages/nn-core/src/types/parser.ts
-var ElementsMap = class {
-  _map = /* @__PURE__ */ new Map();
-  set(key, nodes) {
-    this._map.set(key.toLowerCase(), { key, nodes });
-  }
-  delete(key) {
-    return this._map.delete(key.toLowerCase());
-  }
-  has(key) {
-    return this._map.has(key.toLowerCase());
-  }
-  get(key) {
-    return this._map.get(key.toLowerCase())?.nodes;
-  }
-  keys() {
-    return Array.from(this._map.values()).map((e) => e.key);
-  }
-  entries() {
-    return Array.from(this._map.values()).map((e) => [e.key, e.nodes]);
-  }
-  forEach(fn) {
-    for (const { key, nodes } of this._map.values()) {
-      fn(nodes, key);
-    }
-  }
-  get size() {
-    return this._map.size;
-  }
-  [Symbol.iterator]() {
-    return this.entries()[Symbol.iterator]();
-  }
-  /** JSON serialization support — serializes as a plain record */
-  toJSON() {
-    const obj = {};
-    for (const [key, nodes] of this.entries()) {
-      obj[key] = nodes;
-    }
-    return obj;
-  }
-};
 
 // iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -8860,7 +8430,7 @@ function normalizeSource(text) {
   const withoutBom = text.charCodeAt(0) === 65279 ? text.replace(/^\uFEFF+/, "") : text;
   return withoutBom.replace(/\r\n?/g, "\n");
 }
-function parseMarkdownTable2(md) {
+function parseMarkdownTable(md) {
   const lines = normalizeSource(md).split("\n").filter((l) => /(^|[^\\])\|/.test(l.trim()));
   if (lines.length < 2) return [];
   const header = parseTableRow(lines[0]);
@@ -9228,7 +8798,7 @@ function parseConceptSection(conceptName, content) {
   };
 }
 function parseMatrixSection(content, _matrixName) {
-  const rows = parseMarkdownTable2(content);
+  const rows = parseMarkdownTable(content);
   if (rows.length === 0) return [];
   const colNames = Object.keys(rows[0] || {});
   const cells = [];
@@ -9269,6 +8839,48 @@ function getSectionType(rawTitle) {
 
 // iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
+
+// iNNfo/packages/nn-core/src/types/parser.ts
+var ElementsMap = class {
+  _map = /* @__PURE__ */ new Map();
+  set(key, nodes) {
+    this._map.set(key.toLowerCase(), { key, nodes });
+  }
+  delete(key) {
+    return this._map.delete(key.toLowerCase());
+  }
+  has(key) {
+    return this._map.has(key.toLowerCase());
+  }
+  get(key) {
+    return this._map.get(key.toLowerCase())?.nodes;
+  }
+  keys() {
+    return Array.from(this._map.values()).map((e) => e.key);
+  }
+  entries() {
+    return Array.from(this._map.values()).map((e) => [e.key, e.nodes]);
+  }
+  forEach(fn) {
+    for (const { key, nodes } of this._map.values()) {
+      fn(nodes, key);
+    }
+  }
+  get size() {
+    return this._map.size;
+  }
+  [Symbol.iterator]() {
+    return this.entries()[Symbol.iterator]();
+  }
+  /** JSON serialization support — serializes as a plain record */
+  toJSON() {
+    const obj = {};
+    for (const [key, nodes] of this.entries()) {
+      obj[key] = nodes;
+    }
+    return obj;
+  }
+};
 
 // iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {
@@ -9463,6 +9075,509 @@ function parseKnowledge(content) {
     rawFrontmatter,
     rawPreamble
   };
+}
+
+// iNNfo/packages/nn-core/src/imports/parser.ts
+function parseDomainImports(domainContent) {
+  const parsed = parseKnowledge(domainContent);
+  const domains = [];
+  const imports = [];
+  const domainElements = parsed.elements.get("Imported Domain") ?? [];
+  for (const el of domainElements) {
+    const rawPath = String(el.fields["path"] ?? "").trim();
+    domains.push({
+      alias: el.name,
+      path: rawPath
+    });
+  }
+  const importElements = parsed.elements.get("Import") ?? [];
+  for (const el of importElements) {
+    const from = String(el.fields["from"] ?? "").trim();
+    const gt = from.indexOf(">");
+    if (gt === -1) continue;
+    const originAlias = from.slice(0, gt).trim();
+    const rest = from.slice(gt + 1).trim();
+    let model = rest;
+    let concept;
+    let filters;
+    const qMark = model.indexOf("?");
+    let queryPart = "";
+    if (qMark !== -1) {
+      queryPart = model.slice(qMark + 1);
+      model = model.slice(0, qMark);
+    }
+    const atSign = model.indexOf("@");
+    if (atSign !== -1) {
+      const sectionPart = model.slice(atSign + 1);
+      model = model.slice(0, atSign);
+      if (sectionPart.startsWith("concept:")) {
+        concept = sectionPart.slice("concept:".length);
+      } else {
+        concept = sectionPart;
+      }
+    }
+    if (queryPart) {
+      filters = {};
+      const pairs = queryPart.split("&");
+      for (const pair of pairs) {
+        const eq = pair.indexOf("=");
+        if (eq !== -1) {
+          const k = decodeURIComponent(pair.slice(0, eq).trim());
+          const v = decodeURIComponent(pair.slice(eq + 1).trim());
+          if (k) filters[k] = v;
+        }
+      }
+    }
+    imports.push({
+      name: el.name,
+      from,
+      originAlias,
+      model,
+      concept,
+      filters
+    });
+  }
+  return { domains, imports };
+}
+
+// iNNfo/packages/nn-core/src/layout.ts
+var CANONICAL_DOMAIN_ENTRYPOINT = "domaiNN_NN.md";
+
+// iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
+function readDomainAliases(rootDir) {
+  const aliases = /* @__PURE__ */ new Map();
+  const entryPath = (0, import_node_path.join)(rootDir, CANONICAL_DOMAIN_ENTRYPOINT);
+  let content;
+  try {
+    content = (0, import_node_fs.readFileSync)(entryPath, "utf-8");
+  } catch {
+    return aliases;
+  }
+  for (const domain of parseDomainImports(content).domains) {
+    if (!domain.alias || !domain.path) continue;
+    if (/^[a-zA-Z]+:\/\//.test(domain.path) || (0, import_node_path.isAbsolute)(domain.path)) continue;
+    aliases.set(domain.alias.toLowerCase(), (0, import_node_path.resolve)(rootDir, domain.path));
+  }
+  return aliases;
+}
+function splitAliasRef(refPath) {
+  const gt = refPath.indexOf(">");
+  if (gt <= 0) return null;
+  const alias = refPath.slice(0, gt).trim();
+  const rest = refPath.slice(gt + 1).trim();
+  if (!alias || !rest) return null;
+  return { alias, rest };
+}
+function resolveInside(dir, rest) {
+  const abs = (0, import_node_path.resolve)(dir, rest);
+  const rel = (0, import_node_path.relative)(dir, abs);
+  if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) return null;
+  try {
+    const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
+    return { exists: true, headings: extractHeadings(content).map((h) => h.slug), content };
+  } catch {
+    return { exists: false, parentExists: (0, import_node_fs.existsSync)((0, import_node_path.dirname)(abs)) };
+  }
+}
+function createFsSourceResolver(rootDir) {
+  const rootResolved = (0, import_node_path.resolve)(rootDir);
+  let domainAliases;
+  return (refPath, referringPath) => {
+    const aliased = splitAliasRef(refPath);
+    if (aliased) {
+      domainAliases ??= readDomainAliases(rootResolved);
+      const aliasDir = domainAliases.get(aliased.alias.toLowerCase());
+      if (aliasDir) {
+        const inside = resolveInside(aliasDir, aliased.rest);
+        if (inside) return inside;
+      }
+    }
+    const candidateDirs = [];
+    if (referringPath) {
+      const absReferring = (0, import_node_path.isAbsolute)(referringPath) ? referringPath : (0, import_node_path.resolve)(rootDir, referringPath);
+      let cur = (0, import_node_path.dirname)(absReferring);
+      while (true) {
+        const sourcesDir = (0, import_node_path.join)(cur, "sources");
+        if ((0, import_node_fs.existsSync)(sourcesDir)) {
+          candidateDirs.push(cur);
+        }
+        if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
+          break;
+        }
+        const relToRoot = (0, import_node_path.relative)(rootResolved, cur);
+        if (relToRoot.startsWith("..")) {
+          break;
+        }
+        cur = (0, import_node_path.dirname)(cur);
+      }
+    }
+    if (!candidateDirs.includes(rootResolved)) {
+      candidateDirs.push(rootResolved);
+    }
+    for (const dir of candidateDirs) {
+      const abs = (0, import_node_path.resolve)(dir, refPath);
+      const rel = (0, import_node_path.relative)(dir, abs);
+      if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
+        continue;
+      }
+      if ((0, import_node_fs.existsSync)(abs)) {
+        try {
+          const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
+          return {
+            exists: true,
+            headings: extractHeadings(content).map((h) => h.slug),
+            content
+          };
+        } catch {
+          return { exists: false };
+        }
+      }
+    }
+    const primaryDir = candidateDirs[0] ?? rootResolved;
+    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
+    const targetParent = (0, import_node_path.dirname)(targetAbs);
+    const parentExists = (0, import_node_fs.existsSync)(targetParent);
+    if (!parentExists) {
+      return { exists: false, parentExists: false };
+    }
+    let suggestions;
+    try {
+      const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
+      const targetBase = (0, import_node_path.basename)(refPath);
+      const targetStem = targetBase.replace(/\.[^.]+$/, "");
+      const files = entries.filter((e) => e.isFile()).map((e) => e.name);
+      const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
+      const scored = files.map((name) => {
+        const candStem = name.replace(/\.[^.]+$/, "");
+        return { name, dist: levenshteinDistance(targetStem, candStem) };
+      }).filter((item) => item.dist > 0 && item.dist <= maxAllowed).sort((a, b) => a.dist - b.dist);
+      if (scored.length > 0) {
+        suggestions = scored.map((s) => s.name);
+      }
+    } catch {
+    }
+    return {
+      exists: false,
+      parentExists: true,
+      suggestions
+    };
+  };
+}
+
+// iNNfo/packages/nn-core/src/csvTable.ts
+function parseCsvTable(content, options = {}) {
+  const delimiter = options.delimiter ?? ",";
+  const records = [];
+  let record = [];
+  let field = "";
+  let inQuotes = false;
+  let hasContent = false;
+  const pushField = () => {
+    record.push(field);
+    field = "";
+  };
+  const pushRecord = () => {
+    if (record.length === 1 && record[0] === "" && !hasContent) {
+      record = [];
+      return;
+    }
+    records.push(record);
+    record = [];
+    hasContent = false;
+  };
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+    hasContent = hasContent || ch !== "\r" && ch !== "\n" || inQuotes;
+    if (inQuotes) {
+      if (ch === '"') {
+        if (content[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === delimiter) {
+      pushField();
+    } else if (ch === "\r") {
+      if (content[i + 1] !== "\n") field += ch;
+    } else if (ch === "\n") {
+      pushField();
+      pushRecord();
+    } else {
+      field += ch;
+    }
+  }
+  if (inQuotes) {
+    return { headers: [], rows: [], malformed: true };
+  }
+  pushField();
+  pushRecord();
+  if (records.length === 0) return { headers: [], rows: [], malformed: false };
+  const [headerRow, ...body] = records;
+  return { headers: headerRow.map((h) => normalizeName(h)), rows: body, malformed: false };
+}
+
+// iNNfo/packages/nn-core/src/unitResolve.ts
+var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
+function resolveElementUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  let matchedHeading;
+  for (const h of headings) {
+    if (h.level === 2) {
+      const section2 = resolveHeadingSection(content, h.slug);
+      if (section2) {
+        for (let i = section2.startLine + 1; i < section2.endLine; i++) {
+          const m = lines[i].match(/^\s*slug\s*::\s*([^\s]+)/);
+          if (m && m[1].toLowerCase() === unit.slug.toLowerCase()) {
+            matchedHeading = h;
+            break;
+          }
+          if (/^#{1,6}\s/.test(lines[i])) break;
+        }
+      }
+    }
+    if (matchedHeading) break;
+  }
+  if (!matchedHeading) {
+    matchedHeading = headings.find(
+      (h) => h.slug === unit.slug || h.element && slugifyHeading(h.element) === unit.slug || h.slug.endsWith(`--${unit.slug}`)
+    );
+  }
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  if (subunits.length === 0) {
+    return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+  }
+  if (subunits.length === 1) {
+    const owned = sectionOwnLines(content, matchedHeading.slug);
+    if (!owned) return null;
+    const wanted = normalizeName(subunits[0]);
+    const found = [];
+    for (const i of owned) {
+      const field = lines[i].match(FIELD_LINE);
+      if (field && normalizeName(field[1]) === wanted) found.push(i);
+    }
+    return found.length > 0 ? { kind: "field", lines: found } : null;
+  }
+  return null;
+}
+function resolveMatrixUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  const matchedHeading = headings.find(
+    (h) => h.slug === unit.matrixSlug || h.slug === `matrices--${unit.matrixSlug}` || h.text.toLowerCase().includes(unit.matrixSlug.toLowerCase())
+  );
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  const row = unit.rowSlug ?? subunits[0];
+  const col = unit.colSlug ?? subunits[1];
+  if (row && col) {
+    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
+    if (!table) return null;
+    const wantedRow = normalizeName(row);
+    const wantedCol = normalizeName(col);
+    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
+    if (rowIdx === -1) return null;
+    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
+    if (colIdx === -1) return null;
+    const value = table.rows[rowIdx][colIdx];
+    if (value === void 0) return null;
+    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+  }
+  return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+}
+function resolveHeaderUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const match = headings.find((h) => h.slug === unit.slug && h.level === unit.level);
+  if (!match) return null;
+  if (subunits.length === 0) {
+    const section2 = resolveHeadingSection(content, unit.slug);
+    if (!section2) return null;
+    return { kind: "section", startLine: section2.startLine, endLine: section2.endLine };
+  }
+  const lines = content.split("\n");
+  const section = resolveHeadingSection(content, unit.slug);
+  if (!section) return null;
+  if (subunits.length === 1) {
+    const owned = sectionOwnLines(content, unit.slug);
+    if (!owned) return null;
+    const wanted = normalizeName(subunits[0]);
+    const found = [];
+    for (const i of owned) {
+      const field = lines[i].match(FIELD_LINE);
+      if (field && normalizeName(field[1]) === wanted) found.push(i);
+    }
+    return found.length > 0 ? { kind: "field", lines: found } : null;
+  }
+  if (subunits.length === 2) {
+    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
+    if (!table) return null;
+    const wantedRow = normalizeName(subunits[0]);
+    const wantedCol = normalizeName(subunits[1]);
+    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
+    if (rowIdx === -1) return null;
+    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
+    if (colIdx === -1) return null;
+    const value = table.rows[rowIdx][colIdx];
+    if (value === void 0) return null;
+    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+  }
+  return null;
+}
+function splitTableCells(line) {
+  return line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+}
+function parseMarkdownTable2(lines) {
+  const tableLines = lines.filter((l) => l.trim().startsWith("|"));
+  if (tableLines.length < 2) return null;
+  const headers = splitTableCells(tableLines[0]);
+  const body = tableLines.slice(1).filter((l) => !/^[\s|:.-]+$/.test(splitTableCells(l).join(""))).map(splitTableCells);
+  if (body.length === 0) return null;
+  return { headers, rows: body };
+}
+function resolveCsvUnit(content, id, subunits) {
+  const table = parseCsvTable(content);
+  if (table.malformed || table.headers.length === 0) return null;
+  const rowIdx = table.rows.findIndex((r) => (r[0] ?? "").trim() === id.trim());
+  if (rowIdx === -1) return null;
+  if (subunits.length === 0) return { kind: "row", index: rowIdx };
+  if (subunits.length > 1) return null;
+  const colIdx = table.headers.findIndex((h) => h === normalizeName(subunits[0]));
+  if (colIdx === -1) return null;
+  const value = table.rows[rowIdx][colIdx];
+  if (value === void 0) return null;
+  return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+}
+function resolveUnit(content, ref) {
+  const unit = ref.unit;
+  if (!unit) return null;
+  const subunits = ref.subunits ?? [];
+  switch (unit.kind) {
+    case "header":
+      return resolveHeaderUnit(content, unit, subunits);
+    case "row":
+      return resolveCsvUnit(content, unit.id, subunits);
+    case "pointer": {
+      const found = resolveJsonPointer(content, unit.pointer);
+      return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
+    }
+    case "element":
+      return resolveElementUnit(content, unit, subunits);
+    case "matrix":
+      return resolveMatrixUnit(content, unit, subunits);
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
+}
+function listSectionFields(content, slug) {
+  const owned = sectionOwnLines(content, slug);
+  if (!owned) return null;
+  const lines = content.split("\n");
+  const names = [];
+  for (const i of owned) {
+    const field = lines[i].match(FIELD_LINE);
+    if (field) names.push(normalizeName(field[1]));
+  }
+  return names;
+}
+function sectionOwnLines(content, slug) {
+  const headings = extractHeadings(content);
+  const target = headings.find((h) => h.slug === slug);
+  if (!target) return null;
+  const lines = content.split("\n");
+  let end = lines.length;
+  for (const o of headings) {
+    if (o.line > target.line && o.level <= target.level) {
+      end = o.line;
+      break;
+    }
+  }
+  const skip = [];
+  for (const o of headings) {
+    if (o.line > target.line && o.line < end && o.level > target.level) {
+      let oEnd = lines.length;
+      for (const p of headings) {
+        if (p.line > o.line && p.level <= o.level) {
+          oEnd = p.line;
+          break;
+        }
+      }
+      skip.push([o.line, Math.min(oEnd, end)]);
+    }
+  }
+  const owned = [];
+  for (let i = target.line + 1; i < end; i++) {
+    if (!skip.some(([a, b]) => i >= a && i < b)) owned.push(i);
+  }
+  return owned;
+}
+
+// iNNfo/packages/nn-core/src/queryUnits.ts
+function parseKnowledgeQuery(input) {
+  if (!input || typeof input !== "string") return null;
+  const clean = input.trim();
+  const q = clean.indexOf("?");
+  if (q === -1) return null;
+  const target = clean.slice(0, q);
+  let filePathPart = target;
+  let conceptSlug;
+  if (target.includes("@")) {
+    const at = target.indexOf("@");
+    filePathPart = target.slice(0, at);
+    const unitPart = target.slice(at + 1);
+    if (!unitPart.startsWith("concept:") || unitPart.slice("concept:".length).includes("@")) {
+      return null;
+    }
+    const slug = unitPart.slice("concept:".length).trim();
+    if (!slug || !new RegExp(`^${SLUG2}$`).test(slug)) {
+      return null;
+    }
+    conceptSlug = slug;
+  }
+  const resolved = resolveUnitPath(filePathPart);
+  if (!resolved) return null;
+  const rest = clean.slice(q + 1);
+  if (!rest.trim()) return null;
+  const rawSegments = rest.split("&");
+  if (rawSegments.some((s) => s.trim() === "")) return null;
+  const decoded = [];
+  for (const part of rawSegments) {
+    let text;
+    try {
+      text = decodeURIComponent(part.trim());
+    } catch (err) {
+      return null;
+    }
+    if (text.trim() === "") return null;
+    decoded.push(text.trim());
+  }
+  const filters = [];
+  let projection;
+  for (let i = 0; i < decoded.length; i++) {
+    const seg = decoded[i];
+    const eq = seg.indexOf("=");
+    if (eq === -1) {
+      if (i !== decoded.length - 1 || projection !== void 0) return null;
+      projection = seg;
+      continue;
+    }
+    const name = seg.slice(0, eq).trim();
+    const value = seg.slice(eq + 1).trim();
+    if (!name || !value) return null;
+    filters.push({ name, value });
+  }
+  if (filters.length === 0) return null;
+  return { path: resolved.filePath, ...conceptSlug ? { conceptSlug } : {}, filters, projection };
 }
 
 // iNNfo/packages/nn-core/src/schema/extract.ts
@@ -11172,7 +11287,7 @@ function sha256Hex(bytes) {
   return (0, import_node_crypto.createHash)("sha256").update(bytes).digest("hex");
 }
 var toPosix = (p) => p.replace(/\\/g, "/");
-function resolveInside(root, rel) {
+function resolveInside2(root, rel) {
   const rootAbs = path2.resolve(root);
   const target = path2.resolve(rootAbs, rel);
   const within = path2.relative(rootAbs, target);
@@ -11190,7 +11305,7 @@ async function readOrNull(file) {
   }
 }
 async function readSidecarSha256(root, rawRel) {
-  const text = await readOrNull(resolveInside(root, sidecarPathOf(rawRel)));
+  const text = await readOrNull(resolveInside2(root, sidecarPathOf(rawRel)));
   if (text === null) return null;
   const value = parseSidecarFrontmatter(text.toString("utf8"))?.["sha256"];
   return typeof value === "string" ? value.toLowerCase() : "";
@@ -11199,7 +11314,7 @@ async function guardInputs(root, inputs) {
   for (const input of inputs) {
     const recorded = await readSidecarSha256(root, input);
     if (recorded === null) continue;
-    const raw = await readOrNull(resolveInside(root, input));
+    const raw = await readOrNull(resolveInside2(root, input));
     const actual = raw === null ? "(missing)" : sha256Hex(raw);
     if (recorded !== actual) {
       throw new WriteOnceError("HASH_MISMATCH", toPosix(input), "raw bytes differ from the sidecar sha256; cognitivize it again");
@@ -11209,7 +11324,7 @@ async function guardInputs(root, inputs) {
 async function listFamily(root, t) {
   let names;
   try {
-    names = await import_node_fs2.promises.readdir(resolveInside(root, t.dir));
+    names = await import_node_fs2.promises.readdir(resolveInside2(root, t.dir));
   } catch (e) {
     if (e.code === "ENOENT") return [];
     throw e;
@@ -11226,7 +11341,7 @@ function stampOf(member) {
   return parsed.kind === "file" ? parsed.stamp : void 0;
 }
 function budgetOrThrow(root, rel, platform) {
-  const abs = resolveInside(root, rel);
+  const abs = resolveInside2(root, rel);
   const budget = checkPathBudget(abs, platform);
   if (!budget.ok) {
     throw new WriteOnceError("PATH_TOO_LONG", toPosix(rel), `${budget.length} characters exceeds the ${budget.limit} limit`);
@@ -11246,16 +11361,16 @@ async function writeOnce(root, t, bytes, o = {}) {
   const latest = latestOfFamily(await listFamily(root, t));
   if (latest) {
     const recorded = await readSidecarSha256(root, latest.path);
-    const stored = recorded ? recorded : sha256Hex(await readOrNull(resolveInside(root, latest.path)) ?? Buffer.alloc(0));
+    const stored = recorded ? recorded : sha256Hex(await readOrNull(resolveInside2(root, latest.path)) ?? Buffer.alloc(0));
     if (stored === sha256Hex(buffer)) return { status: "deduplicated", path: latest.path };
   }
-  await import_node_fs2.promises.mkdir(resolveInside(root, dirRel), { recursive: true });
+  await import_node_fs2.promises.mkdir(resolveInside2(root, dirRel), { recursive: true });
   let stamp = nextStamp(now(), stampOf(latest));
   for (; ; ) {
     const rel = memberRel(stamp);
     budgetOrThrow(root, rel, platform);
     try {
-      const handle = await import_node_fs2.promises.open(resolveInside(root, rel), "wx");
+      const handle = await import_node_fs2.promises.open(resolveInside2(root, rel), "wx");
       try {
         await handle.writeFile(buffer);
       } finally {
@@ -11298,8 +11413,8 @@ async function applyGc(root, confirmed, o) {
   const deleted = [];
   for (const rel of confirmed.map(toPosix)) {
     if (!allowed.has(rel)) continue;
-    await import_node_fs2.promises.rm(resolveInside(root, rel), { force: true });
-    await import_node_fs2.promises.rm(resolveInside(root, sidecarPathOf(rel)), { force: true });
+    await import_node_fs2.promises.rm(resolveInside2(root, rel), { force: true });
+    await import_node_fs2.promises.rm(resolveInside2(root, sidecarPathOf(rel)), { force: true });
     deleted.push(rel);
   }
   return { deleted: deleted.sort() };

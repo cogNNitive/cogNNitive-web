@@ -1,0 +1,9 @@
+{
+  "name": "nn-conntent",
+  "private": true,
+  "description": "cogNNitive coNNtent skill runtime dependencies. The pinned HyperFrames CLI and its render toolchain live here; agents resolve the CLI from this package's node_modules/.bin, never via npx.",
+  "dependencies": {
+    "gsap": "3.14.2",
+    "hyperframes": "0.8.192"
+  }
+}

@@ -8512,6 +8512,26 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return (el.textContent || '').trim()
   }
 
+  /**
+   * The per-view facts the exporter collected (decision A12). Absent (an older shell or
+   * a domain whose views ship no data module) means an empty map, never undefined; a
+   * corrupt slot is loud, like every other slot.
+   */
+  function parseViewData(raw) {
+    var text = String(raw == null ? '' : raw).trim()
+    if (text === '') return {}
+    var parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      throw new Error('nn-console: nn-view-data slot holds corrupt JSON')
+    }
+    if (!isObject(parsed)) {
+      throw new Error('nn-console: the nn-view-data slot must decode to a JSON object')
+    }
+    return parsed
+  }
+
   function parseSlots(schemaRaw, modelRaw) {
     var schema
     var model
@@ -12122,11 +12142,15 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           container: panel,
           doc: doc,
           ui: UI,
+          // The exporter's per-view facts (decision A12): `ctx.viewData` is this view's
+          // entry, `ctx.payload.viewData` the whole map keyed by view id.
+          viewData: (opts.viewData && opts.viewData[t.id]) || {},
           payload: {
             schema: opts.schema,
             model: opts.model,
             meta: opts.meta,
             models: Array.isArray(opts.meta && opts.meta.models) ? opts.meta.models : [],
+            viewData: opts.viewData || {},
           },
         }
         if (editable) {
@@ -14341,6 +14365,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     }
     var config = parseConfig(slotText(active, 'nn-config'))
     var slots = parseSlots(slotText(active, 'nn-schema'), slotText(active, 'nn-model'))
+    var viewData = parseViewData(slotText(active, 'nn-view-data'))
     var schema = slots.schema
     var model = slots.model
     var meta = isObject(model.meta) ? model.meta : {}
@@ -14792,6 +14817,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       schema: schema,
       model: model,
       meta: meta,
+      viewData: viewData,
       state: state,
       onRefresh: function () {
         refresh(activeSearchQuery)

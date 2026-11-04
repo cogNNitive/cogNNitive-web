@@ -2157,7 +2157,7 @@ agent-bootstrap:
 `;
     const catalog = {
       blueprints: {
-        'video-script': { name: 'video-script', release_tag: 'tag-new', adopted: 'V_0-4-0' },
+        'coNNtent': { name: 'coNNtent', release_tag: 'tag-new', adopted: 'V_0-4-0' },
       },
     };
     const server = await serveRoutes({ '/manifest.md': manifestContent, '/catalog.json': catalog });
@@ -2167,12 +2167,12 @@ agent-bootstrap:
       const blueprintsDir = path.join(tmpDir, 'blueprints');
       const stateFile = path.join(tmpDir, 'bootstrap-state.json');
       fs.mkdirSync(blueprintsDir, { recursive: true });
-      fs.mkdirSync(path.join(skillsDir, 'nn-video-script'), { recursive: true });
-      fs.writeFileSync(path.join(blueprintsDir, 'video-script.md'), '# bp');
+      fs.mkdirSync(path.join(skillsDir, 'nn-conntent'), { recursive: true });
+      fs.writeFileSync(path.join(blueprintsDir, 'coNNtent.md'), '# bp');
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: `${server.url}/manifest.md`,
-        skills: { 'nn-video-script': { commit: 'tag-old', source_blueprint: 'video-script' } },
-        blueprints: { 'video-script': { commit: 'tag-old', version: 'V_0-3-0' } },
+        skills: { 'nn-conntent': { commit: 'tag-old', source_blueprint: 'coNNtent' } },
+        blueprints: { 'coNNtent': { commit: 'tag-old', version: 'V_0-3-0' } },
       }));
 
       const res = await runScriptAsync([
@@ -2186,10 +2186,10 @@ agent-bootstrap:
 
       assert.strictEqual(res.status, 1, `Drifted catalog blueprint must exit 1. Got: ${res.stdout} ${res.stderr}`);
       const parsedRes = JSON.parse(res.stdout);
-      const bp = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'video-script');
-      assert.ok(bp, 'a catalog row for video-script must be reported');
+      const bp = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'coNNtent');
+      assert.ok(bp, 'a catalog row for coNNtent must be reported');
       assert.strictEqual(bp.status, 'outdated');
-      const skill = parsedRes.items.find((i) => i.type === 'catalog-skill' && i.name === 'nn-video-script');
+      const skill = parsedRes.items.find((i) => i.type === 'catalog-skill' && i.name === 'nn-conntent');
       assert.ok(skill, 'the embedded skill must be reported');
       assert.strictEqual(skill.status, 'outdated');
       console.log('✔ installed catalog blueprint + embedded skill report outdated vs release_tag');
@@ -2213,11 +2213,11 @@ agent-bootstrap:
     try {
       const skillsDir = path.join(tmpDir, 'skills');
       const stateFile = path.join(tmpDir, 'bootstrap-state.json');
-      const skillDir = path.join(skillsDir, 'nn-video-script');
+      const skillDir = path.join(skillsDir, 'nn-conntent');
       fs.mkdirSync(path.join(skillDir, 'node_modules', 'hyperframes'), { recursive: true });
       fs.writeFileSync(path.join(skillDir, 'SKILL.md'), [
         '---',
-        'name: nn-video-script',
+        'name: nn-conntent',
         'version: V_0-6-0',
         'depends_on:',
         '  cli:',
@@ -2236,7 +2236,7 @@ agent-bootstrap:
         'body',
       ].join('\n'), 'utf-8');
       fs.writeFileSync(path.join(skillDir, 'package.json'), JSON.stringify({
-        name: 'nn-video-script',
+        name: 'nn-conntent',
         version: '1.0.0',
         dependencies: { hyperframes: '0.8.192' },
       }));
@@ -2246,7 +2246,7 @@ agent-bootstrap:
       }));
       fs.writeFileSync(stateFile, JSON.stringify({
         manifest: server.url,
-        skills: { 'nn-video-script': { commit: 'c1', source_blueprint: 'video-script' } },
+        skills: { 'nn-conntent': { commit: 'c1', source_blueprint: 'coNNtent' } },
         blueprints: {},
       }));
 
@@ -2406,7 +2406,7 @@ agent-bootstrap:
 `;
     const catalog = {
       blueprints: {
-        'video-script': { name: 'video-script', release_tag: 'tag-new' },
+        'coNNtent': { name: 'coNNtent', release_tag: 'tag-new' },
         'visual-catalog': { name: 'visual-catalog', release_tag: null },
       },
     };
@@ -2418,7 +2418,7 @@ agent-bootstrap:
         manifest: `${server.url}/manifest.md`,
         skills: {},
         blueprints: {
-          'video-script': { commit: 'tag-new' },
+          'coNNtent': { commit: 'tag-new' },
           'visual-catalog': { commit: 'some-commit' },
         },
       }));
@@ -2433,7 +2433,7 @@ agent-bootstrap:
       assert.strictEqual(res.status, 0, `Current/unreleased catalog entries must not block. Got: ${res.stdout} ${res.stderr}`);
       const parsedRes = JSON.parse(res.stdout);
       assert.strictEqual(parsedRes.summary.catalogOutdated, 0);
-      const current = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'video-script');
+      const current = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'coNNtent');
       assert.strictEqual(current.status, 'current');
       const unreleased = parsedRes.items.find((i) => i.type === 'catalog' && i.name === 'visual-catalog');
       assert.strictEqual(unreleased.status, 'unreleased');

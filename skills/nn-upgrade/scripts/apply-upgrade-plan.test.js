@@ -16,8 +16,8 @@ const upgrade = require('../../nn-preflight/scripts/upgrade-check');
 
 const CATALOG = {
   blueprints: {
-    'video-script': {
-      name: 'video-script',
+    'coNNtent': {
+      name: 'coNNtent',
       adopted: 'V_0-15-0',
       versions: [{ blueprint_version: 'V_0-14-1' }, { blueprint_version: 'V_0-15-0' }],
     },
@@ -25,7 +25,7 @@ const CATALOG = {
 };
 
 const URL_OLD =
-  'https://x/main/iNNfo/specs/bluepriNNts/video-script/video-script_V_0-14-1_NN.md';
+  'https://x/main/iNNfo/specs/bluepriNNts/coNNtent/coNNtent_V_0-14-1_NN.md';
 
 /**
  * A domaiNN with `count` Videos of one Series, all pinned at `version`.
@@ -38,13 +38,13 @@ function buildDomain(count, version = 'V_0-14-1') {
     const dir = path.join(ws, 'series', 'villa', 'assets', slug);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
-      path.join(dir, `${slug}_video-script_NN.md`),
+      path.join(dir, `${slug}_coNNtent_NN.md`),
       [
         '---',
         'level: 3',
         `title: "Video ${i}"`,
         'parent_spec:',
-        `  name: "video-script_${version}"`,
+        `  name: "coNNtent_${version}"`,
         `  url: "${URL_OLD.replace('V_0-14-1', version)}"`,
         '---',
         '',
@@ -82,16 +82,16 @@ function runTests() {
       'level: 3',
       'title: "Video 0"',
       'parent_spec:',
-      '  name: "video-script_V_0-14-1"',
+      '  name: "coNNtent_V_0-14-1"',
       `  url: "${URL_OLD}"`,
       '---',
       '',
       '## NN Video: v00',
       '',
     ].join('\n');
-    const after = repinContent(before, 'video-script', 'V_0-15-0');
-    assert.ok(after.includes('name: "video-script_V_0-15-0"'), after);
-    assert.ok(after.includes('video-script_V_0-15-0_NN.md'), after);
+    const after = repinContent(before, 'coNNtent', 'V_0-15-0');
+    assert.ok(after.includes('name: "coNNtent_V_0-15-0"'), after);
+    assert.ok(after.includes('coNNtent_V_0-15-0_NN.md'), after);
     assert.ok(after.includes('## NN Video: v00'), 'the body is untouched');
     assert.ok(after.includes('title: "Video 0"'), 'the title is untouched');
     console.log('✔ repinContent rewrites the pin and nothing else');
@@ -123,8 +123,8 @@ function runTests() {
       const extra = path.join(ws, 'series', 'villa', 'assets', 'v99')
       fs.mkdirSync(extra, { recursive: true })
       fs.writeFileSync(
-        path.join(extra, 'v99_video-script_NN.md'),
-        fs.readFileSync(path.join(ws, 'series', 'villa', 'assets', 'v00', 'v00_video-script_NN.md'), 'utf-8'),
+        path.join(extra, 'v99_coNNtent_NN.md'),
+        fs.readFileSync(path.join(ws, 'series', 'villa', 'assets', 'v00', 'v00_coNNtent_NN.md'), 'utf-8'),
         'utf-8',
       );
       const result = applyUpgradePlan({
@@ -168,7 +168,7 @@ function runTests() {
       assert.strictEqual(asked, 1, 'one mapping question for the whole unit');
       const contents = readAll(ws);
       assert.strictEqual(contents.length, 24);
-      assert.ok(contents.every(([, c]) => c.includes('video-script_V_0-15-0')), 'every pin moved');
+      assert.ok(contents.every(([, c]) => c.includes('coNNtent_V_0-15-0')), 'every pin moved');
       assert.ok(contents.every(([, c]) => c.includes('## NN Clip:')), 'the one answer reached all 24');
       assert.ok(fs.existsSync(path.join(backupTarget, 'manifest.sha256')), 'a backup precedes the writes');
       console.log('✔ 24 instances repin as one unit and the mapping is asked once');
@@ -185,7 +185,7 @@ function runTests() {
     try {
       const plan = upgrade.planUpgrade(ws, CATALOG);
       const before = readAll(ws);
-      const failingRel = 'series/villa/assets/v13/v13_video-script_NN.md';
+      const failingRel = 'series/villa/assets/v13/v13_coNNtent_NN.md';
       const result = applyUpgradePlan({
         workspaceDir: ws,
         catalog: CATALOG,
@@ -193,7 +193,7 @@ function runTests() {
         consent: true,
         backupTarget,
         validate: (abs) => {
-          if (abs.endsWith(path.join('v13', 'v13_video-script_NN.md'))) return false;
+          if (abs.endsWith(path.join('v13', 'v13_coNNtent_NN.md'))) return false;
           return true;
         },
       });

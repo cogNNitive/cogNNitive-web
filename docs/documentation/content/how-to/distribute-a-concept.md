@@ -2,7 +2,7 @@
 
 Give each instance of a concept its own kNNowledge document: declare the storage in the
 bluepriNNt, create instance models, move or rename them, and extract instances out of an existing
-compact document. This guide uses the `video-script` shape: a Series that contains Videos.
+compact document. This guide uses the `coNNtent` shape: a Series that contains Videos.
 
 Read [Storage and identity](../concepts/storage-and-identity.md) first if the terms *instance
 model*, *placement pattern* or *hierarchical id* are new.
@@ -74,8 +74,8 @@ hierarchical id; its last segment is the slug and the rest must be an existing c
 op:: add_model
 target:: villabotijos-today/new-episode
 concept:: Video
-blueprint_name:: video-script
-blueprint_url:: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md
+blueprint_name:: coNNtent
+blueprint_url:: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md
 name:: New Episode
 evidence:: decision
 author:: agent
@@ -84,7 +84,7 @@ author:: agent
 Result:
 
 ```
-series/villabotijos-today/assets/new-episode/new-episode_video-script_NN.md
+series/villabotijos-today/assets/new-episode/new-episode_coNNtent_NN.md
 ```
 
 The file starts with its instance root already in it (`## NN Video: New Episode` with the slug
@@ -187,8 +187,8 @@ from the source.
 op:: extract_instance
 target:: InnteresanteVideos@intro
 to:: innteresante/intro
-blueprint_name:: video-script
-blueprint_url:: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md
+blueprint_name:: coNNtent
+blueprint_url:: https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md
 evidence:: decision
 author:: agent
 ```

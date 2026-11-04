@@ -25,7 +25,7 @@ The catalog below is distributed with the ecosystem and is the authoritative lis
 | `repository` | `V_0-3-0` | free |
 | `sidecar` | `V_0-1-1` | core |
 | `sources` | `V_0-3-0` | core |
-| `video-script` | `V_0-2-2` | free |
+| `coNNtent` | `V_0-2-2` | free |
 | `visual-catalog` | `V_0-3-0` | free |
 
 ## Frozen bluepriNNts

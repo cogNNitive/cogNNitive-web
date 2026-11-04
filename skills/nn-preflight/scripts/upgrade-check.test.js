@@ -229,15 +229,15 @@ async function runTests() {
         const dir = path.join(ws, 'series', 'villa', 'assets', `v${String(i).padStart(2, '0')}`)
         fs.mkdirSync(dir, { recursive: true })
         fs.writeFileSync(
-          path.join(dir, `v${String(i).padStart(2, '0')}_video-script_NN.md`),
-          '---\nlevel: 3\nparent_spec:\n  name: "video-script_V_0-14-1"\n  url: "https://x/main/iNNfo/specs/bluepriNNts/video-script/video-script_V_0-14-1_NN.md"\n---\n# NN Video\n',
+          path.join(dir, `v${String(i).padStart(2, '0')}_coNNtent_NN.md`),
+          '---\nlevel: 3\nparent_spec:\n  name: "coNNtent_V_0-14-1"\n  url: "https://x/main/iNNfo/specs/bluepriNNts/coNNtent/coNNtent_V_0-14-1_NN.md"\n---\n# NN Video\n',
           'utf-8',
         )
       }
       const catalog = {
         blueprints: {
-          'video-script': {
-            name: 'video-script',
+          'coNNtent': {
+            name: 'coNNtent',
             adopted: 'V_0-15-0',
             versions: [{ blueprint_version: 'V_0-14-1' }, { blueprint_version: 'V_0-15-0' }],
           },
@@ -245,7 +245,7 @@ async function runTests() {
       }
       const plan = planUpgrade(ws, catalog)
       assert.strictEqual(plan.units.length, 1, 'one bluepriNNt is one unit')
-      assert.strictEqual(plan.units[0].blueprint, 'video-script')
+      assert.strictEqual(plan.units[0].blueprint, 'coNNtent')
       assert.strictEqual(plan.units[0].count, 24, 'the unit carries every instance')
       assert.strictEqual(plan.units[0].members.length, 24)
       assert.strictEqual(plan.units[0].skew, false, 'a uniform pin is not a skew')

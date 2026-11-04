@@ -17,6 +17,7 @@
 
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
 import { Script } from 'node:vm'
 
@@ -75,13 +76,23 @@ async function listEntries(dir) {
 }
 
 /**
- * `{ name, slug }` for every view file in a listing. BluepriNNt roots are flat `assets/`
- * folders, so only `console-view-<slug>.js` counts; domaiNN roots take every `*.js`.
+ * `{ name, slug, dataName }` for every view file in a listing. BluepriNNt roots are flat
+ * `assets/` folders, so only `console-view-<slug>.js` counts; domaiNN roots take every `*.js`.
+ *
+ * A view may ship a sibling `<view>.data.mjs` exporting `collect()` (decision A12). It is
+ * not inlined as a view: it runs at export time, in node.
  */
 function viewFiles(dir, entries, blueprint) {
   const files = []
+  const dataNames = new Set(
+    entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.data.mjs'))
+      .filter((entry) => !blueprint || entry.name.startsWith(BLUEPRINT_VIEW_PREFIX))
+      .map((entry) => entry.name),
+  )
+  const claimed = new Set()
   for (const entry of entries) {
-    if (!entry.name.endsWith('.js')) continue
+    if (!entry.name.endsWith('.js') || entry.name.endsWith('.data.mjs')) continue
     if (blueprint && !entry.name.startsWith(BLUEPRINT_VIEW_PREFIX)) continue
     if (entry.isSymbolicLink()) {
       throw new Error(`${join(dir, entry.name)} is a symbolic link; symlinked views are not supported, copy the file instead`)
@@ -90,15 +101,24 @@ function viewFiles(dir, entries, blueprint) {
       const slug = blueprint
         ? entry.name.slice(BLUEPRINT_VIEW_PREFIX.length, -'.js'.length)
         : entry.name.slice(0, -'.js'.length)
-      files.push({ name: entry.name, slug })
+      const dataName = `${entry.name.slice(0, -'.js'.length)}.data.mjs`
+      if (dataNames.has(dataName)) claimed.add(dataName)
+      files.push({ name: entry.name, slug, dataName: dataNames.has(dataName) ? dataName : null })
     }
+  }
+  const orphans = [...dataNames].filter((name) => !claimed.has(name)).sort(compareCodeUnits)
+  if (orphans.length > 0) {
+    throw new Error(
+      `${join(dir, orphans[0])} has no matching view: a view's data module must sit next to ` +
+        `console-view-<slug>.js and be named console-view-<slug>.data.mjs`,
+    )
   }
   return files.sort((a, b) => compareCodeUnits(a.name, b.name))
 }
 
 async function readViews(dir, files, origin, sourcePrefix) {
   const views = []
-  for (const { name, slug } of files) {
+  for (const { name, slug, dataName } of files) {
     const id = slug
     const source = `${sourcePrefix}/${name}`
     if (!VIEW_ID_RE.test(id)) {
@@ -107,7 +127,14 @@ async function readViews(dir, files, origin, sourcePrefix) {
     if (RESERVED_VIEW_IDS.includes(id)) throw new Error(`view id "${id}" is reserved (${source})`)
     const code = await readFile(join(dir, name), 'utf8')
     assertClassicScript(code, source)
-    views.push({ id, origin, source, code, sha256: createHash('sha256').update(code, 'utf8').digest('hex') })
+    views.push({
+      id,
+      origin,
+      source,
+      code,
+      sha256: createHash('sha256').update(code, 'utf8').digest('hex'),
+      ...(dataName ? { dataPath: join(dir, dataName) } : {}),
+    })
   }
   return views
 }
@@ -345,6 +372,34 @@ function escapeChecked(text, label) {
 const escapeStyle = (text) => text.replace(/<\/(style)/gi, '<\\/$1')
 const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
+/**
+ * Runs every view's `collect({ rootDir, models })` data module and returns
+ * `{ <viewId>: <json> }` (decision A12). Imported dynamically so a view without data
+ * costs nothing, and awaited so an export is deterministic.
+ *
+ * The result is embedded in the console payload; the runtime hands each view its own
+ * entry as `ctx.viewData`.
+ */
+export async function collectViewData({ views, rootDir, models = [] }) {
+  const out = {}
+  for (const view of views) {
+    if (!view.dataPath) continue
+    let mod
+    try {
+      mod = await import(pathToFileURL(view.dataPath).href)
+    } catch (err) {
+      throw new Error(`cannot load the data module for view "${view.id}" (${view.dataPath}): ${err.message}`)
+    }
+    if (typeof mod.collect !== 'function') {
+      throw new Error(
+        `the data module for view "${view.id}" must export a collect() function (${view.dataPath})`,
+      )
+    }
+    out[view.id] = await mod.collect({ rootDir, models })
+  }
+  return out
+}
+
 export function wrapView(view) {
   return (
     `<script data-nn-view="${escapeAttr(view.id)}" data-nn-view-source="${escapeAttr(view.source)}">\n` +
@@ -352,7 +407,7 @@ export function wrapView(view) {
   )
 }
 
-/** HTML comment listing what runs in the page: `<id> <origin> <source> sha256:<12 hex>`. */
+/** The HTML comment listing what runs in the page: `<id> <origin> <source> sha256:<12 hex>`. */
 export function viewsHeader(views) {
   if (views.length === 0) return ''
   const clean = (s) => s.replace(/\s+/g, '_').replace(/-{2,}/g, '-')
