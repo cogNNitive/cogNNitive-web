@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-04T08:21:09.411Z",
-  "head": "5cc2e28844f9bdd46f17bf11e17258c3f430f17e",
+  "generatedAt": "2026-11-04T08:25:33.703Z",
+  "head": "bf1bb5834ac9eb9f540cee4cc6aae4c2a4a0fa9b",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -18,7 +18,7 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.53.0",
       "pinnedTagDate": "2026-11-04T07:36:15+01:00",
-      "commitsSincePin": 49,
+      "commitsSincePin": 50,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-episode-review.data.mjs",
@@ -164,6 +164,7 @@
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/package.json",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/references/folder-contract.md",
@@ -196,7 +197,7 @@
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.53.0",
       "pinnedTagDate": "2026-11-04T07:36:15+01:00",
-      "commitsSincePin": 49,
+      "commitsSincePin": 50,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
         "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-episode-review.data.mjs",
@@ -342,6 +343,7 @@
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/SKILL.md",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/package.json",
         "iNNfo/specs/bluepriNNts/video-script/skills/nn-video-script/references/folder-contract.md",
@@ -374,8 +376,10 @@
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.35.0",
       "pinnedTagDate": "2026-11-04T07:36:15+01:00",
-      "commitsSincePin": 4,
+      "commitsSincePin": 5,
       "filesTouched": [
+        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/package.json",
         "iNNfo/packages/nn-mcp/src/tools/apply-change-facts.spec.ts",
         "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/nn-mcp/src/tools/collections.spec.ts",
@@ -394,13 +398,14 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.33.0",
       "pinnedTagDate": "2026-11-04T07:36:15+01:00",
-      "commitsSincePin": 13,
+      "commitsSincePin": 14,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
         "scripts/console-views.mjs",
         "scripts/export-console.mjs"
       ]
