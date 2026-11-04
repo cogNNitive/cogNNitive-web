@@ -35,6 +35,11 @@ var nnAddress = (() => {
     return text.normalize("NFD").replace(/[̀-ͯ]/g, "");
   }
 
+  // iNNfo/packages/nn-core/src/assertNever.ts
+  function assertNever(value, context = "value") {
+    throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
+  }
+
   // iNNfo/packages/nn-core/src/jsonPointer.ts
   var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
   function isJsonPointer(pointer) {
@@ -96,15 +101,192 @@ var nnAddress = (() => {
     return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
   }
 
+  // iNNfo/packages/nn-core/src/address/grammar.ts
+  var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+  var SLUG = "[\\p{Ll}\\p{Lo}\\p{N}]+(?:-+[\\p{Ll}\\p{Lo}\\p{N}]+)*";
+  var FIELD = "[\\p{L}\\p{N}]+(?:[-_][\\p{L}\\p{N}]+)*";
+  var CONCEPT = "[\\p{L}\\p{N}]+(?:(?:[ _]|-+)[\\p{L}\\p{N}]+)*";
+  var HEAD_RE = new RegExp(`^${HEAD}$`);
+  var SLUG_RE = new RegExp(`^${SLUG}$`, "u");
+  var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
+  var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
+  var RESERVED_HEAD = "specs";
+  var BODY_MARKER = "#body";
+  var CONCEPT_PREFIX = "concept:";
+  var MATRIX_PREFIX = "matrix:";
+
+  // iNNfo/packages/nn-core/src/address/parse.ts
+  var GRAMMAR_HINT = "use `<hierarchical-id>@<slug>` (for example `series-a/episode-1@scene-1`)";
+  var URL_RE = /^[a-z][a-z0-9+.-]*:\/\//i;
+  var WINDOWS_ABSOLUTE_RE = /^[a-zA-Z]:[/\\]/;
+  var LINE_ANCHOR_RE = /[#@]L\d+(-L\d+)?$/i;
+  var SOURCE_EXTENSION_RE = /\.(md|csv|json)$/i;
+  var CHANGES_STEM_RE = /_changes$/i;
+  function malformed(segment, expected, removed) {
+    const shown = segment === "" ? "an empty segment" : `\`${segment}\``;
+    const error = {
+      kind: "error",
+      code: "ADDRESS_MALFORMED",
+      segment,
+      message: `Malformed address: ${shown} is not ${expected}; ${GRAMMAR_HINT}.`
+    };
+    return removed ? { ...error, removed } : error;
+  }
+  function removedForm(raw, form, shape) {
+    return {
+      kind: "error",
+      code: "ADDRESS_MALFORMED",
+      segment: raw,
+      removed: form,
+      message: `The ${form} \`${shape}\` is removed and is never resolved by title; ${GRAMMAR_HINT}.`
+    };
+  }
+  function parseSourceClass(path, raw) {
+    const base = path.slice(path.lastIndexOf("/") + 1);
+    const parsed = parseName(base);
+    const sourcePrefix = path.startsWith("sources/");
+    if (!sourcePrefix && parsed.kind === "nn" && parsed.sidecarOf === void 0) {
+      const isChangeset = CHANGES_STEM_RE.test(parsed.stem);
+      const role = roleOf({ path: base, parentSpecName: isChangeset ? "changes" : void 0 });
+      if (role === "changeset") {
+        return {
+          kind: "error",
+          code: "NN_DOCUMENT_CITED_BY_HEADING",
+          segment: raw,
+          message: `A changeset is not cited by heading (\`@## NN Change: <id>\` is removed); address a change by its model id and slug, ${GRAMMAR_HINT}.`
+        };
+      }
+      if (role === "knowledge") {
+        return {
+          kind: "error",
+          code: "MODEL_CITED_BY_PATH",
+          segment: path,
+          message: `A model is not cited by file path (\`${path}\`); ${GRAMMAR_HINT}.`
+        };
+      }
+    }
+    return { kind: "source", raw };
+  }
+  function parseModelId(part) {
+    const segments = part.split("/");
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      if (i === 0) {
+        if (!HEAD_RE.test(segment)) return malformed(segment, "a valid model-id head");
+      } else if (!SLUG_RE.test(segment)) {
+        return malformed(segment, "a lowercase slug");
+      }
+    }
+    return part;
+  }
+  function parseUnit(rest) {
+    const parts = rest.split("&");
+    const [head, second, third, ...extra] = parts;
+    if (extra.length > 0) return malformed(rest, "a unit with at most three parts");
+    if (head.startsWith(CONCEPT_PREFIX)) {
+      const concept = head.slice(CONCEPT_PREFIX.length);
+      if (!CONCEPT_RE.test(concept)) return malformed(head, "a concept name");
+      if (third !== void 0) return malformed(rest, "a concept unit with at most one field");
+      if (second === void 0) return { kind: "concept", concept };
+      if (!FIELD_RE.test(second)) return malformed(second, "a field name");
+      return { kind: "concept", concept, field: second };
+    }
+    if (head.startsWith(MATRIX_PREFIX)) {
+      const matrix = head.slice(MATRIX_PREFIX.length);
+      if (!SLUG_RE.test(matrix)) return malformed(head, "a matrix slug");
+      if (second !== void 0) return malformed(rest, "a matrix unit with no sub-unit");
+      return { kind: "matrix", matrix };
+    }
+    if (!SLUG_RE.test(head)) return malformed(head, "a lowercase slug");
+    if (second === void 0) return { kind: "element", slug: head };
+    if (third !== void 0) {
+      for (const segment of [second, third]) {
+        if (!SLUG_RE.test(segment)) return malformed(segment, "a lowercase slug");
+      }
+      return { kind: "cell", matrix: head, row: second, col: third };
+    }
+    if (second === BODY_MARKER) return { kind: "body", slug: head };
+    if (!FIELD_RE.test(second)) return malformed(second, "a field name");
+    return { kind: "element", slug: head, field: second };
+  }
+  function parseBlueprint(modelPart, rest) {
+    const family = modelPart.slice(RESERVED_HEAD.length + 1);
+    if (!HEAD_RE.test(family)) return malformed(family, "a blueprint family");
+    if (rest === null) return { kind: "blueprint", family, unit: null };
+    const unit = parseUnit(rest);
+    if ("code" in unit) return unit;
+    if (unit.kind !== "concept" && unit.kind !== "matrix") {
+      return malformed(rest, "a `concept:` or `matrix:` unit of a blueprint");
+    }
+    return { kind: "blueprint", family, unit };
+  }
+  function parseAddress(input) {
+    const raw = String(input ?? "").trim();
+    if (raw === "") return malformed("", "a value");
+    if (raw.startsWith("[[") || raw.endsWith("]]")) {
+      return raw.includes("::") ? removedForm(raw, "title-qualified reference", "[[Title :: Name]]") : removedForm(raw, "wikilink reference", "[[Name]]");
+    }
+    if (raw.includes(" :: ")) return removedForm(raw, "title-qualified reference", "[[Title :: Name]]");
+    if (URL_RE.test(raw) || raw.startsWith("/") || raw.startsWith("\\") || WINDOWS_ABSOLUTE_RE.test(raw)) {
+      return malformed(raw, "a model address (URLs and absolute paths are not addresses)");
+    }
+    if (LINE_ANCHOR_RE.test(raw)) return malformed(raw, "a model address (line anchors are not addresses)");
+    const at = raw.indexOf("@");
+    const modelPart = at === -1 ? raw : raw.slice(0, at);
+    const rest = at === -1 ? null : raw.slice(at + 1);
+    if (modelPart.includes("\\")) return malformed(modelPart, "a model id (path separators are not allowed)");
+    if (modelPart.split("/").includes("..")) return malformed("..", "a model-id segment");
+    if (SOURCE_EXTENSION_RE.test(modelPart)) return parseSourceClass(modelPart, raw);
+    if (modelPart === RESERVED_HEAD) {
+      return malformed(modelPart, "a model id (`specs` is reserved for blueprint addresses)");
+    }
+    if (modelPart.startsWith(`${RESERVED_HEAD}/`)) return parseBlueprint(modelPart, rest);
+    if (modelPart === "") {
+      if (rest === null || rest === "") return malformed("", "a unit after `@`");
+      const unit2 = parseUnit(rest);
+      return "code" in unit2 ? unit2 : { kind: "unit", model: null, unit: unit2 };
+    }
+    const model = parseModelId(modelPart);
+    if (typeof model !== "string") return model;
+    if (rest === null) return { kind: "model", model };
+    if (rest === "") return malformed("", "a unit after `@`");
+    const unit = parseUnit(rest);
+    return "code" in unit ? unit : { kind: "unit", model, unit };
+  }
+
+  // iNNfo/packages/nn-core/src/address/index.ts
+  function isAddressError(value) {
+    return value.kind === "error";
+  }
+
   // iNNfo/packages/nn-core/src/sourceRef.ts
-  var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
-  var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+  var SLUG2 = "[a-z0-9]+(?:-[a-z0-9]+)*";
+  var RETIRED_PREFIX_RE = /^(?:sources\/(?:nn|original|export)|export|models)\//;
+  var SOURCE_FILE_RE = /\.(md|csv|json)$/i;
+  var RAW_AREA_RE = /^sources\//;
+  var REMOVED_PATH_FORMS = /* @__PURE__ */ new Set(["MODEL_CITED_BY_PATH", "NN_DOCUMENT_CITED_BY_HEADING"]);
+  function malformedCitation(raw) {
+    return {
+      kind: "error",
+      code: "ADDRESS_MALFORMED",
+      segment: raw,
+      message: `Malformed citation \`${raw}\`; use \`<path>@<unit>\` for a raw file or \`<hierarchical-id>@<slug>\` for a kNNowledge unit.`
+    };
+  }
+  function removedPathForm(pathAndUnit) {
+    const at = pathAndUnit.indexOf("@");
+    const pathOnly = at === -1 ? pathAndUnit : pathAndUnit.slice(0, at);
+    const forward = pathOnly.split(/[/\\]/).join("/");
+    if (!SOURCE_FILE_RE.test(forward) || RETIRED_PREFIX_RE.test(forward)) return null;
+    const classified = parseAddress(at === -1 ? forward : forward + pathAndUnit.slice(at));
+    return isAddressError(classified) && REMOVED_PATH_FORMS.has(classified.code) ? classified : null;
+  }
   function parseSourceRef(input) {
     if (!input || typeof input !== "string") return null;
     const clean = input.trim();
     if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
     if (/^src-\d+/i.test(clean)) return null;
-    const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
+    const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG2}))?$`));
     if (!legacy) return null;
     const resolved = resolveUnitPath(legacy[1]);
     if (!resolved) return null;
@@ -176,23 +358,70 @@ var nnAddress = (() => {
     const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
     return { level: clamped, text: clean, slug };
   }
-  function resolveUnitPath(rawPath) {
+  function resolveUnitPathResult(rawPath) {
     const trimmed = rawPath.trim();
-    if (!trimmed || /^https?:\/\//i.test(trimmed)) return null;
-    const segments = trimmed.split(/[/\\]/);
-    if (segments.some((s) => s === "..")) return null;
+    const fail = () => ({ ok: false, error: malformedCitation(trimmed) });
+    const at = trimmed.indexOf("@");
+    const pathOnly = at === -1 ? trimmed : trimmed.slice(0, at);
+    if (!pathOnly || /^https?:\/\//i.test(pathOnly)) return fail();
+    const segments = pathOnly.split(/[/\\]/);
+    if (segments.some((s) => s === "..")) return fail();
     const forward = segments.join("/");
-    const isMd = /\.md$/i.test(forward);
-    const isCsv = /\.csv$/i.test(forward);
-    const isJson = /\.json$/i.test(forward);
-    if (!isMd && !isCsv && !isJson) {
-      if (new RegExp(`^${MODEL_ID}$`).test(trimmed)) {
-        return { filePath: trimmed, kind: "model" };
-      }
-      return null;
+    if (!SOURCE_FILE_RE.test(forward)) {
+      if (RAW_AREA_RE.test(forward)) return fail();
+      const address = parseAddress(pathOnly);
+      if (isAddressError(address)) return { ok: false, error: address };
+      return address.kind === "model" ? { ok: true, value: { filePath: pathOnly, kind: "model" } } : fail();
     }
-    if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-    return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
+    if (/^[a-zA-Z]:[/\\]/.test(pathOnly) || pathOnly.startsWith("/")) return fail();
+    const removed = removedPathForm(trimmed);
+    if (removed) return { ok: false, error: removed };
+    return {
+      ok: true,
+      value: { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" }
+    };
+  }
+  function resolveUnitPath(rawPath) {
+    const result = resolveUnitPathResult(rawPath);
+    return result.ok ? result.value : null;
+  }
+  function parseModelUnitRef(raw) {
+    if (RAW_AREA_RE.test(raw)) return null;
+    const address = parseAddress(raw);
+    if (isAddressError(address) || address.kind !== "unit" || address.model === null) return null;
+    const { model, unit } = address;
+    const base = { filePath: model, fileName: basename(model), kind: "model", raw };
+    switch (unit.kind) {
+      case "element":
+        return {
+          ...base,
+          slug: unit.slug,
+          unit: { kind: "element", slug: unit.slug },
+          subunits: unit.field === void 0 ? [] : [unit.field]
+        };
+      case "body":
+        return { ...base, slug: unit.slug, unit: { kind: "element", slug: unit.slug }, subunits: ["#body"] };
+      case "cell":
+        return {
+          ...base,
+          slug: unit.matrix,
+          unit: { kind: "matrix", matrixSlug: unit.matrix, rowSlug: unit.row, colSlug: unit.col },
+          subunits: [unit.row, unit.col]
+        };
+      case "matrix":
+        return { ...base, slug: unit.matrix, unit: { kind: "matrix", matrixSlug: unit.matrix }, subunits: [] };
+      case "concept": {
+        const slug = slugifyHeading(unit.concept);
+        return {
+          ...base,
+          slug,
+          unit: { kind: "header", level: 1, text: slug, slug },
+          subunits: unit.field === void 0 ? [] : [unit.field]
+        };
+      }
+      default:
+        return assertNever(unit, "address unit kind");
+    }
   }
   function decodeSegment(segment) {
     try {
@@ -220,6 +449,7 @@ var nnAddress = (() => {
     const clean = input.trim();
     const at = clean.indexOf("@");
     if (at === -1) return null;
+    if (!SOURCE_FILE_RE.test(clean.slice(0, at))) return parseModelUnitRef(clean);
     const resolved = resolveUnitPath(clean.slice(0, at));
     if (!resolved) return null;
     if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
@@ -232,76 +462,6 @@ var nnAddress = (() => {
       decoded.push(text.trim());
     }
     const [unitRaw, ...subunits] = decoded;
-    if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
-      if (unitRaw.startsWith("concept:")) {
-        const slug = unitRaw.slice("concept:".length);
-        if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-        const unit3 = {
-          kind: "header",
-          level: 1,
-          text: slug,
-          slug
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      if (unitRaw.startsWith("matrix:")) {
-        const slug = unitRaw.slice("matrix:".length);
-        if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-        const unit3 = {
-          kind: "matrix",
-          matrixSlug: slug,
-          ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
-      if (subunits.length === 2) {
-        const unit3 = {
-          kind: "matrix",
-          matrixSlug: unitRaw,
-          rowSlug: subunits[0],
-          colSlug: subunits[1]
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug: unitRaw,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      const unit2 = {
-        kind: "element",
-        slug: unitRaw
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug: unitRaw,
-        kind: "model",
-        unit: unit2,
-        subunits,
-        raw: clean
-      };
-    }
     const isCsv = /\.csv$/i.test(resolved.filePath);
     if (isCsv) {
       if (resolved.kind === "model") return null;
@@ -343,20 +503,28 @@ var nnAddress = (() => {
     }
     return trimmed;
   }
+  var MODEL_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+  function assertModelId(value, name) {
+    const id = assertIdentifier(value, name);
+    if (!id.split("/").every((segment) => MODEL_SEGMENT_RE.test(segment))) {
+      throw new TypeError(`unitAddress: ${name} "${id}" is not a hierarchical model id`);
+    }
+    return id;
+  }
   var unitAddress = {
     domain() {
       return "domaiNN_NN.md";
     },
     document(modelId) {
-      return assertIdentifier(modelId, "modelId");
+      return assertModelId(modelId, "modelId");
     },
     section(modelId, conceptName) {
-      const m = assertIdentifier(modelId, "modelId");
+      const m = assertModelId(modelId, "modelId");
       const c = assertIdentifier(conceptName, "conceptName");
       return `${m}@concept:${slugifyHeading(c)}`;
     },
     element(modelId, elementSlug) {
-      const m = assertIdentifier(modelId, "modelId");
+      const m = assertModelId(modelId, "modelId");
       const s = assertIdentifier(elementSlug, "elementSlug");
       return `${m}@${s}`;
     },
@@ -366,7 +534,7 @@ var nnAddress = (() => {
       return `${b}&${f}`;
     },
     cell(modelId, matrixSlug, rowSlug, colSlug) {
-      const m = assertIdentifier(modelId, "modelId");
+      const m = assertModelId(modelId, "modelId");
       const mat = assertIdentifier(matrixSlug, "matrixSlug");
       const r = assertIdentifier(rowSlug, "rowSlug");
       const c = assertIdentifier(colSlug, "colSlug");
@@ -389,7 +557,6 @@ var nnAddress = (() => {
       return `specs/${f}@matrix:${mat}`;
     }
   };
-  var MODEL_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
   function isValidModelPath(rawPath) {
     if (!rawPath || /^https?:\/\//i.test(rawPath) || /^[a-zA-Z]:[/\\]/.test(rawPath)) return false;
     if (rawPath.startsWith("/") || rawPath.startsWith("\\")) return false;

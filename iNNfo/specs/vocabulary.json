@@ -1,5 +1,5 @@
 {
-  "version": "V_0-3-0",
+  "version": "V_0-4-0",
   "documentation_only": true,
   "terms": {
     "defiNNition": {
@@ -90,6 +90,70 @@
         "git worktree",
         "IndexedDB workspace",
         "subject-area domain"
+      ]
+    },
+    "compact storage": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "Storage form in which every instance of a concept is an element of one kNNowledge document. A concept with no `storage` declaration is compact. A kNNowledge-level concept, not a new level: the document that holds the elements is an ordinary kNNowledge document.",
+      "excludes": [
+        "compressed-storage",
+        "database-storage"
+      ]
+    },
+    "distributed storage": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "Storage form in which each instance of a concept is the root element of its own kNNowledge document, called an instance model, in its own folder placed by the concept's placement rule. Declared with `storage:: distributed`. A kNNowledge-level concept, not a new level.",
+      "excludes": [
+        "distributed-database",
+        "object-storage"
+      ]
+    },
+    "instance model": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "A kNNowledge document that is itself one instance of a distributed concept: its root element is that concept and its `slug::` equals its folder slug. Addressed by a hierarchical id. It is a kNNowledge document, not a new level.",
+      "excludes": [
+        "instance-in-an-object-model"
+      ]
+    },
+    "collection": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "The domaiNN-wide set of instances of one concept, ordered by id and identical whatever the storage form: instance models and compact elements are members alike. Same word and one meaning as the `members` collection of the `changes` bluepriNNt: the set of units of one kind, grouped by the concept or document that defines them. A kNNowledge-level concept, not a new level.",
+      "excludes": [
+        "data-structure-collection",
+        "database-table"
+      ]
+    },
+    "placement rule": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "The `placement::` path pattern a distributed concept declares: where each of its instance models lives relative to the domaiNN root, with exactly one `{slug}` and an optional leading `{container}`. It says where an instance lives, never what it inherits. A kNNowledge-level declaration, not a new level.",
+      "excludes": [
+        "css-placement",
+        "ad-placement"
+      ]
+    },
+    "hierarchical id": {
+      "canonical": true,
+      "aliases": [
+        "model id"
+      ],
+      "sense": "The identity of a kNNowledge document, derived only from its own path and the declarations of its bluepriNNt: the stem without `_NN` for a compact model, or a container chain plus slug (`<container-id>/<slug>`) for an instance model. A stem, a title and a path are never ids. A kNNowledge-level concept, not a new level.",
+      "excludes": [
+        "database-id",
+        "uuid"
+      ]
+    },
+    "title": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "The human label of a kNNowledge document or element. Display-only: it never resolves an address, and two documents may share a title without conflict. Addressing always uses the hierarchical id and the element slug.",
+      "excludes": [
+        "html-title",
+        "frontmatter-property"
       ]
     },
     "ageNNt": {
@@ -490,6 +554,41 @@
       "new": "nn-",
       "kind": "prefix",
       "notes": "Console assets, generated mirrors and wrapper scripts renamed to the nn- prefix. Existing published files under the old name are never moved or deleted, so old stamps and CDN URLs keep resolving."
+    },
+    {
+      "id": "title-qualified reference",
+      "old": "[[Title :: Name]]",
+      "new": "<hierarchical-id>@<slug> address",
+      "kind": "reference_syntax",
+      "notes": "Removed by distributed-storage: a type:: reference value is an address, and a title is display-only. The parser reports ADDRESS_MALFORMED naming the removed form."
+    },
+    {
+      "id": "wikilink reference value",
+      "old": "key:: [[Name]]",
+      "new": "@slug (same document) or <hierarchical-id>@<slug>",
+      "kind": "reference_syntax",
+      "notes": "Removed by distributed-storage for typed reference fields. Prose and index wikilinks stay display text and are untouched."
+    },
+    {
+      "id": "stem id",
+      "old": "<stem> used as a model id",
+      "new": "<hierarchical-id>",
+      "kind": "identity",
+      "notes": "A bare stem such as intro_video-script is not an id and never resolves. The stem derives from the folder slug and equal stems in different folders are legal."
+    },
+    {
+      "id": "path-flipped id",
+      "old": "a model id rewritten to a path when two stems collided",
+      "new": "<hierarchical-id>, never rewritten",
+      "kind": "identity",
+      "notes": "The old collision flip is gone: an id depends only on the file's own path and its bluepriNNt declarations. Two documents that derive the same id are DUPLICATE_MODEL_ID."
+    },
+    {
+      "id": "AMBIGUOUS_MODEL_ID",
+      "old": "AMBIGUOUS_MODEL_ID",
+      "new": "REF_MODEL_NOT_FOUND with the candidate ids",
+      "kind": "diagnostic_code",
+      "notes": "Retired by distributed-storage together with the package-stem alias and the stem-collision module. An unresolved address lists the candidate ids that share its last segment."
     }
   ]
 }

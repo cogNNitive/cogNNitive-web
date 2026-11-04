@@ -35,6 +35,7 @@ __export(index_exports, {
   blueprintNameOf: () => blueprintNameOf,
   canonicalModelId: () => canonicalModelId,
   changesetStampOf: () => changesetStampOf,
+  checkInstanceName: () => checkInstanceName,
   checkNameInvariant: () => checkNameInvariant,
   checkPathBudget: () => checkPathBudget,
   compareMembers: () => compareMembers,
@@ -45,6 +46,7 @@ __export(index_exports, {
   formatMemberName: () => formatMemberName,
   formatNNName: () => formatNNName,
   formatUtcStamp: () => formatUtcStamp,
+  instanceFileName: () => instanceFileName,
   isConsoleModel: () => isConsoleModel,
   isExcludedPath: () => isExcludedPath,
   isModelCandidate: () => isModelCandidate,
@@ -109,6 +111,13 @@ function formatNNName(stem, blueprint) {
   const bp = blueprint.toLowerCase();
   const conforms = s === bp || s.endsWith(`_${bp}`);
   return conforms ? `${stem}_NN.md` : `${stem}_${blueprint}_NN.md`;
+}
+function instanceFileName(folderSlug, blueprint) {
+  return formatNNName(folderSlug, blueprint);
+}
+function checkInstanceName(path, folderSlug, blueprint) {
+  const expected = instanceFileName(folderSlug, blueprint);
+  return baseOf(path).toLowerCase() === expected.toLowerCase() ? null : { expected };
 }
 function formatMemberName(key, ext, stamp) {
   const suffix = stamp ? `_${stamp.stamp}${stamp.seq > 1 ? `-${stamp.seq}` : ""}` : "";

@@ -2490,7 +2490,27 @@
     content.appendChild(empty)
   }
 
-  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId) {
+  // The compact storage form of a standalone console: every loaded element is a
+  // member of its concept's collection, addressed `<model-id>@<slug>`. A console
+  // exported with the index's collections slot never uses this.
+  function collectionsFromElements(elements, meta) {
+    var out = {}
+    var fallbackModel = String((meta && (meta.modelId || meta.model)) || '')
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      if (!e || !e.concept) return
+      var slug = String(e.id || e.slug || '')
+      if (!slug) return
+      var model = String(e.modelId || fallbackModel || '')
+      // A domain export already qualifies the element id with its model id.
+      var address = slug.indexOf('@') !== -1 ? slug : model ? model + '@' + slug : slug
+      var concept = String(e.concept)
+      if (!out[concept]) out[concept] = []
+      if (out[concept].indexOf(address) === -1) out[concept].push(address)
+    })
+    return out
+  }
+
+  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId, referenceIndex) {
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
@@ -2601,6 +2621,8 @@
           onTag: actions && actions.onTag,
           onKnowledge: actions && actions.onKnowledge,
           isKnowledgeBound: actions && actions.isKnowledgeBound,
+          referenceIndex: referenceIndex,
+          onReference: actions && actions.onReference,
           onRef: function (refId) {
             var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
             if (target) renderRefDialog(doc, target)
@@ -5996,7 +6018,18 @@
         return ownershipByModel[String(id)]
       })
     }
+    // The console's reference index: `collections` is the `collection(C)` slot the
+    // exporter filled from the domain index, `meta.models` carries the titles. A
+    // field storing an address renders the target's title from here. A standalone
+    // console exported without the index slot falls back to the elements it
+    // already holds, addressed the compact way (`<model-id>@<slug>`).
     var elements = Array.isArray(model.elements) ? model.elements : []
+    var payloadCollections = isObject(model.collections) ? model.collections : {}
+    if (!Object.keys(payloadCollections).length) payloadCollections = collectionsFromElements(elements, meta)
+    var referenceIndex =
+      UI && typeof UI.buildReferenceIndex === 'function'
+        ? UI.buildReferenceIndex({ models: modelList, collections: payloadCollections, elements: elements })
+        : null
     var matrices = Array.isArray(model.matrices) ? model.matrices : []
     var concepts = (Array.isArray(schema.concepts) ? schema.concepts.slice() : []).map(function (c) {
       return typeof c === 'string' ? { name: c } : c
@@ -6052,6 +6085,9 @@
       // The domain's changesets, newest first (export-console sorts them): the
       // Changes tab's applied history.
       changes: Array.isArray(model.changes) ? model.changes : [],
+      // Reference rendering/autocomplete index (collections + model titles).
+      referenceIndex: referenceIndex,
+      collections: payloadCollections,
       schema: schema,
       concepts: concepts,
       store: Review.createDraftStore(
@@ -6196,6 +6232,24 @@
         var bound = resolveKnowledgeModel(meta, value)
         if (bound) addFacetToken('model', String(bound.id || bound.filePath))
       },
+      // A reference link opens the instance it addresses: its first element card in
+      // this console, or the model facet when the target is not loaded here.
+      onReference: function (address) {
+        var model = String(address || '').split('@')[0]
+        var first = null
+        for (var i = 0; i < elements.length; i++) {
+          var e = elements[i]
+          if (e && String(e.modelId || '') === model) {
+            first = e
+            break
+          }
+        }
+        if (first) {
+          focusElementCard(active, first.id)
+          return
+        }
+        if (resolveKnowledgeModel(meta, model)) addFacetToken('model', model)
+      },
     }
 
     // Lightweight update after a draft is saved: refreshes only the draft-count
@@ -6308,7 +6362,7 @@
       } else if (explorerView === 'cards') {
         mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions, (meta && (meta.modelId || meta.model)) || '')
       } else {
-        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions, (meta && (meta.modelId || meta.model)) || '')
+        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions, (meta && (meta.modelId || meta.model)) || '', state.referenceIndex)
         focusId = null
       }
       renderFilterBar(active, state, function (nextQuery) {
@@ -6437,6 +6491,7 @@
         needs: config.needs,
         store: state.store,
         schema: schema,
+        referenceIndex: referenceIndex,
         getReviewer: getReviewerName,
         onDraftsChanged: refreshDraftCounts,
         // Change C: clicking a change's evidence opens the in-domain unit it points

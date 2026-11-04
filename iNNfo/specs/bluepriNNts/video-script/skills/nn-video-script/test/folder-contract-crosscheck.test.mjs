@@ -16,6 +16,39 @@ const read = (rel) => fs.readFileSync(path.join(SKILL, rel), 'utf8');
 
 const doc = read('references/folder-contract.md');
 const layout = /```\n([\s\S]*?)```/.exec(doc)?.[1] ?? '';
+const skill = read('SKILL.md');
+const blueprint = fs.readFileSync(path.join(SKILL, '..', '..', 'spec_NN.md'), 'utf8');
+
+/** The `placement::` template a Concept Definition declares in the blueprint. */
+const declaredPlacement = (concept) => {
+  const block = new RegExp(`## NN Concept Definition: ${concept}\\n([\\s\\S]*?)(?:\\n## |$)`).exec(blueprint)?.[1] ?? '';
+  return /^placement:: "(.+)"$/m.exec(block)?.[1] ?? null;
+};
+
+test('the documented layout agrees with the placement rules the bluepriNNt declares', () => {
+  assert.equal(declaredPlacement('Series'), 'series/{slug}/');
+  assert.equal(declaredPlacement('Video'), '{container}/assets/{slug}/');
+  assert.match(blueprint, /^storage:: distributed$/m);
+  assert.match(blueprint, /^container:: Series$/m);
+
+  for (const source of [['folder-contract.md', doc], ['SKILL.md', skill]]) {
+    const [name, text] = source;
+    assert.ok(text.includes('series/<s>/'), `${name} names the Series instance folder`);
+    assert.ok(text.includes('series/<s>/assets/<slug>/'), `${name} names the Video instance folder`);
+    assert.ok(text.includes('<s>_video-script_NN.md'), `${name} names the Series instance file`);
+    assert.ok(text.includes('<slug>_video-script_NN.md'), `${name} names the Video instance file`);
+  }
+  assert.ok(layout.includes('<s>_video-script_NN.md'), 'the layout block names the Series instance file');
+  assert.ok(layout.includes('<slug>_video-script_NN.md'), 'the layout block names the Video instance file');
+  assert.doesNotMatch(layout, /_scope_NN|_video-script_<s>/);
+});
+
+test('the script builder writes the name the blueprint placement derives', () => {
+  const builder = read('scripts/build-script-from-draft.mjs');
+  assert.ok(builder.includes('_video-script_NN.md'), 'build-script-from-draft.mjs names the episode script');
+  assert.doesNotMatch(builder, /_video-script_\$\{seriesSlug\}|_scope_NN/);
+  assert.ok(read('scripts/finalize-video.mjs').includes('_video-script_'), 'finalize-video.mjs finds the episode script');
+});
 
 test('the doc has a canonical layout block', () => {
   assert.ok(layout.includes('series/<s>/'), 'the layout block lists the episode tree');

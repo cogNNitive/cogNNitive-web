@@ -139,8 +139,116 @@ function scanWorkspaceUpgrades(workspaceDir, catalog) {
   return { summary, items, models };
 }
 
-function getArg(flag) {
-  const idx = process.argv.indexOf(flag);
+/* ── Grouped upgrade plan (distributed-storage S4b, design A14) ─────────────
+ *
+ * A domaiNN upgrades ONE bluepriNNt version at a time, and every model pinning
+ * that bluepriNNt moves in the same unit: repinning half of a bluepriNNt's
+ * models is exactly the skew `check_domain` reports. The plan groups the
+ * `upgrade-available` models by bluepriNNt, so an interactive upgrade asks one
+ * question per group instead of one per model.
+ *
+ * The plan is pure and read-only. `planHash` covers every member path and its
+ * current pin, so the apply phase can refuse a plan the workspace has outgrown
+ * (a model added or repinned between planning and applying).
+ */
+
+const crypto = require('crypto');
+
+/** Stable hash of the plan's shape: per unit, the blueprint, the target and every member pin. */
+function hashPlan(units) {
+  const shape = units.map((unit) => [
+    unit.blueprint,
+    unit.adopted,
+    unit.members.map((m) => [m.path, m.pinned]),
+  ]);
+  return crypto.createHash('sha256').update(JSON.stringify(shape)).digest('hex');
+}
+
+/**
+ * One unit per bluepriNNt with at least one `upgrade-available` model.
+ *
+ * `pinned` lists every distinct pin inside the unit: more than one means the
+ * domaiNN ALREADY carried a skew, which the plan reports first and resolves by
+ * moving the whole group to the adopted version.
+ */
+function planUpgrade(workspaceDir, catalog) {
+  const models = discoverModels(workspaceDir);
+  const groups = new Map();
+  for (const model of models) {
+    const cls = classifyAgainstCatalog(model.parentUrl, catalog);
+    // A unit is the WHOLE bluepriNNt group, not just its stale members: consent
+    // to upgrade a bluepriNNt has to cover every model that pins it, and a group
+    // that already holds two pins is the skew this plan resolves.
+    if (cls.status !== 'upgrade-available' && cls.status !== 'current') continue;
+    const key = String(cls.template ?? '').toLowerCase();
+    const group = groups.get(key) ?? {
+      blueprint: cls.template,
+      adopted: cls.adopted,
+      gap: cls.gap,
+      members: [],
+      pins: new Set(),
+      upgradable: 0,
+    };
+    group.members.push({ path: model.rel, pinned: cls.pinned, moves: cls.status === 'upgrade-available' });
+    group.pins.add(cls.pinned);
+    if (cls.status === 'upgrade-available') group.upgradable++;
+    // The widest gap in the unit drives how loud the plan is.
+    if (cls.status === 'upgrade-available' && cls.gap === 'major') group.gap = cls.gap;
+    groups.set(key, group);
+  }
+
+  const units = [...groups.values()]
+    // A group whose every member is already adopted has nothing to plan.
+    .filter((group) => group.upgradable > 0)
+    .sort((a, b) => (a.blueprint < b.blueprint ? -1 : a.blueprint > b.blueprint ? 1 : 0))
+    .map((group) => {
+      const members = group.members
+        .slice()
+        .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+      const pinned = [...group.pins].sort()
+      return {
+        blueprint: group.blueprint,
+        adopted: group.adopted,
+        gap: group.gap,
+        count: members.length,
+        pinned,
+        // A pre-existing skew inside the unit: reported first, resolved whole.
+        skew: pinned.length > 1,
+        members,
+      }
+    })
+    .map((unit) => ({ ...unit, planHash: hashPlan([unit]) }));
+
+  return { units, planHash: hashPlan(units) }
+}
+
+/** True when the workspace still matches the plan it was produced from. */
+function isPlanFresh(plan, workspaceDir, catalog) {
+  return planUpgrade(workspaceDir, catalog).planHash === plan.planHash;
+}
+
+/**
+ * Consent text. States the number of models in each unit, because consent to
+ * "upgrade the bluepriNNt" is consent to touch every one of them.
+ */
+function describePlan(plan) {
+  if (plan.units.length === 0) return 'No template upgrades are available.'
+  const lines = []
+  for (const unit of plan.units) {
+    if (unit.skew) {
+      lines.push(
+        `SKEW: ${unit.blueprint} is pinned at ${unit.pinned.join(', ')}; the whole group moves to ${unit.adopted}.`,
+      )
+    }
+    lines.push(
+      `Upgrade ${unit.blueprint}: ${unit.count} model(s) ${unit.pinned.join(', ')} -> ${unit.adopted}`,
+    )
+  }
+  lines.push(`planHash ${plan.planHash}`)
+  return lines.join('\n')
+}
+
+function getArg(flag) {  const idx = process.argv.indexOf(flag);
   return idx !== -1 && idx + 1 < process.argv.length ? process.argv[idx + 1] : null;
 }
 
@@ -180,6 +288,15 @@ function main() {
       console.log(`  [${item.status.toUpperCase()}] ${item.name} — ${arrow}`);
     }
   }
+
+  // The grouped plan is OPT-IN and read-only: `--plan` answers "one unit per
+  // bluepriNNt, and how many models does each move?" without changing what the
+  // default invocation prints.
+  if (process.argv.includes('--plan')) {
+    const plan = planUpgrade(workspaceDir, catalog)
+    if (isJson) console.log(JSON.stringify({ plan }, null, 2))
+    else console.log(`\n${describePlan(plan)}`)
+  }
 }
 
 if (require.main === module) {
@@ -193,4 +310,7 @@ module.exports = {
   parsePinnedUrl,
   discoverModels,
   scanWorkspaceUpgrades,
+  planUpgrade,
+  isPlanFresh,
+  describePlan,
 };

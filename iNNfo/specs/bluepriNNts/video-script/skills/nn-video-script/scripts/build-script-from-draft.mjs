@@ -34,15 +34,14 @@ export function extractFrontmatter(content) {
 }
 
 /**
- * The output filename for a generated script: `<videoSlug>_video-script_<seriesSlug>_NN.md`.
- * Both slugs come from documents (the reviewed JSON and the series `slug::`), never
- * from a hardcoded series name.
- * @param {string} seriesSlug
+ * The output filename for a generated script: `<videoSlug>_video-script_NN.md`.
+ * The stem is the Video instance slug and carries no series name: identity is
+ * hierarchical (`<series>/<slug>`), so the same slug in two series is legal.
  * @param {string} videoSlug
  * @returns {string}
  */
-export function scriptFilename(seriesSlug, videoSlug) {
-  return `${videoSlug}_video-script_${seriesSlug}_NN.md`;
+export function scriptFilename(videoSlug) {
+  return `${videoSlug}_video-script_NN.md`;
 }
 
 /**
@@ -65,9 +64,10 @@ export function dropFrontmatterKeys(frontmatter, keys = MARKER_ONLY_KEYS) {
 }
 
 /**
- * The series document of a folder: its unique `<series>_scope_NN.md` scope
- * document. Returns null when there is none or the name is ambiguous. The legacy
- * `series_NN.md` is not a series document any more.
+ * The series document of a folder: its unique Series instance model, recognised
+ * by frontmatter `scope: true` (never by file name). Returns null when there is
+ * none or the name is ambiguous. Legacy markers such as `series_NN.md` are not
+ * series documents any more.
  * @param {string} seriesDir
  * @returns {{ file: string, marker: boolean } | null}
  */
@@ -79,14 +79,17 @@ export function seriesDocumentFile(seriesDir) {
   } catch {
     return null;
   }
-  const markers = entries.filter((f) => f.endsWith('_scope_NN.md')).sort();
-  return markers.length === 1 ? { file: path.join(dir, markers[0]), marker: true } : null;
+  const candidates = entries
+    .filter((f) => f.endsWith('_video-script_NN.md'))
+    .sort()
+    .filter((f) => /^scope:\s*true\s*$/m.test(extractFrontmatter(fs.readFileSync(path.join(dir, f), 'utf8'))));
+  return candidates.length === 1 ? { file: path.join(dir, candidates[0]), marker: true } : null;
 }
 
 /**
- * Reads the Series document from a series folder (its `<series>_scope_NN.md`
- * scope document). Scope-only keys are dropped, and its slug comes from the
- * filename stem because a scope document declares no `slug::` field.
+ * Reads the Series instance model from a series folder. It IS the series scope
+ * document (`scope: true`): scope-only keys are dropped, and its slug comes from
+ * the filename stem, because the instance root declares it in the body heading.
  * @param {string} seriesDir
  * @returns {{ frontmatter: string, slug: string, title: string, fields: Record<string, string> }}
  */
@@ -94,7 +97,7 @@ export function loadSeriesDocument(seriesDir) {
   const found = seriesDocumentFile(seriesDir);
   if (!found) {
     throw new Error(
-      `no series document in ${path.resolve(seriesDir)}: expected a <series>_scope_NN.md scope document`,
+      `no series document in ${path.resolve(seriesDir)}: expected a <series>_video-script_NN.md Series instance model with frontmatter scope: true`,
     );
   }
   const content = fs.readFileSync(found.file, 'utf8');
@@ -102,11 +105,11 @@ export function loadSeriesDocument(seriesDir) {
   const el = (model.elements.Series || [])[0] || {};
   const fields = el.fields || {};
   const title = fields.title || model.frontmatter.title || el.name || '';
-  const fromStem = path.basename(found.file).replace(/_scope_NN\.md$/, '');
+  const fromStem = path.basename(found.file).replace(/_video-script_NN\.md$/, '');
   return {
     frontmatter: found.marker ? dropFrontmatterKeys(extractFrontmatter(content)) : extractFrontmatter(content),
-    // A marker is named after its series (unique-stem convention); its element
-    // slug is derived from the heading and is not authoritative.
+    // The instance file is named after its slug (design A4); the root element's
+    // slug is not authoritative for the file name.
     slug: found.marker ? fromStem : el.slug || slugify(title),
     title,
     fields,
@@ -291,8 +294,7 @@ function main() {
   const bags = loadCascadeBags(seriesDir || inputDir);
   const series = loadSeriesFor(inputDir, seriesDir);
   const frontmatter = series ? series.frontmatter : '';
-  const seriesSlug = (series && series.slug) || (bags.series && bags.series.slug) || reviewed.slug;
-  const outPath = flag('--out') || path.join(inputDir, scriptFilename(seriesSlug, reviewed.slug));
+  const outPath = flag('--out') || path.join(inputDir, scriptFilename(reviewed.slug));
   let md;
   try {
     assertNoLegacyKeys(reviewed, reviewedPath);

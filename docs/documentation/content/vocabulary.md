@@ -17,6 +17,13 @@ this page is the human-readable rendering of it.
 | Level 2 | **bluepriNNt** | `app`, `template` | Level-2 domain schema specification file (formerly Template / App; e.g. specs/bluepriNNts/business/spec_NN.md) |
 | Level 3 | **kNNowledge** | `model` | Level-3 domain data model (formerly Model). Uncountable noun. The version lives in the `knowledge_version` frontmatter, never in the filename (`_V_` names are retired). |
 | Level 3 | **domaiNN** | `workspace` | Container of kNNowledge, bluepriNNts, sources, procedures and related assets (formerly Workspace). A domaiNN is itself a kNNowledge document. |
+| Ecosystem / Role | **compact storage** | *(none)* | Storage form in which every instance of a concept is an element of one kNNowledge document. A concept with no `storage` declaration is compact. A kNNowledge-level concept, not a new level: the document that holds the elements is an ordinary kNNowledge document. |
+| Ecosystem / Role | **distributed storage** | *(none)* | Storage form in which each instance of a concept is the root element of its own kNNowledge document, called an instance model, in its own folder placed by the concept's placement rule. Declared with `storage:: distributed`. A kNNowledge-level concept, not a new level. |
+| Ecosystem / Role | **instance model** | *(none)* | A kNNowledge document that is itself one instance of a distributed concept: its root element is that concept and its `slug::` equals its folder slug. Addressed by a hierarchical id. It is a kNNowledge document, not a new level. |
+| Ecosystem / Role | **collection** | *(none)* | The domaiNN-wide set of instances of one concept, ordered by id and identical whatever the storage form: instance models and compact elements are members alike. Same word and one meaning as the `members` collection of the `changes` bluepriNNt: the set of units of one kind, grouped by the concept or document that defines them. A kNNowledge-level concept, not a new level. |
+| Ecosystem / Role | **placement rule** | *(none)* | The `placement::` path pattern a distributed concept declares: where each of its instance models lives relative to the domaiNN root, with exactly one `{slug}` and an optional leading `{container}`. It says where an instance lives, never what it inherits. A kNNowledge-level declaration, not a new level. |
+| Ecosystem / Role | **hierarchical id** | `model id` | The identity of a kNNowledge document, derived only from its own path and the declarations of its bluepriNNt: the stem without `_NN` for a compact model, or a container chain plus slug (`<container-id>/<slug>`) for an instance model. A stem, a title and a path are never ids. A kNNowledge-level concept, not a new level. |
+| Ecosystem / Role | **title** | *(none)* | The human label of a kNNowledge document or element. Display-only: it never resolves an address, and two documents may share a title without conflict. Addressing always uses the hierarchical id and the element slug. |
 | Ecosystem / Role | **ageNNt** | `actioNN` | Skill ecosystem, execution engine, and dynamic AI persona framework for cogNNitive |
 | Ecosystem / Role | **referenced skill** | `external skill` | A third-party agent skill a bluepriNNt declares in its frontmatter `skills:` array, pinned to a commit with an SPDX license, and fetched from its upstream repo at install time (never vendored, never fetched at runtime). Its guarantee is bounded to reproducible + license-declared; the maintainer does not vouch for the author. Distinct from an embedded skill, which is vendored and curated. |
 | Level 3 | **sidecar** | *(none)* | Co-located <file>.<ext>_sidecar_NN.md document that carries a file's hash, size, metadata and, for binary files, a normalized body. A concept, not a new level: a kNNowledge-level document that is never a model and is never mirrored into a separate `sources/nn/` tree (that tree is retired). |
@@ -69,6 +76,42 @@ this page is the human-readable rendering of it.
 - **Deprecated Aliases**: `workspace`
 - **Container Nature**: A domaiNN is itself a kNNowledge document containing other documents.
 - **Excluded Senses** (not renamed): `npm workspace`, `VS Code workspace`, `git worktree`, `IndexedDB workspace`, `subject-area domain`
+
+### **compact storage**
+
+- **Sense**: Storage form in which every instance of a concept is an element of one kNNowledge document. A concept with no `storage` declaration is compact. A kNNowledge-level concept, not a new level: the document that holds the elements is an ordinary kNNowledge document.
+- **Excluded Senses** (not renamed): `compressed-storage`, `database-storage`
+
+### **distributed storage**
+
+- **Sense**: Storage form in which each instance of a concept is the root element of its own kNNowledge document, called an instance model, in its own folder placed by the concept's placement rule. Declared with `storage:: distributed`. A kNNowledge-level concept, not a new level.
+- **Excluded Senses** (not renamed): `distributed-database`, `object-storage`
+
+### **instance model**
+
+- **Sense**: A kNNowledge document that is itself one instance of a distributed concept: its root element is that concept and its `slug::` equals its folder slug. Addressed by a hierarchical id. It is a kNNowledge document, not a new level.
+- **Excluded Senses** (not renamed): `instance-in-an-object-model`
+
+### **collection**
+
+- **Sense**: The domaiNN-wide set of instances of one concept, ordered by id and identical whatever the storage form: instance models and compact elements are members alike. Same word and one meaning as the `members` collection of the `changes` bluepriNNt: the set of units of one kind, grouped by the concept or document that defines them. A kNNowledge-level concept, not a new level.
+- **Excluded Senses** (not renamed): `data-structure-collection`, `database-table`
+
+### **placement rule**
+
+- **Sense**: The `placement::` path pattern a distributed concept declares: where each of its instance models lives relative to the domaiNN root, with exactly one `{slug}` and an optional leading `{container}`. It says where an instance lives, never what it inherits. A kNNowledge-level declaration, not a new level.
+- **Excluded Senses** (not renamed): `css-placement`, `ad-placement`
+
+### **hierarchical id**
+
+- **Sense**: The identity of a kNNowledge document, derived only from its own path and the declarations of its bluepriNNt: the stem without `_NN` for a compact model, or a container chain plus slug (`<container-id>/<slug>`) for an instance model. A stem, a title and a path are never ids. A kNNowledge-level concept, not a new level.
+- **Deprecated Aliases**: `model id`
+- **Excluded Senses** (not renamed): `database-id`, `uuid`
+
+### **title**
+
+- **Sense**: The human label of a kNNowledge document or element. Display-only: it never resolves an address, and two documents may share a title without conflict. Addressing always uses the hierarchical id and the element slug.
+- **Excluded Senses** (not renamed): `html-title`, `frontmatter-property`
 
 ### **ageNNt**
 
@@ -164,6 +207,11 @@ This mapping is documentation-only; no runtime aliases exist.
 | `innfo-mcp_` | `nn-mcp_` | tool_prefix | The MCP tool prefix in skills and documentation. The client builds the prefix from the registered server name; tool names after the prefix are unchanged. |
 | `@innfo-console-v` | `@nn-console-v` | console_pin | The console shell pin. Readers still accept `@innfo-console-v*` so already-stamped exports keep resolving; nothing emits it. |
 | `innfo-` | `nn-` | prefix | Console assets, generated mirrors and wrapper scripts renamed to the nn- prefix. Existing published files under the old name are never moved or deleted, so old stamps and CDN URLs keep resolving. |
+| `[[Title :: Name]]` | `<hierarchical-id>@<slug> address` | reference_syntax | Removed by distributed-storage: a type:: reference value is an address, and a title is display-only. The parser reports ADDRESS_MALFORMED naming the removed form. |
+| `key:: [[Name]]` | `@slug (same document) or <hierarchical-id>@<slug>` | reference_syntax | Removed by distributed-storage for typed reference fields. Prose and index wikilinks stay display text and are untouched. |
+| `<stem> used as a model id` | `<hierarchical-id>` | identity | A bare stem such as intro_video-script is not an id and never resolves. The stem derives from the folder slug and equal stems in different folders are legal. |
+| `a model id rewritten to a path when two stems collided` | `<hierarchical-id>, never rewritten` | identity | The old collision flip is gone: an id depends only on the file's own path and its bluepriNNt declarations. Two documents that derive the same id are DUPLICATE_MODEL_ID. |
+| `AMBIGUOUS_MODEL_ID` | `REF_MODEL_NOT_FOUND with the candidate ids` | diagnostic_code | Retired by distributed-storage together with the package-stem alias and the stem-collision module. An unresolved address lists the candidate ids that share its last segment. |
 
 ## Consumer Notes
 

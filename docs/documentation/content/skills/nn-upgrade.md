@@ -23,15 +23,32 @@ ships two capabilities and one maintenance option:
 
 | Phase | What happens |
 |---|---|
-| **B0 — Detect** | Run the Tier-3 upgrade scan via `nn-preflight --workspace-dir` and present the per-document classification. This is the dry run. |
-| **B1 — Inform & consent** | Present the upgrade options. Consent is mandatory before any mutation. |
+| **B0 — Detect** | Run the Tier-3 upgrade scan via `nn-preflight --workspace-dir` and present the classification, grouped by bluepriNNt. This is the dry run. |
+| **B1 — Inform & consent** | Present the upgrade options and the number of documents in each unit. Consent is mandatory before any mutation. |
 | **B2 — Backup** | Create the timestamped backup outside the workspace. |
-| **B3 — Impact analysis** | Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use. |
-| **B4 — Rehydrate & validate** | Hydrate the adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump the version, and re-validate through `nn-mcp`. On failure, restore from the backup. |
+| **B3 — Impact analysis** | Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use. Each question is asked once per concept and the answer applies to every document. |
+| **B4 — Rehydrate & validate** | Hydrate the adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump the version, and re-validate through `nn-mcp`, for every document of the unit. On failure, restore from the backup. |
 
 ```bash
 node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>
 ```
+
+### The upgrade unit is a bluepriNNt
+
+A domaiNN uses **one version per bluepriNNt**, and `check_domain` reports
+`BLUEPRINT_VERSION_SKEW` as an error when documents disagree (see
+[Storage and identity](../concepts/storage-and-identity.md)). So Flow B never upgrades a single
+document in isolation:
+
+- **All or none.** Every document that pins the bluepriNNt is repointed and re-validated, or none
+  is. If one fails re-validation, all of them are restored from the backup and the report names the
+  failing document. A domaiNN is never left with a bluepriNNt pinned at two versions.
+- **The plan covers the group.** `planHash` covers each group's member paths and current pins, so a
+  document added after the plan was made aborts the run.
+- **Consent covers the unit.** The prompt states how many documents it contains, and nothing is
+  written before you accept.
+- **Existing skew comes first.** If the group is already skewed, the skew is reported and the whole
+  group goes to the adopted version, never only the documents on one version.
 
 ### Marker-bearing documents
 
@@ -82,3 +99,4 @@ detailed recipe lives in the `init_domain` flow of the MCP.
 - [nn-preflight](nn-preflight.md) — the Tier-3 scan that detects available upgrades.
 - [nn-innfo](nn-innfo.md) — the `MARKERS_REMOVED` recipe and changeset flow.
 - [The specification chain](../concepts/specifications.md) — how `parent_spec` resolution and versioning work.
+- [Storage and identity](../concepts/storage-and-identity.md) — the version-uniformity rule behind the upgrade unit.

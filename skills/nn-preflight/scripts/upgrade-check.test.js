@@ -18,6 +18,9 @@ const {
   parsePinnedUrl,
   discoverModels,
   scanWorkspaceUpgrades,
+  planUpgrade,
+  isPlanFresh,
+  describePlan,
 } = require('./upgrade-check');
 
 const script = path.join(__dirname, 'upgrade-check.js');
@@ -214,6 +217,105 @@ async function runTests() {
     } finally {
       fs.rmSync(ws, { recursive: true, force: true });
       fs.rmSync(catalogFile, { force: true });
+    }
+  }
+
+  // Test 7: one upgrade unit per bluepriNNt, with the member count (S4b)
+  {
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'upgrade-plan-'))
+    try {
+      // 24 Videos of one Series, all pinned at the same old version.
+      for (let i = 0; i < 24; i++) {
+        const dir = path.join(ws, 'series', 'villa', 'assets', `v${String(i).padStart(2, '0')}`)
+        fs.mkdirSync(dir, { recursive: true })
+        fs.writeFileSync(
+          path.join(dir, `v${String(i).padStart(2, '0')}_video-script_NN.md`),
+          '---\nlevel: 3\nparent_spec:\n  name: "video-script_V_0-14-1"\n  url: "https://x/main/iNNfo/specs/bluepriNNts/video-script/video-script_V_0-14-1_NN.md"\n---\n# NN Video\n',
+          'utf-8',
+        )
+      }
+      const catalog = {
+        blueprints: {
+          'video-script': {
+            name: 'video-script',
+            adopted: 'V_0-15-0',
+            versions: [{ blueprint_version: 'V_0-14-1' }, { blueprint_version: 'V_0-15-0' }],
+          },
+        },
+      }
+      const plan = planUpgrade(ws, catalog)
+      assert.strictEqual(plan.units.length, 1, 'one bluepriNNt is one unit')
+      assert.strictEqual(plan.units[0].blueprint, 'video-script')
+      assert.strictEqual(plan.units[0].count, 24, 'the unit carries every instance')
+      assert.strictEqual(plan.units[0].members.length, 24)
+      assert.strictEqual(plan.units[0].skew, false, 'a uniform pin is not a skew')
+      assert.deepStrictEqual(plan.units[0].pinned, ['V_0-14-1'])
+
+      // The consent text states the number of models the unit touches.
+      const text = describePlan(plan)
+      assert.ok(text.includes('24 model(s)'), text)
+      assert.ok(text.includes('V_0-14-1 -> V_0-15-0'), text)
+      console.log('✔ 24 instances plan as ONE unit of 24, and consent names the count')
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true })
+    }
+  }
+
+  // Test 8: planHash covers every member path and pin, so a changed workspace is stale
+  {
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'upgrade-hash-'))
+    fs.mkdirSync(path.join(ws, 'models'), { recursive: true })
+    try {
+      const model = (name, version) =>
+        fs.writeFileSync(
+          path.join(ws, 'models', name),
+          `---\nlevel: 3\nparent_spec:\n  name: "business_${version}"\n  url: "https://x/main/iNNfo/specs/bluepriNNts/business/business_${version}_NN.md"\n---\n`,
+          'utf-8',
+        )
+      const catalog = CATALOG
+      model('a_V_0-1-0_business_NN.md', 'V_0-1-0')
+      const plan = planUpgrade(ws, catalog)
+      assert.ok(isPlanFresh(plan, ws, catalog), 'an unchanged workspace keeps the plan valid')
+
+      // A model added after planning invalidates it: the unit changed size.
+      model('b_V_0-1-0_business_NN.md', 'V_0-1-0')
+      assert.strictEqual(isPlanFresh(plan, ws, catalog), false, 'a member added after planning aborts')
+
+      const replan = planUpgrade(ws, catalog)
+      assert.strictEqual(replan.units[0].count, 2)
+      assert.notStrictEqual(replan.planHash, plan.planHash)
+      console.log('✔ planHash covers member paths and pins; a stale plan is detected')
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true })
+    }
+  }
+
+  // Test 9: a pre-existing skew is reported first and the group moves whole
+  {
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'upgrade-skew-'))
+    fs.mkdirSync(path.join(ws, 'models'), { recursive: true })
+    try {
+      const model = (name, version) =>
+        fs.writeFileSync(
+          path.join(ws, 'models', name),
+          `---\nlevel: 3\nparent_spec:\n  name: "business_${version}"\n  url: "https://x/main/iNNfo/specs/bluepriNNts/business/business_${version}_NN.md"\n---\n`,
+          'utf-8',
+        )
+      model('a_V_0-1-0_business_NN.md', 'V_0-1-0')
+      model('b_V_0-2-0_business_NN.md', 'V_0-2-0')
+
+      const plan = planUpgrade(ws, CATALOG)
+      assert.strictEqual(plan.units.length, 1, 'one bluepriNNt is still one unit')
+      assert.strictEqual(plan.units[0].skew, true, 'two pins inside one unit is a skew')
+      assert.deepStrictEqual(plan.units[0].pinned, ['V_0-1-0', 'V_0-2-0'])
+      assert.strictEqual(plan.units[0].adopted, 'V_0-2-0', 'the whole group goes to the adopted version')
+
+      const text = describePlan(plan)
+      assert.ok(text.startsWith('SKEW:'), 'the skew is reported before the upgrade line')
+      assert.ok(text.includes('the whole group moves to V_0-2-0'), text)
+      console.log('✔ a pre-existing skew is reported first and resolved by moving the whole group')
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true })
     }
   }
 

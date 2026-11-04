@@ -1,7 +1,7 @@
 ---
 name: nn-innfo
-version: "V_0-5-13"
-last_updated: 2026-10-18
+version: "V_0-5-14"
+last_updated: 2026-11-03
 metadata:
   source_type: "original"
   mcp: "nn-mcp"
@@ -82,6 +82,30 @@ domaiNN-relative `path@unit`, written in full (no implicit prefix), or a bracket
 list when one change cites several units. A `<unit>` is `@## Heading` (Markdown),
 `@RowID&col` (CSV), or `@/items/0/name` (JSON Pointer, RFC 6901). No `src-NNN` IDs,
 no line-number ranges, and never a `staging/` target.
+
+**Unified Addressing and Storage**
+
+1. **One grammar.** A kNNowledge unit is addressed `<hierarchical-id>[@<slug>[&<field>]]`,
+   plus the unchanged `@concept:<slug>`, `@matrix:<slug>` and `@<matrix>&<row>&<col>`
+   forms. A typed `reference` or `knowledge` field holds that address; a
+   same-document reference is relative (`@slug`).
+2. **Titles are display-only.** Never resolve or write a title as a target.
+   `[[Name]]`, `[[Title :: Name]]`, a bare stem, a path and `doc.md@## Heading`
+   are removed forms and are rejected (`ADDRESS_MALFORMED`,
+   `MODEL_CITED_BY_PATH`, `NN_DOCUMENT_CITED_BY_HEADING`). Prose and index
+   wikilinks are display text and stay untouched.
+3. **Storage is declared per concept.** `compact` instances are elements of one
+   document; `distributed` instances are one instance model each, at the
+   declared `placement`. A folder alone never makes a concept distributed.
+4. **One bluepriNNt version per bluepriNNt.** A domaiNN that pins a bluepriNNt at
+   several versions fails `check_domain` with `BLUEPRINT_VERSION_SKEW`. Fix it
+   with `nn-upgrade`, whose unit is the whole bluepriNNt group: it repins and
+   re-validates every member, or none.
+5. **Instance lifecycle.** Create with `add_model` and an explicit `concept::`
+   (container first); rename or move with `move_model`, retargeting every
+   referrer in the same changeset; convert a compact element with
+   `extract_instance`. Removing an instance model is NOT supported: no operation
+   deletes one, and a hand-deleted file is reported as `MODEL_WITHOUT_FILE`.
 
 **Informative Grace**
 
@@ -296,7 +320,7 @@ When the user selects option `[w]` (View & consult documentation):
 1. Present available iNNfo documentation categories and guides:
    - **Level 1 Core Specification**: the iNNfo specification, fetched with `nn-mcp_get_spec` (Primitives: Concepts, Fields, Matrices).
    - **Level 2 Canonical Templates**: Business, Procedures, Organization, Metrics, Projects, Innovation, Analysis, Documentation.
-   - **Syntactic & Structural Rules**: Heading conventions (`# NN`, `## NN`), typing heuristics, WikiLink reference formatting (`[[...]]`), and evidence grammar (`evidence:: <path>@<unit>`).
+   - **Syntactic & Structural Rules**: Heading conventions (`# NN`, `## NN`), typing heuristics, reference-field address syntax (`@<slug>`, `<hierarchical-id>@<slug>`), prose WikiLink display text (`[[...]]`), and evidence grammar (`evidence:: <path>@<unit>`).
    - **Artifact & Console Architecture**: Console shell, slot payloads, and interactive console runtimes.
 2. **Read-only consultation**: This workflow is purely informational and performs **zero workspace filesystem mutations**.
 
@@ -339,14 +363,14 @@ The `nn-mcp` server exposes a deterministic tool set built on `@cognnitive/nn-co
 
 | Tool | Description |
 |------|-------------|
-| `list_knowledge` | Scan the knowledge directory and list all iNNfo knowledge documents |
+| `list_knowledge` | Scan the knowledge directory and list every iNNfo knowledge document with its id, path, version, blueprint and storage. Pass `collection` to list one concept's members instead (it spans distributed instances and compact copies; each item then carries its placement finding, if any) |
 | `read_knowledge` | Parse and return an iNNfo knowledge document's full structure by its id. For surgical work prefer bounded slices: pass concept (+ element) with max_lines (default 150); slices over the cap truncate with truncated=true unless override_reason records a manual override |
 | `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
 | `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
 | `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
 | `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or bare intent operations. Every operation that mutates a Level-3 kNNowledge model (including freeze_slugs and bump_version) is synthesized into a sealed, recorded changeset; only generate_index and the Level-2 bluepriNNt authoring operations (add_concept, add_field, bump_version on a bluepriNNt) write directly. After an applied or partially applied changeset the domain console is regenerated and opened in a browser tab (pass open: false to skip). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
 | `regenerate_console` | Regenerate the domain console (or one model-scoped console) and open it in a browser tab. Idempotent: an up-to-date console is reported as unchanged. Also the retry path after an apply whose console regeneration failed. The result carries console and next_steps: you MUST relay next_steps.notice to the user. |
-| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_element_text, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version, produce_artifact); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
+| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_element_text, remove_matrix, add_matrix, comment, add_model, move_model, freeze_slugs, bump_version, produce_artifact); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
 | `init_domain` | Create an empty, conformant domaiNN container in a new directory: the canonical folders (kNNowledge/, sources/import/, sources/conversations/, conversations/, artifacts/, procedures/, staging/, changes/), a .gitattributes with * -text and a domaiNN_NN.md manifest listing no models. Refuses a directory that exists and is not empty. It is not a changeset; add models afterwards with an add_model changeset (propose_changeset) or init_knowledge. Migration recipe: init_domain for a NEW domain, import the old domain as a source (migrate-domain.js --import-as-source), derive add_model/add_element changes whose evidence cites it, propose_changeset, review, apply_change. |
 | `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
 | `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
@@ -509,7 +533,7 @@ nn-mcp_apply_change({
 
 - **Behavior**:
   1. Raises `knowledge_version` by the requested level. The model is bumped exactly once per changeset: a `bump_version` change replaces the default patch bump of `apply_change`, it never adds to it. A higher level resets the lower ones.
-  2. The model file is never renamed (`kNNowledge/<stem>_NN.md` is invariant) and no reference elsewhere is rewritten.
+  2. A version bump never renames the model file or its folder; only `move_model` changes an instance model's path and id.
   3. An explicit `version` is refused (`INVALID_BUMP_LEVEL`); so is the unversioned provenance log.
   4. `freeze_slugs` follows the same rule: on a Level 3 model it is a changeset operation.
 - **Level 2 bluepriNNts**: `bump_version` on a bluepriNNt sets `blueprint_version` in place and writes directly (`{ bump }` or `{ version }`). `add_concept`, `add_field` and `set_marker` also stay direct on a bluepriNNt and are refused on a Level 3 model (`SCHEMA_OP_ON_LEVEL3`).
@@ -520,7 +544,8 @@ nn-mcp_apply_change({
 ## 6. Rename Safety & Referential Integrity
 
 When a Concept or Element must be renamed:
-* **Delegate to the MCP:** The agent does NOT perform blind manual find-and-replace. It uses `nn-mcp_apply_change` with the matching rename operation (`rename_concept` or `rename_element`) to guarantee deterministic updates of `[[Concept]]` WikiLinks, matrices, and cross-references.
+* **Delegate to the MCP:** The agent does NOT perform blind manual find-and-replace. It uses `nn-mcp_apply_change` with the matching rename operation (`rename_concept` or `rename_element`) to guarantee deterministic updates of typed reference addresses, matrices, and prose WikiLinks.
+* **Instance models have a move, not a rename.** To change an instance's slug or container, use `move_model` (never edit the folder by hand): it changes the hierarchical id, relocates the instance root folder, and rejects the move unless every referrer is retargeted in the same changeset (`MOVE_LEAVES_DANGLING_REFERENCES`). A version bump never renames a file; only `move_model` changes an instance model's path and id.
 
 ---
 
@@ -603,16 +628,16 @@ Would you like me to apply the recommended fix automatically?
 
 ---
 
-## 8d. Relationship Protocol & WikiLink Syntax in Reference Fields
+## 8d. Relationship Protocol & Address Syntax in Reference Fields
 
 There are **4 formal relationship forms** in iNNfo (`hierarchy`, `evaluable_matrix`, `graph_edge`, `sequence`) and two cross-linking mechanisms (`reference` fields and contextual mentions):
 
 1. **Taxonomic hierarchy (`hierarchy`)**: Declared **only** via nested WikiLink lists in the `# NN index` (`* [[Parent]]` -> `  * [[Child]]`).
-2. **Reference fields (`reference`)**: When a field has `type:: reference` in its app definition, its value in the Level 3 model **MUST be enclosed in WikiLink brackets `[[...]]`** (e.g. `location:: [[Dining-Room]]`). NEVER write the value as plain text (`location:: Dining-Room`), because that prevents incoming-reference detection in the editor.
+2. **Reference fields (`reference`)**: A `type:: reference` field holds an **address**, never a title and never a bare name. Same document: `@<slug>` (e.g. `location:: @dining-room`); cross-model: `<hierarchical-id>@<slug>` (e.g. `villabotijos-today/pepper-mapache@00-gancho`). The removed forms `[[Name]]` and `[[Title :: Name]]` are rejected with `ADDRESS_MALFORMED`.
 3. **Evaluable N-to-M relationships (`evaluable_matrix`)**: Expressed in `# NN matrices:` blocks for complex or scored relationships between concepts.
-4. **Contextual mentions**: Written as WikiLinks `[[Element]]` inside the prose Markdown description.
+4. **Contextual mentions**: WikiLinks `[[Element]]` inside prose are display text, not addressing, and stay.
 
-**Wizard / co-creation instruction**: During model creation or editing, the agent MUST guide or ask the user how they want to structure relationships (hierarchy in `# NN index`, a reference field `[[...]]`, or an N-to-M matrix).
+**Wizard / co-creation instruction**: During model creation or editing, the agent MUST guide or ask the user how they want to structure relationships (hierarchy in `# NN index`, a reference field holding an address, or an N-to-M matrix).
 
 ---
 
@@ -938,7 +963,7 @@ Each session MUST record per-intent call and token counts via the `usage-counter
 6. **Contextual Shortcuts:** End every response by offering 2-3 suggested next actions (Quick Actions).
 7. **Full MCP Delegation:** Query types, schemas, and validation from the `nn-mcp` server; do not guess or duplicate the grammar.
 8. **Index Block Scope (`# NN index`):** The `# NN index` is reserved exclusively for workspace manifest documents (`domaiNN_NN.md` / `index.md`) and Level 2 templates (defining the taxonomy hierarchy of Concepts). Level 3 domain data models (`kNNowledge/*_NN.md`) MUST NOT contain a root `# NN index` block; navigation in Level 3 models is derived dynamically from Concept and Element headings.
-9. **Mandatory WikiLink syntax in references:** In every reference field (`type:: reference`), the value MUST be formatted using WikiLink syntax (`key:: [[Element]]`). Plain text without WikiLink brackets is forbidden.
+9. **Address syntax in references:** In every reference field (`type:: reference`), the value MUST be an address: `@<slug>` for a same-document target, or `<hierarchical-id>@<slug>` across models. Titles, bare names and the removed `[[Element]]` form are forbidden there; prose WikiLinks remain display text.
 10. **Element descriptions in prose:** The description/explanation of an element in a Level 3 model must NEVER be written as a `description::` field. It must always be free-form Markdown prose below the `key:: value` field list, separated by a blank line.
 11. **Active Model Selection Gate:** Never perform editing, validation, audits, console export, or model procedure execution without a validated active model in context. Run workspace discovery first if none is set.
 12. **Dynamic Quick Actions:** Only list procedure shortcuts in next steps if the model contains declared procedures.

@@ -87,8 +87,8 @@ priority:: high
 duration:: 4d
 start_date:: "2026-08-01"
 due_date:: "2026-08-05"
-milestone:: [[Blueprint Approval Gate]]
-deliverable:: [[High-Voltage Vault Blueprint]]
+milestone:: @blueprint-approval-gate
+deliverable:: @high-voltage-vault-blueprint
 tags:: [task, calibration, accelerator, physics]
 Calculate required megawatt load to stabilize high-density spectral entities in vault cells.
 
@@ -97,12 +97,12 @@ slug:: install-auxiliary-laser-matrix
 health:: nominal
 status:: in_progress
 priority:: critical
-depends_on:: [[Calibrate Particle Accelerators]]
+depends_on:: @calibrate-particle-accelerators
 duration:: 10d
 start_date:: "2026-08-21"
 due_date:: "2026-08-31"
-milestone:: [[Auxiliary Containment Cell Installation]]
-deliverable:: [[Auxiliary Laser Matrix Cell]]
+milestone:: @auxiliary-containment-cell-installation
+deliverable:: @auxiliary-laser-matrix-cell
 tags:: [task, installation, laser-matrix, subterranean]
 Mount high-frequency laser emitter banks inside the subterranean vault expansion chamber.
 
@@ -111,12 +111,12 @@ slug:: couple-diesel-backup-generator
 health:: warning
 status:: in_progress
 priority:: high
-depends_on:: [[Install Auxiliary Laser Matrix]]
+depends_on:: @install-auxiliary-laser-matrix
 duration:: 5d
 start_date:: "2026-09-01"
 due_date:: "2026-09-06"
-milestone:: [[Auxiliary Containment Cell Installation]]
-deliverable:: [[Automated Backup Power Switch]]
+milestone:: @auxiliary-containment-cell-installation
+deliverable:: @automated-backup-power-switch
 tags:: [task, power, generator, backup]
 Wire the heavy auxiliary diesel generator to the containment grid automatic transfer switch.
 
@@ -125,12 +125,12 @@ slug:: execute-full-load-grid-test
 health:: nominal
 status:: backlog
 priority:: critical
-depends_on:: [[Couple Diesel Backup Generator]]
+depends_on:: @couple-diesel-backup-generator
 duration:: 3d
 start_date:: "2026-09-16"
 due_date:: "2026-09-19"
-milestone:: [[Full Grid Containment Signoff]]
-deliverable:: [[Auxiliary Laser Matrix Cell]]
+milestone:: @full-grid-containment-signoff
+deliverable:: @auxiliary-laser-matrix-cell
 tags:: [task, testing, high-voltage, validation]
 Simulate main city power shutdown to verify automatic switchover and laser grid stability.
 

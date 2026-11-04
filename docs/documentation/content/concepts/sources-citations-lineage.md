@@ -38,6 +38,7 @@ uses the `@` pointer grammar:
 | CSV row | `<csv>@<row>` | `sources/import/prices.csv@SKU-42` |
 | CSV cell | `<csv>@<row>&<column>` | `sources/import/prices.csv@SKU-42&amount` |
 | JSON value | `<json>@/<pointer>` | `sources/import/data.json@/items/0/name` |
+| kNNowledge unit | `<hierarchical-id>@<slug>` | `villabotijos-today/pepper-mapache@00-gancho` |
 
 Rules that hold everywhere:
 
@@ -47,6 +48,11 @@ Rules that hold everywhere:
 - A **binary** file cannot be cited directly; cite its sidecar instead.
 - There is **no `src-NNN` identifier system and no line-number anchors** (`#L1-L10`).
   Anchors are human-readable headings, CSV row keys, or JSON Pointers.
+- The path grammar is for **raw files** (including a sidecar's headings, such as
+  `report.pdf_sidecar_NN.md@## Findings`). A kNNowledge document is cited with its
+  [address](storage-and-identity.md), never by path and heading: `kNNowledge/x_NN.md@## A` is
+  rejected as `MODEL_CITED_BY_PATH`, and a changeset cited by one of its headings is rejected as
+  `NN_DOCUMENT_CITED_BY_HEADING`.
 
 A Citation appears as the `evidence::` of an **applied change**. A kNNowledge unit has no
 citation field of its own: the reserved property and `type:: citation` are banned on Level 3,
@@ -85,4 +91,8 @@ returns a `provenance` report: `EDITED_WITHOUT_RECORD` for a value edited by han
 change that set it, `UNIT_WITHOUT_RECORD` for a unit no change accounts for,
 `EVIDENCE_UNKNOWN` for a change with no evidence, and `EVIDENCE_SOURCE_CHANGED` when the
 cited bytes moved. `strict: true` replays the changes and compares the serialized body, so a
-whitespace-only edit is drift there and not in the default fold. The check is read-only.
+whitespace-only edit is drift there and not in the default fold. A model that applied changes
+touched but that has no file (for example an instance model deleted by hand) is reported as `MODEL_WITHOUT_FILE`: a
+warning in the default fold and an error in strict mode. Moving or renaming an instance model, or
+extracting instances from a compact document, is recorded as a change, so it raises no drift. The
+check is read-only.

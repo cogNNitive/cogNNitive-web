@@ -81,11 +81,13 @@ Instead of relying on fragile line numbers (`#L42-L50`) that break whenever text
 | Scope | Syntax | Example |
 | :--- | :--- | :--- |
 | **Domain** | `domaiNN_NN.md` | `domaiNN_NN.md` |
-| **Document** | `<modelId>` | `kNNowledge/business` |
-| **Concept section** | `<model>@concept:<slug>` | `business@concept:objectives` |
-| **Element** | `<model>@<element>` | `business@q3-revenue-target` |
-| **Field value** | `<model>@<element>&<field>` | `business@q3-revenue-target&amount` |
-| **Matrix cell** | `<model>@<matrix>&<row>&<col>` | `business@swot-matrix&strength-1&opportunity-2` |
+| **Document** | `<model-id>` | `business` |
+| **Concept section** | `<model-id>@concept:<slug>` | `business@concept:objectives` |
+| **Element** | `<model-id>@<element>` | `business@q3-revenue-target` |
+| **Field value** | `<model-id>@<element>&<field>` | `business@q3-revenue-target&amount` |
+| **Matrix cell** | `<model-id>@<matrix>&<row>&<col>` | `business@swot-matrix&strength-1&opportunity-2` |
+
+A model id is never a path or a title. For a compact document it is the file name without `_NN`; for a document that holds a single instance of a distributed concept it is hierarchical, such as `villabotijos-today/intro`. See [Storage and identity](storage-and-identity.md).
 
 Raw sources are cited with the same precision:
 * **Markdown:** `sources/import/brief.md@## Target Audience`

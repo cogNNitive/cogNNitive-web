@@ -14,7 +14,7 @@ cli > layer > scene > video > series > domain > blueprint
 ```
 
 - **Defaults** is `video-defaults_NN.md`: the `domain` level, with the package copy as the `blueprint` level.
-- **Series** is the episode's nearest `*_scope_NN.md`.
+- **Series** is the episode's nearest Series instance model (`<s>_video-script_NN.md`, frontmatter `scope: true`).
 - **Preset** is a named bundle of cascade parameters. A `presets` list is written at Defaults, Series, Video or Scene (never on a Layer) and expands directly under that level, so a Preset beats the outer levels but never the explicit fields of the element that names it.
 - A Preset column mark means the Field can be set inside a Preset.
 

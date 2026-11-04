@@ -13,10 +13,10 @@ tools that enforce it.
   .cognnitive/{cache/video/{tts,images,temp}, video-ledger.jsonl, pending-predictions.jsonl, locks/}
   sounds/  components/  frames/  procedures/  assets/<library>/     # optional, plus any other domaiNN content
   series/<s>/
-    <s>_scope_NN.md                        # the only series anchor (frontmatter `scope: true`)
+    <s>_video-script_NN.md                  # the only series anchor (the Series instance model, frontmatter `scope: true`)
     shared/<kind>/  sounds/  components/  frames/  procedures/      # optional
     assets/<slug>/
-      <slug>_video-script_<s>_NN.md        # the Video record and its script
+      <slug>_video-script_NN.md            # the Video instance model: the record and its script
       draft.json  reviewed.json  review_console.html  draft_thumbs/
       media/  animations/<project>/
       asset_plan.md  asset_plan.approved.json
@@ -33,7 +33,7 @@ Three naming classes, and nothing outside them:
 
 | Class | Rule |
 |---|---|
-| Domain-indexed documents (`_NN.md`) | `<stem>_<blueprint-or-role>_NN.md` with a domain-unique kebab-case stem |
+| Domain-indexed documents (`_NN.md`) | `<stem>_<blueprint-or-role>_NN.md` with a kebab-case stem: the folder slug for an instance model, the canonical stem for a compact model |
 | Working files inside an episode | fixed `snake_case` role names, no slug, no `V_` |
 | Deliverables that leave the episode | `<slug>_<what>_<W>x<H>.<ext>` by TRUE dimensions; blur adds `_blur` |
 

@@ -47,9 +47,9 @@ function fixture() {
   const series = path.join(root, 'series', 's');
   const episode = path.join(series, 'assets', 'e');
   fs.mkdirSync(path.join(episode, 'media'), { recursive: true });
-  fs.writeFileSync(path.join(series, 's_scope_NN.md'), '---\nlevel: 3\nscope: true\ntitle: "S"\n---\n\n# NN Series\n\n## NN Series: S\nslug:: s\n', 'utf8');
+  fs.writeFileSync(path.join(series, 's_video-script_NN.md'), '---\nlevel: 3\nscope: true\ntitle: "S"\n---\n\n# NN Series\n\n## NN Series: S\nslug:: s\n', 'utf8');
   fs.writeFileSync(path.join(episode, 'media', 'bg.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
-  const scriptPath = path.join(episode, 'e_video-script_s_NN.md');
+  const scriptPath = path.join(episode, 'e_video-script_NN.md');
   fs.writeFileSync(scriptPath, SAMPLE, 'utf8');
   return { root, series, episode, scriptPath };
 }

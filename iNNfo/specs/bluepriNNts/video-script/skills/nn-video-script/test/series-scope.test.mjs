@@ -2,7 +2,7 @@
  * nn-video-script/test/series-scope.test.mjs
  *
  * The series bag of the parameter cascade comes from the context-resolution
- * scope chain (`<series>_scope_NN.md` folder scopes), not from a mandatory
+ * scope chain (`<series>_video-script_NN.md` folder scopes), not from a mandatory
  * `series_NN.md`. The legacy document stays as a fallback for domains that do
  * not declare scope markers yet.
  */
@@ -58,16 +58,16 @@ function makeDomain({ marker = true, legacy = false, deeper = false } = {}) {
   fs.mkdirSync(episode, { recursive: true });
   fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), DOMAIN, 'utf8');
   fs.writeFileSync(path.join(series, 'script_template.md'), '---\nlevel: 3\n---\n\n# template\n', 'utf8');
-  if (marker) fs.writeFileSync(path.join(series, 'demo-series_scope_NN.md'), MARKER(SERIES_FIELDS), 'utf8');
+  if (marker) fs.writeFileSync(path.join(series, 'demo-series_video-script_NN.md'), MARKER(SERIES_FIELDS), 'utf8');
   if (legacy) fs.writeFileSync(path.join(series, 'series_NN.md'), LEGACY(SERIES_FIELDS), 'utf8');
   if (deeper) {
     fs.writeFileSync(
-      path.join(episode, 'episode-one_scope_NN.md'),
+      path.join(series, 'assets', 'assets_video-script_NN.md'),
       MARKER('music_volume:: 0.06').replace('title: "Demo series"', 'title: "Episode one"'),
       'utf8',
     );
   }
-  const script = path.join(episode, 'episode-one_video-script_demo-series_NN.md');
+  const script = path.join(episode, 'episode-one_video-script_NN.md');
   fs.writeFileSync(script, '---\nlevel: 3\ntitle: "Episode one"\n---\n\n# NN Video\n', 'utf8');
   return { root, script, series };
 }
@@ -81,7 +81,7 @@ function withDomain(options, fn) {
   }
 }
 
-test('the series bag is read from the <series>_scope_NN.md marker (no series_NN.md needed)', () => {
+test('the series bag is read from the <series>_video-script_NN.md marker (no series_NN.md needed)', () => {
   withDomain({}, (script) => {
     const bags = loadCascadeBags(script);
     assert.equal(bags.series.voice_id, 'VoiceA');

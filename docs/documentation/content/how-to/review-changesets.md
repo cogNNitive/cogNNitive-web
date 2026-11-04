@@ -25,7 +25,7 @@ Editing a file by hand looks harmless and quietly breaks the guarantees your dom
 
 ## What you can change
 
-You express changes as intent, and the agent turns them into the right operations. The kinds of change you can ask for include: updating an element field or a concept-level field, adding or removing an element, renaming an element or a concept, editing concept prose, adding, editing, or removing a matrix, leaving a comment for review, creating a whole new document, freezing element identities, and bumping a version. Some changes are refused when they would break a reference — the agent tells you why and offers an alternative.
+You express changes as intent, and the agent turns them into the right operations. The kinds of change you can ask for include: updating an element field or a concept-level field, adding or removing an element, renaming an element or a concept, editing concept prose, adding, editing, or removing a matrix, leaving a comment for review, creating a whole new document, freezing element identities, and bumping a version. For a concept stored one document per instance you can also create an instance, move or rename one, and extract instances out of a compact document; see [Distribute a concept](distribute-a-concept.md). Some changes are refused when they would break a reference — the agent tells you why and offers an alternative.
 
 ## A changeset is itself a document
 
@@ -39,6 +39,7 @@ Every proposal is stored in the domain as a sealed, dated document under the cha
 - [Use the domain console](domain-console.md) — where the review happens.
 - [Validate a domaiNN](validate-domain.md) — the diagnostics a rejected change returns.
 - [Collaborate with Git](collaborate-git.md) — how changesets map onto commits.
+- [Distribute a concept](distribute-a-concept.md) — create, move and extract instance models.
 
 ## Under the hood
 

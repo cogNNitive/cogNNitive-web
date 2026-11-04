@@ -15,7 +15,7 @@ summary:: Executive RFP proposal summary with verified team staffing and methodo
 status:: verified
 tags:: [rfp, proposal, executive]
 produced_by:: RFP Commercial Response Pipeline
-sources:: [kNNowledge/Fintech_RFP_Response_business_NN.md]
+sources:: [Fintech_RFP_Response_business]
 file_path:: artifacts/commercial_proposal_executive.md
 
 ## NN Artifact: Pricing Breakdown Sheet
@@ -24,5 +24,5 @@ summary:: Mathematical staffing cost matrix and blended hourly pricing breakdown
 status:: verified
 tags:: [pricing, spreadsheet, finance]
 produced_by:: RFP Commercial Response Pipeline
-sources:: [kNNowledge/Consulting_Team_Matrix_organization_NN.md]
+sources:: [Consulting_Team_Matrix_organization]
 file_path:: artifacts/pricing_breakdown_sheet.md

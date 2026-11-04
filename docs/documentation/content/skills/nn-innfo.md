@@ -55,6 +55,9 @@ in the file name.
    generation in a single draft.
 3. **Naming and scaffolding** — create `{ModelName}_{Blueprint}_NN.md`. The stem ends with the
    bluepriNNt name; the version lives in the `knowledge_version` frontmatter key, not the file name.
+   For a concept the bluepriNNt declares distributed, each instance gets its own document at the
+   declared placement path, named `<slug>_<Blueprint>_NN.md`, and is created with `add_model` and a
+   `concept`; see [Distribute a concept](../how-to/distribute-a-concept.md).
 4. **Validation and checklist** — validate with `validate_knowledge` and print the Visual
    Expectation Checklist pointing at the domaiNN console.
 
@@ -62,7 +65,9 @@ in the file name.
 
 - **Type heuristic** — before assigning `type:: string`, ask whether the field points to another
   Element or Concept. If yes, use `type:: reference`. Field names like `owner::`, `client::`, or
-  `category::` are red flags.
+  `category::` are red flags. A `reference` field stores an **address**
+  (`<hierarchical-id>[@<slug>]`), never a title: see
+  [Storage and identity](../concepts/storage-and-identity.md).
 - **Matrix heuristic** — a 1:N relationship with no cross-attributes is a `reference` field; an N:M
   relationship, or any relationship where each cross-point needs its own state, is a matrix.
 

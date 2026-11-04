@@ -35,7 +35,7 @@ Every diagnostic is routed to a bucket by its severity:
 
 | Severity | Effect | Examples |
 |---|---|---|
-| `error` | The document is invalid. | `MARKERS_REMOVED`, `DUPLICATE_SLUG`, `RESERVED_CONCEPT_NAME`, `L3_SCHEMA_COMPONENTS`, `INVALID_NESTED_CONCEPT`, `AMBIGUOUS_ELEMENT_NAME`, `QU_NOT_PROVENANCE` |
+| `error` | The document is invalid. | `MARKERS_REMOVED`, `DUPLICATE_SLUG`, `RESERVED_CONCEPT_NAME`, `L3_SCHEMA_COMPONENTS`, `INVALID_NESTED_CONCEPT`, `AMBIGUOUS_ELEMENT_NAME`, `QU_NOT_PROVENANCE`, `PLACEMENT_MISMATCH`, `DUPLICATE_MODEL_ID`, `BLUEPRINT_VERSION_SKEW` |
 | `warning` | Reported, but does not affect validity. | `UNFROZEN_MODEL`, `PARENT_CONCEPT_GUIDANCE_INCOMPLETE`, `TEMPLATE_CACHE_STALE`, `NN_NAME_INVARIANT` |
 | `info` | An informational notice, reported but never blocking. | `BOM_WARNING` (a byte-order mark was stripped before parsing) |
 
@@ -55,13 +55,23 @@ A diagnostic carries a stable `code`, a `path` into the document, a human-readab
 | Removed constructs | `MARKERS_REMOVED` |
 | Identity and naming | `DUPLICATE_SLUG`, `UNFROZEN_MODEL`, `RESERVED_CONCEPT_NAME`, `NN_NAME_INVARIANT` |
 | Structure | `INVALID_NESTED_CONCEPT`, `SECTION_CONCEPT_MISMATCH`, `L3_SCHEMA_COMPONENTS` |
-| References | `AMBIGUOUS_ELEMENT_NAME`, `SUBMODEL_NOT_FOUND`, `SUBMODEL_TEMPLATE_MISMATCH` |
-| Citations | `KU_DANGLING_FILE`, `KU_UNKNOWN_SLUG`, `KU_UNKNOWN_ROW`, `KU_UNKNOWN_POINTER`, `KU_BINARY_TARGET`, `KU_EXCLUDED_PATH`, `QU_NOT_PROVENANCE` |
+| References | `AMBIGUOUS_ELEMENT_NAME`, `SUBMODEL_NOT_FOUND`, `SUBMODEL_TEMPLATE_MISMATCH`, `ADDRESS_MALFORMED`, `ADDRESS_NOT_CANONICAL`, `REF_MODEL_NOT_FOUND`, `REF_ELEMENT_NOT_FOUND` |
+| Layout and identity | `PLACEMENT_MISMATCH`, `INSTANCE_NAME_MISMATCH`, `INSTANCE_SLUG_MISMATCH`, `CONTAINER_MISSING`, `DUPLICATE_MODEL_ID`, `DISTRIBUTED_CONCEPT_IN_COMPACT_MODEL`, `MIXED_INSTANCE_MODEL`, `MODEL_UNADDRESSABLE`, `RESERVED_MODEL_ID`, `MODEL_ID_INVALID`, `INSTANCE_SHADOWS_ELEMENT_ASSETS`, `BLUEPRINT_VERSION_SKEW` |
+| Citations | `KU_DANGLING_FILE`, `KU_UNKNOWN_SLUG`, `KU_UNKNOWN_ROW`, `KU_UNKNOWN_POINTER`, `KU_BINARY_TARGET`, `KU_EXCLUDED_PATH`, `QU_NOT_PROVENANCE`, `MODEL_CITED_BY_PATH`, `NN_DOCUMENT_CITED_BY_HEADING` |
 | Freshness | `TEMPLATE_CACHE_STALE`, `BOM_WARNING` |
 
 The full set is produced by the validator; treat this table as a map of the areas, not an
 exhaustive list. See [Validator behavior](../how-to/validate-domain.md) in practice, and
 [Sources, citations and lineage](sources-citations-lineage.md) for the citation codes.
+
+## File-level and domain-level findings
+
+Some findings can only be made with the whole domaiNN in view. Validating one file reports what
+one file can know: for an instance model, its placement, its naming and its cardinality. Findings
+across files (a duplicate id, a container that does not exist, an instance stored twice, a
+bluepriNNt pinned at several versions) are reported by `check_domain` in its `layout` section, and
+by `validate_knowledge` with `workspace: true`, filed against the document they name. See *Placement validation* in
+[Storage and identity](storage-and-identity.md).
 
 ## Resolution order
 
@@ -98,6 +108,7 @@ serve different scopes.
 
 - [The specification chain](specifications.md)
 - [Sources, citations and lineage](sources-citations-lineage.md)
+- [Storage and identity](storage-and-identity.md)
 - [Tags and open taxonomy](tags-and-taxonomy.md)
 - [Validate a domaiNN](../how-to/validate-domain.md)
 - [MCP tools](../reference/mcp-tools.md)

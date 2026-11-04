@@ -12,81 +12,81 @@ title: "Ghostbusters Inc. Standard Containment Procedure Model"
 ## NN Work: Standard Ghost Containment Protocol
 slug:: standard-ghost-containment-protocol
 step_type:: task
-next:: [[Subterranean Containment Grid Shutdown Recovery]]
+next:: @subterranean-containment-grid-shutdown-recovery
 condition:: Emergency call received
-input:: [[Client Emergency Intake Call]]
-output:: [[Vault Containment Log]]
+input:: @client-emergency-intake-call
+output:: @vault-containment-log
 output_status:: verified
-tool:: [[High-Voltage Subterranean Containment Grid]]
+tool:: @high-voltage-subterranean-containment-grid
 scope:: internal
 tags:: [procedure, standard-protocol, core-workflow, containment]
 Standard operating procedure for responding to NYC spectral emergency calls, entrapping psychokinetic entities, and securing them inside the headquarters containment grid.
 
 ## NN Work: Emergency Call Triage
 slug:: emergency-call-triage
-parent:: [[Standard Ghost Containment Protocol]]
+parent:: @standard-ghost-containment-protocol
 step_type:: event
-next:: [[Site PKE Scanning]]
+next:: @site-pke-scanning
 condition:: Client accepts billing retainer terms
-input:: [[Client Emergency Intake Call]]
-output:: [[Dispatch Ticket]]
+input:: @client-emergency-intake-call
+output:: @dispatch-ticket
 output_status:: verified
-tool:: [[Headquarters Dispatch Console]]
+tool:: @headquarters-dispatch-console
 scope:: internal
 tags:: [procedure, triage, dispatch, intake]
 Janine Melnitz logs incoming calls, confirms commercial billing terms, and dispatches the Ecto-1 field crew.
 
 ## NN Work: Site PKE Scanning
 slug:: site-pke-scanning
-parent:: [[Standard Ghost Containment Protocol]]
+parent:: @standard-ghost-containment-protocol
 step_type:: task
-next:: [[Proton Stream Target Lock]]
+next:: @proton-stream-target-lock
 condition:: Crew arrives at target location
-input:: [[Dispatch Ticket]]
-output:: [[PKE Survey Map]]
+input:: @dispatch-ticket
+output:: @pke-survey-map
 output_status:: verified
-tool:: [[PKE Meter]]
+tool:: @pke-meter
 scope:: internal
 tags:: [procedure, field-recon, pke-scanning, telemetry]
 Dr. Egon Spengler scans the target location using the PKE Meter to measure psychokinetic energy intensity and locate spectral class-V entities.
 
 ## NN Work: Proton Stream Target Lock
 slug:: proton-stream-target-lock
-parent:: [[Standard Ghost Containment Protocol]]
+parent:: @standard-ghost-containment-protocol
 step_type:: task
-next:: [[Muon Trap Deployment]]
+next:: @muon-trap-deployment
 condition:: Target entity identified in PKE map
-input:: [[PKE Survey Map]]
-output:: [[Class-V Entity Entrapment Beam]]
+input:: @pke-survey-map
+output:: @class-v-entity-entrapment-beam
 output_status:: verified
-tool:: [[Proton Pack Particle Accelerator]]
+tool:: @proton-pack-particle-accelerator
 scope:: internal
 tags:: [procedure, frontline, particle-beam, high-voltage]
 Dr. Ray Stantz and Winston Zeddemore unholster particle throwers, fire proton streams, and hold the entity in a stable containment field.
 
 ## NN Work: Muon Trap Deployment
 slug:: muon-trap-deployment
-parent:: [[Standard Ghost Containment Protocol]]
+parent:: @standard-ghost-containment-protocol
 step_type:: task
-next:: [[Subterranean Facility Transfer]]
+next:: @subterranean-facility-transfer
 condition:: Entity immobilized by proton beam
-input:: [[Class-V Entity Entrapment Beam]]
-output:: [[Sealed Ghost Trap Unit]]
+input:: @class-v-entity-entrapment-beam
+output:: @sealed-ghost-trap-unit
 output_status:: verified
-tool:: [[Muon Ghost Trap]]
+tool:: @muon-ghost-trap
 scope:: internal
 tags:: [procedure, trap-deployment, capture, muon]
 Dr. Peter Venkman slides the muon trap beneath the entrapped entity, steps on the foot pedal, and seals the entity inside the containment canister.
 
 ## NN Work: Subterranean Facility Transfer
 slug:: subterranean-facility-transfer
-parent:: [[Standard Ghost Containment Protocol]]
+parent:: @standard-ghost-containment-protocol
 step_type:: task
 condition:: Sealed trap returned to headquarters
-input:: [[Sealed Ghost Trap Unit]]
-output:: [[Vault Containment Log]]
+input:: @sealed-ghost-trap-unit
+output:: @vault-containment-log
 output_status:: verified
-tool:: [[High-Voltage Subterranean Containment Grid]]
+tool:: @high-voltage-subterranean-containment-grid
 scope:: internal
 tags:: [procedure, facility-transfer, vault, permanent-containment]
 The crew returns to headquarters, inserts the sealed trap into the containment vault access port, and opens the deposit valve.
@@ -95,37 +95,37 @@ The crew returns to headquarters, inserts the sealed trap into the containment v
 slug:: subterranean-containment-grid-shutdown-recovery
 step_type:: task
 condition:: Voltage drop detected in subterranean vault
-input:: [[Power Failure Alarm]]
-output:: [[Restored High-Voltage Grid]]
+input:: @power-failure-alarm
+output:: @restored-high-voltage-grid
 output_status:: verified
-tool:: [[Auxiliary Diesel Generator]]
+tool:: @auxiliary-diesel-generator
 scope:: internal
 tags:: [procedure, emergency-recovery, backup-power, high-risk]
 Emergency protocol executed in the event of an external grid power failure or Municipal Environmental Protection Agency intervention.
 
 ## NN Work: Emergency Alarm Intercept
 slug:: emergency-alarm-intercept
-parent:: [[Subterranean Containment Grid Shutdown Recovery]]
+parent:: @subterranean-containment-grid-shutdown-recovery
 step_type:: event
-next:: [[Backup Generator Coupling]]
+next:: @backup-generator-coupling
 condition:: Voltage drops below 99.8% threshold
-input:: [[Power Failure Alarm]]
-output:: [[System Fault Diagnostic]]
+input:: @power-failure-alarm
+output:: @system-fault-diagnostic
 output_status:: verified
-tool:: [[Grid Status Warning Panel]]
+tool:: @grid-status-warning-panel
 scope:: internal
 tags:: [procedure, telemetry, alarm-intercept, safety]
 Detection of voltage drop in the subterranean vault, triggering immediate audio-visual alarms across headquarters.
 
 ## NN Work: Backup Generator Coupling
 slug:: backup-generator-coupling
-parent:: [[Subterranean Containment Grid Shutdown Recovery]]
+parent:: @subterranean-containment-grid-shutdown-recovery
 step_type:: task
 condition:: Fault diagnostic confirms main grid failure
-input:: [[System Fault Diagnostic]]
-output:: [[Restored High-Voltage Grid]]
+input:: @system-fault-diagnostic
+output:: @restored-high-voltage-grid
 output_status:: verified
-tool:: [[Auxiliary Diesel Generator]]
+tool:: @auxiliary-diesel-generator
 scope:: internal
 tags:: [procedure, manual-override, diesel-coupling, power-restoration]
 Manual engagement of the auxiliary diesel power coupling to maintain grid containment pressure and prevent catastrophic spectral release.

@@ -29,12 +29,12 @@ const SCRIPT = '---\nlevel: 3\n---\n\n# NN Video\n\n## NN Video: X\nslug:: x\n';
 function episode({ master = 'x_1920x1920.mp4', thumbnail = 'x_thumbnail_2560x1440.png' } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-finalize-'));
   fs.mkdirSync(path.join(dir, 'build'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'x_video-script_s_NN.md'), SCRIPT, 'utf8');
+  fs.writeFileSync(path.join(dir, 'x_video-script_NN.md'), SCRIPT, 'utf8');
   if (master) fs.writeFileSync(path.join(dir, master), 'master-bytes', 'utf8');
   if (thumbnail) fs.writeFileSync(path.join(dir, thumbnail), 'png', 'utf8');
   const manifest = {
     fps: 30,
-    metadata: { scriptSource: path.join(dir, 'x_video-script_s_NN.md') },
+    metadata: { scriptSource: path.join(dir, 'x_video-script_NN.md') },
     tracks: {
       scenes: [
         { id: 'scene_a', fromFrame: 0, props: { title: 'A' } },
@@ -82,7 +82,7 @@ test('finalize derives the formats from the master and prints the fields', async
   assert.ok(res.messages.includes('master:: x_1920x1920.mp4'));
   // It never writes the model or a description file.
   assert.equal(fs.existsSync(path.join(dir, 'description.md')), false);
-  assert.equal(fs.readFileSync(path.join(dir, 'x_video-script_s_NN.md'), 'utf8'), SCRIPT);
+  assert.equal(fs.readFileSync(path.join(dir, 'x_video-script_NN.md'), 'utf8'), SCRIPT);
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -90,7 +90,7 @@ test('a manifest compiled from another script is refused', async () => {
   const dir = episode();
   const manifestPath = path.join(dir, 'build', 'manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.metadata.scriptSource = path.join(dir, 'other_video-script_s_NN.md');
+  manifest.metadata.scriptSource = path.join(dir, 'other_video-script_NN.md');
   fs.writeFileSync(manifestPath, JSON.stringify(manifest), 'utf8');
   await assert.rejects(() => finalizeVideo({ episodeDir: dir, run, probe }), /compiled from/);
   fs.rmSync(dir, { recursive: true, force: true });
@@ -98,7 +98,7 @@ test('a manifest compiled from another script is refused', async () => {
 
 test('a manifest older than the script is refused as stale', async () => {
   const dir = episode();
-  const scriptPath = path.join(dir, 'x_video-script_s_NN.md');
+  const scriptPath = path.join(dir, 'x_video-script_NN.md');
   const later = new Date(Date.now() + 60_000);
   fs.utimesSync(scriptPath, later, later);
   await assert.rejects(() => finalizeVideo({ episodeDir: dir, run, probe }), /older than the script/);
@@ -135,7 +135,7 @@ test('dry run derives nothing', async () => {
 
 test('the helpers find one script, one master and the delivered thumbnail', () => {
   const dir = episode();
-  assert.equal(path.basename(episodeScriptPath(dir)), 'x_video-script_s_NN.md');
+  assert.equal(path.basename(episodeScriptPath(dir)), 'x_video-script_NN.md');
   assert.equal(path.basename(masterPath(dir)), 'x_1920x1920.mp4');
   assert.equal(path.basename(thumbnailPath(dir)), 'x_thumbnail_2560x1440.png');
   fs.rmSync(dir, { recursive: true, force: true });

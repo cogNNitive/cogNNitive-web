@@ -32,7 +32,7 @@ function makeDomain({ series = [], domain = [] }) {
   fs.mkdirSync(episode, { recursive: true });
   fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '---\ntitle: demo\n---\n\n# NN DomaiNN\n');
   fs.writeFileSync(path.join(root, 'video-defaults_NN.md'), defaultsDoc(domain));
-  fs.writeFileSync(path.join(seriesDir, 'demo_scope_NN.md'), scopeDoc('Demo', series));
+  fs.writeFileSync(path.join(seriesDir, 'demo_video-script_NN.md'), scopeDoc('Demo', series));
   return { root, episode };
 }
 

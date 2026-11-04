@@ -37,6 +37,12 @@ avatar:: media/presenter.png
 intro:: media/intro.mp4
 `;
 
+// A Series instance model IS the series scope document: `scope: true` marks it.
+const SERIES_SCOPE_CONTENT = SERIES_CONTENT.replace(
+  '\n---\n\n# NN Series',
+  '\nscope: true\n---\n\n# NN Series',
+);
+
 // The cascade bags: the series document supplies the values the tool reads.
 const bags = {
   series: {
@@ -83,8 +89,18 @@ test('the intro asset comes from the cascade and the presenter carries no litera
   assert.doesNotMatch(hook, /asset:: media\/presenter\.png/);
 });
 
-test('the script filename uses the Series slug', () => {
-  assert.equal(scriptFilename('other-series', 'demo'), 'demo_video-script_other-series_NN.md');
+test('the script filename uses the Video slug only, never the Series slug', () => {
+  assert.equal(scriptFilename('demo'), 'demo_video-script_NN.md');
+});
+
+test('the same episode slug in two series yields the same valid name in both', () => {
+  const placed = (seriesSlug, videoSlug) =>
+    path.posix.join('series', seriesSlug, 'assets', videoSlug, scriptFilename(videoSlug));
+  const first = placed('villabotijos-today', 'intro');
+  const second = placed('innteresante', 'intro');
+  assert.equal(first, 'series/villabotijos-today/assets/intro/intro_video-script_NN.md');
+  assert.equal(second, 'series/innteresante/assets/intro/intro_video-script_NN.md');
+  assert.equal(path.posix.basename(first), path.posix.basename(second));
 });
 
 test('the frontmatter is copied from the series document', () => {
@@ -223,11 +239,12 @@ test('a reviewed scene without an overlays key yields no overlays, with or witho
 
 test('loadSeriesDocument reads the slug, title and frontmatter from the scope document', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-series-'));
-  fs.writeFileSync(path.join(dir, 'other-series_scope_NN.md'), SERIES_CONTENT, 'utf8');
+  fs.writeFileSync(path.join(dir, 'other-series_video-script_NN.md'), SERIES_SCOPE_CONTENT, 'utf8');
   const series = loadSeriesDocument(dir);
   assert.equal(series.slug, 'other-series');
   assert.equal(series.title, 'Other Series');
-  assert.equal(series.frontmatter, extractFrontmatter(SERIES_CONTENT));
+  assert.doesNotMatch(series.frontmatter, /^scope: true$/m);
+  assert.match(series.frontmatter, /^title: "Other Series"$/m);
   assert.equal(series.fields.avatar, 'media/presenter.png');
   fs.rmSync(dir, { recursive: true, force: true });
 });
@@ -280,5 +297,5 @@ test('an episode with reviewed.json and no draft.json builds its script', async 
   fs.rmSync(dir, { recursive: true, force: true });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(files.length, 1);
-  assert.match(files[0], /^demo_video-script_.+_NN\.md$/);
+  assert.match(files[0], /^demo_video-script_NN\.md$/);
 });

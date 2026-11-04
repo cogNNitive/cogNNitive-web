@@ -36,6 +36,9 @@ Every problem carries the same short code each time it appears, so you can searc
 | A document is missing its bluepriNNt link or version | The document header is incomplete or invalid. | Ask the agent to repair the header. |
 | A document's structure does not match its bluepriNNt | Required sections or concepts are absent. | Ask the agent to realign the document with its bluepriNNt. |
 | A field or cell drifted | A value was edited by hand after the change that set it. | Report the change that owns the value, or revert the edit. |
+| A document is in the wrong folder, or two documents share an identity | A concept stored one document per instance must sit at the path its bluepriNNt declares, and each document needs a unique id. | Ask the agent to move or rename the instance. See [Distribute a concept](distribute-a-concept.md). |
+| The same bluepriNNt is pinned at several versions | Within a domaiNN every document must pin the same version of a given bluepriNNt. | Ask the agent to run the upgrade, which repins them all together. |
+| A reference does not resolve | A reference field must hold an address (`<hierarchical-id>[@<slug>]`); a title or a file path does not resolve. | Ask the agent to rewrite the reference as an address. |
 | A source companion does not match its file | The sidecar's recorded subject disagrees with its name. | Ask the agent to re-run the source's cognitivization. |
 
 > [!NOTE]
@@ -45,6 +48,7 @@ Every problem carries the same short code each time it appears, so you can searc
 
 - [Validator behavior](../concepts/validator-behavior.md) — severity, ordering, and the resolution order.
 - [Import and cite sources](import-sources.md) — the citation grammar the diagnostics refer to.
+- [Storage and identity](../concepts/storage-and-identity.md) — the layout, identity and version checks.
 - [Sync lineage and back up a domaiNN](sync-and-backup.md) — the drift gate in practice.
 
 ## Under the hood

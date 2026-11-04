@@ -31,17 +31,17 @@ nav_enabled:: true
 ## NN Section: Equipment
 slug:: equipment
 section_order:: 1
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 
 ## NN Section: Procedures
 slug:: procedures
 section_order:: 2
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 
 ## NN Section: Personnel
 slug:: personnel
 section_order:: 3
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 
 # NN Page
 
@@ -51,7 +51,7 @@ title:: Handbook Overview
 source:: overview.md
 route:: overview
 order:: 10
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 tags:: [docs, handbook, onboarding]
 
 Purpose of the handbook, how it is organized, and who must read it before riding out in the Ecto-1.
@@ -62,7 +62,7 @@ title:: Proton Pack
 source:: equipment/proton-pack.md
 route:: equipment/proton-pack
 order:: 10
-parent:: [[Equipment]]
+parent:: @equipment
 tags:: [docs, equipment, particle-accelerator, safety]
 
 Startup sequence, power-cell limits, and safety interlocks for the unlicensed nuclear accelerator worn on every field call.
@@ -73,7 +73,7 @@ title:: Ghost Trap
 source:: equipment/ghost-trap.md
 route:: equipment/ghost-trap
 order:: 20
-parent:: [[Equipment]]
+parent:: @equipment
 tags:: [docs, equipment, containment, battery]
 
 Deployment, foot-pedal triggering, containment seal checks, and transfer protocols back to the basement grid.
@@ -84,7 +84,7 @@ title:: PKE Meter
 source:: equipment/pke-meter.md
 route:: equipment/pke-meter
 order:: 30
-parent:: [[Equipment]]
+parent:: @equipment
 tags:: [docs, equipment, sensor, psychokinetic]
 
 Reading psychokinetic-energy frequency spikes, tracking entity residual trails, and calibrating the wings before entering hot zones.
@@ -95,7 +95,7 @@ title:: Entrapment Protocol
 source:: procedures/entrapment.md
 route:: procedures/entrapment
 order:: 10
-parent:: [[Procedures]]
+parent:: @procedures
 tags:: [docs, procedure, field-capture, cross-streams]
 
 Step-by-step field protocol for coordinating dual proton streams into the trap cone without crossing streams.
@@ -106,7 +106,7 @@ title:: Grid Transfer
 source:: procedures/grid-transfer.md
 route:: procedures/grid-transfer
 order:: 20
-parent:: [[Procedures]]
+parent:: @procedures
 tags:: [docs, procedure, basement, containment-grid]
 
 Procedure for inserting full traps into the basement containment grid and safely venting residual psychomagnotheric charge.
@@ -117,7 +117,7 @@ title:: Roster
 source:: personnel/roster.md
 route:: personnel/roster
 order:: 10
-parent:: [[Personnel]]
+parent:: @personnel
 tags:: [docs, personnel, team, contacts]
 
 Authorized field investigators, scientific leads, and emergency contact frequencies for the firehouse watch desk.
@@ -129,21 +129,21 @@ slug:: handbook-home
 label:: 📘 Manual
 url:: /
 order:: 1
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 
 ## NN NavbarItem: Equipment Guide
 slug:: equipment-guide
 label:: ⚡ Equipment
 url:: #/equipment/proton-pack
 order:: 2
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 
 ## NN NavbarItem: Containment Grid
 slug:: containment-grid
 label:: 🔋 Grid Status
 url:: https://grid.ghostbusters.com
 order:: 3
-parent:: [[Field Operations Handbook]]
+parent:: @field-operations-handbook
 
 # NN Asset
 

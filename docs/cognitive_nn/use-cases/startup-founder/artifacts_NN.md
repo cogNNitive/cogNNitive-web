@@ -15,5 +15,5 @@ summary:: Comprehensive executive summary for seed investors with linked due dil
 status:: verified
 tags:: [pitch, due-diligence, investor]
 produced_by:: Customer Discovery Ingestion & Synthesis
-sources:: [kNNowledge/SaaS_Founder_business_NN.md]
+sources:: [SaaS_Founder_business]
 file_path:: artifacts/pitch_deck_summary.md

@@ -1,8 +1,8 @@
 ---
 name: nn-sources
 description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and record every artifact through a `produce_artifact` change. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
-version: "V_3-5-5"
-last_updated: 2026-10-27
+version: "V_3-5-6"
+last_updated: 2026-11-03
 empty_sections_mode: "ask-per-section"
 license: MIT
 metadata:
@@ -72,6 +72,30 @@ domaiNN-relative `path@unit`, written in full (no implicit prefix), or a bracket
 list when one change cites several units. A `<unit>` is `@## Heading` (Markdown),
 `@RowID&col` (CSV), or `@/items/0/name` (JSON Pointer, RFC 6901). No `src-NNN` IDs,
 no line-number ranges, and never a `staging/` target.
+
+**Unified Addressing and Storage**
+
+1. **One grammar.** A kNNowledge unit is addressed `<hierarchical-id>[@<slug>[&<field>]]`,
+   plus the unchanged `@concept:<slug>`, `@matrix:<slug>` and `@<matrix>&<row>&<col>`
+   forms. A typed `reference` or `knowledge` field holds that address; a
+   same-document reference is relative (`@slug`).
+2. **Titles are display-only.** Never resolve or write a title as a target.
+   `[[Name]]`, `[[Title :: Name]]`, a bare stem, a path and `doc.md@## Heading`
+   are removed forms and are rejected (`ADDRESS_MALFORMED`,
+   `MODEL_CITED_BY_PATH`, `NN_DOCUMENT_CITED_BY_HEADING`). Prose and index
+   wikilinks are display text and stay untouched.
+3. **Storage is declared per concept.** `compact` instances are elements of one
+   document; `distributed` instances are one instance model each, at the
+   declared `placement`. A folder alone never makes a concept distributed.
+4. **One bluepriNNt version per bluepriNNt.** A domaiNN that pins a bluepriNNt at
+   several versions fails `check_domain` with `BLUEPRINT_VERSION_SKEW`. Fix it
+   with `nn-upgrade`, whose unit is the whole bluepriNNt group: it repins and
+   re-validates every member, or none.
+5. **Instance lifecycle.** Create with `add_model` and an explicit `concept::`
+   (container first); rename or move with `move_model`, retargeting every
+   referrer in the same changeset; convert a compact element with
+   `extract_instance`. Removing an instance model is NOT supported: no operation
+   deletes one, and a hand-deleted file is reported as `MODEL_WITHOUT_FILE`.
 
 **Informative Grace**
 
@@ -210,7 +234,7 @@ cited_works:
 
 > **⚠️ Staging Buffer Rule (`staging/`)**: Intermediate dumps from extraction tools (Whisper SRTs, raw OCR text) live temporarily in a `staging/` folder. Any `staging` path segment is strictly ignored by scanners, `--cognitivize` on a directory, the lineage projection and models, and write-once rules do not apply to it. `staging/` is **NEVER a valid citation target** (a citation into it reports `KU_EXCLUDED_PATH`: scratch, not missing).
 
-> **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system and **no implicit path prefix**: a citation path is domaiNN-relative, written in full. Downstream Level 3 models reference sources directly by path and `@` anchor via `evidence:: sources/import/<file>.md@## <Heading>` (CSV row/col: `sources/import/<file>.csv@RowID&col`; JSON Pointer: `sources/import/<file>.json@/items/0/name`, RFC 6901, starting with `/`, a literal `&` written `%26`; or file-level citation `kNNowledge/<model>_NN.md`; multiple values use list syntax: `evidence:: [sources/import/a.md@## Intro, sources/import/b_20261001T101500Z.pdf_sidecar_NN.md@## Summary]`). Binary raw files cannot be cited directly: cite the binary's sidecar (citing `x.pdf@...` reports `KU_BINARY_TARGET` and suggests `x.pdf_sidecar_NN.md@...`). Line numbers are prohibited; heading text anchors, CSV row keys or JSON Pointers are mandatory.
+> **⚠️ Citation Rule**: There is no `source_id`/`src-NNN` system and **no implicit path prefix**: a citation path is domaiNN-relative, written in full. Downstream Level 3 models reference sources directly by path and `@` anchor via `evidence:: sources/import/<file>.md@## <Heading>` (CSV row/col: `sources/import/<file>.csv@RowID&col`; JSON Pointer: `sources/import/<file>.json@/items/0/name`, RFC 6901, starting with `/`, a literal `&` written `%26`; or file-level citation by model id `<model-id>`; multiple values use list syntax: `evidence:: [sources/import/a.md@## Intro, sources/import/b_20261001T101500Z.pdf_sidecar_NN.md@## Summary]`). Binary raw files cannot be cited directly: cite the binary's sidecar (citing `x.pdf@...` reports `KU_BINARY_TARGET` and suggests `x.pdf_sidecar_NN.md@...`). Line numbers are prohibited; heading text anchors, CSV row keys or JSON Pointers are mandatory.
 
 > **Heading anchors use the human-readable heading text** (`@## Visión`) — the same rule the iNNfo editor and `@cognnitive/nn-core` use.
 

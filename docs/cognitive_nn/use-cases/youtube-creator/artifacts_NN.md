@@ -15,7 +15,7 @@ summary:: Verified spoken narrative with embedded visual cue triggers for studio
 status:: verified
 tags:: [teleprompter, studio, script]
 produced_by:: Episode 42 Video Production Pipeline
-sources:: [kNNowledge/Episode_42_Battery_Tech_video_script_NN.md]
+sources:: [Episode_42_Battery_Tech_video_script]
 file_path:: artifacts/production_teleprompter_cue_sheet.md
 
 ## NN Artifact: B-Roll Shooting Checklist
@@ -24,7 +24,7 @@ summary:: Sequenced shot list and camera setup requirements for studio and macro
 status:: verified
 tags:: [b-roll, camera, filming]
 produced_by:: Episode 42 Video Production Pipeline
-sources:: [kNNowledge/Episode_42_Battery_Tech_video_script_NN.md]
+sources:: [Episode_42_Battery_Tech_video_script]
 file_path:: artifacts/broll_shooting_checklist.md
 
 ## NN Artifact: YouTube Description & Bibliography
@@ -33,5 +33,5 @@ summary:: Formatted video description with academic paper citations and timestam
 status:: verified
 tags:: [bibliography, youtube, description]
 produced_by:: Episode 42 Video Production Pipeline
-sources:: [kNNowledge/Episode_42_Battery_Tech_video_script_NN.md]
+sources:: [Episode_42_Battery_Tech_video_script]
 file_path:: artifacts/youtube_description_bibliography.md

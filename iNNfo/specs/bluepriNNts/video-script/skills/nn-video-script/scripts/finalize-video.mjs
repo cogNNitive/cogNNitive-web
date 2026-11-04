@@ -31,15 +31,15 @@ export function listEpisodeScripts(dir) {
   if (!fs.existsSync(dir)) return [];
   return fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith('_video-script_') || /_video-script_.*_NN\.md$/.test(f))
+    .filter((f) => f.endsWith('_video-script_NN.md'))
     .sort();
 }
 
-/** The episode's script document: the one `*_video-script_*_NN.md` in the folder. */
+/** The episode's script document: the one `<slug>_video-script_NN.md` in the folder. */
 export function episodeScriptPath(episodeDir) {
   const scripts = listEpisodeScripts(episodeDir);
   if (scripts.length === 0) {
-    throw new Error(`No episode script found in ${path.resolve(episodeDir)} (*_video-script_*_NN.md)`);
+    throw new Error(`No episode script found in ${path.resolve(episodeDir)} (<slug>_video-script_NN.md)`);
   }
   if (scripts.length > 1) {
     throw new Error(`Several episode scripts in ${path.resolve(episodeDir)}: ${scripts.join(', ')}`);

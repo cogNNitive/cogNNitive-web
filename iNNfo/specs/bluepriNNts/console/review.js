@@ -584,21 +584,23 @@
     // Resolve an anchor to a KU-modal target. Returns null when the anchor is
     // not modal-editable (card comments, tag/relation proposals use popovers
     // or immediate comment drafts instead).
-    // Candidates are the owner's own model only (a reference never crosses
-    // models) and, when the definition declares target_concepts, only those concepts.
-    function modelKeyOf(e) {
-      return String(e.modelId || e.modelFile || '')
+    // Candidates are the collection members of the field's `target_concepts`, from
+    // the console reference index (`collections` + model titles). A reference may
+    // cross models: that is what the address grammar is for. Each candidate carries
+    // its title for display and its address as the value.
+    function referenceCandidates(def) {
+      var allowed = def && Array.isArray(def.target_concepts) ? def.target_concepts : []
+      var index = options.referenceIndex
+      if (!index || typeof UI.referenceCandidates !== 'function') return []
+      return UI.referenceCandidates(index, allowed, '')
     }
 
-    function referenceCandidates(def, owner) {
-      var allowed = def && Array.isArray(def.target_concepts) ? def.target_concepts : []
-      var set = allowed.map(function (c) {
-        return String(c).toLowerCase()
-      })
-      return elements.filter(function (e) {
-        if (!e || (owner && modelKeyOf(e) !== modelKeyOf(owner))) return false
-        return !set.length || set.indexOf(String(e.concept).toLowerCase()) !== -1
-      })
+    // The element's canonical address: `<model-id>@<slug>`.
+    function elementAddress(e) {
+      if (!e) return ''
+      var model = String(e.modelId || meta.modelId || '')
+      var slug = String(e.slug || e.id || '')
+      return model && slug ? model + '@' + slug : slug
     }
 
     function kuModalTarget(anchorData) {
@@ -645,8 +647,11 @@
           title: 'Retarget ' + (el.name || anchorData.elementId) + ' \u2192 ' + anchorData.relField,
           fieldName: anchorData.relField,
           type: 'reference',
-          value: relTargetEl ? '[[' + (relTargetEl.name || relTargetEl.id) + ']]' : anchorData.relTarget,
-          candidates: referenceCandidates(fieldDefOf(options.schema, el.concept, anchorData.relField), el),
+          // The stored value is the address of the related element, shown by title
+          // in the field and in the autocomplete.
+          value: relTargetEl ? elementAddress(relTargetEl) : anchorData.relTarget,
+          candidates: referenceCandidates(fieldDefOf(options.schema, el.concept, anchorData.relField)),
+          modelId: el.modelId || meta.modelId,
           draftField: anchorData.relField,
           original: anchorData.relTarget,
           citations: base.citations,
@@ -702,8 +707,10 @@
         target_concepts: schemaField ? schemaField.target_concepts : undefined,
         candidates:
           schemaField && (schemaField.type === 'reference' || fieldType === 'reference')
-            ? referenceCandidates(schemaField, el)
+            ? referenceCandidates(schemaField)
             : undefined,
+        // The model the edit belongs to: a target inside it is written relative (`@slug`).
+        modelId: el.modelId || meta.modelId,
         draftField: field,
         original: fieldVal,
         citations: base.citations.filter(function (c) {
@@ -746,6 +753,7 @@
           value: target.value,
           options: target.options,
           candidates: target.candidates,
+          modelId: target.modelId,
           citations: target.citations,
           history: target.history,
           isComment: !!target.isComment,

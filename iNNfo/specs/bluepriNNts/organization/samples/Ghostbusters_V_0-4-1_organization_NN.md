@@ -115,7 +115,7 @@ Administrative seat managing office intake, dispatching, and financial accounts.
 
 ## NN Person: Dr. Egon Spengler
 slug:: dr-egon-spengler
-position_ref:: [[Chief Scientist]]
+position_ref:: @chief-scientist
 compensation:: Equal partner equity share (25%), $75,000 base salary, full laboratory access.
 contributions:: Invented the Proton Pack, PKE Meter, and Containment Grid; leads theoretical ecto-physics research.
 image:: assets/people/egon_spengler.png
@@ -124,7 +124,7 @@ Dr. Egon Spengler is the chief intellectual architect of Ghostbusters Inc., spec
 
 ## NN Person: Dr. Peter Venkman
 slug:: dr-peter-venkman
-position_ref:: [[Operations Director]]
+position_ref:: @operations-director
 compensation:: Equal partner equity share (25%), $75,000 base salary, commercial bonus commissions.
 contributions:: Leads client negotiations, marketing, press relations, and operational decision-making.
 image:: assets/people/peter_venkman.png
@@ -133,7 +133,7 @@ Dr. Peter Venkman brings psychological insight, commercial charisma, and public 
 
 ## NN Person: Dr. Raymond Stantz
 slug:: dr-raymond-stantz
-position_ref:: [[Staff Scientist & Engineer]]
+position_ref:: @staff-scientist-engineer
 compensation:: Equal partner equity share (25%), $75,000 base salary, equipment trade access.
 contributions:: Co-developed the Proton Pack, maintains Ecto-1, and conducts field entrapment operations.
 image:: assets/people/raymond_stantz.png
@@ -142,7 +142,7 @@ Dr. Ray Stantz combines deep enthusiasm for occult history with practical mechan
 
 ## NN Person: Winston Zeddemore
 slug:: winston-zeddemore
-position_ref:: [[Field Specialist]]
+position_ref:: @field-specialist
 compensation:: $60,000 base salary, overtime hazard pay ($500 per captured class-V entity), healthcare benefits.
 contributions:: Operates heavy field hardware, manages Ecto-1 driving duties, and executes frontline captures.
 image:: assets/people/winston_zeddemore.png
@@ -151,7 +151,7 @@ Winston Zeddemore joined the team during peak NYC spectral activity, providing s
 
 ## NN Person: Janine Melnitz
 slug:: janine-melnitz
-position_ref:: [[Office Administrator]]
+position_ref:: @office-administrator
 compensation:: $48,000 base salary, full health insurance, overtime dispatch bonuses.
 contributions:: Handles emergency intake calls, manages billing and legal notices, and monitors the containment grid warning alarms.
 image:: assets/people/janine_melnitz.png

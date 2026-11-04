@@ -8456,6 +8456,16 @@ var REQUIRED_BY_PRIMITIVE = {
   [MATRIX_DEFINITION]: ["source", "target"]
 };
 
+// iNNfo/packages/nn-core/src/address/grammar.ts
+var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+var SLUG = "[\\p{Ll}\\p{Lo}\\p{N}]+(?:-+[\\p{Ll}\\p{Lo}\\p{N}]+)*";
+var FIELD = "[\\p{L}\\p{N}]+(?:[-_][\\p{L}\\p{N}]+)*";
+var CONCEPT = "[\\p{L}\\p{N}]+(?:(?:[ _]|-+)[\\p{L}\\p{N}]+)*";
+var HEAD_RE = new RegExp(`^${HEAD}$`);
+var SLUG_RE = new RegExp(`^${SLUG}$`, "u");
+var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
+var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
+
 // iNNfo/packages/nn-core/src/sourceRef.ts
 function slugifyHeading(text) {
   const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");

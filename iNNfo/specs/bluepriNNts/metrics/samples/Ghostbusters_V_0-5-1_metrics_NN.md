@@ -13,10 +13,10 @@ title: "Ghostbusters Containment Revenue Projection"
 slug:: monthly-net-result
 metricValue:: <calculated>
 metricFormula:: monthly containment revenue - monthly direct costs - monthly operating subtotal
-dependsOn:: [[Monthly Containment Revenue]]
+dependsOn:: @monthly-containment-revenue
 metricType:: result
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 Monthly bottom line. Year 1 baseline resolves near break-even against the $1.2M revenue base.
 
@@ -24,10 +24,10 @@ Monthly bottom line. Year 1 baseline resolves near break-even against the $1.2M 
 slug:: monthly-containment-revenue
 metricValue:: <calculated>
 metricFormula:: monthly incidents x average fee per incident
-dependsOn:: [[Monthly Incidents]]
+dependsOn:: @monthly-incidents
 metricType:: revenue
 metricUnit:: USD/month
-evolution:: [[Compound 5 Evolution]]
+evolution:: @compound-5-evolution
 
 Anchored on Year 1 actuals: 240 incidents at $5,000 average fee ($1.2M/year, ~$100,000/month).
 
@@ -35,10 +35,10 @@ Anchored on Year 1 actuals: 240 incidents at $5,000 average fee ($1.2M/year, ~$1
 slug:: monthly-direct-costs
 metricValue:: <calculated>
 metricFormula:: monthly incidents x direct cost per incident
-dependsOn:: [[Monthly Incidents]]
+dependsOn:: @monthly-incidents
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 Unit economics: $1,800 direct cost per incident (labor + equipment + fuel), 64% gross margin.
 
@@ -46,10 +46,10 @@ Unit economics: $1,800 direct cost per incident (labor + equipment + fuel), 64% 
 slug:: monthly-operating-subtotal
 metricValue:: <calculated>
 metricFormula:: monthly payroll + equipment maintenance + facility operations + insurance + Ecto-1 operations
-dependsOn:: [[Monthly Payroll]]
+dependsOn:: @monthly-payroll
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 ## NN Metrics: Monthly Payroll
 slug:: monthly-payroll
@@ -57,7 +57,7 @@ metricValue:: 35000
 metricFormula:: <fixed monthly slice of $420,000/year>
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 4 full-time operators + 1 office manager.
 
@@ -67,7 +67,7 @@ metricValue:: 7083
 metricFormula:: <fixed monthly slice of $85,000/year>
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 Proton Pack calibration, trap refurbishment, PKE meter replacement.
 
@@ -77,7 +77,7 @@ metricValue:: 10000
 metricFormula:: <fixed monthly slice of $120,000/year>
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 Firehouse lease, utilities, containment grid power.
 
@@ -87,7 +87,7 @@ metricValue:: 7917
 metricFormula:: <fixed monthly slice of $95,000/year>
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 Liability insurance, legal retainers, regulatory compliance.
 
@@ -97,7 +97,7 @@ metricValue:: 2083
 metricFormula:: <fixed monthly slice of $25,000/year>
 metricType:: expense
 metricUnit:: USD/month
-evolution:: [[Additive 5 Evolution]]
+evolution:: @additive-5-evolution
 
 Ecto-1 fuel, maintenance, insurance. Grows with mileage.
 
@@ -107,7 +107,7 @@ metricValue:: 25000
 metricFormula:: <one-off containment vault expansion>
 metricType:: investment
 metricUnit:: USD
-evolution:: [[Fixed Evolution]]
+evolution:: @fixed-evolution
 
 # NN Variables
 

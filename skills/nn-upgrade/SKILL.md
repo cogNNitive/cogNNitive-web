@@ -62,8 +62,17 @@ It also exposes one maintenance option, `--freeze-slugs`, the remedy named by th
 ### Phase B0 — Detect
 Run the Tier-3 upgrade scan (via `nn-preflight` `--workspace-dir`) and present the per-model classification. This is the dry run: it writes nothing.
 
+Add `--plan` for the unit the upgrade will actually apply:
+```bash
+node skills/nn-preflight/scripts/upgrade-check.js --workspace-dir <dir> --catalog-file <catalog.json> --plan
+```
+
+**The unit is the bluepriNNt group, never the model.** Every model pinning a bluepriNNt moves in the same unit; `count` is how many models the consent covers; a group that already holds two pins reports `SKEW:` first and moves whole to the adopted version. Repinning part of a group IS the skew `check_domain` reports as `BLUEPRINT_VERSION_SKEW`.
+
+The plan carries a `planHash` over every member path and its current pin. Re-derive it before the first write (`isPlanFresh`): a model added or repinned between consent and apply makes the plan stale, and the run aborts with no writes rather than upgrading half a group.
+
 ### Phase B1 — Inform & Consent
-Present upgrade options. Consent is mandatory before any mutation.
+Present upgrade options. Consent is mandatory before any mutation, and it must state the number of models in each unit (`describePlan` prints it): consenting to "upgrade the bluepriNNt" is consenting to touch every model that pins it.
 
 ### Phase B2 — Backup
 Create a timestamped backup outside the workspace:
@@ -72,12 +81,18 @@ node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>
 ```
 
 ### Phase B3 — Impact Analysis
-Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use.
+Diff the pinned and adopted schemas. Ask mapping questions **once per concept**, then apply the answer to every instance in the unit: 24 Videos share one concept, so a per-model question is 23 redundant prompts and 23 chances to answer differently.
 
 **Marker-bearing models**: a model whose documents still carry a `# NN Marker Definition` or an `item-markers matrix` is legacy. Do NOT ask marker mapping questions at upgrade time — report the `MARKERS_REMOVED` diagnostic and link to the `nn-innfo` recipe `MARKERS_REMOVED` (§8e-bis), which turns the diagnostic into a reviewable changeset.
 
 ### Phase B4 — Rehydrate & Validate
 Hydrate adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump version, and re-validate through MCP. On validation failure, restore from the backup.
+
+Repin **every member of the unit or none**:
+```bash
+node skills/nn-upgrade/scripts/apply-upgrade-plan.js --workspace-dir <dir> --catalog-file <catalog.json> [--consent] [--dry-run]
+```
+The script takes the plan, refuses to write without `--consent`, re-checks `planHash` before the first write (`PLAN_STALE`), backs the workspace up, and restores every member if one fails re-validation (`UNIT_REVALIDATION_FAILED`, naming the failing model). If any member fails, restore the whole unit from the backup and report the failing model's id — never leave a partly repinned group.
 
 ---
 

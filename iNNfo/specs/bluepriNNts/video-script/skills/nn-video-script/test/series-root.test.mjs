@@ -30,7 +30,7 @@ test('a series anchored only by its scope document resolves', () => {
   const series = path.join(root, 'series', 's');
   const episode = path.join(series, 'assets', 'e');
   fs.mkdirSync(episode, { recursive: true });
-  fs.writeFileSync(path.join(series, 's_scope_NN.md'), scopeDoc('S'), 'utf8');
+  fs.writeFileSync(path.join(series, 's_video-script_NN.md'), scopeDoc('S'), 'utf8');
 
   assert.equal(findSeriesRoot(episode), series);
   assert.equal(Number(fs.existsSync(path.join(series, 'series_NN.md'))), 0);
@@ -43,8 +43,8 @@ test('nested scopes resolve to the outermost one below the domain root', () => {
   const nested = path.join(series, 'assets');
   const episode = path.join(nested, 'e');
   fs.mkdirSync(episode, { recursive: true });
-  fs.writeFileSync(path.join(series, 's_scope_NN.md'), scopeDoc('S'), 'utf8');
-  fs.writeFileSync(path.join(nested, 'assets_scope_NN.md'), scopeDoc('Assets'), 'utf8');
+  fs.writeFileSync(path.join(series, 's_video-script_NN.md'), scopeDoc('S'), 'utf8');
+  fs.writeFileSync(path.join(nested, 'assets_video-script_NN.md'), scopeDoc('Assets'), 'utf8');
 
   assert.equal(findSeriesRoot(episode), series);
   fs.rmSync(root, { recursive: true, force: true });
@@ -55,8 +55,8 @@ test('a duplicate scope marker is surfaced, not swallowed', () => {
   const series = path.join(root, 'series', 's');
   const episode = path.join(series, 'assets', 'e');
   fs.mkdirSync(episode, { recursive: true });
-  fs.writeFileSync(path.join(series, 's_scope_NN.md'), scopeDoc('S'), 'utf8');
-  fs.writeFileSync(path.join(series, 'other_scope_NN.md'), scopeDoc('Other'), 'utf8');
+  fs.writeFileSync(path.join(series, 's_video-script_NN.md'), scopeDoc('S'), 'utf8');
+  fs.writeFileSync(path.join(series, 'other_video-script_NN.md'), scopeDoc('Other'), 'utf8');
 
   assert.throws(() => findSeriesRoot(episode), /DUPLICATE_SCOPE_MARKER/);
   fs.rmSync(root, { recursive: true, force: true });
@@ -90,7 +90,7 @@ test('a stale legacy marker supplies no cascade value next to a scope document',
   const series = path.join(root, 'series', 's');
   const episode = path.join(series, 'assets', 'e');
   fs.mkdirSync(episode, { recursive: true });
-  fs.writeFileSync(path.join(series, 's_scope_NN.md'), scopeDoc('S'), 'utf8');
+  fs.writeFileSync(path.join(series, 's_video-script_NN.md'), scopeDoc('S'), 'utf8');
   fs.writeFileSync(path.join(series, 'series_NN.md'), '---\nlevel: 3\ntitle: "Old"\n---\n\n# NN Series\n\n## NN Series: Old\ntransition:: wipe\n', 'utf8');
 
   const bags = loadCascadeBags(episode);

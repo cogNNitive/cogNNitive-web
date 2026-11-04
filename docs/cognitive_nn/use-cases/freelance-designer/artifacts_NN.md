@@ -15,5 +15,5 @@ summary:: Interactive single-page web dashboard for client specification sign-of
 status:: verified
 tags:: [dashboard, html, sign-off]
 produced_by:: Website Specification & Client Sign-Off Pipeline
-sources:: [kNNowledge/Client_Website_site_spec_NN.md]
+sources:: [Client_Website_site_spec]
 file_path:: artifacts/interactive_spec_dashboard.html

@@ -3,10 +3,10 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+  name: "iNNfo_V_0-7-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "video-script"
-blueprint_version: "V_0-14-1"
+blueprint_version: "V_0-15-0"
 title: "Video Script App"
 relationship_types:
   hierarchy:
@@ -49,6 +49,9 @@ icon:: clapperboard
 type:: list
 color:: blue
 weight:: 100
+storage:: distributed
+container:: Series
+placement:: "{container}/assets/{slug}/"
 
 ## NN Concept Definition: Scene
 slug:: scene
@@ -77,6 +80,8 @@ icon:: layers
 type:: list
 color:: teal
 weight:: 60
+storage:: distributed
+placement:: "series/{slug}/"
 
 ## NN Concept Definition: Video Defaults
 slug:: video-defaults
@@ -288,22 +293,27 @@ from synthesized media.
 
 ## Structure
 
-- **Video** — exactly one per document. Carries the human `title`. The engine derives the
-  composition id from it. No versioning mechanism exists.
+- **Video** — a distributed concept: one Video instance model per episode, at
+  `series/<s>/assets/<slug>/<slug>_video-script_NN.md`. Its instance root element is the
+  Video; the document holds exactly one Video element. Carries the human `title`. The
+  engine derives the composition id from it. No versioning mechanism exists.
 - **Scene** — child of Video. Order equals the order of the `# NN index` list; no `order::`
   field exists. Its free-form prose BODY is the narration, synthesized by TTS and timed
   by the engine. It owns its `Layer` children and may carry `background_audio::`,
-  `transition::` and a `presets::` list.
+  `transition::` and a `presets::` list. A Scene is an element of the Video instance
+  model, never a model of its own.
 - **Layer** — child of a Scene, never of the Video. Discriminated by a required `type::`
-  select. The allowed fields depend on `type::` (see Conditional Fields).
+  select. The allowed fields depend on `type::` (see Conditional Fields). A Layer is an
+  element of the Video instance model, never a model of its own.
 - **Preset** — top-level Concept with no fields of its own. An element may carry only the
   Fields whose `concept::` lists `Preset`, plus the global `tags` and its reserved `slug`.
   Presets are defined in the script, in Series scope documents or in the domain
   `video-defaults_NN.md`, and are referenced by bare name from `presets::`.
-- **Series** — a top-level Concept for a real series. The episode's nearest ancestor holding
-  a scope document (`<s>_scope_NN.md` with frontmatter `scope: true`) supplies the `series`
-  cascade level, plus `title`, `avatar` and `intro`. An episode outside a series folder has
-  no `series` level.
+- **Series** — a distributed concept: one Series instance model per series, at
+  `series/<s>/<s>_video-script_NN.md`. That model IS the series scope document: it carries
+  frontmatter `scope: true`, and its root element's fields are the `series` cascade level.
+  The engine recognises it by `scope: true`, never by file name. An episode outside a
+  series folder has no `series` level.
 - **Video Defaults** — a top-level Concept carrying every cascade parameter's baseline. The
   package ships one at `defaults/video-defaults_NN.md` (the `blueprint` level); a domain MAY
   copy it to its root as `video-defaults_NN.md` (the `domain` level).
@@ -336,7 +346,7 @@ guard's discretion.
 ## Objectives
 
 - Provide a valid Level-2 blueprint usable as `parent_spec` for video scripts at Level 3.
-- Model one Video per document, its ordered Scenes, and each Scene's Layers.
+- Model one Video per Video instance model, its ordered Scenes, and each Scene's Layers.
 - Keep narration as the Scene prose body, never as a Field or Concept.
 - Keep the script tool-agnostic by guidance, with voice and model values in Presets or scope
   documents and every override expressed as a cascade field.
@@ -360,7 +370,9 @@ episode's record — status, script, master and thumbnail.
 
 ### Description
 
-One `## NN Video: <name>` element models one episode. Its `slug::` is the stable identity the
+One `## NN Video: <name>` element models one episode but the model holds exactly one Video
+element; the distributed `Video` concept makes each episode its own instance model at
+`series/<s>/assets/<slug>/<slug>_video-script_NN.md`. Its `slug::` is the stable identity the
 engine uses to name the output. The `title` feeds the derived manifest composition id. The record
 fields — `description`, `status`, `script`, `master` and `thumbnail` — make the same
 document both the episode's catalogue entry and its script, so an episode is modelled once. A
@@ -466,11 +478,12 @@ A real series: the source of the `series` cascade level and of `title`, `avatar`
 
 ### Description
 
-The episode's nearest ancestor holding a scope document — a `_NN.md` file with frontmatter
-`scope: true`, canonically `<s>_scope_NN.md` — is its series root. That document's fields supply
-the `series` level of the Universal Parameter Cascade; an episode outside a series folder (or a
-marker at the domain root) has no `series` level. A series folder holds at most one scope
-document. Legacy markers such as `series_NN.md` anchor nothing.
+The episode's nearest ancestor holding a Series instance model — a `_NN.md` file with
+frontmatter `scope: true`, canonically `<s>_video-script_NN.md` — is its series root. That
+document's fields supply the `series` level of the Universal Parameter Cascade; an episode
+outside a series folder (or a marker at the domain root) has no `series` level. A series
+folder holds at most one scope document. Legacy markers such as `series_NN.md` and the older
+`<s>_scope_NN.md` name anchor nothing.
 
 ### Methodologies
 

@@ -1822,8 +1822,7 @@
       document.getElementById("btn-copy-prompt")?.addEventListener("click", async () => {
         const payload = buildReviewed();
         const markdown = generateL3Markdown();
-        const seriesSlug = DRAFT.series || 'series';
-        const targetFilename = `${payload.slug}_video-script_${seriesSlug}_NN.md`;
+        const targetFilename = `${payload.slug}_video-script_NN.md`;
 
         const bt = String.fromCharCode(96);
         const bt3 = bt + bt + bt;

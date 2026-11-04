@@ -58,6 +58,16 @@ and `knowledge_version` — never `blueprint_version` and never a version in its
 > read; the version also never appears in the file name. See
 > [Canonical vocabulary](../vocabulary.md).
 
+## One version per bluepriNNt in a domaiNN
+
+Each level-3 document pins one bluepriNNt version in `parent_spec.name`. Within one domaiNN, every
+document that pins a given bluepriNNt must pin the **same** version. `check_domain` reports
+`BLUEPRINT_VERSION_SKEW` as an error, once per bluepriNNt, when documents disagree, and lists a
+bare name (no version token) or an unclassifiable URL as an incomparable pin. The check is
+domain-level: validating a single file never reports it, and it applies to compact and
+distributed storage alike. The [nn-upgrade](../skills/nn-upgrade.md) skill repins every document
+of a bluepriNNt together, or none. See *Version uniformity* in [Storage and identity](storage-and-identity.md).
+
 ## Why the URL is never hardcoded
 
 The engine resolves a specification **from an explicit URL
@@ -86,6 +96,7 @@ for how resolution failures surface as diagnostics.
 ## See also
 
 - [The four levels](levels.md)
+- [Storage and identity](storage-and-identity.md)
 - [Ecosystem architecture](ecosystem.md)
 - [Canonical vocabulary](../vocabulary.md)
 - [bluepriNNts catalog](../reference/blueprints.md)

@@ -158,6 +158,17 @@ tags:: [docs, how-to, changeset, review, mutation]
 
 Propose, review, and apply changesets — the supported way to mutate a domaiNN.
 
+## NN Page: Distribute a concept
+slug:: distribute-a-concept
+title:: Distribute a concept
+source:: content/how-to/distribute-a-concept.md
+route:: content/how-to/distribute-a-concept.md
+order:: 65
+parent:: [[How-To Guides]]
+tags:: [docs, how-to, storage, distributed, instance-model, move, extract]
+
+Declare storage on a concept, create instance models, move or rename them, and extract instances from a compact document.
+
 ## NN Page: Sync lineage and back up a domaiNN
 slug:: sync-and-backup
 title:: Sync lineage and back up a domaiNN
@@ -267,6 +278,17 @@ parent:: [[Architecture & Concepts]]
 tags:: [docs, concept, sources, citations, lineage]
 
 The three terms behind provenance: Source, Citation, and Lineage.
+
+## NN Page: Storage and identity
+slug:: storage-and-identity
+title:: Storage and identity
+source:: content/concepts/storage-and-identity.md
+route:: content/concepts/storage-and-identity.md
+order:: 65
+parent:: [[Architecture & Concepts]]
+tags:: [docs, concept, storage, identity, references, placement, versions]
+
+Compact and distributed storage, hierarchical ids, the unified reference grammar, placement validation, and version uniformity.
 
 ## NN Page: Tags and open taxonomy
 slug:: tags-and-taxonomy

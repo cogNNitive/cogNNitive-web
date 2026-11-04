@@ -24,6 +24,7 @@ const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 
 const SERIES_CONTENT = `---
 level: 3
+scope: true
 parent_spec:
   name: "video-script_V_0-13-2"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/video-script/spec_NN.md"
@@ -40,7 +41,7 @@ title:: Other Series
 
 function withSeries(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-thumb-series-'));
-  fs.writeFileSync(path.join(dir, 'other-series_scope_NN.md'), SERIES_CONTENT, 'utf8');
+  fs.writeFileSync(path.join(dir, 'other-series_video-script_NN.md'), SERIES_CONTENT, 'utf8');
   try {
     fn(dir);
   } finally {

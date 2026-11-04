@@ -82,7 +82,7 @@ opportunityDescription:: "Transitioning from traditional pneumatic foot-pedal ca
 opportunityProblem:: "Physical cable cords on muon traps create severe trip hazards in tight indoor corridors and delay trap activation during high-speed entity pursuits."
 opportunitySource:: "Field Operations Incident Logs & Operator Feedback"
 opportunityStakeholders:: "Senior Paranormal Technicians, Field Operators, Equipment Maintenance Crew"
-opportunityProposerId:: [[Dr. Egon Spengler]]
+opportunityProposerId:: @dr-egon-spengler
 opportunityPriority:: "high"
 opportunityStatus:: "prioritized"
 opportunityDateIdentified:: "2026-08-01"
@@ -98,7 +98,7 @@ opportunityDescription:: "Developing a high-frequency beam stream neutralizer to
 opportunityProblem:: "High-mass Class-VI entities require excessive proton beam energy, rapidly draining backpack nuclear batteries and causing thermal overload."
 opportunitySource:: "Sedgewick Hotel Outbreak Post-Mortem Report"
 opportunityStakeholders:: "Chief Science Officer, Field Crew, Nuclear Safety Inspector"
-opportunityProposerId:: [[Dr. Raymond Stantz]]
+opportunityProposerId:: @dr-raymond-stantz
 opportunityPriority:: "medium"
 opportunityStatus:: "under_review"
 opportunityDateIdentified:: "2026-08-10"
@@ -114,8 +114,8 @@ initiativeId:: "INI-001"
 initiativeName:: "Wireless Muon Trap Foot-Pedal"
 initiativeType:: "Hardware Innovation"
 initiativePhase:: "Implementation"
-initiativeManagerId:: [[Dr. Egon Spengler]]
-initiativeOpportunityId:: [[Automated Remote Trap Triggering]]
+initiativeManagerId:: @dr-egon-spengler
+initiativeOpportunityId:: @automated-remote-trap-triggering
 initiativeUser:: "Senior Paranormal Technicians & Field Operators"
 initiativeProblem:: "Cable snagging during indoor pursuits causes delayed trap opening and entity escapes."
 initiativeSolution:: "Compact 433MHz RF transmitter embedded in ergonomic boot pedal communicating with iris-door trap servo motor."
@@ -144,8 +144,8 @@ initiativeId:: "INI-002"
 initiativeName:: "Subterranean Grid Power Auto-Coupler"
 initiativeType:: "Facility Automation"
 initiativePhase:: "Planning"
-initiativeManagerId:: [[Dr. Raymond Stantz]]
-initiativeOpportunityId:: [[Automated Remote Trap Triggering]]
+initiativeManagerId:: @dr-raymond-stantz
+initiativeOpportunityId:: @automated-remote-trap-triggering
 initiativeUser:: "Headquarters Vault Operations & Maintenance Crew"
 initiativeProblem:: "Main city power drops disrupt laser containment grid pressure, risking catastrophic entity release."
 initiativeSolution:: "Solid-state high-voltage automatic transfer switch connected to auxiliary diesel generator backup bus."

@@ -106,6 +106,11 @@ var nnAddress = (() => {
     return text.normalize("NFD").replace(/[̀-ͯ]/g, "");
   }
 
+  // iNNfo/packages/nn-core/src/assertNever.ts
+  function assertNever(value, context = "value") {
+    throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
+  }
+
   // iNNfo/packages/nn-core/src/jsonPointer.ts
   var POINTER_RE = /^(?:\/(?:[^~/]|~[01])*)*$/;
   function isJsonPointer(pointer) {
@@ -167,15 +172,192 @@ var nnAddress = (() => {
     return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
   }
 
+  // iNNfo/packages/nn-core/src/address/grammar.ts
+  var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+  var SLUG = "[\\p{Ll}\\p{Lo}\\p{N}]+(?:-+[\\p{Ll}\\p{Lo}\\p{N}]+)*";
+  var FIELD = "[\\p{L}\\p{N}]+(?:[-_][\\p{L}\\p{N}]+)*";
+  var CONCEPT = "[\\p{L}\\p{N}]+(?:(?:[ _]|-+)[\\p{L}\\p{N}]+)*";
+  var HEAD_RE = new RegExp(`^${HEAD}$`);
+  var SLUG_RE = new RegExp(`^${SLUG}$`, "u");
+  var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
+  var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
+  var RESERVED_HEAD = "specs";
+  var BODY_MARKER = "#body";
+  var CONCEPT_PREFIX = "concept:";
+  var MATRIX_PREFIX = "matrix:";
+
+  // iNNfo/packages/nn-core/src/address/parse.ts
+  var GRAMMAR_HINT = "use `<hierarchical-id>@<slug>` (for example `series-a/episode-1@scene-1`)";
+  var URL_RE = /^[a-z][a-z0-9+.-]*:\/\//i;
+  var WINDOWS_ABSOLUTE_RE = /^[a-zA-Z]:[/\\]/;
+  var LINE_ANCHOR_RE = /[#@]L\d+(-L\d+)?$/i;
+  var SOURCE_EXTENSION_RE = /\.(md|csv|json)$/i;
+  var CHANGES_STEM_RE = /_changes$/i;
+  function malformed(segment, expected, removed) {
+    const shown = segment === "" ? "an empty segment" : `\`${segment}\``;
+    const error = {
+      kind: "error",
+      code: "ADDRESS_MALFORMED",
+      segment,
+      message: `Malformed address: ${shown} is not ${expected}; ${GRAMMAR_HINT}.`
+    };
+    return removed ? { ...error, removed } : error;
+  }
+  function removedForm(raw, form, shape) {
+    return {
+      kind: "error",
+      code: "ADDRESS_MALFORMED",
+      segment: raw,
+      removed: form,
+      message: `The ${form} \`${shape}\` is removed and is never resolved by title; ${GRAMMAR_HINT}.`
+    };
+  }
+  function parseSourceClass(path, raw) {
+    const base = path.slice(path.lastIndexOf("/") + 1);
+    const parsed = parseName(base);
+    const sourcePrefix = path.startsWith("sources/");
+    if (!sourcePrefix && parsed.kind === "nn" && parsed.sidecarOf === void 0) {
+      const isChangeset = CHANGES_STEM_RE.test(parsed.stem);
+      const role = roleOf({ path: base, parentSpecName: isChangeset ? "changes" : void 0 });
+      if (role === "changeset") {
+        return {
+          kind: "error",
+          code: "NN_DOCUMENT_CITED_BY_HEADING",
+          segment: raw,
+          message: `A changeset is not cited by heading (\`@## NN Change: <id>\` is removed); address a change by its model id and slug, ${GRAMMAR_HINT}.`
+        };
+      }
+      if (role === "knowledge") {
+        return {
+          kind: "error",
+          code: "MODEL_CITED_BY_PATH",
+          segment: path,
+          message: `A model is not cited by file path (\`${path}\`); ${GRAMMAR_HINT}.`
+        };
+      }
+    }
+    return { kind: "source", raw };
+  }
+  function parseModelId(part) {
+    const segments = part.split("/");
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      if (i === 0) {
+        if (!HEAD_RE.test(segment)) return malformed(segment, "a valid model-id head");
+      } else if (!SLUG_RE.test(segment)) {
+        return malformed(segment, "a lowercase slug");
+      }
+    }
+    return part;
+  }
+  function parseUnit(rest) {
+    const parts = rest.split("&");
+    const [head, second, third, ...extra] = parts;
+    if (extra.length > 0) return malformed(rest, "a unit with at most three parts");
+    if (head.startsWith(CONCEPT_PREFIX)) {
+      const concept = head.slice(CONCEPT_PREFIX.length);
+      if (!CONCEPT_RE.test(concept)) return malformed(head, "a concept name");
+      if (third !== void 0) return malformed(rest, "a concept unit with at most one field");
+      if (second === void 0) return { kind: "concept", concept };
+      if (!FIELD_RE.test(second)) return malformed(second, "a field name");
+      return { kind: "concept", concept, field: second };
+    }
+    if (head.startsWith(MATRIX_PREFIX)) {
+      const matrix = head.slice(MATRIX_PREFIX.length);
+      if (!SLUG_RE.test(matrix)) return malformed(head, "a matrix slug");
+      if (second !== void 0) return malformed(rest, "a matrix unit with no sub-unit");
+      return { kind: "matrix", matrix };
+    }
+    if (!SLUG_RE.test(head)) return malformed(head, "a lowercase slug");
+    if (second === void 0) return { kind: "element", slug: head };
+    if (third !== void 0) {
+      for (const segment of [second, third]) {
+        if (!SLUG_RE.test(segment)) return malformed(segment, "a lowercase slug");
+      }
+      return { kind: "cell", matrix: head, row: second, col: third };
+    }
+    if (second === BODY_MARKER) return { kind: "body", slug: head };
+    if (!FIELD_RE.test(second)) return malformed(second, "a field name");
+    return { kind: "element", slug: head, field: second };
+  }
+  function parseBlueprint(modelPart, rest) {
+    const family = modelPart.slice(RESERVED_HEAD.length + 1);
+    if (!HEAD_RE.test(family)) return malformed(family, "a blueprint family");
+    if (rest === null) return { kind: "blueprint", family, unit: null };
+    const unit = parseUnit(rest);
+    if ("code" in unit) return unit;
+    if (unit.kind !== "concept" && unit.kind !== "matrix") {
+      return malformed(rest, "a `concept:` or `matrix:` unit of a blueprint");
+    }
+    return { kind: "blueprint", family, unit };
+  }
+  function parseAddress(input) {
+    const raw = String(input ?? "").trim();
+    if (raw === "") return malformed("", "a value");
+    if (raw.startsWith("[[") || raw.endsWith("]]")) {
+      return raw.includes("::") ? removedForm(raw, "title-qualified reference", "[[Title :: Name]]") : removedForm(raw, "wikilink reference", "[[Name]]");
+    }
+    if (raw.includes(" :: ")) return removedForm(raw, "title-qualified reference", "[[Title :: Name]]");
+    if (URL_RE.test(raw) || raw.startsWith("/") || raw.startsWith("\\") || WINDOWS_ABSOLUTE_RE.test(raw)) {
+      return malformed(raw, "a model address (URLs and absolute paths are not addresses)");
+    }
+    if (LINE_ANCHOR_RE.test(raw)) return malformed(raw, "a model address (line anchors are not addresses)");
+    const at = raw.indexOf("@");
+    const modelPart = at === -1 ? raw : raw.slice(0, at);
+    const rest = at === -1 ? null : raw.slice(at + 1);
+    if (modelPart.includes("\\")) return malformed(modelPart, "a model id (path separators are not allowed)");
+    if (modelPart.split("/").includes("..")) return malformed("..", "a model-id segment");
+    if (SOURCE_EXTENSION_RE.test(modelPart)) return parseSourceClass(modelPart, raw);
+    if (modelPart === RESERVED_HEAD) {
+      return malformed(modelPart, "a model id (`specs` is reserved for blueprint addresses)");
+    }
+    if (modelPart.startsWith(`${RESERVED_HEAD}/`)) return parseBlueprint(modelPart, rest);
+    if (modelPart === "") {
+      if (rest === null || rest === "") return malformed("", "a unit after `@`");
+      const unit2 = parseUnit(rest);
+      return "code" in unit2 ? unit2 : { kind: "unit", model: null, unit: unit2 };
+    }
+    const model = parseModelId(modelPart);
+    if (typeof model !== "string") return model;
+    if (rest === null) return { kind: "model", model };
+    if (rest === "") return malformed("", "a unit after `@`");
+    const unit = parseUnit(rest);
+    return "code" in unit ? unit : { kind: "unit", model, unit };
+  }
+
+  // iNNfo/packages/nn-core/src/address/index.ts
+  function isAddressError(value) {
+    return value.kind === "error";
+  }
+
   // iNNfo/packages/nn-core/src/sourceRef.ts
-  var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
-  var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+  var SLUG2 = "[a-z0-9]+(?:-[a-z0-9]+)*";
+  var RETIRED_PREFIX_RE = /^(?:sources\/(?:nn|original|export)|export|models)\//;
+  var SOURCE_FILE_RE = /\.(md|csv|json)$/i;
+  var RAW_AREA_RE = /^sources\//;
+  var REMOVED_PATH_FORMS = /* @__PURE__ */ new Set(["MODEL_CITED_BY_PATH", "NN_DOCUMENT_CITED_BY_HEADING"]);
+  function malformedCitation(raw) {
+    return {
+      kind: "error",
+      code: "ADDRESS_MALFORMED",
+      segment: raw,
+      message: `Malformed citation \`${raw}\`; use \`<path>@<unit>\` for a raw file or \`<hierarchical-id>@<slug>\` for a kNNowledge unit.`
+    };
+  }
+  function removedPathForm(pathAndUnit) {
+    const at = pathAndUnit.indexOf("@");
+    const pathOnly = at === -1 ? pathAndUnit : pathAndUnit.slice(0, at);
+    const forward = pathOnly.split(/[/\\]/).join("/");
+    if (!SOURCE_FILE_RE.test(forward) || RETIRED_PREFIX_RE.test(forward)) return null;
+    const classified = parseAddress(at === -1 ? forward : forward + pathAndUnit.slice(at));
+    return isAddressError(classified) && REMOVED_PATH_FORMS.has(classified.code) ? classified : null;
+  }
   function parseSourceRef(input) {
     if (!input || typeof input !== "string") return null;
     const clean = input.trim();
     if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
     if (/^src-\d+/i.test(clean)) return null;
-    const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
+    const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG2}))?$`));
     if (!legacy) return null;
     const resolved = resolveUnitPath(legacy[1]);
     if (!resolved) return null;
@@ -247,23 +429,70 @@ var nnAddress = (() => {
     const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
     return { level: clamped, text: clean, slug };
   }
-  function resolveUnitPath(rawPath) {
+  function resolveUnitPathResult(rawPath) {
     const trimmed = rawPath.trim();
-    if (!trimmed || /^https?:\/\//i.test(trimmed)) return null;
-    const segments = trimmed.split(/[/\\]/);
-    if (segments.some((s) => s === "..")) return null;
+    const fail = () => ({ ok: false, error: malformedCitation(trimmed) });
+    const at = trimmed.indexOf("@");
+    const pathOnly = at === -1 ? trimmed : trimmed.slice(0, at);
+    if (!pathOnly || /^https?:\/\//i.test(pathOnly)) return fail();
+    const segments = pathOnly.split(/[/\\]/);
+    if (segments.some((s) => s === "..")) return fail();
     const forward = segments.join("/");
-    const isMd = /\.md$/i.test(forward);
-    const isCsv = /\.csv$/i.test(forward);
-    const isJson = /\.json$/i.test(forward);
-    if (!isMd && !isCsv && !isJson) {
-      if (new RegExp(`^${MODEL_ID}$`).test(trimmed)) {
-        return { filePath: trimmed, kind: "model" };
-      }
-      return null;
+    if (!SOURCE_FILE_RE.test(forward)) {
+      if (RAW_AREA_RE.test(forward)) return fail();
+      const address = parseAddress(pathOnly);
+      if (isAddressError(address)) return { ok: false, error: address };
+      return address.kind === "model" ? { ok: true, value: { filePath: pathOnly, kind: "model" } } : fail();
     }
-    if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-    return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
+    if (/^[a-zA-Z]:[/\\]/.test(pathOnly) || pathOnly.startsWith("/")) return fail();
+    const removed = removedPathForm(trimmed);
+    if (removed) return { ok: false, error: removed };
+    return {
+      ok: true,
+      value: { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" }
+    };
+  }
+  function resolveUnitPath(rawPath) {
+    const result = resolveUnitPathResult(rawPath);
+    return result.ok ? result.value : null;
+  }
+  function parseModelUnitRef(raw) {
+    if (RAW_AREA_RE.test(raw)) return null;
+    const address = parseAddress(raw);
+    if (isAddressError(address) || address.kind !== "unit" || address.model === null) return null;
+    const { model, unit } = address;
+    const base = { filePath: model, fileName: basename(model), kind: "model", raw };
+    switch (unit.kind) {
+      case "element":
+        return {
+          ...base,
+          slug: unit.slug,
+          unit: { kind: "element", slug: unit.slug },
+          subunits: unit.field === void 0 ? [] : [unit.field]
+        };
+      case "body":
+        return { ...base, slug: unit.slug, unit: { kind: "element", slug: unit.slug }, subunits: ["#body"] };
+      case "cell":
+        return {
+          ...base,
+          slug: unit.matrix,
+          unit: { kind: "matrix", matrixSlug: unit.matrix, rowSlug: unit.row, colSlug: unit.col },
+          subunits: [unit.row, unit.col]
+        };
+      case "matrix":
+        return { ...base, slug: unit.matrix, unit: { kind: "matrix", matrixSlug: unit.matrix }, subunits: [] };
+      case "concept": {
+        const slug = slugifyHeading(unit.concept);
+        return {
+          ...base,
+          slug,
+          unit: { kind: "header", level: 1, text: slug, slug },
+          subunits: unit.field === void 0 ? [] : [unit.field]
+        };
+      }
+      default:
+        return assertNever(unit, "address unit kind");
+    }
   }
   function decodeSegment(segment) {
     try {
@@ -291,6 +520,7 @@ var nnAddress = (() => {
     const clean = input.trim();
     const at = clean.indexOf("@");
     if (at === -1) return null;
+    if (!SOURCE_FILE_RE.test(clean.slice(0, at))) return parseModelUnitRef(clean);
     const resolved = resolveUnitPath(clean.slice(0, at));
     if (!resolved) return null;
     if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
@@ -303,76 +533,6 @@ var nnAddress = (() => {
       decoded.push(text.trim());
     }
     const [unitRaw, ...subunits] = decoded;
-    if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
-      if (unitRaw.startsWith("concept:")) {
-        const slug = unitRaw.slice("concept:".length);
-        if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-        const unit3 = {
-          kind: "header",
-          level: 1,
-          text: slug,
-          slug
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      if (unitRaw.startsWith("matrix:")) {
-        const slug = unitRaw.slice("matrix:".length);
-        if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-        const unit3 = {
-          kind: "matrix",
-          matrixSlug: slug,
-          ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
-      if (subunits.length === 2) {
-        const unit3 = {
-          kind: "matrix",
-          matrixSlug: unitRaw,
-          rowSlug: subunits[0],
-          colSlug: subunits[1]
-        };
-        return {
-          filePath: resolved.filePath,
-          fileName: basename(resolved.filePath),
-          slug: unitRaw,
-          kind: "model",
-          unit: unit3,
-          subunits,
-          raw: clean
-        };
-      }
-      const unit2 = {
-        kind: "element",
-        slug: unitRaw
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename(resolved.filePath),
-        slug: unitRaw,
-        kind: "model",
-        unit: unit2,
-        subunits,
-        raw: clean
-      };
-    }
     const isCsv = /\.csv$/i.test(resolved.filePath);
     if (isCsv) {
       if (resolved.kind === "model") return null;
@@ -414,20 +574,28 @@ var nnAddress = (() => {
     }
     return trimmed;
   }
+  var MODEL_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+  function assertModelId(value, name) {
+    const id = assertIdentifier(value, name);
+    if (!id.split("/").every((segment) => MODEL_SEGMENT_RE.test(segment))) {
+      throw new TypeError(`unitAddress: ${name} "${id}" is not a hierarchical model id`);
+    }
+    return id;
+  }
   var unitAddress = {
     domain() {
       return "domaiNN_NN.md";
     },
     document(modelId) {
-      return assertIdentifier(modelId, "modelId");
+      return assertModelId(modelId, "modelId");
     },
     section(modelId, conceptName) {
-      const m = assertIdentifier(modelId, "modelId");
+      const m = assertModelId(modelId, "modelId");
       const c = assertIdentifier(conceptName, "conceptName");
       return `${m}@concept:${slugifyHeading(c)}`;
     },
     element(modelId, elementSlug) {
-      const m = assertIdentifier(modelId, "modelId");
+      const m = assertModelId(modelId, "modelId");
       const s = assertIdentifier(elementSlug, "elementSlug");
       return `${m}@${s}`;
     },
@@ -437,7 +605,7 @@ var nnAddress = (() => {
       return `${b}&${f}`;
     },
     cell(modelId, matrixSlug, rowSlug, colSlug) {
-      const m = assertIdentifier(modelId, "modelId");
+      const m = assertModelId(modelId, "modelId");
       const mat = assertIdentifier(matrixSlug, "matrixSlug");
       const r = assertIdentifier(rowSlug, "rowSlug");
       const c = assertIdentifier(colSlug, "colSlug");
@@ -460,7 +628,6 @@ var nnAddress = (() => {
       return `specs/${f}@matrix:${mat}`;
     }
   };
-  var MODEL_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
   function isValidModelPath(rawPath) {
     if (!rawPath || /^https?:\/\//i.test(rawPath) || /^[a-zA-Z]:[/\\]/.test(rawPath)) return false;
     if (rawPath.startsWith("/") || rawPath.startsWith("\\")) return false;
@@ -2215,6 +2382,13 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       return renderFieldUrl(d, doc)
     }
 
+    // 1b. A field whose value is an address in the console's reference index: the
+    // target's title, linked, with the address kept as the value.
+    if (typeof value === 'string') {
+      var asReference = renderFieldReference(d, doc, opts)
+      if (asReference) return asReference
+    }
+
     // 2. A field carrying resolved citations is a citation: the value plus the
     // clickable citation icon(s), rendered as part of the value.
     if (Array.isArray(d.citations) && d.citations.length) {
@@ -2883,6 +3057,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
                 onCite: opts && opts.onCite,
                 onKnowledge: opts && opts.onKnowledge,
                 isKnowledgeBound: opts && opts.isKnowledgeBound,
+                referenceIndex: opts && opts.referenceIndex,
+                onReference: opts && opts.onReference,
               },
             ),
           )
@@ -3390,59 +3566,219 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return wrap
   }
 
-  // Candidates are the elements the caller allows. The datalist offers display
-  // names; the proposal is always the exact reference grammar `[[Display Name]]`
-  // (see refProposal), never a slug.
+  // Candidates are the caller's reference index entries. The listbox offers
+  // `title - address` and the selection writes the ADDRESS (relative `@slug` when
+  // the target lives in the model being edited): titles are display-only, and no
+  // tool resolves an address by title (unified-reference-grammar).
   function FieldReferenceWidget(value, candidates, opts) {
     var doc = resolveDoc(opts)
     var wrap = makeEl(doc, 'div', 'nn-edit-reference')
     wrap.setAttribute('data-nn-widget', 'reference')
     var input = makeEl(doc, 'input', 'nn-edit-input')
     input.setAttribute('type', 'text')
-    input.setAttribute('placeholder', 'Element name, e.g. [[Display Name]]')
+    input.setAttribute('placeholder', 'Title, e.g. El mapache fuera de la ley')
+    input.setAttribute('role', 'combobox')
+    input.setAttribute('aria-autocomplete', 'list')
     if (value != null) input.value = String(value)
     wrap.appendChild(input)
 
-    var datalistId = 'nn-ref-list-' + Math.random().toString(36).slice(2, 8)
-    input.setAttribute('list', datalistId)
-    var dl = makeEl(doc, 'datalist')
-    dl.id = datalistId
-    var list = Array.isArray(candidates) ? candidates : []
-    list.forEach(function (c) {
-      var label = typeof c === 'string' ? c : c && (c.name || c.id)
-      if (!label) return
-      var op = makeEl(doc, 'option')
-      op.value = String(label)
-      op.textContent = c && typeof c === 'object' && c.concept ? label + ' (' + c.concept + ')' : String(label)
-      dl.appendChild(op)
+    var list = makeEl(doc, 'ul', 'nn-edit-reference-options')
+    list.setAttribute('role', 'listbox')
+    list.id = 'nn-ref-list-' + Math.random().toString(36).slice(2, 8)
+    input.setAttribute('aria-controls', list.id)
+    wrap.appendChild(list)
+
+    var all = Array.isArray(candidates) ? candidates : []
+    var modelId = opts && opts.modelId ? String(opts.modelId) : ''
+    // The list opens on every candidate and filters only once the author types: an
+    // existing value must not hide the alternatives.
+    var typed = false
+
+    function paint() {
+      list.innerHTML = ''
+      var query = typed ? String(input.value == null ? '' : input.value) : ''
+      var matches = refMatches(all, query)
+      matches.forEach(function (c) {
+        var address = relativeAddress(c.address, modelId)
+        var li = makeEl(doc, 'li', 'nn-edit-reference-option')
+        li.setAttribute('role', 'option')
+        li.setAttribute('data-nn-reference-option', '')
+        li.setAttribute('data-address', c.address)
+        li.textContent = String(c.title) + ' - ' + c.address
+        li.addEventListener('click', function (ev) {
+          if (ev && typeof ev.preventDefault === 'function') ev.preventDefault()
+          input.value = address
+          input.setAttribute('data-address', c.address)
+          // A chosen address is final; the list collapses to the chosen entry.
+          list.innerHTML = ''
+        })
+        list.appendChild(li)
+      })
+      // Typing again invalidates a previous pick.
+      if (refAddressOf(input.value, all) === null) input.removeAttribute('data-address')
+    }
+
+    input.addEventListener('input', function () {
+      typed = true
+      paint()
     })
-    wrap.appendChild(dl)
+    input.addEventListener('focus', paint)
+    paint()
     return wrap
   }
 
-  // `[[Name]]` stays as is, a bare name is wrapped, blank stays blank.
-  function refProposal(raw) {
-    var v = String(raw == null ? '' : raw).trim()
-    if (!v) return ''
-    return /^\[\[[^\]]*\]\]$/.test(v) ? v : '[[' + v + ']]'
+  // `title - address` filtering for the autocomplete: a title substring, the
+  // address substring, or an empty query listing every candidate.
+  function refMatches(candidates, query) {
+    var list = Array.isArray(candidates) ? candidates : []
+    var q = String(query == null ? '' : query).trim().toLowerCase()
+    if (!q) return list
+    return list.filter(function (c) {
+      if (!c) return false
+      return (
+        String(c.title == null ? '' : c.title).toLowerCase().indexOf(q) !== -1 ||
+        String(c.address == null ? '' : c.address).toLowerCase().indexOf(q) !== -1
+      )
+    })
   }
 
-  // The display name a typed reference resolves to among the candidates
-  // (case-insensitive), or null: an unknown name or one holding a bracket is not a
-  // valid reference target.
-  function refCandidateName(raw, candidates) {
+  // The address a stored value names, among the candidates: the full address, or
+  // the relative `@slug` form of a candidate in `modelId`.
+  function refAddressOf(raw, candidates, modelId) {
     var v = String(raw == null ? '' : raw).trim()
-    var m = /^\[\[([^\]]*)\]\]$/.exec(v)
-    var name = (m ? m[1] : v).trim()
-    if (!name || /[\[\]]/.test(name)) return null
-    var want = name.toLowerCase()
+    if (!v) return null
     var list = Array.isArray(candidates) ? candidates : []
     for (var i = 0; i < list.length; i++) {
       var c = list[i]
-      var label = typeof c === 'string' ? c : c && (c.name || c.id)
-      if (label && String(label).toLowerCase() === want) return String(label)
+      if (!c || !c.address) continue
+      if (String(c.address) === v) return String(c.address)
+      if (modelId && relativeAddress(c.address, modelId) === v) return String(c.address)
     }
     return null
+  }
+
+  function referenceError(raw, candidates, modelId) {
+    var v = String(raw == null ? '' : raw).trim()
+    if (!v) return ''
+    if (refAddressOf(v, candidates, modelId) !== null) return ''
+    var list = Array.isArray(candidates) ? candidates : []
+    if (!list.length) return 'No targets are available for this field yet.'
+    var shown = list.slice(0, 6).map(function (c) {
+      return '"' + String(c.title) + '" (' + String(c.address) + ')'
+    })
+    return 'Pick one of the existing targets: ' + shown.join(', ') + '.'
+  }
+
+  // The relative addressing form of an address that lives in `modelId`
+  // (`model@slug` -> `@slug`), or the address itself when it lives elsewhere.
+  function relativeAddress(address, modelId) {
+    var a = String(address == null ? '' : address)
+    var model = String(modelId == null ? '' : modelId)
+    if (!model) return a
+    var at = a.indexOf('@')
+    if (at === -1) return a
+    if (a.slice(0, at) === model) return a.slice(at)
+    return a
+  }
+
+  // The address part of an address (`model@slug&field` -> `model`).
+  function addressModelOf(address) {
+    var a = String(address == null ? '' : address)
+    var at = a.indexOf('@')
+    return at === -1 ? a : a.slice(0, at)
+  }
+
+  // Addresses -> display metadata, built from the payload's `collections` slot
+  // (the members of `collection(C)`, resolved by the domain index) and
+  // `meta.models` (id -> title). One collection per concept, whatever the storage
+  // form, so a compact and a distributed copy index the same way.
+  function buildReferenceIndex(input) {
+    var data = input && typeof input === 'object' ? input : {}
+    var titles = {}
+    ;(Array.isArray(data.models) ? data.models : []).forEach(function (m) {
+      if (!m || !m.id) return
+      titles[String(m.id)] = String(m.title == null ? m.id : m.title)
+    })
+    // Element titles, so an element address shows its element's name and not its slug.
+    var elementTitles = {}
+    ;(Array.isArray(data.elements) ? data.elements : []).forEach(function (e) {
+      if (!e) return
+      var model = String(e.modelId || '')
+      var raw = String(e.id || e.slug || '')
+      if (!raw) return
+      // A domain export already qualifies the element id with its model.
+      var address = raw.indexOf('@') !== -1 ? raw : model ? model + '@' + raw : raw
+      elementTitles[address] = String(e.name == null ? raw : e.name)
+    })
+    var collections = data.collections && typeof data.collections === 'object' ? data.collections : {}
+    var byAddress = {}
+    var out = []
+    Object.keys(collections).forEach(function (concept) {
+      var members = Array.isArray(collections[concept]) ? collections[concept] : []
+      members.forEach(function (address) {
+        var a = String(address == null ? '' : address)
+        if (!a || byAddress[a]) return
+        var model = addressModelOf(a)
+        var at = a.indexOf('@')
+        // The model title for a model address; an element address shows its own
+        // element name when the payload carries one, else its slug.
+        var title = elementTitles[a] || (at === -1 ? titles[model] || model : a.slice(at + 1))
+        var entry = { address: a, concept: String(concept), title: title, modelId: model }
+        byAddress[a] = entry
+        out.push(entry)
+      })
+    })
+    out.sort(function (a, b) {
+      if (a.title !== b.title) return a.title < b.title ? -1 : 1
+      return a.address < b.address ? -1 : 1
+    })
+    return { byAddress: byAddress, list: out }
+  }
+
+  // The candidates of a field's `target_concepts`, filtered by a title substring.
+  function referenceCandidates(index, concepts, query) {
+    var list = index && Array.isArray(index.list) ? index.list : []
+    var allowed = (Array.isArray(concepts) ? concepts : []).map(function (c) {
+      return String(c == null ? '' : c).toLowerCase()
+    })
+    var scoped = allowed.length
+      ? list.filter(function (c) {
+          return allowed.indexOf(String(c.concept).toLowerCase()) !== -1
+        })
+      : list
+    return refMatches(scoped, query).map(function (c) {
+      return { address: c.address, title: c.title, concept: c.concept, modelId: c.modelId }
+    })
+  }
+
+  function referenceEntry(index, value) {
+    if (!index || !index.byAddress) return null
+    var v = String(value == null ? '' : value).trim()
+    if (!v) return null
+    return index.byAddress[v] || null
+  }
+
+  // A field Storing an address shows the target's title and links to it; the
+  // stored value stays the address (the link carries it in `data-address`).
+  function renderFieldReference(d, doc, opts) {
+    var entry = referenceEntry(opts && opts.referenceIndex, d.value)
+    if (!entry) return null
+    var wrap = makeEl(doc, 'span', 'nn-ku-value nn-field-reference')
+    wrap.setAttribute('data-value', String(d.value))
+    wrap.setAttribute('data-address', entry.address)
+    var link = makeEl(doc, 'a', 'nn-field-reference-link', entry.title)
+    link.setAttribute('data-address', entry.address)
+    link.setAttribute('title', entry.address)
+    link.setAttribute('href', '#' + encodeURIComponent(entry.address))
+    if (opts && typeof opts.onReference === 'function') {
+      link.addEventListener('click', function (ev) {
+        if (ev && typeof ev.preventDefault === 'function') ev.preventDefault()
+        opts.onReference(entry.address)
+      })
+    }
+    wrap.appendChild(link)
+    wrap.appendChild(makeEl(doc, 'code', 'nn-field-reference-address', entry.address))
+    return wrap
   }
 
   function FieldMarkdownWidget(value, opts) {
@@ -3610,7 +3946,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     } else if (fieldType === 'multiselect') {
       widgetRef = FieldMultiSelectWidget(data.value, data.options, opts)
     } else if (fieldType === 'reference') {
-      widgetRef = FieldReferenceWidget(data.value, data.candidates, opts)
+      widgetRef = FieldReferenceWidget(data.value, data.candidates, {
+        doc: doc,
+        modelId: data.modelId || (opts && opts.modelId),
+      })
     } else if (fieldType === 'markdown' || fieldType === 'markdown_inline') {
       widgetRef = FieldMarkdownWidget(data.value, opts)
     } else {
@@ -3728,16 +4067,21 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           var refInp = widgetRef.querySelector('input')
           var refRaw = refInp ? refInp.value : ''
           // Unchanged input proposes the original value as is.
-          if (refRaw === String(data.value == null ? '' : data.value) || String(refRaw).trim() === '') {
-            result.proposed = refRaw === String(data.value == null ? '' : data.value) ? refRaw : refProposal(refRaw)
+          if (refRaw === String(data.value == null ? '' : data.value)) {
+            result.proposed = refRaw
+          } else if (String(refRaw).trim() === '') {
+            // Blank clears the reference.
+            result.proposed = ''
           } else {
-            var refName = refCandidateName(refRaw, data.candidates)
-            if (refName === null) {
-              saveError.textContent = 'Pick an existing element name; brackets are not allowed.'
+            var refAddr = refAddressOf(refRaw, data.candidates, data.modelId)
+            if (refAddr === null) {
+              saveError.textContent = referenceError(refRaw, data.candidates, data.modelId)
               saveError.style.display = 'block'
               return
             }
-            result.proposed = '[[' + refName + ']]'
+            // The stored value is the address; a target in this model is written
+            // in its relative form.
+            result.proposed = relativeAddress(refAddr, data.modelId)
           }
         } else {
           result.proposed = widgetRef.value
@@ -5249,6 +5593,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     FieldSelectWidget: FieldSelectWidget,
     FieldMultiSelectWidget: FieldMultiSelectWidget,
     FieldReferenceWidget: FieldReferenceWidget,
+    buildReferenceIndex: buildReferenceIndex,
+    referenceCandidates: referenceCandidates,
+    referenceError: referenceError,
+    relativeAddress: relativeAddress,
     FieldMarkdownWidget: FieldMarkdownWidget,
     KpiGrid: KpiGrid,
     DataTable: DataTable,
@@ -5846,21 +6194,23 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     // Resolve an anchor to a KU-modal target. Returns null when the anchor is
     // not modal-editable (card comments, tag/relation proposals use popovers
     // or immediate comment drafts instead).
-    // Candidates are the owner's own model only (a reference never crosses
-    // models) and, when the definition declares target_concepts, only those concepts.
-    function modelKeyOf(e) {
-      return String(e.modelId || e.modelFile || '')
+    // Candidates are the collection members of the field's `target_concepts`, from
+    // the console reference index (`collections` + model titles). A reference may
+    // cross models: that is what the address grammar is for. Each candidate carries
+    // its title for display and its address as the value.
+    function referenceCandidates(def) {
+      var allowed = def && Array.isArray(def.target_concepts) ? def.target_concepts : []
+      var index = options.referenceIndex
+      if (!index || typeof UI.referenceCandidates !== 'function') return []
+      return UI.referenceCandidates(index, allowed, '')
     }
 
-    function referenceCandidates(def, owner) {
-      var allowed = def && Array.isArray(def.target_concepts) ? def.target_concepts : []
-      var set = allowed.map(function (c) {
-        return String(c).toLowerCase()
-      })
-      return elements.filter(function (e) {
-        if (!e || (owner && modelKeyOf(e) !== modelKeyOf(owner))) return false
-        return !set.length || set.indexOf(String(e.concept).toLowerCase()) !== -1
-      })
+    // The element's canonical address: `<model-id>@<slug>`.
+    function elementAddress(e) {
+      if (!e) return ''
+      var model = String(e.modelId || meta.modelId || '')
+      var slug = String(e.slug || e.id || '')
+      return model && slug ? model + '@' + slug : slug
     }
 
     function kuModalTarget(anchorData) {
@@ -5907,8 +6257,11 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           title: 'Retarget ' + (el.name || anchorData.elementId) + ' \u2192 ' + anchorData.relField,
           fieldName: anchorData.relField,
           type: 'reference',
-          value: relTargetEl ? '[[' + (relTargetEl.name || relTargetEl.id) + ']]' : anchorData.relTarget,
-          candidates: referenceCandidates(fieldDefOf(options.schema, el.concept, anchorData.relField), el),
+          // The stored value is the address of the related element, shown by title
+          // in the field and in the autocomplete.
+          value: relTargetEl ? elementAddress(relTargetEl) : anchorData.relTarget,
+          candidates: referenceCandidates(fieldDefOf(options.schema, el.concept, anchorData.relField)),
+          modelId: el.modelId || meta.modelId,
           draftField: anchorData.relField,
           original: anchorData.relTarget,
           citations: base.citations,
@@ -5964,8 +6317,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         target_concepts: schemaField ? schemaField.target_concepts : undefined,
         candidates:
           schemaField && (schemaField.type === 'reference' || fieldType === 'reference')
-            ? referenceCandidates(schemaField, el)
+            ? referenceCandidates(schemaField)
             : undefined,
+        // The model the edit belongs to: a target inside it is written relative (`@slug`).
+        modelId: el.modelId || meta.modelId,
         draftField: field,
         original: fieldVal,
         citations: base.citations.filter(function (c) {
@@ -6008,6 +6363,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           value: target.value,
           options: target.options,
           candidates: target.candidates,
+          modelId: target.modelId,
           citations: target.citations,
           history: target.history,
           isComment: !!target.isComment,
@@ -10474,7 +10830,27 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     content.appendChild(empty)
   }
 
-  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId) {
+  // The compact storage form of a standalone console: every loaded element is a
+  // member of its concept's collection, addressed `<model-id>@<slug>`. A console
+  // exported with the index's collections slot never uses this.
+  function collectionsFromElements(elements, meta) {
+    var out = {}
+    var fallbackModel = String((meta && (meta.modelId || meta.model)) || '')
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      if (!e || !e.concept) return
+      var slug = String(e.id || e.slug || '')
+      if (!slug) return
+      var model = String(e.modelId || fallbackModel || '')
+      // A domain export already qualifies the element id with its model id.
+      var address = slug.indexOf('@') !== -1 ? slug : model ? model + '@' + slug : slug
+      var concept = String(e.concept)
+      if (!out[concept]) out[concept] = []
+      if (out[concept].indexOf(address) === -1) out[concept].push(address)
+    })
+    return out
+  }
+
+  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId, referenceIndex) {
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
@@ -10585,6 +10961,8 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
           onTag: actions && actions.onTag,
           onKnowledge: actions && actions.onKnowledge,
           isKnowledgeBound: actions && actions.isKnowledgeBound,
+          referenceIndex: referenceIndex,
+          onReference: actions && actions.onReference,
           onRef: function (refId) {
             var target = refs && isObject(refs[String(refId)]) ? refs[String(refId)] : null
             if (target) renderRefDialog(doc, target)
@@ -13980,7 +14358,18 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         return ownershipByModel[String(id)]
       })
     }
+    // The console's reference index: `collections` is the `collection(C)` slot the
+    // exporter filled from the domain index, `meta.models` carries the titles. A
+    // field storing an address renders the target's title from here. A standalone
+    // console exported without the index slot falls back to the elements it
+    // already holds, addressed the compact way (`<model-id>@<slug>`).
     var elements = Array.isArray(model.elements) ? model.elements : []
+    var payloadCollections = isObject(model.collections) ? model.collections : {}
+    if (!Object.keys(payloadCollections).length) payloadCollections = collectionsFromElements(elements, meta)
+    var referenceIndex =
+      UI && typeof UI.buildReferenceIndex === 'function'
+        ? UI.buildReferenceIndex({ models: modelList, collections: payloadCollections, elements: elements })
+        : null
     var matrices = Array.isArray(model.matrices) ? model.matrices : []
     var concepts = (Array.isArray(schema.concepts) ? schema.concepts.slice() : []).map(function (c) {
       return typeof c === 'string' ? { name: c } : c
@@ -14036,6 +14425,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       // The domain's changesets, newest first (export-console sorts them): the
       // Changes tab's applied history.
       changes: Array.isArray(model.changes) ? model.changes : [],
+      // Reference rendering/autocomplete index (collections + model titles).
+      referenceIndex: referenceIndex,
+      collections: payloadCollections,
       schema: schema,
       concepts: concepts,
       store: Review.createDraftStore(
@@ -14180,6 +14572,24 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         var bound = resolveKnowledgeModel(meta, value)
         if (bound) addFacetToken('model', String(bound.id || bound.filePath))
       },
+      // A reference link opens the instance it addresses: its first element card in
+      // this console, or the model facet when the target is not loaded here.
+      onReference: function (address) {
+        var model = String(address || '').split('@')[0]
+        var first = null
+        for (var i = 0; i < elements.length; i++) {
+          var e = elements[i]
+          if (e && String(e.modelId || '') === model) {
+            first = e
+            break
+          }
+        }
+        if (first) {
+          focusElementCard(active, first.id)
+          return
+        }
+        if (resolveKnowledgeModel(meta, model)) addFacetToken('model', model)
+      },
     }
 
     // Lightweight update after a draft is saved: refreshes only the draft-count
@@ -14292,7 +14702,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       } else if (explorerView === 'cards') {
         mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions, (meta && (meta.modelId || meta.model)) || '')
       } else {
-        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions, (meta && (meta.modelId || meta.model)) || '')
+        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions, (meta && (meta.modelId || meta.model)) || '', state.referenceIndex)
         focusId = null
       }
       renderFilterBar(active, state, function (nextQuery) {
@@ -14421,6 +14831,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         needs: config.needs,
         store: state.store,
         schema: schema,
+        referenceIndex: referenceIndex,
         getReviewer: getReviewerName,
         onDraftsChanged: refreshDraftCounts,
         // Change C: clicking a change's evidence opens the in-domain unit it points

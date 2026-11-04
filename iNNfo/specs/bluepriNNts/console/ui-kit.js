@@ -1276,6 +1276,13 @@
       return renderFieldUrl(d, doc)
     }
 
+    // 1b. A field whose value is an address in the console's reference index: the
+    // target's title, linked, with the address kept as the value.
+    if (typeof value === 'string') {
+      var asReference = renderFieldReference(d, doc, opts)
+      if (asReference) return asReference
+    }
+
     // 2. A field carrying resolved citations is a citation: the value plus the
     // clickable citation icon(s), rendered as part of the value.
     if (Array.isArray(d.citations) && d.citations.length) {
@@ -1944,6 +1951,8 @@
                 onCite: opts && opts.onCite,
                 onKnowledge: opts && opts.onKnowledge,
                 isKnowledgeBound: opts && opts.isKnowledgeBound,
+                referenceIndex: opts && opts.referenceIndex,
+                onReference: opts && opts.onReference,
               },
             ),
           )
@@ -2451,59 +2460,219 @@
     return wrap
   }
 
-  // Candidates are the elements the caller allows. The datalist offers display
-  // names; the proposal is always the exact reference grammar `[[Display Name]]`
-  // (see refProposal), never a slug.
+  // Candidates are the caller's reference index entries. The listbox offers
+  // `title - address` and the selection writes the ADDRESS (relative `@slug` when
+  // the target lives in the model being edited): titles are display-only, and no
+  // tool resolves an address by title (unified-reference-grammar).
   function FieldReferenceWidget(value, candidates, opts) {
     var doc = resolveDoc(opts)
     var wrap = makeEl(doc, 'div', 'nn-edit-reference')
     wrap.setAttribute('data-nn-widget', 'reference')
     var input = makeEl(doc, 'input', 'nn-edit-input')
     input.setAttribute('type', 'text')
-    input.setAttribute('placeholder', 'Element name, e.g. [[Display Name]]')
+    input.setAttribute('placeholder', 'Title, e.g. El mapache fuera de la ley')
+    input.setAttribute('role', 'combobox')
+    input.setAttribute('aria-autocomplete', 'list')
     if (value != null) input.value = String(value)
     wrap.appendChild(input)
 
-    var datalistId = 'nn-ref-list-' + Math.random().toString(36).slice(2, 8)
-    input.setAttribute('list', datalistId)
-    var dl = makeEl(doc, 'datalist')
-    dl.id = datalistId
-    var list = Array.isArray(candidates) ? candidates : []
-    list.forEach(function (c) {
-      var label = typeof c === 'string' ? c : c && (c.name || c.id)
-      if (!label) return
-      var op = makeEl(doc, 'option')
-      op.value = String(label)
-      op.textContent = c && typeof c === 'object' && c.concept ? label + ' (' + c.concept + ')' : String(label)
-      dl.appendChild(op)
+    var list = makeEl(doc, 'ul', 'nn-edit-reference-options')
+    list.setAttribute('role', 'listbox')
+    list.id = 'nn-ref-list-' + Math.random().toString(36).slice(2, 8)
+    input.setAttribute('aria-controls', list.id)
+    wrap.appendChild(list)
+
+    var all = Array.isArray(candidates) ? candidates : []
+    var modelId = opts && opts.modelId ? String(opts.modelId) : ''
+    // The list opens on every candidate and filters only once the author types: an
+    // existing value must not hide the alternatives.
+    var typed = false
+
+    function paint() {
+      list.innerHTML = ''
+      var query = typed ? String(input.value == null ? '' : input.value) : ''
+      var matches = refMatches(all, query)
+      matches.forEach(function (c) {
+        var address = relativeAddress(c.address, modelId)
+        var li = makeEl(doc, 'li', 'nn-edit-reference-option')
+        li.setAttribute('role', 'option')
+        li.setAttribute('data-nn-reference-option', '')
+        li.setAttribute('data-address', c.address)
+        li.textContent = String(c.title) + ' - ' + c.address
+        li.addEventListener('click', function (ev) {
+          if (ev && typeof ev.preventDefault === 'function') ev.preventDefault()
+          input.value = address
+          input.setAttribute('data-address', c.address)
+          // A chosen address is final; the list collapses to the chosen entry.
+          list.innerHTML = ''
+        })
+        list.appendChild(li)
+      })
+      // Typing again invalidates a previous pick.
+      if (refAddressOf(input.value, all) === null) input.removeAttribute('data-address')
+    }
+
+    input.addEventListener('input', function () {
+      typed = true
+      paint()
     })
-    wrap.appendChild(dl)
+    input.addEventListener('focus', paint)
+    paint()
     return wrap
   }
 
-  // `[[Name]]` stays as is, a bare name is wrapped, blank stays blank.
-  function refProposal(raw) {
-    var v = String(raw == null ? '' : raw).trim()
-    if (!v) return ''
-    return /^\[\[[^\]]*\]\]$/.test(v) ? v : '[[' + v + ']]'
+  // `title - address` filtering for the autocomplete: a title substring, the
+  // address substring, or an empty query listing every candidate.
+  function refMatches(candidates, query) {
+    var list = Array.isArray(candidates) ? candidates : []
+    var q = String(query == null ? '' : query).trim().toLowerCase()
+    if (!q) return list
+    return list.filter(function (c) {
+      if (!c) return false
+      return (
+        String(c.title == null ? '' : c.title).toLowerCase().indexOf(q) !== -1 ||
+        String(c.address == null ? '' : c.address).toLowerCase().indexOf(q) !== -1
+      )
+    })
   }
 
-  // The display name a typed reference resolves to among the candidates
-  // (case-insensitive), or null: an unknown name or one holding a bracket is not a
-  // valid reference target.
-  function refCandidateName(raw, candidates) {
+  // The address a stored value names, among the candidates: the full address, or
+  // the relative `@slug` form of a candidate in `modelId`.
+  function refAddressOf(raw, candidates, modelId) {
     var v = String(raw == null ? '' : raw).trim()
-    var m = /^\[\[([^\]]*)\]\]$/.exec(v)
-    var name = (m ? m[1] : v).trim()
-    if (!name || /[\[\]]/.test(name)) return null
-    var want = name.toLowerCase()
+    if (!v) return null
     var list = Array.isArray(candidates) ? candidates : []
     for (var i = 0; i < list.length; i++) {
       var c = list[i]
-      var label = typeof c === 'string' ? c : c && (c.name || c.id)
-      if (label && String(label).toLowerCase() === want) return String(label)
+      if (!c || !c.address) continue
+      if (String(c.address) === v) return String(c.address)
+      if (modelId && relativeAddress(c.address, modelId) === v) return String(c.address)
     }
     return null
+  }
+
+  function referenceError(raw, candidates, modelId) {
+    var v = String(raw == null ? '' : raw).trim()
+    if (!v) return ''
+    if (refAddressOf(v, candidates, modelId) !== null) return ''
+    var list = Array.isArray(candidates) ? candidates : []
+    if (!list.length) return 'No targets are available for this field yet.'
+    var shown = list.slice(0, 6).map(function (c) {
+      return '"' + String(c.title) + '" (' + String(c.address) + ')'
+    })
+    return 'Pick one of the existing targets: ' + shown.join(', ') + '.'
+  }
+
+  // The relative addressing form of an address that lives in `modelId`
+  // (`model@slug` -> `@slug`), or the address itself when it lives elsewhere.
+  function relativeAddress(address, modelId) {
+    var a = String(address == null ? '' : address)
+    var model = String(modelId == null ? '' : modelId)
+    if (!model) return a
+    var at = a.indexOf('@')
+    if (at === -1) return a
+    if (a.slice(0, at) === model) return a.slice(at)
+    return a
+  }
+
+  // The address part of an address (`model@slug&field` -> `model`).
+  function addressModelOf(address) {
+    var a = String(address == null ? '' : address)
+    var at = a.indexOf('@')
+    return at === -1 ? a : a.slice(0, at)
+  }
+
+  // Addresses -> display metadata, built from the payload's `collections` slot
+  // (the members of `collection(C)`, resolved by the domain index) and
+  // `meta.models` (id -> title). One collection per concept, whatever the storage
+  // form, so a compact and a distributed copy index the same way.
+  function buildReferenceIndex(input) {
+    var data = input && typeof input === 'object' ? input : {}
+    var titles = {}
+    ;(Array.isArray(data.models) ? data.models : []).forEach(function (m) {
+      if (!m || !m.id) return
+      titles[String(m.id)] = String(m.title == null ? m.id : m.title)
+    })
+    // Element titles, so an element address shows its element's name and not its slug.
+    var elementTitles = {}
+    ;(Array.isArray(data.elements) ? data.elements : []).forEach(function (e) {
+      if (!e) return
+      var model = String(e.modelId || '')
+      var raw = String(e.id || e.slug || '')
+      if (!raw) return
+      // A domain export already qualifies the element id with its model.
+      var address = raw.indexOf('@') !== -1 ? raw : model ? model + '@' + raw : raw
+      elementTitles[address] = String(e.name == null ? raw : e.name)
+    })
+    var collections = data.collections && typeof data.collections === 'object' ? data.collections : {}
+    var byAddress = {}
+    var out = []
+    Object.keys(collections).forEach(function (concept) {
+      var members = Array.isArray(collections[concept]) ? collections[concept] : []
+      members.forEach(function (address) {
+        var a = String(address == null ? '' : address)
+        if (!a || byAddress[a]) return
+        var model = addressModelOf(a)
+        var at = a.indexOf('@')
+        // The model title for a model address; an element address shows its own
+        // element name when the payload carries one, else its slug.
+        var title = elementTitles[a] || (at === -1 ? titles[model] || model : a.slice(at + 1))
+        var entry = { address: a, concept: String(concept), title: title, modelId: model }
+        byAddress[a] = entry
+        out.push(entry)
+      })
+    })
+    out.sort(function (a, b) {
+      if (a.title !== b.title) return a.title < b.title ? -1 : 1
+      return a.address < b.address ? -1 : 1
+    })
+    return { byAddress: byAddress, list: out }
+  }
+
+  // The candidates of a field's `target_concepts`, filtered by a title substring.
+  function referenceCandidates(index, concepts, query) {
+    var list = index && Array.isArray(index.list) ? index.list : []
+    var allowed = (Array.isArray(concepts) ? concepts : []).map(function (c) {
+      return String(c == null ? '' : c).toLowerCase()
+    })
+    var scoped = allowed.length
+      ? list.filter(function (c) {
+          return allowed.indexOf(String(c.concept).toLowerCase()) !== -1
+        })
+      : list
+    return refMatches(scoped, query).map(function (c) {
+      return { address: c.address, title: c.title, concept: c.concept, modelId: c.modelId }
+    })
+  }
+
+  function referenceEntry(index, value) {
+    if (!index || !index.byAddress) return null
+    var v = String(value == null ? '' : value).trim()
+    if (!v) return null
+    return index.byAddress[v] || null
+  }
+
+  // A field Storing an address shows the target's title and links to it; the
+  // stored value stays the address (the link carries it in `data-address`).
+  function renderFieldReference(d, doc, opts) {
+    var entry = referenceEntry(opts && opts.referenceIndex, d.value)
+    if (!entry) return null
+    var wrap = makeEl(doc, 'span', 'nn-ku-value nn-field-reference')
+    wrap.setAttribute('data-value', String(d.value))
+    wrap.setAttribute('data-address', entry.address)
+    var link = makeEl(doc, 'a', 'nn-field-reference-link', entry.title)
+    link.setAttribute('data-address', entry.address)
+    link.setAttribute('title', entry.address)
+    link.setAttribute('href', '#' + encodeURIComponent(entry.address))
+    if (opts && typeof opts.onReference === 'function') {
+      link.addEventListener('click', function (ev) {
+        if (ev && typeof ev.preventDefault === 'function') ev.preventDefault()
+        opts.onReference(entry.address)
+      })
+    }
+    wrap.appendChild(link)
+    wrap.appendChild(makeEl(doc, 'code', 'nn-field-reference-address', entry.address))
+    return wrap
   }
 
   function FieldMarkdownWidget(value, opts) {
@@ -2671,7 +2840,10 @@
     } else if (fieldType === 'multiselect') {
       widgetRef = FieldMultiSelectWidget(data.value, data.options, opts)
     } else if (fieldType === 'reference') {
-      widgetRef = FieldReferenceWidget(data.value, data.candidates, opts)
+      widgetRef = FieldReferenceWidget(data.value, data.candidates, {
+        doc: doc,
+        modelId: data.modelId || (opts && opts.modelId),
+      })
     } else if (fieldType === 'markdown' || fieldType === 'markdown_inline') {
       widgetRef = FieldMarkdownWidget(data.value, opts)
     } else {
@@ -2789,16 +2961,21 @@
           var refInp = widgetRef.querySelector('input')
           var refRaw = refInp ? refInp.value : ''
           // Unchanged input proposes the original value as is.
-          if (refRaw === String(data.value == null ? '' : data.value) || String(refRaw).trim() === '') {
-            result.proposed = refRaw === String(data.value == null ? '' : data.value) ? refRaw : refProposal(refRaw)
+          if (refRaw === String(data.value == null ? '' : data.value)) {
+            result.proposed = refRaw
+          } else if (String(refRaw).trim() === '') {
+            // Blank clears the reference.
+            result.proposed = ''
           } else {
-            var refName = refCandidateName(refRaw, data.candidates)
-            if (refName === null) {
-              saveError.textContent = 'Pick an existing element name; brackets are not allowed.'
+            var refAddr = refAddressOf(refRaw, data.candidates, data.modelId)
+            if (refAddr === null) {
+              saveError.textContent = referenceError(refRaw, data.candidates, data.modelId)
               saveError.style.display = 'block'
               return
             }
-            result.proposed = '[[' + refName + ']]'
+            // The stored value is the address; a target in this model is written
+            // in its relative form.
+            result.proposed = relativeAddress(refAddr, data.modelId)
           }
         } else {
           result.proposed = widgetRef.value
@@ -4310,6 +4487,10 @@
     FieldSelectWidget: FieldSelectWidget,
     FieldMultiSelectWidget: FieldMultiSelectWidget,
     FieldReferenceWidget: FieldReferenceWidget,
+    buildReferenceIndex: buildReferenceIndex,
+    referenceCandidates: referenceCandidates,
+    referenceError: referenceError,
+    relativeAddress: relativeAddress,
     FieldMarkdownWidget: FieldMarkdownWidget,
     KpiGrid: KpiGrid,
     DataTable: DataTable,

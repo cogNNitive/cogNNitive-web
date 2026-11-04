@@ -2,8 +2,8 @@
 name: nn-video-script
 description: |
   iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Lowers the structured model into a deterministic Composition Manifest, emits a HyperFrames project from it, measures duration with ffprobe, and renders headlessly via the pinned HyperFrames CLI; also supports thumbnail composition. Triggers: video script, cognnitive video, hyperframes, series script, nn-video-script, video-script blueprint, finalize video, render video script.
-version: "V_0-15-7"
-last_updated: 2026-10-31
+version: "V_0-15-8"
+last_updated: 2026-11-03
 license: MIT
 depends_on:
   cli:
@@ -65,6 +65,18 @@ simply skipped and the package defaults apply.
 ## 2. Scope of This Skill in the Authoring Workflow
 
 This skill owns **authoring, validating, compiling, rendering, and finalizing** one video's script inside a Series folder:
+
+The layout is the placement rule the `video-script` blueprint declares, not a convention of this skill:
+
+```
+<domain>/
+  series/<s>/                                       # the Series instance folder
+  series/<s>/<s>_video-script_NN.md                 # the Series instance model; frontmatter `scope: true` makes it the series scope document
+  series/<s>/assets/<slug>/                         # the Video instance folder
+  series/<s>/assets/<slug>/<slug>_video-script_NN.md  # the Video instance model: the episode's record and its script
+```
+
+The episode script stem is the episode slug and never carries the series name: identity is hierarchical (`<series>/<slug>`), so the same episode slug in two series is legal. See `references/folder-contract.md` for the full tree.
 
 1. **Author** the video's Level-3 kNNowledge document (adopting the `video-script` blueprint, following the Series' `includes` blueprint and its scope document plus its `Preset` elements; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `video-script` blueprint at run time — never restated as prose.
 1b. **Interactive Review Console & Human Review Gate** (`review_console.html`):
@@ -149,7 +161,7 @@ This skill owns **authoring, validating, compiling, rendering, and finalizing** 
 | `scripts/render-formats.mjs` | The one derivation from the 1920x1920 master: `_1080x1920` and `_1920x1080` are the central 1080 crops, `_1080x1080` is a lanczos scale, and `--fill blur` is an opt-in with a `_blur` suffix. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor: renders a one-frame HyperFrames composition (base image + typography + brand pill) through the pinned CLI. `--series <dir>` (or the cascade from `--out`) fills subtitle/badge from the Series `title`; font/accent come from the resolved `frame` tokens. |
 | `scripts/finalize-video.mjs` | Derives the delivery formats from the master in place, prints the `description.md` chapters and the `master::`/`thumbnail::` values. Never writes the model. |
-| `scripts/build-script-from-draft.mjs` | Generates the L3 `video-script` document from a reviewed draft JSON, reading series values through the parameter cascade (series scope document → domain Video Defaults → package Video Defaults). The reviewed JSON (all scenes, fixed ones included, each with its `kind`) is the single source of truth for per-scene decisions (narration, choice, overlays) and works on its own; `--draft` only supplies scene structure. The script frontmatter is copied from the series document and the filename uses the Series slug. |
+| `scripts/build-script-from-draft.mjs` | Generates the L3 `video-script` document from a reviewed draft JSON, reading series values through the parameter cascade (series scope document → domain Video Defaults → package Video Defaults). The reviewed JSON (all scenes, fixed ones included, each with its `kind`) is the single source of truth for per-scene decisions (narration, choice, overlays) and works on its own; `--draft` only supplies scene structure. The script frontmatter is copied from the Series instance model and the file is named `<slug>_video-script_NN.md` from the episode slug. |
 | `scripts/build-draft-html.mjs` | Generates the self-contained interactive Review Console (`review_console.html`) from a draft JSON with inlined base64 thumbnails, parameter cascade overrides, hook variant selector, live L3 preview, and Quine self-saving pattern. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.

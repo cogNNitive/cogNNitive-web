@@ -53,6 +53,11 @@ against that contract: unknown Concepts, out-of-set `select` values, duplicate s
 and undeclared nesting are all rejected deterministically. The validator is described
 in [Validator behavior](validator-behavior.md).
 
+A bluepriNNt also declares, **per concept**, where the instances of that concept are stored: all
+as elements of one kNNowledge document (compact storage), or one kNNowledge document per instance
+(distributed storage). The validator then checks that each document sits where the declaration
+says. See [Storage and identity](storage-and-identity.md).
+
 ## A domaiNN is itself a kNNowledge document
 
 A **`domaiNN`** is the container: the directory that holds `kNNowledge/`, the adopted
@@ -74,6 +79,7 @@ The system's own container follows the same rules as the data inside it.
 
 - [Ecosystem architecture](ecosystem.md)
 - [The specification chain](specifications.md)
+- [Storage and identity](storage-and-identity.md)
 - [Canonical vocabulary](../vocabulary.md)
 - [Create your first domaiNN](../tutorials/first-domain.md)
 - [Home](../../README.md)

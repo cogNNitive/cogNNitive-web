@@ -7399,7 +7399,6 @@ __export(index_exports, {
   isSidecarName: () => isSidecarName,
   latestOfFamily: () => latestOfFamily,
   loadChangesetRecords: () => loadChangesetRecords,
-  normalizeModelId: () => normalizeModelId,
   normalizeToolId: () => normalizeToolId,
   parentSpecNameOf: () => parentSpecNameOf,
   parseChangesetTarget: () => parseChangesetTarget,
@@ -8095,6 +8094,227 @@ function parseKnowledge(content) {
   };
 }
 
+// iNNfo/packages/nn-core/src/schema/storage.ts
+var STORAGE_MODES = ["compact", "distributed"];
+var LITERAL_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+var RESERVED_LITERALS = /* @__PURE__ */ new Set(["archive", "staging", "specs", "backups"]);
+var SLUG_TOKEN = "{slug}";
+var CONTAINER_TOKEN = "{container}";
+function invalid(template, why) {
+  return {
+    ok: false,
+    code: "PLACEMENT_INVALID",
+    message: `placement "${template}" is invalid: ${why}`
+  };
+}
+function parsePlacement(template, opts) {
+  if (template.trim() === "") return invalid(template, "the template is empty");
+  if (template.includes("\\")) return invalid(template, 'use POSIX separators ("/"), not backslashes');
+  if (template.startsWith("/")) return invalid(template, "the path must be relative to the domaiNN root");
+  if (!template.endsWith("/")) return invalid(template, 'the template must end with "/"');
+  const parts = template.slice(0, -1).split("/");
+  const segments = [];
+  let slugCount = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === "") return invalid(template, "it contains an empty segment");
+    if (part === "..") return invalid(template, 'a ".." segment is not allowed');
+    if (part.startsWith(".")) return invalid(template, `segment "${part}" starts with "." (a "."-prefixed segment is not allowed)`);
+    if (part === SLUG_TOKEN) {
+      slugCount++;
+      segments.push({ kind: "slug" });
+      continue;
+    }
+    if (part === CONTAINER_TOKEN) {
+      if (i !== 0) return invalid(template, "{container} is allowed only as the first segment");
+      if (!opts.hasContainer) return invalid(template, "{container} requires the concept to declare container::");
+      segments.push({ kind: "container" });
+      continue;
+    }
+    if (part.includes("{") || part.includes("}")) {
+      return invalid(template, `unknown token "${part}"; the only tokens are {slug} and {container}`);
+    }
+    const folded = part.toLowerCase();
+    if (folded === "knowledge") {
+      return invalid(template, 'the literal "kNNowledge" is reserved for compact models');
+    }
+    if (RESERVED_LITERALS.has(part)) return invalid(template, `the literal "${part}" is reserved`);
+    if (i === 0 && part === "sources") return invalid(template, 'the literal "sources" is reserved at the domaiNN root');
+    if (!LITERAL_RE.test(part)) {
+      return invalid(template, `literal "${part}" must be kebab-case ([a-z0-9]+(-[a-z0-9]+)*)`);
+    }
+    segments.push({ kind: "literal", value: part });
+  }
+  if (slugCount === 0) return invalid(template, "it must contain exactly one {slug} (found none)");
+  if (slugCount > 1) return invalid(template, `it must contain exactly one {slug} (found ${slugCount})`);
+  return { ok: true, segments, slugIndex: segments.findIndex((s) => s.kind === "slug") };
+}
+function nonEmpty(v) {
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : void 0;
+}
+function readStorage(fields) {
+  const rawMode = nonEmpty(fields["storage"]);
+  const container = nonEmpty(fields["container"]);
+  const placement = nonEmpty(fields["placement"]);
+  if (!rawMode && !container && !placement) return void 0;
+  const storage = { mode: "compact" };
+  if (rawMode) {
+    const mode = STORAGE_MODES.find((m) => m === rawMode.toLowerCase());
+    if (mode) storage.mode = mode;
+    else storage.unknownMode = rawMode;
+  }
+  if (container) storage.container = container;
+  if (placement) storage.placement = placement;
+  return storage;
+}
+function validateStorage(concepts) {
+  const diagnostics = [];
+  const byName = new Map(concepts.map((c) => [c.name.toLowerCase(), c]));
+  const report = (code, concept, property, detail) => {
+    diagnostics.push({
+      code,
+      severity: "error",
+      path: `Concept Definition.${concept}.${property}`,
+      message: `${code}: concept "${concept}" - ${detail}`
+    });
+  };
+  const parsed = /* @__PURE__ */ new Map();
+  for (const concept of concepts) {
+    const storage = concept.storage;
+    if (!storage) continue;
+    const name = concept.name;
+    if (storage.unknownMode !== void 0) {
+      report(
+        "STORAGE_UNKNOWN_MODE",
+        name,
+        "storage",
+        `storage "${storage.unknownMode}" is not a known mode; use one of: ${STORAGE_MODES.join(", ")}`
+      );
+      continue;
+    }
+    if (storage.mode === "compact") {
+      if (storage.placement !== void 0 || storage.container !== void 0) {
+        const property = storage.placement !== void 0 ? "placement" : "container";
+        report(
+          "PLACEMENT_FORBIDDEN",
+          name,
+          property,
+          `a compact concept cannot declare ${property}::; declare storage:: distributed or remove it`
+        );
+      }
+      continue;
+    }
+    if (storage.placement === void 0) {
+      report(
+        "PLACEMENT_REQUIRED",
+        name,
+        "placement",
+        'a distributed concept must declare placement:: (for example placement:: "series/{slug}/"); add it'
+      );
+      continue;
+    }
+    const result = parsePlacement(storage.placement, { hasContainer: storage.container !== void 0 });
+    if (!result.ok) {
+      report("PLACEMENT_INVALID", name, "placement", `${result.message}; fix the template`);
+      continue;
+    }
+    if (storage.container !== void 0 && !result.segments.some((s) => s.kind === "container")) {
+      report(
+        "PLACEMENT_INVALID",
+        name,
+        "placement",
+        `container:: ${storage.container} is declared but placement "${storage.placement}" never names {container}; start the template with {container}/`
+      );
+      continue;
+    }
+    parsed.set(name.toLowerCase(), { segments: result.segments, slugIndex: result.slugIndex });
+  }
+  const next = /* @__PURE__ */ new Map();
+  for (const concept of concepts) {
+    const storage = concept.storage;
+    if (!storage || storage.mode !== "distributed" || storage.container === void 0) continue;
+    const target = byName.get(storage.container.toLowerCase());
+    if (!target) {
+      report(
+        "CONTAINER_NOT_DISTRIBUTED",
+        concept.name,
+        "container",
+        `container "${storage.container}" is not a concept of this schema; declare it distributed or fix the name`
+      );
+    } else if (target.storage?.mode !== "distributed") {
+      report(
+        "CONTAINER_NOT_DISTRIBUTED",
+        concept.name,
+        "container",
+        `container "${target.name}" is not distributed, so it cannot hold instance models; declare storage:: distributed on "${target.name}"`
+      );
+    } else {
+      next.set(concept.name.toLowerCase(), target.name.toLowerCase());
+    }
+  }
+  const cyclic = /* @__PURE__ */ new Set();
+  const seenCycles = /* @__PURE__ */ new Set();
+  for (const start of next.keys()) {
+    const path2 = [];
+    let at = start;
+    while (at !== void 0 && !path2.includes(at)) {
+      path2.push(at);
+      at = next.get(at);
+    }
+    if (at === void 0) continue;
+    const members = path2.slice(path2.indexOf(at));
+    members.forEach((m) => cyclic.add(m));
+    const key = [...members].sort().join("|");
+    if (seenCycles.has(key)) continue;
+    seenCycles.add(key);
+    const names = members.map((m) => byName.get(m).name);
+    report(
+      "CONTAINER_CYCLE",
+      names[0],
+      "container",
+      `containers form a cycle (${[...names, names[0]].join(" -> ")}); break it so every chain ends at the domaiNN root`
+    );
+  }
+  const expand = (key) => {
+    const own = parsed.get(key);
+    if (!own || cyclic.has(key)) return null;
+    if (own.segments[0].kind !== "container") return own.segments;
+    const containerKey = next.get(key);
+    const container = containerKey ? parsed.get(containerKey) : void 0;
+    const containerFolder = containerKey ? expand(containerKey) : null;
+    if (!container || !containerFolder) return null;
+    return [...containerFolder.slice(0, container.slugIndex + 1), ...own.segments.slice(1)];
+  };
+  const folders = /* @__PURE__ */ new Map();
+  for (const key of parsed.keys()) {
+    const folder = expand(key);
+    if (folder) folders.set(key, folder);
+  }
+  const keys = [...folders.keys()];
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = i + 1; j < keys.length; j++) {
+      const a = folders.get(keys[i]);
+      const b = folders.get(keys[j]);
+      if (a.length !== b.length) continue;
+      const collide = a.every((seg, n) => {
+        const other = b[n];
+        if (seg.kind === "slug" || other.kind === "slug") return true;
+        return seg.kind === "literal" && other.kind === "literal" && seg.value === other.value;
+      });
+      if (!collide) continue;
+      const first = byName.get(keys[i]);
+      const second = byName.get(keys[j]);
+      report(
+        "PLACEMENT_OVERLAP",
+        first.name,
+        "placement",
+        `placement "${first.storage?.placement}" can match the same folder as "${second.name}" ("${second.storage?.placement}"); give each concept its own folder shape`
+      );
+    }
+  }
+  return diagnostics;
+}
+
 // iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
@@ -8140,6 +8360,8 @@ function extractBlueprintSchema(parsed) {
     };
     const conceptDescription = asString(el.fields["description"]);
     if (conceptDescription) concept.description = conceptDescription;
+    const storage = readStorage(el.fields);
+    if (storage) concept.storage = storage;
     concepts.push(concept);
     fieldsByConcept.set(concept.name, []);
   }
@@ -8307,10 +8529,15 @@ function applyAliasToSchema(schema, alias) {
         ...target_concepts ? { target_concepts } : {}
       };
     });
+    const storage = c.storage?.container ? {
+      ...c.storage,
+      container: conceptRenameLookup.get(c.storage.container.toLowerCase()) ?? c.storage.container
+    } : c.storage;
     return {
       ...c,
       name: newConceptName,
-      ...fields ? { fields } : {}
+      ...fields ? { fields } : {},
+      ...storage ? { storage } : {}
     };
   });
   const matrices = schema.matrices.map((mx) => {
@@ -8494,6 +8721,7 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
       delete local.globalFields;
     }
     attachDeclaredBy(local, provenance, declMetaOf(parsed.frontmatter, selfLabel));
+    if (_depth === 0 && includes.length === 0) errors.push(...validateStorage(local.concepts));
     return { schema: local, errors };
   }
   if (_depth >= 10) {
@@ -8573,6 +8801,9 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
   }
   if (_depth === 0) {
     attachDeclaredBy(base, provenance, declMetaOf(parsed.frontmatter, selfLabel));
+    if (!errors.some((e) => e.path.startsWith("includes.") && /could not be resolved/.test(e.message))) {
+      errors.push(...validateStorage(base.concepts));
+    }
   }
   return { schema: base, errors };
 }
@@ -8616,7 +8847,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-6-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-7-0", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -8997,137 +9228,6 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   return null;
 }
 
-// iNNfo/packages/nn-core/src/validator/crypto.ts
-function computeSha256(content) {
-  const utf8 = new TextEncoder().encode(content);
-  function rotr(n, x) {
-    return x >>> n | x << 32 - n;
-  }
-  const K = [
-    1116352408,
-    1899447441,
-    3049323471,
-    3921009573,
-    961987163,
-    1508970993,
-    2453635748,
-    2870763221,
-    3624381080,
-    310598401,
-    607225278,
-    1426881987,
-    1925078388,
-    2162078206,
-    2614888103,
-    3248222580,
-    3835390401,
-    4022224774,
-    264347078,
-    604807628,
-    770255983,
-    1249150122,
-    1555081692,
-    1996064986,
-    2554220882,
-    2821834349,
-    2952996808,
-    3210313671,
-    3336571891,
-    3584528711,
-    113926993,
-    338241895,
-    666307205,
-    773529912,
-    1294757372,
-    1396182291,
-    1695183700,
-    1986661051,
-    2177026350,
-    2456956037,
-    2730485921,
-    2820302411,
-    3259730800,
-    3345764771,
-    3516065817,
-    3600352804,
-    4094571909,
-    275423344,
-    430227734,
-    506948616,
-    659060556,
-    883997877,
-    958139571,
-    1322822218,
-    1537002063,
-    1747873779,
-    1955562222,
-    2024104815,
-    2227730452,
-    2361852424,
-    2428436474,
-    2756734187,
-    3204031479,
-    3329325298
-  ];
-  let H = [
-    1779033703,
-    3144134277,
-    1013904242,
-    2773480762,
-    1359893119,
-    2600822924,
-    528734635,
-    1541459225
-  ];
-  const len = utf8.length;
-  const bitLen = len * 8;
-  const padLen = (len + 8 >> 6 << 6) + 64;
-  const msg = new Uint8Array(padLen);
-  msg.set(utf8);
-  msg[len] = 128;
-  const view = new DataView(msg.buffer);
-  view.setUint32(padLen - 4, bitLen, false);
-  const W = new Int32Array(64);
-  for (let i = 0; i < padLen; i += 64) {
-    for (let t = 0; t < 16; t++) {
-      W[t] = view.getInt32(i + t * 4, false);
-    }
-    for (let t = 16; t < 64; t++) {
-      const s0 = rotr(7, W[t - 15]) ^ rotr(18, W[t - 15]) ^ W[t - 15] >>> 3;
-      const s1 = rotr(17, W[t - 2]) ^ rotr(19, W[t - 2]) ^ W[t - 2] >>> 10;
-      W[t] = W[t - 16] + s0 + W[t - 7] + s1 | 0;
-    }
-    let [a, b, c, d, e, f, g, h] = H;
-    for (let t = 0; t < 64; t++) {
-      const S1 = rotr(6, e) ^ rotr(11, e) ^ rotr(25, e);
-      const ch = e & f ^ ~e & g;
-      const temp1 = h + S1 + ch + K[t] + W[t] | 0;
-      const S0 = rotr(2, a) ^ rotr(13, a) ^ rotr(22, a);
-      const maj = a & b ^ a & c ^ b & c;
-      const temp2 = S0 + maj | 0;
-      h = g;
-      g = f;
-      f = e;
-      e = d + temp1 | 0;
-      d = c;
-      c = b;
-      b = a;
-      a = temp1 + temp2 | 0;
-    }
-    H = [
-      H[0] + a | 0,
-      H[1] + b | 0,
-      H[2] + c | 0,
-      H[3] + d | 0,
-      H[4] + e | 0,
-      H[5] + f | 0,
-      H[6] + g | 0,
-      H[7] + h | 0
-    ];
-  }
-  return H.map((x) => (x >>> 0).toString(16).padStart(8, "0")).join("");
-}
-
 // iNNfo/packages/nn-core/src/naming/contract.ts
 var ENTRYPOINT_FILENAME = "domaiNN_NN.md";
 var SPEC_FILENAME = "spec_NN.md";
@@ -9266,6 +9366,295 @@ function isSidecarName(nameOrPath) {
   return SIDECAR_PATH_RE.test(nameOrPath);
 }
 
+// iNNfo/packages/nn-core/src/address/grammar.ts
+var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+var SLUG = "[\\p{Ll}\\p{Lo}\\p{N}]+(?:-+[\\p{Ll}\\p{Lo}\\p{N}]+)*";
+var FIELD = "[\\p{L}\\p{N}]+(?:[-_][\\p{L}\\p{N}]+)*";
+var CONCEPT = "[\\p{L}\\p{N}]+(?:(?:[ _]|-+)[\\p{L}\\p{N}]+)*";
+var HEAD_RE = new RegExp(`^${HEAD}$`);
+var SLUG_RE = new RegExp(`^${SLUG}$`, "u");
+var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
+var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
+var RESERVED_HEAD = "specs";
+var BODY_MARKER = "#body";
+var CONCEPT_PREFIX = "concept:";
+var MATRIX_PREFIX = "matrix:";
+
+// iNNfo/packages/nn-core/src/address/parse.ts
+var GRAMMAR_HINT = "use `<hierarchical-id>@<slug>` (for example `series-a/episode-1@scene-1`)";
+var URL_RE = /^[a-z][a-z0-9+.-]*:\/\//i;
+var WINDOWS_ABSOLUTE_RE = /^[a-zA-Z]:[/\\]/;
+var LINE_ANCHOR_RE = /[#@]L\d+(-L\d+)?$/i;
+var SOURCE_EXTENSION_RE = /\.(md|csv|json)$/i;
+var CHANGES_STEM_RE = /_changes$/i;
+function malformed(segment, expected, removed) {
+  const shown = segment === "" ? "an empty segment" : `\`${segment}\``;
+  const error = {
+    kind: "error",
+    code: "ADDRESS_MALFORMED",
+    segment,
+    message: `Malformed address: ${shown} is not ${expected}; ${GRAMMAR_HINT}.`
+  };
+  return removed ? { ...error, removed } : error;
+}
+function removedForm(raw, form, shape) {
+  return {
+    kind: "error",
+    code: "ADDRESS_MALFORMED",
+    segment: raw,
+    removed: form,
+    message: `The ${form} \`${shape}\` is removed and is never resolved by title; ${GRAMMAR_HINT}.`
+  };
+}
+function parseSourceClass(path2, raw) {
+  const base = path2.slice(path2.lastIndexOf("/") + 1);
+  const parsed = parseName(base);
+  const sourcePrefix = path2.startsWith("sources/");
+  if (!sourcePrefix && parsed.kind === "nn" && parsed.sidecarOf === void 0) {
+    const isChangeset = CHANGES_STEM_RE.test(parsed.stem);
+    const role = roleOf({ path: base, parentSpecName: isChangeset ? "changes" : void 0 });
+    if (role === "changeset") {
+      return {
+        kind: "error",
+        code: "NN_DOCUMENT_CITED_BY_HEADING",
+        segment: raw,
+        message: `A changeset is not cited by heading (\`@## NN Change: <id>\` is removed); address a change by its model id and slug, ${GRAMMAR_HINT}.`
+      };
+    }
+    if (role === "knowledge") {
+      return {
+        kind: "error",
+        code: "MODEL_CITED_BY_PATH",
+        segment: path2,
+        message: `A model is not cited by file path (\`${path2}\`); ${GRAMMAR_HINT}.`
+      };
+    }
+  }
+  return { kind: "source", raw };
+}
+function parseModelId(part) {
+  const segments = part.split("/");
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    if (i === 0) {
+      if (!HEAD_RE.test(segment)) return malformed(segment, "a valid model-id head");
+    } else if (!SLUG_RE.test(segment)) {
+      return malformed(segment, "a lowercase slug");
+    }
+  }
+  return part;
+}
+function parseUnit(rest) {
+  const parts = rest.split("&");
+  const [head, second, third, ...extra] = parts;
+  if (extra.length > 0) return malformed(rest, "a unit with at most three parts");
+  if (head.startsWith(CONCEPT_PREFIX)) {
+    const concept = head.slice(CONCEPT_PREFIX.length);
+    if (!CONCEPT_RE.test(concept)) return malformed(head, "a concept name");
+    if (third !== void 0) return malformed(rest, "a concept unit with at most one field");
+    if (second === void 0) return { kind: "concept", concept };
+    if (!FIELD_RE.test(second)) return malformed(second, "a field name");
+    return { kind: "concept", concept, field: second };
+  }
+  if (head.startsWith(MATRIX_PREFIX)) {
+    const matrix = head.slice(MATRIX_PREFIX.length);
+    if (!SLUG_RE.test(matrix)) return malformed(head, "a matrix slug");
+    if (second !== void 0) return malformed(rest, "a matrix unit with no sub-unit");
+    return { kind: "matrix", matrix };
+  }
+  if (!SLUG_RE.test(head)) return malformed(head, "a lowercase slug");
+  if (second === void 0) return { kind: "element", slug: head };
+  if (third !== void 0) {
+    for (const segment of [second, third]) {
+      if (!SLUG_RE.test(segment)) return malformed(segment, "a lowercase slug");
+    }
+    return { kind: "cell", matrix: head, row: second, col: third };
+  }
+  if (second === BODY_MARKER) return { kind: "body", slug: head };
+  if (!FIELD_RE.test(second)) return malformed(second, "a field name");
+  return { kind: "element", slug: head, field: second };
+}
+function parseBlueprint(modelPart, rest) {
+  const family = modelPart.slice(RESERVED_HEAD.length + 1);
+  if (!HEAD_RE.test(family)) return malformed(family, "a blueprint family");
+  if (rest === null) return { kind: "blueprint", family, unit: null };
+  const unit = parseUnit(rest);
+  if ("code" in unit) return unit;
+  if (unit.kind !== "concept" && unit.kind !== "matrix") {
+    return malformed(rest, "a `concept:` or `matrix:` unit of a blueprint");
+  }
+  return { kind: "blueprint", family, unit };
+}
+function parseAddress(input) {
+  const raw = String(input ?? "").trim();
+  if (raw === "") return malformed("", "a value");
+  if (raw.startsWith("[[") || raw.endsWith("]]")) {
+    return raw.includes("::") ? removedForm(raw, "title-qualified reference", "[[Title :: Name]]") : removedForm(raw, "wikilink reference", "[[Name]]");
+  }
+  if (raw.includes(" :: ")) return removedForm(raw, "title-qualified reference", "[[Title :: Name]]");
+  if (URL_RE.test(raw) || raw.startsWith("/") || raw.startsWith("\\") || WINDOWS_ABSOLUTE_RE.test(raw)) {
+    return malformed(raw, "a model address (URLs and absolute paths are not addresses)");
+  }
+  if (LINE_ANCHOR_RE.test(raw)) return malformed(raw, "a model address (line anchors are not addresses)");
+  const at = raw.indexOf("@");
+  const modelPart = at === -1 ? raw : raw.slice(0, at);
+  const rest = at === -1 ? null : raw.slice(at + 1);
+  if (modelPart.includes("\\")) return malformed(modelPart, "a model id (path separators are not allowed)");
+  if (modelPart.split("/").includes("..")) return malformed("..", "a model-id segment");
+  if (SOURCE_EXTENSION_RE.test(modelPart)) return parseSourceClass(modelPart, raw);
+  if (modelPart === RESERVED_HEAD) {
+    return malformed(modelPart, "a model id (`specs` is reserved for blueprint addresses)");
+  }
+  if (modelPart.startsWith(`${RESERVED_HEAD}/`)) return parseBlueprint(modelPart, rest);
+  if (modelPart === "") {
+    if (rest === null || rest === "") return malformed("", "a unit after `@`");
+    const unit2 = parseUnit(rest);
+    return "code" in unit2 ? unit2 : { kind: "unit", model: null, unit: unit2 };
+  }
+  const model = parseModelId(modelPart);
+  if (typeof model !== "string") return model;
+  if (rest === null) return { kind: "model", model };
+  if (rest === "") return malformed("", "a unit after `@`");
+  const unit = parseUnit(rest);
+  return "code" in unit ? unit : { kind: "unit", model, unit };
+}
+
+// iNNfo/packages/nn-core/src/address/index.ts
+function isAddressError(value) {
+  return value.kind === "error";
+}
+
+// iNNfo/packages/nn-core/src/validator/crypto.ts
+function computeSha256(content) {
+  const utf8 = new TextEncoder().encode(content);
+  function rotr(n, x) {
+    return x >>> n | x << 32 - n;
+  }
+  const K = [
+    1116352408,
+    1899447441,
+    3049323471,
+    3921009573,
+    961987163,
+    1508970993,
+    2453635748,
+    2870763221,
+    3624381080,
+    310598401,
+    607225278,
+    1426881987,
+    1925078388,
+    2162078206,
+    2614888103,
+    3248222580,
+    3835390401,
+    4022224774,
+    264347078,
+    604807628,
+    770255983,
+    1249150122,
+    1555081692,
+    1996064986,
+    2554220882,
+    2821834349,
+    2952996808,
+    3210313671,
+    3336571891,
+    3584528711,
+    113926993,
+    338241895,
+    666307205,
+    773529912,
+    1294757372,
+    1396182291,
+    1695183700,
+    1986661051,
+    2177026350,
+    2456956037,
+    2730485921,
+    2820302411,
+    3259730800,
+    3345764771,
+    3516065817,
+    3600352804,
+    4094571909,
+    275423344,
+    430227734,
+    506948616,
+    659060556,
+    883997877,
+    958139571,
+    1322822218,
+    1537002063,
+    1747873779,
+    1955562222,
+    2024104815,
+    2227730452,
+    2361852424,
+    2428436474,
+    2756734187,
+    3204031479,
+    3329325298
+  ];
+  let H = [
+    1779033703,
+    3144134277,
+    1013904242,
+    2773480762,
+    1359893119,
+    2600822924,
+    528734635,
+    1541459225
+  ];
+  const len = utf8.length;
+  const bitLen = len * 8;
+  const padLen = (len + 8 >> 6 << 6) + 64;
+  const msg = new Uint8Array(padLen);
+  msg.set(utf8);
+  msg[len] = 128;
+  const view = new DataView(msg.buffer);
+  view.setUint32(padLen - 4, bitLen, false);
+  const W = new Int32Array(64);
+  for (let i = 0; i < padLen; i += 64) {
+    for (let t = 0; t < 16; t++) {
+      W[t] = view.getInt32(i + t * 4, false);
+    }
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotr(7, W[t - 15]) ^ rotr(18, W[t - 15]) ^ W[t - 15] >>> 3;
+      const s1 = rotr(17, W[t - 2]) ^ rotr(19, W[t - 2]) ^ W[t - 2] >>> 10;
+      W[t] = W[t - 16] + s0 + W[t - 7] + s1 | 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(6, e) ^ rotr(11, e) ^ rotr(25, e);
+      const ch = e & f ^ ~e & g;
+      const temp1 = h + S1 + ch + K[t] + W[t] | 0;
+      const S0 = rotr(2, a) ^ rotr(13, a) ^ rotr(22, a);
+      const maj = a & b ^ a & c ^ b & c;
+      const temp2 = S0 + maj | 0;
+      h = g;
+      g = f;
+      f = e;
+      e = d + temp1 | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = temp1 + temp2 | 0;
+    }
+    H = [
+      H[0] + a | 0,
+      H[1] + b | 0,
+      H[2] + c | 0,
+      H[3] + d | 0,
+      H[4] + e | 0,
+      H[5] + f | 0,
+      H[6] + g | 0,
+      H[7] + h | 0
+    ];
+  }
+  return H.map((x) => (x >>> 0).toString(16).padStart(8, "0")).join("");
+}
+
 // iNNfo/packages/nn-core/src/assertNever.ts
 function assertNever(value, context = "value") {
   throw new Error(`Unhandled ${context}: ${JSON.stringify(value)}`);
@@ -9304,20 +9693,39 @@ function resolveJsonPointer(content, pointer) {
 }
 
 // iNNfo/packages/nn-core/src/sourceRef.ts
-var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
-var MODEL_ID = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+var SLUG2 = "[a-z0-9]+(?:-[a-z0-9]+)*";
+var RETIRED_PREFIX_RE = /^(?:sources\/(?:nn|original|export)|export|models)\//;
+var SOURCE_FILE_RE = /\.(md|csv|json)$/i;
+var RAW_AREA_RE = /^sources\//;
+var REMOVED_PATH_FORMS = /* @__PURE__ */ new Set(["MODEL_CITED_BY_PATH", "NN_DOCUMENT_CITED_BY_HEADING"]);
+function malformedCitation(raw) {
+  return {
+    kind: "error",
+    code: "ADDRESS_MALFORMED",
+    segment: raw,
+    message: `Malformed citation \`${raw}\`; use \`<path>@<unit>\` for a raw file or \`<hierarchical-id>@<slug>\` for a kNNowledge unit.`
+  };
+}
+function removedPathForm(pathAndUnit) {
+  const at = pathAndUnit.indexOf("@");
+  const pathOnly = at === -1 ? pathAndUnit : pathAndUnit.slice(0, at);
+  const forward = pathOnly.split(/[/\\]/).join("/");
+  if (!SOURCE_FILE_RE.test(forward) || RETIRED_PREFIX_RE.test(forward)) return null;
+  const classified = parseAddress(at === -1 ? forward : forward + pathAndUnit.slice(at));
+  return isAddressError(classified) && REMOVED_PATH_FORMS.has(classified.code) ? classified : null;
+}
 function parseSourceRef(input) {
   if (!input || typeof input !== "string") return null;
   const clean = input.trim();
   if (/#L\d+(-L\d+)?$/i.test(clean)) return null;
   if (/^src-\d+/i.test(clean)) return null;
-  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG}))?$`));
+  const legacy = clean.match(new RegExp(`^([^#:]+?)(?:#(${SLUG2}))?$`));
   if (!legacy) return null;
   const resolved = resolveUnitPath(legacy[1]);
   if (!resolved) return null;
   return {
     filePath: resolved.filePath,
-    fileName: basename2(resolved.filePath),
+    fileName: basename(resolved.filePath),
     slug: legacy[2] || void 0,
     kind: resolved.kind,
     raw: clean
@@ -9343,12 +9751,12 @@ function parseCitation(input) {
   if (!resolved) return null;
   return {
     filePath: resolved.filePath,
-    fileName: basename2(resolved.filePath),
+    fileName: basename(resolved.filePath),
     kind: resolved.kind,
     raw: clean
   };
 }
-function basename2(p) {
+function basename(p) {
   return p.split(/[/\\]/).pop() || p;
 }
 function cleanSourceItem(v) {
@@ -9517,23 +9925,70 @@ function slugifyUnitHeading(level, text) {
 function normalizeName(name) {
   return nfc(name).trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_\-\p{L}\p{N}]+/gu, "");
 }
-function resolveUnitPath(rawPath) {
+function resolveUnitPathResult(rawPath) {
   const trimmed = rawPath.trim();
-  if (!trimmed || /^https?:\/\//i.test(trimmed)) return null;
-  const segments = trimmed.split(/[/\\]/);
-  if (segments.some((s) => s === "..")) return null;
+  const fail = () => ({ ok: false, error: malformedCitation(trimmed) });
+  const at = trimmed.indexOf("@");
+  const pathOnly = at === -1 ? trimmed : trimmed.slice(0, at);
+  if (!pathOnly || /^https?:\/\//i.test(pathOnly)) return fail();
+  const segments = pathOnly.split(/[/\\]/);
+  if (segments.some((s) => s === "..")) return fail();
   const forward = segments.join("/");
-  const isMd = /\.md$/i.test(forward);
-  const isCsv = /\.csv$/i.test(forward);
-  const isJson = /\.json$/i.test(forward);
-  if (!isMd && !isCsv && !isJson) {
-    if (new RegExp(`^${MODEL_ID}$`).test(trimmed)) {
-      return { filePath: trimmed, kind: "model" };
-    }
-    return null;
+  if (!SOURCE_FILE_RE.test(forward)) {
+    if (RAW_AREA_RE.test(forward)) return fail();
+    const address = parseAddress(pathOnly);
+    if (isAddressError(address)) return { ok: false, error: address };
+    return address.kind === "model" ? { ok: true, value: { filePath: pathOnly, kind: "model" } } : fail();
   }
-  if (/^[a-zA-Z]:[/\\]/.test(trimmed) || trimmed.startsWith("/")) return null;
-  return { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" };
+  if (/^[a-zA-Z]:[/\\]/.test(pathOnly) || pathOnly.startsWith("/")) return fail();
+  const removed = removedPathForm(trimmed);
+  if (removed) return { ok: false, error: removed };
+  return {
+    ok: true,
+    value: { filePath: forward, kind: roleOf({ path: forward }) === "knowledge" ? "model" : "source" }
+  };
+}
+function resolveUnitPath(rawPath) {
+  const result = resolveUnitPathResult(rawPath);
+  return result.ok ? result.value : null;
+}
+function parseModelUnitRef(raw) {
+  if (RAW_AREA_RE.test(raw)) return null;
+  const address = parseAddress(raw);
+  if (isAddressError(address) || address.kind !== "unit" || address.model === null) return null;
+  const { model, unit } = address;
+  const base = { filePath: model, fileName: basename(model), kind: "model", raw };
+  switch (unit.kind) {
+    case "element":
+      return {
+        ...base,
+        slug: unit.slug,
+        unit: { kind: "element", slug: unit.slug },
+        subunits: unit.field === void 0 ? [] : [unit.field]
+      };
+    case "body":
+      return { ...base, slug: unit.slug, unit: { kind: "element", slug: unit.slug }, subunits: ["#body"] };
+    case "cell":
+      return {
+        ...base,
+        slug: unit.matrix,
+        unit: { kind: "matrix", matrixSlug: unit.matrix, rowSlug: unit.row, colSlug: unit.col },
+        subunits: [unit.row, unit.col]
+      };
+    case "matrix":
+      return { ...base, slug: unit.matrix, unit: { kind: "matrix", matrixSlug: unit.matrix }, subunits: [] };
+    case "concept": {
+      const slug = slugifyHeading(unit.concept);
+      return {
+        ...base,
+        slug,
+        unit: { kind: "header", level: 1, text: slug, slug },
+        subunits: unit.field === void 0 ? [] : [unit.field]
+      };
+    }
+    default:
+      return assertNever(unit, "address unit kind");
+  }
 }
 function decodeSegment(segment) {
   try {
@@ -9549,7 +10004,7 @@ function parsePointerRef(resolved, rawPointer, raw) {
   if (pointer === null || !isJsonPointer(pointer)) return null;
   return {
     filePath: resolved.filePath,
-    fileName: basename2(resolved.filePath),
+    fileName: basename(resolved.filePath),
     kind: resolved.kind,
     unit: { kind: "pointer", pointer },
     subunits: [],
@@ -9561,6 +10016,7 @@ function parseKnowledgeUnitRef(input) {
   const clean = input.trim();
   const at = clean.indexOf("@");
   if (at === -1) return null;
+  if (!SOURCE_FILE_RE.test(clean.slice(0, at))) return parseModelUnitRef(clean);
   const resolved = resolveUnitPath(clean.slice(0, at));
   if (!resolved) return null;
   if (/\.json$/i.test(resolved.filePath)) return parsePointerRef(resolved, clean.slice(at + 1), clean);
@@ -9573,82 +10029,12 @@ function parseKnowledgeUnitRef(input) {
     decoded.push(text.trim());
   }
   const [unitRaw, ...subunits] = decoded;
-  if (!/\.(md|csv|json)$/i.test(resolved.filePath)) {
-    if (unitRaw.startsWith("concept:")) {
-      const slug = unitRaw.slice("concept:".length);
-      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-      const unit3 = {
-        kind: "header",
-        level: 1,
-        text: slug,
-        slug
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename2(resolved.filePath),
-        slug,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (unitRaw.startsWith("matrix:")) {
-      const slug = unitRaw.slice("matrix:".length);
-      if (!new RegExp(`^${SLUG}$`).test(slug)) return null;
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: slug,
-        ...subunits.length === 2 ? { rowSlug: subunits[0], colSlug: subunits[1] } : {}
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename2(resolved.filePath),
-        slug,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    if (!new RegExp(`^${SLUG}$`).test(unitRaw)) return null;
-    if (subunits.length === 2) {
-      const unit3 = {
-        kind: "matrix",
-        matrixSlug: unitRaw,
-        rowSlug: subunits[0],
-        colSlug: subunits[1]
-      };
-      return {
-        filePath: resolved.filePath,
-        fileName: basename2(resolved.filePath),
-        slug: unitRaw,
-        kind: "model",
-        unit: unit3,
-        subunits,
-        raw: clean
-      };
-    }
-    const unit2 = {
-      kind: "element",
-      slug: unitRaw
-    };
-    return {
-      filePath: resolved.filePath,
-      fileName: basename2(resolved.filePath),
-      slug: unitRaw,
-      kind: "model",
-      unit: unit2,
-      subunits,
-      raw: clean
-    };
-  }
   const isCsv = /\.csv$/i.test(resolved.filePath);
   if (isCsv) {
     if (resolved.kind === "model") return null;
     return {
       filePath: resolved.filePath,
-      fileName: basename2(resolved.filePath),
+      fileName: basename(resolved.filePath),
       kind: "source",
       unit: { kind: "row", id: unitRaw },
       subunits,
@@ -9667,7 +10053,7 @@ function parseKnowledgeUnitRef(input) {
   };
   return {
     filePath: resolved.filePath,
-    fileName: basename2(resolved.filePath),
+    fileName: basename(resolved.filePath),
     slug: headed.slug,
     kind: resolved.kind,
     unit,
@@ -9940,6 +10326,8 @@ var CHANGE_OPS = [
   "add_matrix",
   "comment",
   "add_model",
+  "move_model",
+  "extract_instance",
   "freeze_slugs",
   "bump_version",
   "update_element_text",
@@ -9960,14 +10348,64 @@ function addModelProblems(change) {
       problems.push(`change "${id}": add_model must not carry "${key}"`);
     }
   }
-  if (change.concept !== void 0 || change.fields !== void 0 || change.slug !== void 0) {
-    problems.push(`change "${id}": add_model must not carry element payload (concept, slug, fields)`);
+  if (change.fields !== void 0 || change.slug !== void 0) {
+    problems.push(`change "${id}": add_model must not carry element payload (slug, fields)`);
   }
   if (!change.blueprint_name) problems.push(`change "${id}": add_model requires "blueprint_name"`);
   if (!change.blueprint_url) problems.push(`change "${id}": add_model requires "blueprint_url"`);
   const target = change.target;
-  if (!target || target.includes("@") || target.includes("&") || target.includes("..") || /^[a-zA-Z]:/.test(target) || /[\\/]/.test(target)) {
-    problems.push(`change "${id}": add_model target must be a plain model id (no "@", "&", "..", path separators, or absolute path)`);
+  const hierarchical = typeof change.concept === "string" && change.concept.trim() !== "";
+  if (!target || target.includes("@") || target.includes("&") || target.includes("..") || /^[a-zA-Z]:/.test(target) || (hierarchical ? target.includes("\\") : /[\\/]/.test(target))) {
+    problems.push(
+      hierarchical ? `change "${id}": add_model target must be a hierarchical model id (no "@", "&", "..", backslashes, or absolute path)` : `change "${id}": add_model target must be a plain model id (no "@", "&", "..", path separators, or absolute path)`
+    );
+  }
+  return problems;
+}
+function moveModelProblems(change) {
+  if (change.op !== "move_model") return [];
+  const problems = [];
+  const id = change.id;
+  const bareModelId = (value) => value.length > 0 && !value.includes("@") && !value.includes("&") && !value.includes("\\") && !value.includes("..") && !/^[a-zA-Z]:/.test(value) && value !== ".";
+  const target = String(change.target ?? "").trim();
+  if (!target || !bareModelId(target) || target.startsWith("/")) {
+    problems.push(`change "${id}": move_model target must be the old instance model id`);
+  }
+  const to = String(change.to ?? "").trim();
+  if (!to) problems.push(`change "${id}": move_model requires "to" (the new instance model id)`);
+  else if (!bareModelId(to) || to.startsWith("/")) {
+    problems.push(`change "${id}": move_model "to" must be the new instance model id`);
+  }
+  return problems;
+}
+function extractInstanceProblems(change) {
+  if (change.op !== "extract_instance") return [];
+  const problems = [];
+  const id = change.id;
+  for (const key of ["from", "base_hash"]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": extract_instance must not carry "${key}"`);
+    }
+  }
+  if (change.fields !== void 0 || change.slug !== void 0) {
+    problems.push(`change "${id}": extract_instance must not carry element payload (slug, fields)`);
+  }
+  if (!change.blueprint_name) problems.push(`change "${id}": extract_instance requires "blueprint_name"`);
+  if (!change.blueprint_url) problems.push(`change "${id}": extract_instance requires "blueprint_url"`);
+  const target = String(change.target ?? "").trim();
+  const at = target.indexOf("@");
+  const modelPart = at === -1 ? target : target.slice(0, at);
+  const elementPart = at === -1 ? "" : target.slice(at + 1);
+  const unsafe = (value) => value.includes("&") || value.includes("\\") || value.includes("..") || /^[a-zA-Z]:/.test(value) || value.startsWith("/");
+  if (!modelPart || !elementPart || unsafe(modelPart) || unsafe(elementPart)) {
+    problems.push(
+      `change "${id}": extract_instance target must be the source element address (<compact-id>@<slug>)`
+    );
+  }
+  const to = String(change.to ?? "").trim();
+  if (!to) problems.push(`change "${id}": extract_instance requires "to" (the new instance model id)`);
+  else if (!to.includes("/") || unsafe(to)) {
+    problems.push(`change "${id}": extract_instance "to" must be a hierarchical instance model id`);
   }
   return problems;
 }
@@ -10168,6 +10606,11 @@ function parseChangeset(rawContent) {
         if (shas.length > 0) currentChange.evidence_sha256 = shas;
         break;
       }
+      case "extracted_slugs": {
+        const slugs = splitSourceFieldValue(rawVal);
+        if (slugs.length > 0) currentChange.extracted_slugs = slugs;
+        break;
+      }
       case "seed": {
         const parsedSeed = parseJsonObject(rawVal);
         if (parsedSeed) {
@@ -10190,6 +10633,14 @@ function parseChangeset(rawContent) {
   const problems = changes.flatMap(addModelProblems);
   if (problems.length > 0) {
     throw new Error(`Invalid add_model change: ${problems.join("; ")}`);
+  }
+  const moveProblems = changes.flatMap(moveModelProblems);
+  if (moveProblems.length > 0) {
+    throw new Error(`Invalid move_model change: ${moveProblems.join("; ")}`);
+  }
+  const extractProblems = changes.flatMap(extractInstanceProblems);
+  if (extractProblems.length > 0) {
+    throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
   }
   return {
     frontmatter,
@@ -10288,6 +10739,30 @@ function updateWikiLinks(text, oldName, newName) {
 }
 
 // iNNfo/packages/nn-core/src/changelog/fold.ts
+function rekeyKey(key, from, to, slugs) {
+  const at = key.indexOf("@");
+  const model = at === -1 ? key : key.slice(0, at);
+  const rest = at === -1 ? "" : key.slice(at);
+  let newModel;
+  if (model === from) newModel = to;
+  else if (model.startsWith(`${from}/`)) newModel = `${to}${model.slice(from.length)}`;
+  else return key;
+  if (at === -1) {
+    return slugs ? key : newModel;
+  }
+  if (slugs) {
+    const first = rest.slice(1).split("&")[0] ?? "";
+    const moved = slugs.some((slug) => slug.toLowerCase() === first.toLowerCase());
+    return moved ? `${newModel}${rest}` : key;
+  }
+  const oldSlug = from.split("/").pop() ?? "";
+  const newSlug = to.split("/").pop() ?? "";
+  if (oldSlug !== newSlug) {
+    const [first, ...others] = rest.slice(1).split("&");
+    if (first === oldSlug) return `${newModel}@${[newSlug, ...others].join("&")}`;
+  }
+  return `${newModel}${rest}`;
+}
 function canonicalValue2(raw) {
   if (raw === void 0 || raw === null) return "";
   const parsed = parsePropertyValue(String(raw));
@@ -10328,6 +10803,7 @@ function foldChanges(changes) {
   const epochs = /* @__PURE__ */ new Map();
   const elements = /* @__PURE__ */ new Map();
   const relinks = /* @__PURE__ */ new Map();
+  const rekeys = [];
   const addRelink = (model, from, to, order) => {
     if (!from || !to) return;
     const bucket = relinks.get(model);
@@ -10385,6 +10861,51 @@ function foldChanges(changes) {
         addRelink(model, oldName, newName, order);
         return;
       }
+      case "move_model":
+      case "extract_instance": {
+        const slugs = change.op === "extract_instance" ? change.extractedSlugs : void 0;
+        if (change.op === "extract_instance" && (!slugs || slugs.length === 0)) return;
+        const fromId = change.op === "extract_instance" ? change.target.split("@")[0].trim() : change.target;
+        const toId = change.to ?? "";
+        if (!fromId || !toId || fromId === toId) return;
+        const rekey = (key) => rekeyKey(key, fromId, toId, slugs);
+        const rekeyMap = (map, withKey) => {
+          for (const [key, value] of [...map]) {
+            const next = rekey(key);
+            if (next === key) continue;
+            map.delete(key);
+            map.set(next, withKey(value, next));
+          }
+        };
+        rekeyMap(units, (unit, key) => ({ ...unit, key }));
+        rekeyMap(epochs, (_value) => _value);
+        rekeyMap(elements, (_value) => _value);
+        for (const key of [...cleared]) {
+          const next = rekey(key);
+          if (next === key) continue;
+          cleared.delete(key);
+          cleared.add(next);
+        }
+        for (let i = 0; i < tombstones.length; i++) {
+          const tombstone = tombstones[i];
+          const target = rekey(tombstone.target);
+          if (target === tombstone.target) continue;
+          tombstones[i] = {
+            ...tombstone,
+            target,
+            ...tombstone.resolvedTarget !== void 0 ? { resolvedTarget: rekey(tombstone.resolvedTarget) } : {}
+          };
+        }
+        rekeys.push({
+          from: fromId,
+          to: toId,
+          order,
+          kind: change.op === "extract_instance" ? "extract" : "move",
+          change,
+          ...slugs ? { slugs } : {}
+        });
+        return;
+      }
       case "remove_element": {
         const { model, parts } = splitUnitKey(address);
         const key = elementKeyOf(address) || (parts[0] ? `${model}@${parts[0]}` : address);
@@ -10421,7 +10942,7 @@ function foldChanges(changes) {
         return;
     }
   });
-  return { units, cleared, tombstones, epochs, elements, relinks };
+  return { units, cleared, tombstones, epochs, elements, relinks, rekeys };
 }
 function applyRelinks(unit, relinks) {
   if (unit.kind === "cell" || unit.kind === "artifact") return unit.value;
@@ -10465,21 +10986,59 @@ var ChangeLogImpl = class {
   fold;
   constructor(changes) {
     this.all = [...changes].sort(compareChanges);
-    for (const change of this.all) {
-      if (!change.applied) continue;
-      const unit = unitOf(change);
+    this.fold = foldChanges(this.all);
+    this.all.forEach((change, order) => {
+      if (!change.applied) return;
+      const unit = this.forwardKey(unitOf(change), order);
       const bucket = this.byUnit.get(unit);
       if (bucket) bucket.push(change);
       else this.byUnit.set(unit, [change]);
-    }
-    this.fold = foldChanges(this.all);
+    });
   }
   /** Applied changes of a unit, cut at the latest add_element of its element. */
   history(unit) {
-    const bucket = this.byUnit.get(unit) ?? [];
-    const epoch = this.fold.epochs.get(elementKeyOf(unit));
+    const key = this.forwardKey(unit);
+    const bucket = this.byUnit.get(key) ?? [];
+    const epoch = this.fold.epochs.get(elementKeyOf(key));
     if (epoch === void 0) return bucket;
     return bucket.filter((change) => this.orderOf(change) > epoch);
+  }
+  identities(id) {
+    const former = [];
+    let current = id;
+    for (let i = this.fold.rekeys.length - 1; i >= 0; i--) {
+      const rekey = this.fold.rekeys[i];
+      if (rekey.kind === "extract") continue;
+      if (rekey.to !== current) continue;
+      former.push(rekey.from);
+      current = rekey.from;
+    }
+    return former.reverse();
+  }
+  successorOf(id) {
+    let current = id;
+    let moved = false;
+    for (const rekey of this.fold.rekeys) {
+      if (rekey.kind === "extract") continue;
+      if (current === rekey.from) current = rekey.to;
+      else if (current.startsWith(`${rekey.from}/`)) current = `${rekey.to}${current.slice(rekey.from.length)}`;
+      else continue;
+      moved = true;
+    }
+    return moved ? current : void 0;
+  }
+  /**
+   * Maps a unit key forward through the rekeys recorded AFTER `order` (all of
+   * them when `order` is omitted). The first move a unit predates re-keys it.
+   */
+  forwardKey(unit, order = -1) {
+    let key = unit;
+    for (const rekey of this.fold.rekeys) {
+      if (rekey.order < order) continue;
+      const next = rekeyKey(key, rekey.from, rekey.to, rekey.slugs);
+      if (next !== key) key = next;
+    }
+    return key;
   }
   origin(unit) {
     if (!this.fold.units.has(unit)) return void 0;
@@ -10537,6 +11096,9 @@ var ChangeLogImpl = class {
   get tombstones() {
     return this.fold.tombstones;
   }
+  get rekeys() {
+    return this.fold.rekeys;
+  }
   /** Canonical position of a change: its index in the sorted `all` list. */
   orderOf(change) {
     return this.orderIndex.get(change) ?? -1;
@@ -10573,11 +11135,15 @@ function loggedChanges(cs) {
       evidence: change.evidence,
       evidenceItems: splitEvidence(change.evidence),
       evidenceSha256: change.evidence_sha256,
+      extractedSlugs: change.extracted_slugs,
       from: change.from,
       to: change.to,
       concept: change.concept,
       name: change.name,
       slug: change.slug,
+      blueprintName: change.blueprint_name,
+      blueprintUrl: change.blueprint_url,
+      knowledgeVersion: change.knowledge_version,
       resolvedSlug: change.resolved_slug,
       notes: change.notes,
       resolution: change.resolution,
@@ -10738,7 +11304,8 @@ async function writeOnce(root, t, bytes, o = {}) {
 var EXECUTION_FACT_KEYS = [
   "resolved_slug",
   "resolved_target",
-  "evidence_sha256"
+  "evidence_sha256",
+  "extracted_slugs"
 ];
 
 // iNNfo/packages/nn-core/src/changeset/serializer.ts
@@ -11327,10 +11894,13 @@ function extractWikilinksFromValue(val) {
   }
   return [];
 }
-function normalizeModelId(filePath, fallbackTitle) {
-  if (!filePath) return fallbackTitle ? slugify(fallbackTitle) : "model";
-  const normalized = filePath.split("\\").join("/");
-  return displayStem(normalized.replace(/^.*?\/(kNNowledge|models)\//i, "$1/"));
+function standaloneModelId(filePath, fallbackTitle) {
+  if (filePath) {
+    const base = filePath.split(/[\\/]/).pop() ?? "";
+    const stem = displayStem(base);
+    if (stem) return stem;
+  }
+  return fallbackTitle ? slugify(fallbackTitle) : "model";
 }
 function buildConsolePayload(options) {
   const { content, path: modelPath, schema: inputSchema, resolver, changesets, generated } = options;
@@ -11340,17 +11910,8 @@ function buildConsolePayload(options) {
   const title = fm.title || fm.name || (modelPath ? displayStem(modelPath.split(/[/\\]/).pop() ?? "") : "Model") || "Model";
   const template = fm.target_blueprint || fm.blueprint || fm.template || void 0;
   const modelVersion = fm.knowledge_version || fm.version || "V_0-1-0";
-  const modelId = normalizeModelId(modelPath, title);
+  const modelId = options.modelId || standaloneModelId(modelPath, title);
   const changeLog = Array.isArray(changesets) && changesets.length > 0 ? buildChangeLogFromChangesets(changesets) : void 0;
-  const cellUnitBySuffix = /* @__PURE__ */ new Map();
-  if (changeLog) {
-    for (const unit of changeLog.units()) {
-      const at = unit.key.indexOf("@");
-      if (at === -1) continue;
-      const suffix = unit.key.slice(at + 1);
-      if (!cellUnitBySuffix.has(suffix)) cellUnitBySuffix.set(suffix, unit.key);
-    }
-  }
   const rawElements = [];
   const elementsByName = /* @__PURE__ */ new Map();
   const elementsById = /* @__PURE__ */ new Map();
@@ -11482,9 +12043,7 @@ function buildConsolePayload(options) {
         const matrixSlug = slugify(mat.name);
         for (const cell of mat.cells ?? []) {
           if (String(cell.value ?? "").trim() === "") continue;
-          const suffix = `${matrixSlug}&${headRows[cell.row]?.slug}&${headCols[cell.col]?.slug}`;
-          const unitKey = cellUnitBySuffix.get(suffix);
-          if (!unitKey) continue;
+          const unitKey = `${modelId}@${matrixSlug}&${headRows[cell.row]?.slug}&${headCols[cell.col]?.slug}`;
           const origin = changeLog.origin(unitKey);
           if (!origin) continue;
           cellProvenance ??= {};
@@ -11545,7 +12104,8 @@ function buildConsolePayload(options) {
     model: {
       meta,
       elements,
-      matrices
+      matrices,
+      ...options.collections ? { collections: options.collections } : {}
     }
   };
 }
@@ -11667,20 +12227,28 @@ function assertIdentifier(value, name) {
   }
   return trimmed;
 }
+var MODEL_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+function assertModelId(value, name) {
+  const id = assertIdentifier(value, name);
+  if (!id.split("/").every((segment) => MODEL_SEGMENT_RE.test(segment))) {
+    throw new TypeError(`unitAddress: ${name} "${id}" is not a hierarchical model id`);
+  }
+  return id;
+}
 var unitAddress = {
   domain() {
     return "domaiNN_NN.md";
   },
   document(modelId) {
-    return assertIdentifier(modelId, "modelId");
+    return assertModelId(modelId, "modelId");
   },
   section(modelId, conceptName) {
-    const m = assertIdentifier(modelId, "modelId");
+    const m = assertModelId(modelId, "modelId");
     const c = assertIdentifier(conceptName, "conceptName");
     return `${m}@concept:${slugifyHeading(c)}`;
   },
   element(modelId, elementSlug) {
-    const m = assertIdentifier(modelId, "modelId");
+    const m = assertModelId(modelId, "modelId");
     const s = assertIdentifier(elementSlug, "elementSlug");
     return `${m}@${s}`;
   },
@@ -11690,7 +12258,7 @@ var unitAddress = {
     return `${b}&${f}`;
   },
   cell(modelId, matrixSlug, rowSlug, colSlug) {
-    const m = assertIdentifier(modelId, "modelId");
+    const m = assertModelId(modelId, "modelId");
     const mat = assertIdentifier(matrixSlug, "matrixSlug");
     const r = assertIdentifier(rowSlug, "rowSlug");
     const c = assertIdentifier(colSlug, "colSlug");
@@ -11713,7 +12281,6 @@ var unitAddress = {
     return `specs/${f}@matrix:${mat}`;
   }
 };
-var MODEL_SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 function isValidModelPath(rawPath) {
   if (!rawPath || /^https?:\/\//i.test(rawPath) || /^[a-zA-Z]:[/\\]/.test(rawPath)) return false;
   if (rawPath.startsWith("/") || rawPath.startsWith("\\")) return false;
@@ -11920,7 +12487,6 @@ function unitHome(address) {
   isSidecarName,
   latestOfFamily,
   loadChangesetRecords,
-  normalizeModelId,
   normalizeToolId,
   parentSpecNameOf,
   parseChangesetTarget,
