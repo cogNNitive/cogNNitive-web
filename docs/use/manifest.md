@@ -79,44 +79,44 @@ agent-bootstrap:
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
     - name: changes
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/changes/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
     - name: sidecar
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/sidecar/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
     - name: sources
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
     - name: artifacts
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
     - name: procedures
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
     - name: blank
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
       version: "V_0-5-0"
-      ref: "blueprints-v0.53.0"
-      commit: "8f31aaa52e0b4348c3ffa3a8f238286056fca26a"
+      ref: "blueprints-v0.53.1"
+      commit: "925d489b90b3052c6ad74a31bcdcb3c87a55ee5a"
   console-assets:
     - file: iNNfo/specs/bluepriNNts/console/nn-console.bundle.js
       version: "0.33.0"
