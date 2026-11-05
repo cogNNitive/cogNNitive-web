@@ -8620,3 +8620,664 @@ input[type="text"], input[type="search"], textarea, select {
 }
 .nn-candidate-note { margin: 0 0 8px; font-size: 12px; opacity: 0.75; }
 .nn-visual-card.is-selected { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb inset; }
+
+/* ── Domain Console Files Section ─────────────────────────────────── */
+.nn-files-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.nn-files-view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.nn-files-view-toggle button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.nn-files-view-toggle button:hover {
+  color: var(--text);
+}
+
+.nn-files-view-toggle button.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.nn-files-stat-pill {
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.nn-files-view-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+
+.nn-files-split {
+  display: flex;
+  flex: 1;
+  min-height: 560px;
+}
+
+.nn-files-sidebar {
+  width: 320px;
+  min-width: 270px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 14px 10px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nn-files-detail {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--surface);
+}
+
+/* Category Tree */
+.nn-category-group {
+  margin-bottom: 8px;
+}
+
+.nn-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  user-select: none;
+  transition: background 0.12s ease;
+}
+
+.nn-category-header:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.nn-category-header-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nn-category-header .chevron {
+  display: inline-flex;
+  transition: transform 0.15s ease;
+  font-size: 0.7rem;
+}
+
+.nn-category-header.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+
+.nn-category-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.nn-category-tree {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nn-category-tree.collapsed {
+  display: none;
+}
+
+.nn-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.nn-file-row:hover {
+  background: var(--surface-2);
+}
+
+.nn-file-row.active {
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.nn-file-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+
+.nn-file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nn-file-size {
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.nn-badge-warning {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warning) 16%, var(--surface));
+  color: var(--warning);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--surface));
+}
+
+.nn-tree-depth-0 { padding-left: 8px; }
+.nn-tree-depth-1 { padding-left: 20px; }
+.nn-tree-depth-2 { padding-left: 32px; }
+.nn-tree-depth-3 { padding-left: 44px; }
+.nn-tree-depth-4 { padding-left: 56px; }
+
+/* Workspace Dashboard */
+.nn-files-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.nn-files-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.nn-kpi-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.nn-kpi-card .kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.nn-kpi-card .kpi-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.nn-kpi-card .kpi-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.nn-storage-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nn-storage-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.nn-storage-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.nn-storage-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.nn-storage-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nn-storage-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.nn-watch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.nn-watch-table th,
+.nn-watch-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.nn-watch-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.nn-watch-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.nn-watch-status-dot.active { background: #10b981; }
+.nn-watch-status-dot.idle { background: #f59e0b; }
+.nn-watch-status-dot.offline { background: #ef4444; }
+
+.nn-files-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nn-integrity-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, var(--surface));
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+/* File Detail Card */
+.nn-file-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.nn-file-detail-breadcrumb {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nn-file-detail-breadcrumb a {
+  color: var(--link);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.nn-file-detail-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.nn-file-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.nn-file-detail-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.nn-file-detail-path {
+  font-size: 0.82rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.nn-file-attrs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.nn-file-attr {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nn-file-attr-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.nn-file-attr-value {
+  font-size: 0.82rem;
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.nn-hash-copy {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nn-hash-copy:hover {
+  color: var(--primary);
+}
+
+.nn-lineage-tier {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.nn-lineage-tier-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.nn-lineage-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 5-Stage Pipeline Flow */
+.nn-files-pipeline {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 16px 8px;
+  min-height: 520px;
+}
+
+.nn-pipeline-stage {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+
+.nn-pipeline-stage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.nn-pipeline-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.nn-pipeline-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nn-pipeline-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.nn-pipeline-card.nn-pipeline-highlight {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.nn-pipeline-card.dimmed {
+  opacity: 0.25;
+  filter: grayscale(0.8);
+}
+
+.nn-pipeline-card-name {
+  display: block;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nn-pipeline-card-sub {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* Native Modal File Preview Dialog */
+#nn-file-preview-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: min(960px, 94vw);
+  width: 100%;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+#nn-file-preview-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+#nn-file-preview-dialog .nn-modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 88vh;
+}
+
+#nn-file-preview-dialog .nn-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+#nn-file-preview-dialog .nn-modal-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#nn-file-preview-dialog .nn-modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+#nn-file-preview-dialog .nn-file-preview-size {
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+#nn-file-preview-dialog .nn-modal-close {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  width: 28px;
+  height: 28px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#nn-file-preview-dialog .nn-modal-close:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+#nn-file-preview-dialog .nn-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+#nn-file-preview-dialog .nn-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+pre.nn-file-preview-code {
+  margin: 0;
+  padding: 16px;
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  overflow: auto;
+  max-height: 60vh;
+  border-radius: var(--radius-sm);
+  white-space: pre;
+}
+
+.nn-file-preview-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 60vh;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.nn-file-preview-image img {
+  max-width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+}
+
+.nn-file-binary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+

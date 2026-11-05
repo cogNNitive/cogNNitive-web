@@ -39,7 +39,7 @@ The catalog below is generated from `manifest/source.yaml`, so it lists exactly 
 | [`nn-sources`](nn-sources.md) | `V_3-5-4` | Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync. |
 | [`nn-innfo`](nn-innfo.md) | `V_0-5-13` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
 | [`nn-preflight`](nn-preflight.md) | `V_0-2-5` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
-| [`nn-upgrade`](nn-upgrade.md) | `V_0-4-2` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
+| [`nn-update`](nn-update.md) | `V_0-4-2` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
 | [`nn-site-generator`](nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
 | [`nn-design-presets`](nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
 | [`nn-skills-lifecycle`](nn-skills-lifecycle.md) | `V_1-3-1` | Audit, update, and maintain cogNNitive skills. |

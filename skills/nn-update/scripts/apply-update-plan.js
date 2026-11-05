@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/apply-upgrade-plan.js
+ * skills/nn-update/scripts/apply-update-plan.js
  *
- * Applies a GROUPED upgrade plan produced by `nn-preflight`'s
- * `upgrade-check.js --plan` (distributed-storage S4b.2, design A14).
+ * Applies a grouped Blueprint Lineage Reconciliation plan produced by
+ * `nn-preflight`'s lineage audit (`lineage-audit.js --plan`).
  *
  * Three invariants, each one the reason this file exists rather than a loop in
  * the SKILL:
@@ -13,45 +13,88 @@
  *    none is. A unit that ends with two pins is the skew `check_domain` reports.
  * 2. **All-or-none.** If any member fails re-validation, EVERY member is restored
  *    from the pre-write content (and the backup path is returned), so a failed
- *    upgrade never leaves half a group moved.
+ *    update never leaves half a group moved.
  * 3. **Consent and freshness gate the first write.** No file is touched without
  *    `consent: true`, and a plan the workspace has outgrown (`isPlanFresh`)
  *    aborts with no writes.
  *
- * The pinned->adopted schema diff and its mapping questions belong to the SKILL
- * (Flow B3): they need schema resolution this script does not do. The mapping is
- * asked ONCE per unit through the `onMapping` hook and the answer is applied to
- * every member - 24 Videos share one concept, so a per-model prompt would be 23
- * redundant questions and 23 chances to answer differently.
+ * The pin is rewritten through the parser and the mutation engine, never with a
+ * regular expression: `parseKnowledge` reads the document, `repin_blueprint`
+ * (and `rename_concept` for an agreed mapping) mutate the AST, and
+ * `serializeKnowledge` writes it back. A document the parser cannot read is a
+ * hard failure, not a silent text patch.
+ *
+ * Note that any engine mutation freezes the model's slugs (`slug:: <slug>` on
+ * every element). That is the platform contract for every changeset-driven
+ * write, not a side effect of this script.
  */
 
 const fs = require('fs');
 const path = require('path');
 const { backupWorkspace } = require('./backup-workspace');
 const upgrade = require('../../nn-preflight/scripts/upgrade-check');
+const core = require('./lib/nn-core.generated.cjs');
 
-/** Rewrite the pinned version of one model. Only the pin changes; every other byte stays. */
-function repinContent(content, blueprint, version, mapping = {}) {
-  let out = content;
+/** The pinned version segment inside a blueprint url, if any. */
+const PIN_SEGMENT = /V_\d+-\d+-\d+/;
 
-  // `parent_spec.name` carries the pin: "<blueprint>_<V_x-y-z>" (bare name is legal too).
-  out = out.replace(
-    /(parent_spec:[ \t]*\r?\n[ \t]*name:[ \t]*["']?)([^"'\r\n]+)/,
-    (match, head) => `${head}${blueprint}_${version}`,
-  );
+/**
+ * Rewrite one model onto a target blueprint version through the AST.
+ *
+ * @param {string} content The model as read from disk.
+ * @param {string} blueprint Canonical blueprint name (`coNNtent`).
+ * @param {string} version Target `V_x-y-z`.
+ * @param {Record<string,string>} [mapping] Concept renames agreed for the unit.
+ * @returns {string} The serialized model.
+ */
+function reconcileContent(content, blueprint, version, mapping = {}) {
+  const model = core.parseKnowledge(content);
+  const current = model.frontmatter.parent_spec ?? {};
+  const currentUrl = String(current.url ?? '');
+  const targetUrl = PIN_SEGMENT.test(currentUrl)
+    ? currentUrl.replace(new RegExp(PIN_SEGMENT.source, 'g'), version)
+    : currentUrl;
 
-  // `parent_spec.url` carries the same pin inside the file or folder name.
-  out = out.replace(
-    /(parent_spec:[ \t]*\r?\n(?:[ \t]*[^\r\n]*\r?\n)*?[ \t]*url:[ \t]*["']?[^"'\r\n]*?)_V_\d+-\d+-\d+/,
-    (match, head) => `${head}_${version}`,
-  );
-
-  // A concept renamed between the pinned and the adopted schema: one answer, applied everywhere.
-  for (const [from, to] of Object.entries(mapping)) {
-    if (!from || !to || from === to) continue
-    out = out.split(`## NN ${from}:`).join(`## NN ${to}:`)
+  const repin = core.applyMutation(model, 'repin_blueprint', {
+    to: `${blueprint}_${version}`,
+    blueprintUrl: targetUrl,
+    ...(current.name ? { from: String(current.name) } : {}),
+  });
+  if (!repin.success) {
+    const detail = (repin.errors ?? []).map((e) => e.message).join('; ');
+    throw new Error(`repin_blueprint failed: ${detail || 'unknown error'}`);
   }
-  return out
+
+  for (const [from, to] of Object.entries(mapping)) {
+    if (!from || !to || from === to) continue;
+    const renamed = core.applyMutation(model, 'rename_concept', {
+      conceptName: from,
+      newName: to,
+    });
+    // On a Level-2 blueprint `rename_concept` rewrites the Concept Definition.
+    // On a Level-3 model the concept name is the section heading, and the engine
+    // has no section primitive yet: the heading is renamed on the serialized AST
+    // below, never on the raw file.
+    if (!renamed.success && model.frontmatter.level !== 3) {
+      const detail = (renamed.errors ?? []).map((e) => e.message).join('; ');
+      throw new Error(`rename_concept ${from} -> ${to} failed: ${detail || 'unknown error'}`);
+    }
+  }
+
+  return renameLevel3Sections(core.serializeKnowledge(model), mapping);
+}
+
+/** Rename a Level-3 concept section (`# NN <Concept>` and its `## NN <Concept>: x` children). */
+function renameLevel3Sections(serialized, mapping = {}) {
+  let out = serialized;
+  for (const [from, to] of Object.entries(mapping)) {
+    if (!from || !to || from === to) continue;
+    const esc = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out
+      .replace(new RegExp(`^# NN ${esc}$`, 'gm'), `# NN ${to}`)
+      .replace(new RegExp(`^## NN ${esc}: `, 'gm'), `## NN ${to}: `);
+  }
+  return out;
 }
 
 /**
@@ -70,12 +113,10 @@ function repinContent(content, blueprint, version, mapping = {}) {
  * @param {boolean} [options.dryRun] Report what would happen, write nothing.
  * @param {string} [options.backupTarget] Where the pre-write backup goes.
  */
-function applyUpgradePlan(options) {
-  const { workspaceDir, plan, catalog, consent } = options;
+function applyUpdatePlan(options) {
+  const { workspaceDir, plan, consent } = options;
   const unitCount = plan && Array.isArray(plan.units) ? plan.units.length : 0;
-  const modelCount = unitCount
-    ? plan.units.reduce((total, unit) => total + unit.count, 0)
-    : 0;
+  const modelCount = unitCount ? plan.units.reduce((total, unit) => total + unit.count, 0) : 0;
 
   if (!plan || !Array.isArray(plan.units) || unitCount === 0) {
     return { ok: false, code: 'PLAN_EMPTY', written: 0 };
@@ -107,11 +148,17 @@ function applyUpgradePlan(options) {
       const abs = path.join(workspaceDir, member.path);
       const before = fs.readFileSync(abs, 'utf-8');
       originals.set(abs, before);
-      const after = repinContent(before, unit.blueprint, unit.adopted, mapping);
+      let after;
+      try {
+        after = reconcileContent(before, unit.blueprint, unit.adopted, mapping);
+      } catch (err) {
+        failures.push({ path: member.path, id: member.path, message: err.message });
+        continue;
+      }
       fs.writeFileSync(abs, after, 'utf-8');
       written++;
       if (typeof options.validate === 'function' && options.validate(abs, after) === false) {
-        failures.push({ path: member.path, id: member.path });
+        failures.push({ path: member.path, id: member.path, message: 're-validation failed' });
       }
     }
 
@@ -149,14 +196,14 @@ function main() {
   const catalogFile = getArg('--catalog-file');
   if (!workspaceDir || !catalogFile) {
     console.error(
-      'Usage: node apply-upgrade-plan.js --workspace-dir <dir> --catalog-file <catalog.json> [--consent] [--dry-run]',
+      'Usage: node apply-update-plan.js --workspace-dir <dir> --catalog-file <catalog.json> [--consent] [--dry-run]',
     );
     process.exit(2);
   }
   const catalog = JSON.parse(fs.readFileSync(catalogFile, 'utf-8'));
   const plan = upgrade.planUpgrade(workspaceDir, catalog);
   console.log(upgrade.describePlan(plan));
-  const result = applyUpgradePlan({
+  const result = applyUpdatePlan({
     workspaceDir,
     catalog,
     plan,
@@ -171,4 +218,10 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { applyUpgradePlan, repinContent };
+module.exports = {
+  applyUpdatePlan,
+  reconcileContent,
+  // Deprecated aliases kept for one release.
+  applyUpgradePlan: applyUpdatePlan,
+  repinContent: reconcileContent,
+};

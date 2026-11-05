@@ -81,7 +81,7 @@ each document's pinned `parent_spec` against the catalog's adopted version: `cur
 
 Available upgrades are **informational** — they never flip the exit code to a blocker. If the
 catalog is unreachable, the scan degrades to a non-blocking `offline` notice. Migration is handled
-by [nn-upgrade](nn-upgrade.md), never by preflight.
+by [nn-update](nn-update.md), never by preflight.
 
 ## Report format
 
@@ -100,6 +100,6 @@ instead — see [nn-skills-lifecycle](nn-skills-lifecycle.md).
 ## See also
 
 - [nn](nn.md) — the front controller and sole gate owner per session.
-- [nn-upgrade](nn-upgrade.md) — the owner of the upgrade flow Tier 3 detects.
+- [nn-update](nn-update.md) — the owner of the upgrade flow Tier 3 detects.
 - [nn-skills-lifecycle](nn-skills-lifecycle.md) — manifest-pinned install and update.
 - [Install and connect an AI agent](../how-to/install-agent.md) — the setup this gate verifies.

@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-5-0"
+  name: "procedures_V_0-5-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-3-0"
 title: "Ingest Visual Catalog Procedure"
@@ -171,7 +171,7 @@ description:: Deterministic validation of the catalogue (`validate_knowledge`) a
 
 ## NN Artifact: Raw Visual Sources
 type:: input
-description:: The raw image files staged in sources/import/ (or sources/original/).
+description:: The raw image files staged in sources/import/ .
 
 ## NN Artifact: Normalized Source
 type:: intermediate

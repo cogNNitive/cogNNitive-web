@@ -3,9 +3,9 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-4-0"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
+blueprint_version: "V_0-4-2"
 title: "Analysis App"
 procedures:
   - id: "run-coherence-audit"
@@ -370,6 +370,17 @@ Actionable improvement proposals and strategic recommendations resulting from th
 ### Description
 Suggestions are concrete improvement proposals identified during the model analysis phase. They target operational bottlenecks, value proposition enhancements, or cost optimizations to increase business model resilience.
 
+### Methodologies
+
+- Derive each suggestion from an observed bottleneck or a rejected hypothesis, never from intuition alone.
+- Rank by impact times feasibility, and drop anything the Current situation section cannot justify.
+- Write one suggestion per Problem it addresses, so the traceability stays readable.
+
+### Prompts
+
+- List the bottlenecks in <business model> and propose one suggestion per bottleneck.
+- Score each suggestion by impact and feasibility, and drop the ones below the cut.
+
 ## Keys
 
 ### Summary
@@ -377,6 +388,17 @@ Key success factors, critical capabilities, and core competencies required for b
 
 ### Description
 Keys represent the critical capabilities, resources, and operational milestones that determine the success or failure of the venture. They serve as leading indicators of strategic performance.
+
+### Methodologies
+
+- Derive keys from the value proposition and the customer segments, not from a generic industry list.
+- State each key as a capability the venture must own or acquire, with an observable indicator.
+- Drop any key that duplicates a Strength or a Resource already modelled elsewhere.
+
+### Prompts
+
+- What must this venture be able to do to deliver its value proposition? Turn each answer into a Key.
+- For each Key, name the indicator that would show it is missing.
 
 ## Coherence
 
@@ -435,3 +457,20 @@ Growth Hacking is a marketing strategy that focuses on rapid experimentation acr
 `What metrics will measure experiment success, and how will we collect the data?`
 `How should we iterate on the experiment based on initial results?`
 
+
+## Validation
+
+### Summary
+Evidence that the analysis holds: the tests, interviews and measurements behind each claim.
+
+### Description
+Validation records what was checked, how, and what it showed. It is the difference between an analysis and an opinion: a claim with no validation entry stays a hypothesis, and the console can render both without confusing them.
+
+### Methodologies
+- Pair every Key and Suggestion with at least one validation entry, or mark it a hypothesis.
+- Record the method (interview, experiment, desk research) and the sample size.
+- Prefer a falsifying test over a confirming one.
+
+### Prompts
+- Which claims in this analysis have no validation behind them?
+- Propose the cheapest test that would falsify <claim>.

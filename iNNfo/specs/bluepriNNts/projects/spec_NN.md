@@ -3,9 +3,9 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-4-0"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
+blueprint_version: "V_0-4-3"
 title: "Projects App"
 procedures:
   - id: "calculate-critical-path"
@@ -153,6 +153,11 @@ type:: string
 ## NN Field Definition: end_date
 concept:: Phases
 type:: string
+
+## NN Field Definition: order
+concept:: Phases
+type:: number
+description:: Position of the phase inside the project's sequence. Reorder by updating it with one update_field change per phase in the same changeset.
 
 ## NN Field Definition: impact
 concept:: Risk
@@ -353,6 +358,17 @@ Overall vision, objective, and executive summary of the project.
 ### Description
 The Project concept is the root container for defining strategic goals, project scope, budget constraints, and overall success metrics for a business or technical initiative.
 
+### Methodologies
+
+- Anchor the project in the milestone it must reach, not in the deliverables it produces.
+- Keep the scope statement to one paragraph; every added clause is a change request.
+- Re-derive the budget and the success metrics whenever a milestone moves.
+
+### Prompts
+
+- State the outcome this project must reach and the date it must reach it.
+- Which deliverable could be dropped without endangering the outcome?
+
 ## Phases
 
 ### Summary
@@ -360,6 +376,18 @@ The distinct, ordered stages a project moves through — from framing to close-o
 
 ### Description
 Phases break the project lifecycle into a sequence of stages that structure planning, execution, and control. Typical stages are Initiation, Planning, Implementation, Verification, and Close-out. Phases are ordered (`type:: sequence`); a project advances through them, and Milestone checkpoints are typically anchored inside a phase. Use `phase_status`, `start_date`, and `end_date` to track each stage.
+
+### Methodologies
+
+- Name phases after the decision they end, not after the work they contain.
+- Give every phase an entrance and an exit criterion.
+- Avoid more than seven phases; merge the ones that share a criterion.
+- Order the phases with the `order` field. To reorder, emit one `update_field` per changed phase in the same changeset (`<model>@<phase>&order`), never a direct file edit: the changeset is what makes the reorder atomic and recorded.
+
+### Prompts
+
+- What decision marks the end of this phase?
+- Is any phase missing an exit criterion?
 
 ## Milestone
 
@@ -369,6 +397,17 @@ Key date checkpoints and gates marking significant progress points in the projec
 ### Description
 A Milestone marks a zero-duration checkpoint or critical decision gate in the project timeline. Used to evaluate progress, unlock phase transitions, and verify major deliverable completion.
 
+### Methodologies
+
+- Tie each milestone to a verifiable artifact, not to a feeling of progress.
+- Place milestones at phase boundaries.
+- Keep the date and the acceptance criterion in the same element.
+
+### Prompts
+
+- What artifact proves this milestone is reached?
+- Which milestone is at risk, and what would recover it?
+
 ## Deliverable
 
 ### Summary
@@ -376,6 +415,17 @@ Specific artifacts or outcomes that must be completed to achieve project goals.
 
 ### Description
 A Deliverable is a tangible output, document, software build, or physical asset created by project tasks and verified against acceptance criteria before project sign-off.
+
+### Methodologies
+
+- Describe a deliverable by what a reviewer can check, never by the effort it took.
+- Map each deliverable to the milestone that consumes it.
+- Split anything that cannot be accepted or rejected in one review.
+
+### Prompts
+
+- How would a reviewer accept or reject this deliverable?
+- Which milestone does this deliverable unblock?
 
 ## Task
 
@@ -385,6 +435,17 @@ Actionable work units with priorities, durations, and dependency sequences.
 ### Description
 A Task represents an individual unit of work performed by project roles. Tasks use `depends_on` and `duration` to construct task dependency networks for Critical Path Method (CPM) calculations and Gantt timeline visualization.
 
+### Methodologies
+
+- Size a task so one person can finish it without re-planning.
+- Give every task an owner and a definition of done.
+- Attach tasks to a deliverable, never directly to the project.
+
+### Prompts
+
+- Break this deliverable into tasks one person can finish.
+- Which task has no owner?
+
 ## Risk
 
 ### Summary
@@ -393,6 +454,17 @@ Uncertain events that could negatively affect project goals, including probabili
 ### Description
 A Risk identifies potential threats to schedule, budget, quality, or scope. Each Risk records `impact`, `probability`, and `mitigation` strategies, and maps to Milestones via the risks-milestones matrix.
 
+### Methodologies
+
+- State each risk as a cause, an event and an impact, in that order.
+- Record the mitigation and the trigger that activates it.
+- Re-score risks when a phase closes.
+
+### Prompts
+
+- What would have to happen for this project to fail?
+- What is the earliest signal that this risk is materializing?
+
 ## Project roles
 
 ### Summary
@@ -400,3 +472,14 @@ Functional responsibilities and team positions mapped to tasks via RACI.
 
 ### Description
 Project roles define the functional actors participating in project execution. Roles carry an internal or external `scope` and are assigned to tasks through the task-roles matrix (Responsible, Accountable, Consulted, Informed).
+
+### Methodologies
+
+- Name the decision each role owns, not the activities it performs.
+- Keep one accountable role per decision.
+- Record the escalation path for each role.
+
+### Prompts
+
+- Who decides <decision>, and who is consulted?
+- Which role currently has no accountable owner?

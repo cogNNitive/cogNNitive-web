@@ -115,7 +115,7 @@ is no record to regenerate and no drift check to run; `--check-impact` audits ci
 
 Domains created before cognitivize-in-place used a mirrored normalized tree and snapshot archive.
 The runtime never reads or writes those folders, and such a domain is not migrated in place.
-Create a new domain and import the old one as a source with [nn-upgrade](nn-upgrade.md).
+Create a new domain and import the old one as a source with [nn-update](nn-update.md).
 
 ## See also
 

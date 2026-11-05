@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-7-0"
+blueprint_version: "V_0-8-1"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -37,7 +37,7 @@ description:: Open vocabulary ad-hoc tags and classification labels.
 ## NN Field Definition: op
 concept:: Change
 type:: select
-options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact]
+options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default]
 description:: Mutation or review operation.
 
 ## NN Field Definition: target
@@ -166,9 +166,13 @@ Every graph mutation in cogNNitive is represented as a structured changeset docu
 A changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.
 
 Each change is declared as an element of concept Change:
-- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact.
+- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default.
 - update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.
+- rename_element: Changes one element's display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element's slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.
 - produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.
+- repin_blueprint: Moves a model's parent_spec (name and url) and its blueprint_version pin to a target bluepriNNt version. target is the bare model id, to is the target parent_spec.name, blueprint_url is the target url, and from is an optional precondition on the current parent_spec.name. It is the only supported way to repoint a model: patching frontmatter text is not a change and leaves no record. A stale from is MUTATION_FAILED.
+- rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.
+- set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.
 - add_element: Creates an element with its concept, name and optional explicit slug only. It carries no inline field values: each field is set afterwards by its own update_field change with its own evidence (no from, because the field does not exist yet). notes is rationale, never prose.
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.
@@ -198,7 +202,7 @@ level: 3
 parent_spec:
   name: changes
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
-blueprint_version: "V_0-7-0"
+blueprint_version: "V_0-8-1"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

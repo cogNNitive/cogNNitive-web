@@ -89,7 +89,7 @@ no line-number ranges, and never a `staging/` target.
    declared `placement`. A folder alone never makes a concept distributed.
 4. **One bluepriNNt version per bluepriNNt.** A domaiNN that pins a bluepriNNt at
    several versions fails `check_domain` with `BLUEPRINT_VERSION_SKEW`. Fix it
-   with `nn-upgrade`, whose unit is the whole bluepriNNt group: it repins and
+   with `nn-update`, whose unit is the whole bluepriNNt group: it repins and
    re-validates every member, or none.
 5. **Instance lifecycle.** Create with `add_model` and an explicit `concept::`
    (container first); rename or move with `move_model`, retargeting every
@@ -155,7 +155,7 @@ Every project workspace MUST adhere to the following structure:
 > **No root `index.md`**: the workspace root index was retired (#225). The parser never read it as an entrypoint, and the canonical index is the `# NN kNNowledge` block inside `domaiNN_NN.md`. `nn-sources` no longer writes a root `index.md`.
 
 
-**Cognitivize in place.** Folders are write destinations; a file's role comes from its name. There is no mirror tree: the scanner (`--scan`) walks `sources/import/` and `sources/conversations/` recursively, and for every raw file without an up-to-date sidecar it writes a co-located `<file>.<ext>_sidecar_NN.md` through the one core operation `cognitivize` (the same one behind `--cognitivize <file|dir>` and the MCP `cognitivize` tool). The raw file is never moved, renamed or rewritten. Change detection uses the sha256 of the raw bytes recorded in the sidecar: when the bytes change, `--scan` refreshes the sidecar in place (no snapshot is taken), and the downstream `[IMPACT WARNING]` audit runs. Imports (`--import-url`, `--scan-external`) and conversation promotion are write-once: they never overwrite, a changed external file lands as a new UTC-suffixed family member (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`) and identical bytes are deduplicated. Files you drop into `sources/import/` by hand keep their names (unsuffixed family members). Retired layouts (the old normalized mirror, archive, export and original folders) are never read or written by the runtime; an old domaiNN is upgraded with `nn-upgrade` (see §2i). When a raw file disappears from disk, its sidecar is reported as an orphan warning and preserved; nothing is deleted without explicit user consent (`--unlink`, `--gc`), and a non-interactive `--scan` never mutates anything (Zero Unilateral Mutation).
+**Cognitivize in place.** Folders are write destinations; a file's role comes from its name. There is no mirror tree: the scanner (`--scan`) walks `sources/import/` and `sources/conversations/` recursively, and for every raw file without an up-to-date sidecar it writes a co-located `<file>.<ext>_sidecar_NN.md` through the one core operation `cognitivize` (the same one behind `--cognitivize <file|dir>` and the MCP `cognitivize` tool). The raw file is never moved, renamed or rewritten. Change detection uses the sha256 of the raw bytes recorded in the sidecar: when the bytes change, `--scan` refreshes the sidecar in place (no snapshot is taken), and the downstream `[IMPACT WARNING]` audit runs. Imports (`--import-url`, `--scan-external`) and conversation promotion are write-once: they never overwrite, a changed external file lands as a new UTC-suffixed family member (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`) and identical bytes are deduplicated. Files you drop into `sources/import/` by hand keep their names (unsuffixed family members). Retired layouts (the old normalized mirror, archive, export and original folders) are never read or written by the runtime; an old domaiNN is upgraded with `nn-update` (see §2i). When a raw file disappears from disk, its sidecar is reported as an orphan warning and preserved; nothing is deleted without explicit user consent (`--unlink`, `--gc`), and a non-interactive `--scan` never mutates anything (Zero Unilateral Mutation).
 
 Then run:
 ```bash
@@ -524,10 +524,10 @@ When a user requests to remove, delete, or unlink a source completely from the w
 
 #### 2i. Replacing a Domain Created with the Retired Layout
 
-Domains created before cognitivize-in-place used a mirrored normalized tree and a snapshot archive under `sources/`, plus separate `original` and `export` folders (and a root `export/` folder for deliverables). The runtime of this skill never reads or writes those folders. Such a domain is not migrated in place. Create a new domain and import the old one as a Source with `nn-upgrade`:
+Domains created before cognitivize-in-place used a mirrored normalized tree and a snapshot archive under `sources/`, plus separate `original` and `export` folders (and a root `export/` folder for deliverables). The runtime of this skill never reads or writes those folders. Such a domain is not migrated in place. Create a new domain and import the old one as a Source with `nn-update`:
 
 ```bash
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir "<old-domain>" --import-as-source --new-domain-dir "<new-domain>"
+node skills/nn-update/scripts/migrate-domain.js --domain-dir "<old-domain>" --import-as-source --new-domain-dir "<new-domain>"
 ```
 
 - The old tree is copied byte-identically under the new domain's `sources/`; the old directory is never modified, and nothing the user wrote is deleted.

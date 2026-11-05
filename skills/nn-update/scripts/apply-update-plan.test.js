@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/apply-upgrade-plan.test.js
+ * skills/nn-update/scripts/apply-update-plan.test.js
  *
- * Unit tests for apply-upgrade-plan.js (distributed-storage S4b.2).
+ * Unit tests for apply-update-plan.js (distributed-storage S4b.2).
  * Plain node, matching the sibling skill tests.
  */
 
@@ -11,7 +11,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const assert = require('assert');
-const { applyUpgradePlan, repinContent } = require('./apply-upgrade-plan');
+const { applyUpdatePlan, reconcileContent } = require('./apply-update-plan');
 const upgrade = require('../../nn-preflight/scripts/upgrade-check');
 
 const CATALOG = {
@@ -73,9 +73,9 @@ const readAll = (ws) => {
 };
 
 function runTests() {
-  console.log('Running apply-upgrade-plan unit tests...');
+  console.log('Running apply-update-plan unit tests...');
 
-  // Test 1: repinContent rewrites only the pin
+  // Test 1: reconcileContent rewrites only the pin
   {
     const before = [
       '---',
@@ -89,12 +89,12 @@ function runTests() {
       '## NN Video: v00',
       '',
     ].join('\n');
-    const after = repinContent(before, 'coNNtent', 'V_0-15-0');
+    const after = reconcileContent(before, 'coNNtent', 'V_0-15-0');
     assert.ok(after.includes('name: "coNNtent_V_0-15-0"'), after);
     assert.ok(after.includes('coNNtent_V_0-15-0_NN.md'), after);
     assert.ok(after.includes('## NN Video: v00'), 'the body is untouched');
     assert.ok(after.includes('title: "Video 0"'), 'the title is untouched');
-    console.log('✔ repinContent rewrites the pin and nothing else');
+    console.log('✔ reconcileContent rewrites the pin and nothing else');
   }
 
   // Test 2: no consent, no writes
@@ -103,7 +103,7 @@ function runTests() {
     try {
       const plan = upgrade.planUpgrade(ws, CATALOG);
       const before = readAll(ws);
-      const result = applyUpgradePlan({ workspaceDir: ws, catalog: CATALOG, plan });
+      const result = applyUpdatePlan({ workspaceDir: ws, catalog: CATALOG, plan });
       assert.strictEqual(result.ok, false);
       assert.strictEqual(result.code, 'CONSENT_REQUIRED');
       assert.strictEqual(result.models, 3, 'the refusal states the model count');
@@ -127,7 +127,7 @@ function runTests() {
         fs.readFileSync(path.join(ws, 'series', 'villa', 'assets', 'v00', 'v00_coNNtent_NN.md'), 'utf-8'),
         'utf-8',
       );
-      const result = applyUpgradePlan({
+      const result = applyUpdatePlan({
         workspaceDir: ws,
         catalog: CATALOG,
         plan,
@@ -150,7 +150,7 @@ function runTests() {
       const plan = upgrade.planUpgrade(ws, CATALOG);
       assert.strictEqual(plan.units[0].count, 24);
       let asked = 0;
-      const result = applyUpgradePlan({
+      const result = applyUpdatePlan({
         workspaceDir: ws,
         catalog: CATALOG,
         plan,
@@ -186,7 +186,7 @@ function runTests() {
       const plan = upgrade.planUpgrade(ws, CATALOG);
       const before = readAll(ws);
       const failingRel = 'series/villa/assets/v13/v13_coNNtent_NN.md';
-      const result = applyUpgradePlan({
+      const result = applyUpdatePlan({
         workspaceDir: ws,
         catalog: CATALOG,
         plan,

@@ -3,9 +3,9 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-3-1"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
+blueprint_version: "V_0-3-3"
 title: "Sources Catalog App"
 relationship_types:
   hierarchy:
@@ -62,7 +62,7 @@ description:: Original file or payload format.
 ## NN Field Definition: raw_path
 concept:: Source
 type:: string
-description:: Workspace-relative path to the raw/binary asset in sources/import/ or sources/original/.
+description:: Workspace-relative path to the raw/binary asset in sources/import/.
 
 ## NN Field Definition: summary
 concept:: Source
@@ -78,7 +78,7 @@ description:: Operational and synchronization state of the source.
 ## NN Field Definition: source_model
 concept:: Source
 type:: knowledge
-description:: Relative link to normalized iNNfo model document in sources/nn/.
+description:: Relative link to the source's co-located sidecar, `<file>.<ext>_sidecar_NN.md` under sources/import/.
 
 # Sources Catalog Template
 
@@ -86,7 +86,7 @@ description:: Relative link to normalized iNNfo model document in sources/nn/.
 
 ## Philosophy
 
-The Sources Catalog serves as the single source of truth for all primary and normalized sources in an iNNfo workspace. By maintaining concise semantic summaries directly in the catalog, AI agents and human users can query source inventories and make informed citation decisions without performing expensive file I/O operations against normalized leaf models. Physical cryptographic metadata (e.g. SHA-256 hashes, timestamps) remains strictly isolated within normalized document frontmatter under `sources/nn/`.
+The Sources Catalog serves as the single source of truth for all primary and normalized sources in an iNNfo workspace. By maintaining concise semantic summaries directly in the catalog, AI agents and human users can query source inventories and make informed citation decisions without performing expensive file I/O operations against normalized leaf models. Physical cryptographic metadata (e.g. SHA-256 hashes, timestamps) remains strictly isolated within each source's co-located sidecar under `sources/import/`.
 
 ## Template
 
@@ -110,11 +110,11 @@ title: "<Sources Catalog Name>"
 
 ## NN Source: Source Name
 type:: local_file
-origin_uri:: sources/original/document.pdf
-raw_path:: sources/original/document.pdf
+origin_uri:: sources/import/document.pdf
+raw_path:: sources/import/document.pdf
 format:: pdf
 summary:: Concise summary of the source document contents.
 tags:: [tag1, tag2]
 status:: ready
-source_model:: sources/nn/document.md
+source_model:: sources/import/document.pdf_sidecar_NN.md
 ```

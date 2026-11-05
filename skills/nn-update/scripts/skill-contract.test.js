@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/skill-contract.test.js
+ * skills/nn-update/scripts/skill-contract.test.js
  *
- * Doc contract for SKILL.md: Flow B, --freeze-slugs and the new-domain pointer are
+ * Doc contract for SKILL.md: Blueprint Lineage Reconciliation, --freeze-slugs and the new-domain pointer are
  * documented; the retired in-place flows and retired-path literals are not.
  */
 
@@ -14,12 +14,12 @@ const path = require('node:path')
 const SKILL = fs.readFileSync(path.join(__dirname, '..', 'SKILL.md'), 'utf8')
 
 function run() {
-  console.log('Running nn-upgrade SKILL.md contract tests...')
+  console.log('Running nn-update SKILL.md contract tests...')
 
-  for (const required of ['Flow B', '--freeze-slugs', '--import-as-source', 'new domain']) {
+  for (const required of ['Blueprint Lineage Reconciliation', '--freeze-slugs', '--import-as-source', 'new domain']) {
     assert.ok(SKILL.includes(required), `SKILL.md must describe "${required}"`)
   }
-  console.log('✔ SKILL.md describes Flow B, --freeze-slugs and the new-domain pointer')
+  console.log('✔ SKILL.md describes Blueprint Lineage Reconciliation, --freeze-slugs and the new-domain pointer')
 
   assert.ok(
     /nn-innfo/.test(SKILL) && /MARKERS_REMOVED/.test(SKILL),
@@ -31,7 +31,7 @@ function run() {
   )
   console.log('✔ SKILL.md links the MARKERS_REMOVED recipe instead of asking marker mapping')
 
-  const retiredFlows = [/Flow A/, /Flow C/, /batch-update/, /--layout-only/, /--restore/, /--migrate-references/, /Layout Migration/i]
+  const retiredFlows = [/Flow B/, /Flow A/, /Flow C/, /batch-update/, /--layout-only/, /--restore/, /--migrate-references/, /Layout Migration/i]
   for (const re of retiredFlows) {
     assert.ok(!re.test(SKILL), `SKILL.md must not mention the retired ${re}`)
   }

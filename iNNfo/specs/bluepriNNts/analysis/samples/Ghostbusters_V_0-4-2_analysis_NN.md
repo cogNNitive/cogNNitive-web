@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "analysis_V_0-4-0"
+  name: "analysis_V_0-4-2"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
-knowledge_version: "V_0-4-0"
+knowledge_version: "undefined"
 title: "Ghostbusters Inc. Spectral Risk & Business Analysis Model"
 ---
 

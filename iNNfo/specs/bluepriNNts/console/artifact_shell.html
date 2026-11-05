@@ -366,10 +366,45 @@
           <div id="nn-matrices"></div>
         </div>
         <div id="nn-tab-review" class="nn-tab-panel"></div>
+        <section id="nn-tab-files" class="nn-tab-panel" role="tabpanel" aria-labelledby="nn-tab-btn-files" hidden>
+          <div class="nn-files-toolbar">
+            <div class="nn-files-view-toggle">
+              <button type="button" class="nn-btn nn-btn-sm active" id="nn-files-mode-explorer" data-mode="explorer">Split Explorer</button>
+              <button type="button" class="nn-btn nn-btn-sm" id="nn-files-mode-pipeline" data-mode="pipeline">Pipeline Flow</button>
+            </div>
+            <div class="nn-files-toolbar-actions">
+              <span id="nn-files-active-stat" class="nn-files-stat-pill"></span>
+            </div>
+          </div>
+          <div class="nn-files-view-container view-mode-explorer">
+            <div class="nn-files-split">
+              <aside class="nn-files-sidebar" id="nn-files-sidebar" aria-label="Workspace Files Categories"></aside>
+              <div class="nn-files-detail" id="nn-files-detail" aria-label="File Details and Dashboard"></div>
+            </div>
+            <div class="nn-files-pipeline" id="nn-files-pipeline" aria-label="5-Stage Pipeline Flow" style="display: none;"></div>
+          </div>
+        </section>
       </main>
     </div>
 
     <dialog id="nn-ref-dialog" aria-label="Referenced element details"></dialog>
+    <dialog id="nn-file-preview-dialog" class="nn-edit-modal" aria-labelledby="nn-file-preview-title">
+      <div class="nn-modal-content">
+        <header class="nn-modal-header">
+          <div class="nn-modal-header-main">
+            <h2 id="nn-file-preview-title">File Preview</h2>
+            <span id="nn-file-preview-badge" class="nn-badge"></span>
+            <span id="nn-file-preview-size" class="nn-file-preview-size"></span>
+          </div>
+          <button type="button" class="nn-modal-close" id="nn-file-preview-close" aria-label="Close dialog">&times;</button>
+        </header>
+        <div id="nn-file-preview-body" class="nn-modal-body"></div>
+        <footer class="nn-modal-footer">
+          <button type="button" class="nn-btn nn-btn-secondary" id="nn-file-preview-copy">Copy Content</button>
+          <button type="button" class="nn-btn nn-btn-outline" id="nn-file-preview-dismiss">Close</button>
+        </footer>
+      </div>
+    </dialog>
 
     <script type="application/json" id="nn-config">
       {
@@ -396,7 +431,7 @@
 
     <script src="./nn-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@nn-console-v0.33.1/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@nn-console-v0.34.0/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   </body>

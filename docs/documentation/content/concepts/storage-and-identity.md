@@ -387,7 +387,7 @@ the same as one version per concept, for compact and distributed storage alike.
 document:
 
 ```
-BLUEPRINT_VERSION_SKEW: bluepriNNt "video-script" (concepts: Series, Video) - pinned at 2 versions across 24 models: V_0-15-0 (20: <first 3 paths>...), unpinned (4: <paths>); a domaiNN uses one version per bluepriNNt, run nn-upgrade
+BLUEPRINT_VERSION_SKEW: bluepriNNt "video-script" (concepts: Series, Video) - pinned at 2 versions across 24 models: V_0-15-0 (20: <first 3 paths>...), unpinned (4: <paths>); a domaiNN uses one version per bluepriNNt, run nn-update
 ```
 
 - A bare name such as `video-script`, or a pin whose URL cannot be classified, is listed as an
@@ -401,7 +401,7 @@ BLUEPRINT_VERSION_SKEW: bluepriNNt "video-script" (concepts: Series, Video) - pi
 > The rule is not limited to distributed concepts. Any domaiNN whose documents pin one bluepriNNt
 > at several versions now fails `check_domain`.
 
-[nn-upgrade](../skills/nn-upgrade.md) fixes skew: its upgrade unit is the whole bluepriNNt group.
+[nn-update](../skills/nn-update.md) fixes skew: its upgrade unit is the whole bluepriNNt group.
 It repins and re-validates every member, or none, and a document added after the plan was made
 aborts the run. When a group is already skewed, the whole group goes to the adopted version.
 

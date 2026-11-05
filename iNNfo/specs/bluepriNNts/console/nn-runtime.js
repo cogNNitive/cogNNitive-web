@@ -3484,8 +3484,21 @@
   // Built-in tabs, registered per boot (they are not in the registry).
   function builtinViews(doc, config, model, meta, shell, schema) {
     var views = []
+    // Files sits after the knowledge/changes band and only exists when the
+    // payload carries a precomputed inventory.
+    var filesPayload = model && model.files
+    var hasFiles =
+      !!filesPayload &&
+      ((Array.isArray(filesPayload.inventory) && filesPayload.inventory.length > 0) ||
+        (Array.isArray(filesPayload.watchRoots) && filesPayload.watchRoots.length > 0))
+    var scoped = consoleScopeOf(meta)
     // A standalone --view artifact mounts that view alone.
-    if (consoleScopeOf(meta)) return views
+    if (scoped) {
+      if (scoped === 'files' && hasFiles) {
+        views.push({ id: 'files', title: 'Files', icon: 'folder', order: 25, tone: 'core', panelId: 'nn-tab-files' })
+      }
+      return views
+    }
     if (schema && Array.isArray(schema.concepts) && schema.concepts.length) {
       views.push({ id: 'metamodel', title: 'Domain', icon: 'metamodel', order: 10, tone: 'core', panelId: 'nn-tab-metamodel' })
     }
@@ -3494,6 +3507,11 @@
     }
     if (Array.isArray(model && model.matrices) && model.matrices.length > 0) {
       views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 30, tone: 'core', panelId: 'nn-tab-matrices' })
+    }
+    // Files sits right after the knowledge/changes band and only exists when the
+    // payload carries a precomputed inventory.
+    if (hasFiles) {
+      views.push({ id: 'files', title: 'Files', icon: 'folder', order: 25, tone: 'core', panelId: 'nn-tab-files' })
     }
     return views
   }
@@ -3529,6 +3547,12 @@
             out.q = decodeURIComponent(part.slice(2))
           } catch {
             out.q = ''
+          }
+        } else if (part.indexOf('path=') === 0) {
+          try {
+            out.path = decodeURIComponent(part.slice(5))
+          } catch {
+            out.path = ''
           }
         } else if (part && !out.tab) {
           out.tab = part
@@ -4047,6 +4071,768 @@
     var rest = at === -1 ? t : t.slice(at + 1)
     var segs = rest.split('&')
     return segs.length > 1 ? segs[1].trim() : ''
+  }
+
+  /* ---------------------------------------------------------------------------
+     Files view.
+     Read-only inventory explorer over `model.files` (precomputed by
+     export-console). Split Explorer (tree + detail) is the primary view; the
+     5-stage Pipeline Flow is the secondary one. There is deliberately no
+     mutation, edit or delete affordance anywhere in this view.
+     ------------------------------------------------------------------------- */
+
+  var FILES_CATEGORIES = [
+    { id: 'watch_root', title: 'Watch Folders' },
+    { id: 'source', title: 'Sources' },
+    { id: 'imported_domain', title: 'Imported Domains' },
+    { id: 'asset', title: 'Assets' },
+    { id: 'evidence', title: 'Evidence' },
+    { id: 'artifact', title: 'Artifacts' },
+  ]
+
+  var FILES_CATEGORY_LABEL = {
+    watch_root: 'watch root',
+    source: 'source',
+    imported_domain: 'imported domain',
+    asset: 'asset',
+    evidence: 'evidence',
+    artifact: 'artifact',
+  }
+
+  var FILES_PIPELINE_STAGES = [
+    { id: 'origins', title: 'Origins' },
+    { id: 'sources', title: 'Sources' },
+    { id: 'changes', title: 'Changes' },
+    { id: 'units', title: 'Units' },
+    { id: 'artifacts', title: 'Artifacts' },
+  ]
+
+  function filesFmtBytes(bytes) {
+    var n = Number(bytes) || 0
+    if (n < 1024) return n + ' B'
+    if (n < 1048576) return round1(n / 1024) + ' KB'
+    if (n < 1073741824) return round1(n / 1048576) + ' MB'
+    return round1(n / 1073741824) + ' GB'
+  }
+
+  function round1(n) {
+    return Math.round(n * 10) / 10
+  }
+
+  function filesBaseName(p) {
+    var s = String(p || '')
+    var i = s.lastIndexOf('/')
+    return i === -1 ? s : s.slice(i + 1)
+  }
+
+  function filesPct(rate) {
+    return Math.round((Number(rate) || 0) * 100) + '%'
+  }
+
+  function renderFilesTab(doc, files, opts) {
+    var host = doc.getElementById('nn-tab-files')
+    if (!host || !files || !Array.isArray(files.inventory)) return
+    opts = opts || {}
+    host.removeAttribute('hidden')
+
+    var sidebar = doc.getElementById('nn-files-sidebar')
+    var detail = doc.getElementById('nn-files-detail')
+    var pipeline = doc.getElementById('nn-files-pipeline')
+    var split = host.querySelector('.nn-files-split')
+    var statPill = doc.getElementById('nn-files-active-stat')
+    var explorerBtn = doc.getElementById('nn-files-mode-explorer')
+    var pipelineBtn = doc.getElementById('nn-files-mode-pipeline')
+    var dialog = doc.getElementById('nn-file-preview-dialog')
+
+    var inventory = files.inventory
+    var stats = files.stats || {}
+    var watchRoots = Array.isArray(files.watchRoots) ? files.watchRoots : []
+    var lineage = files.lineage || {}
+    var elements = Array.isArray(opts.elements) ? opts.elements : []
+    var byPath = {}
+    inventory.forEach(function (f) {
+      if (f && f.path) byPath[f.path] = f
+    })
+
+    // Which units cite which file, matched the same way export does. A unit cites
+    // the sidecar document, so the path is folded back to its subject file.
+    var SIDECAR_SUFFIX = '_sidecar_NN.md'
+    function citationSubject(raw) {
+      var norm = String(raw).replace(/\\/g, '/').replace(/^\/+/, '').split('#')[0]
+      if (norm.length > SIDECAR_SUFFIX.length && norm.slice(-SIDECAR_SUFFIX.length) === SIDECAR_SUFFIX) {
+        return norm.slice(0, norm.length - SIDECAR_SUFFIX.length)
+      }
+      return norm
+    }
+
+    var unitsByPath = {}
+    elements.forEach(function (e) {
+      if (!e || !e.citations) return
+      Object.keys(e.citations).forEach(function (field) {
+        var list = e.citations[field]
+        if (!Array.isArray(list)) return
+        list.forEach(function (cit) {
+          var raw = cit && (cit.path || cit.href)
+          if (!raw) return
+          var norm = citationSubject(raw)
+          inventory.forEach(function (f) {
+            if (f.path === norm || f.path.endsWith('/' + norm) || norm.endsWith('/' + f.path)) {
+              if (!unitsByPath[f.path]) unitsByPath[f.path] = []
+              if (unitsByPath[f.path].indexOf(e.id) < 0) unitsByPath[f.path].push(e.id)
+            }
+          })
+        })
+      })
+    })
+
+    var state = { mode: 'explorer', selected: '', collapsed: {}, query: '' }
+
+    var elementsById = {}
+    elements.forEach(function (e) {
+      if (e && e.id) elementsById[e.id] = e
+    })
+
+    function kuBadge(unitId) {
+      var target = elementsById[unitId]
+      var ref = { id: String(unitId), label: (target && (target.name || target.slug)) || String(unitId) }
+      if (target && target.concept) ref.concept = target.concept
+      if (!UI || typeof UI.Ku !== 'function') return el('span', 'nn-badge', ref.label)
+      try {
+        return UI.Ku('element', ref, {
+          doc: doc,
+          onAction: function (action, descriptor) {
+            if (action === 'reveal' && typeof opts.onReveal === 'function') opts.onReveal(descriptor)
+          },
+        })
+      } catch {
+        return el('span', 'nn-badge', ref.label)
+      }
+    }
+
+    function matchesQuery(entry) {
+      if (!state.query) return true
+      return entry.path.toLowerCase().indexOf(state.query) >= 0
+    }
+
+    /* ---- sidebar ---------------------------------------------------------- */
+
+    function renderSidebar() {
+      if (!sidebar) return
+      sidebar.innerHTML = ''
+
+      var search = doc.createElement('input')
+      search.type = 'search'
+      search.className = 'nn-input'
+      search.setAttribute('placeholder', 'Filter files by path\u2026')
+      search.setAttribute('aria-label', 'Filter files by path')
+      search.value = state.query
+      search.addEventListener('input', function () {
+        state.query = String(search.value || '').toLowerCase().trim()
+        renderSidebar()
+      })
+      sidebar.appendChild(search)
+
+      var anyGroup = false
+      FILES_CATEGORIES.forEach(function (cat) {
+        var members = inventory.filter(function (f) {
+          return f.category === cat.id && matchesQuery(f)
+        })
+        if (!members.length) return
+        anyGroup = true
+        var collapsed = state.collapsed[cat.id] === true
+        var group = el('div', 'nn-category-group')
+        var head = el('div', 'nn-category-header' + (collapsed ? ' collapsed' : ''))
+        head.setAttribute('role', 'button')
+        head.setAttribute('tabindex', '0')
+        head.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+        var headMain = el('span', 'nn-category-header-main')
+        var chevron = el('span', 'chevron', collapsed ? '\u25B8' : '\u25BE')
+        chevron.setAttribute('aria-hidden', 'true')
+        headMain.appendChild(chevron)
+        headMain.appendChild(el('span', null, cat.title))
+        head.appendChild(headMain)
+        head.appendChild(el('span', 'nn-category-badge', String(members.length)))
+        function toggle() {
+          state.collapsed[cat.id] = !collapsed
+          renderSidebar()
+        }
+        head.addEventListener('click', toggle)
+        head.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') {
+            ev.preventDefault()
+            toggle()
+          }
+        })
+        group.appendChild(head)
+
+        if (!collapsed) {
+          var tree = el('div', 'nn-category-tree')
+          members.forEach(function (entry) {
+            var row = el('div', 'nn-file-row' + (state.selected === entry.path ? ' active' : ''))
+            row.setAttribute('role', 'button')
+            row.setAttribute('tabindex', '0')
+            row.setAttribute('data-path', entry.path)
+            row.setAttribute('title', entry.path)
+            var icon = el('span', 'nn-file-icon', entry.category === 'artifact' ? '\u25A0' : '\u25A1')
+            icon.setAttribute('aria-hidden', 'true')
+            row.appendChild(icon)
+            row.appendChild(el('span', 'nn-file-name', filesBaseName(entry.path)))
+            row.appendChild(el('span', 'nn-file-size', filesFmtBytes(entry.size)))
+            if (entry.uncited || (entry.sidecar && entry.sidecar.exists === false)) {
+              var warn = el('span', 'nn-badge-warning', '!')
+              warn.setAttribute('title', entry.uncited ? 'Not cited by any knowledge unit or change' : 'No sidecar')
+              row.appendChild(warn)
+            }
+            function open() {
+              selectFile(entry.path)
+            }
+            row.addEventListener('click', open)
+            row.addEventListener('keydown', function (ev) {
+              if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault()
+                open()
+              }
+            })
+            tree.appendChild(row)
+          })
+          group.appendChild(tree)
+        }
+        sidebar.appendChild(group)
+      })
+
+      if (!anyGroup) sidebar.appendChild(el('p', 'nn-files-empty', 'No files match this filter.'))
+    }
+
+    /* ---- workspace dashboard ---------------------------------------------- */
+
+    function renderDashboard() {
+      if (!detail) return
+      detail.innerHTML = ''
+      var dash = el('div', 'nn-files-dashboard')
+
+      var kpis = el('div', 'nn-files-kpis')
+      function kpi(label, value, sub) {
+        var card = el('div', 'nn-kpi-card')
+        card.appendChild(el('div', 'kpi-label', label))
+        card.appendChild(el('div', 'kpi-value', value))
+        if (sub) card.appendChild(el('div', 'kpi-sub', sub))
+        kpis.appendChild(card)
+      }
+      kpi('Files', String(stats.totalFiles || inventory.length), 'indexed in this workspace')
+      kpi('Footprint', filesFmtBytes(stats.totalBytes || 0), 'total bytes on disk')
+      kpi('Source coverage', filesPct(stats.sourceCoverageRate), (stats.uncitedSourceCount || 0) + ' uncited')
+      kpi(
+        'Sidecars',
+        String((stats.sidecarMissingCount || 0) + (stats.sidecarInvalidCount || 0) + (stats.sidecarMismatchCount || 0)),
+        'missing, invalid or stale',
+      )
+      dash.appendChild(kpis)
+
+      var byCategory = stats.storageByCategory || {}
+      var segments = el('div', 'nn-storage-bar')
+      var legend = el('div', 'nn-storage-legend')
+      var palette = ['#3b82f6', '#8b5cf6', '#0ea5e9', '#f59e0b', '#10b981', '#ef4444']
+      FILES_CATEGORIES.forEach(function (cat, i) {
+        var bytes = byCategory[cat.id] || 0
+        if (!bytes) return
+        var pct = stats.totalBytes ? (bytes / stats.totalBytes) * 100 : 0
+        var seg = el('div', 'nn-storage-segment')
+        seg.style.width = pct.toFixed(2) + '%'
+        seg.style.background = palette[i % palette.length]
+        seg.setAttribute('title', cat.title + ': ' + filesFmtBytes(bytes))
+        segments.appendChild(seg)
+        var item = el('span', 'nn-storage-legend-item')
+        var dot = el('span', 'nn-storage-legend-dot')
+        dot.style.background = palette[i % palette.length]
+        item.appendChild(dot)
+        item.appendChild(el('span', null, cat.title + ' ' + filesFmtBytes(bytes)))
+        legend.appendChild(item)
+      })
+      var storageWrap = el('div', 'nn-storage-bar-wrap')
+      storageWrap.appendChild(el('h3', 'nn-files-section-title', 'Storage distribution'))
+      storageWrap.appendChild(segments)
+      storageWrap.appendChild(legend)
+      dash.appendChild(storageWrap)
+
+      if (watchRoots.length) {
+        var table = doc.createElement('table')
+        table.className = 'nn-watch-table'
+        // Watch-root rows are filesystem facts, not knowledge-unit references, so
+        // the Ku tree guard's exemption marker applies to the whole table.
+        table.setAttribute('data-ku-exempt', '1')
+        var thead = doc.createElement('thead')
+        var hr = doc.createElement('tr')
+        ;['Root', 'Status', 'Files', 'Last change'].forEach(function (h) {
+          hr.appendChild(el('th', null, h))
+        })
+        thead.appendChild(hr)
+        table.appendChild(thead)
+        var tbody = doc.createElement('tbody')
+        watchRoots.forEach(function (root) {
+          var tr = doc.createElement('tr')
+          var tdRoot = doc.createElement('td')
+          tdRoot.appendChild(el('code', null, String(root.path)))
+          tr.appendChild(tdRoot)
+          var tdStatus = doc.createElement('td')
+          var dot = el('span', 'nn-watch-status-dot ' + (root.status || 'idle'))
+          tdStatus.appendChild(dot)
+          tdStatus.appendChild(el('span', null, ' ' + String(root.status || 'idle')))
+          tr.appendChild(tdStatus)
+          tr.appendChild(el('td', null, String(root.fileCount || 0)))
+          tr.appendChild(el('td', null, root.lastSync ? String(root.lastSync) : '\u2014'))
+          tbody.appendChild(tr)
+        })
+        table.appendChild(tbody)
+        var rootsWrap = el('div', 'nn-files-roots')
+        rootsWrap.appendChild(el('h3', 'nn-files-section-title', 'Watch roots'))
+        rootsWrap.appendChild(table)
+        dash.appendChild(rootsWrap)
+      }
+
+      var alerts = el('div', 'nn-files-alerts')
+      function alert(count, one, many) {
+        if (!count) return
+        var card = el('div', 'nn-integrity-alert')
+        card.appendChild(el('strong', null, String(count)))
+        card.appendChild(el('span', null, ' ' + (count === 1 ? one : many)))
+        alerts.appendChild(card)
+      }
+      alert(
+        stats.uncitedSourceCount,
+        'source file is never cited by a knowledge unit or a change',
+        'source files are never cited by a knowledge unit or a change',
+      )
+      alert(stats.sidecarMissingCount, 'file has no sidecar', 'files have no sidecar')
+      alert(
+        stats.sidecarInvalidCount,
+        'sidecar has an invalid frontmatter',
+        'sidecars have an invalid frontmatter',
+      )
+      alert(
+        stats.sidecarMismatchCount,
+        'sidecar digest no longer matches its file',
+        'sidecar digests no longer match their file',
+      )
+      if (alerts.childNodes.length) {
+        var alertsWrap = el('div', 'nn-files-section')
+        alertsWrap.appendChild(el('h3', 'nn-files-section-title', 'Integrity signals'))
+        alertsWrap.appendChild(alerts)
+        dash.appendChild(alertsWrap)
+      }
+
+      detail.appendChild(dash)
+    }
+
+    /* ---- per-file detail -------------------------------------------------- */
+
+    function renderFileDetail(entry) {
+      if (!detail) return
+      detail.innerHTML = ''
+      var card = el('div', 'nn-file-detail-card')
+
+      var crumb = el('div', 'nn-file-detail-breadcrumb')
+      var back = doc.createElement('a')
+      back.setAttribute('href', '#files')
+      back.textContent = 'Workspace overview'
+      back.addEventListener('click', function (ev) {
+        ev.preventDefault()
+        selectFile('')
+      })
+      crumb.appendChild(back)
+      crumb.appendChild(el('span', null, ' / ' + entry.path))
+      card.appendChild(crumb)
+
+      var header = el('div', 'nn-file-detail-header')
+      header.appendChild(el('h2', 'nn-file-detail-title', filesBaseName(entry.path)))
+      header.appendChild(el('span', 'nn-badge', FILES_CATEGORY_LABEL[entry.category] || entry.category))
+      card.appendChild(header)
+      card.appendChild(el('p', 'nn-file-detail-path', entry.path))
+
+      var attrs = el('div', 'nn-file-attrs-grid')
+      function attr(label, value, extra) {
+        var cell = el('div', 'nn-file-attr')
+        cell.appendChild(el('span', 'nn-file-attr-label', label))
+        var val = el('span', 'nn-file-attr-value', value)
+        if (extra) val.appendChild(extra)
+        cell.appendChild(val)
+        attrs.appendChild(cell)
+      }
+      attr('Size', filesFmtBytes(entry.size))
+      attr('Type', String(entry.mimeType || ''))
+      attr('Modified', entry.mtime ? String(entry.mtime) : '\u2014')
+      var copy = doc.createElement('button')
+      copy.type = 'button'
+      copy.className = 'nn-hash-copy'
+      copy.textContent = String(entry.sha256 || '').slice(0, 16)
+      copy.setAttribute('title', 'Copy full SHA-256')
+      copy.addEventListener('click', function () {
+        var text = String(entry.sha256 || '')
+        var view = doc.defaultView
+        if (view && view.navigator && view.navigator.clipboard) {
+          try {
+            view.navigator.clipboard.writeText(text)
+          } catch {
+            /* clipboard unavailable offline */
+          }
+        }
+        copy.textContent = 'copied'
+        if (view && view.setTimeout) {
+          view.setTimeout(function () {
+            copy.textContent = text.slice(0, 16)
+          }, 1200)
+        }
+      })
+      attr('SHA-256', '', copy)
+      card.appendChild(attrs)
+
+      if (entry.sidecar) {
+        var side = el('div', 'nn-file-section')
+        side.appendChild(el('h3', 'nn-files-section-title', 'Sidecar'))
+        var status = el('p', 'nn-file-sidecar-status')
+        if (!entry.sidecar.exists) {
+          status.textContent = 'No sidecar for this file.'
+        } else if (!entry.sidecar.valid) {
+          status.textContent = 'Sidecar is not valid: ' + String(entry.sidecar.error || 'unknown error')
+        } else {
+          status.textContent =
+            'Sidecar ' +
+            String(entry.sidecar.path || '') +
+            (entry.sidecar.sha256Matches === false
+              ? ' — digest does not match the file (stale sidecar).'
+              : ' — digest matches the file.')
+        }
+        side.appendChild(status)
+        card.appendChild(side)
+      }
+
+      var citedUnits = unitsByPath[entry.path] || []
+      var citSection = el('div', 'nn-file-section')
+      citSection.appendChild(
+        el('h3', 'nn-files-section-title', 'Knowledge units (' + String(citedUnits.length) + ')'),
+      )
+      if (citedUnits.length) {
+        var list = el('div', 'nn-lineage-units')
+        citedUnits.forEach(function (uid) {
+          list.appendChild(kuBadge(uid))
+        })
+        citSection.appendChild(list)
+      } else {
+        citSection.appendChild(
+          el('p', 'nn-file-hint', 'No knowledge unit cites this file, and no change uses it as evidence.'),
+        )
+      }
+      card.appendChild(citSection)
+
+      var line = lineage[entry.path]
+      if (line) {
+        var tiers = el('div', 'nn-lineage-tier')
+        tiers.appendChild(el('h3', 'nn-lineage-tier-title', 'Reverse lineage'))
+        var chain = el('div', 'nn-lineage-units')
+        ;(line.unitIds || []).forEach(function (uid) {
+          chain.appendChild(kuBadge(uid))
+        })
+        tiers.appendChild(chain)
+        if ((line.changesetIds || []).length) {
+          tiers.appendChild(el('p', 'nn-lineage-sub', 'Changes: ' + line.changesetIds.join(', ')))
+        }
+        if ((line.sourcePaths || []).length) {
+          tiers.appendChild(el('p', 'nn-lineage-sub', 'Original files: ' + line.sourcePaths.join(', ')))
+        }
+        card.appendChild(tiers)
+      }
+
+      var actions = el('div', 'nn-file-actions')
+      var openBtn = doc.createElement('button')
+      openBtn.type = 'button'
+      openBtn.className = 'nn-btn nn-btn-secondary'
+      openBtn.textContent = 'Open / Preview'
+      openBtn.addEventListener('click', function () {
+        openPreview(entry)
+      })
+      actions.appendChild(openBtn)
+      card.appendChild(actions)
+
+      detail.appendChild(card)
+    }
+
+    /* ---- pipeline view ---------------------------------------------------- */
+
+    function renderPipeline() {
+      if (!pipeline) return
+      pipeline.innerHTML = ''
+      var sourcesStage = inventory.filter(function (f) {
+        return f.category === 'source' || f.category === 'imported_domain'
+      })
+      var artifactsStage = inventory.filter(function (f) {
+        return f.category === 'artifact'
+      })
+      var unitSet = {}
+      Object.keys(unitsByPath).forEach(function (p) {
+        unitsByPath[p].forEach(function (uid) {
+          unitSet[uid] = true
+        })
+      })
+      Object.keys(lineage).forEach(function (k) {
+        ;(lineage[k].unitIds || []).forEach(function (uid) {
+          unitSet[uid] = true
+        })
+      })
+      var unitIds = Object.keys(unitSet).sort()
+      // Changes come from the domain's own changeset records; lineage only adds
+      // the highlighting, so the column is never empty when changes exist.
+      var changeRecords = Array.isArray(opts.changes) ? opts.changes : []
+      var changeNode = {}
+      changeRecords.forEach(function (cs) {
+        var path = String((cs && cs.path) || '')
+        var id = path
+          .split('/')
+          .pop()
+          .replace(/_changes_NN\.md$/i, '')
+        if (id) changeNode[id] = { name: (cs && cs.title) || id, sub: (cs && cs.status) || 'changeset' }
+      })
+      Object.keys(lineage).forEach(function (k) {
+        ;(lineage[k].changesetIds || []).forEach(function (id) {
+          if (!changeNode[id]) changeNode[id] = { name: id, sub: 'changeset' }
+        })
+      })
+      var changeIds = Object.keys(changeNode).sort()
+
+      var content = {
+        origins: watchRoots.map(function (r) {
+          return { id: 'root:' + r.path, name: r.path, sub: (r.fileCount || 0) + ' files · ' + (r.status || 'idle') }
+        }),
+        sources: sourcesStage.map(function (f) {
+          return { id: 'file:' + f.path, name: filesBaseName(f.path), sub: FILES_CATEGORY_LABEL[f.category] + ' · ' + filesFmtBytes(f.size) }
+        }),
+        changes: changeIds.map(function (id) {
+          return { id: 'change:' + id, name: changeNode[id].name, sub: changeNode[id].sub }
+        }),
+        units: unitIds.map(function (id) {
+          var target = elementsById[id]
+          return {
+            id: 'unit:' + id,
+            name: (target && (target.name || target.slug)) || id,
+            sub: 'knowledge unit',
+          }
+        }),
+        artifacts: artifactsStage.map(function (f) {
+          return { id: 'file:' + f.path, name: filesBaseName(f.path), sub: filesFmtBytes(f.size) }
+        }),
+      }
+
+      FILES_PIPELINE_STAGES.forEach(function (stage) {
+        var col = el('div', 'nn-pipeline-stage')
+        var head = el('div', 'nn-pipeline-stage-head')
+        head.appendChild(el('span', null, stage.title))
+        head.appendChild(el('span', 'nn-category-badge', String(content[stage.id].length)))
+        col.appendChild(head)
+        var cards = el('div', 'nn-pipeline-cards')
+        content[stage.id].forEach(function (item) {
+          var card = el('div', 'nn-pipeline-card')
+          card.setAttribute('data-node', item.id)
+          card.appendChild(el('span', 'nn-pipeline-card-name', item.name))
+          card.appendChild(el('span', 'nn-pipeline-card-sub', item.sub))
+          card.addEventListener('mouseenter', function () {
+            highlight(item.id)
+          })
+          card.addEventListener('mouseleave', clearHighlight)
+          card.addEventListener('click', function () {
+            var path = item.id.indexOf('file:') === 0 ? item.id.slice(5) : ''
+            if (path && byPath[path]) selectFile(path)
+          })
+          cards.appendChild(card)
+        })
+        col.appendChild(cards)
+        pipeline.appendChild(col)
+      })
+    }
+
+    // Hover tracing: a source lights up the units that cite it and the artifacts
+    // whose reverse lineage points back at it. Everything else dims.
+    function connectedTo(nodeId) {
+      var out = {}
+      out[nodeId] = true
+      var path = nodeId.indexOf('file:') === 0 ? nodeId.slice(5) : ''
+      if (!path) return out
+      var units = unitsByPath[path] || []
+      units.forEach(function (uid) {
+        out['unit:' + uid] = true
+      })
+      Object.keys(lineage).forEach(function (artifactPath) {
+        var entry = lineage[artifactPath]
+        var hit =
+          (entry.sourcePaths || []).indexOf(path) >= 0 ||
+          (entry.unitIds || []).some(function (uid) {
+            return units.indexOf(uid) >= 0
+          })
+        if (hit) {
+          out['file:' + artifactPath] = true
+          ;(entry.changesetIds || []).forEach(function (id) {
+            out['change:' + id] = true
+          })
+        }
+      })
+      return out
+    }
+
+    function highlight(nodeId) {
+      var keep = connectedTo(nodeId)
+      var cards = pipeline.querySelectorAll('.nn-pipeline-card')
+      ;[].slice.call(cards).forEach(function (card) {
+        var id = card.getAttribute('data-node')
+        card.classList.toggle('nn-pipeline-highlight', id === nodeId)
+        card.classList.toggle('dimmed', !keep[id])
+      })
+    }
+
+    function clearHighlight() {
+      var cards = pipeline.querySelectorAll('.nn-pipeline-card')
+      ;[].slice.call(cards).forEach(function (card) {
+        card.classList.remove('dimmed')
+        card.classList.remove('nn-pipeline-highlight')
+      })
+    }
+
+    /* ---- preview dialog --------------------------------------------------- */
+
+    function openPreview(entry) {
+      if (!dialog) return
+      var title = doc.getElementById('nn-file-preview-title')
+      var badge = doc.getElementById('nn-file-preview-badge')
+      var size = doc.getElementById('nn-file-preview-size')
+      var body = doc.getElementById('nn-file-preview-body')
+      if (title) title.textContent = filesBaseName(entry.path)
+      if (badge) badge.textContent = FILES_CATEGORY_LABEL[entry.category] || entry.category
+      if (size) size.textContent = filesFmtBytes(entry.size)
+      if (!body) return
+      body.innerHTML = ''
+
+      var mime = String(entry.mimeType || '')
+      var truncated = entry.snippetTruncated === true
+      if (typeof entry.snippet === 'string' && mime.indexOf('image/') !== 0) {
+        var pre = el('pre', 'nn-file-preview-code')
+        var code = doc.createElement('code')
+        // textContent: file content is never parsed as markup (XSS invariant).
+        code.textContent = entry.snippet
+        pre.appendChild(code)
+        body.appendChild(pre)
+        if (truncated) {
+          body.appendChild(
+            el('p', 'nn-file-preview-note', 'Preview truncated. The complete file stays in the workspace.'),
+          )
+        }
+      } else {
+        var card = el('div', 'nn-file-binary-card')
+        card.appendChild(el('p', null, 'This file is not inlined in the console payload.'))
+        card.appendChild(el('p', 'nn-file-attr-value', 'SHA-256: ' + String(entry.sha256 || '')))
+        card.appendChild(el('p', 'nn-file-attr-value', 'Workspace path: ' + entry.path))
+        body.appendChild(card)
+      }
+
+      var copyBtn = doc.getElementById('nn-file-preview-copy')
+      if (copyBtn) {
+        copyBtn.onclick = function () {
+          var view = doc.defaultView
+          if (view && view.navigator && view.navigator.clipboard && typeof entry.snippet === 'string') {
+            try {
+              view.navigator.clipboard.writeText(entry.snippet)
+            } catch {
+              /* clipboard unavailable */
+            }
+          }
+        }
+      }
+      if (typeof dialog.showModal === 'function') dialog.showModal()
+      else dialog.setAttribute('open', 'open')
+    }
+
+    function closePreview() {
+      if (!dialog) return
+      if (typeof dialog.close === 'function') dialog.close()
+      else dialog.removeAttribute('open')
+    }
+
+    if (dialog && !dialog.getAttribute('data-nn-bound')) {
+      dialog.setAttribute('data-nn-bound', '1')
+      var closeBtn = doc.getElementById('nn-file-preview-close')
+      var dismissBtn = doc.getElementById('nn-file-preview-dismiss')
+      if (closeBtn) closeBtn.addEventListener('click', closePreview)
+      if (dismissBtn) dismissBtn.addEventListener('click', closePreview)
+      dialog.addEventListener('click', function (ev) {
+        if (ev.target === dialog) closePreview()
+      })
+    }
+
+    /* ---- state ------------------------------------------------------------ */
+
+    function setMode(mode) {
+      state.mode = mode === 'pipeline' ? 'pipeline' : 'explorer'
+      if (explorerBtn) explorerBtn.classList.toggle('active', state.mode === 'explorer')
+      if (pipelineBtn) pipelineBtn.classList.toggle('active', state.mode === 'pipeline')
+      if (split) split.style.display = state.mode === 'explorer' ? 'flex' : 'none'
+      if (pipeline) pipeline.style.display = state.mode === 'pipeline' ? 'flex' : 'none'
+      if (statPill) {
+        statPill.textContent =
+          state.mode === 'explorer'
+            ? String(inventory.length) + ' files'
+            : String(FILES_PIPELINE_STAGES.length) + ' stages'
+      }
+    }
+
+    function selectFile(path) {
+      state.selected = path && byPath[path] ? path : ''
+      if (state.selected) {
+        renderFileDetail(byPath[state.selected])
+        try {
+          if (doc.location) doc.location.hash = '#files&path=' + encodeURIComponent(state.selected)
+        } catch {
+          /* file:// may refuse hash writes */
+        }
+      } else {
+        renderDashboard()
+        try {
+          if (doc.location) doc.location.hash = '#files'
+        } catch {
+          /* ignore */
+        }
+      }
+      renderSidebar()
+    }
+
+    if (explorerBtn) explorerBtn.addEventListener('click', function () { setMode('explorer') })
+    if (pipelineBtn) pipelineBtn.addEventListener('click', function () { setMode('pipeline') })
+
+    renderSidebar()
+    renderDashboard()
+    renderPipeline()
+    setMode('explorer')
+
+    // Deep link: #files&path=<encoded workspace path>
+    function hashPath() {
+      var h = doc.location ? String(doc.location.hash || '') : ''
+      var mm = /(?:^#|&)path=([^&]+)/.exec(h)
+      if (!mm) return ''
+      try {
+        return decodeURIComponent(mm[1])
+      } catch {
+        return ''
+      }
+    }
+
+    var onHashPath = function () {
+      var wanted = hashPath()
+      if (wanted && byPath[wanted]) {
+        if (wanted !== state.selected) selectFile(wanted)
+        return
+      }
+      if (!wanted && state.selected && /^#files(?![&\w])/.test(String(doc.location.hash || ''))) {
+        selectFile('')
+      }
+    }
+    if (doc.defaultView) doc.defaultView.addEventListener('hashchange', onHashPath)
+
+    var initial = hashPath()
+    if (initial && byPath[initial]) selectFile(initial)
   }
 
   // One Changes tab: Unsent on top (the only change signal a model view carries),
@@ -6634,6 +7420,13 @@
       renderDocumentView(active, docElements, concepts, (meta && (meta.modelId || meta.model)) || '')
     }
     renderMatrices(active, matrices, concepts, (meta && (meta.modelId || meta.model)) || '')
+    renderFilesTab(active, model && model.files, {
+      elements: elements,
+      changes: (model && Array.isArray(model.changes) ? model.changes : []),
+      onReveal: function (descriptor) {
+        revealUnit(descriptor)
+      },
+    })
     renderMetamodelView(active, schema, matrices, elements)
 
     var searchBox = active.getElementById('nn-search')

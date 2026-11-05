@@ -7373,6 +7373,8 @@ var require_dist = __commonJS({
 // <stdin>
 var stdin_exports = {};
 __export(stdin_exports, {
+  applyMutation: () => applyMutation,
+  buildLineageChangeset: () => buildLineageChangeset,
   freeze_slugs: () => freeze_slugs,
   parseKnowledge: () => parseKnowledge,
   planDomainScaffold: () => planDomainScaffold,
@@ -8449,6 +8451,107 @@ var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
 var MATRIX_DEFINITION = "Matrix Definition";
 
+// iNNfo/packages/nn-core/src/schema/field-values.ts
+function valueKey(v) {
+  if (v === null || v === void 0) return "";
+  return String(v).trim().toLowerCase();
+}
+function validateFieldValue(def, value, path) {
+  const diagnostics = [];
+  if (value === void 0 || value === null) {
+    return diagnostics;
+  }
+  if (def.multiple) {
+    if (typeof value === "string" && value.includes(",") && !value.trim().startsWith("[")) {
+      diagnostics.push({
+        path,
+        message: `Field "${def.name}" has unbracketed comma-separated value "${value}". Multi-valued fields should use [val1, val2]`,
+        severity: "warning",
+        code: "MULTI_VALUE_UNBRACKETED"
+      });
+    }
+    const items = Array.isArray(value) ? value : [value];
+    if (def.type === "select" && def.options && def.options.length > 0) {
+      const allowedKeys = new Set(def.options.map(valueKey));
+      for (const item of items) {
+        if (!allowedKeys.has(valueKey(item))) {
+          diagnostics.push({
+            path,
+            message: `Invalid value "${String(item)}" for "${def.name}". Allowed: ${def.options.join(", ")}`,
+            severity: "error"
+          });
+        }
+      }
+    }
+    return diagnostics;
+  }
+  if (def.type === "select" && Array.isArray(value)) {
+    diagnostics.push({
+      path,
+      message: `Single-valued field "${def.name}" does not accept array values`,
+      severity: "error"
+    });
+    return diagnostics;
+  }
+  if (def.type === "select" && def.options && def.options.length > 0) {
+    const valStr = String(value);
+    if (!def.options.includes(valStr)) {
+      diagnostics.push({
+        path,
+        message: `Invalid value "${valStr}" for "${def.name}". Allowed: ${def.options.join(", ")}`,
+        severity: "error"
+      });
+    }
+  } else if (def.type === "number") {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      diagnostics.push({
+        path,
+        message: `Invalid numeric value "${String(value)}" for "${def.name}"`,
+        severity: "error"
+      });
+    } else if (def.widget === "scale" && def.widgetConfig) {
+      const { min, max, step } = def.widgetConfig;
+      if (typeof min === "number" && value < min || typeof max === "number" && value > max) {
+        diagnostics.push({
+          path,
+          message: `Value ${value} for "${def.name}" is outside declared bounds [${min ?? "-Infinity"}..${max ?? "Infinity"}]`,
+          severity: "error"
+        });
+      }
+      if (typeof step === "number" && step > 0) {
+        const base = typeof min === "number" ? min : 0;
+        const rem = Math.abs((value - base) % step);
+        if (rem > 1e-9 && Math.abs(rem - step) > 1e-9) {
+          diagnostics.push({
+            path,
+            message: `Value ${value} for "${def.name}" does not match declared step ${step}`,
+            severity: "error"
+          });
+        }
+      }
+    }
+  } else if (def.type === "boolean") {
+    if (typeof value !== "boolean") {
+      diagnostics.push({
+        path,
+        message: `Invalid boolean value "${String(value)}" for "${def.name}"`,
+        severity: "error"
+      });
+    }
+  }
+  return diagnostics;
+}
+
+// iNNfo/packages/nn-core/src/validator/constants.ts
+var RESERVED_CONCEPT_NAMES = /* @__PURE__ */ new Set(["Concepts", "Elements", "Markers"]);
+var WIDGET_CONFIG_KEYS = {
+  scale: ["min", "max", "step", "unit"],
+  set: ["max_selections"],
+  cycle: [],
+  boolean: ["true_label", "false_label"],
+  text: ["max_length"]
+};
+
 // iNNfo/packages/nn-core/src/schema/metaschema.ts
 var REQUIRED_BY_PRIMITIVE = {
   [CONCEPT_DEFINITION]: ["type"],
@@ -8467,6 +8570,26 @@ var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
 var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
 
 // iNNfo/packages/nn-core/src/sourceRef.ts
+function levenshteinDistance(a, b) {
+  const an = a.length;
+  const bn = b.length;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix = Array.from({ length: bn + 1 }, () => new Array(an + 1).fill(0));
+  for (let i = 0; i <= an; i++) matrix[0][i] = i;
+  for (let j = 0; j <= bn; j++) matrix[j][0] = j;
+  for (let j = 1; j <= bn; j++) {
+    for (let i = 1; i <= an; i++) {
+      const cost = a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j - 1][i] + 1,
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i - 1] + cost
+      );
+    }
+  }
+  return matrix[bn][an];
+}
 function slugifyHeading(text) {
   const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
   return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
@@ -8478,7 +8601,114 @@ function slugifyFlat(part) {
   return filtered.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+// iNNfo/packages/nn-core/src/references.ts
+function updateReferenceString(text, oldName, newName) {
+  if (!text || typeof text !== "string") return text;
+  const oldSlug = slugify(oldName);
+  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+    if (slugify(text.trim()) === oldSlug) {
+      const leadingSpaces = text.match(/^\s*/)?.[0] || "";
+      const trailingSpaces = text.match(/\s*$/)?.[0] || "";
+      return `${leadingSpaces}${newName}${trailingSpaces}`;
+    }
+  }
+  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+    const qualifiedBracketRegex = new RegExp(`^(\\s*\\[[^\\]]+\\]\\s*)(.+)$`, "i");
+    const matchBracket = text.match(qualifiedBracketRegex);
+    if (matchBracket && slugify(matchBracket[2].trim()) === oldSlug) {
+      const trailingSpaces = matchBracket[2].match(/\s*$/)?.[0] || "";
+      return `${matchBracket[1]}${newName}${trailingSpaces}`;
+    }
+    const qualifiedColonRegex = new RegExp(`^(\\s*[^:]+::\\s*)(.+)$`, "i");
+    const matchColon = text.match(qualifiedColonRegex);
+    if (matchColon && slugify(matchColon[2].trim()) === oldSlug) {
+      const trailingSpaces = matchColon[2].match(/\s*$/)?.[0] || "";
+      return `${matchColon[1]}${newName}${trailingSpaces}`;
+    }
+  }
+  return updateWikiLinks(text, oldName, newName);
+}
+function updateWikiLinks(text, oldName, newName) {
+  if (!text || typeof text !== "string") return text;
+  const oldSlug = slugify(oldName);
+  return text.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
+    const trimmedTarget = target.trim();
+    if (slugify(trimmedTarget) === oldSlug) {
+      return `[[${newName}${alias ?? ""}]]`;
+    }
+    const qBracket = new RegExp(`^(\\[[^\\]]+\\]\\s*)(.+)$`, "i");
+    const mBracket = trimmedTarget.match(qBracket);
+    if (mBracket && slugify(mBracket[2]) === oldSlug) {
+      return `[[${mBracket[1]}${newName}${alias ?? ""}]]`;
+    }
+    const qColon = new RegExp(`^(.*::\\s*)(.+)$`, "i");
+    const mColon = trimmedTarget.match(qColon);
+    if (mColon && slugify(mColon[2]) === oldSlug) {
+      return `[[${mColon[1]}${newName}${alias ?? ""}]]`;
+    }
+    return match;
+  });
+}
+
 // iNNfo/packages/nn-core/src/mutate.ts
+function requireArgs(args, keys) {
+  const values = {};
+  const missing = [];
+  for (const key of keys) {
+    const value = args[key];
+    if (typeof value === "string" && value.length > 0) {
+      values[key] = value;
+    } else {
+      missing.push(key);
+    }
+  }
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      result: {
+        success: false,
+        errors: [
+          {
+            path: "",
+            message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required`
+          }
+        ]
+      }
+    };
+  }
+  return { ok: true, values };
+}
+function unknownConceptMessage(conceptName, declaredNames) {
+  let best;
+  let bestDistance = Infinity;
+  for (const name of declaredNames) {
+    const dist = levenshteinDistance(conceptName.toLowerCase(), name.toLowerCase());
+    if (dist < bestDistance) {
+      bestDistance = dist;
+      best = name;
+    }
+  }
+  if (best !== void 0 && bestDistance <= 2) {
+    return `Concept "${conceptName}" is not declared in the template. Did you mean "${best}"?`;
+  }
+  return `Concept "${conceptName}" is not declared in the template. Declared concepts: ${declaredNames.join(", ")}`;
+}
+function cloneKnowledge(model) {
+  const { elements, ...rest } = model;
+  const clonedElements = new ElementsMap();
+  for (const [key, nodes] of elements.entries()) {
+    clonedElements.set(key, nodes.map((node) => structuredClone(node)));
+  }
+  return { ...structuredClone(rest), elements: clonedElements };
+}
+function applyMutation(model, op, args, schema) {
+  const draft = cloneKnowledge(model);
+  const result = runMutation(draft, op, args, schema);
+  if (result.success) {
+    Object.assign(model, draft);
+  }
+  return result;
+}
 function freeze_slugs(model) {
   const existingSlugs = /* @__PURE__ */ new Set();
   for (const [, elements] of model.elements.entries()) {
@@ -8505,8 +8735,1332 @@ function freeze_slugs(model) {
   }
   return { success: true };
 }
+function modelHasUnfrozenElements(model) {
+  for (const [, elements] of model.elements.entries()) {
+    for (const el of elements) {
+      if (!el.slugExplicit) return true;
+    }
+  }
+  return false;
+}
+var MUTATION_HANDLERS = {
+  add_concept: (model, args) => addConcept(model, args),
+  add_field: (model, args) => addField(model, args),
+  add_element: (model, args, schema) => addElement(model, args, schema),
+  update_field: (model, args, schema) => updateField(model, args, schema),
+  remove_element: (model, args) => removeElement(model, args),
+  rename_concept: (model, args) => renameConcept(model, args),
+  rename_element: (model, args, schema) => renameElement(model, args, schema),
+  update_matrix_cell: (model, args) => updateMatrixCell(model, args),
+  update_element_text: (model, args) => updateElementText(model, args),
+  update_concept_text: (model, args, schema) => updateConceptText(model, args, schema),
+  update_concept_field: (model, args, schema) => updateConceptField(model, args, schema),
+  remove_matrix: (model, args) => removeMatrix(model, args),
+  add_matrix: (model, args) => addMatrix(model, args),
+  generate_index: (model, args) => generateIndex(model, args),
+  freeze_slugs: (model) => freeze_slugs(model),
+  extract_instance: (model, args) => extractInstance(model, args),
+  repin_blueprint: (model, args) => repinBlueprint(model, args),
+  rename_field: (model, args) => renameFieldKey(model, args),
+  set_field_default: (model, args) => setFieldDefault(model, args)
+};
+function repinBlueprint(model, args) {
+  const to = typeof args.to === "string" ? args.to.trim() : "";
+  const url = typeof args.blueprintUrl === "string" ? args.blueprintUrl.trim() : "";
+  const from = typeof args.from === "string" ? args.from.trim() : "";
+  if (!to) {
+    return { success: false, errors: [{ path: "to", message: 'repin_blueprint requires "to"' }] };
+  }
+  if (!url) {
+    return {
+      success: false,
+      errors: [{ path: "blueprintUrl", message: 'repin_blueprint requires "blueprintUrl"' }]
+    };
+  }
+  const fm = model.frontmatter;
+  const current = fm.parent_spec?.name;
+  if (from && typeof current === "string" && current.toLowerCase() !== from.toLowerCase()) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "from",
+          message: `repin_blueprint precondition failed: the model is pinned to "${current}", not "${from}"`
+        }
+      ]
+    };
+  }
+  const version = to.match(/V_\d+-\d+-\d+/)?.[0];
+  fm.parent_spec = { ...fm.parent_spec ?? {}, name: to, url };
+  if (version) fm.blueprint_version = version;
+  return { success: true };
+}
+function renameFieldKey(model, args) {
+  const from = typeof args.from === "string" ? args.from.trim() : "";
+  const to = typeof args.to === "string" ? args.to.trim() : "";
+  const scope = typeof args.conceptName === "string" ? args.conceptName.trim() : "";
+  if (!from || !to) {
+    return {
+      success: false,
+      errors: [{ path: "", message: 'rename_field requires "from" and "to"' }]
+    };
+  }
+  if (from.toLowerCase() === to.toLowerCase()) {
+    return {
+      success: false,
+      errors: [{ path: "to", message: 'rename_field "from" and "to" are the same field' }]
+    };
+  }
+  let renamed = 0;
+  for (const [concept, elements] of model.elements.entries()) {
+    if (scope && concept.toLowerCase() !== scope.toLowerCase()) continue;
+    for (const el of elements) {
+      const key = Object.keys(el.fields).find((k) => k.toLowerCase() === from.toLowerCase());
+      if (!key) continue;
+      const value = el.fields[key];
+      delete el.fields[key];
+      el.fields[to] = value;
+      const rawFields = el.rawFields;
+      if (rawFields && rawFields[key] !== void 0) {
+        const raw = rawFields[key];
+        delete rawFields[key];
+        rawFields[to] = raw;
+      }
+      renamed += 1;
+    }
+  }
+  if (renamed === 0) {
+    return {
+      success: true,
+      warnings: [{ path: "", message: `rename_field: no element carries "${from}"` }]
+    };
+  }
+  return { success: true };
+}
+function setFieldDefault(model, args) {
+  const fieldName = typeof args.fieldName === "string" ? args.fieldName.trim() : typeof args.name === "string" ? args.name.trim() : "";
+  const value = args.value !== void 0 ? args.value : args.to;
+  const scope = typeof args.conceptName === "string" ? args.conceptName.trim() : "";
+  if (!fieldName) {
+    return { success: false, errors: [{ path: "name", message: 'set_field_default requires "name"' }] };
+  }
+  if (value === void 0) {
+    return { success: false, errors: [{ path: "to", message: 'set_field_default requires "to"' }] };
+  }
+  let filled = 0;
+  for (const [concept, elements] of model.elements.entries()) {
+    if (scope && concept.toLowerCase() !== scope.toLowerCase()) continue;
+    for (const el of elements) {
+      const existing = Object.keys(el.fields).find(
+        (k) => k.toLowerCase() === fieldName.toLowerCase()
+      );
+      if (existing) continue;
+      el.fields[fieldName] = value;
+      filled += 1;
+    }
+  }
+  if (filled === 0) {
+    return {
+      success: true,
+      warnings: [{ path: "", message: `set_field_default: every element already has "${fieldName}"` }]
+    };
+  }
+  return { success: true };
+}
+var LEVEL2_ONLY_OPS = /* @__PURE__ */ new Set(["add_concept", "add_field"]);
+var LEVEL3_ONLY_OPS = /* @__PURE__ */ new Set(["add_matrix"]);
+function runMutation(model, op, args, schema) {
+  try {
+    const handler = MUTATION_HANDLERS[op];
+    if (!handler) {
+      return { success: false, errors: [{ path: "", message: `Unknown operation: ${op}` }] };
+    }
+    if (model.frontmatter.read_only === true) {
+      return {
+        success: false,
+        errors: [
+          {
+            path: "frontmatter.read_only",
+            message: `Document is a read-only imported snapshot from "${model.frontmatter.imported_from ?? "origin"}". Direct mutations are prohibited; edit at the origin domain.`
+          }
+        ]
+      };
+    }
+    if (LEVEL2_ONLY_OPS.has(op) && model.frontmatter.level !== 2) {
+      return {
+        success: false,
+        errors: [
+          {
+            path: "frontmatter.level",
+            message: `Operation "${op}" authors template primitives and is only valid on a level-2 template; this document is level ${model.frontmatter.level ?? "unset"}. Use add_element/update_field on a level-3 model, or target the parent template.`
+          }
+        ]
+      };
+    }
+    if (LEVEL3_ONLY_OPS.has(op) && model.frontmatter.level !== 3) {
+      return {
+        success: false,
+        errors: [
+          {
+            path: "frontmatter.level",
+            message: `Operation "${op}" authors a Level-3 matrix table and is only valid on a level-3 kNNowledge model; this document is level ${model.frontmatter.level ?? "unset"}. On a bluepriNNt, declare a matrix with add_element on the "Matrix Definition" concept instead.`
+          }
+        ]
+      };
+    }
+    if (op !== "freeze_slugs" && modelHasUnfrozenElements(model)) {
+      freeze_slugs(model);
+    }
+    return handler(model, args, schema);
+  } catch (err) {
+    return {
+      success: false,
+      errors: [{ path: "", message: err instanceof Error ? err.message : String(err) }]
+    };
+  }
+}
+function addConcept(model, args) {
+  const req = requireArgs(args, ["conceptName"]);
+  if (!req.ok) return req.result;
+  const { conceptName } = req.values;
+  if (RESERVED_CONCEPT_NAMES.has(conceptName)) {
+    return {
+      success: false,
+      errors: [{
+        path: "Concept Definition",
+        message: `"${conceptName}" is a reserved pseudo-concept name and MUST NOT be declared`
+      }]
+    };
+  }
+  const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
+  if (defs.some((c) => c.name.toLowerCase() === conceptName.toLowerCase())) {
+    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" already exists` }] };
+  }
+  const fields = { type: args.type ?? "text" };
+  if (args.icon !== void 0) fields["icon"] = args.icon;
+  if (args.color !== void 0) fields["color"] = args.color;
+  if (args.weight !== void 0) fields["weight"] = args.weight;
+  defs.push({ type: CONCEPT_DEFINITION, name: conceptName, description: "", fields, markers: {} });
+  model.elements.set(CONCEPT_DEFINITION, defs);
+  return { success: true };
+}
+function addField(model, args) {
+  const req = requireArgs(args, ["conceptName", "fieldName"]);
+  if (!req.ok) return req.result;
+  const { conceptName, fieldName } = req.values;
+  let conceptVal = conceptName;
+  if (typeof conceptName === "string") {
+    const trimmed = conceptName.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      conceptVal = parsePropertyValue(trimmed);
+    } else {
+      conceptVal = trimmed;
+    }
+  }
+  const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
+  const declaredConceptNames = new Set(defs.map((c) => c.name.toLowerCase()));
+  if (conceptVal === "*") {
+  } else if (Array.isArray(conceptVal)) {
+    for (const c of conceptVal) {
+      if (!declaredConceptNames.has(String(c).toLowerCase())) {
+        return { success: false, errors: [{ path: "concept", message: `Concept "${c}" not found` }] };
+      }
+    }
+  } else if (typeof conceptVal === "string") {
+    if (!declaredConceptNames.has(conceptVal.toLowerCase())) {
+      return { success: false, errors: [{ path: "", message: `Concept "${conceptVal}" not found` }] };
+    }
+  }
+  const fds = model.elements.get(FIELD_DEFINITION) ?? [];
+  const existingField = fds.find(
+    (f) => f.name.toLowerCase() === fieldName.toLowerCase() && JSON.stringify(f.fields["concept"]) === JSON.stringify(conceptVal)
+  );
+  if (existingField) {
+    return {
+      success: false,
+      errors: [{ path: "", message: `Field "${fieldName}" already exists on concept "${String(conceptVal)}"` }]
+    };
+  }
+  const fieldType = args.fieldType ?? args.type ?? "string";
+  const fields = {
+    concept: conceptVal,
+    type: fieldType
+  };
+  if (args.multiple !== void 0) {
+    const mult = args.multiple === true || args.multiple === "true";
+    if (mult && fieldType !== "select") {
+      return {
+        success: false,
+        errors: [{ path: "multiple", message: `Field "${fieldName}" has multiple:: true, which requires type:: select (got "${fieldType}")` }]
+      };
+    }
+    fields["multiple"] = mult;
+  }
+  if (args.widget !== void 0) {
+    const widget = String(args.widget).toLowerCase();
+    if (widget === "scale" && fieldType !== "number") {
+      return {
+        success: false,
+        errors: [{ path: "widget", message: `widget "scale" requires type:: number (got "${fieldType}")` }]
+      };
+    }
+    if (widget === "boolean" && fieldType !== "boolean") {
+      return {
+        success: false,
+        errors: [{ path: "widget", message: `widget "boolean" requires type:: boolean (got "${fieldType}")` }]
+      };
+    }
+    if (widget === "cycle") {
+      const opts = args.options;
+      const hasOptions = Array.isArray(opts) ? opts.length > 0 : Boolean(opts);
+      if (fieldType !== "select" || fields["multiple"] === true || !hasOptions) {
+        return {
+          success: false,
+          errors: [{ path: "widget", message: `widget "cycle" requires a single-valued select with options` }]
+        };
+      }
+    }
+    if (widget === "set") {
+      if (fieldType !== "select" || fields["multiple"] !== true) {
+        return {
+          success: false,
+          errors: [{ path: "widget", message: `widget "set" requires type:: select with multiple:: true` }]
+        };
+      }
+    }
+    if (widget === "text" && fieldType !== "string") {
+      return {
+        success: false,
+        errors: [{ path: "widget", message: `widget "text" requires type:: string (got "${fieldType}")` }]
+      };
+    }
+    fields["widget"] = widget;
+  }
+  if (args.widget_config !== void 0 || args.widgetConfig !== void 0) {
+    const cfg = args.widget_config ?? args.widgetConfig;
+    const widget = fields["widget"];
+    if (!widget) {
+      return {
+        success: false,
+        errors: [{ path: "widget_config", message: `"${fieldName}" declares widget_config but no widget` }]
+      };
+    }
+    const allowed = WIDGET_CONFIG_KEYS[widget] || [];
+    if (typeof cfg === "object" && cfg !== null) {
+      for (const k of Object.keys(cfg)) {
+        if (!allowed.includes(k)) {
+          return {
+            success: false,
+            errors: [{ path: `widget_config.${k}`, message: `"${k}" is not a widget_config key for widget "${widget}". Allowed: ${allowed.join(", ") || "(none)"}` }]
+          };
+        }
+      }
+      if (widget === "scale") {
+        const scaleCfg = cfg;
+        if (scaleCfg["min"] === void 0 || scaleCfg["max"] === void 0) {
+          return {
+            success: false,
+            errors: [{ path: "widget_config", message: `widget "scale" requires widget_config.min and max` }]
+          };
+        }
+        if (Number(scaleCfg["min"]) >= Number(scaleCfg["max"])) {
+          return {
+            success: false,
+            errors: [{ path: "widget_config", message: `widget "scale" min (${scaleCfg["min"]}) must be less than max (${scaleCfg["max"]})` }]
+          };
+        }
+      }
+    }
+    fields["widget_config"] = cfg;
+  }
+  if (args.options !== void 0) {
+    if (typeof args.options === "string" && args.options.trim().startsWith("[")) {
+      fields["options"] = parsePropertyValue(args.options);
+    } else {
+      fields["options"] = args.options;
+    }
+  }
+  if (args.target_concepts !== void 0) fields["target_concepts"] = args.target_concepts;
+  if (args.description !== void 0) fields["description"] = args.description;
+  const previous = fds[fds.length - 1];
+  if (previous && previous.trailingBlankLine === false) previous.trailingBlankLine = true;
+  fds.push({ type: FIELD_DEFINITION, name: fieldName, description: "", fields, markers: {} });
+  model.elements.set(FIELD_DEFINITION, fds);
+  return { success: true };
+}
+function addElement(model, args, schema) {
+  const req = requireArgs(args, ["conceptName", "elementName"]);
+  if (!req.ok) return req.result;
+  const { conceptName, elementName } = req.values;
+  if (schema) {
+    const declared = schema.concepts.find((c) => c.name.toLowerCase() === conceptName.toLowerCase());
+    if (!declared) {
+      const declaredNames = schema.concepts.map((c) => c.name);
+      return {
+        success: false,
+        errors: [{ path: "conceptName", message: unknownConceptMessage(conceptName, declaredNames) }]
+      };
+    }
+  }
+  const existingElements = model.elements.get(conceptName) ?? [];
+  if (existingElements.some((e) => e.name.toLowerCase() === elementName.toLowerCase())) {
+    return {
+      success: false,
+      errors: [{ path: "", message: `Element "${elementName}" already exists in concept "${conceptName}"` }]
+    };
+  }
+  const requestedSlug = typeof args.slug === "string" && args.slug.trim() ? args.slug.trim() : void 0;
+  if (requestedSlug) {
+    for (const [, elements] of model.elements.entries()) {
+      for (const el of elements) {
+        if (el.slug?.toLowerCase() === requestedSlug.toLowerCase()) {
+          return {
+            success: false,
+            errors: [{ path: "slug", message: `Slug "${requestedSlug}" already exists in this model \u2014 element slugs must be unique model-wide` }]
+          };
+        }
+      }
+    }
+  }
+  if (args.fields !== void 0 && args.fields !== null) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "fields",
+          message: "INVALID_OPERATION: add_element must not carry inline fields; emit one update_field change per field (target model@element&field)"
+        }
+      ]
+    };
+  }
+  const reservedArgsKeys = /* @__PURE__ */ new Set([
+    "conceptName",
+    "elementName",
+    "slug",
+    "description",
+    "fields",
+    // Not a field: a change derives from `evidence`. Accepted here only so the
+    // generic copy below does not smuggle it into the element's fields.
+    "sources",
+    "rationale",
+    "approved_by",
+    "author",
+    "recovered_after",
+    "timestamp",
+    "scope",
+    "change"
+  ]);
+  const fields = {};
+  for (const [k, v] of Object.entries(args)) {
+    if (!reservedArgsKeys.has(k) && v !== void 0) {
+      fields[k] = v;
+    }
+  }
+  if (existingElements.length > 0) {
+    const prevLast = existingElements[existingElements.length - 1];
+    prevLast.trailingBlankLine = true;
+  }
+  let elementSlug;
+  if (requestedSlug) {
+    elementSlug = requestedSlug;
+  } else {
+    const existingSlugs = /* @__PURE__ */ new Set();
+    for (const [, elements] of model.elements.entries()) {
+      for (const el of elements) {
+        if (el.slug) existingSlugs.add(el.slug.toLowerCase());
+      }
+    }
+    const baseSlug = slugifyHeading(elementName);
+    let candidate = baseSlug;
+    let counter = 1;
+    while (existingSlugs.has(candidate.toLowerCase())) {
+      candidate = `${baseSlug}-${counter++}`;
+    }
+    elementSlug = candidate;
+  }
+  const newElement = {
+    type: conceptName,
+    name: elementName,
+    description: args.description ?? "",
+    fields,
+    markers: {},
+    slug: elementSlug,
+    slugExplicit: true,
+    trailingBlankLine: true
+  };
+  existingElements.push(newElement);
+  model.elements.set(conceptName, existingElements);
+  return { success: true };
+}
+function matchesElement(e, target) {
+  const tLower = target.toLowerCase();
+  if (e.name.toLowerCase() === tLower) return true;
+  if (e.slug && e.slug.toLowerCase() === tLower) return true;
+  if (slugify(e.name).toLowerCase() === tLower) return true;
+  if (slugifyHeading(e.name).toLowerCase() === tLower) return true;
+  return false;
+}
+function coerceFieldValue(existing, incoming) {
+  if (typeof incoming !== "string") return incoming;
+  if (typeof existing === "number") {
+    const trimmed = incoming.trim();
+    if (trimmed !== "") {
+      const asNumber = Number(trimmed);
+      if (Number.isFinite(asNumber)) return asNumber;
+    }
+    return incoming;
+  }
+  if (typeof existing === "boolean") {
+    const lower = incoming.trim().toLowerCase();
+    if (lower === "true") return true;
+    if (lower === "false") return false;
+    return incoming;
+  }
+  if (Array.isArray(existing)) {
+    const parsed = parsePropertyValue(incoming);
+    if (Array.isArray(parsed)) return parsed;
+    return incoming;
+  }
+  return incoming;
+}
+function updateField(model, args, schema) {
+  let elementName = args.elementName || args.elementSlug || args.slug || "";
+  let fieldName = args.fieldName || "";
+  const conceptName = args.conceptName || "";
+  const val = args.value !== void 0 ? args.value : args.to;
+  if (args.target && typeof args.target === "string") {
+    let clean = args.target.trim();
+    if (clean.includes("@")) {
+      clean = clean.slice(clean.indexOf("@") + 1);
+    }
+    const parts = clean.split("&");
+    if (parts.length >= 2) {
+      fieldName = parts[parts.length - 1];
+      elementName = parts.slice(0, -1).join("&");
+    } else if (parts.length === 1 && !elementName) {
+      elementName = parts[0];
+    }
+  }
+  if (!elementName || !fieldName) {
+    const missing = [];
+    if (!elementName) missing.push("elementName");
+    if (!fieldName) missing.push("fieldName");
+    return {
+      success: false,
+      errors: [{ path: "", message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required` }]
+    };
+  }
+  if (fieldName.trim().toLowerCase() === "description") {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "fieldName",
+          message: "USE_UPDATE_ELEMENT_TEXT: the element prose is not a field; use update_element_text on the bare element target (model@element)"
+        }
+      ]
+    };
+  }
+  if (val === void 0) {
+    return { success: false, errors: [{ path: "", message: "value is required" }] };
+  }
+  let foundElement;
+  let foundConcept;
+  if (conceptName) {
+    const existingElements = model.elements.get(conceptName);
+    if (!existingElements) {
+      return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+    }
+    foundElement = existingElements.find((e) => matchesElement(e, elementName));
+    foundConcept = conceptName;
+  } else {
+    for (const [cName, elements] of model.elements.entries()) {
+      const el = elements.find((e) => matchesElement(e, elementName));
+      if (el) {
+        foundElement = el;
+        foundConcept = cName;
+        break;
+      }
+    }
+  }
+  if (!foundElement || !foundConcept) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "",
+          message: `Element "${elementName}" not found${conceptName ? ` in concept "${conceptName}"` : ""}`
+        }
+      ]
+    };
+  }
+  if (val === "") {
+    delete foundElement.fields[fieldName];
+    if (foundElement.rawFields) {
+      delete foundElement.rawFields[fieldName];
+    }
+    return { success: true };
+  }
+  let parsedVal = val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      parsedVal = parsePropertyValue(trimmed);
+    }
+  }
+  if (schema && foundConcept) {
+    const conceptObj = schema.concepts?.find((c) => c.name.toLowerCase() === foundConcept.toLowerCase());
+    let fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
+    if (!fieldDef && Array.isArray(schema.fields)) {
+      fieldDef = schema.fields.find(
+        (f) => f.name.toLowerCase() === fieldName.toLowerCase() && (!f.concept || f.concept === "*" || (Array.isArray(f.concept) ? f.concept.some((c) => c.toLowerCase() === foundConcept.toLowerCase()) : String(f.concept).toLowerCase() === foundConcept.toLowerCase()))
+      );
+    }
+    if (fieldDef) {
+      const diags = validateFieldValue(fieldDef, parsedVal, `${foundConcept}.${fieldName}`);
+      const errors = diags.filter((d) => d.severity === "error");
+      if (errors.length > 0) {
+        return {
+          success: false,
+          errors: errors.map((e) => ({ path: e.path, message: e.message }))
+        };
+      }
+    }
+  }
+  foundElement.fields[fieldName] = coerceFieldValue(foundElement.fields[fieldName], parsedVal);
+  if (foundElement.rawFields && fieldName in foundElement.rawFields) {
+    delete foundElement.rawFields[fieldName];
+  }
+  return { success: true };
+}
+function updateMatrixCell(model, args) {
+  const matrixName = args.matrixName || "";
+  let matrixSlug = args.matrixSlug || "";
+  let row = args.row || "";
+  let col = args.col || "";
+  const val = args.value !== void 0 ? String(args.value) : args.to !== void 0 ? String(args.to) : void 0;
+  if (args.target && typeof args.target === "string") {
+    let clean = args.target.trim();
+    if (clean.includes("@")) {
+      clean = clean.slice(clean.indexOf("@") + 1);
+    }
+    const parts = clean.split("&");
+    if (parts.length >= 3) {
+      matrixSlug = parts[0];
+      row = parts[1];
+      col = parts[2];
+    }
+  }
+  if (!row || !col) {
+    return { success: false, errors: [{ path: "", message: "row and col are required" }] };
+  }
+  if (val === void 0) {
+    return { success: false, errors: [{ path: "", message: "value is required" }] };
+  }
+  const normalizeKey = (k) => k.replace(/[×xX]/g, "x").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+  const matchesMatrix = (name, candidateSlug) => {
+    if (matrixName && name.toLowerCase() === matrixName.toLowerCase()) return true;
+    if (matrixSlug) {
+      if (candidateSlug && candidateSlug.toLowerCase() === matrixSlug.toLowerCase()) return true;
+      if (slugify(name).toLowerCase() === matrixSlug.toLowerCase()) return true;
+      if (slugifyHeading(name).toLowerCase() === matrixSlug.toLowerCase()) return true;
+      if (normalizeKey(name) === normalizeKey(matrixSlug)) return true;
+    }
+    if (matrixName) {
+      if (slugify(name).toLowerCase() === slugify(matrixName).toLowerCase()) return true;
+      if (slugifyHeading(name).toLowerCase() === slugifyHeading(matrixName).toLowerCase()) return true;
+      if (normalizeKey(name) === normalizeKey(matrixName)) return true;
+    }
+    return false;
+  };
+  let matrix = model.matrices.find((m) => matchesMatrix(m.name, m.slug));
+  if (!matrix && model.frontmatter?.matrices) {
+    const decl = model.frontmatter.matrices.find((d) => matchesMatrix(d.name, d.slug));
+    if (decl) {
+      matrix = model.matrices.find((m) => m.name.toLowerCase() === decl.name.toLowerCase());
+    }
+  }
+  if (!matrix) {
+    return {
+      success: false,
+      errors: [{ path: "", message: `Matrix "${matrixName || matrixSlug}" not found` }]
+    };
+  }
+  const matchesCoord = (actual, requested) => {
+    const a = actual.toLowerCase();
+    const r = requested.toLowerCase();
+    return a === r || slugify(a) === slugify(r) || slugifyHeading(a) === slugifyHeading(r) || normalizeKey(a) === normalizeKey(r);
+  };
+  const cell = matrix.cells.find((c) => matchesCoord(c.row, row) && matchesCoord(c.col, col));
+  if (cell) {
+    cell.value = val;
+  } else {
+    matrix.cells.push({ row, col, value: val });
+  }
+  return { success: true };
+}
+function removeElement(model, args) {
+  const req = requireArgs(args, ["conceptName", "elementName"]);
+  if (!req.ok) return req.result;
+  const { conceptName, elementName } = req.values;
+  const existingElements = model.elements.get(conceptName) ?? [];
+  const targetEl = existingElements.find(
+    (e) => e.name.toLowerCase() === elementName.toLowerCase() || e.slug && e.slug.toLowerCase() === elementName.toLowerCase() || slugifyHeading(e.name).toLowerCase() === elementName.toLowerCase()
+  );
+  const filtered = existingElements.filter(
+    (e) => e.name.toLowerCase() !== elementName.toLowerCase() && (!e.slug || e.slug.toLowerCase() !== elementName.toLowerCase()) && slugifyHeading(e.name).toLowerCase() !== elementName.toLowerCase()
+  );
+  if (filtered.length === existingElements.length) {
+    return { success: false, errors: [{ path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }] };
+  }
+  model.elements.set(conceptName, filtered);
+  let cascadedCells = 0;
+  if (model.matrices) {
+    const targetIdent = elementName.toLowerCase();
+    const targetSlug = targetEl?.slug?.toLowerCase();
+    const targetHeading = targetEl ? slugifyHeading(targetEl.name).toLowerCase() : void 0;
+    for (const matrix of model.matrices) {
+      if (!matrix.cells) continue;
+      const initialCount = matrix.cells.length;
+      matrix.cells = matrix.cells.filter((c) => {
+        const rLower = c.row.toLowerCase();
+        const colLower = c.col.toLowerCase();
+        const unbracket = (s) => {
+          const m = s.match(/^\[\[(.*)\]\]$/);
+          return m ? m[1].toLowerCase() : s;
+        };
+        const rClean = unbracket(rLower);
+        const cClean = unbracket(colLower);
+        const rowMatches = rLower === targetIdent || rClean === targetIdent || targetSlug !== void 0 && (rLower === targetSlug || rClean === targetSlug) || targetHeading !== void 0 && (rLower === targetHeading || rClean === targetHeading);
+        const colMatches = colLower === targetIdent || cClean === targetIdent || targetSlug !== void 0 && (colLower === targetSlug || cClean === targetSlug) || targetHeading !== void 0 && (colLower === targetHeading || cClean === targetHeading);
+        return !rowMatches && !colMatches;
+      });
+      cascadedCells += initialCount - matrix.cells.length;
+    }
+  }
+  return { success: true, cascadedMatrixCells: cascadedCells };
+}
+function subtreeOf(model, elementIdent, conceptName) {
+  const ident = elementIdent.trim().toLowerCase();
+  if (!ident) return null;
+  const matches = (el) => Boolean(el.slug && el.slug.toLowerCase() === ident);
+  let rootConcept;
+  let root;
+  const scoped = conceptName ? [[conceptName, model.elements.get(conceptName) ?? []]] : [...model.elements.entries()];
+  for (const [concept, list] of scoped) {
+    root = list.find(matches);
+    if (root) {
+      rootConcept = concept;
+      break;
+    }
+  }
+  if (!root || !rootConcept) return null;
+  const picked = /* @__PURE__ */ new Set([root]);
+  const elements = [
+    { concept: rootConcept, node: root }
+  ];
+  const pending = [root.slug.toLowerCase()];
+  while (pending.length > 0) {
+    const parent = pending.shift();
+    for (const [concept, list] of model.elements.entries()) {
+      for (const el of list) {
+        if (picked.has(el)) continue;
+        if (!el.parentSlug || el.parentSlug.toLowerCase() !== parent) continue;
+        if (!el.slug) continue;
+        picked.add(el);
+        elements.push({ concept, node: el });
+        pending.push(el.slug.toLowerCase());
+      }
+    }
+  }
+  return {
+    concept: rootConcept,
+    elements,
+    slugs: elements.map(({ node }) => node.slug)
+  };
+}
+function extractInstance(model, args) {
+  const elementIdent = String(args.elementName ?? args.elementIdent ?? args.slug ?? "").trim();
+  if (!elementIdent) {
+    return { success: false, errors: [{ path: "", message: "elementName is required" }] };
+  }
+  const conceptName = typeof args.conceptName === "string" ? args.conceptName : void 0;
+  const subtree = subtreeOf(model, elementIdent, conceptName);
+  if (!subtree) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "",
+          message: `Element "${elementIdent}" not found in this model`
+        }
+      ]
+    };
+  }
+  const moved = new Set(subtree.elements.map(({ node }) => node));
+  for (const [concept, list] of model.elements.entries()) {
+    const kept = list.filter((el) => !moved.has(el));
+    if (kept.length !== list.length) model.elements.set(concept, kept);
+  }
+  return { success: true, extracted: subtree };
+}
+function updateElementText(model, args) {
+  let elementName = args.elementName || args.elementSlug || args.slug || "";
+  const conceptName = args.conceptName || "";
+  const text = typeof args.text === "string" ? args.text : typeof args.content === "string" ? args.content : typeof args.value === "string" ? args.value : typeof args.to === "string" ? args.to : void 0;
+  if (args.target && typeof args.target === "string") {
+    let clean = args.target.trim();
+    if (clean.includes("@")) clean = clean.slice(clean.indexOf("@") + 1);
+    const bodyIdx = clean.indexOf("&");
+    if (bodyIdx !== -1) clean = clean.slice(0, bodyIdx);
+    if (!elementName) elementName = clean.trim();
+  }
+  if (!elementName) {
+    return { success: false, errors: [{ path: "", message: "elementName is required" }] };
+  }
+  if (text === void 0) {
+    return { success: false, errors: [{ path: "", message: "to (or text) is required" }] };
+  }
+  let foundElement;
+  if (conceptName) {
+    const existingElements = model.elements.get(conceptName);
+    if (!existingElements) {
+      return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+    }
+    foundElement = existingElements.find((e) => matchesElement(e, elementName));
+  } else {
+    for (const [, elements] of model.elements.entries()) {
+      const el = elements.find((e) => matchesElement(e, elementName));
+      if (el) {
+        foundElement = el;
+        break;
+      }
+    }
+  }
+  if (!foundElement) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "",
+          message: `Element "${elementName}" not found${conceptName ? ` in concept "${conceptName}"` : ""}`
+        }
+      ]
+    };
+  }
+  foundElement.description = text;
+  return { success: true };
+}
+function updateConceptText(model, args, schema) {
+  const req = requireArgs(args, ["conceptName"]);
+  if (!req.ok) return req.result;
+  const { conceptName } = req.values;
+  const text = typeof args.text === "string" ? args.text : typeof args.content === "string" ? args.content : typeof args.value === "string" ? args.value : typeof args.to === "string" ? args.to : "";
+  if (!model.rawSections) {
+    model.rawSections = {};
+  }
+  let targetKey = conceptName;
+  if (schema) {
+    const declared = schema.concepts.find(
+      (c) => c.name.toLowerCase() === conceptName.toLowerCase()
+    );
+    if (declared) targetKey = declared.name;
+  }
+  for (const k of Object.keys(model.rawSections)) {
+    if (k.toLowerCase() === conceptName.toLowerCase()) {
+      targetKey = k;
+      break;
+    }
+  }
+  model.rawSections[targetKey] = text;
+  if (model.sectionOrder && !model.sectionOrder.map((s) => s.toLowerCase()).includes(targetKey.toLowerCase())) {
+    model.sectionOrder.push(targetKey);
+  }
+  return { success: true };
+}
+function updateConceptField(model, args, schema) {
+  let conceptName = args.conceptName || "";
+  let fieldName = args.fieldName || "";
+  const val = args.value !== void 0 ? args.value : args.to;
+  if (args.target && typeof args.target === "string") {
+    let clean = args.target.trim();
+    if (clean.includes("@")) {
+      clean = clean.slice(clean.indexOf("@") + 1);
+    }
+    const ampIdx = clean.indexOf("&");
+    if (ampIdx !== -1) {
+      conceptName = clean.slice(0, ampIdx).trim();
+      fieldName = clean.slice(ampIdx + 1).trim();
+    } else if (!conceptName) {
+      conceptName = clean;
+    }
+  }
+  if (conceptName.toLowerCase().startsWith("concept:")) {
+    conceptName = conceptName.slice("concept:".length).trim();
+  }
+  if (!conceptName || !fieldName) {
+    const missing = [];
+    if (!conceptName) missing.push("conceptName");
+    if (!fieldName) missing.push("fieldName");
+    return {
+      success: false,
+      errors: [{ path: "", message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required` }]
+    };
+  }
+  if (val === void 0) {
+    return { success: false, errors: [{ path: "", message: "value is required" }] };
+  }
+  let targetConceptKey = conceptName;
+  if (schema) {
+    const declared = schema.concepts.find(
+      (c) => c.name.toLowerCase() === conceptName.toLowerCase()
+    );
+    if (declared) targetConceptKey = declared.name;
+  } else if (model.conceptFields) {
+    for (const k of Object.keys(model.conceptFields)) {
+      if (k.toLowerCase() === conceptName.toLowerCase()) {
+        targetConceptKey = k;
+        break;
+      }
+    }
+  }
+  let parsedVal = val;
+  let rawValString;
+  if (typeof val === "string") {
+    rawValString = val;
+    const trimmed = val.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      parsedVal = parsePropertyValue(trimmed);
+    }
+  } else if (Array.isArray(val)) {
+    rawValString = `[${val.join(", ")}]`;
+  } else if (val !== null && val !== void 0) {
+    rawValString = String(val);
+  }
+  if (schema) {
+    const conceptObj = schema.concepts?.find((c) => c.name.toLowerCase() === targetConceptKey.toLowerCase());
+    let fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
+    if (!fieldDef && Array.isArray(schema.fields)) {
+      fieldDef = schema.fields.find(
+        (f) => f.name.toLowerCase() === fieldName.toLowerCase() && (!f.concept || f.concept === "*" || (Array.isArray(f.concept) ? f.concept.some((c) => c.toLowerCase() === targetConceptKey.toLowerCase()) : String(f.concept).toLowerCase() === targetConceptKey.toLowerCase()))
+      );
+    }
+    if (fieldDef) {
+      const diags = validateFieldValue(fieldDef, parsedVal, `${targetConceptKey}.${fieldName}`);
+      const errors = diags.filter((d) => d.severity === "error");
+      if (errors.length > 0) {
+        return {
+          success: false,
+          errors: errors.map((e) => ({ path: e.path, message: e.message }))
+        };
+      }
+    }
+  }
+  if (!model.conceptFields) model.conceptFields = {};
+  if (!model.rawConceptFields) model.rawConceptFields = {};
+  if (!model.conceptFields[targetConceptKey]) {
+    model.conceptFields[targetConceptKey] = {};
+  }
+  if (!model.rawConceptFields[targetConceptKey]) {
+    model.rawConceptFields[targetConceptKey] = {};
+  }
+  model.conceptFields[targetConceptKey][fieldName] = parsedVal;
+  if (rawValString !== void 0) {
+    model.rawConceptFields[targetConceptKey][fieldName] = rawValString;
+  }
+  if (model.sectionOrder && !model.sectionOrder.map((s) => s.toLowerCase()).includes(targetConceptKey.toLowerCase())) {
+    model.sectionOrder.push(targetConceptKey);
+  }
+  return { success: true };
+}
+function matrixIdentMatches(name, ident) {
+  const lower = ident.toLowerCase();
+  return name.toLowerCase() === lower || slugify(name).toLowerCase() === lower || slugifyHeading(name).toLowerCase() === lower;
+}
+function addMatrix(model, args) {
+  let matrixName = args.matrixName || args.name || args.matrixSlug || "";
+  if (args.target && typeof args.target === "string") {
+    let clean = args.target.trim();
+    if (clean.includes("@")) clean = clean.slice(clean.indexOf("@") + 1);
+    if (clean.toLowerCase().startsWith("matrix:")) clean = clean.slice("matrix:".length).trim();
+    if (!matrixName) matrixName = clean;
+  }
+  if (matrixName.toLowerCase().startsWith("matrix:")) {
+    matrixName = matrixName.slice("matrix:".length).trim();
+  }
+  if (!matrixName) {
+    return { success: false, errors: [{ path: "", message: "matrixName is required" }] };
+  }
+  const exists = model.matrices && model.matrices.some((m) => matrixIdentMatches(m.name, matrixName)) || model.sectionOrder && model.sectionOrder.some((s) => {
+    const ident = s.toLowerCase().startsWith("matrices: ") ? s.slice("matrices: ".length) : s;
+    return matrixIdentMatches(ident, matrixName);
+  });
+  if (exists) {
+    return { success: false, errors: [{ path: "", message: `Matrix "${matrixName}" already exists` }] };
+  }
+  const source = args.source || args.conceptName || "";
+  const targetConcept = args.targetConcept || args.axisTarget || args.to || "";
+  const listArg = (value) => {
+    if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+    if (typeof value === "string") return value.split(",").map((v) => v.trim()).filter(Boolean);
+    return [];
+  };
+  const elementNamesOf = (concept) => {
+    if (!concept) return [];
+    const nodes = model.elements.get(concept);
+    return nodes ? nodes.map((n) => n.name) : [];
+  };
+  const columnSeeds = listArg(args.columns);
+  const rowSeeds = listArg(args.rows);
+  const cols = columnSeeds.length > 0 ? columnSeeds : elementNamesOf(targetConcept);
+  const rows = rowSeeds.length > 0 ? rowSeeds : elementNamesOf(source);
+  const cells = [];
+  for (const row of rows) {
+    for (const col of cols) cells.push({ row, col, value: "" });
+  }
+  if (!model.matrices) model.matrices = [];
+  model.matrices.push({ name: matrixName, source, target: targetConcept, cells });
+  if (model.sectionOrder && !model.sectionOrder.some((s) => {
+    const ident = s.toLowerCase().startsWith("matrices: ") ? s.slice("matrices: ".length) : s;
+    return matrixIdentMatches(ident, matrixName);
+  })) {
+    model.sectionOrder.push(`matrices: ${matrixName}`);
+  }
+  return { success: true };
+}
+function removeMatrix(model, args) {
+  let matrixName = args.matrixName || args.matrixSlug || "";
+  if (args.target && typeof args.target === "string") {
+    let clean = args.target.trim();
+    if (clean.includes("@")) {
+      clean = clean.slice(clean.indexOf("@") + 1);
+    }
+    if (clean.toLowerCase().startsWith("matrix:")) {
+      clean = clean.slice("matrix:".length).trim();
+    }
+    matrixName = clean;
+  }
+  if (matrixName.toLowerCase().startsWith("matrix:")) {
+    matrixName = matrixName.slice("matrix:".length).trim();
+  }
+  if (!matrixName) {
+    return { success: false, errors: [{ path: "", message: "matrixName is required" }] };
+  }
+  const mLower = matrixName.toLowerCase();
+  const matchesMatrix = (name) => {
+    return name.toLowerCase() === mLower || slugify(name).toLowerCase() === mLower || slugifyHeading(name).toLowerCase() === mLower;
+  };
+  let found = false;
+  if (model.matrices && model.matrices.length > 0) {
+    const beforeLen = model.matrices.length;
+    model.matrices = model.matrices.filter((m) => !matchesMatrix(m.name));
+    if (model.matrices.length < beforeLen) {
+      found = true;
+    }
+  }
+  if (model.sectionOrder) {
+    const beforeSecLen = model.sectionOrder.length;
+    model.sectionOrder = model.sectionOrder.filter((s) => {
+      if (s.toLowerCase().startsWith("matrices: ")) {
+        const namePart = s.slice("matrices: ".length);
+        return !matchesMatrix(namePart);
+      }
+      return !matchesMatrix(s);
+    });
+    if (model.sectionOrder.length < beforeSecLen) {
+      found = true;
+    }
+  }
+  if (!found) {
+    return {
+      success: false,
+      errors: [{ path: "", message: `Matrix "${matrixName}" not found` }]
+    };
+  }
+  return { success: true };
+}
+function renameConcept(model, args) {
+  const req = requireArgs(args, ["conceptName", "newName"]);
+  if (!req.ok) return req.result;
+  const { conceptName, newName } = req.values;
+  if (RESERVED_CONCEPT_NAMES.has(newName)) {
+    return {
+      success: false,
+      errors: [{ path: "Concept Definition", message: `"${newName}" is a reserved pseudo-concept name` }]
+    };
+  }
+  const lowerOld = conceptName.toLowerCase();
+  const lowerNew = newName.toLowerCase();
+  if (lowerOld === lowerNew) return { success: false, errors: [{ path: "", message: "newName must differ from conceptName" }] };
+  const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
+  const def = defs.find((c) => c.name.toLowerCase() === lowerOld);
+  if (!def) {
+    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found in Concept Definition elements` }] };
+  }
+  if (defs.some((c) => c.name.toLowerCase() === lowerNew && c !== def)) {
+    return { success: false, errors: [{ path: "", message: `Concept "${newName}" already exists in Concept Definition elements` }] };
+  }
+  def.name = newName;
+  const fds = model.elements.get(FIELD_DEFINITION) ?? [];
+  for (const f of fds) {
+    if (typeof f.fields["concept"] === "string" && f.fields["concept"].toLowerCase() === lowerOld) {
+      f.fields["concept"] = newName;
+    }
+  }
+  if (fds.length > 0) model.elements.set(FIELD_DEFINITION, fds);
+  const mds = model.elements.get(MATRIX_DEFINITION) ?? [];
+  for (const m of mds) {
+    if (typeof m.fields["source"] === "string" && m.fields["source"].toLowerCase() === lowerOld) {
+      m.fields["source"] = newName;
+    }
+    if (typeof m.fields["target"] === "string" && m.fields["target"].toLowerCase() === lowerOld) {
+      m.fields["target"] = newName;
+    }
+  }
+  if (mds.length > 0) model.elements.set(MATRIX_DEFINITION, mds);
+  model.elements.set(CONCEPT_DEFINITION, defs);
+  const nodes = model.elements.get(conceptName);
+  if (nodes) {
+    for (const node of nodes) node.type = newName;
+    model.elements.set(newName, nodes);
+    model.elements.delete(conceptName);
+  }
+  for (const edge of model.taxonomy) {
+    if (edge.parent.toLowerCase() === lowerOld) edge.parent = newName;
+    if (edge.child.toLowerCase() === lowerOld) edge.child = newName;
+  }
+  if (model.rawSections) {
+    const raw = model.rawSections[conceptName];
+    if (raw !== void 0) {
+      delete model.rawSections[conceptName];
+      model.rawSections[newName] = raw;
+    }
+  }
+  return { success: true };
+}
+function referenceFieldsByConcept(schema) {
+  const map = /* @__PURE__ */ new Map();
+  if (!schema) return map;
+  for (const concept of schema.concepts) {
+    const refs = /* @__PURE__ */ new Set();
+    for (const f of concept.fields ?? []) {
+      if (f.type === "reference" || f.type === "knowledge") refs.add(f.name.toLowerCase());
+    }
+    map.set(concept.name.toLowerCase(), refs);
+  }
+  return map;
+}
+function renameElement(model, args, schema) {
+  const req = requireArgs(args, ["conceptName", "elementName", "newName"]);
+  if (!req.ok) return req.result;
+  const { conceptName, elementName, newName } = req.values;
+  let lowerOld = elementName.toLowerCase();
+  const lowerNew = newName.toLowerCase();
+  if (lowerOld === lowerNew) return { success: false, errors: [{ path: "", message: "newName must differ from elementName" }] };
+  const existingElements = model.elements.get(conceptName);
+  if (!existingElements) return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+  const element = existingElements.find((e) => matchesElement(e, elementName));
+  if (!element) return { success: false, errors: [{ path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }] };
+  const oldDisplayName = element.name;
+  lowerOld = oldDisplayName.toLowerCase();
+  const duplicateSibling = existingElements.find(
+    (e) => e !== element && e.name.toLowerCase() === lowerNew
+  );
+  if (duplicateSibling) {
+    return {
+      success: false,
+      errors: [{ path: "", message: `Element "${newName}" already exists in concept "${conceptName}"` }]
+    };
+  }
+  element.name = newName;
+  for (const edge of model.taxonomy) {
+    if (edge.parent.toLowerCase() === lowerOld) edge.parent = newName;
+    if (edge.child.toLowerCase() === lowerOld) edge.child = newName;
+  }
+  for (const matrix of model.matrices) {
+    for (const cell of matrix.cells) {
+      if (cell.row.toLowerCase() === lowerOld) cell.row = newName;
+      if (cell.col.toLowerCase() === lowerOld) cell.col = newName;
+    }
+  }
+  const refsByConcept = referenceFieldsByConcept(schema);
+  for (const [, elements] of model.elements.entries()) {
+    for (const el of elements) {
+      if (el.fields) {
+        const conceptRefs = refsByConcept.get(el.type.toLowerCase());
+        for (const [fKey, fVal] of Object.entries(el.fields)) {
+          const isRefField = conceptRefs?.has(fKey.toLowerCase()) ?? false;
+          const rewrite = (s) => isRefField ? updateReferenceString(s, oldDisplayName, newName) : updateWikiLinks(s, oldDisplayName, newName);
+          if (typeof fVal === "string") {
+            el.fields[fKey] = rewrite(fVal);
+          } else if (Array.isArray(fVal)) {
+            el.fields[fKey] = fVal.map(
+              (item) => typeof item === "string" ? rewrite(item) : item
+            );
+          }
+        }
+      }
+      if (el.description && typeof el.description === "string") {
+        el.description = updateWikiLinks(el.description, oldDisplayName, newName);
+      }
+      if (Array.isArray(el.relationships)) {
+        for (const rel of el.relationships) {
+          if (rel && typeof rel.target === "string" && rel.target.toLowerCase() === lowerOld) {
+            rel.target = newName;
+          }
+        }
+      }
+    }
+  }
+  if (model.rawSections) {
+    for (const [sKey, sVal] of Object.entries(model.rawSections)) {
+      if (typeof sVal === "string") {
+        model.rawSections[sKey] = updateWikiLinks(sVal, oldDisplayName, newName);
+      }
+    }
+  }
+  model.elements.set(conceptName, existingElements);
+  return { success: true };
+}
+function generateIndex(model, args) {
+  const templateTaxonomy = args.taxonomy;
+  const presentConcepts = /* @__PURE__ */ new Set();
+  for (const c of model.elements.keys()) {
+    if (c.toLowerCase() !== "concept definition" && c.toLowerCase() !== "field definition" && c.toLowerCase() !== "marker definition" && c.toLowerCase() !== "matrix definition") {
+      presentConcepts.add(c);
+    }
+  }
+  if (model.rawSections) {
+    for (const c of Object.keys(model.rawSections)) {
+      if (c.toLowerCase() !== "index") {
+        presentConcepts.add(c);
+      }
+    }
+  }
+  const conceptDefs = model.elements.get(CONCEPT_DEFINITION);
+  if (conceptDefs) {
+    for (const cd of conceptDefs) {
+      presentConcepts.add(cd.name);
+    }
+  }
+  let finalEdges = [];
+  if (templateTaxonomy && Array.isArray(templateTaxonomy) && templateTaxonomy.length > 0) {
+    const edgesToKeep = templateTaxonomy.filter(
+      (edge) => presentConcepts.has(edge.parent) && presentConcepts.has(edge.child)
+    );
+    const childNodesInKept = new Set(edgesToKeep.map((e) => e.child));
+    for (const concept of presentConcepts) {
+      if (!childNodesInKept.has(concept)) {
+        edgesToKeep.push({ parent: "", child: concept });
+      }
+    }
+    finalEdges = edgesToKeep;
+  } else {
+    for (const concept of presentConcepts) {
+      finalEdges.push({ parent: "", child: concept });
+    }
+  }
+  model.taxonomy = finalEdges;
+  return { success: true };
+}
+
+// iNNfo/packages/nn-core/src/changeset/lineage/builder.ts
+function buildLineageChangeset(input) {
+  if (!input.evidence || !input.evidence.trim()) {
+    throw new Error("buildLineageChangeset: every generated change needs evidence");
+  }
+  const changes = [];
+  const skipped = [];
+  const prefix = input.idPrefix ?? `${input.modelId}-lineage`;
+  const nextId = () => `${prefix}-${String(changes.length + 1).padStart(2, "0")}`;
+  const fm = input.model.frontmatter;
+  const currentPin = fm.parent_spec ?? {};
+  const targetVersion = input.target.version ?? String(input.target.name).match(/V_\d+-\d+-\d+/)?.[0] ?? null;
+  if (String(currentPin.name ?? "").toLowerCase() !== input.target.name.toLowerCase() || String(currentPin.url ?? "") !== input.target.url) {
+    changes.push({
+      id: nextId(),
+      op: "repin_blueprint",
+      target: input.modelId,
+      ...currentPin.name ? { from: String(currentPin.name) } : {},
+      to: input.target.name,
+      blueprint_url: input.target.url,
+      ...targetVersion ? { knowledge_version: targetVersion } : {},
+      evidence: input.evidence
+    });
+  }
+  for (const mapping of input.mappings ?? []) {
+    if (!modelCarriesField(input.model, mapping.from, mapping.concept)) {
+      skipped.push(
+        `mapping ${mapping.from} -> ${mapping.to}: no element carries "${mapping.from}"`
+      );
+      continue;
+    }
+    changes.push({
+      id: nextId(),
+      op: "rename_field",
+      target: input.modelId,
+      from: mapping.from,
+      to: mapping.to,
+      ...mapping.concept ? { concept: mapping.concept } : {},
+      evidence: input.evidence
+    });
+  }
+  for (const dflt of input.defaults ?? []) {
+    if (!modelLacksField(input.model, dflt.field, dflt.concept)) {
+      skipped.push(`default ${dflt.field}: every element already carries it`);
+      continue;
+    }
+    changes.push({
+      id: nextId(),
+      op: "set_field_default",
+      target: input.modelId,
+      name: dflt.field,
+      to: dflt.value,
+      ...dflt.concept ? { concept: dflt.concept } : {},
+      evidence: input.evidence
+    });
+  }
+  const document = {
+    frontmatter: {
+      spec_version: input.changesBlueprint.specVersion,
+      level: 3,
+      parent_spec: { name: "changes", url: input.changesBlueprint.url },
+      blueprint_version: input.changesBlueprint.version,
+      status: "proposed",
+      ...input.author ? { author: input.author } : {},
+      title: `Lineage reconciliation for ${input.modelId}`
+    },
+    changes
+  };
+  return { document, skipped };
+}
+function inScope(concept, scope) {
+  return !scope || concept.toLowerCase() === scope.toLowerCase();
+}
+function modelCarriesField(model, field, scope) {
+  const wanted = field.toLowerCase();
+  for (const [concept, elements] of model.elements.entries()) {
+    if (!inScope(concept, scope)) continue;
+    for (const el of elements) {
+      if (Object.keys(el.fields).some((k) => k.toLowerCase() === wanted)) return true;
+    }
+  }
+  return false;
+}
+function modelLacksField(model, field, scope) {
+  const wanted = field.toLowerCase();
+  for (const [concept, elements] of model.elements.entries()) {
+    if (!inScope(concept, scope)) continue;
+    for (const el of elements) {
+      if (!Object.keys(el.fields).some((k) => k.toLowerCase() === wanted)) return true;
+    }
+  }
+  return false;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  applyMutation,
+  buildLineageChangeset,
   freeze_slugs,
   parseKnowledge,
   planDomainScaffold,

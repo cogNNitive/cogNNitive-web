@@ -57,8 +57,8 @@ stateDiagram-v2
 | [nn](nn.md) | `[r] Review & Deliverables` → site or web deliverable | [nn-site-generator](nn-site-generator.md) |
 | [nn](nn.md) | `[p] Procedures` → procedure selected | [nn-innfo](nn-innfo.md) (Procedure Execution Protocol) |
 | [nn](nn.md) | Visual artifact requested (console, dashboard, site) | [nn-design-presets](nn-design-presets.md) |
-| [nn-preflight](nn-preflight.md) | Tier-3 scan reports `upgrade-available` | [nn-upgrade](nn-upgrade.md) |
-| [nn-upgrade](nn-upgrade.md) | Impact analysis finds a marker-bearing document | [nn-innfo](nn-innfo.md) (`MARKERS_REMOVED` recipe) |
+| [nn-preflight](nn-preflight.md) | Tier-3 scan reports `upgrade-available` | [nn-update](nn-update.md) |
+| [nn-update](nn-update.md) | Impact analysis finds a marker-bearing document | [nn-innfo](nn-innfo.md) (`MARKERS_REMOVED` recipe) |
 | [nn-innfo](nn-innfo.md) | A procedure step declares CLI ingestion | [nn-sources](nn-sources.md) |
 | [nn-innfo](nn-innfo.md) | Console/HTML artifact must be styled | [nn-design-presets](nn-design-presets.md) |
 | [nn-site-generator](nn-site-generator.md) | Design tokens needed for generated pages | [nn-design-presets](nn-design-presets.md) |
@@ -71,7 +71,7 @@ dependencies are installed and updated together, and they define the minimum wor
 workflow:
 
 - [nn-sources](nn-sources.md) requires [nn-innfo](nn-innfo.md) and [nn-preflight](nn-preflight.md).
-- [nn-upgrade](nn-upgrade.md) requires [nn-preflight](nn-preflight.md).
+- [nn-update](nn-update.md) requires [nn-preflight](nn-preflight.md).
 - [nn-skills-lifecycle](nn-skills-lifecycle.md) requires [nn-preflight](nn-preflight.md).
 
 ## See also

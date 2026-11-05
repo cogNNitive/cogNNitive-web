@@ -33,7 +33,7 @@ const https = require('https');
 const crypto = require('crypto');
 const { parseFocusedYaml, parseFrontmatter } = require('./lib/yaml-lite');
 const { diffSkillDir } = require('./lib/skill-content-hash');
-const { discoverModels, scanWorkspaceUpgrades } = require('./upgrade-check');
+const { discoverModels, scanWorkspaceLineage } = require('./lineage-audit');
 const { isProjectableName, classifyProjection, hashTree } = require('./lib/projection');
 // The bundle is a generated CJS mirror whose exports tsc cannot infer; the cast restates its contract.
 const { SPEC_FILENAME, ensureNNFilename, isSidecarName, rawPathOfSidecar, sidecarPathOf } = /** @type {any} */ (
@@ -1277,7 +1277,7 @@ async function runCheck(options = {}) {
         });
       }
       if (catalog) {
-        const upgrade = scanWorkspaceUpgrades(workspaceDir, catalog);
+        const upgrade = scanWorkspaceLineage(workspaceDir, catalog);
         results.summary.blueprintModelsScanned = upgrade.summary.modelsScanned;
         results.summary.templateUpgradesAvailable = upgrade.summary.upgradeAvailable;
         results.summary.blueprintModelsCurrent = upgrade.summary.current;
@@ -1646,7 +1646,7 @@ function printHumanReport(results) {
         console.log(`  - ${item.name}: ${item.template} ${item.pinned} -> ${item.adopted} (${item.kind})`);
       }
     }
-    console.log('  Invoke the nn-upgrade skill to migrate with backup and re-validation (or continue as-is).\n');
+    console.log('  Invoke the nn-update skill to migrate with backup and re-validation (or continue as-is).\n');
   }
 
   if (results.summary.templateCatalogOffline > 0) {

@@ -422,11 +422,11 @@ tags:: [docs, skills, preflight, readiness]
 
 The environment readiness gate and skill-location reference.
 
-## NN Page: nn-upgrade
-slug:: nn-upgrade
-title:: nn-upgrade
-source:: content/skills/nn-upgrade.md
-route:: content/skills/nn-upgrade.md
+## NN Page: nn-update
+slug:: nn-update
+title:: nn-update
+source:: content/skills/nn-update.md
+route:: content/skills/nn-update.md
 order:: 50
 parent:: [[Canonical Skills]]
 tags:: [docs, skills, upgrade, migration]

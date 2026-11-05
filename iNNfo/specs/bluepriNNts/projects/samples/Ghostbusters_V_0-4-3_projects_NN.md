@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "projects_V_0-4-0"
+  name: "projects_V_0-4-3"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/projects/spec_NN.md"
-knowledge_version: "V_0-4-0"
+knowledge_version: "undefined"
 title: "Ghostbusters Subterranean Containment Upgrade Project"
 ---
 

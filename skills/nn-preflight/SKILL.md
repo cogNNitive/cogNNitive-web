@@ -76,7 +76,7 @@ Environment readiness gate for cogNNitive workflows. Runs deterministic checks a
 2. **Node.js**: require >= 18.
 3. **nn-mcp availability**: call `nn-mcp_list_knowledge`; if the MCP tool is unavailable, fall back to checking that the bundle exists at `~/.agents/mcp/nn-mcp.bundle.js` or `.cogNNitive/mcp-bundle.js`.
 4. **Skill Dependencies Integrity**: verify installed skills containing `package.json` have `node_modules` present and resolvable.
-5. **Workspace layout**: verify the expected directories exist — `sources/` (`sources/import/`, `sources/conversations/`), `conversations/`, `artifacts/`, `kNNowledge/`, `procedures/`, `index.md`. There are no fallbacks to retired folders (the old normalized mirror, snapshot archive and export folders): preflight does not classify or report a domain's layout. A domain still on the retired layout is replaced by a new domain that imports the old one as a Source (`nn-upgrade`).
+5. **Workspace layout**: verify the expected directories exist — `sources/` (`sources/import/`, `sources/conversations/`), `conversations/`, `artifacts/`, `kNNowledge/`, `procedures/`, `index.md`. There are no fallbacks to retired folders (the old normalized mirror, snapshot archive and export folders): preflight does not classify or report a domain's layout. A domain still on the retired layout is replaced by a new domain that imports the old one as a Source (`nn-update`).
 
 ## Tier 2 Checks (optional — only for iNNfo output workflows)
 
@@ -89,7 +89,7 @@ Environment readiness gate for cogNNitive workflows. Runs deterministic checks a
 
 ## Tier 3 Checks (workspace template upgrades — informational)
 
-8. **Workspace template upgrade detection (`scanWorkspaceUpgrades` via `scripts/upgrade-check.js`)**: when `--workspace-dir` is provided and the workspace contains Level-3 models, fetches the committed Level-2 template catalog (`iNNfo/specs/bluepriNNts/catalog.json`, override with `--template-catalog-url`) and classifies each model's pinned `parent_spec` template against the catalog's `adopted` version — `current`, `upgrade-available` (with `major`/`minor`/`patch` gap), `ahead`, or `unlisted`. Available upgrades are **informational**: they are reported as `template-upgrade` items with `summary.templateUpgrades*` counts and NEVER flip the exit code to a blocker. If the catalog is unreachable, the scan degrades to a non-blocking `offline` notice (`summary.templateCatalogOffline`). Emits `template-upgrade` items in `--json` mode. Migration is handled by the `nn-upgrade` skill, never by preflight.
+8. **Workspace template upgrade detection (`scanWorkspaceLineage` via `scripts/lineage-audit.js`)**: when `--workspace-dir` is provided and the workspace contains Level-3 models, fetches the committed Level-2 template catalog (`iNNfo/specs/bluepriNNts/catalog.json`, override with `--template-catalog-url`) and classifies each model's pinned `parent_spec` template against the catalog's `adopted` version — `current`, `upgrade-available` (with `major`/`minor`/`patch` gap), `ahead`, or `unlisted`. Available upgrades are **informational**: they are reported as `template-upgrade` items with `summary.templateUpgrades*` counts and NEVER flip the exit code to a blocker. If the catalog is unreachable, the scan degrades to a non-blocking `offline` notice (`summary.templateCatalogOffline`). Emits `template-upgrade` items in `--json` mode. Migration is handled by the `nn-update` skill, never by preflight.
 
 ---
 

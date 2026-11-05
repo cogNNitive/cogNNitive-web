@@ -3,9 +3,9 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business-model/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
-blueprint_version: "V_0-4-1"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
+blueprint_version: "V_0-4-3"
 title: "Business Model App"
 relationship_types:
   hierarchy:
@@ -3614,3 +3614,54 @@ Patent databases like those maintained by the U.S. Patent and Trademark Office o
 
 ### Prompts
 *No prompts provided.*
+
+## Contributions
+
+### Summary
+What each stakeholder group gives the venture: the inputs without which the value proposition cannot be delivered.
+
+### Description
+Contributions are the counterpart of Customer segments and Key partners: time, assets, money, access or legitimacy. They make the exchange explicit, so a model that expects something from a group has to name it.
+
+### Methodologies
+- Derive contributions from the segments and partners already declared; do not invent new groups here.
+- Name the contribution and its frequency, not just its category.
+- Flag any contribution the venture cannot obtain twice.
+
+### Prompts
+- What does each segment give in exchange for the value proposition?
+- Which contributions would stop the business tomorrow if they disappeared?
+
+## Compensations
+
+### Summary
+What the venture gives back: the money, service or benefit that keeps a contribution flowing.
+
+### Description
+Compensations close the exchange loop opened by Contributions. A contribution with no compensation is either a gift or a dependency the model has not priced, and both are worth seeing.
+
+### Methodologies
+- Pair every Contribution with the compensation that sustains it.
+- Distinguish monetary from non-monetary compensation.
+- Check that the sum of compensations is compatible with the revenue model.
+
+### Prompts
+- What does each group get back for what it gives?
+- Which compensation is unpaid today and would have to be paid at scale?
+
+## Procedure
+
+### Summary
+The repeatable operating procedure the business runs to deliver its value proposition.
+
+### Description
+Procedure holds the ordered steps, owners and triggers of a recurring business activity, as text rather than a workflow engine. It is where a model stops describing and starts operating.
+
+### Methodologies
+- Write the trigger, the steps and the outcome; a procedure with no outcome cannot be verified.
+- Keep one procedure per repeatable activity, and sequence the steps, not the org chart.
+- Reference the roles that own each step instead of naming individuals.
+
+### Prompts
+- What happens, in order, from <trigger> to <outcome>?
+- Which step in this procedure has no owner?

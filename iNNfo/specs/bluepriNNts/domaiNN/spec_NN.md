@@ -3,11 +3,11 @@ spec_version: "V_0-5-0"
 spec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
 level: 2
 parent_spec:
-  name: "iNNfo_V_0-5-0"
-  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-5-0_NN.md"
+  name: "iNNfo_V_0-6-0"
+  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 title: "DomaiNN Blueprint"
 blueprint_name: "domaiNN"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 relationship_types:
   hierarchy:
     enabled: true

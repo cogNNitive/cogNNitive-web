@@ -36,8 +36,8 @@
  * Importing this module has no side effect: the CLI runs only as the entry point.
  */
 
-import { readdir, readFile, writeFile, mkdir, rename, rm, stat } from 'node:fs/promises'
-import { existsSync, realpathSync } from 'node:fs'
+import { readdir, readFile, writeFile, mkdir, rename, rm, stat, open } from 'node:fs/promises'
+import { createReadStream, existsSync, realpathSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
@@ -161,6 +161,7 @@ function parseArgs(argv) {
     filter: null,
     model: null,
     open: true,
+    files: true,
   }
   const slice = argv.slice(2)
   for (let i = 0; i < slice.length; i++) {
@@ -179,6 +180,8 @@ function parseArgs(argv) {
       args.domain = true
     } else if (a === '--no-open') {
       args.open = false
+    } else if (a === '--no-files') {
+      args.files = false
     } else if (a === '--new-view') {
       i++
       if (i < slice.length && !slice[i].startsWith('--')) args.newView = slice[i]
@@ -753,6 +756,339 @@ function versionsOf(modelSummaries) {
   return out
 }
 
+/** `<file>.<ext>_sidecar_NN.md` — detection and subject mapping come from the naming contract. */
+function isSidecarRel(rel) {
+  return payloadHelper && payloadHelper.isSidecarPath
+    ? payloadHelper.isSidecarPath(rel)
+    : false
+}
+
+/**
+ * Console build outputs, sidecar documents and append-only `.jsonl` logs are not
+ * workspace content: inventorying them would embed the console inside itself
+ * (changing the payload on every export) or resurrect retired ledger surfaces.
+ */
+function isBuildOutputRel(rel) {
+  const posix = String(rel || '').replace(/\\/g, '/')
+  const base = posix.split('/').pop() || ''
+  if (/\.(jsonl|ndjson)$/i.test(base)) return true
+  if (/^domaiNN_console.*\.html$/i.test(base)) return true
+  if (/\.html$/i.test(base) && /_(console|view)$/i.test(posix.split('/').slice(-2, -1)[0] || '')) return true
+  return /^\w+_console\.html$/i.test(base)
+}
+
+// Preview budget. A preview is an EXCERPT, never a document body: it reuses the
+// same cap the citation pipeline applies (EXCERPT_CHAR_CAP, 500 chars), so the
+// console never embeds a source body it would not embed as a citation. The total
+// preview weight is also capped because the payload is inlined in one HTML file.
+const SNIPPET_TOTAL_BUDGET = 2 * 1024 * 1024
+
+function snippetCharCap() {
+  const fromHelper = payloadHelper && payloadHelper.EXCERPT_CHAR_CAP
+  return Number.isFinite(fromHelper) && fromHelper > 0 ? fromHelper : 500
+}
+
+/** Streams a file through SHA-256 so multi-hundred-MB sources never load in memory. */
+async function hashFileStream(filePath) {
+  return new Promise((resolvePromise, reject) => {
+    const hash = createHash('sha256')
+    const stream = createReadStream(filePath)
+    stream.on('error', reject)
+    stream.on('data', (chunk) => hash.update(chunk))
+    stream.on('end', () => resolvePromise(hash.digest('hex')))
+  })
+}
+
+/**
+ * Scans workspace files across sources/, assets/, evidence/, artifacts/, watch roots,
+ * and imported domains; computes hashes, metadata, sidecar states, unit citations,
+ * changeset evidence links, reverse lineage for artifacts, and gap stats.
+ *
+ * @param {string} workspaceRoot
+ * @param {{ elements?: Array<any>, changesets?: Array<any>, watchRoots?: Array<any> }} [options]
+ */
+export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
+  const root = resolve(workspaceRoot)
+  const elements = options.elements || []
+  const changesets = options.changesets || []
+  const configuredWatchRoots = options.watchRoots || []
+
+  const scanDirs = [
+    'sources',
+    'assets',
+    'evidence',
+    'artifacts',
+    'conversations',
+    'imported',
+    '.domains',
+    'watch',
+  ]
+  const inventory = []
+  const artifactsList = []
+  const sourceFilesList = []
+
+  async function walk(dirAbs) {
+    if (!existsSync(dirAbs)) return []
+    const results = []
+    try {
+      const entries = await readdir(dirAbs, { withFileTypes: true })
+      for (const ent of entries) {
+        const full = join(dirAbs, ent.name)
+        if (ent.isDirectory()) {
+          if (ent.name === 'node_modules' || ent.name === '.git') continue
+          const sub = await walk(full)
+          results.push(...sub)
+        } else if (ent.isFile()) {
+          results.push(full)
+        }
+      }
+    } catch {
+      // ignore unreadable
+    }
+    return results
+  }
+
+  const allFilePaths = new Set()
+  for (const d of scanDirs) {
+    const p = join(root, d)
+    const files = await walk(p)
+    for (const f of files) allFilePaths.add(f)
+  }
+
+  const domainConsole = join(root, 'domaiNN_console.html')
+  if (existsSync(domainConsole)) {
+    allFilePaths.add(domainConsole)
+  }
+
+  // Pre-index sidecars. The workspace convention is `<file>.<ext>_sidecar_NN.md`
+  // (naming/contract.ts `isSidecarName`), a markdown document with YAML frontmatter.
+  const sidecarFilesMap = new Map()
+  for (const f of allFilePaths) {
+    const rel = relative(root, f).replace(/\\/g, '/')
+    if (isSidecarRel(rel)) {
+      sidecarFilesMap.set(payloadHelper.sidecarSubjectPath(rel), f)
+    }
+  }
+
+  // Map elements citations and changeset evidence for fast lookup. A unit cites
+  // the normalized sidecar document (`<file>.<ext>_sidecar_NN.md`); the inventory
+  // entry is the subject file, so both sides are normalized to that path.
+  function normalizeCitationPath(raw) {
+    const norm = String(raw).replace(/\\/g, '/').replace(/^\/+/, '').split('#')[0]
+    return payloadHelper && payloadHelper.isSidecarPath && payloadHelper.isSidecarPath(norm)
+      ? payloadHelper.sidecarSubjectPath(norm)
+      : norm
+  }
+
+  const citationPaths = []
+  for (const el of elements) {
+    if (el.citations && typeof el.citations === 'object') {
+      for (const list of Object.values(el.citations)) {
+        if (Array.isArray(list)) {
+          for (const cit of list) {
+            const raw = cit.path || cit.href
+            if (raw) {
+              citationPaths.push({ norm: normalizeCitationPath(raw), excerpt: cit.excerpt, unitId: el.id })
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const changeEvidencePaths = []
+  for (const cs of changesets) {
+    if (cs.evidence) changeEvidencePaths.push(normalizeCitationPath(cs.evidence))
+    if (Array.isArray(cs.changes)) {
+      for (const c of cs.changes) {
+        if (c.evidence) changeEvidencePaths.push(normalizeCitationPath(c.evidence))
+      }
+    }
+  }
+
+  // Sort paths deterministically
+  const sortedFilePaths = Array.from(allFilePaths).sort()
+  let snippetBudget = SNIPPET_TOTAL_BUDGET
+
+  for (const fullPath of sortedFilePaths) {
+    const rel = relative(root, fullPath).replace(/\\/g, '/')
+
+    // A sidecar is metadata for its subject, never an inventory entry of its own.
+    if (isSidecarRel(rel)) continue
+
+    // Console outputs and feedback ledgers are not workspace content.
+    if (isBuildOutputRel(rel)) continue
+
+    let st
+    try {
+      st = await stat(fullPath)
+    } catch {
+      continue
+    }
+
+    let sha256 = ''
+    try {
+      sha256 = await hashFileStream(fullPath)
+    } catch {
+      continue
+    }
+
+    const mimeType = payloadHelper && payloadHelper.mimeTypeFromPath
+      ? payloadHelper.mimeTypeFromPath(rel)
+      : 'application/octet-stream'
+
+    const category = payloadHelper && payloadHelper.classifyFileCategory
+      ? payloadHelper.classifyFileCategory(rel)
+      : 'source'
+
+    const isSourceLike = payloadHelper && payloadHelper.isSourceLike
+      ? payloadHelper.isSourceLike(category)
+      : category === 'source' || category === 'imported_domain'
+
+    // Sidecar detection: the canonical `<rel>_sidecar_NN.md` companion.
+    let sidecar = undefined
+    const companionSidecarRel = payloadHelper && payloadHelper.sidecarPathFor
+      ? payloadHelper.sidecarPathFor(rel)
+      : rel + '_sidecar_NN.md'
+    const companionSidecarPath = sidecarFilesMap.get(rel)
+    if (companionSidecarPath) {
+      let sidecarContent = ''
+      try {
+        sidecarContent = await readFile(companionSidecarPath, 'utf8')
+      } catch {
+        // unreadable
+      }
+      sidecar = payloadHelper && payloadHelper.parseAndValidateSidecar
+        ? payloadHelper.parseAndValidateSidecar(sidecarContent, companionSidecarRel, sha256)
+        : { path: companionSidecarRel, exists: true, valid: false, error: 'Sidecar helpers unavailable' }
+    } else if (isSourceLike || category === 'asset') {
+      sidecar = { path: companionSidecarRel, exists: false, valid: false }
+    }
+
+    // Cross-reference citations
+    let citationsCount = 0
+    let excerptCount = 0
+    for (const c of citationPaths) {
+      if (c.norm === rel || rel.endsWith('/' + c.norm) || c.norm.endsWith('/' + rel) || basename(c.norm) === basename(rel)) {
+        citationsCount++
+        if (c.excerpt) excerptCount++
+      }
+    }
+
+    // Cross-reference changes
+    let changesCount = 0
+    for (const ev of changeEvidencePaths) {
+      if (ev === rel || rel.endsWith('/' + ev) || ev.endsWith('/' + rel) || basename(ev) === basename(rel)) {
+        changesCount++
+      }
+    }
+
+    const uncited = isSourceLike && citationsCount === 0 && changesCount === 0
+
+    // Bounded text preview: an excerpt, capped like a citation excerpt. Binaries
+    // are never inlined, and the whole payload shares one preview budget.
+    let snippet = undefined
+    let snippetTruncated = false
+    const textMime = payloadHelper && payloadHelper.isTextMime
+      ? payloadHelper.isTextMime(mimeType)
+      : mimeType.startsWith('text/')
+    if (textMime && st.size > 0 && snippetBudget > 0) {
+      const want = Math.min(st.size, snippetCharCap(), snippetBudget)
+      try {
+        const buf = Buffer.alloc(want)
+        const handle = await open(fullPath, 'r')
+        try {
+          await handle.read(buf, 0, want, 0)
+        } finally {
+          await handle.close()
+        }
+        snippet = buf.toString('utf8')
+        snippetTruncated = want < st.size
+        snippetBudget -= want
+      } catch {
+        // unreadable preview: keep the metadata
+      }
+    }
+
+    const entry = {
+      id: rel,
+      path: rel,
+      category,
+      size: st.size,
+      sha256,
+      mimeType,
+      mtime: st.mtime.toISOString(),
+      ...(sidecar ? { sidecar } : {}),
+      citationsCount,
+      excerptCount,
+      changesCount,
+      uncited,
+      ...(snippet !== undefined ? { snippet, snippetTruncated } : {}),
+    }
+
+    inventory.push(entry)
+
+    if (category === 'artifact') {
+      artifactsList.push({ id: rel, path: rel, content: snippet })
+    } else if (isSourceLike) {
+      sourceFilesList.push({ id: rel, path: rel })
+    }
+  }
+
+  // Watch roots. `lastSync` is derived from the newest mtime under the root so
+  // two exports of unchanged files produce identical payloads.
+  function describeRoot(rootRel) {
+    const prefix = rootRel.replace(/\/+$/, '') + '/'
+    const members = inventory.filter((e) => e.path.startsWith(prefix))
+    if (!members.length) return null
+    const newest = members.reduce((acc, e) => (e.mtime > acc ? e.mtime : acc), '')
+    return {
+      path: rootRel,
+      status: 'active',
+      fileCount: members.length,
+      lastSync: newest || undefined,
+    }
+  }
+
+  const watchRoots = []
+  if (Array.isArray(configuredWatchRoots) && configuredWatchRoots.length > 0) {
+    watchRoots.push(...configuredWatchRoots)
+  } else {
+    for (const rel of ['sources', 'watch', 'conversations', 'assets', 'evidence', 'artifacts']) {
+      const descriptor = describeRoot(rel)
+      if (descriptor) watchRoots.push(descriptor)
+    }
+  }
+
+  // Reverse lineage
+  const lineage = payloadHelper && payloadHelper.resolveArtifactReverseLineage
+    ? payloadHelper.resolveArtifactReverseLineage(artifactsList, elements, changesets, sourceFilesList)
+    : {}
+
+  // Stats
+  const stats = payloadHelper && payloadHelper.calculateFilesStats
+    ? payloadHelper.calculateFilesStats(inventory, watchRoots)
+    : {
+        totalFiles: inventory.length,
+        totalBytes: inventory.reduce((a, b) => a + (b.size || 0), 0),
+        categoryCounts: { watch_root: 0, source: 0, imported_domain: 0, asset: 0, evidence: 0, artifact: 0 },
+        storageByCategory: { watch_root: 0, source: 0, imported_domain: 0, asset: 0, evidence: 0, artifact: 0 },
+        sourceCoverageRate: 1,
+        uncitedSourceCount: 0,
+        sidecarMissingCount: 0,
+        sidecarInvalidCount: 0,
+        sidecarMismatchCount: 0,
+        excerptCount: 0,
+      }
+
+  return {
+    inventory,
+    watchRoots,
+    stats,
+    lineage,
+  }
+}
+
 /**
  * The single console writer, shared by the CLI and the MCP.
  *
@@ -1221,6 +1557,19 @@ export async function writeConsole(opts = {}) {
     ? `${baseDomainId}::scope:${hashSlice([...scopeModelIds].sort().join('\n'), 8)}`
     : baseDomainId
 
+  let filesData = null
+  if (opts.files !== false && !opts.noFiles) {
+    try {
+      filesData = await collectWorkspaceFiles(root, {
+        elements: allElements,
+        changesets,
+        watchRoots: opts.watchRoots,
+      })
+    } catch (err) {
+      process.stderr.write(`WARNING: [export-console] error scanning files: ${err.message}\n`)
+    }
+  }
+
   const domainPayload = {
     viewData,
     schema: {
@@ -1253,6 +1602,7 @@ export async function writeConsole(opts = {}) {
       changes: (Array.isArray(changesets) ? changesets.slice() : []).sort((a, b) =>
         String(b.path).localeCompare(String(a.path)),
       ),
+      ...(filesData ? { files: filesData } : {}),
     },
   }
 
@@ -1650,6 +2000,7 @@ async function runMain(argv, options = {}) {
     view: args.view,
     open: args.open,
     launcher: args.launcher,
+    files: args.files,
     models,
     log: (line) => console.log(line),
   })

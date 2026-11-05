@@ -7377,12 +7377,15 @@ __export(index_exports, {
   buildChangeLogFromChangesets: () => buildChangeLogFromChangesets,
   buildConsolePayload: () => buildConsolePayload,
   buildConsoleSchemaSlot: () => buildConsoleSchemaSlot,
+  calculateFilesStats: () => calculateFilesStats,
   canonicalJsonStringify: () => canonicalJsonStringify,
   capExcerpt: () => capExcerpt,
   citationFieldsFor: () => citationFieldsFor,
+  classifyFileCategory: () => classifyFileCategory,
   classifyFromFrontmatter: () => classifyFromFrontmatter,
   classifyOrigin: () => classifyOrigin,
   computeElementHash: () => computeElementHash,
+  computeFileSha256: () => computeFileSha256,
   computeSha256: () => computeSha256,
   consoleOutputPath: () => consoleOutputPath,
   createFsSourceResolver: () => createFsSourceResolver,
@@ -7397,21 +7400,29 @@ __export(index_exports, {
   isExcludedPath: () => isExcludedPath,
   isNNName: () => isNNName,
   isSidecarName: () => isSidecarName,
+  isSidecarPath: () => isSidecarPath,
+  isSourceLike: () => isSourceLike,
+  isTextMime: () => isTextMime,
   latestOfFamily: () => latestOfFamily,
   loadChangesetRecords: () => loadChangesetRecords,
+  mimeTypeFromPath: () => mimeTypeFromPath,
   normalizeToolId: () => normalizeToolId,
   parentSpecNameOf: () => parentSpecNameOf,
+  parseAndValidateSidecar: () => parseAndValidateSidecar,
   parseChangesetTarget: () => parseChangesetTarget,
   parseFrontmatter: () => parseFrontmatter,
   parseName: () => parseName,
   parseUnitAddress: () => parseUnitAddress,
   parseYaml: () => parseYaml,
   readChangeAuthor: () => readChangeAuthor,
+  resolveArtifactReverseLineage: () => resolveArtifactReverseLineage,
   resolveCitation: () => resolveCitation,
   resolveConsoleSchema: () => resolveConsoleSchema,
   resolveEvidenceCitation: () => resolveEvidenceCitation,
   roleOf: () => roleOf,
   serializeConsoleSlot: () => serializeConsoleSlot,
+  sidecarPathFor: () => sidecarPathFor,
+  sidecarSubjectPath: () => sidecarSubjectPath,
   unitAddress: () => unitAddress,
   unitHome: () => unitHome,
   writeOnce: () => writeOnce
@@ -8850,7 +8861,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-7-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-8-1", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -10346,7 +10357,10 @@ var CHANGE_OPS = [
   "freeze_slugs",
   "bump_version",
   "update_element_text",
-  "produce_artifact"
+  "produce_artifact",
+  "repin_blueprint",
+  "rename_field",
+  "set_field_default"
 ];
 function isChangeStatus(val) {
   return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);
@@ -10419,8 +10433,8 @@ function extractInstanceProblems(change) {
   }
   const to = String(change.to ?? "").trim();
   if (!to) problems.push(`change "${id}": extract_instance requires "to" (the new instance model id)`);
-  else if (!to.includes("/") || unsafe(to)) {
-    problems.push(`change "${id}": extract_instance "to" must be a hierarchical instance model id`);
+  else if (unsafe(to) || to.startsWith("/") || to.endsWith("/") || to.includes("//")) {
+    problems.push(`change "${id}": extract_instance "to" must be a valid instance model id`);
   }
   return problems;
 }
@@ -11809,6 +11823,234 @@ function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltL
   }
 }
 
+// iNNfo/packages/nn-core/src/console/files-inventory.ts
+var import_node_crypto2 = require("node:crypto");
+var SOURCE_LIKE = ["source", "imported_domain"];
+function isSourceLike(category) {
+  return SOURCE_LIKE.indexOf(category) >= 0;
+}
+function classifyFileCategory(relPath) {
+  const norm = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (norm.startsWith("artifacts/") || norm === "domaiNN_console.html") return "artifact";
+  if (norm.startsWith("assets/") || norm.startsWith("sources/assets/")) return "asset";
+  if (norm.startsWith("evidence/") || norm.startsWith("sources/evidence/")) return "evidence";
+  if (norm.startsWith("imported/") || norm.startsWith(".domains/") || norm.startsWith("domains/import/")) {
+    return "imported_domain";
+  }
+  if (norm.startsWith("watch/") || norm.startsWith("sources/watch/")) return "watch_root";
+  if (norm.startsWith("sources/") || norm.startsWith("conversations/")) return "source";
+  return "source";
+}
+function computeFileSha256(content) {
+  return (0, import_node_crypto2.createHash)("sha256").update(content).digest("hex");
+}
+function mimeTypeFromPath(filePath) {
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "text/markdown";
+  if (lower.endsWith(".txt")) return "text/plain";
+  if (lower.endsWith(".json")) return "application/json";
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+  if (lower.endsWith(".css")) return "text/css";
+  if (lower.endsWith(".js") || lower.endsWith(".mjs") || lower.endsWith(".cjs")) return "text/javascript";
+  if (lower.endsWith(".ts")) return "text/typescript";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".csv")) return "text/csv";
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "application/yaml";
+  return "application/octet-stream";
+}
+function isTextMime(mimeType) {
+  return mimeType.startsWith("text/") || mimeType === "application/json" || mimeType === "application/yaml";
+}
+var SIDECAR_SUFFIX = "_sidecar_NN.md";
+function isSidecarPath(relPath) {
+  return isSidecarName(relPath);
+}
+function sidecarSubjectPath(sidecarRel) {
+  if (!isSidecarName(sidecarRel)) return sidecarRel;
+  return sidecarRel.slice(0, sidecarRel.length - SIDECAR_SUFFIX.length);
+}
+function sidecarPathFor(relPath) {
+  return relPath + SIDECAR_SUFFIX;
+}
+var FRONTMATTER_RE2 = /^---\r?\n([\s\S]*?)\r?\n---/;
+function frontmatterEntry(block, key) {
+  const m = new RegExp("^" + key + ":\\s*(.+?)\\s*$", "m").exec(block);
+  if (!m) return void 0;
+  return m[1].replace(/^["']|["']$/g, "").trim();
+}
+function parseAndValidateSidecar(sidecarContent, sidecarPath, subjectSha256) {
+  if (sidecarContent === null || sidecarContent === void 0) {
+    return { path: sidecarPath, exists: false, valid: false };
+  }
+  const match = String(sidecarContent).match(FRONTMATTER_RE2);
+  if (!match) {
+    return { path: sidecarPath, exists: true, valid: false, error: "Missing YAML frontmatter" };
+  }
+  const block = match[1];
+  const sourceFile = frontmatterEntry(block, "source_file");
+  const sha256 = (frontmatterEntry(block, "sha256") || "").toLowerCase();
+  if (!sourceFile) {
+    return { path: sidecarPath, exists: true, valid: false, error: "Missing source_file" };
+  }
+  if (!/^[0-9a-f]{64}$/.test(sha256)) {
+    return {
+      path: sidecarPath,
+      exists: true,
+      valid: false,
+      sourceFile,
+      error: "Missing or malformed sha256"
+    };
+  }
+  return {
+    path: sidecarPath,
+    exists: true,
+    valid: true,
+    sourceFile,
+    sha256,
+    sha256Matches: subjectSha256 ? sha256 === subjectSha256.toLowerCase() : void 0,
+    sourceFormat: frontmatterEntry(block, "source_format"),
+    author: frontmatterEntry(block, "author"),
+    normalizedAt: frontmatterEntry(block, "normalized_at")
+  };
+}
+function normalizePosix(p) {
+  return p.replace(/\\/g, "/").replace(/^\/+/, "").split("#")[0].trim();
+}
+function resolveArtifactReverseLineage(artifacts, elements, changes, sources) {
+  const result = {};
+  if (!Array.isArray(artifacts)) return result;
+  const sourcePaths = new Set((sources || []).map((s) => normalizePosix(s.path || s.id || "")));
+  const elementMap = /* @__PURE__ */ new Map();
+  for (const el of elements || []) {
+    if (!el || !el.id) continue;
+    elementMap.set(el.id, el);
+    if (el.slug) elementMap.set(el.slug, el);
+  }
+  const changeTargetToChangeset = /* @__PURE__ */ new Map();
+  const changesetToEvidence = /* @__PURE__ */ new Map();
+  for (const cs of changes || []) {
+    const csId = cs.id || (cs.path ? cs.path.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, "") : "") || "";
+    if (!changesetToEvidence.has(csId)) changesetToEvidence.set(csId, /* @__PURE__ */ new Set());
+    if (cs.evidence) changesetToEvidence.get(csId).add(normalizePosix(cs.evidence));
+    if (Array.isArray(cs.changes)) {
+      for (const c of cs.changes) {
+        if (c.target) {
+          if (!changeTargetToChangeset.has(c.target)) changeTargetToChangeset.set(c.target, /* @__PURE__ */ new Set());
+          if (csId) changeTargetToChangeset.get(c.target).add(csId);
+        }
+        if (c.evidence && csId) changesetToEvidence.get(csId).add(normalizePosix(c.evidence));
+      }
+    }
+  }
+  for (const art of artifacts) {
+    const artifactId = art.id;
+    const unitIdSet = /* @__PURE__ */ new Set();
+    for (const u of art.unitIds || []) unitIdSet.add(u);
+    if (art.content) {
+      const patterns = [/\[\[([a-zA-Z0-9_\-:]+)\]\]/g, /(?:data-nn-unit|data-unit)=["']([a-zA-Z0-9_\-:]+)["']/g];
+      for (const re of patterns) {
+        let m;
+        while ((m = re.exec(art.content)) !== null) {
+          const candidate = m[1].trim();
+          if (elementMap.has(candidate)) unitIdSet.add(candidate);
+        }
+      }
+    }
+    const unitIds = Array.from(unitIdSet);
+    const changesetIdSet = /* @__PURE__ */ new Set();
+    const sourcePathSet = /* @__PURE__ */ new Set();
+    for (const uid of unitIds) {
+      const el = elementMap.get(uid);
+      if (!el) continue;
+      for (const h of el.history || []) {
+        const csId = h.changesetId || h.changeset || h.changeId;
+        if (csId) changesetIdSet.add(csId);
+      }
+      const targets = changeTargetToChangeset.get(el.id) || changeTargetToChangeset.get(el.slug || "");
+      if (targets) for (const csId of targets) changesetIdSet.add(csId);
+      for (const fieldCits of Object.values(el.citations || {})) {
+        if (!Array.isArray(fieldCits)) continue;
+        for (const cit of fieldCits) {
+          const citPath = cit.path || cit.href;
+          if (citPath) sourcePathSet.add(normalizePosix(citPath));
+        }
+      }
+    }
+    for (const csId of changesetIdSet) {
+      const evidences = changesetToEvidence.get(csId);
+      if (!evidences) continue;
+      for (const ev of evidences) {
+        if (!sourcePaths.size || sourcePaths.has(ev)) sourcePathSet.add(ev);
+      }
+    }
+    result[artifactId] = {
+      artifactId,
+      artifactPath: art.path,
+      unitIds,
+      changesetIds: Array.from(changesetIdSet).sort(),
+      sourcePaths: Array.from(sourcePathSet).sort()
+    };
+  }
+  return result;
+}
+function calculateFilesStats(inventory, watchRoots = []) {
+  const empty = () => ({
+    watch_root: 0,
+    source: 0,
+    imported_domain: 0,
+    asset: 0,
+    evidence: 0,
+    artifact: 0
+  });
+  const categoryCounts = empty();
+  const storageByCategory = empty();
+  let totalBytes = 0;
+  let sourceLikeCount = 0;
+  let uncitedSourceCount = 0;
+  let sidecarMissingCount = 0;
+  let sidecarInvalidCount = 0;
+  let sidecarMismatchCount = 0;
+  let excerptCount = 0;
+  for (const entry of inventory) {
+    totalBytes += entry.size || 0;
+    if (categoryCounts[entry.category] !== void 0) {
+      categoryCounts[entry.category]++;
+      storageByCategory[entry.category] += entry.size || 0;
+    }
+    if (isSourceLike(entry.category)) {
+      sourceLikeCount++;
+      if (entry.uncited) uncitedSourceCount++;
+    }
+    excerptCount += entry.excerptCount || 0;
+    const sidecar = entry.sidecar;
+    if (sidecar && isSourceLike(entry.category)) {
+      if (!sidecar.exists) sidecarMissingCount++;
+      else if (!sidecar.valid) sidecarInvalidCount++;
+      else if (sidecar.sha256Matches === false) sidecarMismatchCount++;
+    }
+  }
+  if (categoryCounts.watch_root === 0 && watchRoots.length > 0) {
+    categoryCounts.watch_root = watchRoots.length;
+  }
+  return {
+    totalFiles: inventory.length,
+    totalBytes,
+    categoryCounts,
+    storageByCategory,
+    sourceCoverageRate: sourceLikeCount === 0 ? 1 : Number(((sourceLikeCount - uncitedSourceCount) / sourceLikeCount).toFixed(4)),
+    uncitedSourceCount,
+    sidecarMissingCount,
+    sidecarInvalidCount,
+    sidecarMismatchCount,
+    excerptCount
+  };
+}
+
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs2 = require("node:fs");
 var import_node_path2 = require("node:path");
@@ -12588,12 +12830,15 @@ function unitHome(address) {
   buildChangeLogFromChangesets,
   buildConsolePayload,
   buildConsoleSchemaSlot,
+  calculateFilesStats,
   canonicalJsonStringify,
   capExcerpt,
   citationFieldsFor,
+  classifyFileCategory,
   classifyFromFrontmatter,
   classifyOrigin,
   computeElementHash,
+  computeFileSha256,
   computeSha256,
   consoleOutputPath,
   createFsSourceResolver,
@@ -12608,21 +12853,29 @@ function unitHome(address) {
   isExcludedPath,
   isNNName,
   isSidecarName,
+  isSidecarPath,
+  isSourceLike,
+  isTextMime,
   latestOfFamily,
   loadChangesetRecords,
+  mimeTypeFromPath,
   normalizeToolId,
   parentSpecNameOf,
+  parseAndValidateSidecar,
   parseChangesetTarget,
   parseFrontmatter,
   parseName,
   parseUnitAddress,
   parseYaml,
   readChangeAuthor,
+  resolveArtifactReverseLineage,
   resolveCitation,
   resolveConsoleSchema,
   resolveEvidenceCitation,
   roleOf,
   serializeConsoleSlot,
+  sidecarPathFor,
+  sidecarSubjectPath,
   unitAddress,
   unitHome,
   writeOnce

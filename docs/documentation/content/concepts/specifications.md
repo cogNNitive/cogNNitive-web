@@ -65,7 +65,7 @@ document that pins a given bluepriNNt must pin the **same** version. `check_doma
 `BLUEPRINT_VERSION_SKEW` as an error, once per bluepriNNt, when documents disagree, and lists a
 bare name (no version token) or an unclassifiable URL as an incomparable pin. The check is
 domain-level: validating a single file never reports it, and it applies to compact and
-distributed storage alike. The [nn-upgrade](../skills/nn-upgrade.md) skill repins every document
+distributed storage alike. The [nn-update](../skills/nn-update.md) skill repins every document
 of a bluepriNNt together, or none. See *Version uniformity* in [Storage and identity](storage-and-identity.md).
 
 ## Why the URL is never hardcoded

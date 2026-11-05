@@ -1,6 +1,6 @@
-# nn-upgrade
+# nn-update
 
-`nn-upgrade` is the guided, **consent-gated** upgrade engine for a domaiNN. It owns the upgrades
+`nn-update` is the guided, **consent-gated** upgrade engine for a domaiNN. It owns the upgrades
 that [nn-preflight](nn-preflight.md) detects: consent, backup, plan validation, and recovery. It
 ships two capabilities and one maintenance option:
 
@@ -30,7 +30,7 @@ ships two capabilities and one maintenance option:
 | **B4 — Rehydrate & validate** | Hydrate the adopted bluepriNNts, update frontmatter (`parent_spec`, `blueprint_name`), bump the version, and re-validate through `nn-mcp`, for every document of the unit. On failure, restore from the backup. |
 
 ```bash
-node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>
+node skills/nn-update/scripts/backup-workspace.js --workspace-dir <dir>
 ```
 
 ### The upgrade unit is a bluepriNNt
@@ -63,8 +63,8 @@ When the console reports `UNFROZEN_MODEL`, freeze the element slugs of the domai
 documents:
 
 ```bash
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs          # dry run
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs --apply  # write
+node skills/nn-update/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs          # dry run
+node skills/nn-update/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs --apply  # write
 ```
 
 The dry run lists the documents and slugs it would freeze; `--apply` writes them in place. Present
@@ -76,7 +76,7 @@ There is **no in-place migration**. When a domain is on the retired layout or ca
 create a new domain and import the old one as a **source**:
 
 ```bash
-node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>
+node skills/nn-update/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>
 ```
 
 This scaffolds a new domaiNN and copies the old tree byte-identically under the new domain's

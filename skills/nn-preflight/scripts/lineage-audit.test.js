@@ -319,7 +319,28 @@ async function runTests() {
     }
   }
 
-  console.log('All upgrade-check tests passed successfully!\n');
+  // Test: the audit emits the canonical lineage key alongside the deprecated alias.
+  {
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'lineage-audit-'))
+    try {
+      fs.mkdirSync(path.join(ws, 'kNNowledge'), { recursive: true })
+      fs.writeFileSync(
+        path.join(ws, 'kNNowledge', 'a_business_NN.md'),
+        '---\nlevel: 3\nparent_spec:\n  name: "business_V_0-1-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/business/business_V_0-1-0_NN.md"\nknowledge_version: "V_0-1-0"\n---\n# NN x\n',
+        'utf-8',
+      )
+      const result = scanWorkspaceUpgrades(ws, CATALOG)
+      const item = result.items.find((i) => i.status === 'upgrade-available')
+      assert.ok(item, JSON.stringify(result.items))
+      assert.strictEqual(item.updateStatus, 'update-available', 'canonical key')
+      assert.strictEqual(item.status, 'upgrade-available', 'deprecated alias kept for one release')
+      console.log('✔ the audit emits updateStatus and keeps the deprecated status alias')
+    } finally {
+      fs.rmSync(ws, { recursive: true, force: true })
+    }
+  }
+
+  console.log('All lineage-audit tests passed successfully!\n');
 }
 
 runTests().catch((err) => {

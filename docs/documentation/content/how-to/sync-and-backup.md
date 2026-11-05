@@ -66,4 +66,4 @@ Git is an optional review and collaboration layer on top of a domain. It never r
 
 ## Under the hood
 
-The agent syncs the record and reconciles the manifest through the `nn-mcp` server, and takes migration backups with the `nn-upgrade` skill. See [MCP tools](../reference/mcp-tools.md) and [CLI and scripts](../reference/cli.md).
+The agent syncs the record and reconciles the manifest through the `nn-mcp` server, and takes migration backups with the `nn-update` skill. See [MCP tools](../reference/mcp-tools.md) and [CLI and scripts](../reference/cli.md).

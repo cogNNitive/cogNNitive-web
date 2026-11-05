@@ -99,7 +99,7 @@ no line-number ranges, and never a `staging/` target.
    declared `placement`. A folder alone never makes a concept distributed.
 4. **One bluepriNNt version per bluepriNNt.** A domaiNN that pins a bluepriNNt at
    several versions fails `check_domain` with `BLUEPRINT_VERSION_SKEW`. Fix it
-   with `nn-upgrade`, whose unit is the whole bluepriNNt group: it repins and
+   with `nn-update`, whose unit is the whole bluepriNNt group: it repins and
    re-validates every member, or none.
 5. **Instance lifecycle.** Create with `add_model` and an explicit `concept::`
    (container first); rename or move with `move_model`, retargeting every
@@ -517,7 +517,7 @@ Every change is audited through an immutable changeset:
 
 - `nn-mcp_init_domain({ dir, name })` creates an empty, conformant domaiNN in a new directory (canonical folders, `changes/`, `.gitattributes` with `* -text`, a manifest listing no models). It refuses a non-empty directory and is not a changeset.
 - Add models afterwards with an `add_model` change (alone or together with `add_element` changes in the same changeset) via `propose_changeset`, or with `init_knowledge`.
-- Migration recipe: `init_domain` for a NEW domain, import the old domain as a source (`node skills/nn-upgrade/scripts/migrate-domain.js --import-as-source`), derive `add_model` / `add_element` changes whose `evidence` cites it, `propose_changeset`, review in the console, reply OK, `apply_change`.
+- Migration recipe: `init_domain` for a NEW domain, import the old domain as a source (`node skills/nn-update/scripts/migrate-domain.js --import-as-source`), derive `add_model` / `add_element` changes whose `evidence` cites it, `propose_changeset`, review in the console, reply OK, `apply_change`.
 
 #### Version bump
 
@@ -663,7 +663,7 @@ An older document that still contains a `# NN Marker Definition` section or an `
 4. **Level-2 vs Level-3**: changesets target Level-3 documents only, and no operation removes a Marker Definition section. For a **shipped bluepriNNt**, upgrade it with the Flow B template upgrade. For a **custom Level-2**, propose a direct edit and wait for consent — the Level-3 documents that depend on it stay invalid until that edit lands.
 5. **Propose with `propose_changeset`**: seal the changeset and open the console so the user reviews and approves it. Do not apply it yourself before review.
 
-`nn-upgrade` links here when its impact analysis finds a marker-bearing model; it does not ask mapping questions.
+`nn-update` links here when its impact analysis finds a marker-bearing model; it does not ask mapping questions.
 
 ---
 

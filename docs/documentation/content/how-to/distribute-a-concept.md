@@ -242,7 +242,7 @@ message names the path, the id when there is one, and the fix.
 | `MODEL_ID_INVALID` | Fix the id: the message names the segment or segment count the concept expects. |
 | `DUPLICATE_SLUG` | Give each element of the model its own `slug::`. |
 | `INSTANCE_SHADOWS_ELEMENT_ASSETS` | Warning. Rename the element or the instance so they do not share an `assets/` folder. |
-| `BLUEPRINT_VERSION_SKEW` | Ask your agent to run [nn-upgrade](../skills/nn-upgrade.md). It repins every document of the bluepriNNt, or none. |
+| `BLUEPRINT_VERSION_SKEW` | Ask your agent to run [nn-update](../skills/nn-update.md). It repins every document of the bluepriNNt, or none. |
 | `MODEL_WITHOUT_FILE` | A document touched by changes has no file. Restore it. See the limit below. |
 | `STALE_TARGET_MOVED` | A pending change names an instance renamed after its `base_version`; retarget it to the id the message names. |
 
@@ -263,5 +263,5 @@ References have their own codes (`REF_MODEL_NOT_FOUND`, `ADDRESS_MALFORMED` and 
 - [Storage and identity](../concepts/storage-and-identity.md)
 - [Review changesets](review-changesets.md)
 - [Validate a domaiNN](validate-domain.md)
-- [nn-upgrade](../skills/nn-upgrade.md)
+- [nn-update](../skills/nn-update.md)
 - [MCP tools](../reference/mcp-tools.md)

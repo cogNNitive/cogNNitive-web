@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 title: "Visual Catalog App"
-blueprint_version: "V_0-3-3"
+blueprint_version: "V_0-3-4"
 procedures:
   - id: "ingest-visual-catalog"
     name: "Ingest Visual Catalog Procedure"
@@ -94,7 +94,7 @@ description:: Extraction confidence score (0-10 scale).
 ## NN Field Definition: source
 concept:: Entry
 type:: address
-description:: OPTIONAL citation to the normalized source (sources/nn/...) this Entry derives from.
+description:: OPTIONAL citation to the derived-from unit, addressed as `<sidecar path>@<unit>` or `@<slug>` under sources/import/.
 
 ## NN Field Definition: description
 concept:: Category
@@ -120,7 +120,7 @@ description:: Capture date or timestamp of the image.
 ## NN Field Definition: original_ref
 concept:: Evidence
 type:: string
-description:: Workspace-relative path to the ORIGINAL binary asset in sources/import/ or sources/original/.
+description:: Workspace-relative path to the ORIGINAL binary asset in sources/import/.
 
 ## NN Field Definition: source
 concept:: Evidence
@@ -179,7 +179,7 @@ Visual knowledge is captured as images long before it is structured as data. Cat
 | Entry | `attributes` | string | Structured key/value or inline notes |
 | Entry | `status` | select | candidate / confirmed / rejected |
 | Entry | `confidence` | number (scale 0-10) | Extraction confidence score |
-| Entry | `source` | citation | Optional citation to `sources/nn/...` |
+| Entry | `source` | address | Optional citation to the derived-from unit |
 | Category | `parent` | reference → Category | Parent Category |
 | Category | `description` | markdown_inline | Scope explanation |
 | Evidence | `image` | image | The witness image (first `type:: image` = main image) |
@@ -224,16 +224,16 @@ name:: <stable identity>
 category:: [[<Category>]]
 status:: candidate
 tags:: [tag1, tag2]
-source:: sources/nn/<file>.md#<slug>
+source:: sources/import/<file>.<ext>_sidecar_NN.md@<slug>
 
 # NN Evidence: <label>
 image:: evidence/<file>.png
 captured_at:: <iso-date>
 original_ref:: sources/import/<file>.png
-source:: sources/nn/<file>.md#<slug>
+source:: sources/import/<file>.<ext>_sidecar_NN.md@<slug>
 ```
 
-`source::` citations use the canonical pointer form (`<path>@<unit>`); the `#<slug>` form shown above is accepted for legacy compatibility. The `image::` value resolves under `{modelDir}/assets/{element-slug}/`; the `original_ref::` value points into `sources/import/` (the ORIGINAL is never citable as a source — only the normalized file under `sources/nn/` is).
+`source::` citations use the canonical pointer form (`<path>@<unit>`); the `#<slug>` form shown above is accepted for legacy compatibility. The `image::` value resolves under `{modelDir}/assets/{element-slug}/`; the `original_ref::` value points into `sources/import/` (the ORIGINAL is never citable as a source - only its co-located sidecar under `sources/import/` is).
 
 # Concept Guidance Documentation
 
@@ -289,7 +289,7 @@ A witness image plus provenance pointing to the raw image in sources/import/ and
 
 ### Description
 
-An `Evidence` is one `## NN Evidence: <label>` element. Its `image` field is the FIRST declared `type:: image` field in this blueprint, so it resolves as the main image and its value is stored under the owning model's `assets/{element-slug}/` folder. `original_ref` points at the ORIGINAL binary asset in `sources/import/` or `sources/original/`. Images are raw-only assets whose provenance is established via `original_ref` and co-located sidecars (`<file>_sidecar_NN.md` created by `process-images.js` / `cognitivize`), without requiring an intermediate text-conversion file. When a companion text description exists, `source` cites it; otherwise `source` is omitted. The `Entry x Evidence matrix` records which Entries each Evidence witnesses and how directly (`primary`, `visible`, `partial`).
+An `Evidence` is one `## NN Evidence: <label>` element. Its `image` field is the FIRST declared `type:: image` field in this blueprint, so it resolves as the main image and its value is stored under the owning model's `assets/{element-slug}/` folder. `original_ref` points at the ORIGINAL binary asset in `sources/import/`. Images are raw-only assets whose provenance is established via `original_ref` and co-located sidecars (`<file>_sidecar_NN.md` created by `process-images.js` / `cognitivize`), without requiring an intermediate text-conversion file. When a companion text description exists, `source` cites it; otherwise `source` is omitted. The `Entry x Evidence matrix` records which Entries each Evidence witnesses and how directly (`primary`, `visible`, `partial`).
 
 ### Methodologies
 
