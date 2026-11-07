@@ -149,7 +149,7 @@ function extractHtmlMetadata(html) {
  * own extension.
  *
  * Returns a manifest describing what was saved — callers (the CLI or the
- * agent) are responsible for feeding `source_url`/`downloaded_at`/`meta` into
+ * agent) are responsible for feeding `origin_uri`/`retrieved_at`/`meta` into
  * scanner.scanAndProcess's `webImportMeta` option so it ends up in the
  * normalized frontmatter.
  */
@@ -182,7 +182,7 @@ async function downloadToImport(url, projectDir, options = {}) {
   );
   const destPath = path.join(projectDir, written.path);
 
-  const downloadedAt = new Date().toISOString();
+  const retrievedAt = new Date().toISOString();
   const relPath = path.relative(path.join(projectDir, IMPORT_DIR), destPath).replace(/\\/g, '/');
 
   const result = {
@@ -190,8 +190,8 @@ async function downloadToImport(url, projectDir, options = {}) {
     absPath: destPath,
     deduplicated: written.status === 'deduplicated',
     contentType: contentType || null,
-    sourceUrl: url,
-    downloadedAt,
+    originUri: url,
+    retrievedAt,
     meta: {
       origin_uri: url,
       type: options.type || 'url_snapshot',

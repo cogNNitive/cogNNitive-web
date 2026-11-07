@@ -237,15 +237,17 @@ async function run() {
       autoAcceptPrompt: true,
       webImportMeta: {
         'sources/import/page_20260910T101500Z.html': {
-          source_url: 'https://example.com/page',
-          downloaded_at: '2026-09-10T10:15:00.000Z',
+          origin_uri: 'https://example.com/page',
+          retrieved_at: '2026-09-10T10:15:00.000Z',
           title: 'Example Page',
           author: 'Jane Doe',
         },
       },
     });
     const webSidecar = read(path.join(webProj, 'sources', 'import', sidecarOf('page_20260910T101500Z.html')));
-    assertTrue(webSidecar.includes('source_url: https://example.com/page'), 'web import source_url lands in the sidecar');
+    assertTrue(webSidecar.includes('origin_uri: https://example.com/page'), 'web import origin_uri lands in the sidecar');
+    assertTrue(webSidecar.includes('retrieved_at: '), 'web import retrieved_at lands in the sidecar');
+    assertTrue(!/source_url|downloaded_at/.test(webSidecar), 'the legacy keys never reach the sidecar');
     assertTrue(webSidecar.includes('title: Example Page'), 'web import title lands in the sidecar');
     assertTrue(webSidecar.includes('Body text.'), 'the html sidecar carries the extracted text');
 

@@ -6,7 +6,6 @@ const path = require('path');
 const { listWorkspaceModels, deriveIndexLabel } = require('../../scripts/lib/workspace-index');
 const guards = require('../../scripts/lib/duplicate-guards');
 const { findFamilyManifest } = require('../../scripts/lib/convergence-delta');
-const { scanAllWatchRoots } = require('../../scripts/lib/external-scanner');
 const { groupSourceFamilies } = require('../../scripts/lib/impact-checker');
 
 const SIDECAR = '---\nlevel: 3\nparent_spec:\n  name: sidecar\n---\n';
@@ -67,25 +66,6 @@ async function run() {
     write(root, 'kNNowledge/Acme_cogNNitive_NN.md', '## NN Source Family: fam\nstrategy:: cite-only\n');
     write(root, 'kNNowledge/Aaa.csv_sidecar_NN.md', SIDECAR + '## NN Source Family: bogus\nstrategy:: cite-only\n');
     assert.strictEqual(path.basename(findFamilyManifest(root)), 'Acme_cogNNitive_NN.md');
-  });
-
-  it('only the domaiNN entrypoint supplies watch roots', (root) => {
-    const watched = path.join(root, 'watched');
-    write(watched, 'drop.csv', 'a,b\n1,2\n');
-    write(
-      root,
-      'kNNowledge/Acme_cogNNitive_NN.md',
-      `## NN External Watch Roots:\n- Root: "${watched.replace(/\\/g, '/')}"\n  Cadence: "dynamic"\n  Recursive: true\n  Filter: ["*.csv"]\n`,
-    );
-    write(root, 'kNNowledge/Aaa_workspace.csv_sidecar_NN.md', SIDECAR);
-    assert.strictEqual(scanAllWatchRoots(root).roots.length, 0, 'a retired record name declares nothing');
-
-    write(
-      root,
-      'domaiNN_NN.md',
-      `## NN External Watch Roots:\n- Root: "${watched.replace(/\\/g, '/')}"\n  Cadence: "dynamic"\n  Recursive: true\n  Filter: ["*.csv"]\n`,
-    );
-    assert.strictEqual(scanAllWatchRoots(root).roots.length, 1, 'the entrypoint declares the roots');
   });
 
   it('source families ignore sidecars next to stamped files', (root) => {

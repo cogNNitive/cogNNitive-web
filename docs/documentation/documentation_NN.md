@@ -180,6 +180,17 @@ tags:: [docs, how-to, lineage, backup, drift]
 
 Keep the lineage record in sync, detect drift, and back a domaiNN up safely.
 
+## NN Page: Synchronize an external origin
+slug:: synchronize-an-origin
+title:: Synchronize an external origin
+source:: content/how-to/synchronize-an-origin.md
+route:: content/how-to/synchronize-an-origin.md
+order:: 75
+parent:: [[How-To Guides]]
+tags:: [docs, how-to, synchronization, sources, mirror]
+
+Declare a Synchronization, refresh it on request with `--sync`, and reference a mirrored element.
+
 ## NN Page: Collaborate with Git
 slug:: collaborate-git
 title:: Collaborate with Git

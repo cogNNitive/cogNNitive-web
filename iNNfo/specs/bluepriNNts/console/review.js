@@ -56,6 +56,12 @@
     if (el && isObject(el.rawFields) && Object.prototype.hasOwnProperty.call(el.rawFields, key)) {
       return el.rawFields[key]
     }
+    if (el && Array.isArray(el.fields)) {
+      var match = el.fields.find(function (f) {
+        return f && f.name === key
+      })
+      if (match) return match.value
+    }
     return el && el.fields ? el.fields[key] : undefined
   }
 
@@ -441,15 +447,37 @@
     var needs = Array.isArray(options.needs) ? options.needs : []
     var store = options.store
     var elementsById = {}
-    elements.forEach(function (el) {
-      if (el && el.id) elementsById[el.id] = el
-    })
+    function indexElement(el) {
+      if (!el) return
+      if (el.id) elementsById[el.id] = el
+      if (el.slug && !elementsById[el.slug]) elementsById[el.slug] = el
+      if (typeof el.id === 'string') {
+        var at = el.id.indexOf('@')
+        if (at !== -1) {
+          var bare = el.id.slice(at + 1)
+          if (!elementsById[bare]) elementsById[bare] = el
+        }
+      }
+    }
+    elements.forEach(indexElement)
+
+    function resolveElement(id, modelId) {
+      if (!id) return null
+      if (elementsById[id]) return elementsById[id]
+      if (modelId && elementsById[modelId + '@' + id]) return elementsById[modelId + '@' + id]
+      if (typeof id === 'string') {
+        var at = id.indexOf('@')
+        if (at !== -1 && elementsById[id.slice(at + 1)]) return elementsById[id.slice(at + 1)]
+      }
+      return null
+    }
 
     // No review mode: an edit only ever creates a draft, so there is nothing to
     // "arm". Decoration and the edit affordance are always live; the changeset bar
     // is driven by the DRAFTS (see syncChangesetBar), not by a mode switch.
     var enabled = true
     var openPopover = null
+    var modalStack = []
     var lastAnchor = null
     var toastEl = null
     var toastTimer = null
@@ -490,7 +518,23 @@
 
     function closePopover() {
       if (openPopover && openPopover.parentNode) openPopover.parentNode.removeChild(openPopover)
+      if (modalStack.length > 0) {
+        openPopover = modalStack.pop()
+        if (openPopover && typeof openPopover.focus === 'function') {
+          openPopover.focus()
+        }
+      } else {
+        openPopover = null
+      }
+    }
+
+    function closeAllPopovers() {
+      if (openPopover && openPopover.parentNode) openPopover.parentNode.removeChild(openPopover)
       openPopover = null
+      while (modalStack.length > 0) {
+        var m = modalStack.pop()
+        if (m && m.parentNode) m.parentNode.removeChild(m)
+      }
     }
 
     function valueKeyOf(v) {
@@ -635,14 +679,14 @@
           history: [],
         }
       }
-      var el = elementsById[anchorData.elementId]
+      var el = resolveElement(anchorData.elementId, anchorData.modelId)
       if (!el || typeof UI.EditModal !== 'function') return null
       var base = {
         citations: flattenCitations(el.citations),
         history: Array.isArray(el.history) ? el.history : [],
       }
       if (anchorData.relRetarget) {
-        var relTargetEl = elementsById[anchorData.relTarget]
+        var relTargetEl = resolveElement(anchorData.relTarget, anchorData.modelId)
         return {
           title: 'Retarget ' + (el.name || anchorData.elementId) + ' \u2192 ' + anchorData.relField,
           fieldName: anchorData.relField,
@@ -659,7 +703,16 @@
         }
       }
       var field = anchorData.field
-      if (!field) return null
+      if (!field) {
+        return {
+          title: el.name || anchorData.elementId,
+          fieldName: null,
+          value: null,
+          citations: base.citations,
+          history: base.history,
+          modelId: el.modelId || meta.modelId,
+        }
+      }
       if (field === '__name') {
         return {
           title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 name',
@@ -745,22 +798,32 @@
     }
 
     function openModalFor(anchorData, target) {
+      var targetEl = resolveElement(anchorData.elementId, anchorData.modelId)
+      var modalTitle = target.title
+      if (anchorData.info) {
+        if (anchorData.field) {
+          modalTitle = (targetEl ? (targetEl.name || anchorData.elementId) : anchorData.elementId) + ' \u2192 ' + anchorData.field
+        } else if (targetEl) {
+          modalTitle = targetEl.name || anchorData.elementId
+        }
+      }
       var modal = UI.EditModal(
         {
-          title: target.title,
+          title: modalTitle,
+          element: targetEl,
+          elementId: anchorData.elementId,
+          concept: targetEl && targetEl.concept,
           fieldName: target.fieldName,
           type: target.type,
           value: target.value,
           options: target.options,
           candidates: target.candidates,
           modelId: target.modelId,
-          citations: target.citations,
           history: target.history,
           isComment: !!target.isComment,
           structure: !!target.structure,
           reviewer: typeof options.getReviewer === 'function' ? String(options.getReviewer() || '') : '',
           warning: (function () {
-            var targetEl = elementsById[anchorData.elementId]
             var hasHash = !!(targetEl && typeof targetEl.hash === 'string' && BASE_HASH_PATTERN.test(targetEl.hash))
             if (targetEl && !hasHash) {
               return (
@@ -772,11 +835,12 @@
           })(),
           commentOnly: !!target.commentOnly,
           valueCommentOnly: !!target.valueCommentOnly,
-          connections: connectionsFor(elementsById[anchorData.elementId]),
-          startTab: anchorData.info ? 'history' : 'edit',
+          connections: connectionsFor(targetEl),
+          startTab: anchorData.startTab || (anchorData.info ? 'view' : (anchorData.edit ? 'edit' : 'view')),
         },
         {
           doc: doc,
+          byId: elementsById,
           onEvidence:
             typeof options.onEvidence === 'function' ? options.onEvidence : undefined,
           onSave: function (res) {
@@ -797,10 +861,16 @@
           },
           onCancel: function () {
             closePopover()
-            if (lastAnchor && typeof lastAnchor.focus === 'function') lastAnchor.focus()
+            if (!openPopover && lastAnchor && typeof lastAnchor.focus === 'function') {
+              lastAnchor.focus()
+            }
           },
         },
       )
+      if (modalStack.length > 0) {
+        modal.classList.add('nn-modal-nested')
+        modal.setAttribute('data-nested-modal', 'true')
+      }
       doc.body.appendChild(modal)
       openPopover = modal
       if (typeof modal.showModal === 'function') {
@@ -817,7 +887,7 @@
       // Validate first: an invalid call must not close the open popover or
       // move the focus anchor.
       var target = kuModalTarget(anchorData)
-      var el = elementsById[anchorData.elementId]
+      var el = resolveElement(anchorData.elementId, anchorData.modelId)
       if (!target && anchorData.comment && el) {
         target = {
           title: 'Comment on ' + (el.name || anchorData.elementId),
@@ -834,9 +904,23 @@
       // inside the modal being replaced does not count.
       var focused = doc.activeElement
       if (openPopover && focused && openPopover.contains(focused)) focused = lastAnchor
-      closePopover()
+
+      if (openPopover) {
+        if (openPopover.tagName === 'DIALOG') {
+          modalStack.push(openPopover)
+        } else if (openPopover.parentNode) {
+          openPopover.parentNode.removeChild(openPopover)
+          openPopover = null
+        }
+      }
+
       lastAnchor = focused && focused !== doc.body ? focused : null
-      if (anchorData.comment) target = Object.assign({}, target, { isComment: true })
+      if (anchorData.comment) {
+        target = Object.assign({}, target, { isComment: true })
+        // A comment on the whole element has no value to propose: the modal is
+        // comment-only. A field comment keeps the Propose/Comment toggle.
+        if (!target.fieldName) target = Object.assign({}, target, { commentOnly: true })
+      }
       if (anchorData.structure) target = Object.assign({}, target, { structure: true })
       openModalFor(anchorData, target)
       return true
@@ -854,7 +938,7 @@
       // Tag membership is a `correction` on the `tags` Field carrying the full
       // new array (applied as `update_field`), never a comment draft.
       if (anchorData.tagRemove) {
-        var elTag = elementsById[anchorData.elementId]
+        var elTag = resolveElement(anchorData.elementId, anchorData.modelId)
         var curTags = effectiveTagsOf(elTag)
         var nextTags = curTags.filter(function (t) {
           return valueKeyOf(t) !== valueKeyOf(anchorData.tagRemove)
@@ -897,9 +981,9 @@
               ? 'Annotate field'
               : 'Annotate element',
       }
-      if (anchorData.field && elementsById[anchorData.elementId]) {
-        var el = elementsById[anchorData.elementId]
-        data.original = docFieldValue(el, anchorData.field)
+      var targetEl = resolveElement(anchorData.elementId, anchorData.modelId)
+      if (anchorData.field && targetEl) {
+        data.original = docFieldValue(targetEl, anchorData.field)
       }
       var pop = UI.AnnotationPopover(data, {
         doc: doc,
@@ -1015,7 +1099,14 @@
     function openNew() {
       var concepts = schemaConcepts()
       if (!concepts.length || typeof UI.NewElementModal !== 'function') return false
-      closePopover()
+      if (openPopover) {
+        if (openPopover.tagName === 'DIALOG') {
+          modalStack.push(openPopover)
+        } else if (openPopover.parentNode) {
+          openPopover.parentNode.removeChild(openPopover)
+          openPopover = null
+        }
+      }
       var modal = UI.NewElementModal(
         {
           concepts: concepts.map(function (c) {
@@ -1081,7 +1172,7 @@
       var tag = target && target.tagName ? String(target.tagName).toLowerCase() : ''
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return
       if (target && target.isContentEditable) return
-      if (openPopover) return
+      if (openPopover || (modalStack && modalStack.length)) return
 
       var visible = []
       Array.prototype.forEach.call(
@@ -1568,7 +1659,7 @@
       if (subs.length === 1) {
         return { elementId: unit, modelId: model, field: subs[0] }
       }
-      return { elementId: unit, modelId: model, field: '__name' }
+      return { elementId: unit, modelId: model, field: null }
     }
 
     // One descriptor-driven entry point for every Ku action. `Ku` never knows

@@ -514,7 +514,7 @@ async function renderTree(models, root, consoles) {
 function injectSlots(shell, config, schema, model, viewData) {
   const serialize = payloadHelper?.serializeConsoleSlot
     ? (json) => payloadHelper.serializeConsoleSlot(json)
-    : (json) => JSON.stringify(json, null, 2).replace(/</g, '\\u003c')
+    : (json) => JSON.stringify(json).replace(/</g, '\\u003c')
   const slot = (html, id, json) =>
     html.replace(
       new RegExp(`(<script type="application/json" id="${id}">)[\\s\\S]*?(</script>)`),
@@ -800,18 +800,18 @@ async function hashFileStream(filePath) {
 }
 
 /**
- * Scans workspace files across sources/, assets/, evidence/, artifacts/, watch roots,
- * and imported domains; computes hashes, metadata, sidecar states, unit citations,
- * changeset evidence links, reverse lineage for artifacts, and gap stats.
+ * Scans workspace files across sources/, assets/, evidence/, artifacts/ and
+ * conversations/; computes hashes, metadata, sidecar states, unit citations,
+ * changeset evidence links, reverse lineage for artifacts, gap stats, and the
+ * origins declared by the sources catalog or recorded in sidecars.
  *
  * @param {string} workspaceRoot
- * @param {{ elements?: Array<any>, changesets?: Array<any>, watchRoots?: Array<any> }} [options]
+ * @param {{ elements?: Array<any>, changesets?: Array<any> }} [options]
  */
 export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
   const root = resolve(workspaceRoot)
   const elements = options.elements || []
   const changesets = options.changesets || []
-  const configuredWatchRoots = options.watchRoots || []
 
   const scanDirs = [
     'sources',
@@ -819,9 +819,6 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     'evidence',
     'artifacts',
     'conversations',
-    'imported',
-    '.domains',
-    'watch',
   ]
   const inventory = []
   const artifactsList = []
@@ -943,7 +940,7 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
 
     const isSourceLike = payloadHelper && payloadHelper.isSourceLike
       ? payloadHelper.isSourceLike(category)
-      : category === 'source' || category === 'imported_domain'
+      : category === 'source'
 
     // Sidecar detection: the canonical `<rel>_sidecar_NN.md` companion.
     let sidecar = undefined
@@ -961,7 +958,7 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
       sidecar = payloadHelper && payloadHelper.parseAndValidateSidecar
         ? payloadHelper.parseAndValidateSidecar(sidecarContent, companionSidecarRel, sha256)
         : { path: companionSidecarRel, exists: true, valid: false, error: 'Sidecar helpers unavailable' }
-    } else if (isSourceLike || category === 'asset') {
+    } else if ((isSourceLike || category === 'asset') && !payloadHelper.isMirrorFile(rel)) {
       sidecar = { path: companionSidecarRel, exists: false, valid: false }
     }
 
@@ -1035,30 +1032,18 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     }
   }
 
-  // Watch roots. `lastSync` is derived from the newest mtime under the root so
-  // two exports of unchanged files produce identical payloads.
-  function describeRoot(rootRel) {
-    const prefix = rootRel.replace(/\/+$/, '') + '/'
-    const members = inventory.filter((e) => e.path.startsWith(prefix))
-    if (!members.length) return null
-    const newest = members.reduce((acc, e) => (e.mtime > acc ? e.mtime : acc), '')
-    return {
-      path: rootRel,
-      status: 'active',
-      fileCount: members.length,
-      lastSync: newest || undefined,
+  // Origins: the Synchronization elements of the sources catalog plus the origin
+  // keys recorded in sidecars. A folder name never makes one.
+  let synchronizations = []
+  const catalogPath = join(root, 'sources', 'sources_NN.md')
+  if (existsSync(catalogPath)) {
+    try {
+      synchronizations = payloadHelper.readSynchronizations(await readFile(catalogPath, 'utf8')).synchronizations
+    } catch {
+      // an unreadable catalog declares nothing
     }
   }
-
-  const watchRoots = []
-  if (Array.isArray(configuredWatchRoots) && configuredWatchRoots.length > 0) {
-    watchRoots.push(...configuredWatchRoots)
-  } else {
-    for (const rel of ['sources', 'watch', 'conversations', 'assets', 'evidence', 'artifacts']) {
-      const descriptor = describeRoot(rel)
-      if (descriptor) watchRoots.push(descriptor)
-    }
-  }
+  const origins = payloadHelper.buildOrigins(synchronizations, inventory)
 
   // Reverse lineage
   const lineage = payloadHelper && payloadHelper.resolveArtifactReverseLineage
@@ -1067,12 +1052,12 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
 
   // Stats
   const stats = payloadHelper && payloadHelper.calculateFilesStats
-    ? payloadHelper.calculateFilesStats(inventory, watchRoots)
+    ? payloadHelper.calculateFilesStats(inventory)
     : {
         totalFiles: inventory.length,
         totalBytes: inventory.reduce((a, b) => a + (b.size || 0), 0),
-        categoryCounts: { watch_root: 0, source: 0, imported_domain: 0, asset: 0, evidence: 0, artifact: 0 },
-        storageByCategory: { watch_root: 0, source: 0, imported_domain: 0, asset: 0, evidence: 0, artifact: 0 },
+        categoryCounts: { source: 0, asset: 0, evidence: 0, artifact: 0, unclassified: 0 },
+        storageByCategory: { source: 0, asset: 0, evidence: 0, artifact: 0, unclassified: 0 },
         sourceCoverageRate: 1,
         uncitedSourceCount: 0,
         sidecarMissingCount: 0,
@@ -1083,7 +1068,7 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
 
   return {
     inventory,
-    watchRoots,
+    origins,
     stats,
     lineage,
   }
@@ -1563,7 +1548,6 @@ export async function writeConsole(opts = {}) {
       filesData = await collectWorkspaceFiles(root, {
         elements: allElements,
         changesets,
-        watchRoots: opts.watchRoots,
       })
     } catch (err) {
       process.stderr.write(`WARNING: [export-console] error scanning files: ${err.message}\n`)
@@ -1640,15 +1624,35 @@ export async function writeConsole(opts = {}) {
     }
     return html
   }
-  const html = buildHtml(new Date().toISOString())
-
   // Final size gate, before the first write of this run.
   const bytes = (text) => Buffer.byteLength(text, 'utf8')
-  const budget = viewsLib.evaluateSizeBudget({
-    bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
-    models: bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
-    views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),    total: bytes(html),
-  })
+  const budgetOf = (rendered) =>
+    viewsLib.evaluateSizeBudget({
+      bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
+      models: bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
+      views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
+      total: bytes(rendered),
+    })
+
+  let html = buildHtml(new Date().toISOString())
+  let budget = budgetOf(html)
+
+  // Degrade instead of refusing to write: a domain that outgrew the hard limit still
+  // exports, with the resolved citation payload dropped and the strategy reported.
+  let slimmed = false
+  if (budget.status === 'fail') {
+    const stripped = viewsLib.stripConsoleCitations(domainPayload)
+    if (stripped > 0) {
+      html = buildHtml(new Date().toISOString())
+      budget = budgetOf(html)
+      slimmed = true
+      process.stderr.write(
+        `WARNING: [export-console] console exceeded ${viewsLib.CONSOLE_SIZE_BUDGET.failBytes} B; ` +
+          `exported slimmed — dropped the resolved citations of ${stripped} elements ` +
+          `(their raw field values are untouched).\n`,
+      )
+    }
+  }
   if (budget.status === 'fail') throw new ConsoleExportError(budget.message, 'CONSOLE_TOO_LARGE')
   if (budget.status === 'warn') process.stderr.write(`WARNING: [export-console] ${budget.message}\n`)
   log(budget.breakdown)
@@ -1664,7 +1668,7 @@ export async function writeConsole(opts = {}) {
     absPath = join(root, relativePath)
     relPath = relativePath
     let isUnchanged = false
-    if (existsSync(absPath)) {
+    if (!slimmed && existsSync(absPath)) {
       const previous = await readFile(absPath, 'utf-8')
       const previousGenerated = extractModelMetaFromHtml(previous)?.generated
       // Re-render with the previous generated stamp: identical bytes mean nothing changed.

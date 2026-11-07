@@ -29,7 +29,7 @@ flowchart LR
 ## 1. Enter — import
 
 Raw files land in `sources/import/`. They arrive by hand (a file dropped in the folder),
-fetched from the web, or picked up from a watched folder. Imports are **write-once**: a
+fetched from the web, or refreshed from a Synchronization. Imports are **write-once**: a
 changed external file lands as a new UTC-suffixed family member
 (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`), and identical bytes are deduplicated. The
 raw file is never moved or rewritten. See

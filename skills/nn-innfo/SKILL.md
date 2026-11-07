@@ -66,7 +66,7 @@ description: |
 **Canonical Source Taxonomy & Citation Contract**
 
 1. **Primary Source**: the immutable, original evidence files under
-   `sources/import/` or watched via `## NN External Watch Roots:` (read-only).
+   `sources/import/` or kept in sync with an external origin through a `## NN Synchronization:` element (`nn-sources --sync`).
 2. **Normalized / Secondary Source**: cognitivized in place — a co-located sidecar
    `<file>.<ext>_sidecar_NN.md` carries origin metadata (`source_file`, `sha256`,
    `size_bytes`, `source_format`, `normalized_at`); binary sources also carry the
@@ -795,7 +795,7 @@ Upon concluding the generation or editing of a model, the agent MUST include log
 
 ---
 
-## 14. Workspace Manifest Synchronization (Self-Registration)
+## 14. Workspace Manifest Reconciliation (Self-Registration)
 
 The workspace manifest (`domaiNN_NN.md`, section `# NN kNNowledge`) can drift out of sync with the filesystem: a new Level 3 model is created and nobody adds its entry, or a file is deleted and the manifest entry keeps pointing at a model that no longer exists. The MCP's `sync_domain_manifest` tool reconciles this additively, never destructively:
 
@@ -816,20 +816,20 @@ nn-mcp_sync_domain_manifest({ dry_run: true })
 nn-mcp_sync_domain_manifest({ dry_run: false }) // only after explicit confirmation
 ```
 
-This is the headless / CLI-equivalent path for actioNN — there is no separate `nn` binary; synchronization always goes through the existing MCP bridge (`nn-mcp`), like every other tool in this skill.
+This is the headless / CLI-equivalent path for actioNN — there is no separate `nn` binary; reconciliation always goes through the existing MCP bridge (`nn-mcp`), like every other tool in this skill.
 
 ---
 
-## 15. External Watch Roots & Pre-Authoring Scanner Integration
+## 15. Synchronizations & Pre-Authoring Refresh
 
-The session-start surfacing of watch roots — the contextual `[s] Sources` sub-option, the `[h] Help` capability entry, and the read-only `--watch-digest` — is owned by `nn` (see the `router-governance` and `external-watch-roots` capabilities). This section covers only the pre-authoring check that runs when a model citing dynamic sources is about to be written.
+A **Synchronization** is a `## NN Synchronization: <name>` element in `sources/sources_NN.md` that keeps a local copy of an external file or folder (another domaiNN, a shared drive, an `https://` file). It is refreshed only on request: there is no daemon and no session-start scan. This section covers the pre-authoring check and how to author against a mirrored model; the refresh command itself is owned by `nn-sources`.
 
-When authoring or auditing models that rely on external data drops (e.g. client spreadsheets, RFPs, audio transcripts):
-1. **Detect Declarative Watch Roots**: Check if the `domaiNN_NN.md` entrypoint defines a `## NN External Watch Roots:` section.
-2. **Pre-Authoring Scan Check**: Before updating or creating a model citing dynamic sources, offer to scan external roots:
-   > *"This workspace defines external watch roots. Would you like to scan for new or evolved primary sources before authoring?"*
-3. **Execution**: Invoke `node skills/nn-sources/scripts/index.js --scan-external --check-impact` to inspect external changes, import timestamped snapshots (`YYYYMMDD-HHmmss`), and check source family evolutions.
-4. **Shared Digest State**: Consult `.cognnitive/watch-digest.json` and skip any item the session-start digest already offered or decided (`ignore`/`import`), so the user is not asked twice for the same content.
+When authoring or auditing models that rely on a synchronized origin (e.g. an Organization domaiNN mirrored into a Procedures domaiNN):
+1. **Detect declarations**: Check whether `sources/sources_NN.md` declares Synchronization elements (`alias`, `origin_uri`, `kind`, `state`).
+2. **Pre-authoring refresh check**: Before writing a model that points into a mirror, offer to refresh it:
+   > *"This workspace synchronizes an external origin. Would you like to refresh it before authoring?"*
+3. **Execution**: Invoke `node skills/nn-sources/scripts/index.js --sync [alias]`. It lands the origin and prints a ready `propose_changeset` payload (one `comment` change, per-file before/after sha256); apply it through `propose_changeset` + `apply_change`. Nothing is applied by the CLI.
+4. **Point at a mirrored element with a `reference` field** whose value is the path form `sources/sync/<alias>/<path>_NN.md@<slug>` (for example `sources/sync/org/organization_NN.md@gerente`). `check_domain` resolves it and reports `REF_ELEMENT_NOT_FOUND` / `REF_MODEL_NOT_FOUND` when the origin renamed or dropped the target. Never edit files under `sources/sync/`; the next refresh replaces them.
 
 ---
 

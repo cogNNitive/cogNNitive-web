@@ -829,6 +829,21 @@ var require_mcp_config_adapter = __commonJS({
     function writeJsonClean(filePath, data, indent = 2) {
       saveJsonAtomic(filePath, data, indent);
     }
+    function writeTextClean(filePath, text) {
+      const dir = path2.dirname(filePath);
+      fs.mkdirSync(dir, { recursive: true });
+      const tmp = path2.join(dir, `.${path2.basename(filePath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+      try {
+        fs.writeFileSync(tmp, text, "utf-8");
+        fs.renameSync(tmp, filePath);
+      } catch (err) {
+        try {
+          if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+        } catch (_) {
+        }
+        throw err;
+      }
+    }
     function registerMcpForOpenCode({ configFile, serverName = "nn-mcp", bundlePath }) {
       const dir = path2.dirname(configFile);
       if (!fs.existsSync(dir)) {
@@ -938,6 +953,192 @@ var require_mcp_config_adapter = __commonJS({
       }
       return results;
     }
+    function updateHermesYaml(content, serverName = "nn-mcp", bundlePath) {
+      let lines = (content || "").replace(/\r\n/g, "\n").split("\n");
+      while (lines.length > 0 && lines[lines.length - 1].trim() === "") {
+        lines.pop();
+      }
+      let mcpStart = -1;
+      let mcpEnd = -1;
+      let curatorStart = -1;
+      let curatorEnd = -1;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (/^[a-zA-Z0-9_]+:/.test(line)) {
+          if (mcpStart !== -1 && mcpEnd === -1) {
+            mcpEnd = i;
+          }
+          if (curatorStart !== -1 && curatorEnd === -1) {
+            curatorEnd = i;
+          }
+          if (/^mcp_servers:/.test(line)) {
+            mcpStart = i;
+          } else if (/^curator:/.test(line)) {
+            curatorStart = i;
+          }
+        }
+      }
+      if (mcpStart !== -1 && mcpEnd === -1) mcpEnd = lines.length;
+      if (curatorStart !== -1 && curatorEnd === -1) curatorEnd = lines.length;
+      let changed = false;
+      if (curatorStart === -1) {
+        lines.push("");
+        lines.push("curator:");
+        lines.push("  enabled: false");
+        changed = true;
+      } else {
+        const curatorLines = lines.slice(curatorStart, curatorEnd);
+        const hasEnabledFalse = curatorLines.some((l) => /^\s+enabled:\s*false\s*$/.test(l));
+        if (!hasEnabledFalse) {
+          let replaced = false;
+          for (let i = curatorStart + 1; i < curatorEnd; i++) {
+            if (/^\s+enabled:/.test(lines[i])) {
+              lines[i] = "  enabled: false";
+              replaced = true;
+              changed = true;
+              break;
+            }
+          }
+          if (!replaced) {
+            lines.splice(curatorStart + 1, 0, "  enabled: false");
+            changed = true;
+          }
+        }
+      }
+      if (changed) {
+        mcpStart = -1;
+        mcpEnd = -1;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (/^[a-zA-Z0-9_]+:/.test(line)) {
+            if (mcpStart !== -1 && mcpEnd === -1) {
+              mcpEnd = i;
+            }
+            if (/^mcp_servers:/.test(line)) {
+              mcpStart = i;
+            }
+          }
+        }
+        if (mcpStart !== -1 && mcpEnd === -1) mcpEnd = lines.length;
+      }
+      const targetServerBlock = [
+        `  ${serverName}:`,
+        `    command: node`,
+        `    args:`,
+        `      - ${bundlePath}`,
+        `    enabled: true`
+      ];
+      if (mcpStart === -1) {
+        lines.push("");
+        lines.push("mcp_servers:");
+        lines.push(...targetServerBlock);
+        changed = true;
+      } else {
+        let parseServerProperties2 = function(serverLines) {
+          let command = null;
+          let args = [];
+          let enabled = true;
+          let inArgs = false;
+          for (const l of serverLines) {
+            const trimmed = l.trim();
+            if (!trimmed) continue;
+            if (trimmed.startsWith("command:")) {
+              inArgs = false;
+              command = trimmed.replace("command:", "").trim().replace(/^['"]|['"]$/g, "");
+            } else if (trimmed.startsWith("args:")) {
+              inArgs = true;
+            } else if (inArgs && trimmed.startsWith("-")) {
+              args.push(trimmed.slice(1).trim().replace(/^['"]|['"]$/g, ""));
+            } else if (trimmed.startsWith("enabled:")) {
+              inArgs = false;
+              enabled = trimmed.replace("enabled:", "").trim() === "true";
+            } else if (!trimmed.startsWith("-")) {
+              inArgs = false;
+            }
+          }
+          return { command, args, enabled };
+        };
+        var parseServerProperties = parseServerProperties2;
+        const mcpLines = lines.slice(mcpStart + 1, mcpEnd);
+        const servers = [];
+        let currentServer = null;
+        for (let i = 0; i < mcpLines.length; i++) {
+          const line = mcpLines[i];
+          const match = /^ {2}([a-zA-Z0-9_-]+):/.exec(line);
+          if (match) {
+            if (currentServer) {
+              currentServer.end = i;
+              currentServer.lines = mcpLines.slice(currentServer.start, currentServer.end);
+              servers.push(currentServer);
+            }
+            currentServer = { name: match[1], start: i, end: -1, lines: [] };
+          }
+        }
+        if (currentServer) {
+          currentServer.end = mcpLines.length;
+          currentServer.lines = mcpLines.slice(currentServer.start, currentServer.end);
+          servers.push(currentServer);
+        }
+        let filteredServers = servers;
+        if (serverName === "nn-mcp") {
+          const hasLegacy = servers.some((s) => s.name === "innfo-mcp");
+          if (hasLegacy) {
+            filteredServers = servers.filter((s) => s.name !== "innfo-mcp");
+            changed = true;
+          }
+        }
+        const existing = filteredServers.find((s) => s.name === serverName);
+        let targetUpToDate = false;
+        if (existing) {
+          const parsed = parseServerProperties2(existing.lines);
+          if (parsed.command === "node" && parsed.enabled === true && parsed.args.length === 1 && path2.resolve(parsed.args[0]).toLowerCase() === path2.resolve(bundlePath).toLowerCase()) {
+            targetUpToDate = true;
+          }
+        }
+        if (!targetUpToDate || changed) {
+          const newMcpLines = ["mcp_servers:"];
+          let serverAdded = false;
+          for (const s of filteredServers) {
+            if (s.name === serverName) {
+              newMcpLines.push(...targetServerBlock);
+              serverAdded = true;
+            } else {
+              newMcpLines.push(...s.lines);
+            }
+          }
+          if (!serverAdded) {
+            newMcpLines.push(...targetServerBlock);
+          }
+          lines.splice(mcpStart, mcpEnd - mcpStart, ...newMcpLines);
+          changed = true;
+        }
+      }
+      const newContent = lines.join("\n") + "\n";
+      return { newContent, updated: changed };
+    }
+    function registerMcpForHermes(options) {
+      const homedir = options.homedir || os.homedir();
+      const configFile = options.configFile || path2.join(homedir, ".hermes", "config.yaml");
+      const serverName = options.serverName || "nn-mcp";
+      const bundlePath = options.bundlePath;
+      const dir = path2.dirname(configFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      let content = "";
+      if (fs.existsSync(configFile)) {
+        try {
+          content = fs.readFileSync(configFile, "utf-8").replace(/^\uFEFF/, "");
+        } catch {
+          content = "";
+        }
+      }
+      const { newContent, updated } = updateHermesYaml(content, serverName, bundlePath);
+      if (updated) {
+        writeTextClean(configFile, newContent);
+      }
+      return { agent: "hermes", file: configFile, updated };
+    }
     function registerMcpAuto({ bundlePath, serverName = "nn-mcp", homedir = os.homedir(), targetAgent = "auto" }) {
       const results = [];
       const normalizedAgent = (targetAgent || "auto").toLowerCase();
@@ -946,6 +1147,8 @@ var require_mcp_config_adapter = __commonJS({
       const opencodeJsonc = path2.join(opencodeDir, "opencode.jsonc");
       const claudeJson = path2.join(homedir, ".claude.json");
       const geminiDir = path2.join(homedir, ".gemini");
+      const hermesDir = path2.join(homedir, ".hermes");
+      const hermesYaml = path2.join(hermesDir, "config.yaml");
       if (normalizedAgent === "opencode") {
         const targetFile = fs.existsSync(opencodeJsonc) && !fs.existsSync(opencodeJson) ? opencodeJsonc : opencodeJson;
         results.push(registerMcpForOpenCode({ configFile: targetFile, serverName, bundlePath }));
@@ -959,11 +1162,16 @@ var require_mcp_config_adapter = __commonJS({
         results.push(...registerMcpForAntigravity({ homedir, serverName, bundlePath }));
         return results;
       }
+      if (normalizedAgent === "hermes") {
+        results.push(registerMcpForHermes({ configFile: hermesYaml, serverName, bundlePath, homedir }));
+        return results;
+      }
       if (normalizedAgent === "all") {
         const targetFile = fs.existsSync(opencodeJsonc) && !fs.existsSync(opencodeJson) ? opencodeJsonc : opencodeJson;
         results.push(registerMcpForOpenCode({ configFile: targetFile, serverName, bundlePath }));
         results.push(registerMcpForClaude({ configFile: claudeJson, serverName, bundlePath }));
         results.push(...registerMcpForAntigravity({ homedir, serverName, bundlePath }));
+        results.push(registerMcpForHermes({ configFile: hermesYaml, serverName, bundlePath, homedir }));
         return results;
       }
       let matchedAny = false;
@@ -980,6 +1188,10 @@ var require_mcp_config_adapter = __commonJS({
         results.push(...registerMcpForAntigravity({ homedir, serverName, bundlePath }));
         matchedAny = true;
       }
+      if (fs.existsSync(hermesDir) || fs.existsSync(hermesYaml) || process.env.HERMES || process.env.HERMES_HOME) {
+        results.push(registerMcpForHermes({ configFile: hermesYaml, serverName, bundlePath, homedir }));
+        matchedAny = true;
+      }
       if (!matchedAny) {
         results.push(registerMcpForOpenCode({ configFile: opencodeJson, serverName, bundlePath }));
       }
@@ -988,10 +1200,13 @@ var require_mcp_config_adapter = __commonJS({
     module2.exports = {
       readJsonClean,
       writeJsonClean,
+      writeTextClean,
       registerMcpForOpenCode,
       registerMcpForClaude,
       registerMcpForAntigravity,
-      registerMcpAuto
+      registerMcpForHermes,
+      registerMcpAuto,
+      updateHermesYaml
     };
   }
 });
@@ -2369,6 +2584,7 @@ Skipping skill projection: workspace scope does not project to global editor dir
       const opencodeSkillsDir = path2.join(homedir, ".config", "opencode", "skills");
       const claudeSkillsDir = path2.join(homedir, ".claude", "skills");
       const geminiSkillsDir = path2.join(homedir, ".gemini", "config", "skills");
+      const hermesSkillsDir = path2.join(homedir, ".hermes", "skills");
       if (normalizedAgent === "opencode" || normalizedAgent === "all") {
         agentTargets.push({ agent: "opencode", dir: opencodeSkillsDir });
       }
@@ -2377,6 +2593,9 @@ Skipping skill projection: workspace scope does not project to global editor dir
       }
       if (normalizedAgent === "antigravity" || normalizedAgent === "all") {
         agentTargets.push({ agent: "antigravity", dir: geminiSkillsDir });
+      }
+      if (normalizedAgent === "hermes" || normalizedAgent === "all") {
+        agentTargets.push({ agent: "hermes", dir: hermesSkillsDir });
       }
       if (normalizedAgent === "auto") {
         if (fs.existsSync(path2.join(homedir, ".config", "opencode")) || process.env.OPENCODE_SESSION_ID || process.env.OPENCODE_RUN_ID) {
@@ -2387,6 +2606,9 @@ Skipping skill projection: workspace scope does not project to global editor dir
         }
         if (fs.existsSync(path2.join(homedir, ".gemini")) || process.env.ANTIGRAVITY || process.env.GEMINI_CLI) {
           agentTargets.push({ agent: "antigravity", dir: geminiSkillsDir });
+        }
+        if (fs.existsSync(path2.join(homedir, ".hermes")) || process.env.HERMES || process.env.HERMES_HOME) {
+          agentTargets.push({ agent: "hermes", dir: hermesSkillsDir });
         }
         if (agentTargets.length === 0) {
           agentTargets.push({ agent: "opencode", dir: opencodeSkillsDir });
@@ -2644,7 +2866,7 @@ function parseArgs(argv) {
 }
 function usage() {
   console.log(`Usage:
-  node scripts/skills-manager.js bootstrap [--scope <global|workspace>] [--agent <auto|opencode|claude|antigravity>] [--yes]
+  node scripts/skills-manager.js bootstrap [--scope <global|workspace>] [--agent <auto|all|opencode|claude|antigravity|hermes>] [--yes]
   node scripts/skills-manager.js status    [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>]
   node scripts/skills-manager.js install   [--skills-dir <dir>] [--blueprints-dir <dir>] [--state <file>] [--blueprint <name>] [--yes]
   node scripts/skills-manager.js install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>] [--skills-dir <dir>] [--state <file>] [--yes]
@@ -2661,7 +2883,7 @@ Commands:
 
 Flags:
   --scope <scope>         Installation scope: global (default, ~/.agents/) or workspace (./.agents/)
-  --agent <agent>         Target agent for MCP/Skills: auto (default), all, opencode, claude, antigravity
+  --agent <agent>         Target agent for MCP/Skills: auto (default), all, opencode, claude, antigravity, hermes
   --skills-dir <dir>      Skills directory (default: ~/.agents/skills)
   --blueprints-dir <dir>  Blueprints directory (default: ~/.agents/bluepriNNts; --templates-dir accepted as legacy alias)
   --mcp-dir <dir>         MCP bundle directory (default: ~/.agents/mcp)

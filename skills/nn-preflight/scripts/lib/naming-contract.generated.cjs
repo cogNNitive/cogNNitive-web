@@ -54,6 +54,7 @@ __export(index_exports, {
   isProcedureDocument: () => isProcedureDocument,
   isRegenerableView: () => isRegenerableView,
   isSidecarName: () => isSidecarName,
+  isUnderRootSources: () => isUnderRootSources,
   nextStamp: () => nextStamp,
   parentSpecNameOf: () => parentSpecNameOf,
   parseName: () => parseName,

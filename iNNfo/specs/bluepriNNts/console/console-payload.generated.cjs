@@ -1002,14 +1002,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text2, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text;
+        return text2;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text.length <= endStep)
-        return text;
+      if (text2.length <= endStep)
+        return text2;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1026,14 +1026,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text, i, indent.length);
+        i = consumeMoreIndentedLines(text2, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text[i += 1]; ) {
+      for (let ch; ch = text2[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text[i + 1]) {
+          switch (text2[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1050,12 +1050,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text, i, indent.length);
+            i = consumeMoreIndentedLines(text2, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text[i + 1];
+            const next = text2[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1067,12 +1067,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text[i += 1];
+                ch = text2[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text;
+                return text2;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1087,39 +1087,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text;
+        return text2;
       if (onFold)
         onFold();
-      let res = text.slice(0, folds[0]);
+      let res = text2.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text.length;
+        const end2 = folds[i2 + 1] || text2.length;
         if (fold === 0)
           res = `
-${indent}${text.slice(0, end2)}`;
+${indent}${text2.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text[fold]}\\`;
+            res += `${text2[fold]}\\`;
           res += `
-${indent}${text.slice(fold + 1, end2)}`;
+${indent}${text2.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text, i, indent) {
+    function consumeMoreIndentedLines(text2, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text[start];
+      let ch = text2[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text[++i];
+          ch = text2[++i];
         } else {
           do {
-            ch = text[++i];
+            ch = text2[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text[start];
+          ch = text2[start];
         }
       }
       return end;
@@ -7377,6 +7377,7 @@ __export(index_exports, {
   buildChangeLogFromChangesets: () => buildChangeLogFromChangesets,
   buildConsolePayload: () => buildConsolePayload,
   buildConsoleSchemaSlot: () => buildConsoleSchemaSlot,
+  buildOrigins: () => buildOrigins,
   calculateFilesStats: () => calculateFilesStats,
   canonicalJsonStringify: () => canonicalJsonStringify,
   capExcerpt: () => capExcerpt,
@@ -7398,6 +7399,7 @@ __export(index_exports, {
   hashParsedElement: () => hashParsedElement,
   isConsoleModel: () => isConsoleModel,
   isExcludedPath: () => isExcludedPath,
+  isMirrorFile: () => isMirrorFile,
   isNNName: () => isNNName,
   isSidecarName: () => isSidecarName,
   isSidecarPath: () => isSidecarPath,
@@ -7415,6 +7417,7 @@ __export(index_exports, {
   parseUnitAddress: () => parseUnitAddress,
   parseYaml: () => parseYaml,
   readChangeAuthor: () => readChangeAuthor,
+  readSynchronizations: () => readSynchronizations,
   resolveArtifactReverseLineage: () => resolveArtifactReverseLineage,
   resolveCitation: () => resolveCitation,
   resolveConsoleSchema: () => resolveConsoleSchema,
@@ -7479,15 +7482,12 @@ var ElementsMap = class {
   }
 };
 
-// iNNfo/packages/nn-core/src/layout.ts
-var CANONICAL_DOMAIN_ENTRYPOINT = "domaiNN_NN.md";
-
 // iNNfo/packages/nn-core/src/parser/slug.ts
-function nfc(text) {
-  return text.normalize("NFC");
+function nfc(text2) {
+  return text2.normalize("NFC");
 }
-function stripCombiningMarks(text) {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "");
+function stripCombiningMarks(text2) {
+  return text2.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -7499,8 +7499,8 @@ var import_yaml = __toESM(require_dist(), 1);
 // iNNfo/packages/nn-core/src/parser/markdown.ts
 var YAML_BLOCK_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 var BOM_CHAR = String.fromCharCode(65279);
-function normalizeSource(text) {
-  const withoutBom = text.charCodeAt(0) === 65279 ? text.replace(/^\uFEFF+/, "") : text;
+function normalizeSource(text2) {
+  const withoutBom = text2.charCodeAt(0) === 65279 ? text2.replace(/^\uFEFF+/, "") : text2;
   return withoutBom.replace(/\r\n?/g, "\n");
 }
 function parseMarkdownTable(md) {
@@ -7971,8 +7971,8 @@ function deriveElementSlugs(elements) {
     concept: info.concept
   }));
 }
-function splitTopLevelSections(text) {
-  const lines = text.split("\n");
+function splitTopLevelSections(text2) {
+  const lines = text2.split("\n");
   const sections = [];
   let currentLines = [];
   let inCodeFence = false;
@@ -9550,6 +9550,25 @@ function isAddressError(value) {
   return value.kind === "error";
 }
 
+// iNNfo/packages/nn-core/src/sync/address.ts
+var SYNC_DIR = "sources/sync";
+function parseMirrorAddress(raw) {
+  const value = String(raw ?? "").trim();
+  const at = value.indexOf("@");
+  if (at === -1) return null;
+  const location = value.slice(0, at);
+  if (location.includes("\\") || !location.startsWith(`${SYNC_DIR}/`)) return null;
+  const segments = location.slice(SYNC_DIR.length + 1).split("/");
+  if (segments.length < 2) return null;
+  if (segments.some((s) => s === "" || s === "." || s === "..")) return null;
+  const path2 = segments.slice(1).join("/");
+  if (!isNNName(path2) || !/\.md$/i.test(path2)) return null;
+  const unit = parseUnit(value.slice(at + 1));
+  if ("code" in unit) return null;
+  if (unit.kind !== "element" && unit.kind !== "body") return null;
+  return { alias: segments[0], path: path2, unit };
+}
+
 // iNNfo/packages/nn-core/src/validator/crypto.ts
 function computeSha256(content) {
   const utf8 = new TextEncoder().encode(content);
@@ -9884,8 +9903,8 @@ function levenshteinDistance(a, b) {
   }
   return matrix[bn][an];
 }
-function slugifyHeading(text) {
-  const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
+function slugifyHeading(text2) {
+  const stripped = nfc(text2).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
   return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
 }
 function slugifyFlat(part) {
@@ -9902,12 +9921,12 @@ function extractHeadings(markdown) {
     const match = lines[i].match(/^(#{1,6})\s+(.+?)\s*$/);
     if (!match) continue;
     const level = match[1].length;
-    const text = match[2].replace(/[*_`]/g, "").trim();
-    const { concept, element, slug: baseSlug } = headingSlugParts(text);
+    const text2 = match[2].replace(/[*_`]/g, "").trim();
+    const { concept, element, slug: baseSlug } = headingSlugParts(text2);
     const occurrence = seen.get(baseSlug) ?? 0;
     seen.set(baseSlug, occurrence + 1);
     const slug = occurrence === 0 ? baseSlug : `${baseSlug}-${occurrence}`;
-    headings.push({ level, text, slug, line: i, concept, element });
+    headings.push({ level, text: text2, slug, line: i, concept, element });
   }
   return headings;
 }
@@ -9926,8 +9945,8 @@ function resolveHeadingSection(markdown, slug) {
   }
   return { heading, startLine: heading.line, endLine };
 }
-function headingSlugParts(text) {
-  const clean = text.trim();
+function headingSlugParts(text2) {
+  const clean = text2.trim();
   const boundary = clean.indexOf(":");
   if (boundary > 0) {
     const concept = clean.slice(0, boundary).trim();
@@ -9942,8 +9961,8 @@ function headingSlugParts(text) {
   }
   return { slug: slugifyHeading(clean) };
 }
-function slugifyUnitHeading(level, text) {
-  const clean = text.trim();
+function slugifyUnitHeading(level, text2) {
+  const clean = text2.trim();
   const { slug } = headingSlugParts(clean);
   const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
   return { level: clamped, text: clean, slug };
@@ -10050,9 +10069,9 @@ function parseKnowledgeUnitRef(input) {
   if (rawSegments.some((s) => s.trim() === "")) return null;
   const decoded = [];
   for (const part of rawSegments) {
-    const text = decodeSegment(part.trim());
-    if (text === null || text.trim() === "") return null;
-    decoded.push(text.trim());
+    const text2 = decodeSegment(part.trim());
+    if (text2 === null || text2.trim() === "") return null;
+    decoded.push(text2.trim());
   }
   const [unitRaw, ...subunits] = decoded;
   const isCsv = /\.csv$/i.test(resolved.filePath);
@@ -10719,36 +10738,36 @@ function compareChanges(a, b) {
 }
 
 // iNNfo/packages/nn-core/src/references.ts
-function updateReferenceString(text, oldName, newName) {
-  if (!text || typeof text !== "string") return text;
+function updateReferenceString(text2, oldName, newName) {
+  if (!text2 || typeof text2 !== "string") return text2;
   const oldSlug = slugify(oldName);
-  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
-    if (slugify(text.trim()) === oldSlug) {
-      const leadingSpaces = text.match(/^\s*/)?.[0] || "";
-      const trailingSpaces = text.match(/\s*$/)?.[0] || "";
+  if (!text2.trim().startsWith("[[") && !text2.trim().endsWith("]]")) {
+    if (slugify(text2.trim()) === oldSlug) {
+      const leadingSpaces = text2.match(/^\s*/)?.[0] || "";
+      const trailingSpaces = text2.match(/\s*$/)?.[0] || "";
       return `${leadingSpaces}${newName}${trailingSpaces}`;
     }
   }
-  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+  if (!text2.trim().startsWith("[[") && !text2.trim().endsWith("]]")) {
     const qualifiedBracketRegex = new RegExp(`^(\\s*\\[[^\\]]+\\]\\s*)(.+)$`, "i");
-    const matchBracket = text.match(qualifiedBracketRegex);
+    const matchBracket = text2.match(qualifiedBracketRegex);
     if (matchBracket && slugify(matchBracket[2].trim()) === oldSlug) {
       const trailingSpaces = matchBracket[2].match(/\s*$/)?.[0] || "";
       return `${matchBracket[1]}${newName}${trailingSpaces}`;
     }
     const qualifiedColonRegex = new RegExp(`^(\\s*[^:]+::\\s*)(.+)$`, "i");
-    const matchColon = text.match(qualifiedColonRegex);
+    const matchColon = text2.match(qualifiedColonRegex);
     if (matchColon && slugify(matchColon[2].trim()) === oldSlug) {
       const trailingSpaces = matchColon[2].match(/\s*$/)?.[0] || "";
       return `${matchColon[1]}${newName}${trailingSpaces}`;
     }
   }
-  return updateWikiLinks(text, oldName, newName);
+  return updateWikiLinks(text2, oldName, newName);
 }
-function updateWikiLinks(text, oldName, newName) {
-  if (!text || typeof text !== "string") return text;
+function updateWikiLinks(text2, oldName, newName) {
+  if (!text2 || typeof text2 !== "string") return text2;
   const oldSlug = slugify(oldName);
-  return text.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
+  return text2.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
     const trimmedTarget = target.trim();
     if (slugify(trimmedTarget) === oldSlug) {
       return `[[${newName}${alias ?? ""}]]`;
@@ -11205,8 +11224,8 @@ var import_node_crypto = require("node:crypto");
 var import_yaml8 = __toESM(require_dist(), 1);
 var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
 var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
-function parseSidecarFrontmatter(text) {
-  const match = FRONTMATTER_RE.exec(text);
+function parseSidecarFrontmatter(text2) {
+  const match = FRONTMATTER_RE.exec(text2);
   if (!match) return null;
   try {
     const value = (0, import_yaml8.parse)(match[1]);
@@ -11250,9 +11269,9 @@ async function readOrNull(file) {
   }
 }
 async function readSidecarSha256(root, rawRel) {
-  const text = await readOrNull(resolveInside(root, sidecarPathOf(rawRel)));
-  if (text === null) return null;
-  const value = parseSidecarFrontmatter(text.toString("utf8"))?.["sha256"];
+  const text2 = await readOrNull(resolveInside(root, sidecarPathOf(rawRel)));
+  if (text2 === null) return null;
+  const value = parseSidecarFrontmatter(text2.toString("utf8"))?.["sha256"];
   return typeof value === "string" ? value.toLowerCase() : "";
 }
 async function guardInputs(root, inputs) {
@@ -11383,67 +11402,45 @@ function hashParsedElement(concept, node) {
   });
 }
 
-// iNNfo/packages/nn-core/src/imports/parser.ts
-function parseDomainImports(domainContent) {
-  const parsed = parseKnowledge(domainContent);
-  const domains = [];
-  const imports = [];
-  const domainElements = parsed.elements.get("Imported Domain") ?? [];
-  for (const el of domainElements) {
-    const rawPath = String(el.fields["path"] ?? "").trim();
-    domains.push({
-      alias: el.name,
-      path: rawPath
+// iNNfo/packages/nn-core/src/sync/declarations.ts
+var CONCEPT2 = "Synchronization";
+var text = (value) => typeof value === "string" ? value.trim() : "";
+function readSynchronizations(catalog) {
+  const synchronizations = [];
+  const diagnostics = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const el of parseKnowledge(catalog).elements.get(CONCEPT2) ?? []) {
+    const alias = text(el.fields["alias"]);
+    const path2 = `elements.${CONCEPT2}.${el.name}.fields.alias`;
+    if (!SLUG_RE.test(alias)) {
+      diagnostics.push({
+        path: path2,
+        message: `SYNC_ALIAS_INVALID: alias "${alias}" of Synchronization "${el.name}" is not a folder-safe slug; use lowercase letters, digits and hyphens`,
+        severity: "error",
+        code: "SYNC_ALIAS_INVALID",
+        meta: { field: "alias" }
+      });
+      continue;
+    }
+    if (seen.has(alias)) {
+      diagnostics.push({
+        path: path2,
+        message: `SYNC_ALIAS_DUPLICATE: alias "${alias}" of Synchronization "${el.name}" is already declared; aliases are unique within the domaiNN`,
+        severity: "error",
+        code: "SYNC_ALIAS_DUPLICATE",
+        meta: { field: "alias" }
+      });
+      continue;
+    }
+    seen.add(alias);
+    synchronizations.push({
+      alias,
+      origin: text(el.fields["origin_uri"]),
+      kind: text(el.fields["kind"]) === "file" ? "file" : "folder",
+      state: text(el.fields["state"]) === "paused" ? "paused" : "active"
     });
   }
-  const importElements = parsed.elements.get("Import") ?? [];
-  for (const el of importElements) {
-    const from = String(el.fields["from"] ?? "").trim();
-    const gt = from.indexOf(">");
-    if (gt === -1) continue;
-    const originAlias = from.slice(0, gt).trim();
-    const rest = from.slice(gt + 1).trim();
-    let model = rest;
-    let concept;
-    let filters;
-    const qMark = model.indexOf("?");
-    let queryPart = "";
-    if (qMark !== -1) {
-      queryPart = model.slice(qMark + 1);
-      model = model.slice(0, qMark);
-    }
-    const atSign = model.indexOf("@");
-    if (atSign !== -1) {
-      const sectionPart = model.slice(atSign + 1);
-      model = model.slice(0, atSign);
-      if (sectionPart.startsWith("concept:")) {
-        concept = sectionPart.slice("concept:".length);
-      } else {
-        concept = sectionPart;
-      }
-    }
-    if (queryPart) {
-      filters = {};
-      const pairs = queryPart.split("&");
-      for (const pair of pairs) {
-        const eq = pair.indexOf("=");
-        if (eq !== -1) {
-          const k = decodeURIComponent(pair.slice(0, eq).trim());
-          const v = decodeURIComponent(pair.slice(eq + 1).trim());
-          if (k) filters[k] = v;
-        }
-      }
-    }
-    imports.push({
-      name: el.name,
-      from,
-      originAlias,
-      model,
-      concept,
-      filters
-    });
-  }
-  return { domains, imports };
+  return { synchronizations, diagnostics };
 }
 
 // iNNfo/packages/nn-core/src/console/citations.ts
@@ -11541,9 +11538,9 @@ function classifyOrigin(content, fm, ref) {
   }
   return classifyFromFrontmatter(fm);
 }
-function capExcerpt(text) {
-  if (text.length <= EXCERPT_CHAR_CAP) return { text, truncated: false };
-  return { text: text.slice(0, EXCERPT_CHAR_CAP), truncated: true };
+function capExcerpt(text2) {
+  if (text2.length <= EXCERPT_CHAR_CAP) return { text: text2, truncated: false };
+  return { text: text2.slice(0, EXCERPT_CHAR_CAP), truncated: true };
 }
 function extractExcerpt(content, unit) {
   const lines = content.split("\n");
@@ -11825,21 +11822,20 @@ function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltL
 
 // iNNfo/packages/nn-core/src/console/files-inventory.ts
 var import_node_crypto2 = require("node:crypto");
-var SOURCE_LIKE = ["source", "imported_domain"];
 function isSourceLike(category) {
-  return SOURCE_LIKE.indexOf(category) >= 0;
+  return category === "source";
+}
+function isMirrorFile(relPath) {
+  const p = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
+  return p.startsWith("sources/sync/") || p === "sources/sources_NN.md";
 }
 function classifyFileCategory(relPath) {
   const norm = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
   if (norm.startsWith("artifacts/") || norm === "domaiNN_console.html") return "artifact";
   if (norm.startsWith("assets/") || norm.startsWith("sources/assets/")) return "asset";
   if (norm.startsWith("evidence/") || norm.startsWith("sources/evidence/")) return "evidence";
-  if (norm.startsWith("imported/") || norm.startsWith(".domains/") || norm.startsWith("domains/import/")) {
-    return "imported_domain";
-  }
-  if (norm.startsWith("watch/") || norm.startsWith("sources/watch/")) return "watch_root";
   if (norm.startsWith("sources/") || norm.startsWith("conversations/")) return "source";
-  return "source";
+  return "unclassified";
 }
 function computeFileSha256(content) {
   return (0, import_node_crypto2.createHash)("sha256").update(content).digest("hex");
@@ -11915,7 +11911,10 @@ function parseAndValidateSidecar(sidecarContent, sidecarPath, subjectSha256) {
     sha256Matches: subjectSha256 ? sha256 === subjectSha256.toLowerCase() : void 0,
     sourceFormat: frontmatterEntry(block, "source_format"),
     author: frontmatterEntry(block, "author"),
-    normalizedAt: frontmatterEntry(block, "normalized_at")
+    normalizedAt: frontmatterEntry(block, "normalized_at"),
+    synchronization: frontmatterEntry(block, "synchronization"),
+    originUri: frontmatterEntry(block, "origin_uri"),
+    originPath: frontmatterEntry(block, "origin_path")
   };
 }
 function normalizePosix(p) {
@@ -11998,14 +11997,55 @@ function resolveArtifactReverseLineage(artifacts, elements, changes, sources) {
   }
   return result;
 }
-function calculateFilesStats(inventory, watchRoots = []) {
+function buildOrigins(synchronizations, inventory) {
+  const declared = new Set(synchronizations.map((s) => s.alias));
+  const byAlias = /* @__PURE__ */ new Map();
+  const adhoc = /* @__PURE__ */ new Map();
+  for (const entry of inventory) {
+    const sc = entry.sidecar;
+    const alias = sc?.synchronization;
+    if (alias && declared.has(alias)) {
+      byAlias.set(alias, [...byAlias.get(alias) ?? [], entry.id]);
+      continue;
+    }
+    const mirror = /^sources\/sync\/([^/]+)\//.exec(entry.path);
+    if (mirror && declared.has(mirror[1])) {
+      byAlias.set(mirror[1], [...byAlias.get(mirror[1]) ?? [], entry.id]);
+      continue;
+    }
+    const key = alias || sc?.originUri;
+    if (!key) continue;
+    const group = adhoc.get(key) ?? { origin: sc?.originUri ?? "", files: [] };
+    group.files.push(entry.id);
+    adhoc.set(key, group);
+  }
+  const origins = synchronizations.map((s) => ({
+    id: s.alias,
+    alias: s.alias,
+    origin: s.origin,
+    kind: s.kind,
+    state: s.state,
+    files: (byAlias.get(s.alias) ?? []).sort()
+  }));
+  for (const id of [...adhoc.keys()].sort()) {
+    const group = adhoc.get(id);
+    origins.push({
+      id,
+      origin: group.origin,
+      kind: /^https?:\/\//i.test(group.origin) ? "url" : "file",
+      state: "adhoc",
+      files: group.files.sort()
+    });
+  }
+  return origins;
+}
+function calculateFilesStats(inventory) {
   const empty = () => ({
-    watch_root: 0,
     source: 0,
-    imported_domain: 0,
     asset: 0,
     evidence: 0,
-    artifact: 0
+    artifact: 0,
+    unclassified: 0
   });
   const categoryCounts = empty();
   const storageByCategory = empty();
@@ -12029,13 +12069,11 @@ function calculateFilesStats(inventory, watchRoots = []) {
     excerptCount += entry.excerptCount || 0;
     const sidecar = entry.sidecar;
     if (sidecar && isSourceLike(entry.category)) {
-      if (!sidecar.exists) sidecarMissingCount++;
-      else if (!sidecar.valid) sidecarInvalidCount++;
+      if (!sidecar.exists) {
+        if (!isMirrorFile(entry.path)) sidecarMissingCount++;
+      } else if (!sidecar.valid) sidecarInvalidCount++;
       else if (sidecar.sha256Matches === false) sidecarMismatchCount++;
     }
-  }
-  if (categoryCounts.watch_root === 0 && watchRoots.length > 0) {
-    categoryCounts.watch_root = watchRoots.length;
   }
   return {
     totalFiles: inventory.length,
@@ -12054,54 +12092,9 @@ function calculateFilesStats(inventory, watchRoots = []) {
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs2 = require("node:fs");
 var import_node_path2 = require("node:path");
-function readDomainAliases(rootDir) {
-  const aliases = /* @__PURE__ */ new Map();
-  const entryPath = (0, import_node_path2.join)(rootDir, CANONICAL_DOMAIN_ENTRYPOINT);
-  let content;
-  try {
-    content = (0, import_node_fs2.readFileSync)(entryPath, "utf-8");
-  } catch {
-    return aliases;
-  }
-  for (const domain of parseDomainImports(content).domains) {
-    if (!domain.alias || !domain.path) continue;
-    if (/^[a-zA-Z]+:\/\//.test(domain.path) || (0, import_node_path2.isAbsolute)(domain.path)) continue;
-    aliases.set(domain.alias.toLowerCase(), (0, import_node_path2.resolve)(rootDir, domain.path));
-  }
-  return aliases;
-}
-function splitAliasRef(refPath) {
-  const gt = refPath.indexOf(">");
-  if (gt <= 0) return null;
-  const alias = refPath.slice(0, gt).trim();
-  const rest = refPath.slice(gt + 1).trim();
-  if (!alias || !rest) return null;
-  return { alias, rest };
-}
-function resolveInside2(dir, rest) {
-  const abs = (0, import_node_path2.resolve)(dir, rest);
-  const rel = (0, import_node_path2.relative)(dir, abs);
-  if (rel === "" || rel.startsWith("..") || (0, import_node_path2.isAbsolute)(rel)) return null;
-  try {
-    const content = (0, import_node_fs2.readFileSync)(abs, "utf-8");
-    return { exists: true, headings: extractHeadings(content).map((h) => h.slug), content };
-  } catch {
-    return { exists: false, parentExists: (0, import_node_fs2.existsSync)((0, import_node_path2.dirname)(abs)) };
-  }
-}
 function createFsSourceResolver(rootDir) {
   const rootResolved = (0, import_node_path2.resolve)(rootDir);
-  let domainAliases;
   return (refPath, referringPath) => {
-    const aliased = splitAliasRef(refPath);
-    if (aliased) {
-      domainAliases ??= readDomainAliases(rootResolved);
-      const aliasDir = domainAliases.get(aliased.alias.toLowerCase());
-      if (aliasDir) {
-        const inside = resolveInside2(aliasDir, aliased.rest);
-        if (inside) return inside;
-      }
-    }
     const candidateDirs = [];
     if (referringPath) {
       const absReferring = (0, import_node_path2.isAbsolute)(referringPath) ? referringPath : (0, import_node_path2.resolve)(rootDir, referringPath);
@@ -12187,7 +12180,7 @@ function consoleOutputPath(scope) {
 
 // iNNfo/packages/nn-core/src/console/slot.ts
 function serializeConsoleSlot(value) {
-  return JSON.stringify(value, null, 2).replace(/</g, "\\u003c");
+  return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 function flattenConceptFields(concepts) {
   const out = [];
@@ -12479,7 +12472,19 @@ function buildConsolePayload(options) {
 var import_node_path3 = require("node:path");
 var import_node_fs3 = require("node:fs");
 var import_promises2 = require("node:fs/promises");
+async function resolveLocalSpecPath(rootDir, url) {
+  if (!url || /^(?:https?|data|file):/i.test(url)) return null;
+  const absolute = (0, import_node_path3.isAbsolute)(url) ? url : (0, import_node_path3.resolve)(rootDir, url);
+  const rel = (0, import_node_path3.relative)(rootDir, absolute);
+  if (rel.startsWith("..") || (0, import_node_path3.isAbsolute)(rel)) return null;
+  return (0, import_node_fs3.existsSync)(absolute) ? absolute : null;
+}
 async function resolveBlueprintContent(rootDir, name, url, globalDir, skillsDir, warnings) {
+  const local = await resolveLocalSpecPath(rootDir, url);
+  if (local !== null) {
+    const content = await (0, import_promises2.readFile)(local, "utf-8").catch(() => null);
+    if (content !== null) return { content, dir: (0, import_node_path3.dirname)(local) };
+  }
   const version = url ? parseSpecName((0, import_node_path3.basename)(url)).version : void 0;
   const resolveOnce = async (refName) => {
     const pkg = await resolveBlueprintPackage(rootDir, refName, version, { globalDir, skillsDir });
@@ -12658,10 +12663,24 @@ function isValidModelPath(rawPath) {
   }
   return true;
 }
+function parseMirror(trimmed) {
+  const mirror = parseMirrorAddress(trimmed);
+  if (!mirror) return null;
+  const unit = mirror.unit;
+  return {
+    kind: "source",
+    filePath: `${SYNC_DIR}/${mirror.alias}/${mirror.path}`,
+    slug: unit.kind === "element" || unit.kind === "body" ? unit.slug : void 0,
+    subunits: unit.kind === "element" && unit.field ? [unit.field] : [],
+    raw: trimmed
+  };
+}
 function parseUnitAddress(address) {
   if (!address || typeof address !== "string") return null;
   const trimmed = address.trim();
   if (!trimmed) return null;
+  const mirror = parseMirror(trimmed);
+  if (mirror) return mirror;
   if (trimmed === "domaiNN_NN.md") {
     return { kind: "domain", modelId: trimmed, subunits: [] };
   }
@@ -12830,6 +12849,7 @@ function unitHome(address) {
   buildChangeLogFromChangesets,
   buildConsolePayload,
   buildConsoleSchemaSlot,
+  buildOrigins,
   calculateFilesStats,
   canonicalJsonStringify,
   capExcerpt,
@@ -12851,6 +12871,7 @@ function unitHome(address) {
   hashParsedElement,
   isConsoleModel,
   isExcludedPath,
+  isMirrorFile,
   isNNName,
   isSidecarName,
   isSidecarPath,
@@ -12868,6 +12889,7 @@ function unitHome(address) {
   parseUnitAddress,
   parseYaml,
   readChangeAuthor,
+  readSynchronizations,
   resolveArtifactReverseLineage,
   resolveCitation,
   resolveConsoleSchema,

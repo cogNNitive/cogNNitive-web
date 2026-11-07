@@ -6,7 +6,7 @@
  *
  * The nn-sources CLI no longer has a lineage record: the three record flags are
  * unknown options, no command refreshes a record, the record/provenance modules
- * are gone, and the watch roots are read from the domaiNN entrypoint.
+ * are gone, and the watch-root machinery (scanner, digest) is deleted.
  */
 
 const fs = require('node:fs');
@@ -16,7 +16,7 @@ const { spawnSync } = require('node:child_process');
 
 const INDEX = path.join(__dirname, '..', '..', 'scripts', 'index.js');
 const LIB = path.join(__dirname, '..', '..', 'scripts');
-const externalScanner = require('../../scripts/lib/external-scanner');
+const watchDigestStore = require('../../scripts/lib/watch-digest-store');
 
 let passed = 0;
 let failed = 0;
@@ -40,9 +40,7 @@ function workspace() {
   fs.mkdirSync(path.join(root, 'sources', 'import'), { recursive: true });
   fs.writeFileSync(
     path.join(root, 'domaiNN_NN.md'),
-    '---\nlevel: 3\n---\n\n# NN index\n\n## NN External Watch Roots:\n- Root: "' +
-      path.join(root, 'external').replace(/\\/g, '/') +
-      '"\n  Cadence: "dynamic"\n  Recursive: false\n',
+    '---\nlevel: 3\n---\n\n# NN index\n',
     'utf8',
   );
   fs.writeFileSync(path.join(root, 'sources', 'import', 'a.txt'), 'hello\n', 'utf8');
@@ -78,12 +76,16 @@ async function run() {
       .filter((name) => /_cogNNitive_NN\.md$/i.test(name));
     ok(records.length === 0, 'no lineage record is written by --scan or --cognitivize');
 
-    // Watch roots come from the entrypoint.
-    const scan = externalScanner.scanAllWatchRoots(root);
+    // The watch-root machinery is gone; only the convergence state I/O survives.
+    ok(!fs.existsSync(path.join(LIB, 'lib', 'external-scanner.js')), 'lib/external-scanner.js is deleted');
     ok(
-      scan.roots.some((entry) => String(entry.root).includes('external')),
-      'watch roots are read from domaiNN_NN.md',
+      ['decide', 'buildDigest', 'findItemByKey', 'digestKey'].every((fn) => watchDigestStore[fn] === undefined),
+      'the watch digest functions are deleted',
     );
+    for (const flag of ['--scan-external', '--watch-digest', '--digest-decide']) {
+      const run = cli(root, [flag]);
+      ok(run.status !== 0 && /unknown option/i.test(run.stderr), flag + ' is an unknown option');
+    }
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

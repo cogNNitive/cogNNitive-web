@@ -9,18 +9,18 @@ nn-mcp is an MCP server that provides semantic iNNfo tools (validate, list, read
 ## Recommended: automated bootstrap
 
 Don't hand-edit the config files below unless you have to. `scripts/skills-manager.js`
-already detects your installed editor (OpenCode, Claude Code, Antigravity) and writes
+already detects your installed editor (OpenCode, Claude Code, Antigravity, Hermes) and writes
 its MCP config for you, alongside skills and bluepriNNts, in one step:
 
 ```bash
 node scripts/skills-manager.js bootstrap --agent auto
 ```
 
-Pass `--agent <opencode|claude|antigravity>` to target a specific editor, or `--agent all`
+Pass `--agent <opencode|claude|antigravity|hermes>` to target a specific editor, or `--agent all`
 to register every supported one. See `node scripts/skills-manager.js bootstrap --help`
 for the full flag list (scope, custom directories, non-interactive `--yes`).
 
-If your editor isn't one of the three above, or you need to see exactly what the
+If your editor isn't one of the four above, or you need to see exactly what the
 automated step writes, use the manual setup below instead.
 
 ## Manual setup (fallback / unsupported editor)

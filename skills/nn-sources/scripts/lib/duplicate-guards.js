@@ -4,7 +4,7 @@
  *
  * Two guards share one matching layer:
  *  1. History guard  — search past conversation transcripts for prior handling
- *     of the same/similar source (by filename, source_file/source_url, topic).
+ *     of the same/similar source (by filename, source_file/origin_uri, topic).
  *  2. Duplicate guard — compare an incoming file against already-ingested
  *     sources: exact (sha256) or near (structural similarity) duplicates.
  *
@@ -112,7 +112,7 @@ function detectDuplicates(incomingPath, corpus, opts = {}) {
 
 /**
  * History guard: search past conversation transcripts for prior handling of a
- * source. Matches on filename stem, `source_file`/`source_url` fields, or the
+ * source. Matches on filename stem, `source_file`/`origin_uri` fields, or the
  * slugified topic inside `conversations/*.md`.
  *
  * @param {string} workspaceRoot

@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-1-3"
+blueprint_version: "V_0-2-0"
 title: "Sidecar App"
 relationship_types:
   hierarchy:
@@ -63,6 +63,26 @@ concept:: Sidecar
 type:: string
 description:: Optional. Name of the normalizer that produced the body for a binary subject. Absent for text-native subjects, whose sidecar has no body.
 
+## NN Field Definition: synchronization
+concept:: Sidecar
+type:: string
+description:: Optional. Alias of the Synchronization that landed the subject. Absent for a manual import.
+
+## NN Field Definition: origin_path
+concept:: Sidecar
+type:: string
+description:: Optional. Path of the subject relative to its origin, in posix form. Tells apart same-named files that come from different origin folders.
+
+## NN Field Definition: origin_uri
+concept:: Sidecar
+type:: string
+description:: Optional. Where the subject was fetched from: the origin path or the `https://` URL of the Synchronization.
+
+## NN Field Definition: retrieved_at
+concept:: Sidecar
+type:: string
+description:: Optional. ISO-8601 UTC instant at which the subject was copied or downloaded from its origin.
+
 # Sidecar Template
 
 ## A level-2 template for the co-located metadata document that makes any workspace file a citable source
@@ -93,6 +113,10 @@ size_bytes: 1048576
 source_format: "pdf"
 normalized_at: "2026-10-02T10:15:00Z"
 normalized_by: "nn-trannsform"
+synchronization: "org"
+origin_path: "docs/report.pdf"
+origin_uri: "../organization"
+retrieved_at: "2026-10-02T10:14:00Z"
 sources: []
 ---
 ```
@@ -101,7 +125,7 @@ The body is optional. A sidecar for a binary subject carries the normalized Mark
 
 ## Rules
 
-1. `source_file`, `sha256`, `size_bytes`, `source_format`, and `normalized_at` are required. `normalized_by` and `sources` are optional.
+1. `source_file`, `sha256`, `size_bytes`, `source_format`, and `normalized_at` are required. `normalized_by`, `sources`, `synchronization`, `origin_path`, `origin_uri` and `retrieved_at` are optional. The four origin keys are written together by `nn-sources --sync` and are absent on a manual import.
 2. A normalizer may add its own metadata keys to the frontmatter; they are preserved on refresh.
 3. A sidecar never declares `derived_from`. The upstream edge of a subject is `sources`; the lineage projection derives its own `derived_from` from it.
 4. The sidecar of a sidecar does not exist. `cognitivize` rejects sidecars, `_NN.md` documents, excluded paths, and over-long paths.

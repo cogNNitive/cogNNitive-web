@@ -14,6 +14,7 @@
   - [Review changesets](content/how-to/review-changesets.md)
   - [Distribute a concept](content/how-to/distribute-a-concept.md)
   - [Sync lineage and back up a domaiNN](content/how-to/sync-and-backup.md)
+  - [Synchronize an external origin](content/how-to/synchronize-an-origin.md)
   - [Collaborate with Git](content/how-to/collaborate-git.md)
   - [Execute a procedure](content/how-to/execute-procedure.md)
 

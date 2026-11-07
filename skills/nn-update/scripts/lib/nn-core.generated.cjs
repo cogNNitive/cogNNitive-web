@@ -7398,6 +7398,7 @@ var DOMAIN_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNit
 var DOMAIN_DIRS = [
   "kNNowledge",
   "sources/import",
+  "sources/sync",
   "sources/conversations",
   "conversations",
   "artifacts",
@@ -7406,6 +7407,8 @@ var DOMAIN_DIRS = [
   "changes"
 ];
 var DOMAIN_MANIFEST_FILE = "domaiNN_NN.md";
+var SOURCES_CATALOG_FILE = "sources/sources_NN.md";
+var SOURCES_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md";
 function planDomainScaffold(input) {
   const name = input.name.trim();
   const workspaceId = (input.workspaceId?.trim() || slugify(name)).trim();
@@ -7434,10 +7437,31 @@ function planDomainScaffold(input) {
     `${heading} \u2014 an empty domaiNN. Add models with an add_model changeset; every change to its content goes through a changeset.`,
     ""
   ].join("\n");
+  const catalog = [
+    "---",
+    "level: 3",
+    "parent_spec:",
+    '  name: "sources"',
+    `  url: ${esc(SOURCES_BLUEPRINT_URL)}`,
+    'knowledge_version: "V_0-1-0"',
+    `title: ${esc(`${name} Sources`)}`,
+    "---",
+    "",
+    "# NN index",
+    "",
+    "* [[Source]]",
+    "* [[Synchronization]]",
+    "",
+    "# NN Source",
+    "",
+    "# NN Synchronization",
+    ""
+  ].join("\n");
   return {
     dirs: [...DOMAIN_DIRS],
     files: [
       { path: DOMAIN_MANIFEST_FILE, content: manifest },
+      { path: SOURCES_CATALOG_FILE, content: catalog },
       { path: ".gitattributes", content: "* -text\n" }
     ],
     workspaceId

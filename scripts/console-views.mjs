@@ -522,7 +522,28 @@ export function inlineConsoleAssets(shell, assets) {
 }
 
 /** The only place the size thresholds live (bytes of the final HTML). */
-export const CONSOLE_SIZE_BUDGET = Object.freeze({ warnBytes: 5_000_000, failBytes: 15_000_000 })/**
+export const CONSOLE_SIZE_BUDGET = Object.freeze({ warnBytes: 5_000_000, failBytes: 15_000_000 })
+
+/**
+ * Drops the resolved citation objects from a console payload in place, so an
+ * oversized console can still be written: a citation field keeps its raw value,
+ * only the resolved path/excerpt metadata is removed. Returns how many elements
+ * lost their citation set.
+ */
+export function stripConsoleCitations(payload) {
+  const elements = payload?.model?.elements
+  if (!Array.isArray(elements)) return 0
+  let dropped = 0
+  for (const element of elements) {
+    if (element && element.citations) {
+      delete element.citations
+      dropped += 1
+    }
+  }
+  return dropped
+}
+
+/**
  * Pure size gate. Inputs are UTF-8 byte counts: bundle = inlined bundle + CSS, models =
  * schema + model slots, views = wrapped view scripts, total = the final HTML.
  */

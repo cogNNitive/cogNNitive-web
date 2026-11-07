@@ -1,6 +1,6 @@
 {
   "blueprint": "coNNtent",
-  "blueprint_version": "V_0-15-0",
+  "blueprint_version": "V_0-15-1",
   "generated_from": "spec_NN.md",
   "fields": {
     "adapter": {

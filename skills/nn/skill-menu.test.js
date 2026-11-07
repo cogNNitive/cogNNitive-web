@@ -1,10 +1,9 @@
 /**
  * skills/nn/skill-menu.test.js
  *
- * Guards the discoverability contract added by the `watch-roots-discoverability`
- * change: the entry menu must surface external watch roots contextually, list the
- * capability in Help, and invoke the read-only session-start digest — all without
- * changing the `[s][m][r][p][h][x]` shape.
+ * Guards the entry menu contract of the `domain-synchronizations` change: no watch
+ * root or session-start digest surfacing remains, Help lists the explicit
+ * Synchronizations capability, and the `[s][m][r][p][h][x]` shape is unchanged.
  *
  * Zero external test framework dependencies (runs with plain node).
  */
@@ -37,34 +36,26 @@ async function runTests() {
     }
   };
 
-  await test('branches on the probe signal watch_roots.declared', async () => {
-    assert.ok(hits(SKILL, /watch_roots\.declared/).length > 0, 'SKILL.md must branch on watch_roots.declared');
+  await test('the menu no longer surfaces watch roots or the session-start digest', async () => {
+    assert.strictEqual(hits(SKILL, /watch_roots/).length, 0, 'SKILL.md must not branch on watch_roots');
+    assert.strictEqual(hits(SKILL, /--watch-digest|--scan-external|--digest-decide/).length, 0, 'SKILL.md must not invoke removed flags');
+    assert.strictEqual(hits(SKILL, /[Ww]atch(ed)? (roots?|folders)/).length, 0, 'SKILL.md must not mention watch roots or watched folders');
   });
 
-  await test('Sources offers a contextual scan sub-option', async () => {
-    assert.ok(hits(SKILL, /[Ss]can external watch roots/).length > 0, 'SKILL.md must offer scanning external watch roots');
-  });
-
-  await test('Sources offers to declare a root when none exist', async () => {
-    assert.ok(hits(SKILL, /[Dd]eclare a watch root/).length > 0, 'SKILL.md must offer declaring a watch root');
-  });
-
-  await test('Help lists the watched-folders capability', async () => {
-    assert.ok(hits(SKILL, /[Ww]atched folders/).length > 0, 'Help must list the watched-folders capability');
-  });
-
-  await test('session start invokes the read-only digest', async () => {
-    assert.ok(hits(SKILL, /--watch-digest/).length > 0, 'SKILL.md must invoke --watch-digest at session start');
+  await test('Help lists the Synchronizations capability and its explicit command', async () => {
+    assert.ok(hits(SKILL, /\*\*Synchronizations\*\*/).length > 0, 'Help must list the Synchronizations capability');
+    assert.ok(hits(SKILL, /--sync \[alias\]/).length > 0, 'Help must name the explicit --sync [alias] command');
   });
 
   await test('the top-level menu shape is preserved', async () => {
-    assert.ok(hits(SKILL, /\[s\]\[m\]\[r\]\[p\]\[h\]\[x\]/).length > 0, 'the [s][m][r][p][h][x] shape must be documented');
+    assert.ok(['s', 'm', 'r', 'p', 'h', 'x'].every((k) => hits(SKILL, new RegExp('^\\[' + k + '\\] ', 'm')).length > 0), 'the [s][m][r][p][h][x] menu lines must be documented');
   });
 
   await test('the guard can go red: a planted marker is flagged', async () => {
-    const planted = 'this text has no watch-root surfacing at all';
-    assert.strictEqual(hits(planted, /[Ss]can external watch roots/).length, 0, 'the scanner must flag a text without the sub-option');
-    assert.strictEqual(hits(planted, /--watch-digest/).length, 0, 'the scanner must flag a text without the digest');
+    const planted = 'Scan external watch roots with --watch-digest';
+    assert.strictEqual(hits(planted, /--watch-digest/).length, 1, 'the scanner must flag a text that still invokes a removed flag');
+    assert.strictEqual(hits(planted, /[Ww]atch(?:ed)? (?:roots?|folders)/).length, 1, 'the scanner must flag leftover watch-root wording');
+    assert.strictEqual(hits('no synchronization here', /--sync \[alias\]/).length, 0, 'the scanner must flag a Help without --sync');
   });
 
   console.log(`\nAll nn skill-menu tests finished: ${passed} passed, ${failed} failed.`);

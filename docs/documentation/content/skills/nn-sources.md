@@ -88,9 +88,7 @@ node scripts/index.js <flag> [--src "<project-dir>"]
 | `--normalize-file "<path>"` | Atomically refresh one source file and audit downstream citations. |
 | `--check-impact` | Audit every kNNowledge citation for drifted or missing anchors; exits non-zero on drift. |
 | `--import-url "<url>"` | Download a resource into `sources/import/` as a write-once, UTC-suffixed family member. |
-| `--scan-external` | Scan declared external watch roots; classify changes as `NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, or `DISCONNECTED`. |
-| `--watch-digest [--json]` | Render the read-only session-start digest of changed items awaiting a decision. |
-| `--digest-decide "<key>" --status <ignore\|postpone\|import>` | Record a per-item digest decision in `.cognnitive/watch-digest.json`. |
+| `--sync [alias]` | Refresh the declared Synchronizations (all active, or one alias) and print a `propose_changeset` payload; see [Synchronize an external origin](../how-to/synchronize-an-origin.md). |
 | `--curate-csv "<path>" --key "<col>" [--dedup]` | Write a citation-ready RFC-4180 CSV to `artifacts/curated/` with a validated first-column key. |
 | `--converge <family> [--json] [--plan]` | Produce a read-only convergence proposal for a timestamped source family. |
 | `--converge-mark <family> --version <v>` | Mark a convergence proposal applied so re-running is a no-op. |

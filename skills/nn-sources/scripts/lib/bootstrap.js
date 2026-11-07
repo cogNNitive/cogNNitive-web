@@ -121,8 +121,7 @@ function bootstrapProject(srcDir, destParentDir, projectName, options = {}) {
       `Operational domaiNN container for ${effectiveProjectName}.\n` +
       `knowledge_dir:: kNNowledge/\n` +
       `sources_dir:: sources/\n\n` +
-      `# NN kNNowledge\n\n` +
-      `# NN External Watch Roots\n`;
+      `# NN kNNowledge\n`;
     fs.writeFileSync(domainnPath, domainnContent, 'utf8');
   }
 

@@ -158,6 +158,9 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     scriptContent = fs.readFileSync(scriptContentOrPath, 'utf8');
   }
 
+  const scriptDir = isPath
+    ? path.dirname(path.resolve(scriptContentOrPath))
+    : (options.scriptDir ? path.resolve(options.scriptDir) : null);
   const compiler = new SceneCompiler(options);
   const model = isPath ? loadKnowledgeModel(scriptContentOrPath) : parseKnowledgeDocument(String(scriptContent));
   // Model selection goes through the single cascade resolver
@@ -165,13 +168,13 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   // the execution read the same bags, so they pick the SAME model id. No flag
   // supplies a parameter: the cascade has no `cli` level.
   const bags = withScriptPresets(
-    options.bags || (isPath ? loadCascadeBags(path.dirname(path.resolve(scriptContentOrPath))) : {}),
+    options.bags || (scriptDir ? loadCascadeBags(scriptDir) : {}),
     model,
     isPath ? path.resolve(scriptContentOrPath) : null,
   );
-  const guard = compiler.checkScript(model, { ...options, bags });
+  const guard = compiler.checkScript(model, { ...options, bags, scriptDir });
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { bags });
+  const parsed = compiler.lowerKnowledgeModel(model, { ...options, bags, scriptDir });
   const defaultImageModel = normalizeModelId(resolve('image_model', bags).value);
   const defaultImageSize = resolve('image_size', bags).value;
   const defaultAvatarModel = normalizeModelId(resolve('avatar_model', bags).value);
@@ -185,7 +188,6 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   // keys come from the helpers compile uses, so a hit here is a hit there. Offline placeholders
   // live under `<key>-offline`, never under the key read here. Without a script path or cache
   // dir nothing is known to be cached: everything is priced.
-  const scriptDir = isPath ? path.dirname(path.resolve(scriptContentOrPath)) : null;
   const cacheDir = options.cacheDir || (scriptDir ? resolveDefaultCacheDir(scriptDir) : null);
   const cache = cacheDir ? new CacheManager({ baseDir: cacheDir, readOnly: true }) : null;
   const models = { image: defaultImageModel, imageSize: defaultImageSize, tts: defaultTtsModel, avatar: defaultAvatarModel };

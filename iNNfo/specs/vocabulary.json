@@ -136,6 +136,24 @@
         "ad-placement"
       ]
     },
+    "synchronization": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "A concept of the sources catalog that declares an origin (a file, a folder or a URL) landed into a domaiNN on demand by `nn-sources --sync [alias]`. Models land as mirrors, other files as sources. A kNNowledge-level concept, not a new level.",
+      "excludes": [
+        "sync_domain_manifest",
+        "file-sync-daemon"
+      ]
+    },
+    "mirror": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "A read-only copy of an origin's kNNowledge document under `sources/sync/<alias>/`, replaced in place on each synchronization. A consumer addresses its elements with a `reference` path such as `sources/sync/org/organization_NN.md@manager`. Never a model of the consumer domaiNN.",
+      "excludes": [
+        "git-mirror",
+        "network-mirror"
+      ]
+    },
     "hierarchical id": {
       "canonical": true,
       "aliases": [

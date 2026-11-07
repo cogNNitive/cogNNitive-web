@@ -26,7 +26,7 @@ Short definitions of the terms used across this documentation. The canonical voc
 | **instance model** | The kNNowledge document of one instance of a distributed concept. Its root element is that instance, and its child concepts are elements. It lives at the path the placement rule gives. |
 | **kNNowledge** | The Level-3 (L3) domain data model that conforms to a bluepriNNt. It is an uncountable noun: write "N kNNowledge documents". The retired alias `model` is not used. |
 | **knowledge_version** | The Level-3 frontmatter key that carries a kNNowledge document's version. The version never appears in the file name; the retired key is `model_version`. |
-| **lineage** | The record `<project>_cogNNitive_NN.md` that traces every Source, kNNowledge document, and artifact, together with the external watch roots and an append-only procedures log. |
+| **lineage** | The record `<project>_cogNNitive_NN.md` that traces every Source, kNNowledge document, and artifact, together with the Synchronizations and an append-only procedures log. |
 | **model id** | The identifier of a kNNowledge document. A compact model's id is its file name without `_NN`, of the form `<name>_<blueprint>`; an instance model's id is hierarchical. It carries no version; the version lives in the `knowledge_version` frontmatter key. |
 | **placement rule** | The path pattern a bluepriNNt declares with `placement::` on a distributed concept. It says where an instance model must live, for example `series/{slug}/`. |
 | **sidecar** | A co-located `<file>.<ext>_sidecar_NN.md` document that records a raw file's hash, size, and metadata and, for binary files, a normalized body. It is a kNNowledge-level document that is never a model. |

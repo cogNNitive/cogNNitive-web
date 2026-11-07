@@ -118,17 +118,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path4) {
-      const ctrl = callVisitor(key, node, visitor, path4);
+    function visit_(key, node, visitor, path5) {
+      const ctrl = callVisitor(key, node, visitor, path5);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path4, ctrl);
-        return visit_(key, ctrl, visitor, path4);
+        replaceNode(key, path5, ctrl);
+        return visit_(key, ctrl, visitor, path5);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path4 = Object.freeze(path4.concat(node));
+          path5 = Object.freeze(path5.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path4);
+            const ci = visit_(i, node.items[i], visitor, path5);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -139,13 +139,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path4 = Object.freeze(path4.concat(node));
-          const ck = visit_("key", node.key, visitor, path4);
+          path5 = Object.freeze(path5.concat(node));
+          const ck = visit_("key", node.key, visitor, path5);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path4);
+          const cv = visit_("value", node.value, visitor, path5);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -166,17 +166,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path4) {
-      const ctrl = await callVisitor(key, node, visitor, path4);
+    async function visitAsync_(key, node, visitor, path5) {
+      const ctrl = await callVisitor(key, node, visitor, path5);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path4, ctrl);
-        return visitAsync_(key, ctrl, visitor, path4);
+        replaceNode(key, path5, ctrl);
+        return visitAsync_(key, ctrl, visitor, path5);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path4 = Object.freeze(path4.concat(node));
+          path5 = Object.freeze(path5.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path4);
+            const ci = await visitAsync_(i, node.items[i], visitor, path5);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -187,13 +187,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path4 = Object.freeze(path4.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path4);
+          path5 = Object.freeze(path5.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path5);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path4);
+          const cv = await visitAsync_("value", node.value, visitor, path5);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -220,23 +220,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path4) {
+    function callVisitor(key, node, visitor, path5) {
       if (typeof visitor === "function")
-        return visitor(key, node, path4);
+        return visitor(key, node, path5);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path4);
+        return visitor.Map?.(key, node, path5);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path4);
+        return visitor.Seq?.(key, node, path5);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path4);
+        return visitor.Pair?.(key, node, path5);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path4);
+        return visitor.Scalar?.(key, node, path5);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path4);
+        return visitor.Alias?.(key, node, path5);
       return void 0;
     }
-    function replaceNode(key, path4, node) {
-      const parent = path4[path4.length - 1];
+    function replaceNode(key, path5, node) {
+      const parent = path5[path5.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -848,10 +848,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path4, value) {
+    function collectionFromPath(schema, path5, value) {
       let v = value;
-      for (let i = path4.length - 1; i >= 0; --i) {
-        const k = path4[i];
+      for (let i = path5.length - 1; i >= 0; --i) {
+        const k = path5[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -870,7 +870,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path4) => path4 == null || typeof path4 === "object" && !!path4[Symbol.iterator]().next().done;
+    var isEmptyPath = (path5) => path5 == null || typeof path5 === "object" && !!path5[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -900,11 +900,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path4, value) {
-        if (isEmptyPath(path4))
+      addIn(path5, value) {
+        if (isEmptyPath(path5))
           this.add(value);
         else {
-          const [key, ...rest] = path4;
+          const [key, ...rest] = path5;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -918,8 +918,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path4) {
-        const [key, ...rest] = path4;
+      deleteIn(path5) {
+        const [key, ...rest] = path5;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -933,8 +933,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path4, keepScalar) {
-        const [key, ...rest] = path4;
+      getIn(path5, keepScalar) {
+        const [key, ...rest] = path5;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -952,8 +952,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path4) {
-        const [key, ...rest] = path4;
+      hasIn(path5) {
+        const [key, ...rest] = path5;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -963,8 +963,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path4, value) {
-        const [key, ...rest] = path4;
+      setIn(path5, value) {
+        const [key, ...rest] = path5;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -1008,14 +1008,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text2, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text;
+        return text2;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text.length <= endStep)
-        return text;
+      if (text2.length <= endStep)
+        return text2;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1032,14 +1032,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text, i, indent.length);
+        i = consumeMoreIndentedLines(text2, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text[i += 1]; ) {
+      for (let ch; ch = text2[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text[i + 1]) {
+          switch (text2[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1056,12 +1056,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text, i, indent.length);
+            i = consumeMoreIndentedLines(text2, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text[i + 1];
+            const next = text2[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1073,12 +1073,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text[i += 1];
+                ch = text2[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text;
+                return text2;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1093,39 +1093,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text;
+        return text2;
       if (onFold)
         onFold();
-      let res = text.slice(0, folds[0]);
+      let res = text2.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text.length;
+        const end2 = folds[i2 + 1] || text2.length;
         if (fold === 0)
           res = `
-${indent}${text.slice(0, end2)}`;
+${indent}${text2.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text[fold]}\\`;
+            res += `${text2[fold]}\\`;
           res += `
-${indent}${text.slice(fold + 1, end2)}`;
+${indent}${text2.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text, i, indent) {
+    function consumeMoreIndentedLines(text2, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text[start];
+      let ch = text2[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text[++i];
+          ch = text2[++i];
         } else {
           do {
-            ch = text[++i];
+            ch = text2[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text[start];
+          ch = text2[start];
         }
       }
       return end;
@@ -3479,9 +3479,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path4, value) {
+      addIn(path5, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path4, value);
+          this.contents.addIn(path5, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3556,14 +3556,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path4) {
-        if (Collection.isEmptyPath(path4)) {
+      deleteIn(path5) {
+        if (Collection.isEmptyPath(path5)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path4) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path5) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3578,10 +3578,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path4, keepScalar) {
-        if (Collection.isEmptyPath(path4))
+      getIn(path5, keepScalar) {
+        if (Collection.isEmptyPath(path5))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path4, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path5, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3592,10 +3592,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path4) {
-        if (Collection.isEmptyPath(path4))
+      hasIn(path5) {
+        if (Collection.isEmptyPath(path5))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path4) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path5) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3612,13 +3612,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path4, value) {
-        if (Collection.isEmptyPath(path4)) {
+      setIn(path5, value) {
+        if (Collection.isEmptyPath(path5)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path4), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path5), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path4, value);
+          this.contents.setIn(path5, value);
         }
       }
       /**
@@ -5579,9 +5579,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path4) => {
+    visit.itemAtPath = (cst, path5) => {
       let item = cst;
-      for (const [field, index] of path4) {
+      for (const [field, index] of path5) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5590,23 +5590,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path4) => {
-      const parent = visit.itemAtPath(cst, path4.slice(0, -1));
-      const field = path4[path4.length - 1][0];
+    visit.parentCollection = (cst, path5) => {
+      const parent = visit.itemAtPath(cst, path5.slice(0, -1));
+      const field = path5[path5.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path4, item, visitor) {
-      let ctrl = visitor(item, path4);
+    function _visit(path5, item, visitor) {
+      let ctrl = visitor(item, path5);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path4.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path5.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5617,10 +5617,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path4);
+            ctrl = ctrl(item, path5);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path4) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path5) : ctrl;
     }
     exports2.visit = visit;
   }
@@ -7419,6 +7419,7 @@ __export(trannsformPrimitives_exports, {
   isProcedureDocument: () => isProcedureDocument,
   isRegenerableView: () => isRegenerableView,
   isSidecarName: () => isSidecarName,
+  isUnderRootSources: () => isUnderRootSources,
   latestOfFamily: () => latestOfFamily,
   nextStamp: () => nextStamp,
   normalizeName: () => normalizeName,
@@ -7434,6 +7435,9 @@ __export(trannsformPrimitives_exports, {
   rawPathOfSidecar: () => rawPathOfSidecar,
   readLineageSnapshot: () => readLineageSnapshot,
   readSidecarSha256: () => readSidecarSha256,
+  readSynchronizations: () => readSynchronizations,
+  refreshSynchronization: () => refreshSynchronization,
+  removeOrphanMirrors: () => removeOrphanMirrors,
   resolveJsonPointer: () => resolveJsonPointer,
   roleOf: () => roleOf,
   serializeKnowledgeUnitRef: () => serializeKnowledgeUnitRef,
@@ -7448,11 +7452,11 @@ __export(trannsformPrimitives_exports, {
 module.exports = __toCommonJS(trannsformPrimitives_exports);
 
 // iNNfo/packages/nn-core/src/parser/slug.ts
-function nfc(text) {
-  return text.normalize("NFC");
+function nfc(text2) {
+  return text2.normalize("NFC");
 }
-function stripCombiningMarks(text) {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "");
+function stripCombiningMarks(text2) {
+  return text2.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
@@ -7513,25 +7517,25 @@ var SIDECAR_BLUEPRINT = "sidecar";
 var NN_SUFFIX_RE = /_NN\.md$/i;
 var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
 var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
-function baseOf(path4) {
-  const i = Math.max(path4.lastIndexOf("/"), path4.lastIndexOf("\\"));
-  return i < 0 ? path4 : path4.slice(i + 1);
+function baseOf(path5) {
+  const i = Math.max(path5.lastIndexOf("/"), path5.lastIndexOf("\\"));
+  return i < 0 ? path5 : path5.slice(i + 1);
 }
-function parseName(basename4) {
-  if (NN_SUFFIX_RE.test(basename4)) {
-    const stem2 = basename4.replace(NN_SUFFIX_RE, "");
-    const sidecar = SIDECAR_PATH_RE.exec(basename4);
-    return sidecar ? { kind: "nn", basename: basename4, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename4, stem: stem2 };
+function parseName(basename5) {
+  if (NN_SUFFIX_RE.test(basename5)) {
+    const stem2 = basename5.replace(NN_SUFFIX_RE, "");
+    const sidecar = SIDECAR_PATH_RE.exec(basename5);
+    return sidecar ? { kind: "nn", basename: basename5, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename5, stem: stem2 };
   }
-  const dot = basename4.lastIndexOf(".");
+  const dot = basename5.lastIndexOf(".");
   const hasExt = dot > 0;
-  const stem = hasExt ? basename4.slice(0, dot) : basename4;
-  const ext = hasExt ? basename4.slice(dot + 1) : "";
+  const stem = hasExt ? basename5.slice(0, dot) : basename5;
+  const ext = hasExt ? basename5.slice(dot + 1) : "";
   const m = STAMP_SUFFIX_RE.exec(stem);
-  if (!m) return { kind: "file", basename: basename4, key: stem, ext };
+  if (!m) return { kind: "file", basename: basename5, key: stem, ext };
   return {
     kind: "file",
-    basename: basename4,
+    basename: basename5,
     key: m[1],
     ext,
     stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
@@ -7546,9 +7550,9 @@ function formatNNName(stem, blueprint) {
 function instanceFileName(folderSlug, blueprint) {
   return formatNNName(folderSlug, blueprint);
 }
-function checkInstanceName(path4, folderSlug, blueprint) {
+function checkInstanceName(path5, folderSlug, blueprint) {
   const expected = instanceFileName(folderSlug, blueprint);
-  return baseOf(path4).toLowerCase() === expected.toLowerCase() ? null : { expected };
+  return baseOf(path5).toLowerCase() === expected.toLowerCase() ? null : { expected };
 }
 function formatMemberName(key, ext, stamp) {
   const suffix = stamp ? `_${stamp.stamp}${stamp.seq > 1 ? `-${stamp.seq}` : ""}` : "";
@@ -7561,12 +7565,12 @@ function rawPathOfSidecar(sidecarPath) {
   const m = SIDECAR_PATH_RE.exec(sidecarPath);
   return m ? m[1] : null;
 }
-function displayStem(basename4) {
-  if (NN_SUFFIX_RE.test(basename4)) return basename4.replace(NN_SUFFIX_RE, "");
-  return basename4.replace(/\.md$/i, "");
+function displayStem(basename5) {
+  if (NN_SUFFIX_RE.test(basename5)) return basename5.replace(NN_SUFFIX_RE, "");
+  return basename5.replace(/\.md$/i, "");
 }
-function procedureIdOf(basename4) {
-  return displayStem(baseOf(basename4)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
+function procedureIdOf(basename5) {
+  return displayStem(baseOf(basename5)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
 }
 var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set(["backups", "archive", "specs"]);
 var CORE_BLUEPRINT_ROLE = {
@@ -7579,8 +7583,8 @@ var CORE_BLUEPRINT_ROLE = {
 function coreBlueprintKey(parentSpecName) {
   return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
 }
-function segmentsOf(path4) {
-  return path4.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
+function segmentsOf(path5) {
+  return path5.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
 function roleOf(i) {
   const base = baseOf(i.path);
@@ -7600,21 +7604,21 @@ function isProcedureDocument(nameOrPath) {
   const parsed = parseName(baseOf(nameOrPath));
   return parsed.kind === "nn" && parsed.sidecarOf === void 0 && /_procedures$/i.test(parsed.stem);
 }
-function isExcludedPath(path4) {
-  const segs = segmentsOf(path4);
+function isExcludedPath(path5) {
+  const segs = segmentsOf(path5);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0])) return true;
   return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
 }
-function isRegenerableView(path4) {
-  const normalized = String(path4 ?? "").replace(/\\/g, "/").toLowerCase();
+function isRegenerableView(path5) {
+  const normalized = String(path5 ?? "").replace(/\\/g, "/").toLowerCase();
   if (!normalized) return false;
   const segs = normalized.split("/").filter((seg) => seg.length > 0);
   if (segs[0] !== "artifacts") return false;
   if (segs.length >= 3 && segs[1].endsWith("_console")) return true;
   return segs.length === 2 && /^impact_audit_report.*\.md$/.test(segs[1]);
 }
-function familyOf(path4) {
-  const normalized = path4.replace(/\\/g, "/");
+function familyOf(path5) {
+  const normalized = path5.replace(/\\/g, "/");
   const parsed = parseName(baseOf(normalized));
   if (parsed.kind !== "file") return null;
   const slash = normalized.lastIndexOf("/");
@@ -7664,8 +7668,8 @@ function parentSpecNameOf(frontmatter) {
   }
   return void 0;
 }
-function isUnderRootSources(path4) {
-  return segmentsOf(path4)[0]?.toLowerCase() === "sources";
+function isUnderRootSources(path5) {
+  return segmentsOf(path5)[0]?.toLowerCase() === "sources";
 }
 function isModelCandidate(f) {
   if (f.frontmatter["level"] !== 3) return false;
@@ -7689,8 +7693,8 @@ var STRUCTURAL_STEM_RE = /^(?:iNNfo|defiNNition|defiNNe|meta-bluepriNNt)(?:_V_\d
 function blueprintNameOf(parentSpecName) {
   return parentSpecName.trim().replace(/_V_\d+-\d+-\d+$/i, "");
 }
-function checkNameInvariant(path4, bp) {
-  const base = baseOf(path4);
+function checkNameInvariant(path5, bp) {
+  const base = baseOf(path5);
   const parsed = parseName(base);
   if (parsed.kind !== "nn") return null;
   const lower = base.toLowerCase();
@@ -7763,10 +7767,10 @@ function removedForm(raw, form, shape) {
     message: `The ${form} \`${shape}\` is removed and is never resolved by title; ${GRAMMAR_HINT}.`
   };
 }
-function parseSourceClass(path4, raw) {
-  const base = path4.slice(path4.lastIndexOf("/") + 1);
+function parseSourceClass(path5, raw) {
+  const base = path5.slice(path5.lastIndexOf("/") + 1);
   const parsed = parseName(base);
-  const sourcePrefix = path4.startsWith("sources/");
+  const sourcePrefix = path5.startsWith("sources/");
   if (!sourcePrefix && parsed.kind === "nn" && parsed.sidecarOf === void 0) {
     const isChangeset = CHANGES_STEM_RE.test(parsed.stem);
     const role = roleOf({ path: base, parentSpecName: isChangeset ? "changes" : void 0 });
@@ -7782,8 +7786,8 @@ function parseSourceClass(path4, raw) {
       return {
         kind: "error",
         code: "MODEL_CITED_BY_PATH",
-        segment: path4,
-        message: `A model is not cited by file path (\`${path4}\`); ${GRAMMAR_HINT}.`
+        segment: path5,
+        message: `A model is not cited by file path (\`${path5}\`); ${GRAMMAR_HINT}.`
       };
     }
   }
@@ -8095,8 +8099,8 @@ function levenshteinDistance(a, b) {
   }
   return matrix[bn][an];
 }
-function slugifyHeading(text) {
-  const stripped = nfc(text).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
+function slugifyHeading(text2) {
+  const stripped = nfc(text2).replace(/^\s*#{1,6}\s*/, "").replace(/[*_`]/g, "");
   return stripped.split(/(?<=[\p{L}\p{N}])--(?=[\p{L}\p{N}])/gu).map(slugifyFlat).join("--");
 }
 function slugifyFlat(part) {
@@ -8113,12 +8117,12 @@ function extractHeadings(markdown) {
     const match = lines[i].match(/^(#{1,6})\s+(.+?)\s*$/);
     if (!match) continue;
     const level = match[1].length;
-    const text = match[2].replace(/[*_`]/g, "").trim();
-    const { concept, element, slug: baseSlug } = headingSlugParts(text);
+    const text2 = match[2].replace(/[*_`]/g, "").trim();
+    const { concept, element, slug: baseSlug } = headingSlugParts(text2);
     const occurrence = seen.get(baseSlug) ?? 0;
     seen.set(baseSlug, occurrence + 1);
     const slug = occurrence === 0 ? baseSlug : `${baseSlug}-${occurrence}`;
-    headings.push({ level, text, slug, line: i, concept, element });
+    headings.push({ level, text: text2, slug, line: i, concept, element });
   }
   return headings;
 }
@@ -8137,8 +8141,8 @@ function resolveHeadingSection(markdown, slug) {
   }
   return { heading, startLine: heading.line, endLine };
 }
-function headingSlugParts(text) {
-  const clean = text.trim();
+function headingSlugParts(text2) {
+  const clean = text2.trim();
   const boundary = clean.indexOf(":");
   if (boundary > 0) {
     const concept = clean.slice(0, boundary).trim();
@@ -8153,8 +8157,8 @@ function headingSlugParts(text) {
   }
   return { slug: slugifyHeading(clean) };
 }
-function slugifyUnitHeading(level, text) {
-  const clean = text.trim();
+function slugifyUnitHeading(level, text2) {
+  const clean = text2.trim();
   const { slug } = headingSlugParts(clean);
   const clamped = Math.min(6, Math.max(1, Math.floor(level) || 1));
   return { level: clamped, text: clean, slug };
@@ -8261,9 +8265,9 @@ function parseKnowledgeUnitRef(input) {
   if (rawSegments.some((s) => s.trim() === "")) return null;
   const decoded = [];
   for (const part of rawSegments) {
-    const text = decodeSegment(part.trim());
-    if (text === null || text.trim() === "") return null;
-    decoded.push(text.trim());
+    const text2 = decodeSegment(part.trim());
+    if (text2 === null || text2.trim() === "") return null;
+    decoded.push(text2.trim());
   }
   const [unitRaw, ...subunits] = decoded;
   const isCsv = /\.csv$/i.test(resolved.filePath);
@@ -8329,8 +8333,8 @@ function serializeKnowledgeUnitRef(filePath, unit, subunits = []) {
 
 // iNNfo/packages/nn-core/src/workspace/integrity/versionStatus.ts
 function parsePinnedUrl(url) {
-  const basename4 = String(url).split("/").pop()?.replace(/\.md$/i, "") ?? "";
-  const flat = basename4.match(/^(.+?)_V_(\d+)-(\d+)-(\d+)(?:_spec)?_NN$/i);
+  const basename5 = String(url).split("/").pop()?.replace(/\.md$/i, "") ?? "";
+  const flat = basename5.match(/^(.+?)_V_(\d+)-(\d+)-(\d+)(?:_spec)?_NN$/i);
   if (flat) return { name: flat[1], version: `V_${flat[2]}-${flat[3]}-${flat[4]}` };
   const pkg = String(url).match(/bluepriNNts\/([^/]+)\/V_(\d+)-(\d+)-(\d+)\/spec_NN\.md/i);
   if (pkg) return { name: pkg[1], version: `V_${pkg[2]}-${pkg[3]}-${pkg[4]}` };
@@ -8387,7 +8391,7 @@ function versionSkew(models) {
   for (const [key, { blueprint, members }] of [...groups].sort(([a], [b]) => byText(a, b))) {
     void key;
     const byVersion = /* @__PURE__ */ new Map();
-    for (const { version, path: path4 } of members) byVersion.set(version, [...byVersion.get(version) ?? [], path4]);
+    for (const { version, path: path5 } of members) byVersion.set(version, [...byVersion.get(version) ?? [], path5]);
     if (byVersion.size < 2) continue;
     const versions = [...byVersion].map(([version, paths]) => ({ version, count: paths.length, paths: [...paths].sort(byText) })).sort((a, b) => b.count - a.count || byText(a.version, b.version));
     const concepts = [...new Set(members.flatMap((m) => m.concepts))].sort(byText);
@@ -8419,6 +8423,438 @@ function versionSkew(models) {
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
+function createFsSourceResolver(rootDir) {
+  const rootResolved = (0, import_node_path.resolve)(rootDir);
+  return (refPath, referringPath) => {
+    const candidateDirs = [];
+    if (referringPath) {
+      const absReferring = (0, import_node_path.isAbsolute)(referringPath) ? referringPath : (0, import_node_path.resolve)(rootDir, referringPath);
+      let cur = (0, import_node_path.dirname)(absReferring);
+      while (true) {
+        const sourcesDir = (0, import_node_path.join)(cur, "sources");
+        if ((0, import_node_fs.existsSync)(sourcesDir)) {
+          candidateDirs.push(cur);
+        }
+        if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
+          break;
+        }
+        const relToRoot = (0, import_node_path.relative)(rootResolved, cur);
+        if (relToRoot.startsWith("..")) {
+          break;
+        }
+        cur = (0, import_node_path.dirname)(cur);
+      }
+    }
+    if (!candidateDirs.includes(rootResolved)) {
+      candidateDirs.push(rootResolved);
+    }
+    for (const dir of candidateDirs) {
+      const abs = (0, import_node_path.resolve)(dir, refPath);
+      const rel = (0, import_node_path.relative)(dir, abs);
+      if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
+        continue;
+      }
+      if ((0, import_node_fs.existsSync)(abs)) {
+        try {
+          const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
+          return {
+            exists: true,
+            headings: extractHeadings(content).map((h) => h.slug),
+            content
+          };
+        } catch {
+          return { exists: false };
+        }
+      }
+    }
+    const primaryDir = candidateDirs[0] ?? rootResolved;
+    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
+    const targetParent = (0, import_node_path.dirname)(targetAbs);
+    const parentExists = (0, import_node_fs.existsSync)(targetParent);
+    if (!parentExists) {
+      return { exists: false, parentExists: false };
+    }
+    let suggestions;
+    try {
+      const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
+      const targetBase = (0, import_node_path.basename)(refPath);
+      const targetStem = targetBase.replace(/\.[^.]+$/, "");
+      const files = entries.filter((e) => e.isFile()).map((e) => e.name);
+      const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
+      const scored = files.map((name) => {
+        const candStem = name.replace(/\.[^.]+$/, "");
+        return { name, dist: levenshteinDistance(targetStem, candStem) };
+      }).filter((item) => item.dist > 0 && item.dist <= maxAllowed).sort((a, b) => a.dist - b.dist);
+      if (scored.length > 0) {
+        suggestions = scored.map((s) => s.name);
+      }
+    } catch {
+    }
+    return {
+      exists: false,
+      parentExists: true,
+      suggestions
+    };
+  };
+}
+
+// iNNfo/packages/nn-core/src/csvTable.ts
+function parseCsvTable(content, options = {}) {
+  const delimiter = options.delimiter ?? ",";
+  const records = [];
+  let record = [];
+  let field = "";
+  let inQuotes = false;
+  let hasContent = false;
+  const pushField = () => {
+    record.push(field);
+    field = "";
+  };
+  const pushRecord = () => {
+    if (record.length === 1 && record[0] === "" && !hasContent) {
+      record = [];
+      return;
+    }
+    records.push(record);
+    record = [];
+    hasContent = false;
+  };
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+    hasContent = hasContent || ch !== "\r" && ch !== "\n" || inQuotes;
+    if (inQuotes) {
+      if (ch === '"') {
+        if (content[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === delimiter) {
+      pushField();
+    } else if (ch === "\r") {
+      if (content[i + 1] !== "\n") field += ch;
+    } else if (ch === "\n") {
+      pushField();
+      pushRecord();
+    } else {
+      field += ch;
+    }
+  }
+  if (inQuotes) {
+    return { headers: [], rows: [], malformed: true };
+  }
+  pushField();
+  pushRecord();
+  if (records.length === 0) return { headers: [], rows: [], malformed: false };
+  const [headerRow, ...body] = records;
+  return { headers: headerRow.map((h) => normalizeName(h)), rows: body, malformed: false };
+}
+
+// iNNfo/packages/nn-core/src/unitResolve.ts
+var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
+function resolveElementUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  let matchedHeading;
+  for (const h of headings) {
+    if (h.level === 2) {
+      const section2 = resolveHeadingSection(content, h.slug);
+      if (section2) {
+        for (let i = section2.startLine + 1; i < section2.endLine; i++) {
+          const m = lines[i].match(/^\s*slug\s*::\s*([^\s]+)/);
+          if (m && m[1].toLowerCase() === unit.slug.toLowerCase()) {
+            matchedHeading = h;
+            break;
+          }
+          if (/^#{1,6}\s/.test(lines[i])) break;
+        }
+      }
+    }
+    if (matchedHeading) break;
+  }
+  if (!matchedHeading) {
+    matchedHeading = headings.find(
+      (h) => h.slug === unit.slug || h.element && slugifyHeading(h.element) === unit.slug || h.slug.endsWith(`--${unit.slug}`)
+    );
+  }
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  if (subunits.length === 0) {
+    return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+  }
+  if (subunits.length === 1) {
+    const owned = sectionOwnLines(content, matchedHeading.slug);
+    if (!owned) return null;
+    const wanted = normalizeName(subunits[0]);
+    const found = [];
+    for (const i of owned) {
+      const field = lines[i].match(FIELD_LINE);
+      if (field && normalizeName(field[1]) === wanted) found.push(i);
+    }
+    return found.length > 0 ? { kind: "field", lines: found } : null;
+  }
+  return null;
+}
+function resolveMatrixUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const lines = content.split("\n");
+  const matchedHeading = headings.find(
+    (h) => h.slug === unit.matrixSlug || h.slug === `matrices--${unit.matrixSlug}` || h.text.toLowerCase().includes(unit.matrixSlug.toLowerCase())
+  );
+  if (!matchedHeading) return null;
+  const section = resolveHeadingSection(content, matchedHeading.slug);
+  if (!section) return null;
+  const row = unit.rowSlug ?? subunits[0];
+  const col = unit.colSlug ?? subunits[1];
+  if (row && col) {
+    const table = parseMarkdownTable(lines.slice(section.startLine, section.endLine));
+    if (!table) return null;
+    const wantedRow = normalizeName(row);
+    const wantedCol = normalizeName(col);
+    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
+    if (rowIdx === -1) return null;
+    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
+    if (colIdx === -1) return null;
+    const value = table.rows[rowIdx][colIdx];
+    if (value === void 0) return null;
+    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+  }
+  return { kind: "section", startLine: section.startLine, endLine: section.endLine };
+}
+function resolveHeaderUnit(content, unit, subunits) {
+  const headings = extractHeadings(content);
+  const match = headings.find((h) => h.slug === unit.slug && h.level === unit.level);
+  if (!match) return null;
+  if (subunits.length === 0) {
+    const section2 = resolveHeadingSection(content, unit.slug);
+    if (!section2) return null;
+    return { kind: "section", startLine: section2.startLine, endLine: section2.endLine };
+  }
+  const lines = content.split("\n");
+  const section = resolveHeadingSection(content, unit.slug);
+  if (!section) return null;
+  if (subunits.length === 1) {
+    const owned = sectionOwnLines(content, unit.slug);
+    if (!owned) return null;
+    const wanted = normalizeName(subunits[0]);
+    const found = [];
+    for (const i of owned) {
+      const field = lines[i].match(FIELD_LINE);
+      if (field && normalizeName(field[1]) === wanted) found.push(i);
+    }
+    return found.length > 0 ? { kind: "field", lines: found } : null;
+  }
+  if (subunits.length === 2) {
+    const table = parseMarkdownTable(lines.slice(section.startLine, section.endLine));
+    if (!table) return null;
+    const wantedRow = normalizeName(subunits[0]);
+    const wantedCol = normalizeName(subunits[1]);
+    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
+    if (rowIdx === -1) return null;
+    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
+    if (colIdx === -1) return null;
+    const value = table.rows[rowIdx][colIdx];
+    if (value === void 0) return null;
+    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+  }
+  return null;
+}
+function splitTableCells(line) {
+  return line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+}
+function parseMarkdownTable(lines) {
+  const tableLines = lines.filter((l) => l.trim().startsWith("|"));
+  if (tableLines.length < 2) return null;
+  const headers = splitTableCells(tableLines[0]);
+  const body = tableLines.slice(1).filter((l) => !/^[\s|:.-]+$/.test(splitTableCells(l).join(""))).map(splitTableCells);
+  if (body.length === 0) return null;
+  return { headers, rows: body };
+}
+function resolveCsvUnit(content, id, subunits) {
+  const table = parseCsvTable(content);
+  if (table.malformed || table.headers.length === 0) return null;
+  const rowIdx = table.rows.findIndex((r) => (r[0] ?? "").trim() === id.trim());
+  if (rowIdx === -1) return null;
+  if (subunits.length === 0) return { kind: "row", index: rowIdx };
+  if (subunits.length > 1) return null;
+  const colIdx = table.headers.findIndex((h) => h === normalizeName(subunits[0]));
+  if (colIdx === -1) return null;
+  const value = table.rows[rowIdx][colIdx];
+  if (value === void 0) return null;
+  return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
+}
+function resolveUnit(content, ref) {
+  const unit = ref.unit;
+  if (!unit) return null;
+  const subunits = ref.subunits ?? [];
+  switch (unit.kind) {
+    case "header":
+      return resolveHeaderUnit(content, unit, subunits);
+    case "row":
+      return resolveCsvUnit(content, unit.id, subunits);
+    case "pointer": {
+      const found = resolveJsonPointer(content, unit.pointer);
+      return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
+    }
+    case "element":
+      return resolveElementUnit(content, unit, subunits);
+    case "matrix":
+      return resolveMatrixUnit(content, unit, subunits);
+    default:
+      return assertNever(unit, "knowledge unit kind");
+  }
+}
+function listSectionFields(content, slug) {
+  const owned = sectionOwnLines(content, slug);
+  if (!owned) return null;
+  const lines = content.split("\n");
+  const names = [];
+  for (const i of owned) {
+    const field = lines[i].match(FIELD_LINE);
+    if (field) names.push(normalizeName(field[1]));
+  }
+  return names;
+}
+function sectionOwnLines(content, slug) {
+  const headings = extractHeadings(content);
+  const target = headings.find((h) => h.slug === slug);
+  if (!target) return null;
+  const lines = content.split("\n");
+  let end = lines.length;
+  for (const o of headings) {
+    if (o.line > target.line && o.level <= target.level) {
+      end = o.line;
+      break;
+    }
+  }
+  const skip = [];
+  for (const o of headings) {
+    if (o.line > target.line && o.line < end && o.level > target.level) {
+      let oEnd = lines.length;
+      for (const p of headings) {
+        if (p.line > o.line && p.level <= o.level) {
+          oEnd = p.line;
+          break;
+        }
+      }
+      skip.push([o.line, Math.min(oEnd, end)]);
+    }
+  }
+  const owned = [];
+  for (let i = target.line + 1; i < end; i++) {
+    if (!skip.some(([a, b]) => i >= a && i < b)) owned.push(i);
+  }
+  return owned;
+}
+
+// iNNfo/packages/nn-core/src/queryUnits.ts
+function parseKnowledgeQuery(input) {
+  if (!input || typeof input !== "string") return null;
+  const clean = input.trim();
+  const q = clean.indexOf("?");
+  if (q === -1) return null;
+  const target = clean.slice(0, q);
+  let filePathPart = target;
+  let conceptSlug;
+  if (target.includes("@")) {
+    const at = target.indexOf("@");
+    filePathPart = target.slice(0, at);
+    const unitPart = target.slice(at + 1);
+    if (!unitPart.startsWith("concept:") || unitPart.slice("concept:".length).includes("@")) {
+      return null;
+    }
+    const slug = unitPart.slice("concept:".length).trim();
+    if (!slug || !new RegExp(`^${SLUG2}$`).test(slug)) {
+      return null;
+    }
+    conceptSlug = slug;
+  }
+  const resolved = resolveUnitPath(filePathPart);
+  if (!resolved) return null;
+  const rest = clean.slice(q + 1);
+  if (!rest.trim()) return null;
+  const rawSegments = rest.split("&");
+  if (rawSegments.some((s) => s.trim() === "")) return null;
+  const decoded = [];
+  for (const part of rawSegments) {
+    let text2;
+    try {
+      text2 = decodeURIComponent(part.trim());
+    } catch (err) {
+      return null;
+    }
+    if (text2.trim() === "") return null;
+    decoded.push(text2.trim());
+  }
+  const filters = [];
+  let projection;
+  for (let i = 0; i < decoded.length; i++) {
+    const seg = decoded[i];
+    const eq = seg.indexOf("=");
+    if (eq === -1) {
+      if (i !== decoded.length - 1 || projection !== void 0) return null;
+      projection = seg;
+      continue;
+    }
+    const name = seg.slice(0, eq).trim();
+    const value = seg.slice(eq + 1).trim();
+    if (!name || !value) return null;
+    filters.push({ name, value });
+  }
+  if (filters.length === 0) return null;
+  return { path: resolved.filePath, ...conceptSlug ? { conceptSlug } : {}, filters, projection };
+}
+
+// iNNfo/packages/nn-core/src/types/parser.ts
+var ElementsMap = class {
+  _map = /* @__PURE__ */ new Map();
+  set(key, nodes) {
+    this._map.set(key.toLowerCase(), { key, nodes });
+  }
+  delete(key) {
+    return this._map.delete(key.toLowerCase());
+  }
+  has(key) {
+    return this._map.has(key.toLowerCase());
+  }
+  get(key) {
+    return this._map.get(key.toLowerCase())?.nodes;
+  }
+  keys() {
+    return Array.from(this._map.values()).map((e) => e.key);
+  }
+  entries() {
+    return Array.from(this._map.values()).map((e) => [e.key, e.nodes]);
+  }
+  forEach(fn) {
+    for (const { key, nodes } of this._map.values()) {
+      fn(nodes, key);
+    }
+  }
+  get size() {
+    return this._map.size;
+  }
+  [Symbol.iterator]() {
+    return this.entries()[Symbol.iterator]();
+  }
+  /** JSON serialization support — serializes as a plain record */
+  toJSON() {
+    const obj = {};
+    for (const [key, nodes] of this.entries()) {
+      obj[key] = nodes;
+    }
+    return obj;
+  }
+};
 
 // iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -8426,11 +8862,11 @@ var import_yaml = __toESM(require_dist(), 1);
 // iNNfo/packages/nn-core/src/parser/markdown.ts
 var YAML_BLOCK_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
 var BOM_CHAR = String.fromCharCode(65279);
-function normalizeSource(text) {
-  const withoutBom = text.charCodeAt(0) === 65279 ? text.replace(/^\uFEFF+/, "") : text;
+function normalizeSource(text2) {
+  const withoutBom = text2.charCodeAt(0) === 65279 ? text2.replace(/^\uFEFF+/, "") : text2;
   return withoutBom.replace(/\r\n?/g, "\n");
 }
-function parseMarkdownTable(md) {
+function parseMarkdownTable2(md) {
   const lines = normalizeSource(md).split("\n").filter((l) => /(^|[^\\])\|/.test(l.trim()));
   if (lines.length < 2) return [];
   const header = parseTableRow(lines[0]);
@@ -8798,7 +9234,7 @@ function parseConceptSection(conceptName, content) {
   };
 }
 function parseMatrixSection(content, _matrixName) {
-  const rows = parseMarkdownTable(content);
+  const rows = parseMarkdownTable2(content);
   if (rows.length === 0) return [];
   const colNames = Object.keys(rows[0] || {});
   const cells = [];
@@ -8839,48 +9275,6 @@ function getSectionType(rawTitle) {
 
 // iNNfo/packages/nn-core/src/parser/serializer.ts
 var import_yaml3 = __toESM(require_dist(), 1);
-
-// iNNfo/packages/nn-core/src/types/parser.ts
-var ElementsMap = class {
-  _map = /* @__PURE__ */ new Map();
-  set(key, nodes) {
-    this._map.set(key.toLowerCase(), { key, nodes });
-  }
-  delete(key) {
-    return this._map.delete(key.toLowerCase());
-  }
-  has(key) {
-    return this._map.has(key.toLowerCase());
-  }
-  get(key) {
-    return this._map.get(key.toLowerCase())?.nodes;
-  }
-  keys() {
-    return Array.from(this._map.values()).map((e) => e.key);
-  }
-  entries() {
-    return Array.from(this._map.values()).map((e) => [e.key, e.nodes]);
-  }
-  forEach(fn) {
-    for (const { key, nodes } of this._map.values()) {
-      fn(nodes, key);
-    }
-  }
-  get size() {
-    return this._map.size;
-  }
-  [Symbol.iterator]() {
-    return this.entries()[Symbol.iterator]();
-  }
-  /** JSON serialization support — serializes as a plain record */
-  toJSON() {
-    const obj = {};
-    for (const [key, nodes] of this.entries()) {
-      obj[key] = nodes;
-    }
-    return obj;
-  }
-};
 
 // iNNfo/packages/nn-core/src/parser/core.ts
 function deriveElementSlugs(elements) {
@@ -8940,8 +9334,8 @@ function deriveElementSlugs(elements) {
     concept: info.concept
   }));
 }
-function splitTopLevelSections(text) {
-  const lines = text.split("\n");
+function splitTopLevelSections(text2) {
+  const lines = text2.split("\n");
   const sections = [];
   let currentLines = [];
   let inCodeFence = false;
@@ -9075,509 +9469,6 @@ function parseKnowledge(content) {
     rawFrontmatter,
     rawPreamble
   };
-}
-
-// iNNfo/packages/nn-core/src/imports/parser.ts
-function parseDomainImports(domainContent) {
-  const parsed = parseKnowledge(domainContent);
-  const domains = [];
-  const imports = [];
-  const domainElements = parsed.elements.get("Imported Domain") ?? [];
-  for (const el of domainElements) {
-    const rawPath = String(el.fields["path"] ?? "").trim();
-    domains.push({
-      alias: el.name,
-      path: rawPath
-    });
-  }
-  const importElements = parsed.elements.get("Import") ?? [];
-  for (const el of importElements) {
-    const from = String(el.fields["from"] ?? "").trim();
-    const gt = from.indexOf(">");
-    if (gt === -1) continue;
-    const originAlias = from.slice(0, gt).trim();
-    const rest = from.slice(gt + 1).trim();
-    let model = rest;
-    let concept;
-    let filters;
-    const qMark = model.indexOf("?");
-    let queryPart = "";
-    if (qMark !== -1) {
-      queryPart = model.slice(qMark + 1);
-      model = model.slice(0, qMark);
-    }
-    const atSign = model.indexOf("@");
-    if (atSign !== -1) {
-      const sectionPart = model.slice(atSign + 1);
-      model = model.slice(0, atSign);
-      if (sectionPart.startsWith("concept:")) {
-        concept = sectionPart.slice("concept:".length);
-      } else {
-        concept = sectionPart;
-      }
-    }
-    if (queryPart) {
-      filters = {};
-      const pairs = queryPart.split("&");
-      for (const pair of pairs) {
-        const eq = pair.indexOf("=");
-        if (eq !== -1) {
-          const k = decodeURIComponent(pair.slice(0, eq).trim());
-          const v = decodeURIComponent(pair.slice(eq + 1).trim());
-          if (k) filters[k] = v;
-        }
-      }
-    }
-    imports.push({
-      name: el.name,
-      from,
-      originAlias,
-      model,
-      concept,
-      filters
-    });
-  }
-  return { domains, imports };
-}
-
-// iNNfo/packages/nn-core/src/layout.ts
-var CANONICAL_DOMAIN_ENTRYPOINT = "domaiNN_NN.md";
-
-// iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
-function readDomainAliases(rootDir) {
-  const aliases = /* @__PURE__ */ new Map();
-  const entryPath = (0, import_node_path.join)(rootDir, CANONICAL_DOMAIN_ENTRYPOINT);
-  let content;
-  try {
-    content = (0, import_node_fs.readFileSync)(entryPath, "utf-8");
-  } catch {
-    return aliases;
-  }
-  for (const domain of parseDomainImports(content).domains) {
-    if (!domain.alias || !domain.path) continue;
-    if (/^[a-zA-Z]+:\/\//.test(domain.path) || (0, import_node_path.isAbsolute)(domain.path)) continue;
-    aliases.set(domain.alias.toLowerCase(), (0, import_node_path.resolve)(rootDir, domain.path));
-  }
-  return aliases;
-}
-function splitAliasRef(refPath) {
-  const gt = refPath.indexOf(">");
-  if (gt <= 0) return null;
-  const alias = refPath.slice(0, gt).trim();
-  const rest = refPath.slice(gt + 1).trim();
-  if (!alias || !rest) return null;
-  return { alias, rest };
-}
-function resolveInside(dir, rest) {
-  const abs = (0, import_node_path.resolve)(dir, rest);
-  const rel = (0, import_node_path.relative)(dir, abs);
-  if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) return null;
-  try {
-    const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
-    return { exists: true, headings: extractHeadings(content).map((h) => h.slug), content };
-  } catch {
-    return { exists: false, parentExists: (0, import_node_fs.existsSync)((0, import_node_path.dirname)(abs)) };
-  }
-}
-function createFsSourceResolver(rootDir) {
-  const rootResolved = (0, import_node_path.resolve)(rootDir);
-  let domainAliases;
-  return (refPath, referringPath) => {
-    const aliased = splitAliasRef(refPath);
-    if (aliased) {
-      domainAliases ??= readDomainAliases(rootResolved);
-      const aliasDir = domainAliases.get(aliased.alias.toLowerCase());
-      if (aliasDir) {
-        const inside = resolveInside(aliasDir, aliased.rest);
-        if (inside) return inside;
-      }
-    }
-    const candidateDirs = [];
-    if (referringPath) {
-      const absReferring = (0, import_node_path.isAbsolute)(referringPath) ? referringPath : (0, import_node_path.resolve)(rootDir, referringPath);
-      let cur = (0, import_node_path.dirname)(absReferring);
-      while (true) {
-        const sourcesDir = (0, import_node_path.join)(cur, "sources");
-        if ((0, import_node_fs.existsSync)(sourcesDir)) {
-          candidateDirs.push(cur);
-        }
-        if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
-          break;
-        }
-        const relToRoot = (0, import_node_path.relative)(rootResolved, cur);
-        if (relToRoot.startsWith("..")) {
-          break;
-        }
-        cur = (0, import_node_path.dirname)(cur);
-      }
-    }
-    if (!candidateDirs.includes(rootResolved)) {
-      candidateDirs.push(rootResolved);
-    }
-    for (const dir of candidateDirs) {
-      const abs = (0, import_node_path.resolve)(dir, refPath);
-      const rel = (0, import_node_path.relative)(dir, abs);
-      if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
-        continue;
-      }
-      if ((0, import_node_fs.existsSync)(abs)) {
-        try {
-          const content = (0, import_node_fs.readFileSync)(abs, "utf-8");
-          return {
-            exists: true,
-            headings: extractHeadings(content).map((h) => h.slug),
-            content
-          };
-        } catch {
-          return { exists: false };
-        }
-      }
-    }
-    const primaryDir = candidateDirs[0] ?? rootResolved;
-    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
-    const targetParent = (0, import_node_path.dirname)(targetAbs);
-    const parentExists = (0, import_node_fs.existsSync)(targetParent);
-    if (!parentExists) {
-      return { exists: false, parentExists: false };
-    }
-    let suggestions;
-    try {
-      const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
-      const targetBase = (0, import_node_path.basename)(refPath);
-      const targetStem = targetBase.replace(/\.[^.]+$/, "");
-      const files = entries.filter((e) => e.isFile()).map((e) => e.name);
-      const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
-      const scored = files.map((name) => {
-        const candStem = name.replace(/\.[^.]+$/, "");
-        return { name, dist: levenshteinDistance(targetStem, candStem) };
-      }).filter((item) => item.dist > 0 && item.dist <= maxAllowed).sort((a, b) => a.dist - b.dist);
-      if (scored.length > 0) {
-        suggestions = scored.map((s) => s.name);
-      }
-    } catch {
-    }
-    return {
-      exists: false,
-      parentExists: true,
-      suggestions
-    };
-  };
-}
-
-// iNNfo/packages/nn-core/src/csvTable.ts
-function parseCsvTable(content, options = {}) {
-  const delimiter = options.delimiter ?? ",";
-  const records = [];
-  let record = [];
-  let field = "";
-  let inQuotes = false;
-  let hasContent = false;
-  const pushField = () => {
-    record.push(field);
-    field = "";
-  };
-  const pushRecord = () => {
-    if (record.length === 1 && record[0] === "" && !hasContent) {
-      record = [];
-      return;
-    }
-    records.push(record);
-    record = [];
-    hasContent = false;
-  };
-  for (let i = 0; i < content.length; i++) {
-    const ch = content[i];
-    hasContent = hasContent || ch !== "\r" && ch !== "\n" || inQuotes;
-    if (inQuotes) {
-      if (ch === '"') {
-        if (content[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += ch;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === delimiter) {
-      pushField();
-    } else if (ch === "\r") {
-      if (content[i + 1] !== "\n") field += ch;
-    } else if (ch === "\n") {
-      pushField();
-      pushRecord();
-    } else {
-      field += ch;
-    }
-  }
-  if (inQuotes) {
-    return { headers: [], rows: [], malformed: true };
-  }
-  pushField();
-  pushRecord();
-  if (records.length === 0) return { headers: [], rows: [], malformed: false };
-  const [headerRow, ...body] = records;
-  return { headers: headerRow.map((h) => normalizeName(h)), rows: body, malformed: false };
-}
-
-// iNNfo/packages/nn-core/src/unitResolve.ts
-var FIELD_LINE = /^\s*([^\s:][^:]*?)\s*::/;
-function resolveElementUnit(content, unit, subunits) {
-  const headings = extractHeadings(content);
-  const lines = content.split("\n");
-  let matchedHeading;
-  for (const h of headings) {
-    if (h.level === 2) {
-      const section2 = resolveHeadingSection(content, h.slug);
-      if (section2) {
-        for (let i = section2.startLine + 1; i < section2.endLine; i++) {
-          const m = lines[i].match(/^\s*slug\s*::\s*([^\s]+)/);
-          if (m && m[1].toLowerCase() === unit.slug.toLowerCase()) {
-            matchedHeading = h;
-            break;
-          }
-          if (/^#{1,6}\s/.test(lines[i])) break;
-        }
-      }
-    }
-    if (matchedHeading) break;
-  }
-  if (!matchedHeading) {
-    matchedHeading = headings.find(
-      (h) => h.slug === unit.slug || h.element && slugifyHeading(h.element) === unit.slug || h.slug.endsWith(`--${unit.slug}`)
-    );
-  }
-  if (!matchedHeading) return null;
-  const section = resolveHeadingSection(content, matchedHeading.slug);
-  if (!section) return null;
-  if (subunits.length === 0) {
-    return { kind: "section", startLine: section.startLine, endLine: section.endLine };
-  }
-  if (subunits.length === 1) {
-    const owned = sectionOwnLines(content, matchedHeading.slug);
-    if (!owned) return null;
-    const wanted = normalizeName(subunits[0]);
-    const found = [];
-    for (const i of owned) {
-      const field = lines[i].match(FIELD_LINE);
-      if (field && normalizeName(field[1]) === wanted) found.push(i);
-    }
-    return found.length > 0 ? { kind: "field", lines: found } : null;
-  }
-  return null;
-}
-function resolveMatrixUnit(content, unit, subunits) {
-  const headings = extractHeadings(content);
-  const lines = content.split("\n");
-  const matchedHeading = headings.find(
-    (h) => h.slug === unit.matrixSlug || h.slug === `matrices--${unit.matrixSlug}` || h.text.toLowerCase().includes(unit.matrixSlug.toLowerCase())
-  );
-  if (!matchedHeading) return null;
-  const section = resolveHeadingSection(content, matchedHeading.slug);
-  if (!section) return null;
-  const row = unit.rowSlug ?? subunits[0];
-  const col = unit.colSlug ?? subunits[1];
-  if (row && col) {
-    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
-    if (!table) return null;
-    const wantedRow = normalizeName(row);
-    const wantedCol = normalizeName(col);
-    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
-    if (rowIdx === -1) return null;
-    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
-    if (colIdx === -1) return null;
-    const value = table.rows[rowIdx][colIdx];
-    if (value === void 0) return null;
-    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
-  }
-  return { kind: "section", startLine: section.startLine, endLine: section.endLine };
-}
-function resolveHeaderUnit(content, unit, subunits) {
-  const headings = extractHeadings(content);
-  const match = headings.find((h) => h.slug === unit.slug && h.level === unit.level);
-  if (!match) return null;
-  if (subunits.length === 0) {
-    const section2 = resolveHeadingSection(content, unit.slug);
-    if (!section2) return null;
-    return { kind: "section", startLine: section2.startLine, endLine: section2.endLine };
-  }
-  const lines = content.split("\n");
-  const section = resolveHeadingSection(content, unit.slug);
-  if (!section) return null;
-  if (subunits.length === 1) {
-    const owned = sectionOwnLines(content, unit.slug);
-    if (!owned) return null;
-    const wanted = normalizeName(subunits[0]);
-    const found = [];
-    for (const i of owned) {
-      const field = lines[i].match(FIELD_LINE);
-      if (field && normalizeName(field[1]) === wanted) found.push(i);
-    }
-    return found.length > 0 ? { kind: "field", lines: found } : null;
-  }
-  if (subunits.length === 2) {
-    const table = parseMarkdownTable2(lines.slice(section.startLine, section.endLine));
-    if (!table) return null;
-    const wantedRow = normalizeName(subunits[0]);
-    const wantedCol = normalizeName(subunits[1]);
-    const rowIdx = table.rows.findIndex((r) => normalizeName(r[0] ?? "") === wantedRow);
-    if (rowIdx === -1) return null;
-    const colIdx = table.headers.findIndex((h) => normalizeName(h) === wantedCol);
-    if (colIdx === -1) return null;
-    const value = table.rows[rowIdx][colIdx];
-    if (value === void 0) return null;
-    return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
-  }
-  return null;
-}
-function splitTableCells(line) {
-  return line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-}
-function parseMarkdownTable2(lines) {
-  const tableLines = lines.filter((l) => l.trim().startsWith("|"));
-  if (tableLines.length < 2) return null;
-  const headers = splitTableCells(tableLines[0]);
-  const body = tableLines.slice(1).filter((l) => !/^[\s|:.-]+$/.test(splitTableCells(l).join(""))).map(splitTableCells);
-  if (body.length === 0) return null;
-  return { headers, rows: body };
-}
-function resolveCsvUnit(content, id, subunits) {
-  const table = parseCsvTable(content);
-  if (table.malformed || table.headers.length === 0) return null;
-  const rowIdx = table.rows.findIndex((r) => (r[0] ?? "").trim() === id.trim());
-  if (rowIdx === -1) return null;
-  if (subunits.length === 0) return { kind: "row", index: rowIdx };
-  if (subunits.length > 1) return null;
-  const colIdx = table.headers.findIndex((h) => h === normalizeName(subunits[0]));
-  if (colIdx === -1) return null;
-  const value = table.rows[rowIdx][colIdx];
-  if (value === void 0) return null;
-  return { kind: "cell", row: rowIdx, column: table.headers[colIdx], value };
-}
-function resolveUnit(content, ref) {
-  const unit = ref.unit;
-  if (!unit) return null;
-  const subunits = ref.subunits ?? [];
-  switch (unit.kind) {
-    case "header":
-      return resolveHeaderUnit(content, unit, subunits);
-    case "row":
-      return resolveCsvUnit(content, unit.id, subunits);
-    case "pointer": {
-      const found = resolveJsonPointer(content, unit.pointer);
-      return found.ok ? { kind: "pointer", pointer: unit.pointer, value: found.value } : null;
-    }
-    case "element":
-      return resolveElementUnit(content, unit, subunits);
-    case "matrix":
-      return resolveMatrixUnit(content, unit, subunits);
-    default:
-      return assertNever(unit, "knowledge unit kind");
-  }
-}
-function listSectionFields(content, slug) {
-  const owned = sectionOwnLines(content, slug);
-  if (!owned) return null;
-  const lines = content.split("\n");
-  const names = [];
-  for (const i of owned) {
-    const field = lines[i].match(FIELD_LINE);
-    if (field) names.push(normalizeName(field[1]));
-  }
-  return names;
-}
-function sectionOwnLines(content, slug) {
-  const headings = extractHeadings(content);
-  const target = headings.find((h) => h.slug === slug);
-  if (!target) return null;
-  const lines = content.split("\n");
-  let end = lines.length;
-  for (const o of headings) {
-    if (o.line > target.line && o.level <= target.level) {
-      end = o.line;
-      break;
-    }
-  }
-  const skip = [];
-  for (const o of headings) {
-    if (o.line > target.line && o.line < end && o.level > target.level) {
-      let oEnd = lines.length;
-      for (const p of headings) {
-        if (p.line > o.line && p.level <= o.level) {
-          oEnd = p.line;
-          break;
-        }
-      }
-      skip.push([o.line, Math.min(oEnd, end)]);
-    }
-  }
-  const owned = [];
-  for (let i = target.line + 1; i < end; i++) {
-    if (!skip.some(([a, b]) => i >= a && i < b)) owned.push(i);
-  }
-  return owned;
-}
-
-// iNNfo/packages/nn-core/src/queryUnits.ts
-function parseKnowledgeQuery(input) {
-  if (!input || typeof input !== "string") return null;
-  const clean = input.trim();
-  const q = clean.indexOf("?");
-  if (q === -1) return null;
-  const target = clean.slice(0, q);
-  let filePathPart = target;
-  let conceptSlug;
-  if (target.includes("@")) {
-    const at = target.indexOf("@");
-    filePathPart = target.slice(0, at);
-    const unitPart = target.slice(at + 1);
-    if (!unitPart.startsWith("concept:") || unitPart.slice("concept:".length).includes("@")) {
-      return null;
-    }
-    const slug = unitPart.slice("concept:".length).trim();
-    if (!slug || !new RegExp(`^${SLUG2}$`).test(slug)) {
-      return null;
-    }
-    conceptSlug = slug;
-  }
-  const resolved = resolveUnitPath(filePathPart);
-  if (!resolved) return null;
-  const rest = clean.slice(q + 1);
-  if (!rest.trim()) return null;
-  const rawSegments = rest.split("&");
-  if (rawSegments.some((s) => s.trim() === "")) return null;
-  const decoded = [];
-  for (const part of rawSegments) {
-    let text;
-    try {
-      text = decodeURIComponent(part.trim());
-    } catch (err) {
-      return null;
-    }
-    if (text.trim() === "") return null;
-    decoded.push(text.trim());
-  }
-  const filters = [];
-  let projection;
-  for (let i = 0; i < decoded.length; i++) {
-    const seg = decoded[i];
-    const eq = seg.indexOf("=");
-    if (eq === -1) {
-      if (i !== decoded.length - 1 || projection !== void 0) return null;
-      projection = seg;
-      continue;
-    }
-    const name = seg.slice(0, eq).trim();
-    const value = seg.slice(eq + 1).trim();
-    if (!name || !value) return null;
-    filters.push({ name, value });
-  }
-  if (filters.length === 0) return null;
-  return { path: resolved.filePath, ...conceptSlug ? { conceptSlug } : {}, filters, projection };
 }
 
 // iNNfo/packages/nn-core/src/schema/extract.ts
@@ -9976,36 +9867,36 @@ function compareChanges(a, b) {
 }
 
 // iNNfo/packages/nn-core/src/references.ts
-function updateReferenceString(text, oldName, newName) {
-  if (!text || typeof text !== "string") return text;
+function updateReferenceString(text2, oldName, newName) {
+  if (!text2 || typeof text2 !== "string") return text2;
   const oldSlug = slugify(oldName);
-  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
-    if (slugify(text.trim()) === oldSlug) {
-      const leadingSpaces = text.match(/^\s*/)?.[0] || "";
-      const trailingSpaces = text.match(/\s*$/)?.[0] || "";
+  if (!text2.trim().startsWith("[[") && !text2.trim().endsWith("]]")) {
+    if (slugify(text2.trim()) === oldSlug) {
+      const leadingSpaces = text2.match(/^\s*/)?.[0] || "";
+      const trailingSpaces = text2.match(/\s*$/)?.[0] || "";
       return `${leadingSpaces}${newName}${trailingSpaces}`;
     }
   }
-  if (!text.trim().startsWith("[[") && !text.trim().endsWith("]]")) {
+  if (!text2.trim().startsWith("[[") && !text2.trim().endsWith("]]")) {
     const qualifiedBracketRegex = new RegExp(`^(\\s*\\[[^\\]]+\\]\\s*)(.+)$`, "i");
-    const matchBracket = text.match(qualifiedBracketRegex);
+    const matchBracket = text2.match(qualifiedBracketRegex);
     if (matchBracket && slugify(matchBracket[2].trim()) === oldSlug) {
       const trailingSpaces = matchBracket[2].match(/\s*$/)?.[0] || "";
       return `${matchBracket[1]}${newName}${trailingSpaces}`;
     }
     const qualifiedColonRegex = new RegExp(`^(\\s*[^:]+::\\s*)(.+)$`, "i");
-    const matchColon = text.match(qualifiedColonRegex);
+    const matchColon = text2.match(qualifiedColonRegex);
     if (matchColon && slugify(matchColon[2].trim()) === oldSlug) {
       const trailingSpaces = matchColon[2].match(/\s*$/)?.[0] || "";
       return `${matchColon[1]}${newName}${trailingSpaces}`;
     }
   }
-  return updateWikiLinks(text, oldName, newName);
+  return updateWikiLinks(text2, oldName, newName);
 }
-function updateWikiLinks(text, oldName, newName) {
-  if (!text || typeof text !== "string") return text;
+function updateWikiLinks(text2, oldName, newName) {
+  if (!text2 || typeof text2 !== "string") return text2;
   const oldSlug = slugify(oldName);
-  return text.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
+  return text2.replace(/\[\[\s*([^\|]+?)(\s*\|[^\]]+)?\s*\]\]/gi, (match, target, alias) => {
     const trimmedTarget = target.trim();
     if (slugify(trimmedTarget) === oldSlug) {
       return `[[${newName}${alias ?? ""}]]`;
@@ -10402,8 +10293,9 @@ function createChangeLog(changes) {
 }
 
 // iNNfo/packages/nn-core/src/changelog/load.ts
-function isChangesetPath(path4) {
-  const name = path4.split("/").pop() ?? "";
+function isChangesetPath(path5) {
+  if (isUnderRootSources(path5)) return false;
+  const name = path5.split("/").pop() ?? "";
   if (!isNNName(name) || isSidecarName(name)) return false;
   const parsed = parseName(name);
   return parsed.kind === "nn" && parsed.stem.endsWith("_changes");
@@ -10563,8 +10455,8 @@ function extractFileCitations(files) {
   }
   return sites;
 }
-function familyKey(path4) {
-  const family = familyOf(path4);
+function familyKey(path5) {
+  const family = familyOf(path5);
   return family ? `${family.dir}\0${family.key}\0${family.ext}` : null;
 }
 function evidenceCitationSites(log, scope = "live") {
@@ -10777,10 +10669,10 @@ function validateCitations(sites, resolver) {
   const checkedCsvKeys = /* @__PURE__ */ new Set();
   for (const site of sites) {
     const value = site.value;
-    const path4 = site.element ? `${site.referringPath}#${site.element}.${site.field}` : `${site.referringPath}#${site.field}`;
+    const path5 = site.element ? `${site.referringPath}#${site.element}.${site.field}` : `${site.referringPath}#${site.field}`;
     if (value.includes("?") && parseKnowledgeQuery(value)) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Queries are not valid citations: "${value}" selects a set, not a unit \u2014 resolve it to pointers first (e.g. run it as a query, then cite the resulting "@" references)`,
         severity: "error",
         code: "QU_NOT_PROVENANCE",
@@ -10792,7 +10684,7 @@ function validateCitations(sites, resolver) {
     const targetPath = citationTargetPath(value);
     if (targetPath && targetPath.split("/").includes("staging")) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Excluded source reference "${value}" \u2014 "staging/" is scratch space and is not citable`,
         severity: "error",
         code: "KU_EXCLUDED_PATH",
@@ -10803,7 +10695,7 @@ function validateCitations(sites, resolver) {
     }
     if (targetPath && value.includes("@") && isBinaryTarget(targetPath)) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Binary source reference "${value}" \u2014 a unit cannot address a binary file; cite its sidecar "${sidecarPathOf(targetPath)}" instead`,
         severity: "error",
         code: "KU_BINARY_TARGET",
@@ -10815,7 +10707,7 @@ function validateCitations(sites, resolver) {
     const cit = parseCitation(value);
     if (!cit) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Malformed source reference "${value}" \u2014 use "<path>@<unit>" (e.g. "file.md@## Section", "data.csv@104"); line ranges like #L10-L20 and src-NNN ids are not allowed`,
         severity: "error",
         code: "KU_MALFORMED",
@@ -10828,7 +10720,7 @@ function validateCitations(sites, resolver) {
       validateUnitPointer(
         cit,
         site.referringPath,
-        path4,
+        path5,
         resolver,
         diagnostics,
         checkedCsvKeys,
@@ -10839,7 +10731,7 @@ function validateCitations(sites, resolver) {
     const resolved = resolver(cit.filePath, site.referringPath);
     if (!resolved || !resolved.exists) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: formatDanglingMessage(cit, resolved),
         severity: "error",
         code: "KU_DANGLING_FILE",
@@ -10850,7 +10742,7 @@ function validateCitations(sites, resolver) {
     }
     if (cit.slug && resolved.headings && !resolved.headings.includes(cit.slug)) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Source reference "${cit.raw}" points at heading "#${cit.slug}" which does not exist in "${cit.fileName}"`,
         severity: "warning",
         code: "KU_UNKNOWN_SLUG",
@@ -10860,7 +10752,7 @@ function validateCitations(sites, resolver) {
     }
     if (cit.legacyHash) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Legacy "#slug" form is deprecated \u2014 prefer "@" pointers${suggestCanonical(resolved, cit)}`,
         severity: "warning",
         code: "KU_DEPRECATED_HASH",
@@ -10874,11 +10766,11 @@ function validateCitations(sites, resolver) {
 function citationTargetPath(value) {
   const trimmed = value.trim();
   const cut = trimmed.search(/[@#]/);
-  const path4 = (cut === -1 ? trimmed : trimmed.slice(0, cut)).replace(/\\/g, "/");
-  return path4 || null;
+  const path5 = (cut === -1 ? trimmed : trimmed.slice(0, cut)).replace(/\\/g, "/");
+  return path5 || null;
 }
-function isBinaryTarget(path4) {
-  const ext = /\.([A-Za-z0-9]+)$/.exec(path4)?.[1]?.toLowerCase();
+function isBinaryTarget(path5) {
+  const ext = /\.([A-Za-z0-9]+)$/.exec(path5)?.[1]?.toLowerCase();
   return ext !== void 0 && ext !== "md" && ext !== "csv" && ext !== "json";
 }
 function formatDanglingMessage(ref, resolved) {
@@ -10897,13 +10789,13 @@ function suggestCanonical(resolved, ref) {
   }
   return ` (e.g. "${ref.filePath}@## Section")`;
 }
-function validateUnitPointer(ref, referringPath, path4, resolver, diagnostics, checkedCsvKeys, site) {
+function validateUnitPointer(ref, referringPath, path5, resolver, diagnostics, checkedCsvKeys, site) {
   const unit = ref.unit;
   const subunits = ref.subunits ?? [];
   const resolved = resolver(ref.filePath, referringPath);
   if (!resolved || !resolved.exists) {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: formatDanglingMessage(ref, resolved),
       severity: "error",
       code: "KU_DANGLING_FILE",
@@ -10914,25 +10806,25 @@ function validateUnitPointer(ref, referringPath, path4, resolver, diagnostics, c
   }
   switch (unit.kind) {
     case "header":
-      validateHeaderUnit(ref, unit.slug, unit.level, subunits, resolved, path4, diagnostics, site);
+      validateHeaderUnit(ref, unit.slug, unit.level, subunits, resolved, path5, diagnostics, site);
       return;
     case "row":
-      validateRowUnit(ref, unit.id, subunits, resolved, path4, diagnostics, checkedCsvKeys, site);
+      validateRowUnit(ref, unit.id, subunits, resolved, path5, diagnostics, checkedCsvKeys, site);
       return;
     case "pointer":
-      validatePointerUnit(ref, unit.pointer, resolved, path4, diagnostics, site);
+      validatePointerUnit(ref, unit.pointer, resolved, path5, diagnostics, site);
       return;
     case "element":
-      validateElementUnit(ref, unit.slug, subunits, resolved, path4, diagnostics, site);
+      validateElementUnit(ref, unit.slug, subunits, resolved, path5, diagnostics, site);
       return;
     case "matrix":
-      validateMatrixUnit(ref, unit.matrixSlug, unit.rowSlug, unit.colSlug, resolved, path4, diagnostics, site);
+      validateMatrixUnit(ref, unit.matrixSlug, unit.rowSlug, unit.colSlug, resolved, path5, diagnostics, site);
       return;
     default:
       return assertNever(unit, "knowledge unit kind");
   }
 }
-function validateElementUnit(ref, slug, subunits, resolved, path4, diagnostics, site) {
+function validateElementUnit(ref, slug, subunits, resolved, path5, diagnostics, site) {
   if (!resolved.content) return;
   const unitResult = resolveUnit(resolved.content, ref);
   if (!unitResult) {
@@ -10941,7 +10833,7 @@ function validateElementUnit(ref, slug, subunits, resolved, path4, diagnostics, 
       const baseResult = resolveUnit(resolved.content, baseRef);
       if (!baseResult) {
         diagnostics.push({
-          path: path4,
+          path: path5,
           message: `Source reference "${ref.raw}" points at element "@${slug}" which does not exist in "${ref.fileName}"`,
           severity: "error",
           code: "KU_UNKNOWN_ELEMENT_SLUG",
@@ -10950,7 +10842,7 @@ function validateElementUnit(ref, slug, subunits, resolved, path4, diagnostics, 
         });
       } else {
         diagnostics.push({
-          path: path4,
+          path: path5,
           message: `Source reference "${ref.raw}" points at field "&${subunits[0]}" which does not exist in element "@${slug}" of "${ref.fileName}"`,
           severity: "error",
           code: "KU_FIELD_OUTSIDE_SECTION",
@@ -10960,7 +10852,7 @@ function validateElementUnit(ref, slug, subunits, resolved, path4, diagnostics, 
       }
     } else {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Source reference "${ref.raw}" points at element "@${slug}" which does not exist in "${ref.fileName}"`,
         severity: "error",
         code: "KU_UNKNOWN_ELEMENT_SLUG",
@@ -10970,13 +10862,13 @@ function validateElementUnit(ref, slug, subunits, resolved, path4, diagnostics, 
     }
   }
 }
-function validateMatrixUnit(ref, matrixSlug, rowSlug, colSlug, resolved, path4, diagnostics, site) {
+function validateMatrixUnit(ref, matrixSlug, rowSlug, colSlug, resolved, path5, diagnostics, site) {
   if (!resolved.content) return;
   const unitResult = resolveUnit(resolved.content, ref);
   if (!unitResult) {
     if (rowSlug && colSlug) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Source reference "${ref.raw}" points at matrix cell "&${rowSlug}&${colSlug}" which does not resolve in "${ref.fileName}"`,
         severity: "error",
         code: "KU_UNKNOWN_MATRIX_CELL",
@@ -10985,7 +10877,7 @@ function validateMatrixUnit(ref, matrixSlug, rowSlug, colSlug, resolved, path4, 
       });
     } else {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Source reference "${ref.raw}" points at matrix "@${matrixSlug}" which does not exist in "${ref.fileName}"`,
         severity: "error",
         code: "KU_UNKNOWN_MATRIX_SLUG",
@@ -10995,13 +10887,13 @@ function validateMatrixUnit(ref, matrixSlug, rowSlug, colSlug, resolved, path4, 
     }
   }
 }
-function validatePointerUnit(ref, pointer, resolved, path4, diagnostics, site) {
+function validatePointerUnit(ref, pointer, resolved, path5, diagnostics, site) {
   if (!resolved.content) return;
   const found = resolveJsonPointer(resolved.content, pointer);
   if (found.ok) return;
   if (found.reason === "invalid-json") {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: `Source file "${ref.filePath}" cannot be parsed as JSON`,
       severity: "error",
       code: "KU_INVALID_JSON",
@@ -11011,7 +10903,7 @@ function validatePointerUnit(ref, pointer, resolved, path4, diagnostics, site) {
     return;
   }
   diagnostics.push({
-    path: path4,
+    path: path5,
     message: `Source reference "${ref.raw}" points at pointer "${pointer}" which does not exist in "${ref.fileName}"`,
     severity: "error",
     code: "KU_UNKNOWN_POINTER",
@@ -11019,12 +10911,12 @@ function validatePointerUnit(ref, pointer, resolved, path4, diagnostics, site) {
     target: ref.filePath
   });
 }
-function validateHeaderUnit(ref, slug, _level, subunits, resolved, path4, diagnostics, site) {
+function validateHeaderUnit(ref, slug, _level, subunits, resolved, path5, diagnostics, site) {
   const headings = resolved.headings ?? (resolved.content ? extractHeadings(resolved.content).map((h) => h.slug) : void 0);
   const heading = resolved.content ? extractHeadings(resolved.content).find((h) => h.slug === slug) : void 0;
   if (headings && !headings.includes(slug)) {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: `Source reference "${ref.raw}" points at heading "@${slug}" which does not exist in "${ref.fileName}"`,
       severity: "warning",
       code: "KU_UNKNOWN_SLUG",
@@ -11039,7 +10931,7 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path4, diagno
     if (fields === void 0) return;
     if (!fields.includes(normalizeName(subunits[0]))) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Source reference "${ref.raw}" points at field "&${subunits[0]}" which does not exist in section "@${slug}" of "${ref.fileName}"`,
         severity: "error",
         code: "KU_FIELD_OUTSIDE_SECTION",
@@ -11053,7 +10945,7 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path4, diagno
     if (!resolved.content) return;
     if (!resolveUnit(resolved.content, ref)) {
       diagnostics.push({
-        path: path4,
+        path: path5,
         message: `Source reference "${ref.raw}" points at matrix cell "&${subunits[0]}&${subunits[1]}" which does not resolve in "${ref.fileName}"`,
         severity: "error",
         code: "KU_UNKNOWN_MATRIX_CELL",
@@ -11064,7 +10956,7 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path4, diagno
     return;
   }
   diagnostics.push({
-    path: path4,
+    path: path5,
     message: `Malformed source reference "${ref.raw}" \u2014 a header pointer takes at most one field (&field) or one matrix cell (&row&column)`,
     severity: "error",
     code: "KU_MALFORMED",
@@ -11072,12 +10964,12 @@ function validateHeaderUnit(ref, slug, _level, subunits, resolved, path4, diagno
     target: ref.filePath
   });
 }
-function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checkedCsvKeys, site) {
+function validateRowUnit(ref, id, subunits, resolved, path5, diagnostics, checkedCsvKeys, site) {
   if (!resolved.content) return;
   const table = parseCsvTable(resolved.content);
   if (table.malformed) {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: `Source file "${ref.filePath}" cannot be parsed as CSV`,
       severity: "error",
       code: "KU_MALFORMED",
@@ -11093,7 +10985,7 @@ function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checke
     for (const key of keys) {
       if (key === "") {
         diagnostics.push({
-          path: path4,
+          path: path5,
           message: `Source file "${ref.filePath}" has a row with an empty key in the first column`,
           severity: "error",
           code: "KU_EMPTY_KEY",
@@ -11102,7 +10994,7 @@ function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checke
         });
       } else if (seen.has(key)) {
         diagnostics.push({
-          path: path4,
+          path: path5,
           message: `Source file "${ref.filePath}" has duplicate key "${key}" in the first column`,
           severity: "error",
           code: "KU_DUPLICATE_KEY",
@@ -11116,7 +11008,7 @@ function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checke
   const rowIdx = table.rows.findIndex((r) => (r[0] ?? "").trim() === id.trim());
   if (rowIdx === -1) {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: `Source reference "${ref.raw}" points at row "@${id}" which does not exist in "${ref.fileName}"`,
       severity: "error",
       code: "KU_UNKNOWN_ROW",
@@ -11128,7 +11020,7 @@ function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checke
   if (subunits.length === 0) return;
   if (subunits.length > 1) {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: `Malformed source reference "${ref.raw}" \u2014 a CSV row takes at most one column (&column)`,
       severity: "error",
       code: "KU_MALFORMED",
@@ -11139,7 +11031,7 @@ function validateRowUnit(ref, id, subunits, resolved, path4, diagnostics, checke
   }
   if (!table.headers.includes(normalizeName(subunits[0]))) {
     diagnostics.push({
-      path: path4,
+      path: path5,
       message: `Source reference "${ref.raw}" points at column "&${subunits[0]}" which does not exist in "${ref.fileName}"`,
       severity: "error",
       code: "KU_UNKNOWN_COLUMN",
@@ -11156,6 +11048,11 @@ function listSectionFieldsFor(content, heading) {
 // iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var fs = __toESM(require("node:fs"), 1);
 var path = __toESM(require("node:path"), 1);
+
+// iNNfo/packages/nn-core/src/sync/address.ts
+var SYNC_DIR = "sources/sync";
+
+// iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([".md", ".csv", ".json", ".html", ".htm"]);
 function walkDir(dir, baseDir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -11163,6 +11060,7 @@ function walkDir(dir, baseDir, out) {
     const fullPath = path.join(dir, entry.name);
     const relPath = path.relative(baseDir, fullPath).split("\\").join("/");
     if (isExcludedPath(relPath)) continue;
+    if (relPath === SYNC_DIR) continue;
     if (entry.isDirectory()) {
       walkDir(fullPath, baseDir, out);
     } else if (entry.isFile() && TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
@@ -11238,9 +11136,10 @@ var OWNED_KEYS = /* @__PURE__ */ new Set([
   "normalized_by",
   "derived_from"
 ]);
+var DROPPED_KEYS = /* @__PURE__ */ new Set(["source_url", "downloaded_at"]);
 var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
-function parseSidecarFrontmatter(text) {
-  const match = FRONTMATTER_RE.exec(text);
+function parseSidecarFrontmatter(text2) {
+  const match = FRONTMATTER_RE.exec(text2);
   if (!match) return null;
   try {
     const value = (0, import_yaml8.parse)(match[1]);
@@ -11262,7 +11161,7 @@ function buildSidecar(i) {
   if (i.normalizedBy) fm["normalized_by"] = i.normalizedBy;
   for (const extras of [i.previous ?? {}, i.metadata ?? {}]) {
     for (const [key, value] of Object.entries(extras)) {
-      if (!OWNED_KEYS.has(key)) fm[key] = value;
+      if (!OWNED_KEYS.has(key) && !DROPPED_KEYS.has(key)) fm[key] = value;
     }
   }
   const head = `---
@@ -11290,7 +11189,7 @@ function sha256Hex(bytes) {
   return (0, import_node_crypto.createHash)("sha256").update(bytes).digest("hex");
 }
 var toPosix = (p) => p.replace(/\\/g, "/");
-function resolveInside2(root, rel) {
+function resolveInside(root, rel) {
   const rootAbs = path2.resolve(root);
   const target = path2.resolve(rootAbs, rel);
   const within = path2.relative(rootAbs, target);
@@ -11308,16 +11207,16 @@ async function readOrNull(file) {
   }
 }
 async function readSidecarSha256(root, rawRel) {
-  const text = await readOrNull(resolveInside2(root, sidecarPathOf(rawRel)));
-  if (text === null) return null;
-  const value = parseSidecarFrontmatter(text.toString("utf8"))?.["sha256"];
+  const text2 = await readOrNull(resolveInside(root, sidecarPathOf(rawRel)));
+  if (text2 === null) return null;
+  const value = parseSidecarFrontmatter(text2.toString("utf8"))?.["sha256"];
   return typeof value === "string" ? value.toLowerCase() : "";
 }
 async function guardInputs(root, inputs) {
   for (const input of inputs) {
     const recorded = await readSidecarSha256(root, input);
     if (recorded === null) continue;
-    const raw = await readOrNull(resolveInside2(root, input));
+    const raw = await readOrNull(resolveInside(root, input));
     const actual = raw === null ? "(missing)" : sha256Hex(raw);
     if (recorded !== actual) {
       throw new WriteOnceError("HASH_MISMATCH", toPosix(input), "raw bytes differ from the sidecar sha256; cognitivize it again");
@@ -11327,7 +11226,7 @@ async function guardInputs(root, inputs) {
 async function listFamily(root, t) {
   let names;
   try {
-    names = await import_node_fs2.promises.readdir(resolveInside2(root, t.dir));
+    names = await import_node_fs2.promises.readdir(resolveInside(root, t.dir));
   } catch (e) {
     if (e.code === "ENOENT") return [];
     throw e;
@@ -11344,7 +11243,7 @@ function stampOf(member) {
   return parsed.kind === "file" ? parsed.stamp : void 0;
 }
 function budgetOrThrow(root, rel, platform) {
-  const abs = resolveInside2(root, rel);
+  const abs = resolveInside(root, rel);
   const budget = checkPathBudget(abs, platform);
   if (!budget.ok) {
     throw new WriteOnceError("PATH_TOO_LONG", toPosix(rel), `${budget.length} characters exceeds the ${budget.limit} limit`);
@@ -11364,16 +11263,16 @@ async function writeOnce(root, t, bytes, o = {}) {
   const latest = latestOfFamily(await listFamily(root, t));
   if (latest) {
     const recorded = await readSidecarSha256(root, latest.path);
-    const stored = recorded ? recorded : sha256Hex(await readOrNull(resolveInside2(root, latest.path)) ?? Buffer.alloc(0));
+    const stored = recorded ? recorded : sha256Hex(await readOrNull(resolveInside(root, latest.path)) ?? Buffer.alloc(0));
     if (stored === sha256Hex(buffer)) return { status: "deduplicated", path: latest.path };
   }
-  await import_node_fs2.promises.mkdir(resolveInside2(root, dirRel), { recursive: true });
+  await import_node_fs2.promises.mkdir(resolveInside(root, dirRel), { recursive: true });
   let stamp = nextStamp(now(), stampOf(latest));
   for (; ; ) {
     const rel = memberRel(stamp);
     budgetOrThrow(root, rel, platform);
     try {
-      const handle = await import_node_fs2.promises.open(resolveInside2(root, rel), "wx");
+      const handle = await import_node_fs2.promises.open(resolveInside(root, rel), "wx");
       try {
         await handle.writeFile(buffer);
       } finally {
@@ -11416,8 +11315,8 @@ async function applyGc(root, confirmed, o) {
   const deleted = [];
   for (const rel of confirmed.map(toPosix)) {
     if (!allowed.has(rel)) continue;
-    await import_node_fs2.promises.rm(resolveInside2(root, rel), { force: true });
-    await import_node_fs2.promises.rm(resolveInside2(root, sidecarPathOf(rel)), { force: true });
+    await import_node_fs2.promises.rm(resolveInside(root, rel), { force: true });
+    await import_node_fs2.promises.rm(resolveInside(root, sidecarPathOf(rel)), { force: true });
     deleted.push(rel);
   }
   return { deleted: deleted.sort() };
@@ -11460,18 +11359,19 @@ async function cognitivize(root, rel, o = {}) {
   const textNative = TEXT_NATIVE_FORMATS.has(format);
   if (!textNative && !o.normalizer) return { status: "requires-normalizer", path: relPath };
   const normalized = o.normalizer ? await o.normalizer({ path: relPath, ext: format, bytes }) : void 0;
-  const text = buildSidecar({
+  const nowIso = isoSeconds((o.now ?? (() => /* @__PURE__ */ new Date()))());
+  const text2 = buildSidecar({
     sourceFile: relPath,
     sha256,
     sizeBytes: bytes.byteLength,
     sourceFormat: format,
-    normalizedAt: isoSeconds((o.now ?? (() => /* @__PURE__ */ new Date()))()),
+    normalizedAt: nowIso,
     normalizedBy: normalized?.normalizedBy,
     previous,
-    metadata: normalized?.metadata,
+    metadata: { ...normalized?.metadata, ...o.origin ? { ...o.origin, retrieved_at: nowIso } : {} },
     body: textNative ? void 0 : normalized?.body
   });
-  await import_node_fs3.promises.writeFile(sidecarAbs, text, "utf8");
+  await import_node_fs3.promises.writeFile(sidecarAbs, text2, "utf8");
   return { status: existing ? "refreshed" : "written", sidecar: sidecarRel, sha256 };
 }
 var IMPORT_DIR = "sources/import";
@@ -11489,7 +11389,7 @@ async function importRaw(root, externalAbs, o = {}) {
   if (bytes === null || parsed.kind !== "file") return rejected("not-found");
   const written = await writeOnce(
     root,
-    { dir: IMPORT_DIR, key: parsed.key, ext: parsed.ext },
+    { dir: o.dir ?? IMPORT_DIR, key: parsed.key, ext: parsed.ext },
     bytes,
     { now: o.now, platform: o.platform }
   );
@@ -11499,6 +11399,252 @@ async function importRaw(root, externalAbs, o = {}) {
     path: written.path,
     cognitivize: result
   };
+}
+
+// iNNfo/packages/nn-core/src/sync/refresh.ts
+var import_node_fs4 = require("node:fs");
+var path4 = __toESM(require("node:path"), 1);
+var IMPORT_DIR2 = "sources/import";
+var digestOf = (entries) => sha256Hex(
+  [...entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([p, s]) => `${p}	${s}
+`).join("")
+);
+var isInside = (child, parent) => {
+  const rel = path4.relative(parent, child);
+  return rel === "" || !rel.startsWith("..") && !path4.isAbsolute(rel);
+};
+async function shaTree(dir) {
+  const out = /* @__PURE__ */ new Map();
+  const walk = async (rel) => {
+    let entries;
+    try {
+      entries = await import_node_fs4.promises.readdir(path4.join(dir, rel), { withFileTypes: true });
+    } catch (e) {
+      if (e.code === "ENOENT") return;
+      throw e;
+    }
+    for (const entry of entries) {
+      const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) await walk(entryRel);
+      else if (entry.isFile()) out.set(entryRel, sha256Hex(await import_node_fs4.promises.readFile(path4.join(dir, entryRel))));
+    }
+  };
+  await walk("");
+  return out;
+}
+async function classify(rel, abs, inDomain) {
+  const base = rel.slice(rel.lastIndexOf("/") + 1);
+  const bytes = await import_node_fs4.promises.readFile(abs);
+  const file = { rel, abs, bytes, sha: sha256Hex(bytes) };
+  if (isNNName(base)) {
+    if (isSidecarName(base)) return null;
+    let frontmatter = null;
+    try {
+      frontmatter = parseFrontmatter(bytes.toString("utf8"));
+    } catch {
+      return null;
+    }
+    return frontmatter && isModelCandidate({ path: rel, frontmatter }) ? { ...file, model: true } : null;
+  }
+  return inDomain ? null : { ...file, model: false };
+}
+async function enumerateOrigin(s, originAbs) {
+  if (s.kind === "file") {
+    const found = await classify(path4.basename(originAbs), originAbs, false);
+    return found ? [found] : [];
+  }
+  const inDomain = await import_node_fs4.promises.lstat(path4.join(originAbs, ENTRYPOINT_FILENAME)).then((st) => st.isFile()).catch(() => false);
+  const out = [];
+  const walk = async (rel) => {
+    for (const entry of await import_node_fs4.promises.readdir(path4.join(originAbs, rel), { withFileTypes: true })) {
+      const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (isExcludedPath(entryRel) || isUnderRootSources(entryRel)) continue;
+      if (entry.isDirectory()) await walk(entryRel);
+      else if (entry.isFile()) {
+        const found = await classify(entryRel, path4.join(originAbs, entryRel), inDomain);
+        if (found) out.push(found);
+      }
+    }
+  };
+  await walk("");
+  return out;
+}
+async function latestMemberSha(root, dirRel, key, ext) {
+  let names;
+  try {
+    names = await import_node_fs4.promises.readdir(path4.join(root, dirRel));
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
+  }
+  const members = names.filter((name) => {
+    const parsed = parseName(name);
+    return parsed.kind === "file" && parsed.key === key && parsed.ext === ext;
+  }).map((name) => ({ path: `${dirRel}/${name}` }));
+  const latest = latestOfFamily(members);
+  const bytes = latest ? await readOrNull(path4.join(root, latest.path)) : null;
+  return bytes ? sha256Hex(bytes) : null;
+}
+async function pruneEmptyDirs(from, stop) {
+  let dir = from;
+  while (dir !== stop && isInside(dir, stop)) {
+    const left = await import_node_fs4.promises.readdir(dir).catch(() => null);
+    if (!left || left.length > 0) return;
+    await import_node_fs4.promises.rmdir(dir);
+    dir = path4.dirname(dir);
+  }
+}
+async function refreshSynchronization(root, s, o = {}) {
+  if (!SLUG_RE.test(s.alias)) throw new RangeError(`SYNC_ALIAS_INVALID: "${s.alias}" is not a folder-safe slug`);
+  const rootAbs = path4.resolve(root);
+  const mirrorDir = path4.join(rootAbs, SYNC_DIR, s.alias);
+  const platform = o.platform ?? process.platform;
+  const existing = await shaTree(mirrorDir);
+  const idle = (status) => {
+    const digest = digestOf(existing);
+    return { alias: s.alias, status, files: [], digestBefore: digest, digestAfter: digest };
+  };
+  if (s.state === "paused") return idle("skipped");
+  const originAbs = path4.resolve(s.origin);
+  const stat = await import_node_fs4.promises.stat(originAbs).catch(() => null);
+  if (!stat || (s.kind === "file" ? !stat.isFile() : !stat.isDirectory())) return idle("unreachable");
+  const [originReal, rootReal] = await Promise.all([import_node_fs4.promises.realpath(originAbs), import_node_fs4.promises.realpath(rootAbs)]);
+  if (isInside(originReal, rootReal)) {
+    throw new RangeError(`SYNC_SELF_LOOP: origin ${s.origin} is inside the domaiNN; a mirror would recurse`);
+  }
+  if (isInside(rootReal, originReal)) {
+    throw new RangeError(`SYNC_SELF_LOOP: the domaiNN is inside origin ${s.origin}; a mirror would recurse`);
+  }
+  const originFiles = await enumerateOrigin(s, originAbs);
+  const before = /* @__PURE__ */ new Map();
+  const after = /* @__PURE__ */ new Map();
+  const files = [];
+  const writes = [];
+  const note = (p, b, a) => {
+    if (b !== null) before.set(p, b);
+    if (a !== null) after.set(p, a);
+  };
+  const overBudget = (abs, rel) => {
+    const budget = checkPathBudget(abs, platform);
+    if (!budget.ok) {
+      throw new RangeError(`SYNC_PATH_TOO_LONG: ${rel} (${budget.length} characters exceeds the ${budget.limit} limit)`);
+    }
+  };
+  const models = originFiles.filter((f) => f.model);
+  for (const f of models) {
+    const prior = existing.get(f.rel) ?? null;
+    note(f.rel, prior, f.sha);
+    if (prior === f.sha) continue;
+    const target = path4.join(mirrorDir, ...f.rel.split("/"));
+    overBudget(target, f.rel);
+    files.push({ path: f.rel, before: prior, after: f.sha });
+    writes.push(async () => {
+      await import_node_fs4.promises.mkdir(path4.dirname(target), { recursive: true });
+      await import_node_fs4.promises.writeFile(target, f.bytes);
+    });
+  }
+  const planned = new Set(models.map((f) => f.rel));
+  for (const [rel, prior] of existing) {
+    if (planned.has(rel)) continue;
+    before.set(rel, prior);
+    files.push({ path: rel, before: prior, after: null });
+    writes.push(async () => {
+      const target = path4.join(mirrorDir, ...rel.split("/"));
+      await import_node_fs4.promises.rm(target, { force: true });
+      await pruneEmptyDirs(path4.dirname(target), mirrorDir);
+    });
+  }
+  for (const f of originFiles.filter((x) => !x.model)) {
+    const base = f.rel.slice(f.rel.lastIndexOf("/") + 1);
+    const parsed = parseName(base);
+    if (parsed.kind !== "file" || parsed.ext === "") continue;
+    const folder = f.rel.includes("/") ? `/${f.rel.slice(0, f.rel.lastIndexOf("/"))}` : "";
+    const dirRel = `${IMPORT_DIR2}/${s.alias}${folder}`;
+    const prior = await latestMemberSha(rootAbs, dirRel, parsed.key, parsed.ext);
+    note(f.rel, prior, f.sha);
+    if (prior === f.sha) continue;
+    overBudget(path4.join(rootAbs, sidecarPathOf(`${dirRel}/${parsed.key}_00000000T000000Z-99.${parsed.ext}`)), f.rel);
+    files.push({ path: f.rel, before: prior, after: f.sha });
+    writes.push(async () => {
+      const r = await importRaw(rootAbs, f.abs, {
+        dir: dirRel,
+        origin: { synchronization: s.alias, origin_uri: s.origin, origin_path: f.rel },
+        now: o.now,
+        platform: o.platform,
+        normalizer: o.normalizer
+      });
+      if (r.status === "rejected") throw new Error(`SYNC_IMPORT_REJECTED: ${f.rel} (${r.reason})`);
+    });
+  }
+  for (const write of writes) await write();
+  files.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  return {
+    alias: s.alias,
+    status: files.length === 0 ? "unchanged" : "refreshed",
+    files,
+    digestBefore: digestOf(before),
+    digestAfter: digestOf(after)
+  };
+}
+async function removeOrphanMirrors(root, aliases) {
+  const syncDir = path4.join(path4.resolve(root), SYNC_DIR);
+  const entries = await import_node_fs4.promises.readdir(syncDir, { withFileTypes: true }).catch(() => []);
+  const results = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || aliases.includes(entry.name)) continue;
+    const dir = path4.join(syncDir, entry.name);
+    const tree = await shaTree(dir);
+    await import_node_fs4.promises.rm(dir, { recursive: true, force: true });
+    results.push({
+      alias: entry.name,
+      status: "removed",
+      files: [...tree].map(([p, before]) => ({ path: p, before, after: null })),
+      digestBefore: digestOf(tree),
+      digestAfter: digestOf(/* @__PURE__ */ new Map())
+    });
+  }
+  return results;
+}
+
+// iNNfo/packages/nn-core/src/sync/declarations.ts
+var CONCEPT2 = "Synchronization";
+var text = (value) => typeof value === "string" ? value.trim() : "";
+function readSynchronizations(catalog) {
+  const synchronizations = [];
+  const diagnostics = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const el of parseKnowledge(catalog).elements.get(CONCEPT2) ?? []) {
+    const alias = text(el.fields["alias"]);
+    const path5 = `elements.${CONCEPT2}.${el.name}.fields.alias`;
+    if (!SLUG_RE.test(alias)) {
+      diagnostics.push({
+        path: path5,
+        message: `SYNC_ALIAS_INVALID: alias "${alias}" of Synchronization "${el.name}" is not a folder-safe slug; use lowercase letters, digits and hyphens`,
+        severity: "error",
+        code: "SYNC_ALIAS_INVALID",
+        meta: { field: "alias" }
+      });
+      continue;
+    }
+    if (seen.has(alias)) {
+      diagnostics.push({
+        path: path5,
+        message: `SYNC_ALIAS_DUPLICATE: alias "${alias}" of Synchronization "${el.name}" is already declared; aliases are unique within the domaiNN`,
+        severity: "error",
+        code: "SYNC_ALIAS_DUPLICATE",
+        meta: { field: "alias" }
+      });
+      continue;
+    }
+    seen.add(alias);
+    synchronizations.push({
+      alias,
+      origin: text(el.fields["origin_uri"]),
+      kind: text(el.fields["kind"]) === "file" ? "file" : "folder",
+      state: text(el.fields["state"]) === "paused" ? "paused" : "active"
+    });
+  }
+  return { synchronizations, diagnostics };
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
@@ -11547,6 +11693,7 @@ async function importRaw(root, externalAbs, o = {}) {
   isProcedureDocument,
   isRegenerableView,
   isSidecarName,
+  isUnderRootSources,
   latestOfFamily,
   nextStamp,
   normalizeName,
@@ -11562,6 +11709,9 @@ async function importRaw(root, externalAbs, o = {}) {
   rawPathOfSidecar,
   readLineageSnapshot,
   readSidecarSha256,
+  readSynchronizations,
+  refreshSynchronization,
+  removeOrphanMirrors,
   resolveJsonPointer,
   roleOf,
   serializeKnowledgeUnitRef,

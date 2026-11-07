@@ -9,9 +9,9 @@ const config = require('./config');
 const scanner = require('./scanner');
 const webImport = require('./webImport');
 const { bootstrapProject } = require('./lib/bootstrap');
-const { auditModelCitations, checkScanImpact, writeImpactReport, detectSourceFamilyEvolution } = require('./lib/impact-checker');
+const { auditModelCitations, checkScanImpact, writeImpactReport } = require('./lib/impact-checker');
 const { promoteConversation, PROMOTION_OPTIONS } = require('./lib/conversations');
-const externalScanner = require('./lib/external-scanner');
+const { runSync } = require('./lib/sync');
 const watchDigestStore = require('./lib/watch-digest-store');
 const curateCsv = require('./lib/curate-csv');
 const gc = require('./lib/gc');
@@ -27,10 +27,7 @@ async function main() {
     argv['normalize-file'] ||
     argv.cognitivize ||
     argv.file ||
-    argv['scan-external'] ||
-    argv.external ||
-    argv['watch-digest'] ||
-    argv['digest-decide'] ||
+    argv.sync ||
     argv['check-impact'] ||
     argv.impact ||
     argv['impact-check'] ||
@@ -56,12 +53,11 @@ async function main() {
     // The record flags (`--lineage`, `--provenance`, `--check`) are retired.
     const KNOWN_OPTIONS = new Set([
       'apply', 'check-impact', 'cognitivize', 'converge', 'converge-mark', 'curate-csv',
-      'dedup', 'dest', 'digest-decide', 'external', 'file', 'format', 'formats', 'gc',
+      'dedup', 'dest', 'file', 'format', 'formats', 'gc',
       'impact', 'impact-check', 'import-url', 'in-place', 'inPlace', 'inplace', 'json',
-      'key', 'name', 'normalize-file', 'note', 'paths', 'plan', 'promote-conv',
+      'key', 'name', 'normalize-file', 'paths', 'plan', 'promote-conv',
       'promote-conversation', 'purge', 'remove-source', 'report', 'scan',
-      'scan-external', 'slice', 'slug', 'src', 'status', 'unlink', 'version',
-      'watch-digest', 'y', 'yes',
+      'slice', 'slug', 'src', 'sync', 'unlink', 'version', 'y', 'yes',
     ]);
     const unknown = Object.keys(argv).filter((key) => key !== '_' && !KNOWN_OPTIONS.has(key));
     if (unknown.length > 0) {
@@ -221,110 +217,8 @@ async function handleCliMode(argv) {
     process.exit(audit.errors.length > 0 ? 1 : 0);
   }
 
-  if (argv['scan-external'] || argv.external) {
-    const scanResult = externalScanner.scanAllWatchRoots(projectDir);
-
-    if (argv.json) {
-      console.log(JSON.stringify(externalScanner.serializeScanResult(scanResult), null, 2));
-      process.exit(0);
-    }
-
-    console.log(`Scanning external watch roots for "${projectDir}"...`);
-
-    console.log(`Discovered ${scanResult.roots.length} external root(s).`);
-    for (const r of scanResult.roots) {
-      console.log(`- [${r.status}] ${r.root} (${r.cadence}, ${r.items.length} file(s))`);
-    }
-
-    const { new: newItems, evolved, alerts, disconnected } = scanResult.classified;
-    console.log(`\nDelta Summary:`);
-    console.log(`  NEW files: ${newItems.length}`);
-    console.log(`  EVOLVED (dynamic): ${evolved.length}`);
-    console.log(`  STATIC ALERTS: ${alerts.length}`);
-    console.log(`  DISCONNECTED roots: ${disconnected.length}`);
-
-    const candidates = [...newItems, ...evolved];
-    if (candidates.length > 0) {
-      if (argv.yes || argv.y || argv.apply) {
-        console.log(`\nImporting ${candidates.length} candidate file(s) into sources/import/...`);
-        const imported = await externalScanner.importExternalFiles(candidates, projectDir);
-        for (const imp of imported) {
-          console.log(`  ✔ ${imp.status === 'deduplicated' ? 'Already imported' : 'Copied'}: ${imp.importedAs}`);
-        }
-        console.log(`\nNormalizing imported sources...`);
-        const scanRes = await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true });
-        console.log(`Normalization done: Processed ${scanRes.processedCount} source(s).`);
-      } else {
-        console.log(`\nCandidate files to import:`);
-        for (const c of candidates) {
-          console.log(`  - [${c.deltaStatus}] ${c.baseName} (${c.cadence})`);
-        }
-        console.log(`\nRun with --apply or --yes to import and normalize these files.`);
-      }
-    }
-
-    const evolutions = detectSourceFamilyEvolution(projectDir);
-    if (evolutions.length > 0) {
-      console.log(`\n⚡ Source Family Evolution Opportunities (${evolutions.length}):`);
-      for (const evo of evolutions) {
-        console.log(`  - ${evo.modelFile}: cites "${evo.currentSnapshot}" -> newer "${evo.latestSnapshot}" available`);
-      }
-    }
-
-    process.exit(0);
-  }
-
-  if (argv['watch-digest']) {
-    // Read-only session-start digest. Never writes to sources/; degrades to an
-    // empty digest when no roots are declared or the scan is unavailable.
-    let digest;
-    try {
-      const state = watchDigestStore.loadState(projectDir);
-      const scanResult = externalScanner.scanAllWatchRoots(projectDir);
-      digest = watchDigestStore.buildDigest(scanResult, state);
-    } catch (err) {
-      digest = {
-        generatedAt: new Date().toISOString(),
-        roots: [],
-        disconnected: [],
-        items: [],
-        error: err.message,
-      };
-    }
-
-    if (argv.json || digest.items.length > 0 || digest.disconnected.length > 0) {
-      console.log(JSON.stringify(digest, null, 2));
-    }
-    process.exit(0);
-  }
-
-  if (argv['digest-decide']) {
-    const key = String(argv['digest-decide']);
-    const status = argv.status || 'postpone';
-
-    if (!watchDigestStore.DECISION_STATUSES.includes(status)) {
-      console.error(`Error: --status must be one of: ${watchDigestStore.DECISION_STATUSES.join(', ')}.`);
-      process.exit(1);
-    }
-
-    try {
-      if (status === 'import') {
-        const scanResult = externalScanner.scanAllWatchRoots(projectDir);
-        const item = watchDigestStore.findItemByKey(scanResult, key);
-        if (!item) {
-          console.error(`Error: no external item matches digest key "${key}".`);
-          process.exit(1);
-        }
-        await externalScanner.importExternalFiles([item], projectDir);
-        await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true });
-      }
-      watchDigestStore.decide(projectDir, key, status, argv.note);
-      console.log(JSON.stringify({ key, status, state: watchDigestStore.statePath(projectDir) }, null, 2));
-    } catch (err) {
-      console.error(`Error applying digest decision: ${err.message}`);
-      process.exit(1);
-    }
-    process.exit(0);
+  if (argv.sync) {
+    process.exit(await runSync(projectDir, typeof argv.sync === 'string' ? argv.sync : null));
   }
 
   if (argv['converge-mark']) {
@@ -515,8 +409,8 @@ async function handleCliMode(argv) {
     if (importResult) {
       scanOptions.webImportMeta = {
         [importResult.relPath]: {
-          source_url: importResult.sourceUrl,
-          downloaded_at: importResult.downloadedAt,
+          origin_uri: importResult.originUri,
+          retrieved_at: importResult.retrievedAt,
           ...importResult.meta,
         }
       };

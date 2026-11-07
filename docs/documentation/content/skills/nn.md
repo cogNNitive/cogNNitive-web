@@ -51,15 +51,8 @@ The `(Recommended)` tag is assigned dynamically to the first actionable stage:
 3. Else (empty workspace) → `[s] (Recommended)`
 
 The `[s][m][r][p][h][x]` shape and the recommended selection are fixed. Contextual capabilities —
-such as external watch roots — appear *inside* a stage, never as a new top-level letter.
-
-### Sources sub-option and watch digest
-
-When the domain declares external watch roots, `[s] Sources` offers **Scan external watch roots**
-(an on-demand scan) instead of **Declare a watch root**. After the activation gate, `nn` also runs
-the read-only session-start digest and presents each pending item for a per-item decision
-(`ignore` / `postpone` / `import`). The digest never writes to `sources/`, and if it is
-unavailable it is swallowed so it can never block the session.
+such as source ingestion — appear *inside* a stage, never as a new top-level letter. `nn` runs no scan
+or digest at session start; synchronizing an external origin is always an explicit `--sync` request.
 
 ## Routing and the procedure catalog
 
@@ -95,8 +88,8 @@ canonical **Procedure Execution Protocol** owned by [nn-innfo](nn-innfo.md).
 
 ## Help
 
-The `[h] Help` stage lists the platform capabilities — including **watched folders**, which ingest
-new or evolved files from external directories without daemons — and points at the bluepriNNts
+The `[h] Help` stage lists the platform capabilities — including **Synchronizations**, which keep a local
+mirror of an external file or folder up to date on request, without daemons — and points at the bluepriNNts
 catalog, specifications, and guides.
 
 ## See also

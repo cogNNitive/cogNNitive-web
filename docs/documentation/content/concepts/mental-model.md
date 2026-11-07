@@ -147,13 +147,13 @@ sequenceDiagram
 
 ---
 
-## Watch Folders and External Ingestion
+## Synchronizations and External Ingestion
 
-When external files arrive from scanners, shared Dropbox drives, or downloads, cogNNitive handles them through **Watch Roots** declared in `domaiNN_NN.md`:
+When external files live on a shared drive, in another domaiNN, or behind a URL, cogNNitive handles them through a **Synchronization** declared in `sources/sources_NN.md`:
 
-* **No CPU-heavy background daemons:** Ingestion scans are triggered on session boot or on-demand via `--scan-external`.
-* **The decision digest:** The scanner classifies files into `NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, or `DISCONNECTED`.
-* **Explicit consent:** You review the digest and decide per item: `import`, `postpone`, or `ignore`. Imported files are copied to `sources/import/` with write-once timestamping and cognitivized immediately.
+* **No background daemons:** nothing runs on session start. A refresh happens only when you ask for it with `--sync [alias]`.
+* **Mirrors and imports:** models of the origin are mirrored under `sources/sync/<alias>/`; other files become write-once members of `sources/import/<alias>/`.
+* **Recorded refresh:** the command prints a `propose_changeset` payload with the before/after sha256 of every changed file, and your agent applies it. See [Synchronize an external origin](../how-to/synchronize-an-origin.md).
 
 ---
 

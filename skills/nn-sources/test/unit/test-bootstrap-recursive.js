@@ -83,6 +83,7 @@ async function runAsync() {
     }
     const entrypoint = fs.readFileSync(path.join(destParent, 'Proj', 'domaiNN_NN.md'), 'utf8');
     check(/sources_dir:: sources\/\n/.test(entrypoint), 'entrypoint sources_dir:: names sources/');
+    check(!/Watch Roots/i.test(entrypoint), 'entrypoint declares no External Watch Roots block');
     check(
       !/This is an \*\*iNNfo document\*\*/.test(entrypoint) && !/> \[!NOTE\]/.test(entrypoint),
       'entrypoint carries no boilerplate document badge',

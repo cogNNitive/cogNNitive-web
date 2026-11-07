@@ -2,11 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Persistent decision state for the session-start external watch root digest.
- *
- * Stores one entry per content-addressed watch-root item, keyed by
- * `(root, relPath, sha256)`, so a decision sticks to the exact bytes it was made
- * for and an edited file is re-offered under a new key.
+ * Persistent workspace-local state: convergence records per source family and the
+ * content hashes a user has ignored. The file keeps its historic name.
  *
  * Lives at `<projectDir>/.cognnitive/watch-digest.json` — a workspace-local cache,
  * never a source, never a citation target.
@@ -15,24 +12,6 @@ const path = require('path');
 const STATE_REL_DIR = '.cognnitive';
 const STATE_FILE = 'watch-digest.json';
 const STATE_VERSION = 1;
-
-/** Statuses that must not be offered again. */
-const SUPPRESSED_STATUSES = new Set(['ignore', 'import']);
-
-/** Accepted decision values. */
-const DECISION_STATUSES = ['ignore', 'postpone', 'import'];
-
-/**
- * Builds the content-addressed digest key for a watch-root item.
- * @param {string} root
- * @param {string} relPath
- * @param {string} sha256
- * @returns {string}
- */
-function digestKey(root, relPath, sha256) {
-  const normalize = (value) => String(value == null ? '' : value).replace(/\\/g, '/');
-  return `${normalize(root)}::${normalize(relPath)}::${normalize(sha256)}`;
-}
 
 /**
  * Absolute path to the digest state file for a workspace.
@@ -103,100 +82,6 @@ function saveState(projectDir, state) {
 }
 
 /**
- * Records a decision for a digest key. Idempotent for identical input.
- * @param {string} projectDir
- * @param {string} key
- * @param {'ignore' | 'postpone' | 'import'} status
- * @param {string} [note]
- * @returns {object} the updated state
- */
-function decide(projectDir, key, status, note = '') {
-  if (!DECISION_STATUSES.includes(status)) {
-    throw new Error(`Unknown digest decision "${status}". Expected one of: ${DECISION_STATUSES.join(', ')}.`);
-  }
-  const state = loadState(projectDir);
-  state.items[key] = {
-    status,
-    decidedAt: new Date().toISOString(),
-    note: note || '',
-  };
-  saveState(projectDir, state);
-  return state;
-}
-
-/**
- * Renders the digest: the watch-root scan filtered down to items awaiting a
- * decision (suppressed hashes dropped, postponed ones kept).
- *
- * @param {{ roots?: Array<any>, classified?: { new?: Array<any>, evolved?: Array<any>, alerts?: Array<any>, disconnected?: Array<string> } }} scanResult
- * @param {{ items: Record<string, { status: string }> }} state
- * @returns {{
- *   generatedAt: string,
- *   roots: Array<{ root: string, cadence: string, status: string }>,
- *   disconnected: Array<string>,
- *   items: Array<object>
- * }}
- */
-function buildDigest(scanResult, state) {
-  const classified = (scanResult && scanResult.classified) || {};
-  const itemsState = (state && state.items) || {};
-  const candidates = [
-    ...(classified.new || []),
-    ...(classified.evolved || []),
-    ...(classified.alerts || []),
-  ];
-
-  const items = [];
-  for (const item of candidates) {
-    const key = digestKey(item.root, item.relPath, item.sha256);
-    const record = itemsState[key];
-    if (record && SUPPRESSED_STATUSES.has(record.status)) continue;
-    items.push({
-      key,
-      root: item.root,
-      relPath: item.relPath,
-      baseName: item.baseName,
-      fullPath: item.fullPath,
-      cadence: item.cadence,
-      sha256: item.sha256,
-      deltaStatus: item.deltaStatus,
-      sizeBytes: item.sizeBytes,
-    });
-  }
-
-  return {
-    generatedAt: new Date().toISOString(),
-    roots: ((scanResult && scanResult.roots) || []).map((r) => ({
-      root: r.root,
-      cadence: r.cadence,
-      status: r.status,
-    })),
-    disconnected: classified.disconnected || [],
-    items,
-  };
-}
-
-/**
- * Finds a scan item by its digest key across every classified bucket.
- * @param {any} scanResult
- * @param {string} key
- * @returns {object | null}
- */
-function findItemByKey(scanResult, key) {
-  const classified = (scanResult && scanResult.classified) || {};
-  const all = [
-    ...(classified.new || []),
-    ...(classified.evolved || []),
-    ...(classified.alerts || []),
-    ...(classified.unchanged || []),
-  ];
-  for (const item of all) {
-    if (digestKey(item.root, item.relPath, item.sha256) === key) return item;
-  }
-  return null;
-}
-
-/**
  * Reads the recorded convergence state for one source family.
  * @param {string} projectDir
  * @param {string} family
@@ -244,15 +129,10 @@ module.exports = {
   STATE_REL_DIR,
   STATE_FILE,
   STATE_VERSION,
-  DECISION_STATUSES,
-  digestKey,
   statePath,
   loadState,
   serializeState,
   saveState,
-  decide,
-  buildDigest,
-  findItemByKey,
   getConvergence,
   recordConvergence,
   ignoredShas,

@@ -100,6 +100,9 @@ var nnAddress = (() => {
     }
     return CORE_BLUEPRINT_ROLE[bp] ?? "knowledge";
   }
+  function isNNName(nameOrPath) {
+    return NN_SUFFIX_RE.test(baseOf(nameOrPath));
+  }
 
   // iNNfo/packages/nn-core/src/address/grammar.ts
   var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
@@ -495,6 +498,25 @@ var nnAddress = (() => {
     };
   }
 
+  // iNNfo/packages/nn-core/src/sync/address.ts
+  var SYNC_DIR = "sources/sync";
+  function parseMirrorAddress(raw) {
+    const value = String(raw ?? "").trim();
+    const at = value.indexOf("@");
+    if (at === -1) return null;
+    const location = value.slice(0, at);
+    if (location.includes("\\") || !location.startsWith(`${SYNC_DIR}/`)) return null;
+    const segments = location.slice(SYNC_DIR.length + 1).split("/");
+    if (segments.length < 2) return null;
+    if (segments.some((s) => s === "" || s === "." || s === "..")) return null;
+    const path = segments.slice(1).join("/");
+    if (!isNNName(path) || !/\.md$/i.test(path)) return null;
+    const unit = parseUnit(value.slice(at + 1));
+    if ("code" in unit) return null;
+    if (unit.kind !== "element" && unit.kind !== "body") return null;
+    return { alias: segments[0], path, unit };
+  }
+
   // iNNfo/packages/nn-core/src/console/unit-address.ts
   function assertIdentifier(value, name) {
     const trimmed = (value ?? "").trim();
@@ -569,10 +591,24 @@ var nnAddress = (() => {
     }
     return true;
   }
+  function parseMirror(trimmed) {
+    const mirror = parseMirrorAddress(trimmed);
+    if (!mirror) return null;
+    const unit = mirror.unit;
+    return {
+      kind: "source",
+      filePath: `${SYNC_DIR}/${mirror.alias}/${mirror.path}`,
+      slug: unit.kind === "element" || unit.kind === "body" ? unit.slug : void 0,
+      subunits: unit.kind === "element" && unit.field ? [unit.field] : [],
+      raw: trimmed
+    };
+  }
   function parseUnitAddress(address) {
     if (!address || typeof address !== "string") return null;
     const trimmed = address.trim();
     if (!trimmed) return null;
+    const mirror = parseMirror(trimmed);
+    if (mirror) return mirror;
     if (trimmed === "domaiNN_NN.md") {
       return { kind: "domain", modelId: trimmed, subunits: [] };
     }

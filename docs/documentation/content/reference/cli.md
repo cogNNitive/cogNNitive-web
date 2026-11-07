@@ -20,8 +20,7 @@ node skills/nn-sources/scripts/index.js <flags> --src <project-dir>
 | `--scan` | Walk `sources/import/` and `sources/conversations/` recursively and cognitivize every raw file without an up-to-date sidecar. Non-interactive: never mutates sources. |
 | `--check-impact` | Verify every change `evidence` in `kNNowledge/` resolves to an existing file and anchor; print `[IMPACT WARNING]` for drifted anchors. Exits non-zero on drift errors. |
 | `--import-url <url>` | Download a resource into `sources/import/` as a write-once, UTC-suffixed family member. |
-| `--scan-external` | Scan the `## NN External Watch Roots:` declared in the `domaiNN_NN.md` entrypoint and classify changes (`NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, `DISCONNECTED`). |
-| `--watch-digest` / `--digest-decide <key> --status <ignore\|postpone\|import>` | Render, then decide, the session-start digest of pending external changes. |
+| `--sync [alias]` | Refresh the `## NN Synchronization:` elements declared in `sources/sources_NN.md` (all active ones, or one alias): mirror models under `sources/sync/<alias>/`, land other files under `sources/import/<alias>/`, and print a `propose_changeset` payload recording the before/after sha256. Exits 1 when an origin is unreachable. |
 | `--curate-csv <path> --key <column> [--dedup]` | Produce a citation-ready RFC-4180 CSV with a unique first-column key under `artifacts/curated/`. |
 | `--converge <family> [--plan]` / `--converge-mark <family> --version <V_x-y-z>` | Compare the two newest members of a timestamped source family and emit a read-only proposal, optionally as a `propose_changeset` payload; mark a proposal applied. |
 | `--gc [--json]` / `--gc --apply --yes --paths <paths>` | List superseded, uncited write-once family members (dry run), or delete the confirmed paths. |

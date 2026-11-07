@@ -27,7 +27,7 @@ const CONVERSATIONS_PREFIX = 'sources/conversations/';
 /** Origin and descriptive keys carried from a web import or a raw markdown file into the sidecar. */
 const METADATA_KEYS = [
   'source_type', 'session_id', 'origin_transcript',
-  'source_url', 'origin_uri', 'downloaded_at',
+  'origin_uri', 'retrieved_at', 'synchronization',
   'title', 'description', 'author', 'tags',
 ];
 

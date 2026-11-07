@@ -141,7 +141,7 @@ If you have a docx or pdf file in the source folder, when running the scan:
 **Expected result:**
 - ✅ OpenCode runs `node scripts/index.js --import-url "<url>" --scan --src test-docs`
 - ✅ The downloaded file appears under `test-docs/sources/import/` with a UTC suffix (`<name>_<YYYYMMDDTHHmmssZ>.<ext>`; extension inferred from `Content-Type`, falling back to the URL)
-- ✅ After the scan, the file's sidecar (`<name>_<stamp>.<ext>_sidecar_NN.md`) includes `source_url` and `downloaded_at` in its frontmatter
+- ✅ After the scan, the file's sidecar (`<name>_<stamp>.<ext>_sidecar_NN.md`) includes `origin_uri` and `retrieved_at` in its frontmatter
 - ✅ Repeating the import of unchanged content reports it as already imported and writes no new file
 - ✅ For an HTML page, `title`/`description`/`author` appear in the sidecar frontmatter when discoverable
 - ✅ For a PDF, the existing `.pdf` handling (pdf-parse) runs and, if present, `info.Title`/`info.Author` populate `title`/`author`

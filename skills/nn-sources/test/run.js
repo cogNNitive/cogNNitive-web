@@ -134,10 +134,10 @@ async function main() {
     totalPassed += cliCognitivizeResult.passed;
     totalFailed += cliCognitivizeResult.failed;
 
-    const externalScannerTest = require('./unit/test-external-scanner');
-    const externalScannerResult = await externalScannerTest.run();
-    totalPassed += externalScannerResult.passed;
-    totalFailed += externalScannerResult.failed;
+    const syncTest = require('./unit/test-sync');
+    const syncResult = await syncTest.run();
+    totalPassed += syncResult.passed;
+    totalFailed += syncResult.failed;
 
     const watchDigestStoreTest = require('./unit/test-watch-digest-store');
     const watchDigestStoreResult = await watchDigestStoreTest.run();

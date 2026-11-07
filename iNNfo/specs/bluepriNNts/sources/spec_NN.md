@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-3-3"
+blueprint_version: "V_0-4-0"
 title: "Sources Catalog App"
 relationship_types:
   hierarchy:
@@ -25,6 +25,7 @@ nature:
 # NN index
 
 * [[Source]]
+* [[Synchronization]]
 
 # NN Concept Definition
 
@@ -33,6 +34,13 @@ icon:: file-input
 type:: list
 color:: teal
 weight:: 100
+
+## NN Concept Definition: Synchronization
+icon:: refresh-cw
+type:: list
+color:: teal
+weight:: 90
+description:: Declares an origin (a file, a folder or a URL) that `nn-sources --sync` lands into this domaiNN on demand: models as mirrors under `sources/sync/<alias>/`, other files as sources under `sources/import/<alias>/`.
 
 # NN Field Definition
 
@@ -49,9 +57,26 @@ options:: [local_file, url_snapshot, dynamic_feed, git_repo, api_export]
 description:: Polymorphic origin category of the primary source.
 
 ## NN Field Definition: origin_uri
-concept:: Source
+concept:: [Source, Synchronization]
 type:: string
 description:: Universal identifier of origin: local path, web URL (https://), or git repository URI.
+
+## NN Field Definition: alias
+concept:: Synchronization
+type:: string
+description:: Folder-safe slug that names the landing folders `sources/sync/<alias>/` and `sources/import/<alias>/`. Unique within the catalog.
+
+## NN Field Definition: kind
+concept:: Synchronization
+type:: select
+options:: [file, folder]
+description:: Whether the origin is a single file or a folder. A URL origin is always a file.
+
+## NN Field Definition: state
+concept:: Synchronization
+type:: select
+options:: [active, paused]
+description:: A paused Synchronization is skipped by `nn-sources --sync`.
 
 ## NN Field Definition: format
 concept:: Source
@@ -118,3 +143,17 @@ tags:: [tag1, tag2]
 status:: ready
 source_model:: sources/import/document.pdf_sidecar_NN.md
 ```
+
+### Synchronization
+
+```markdown
+# NN Synchronization
+
+## NN Synchronization: Organization
+alias:: org
+origin_uri:: ../organization
+kind:: folder
+state:: active
+```
+
+A Synchronization is a declaration, not a copy. `nn-sources --sync [alias]` lands the origin on demand: a folder holding a `domaiNN_NN.md` is mirrored model by model, any other folder splits into mirrored models and imported raw files. A consumer points at a mirrored element with a `reference` field whose value is a path address such as `sources/sync/org/organization_NN.md@manager`.

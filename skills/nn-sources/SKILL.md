@@ -56,7 +56,7 @@ Execute the canonical activation gate defined in `nn-preflight` (session greetin
 **Canonical Source Taxonomy & Citation Contract**
 
 1. **Primary Source**: the immutable, original evidence files under
-   `sources/import/` or watched via `## NN External Watch Roots:` (read-only).
+   `sources/import/` or kept in sync with an external origin through a `## NN Synchronization:` element (`nn-sources --sync`).
 2. **Normalized / Secondary Source**: cognitivized in place — a co-located sidecar
    `<file>.<ext>_sidecar_NN.md` carries origin metadata (`source_file`, `sha256`,
    `size_bytes`, `source_format`, `normalized_at`); binary sources also carry the
@@ -155,7 +155,7 @@ Every project workspace MUST adhere to the following structure:
 > **No root `index.md`**: the workspace root index was retired (#225). The parser never read it as an entrypoint, and the canonical index is the `# NN kNNowledge` block inside `domaiNN_NN.md`. `nn-sources` no longer writes a root `index.md`.
 
 
-**Cognitivize in place.** Folders are write destinations; a file's role comes from its name. There is no mirror tree: the scanner (`--scan`) walks `sources/import/` and `sources/conversations/` recursively, and for every raw file without an up-to-date sidecar it writes a co-located `<file>.<ext>_sidecar_NN.md` through the one core operation `cognitivize` (the same one behind `--cognitivize <file|dir>` and the MCP `cognitivize` tool). The raw file is never moved, renamed or rewritten. Change detection uses the sha256 of the raw bytes recorded in the sidecar: when the bytes change, `--scan` refreshes the sidecar in place (no snapshot is taken), and the downstream `[IMPACT WARNING]` audit runs. Imports (`--import-url`, `--scan-external`) and conversation promotion are write-once: they never overwrite, a changed external file lands as a new UTC-suffixed family member (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`) and identical bytes are deduplicated. Files you drop into `sources/import/` by hand keep their names (unsuffixed family members). Retired layouts (the old normalized mirror, archive, export and original folders) are never read or written by the runtime; an old domaiNN is upgraded with `nn-update` (see §2i). When a raw file disappears from disk, its sidecar is reported as an orphan warning and preserved; nothing is deleted without explicit user consent (`--unlink`, `--gc`), and a non-interactive `--scan` never mutates anything (Zero Unilateral Mutation).
+**Cognitivize in place.** Folders are write destinations; a file's role comes from its name. There is no mirror tree: the scanner (`--scan`) walks `sources/import/` and `sources/conversations/` recursively, and for every raw file without an up-to-date sidecar it writes a co-located `<file>.<ext>_sidecar_NN.md` through the one core operation `cognitivize` (the same one behind `--cognitivize <file|dir>` and the MCP `cognitivize` tool). The raw file is never moved, renamed or rewritten. Change detection uses the sha256 of the raw bytes recorded in the sidecar: when the bytes change, `--scan` refreshes the sidecar in place (no snapshot is taken), and the downstream `[IMPACT WARNING]` audit runs. Imports (`--import-url`, `--sync`) and conversation promotion are write-once: they never overwrite, a changed external file lands as a new UTC-suffixed family member (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`) and identical bytes are deduplicated. Files you drop into `sources/import/` by hand keep their names (unsuffixed family members). Retired layouts (the old normalized mirror, archive, export and original folders) are never read or written by the runtime; an old domaiNN is upgraded with `nn-update` (see §2i). When a raw file disappears from disk, its sidecar is reported as an orphan warning and preserved; nothing is deleted without explicit user consent (`--unlink`, `--gc`), and a non-interactive `--scan` never mutates anything (Zero Unilateral Mutation).
 
 Then run:
 ```bash
@@ -171,7 +171,7 @@ node scripts/index.js --src "<source-folder>" --dest "<destination-parent-folder
 **Primary raw files live in `sources/import/`. The tool never moves, renames, or deletes anything there; it reads the raw bytes and writes a co-located sidecar next to each file.**
 
 1. **Check if `sources/import/` exists** inside the project directory. If not, ask the user and create it: `mkdir sources/import`
-2. **Copy files into `sources/import/`** (preserve originals in-place; DO NOT move or delete user files without consent). The user may organize subfolders freely — sidecars simply sit next to their raw file, so no structure is mirrored anywhere. Files placed by hand keep their names; files brought in by `--import-url`, `--scan-external` or conversation promotion are written write-once with a UTC suffix.
+2. **Copy files into `sources/import/`** (preserve originals in-place; DO NOT move or delete user files without consent). The user may organize subfolders freely — sidecars simply sit next to their raw file, so no structure is mirrored anywhere. Files placed by hand keep their names; files brought in by `--import-url`, `--sync` or conversation promotion are written write-once with a UTC suffix.
 3. **Raw media (audio/video/images)**:
    `.mp3`, `.wav`, `.png`, `.jpg` and similar files are not converted by the scanner: `--scan` reports them as skipped (needs manual action) and `nn-preflight` lists un-transcribed media as informational `raw-media`. To make the content citable, place a transcript or description as a text source (`.txt`, `.md`, `.srt`, `.vtt`...) in `sources/import/` and cognitivize it. Raw media is kept untouched; no automatic same-stem pairing exists.
 4. **Sidecar with Origin-Metadata Frontmatter**:
@@ -268,43 +268,29 @@ When an existing source file is modified in `sources/import/`, its SHA-256 hash 
    ```
    Inspects every Level 3 model in `kNNowledge/`, parses the `evidence` of every applied change, and verifies that the cited file exists (a domaiNN-relative path) AND that the cited anchor (`@## Heading`, `@RowID&col` or a JSON Pointer) is present. Reports errors for drifted or missing anchors along with fuzzy suggestions for closest matching headings. Exits non-zero if drift errors are detected.
 
-#### 2a-3. External Watch Roots & Immutable Timestamped Sources (`--scan-external`)
+#### 2a-3. Synchronizations (`--sync [alias]`)
 
-Workspaces can watch external file drops without daemons or external mutations:
+A domaiNN can keep a local copy of an external file or folder, refreshed only when asked (no daemon, no background process, no session-start scan).
 
-1. **Declarative Watch Roots in the domaiNN entrypoint**:
+1. **Declare it in the sources catalog `sources/sources_NN.md`** (scaffolded by `init_domain`):
    ```markdown
-   ## NN External Watch Roots:
-   - Root: "D:/External_Drops/Client_Inputs"
-     Cadence: "dynamic"
-     Recursive: true
-     Filter: ["*.pdf", "*.docx", "*.xlsx", "*.csv", "*.json"]
-   - Root: "Z:/Vault/Legal"
-     Cadence: "static"
-     Recursive: false
-     Filter: ["*.pdf"]
+   ## NN Synchronization: Organization
+   alias:: org
+   origin_uri:: D:/Shared/Organization
+   kind:: folder
+   state:: active
    ```
-2. **On-Demand Scan with Fast Path**:
+   `alias` is a slug (`SYNC_ALIAS_INVALID` / `SYNC_ALIAS_DUPLICATE` otherwise), `kind` is `file` or `folder`, `state` is `active` or `paused`. An `https://` `origin_uri` is allowed for `kind: file` only.
+2. **Refresh on request**:
    ```bash
-   node scripts/index.js --scan-external --src "<project-dir>"
+   node scripts/index.js --sync [alias] --src "<project-dir>"
    ```
-   Inspects external file metadata (`mtimeMs` and `size`) to avoid unnecessary disk I/O, hashes changed files, and classifies changes (`NEW`, `EVOLVED_DYNAMIC`, `STATIC_ALERT`, `DISCONNECTED`).
-3. **Write-Once Timestamped Ingestion (UTC `YYYYMMDDTHHmmssZ`)**:
-   Every imported file (any cadence: the `static`/`dynamic` cadence only sets how often a root is re-checked) is copied verbatim into `sources/import/<stem>_<YYYYMMDDTHHmmssZ>.<ext>` and cognitivized in place (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>_sidecar_NN.md` next to it). Identical bytes are deduplicated against the latest member of the family; changed bytes add a new member and never touch the earlier ones, so existing citations remain permanently valid. Watch roots are only read, never written.
-4. **Source Family Evolution & Impact Guidance**:
-   The impact checker detects when models reference older snapshots of an evolving source family and advises when newer snapshots are available.
-
-#### 2a-3b. Session-Start Digest (`--watch-digest` / `--digest-decide`)
-
-A domaiNN that declares `## NN External Watch Roots:` can be checked **at session start**, not only before authoring. `nn` offers one digest of what changed and lets the user decide per item.
-
-1. **Machine-readable scan** — `node scripts/index.js --scan-external --json` prints the classified roots as stable JSON (changed items only).
-2. **Digest** — `node scripts/index.js --watch-digest [--json]` renders the scan filtered to items still awaiting a decision. It is **read-only**: it never writes to `sources/`. It prints nothing when no roots are declared, so it never blocks or delays session start.
-3. **Decide** — `node scripts/index.js --digest-decide "<key>" --status <ignore|postpone|import> [--note "<text>"]`.
-   - `ignore` — suppress this exact content (by sha256) permanently.
-   - `postpone` — re-offer next session (default).
-   - `import` — copy the file as a write-once, UTC-suffixed family member into `sources/import/` and cognitivize it.
-4. **State** — decisions persist in `.cognnitive/watch-digest.json` (workspace-local cache; never a source, never a citation target), keyed by `(root, relPath, sha256)`. An edited file (new hash) is re-offered; an unchanged, ignored file is not.
+   Without an alias every `active` Synchronization is refreshed (a `paused` one is skipped) and mirrors without a declaration are removed. The origin is only read, never written; an origin inside the consumer, or the consumer inside the origin, is refused.
+3. **Where things land**:
+   - Models (`_NN.md` files the origin itself would discover) are mirrored in place under `sources/sync/<alias>/<origin-relative path>`; a file that vanished at the origin is deleted from the mirror. Never edit a mirror by hand.
+   - Every other file of a plain folder or a URL becomes a write-once member under `sources/import/<alias>/<origin-relative dir>/` (`<stem>_<YYYYMMDDTHHmmssZ>.<ext>`), cognitivized in place; its sidecar records `synchronization`, `origin_uri`, `origin_path` and `retrieved_at`. Identical bytes are deduplicated and changed bytes add a new member, so existing citations stay valid. A domaiNN origin (`<origin>/domaiNN_NN.md`) contributes models only.
+4. **Record the refresh**: when something changed the CLI prints a ready `propose_changeset` payload (one `comment` change, `target: sources/sync/<alias>`, `evidence: decision`, per-file `path before -> after` sha256). Apply it through `propose_changeset` + `apply_change`; the CLI never writes `changes/`. No difference means no payload. An unreachable origin keeps the existing mirror, prints a warning and exits 1.
+5. **Consume a mirrored model** with a `type:: reference` field holding the path form `sources/sync/<alias>/<path>_NN.md@<slug>`; `check_domain` reports `REF_ELEMENT_NOT_FOUND` when the origin renames the target. Freeze element slugs at the origin (`migrate-domain.js --freeze-slugs`, see `nn-update`) so references survive title edits.
 
 #### 2a-4. Curating a CSV for Row-Level Citation
 
@@ -351,7 +337,7 @@ node scripts/index.js --converge <family> [--json] [--src <project-dir>]
 - Compares the two newest members of the family (`<family>_<UTC stamp>.csv|json`,
   ordered by name) under `sources/` and prints added / changed / removed keys.
 - Removed keys are **flag-only** — never deleted.
-- Reuses `.cognnitive/watch-digest.json`: an `ignore`d item is not re-proposed.
+- Reuses the convergence state in `.cognnitive/watch-digest.json`: an `ignore`d item is not re-proposed.
 - **Idempotent**: an already-applied proposal (or identical snapshots) yields an
   empty proposal.
 
@@ -408,7 +394,7 @@ When the user pastes a URL in chat and wants it ingested:
    ```bash
    node scripts/index.js --import-url "<url>" --scan --src "<project-dir>"
    ```
-   `--import-url` downloads the resource (content type decides the extension, from the response's `Content-Type` header or the URL as fallback) and saves it under `sources/import/` as a write-once, UTC-suffixed family member (a repeat download of identical bytes is reported as already imported and writes nothing). Chained with `--scan`, it immediately cognitivizes it in place, recording `source_url`/`downloaded_at` (and, for HTML pages, best-effort `title`/`description`/`author` scraped from `<title>`, Open Graph tags, meta tags, and JSON-LD) in the sidecar frontmatter.
+   `--import-url` downloads the resource (content type decides the extension, from the response's `Content-Type` header or the URL as fallback) and saves it under `sources/import/` as a write-once, UTC-suffixed family member (a repeat download of identical bytes is reported as already imported and writes nothing). Chained with `--scan`, it immediately cognitivizes it in place, recording `origin_uri`/`retrieved_at` (and, for HTML pages, best-effort `title`/`description`/`author` scraped from `<title>`, Open Graph tags, meta tags, and JSON-LD) in the sidecar frontmatter.
 3. Confirm to the user that the file landed in `sources/import/`, then continue with the normal scan/cognitivize flow.
 4. Downloaded PDFs go through the same existing `.pdf` handling as a manually dropped PDF (pdf-parse, on-demand install); if pdf-parse's own `info.Title`/`info.Author` are available, they populate the same optional sidecar frontmatter keys.
 

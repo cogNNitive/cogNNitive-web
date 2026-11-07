@@ -63,24 +63,8 @@ The `(Recommended)` tag is dynamically assigned to the first actionable stage ba
 [x] Cancel / Exit
 ```
 
-### Contextual Sources Sub-option (External Watch Roots)
-The `[s] Sources` stage surfaces the external watch-roots capability **contextually**, driven by `watch_roots.declared` from the domain probe. This MUST NOT add a new top-level menu letter: the `[s][m][r][p][h][x]` shape and the `(Recommended)` selection are fixed.
-
-- When `watch_roots.declared > 0`, `[s] Sources` offers **Scan external watch roots** — runs the on-demand scan and the session-start digest (`node skills/nn-sources/scripts/index.js --scan-external`).
-- When `watch_roots.declared === 0`, `[s] Sources` offers **Declare a watch root** — a declarative `## NN External Watch Roots:` block in the `domaiNN_NN.md` entrypoint (folders are read-only; no daemon or background process).
-- A probe that omits `watch_roots` (older preflight) is treated as `0` and the menu is presented unchanged.
-
-### Session-Start Watch Digest
-After the activation gate, when `watch_roots.declared > 0`, `nn` runs the read-only digest and presents pending items for a per-item decision:
-
-```bash
-node skills/nn-sources/scripts/index.js --watch-digest
-```
-
-Present each item with `ignore` / `postpone` / `import` (applied via `--digest-decide "<key>" --status <...>`). The digest never writes to `sources/`. If it fails or is unavailable, swallow the error and proceed to the menu — it MUST NOT block the session. When `watch_roots.declared === 0`, the digest is not invoked.
-
 ### Help Capabilities Catalog
-`[h] Help` lists the platform capabilities, including **Watched folders** — ingest new or evolved files from external directories without daemons (declarative roots, on-demand scan, session-start digest).
+`[h] Help` lists the platform capabilities, including **Synchronizations** - keep a local mirror of an external file or folder up to date with an explicit `node skills/nn-sources/scripts/index.js --sync [alias]` (no daemons, no background process, no session-start scan). See `nn-sources` for the instruction.
 
 ---
 

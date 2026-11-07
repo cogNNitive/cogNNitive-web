@@ -32,7 +32,7 @@ test('the committed registry is exactly what the blueprint generates', () => {
 
 test('the registry carries the blueprint identity and the conditional-fields table', () => {
   assert.equal(registry.blueprint, 'coNNtent');
-  assert.equal(registry.blueprint_version, 'V_0-15-0');
+  assert.equal(registry.blueprint_version, 'V_0-15-1');
   assert.deepEqual(registry.conditional_fields, {
     avatar: ['asset', 'prompt'],
     media: ['asset', 'prompt'],

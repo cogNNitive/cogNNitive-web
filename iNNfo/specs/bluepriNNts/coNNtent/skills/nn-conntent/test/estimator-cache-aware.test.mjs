@@ -251,3 +251,72 @@ test('the plan hash is stable and price-sensitive', () => {
     'a price change invalidates a stale approval',
   );
 });
+
+test('the estimator resolves Series Scene Kinds when scriptDir / scriptPath is provided', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-estimator-kind-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'domaiNN_NN.md'), `---
+level: 3
+title: "Test Domain"
+---
+# NN Domain
+`, 'utf8');
+
+    const seriesDir = path.join(dir, 'series', 'test-series');
+    const epDir = path.join(seriesDir, 'assets', 'ep-01');
+    fs.mkdirSync(epDir, { recursive: true });
+
+    const seriesFile = path.join(seriesDir, 'series_coNNtent_NN.md');
+    fs.writeFileSync(seriesFile, `---
+level: 3
+scope: true
+title: "Test Series"
+---
+
+# NN Series
+
+## NN Series: Test
+slug:: test
+language:: es
+
+# NN Scene Kind
+
+## NN Scene Kind: Gancho
+slug:: gancho
+`, 'utf8');
+
+    const epFile = path.join(epDir, 'ep01_coNNtent_NN.md');
+    fs.writeFileSync(epFile, `---
+level: 3
+parent_spec:
+  name: "coNNtent_V_0-15-0"
+  url: "https://example.invalid/coNNtent/spec_NN.md"
+knowledge_version: "V_0-15-0"
+title: "Episode 1"
+---
+
+# NN Video
+
+## NN Video: Episode 1
+slug:: ep-01
+language:: es
+
+# NN Scene
+
+## NN Scene: Hook
+slug:: hook
+kind:: Gancho
+voice:: demo-voice
+voice_model:: minimax/speech-2.8-hd
+
+Hook scene narration.
+`, 'utf8');
+
+    const est = estimateScriptCost(epFile);
+    assert.equal(est.scenes.length, 1);
+    assert.equal(est.summary.totalEstimatedDurationSeconds, 3);
+    assert.equal(est.scenes[0].sceneId, 'scene_hook');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
