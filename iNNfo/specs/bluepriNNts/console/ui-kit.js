@@ -867,6 +867,11 @@
     btn.setAttribute('type', 'button')
     btn.setAttribute('data-origin', String(variant))
     btn.setAttribute('data-field', String(data.field == null ? '' : data.field))
+    // The source the icon stands for, so a host (or a test) can tell which citation
+    // it opens without clicking it.
+    var citeEntry = data.entry && typeof data.entry === 'object' ? data.entry : null
+    var citeSource = citeEntry ? citeEntry.path || citeEntry.source : ''
+    if (citeSource) btn.setAttribute('data-nn-source', String(citeSource))
     var label = 'Origin: ' + (data.field == null ? '' : data.field)
     btn.setAttribute('aria-label', label)
     btn.setAttribute('title', label)
@@ -2874,6 +2879,12 @@
     tabBtnHistory.setAttribute('type', 'button')
     var tabBtnConnections = makeEl(doc, 'button', 'nn-modal-tab-btn', 'Connections')
     tabBtnConnections.setAttribute('type', 'button')
+    // Stable hooks: the tab key (data-nn-tab) and the selected state (aria-selected,
+    // kept by showTab) are the contract; the label and class names are presentation.
+    tabBtnView.setAttribute('data-nn-tab', 'view')
+    tabBtnEdit.setAttribute('data-nn-tab', 'edit')
+    tabBtnHistory.setAttribute('data-nn-tab', 'history')
+    tabBtnConnections.setAttribute('data-nn-tab', 'connections')
     navTabs.appendChild(tabBtnView)
     navTabs.appendChild(tabBtnEdit)
     navTabs.appendChild(tabBtnHistory)
@@ -3202,6 +3213,7 @@
     function showTab(name) {
       Object.keys(tabButtons).forEach(function (k) {
         tabButtons[k].className = 'nn-modal-tab-btn' + (k === name ? ' active' : '')
+        tabButtons[k].setAttribute('aria-selected', k === name ? 'true' : 'false')
         tabPanels[k].style.display = k === name ? 'block' : 'none'
       })
       actions.style.display = name === 'edit' ? '' : 'none'
@@ -4731,6 +4743,7 @@
     var doc = resolveDoc(opts)
     var dlg = makeEl(doc, 'dialog', 'nn-edit-modal nn-ku-info-panel')
     dlg.setAttribute('data-nn-component', 'ku-info-panel')
+    if (descriptor.address) dlg.setAttribute('data-nn-address', String(descriptor.address))
     dlg.setAttribute('role', 'dialog')
     dlg.setAttribute('aria-modal', 'true')
 
@@ -4765,6 +4778,10 @@
     tabBtnHistory.setAttribute('type', 'button')
     var tabBtnConnections = makeEl(doc, 'button', 'nn-modal-tab-btn', 'Connections')
     tabBtnConnections.setAttribute('type', 'button')
+    tabBtnView.setAttribute('data-nn-tab', 'view')
+    tabBtnEdit.setAttribute('data-nn-tab', 'edit')
+    tabBtnHistory.setAttribute('data-nn-tab', 'history')
+    tabBtnConnections.setAttribute('data-nn-tab', 'connections')
     navTabs.appendChild(tabBtnView)
     navTabs.appendChild(tabBtnEdit)
     navTabs.appendChild(tabBtnHistory)
@@ -4835,9 +4852,11 @@
     function showTab(name) {
       Object.keys(tabButtons).forEach(function (k) {
         tabButtons[k].className = 'nn-modal-tab-btn' + (k === name ? ' active' : '')
+        tabButtons[k].setAttribute('aria-selected', k === name ? 'true' : 'false')
         tabPanels[k].style.display = k === name ? 'block' : 'none'
       })
     }
+    showTab('view')
     tabBtnView.addEventListener('click', function () { showTab('view') })
     tabBtnEdit.addEventListener('click', function () { showTab('edit') })
     tabBtnHistory.addEventListener('click', function () { showTab('history') })

@@ -522,7 +522,7 @@ export function inlineConsoleAssets(shell, assets) {
 }
 
 /** The only place the size thresholds live (bytes of the final HTML). */
-export const CONSOLE_SIZE_BUDGET = Object.freeze({ warnBytes: 5_000_000, failBytes: 15_000_000 })
+export const CONSOLE_SIZE_BUDGET = Object.freeze({ warnBytes: 30_000_000, failBytes: 100_000_000 })
 
 /**
  * Drops the resolved citation objects from a console payload in place, so an

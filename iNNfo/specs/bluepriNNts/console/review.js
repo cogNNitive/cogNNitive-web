@@ -867,6 +867,10 @@
           },
         },
       )
+      // Which unit this modal is for: the contract a host or a test reads instead of
+      // inferring it from the title or the DOM order.
+      modal.setAttribute('data-nn-element-id', String(anchorData.elementId == null ? '' : anchorData.elementId))
+      if (anchorData.field) modal.setAttribute('data-nn-field', String(anchorData.field))
       if (modalStack.length > 0) {
         modal.classList.add('nn-modal-nested')
         modal.setAttribute('data-nested-modal', 'true')

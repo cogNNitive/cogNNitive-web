@@ -162,6 +162,7 @@ function parseArgs(argv) {
     model: null,
     open: true,
     files: true,
+    changes: true,
   }
   const slice = argv.slice(2)
   for (let i = 0; i < slice.length; i++) {
@@ -182,6 +183,8 @@ function parseArgs(argv) {
       args.open = false
     } else if (a === '--no-files') {
       args.files = false
+    } else if (a === '--no-changes') {
+      args.changes = false
     } else if (a === '--new-view') {
       i++
       if (i < slice.length && !slice[i].startsWith('--')) args.newView = slice[i]
@@ -783,6 +786,43 @@ function isBuildOutputRel(rel) {
 // preview weight is also capped because the payload is inlined in one HTML file.
 const SNIPPET_TOTAL_BUDGET = 2 * 1024 * 1024
 
+// Change history is the heaviest part of the payload: every change becomes an
+// element and every element carries its history. Embed it only while it stays
+// under this budget; above it the console omits the history and shows a notice
+// with a copyable agent prompt.
+const CHANGES_EMBED_MAX_BYTES = 20 * 1024 * 1024
+const CHANGES_EMBED_MAX_COUNT = 5000
+
+function injectChangesNotice(html, info) {
+  const prompt = `This domain's console omits its change history because it is too large to embed (${info.count} changes, ${Math.round(info.bytes / 1e6)} MB). Use the agent to read the lineage and the change history for this domain (check_domain, read_lineage, query_units) and answer this: `
+  const banner = `
+<div id="nn-changes-omitted" style="position:fixed;right:16px;bottom:16px;z-index:99999;max-width:440px;background:#111827;color:#f9fafb;border:1px solid #374151;border-radius:10px;padding:12px 14px;font:13px/1.45 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)">
+  <div style="flex:1">
+    <strong>Change history omitted</strong><br>
+    This console embeds no change history (${info.count} changes) to keep it responsive. The history is in <code>changes/</code>; ask the agent to query it.
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button id="nn-copy-changes-prompt" type="button" style="cursor:pointer;border:0;border-radius:6px;padding:6px 10px;background:#3b82f6;color:#fff;font:inherit">Copy prompt</button>
+      <button id="nn-dismiss-changes-notice" type="button" style="cursor:pointer;border:1px solid #4b5563;border-radius:6px;padding:6px 10px;background:transparent;color:#e5e7eb;font:inherit">Dismiss</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var prompt = ${JSON.stringify(prompt)};
+  var b = document.getElementById('nn-copy-changes-prompt');
+  var d = document.getElementById('nn-dismiss-changes-notice');
+  var n = document.getElementById('nn-changes-omitted');
+  if (b) b.addEventListener('click', function(){
+    var done = function(){ b.textContent = 'Copied'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(prompt).then(done, done);
+    else { var t=document.createElement('textarea'); t.value=prompt; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(e){} t.remove(); done(); }
+  });
+  if (d && n) d.addEventListener('click', function(){ n.remove(); });
+})();
+</script>`
+  return html.replace(/<\/body>/i, () => banner + '\n</body>')
+}
+
 function snippetCharCap() {
   const fromHelper = payloadHelper && payloadHelper.EXCERPT_CHAR_CAP
   return Number.isFinite(fromHelper) && fromHelper > 0 ? fromHelper : 500
@@ -1180,6 +1220,16 @@ export async function writeConsole(opts = {}) {
   const changesets = payloadHelper.loadChangesetRecords
     ? await payloadHelper.loadChangesetRecords(root)
     : []
+  const changesBytes = Buffer.byteLength(JSON.stringify(changesets), 'utf8')
+  const changeCount = (Array.isArray(changesets) ? changesets : []).reduce(
+    (n, cs) => n + (Array.isArray(cs.changes) ? cs.changes.length : 0),
+    0,
+  )
+  const omitChanges =
+    opts.changes === false ||
+    changesBytes > CHANGES_EMBED_MAX_BYTES ||
+    changeCount > CHANGES_EMBED_MAX_COUNT
+  const payloadChangesets = omitChanges ? [] : changesets
 
   let domainViews
   try {
@@ -1302,7 +1352,7 @@ export async function writeConsole(opts = {}) {
       content: m.content,
       path: relPath,
       resolver,
-      changesets,
+      changesets: payloadChangesets,
       schema: modelSchemaResolution.schema,
       procedures: modelSchemaResolution.procedures,
     })
@@ -1462,11 +1512,11 @@ export async function writeConsole(opts = {}) {
 
   // Change B: materialize the `changes` collection (structure: members) — one unit per
   // `Change` across every batch document, the batch being the grouping. Read-only.
-  if (Array.isArray(changesets) && changesets.length > 0) {
+  if (Array.isArray(payloadChangesets) && payloadChangesets.length > 0) {
     const CHANGES_MODEL_ID = 'changes'
     const CHANGES_MODEL_TITLE = 'Changes'
     let changeUnitCount = 0
-    for (const cs of changesets) {
+    for (const cs of payloadChangesets) {
       const batch = (String(cs.path).split('/').pop() || '').replace(/\.[^/.]+$/, '')
       for (const c of cs.changes) {
         const id = `${batch}#${c.id}`
@@ -1578,24 +1628,31 @@ export async function writeConsole(opts = {}) {
           modelCount: modelSummaries.length,
           sourceCount: domainSources.size,
         },
+        ...(omitChanges
+          ? { changesOmitted: { count: changeCount, bytes: changesBytes } }
+          : {}),
       },
       elements: allElements,
       matrices: allMatrices,
       // D2: the domain's changesets, newest first by file stamp. Read-only, never
       // written into a model.
-      changes: (Array.isArray(changesets) ? changesets.slice() : []).sort((a, b) =>
+      changes: (Array.isArray(payloadChangesets) ? payloadChangesets.slice() : []).sort((a, b) =>
         String(b.path).localeCompare(String(a.path)),
       ),
       ...(filesData ? { files: filesData } : {}),
     },
   }
 
+  // The conditional `changesOmitted` spread above closes the inferred meta type, so
+  // widen it before adding the optional scope.
+  /** @type {Record<string, unknown>} */
+  const payloadMeta = domainPayload.model.meta
   if (scoped) {
     const scope = { models: [...scopeModelIds].sort(), label: scopeLabelOf(selected) }
     if (view) scope.view = view
-    domainPayload.model.meta.consoleScope = scope
+    payloadMeta.consoleScope = scope
   } else if (view) {
-    domainPayload.model.meta.consoleScope = { view: view }
+    payloadMeta.consoleScope = { view: view }
   }
 
   // Output location. A console (whole-domaiNN or model-scoped) owns ONE stable file
@@ -1615,10 +1672,9 @@ export async function writeConsole(opts = {}) {
   const outDirAbs = familyDir ? join(root, familyDir) : dirname(join(root, relativePath))
   const buildHtml = (generated) => {
     domainPayload.model.meta.generated = generated
-    let html = viewsLib.inlineConsoleAssets(
-      renderConsole(resolvedShell, null, config, domainPayload, outDirAbs, root),
-      preparedAssets,
-    )
+    let rendered = renderConsole(resolvedShell, null, config, domainPayload, outDirAbs, root)
+    if (omitChanges) rendered = injectChangesNotice(rendered, { count: changeCount, bytes: changesBytes })
+    let html = viewsLib.inlineConsoleAssets(rendered, preparedAssets)
     if (!html.includes('data-theme=')) {
       html = html.replace('<html lang="en">', '<html lang="en" data-theme="light">')
     }
@@ -1887,7 +1943,7 @@ async function runMain(argv, options = {}) {
   if (typeof options.open === 'boolean') args.open = options.open
   if (!args.root) {
     console.error(
-      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--new-view <slug>] [--filter <pattern>] [--no-open] [<ModelName>]',
+      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--new-view <slug>] [--filter <pattern>] [--no-open] [--no-files] [--no-changes] [<ModelName>]',
     )
     return { exitCode: 2, writtenFiles: [] }
   }
@@ -2005,6 +2061,7 @@ async function runMain(argv, options = {}) {
     open: args.open,
     launcher: args.launcher,
     files: args.files,
+    changes: args.changes,
     models,
     log: (line) => console.log(line),
   })
