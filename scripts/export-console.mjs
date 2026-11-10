@@ -1396,7 +1396,7 @@ export async function writeConsole(opts = {}) {
   // mirror uses, so every producer emits byte-identical slots.
   const resolveModelSchema = async (content) => {
     const fm = frontmatterOf(content)
-    if (!fm?.parent_spec?.name) return { schema: undefined, procedures: [] }
+    if (!fm?.parent_spec?.name) return { schema: undefined, procedures: [], catalog: null }
     try {
       const resolution = await payloadHelper.resolveConsoleSchema({
         rootDir: root,
@@ -1406,12 +1406,16 @@ export async function writeConsole(opts = {}) {
       for (const warning of resolution.warnings) {
         process.stderr.write(`WARNING: [export-console] ${warning}\n`)
       }
-      return { schema: resolution.schema, procedures: resolution.procedures }
+      return {
+        schema: resolution.schema,
+        procedures: resolution.procedures,
+        catalog: resolution.catalog,
+      }
     } catch (err) {
       process.stderr.write(
         `WARNING: [export-console] Schema resolution failed: ${err?.message ?? err}\n`,
       )
-      return { schema: undefined, procedures: [] }
+      return { schema: undefined, procedures: [], catalog: null }
     }
   }
 
@@ -1438,12 +1442,20 @@ export async function writeConsole(opts = {}) {
   const domainSources = new Set()
   // The changes bluepriNNt version every model payload was built against (identical across models).
   let changesBlueprintVersion = ''
+  let blueprintCatalog = null
 
   for (const m of payloadModels) {
     const relPath = relative(root, m.filePath).replace(/\\/g, '/')
     const fileName = basename(relPath)
     const modelStem = fileName.replace(/\.[^/.]+$/, '')
     const modelSchemaResolution = await resolveModelSchema(m.content)
+    if (modelSchemaResolution.catalog) {
+      if (!blueprintCatalog) {
+        blueprintCatalog = { models: {}, voices: {} }
+      }
+      Object.assign(blueprintCatalog.models, modelSchemaResolution.catalog.models || {})
+      Object.assign(blueprintCatalog.voices, modelSchemaResolution.catalog.voices || {})
+    }
     const payload = payloadHelper.buildConsolePayload({
       content: m.content,
       path: relPath,
@@ -1699,15 +1711,43 @@ export async function writeConsole(opts = {}) {
     for (const el of allElements) {
       if (!el || String(el.concept) !== concept) continue
       const fields = el.fields || {}
-      if (concept === 'Model') {
-        if (!(fields.allowed === true || fields.allowed === 'true')) continue
-        if (wanted && String(fields.capability || '').toLowerCase() !== wanted) continue
+      const slug = String(fields.slug || el.slug || el.name || '').trim()
+
+      let refEntry = null
+      if (concept === 'Model' && blueprintCatalog?.models) {
+        refEntry = blueprintCatalog.models[slug]
+        if (!refEntry) {
+          // Fallback matching if version infix differs (e.g. minimax-speech-hd vs minimax-speech-2-8-hd)
+          const norm = slug.replace(/[-_.]/g, '').toLowerCase()
+          for (const [k, v] of Object.entries(blueprintCatalog.models)) {
+            if (k.replace(/[-_.]/g, '').toLowerCase() === norm) {
+              refEntry = v
+              break
+            }
+            const kNoVer = k.replace(/-\d+(?:-\d+)*-/, '-').replace(/[-_.]/g, '').toLowerCase()
+            const slugNoVer = slug.replace(/-\d+(?:-\d+)*-/, '-').replace(/[-_.]/g, '').toLowerCase()
+            if (kNoVer === slugNoVer) {
+              refEntry = v
+              break
+            }
+          }
+        }
+      } else if (concept === 'Voice' && blueprintCatalog?.voices) {
+        refEntry = blueprintCatalog.voices[slug]
       }
-      if (concept === 'Voice' && !fields.voice_id) continue
+
+      // Merge: reference base, domain element overlay wins
+      const mergedFields = { ...(refEntry || {}), ...fields }
+
+      if (concept === 'Model') {
+        if (!(mergedFields.allowed === true || mergedFields.allowed === 'true')) continue
+        if (wanted && String(mergedFields.capability || '').toLowerCase() !== wanted) continue
+      }
+      if (concept === 'Voice' && !mergedFields.voice_id) continue
       const value =
         concept === 'Model'
-          ? fields.api_id || fields.slug || el.slug || el.name
-          : el.slug || fields.slug || el.name
+          ? mergedFields.api_id || mergedFields.slug || el.slug || el.name
+          : el.slug || mergedFields.slug || el.name
       if (value) out.add(String(value))
     }
     return [...out].sort()

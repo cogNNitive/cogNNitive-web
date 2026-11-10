@@ -12662,6 +12662,46 @@ async function collectIncludes(parent, rootDir, globalDir, skillsDir, warnings) 
   }
   return { byRef, all };
 }
+async function resolveCatalog(parent, warnings) {
+  const fm = parseFrontmatter(parent.content);
+  const catalogRel = fm?.catalog;
+  if (!catalogRel || typeof catalogRel !== "string") return null;
+  if (!parent.dir) {
+    warnings.push(`Blueprint declares catalog '${catalogRel}' but has no on-disk directory.`);
+    return null;
+  }
+  const catalogPath = (0, import_node_path4.isAbsolute)(catalogRel) ? catalogRel : (0, import_node_path4.resolve)(parent.dir, catalogRel);
+  if (!(0, import_node_fs4.existsSync)(catalogPath)) {
+    warnings.push(`Blueprint catalog '${catalogRel}' not found at '${catalogPath}'.`);
+    return null;
+  }
+  try {
+    const text2 = await (0, import_promises2.readFile)(catalogPath, "utf-8");
+    const parsed = parseKnowledge(text2);
+    const collect = (concept) => {
+      const out = {};
+      for (const element of parsed.elements.get(concept) || []) {
+        const fields = element.fields || {};
+        const slug = String(element.slug || fields.slug || element.name);
+        out[slug] = {
+          slug,
+          name: element.name,
+          ...fields
+        };
+      }
+      return out;
+    };
+    return {
+      models: collect("Model"),
+      voices: collect("Voice")
+    };
+  } catch (err) {
+    warnings.push(
+      `Blueprint catalog '${catalogRel}' failed to parse: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return null;
+  }
+}
 async function resolveConsoleSchema(opts) {
   const warnings = [];
   try {
@@ -12677,7 +12717,7 @@ async function resolveConsoleSchema(opts) {
       warnings.push(
         `Schema resolution for parent_spec '${opts.parentName}' not found; derived schema used.`
       );
-      return { schema: void 0, procedures: [], schemaSource: "derived", warnings };
+      return { schema: void 0, procedures: [], schemaSource: "derived", warnings, catalog: null };
     }
     const includes = await collectIncludes(
       parent,
@@ -12695,10 +12735,11 @@ async function resolveConsoleSchema(opts) {
       ...proceduresOf(parent),
       ...includes.all.flatMap((inc) => proceduresOf(inc))
     ];
-    return { schema, procedures, schemaSource: "blueprint", warnings };
+    const catalog = await resolveCatalog(parent, warnings);
+    return { schema, procedures, schemaSource: "blueprint", warnings, catalog };
   } catch (err) {
     warnings.push(`Schema resolution warning: ${err instanceof Error ? err.message : String(err)}`);
-    return { schema: void 0, procedures: [], schemaSource: "derived", warnings };
+    return { schema: void 0, procedures: [], schemaSource: "derived", warnings, catalog: null };
   }
 }
 

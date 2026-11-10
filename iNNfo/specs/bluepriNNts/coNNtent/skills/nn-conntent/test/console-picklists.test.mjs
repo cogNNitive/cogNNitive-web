@@ -151,6 +151,12 @@ function workspace({ catalog = CATALOG } = {}) {
     path.join(BLUEPRINT, 'spec_NN.md'),
     path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'spec_NN.md'),
   );
+  const bpCatalog = path.join(BLUEPRINT, 'catalog');
+  if (fs.existsSync(bpCatalog)) {
+    fs.cpSync(bpCatalog, path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'catalog'), {
+      recursive: true,
+    });
+  }
   const seriesDir = path.join(root, 'series', 's');
   const episodeDir = path.join(seriesDir, 'episodes', 'e');
   fs.mkdirSync(episodeDir, { recursive: true });
@@ -218,6 +224,59 @@ test('no catalog leaves every picklist field a free-text box', async () => {
       assert.ok(field, `${name} is declared`);
       assert.notEqual(field.type, 'select', `${name} stays free text with no catalog`);
     }
+  } finally {
+    ws.cleanup();
+  }
+});
+
+const ALLOWLIST_CATALOG = `---
+level: 3
+parent_spec:
+  name: "coNNtent_V_0-15-1"
+  url: "https://example.invalid/coNNtent/spec_NN.md"
+knowledge_version: "V_0-1-0"
+title: "Allowlist only catalog"
+---
+
+# NN index
+
+* [[Model]]
+
+# NN Model
+
+## NN Model: z-image-turbo
+slug:: z-image-turbo
+allowed:: true
+
+## NN Model: infinitetalk-fast
+slug:: infinitetalk-fast
+allowed:: true
+
+## NN Model: minimax-speech-hd
+slug:: minimax-speech-hd
+allowed:: true
+`;
+
+test('picklists merge blueprint reference catalog with domain overlay declaring only allowed slugs', async () => {
+  const ws = workspace({ catalog: ALLOWLIST_CATALOG });
+  try {
+    const result = await writeConsole({ rootDir: ws.root, open: false });
+    const schema = schemaSlot(fs.readFileSync(result.path, 'utf8'));
+
+    const image = fieldOf(schema, 'image_model')[0];
+    assert.ok(image, 'the image_model field is declared');
+    assert.equal(image.type, 'select');
+    assert.deepEqual(image.options, ['wavespeed-ai/z-image/turbo']);
+
+    const avatar = fieldOf(schema, 'avatar_model')[0];
+    assert.ok(avatar, 'the avatar_model field is declared');
+    assert.equal(avatar.type, 'select');
+    assert.deepEqual(avatar.options, ['wavespeed-ai/infinitetalk-fast']);
+
+    const tts = fieldOf(schema, 'voice_model')[0];
+    assert.ok(tts, 'the voice_model field is declared');
+    assert.equal(tts.type, 'select');
+    assert.deepEqual(tts.options, ['minimax/speech-2.8-hd']);
   } finally {
     ws.cleanup();
   }

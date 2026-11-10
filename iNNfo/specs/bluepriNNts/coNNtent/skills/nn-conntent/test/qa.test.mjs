@@ -34,9 +34,9 @@ function dummyWorkspace(doc = defaultEpisodeDoc()) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-ws-'));
   fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '---\nname: "QA Probe"\nworkspace_id: "qa-probe"\n---\n\n# NN DomaiNN\n', 'utf8');
   fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-17-0'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-18-0'), { recursive: true });
   fs.copyFileSync(path.join(BLUEPRINT, 'spec_NN.md'), path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'spec_NN.md'));
-  fs.copyFileSync(path.join(BLUEPRINT, 'spec_NN.md'), path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-17-0', 'spec_NN.md'));
+  fs.copyFileSync(path.join(BLUEPRINT, 'spec_NN.md'), path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-18-0', 'spec_NN.md'));
   fs.copyFileSync(path.join(BLUEPRINT, 'defaults', 'video-defaults_NN.md'), path.join(root, 'video-defaults_NN.md'));
   fs.mkdirSync(path.join(root, 'changes'), { recursive: true });
   fs.writeFileSync(
@@ -59,12 +59,12 @@ function dummyWorkspace(doc = defaultEpisodeDoc()) {
 
 function defaultEpisodeDoc({ status = 'approved', budget = '1.5' } = {}) {
   return `---
-spec_version: "V_0-17-0"
+spec_version: "V_0-18-0"
 level: 3
 parent_spec:
-  name: "coNNtent_V_0-17-0"
+  name: "coNNtent_V_0-18-0"
   url: "https://example.invalid/coNNtent/spec_NN.md"
-blueprint_version: "V_0-17-0"
+blueprint_version: "V_0-18-0"
 title: "QA Test Episode"
 ---
 

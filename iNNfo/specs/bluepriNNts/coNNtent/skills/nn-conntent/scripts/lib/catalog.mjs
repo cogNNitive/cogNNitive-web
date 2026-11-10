@@ -102,7 +102,17 @@ export function mergeCatalog(reference, overlay = null) {
   const models = { ...reference.models };
   const hasOverlay = Boolean(overlay);
   for (const [slug, override] of Object.entries(overlay?.models || {})) {
-    const base = models[slug] || null;
+    let base = models[slug] || null;
+    if (!base) {
+      const slugNoVer = slug.replace(/-\d+(?:-\d+)*-/, '-').replace(/[-_.]/g, '').toLowerCase();
+      for (const [k, v] of Object.entries(models)) {
+        const kNoVer = k.replace(/-\d+(?:-\d+)*-/, '-').replace(/[-_.]/g, '').toLowerCase();
+        if (kNoVer === slugNoVer) {
+          base = v;
+          break;
+        }
+      }
+    }
     const merged = { ...(base || {}), ...override };
     for (const field of REQUIRED_MODEL_FIELDS) {
       const value = merged[field];
