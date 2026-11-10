@@ -42,7 +42,7 @@ node skills/nn-sources/scripts/extract.js "<file>" [--format pdf|docx|xlsx|doc|t
 | `scripts/export-console.mjs` | Compile the self-contained domain console (`domaiNN_console.html`) from a workspace's Level-3 kNNowledge documents. | `node scripts/export-console.mjs <workspaceRoot> --domain [--no-open]` |
 | `scripts/verify.js` | Deterministic, offline verification runner: inventory parity, static type checks, and generated-manifest freshness. | `node scripts/verify.js [--fast] [--only=<substring>] [--jobs=N] [--verbose]` |
 | `scripts/build-docs.mjs` | Build orchestration for the docs site: build `@cognnitive/nn-core` and `@cognnitive/nn-mcp`, then stage the blueprint catalog. | `node scripts/build-docs.mjs` (honors `INNFO_DOCS_OUT`) |
-| `scripts/nn-session.mjs` | Manage per-session git worktrees for isolated development on `dev`. | `node scripts/nn-session.mjs start\|list\|status\|batch-status\|stop\|sweep [--id <id>] [--no-install]` |
+| `scripts/nn-session.mjs` | Manage per-session git worktrees cut from `main` for isolated development. | `node scripts/nn-session.mjs start\|list\|status\|stop\|sweep [--id <id>] [--no-install]` |
 
 ## See also
 
