@@ -450,12 +450,18 @@ const PREPARED = Symbol('prepared console assets')
 export function prepareAssets({ bundle, css, views }) {
   if (typeof bundle !== 'string' || bundle === '') throw new Error('console bundle is missing or empty')
   if (typeof css !== 'string') throw new Error('console stylesheet is missing')
+  const seenSources = new Set()
+  const uniqueViews = views.filter((v) => {
+    if (seenSources.has(v.source)) return false
+    seenSources.add(v.source)
+    return true
+  })
   return {
     [PREPARED]: true,
     css,
     header: viewsHeader(views),
     bundleScript: `<script>\n${escapeChecked(bundle, 'console bundle')}\n</script>`,
-    viewScripts: views.map(wrapView),
+    viewScripts: uniqueViews.map(wrapView),
   }
 }
 

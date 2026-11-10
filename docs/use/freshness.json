@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-10T11:07:46.097Z",
-  "head": "65032d6458db57e5176a465931578386ab39ca70",
+  "generatedAt": "2026-11-10T12:18:14.746Z",
+  "head": "68998212fe519c71360036598796e6b202c33dfe",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,45 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.56.0",
-      "pinnedTagDate": "2026-11-10T09:43:28+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/catalog.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-picklists.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/field-registry.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/pipeline.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce-cold-cache.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/user-journeys-u1-u7.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/whisper-consent.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs"
-      ]
+      "pinnedTag": "blueprints-v0.57.0",
+      "pinnedTagDate": "2026-11-10T12:06:48+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.56.0",
-      "pinnedTagDate": "2026-11-10T09:43:28+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/catalog.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-picklists.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/field-registry.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/pipeline.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce-cold-cache.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/user-journeys-u1-u7.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/whisper-consent.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs"
-      ]
+      "pinnedTag": "blueprints-v0.57.0",
+      "pinnedTagDate": "2026-11-10T12:06:48+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
@@ -71,9 +43,10 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.36.0",
       "pinnedTagDate": "2026-11-10T09:43:28+01:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 3,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "scripts/console-views.mjs",
         "scripts/export-console.mjs"
       ]
     }
