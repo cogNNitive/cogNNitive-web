@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-8-1"
+blueprint_version: "V_0-9-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -37,7 +37,7 @@ description:: Open vocabulary ad-hoc tags and classification labels.
 ## NN Field Definition: op
 concept:: Change
 type:: select
-options:: [update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default]
+options:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default]
 description:: Mutation or review operation.
 
 ## NN Field Definition: target
@@ -53,7 +53,7 @@ description:: Precondition check value prior to mutation.
 ## NN Field Definition: to
 concept:: Change
 type:: string
-description:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes.
+description:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.
 
 ## NN Field Definition: base_hash
 concept:: Change
@@ -114,12 +114,12 @@ description:: add_model only. Optional initial knowledge_version of the created 
 concept:: Change
 type:: select
 options:: [proposed, applied, partially_applied, rejected, conflict]
-description:: Execution status annotation assigned by the apply engine. partially_applied is a changeset-level status (some changes applied, some conflicted); a change itself is applied, conflict or rejected.
+description:: Execution status annotation assigned by the apply engine. partially_applied is a changeset-level status (some changes applied, some conflicted); a change itself is applied, conflict or rejected. Written once in the changeset frontmatter; a change carries its own status only when it differs.
 
 ## NN Field Definition: resolution
 concept:: Change
 type:: string
-description:: Execution outcome, conflict description or rejection reason. A rejected changeset records why it was rejected here and is never re-applied.
+description:: Conflict description or rejection reason, written only on a change that did not apply. A rejected changeset records why it was rejected here and is never re-applied.
 
 ## NN Field Definition: resolved_slug
 concept:: Change
@@ -129,22 +129,22 @@ description:: Disambiguated slug assigned upon insertion.
 ## NN Field Definition: resolved_target
 concept:: Change
 type:: string
-description:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path). Outside the seal; never accepted from a proposal.
+description:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path; model@frozen-slug for set_fields). Outside the seal; never accepted from a proposal. Written only when it differs from target; otherwise target is the address.
 
 ## NN Field Definition: evidence_sha256
 concept:: Change
 type:: string
-description:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED.
+description:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED. The changeset frontmatter carries one evidence_sha256 map (cited path -> sha256) for the whole batch; a change carries its own list only for a cited path the map does not carry.
 
 ## NN Field Definition: applied_at
 concept:: Change
 type:: string
-description:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms).
+description:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms). Written once in the changeset frontmatter and inherited by every change.
 
 ## NN Field Definition: batch
 concept:: Change
 type:: string
-description:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal.
+description:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal. Written once in the changeset frontmatter and inherited by every change.
 
 # Changeset Blueprint
 
@@ -152,28 +152,30 @@ description:: Execution fact: the batch identity of the apply (the changeset ste
 
 ## Philosophy
 
-Every graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, verified before application, and recorded permanently to form an immutable chain of provenance. The seal is produced at intake when a proposer omits it (see Specification).
+Every graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, an integrity check verified before application that catches an accidental modification of the proposal between proposal and apply, and are recorded permanently to form the chain of provenance. The seal carries no key: anyone able to edit the file can recompute it, and it does not cover the execution facts. The seal is produced at intake when a proposer omits it (see Specification).
 
 ## Objectives
 
 - Standardize graph mutation operations across models, elements, fields, and matrices.
-- Provide cryptographic proposal sealing to detect tampering before execution.
+- Seal each proposal with a hash: an integrity check against accidental modification between proposal and apply, not an authentication of who wrote it.
 - Support atomic two-phase transactions with zero partial side-effects on validation failure.
-- The change is the only provenance: no field of a model carries a citation.- Enable structured human and agent review feedback as comment operations.
+- The change is the only provenance: no field of a model carries a citation.
+- Enable structured human and agent review feedback as comment operations.
 
 ## Specification
 
 A changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.
 
 Each change is declared as an element of concept Change:
-- op: One of update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default.
+- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default.
 - update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.
 - rename_element: Changes one element's display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element's slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.
 - produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.
 - repin_blueprint: Moves a model's parent_spec (name and url) and its blueprint_version pin to a target bluepriNNt version. target is the bare model id, to is the target parent_spec.name, blueprint_url is the target url, and from is an optional precondition on the current parent_spec.name. It is the only supported way to repoint a model: patching frontmatter text is not a change and leaves no record. A stale from is MUTATION_FAILED.
 - rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.
 - set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.
-- add_element: Creates an element with its concept, name and optional explicit slug only. It carries no inline field values: each field is set afterwards by its own update_field change with its own evidence (no from, because the field does not exist yet). notes is rationale, never prose.
+- add_element: Creates an element with its concept, name and optional explicit slug only. It carries no inline field values: its fields are set afterwards by one set_fields change for the fields that share one evidence, and one update_field change for each field whose evidence differs (no from, because the fields do not exist yet). notes is rationale, never prose.
+- set_fields: Sets several fields of one element from one evidence in one change. target is model@element (no &field); to is a one-line JSON object whose keys are field names and whose values are the serialized field values update_field would write; from is optional and holds the expected current value of a subset of the keys of to (a key absent from from has no precondition). It is all or nothing: a failed from or base_hash precondition conflicts the whole change and writes no field. An empty or non-object to, a repeated key, or a from key that to does not set is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT. to and from are sealed as written. The change log records one unit per field (model@slug&field), each with the same history hop, evidence and position. update_field stays for a single field or for fields whose evidence differs.
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.
 - to: Proposed value.
@@ -185,11 +187,11 @@ Each change is declared as an element of concept Change:
 - add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.
 - base_hash: Optional precondition on the target element content; a mismatch is a conflict.
 - evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.
-- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Each change carries its own applied_at (UTC), status, author and batch; the change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit's history.
+- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Every change has an applied_at (UTC), status, author and batch. The batch-wide facts are written once, in the changeset frontmatter (applied_at, batch, status, and evidence_sha256 as a map from each cited path to its sha256), and every change inherits them: a change carries a fact only when its value differs (status when it differs from the changeset status, author when it differs from the frontmatter author, resolution only when the change did not apply, resolved_target only when it differs from target, evidence_sha256 only for a cited path the map does not carry; applied_at and batch never). The change log resolves each fact as the change's own value, else the changeset's, so a changeset whose changes carry every fact themselves resolves the same way. The change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit's history.
 
 Changeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.
 
-A changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value is rejected as tampered (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.
+A changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value means the proposal was modified after it was sealed and is rejected (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.
 
 ## Template
 
@@ -202,7 +204,7 @@ level: 3
 parent_spec:
   name: changes
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
-blueprint_version: "V_0-8-1"
+blueprint_version: "V_0-9-0"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

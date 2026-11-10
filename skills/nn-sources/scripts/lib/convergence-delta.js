@@ -269,8 +269,9 @@ function buildProposal(options) {
  * name/from/to/evidence):
  *   - one `add_element` per new key (op/target/concept/name only: a change
  *     carries no inline fields);
- *   - one `update_field` per field of a new key, with `to` and `evidence` and NO
- *     `from` (the field does not exist yet, so there is nothing to precondition);
+ *   - one `set_fields` per new key setting all its fields (they share the snapshot
+ *     evidence; a single field is an `update_field`), with `to` and `evidence` and
+ *     NO `from` (the fields do not exist yet, so there is nothing to precondition);
  *   - one `update_field` per changed value, ONLY for `replace-values`
  *     (`upsert` leaves changed values under `review` for a human decision);
  *   - at most one trailing `bump_version` (`to` names the level), which the
@@ -298,15 +299,21 @@ function buildApplyPlan(proposal, concept, model) {
       name: added.key,
       evidence,
     });
-    // Each field is its own change so it carries its own evidence; no `from`
-    // because the element (and therefore the field) is created by this plan.
-    for (const field of Object.keys(added.fields || {}).sort()) {
+    // Every field of the new key shares the snapshot evidence, so they are set by
+    // ONE set_fields (a single field stays an update_field). No `from`: the element
+    // (and therefore every field) is created by this plan.
+    const fields = Object.keys(added.fields || {}).sort();
+    if (fields.length === 1) {
       operations.push({
         op: 'update_field',
-        target: `${model}@${added.key}&${field}`,
-        to: added.fields[field],
+        target: `${model}@${added.key}&${fields[0]}`,
+        to: added.fields[fields[0]],
         evidence,
       });
+    } else if (fields.length > 1) {
+      const to = {};
+      for (const field of fields) to[field] = added.fields[field];
+      operations.push({ op: 'set_fields', target: `${model}@${added.key}`, to: JSON.stringify(to), evidence });
     }
   }
   const review = [];

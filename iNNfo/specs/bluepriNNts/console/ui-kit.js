@@ -2085,6 +2085,32 @@
     return { element: (segs[0] || '').trim(), field: (segs[1] || '').trim() }
   }
 
+  /**
+   * The fields a `set_fields` change sets, in `to` order: `[{ field, to, from? }]`.
+   * `to` / `from` are one-line JSON objects; a malformed payload yields `[]`.
+   */
+  function setFieldsOf(entry) {
+    function parse(raw) {
+      if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw
+      if (typeof raw !== 'string') return null
+      try {
+        var v = JSON.parse(raw)
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : null
+      } catch (_) {
+        return null
+      }
+    }
+    var e = entry || {}
+    var to = parse(e.to)
+    if (!to) return []
+    var from = parse(e.from) || {}
+    return Object.keys(to).map(function (field) {
+      var item = { field: field, to: String(to[field]) }
+      if (Object.prototype.hasOwnProperty.call(from, field)) item.from = String(from[field])
+      return item
+    })
+  }
+
   /** Human-language title for a change op (provisional copy, [P]). */
   function cardTitle(op, entry) {
     var e = entry || {}
@@ -2094,6 +2120,18 @@
     switch (op) {
       case 'update_field':
         return 'Edit `' + (field || 'field') + '` of `' + (element || 'element') + '`'
+      case 'set_fields':
+        return (
+          'Edit ' +
+          (setFieldsOf(e)
+            .map(function (f) {
+              return '`' + f.field + '`'
+            })
+            .join(', ') || '`fields`') +
+          ' of `' +
+          (element || 'element') +
+          '`'
+        )
       case 'update_matrix_cell':
         return 'Edit cell `' + (e.row || '') + '` \u00d7 `' + (e.col || '') + '`'
       case 'add_element':
@@ -2131,6 +2169,13 @@
       return String(e.from != null ? e.from : e.element || e.name || '')
     }
     if (op === 'comment') return ''
+    if (op === 'set_fields') {
+      return setFieldsOf(e)
+        .map(function (f) {
+          return f.field + ': ' + f.to
+        })
+        .join(', ')
+    }
     var from = e.from != null ? e.from : e.original
     var to = e.to != null ? e.to : e.proposed
     if (from == null && to == null) return ''
@@ -2165,8 +2210,19 @@
     } else {
       push('op', op)
       push('target', e.target)
-      if (e.from !== undefined) fields.push({ name: 'from', value: String(e.from) })
-      if (e.to !== undefined) fields.push({ name: 'to', value: String(e.to) })
+      if (op === 'set_fields') {
+        // One row per field it set (`previous -> new` when it carried a
+        // precondition), never the raw JSON payload.
+        setFieldsOf(e).forEach(function (f) {
+          fields.push({
+            name: f.field,
+            value: f.from !== undefined ? f.from + ' \u2192 ' + f.to : f.to,
+          })
+        })
+      } else {
+        if (e.from !== undefined) fields.push({ name: 'from', value: String(e.from) })
+        if (e.to !== undefined) fields.push({ name: 'to', value: String(e.to) })
+      }
       push('concept', e.concept)
       push('name', e.name)
     }
@@ -2301,7 +2357,23 @@
         opts.onGoTo(opts.elementId)
       })
     }
-    if (typeof opts.onRevert === 'function' && opts.revertable) {
+    if (typeof opts.onRevert === 'function' && opts.revertable && op === 'set_fields') {
+      // A set_fields is reverted per field: each Revert hands the host the same
+      // single-field record an update_field would.
+      setFieldsOf(entry).forEach(function (f) {
+        action(COPY.revert + ' ' + f.field, 'revert', function () {
+          var fieldEntry = Object.assign({}, entry, {
+            op: 'update_field',
+            target: String(entry.target || '') + '&' + f.field,
+            field: f.field,
+            to: f.to,
+          })
+          if (f.from !== undefined) fieldEntry.from = f.from
+          else delete fieldEntry.from
+          opts.onRevert(fieldEntry)
+        })
+      })
+    } else if (typeof opts.onRevert === 'function' && opts.revertable) {
       action(COPY.revert, 'revert', function () {
         opts.onRevert(entry)
       })
@@ -2451,7 +2523,7 @@
               stateKind: applied ? 'applied' : 'not-applied',
               stateLabel: applied ? COPY.applied : COPY.notApplied,
               elementId: elementName || (el && el.id),
-              revertable: applied && op === 'update_field',
+              revertable: applied && (op === 'update_field' || op === 'set_fields'),
               onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
               onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
               onCite:

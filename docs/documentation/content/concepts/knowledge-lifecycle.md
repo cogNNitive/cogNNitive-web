@@ -61,6 +61,13 @@ version, and so on) written under `changes/`. The changeset is validated before 
 and reviewed before it is applied, so every change to a model is auditable. See
 [Review changesets](../how-to/review-changesets.md).
 
+The seal (`proposal_sha`) is an integrity check: it catches an accidental edit of the
+proposal between proposal and apply. It carries no key, so it is not an authentication —
+anyone who can edit the file can recompute it. Fields that share one evidence (an imported
+row, for example) are set by one `set_fields` change; the facts every change of an apply
+shares (`applied_at`, `batch`, `status`, the evidence hashes) are written once, in the
+changeset frontmatter.
+
 ## 5. Export — artifacts
 
 Producers write their output to `artifacts/`. Like imports, artifacts are **write-once**:

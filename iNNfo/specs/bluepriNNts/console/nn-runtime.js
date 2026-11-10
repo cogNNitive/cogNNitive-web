@@ -6402,10 +6402,17 @@
   // resolves them: `<file stem>@<element slug>[&field]`. The draft carries
   // `knowledge_id` (the knowledge document's file stem) and `element_slug`;
   // `fallbackModel` only covers drafts that lack them. A `kind: 'new'` draft with
-  // filled fields yields the `add_element` block plus one `update_field` block per
-  // field (a change carries no inline `fields`).
+  // filled fields yields the `add_element` block plus ONE `set_fields` block (one
+  // `update_field` when a single field is filled; a change carries no inline `fields`).
   function oneLine(v) {
     return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
+  }
+
+  // A one-line JSON value: JSON.stringify escapes CR/LF, and U+2028/U+2029 (which
+  // it leaves raw) are escaped too, so no value can open a second line.
+  function jsonLine(value) {
+    var sep = [String.fromCharCode(0x2028), String.fromCharCode(0x2029)]
+    return JSON.stringify(value).split(sep[0]).join('\\u2028').split(sep[1]).join('\\u2029')
   }
 
   function draftToChanges(draft, index, fallbackModel, author) {
@@ -6503,25 +6510,43 @@
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
     if (op !== 'add_element' || !isObject(d.proposed)) return [lines.join('\n')]
-    // A change carries no inline fields: each filled field is its own
-    // `update_field`, with its own evidence and no `from` (the field does not
-    // exist yet, so there is nothing to precondition).
+    // A change carries no inline fields. The filled fields share the draft's one
+    // evidence, so they are set by ONE `set_fields` (a single field stays an
+    // `update_field`), with no `from`: the fields do not exist yet.
     var slug = oneLine(d.element_slug || slugify(d.element || '') || 'elem')
     var blocks = [lines.join('\n')]
-    Object.keys(d.proposed)
-      .sort()
-      .forEach(function (field) {
-        blocks.push(
-          [
-            '## NN Change: ' + id + '-' + slugify(field),
-            'op:: update_field',
-            'target:: ' + model + '@' + slug + '&' + oneLine(field),
-            'evidence:: ' + oneLine(ev),
-            'to:: ' + formatChangesetValue(d.proposed[field]),
-            'author:: ' + oneLine(author || 'reviewer'),
-          ].join('\n'),
-        )
+    var filled = Object.keys(d.proposed).sort()
+    if (filled.length > 1) {
+      var payload = {}
+      filled.forEach(function (field) {
+        var v = d.proposed[field]
+        payload[oneLine(field)] =
+          v === undefined || v === null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
       })
+      blocks.push(
+        [
+          '## NN Change: ' + id + '-fields',
+          'op:: set_fields',
+          'target:: ' + model + '@' + slug,
+          'evidence:: ' + oneLine(ev),
+          'to:: ' + jsonLine(payload),
+          'author:: ' + oneLine(author || 'reviewer'),
+        ].join('\n'),
+      )
+      return blocks
+    }
+    filled.forEach(function (field) {
+      blocks.push(
+        [
+          '## NN Change: ' + id + '-' + slugify(field),
+          'op:: update_field',
+          'target:: ' + model + '@' + slug + '&' + oneLine(field),
+          'evidence:: ' + oneLine(ev),
+          'to:: ' + formatChangesetValue(d.proposed[field]),
+          'author:: ' + oneLine(author || 'reviewer'),
+        ].join('\n'),
+      )
+    })
     return blocks
   }
 

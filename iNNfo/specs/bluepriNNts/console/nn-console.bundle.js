@@ -3229,6 +3229,32 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return { element: (segs[0] || '').trim(), field: (segs[1] || '').trim() }
   }
 
+  /**
+   * The fields a `set_fields` change sets, in `to` order: `[{ field, to, from? }]`.
+   * `to` / `from` are one-line JSON objects; a malformed payload yields `[]`.
+   */
+  function setFieldsOf(entry) {
+    function parse(raw) {
+      if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw
+      if (typeof raw !== 'string') return null
+      try {
+        var v = JSON.parse(raw)
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : null
+      } catch (_) {
+        return null
+      }
+    }
+    var e = entry || {}
+    var to = parse(e.to)
+    if (!to) return []
+    var from = parse(e.from) || {}
+    return Object.keys(to).map(function (field) {
+      var item = { field: field, to: String(to[field]) }
+      if (Object.prototype.hasOwnProperty.call(from, field)) item.from = String(from[field])
+      return item
+    })
+  }
+
   /** Human-language title for a change op (provisional copy, [P]). */
   function cardTitle(op, entry) {
     var e = entry || {}
@@ -3238,6 +3264,18 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     switch (op) {
       case 'update_field':
         return 'Edit `' + (field || 'field') + '` of `' + (element || 'element') + '`'
+      case 'set_fields':
+        return (
+          'Edit ' +
+          (setFieldsOf(e)
+            .map(function (f) {
+              return '`' + f.field + '`'
+            })
+            .join(', ') || '`fields`') +
+          ' of `' +
+          (element || 'element') +
+          '`'
+        )
       case 'update_matrix_cell':
         return 'Edit cell `' + (e.row || '') + '` \u00d7 `' + (e.col || '') + '`'
       case 'add_element':
@@ -3275,6 +3313,13 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       return String(e.from != null ? e.from : e.element || e.name || '')
     }
     if (op === 'comment') return ''
+    if (op === 'set_fields') {
+      return setFieldsOf(e)
+        .map(function (f) {
+          return f.field + ': ' + f.to
+        })
+        .join(', ')
+    }
     var from = e.from != null ? e.from : e.original
     var to = e.to != null ? e.to : e.proposed
     if (from == null && to == null) return ''
@@ -3309,8 +3354,19 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     } else {
       push('op', op)
       push('target', e.target)
-      if (e.from !== undefined) fields.push({ name: 'from', value: String(e.from) })
-      if (e.to !== undefined) fields.push({ name: 'to', value: String(e.to) })
+      if (op === 'set_fields') {
+        // One row per field it set (`previous -> new` when it carried a
+        // precondition), never the raw JSON payload.
+        setFieldsOf(e).forEach(function (f) {
+          fields.push({
+            name: f.field,
+            value: f.from !== undefined ? f.from + ' \u2192 ' + f.to : f.to,
+          })
+        })
+      } else {
+        if (e.from !== undefined) fields.push({ name: 'from', value: String(e.from) })
+        if (e.to !== undefined) fields.push({ name: 'to', value: String(e.to) })
+      }
       push('concept', e.concept)
       push('name', e.name)
     }
@@ -3445,7 +3501,23 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         opts.onGoTo(opts.elementId)
       })
     }
-    if (typeof opts.onRevert === 'function' && opts.revertable) {
+    if (typeof opts.onRevert === 'function' && opts.revertable && op === 'set_fields') {
+      // A set_fields is reverted per field: each Revert hands the host the same
+      // single-field record an update_field would.
+      setFieldsOf(entry).forEach(function (f) {
+        action(COPY.revert + ' ' + f.field, 'revert', function () {
+          var fieldEntry = Object.assign({}, entry, {
+            op: 'update_field',
+            target: String(entry.target || '') + '&' + f.field,
+            field: f.field,
+            to: f.to,
+          })
+          if (f.from !== undefined) fieldEntry.from = f.from
+          else delete fieldEntry.from
+          opts.onRevert(fieldEntry)
+        })
+      })
+    } else if (typeof opts.onRevert === 'function' && opts.revertable) {
       action(COPY.revert, 'revert', function () {
         opts.onRevert(entry)
       })
@@ -3595,7 +3667,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
               stateKind: applied ? 'applied' : 'not-applied',
               stateLabel: applied ? COPY.applied : COPY.notApplied,
               elementId: elementName || (el && el.id),
-              revertable: applied && op === 'update_field',
+              revertable: applied && (op === 'update_field' || op === 'set_fields'),
               onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
               onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
               onCite:
@@ -15590,10 +15662,17 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   // resolves them: `<file stem>@<element slug>[&field]`. The draft carries
   // `knowledge_id` (the knowledge document's file stem) and `element_slug`;
   // `fallbackModel` only covers drafts that lack them. A `kind: 'new'` draft with
-  // filled fields yields the `add_element` block plus one `update_field` block per
-  // field (a change carries no inline `fields`).
+  // filled fields yields the `add_element` block plus ONE `set_fields` block (one
+  // `update_field` when a single field is filled; a change carries no inline `fields`).
   function oneLine(v) {
     return String(v).replace(new RegExp('[\\r\\n\\u2028\\u2029]+', 'g'), ' ').trim()
+  }
+
+  // A one-line JSON value: JSON.stringify escapes CR/LF, and U+2028/U+2029 (which
+  // it leaves raw) are escaped too, so no value can open a second line.
+  function jsonLine(value) {
+    var sep = [String.fromCharCode(0x2028), String.fromCharCode(0x2029)]
+    return JSON.stringify(value).split(sep[0]).join('\\u2028').split(sep[1]).join('\\u2029')
   }
 
   function draftToChanges(draft, index, fallbackModel, author) {
@@ -15691,25 +15770,43 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
     if (op !== 'add_element' || !isObject(d.proposed)) return [lines.join('\n')]
-    // A change carries no inline fields: each filled field is its own
-    // `update_field`, with its own evidence and no `from` (the field does not
-    // exist yet, so there is nothing to precondition).
+    // A change carries no inline fields. The filled fields share the draft's one
+    // evidence, so they are set by ONE `set_fields` (a single field stays an
+    // `update_field`), with no `from`: the fields do not exist yet.
     var slug = oneLine(d.element_slug || slugify(d.element || '') || 'elem')
     var blocks = [lines.join('\n')]
-    Object.keys(d.proposed)
-      .sort()
-      .forEach(function (field) {
-        blocks.push(
-          [
-            '## NN Change: ' + id + '-' + slugify(field),
-            'op:: update_field',
-            'target:: ' + model + '@' + slug + '&' + oneLine(field),
-            'evidence:: ' + oneLine(ev),
-            'to:: ' + formatChangesetValue(d.proposed[field]),
-            'author:: ' + oneLine(author || 'reviewer'),
-          ].join('\n'),
-        )
+    var filled = Object.keys(d.proposed).sort()
+    if (filled.length > 1) {
+      var payload = {}
+      filled.forEach(function (field) {
+        var v = d.proposed[field]
+        payload[oneLine(field)] =
+          v === undefined || v === null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
       })
+      blocks.push(
+        [
+          '## NN Change: ' + id + '-fields',
+          'op:: set_fields',
+          'target:: ' + model + '@' + slug,
+          'evidence:: ' + oneLine(ev),
+          'to:: ' + jsonLine(payload),
+          'author:: ' + oneLine(author || 'reviewer'),
+        ].join('\n'),
+      )
+      return blocks
+    }
+    filled.forEach(function (field) {
+      blocks.push(
+        [
+          '## NN Change: ' + id + '-' + slugify(field),
+          'op:: update_field',
+          'target:: ' + model + '@' + slug + '&' + oneLine(field),
+          'evidence:: ' + oneLine(ev),
+          'to:: ' + formatChangesetValue(d.proposed[field]),
+          'author:: ' + oneLine(author || 'reviewer'),
+        ].join('\n'),
+      )
+    })
     return blocks
   }
 

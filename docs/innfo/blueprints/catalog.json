@@ -88,15 +88,15 @@
     },
     "changes": {
       "name": "changes",
-      "adopted": "V_0-8-1",
+      "adopted": "V_0-9-0",
       "tier": "core",
       "access": "public",
       "when_to_use": "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive.",
-      "release_tag": "blueprints-v0.57.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-8-1",
+          "blueprint_version": "V_0-9-0",
           "spec_version": "V_0-5-0",
           "title": "Changeset Blueprint",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
@@ -109,7 +109,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.57.0",
+      "release_tag": null,
       "embedded_skills": [
         "nn-conntent"
       ],

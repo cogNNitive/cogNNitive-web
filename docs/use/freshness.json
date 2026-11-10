@@ -1,41 +1,74 @@
 {
-  "generatedAt": "2026-11-10T12:18:14.746Z",
-  "head": "68998212fe519c71360036598796e6b202c33dfe",
+  "generatedAt": "2026-11-10T19:53:44.652Z",
+  "head": "bdde9b3673203ab999049939b55563456b5072ba",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v3.0.0",
       "pinnedTagDate": "2026-11-10T10:14:12+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 5,
+      "filesTouched": [
+        "skills/nn-innfo/SKILL.md",
+        "skills/nn-sources/scripts/lib/convergence-delta.js",
+        "skills/nn-sources/scripts/lib/convergence-delta.test.js",
+        "skills/nn-sources/scripts/lib/nn-core.generated.cjs",
+        "skills/nn-update/scripts/lib/nn-core.generated.cjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.57.0",
       "pinnedTagDate": "2026-11-10T12:06:48+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 6,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.57.0",
       "pinnedTagDate": "2026-11-10T12:06:48+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 6,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.36.0",
       "pinnedTagDate": "2026-11-07T12:23:56+01:00",
-      "commitsSincePin": 5,
+      "commitsSincePin": 9,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/src/server.spec.ts",
         "iNNfo/packages/nn-mcp/src/server.ts",
+        "iNNfo/packages/nn-mcp/src/tools/apply-change-facts.spec.ts",
         "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/nn-mcp/src/tools/console-regeneration.ts",
         "iNNfo/packages/nn-mcp/src/tools/dev-checkout.ts",
+        "iNNfo/packages/nn-mcp/src/tools/init-knowledge.spec.ts",
+        "iNNfo/packages/nn-mcp/src/tools/produce-artifact.spec.ts",
+        "iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts",
+        "iNNfo/packages/nn-mcp/src/tools/set-fields.spec.ts",
+        "iNNfo/packages/nn-mcp/src/tools/update-element-text.spec.ts",
+        "iNNfo/packages/nn-mcp/test/apply-change-models.test.ts",
         "iNNfo/packages/nn-mcp/test/apply-change.test.ts",
+        "iNNfo/packages/nn-mcp/test/console-export-roundtrip.test.ts",
         "iNNfo/packages/nn-mcp/test/direct-operations.test.ts",
+        "iNNfo/packages/nn-mcp/test/helpers/resolved-facts.ts",
+        "iNNfo/packages/nn-mcp/test/level3-routed-operations.test.ts",
+        "iNNfo/packages/nn-mcp/test/rejected-changesets.test.ts",
         "iNNfo/packages/nn-mcp/test/review-gate-apply.test.ts"
       ]
     },
@@ -43,9 +76,12 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.36.0",
       "pinnedTagDate": "2026-11-10T09:43:28+01:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "scripts/console-views.mjs",
         "scripts/export-console.mjs"
       ]

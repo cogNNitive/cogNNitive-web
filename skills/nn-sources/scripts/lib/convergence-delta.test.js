@@ -143,8 +143,8 @@ function testBuildApplyPlan() {
       name: 'jkl',
       evidence: 'b.csv',
     },
-    { op: 'update_field', target: 'youtube@jkl&title', to: 'Delta', evidence: 'b.csv' },
-    { op: 'update_field', target: 'youtube@jkl&views', to: '400', evidence: 'b.csv' },
+    // The fields of a new key share one evidence: ONE set_fields, no from.
+    { op: 'set_fields', target: 'youtube@jkl', to: '{"title":"Delta","views":"400"}', evidence: 'b.csv' },
     { op: 'update_field', target: 'youtube@abc&views', from: '100', to: '150', evidence: 'b.csv' },
     { op: 'bump_version', target: 'youtube', to: 'patch' },
   ]);
@@ -154,32 +154,50 @@ function testBuildApplyPlan() {
   );
   assert.ok(
     replacePlan.operations.every((op) => !('fields' in op)),
-    'add_element carries no inline fields: each field is its own update_field',
+    'add_element carries no inline fields: its fields follow in one set_fields',
   );
-  // Creation-time field updates have no `from` precondition: the field does not
-  // exist yet. Changed-value updates keep their `from`.
-  const creationUpdates = replacePlan.operations.filter(
-    (op) => op.op === 'update_field' && op.target.startsWith('youtube@jkl&'),
-  );
-  assert.strictEqual(creationUpdates.length, 2);
-  assert.ok(creationUpdates.every((op) => !('from' in op)), 'creation updates omit from');
-  assert.ok(
-    creationUpdates.every((op) => op.evidence === 'b.csv'),
-    'every field carries its own evidence',
-  );
+  // Creation-time fields have no `from` precondition: the field does not exist yet.
+  // Changed-value updates keep their `from`.
+  const creation = replacePlan.operations.filter((op) => op.op === 'set_fields');
+  assert.strictEqual(creation.length, 1);
+  assert.ok(!('from' in creation[0]), 'creation set_fields omits from');
   assert.strictEqual(replacePlan.operations.filter((o) => o.op === 'bump_version').length, 1);
   assert.strictEqual(replacePlan.review.length, 0);
 
   const upsertProposal = buildProposal({ ...common, strategy: 'upsert', fromContent: CSV_FROM, toContent: CSV_TO });
   const upsertPlan = buildApplyPlan(upsertProposal, 'VideoMetric', 'youtube');
-  // Creation still emits one update_field per field (there is no value to review
-  // for a new key); only CHANGED values wait in review under `upsert`.
-  const upsertCreates = upsertPlan.operations.filter((o) => o.op === 'update_field');
+  // Creation still emits the new key's fields (there is no value to review for a
+  // new key); only CHANGED values wait in review under `upsert`.
+  const upsertCreates = upsertPlan.operations.filter((o) => o.op === 'set_fields' || o.op === 'update_field');
   assert.deepStrictEqual(
-    upsertCreates.map((o) => o.target),
-    ['youtube@jkl&title', 'youtube@jkl&views'],
+    upsertCreates.map((o) => [o.op, o.target]),
+    [['set_fields', 'youtube@jkl']],
   );
   assert.ok(upsertCreates.every((o) => !('from' in o)));
+
+  // An import of 3 rows x 5 columns (one key + 4 fields) into an empty model is
+  // 3 add_element and 3 set_fields, and no update_field.
+  const header = 'id,a,b,c,d';
+  const rows = ['r1,1,2,3,4', 'r2,5,6,7,8', 'r3,9,10,11,12'];
+  const importProposal = buildProposal({
+    family: 'fam',
+    key: 'id',
+    strategy: 'replace-values',
+    fromFile: 'empty.csv',
+    toFile: 'r.csv',
+    fromContent: `${header}\n`,
+    toContent: `${header}\n${rows.join('\n')}\n`,
+  });
+  const importOps = buildApplyPlan(importProposal, 'Row', 'm').operations;
+  const count = (op) => importOps.filter((o) => o.op === op).length;
+  assert.deepStrictEqual([count('add_element'), count('set_fields'), count('update_field')], [3, 3, 0]);
+  // A single new field stays an update_field.
+  const single = buildApplyPlan(
+    { ...importProposal, added: [{ key: 'r9', fields: { a: '1' } }], changed: [] },
+    'Row',
+    'm',
+  ).operations;
+  assert.deepStrictEqual(single.map((o) => o.op), ['add_element', 'update_field', 'bump_version']);
   assert.strictEqual(upsertPlan.review.length, 1);
   assert.deepStrictEqual(upsertPlan.removed, [{ key: 'ghi' }]);
 

@@ -9491,12 +9491,10 @@ var REQUIRED_BY_PRIMITIVE = {
   [MATRIX_DEFINITION]: ["source", "target"]
 };
 
-// iNNfo/packages/nn-core/src/changeset/parser.ts
-var import_yaml6 = __toESM(require_dist(), 1);
-
 // iNNfo/packages/nn-core/src/changeset/types.ts
 var CHANGE_OPS = [
   "update_field",
+  "set_fields",
   "add_element",
   "remove_element",
   "rename_element",
@@ -9595,8 +9593,134 @@ function extractInstanceProblems(change) {
   }
   return problems;
 }
+function jsonObjectKeys(text2) {
+  const keys = [];
+  let depth = 0;
+  let expectKey = false;
+  for (let i = 0; i < text2.length; i++) {
+    const ch = text2[i];
+    if (ch === '"') {
+      let j = i + 1;
+      while (j < text2.length && text2[j] !== '"') j += text2[j] === "\\" ? 2 : 1;
+      if (depth === 1 && expectKey) {
+        keys.push(JSON.parse(text2.slice(i, j + 1)));
+        expectKey = false;
+      }
+      i = j;
+      continue;
+    }
+    if (ch === "{" || ch === "[") {
+      depth++;
+      if (ch === "{" && depth === 1) expectKey = true;
+    } else if (ch === "}" || ch === "]") {
+      depth--;
+    } else if (ch === "," && depth === 1) {
+      expectKey = true;
+    }
+  }
+  return keys;
+}
+function parseFieldMap(raw, key) {
+  if (raw === void 0) return { ok: false, reason: `set_fields requires "${key}"` };
+  const text2 = String(raw).trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(text2);
+  } catch {
+    return { ok: false, reason: `set_fields "${key}" must be a JSON object of field -> value` };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return { ok: false, reason: `set_fields "${key}" must be a JSON object of field -> value` };
+  }
+  const keys = jsonObjectKeys(text2);
+  if (keys.length === 0) return { ok: false, reason: `set_fields "${key}" must set at least one field` };
+  const seen = /* @__PURE__ */ new Set();
+  const values = /* @__PURE__ */ new Map();
+  for (const field of keys) {
+    if (seen.has(field)) return { ok: false, reason: `set_fields "${key}" repeats the field "${field}"` };
+    seen.add(field);
+    if (field.trim() === "" || field !== field.trim() || /[&@]/.test(field)) {
+      return { ok: false, reason: `set_fields "${key}" has an invalid field name "${field}"` };
+    }
+    const value = parsed[field];
+    if (typeof value === "string") values.set(field, value);
+    else if (typeof value === "number" || typeof value === "boolean") values.set(field, String(value));
+    else return { ok: false, reason: `set_fields "${key}".${field} must be a serialized value (a string)` };
+  }
+  return { ok: true, values };
+}
+function setFieldsEntries(change) {
+  if (change.op !== "set_fields") return [];
+  const to = parseFieldMap(change.to, "to");
+  if (!to.ok) return [];
+  const from = change.from !== void 0 ? parseFieldMap(change.from, "from") : void 0;
+  if (from && !from.ok) return [];
+  return [...to.values].map(([field, value]) => {
+    const expected = from?.ok ? from.values.get(field) : void 0;
+    return expected === void 0 ? { field, to: value } : { field, to: value, from: expected };
+  });
+}
+
+// iNNfo/packages/nn-core/src/changeset/evidence.ts
+var EVIDENCE_KEYWORDS = ["decision", "unknown"];
+function isKeyword(value) {
+  return EVIDENCE_KEYWORDS.includes(value.toLowerCase());
+}
+function evidenceKeywordInList(value) {
+  const items = splitSourceFieldValue(value);
+  if (items.length < 2) return null;
+  for (const item of items) {
+    if (isKeyword(item)) return item.toLowerCase();
+  }
+  return null;
+}
+function splitEvidence(value) {
+  const keyword = evidenceKeywordInList(value);
+  if (keyword) {
+    throw new Error(
+      `EVIDENCE_KEYWORD_IN_LIST: "${keyword}" is only valid alone in evidence; cite the document, or use the keyword by itself`
+    );
+  }
+  return splitSourceFieldValue(value).map((item) => isKeyword(item) ? item.toLowerCase() : item);
+}
+
+// iNNfo/packages/nn-core/src/changeset/execution-facts.ts
+function evidencePath(item) {
+  const lower = item.toLowerCase();
+  if (lower === "decision" || lower === "unknown") return void 0;
+  return parseCitation(item)?.filePath ?? item.split("@")[0];
+}
+function evidencePaths(evidence) {
+  let items;
+  try {
+    items = splitEvidence(evidence);
+  } catch {
+    return void 0;
+  }
+  if (items.length === 0) return void 0;
+  const paths = [];
+  for (const item of items) {
+    const path5 = evidencePath(item);
+    if (path5 === void 0) return void 0;
+    paths.push(path5);
+  }
+  return paths;
+}
+function inheritedEvidenceShas(evidence, map) {
+  if (!map) return void 0;
+  const paths = evidencePaths(evidence);
+  if (!paths) return void 0;
+  const shas = [];
+  for (const path5 of paths) {
+    const sha = map[path5];
+    if (typeof sha !== "string") return void 0;
+    shas.push(sha);
+  }
+  return shas;
+}
 
 // iNNfo/packages/nn-core/src/changeset/parser.ts
+var import_yaml6 = __toESM(require_dist(), 1);
 function stripQuotes(str2) {
   const trimmed = str2.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
@@ -9857,29 +9981,6 @@ function parseChangeset(rawContent) {
   };
 }
 
-// iNNfo/packages/nn-core/src/changeset/evidence.ts
-var EVIDENCE_KEYWORDS = ["decision", "unknown"];
-function isKeyword(value) {
-  return EVIDENCE_KEYWORDS.includes(value.toLowerCase());
-}
-function evidenceKeywordInList(value) {
-  const items = splitSourceFieldValue(value);
-  if (items.length < 2) return null;
-  for (const item of items) {
-    if (isKeyword(item)) return item.toLowerCase();
-  }
-  return null;
-}
-function splitEvidence(value) {
-  const keyword = evidenceKeywordInList(value);
-  if (keyword) {
-    throw new Error(
-      `EVIDENCE_KEYWORD_IN_LIST: "${keyword}" is only valid alone in evidence; cite the document, or use the keyword by itself`
-    );
-  }
-  return splitSourceFieldValue(value).map((item) => isKeyword(item) ? item.toLowerCase() : item);
-}
-
 // iNNfo/packages/nn-core/src/changelog/order.ts
 function changeStamp(changeset) {
   return changesetStampOf(String(changeset ?? ""))?.stamp ?? "";
@@ -9894,7 +9995,9 @@ function compareChanges(a, b) {
   if (byStamp !== 0) return byStamp;
   const byFile = compareStrings(a.changeset, b.changeset);
   if (byFile !== 0) return byFile;
-  return a.index - b.index;
+  const byIndex = a.index - b.index;
+  if (byIndex !== 0) return byIndex;
+  return (a.subIndex ?? -1) - (b.subIndex ?? -1);
 }
 
 // iNNfo/packages/nn-core/src/references.ts
@@ -10341,36 +10444,77 @@ function parseChangesetSnapshots(files) {
     } catch {
       continue;
     }
-    const fm = doc.frontmatter;
-    changesets.push({
-      path: file.path,
-      status: fm.status,
-      author: fm.author,
-      appliedAt: fm.applied_at,
-      changes: doc.changes
-    });
+    changesets.push(changesetLikeOf(file.path, doc));
   }
   return changesets;
 }
+function changesetLikeOf(path5, doc) {
+  const fm = doc.frontmatter;
+  return {
+    path: path5,
+    status: fm.status,
+    author: fm.author,
+    appliedAt: fm.applied_at,
+    ...typeof fm.batch === "string" ? { batch: fm.batch } : {},
+    ...fm.evidence_sha256 && typeof fm.evidence_sha256 === "object" ? { evidenceSha256: fm.evidence_sha256 } : {},
+    changes: doc.changes
+  };
+}
+function resolveChangeFacts(change, cs) {
+  const status = change.status ?? cs.status ?? "proposed";
+  const inheriting = cs.batch !== void 0;
+  const resolvedTarget = change.resolved_target ?? (inheriting && status === "applied" ? change.target : void 0);
+  const evidenceSha256 = change.evidence_sha256 ?? (status === "applied" ? inheritedEvidenceShas(change.evidence, cs.evidenceSha256) : void 0);
+  const facts = { status };
+  const appliedAt = change.applied_at ?? cs.appliedAt;
+  const batch = change.batch ?? cs.batch;
+  const author = change.author ?? cs.author;
+  if (appliedAt !== void 0) facts.appliedAt = appliedAt;
+  if (batch !== void 0) facts.batch = batch;
+  if (author !== void 0) facts.author = author;
+  if (resolvedTarget !== void 0) facts.resolvedTarget = resolvedTarget;
+  if (evidenceSha256 !== void 0) facts.evidenceSha256 = evidenceSha256;
+  if (change.resolution !== void 0) facts.resolution = change.resolution;
+  return facts;
+}
+function expandSetFields(change) {
+  if (change.op !== "set_fields" || !change.applied) return [change];
+  const entries = setFieldsEntries(change);
+  if (entries.length === 0) return [change];
+  const element = change.resolvedTarget ?? change.target;
+  return entries.map((entry, subIndex) => {
+    const { from: _from, ...rest } = change;
+    return {
+      ...rest,
+      op: "update_field",
+      target: `${change.target}&${entry.field}`,
+      resolvedTarget: `${element}&${entry.field}`,
+      to: entry.to,
+      ...entry.from !== void 0 ? { from: entry.from } : {},
+      subIndex
+    };
+  });
+}
 function loggedChanges(cs) {
   const changesetStatus = cs.status ?? "proposed";
-  return cs.changes.map((change, index) => {
-    const status = change.status ?? changesetStatus;
-    return {
+  return cs.changes.flatMap((change, index) => {
+    const facts = resolveChangeFacts(change, cs);
+    const status = facts.status;
+    return expandSetFields({
       id: change.id,
       changeset: cs.path,
       index,
       status,
       changesetStatus,
-      appliedAt: change.applied_at ?? cs.appliedAt,
-      batch: change.batch,
-      author: change.author ?? cs.author,
+      appliedAt: facts.appliedAt,
+      batch: facts.batch,
+      author: facts.author,
       op: change.op,
       target: change.target,
-      resolvedTarget: change.resolved_target,
+      resolvedTarget: facts.resolvedTarget,
       evidence: change.evidence,
       evidenceItems: splitEvidence(change.evidence),
-      evidenceSha256: change.evidence_sha256,
+      evidenceSha256: facts.evidenceSha256,
       extractedSlugs: change.extracted_slugs,
       from: change.from,
       to: change.to,
@@ -10385,7 +10529,7 @@ function loggedChanges(cs) {
       resolution: change.resolution,
       fields: change.fields,
       applied: status === "applied"
-    };
+    });
   });
 }
 function buildChangeLogFromChangesets(changesets) {

@@ -1636,8 +1636,23 @@ export async function writeConsole(opts = {}) {
         const name = `${c.op} ${c.target}`
         const description = c.notes || ''
         const fields = { op: c.op, target: c.target }
-        if (c.from !== undefined) fields.from = c.from
-        if (c.to !== undefined) fields.to = c.to
+        // set_fields carries `from`/`to` as JSON objects: show one row per field
+        // (`to.<field>`, `from.<field>`) instead of the raw JSON string.
+        const payloadOf = (raw) => {
+          if (c.op !== 'set_fields' || typeof raw !== 'string') return null
+          try {
+            const parsed = JSON.parse(raw)
+            return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null
+          } catch {
+            return null
+          }
+        }
+        for (const key of ['from', 'to']) {
+          if (c[key] === undefined) continue
+          const payload = payloadOf(c[key])
+          if (!payload) fields[key] = c[key]
+          else for (const [field, value] of Object.entries(payload)) fields[`${key}.${field}`] = String(value)
+        }
         if (c.author) fields.author = c.author
         if (c.status) fields.status = c.status
         if (c.evidence) fields.evidence = c.evidence

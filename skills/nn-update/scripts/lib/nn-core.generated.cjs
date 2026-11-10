@@ -9163,7 +9163,7 @@ function addElement(model, args, schema) {
       errors: [
         {
           path: "fields",
-          message: "INVALID_OPERATION: add_element must not carry inline fields; emit one update_field change per field (target model@element&field)"
+          message: "INVALID_OPERATION: add_element must not carry inline fields; emit one set_fields change (target model@element) for the fields that share one evidence, or one update_field per field (target model@element&field)"
         }
       ]
     };
